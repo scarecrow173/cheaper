@@ -1,0 +1,98 @@
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { expectEnvelopeOnly, makeIsolatedEnv, runCheaper } from "./helpers.js";
+
+const fixturesDir = fileURLToPath(new URL("./fixtures", import.meta.url));
+const fixture = (name: string) => path.join(fixturesDir, name);
+
+interface EnvelopeMeta {
+  model: { provider: string; id: string; tier: string } | null;
+  changes: {
+    files: Array<{ path: string; kind: string; linesAdded: number; linesDeleted: number }>;
+    totals: { files: number; linesAdded: number; linesDeleted: number };
+  } | null;
+  usage: { totalTokens: number } | null;
+  turns: number | null;
+}
+
+describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
+  let dir: string;
+  let ws: string;
+  let env: Record<string, string>;
+
+  beforeEach(async () => {
+    ({ dir, ws, env } = await makeIsolatedEnv());
+    // fake model を low tier へ pin する project models.yaml
+    await mkdir(path.join(ws, ".cheaper"), { recursive: true });
+    await writeFile(
+      path.join(ws, ".cheaper", "models.yaml"),
+      "version: 1\noverrides:\n  cheaper-fake/fake-model: low\n",
+    );
+    env.NODE_ENV = "test";
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("bulk-read returns a success envelope with empty changes", async () => {
+    const r = await runCheaper(["bulk-read", "--cwd", ws], {
+      env: { ...env, CHEAPER_TEST_FAKE_STREAM: fixture("bulk-read-fake.js") },
+      input: '{"task":"summarize the workspace"}',
+    });
+    expect(r.code).toBe(0);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect(e.ok).toBe(true);
+    expect(e.worker).toBe("bulk-reader");
+    const result = e.result as Record<string, unknown>;
+    expect(result.summary).toBe("workspace summary");
+    expect(result.findings).toHaveLength(1);
+    const meta = e.meta as EnvelopeMeta;
+    expect(meta.model).toEqual({ provider: "cheaper-fake", id: "fake-model", tier: "low" });
+    expect(meta.changes?.files).toEqual([]);
+    expect(meta.changes?.totals).toEqual({ files: 0, linesAdded: 0, linesDeleted: 0 });
+    expect(r.stderr).toContain("model: cheaper-fake/fake-model (tier low)");
+  });
+
+  it("cheap-write measures meta.changes from the journal, not the model", async () => {
+    const r = await runCheaper(["cheap-write", "--cwd", ws], {
+      env: { ...env, CHEAPER_TEST_FAKE_STREAM: fixture("cheap-write-fake.js") },
+      input: '{"task":"create out.txt","targets":[{"path":"out.txt","intent":"create"}]}',
+    });
+    expect(r.code).toBe(0);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect(e.ok).toBe(true);
+    const meta = e.meta as EnvelopeMeta;
+    expect(meta.changes?.totals.files).toBeGreaterThan(0);
+    expect(meta.changes?.files.map((f) => f.path)).toContain("out.txt");
+    // 実際に workspace へ書き込まれたこと
+    expect(await readFile(path.join(ws, "out.txt"), "utf8")).toBe("hello\n");
+  });
+
+  it("accepts the scripted-response-array fixture form", async () => {
+    const r = await runCheaper(["bulk-read", "--cwd", ws], {
+      env: { ...env, CHEAPER_TEST_FAKE_STREAM: fixture("array-fake.js") },
+      input: '{"task":"t"}',
+    });
+    expect(r.code).toBe(0);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect(e.ok).toBe(true);
+    expect((e.result as Record<string, unknown>).summary).toBe("array form ok");
+  });
+
+  it("ignores CHEAPER_TEST_FAKE_STREAM when NODE_ENV is not test", async () => {
+    const r = await runCheaper(["bulk-read", "--cwd", ws], {
+      env: {
+        ...env,
+        NODE_ENV: "production",
+        CHEAPER_TEST_FAKE_STREAM: fixture("bulk-read-fake.js"),
+      },
+      input: '{"task":"t"}',
+    });
+    // fake stream が注入されないため未認証のまま MODEL_TIER_UNAVAILABLE
+    expect(r.code).toBe(5);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect((e.error as { code: string }).code).toBe("MODEL_TIER_UNAVAILABLE");
+  });
+});

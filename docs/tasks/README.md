@@ -6,3 +6,54 @@ Directory: `docs/tasks`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
+| TASK-0001 | Scaffold pnpm monorepo root configuration | done | [0001-scaffold-pnpm-monorepo-root-configuration.md](./0001-scaffold-pnpm-monorepo-root-configuration.md) |
+| TASK-0002 | Create empty @cheaper/core package skeleton | done | [0002-create-empty-cheaper-core-package-skeleton.md](./0002-create-empty-cheaper-core-package-skeleton.md) |
+| TASK-0003 | Implement core error model and exit code table | done | [0003-implement-core-error-model-and-exit-code-table.md](./0003-implement-core-error-model-and-exit-code-table.md) |
+| TASK-0004 | Implement duration parser | done | [0004-implement-duration-parser.md](./0004-implement-duration-parser.md) |
+| TASK-0005 | Implement tool vocabulary and alias normalization | done | [0005-implement-tool-vocabulary-and-alias-normalization.md](./0005-implement-tool-vocabulary-and-alias-normalization.md) |
+| TASK-0006 | Implement config directory resolution | done | [0006-implement-config-directory-resolution.md](./0006-implement-config-directory-resolution.md) |
+| TASK-0007 | Implement worker frontmatter parser | done | [0007-implement-worker-frontmatter-parser.md](./0007-implement-worker-frontmatter-parser.md) |
+| TASK-0008 | Implement worker schema reference resolution and Ajv validation | done | [0008-implement-worker-schema-reference-resolution-and-ajv-validation.md](./0008-implement-worker-schema-reference-resolution-and-ajv-validation.md) |
+| TASK-0009 | Implement worker definition validation | done | [0009-implement-worker-definition-validation.md](./0009-implement-worker-definition-validation.md) |
+| TASK-0010 | Implement worker resolver with origin precedence | done | [0010-implement-worker-resolver-with-origin-precedence.md](./0010-implement-worker-resolver-with-origin-precedence.md) |
+| TASK-0011 | Implement runtime policy schemas | done | [0011-implement-runtime-policy-schemas.md](./0011-implement-runtime-policy-schemas.md) |
+| TASK-0012 | Implement runtime policy merge | done | [0012-implement-runtime-policy-merge.md](./0012-implement-runtime-policy-merge.md) |
+| TASK-0013 | Implement runtime policy loading order | done | [0013-implement-runtime-policy-loading-order.md](./0013-implement-runtime-policy-loading-order.md) |
+| TASK-0014 | Implement runtime policy CLI restriction | done | [0014-implement-runtime-policy-cli-restriction.md](./0014-implement-runtime-policy-cli-restriction.md) |
+| TASK-0015 | Implement capability intersection checks | done | [0015-implement-capability-intersection-checks.md](./0015-implement-capability-intersection-checks.md) |
+| TASK-0016 | Implement workspace path resolution with symlink policy | done | [0016-implement-workspace-path-resolution-with-symlink-policy.md](./0016-implement-workspace-path-resolution-with-symlink-policy.md) |
+| TASK-0017 | Implement model tier ordering | done | [0017-implement-model-tier-ordering.md](./0017-implement-model-tier-ordering.md) |
+| TASK-0018 | Implement models.yaml config schema and merge | done | [0018-implement-models-yaml-config-schema-and-merge.md](./0018-implement-models-yaml-config-schema-and-merge.md) |
+| TASK-0019 | Implement model tier classification | done | [0019-implement-model-tier-classification.md](./0019-implement-model-tier-classification.md) |
+| TASK-0020 | Implement model candidate resolution and fallback | done | [0020-implement-model-candidate-resolution-and-fallback.md](./0020-implement-model-candidate-resolution-and-fallback.md) |
+| TASK-0021 | Export core public API and run full verification | done | [0021-export-core-public-api-and-run-full-verification.md](./0021-export-core-public-api-and-run-full-verification.md) |
+| TASK-0022 | Scaffold runtime-pi package with Pi import smoke test | done | [0022-scaffold-runtime-pi-package-with-pi-import-smoke-test.md](./0022-scaffold-runtime-pi-package-with-pi-import-smoke-test.md) |
+| TASK-0023 | Implement mutation journal | done | [0023-implement-mutation-journal.md](./0023-implement-mutation-journal.md) |
+| TASK-0024 | Implement boundary-checked tool operations with atomic writes | done | [0024-implement-boundary-checked-tool-operations-with-atomic-writes.md](./0024-implement-boundary-checked-tool-operations-with-atomic-writes.md) |
+| TASK-0025 | Implement sandboxed directory walker | done | [0025-implement-sandboxed-directory-walker.md](./0025-implement-sandboxed-directory-walker.md) |
+| TASK-0026 | Implement sandboxed grep tool | done | [0026-implement-sandboxed-grep-tool.md](./0026-implement-sandboxed-grep-tool.md) |
+| TASK-0027 | Implement sandboxed find tool | done | [0027-implement-sandboxed-find-tool.md](./0027-implement-sandboxed-find-tool.md) |
+| TASK-0028 | Implement tool call budget wrapper | done | [0028-implement-tool-call-budget-wrapper.md](./0028-implement-tool-call-budget-wrapper.md) |
+| TASK-0029 | Implement tool registry mapping vocabulary to Pi tools | done | [0029-implement-tool-registry-mapping-vocabulary-to-pi-tools.md](./0029-implement-tool-registry-mapping-vocabulary-to-pi-tools.md) |
+| TASK-0030 | Implement CheaperResourceLoader without discovery | done | [0030-implement-cheaperresourceloader-without-discovery.md](./0030-implement-cheaperresourceloader-without-discovery.md) |
+| TASK-0031 | Add scripted fake stream test fixture | done | [0031-add-scripted-fake-stream-test-fixture.md](./0031-add-scripted-fake-stream-test-fixture.md) |
+| TASK-0032 | Implement Pi session creation with maxTokens injection | done | [0032-implement-pi-session-creation-with-maxtokens-injection.md](./0032-implement-pi-session-creation-with-maxtokens-injection.md) |
+| TASK-0033 | Implement final output extraction and schema validation | done | [0033-implement-final-output-extraction-and-schema-validation.md](./0033-implement-final-output-extraction-and-schema-validation.md) |
+| TASK-0034 | Implement output repair session | done | [0034-implement-output-repair-session.md](./0034-implement-output-repair-session.md) |
+| TASK-0035 | Implement usage aggregation from message end events | done | [0035-implement-usage-aggregation-from-message-end-events.md](./0035-implement-usage-aggregation-from-message-end-events.md) |
+| TASK-0036 | Implement ModelRuntime adapter to core model shape | done | [0036-implement-modelruntime-adapter-to-core-model-shape.md](./0036-implement-modelruntime-adapter-to-core-model-shape.md) |
+| TASK-0037 | Implement runWorker orchestration with limits and abort classification | done | [0037-implement-runworker-orchestration-with-limits-and-abort-classification.md](./0037-implement-runworker-orchestration-with-limits-and-abort-classification.md) |
+| TASK-0038 | Export runtime-pi public API and run full verification | done | [0038-export-runtime-pi-public-api-and-run-full-verification.md](./0038-export-runtime-pi-public-api-and-run-full-verification.md) |
+| TASK-0039 | Scaffold cheaper CLI package with bin entry | done | [0039-scaffold-cheaper-cli-package-with-bin-entry.md](./0039-scaffold-cheaper-cli-package-with-bin-entry.md) |
+| TASK-0040 | Implement CLI argument parsing | done | [0040-implement-cli-argument-parsing.md](./0040-implement-cli-argument-parsing.md) |
+| TASK-0041 | Implement input reading from stdin or file | done | [0041-implement-input-reading-from-stdin-or-file.md](./0041-implement-input-reading-from-stdin-or-file.md) |
+| TASK-0042 | Implement result and error envelope output | done | [0042-implement-result-and-error-envelope-output.md](./0042-implement-result-and-error-envelope-output.md) |
+| TASK-0043 | Implement human-readable text format output | done | [0043-implement-human-readable-text-format-output.md](./0043-implement-human-readable-text-format-output.md) |
+| TASK-0044 | Add built-in worker JSON schemas | done | [0044-add-built-in-worker-json-schemas.md](./0044-add-built-in-worker-json-schemas.md) |
+| TASK-0045 | Add built-in worker definitions | done | [0045-add-built-in-worker-definitions.md](./0045-add-built-in-worker-definitions.md) |
+| TASK-0046 | Implement CLI main orchestration | done | [0046-implement-cli-main-orchestration.md](./0046-implement-cli-main-orchestration.md) |
+| TASK-0047 | Add e2e tests for non-execution CLI paths | done | [0047-add-e2e-tests-for-non-execution-cli-paths.md](./0047-add-e2e-tests-for-non-execution-cli-paths.md) |
+| TASK-0048 | Add fake stream hook and e2e execution tests | done | [0048-add-fake-stream-hook-and-e2e-execution-tests.md](./0048-add-fake-stream-hook-and-e2e-execution-tests.md) |
+| TASK-0049 | Run full build test and lint verification | done | [0049-run-full-build-test-and-lint-verification.md](./0049-run-full-build-test-and-lint-verification.md) |
+| TASK-0050 | Write implementation record and experiment log | done | [0050-write-implementation-record-and-experiment-log.md](./0050-write-implementation-record-and-experiment-log.md) |
+| TASK-0051 | Run document status audit | done | [0051-run-document-status-audit.md](./0051-run-document-status-audit.md) |

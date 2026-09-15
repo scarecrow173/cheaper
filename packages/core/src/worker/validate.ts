@@ -1,0 +1,143 @@
+import path from "node:path";
+import { CheaperError } from "../errors.js";
+import { isTier, type Tier } from "../model/tier.js";
+import { normalizeToolNames, type ToolName } from "../tools/vocabulary.js";
+import type { ParsedWorkerFile } from "./parse.js";
+import {
+  type CompiledSchema,
+  compileSchema,
+  loadSchema,
+  parseSchemaRef,
+  type SchemaRef,
+} from "./schema.js";
+
+export type WorkerOrigin = "project" | "user" | "builtin" | "explicit";
+
+export interface WorkerDefinition {
+  name: string;
+  description: string;
+  tools: ToolName[];
+  cheaper: {
+    model: { tier: Tier };
+    input?: { schema: SchemaRef };
+    output: { schema: SchemaRef };
+  };
+  instructions: string;
+  sourcePath: string;
+  origin: WorkerOrigin;
+  inputSchema?: CompiledSchema;
+  outputSchema: CompiledSchema;
+}
+
+const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+const CHEAPER_KEYS = new Set(["model", "input", "output"]);
+const MODEL_KEYS = new Set(["tier"]);
+const IO_KEYS = new Set(["schema"]);
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function invalid(sourcePath: string, reason: string): CheaperError {
+  return new CheaperError("INVALID_WORKER_DEFINITION", `invalid worker definition: ${reason}`, {
+    details: { sourcePath, reason },
+  });
+}
+
+function requireStrictKeys(
+  obj: Record<string, unknown>,
+  allowed: Set<string>,
+  where: string,
+  sourcePath: string,
+) {
+  for (const key of Object.keys(obj)) {
+    if (!allowed.has(key)) throw invalid(sourcePath, `unknown-field-${where}-${key}`);
+  }
+}
+
+export async function validateWorkerDefinition(
+  parsed: ParsedWorkerFile,
+  ctx: { sourcePath: string; origin: WorkerOrigin },
+): Promise<WorkerDefinition> {
+  const { sourcePath, origin } = ctx;
+  const fm = parsed.frontmatter;
+  if (!isPlainObject(fm)) throw invalid(sourcePath, "frontmatter-not-object");
+
+  const name = fm.name;
+  if (typeof name !== "string" || name.length === 0) throw invalid(sourcePath, "name-missing");
+  if (!NAME_PATTERN.test(name)) {
+    throw new CheaperError("INVALID_WORKER_NAME", `invalid worker name: ${name}`, {
+      details: { sourcePath, name },
+    });
+  }
+  const stem = path.basename(sourcePath, path.extname(sourcePath));
+  if (stem !== name) {
+    throw new CheaperError(
+      "WORKER_NAME_MISMATCH",
+      `worker name ${name} does not match file stem ${stem}`,
+      {
+        details: { sourcePath, name, stem },
+      },
+    );
+  }
+
+  if (typeof fm.description !== "string" || fm.description.trim().length === 0) {
+    throw invalid(sourcePath, "description-missing");
+  }
+  const tools = normalizeToolNames(fm.tools);
+
+  const cheaper = fm.cheaper;
+  if (!isPlainObject(cheaper)) throw invalid(sourcePath, "cheaper-missing");
+  requireStrictKeys(cheaper, CHEAPER_KEYS, "cheaper", sourcePath);
+
+  const model = cheaper.model;
+  if (!isPlainObject(model)) throw invalid(sourcePath, "model-missing");
+  requireStrictKeys(model, MODEL_KEYS, "model", sourcePath);
+  if (!isTier(model.tier)) throw invalid(sourcePath, "tier-invalid");
+  const tier = model.tier;
+
+  const output = cheaper.output;
+  if (!isPlainObject(output)) throw invalid(sourcePath, "output-missing");
+  requireStrictKeys(output, IO_KEYS, "output", sourcePath);
+  const outputRef = parseSchemaRef(output.schema, "output", sourcePath);
+
+  let inputRef: SchemaRef | undefined;
+  if (cheaper.input !== undefined) {
+    if (!isPlainObject(cheaper.input)) throw invalid(sourcePath, "input-invalid");
+    requireStrictKeys(cheaper.input, IO_KEYS, "input", sourcePath);
+    inputRef = parseSchemaRef(cheaper.input.schema, "input", sourcePath);
+  }
+
+  const baseDir = path.dirname(sourcePath);
+  const outputSchema = compileSchema(await loadSchema(outputRef, baseDir, "output"), "output");
+  const inputSchema = inputRef
+    ? compileSchema(await loadSchema(inputRef, baseDir, "input"), "input")
+    : undefined;
+
+  const def: WorkerDefinition = {
+    name,
+    description: fm.description,
+    tools,
+    cheaper: {
+      model: { tier },
+      output: { schema: outputRef },
+    },
+    instructions: parsed.body,
+    sourcePath,
+    origin,
+    outputSchema,
+  };
+  if (inputRef !== undefined) def.cheaper.input = { schema: inputRef };
+  if (inputSchema !== undefined) def.inputSchema = inputSchema;
+  return def;
+}
+
+export function validateWorkerInput(def: WorkerDefinition, input: unknown): void {
+  if (def.inputSchema === undefined) return;
+  const result = def.inputSchema.validate(input);
+  if (!result.ok) {
+    throw new CheaperError("INVALID_INPUT", `input does not match worker input schema`, {
+      details: { errors: result.errors },
+    });
+  }
+}
