@@ -57,3 +57,8 @@ Directory: `docs/tasks`
 | TASK-0049 | Run full build test and lint verification | done | [0049-run-full-build-test-and-lint-verification.md](./0049-run-full-build-test-and-lint-verification.md) |
 | TASK-0050 | Write implementation record and experiment log | done | [0050-write-implementation-record-and-experiment-log.md](./0050-write-implementation-record-and-experiment-log.md) |
 | TASK-0051 | Run document status audit | done | [0051-run-document-status-audit.md](./0051-run-document-status-audit.md) |
+| TASK-0052 | Add Ollama docker-compose and document container usage in AGENTS.md | todo | [0052-add-ollama-docker-compose-and-document-container-usage-in-agents-md.md](./0052-add-ollama-docker-compose-and-document-container-usage-in-agents-md.md) |
+| TASK-0053 | Start Ollama container and pull qwen3.5 quantized model | todo | [0053-start-ollama-container-and-pull-qwen3-5-quantized-model.md](./0053-start-ollama-container-and-pull-qwen3-5-quantized-model.md) |
+| TASK-0054 | Configure Pi models.json and cheaper models.yaml for Ollama provider | todo | [0054-configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md](./0054-configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md) |
+| TASK-0055 | Run bulk-read and cheap-write smoke against Ollama | todo | [0055-run-bulk-read-and-cheap-write-smoke-against-ollama.md](./0055-run-bulk-read-and-cheap-write-smoke-against-ollama.md) |
+| TASK-0056 | Record experiment log and verify test regression | todo | [0056-record-experiment-log-and-verify-test-regression.md](./0056-record-experiment-log-and-verify-test-regression.md) |

@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-0009"
 type: "design"
-status: "draft"
+status: "approved"
 title: "Ollama real-provider smoke verification setup"
 created: "2026-09-16"
 updated: "2026-09-16"
