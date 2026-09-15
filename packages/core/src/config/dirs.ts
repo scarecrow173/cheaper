@@ -14,7 +14,10 @@ export function resolveConfigDirs(opts: {
   homedir?: string;
 }): ConfigDirs {
   const env = opts.env ?? process.env;
-  const home = opts.homedir ?? os.homedir();
+  // USERPROFILE/HOME は os.homedir() と実環境で一致するため挙動不変。
+  // env 注入によるテスト隔離（unit test でも実ユーザーの ~/.config/cheaper を
+  // 読まない）を有効にするため、env から解決できる場合は env を優先する。
+  const home = opts.homedir ?? env.USERPROFILE ?? env.HOME ?? os.homedir();
   const userConfigDir = env.CHEAPER_CONFIG_DIR
     ? env.CHEAPER_CONFIG_DIR
     : env.XDG_CONFIG_HOME

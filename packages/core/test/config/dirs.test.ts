@@ -31,6 +31,15 @@ describe("resolveConfigDirs", () => {
     const d = resolveConfigDirs({ cwd: "/w", builtinDir: "/b", env: {}, homedir: undefined });
     expect(d.userConfigDir.endsWith(path.join(".config", "cheaper"))).toBe(true);
   });
+  it("resolves homedir from env.USERPROFILE / env.HOME for test isolation", () => {
+    const noHomedir = { cwd: "/w", builtinDir: "/b" };
+    expect(
+      resolveConfigDirs({ ...noHomedir, env: { USERPROFILE: "/up", HOME: "/h" } }).userConfigDir,
+    ).toBe(path.join("/up", ".config", "cheaper"));
+    expect(resolveConfigDirs({ ...noHomedir, env: { HOME: "/h" } }).userConfigDir).toBe(
+      path.join("/h", ".config", "cheaper"),
+    );
+  });
   it("sets projectDir to <cwd>/.cheaper and passes builtinDir through", () => {
     const d = resolveConfigDirs({ ...opts, env: {} });
     expect(d.projectDir).toBe(path.join("/work/proj", ".cheaper"));

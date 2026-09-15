@@ -1,7 +1,10 @@
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { Readable } from "node:stream";
 import { CheaperError } from "@cheaper/core";
 import type { RunWorkerDeps, WorkerRunMeta } from "@cheaper/runtime-pi";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { type CliHooks, type CliIo, runCli } from "../src/cli.js";
 
 function stdinOf(text: string, isTTY = false) {
@@ -10,15 +13,34 @@ function stdinOf(text: string, isTTY = false) {
   return s;
 }
 
-function makeIo(stdinText = '{"task":"x"}', env: NodeJS.ProcessEnv = {}) {
+const tmpDirs: string[] = [];
+
+afterEach(() => {
+  for (const d of tmpDirs.splice(0)) rmSync(d, { recursive: true, force: true });
+});
+
+/**
+ * 実ユーザーの ~/.config/cheaper と repo の .cheaper を読まないよう、
+ * HOME/USERPROFILE/CHEAPER_CONFIG_DIR と cwd を tmp へ隔離する（e2e helpers と同じ方針）。
+ */
+function makeIo(stdinText = '{"task":"x"}', env: NodeJS.ProcessEnv = {}, isTTY = false) {
   let stdout = "";
   let stderr = "";
+  const dir = mkdtempSync(path.join(tmpdir(), "cheaper-cli-test-"));
+  tmpDirs.push(dir);
+  const ws = path.join(dir, "ws");
+  mkdirSync(ws);
   const io: CliIo = {
-    stdin: stdinOf(stdinText),
+    stdin: stdinOf(stdinText, isTTY),
     stdout: { write: (s: string) => (stdout += s) },
     stderr: { write: (s: string) => (stderr += s) },
-    env,
-    cwd: process.cwd(),
+    env: {
+      HOME: dir,
+      USERPROFILE: dir,
+      CHEAPER_CONFIG_DIR: path.join(dir, "cheaper-config"),
+      ...env,
+    },
+    cwd: ws,
   };
   return { io, out: () => stdout, err: () => stderr };
 }
@@ -78,17 +100,9 @@ describe("runCli", () => {
   });
 
   it("emits INVALID_REQUEST when stdin is a TTY without --input", async () => {
-    const io: CliIo = {
-      stdin: stdinOf("", true),
-      stdout: { write: () => {} },
-      stderr: { write: () => {} },
-      env: {},
-      cwd: process.cwd(),
-    };
-    let out = "";
-    io.stdout = { write: (s: string) => (out += s) };
+    const { io, out } = makeIo("", {}, true);
     expect(await runCli(["bulk-read"], io, hooks())).toBe(2);
-    expect(JSON.parse(out).error.code).toBe("INVALID_REQUEST");
+    expect(JSON.parse(out()).error.code).toBe("INVALID_REQUEST");
   });
 
   it("emits INVALID_INPUT when task input violates the worker schema", async () => {
