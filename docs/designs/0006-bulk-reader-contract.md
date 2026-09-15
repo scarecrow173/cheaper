@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-0006"
 type: "design"
-status: "draft"
+status: "approved"
 title: "bulk-reader contract"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -32,7 +32,8 @@ relations:
     - "../specs/0002-bulk-reader-built-in-worker.md"
     - "../adr/0005-model-tier-model-resolver.md"
     - "../adr/0007-workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
-  derived-by: []
+  derived-by:
+    - "../plans/0003-implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md"
   verifies: []
   verified-by: []
   references: []

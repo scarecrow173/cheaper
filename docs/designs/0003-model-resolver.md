@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-0003"
 type: "design"
-status: "draft"
+status: "approved"
 title: "Model Resolver"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -30,7 +30,9 @@ relations:
   derives-from:
     - "../specs/0001-cheaper-v1-worker-runtime-cli.md"
     - "../adr/0005-model-tier-model-resolver.md"
-  derived-by: []
+  derived-by:
+    - "../plans/0001-scaffold-monorepo-and-implement-cheaper-core.md"
+    - "../plans/0002-implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md"
   verifies: []
   verified-by: []
   references: []

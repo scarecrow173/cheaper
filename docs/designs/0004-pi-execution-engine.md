@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-0004"
 type: "design"
-status: "draft"
+status: "approved"
 title: "Pi 実行エンジン: session・制限・abort・retry・出力抽出・repair・usage"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -32,7 +32,8 @@ relations:
     - "../specs/0001-cheaper-v1-worker-runtime-cli.md"
     - "../adr/0001-agent-runtime-pi-sdk-earendil-works-pi-coding-agent.md"
     - "../adr/0003-worker-definition-runtime-policy-runtime-invariants-capability.md"
-  derived-by: []
+  derived-by:
+    - "../plans/0002-implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md"
   verifies: []
   verified-by: []
   references: []

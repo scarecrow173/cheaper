@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-0008"
 type: "design"
-status: "draft"
+status: "approved"
 title: "リポジトリ構成とツールチェーン"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -29,7 +29,9 @@ relations:
   refined-by: []
   derives-from:
     - "../adr/0008-typescript-pnpm-monorepo.md"
-  derived-by: []
+  derived-by:
+    - "../plans/0001-scaffold-monorepo-and-implement-cheaper-core.md"
+    - "../plans/0003-implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md"
   verifies: []
   verified-by: []
   references: []

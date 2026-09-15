@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-0005"
 type: "design"
-status: "draft"
+status: "approved"
 title: "CLI contract・result/error envelope・exit code"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -31,7 +31,8 @@ relations:
     - "../specs/0001-cheaper-v1-worker-runtime-cli.md"
     - "../adr/0004-one-shot-json-first-cli.md"
     - "../adr/0006-wrapper-measured-deterministic-metadata.md"
-  derived-by: []
+  derived-by:
+    - "../plans/0003-implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md"
   verifies: []
   verified-by: []
   references: []

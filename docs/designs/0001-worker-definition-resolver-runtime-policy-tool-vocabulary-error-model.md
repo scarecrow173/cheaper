@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-0001"
 type: "design"
-status: "draft"
+status: "approved"
 title: "コアドメインモデル: Worker Definition・Resolver・Runtime Policy・tool vocabulary・error model"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -33,7 +33,8 @@ relations:
     - "../specs/0001-cheaper-v1-worker-runtime-cli.md"
     - "../adr/0002-worker-yaml-frontmatter-markdown.md"
     - "../adr/0003-worker-definition-runtime-policy-runtime-invariants-capability.md"
-  derived-by: []
+  derived-by:
+    - "../plans/0001-scaffold-monorepo-and-implement-cheaper-core.md"
   verifies: []
   verified-by: []
   references: []

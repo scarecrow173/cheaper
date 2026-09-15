@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-0007"
 type: "design"
-status: "draft"
+status: "approved"
 title: "cheap-writer contract"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -32,7 +32,8 @@ relations:
     - "../specs/0003-cheap-writer-built-in-worker.md"
     - "../adr/0006-wrapper-measured-deterministic-metadata.md"
     - "../adr/0007-workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
-  derived-by: []
+  derived-by:
+    - "../plans/0003-implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md"
   verifies: []
   verified-by: []
   references: []
