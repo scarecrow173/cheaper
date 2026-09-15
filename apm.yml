@@ -1,0 +1,21 @@
+name: cheaper
+version: 1.0.0
+description: APM project for cheaper
+author: scarecrow173
+targets:
+- copilot
+- codex
+- claude
+- cursor
+- windsurf
+- agent-skills
+dependencies:
+  apm:
+  - scarecrow173/apm-packages/packages/basic-dev-foundation#main
+  - scarecrow173/apm-packages/packages/recommended-dev-suite#main
+  - scarecrow173/apm-packages/packages/steer-enterprise-web-research#main
+  - scarecrow173/apm-packages/packages/doc-driven-dev#main
+  mcp: []
+includes: auto
+scripts: {}
+

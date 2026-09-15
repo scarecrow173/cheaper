@@ -1,0 +1,12 @@
+[settings]
+minimum_release_age = "7d"
+
+[env]
+UV_EXCLUDE_NEWER = "1 week"
+
+[tools]
+node = "26"
+pnpm = "11"
+python = "3.12"
+uv = "0.11"
+"pipx:apm-cli"  = { version = "latest", uvx_args = "--prerelease allow" }
