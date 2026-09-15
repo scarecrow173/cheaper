@@ -6,6 +6,7 @@ import {
   type Tier,
 } from "@cheaper/core";
 import type { Api, Model } from "@earendil-works/pi-ai";
+import { type CreateModelRuntimeOptions, ModelRuntime } from "@earendil-works/pi-coding-agent";
 
 /**
  * ModelRuntime のうち runtime-pi が必要とする最小面。
@@ -24,6 +25,18 @@ export function toModelInfo(m: Model<Api>): ModelInfo {
     cost: { input: m.cost.input, output: m.cost.output },
     maxTokens: m.maxTokens,
   };
+}
+
+/**
+ * CLI 用の薄い ModelRuntime factory。cli が `@earendil-works/*` に
+ * 直接依存しないよう、生成だけをここに閉じ込める。
+ * 返り値は ModelCatalog を満たすので `runWorker` の catalog/modelRuntime
+ * 双方にそのまま渡せる。
+ */
+export async function createModelRuntime(
+  options?: CreateModelRuntimeOptions,
+): Promise<ModelRuntime> {
+  return ModelRuntime.create(options);
 }
 
 export interface ResolvedPiModel {

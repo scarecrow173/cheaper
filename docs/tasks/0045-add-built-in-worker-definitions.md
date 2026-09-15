@@ -1,7 +1,7 @@
 ---
 id: "TASK-0045"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add built-in worker definitions"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -66,17 +66,17 @@ PLAN-0003 step 7。built-in Worker 定義: bulk-reader（tools read/grep/find/ls
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] 両 md が core validate を通り tools/tier/schema 参照が設計どおりのテストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] 両 md が core validate を通り tools/tier/schema 参照が設計どおりのテストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter cheaper test -- test/workers.test.ts` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter cheaper test -- test/workers.test.ts` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

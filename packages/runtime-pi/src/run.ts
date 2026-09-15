@@ -69,7 +69,7 @@ function buildSystemPrompt(worker: WorkerDefinition, toolNames: string[]): strin
     "Output schema:",
     JSON.stringify(worker.outputSchema.schema, null, 2),
   ];
-  return worker.instructions.trimEnd() + "\n" + contract.join("\n") + "\n";
+  return `${worker.instructions.trimEnd()}\n${contract.join("\n")}\n`;
 }
 
 function buildUserPrompt(input: unknown): string {

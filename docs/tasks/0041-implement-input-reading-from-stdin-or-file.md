@@ -1,7 +1,7 @@
 ---
 id: "TASK-0041"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement input reading from stdin or file"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -63,18 +63,18 @@ PLAN-0003 step 3。`--input <file|->`（既定 `-`）/stdin 読取。TTY で std
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] stdin・file・空入力・非 object の各テストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] stdin・file・空入力・非 object の各テストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter cheaper test -- test/input.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter cheaper test -- test/input.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

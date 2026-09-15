@@ -1,7 +1,7 @@
 ---
 id: "TASK-0044"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add built-in worker JSON schemas"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -68,17 +68,17 @@ PLAN-0003 step 6。DESIGN-0006/0007 の表を JSON Schema 2020-12 に落とす 4
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] 4 schema が Ajv `validateSchema`（draft 2020-12）を通るテストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] 4 schema が Ajv `validateSchema`（draft 2020-12）を通るテストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter cheaper test -- test/workers.test.ts` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter cheaper test -- test/workers.test.ts` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

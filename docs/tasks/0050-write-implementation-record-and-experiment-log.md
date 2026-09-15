@@ -1,7 +1,7 @@
 ---
 id: "TASK-0050"
 type: "task"
-status: "todo"
+status: "done"
 title: "Write implementation record and experiment log"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -61,16 +61,16 @@ PLAN-0003 step 12。`docs/impl/` に実装記録スキルの手順で implementa
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] ir/exp がスキル規約どおり作成され index に載る
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] ir/exp がスキル規約どおり作成され index に載る
 
 ## Verification
 
-- [ ] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js` exits 0
+- [x] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js` exits 0
 
 ## Out of Scope
 

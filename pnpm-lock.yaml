@@ -21,6 +21,18 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(@types/node@26.5.1)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1))
 
+  packages/cli:
+    dependencies:
+      '@cheaper/core':
+        specifier: workspace:*
+        version: link:../core
+      '@cheaper/runtime-pi':
+        specifier: workspace:*
+        version: link:../runtime-pi
+      yaml:
+        specifier: ^2.9.1
+        version: 2.9.1
+
   packages/core:
     dependencies:
       ajv:

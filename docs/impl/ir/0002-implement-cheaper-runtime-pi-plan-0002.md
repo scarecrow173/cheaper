@@ -1,7 +1,7 @@
 ---
 id: "IMPL-0002"
 type: "impl"
-status: "done"
+status: "completed"
 title: "Implement @cheaper/runtime-pi (PLAN-0002)"
 created: "2026-09-16"
 updated: "2026-09-16"
@@ -10,7 +10,8 @@ relations:
   source: []
   changes:
     added:
-      - "packages/runtime-pi/"
+      - type: "dir"
+        path: "packages/runtime-pi/"
     modified: []
     deleted: []
     renamed: []

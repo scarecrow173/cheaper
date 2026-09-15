@@ -1,7 +1,7 @@
 ---
 id: "TASK-0048"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add fake stream hook and e2e execution tests"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -65,17 +65,17 @@ PLAN-0003 step 10。runtime-pi の `stream` seam を環境変数 `CHEAPER_TEST_F
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] fake stream 経由の成功 envelope・meta.changes・NODE_ENV ガードの e2e が green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] fake stream 経由の成功 envelope・meta.changes・NODE_ENV ガードの e2e が green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter cheaper test -- test/e2e/cli.test.ts` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter cheaper test -- test/e2e/cli.test.ts` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

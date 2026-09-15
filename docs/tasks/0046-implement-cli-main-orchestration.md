@@ -1,7 +1,7 @@
 ---
 id: "TASK-0046"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement CLI main orchestration"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -72,18 +72,18 @@ PLAN-0003 step 8。`main.ts` オーケストレーション: args → input → 
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] 正常系配線・タイマー・signal・未捕捉例外の各テストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] 正常系配線・タイマー・signal・未捕捉例外の各テストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter cheaper test -- test/main.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter cheaper test -- test/main.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

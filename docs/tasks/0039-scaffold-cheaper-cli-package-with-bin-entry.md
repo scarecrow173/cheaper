@@ -1,7 +1,7 @@
 ---
 id: "TASK-0039"
 type: "task"
-status: "todo"
+status: "done"
 title: "Scaffold cheaper CLI package with bin entry"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -66,17 +66,17 @@ PLAN-0003 step 1。`cheaper` パッケージ scaffold: package.json（name `chea
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] `node bin/cheaper.js --version` が exit 0
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] `node bin/cheaper.js --version` が exit 0
 
 ## Verification
 
-- [ ] `mise exec -- pnpm -r build` exits 0
-- [ ] `node packages/cli/bin/cheaper.js --version` exits 0
+- [x] `mise exec -- pnpm -r build` exits 0
+- [x] `node packages/cli/bin/cheaper.js --version` exits 0
 
 ## Out of Scope
 

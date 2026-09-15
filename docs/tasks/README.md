@@ -44,16 +44,16 @@ Directory: `docs/tasks`
 | TASK-0036 | Implement ModelRuntime adapter to core model shape | done | [0036-implement-modelruntime-adapter-to-core-model-shape.md](./0036-implement-modelruntime-adapter-to-core-model-shape.md) |
 | TASK-0037 | Implement runWorker orchestration with limits and abort classification | done | [0037-implement-runworker-orchestration-with-limits-and-abort-classification.md](./0037-implement-runworker-orchestration-with-limits-and-abort-classification.md) |
 | TASK-0038 | Export runtime-pi public API and run full verification | done | [0038-export-runtime-pi-public-api-and-run-full-verification.md](./0038-export-runtime-pi-public-api-and-run-full-verification.md) |
-| TASK-0039 | Scaffold cheaper CLI package with bin entry | todo | [0039-scaffold-cheaper-cli-package-with-bin-entry.md](./0039-scaffold-cheaper-cli-package-with-bin-entry.md) |
-| TASK-0040 | Implement CLI argument parsing | todo | [0040-implement-cli-argument-parsing.md](./0040-implement-cli-argument-parsing.md) |
-| TASK-0041 | Implement input reading from stdin or file | todo | [0041-implement-input-reading-from-stdin-or-file.md](./0041-implement-input-reading-from-stdin-or-file.md) |
-| TASK-0042 | Implement result and error envelope output | todo | [0042-implement-result-and-error-envelope-output.md](./0042-implement-result-and-error-envelope-output.md) |
-| TASK-0043 | Implement human-readable text format output | todo | [0043-implement-human-readable-text-format-output.md](./0043-implement-human-readable-text-format-output.md) |
-| TASK-0044 | Add built-in worker JSON schemas | todo | [0044-add-built-in-worker-json-schemas.md](./0044-add-built-in-worker-json-schemas.md) |
-| TASK-0045 | Add built-in worker definitions | todo | [0045-add-built-in-worker-definitions.md](./0045-add-built-in-worker-definitions.md) |
-| TASK-0046 | Implement CLI main orchestration | todo | [0046-implement-cli-main-orchestration.md](./0046-implement-cli-main-orchestration.md) |
-| TASK-0047 | Add e2e tests for non-execution CLI paths | todo | [0047-add-e2e-tests-for-non-execution-cli-paths.md](./0047-add-e2e-tests-for-non-execution-cli-paths.md) |
-| TASK-0048 | Add fake stream hook and e2e execution tests | todo | [0048-add-fake-stream-hook-and-e2e-execution-tests.md](./0048-add-fake-stream-hook-and-e2e-execution-tests.md) |
-| TASK-0049 | Run full build test and lint verification | todo | [0049-run-full-build-test-and-lint-verification.md](./0049-run-full-build-test-and-lint-verification.md) |
-| TASK-0050 | Write implementation record and experiment log | todo | [0050-write-implementation-record-and-experiment-log.md](./0050-write-implementation-record-and-experiment-log.md) |
-| TASK-0051 | Run document status audit | todo | [0051-run-document-status-audit.md](./0051-run-document-status-audit.md) |
+| TASK-0039 | Scaffold cheaper CLI package with bin entry | done | [0039-scaffold-cheaper-cli-package-with-bin-entry.md](./0039-scaffold-cheaper-cli-package-with-bin-entry.md) |
+| TASK-0040 | Implement CLI argument parsing | done | [0040-implement-cli-argument-parsing.md](./0040-implement-cli-argument-parsing.md) |
+| TASK-0041 | Implement input reading from stdin or file | done | [0041-implement-input-reading-from-stdin-or-file.md](./0041-implement-input-reading-from-stdin-or-file.md) |
+| TASK-0042 | Implement result and error envelope output | done | [0042-implement-result-and-error-envelope-output.md](./0042-implement-result-and-error-envelope-output.md) |
+| TASK-0043 | Implement human-readable text format output | done | [0043-implement-human-readable-text-format-output.md](./0043-implement-human-readable-text-format-output.md) |
+| TASK-0044 | Add built-in worker JSON schemas | done | [0044-add-built-in-worker-json-schemas.md](./0044-add-built-in-worker-json-schemas.md) |
+| TASK-0045 | Add built-in worker definitions | done | [0045-add-built-in-worker-definitions.md](./0045-add-built-in-worker-definitions.md) |
+| TASK-0046 | Implement CLI main orchestration | done | [0046-implement-cli-main-orchestration.md](./0046-implement-cli-main-orchestration.md) |
+| TASK-0047 | Add e2e tests for non-execution CLI paths | done | [0047-add-e2e-tests-for-non-execution-cli-paths.md](./0047-add-e2e-tests-for-non-execution-cli-paths.md) |
+| TASK-0048 | Add fake stream hook and e2e execution tests | done | [0048-add-fake-stream-hook-and-e2e-execution-tests.md](./0048-add-fake-stream-hook-and-e2e-execution-tests.md) |
+| TASK-0049 | Run full build test and lint verification | done | [0049-run-full-build-test-and-lint-verification.md](./0049-run-full-build-test-and-lint-verification.md) |
+| TASK-0050 | Write implementation record and experiment log | done | [0050-write-implementation-record-and-experiment-log.md](./0050-write-implementation-record-and-experiment-log.md) |
+| TASK-0051 | Run document status audit | done | [0051-run-document-status-audit.md](./0051-run-document-status-audit.md) |

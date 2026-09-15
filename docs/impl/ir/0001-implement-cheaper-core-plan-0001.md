@@ -1,7 +1,7 @@
 ---
 id: "IMPL-0001"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Implement @cheaper/core (PLAN-0001)"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -10,14 +10,22 @@ relations:
   source: []
   changes:
     added:
-      - "package.json"
-      - "pnpm-workspace.yaml"
-      - "tsconfig.base.json"
-      - "tsconfig.json"
-      - "biome.json"
-      - "vitest.workspace.ts"
-      - "packages/core/"
-      - "packages/cli/policy.yaml"
+      - type: "file"
+        path: "package.json"
+      - type: "file"
+        path: "pnpm-workspace.yaml"
+      - type: "file"
+        path: "tsconfig.base.json"
+      - type: "file"
+        path: "tsconfig.json"
+      - type: "file"
+        path: "biome.json"
+      - type: "file"
+        path: "vitest.workspace.ts"
+      - type: "dir"
+        path: "packages/core/"
+      - type: "file"
+        path: "packages/cli/policy.yaml"
     modified: []
     deleted: []
     renamed: []

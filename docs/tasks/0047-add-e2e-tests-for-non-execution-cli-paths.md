@@ -1,7 +1,7 @@
 ---
 id: "TASK-0047"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add e2e tests for non-execution CLI paths"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -63,17 +63,17 @@ PLAN-0003 step 9。`node bin/cheaper.js` を `execFile` で起動する e2e（�
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] 上記全ケースの e2e が green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] 上記全ケースの e2e が green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter cheaper test -- test/e2e/cli.test.ts` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter cheaper test -- test/e2e/cli.test.ts` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

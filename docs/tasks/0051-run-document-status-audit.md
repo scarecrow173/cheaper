@@ -1,7 +1,7 @@
 ---
 id: "TASK-0051"
 type: "task"
-status: "todo"
+status: "done"
 title: "Run document status audit"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -62,17 +62,17 @@ PLAN-0003 step 13。`audit_docs.js`（全 type）を実行し No findings であ
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] audit が No findings、index が最新
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] audit が No findings、index が最新
 
 ## Verification
 
-- [ ] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type task` exits 0
-- [ ] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type plan` exits 0
+- [x] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type task` exits 0
+- [x] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type plan` exits 0
 
 ## Out of Scope
 
