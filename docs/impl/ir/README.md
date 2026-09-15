@@ -9,4 +9,5 @@ Directory: `docs/impl/ir`
 | IMPL-0003 | Implement cheaper CLI and built-in workers (PLAN-0003) | completed | [0003-implement-cheaper-cli-and-built-in-workers-plan-0003.md](./0003-implement-cheaper-cli-and-built-in-workers-plan-0003.md) |
 | IMPL-0004 | Code review fixes (post-merge) | completed | [0004-code-review-fixes.md](./0004-code-review-fixes.md) |
 | IMPL-0005 | Add Ollama docker-compose and AGENTS.md container usage | completed | [0005-add-ollama-docker-compose-and-agents-md-container-usage.md](./0005-add-ollama-docker-compose-and-agents-md-container-usage.md) |
-| IMPL-0006 | Start Ollama container and pull model | in-progress | [0006-start-ollama-container-and-pull-model.md](./0006-start-ollama-container-and-pull-model.md) |
+| IMPL-0006 | Start Ollama container and pull model | completed | [0006-start-ollama-container-and-pull-model.md](./0006-start-ollama-container-and-pull-model.md) |
+| IMPL-0007 | Configure Pi models.json and cheaper models.yaml for Ollama | in-progress | [0007-configure-pi-and-cheaper-model-config-for-ollama.md](./0007-configure-pi-and-cheaper-model-config-for-ollama.md) |
