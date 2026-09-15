@@ -58,8 +58,8 @@ relations:
   supersedes: []
   superseded-by: []
   related:
-    - "../designs/0002-workspace-filesystem-boundary-sandboxed-tools.md"
-    - "../designs/0004-pi-execution-engine.md"
+    - "../../designs/0002-workspace-filesystem-boundary-sandboxed-tools.md"
+    - "../../designs/0004-pi-execution-engine.md"
   refines: []
   refined-by: []
   derives-from: []
