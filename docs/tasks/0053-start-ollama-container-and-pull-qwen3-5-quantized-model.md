@@ -1,7 +1,7 @@
 ---
 id: "TASK-0053"
 type: "task"
-status: "todo"
+status: "done"
 title: "Start Ollama container and pull qwen3.5 quantized model"
 created: "2026-09-16"
 updated: "2026-09-16"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/0004-verify-cheaper-real-provider-path-with-ollama-on-docker.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/0006-start-ollama-container-and-pull-model.md"
   depends-on:
     - "docs/plans/0004-verify-cheaper-real-provider-path-with-ollama-on-docker.md"
     - "docs/tasks/0052-add-ollama-docker-compose-and-document-container-usage-in-agents-md.md"
@@ -40,7 +41,7 @@ relations:
 
 ## Work
 
-<!-- Describe the implementation slice. -->
+`docker compose up -d` で Ollama コンテナを起動し、`docker compose exec ollama ollama pull qwen3.5:4b` でモデルを取得した。`curl http://localhost:11434/v1/models` でモデルが一覧に載ることを確認した。
 
 ## Classification
 
@@ -48,20 +49,22 @@ relations:
 
 ## Upstream Documents
 
-- <!-- plan, spec, ADR, or task path -->
+- `docs/plans/0004-verify-cheaper-real-provider-path-with-ollama-on-docker.md`
 
 ## Dependencies
 
-- <!-- prerequisite, blocker, or related task -->
+- `docs/tasks/0052-add-ollama-docker-compose-and-document-container-usage-in-agents-md.md`
 
 ## Affected Files
 
-- <!-- file, directory, module, or interface -->
+- なし（外部状態: Docker コンテナ・Ollama モデル）
 
 ## Done When
 
-- [ ] <!-- completion criterion -->
+- [x] Ollama コンテナが起動し `/v1/models` が pull 済みモデルを返す
 
 ## Verification
 
-- [ ] <!-- command, test, review step, or observable behavior -->
+- [x] `curl -s http://localhost:11434/v1/models` が exit 0 でモデル id を含む JSON を返す（`qwen3.5:4b`）
+- [x] `docker compose ps` で `cheaper-ollama-1` が Up
+- [x] `/v1/chat/completions` が実測 usage（`total_tokens`）を返す
