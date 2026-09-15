@@ -1,7 +1,7 @@
 ---
 id: "DISC-0003"
 type: "discovery"
-status: "completed"
+status: "resolved"
 title: "Post-smoke code review findings on abort, repair, and timeout semantics"
 created: "2026-09-16"
 updated: "2026-09-16"
@@ -29,7 +29,9 @@ relations:
   refines: []
   refined-by: []
   derives-from: []
-  derived-by: []
+  derived-by:
+    - "../specs/0005-repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md"
+    - "../adr/0010-normalize-repair-abort-grace-provider-failure-classification-and-agent-execution.md"
   verifies: []
   verified-by: []
   references: []
