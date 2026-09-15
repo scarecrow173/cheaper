@@ -1,0 +1,65 @@
+import {
+  CheaperError,
+  type ModelConfig,
+  type ModelInfo,
+  resolveModel,
+  type Tier,
+} from "@cheaper/core";
+import type { Api, Model } from "@earendil-works/pi-ai";
+
+/**
+ * ModelRuntime のうち runtime-pi が必要とする最小面。
+ * 実 ModelRuntime・テスト stub の双方を受けられる構造型。
+ */
+export interface ModelCatalog {
+  getAvailable(providerId?: string): Promise<readonly Model<Api>[]>;
+  getModel(providerId: string, modelId: string): Model<Api> | undefined;
+}
+
+/** Pi Model → core の最小 shape（DESIGN-0003 の ModelInfo）。 */
+export function toModelInfo(m: Model<Api>): ModelInfo {
+  return {
+    provider: m.provider,
+    id: m.id,
+    cost: { input: m.cost.input, output: m.cost.output },
+    maxTokens: m.maxTokens,
+  };
+}
+
+export interface ResolvedPiModel {
+  /** createAgentSession に渡す Pi Model。 */
+  model: Model<Api>;
+  /** 実際に選ばれた tier。 */
+  tier: Tier;
+  /** core 側の解決済み model 情報（meta.model 用）。 */
+  info: ModelInfo;
+}
+
+/**
+ * catalog.getAvailable() → ModelInfo 変換 → core resolveModel → getModel で実体解決。
+ * available が 0 件なら resolveModel が MODEL_TIER_UNAVAILABLE
+ * （details.noAuthenticatedModels）を投げる。
+ */
+export async function resolvePiModel(opts: {
+  catalog: ModelCatalog;
+  requestedTier: Tier;
+  policy: { maxTier: Tier; tierFallback: "none" | "higher" };
+  config: ModelConfig;
+}): Promise<ResolvedPiModel> {
+  const available = (await opts.catalog.getAvailable()).map(toModelInfo);
+  const resolved = resolveModel({
+    available,
+    requestedTier: opts.requestedTier,
+    policy: opts.policy,
+    config: opts.config,
+  });
+  const model = opts.catalog.getModel(resolved.model.provider, resolved.model.id);
+  if (model === undefined) {
+    throw new CheaperError(
+      "INTERNAL_ERROR",
+      `resolved model disappeared: ${resolved.model.provider}/${resolved.model.id}`,
+      { details: { provider: resolved.model.provider, id: resolved.model.id } },
+    );
+  }
+  return { model, tier: resolved.tier, info: resolved.model };
+}

@@ -1,7 +1,7 @@
 ---
 id: "TASK-0022"
 type: "task"
-status: "todo"
+status: "done"
 title: "Scaffold runtime-pi package with Pi import smoke test"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -66,17 +66,17 @@ PLAN-0002 step 1。`@cheaper/runtime-pi` scaffold（deps: @cheaper/core workspac
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] Pi import smoke test が green（差異があれば実装せず停止・報告）
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] Pi import smoke test が green（差異があれば実装せず停止・報告）
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/smoke.test.ts` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/smoke.test.ts` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

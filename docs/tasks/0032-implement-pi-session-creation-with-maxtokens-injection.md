@@ -1,7 +1,7 @@
 ---
 id: "TASK-0032"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement Pi session creation with maxTokens injection"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -65,18 +65,18 @@ PLAN-0002 step 11。`createAgentSession` 設定（DESIGN-0004 の呼び出し形
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] 作成された session の tool 登録・settings・streamFunction wrap のテストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] 作成された session の tool 登録・settings・streamFunction wrap のテストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/session.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/session.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

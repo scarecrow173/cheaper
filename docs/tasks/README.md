@@ -27,23 +27,23 @@ Directory: `docs/tasks`
 | TASK-0019 | Implement model tier classification | done | [0019-implement-model-tier-classification.md](./0019-implement-model-tier-classification.md) |
 | TASK-0020 | Implement model candidate resolution and fallback | done | [0020-implement-model-candidate-resolution-and-fallback.md](./0020-implement-model-candidate-resolution-and-fallback.md) |
 | TASK-0021 | Export core public API and run full verification | done | [0021-export-core-public-api-and-run-full-verification.md](./0021-export-core-public-api-and-run-full-verification.md) |
-| TASK-0022 | Scaffold runtime-pi package with Pi import smoke test | todo | [0022-scaffold-runtime-pi-package-with-pi-import-smoke-test.md](./0022-scaffold-runtime-pi-package-with-pi-import-smoke-test.md) |
-| TASK-0023 | Implement mutation journal | todo | [0023-implement-mutation-journal.md](./0023-implement-mutation-journal.md) |
-| TASK-0024 | Implement boundary-checked tool operations with atomic writes | todo | [0024-implement-boundary-checked-tool-operations-with-atomic-writes.md](./0024-implement-boundary-checked-tool-operations-with-atomic-writes.md) |
-| TASK-0025 | Implement sandboxed directory walker | todo | [0025-implement-sandboxed-directory-walker.md](./0025-implement-sandboxed-directory-walker.md) |
-| TASK-0026 | Implement sandboxed grep tool | todo | [0026-implement-sandboxed-grep-tool.md](./0026-implement-sandboxed-grep-tool.md) |
-| TASK-0027 | Implement sandboxed find tool | todo | [0027-implement-sandboxed-find-tool.md](./0027-implement-sandboxed-find-tool.md) |
-| TASK-0028 | Implement tool call budget wrapper | todo | [0028-implement-tool-call-budget-wrapper.md](./0028-implement-tool-call-budget-wrapper.md) |
-| TASK-0029 | Implement tool registry mapping vocabulary to Pi tools | todo | [0029-implement-tool-registry-mapping-vocabulary-to-pi-tools.md](./0029-implement-tool-registry-mapping-vocabulary-to-pi-tools.md) |
-| TASK-0030 | Implement CheaperResourceLoader without discovery | todo | [0030-implement-cheaperresourceloader-without-discovery.md](./0030-implement-cheaperresourceloader-without-discovery.md) |
-| TASK-0031 | Add scripted fake stream test fixture | todo | [0031-add-scripted-fake-stream-test-fixture.md](./0031-add-scripted-fake-stream-test-fixture.md) |
-| TASK-0032 | Implement Pi session creation with maxTokens injection | todo | [0032-implement-pi-session-creation-with-maxtokens-injection.md](./0032-implement-pi-session-creation-with-maxtokens-injection.md) |
-| TASK-0033 | Implement final output extraction and schema validation | todo | [0033-implement-final-output-extraction-and-schema-validation.md](./0033-implement-final-output-extraction-and-schema-validation.md) |
-| TASK-0034 | Implement output repair session | todo | [0034-implement-output-repair-session.md](./0034-implement-output-repair-session.md) |
-| TASK-0035 | Implement usage aggregation from message end events | todo | [0035-implement-usage-aggregation-from-message-end-events.md](./0035-implement-usage-aggregation-from-message-end-events.md) |
-| TASK-0036 | Implement ModelRuntime adapter to core model shape | todo | [0036-implement-modelruntime-adapter-to-core-model-shape.md](./0036-implement-modelruntime-adapter-to-core-model-shape.md) |
-| TASK-0037 | Implement runWorker orchestration with limits and abort classification | todo | [0037-implement-runworker-orchestration-with-limits-and-abort-classification.md](./0037-implement-runworker-orchestration-with-limits-and-abort-classification.md) |
-| TASK-0038 | Export runtime-pi public API and run full verification | todo | [0038-export-runtime-pi-public-api-and-run-full-verification.md](./0038-export-runtime-pi-public-api-and-run-full-verification.md) |
+| TASK-0022 | Scaffold runtime-pi package with Pi import smoke test | done | [0022-scaffold-runtime-pi-package-with-pi-import-smoke-test.md](./0022-scaffold-runtime-pi-package-with-pi-import-smoke-test.md) |
+| TASK-0023 | Implement mutation journal | done | [0023-implement-mutation-journal.md](./0023-implement-mutation-journal.md) |
+| TASK-0024 | Implement boundary-checked tool operations with atomic writes | done | [0024-implement-boundary-checked-tool-operations-with-atomic-writes.md](./0024-implement-boundary-checked-tool-operations-with-atomic-writes.md) |
+| TASK-0025 | Implement sandboxed directory walker | done | [0025-implement-sandboxed-directory-walker.md](./0025-implement-sandboxed-directory-walker.md) |
+| TASK-0026 | Implement sandboxed grep tool | done | [0026-implement-sandboxed-grep-tool.md](./0026-implement-sandboxed-grep-tool.md) |
+| TASK-0027 | Implement sandboxed find tool | done | [0027-implement-sandboxed-find-tool.md](./0027-implement-sandboxed-find-tool.md) |
+| TASK-0028 | Implement tool call budget wrapper | done | [0028-implement-tool-call-budget-wrapper.md](./0028-implement-tool-call-budget-wrapper.md) |
+| TASK-0029 | Implement tool registry mapping vocabulary to Pi tools | done | [0029-implement-tool-registry-mapping-vocabulary-to-pi-tools.md](./0029-implement-tool-registry-mapping-vocabulary-to-pi-tools.md) |
+| TASK-0030 | Implement CheaperResourceLoader without discovery | done | [0030-implement-cheaperresourceloader-without-discovery.md](./0030-implement-cheaperresourceloader-without-discovery.md) |
+| TASK-0031 | Add scripted fake stream test fixture | done | [0031-add-scripted-fake-stream-test-fixture.md](./0031-add-scripted-fake-stream-test-fixture.md) |
+| TASK-0032 | Implement Pi session creation with maxTokens injection | done | [0032-implement-pi-session-creation-with-maxtokens-injection.md](./0032-implement-pi-session-creation-with-maxtokens-injection.md) |
+| TASK-0033 | Implement final output extraction and schema validation | done | [0033-implement-final-output-extraction-and-schema-validation.md](./0033-implement-final-output-extraction-and-schema-validation.md) |
+| TASK-0034 | Implement output repair session | done | [0034-implement-output-repair-session.md](./0034-implement-output-repair-session.md) |
+| TASK-0035 | Implement usage aggregation from message end events | done | [0035-implement-usage-aggregation-from-message-end-events.md](./0035-implement-usage-aggregation-from-message-end-events.md) |
+| TASK-0036 | Implement ModelRuntime adapter to core model shape | done | [0036-implement-modelruntime-adapter-to-core-model-shape.md](./0036-implement-modelruntime-adapter-to-core-model-shape.md) |
+| TASK-0037 | Implement runWorker orchestration with limits and abort classification | done | [0037-implement-runworker-orchestration-with-limits-and-abort-classification.md](./0037-implement-runworker-orchestration-with-limits-and-abort-classification.md) |
+| TASK-0038 | Export runtime-pi public API and run full verification | done | [0038-export-runtime-pi-public-api-and-run-full-verification.md](./0038-export-runtime-pi-public-api-and-run-full-verification.md) |
 | TASK-0039 | Scaffold cheaper CLI package with bin entry | todo | [0039-scaffold-cheaper-cli-package-with-bin-entry.md](./0039-scaffold-cheaper-cli-package-with-bin-entry.md) |
 | TASK-0040 | Implement CLI argument parsing | todo | [0040-implement-cli-argument-parsing.md](./0040-implement-cli-argument-parsing.md) |
 | TASK-0041 | Implement input reading from stdin or file | todo | [0041-implement-input-reading-from-stdin-or-file.md](./0041-implement-input-reading-from-stdin-or-file.md) |

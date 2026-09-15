@@ -1,7 +1,7 @@
 ---
 id: "TASK-0024"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement boundary-checked tool operations with atomic writes"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -64,18 +64,18 @@ PLAN-0002 step 3。boundary 付き `ReadOperations`/`WriteOperations`/`EditOpera
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] workspace 外拒否・symlink in/out・create 許容・原子書き込み・tmp 残留なしのテストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] workspace 外拒否・symlink in/out・create 許容・原子書き込み・tmp 残留なしのテストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/tools/operations.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/tools/operations.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

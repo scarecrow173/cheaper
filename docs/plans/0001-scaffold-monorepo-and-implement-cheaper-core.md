@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0001"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "Scaffold monorepo and implement @cheaper/core"
 created: "2026-09-15"
 updated: "2026-09-15"

@@ -1,7 +1,7 @@
 ---
 id: "TASK-0026"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement sandboxed grep tool"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -63,18 +63,18 @@ PLAN-0002 step 5。`defineTool` + TypeBox で自前 grep: params `{pattern: stri
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] pattern/glob/ignoreCase/maxResults/context・spawn 未呼出のテストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] pattern/glob/ignoreCase/maxResults/context・spawn 未呼出のテストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/tools/grep.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/tools/grep.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

@@ -1,7 +1,7 @@
 ---
 id: "TASK-0037"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement runWorker orchestration with limits and abort classification"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -72,18 +72,18 @@ PLAN-0002 step 16。`runWorker(deps)` オーケストレーション: `deps.stre
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] timeout/abort/maxTurns/maxToolCalls/PARTIAL_MUTATION/repair/transientRetries の fake stream テストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] timeout/abort/maxTurns/maxToolCalls/PARTIAL_MUTATION/repair/transientRetries の fake stream テストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/run.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/run.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

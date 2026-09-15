@@ -1,3 +1,6 @@
 packages:
   - "packages/*"
-onlyBuiltDependencies: []
+allowBuilds:
+  "@google/genai": false
+  esbuild: false
+  protobufjs: false

@@ -1,7 +1,7 @@
 ---
 id: "TASK-0033"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement final output extraction and schema validation"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -63,18 +63,18 @@ PLAN-0002 step 12。`session.messages` 最後の assistant message の text bloc
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] 正常 JSON・フェンス付き・非 JSON・schema 不適合の各テストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] 正常 JSON・フェンス付き・非 JSON・schema 不適合の各テストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/output.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/output.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

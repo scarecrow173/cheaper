@@ -1,7 +1,7 @@
 ---
 id: "TASK-0027"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement sandboxed find tool"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -63,18 +63,18 @@ PLAN-0002 step 6。`defineTool` + TypeBox で自前 find: params `{pattern: stri
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] glob 一致・maxResults・相対 path 出力・spawn 未呼出のテストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] glob 一致・maxResults・相対 path 出力・spawn 未呼出のテストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/tools/find.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi test -- test/tools/find.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

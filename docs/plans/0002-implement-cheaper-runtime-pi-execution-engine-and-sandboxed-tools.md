@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0002"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Implement @cheaper/runtime-pi execution engine and sandboxed tools"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -115,23 +115,23 @@ Pi SDK 統合層を DESIGN-0002/0004 のとおり実装し、fake stream seam �
 
 ## Implementation Sequence
 
-- [ ] 1. パッケージ scaffold + Pi import smoke test（`turn_end`/`message_end`/`tool_execution_start`/`auto_retry_start` の存在を型レベルで確認）
-- [ ] 2. `journal.ts`
-- [ ] 3. `operations.ts`（read/ls → write/edit 原子化 + journal 連携）
-- [ ] 4. `walker.ts`
-- [ ] 5. `grep.ts`
-- [ ] 6. `find.ts`
-- [ ] 7. `budget.ts`
-- [ ] 8. `registry.ts`
-- [ ] 9. `resource-loader.ts`
-- [ ] 10. `test/fixtures/fake-stream.ts`
-- [ ] 11. `session.ts`（createAgentSession 設定 + streamFunction wrap for maxTokens）
-- [ ] 12. `output.ts`
-- [ ] 13. `repair.ts`
-- [ ] 14. `usage.ts`
-- [ ] 15. `model-runtime.ts`
-- [ ] 16. `run.ts`（オーケストレーション・制限・abort 分類）
-- [ ] 17. `index.ts` export + 全検証
+- [x] 1. パッケージ scaffold + Pi import smoke test（`turn_end`/`message_end`/`tool_execution_start`/`auto_retry_start` の存在を型レベルで確認）
+- [x] 2. `journal.ts`
+- [x] 3. `operations.ts`（read/ls → write/edit 原子化 + journal 連携）
+- [x] 4. `walker.ts`
+- [x] 5. `grep.ts`
+- [x] 6. `find.ts`
+- [x] 7. `budget.ts`
+- [x] 8. `registry.ts`
+- [x] 9. `resource-loader.ts`
+- [x] 10. `test/fixtures/fake-stream.ts`
+- [x] 11. `session.ts`（createAgentSession 設定 + streamFunction wrap for maxTokens）
+- [x] 12. `output.ts`
+- [x] 13. `repair.ts`
+- [x] 14. `usage.ts`
+- [x] 15. `model-runtime.ts`
+- [x] 16. `run.ts`（オーケストレーション・制限・abort 分類）
+- [x] 17. `index.ts` export + 全検証
 
 ## Dependency Graph
 

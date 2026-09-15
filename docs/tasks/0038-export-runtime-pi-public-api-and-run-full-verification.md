@@ -1,7 +1,7 @@
 ---
 id: "TASK-0038"
 type: "task"
-status: "todo"
+status: "done"
 title: "Export runtime-pi public API and run full verification"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -62,17 +62,17 @@ PLAN-0002 step 17。`index.ts` export + `pnpm -r build && pnpm -r test && pnpm b
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] 全ビルド・テスト・lint green、spawn 未呼出 assert が green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] 全ビルド・テスト・lint green、spawn 未呼出 assert が green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm -r build && mise exec -- pnpm -r test` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm -r build && mise exec -- pnpm -r test` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
 
 ## Out of Scope
 
