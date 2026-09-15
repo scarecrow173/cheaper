@@ -1,7 +1,7 @@
 ---
 id: "IMPL-0008"
 type: "impl"
-status: "done"
+status: "completed"
 title: "Run real-provider smoke test with Ollama"
 created: "2026-09-16"
 updated: "2026-09-16"

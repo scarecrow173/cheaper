@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0004"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Verify cheaper real-provider path with Ollama on Docker"
 created: "2026-09-16"
 updated: "2026-09-16"

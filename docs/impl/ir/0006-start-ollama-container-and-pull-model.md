@@ -1,7 +1,7 @@
 ---
 id: "IMPL-0006"
 type: "impl"
-status: "done"
+status: "completed"
 title: "Start Ollama container and pull model"
 created: "2026-09-15"
 updated: "2026-09-16"

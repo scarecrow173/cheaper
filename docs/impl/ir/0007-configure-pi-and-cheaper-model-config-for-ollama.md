@@ -1,7 +1,7 @@
 ---
 id: "IMPL-0007"
 type: "impl"
-status: "done"
+status: "completed"
 title: "Configure Pi models.json and cheaper models.yaml for Ollama"
 created: "2026-09-16"
 updated: "2026-09-16"
