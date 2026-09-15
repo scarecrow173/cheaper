@@ -68,11 +68,21 @@ function repairUserPrompt(rawOutput: string, errors: SchemaValidationError[]): s
 export async function repairOutput(opts: RepairOptions): Promise<RepairResult> {
   let rawOutput = opts.rawOutput;
   let errors = opts.errors;
+  const model: Model<Api> = {
+    ...opts.model,
+    samplingParams: {
+      ...opts.model.samplingParams,
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: "worker_output", schema: opts.schema.schema },
+      },
+    },
+  };
   for (let attempt = 1; attempt <= opts.attempts; attempt++) {
     if (opts.signal?.aborted) break;
     const { session } = await createWorkerSession({
       cwd: opts.cwd,
-      model: opts.model,
+      model,
       ...(opts.modelRuntime ? { modelRuntime: opts.modelRuntime } : {}),
       systemPrompt: repairSystemPrompt(opts.schema),
       noTools: "all",
