@@ -65,8 +65,14 @@ async function readModelsConfig(filePath: string): Promise<Record<string, unknow
   let text: string;
   try {
     text = await readFile(filePath, "utf8");
-  } catch {
-    return undefined;
+  } catch (e) {
+    const errno = (e as NodeJS.ErrnoException).code;
+    // 未配置（ENOENT/ENOTDIR）のみ skip。その他の読み込み失敗は silent にしない。
+    if (errno === "ENOENT" || errno === "ENOTDIR") return undefined;
+    throw new CheaperError("INVALID_MODEL_CONFIG", `models config read failed: ${filePath}`, {
+      details: { path: filePath, reason: "read-failed", errno },
+      cause: e,
+    });
   }
   let parsed: unknown;
   try {

@@ -104,6 +104,15 @@ preferences:
     });
   });
 
+  it("unreadable models.yaml (a directory) → INVALID_MODEL_CONFIG read-failed", async () => {
+    // ENOENT/ENOTDIR 以外の読み込み失敗は silent skip しない。
+    await mkdir(path.join(userConfigDir, "models.yaml"));
+    await expect(loadModelConfig({ userConfigDir, projectDir })).rejects.toMatchObject({
+      code: "INVALID_MODEL_CONFIG",
+      details: { reason: "read-failed" },
+    });
+  });
+
   it("rejects non-object yaml and yaml parse errors", async () => {
     await writeFile(path.join(userConfigDir, "models.yaml"), "- a\n- b\n");
     await expect(loadModelConfig({ userConfigDir, projectDir })).rejects.toMatchObject({

@@ -58,20 +58,26 @@ export function successEnvelope(opts: {
 
 function errorMeta(durationMs: number | null, err: unknown): ErrorEnvelopeMeta {
   let changes: ChangesSummary | null = null;
+  let runMeta: (Partial<WorkerRunMeta> & { durationMs?: number }) | undefined;
   if (isCheaperError(err)) {
     const c = err.details?.changes;
     if (typeof c === "object" && c !== null) changes = c as ChangesSummary;
+    // WorkerRunError（run 失敗時の meta snapshot 付き CheaperError）から meta を埋める
+    const rm = (err as { runMeta?: unknown }).runMeta;
+    if (typeof rm === "object" && rm !== null) {
+      runMeta = rm as Partial<WorkerRunMeta> & { durationMs?: number };
+    }
   }
   return {
     durationMs,
-    model: null,
-    usage: null,
-    turns: null,
-    toolCalls: null,
-    rejectedToolCalls: null,
-    repairs: null,
-    transientRetries: null,
-    changes,
+    model: runMeta?.model ?? null,
+    usage: runMeta?.usage ?? null,
+    turns: runMeta?.turns ?? null,
+    toolCalls: runMeta?.toolCalls ?? null,
+    rejectedToolCalls: runMeta?.rejectedToolCalls ?? null,
+    repairs: runMeta?.repairs ?? null,
+    transientRetries: runMeta?.transientRetries ?? null,
+    changes: runMeta?.changes ?? changes,
   };
 }
 

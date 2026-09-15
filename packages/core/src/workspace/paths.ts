@@ -41,10 +41,19 @@ export async function canonicalizeWorkspaceRoot(cwd: string): Promise<string> {
   return realpath(cwd);
 }
 
-/** win32 の大小文字非依存を含む portable な root 配下判定（比較を toLowerCase で行う）。 */
-function isInsideRoot(root: string, candidate: string): boolean {
-  const r = root.toLowerCase();
-  const c = candidate.toLowerCase();
+/**
+ * root 配下判定。`caseInsensitive: true` のとき大小文字非依存で比較する
+ * （win32 の case-insensitive FS 用）。POSIX の case-sensitive FS では
+ * `false`/省略時の厳密比較を使い、case 違い sibling を root 配下と誤認しない。
+ */
+export function isInsideWorkspaceRoot(
+  root: string,
+  candidate: string,
+  opts?: { caseInsensitive?: boolean },
+): boolean {
+  const ci = opts?.caseInsensitive === true;
+  const r = ci ? root.toLowerCase() : root;
+  const c = ci ? candidate.toLowerCase() : candidate;
   return c === r || c.startsWith(r + path.sep);
 }
 
@@ -75,8 +84,14 @@ export async function resolveWorkspacePath(
   // 2. resolve（絶対 input もそのまま扱う）
   const abs = path.resolve(root, input);
 
-  // 3. root 配下かどうか（大小文字非依存比較で win32 を吸収）
-  if (!isInsideRoot(root, abs)) failEscape(input, "outside-workspace");
+  // win32 の FS は大小文字を区別しないため比較も非依存にする。
+  // POSIX では厳密比較（case 違い sibling 経由の escape を防ぐ）。
+  const caseInsensitive = process.platform === "win32";
+
+  // 3. root 配下かどうか
+  if (!isInsideWorkspaceRoot(root, abs, { caseInsensitive })) {
+    failEscape(input, "outside-workspace");
+  }
 
   // 4. root から component 順に辿る。symlink は policy で判定。
   const rel = path.relative(root, abs);
@@ -96,7 +111,9 @@ export async function resolveWorkspacePath(
         // dangling symlink: target の配下確認ができないため fail closed
         failEscape(input, "symlink-unresolvable");
       }
-      if (!isInsideRoot(root, target)) failEscape(input, "symlink-outside-workspace");
+      if (!isInsideWorkspaceRoot(root, target, { caseInsensitive })) {
+        failEscape(input, "symlink-outside-workspace");
+      }
       current = target; // realpath 側から辿り直す
       i += 1;
       continue;

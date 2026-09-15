@@ -3,6 +3,7 @@ import type { Api, Model } from "@earendil-works/pi-ai";
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { extractOutput, type SchemaValidationError } from "./output.js";
 import { createWorkerSession, type StreamFnLike } from "./session.js";
+import type { UsageCollector } from "./usage.js";
 
 export interface RepairOptions {
   cwd: string;
@@ -15,6 +16,10 @@ export interface RepairOptions {
   errors: SchemaValidationError[];
   /** policy.output.repairAttempts。 */
   attempts: number;
+  /** Pi auto-retry 回数（policy.retry.transientAttempts）。省略時 0。 */
+  transientRetries?: number;
+  /** 指定時は各 repair session のイベントを usage 集計に合算する。 */
+  collector?: UsageCollector;
   streamFn?: StreamFnLike;
   /** run 全体の abort signal。abort 時は残り attempt を打ち切る。 */
   signal?: AbortSignal;
@@ -72,9 +77,14 @@ export async function repairOutput(opts: RepairOptions): Promise<RepairResult> {
       systemPrompt: repairSystemPrompt(opts.schema),
       noTools: "all",
       maxOutputTokens: opts.maxOutputTokens,
-      transientRetries: 0,
+      transientRetries: opts.transientRetries ?? 0,
       ...(opts.streamFn ? { streamFn: opts.streamFn } : {}),
     });
+    const collector = opts.collector;
+    const unsubscribe =
+      collector === undefined
+        ? undefined
+        : session.subscribe((event) => collector.handleSessionEvent(event));
     const unlink = opts.signal
       ? () => {
           void session.abort();
@@ -86,6 +96,7 @@ export async function repairOutput(opts: RepairOptions): Promise<RepairResult> {
       await session.prompt(repairUserPrompt(rawOutput, errors));
       extracted = extractOutput(session.messages, opts.schema);
     } finally {
+      unsubscribe?.();
       if (unlink) opts.signal?.removeEventListener("abort", unlink);
       await session.dispose();
     }

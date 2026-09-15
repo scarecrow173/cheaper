@@ -17,9 +17,18 @@ async function readPolicyFile(
   try {
     text = await readFile(filePath, "utf8");
   } catch (e) {
-    if (!required) return undefined;
-    throw new CheaperError("INVALID_RUNTIME_POLICY", `policy file not found: ${filePath}`, {
-      details: { path: filePath },
+    const errno = (e as NodeJS.ErrnoException).code;
+    if (errno === "ENOENT" || errno === "ENOTDIR") {
+      // 未配置のみ skip。それ以外の読み込み失敗（EACCES・EISDIR・壊れた
+      // symlink 等）は silent skip せずエラーにする。
+      if (!required) return undefined;
+      throw new CheaperError("INVALID_RUNTIME_POLICY", `policy file not found: ${filePath}`, {
+        details: { path: filePath },
+        cause: e,
+      });
+    }
+    throw new CheaperError("INVALID_RUNTIME_POLICY", `policy file read failed: ${filePath}`, {
+      details: { path: filePath, reason: "read-failed", errno },
       cause: e,
     });
   }

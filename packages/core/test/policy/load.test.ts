@@ -115,6 +115,31 @@ describe("loadPolicy", () => {
     ).rejects.toMatchObject({ code: "INVALID_RUNTIME_POLICY" });
   });
 
+  it("unreadable optional policy (a directory) → INVALID_RUNTIME_POLICY read-failed", async () => {
+    // policy.yaml が directory だと readFile は EISDIR で落ちる。ENOENT/ENOTDIR 以外の
+    // 読み込み失敗は silent skip せず INVALID_RUNTIME_POLICY にする。
+    await mkdir(path.join(userConfigDir, "policy.yaml"));
+    try {
+      await loadPolicy({ builtinPolicyPath: builtinPath, userConfigDir, projectDir });
+      expect.unreachable();
+    } catch (e) {
+      const err = e as CheaperError;
+      expect(err.code).toBe("INVALID_RUNTIME_POLICY");
+      expect(err.details).toMatchObject({ reason: "read-failed" });
+    }
+  });
+
+  it("ENOTDIR (config dir is a file) is still treated as absent", async () => {
+    const fileAsDir = path.join(dir, "not-a-dir");
+    await writeFile(fileAsDir, "x");
+    const policy = await loadPolicy({
+      builtinPolicyPath: builtinPath,
+      userConfigDir: fileAsDir,
+      projectDir,
+    });
+    expect(policy.execution.maxTurns).toBe(8);
+  });
+
   it("effective policy is re-validated as complete after merge", async () => {
     await writeFile(
       path.join(projectDir, "policy.yaml"),

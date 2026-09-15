@@ -16,7 +16,7 @@ import {
 } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runWorker } from "../src/run.js";
+import { runWorker, WorkerRunError } from "../src/run.js";
 import { createFakePi, fauxAssistantMessage, fauxToolCall } from "./fixtures/fake-stream.js";
 
 let dir: string;
@@ -259,6 +259,73 @@ describe("runWorker", () => {
     const r = await runWorker(await deps(fake, worker(["read"]), policy()));
     expect(r.result).toEqual({ ok: false });
     expect(r.meta.repairs).toBe(1);
+  });
+
+  it("aggregates repair session usage into meta", async () => {
+    const fake = createFakePi({
+      responses: [fauxAssistantMessage("not json"), fauxAssistantMessage('{"ok":false}')],
+    });
+    const r = await runWorker(await deps(fake, worker(["read"]), policy()));
+    expect(r.meta.repairs).toBe(1);
+    // repair session の turn_end / message_end も同じ collector に合算される
+    expect(r.meta.turns).toBe(2);
+    const control = createFakePi({ responses: [fauxAssistantMessage('{"ok":false}')] });
+    const rc = await runWorker(await deps(control, worker(["read"]), policy()));
+    expect(r.meta.usage.output).toBeGreaterThan(rc.meta.usage.output);
+  });
+
+  it("counts repair session auto_retry_start as meta.transientRetries", async () => {
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage("not json"), // main → invalid output
+        fauxAssistantMessage("", { stopReason: "error", errorMessage: "503" }), // repair → retry
+        fauxAssistantMessage('{"ok":true}'), // repair retry で成功
+      ],
+    });
+    const p = policy();
+    p.retry.transientAttempts = 2;
+    const r = await runWorker(await deps(fake, worker(["read"]), p));
+    expect(r.result).toEqual({ ok: true });
+    expect(r.meta.repairs).toBe(1);
+    expect(r.meta.transientRetries).toBe(1);
+    expect(fake.state.callCount).toBe(3);
+  }, 15_000);
+
+  it("classifies timeout during repair session as TIMEOUT", async () => {
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage("not json"), // main → invalid output → repair へ
+        // repair session: abort signal を受けて settle する遅延応答
+        (_ctx, opts) =>
+          new Promise<AssistantMessage>((resolve) => {
+            const timer = setTimeout(() => resolve(fauxAssistantMessage('{"ok":true}')), 10_000);
+            opts?.signal?.addEventListener(
+              "abort",
+              () => {
+                clearTimeout(timer);
+                resolve(
+                  fauxAssistantMessage("", {
+                    stopReason: "aborted",
+                    errorMessage: "Request was aborted",
+                  }),
+                );
+              },
+              { once: true },
+            );
+          }),
+      ],
+    });
+    const p = policy();
+    p.execution.timeoutMs = 50;
+    const err = await runWorker(await deps(fake, worker(["read"]), p)).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("TIMEOUT");
+    // error にはその時点の meta snapshot が載る（envelope error meta 用）
+    expect(err).toBeInstanceOf(WorkerRunError);
+    expect((err as WorkerRunError).runMeta?.turns).toBeGreaterThanOrEqual(1);
+    expect((err as WorkerRunError).runMeta?.usage).toBeDefined();
   });
 
   it("throws INVALID_OUTPUT when repair attempts are exhausted", async () => {

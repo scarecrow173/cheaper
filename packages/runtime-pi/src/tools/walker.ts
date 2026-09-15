@@ -1,7 +1,12 @@
 import type { Dirent, Stats } from "node:fs";
 import { type FileHandle, open, readdir, realpath, stat } from "node:fs/promises";
 import path from "node:path";
-import { resolveWorkspacePath, type SymlinkPolicy, WorkspaceEscapeError } from "@cheaper/core";
+import {
+  isInsideWorkspaceRoot,
+  resolveWorkspacePath,
+  type SymlinkPolicy,
+  WorkspaceEscapeError,
+} from "@cheaper/core";
 
 export const ACCESS_DENIED_MESSAGE = "Access denied: path is outside the workspace";
 
@@ -66,11 +71,8 @@ async function isEligibleFile(real: string): Promise<boolean> {
   return !(await isBinaryFile(real));
 }
 
-function isInsideRoot(root: string, candidate: string): boolean {
-  const r = root.toLowerCase();
-  const c = candidate.toLowerCase();
-  return c === r || c.startsWith(r + path.sep);
-}
+/** win32 の FS 大小文字非依存を boundary 比較に反映する。POSIX では厳密比較。 */
+const CASE_INSENSITIVE_FS = process.platform === "win32";
 
 /**
  * 自前 grep/find 共通の sandboxed walker（DESIGN-0002）。
@@ -106,7 +108,9 @@ async function* walkDir(
 
   let canonical: string;
   try {
-    canonical = (await realpath(fsPath)).toLowerCase();
+    // 生の realpath を cycle キーに使う。POSIX では大小文字違いは別 dir なので
+    // toLowerCase すると誤って同一視して walk 漏れが起きる。
+    canonical = await realpath(fsPath);
   } catch {
     return;
   }
@@ -131,7 +135,9 @@ async function* walkDir(
         } catch {
           continue; // dangling symlink → fail closed skip
         }
-        if (!isInsideRoot(opts.root, target)) continue;
+        if (!isInsideWorkspaceRoot(opts.root, target, { caseInsensitive: CASE_INSENSITIVE_FS })) {
+          continue;
+        }
         // realpath 側を辿り、表示は論理 path（symlink 名）を維持
         yield* walkDir(opts, target, childLogical, ancestors);
       } else if (entry.isDirectory()) {

@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "Pi 実行エンジン: session・制限・abort・retry・出力抽出・repair・usage"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-16"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -114,6 +114,7 @@ createAgentSession({
 - timeout: CLI 入口で `setTimeout(effectiveTimeoutMs)` → `reason = "timeout"` を記録し abort。provider retry・repair も同じタイマー内
 - SIGINT/SIGTERM: `reason = "signal"` → abort
 - abort 猶予: `abort()` 呼び出し後 5 秒以内に `prompt()` が resolve しなければ待機を打ち切り、その時点の journal/usage で同じ分類経路に入る（stream が `options.signal` を無視した場合のハング防止。runtime-pi が `Promise.race` で実装し、cli はこれに依存して必ず envelope を出して exit する）
+- abort の集約: runWorker 内部 AbortController に timeout/外部 signal/limit を集約し、repair session へも同 signal を渡す（repair 中の timeout/abort で repair の prompt が settle し、repair 解決後にも abort 分類を再確認して success を返さない）
 - abort 後の分類: `prompt()` は abort 後も resolve する（実測）ため、resolve/reject どちらでも同一の分類経路に入る。reason に応じて `TIMEOUT` / `ABORTED` / `MAX_TURNS_EXCEEDED` / `MAX_TOOL_CALLS_EXCEEDED`。journal が非空なら `PARTIAL_MUTATION` で包み、`error.cause` に元エラー、`meta.changes` に変更一覧
 
 ### transient retry

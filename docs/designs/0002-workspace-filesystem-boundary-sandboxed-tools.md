@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "workspace filesystem boundary と sandboxed tools"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-16"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -73,7 +73,7 @@ ADR-0007 のハイブリッド方針を実装レベルに落とす。Pi 実機�
   5. 戻り値 `{ real: string（canonical 絶対）, display: string（POSIX 区切り workspace 相対）}`
 - `tools/operations.ts`（runtime-pi）: Pi tool に注入する boundary 付き `ReadOperations`/`WriteOperations`/`EditOperations`/`LsOperations`。各関数は受け取った絶対 path（Pi が cwd 解決済み）を `resolveWorkspacePath` に通し、違反時は `Error("Access denied: path is outside the workspace")` を投げる。Pi tool がそれを tool error result としてモデルへ返す
 - `tools/walker.ts`: 自前 grep/find 共通の再帰 walker。symlink policy 適用、`.git`・`node_modules` を skip、1 ファイル 1MB 超・先頭 8KB に NUL を含むバイナリを skip
-- `tools/grep.ts`: `{ pattern: string(JS RegExp), path?: string = ".", glob?: string, ignoreCase?: boolean, maxResults?: int(default 100, max 500), context?: int(0–3) }` → `path:line: text` 行
+- `tools/grep.ts`: `{ pattern: string(JS RegExp), path?: string = ".", glob?: string, ignoreCase?: boolean, maxResults?: int(default 100, max 500), context?: int(0–3) }` → `path:line: text` 行。regex 評価は `worker_threads` eval worker + watchdog（5s/file, 60s/call）で強制停止可能にし event loop ブロックを防ぐ
 - `tools/find.ts`: `{ pattern: string(glob, `path.matchesGlob` 使用), path?: string = ".", maxResults?: int(default 200, max 1000) }` → 相対 path 行
 - `journal.ts`: write/edit operations 内でファイルごとに初回書き込み前の内容（存在しなければ null）を記録し、書き込み後の内容を更新。実行終了時に `before` と disk 上の最終内容を比較、差が無いものは除外、`kind = before===null ? "created" : "modified"`、行差分は `diff` パッケージ `diffLines` で added/deleted を算出
 
