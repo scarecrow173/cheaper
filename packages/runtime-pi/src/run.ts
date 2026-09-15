@@ -112,13 +112,6 @@ export async function runWorker(
   const { worker, policy } = deps;
   const effectiveTools = checkCapabilities(worker, policy);
 
-  const resolved = await resolvePiModel({
-    catalog: deps.catalog,
-    requestedTier: worker.cheaper.model.tier,
-    policy: policy.model,
-    config: deps.modelConfig,
-  });
-
   const journal = new MutationJournal();
   const collector = new UsageCollector();
   const graceMs = deps.abortGraceMs ?? 5000;
@@ -143,173 +136,183 @@ export async function runWorker(
   deps.signal?.addEventListener("abort", onSignalAbort, { once: true });
   if (deps.signal?.aborted) requestAbort("signal");
 
-  const sandboxed = createSandboxedTools({
-    root: deps.root,
-    symlinkPolicy: policy.filesystem.symlinks,
-    journal,
-    names: effectiveTools,
-    maxToolCalls: policy.execution.maxToolCalls,
-    onLimit: () => requestAbort("maxToolCalls"),
-  });
-
-  const { session } = await createWorkerSession({
-    cwd: deps.root,
-    model: resolved.model,
-    ...(deps.modelRuntime ? { modelRuntime: deps.modelRuntime } : {}),
-    systemPrompt: buildSystemPrompt(worker, sandboxed.toolNames),
-    customTools: sandboxed.tools,
-    toolNames: sandboxed.toolNames,
-    maxOutputTokens: policy.output.maxTokens,
-    transientRetries: policy.retry.transientAttempts,
-    ...(deps.streamFn ? { streamFn: deps.streamFn } : {}),
-  });
-
-  const unsubscribe = session.subscribe((event) => {
-    collector.handleSessionEvent(event);
-    if (
-      event.type === "turn_end" &&
-      collector.snapshot().turns >= policy.execution.maxTurns &&
-      // run が継続する場合のみ abort（stop/error で終わる最終 turn では記録しない）
-      (event.message as { stopReason?: unknown }).stopReason === "toolUse"
-    ) {
-      requestAbort("maxTurns");
-    }
-  });
-
-  const abortError = (reason: AbortReason) =>
-    new CheaperError(ABORT_CODES[reason], `worker run aborted: ${reason}`, {
-      details: { reason },
-    });
-
-  /** CheaperError にその時点の meta snapshot を載せて WorkerRunError 化する。 */
-  const withRunMeta = async (err: CheaperError): Promise<WorkerRunError> => {
-    if (err instanceof WorkerRunError) return err;
-    return new WorkerRunError(err.code, err.message, {
-      ...(err.details !== undefined ? { details: err.details } : {}),
-      ...(err.cause !== undefined ? { cause: err.cause } : {}),
-      runMeta: await buildMeta(),
-    });
-  };
-
-  /** abort 系エラーは journal 非空なら PARTIAL_MUTATION で包む。 */
-  const throwClassified = async (err: CheaperError): Promise<never> => {
-    const meta = await buildMeta();
-    if (meta.changes.totals.files > 0) {
-      throw new WorkerRunError("PARTIAL_MUTATION", "worker aborted after partial mutations", {
-        details: { changes: meta.changes },
-        cause: err,
-        runMeta: meta,
-      });
-    }
-    throw await withRunMeta(err);
-  };
-
   try {
-    const outcome = await promptWithAbortGrace(session, buildUserPrompt(deps.input), {
-      signal: runAbort.signal,
-      graceMs,
+    const resolved = await resolvePiModel({
+      catalog: deps.catalog,
+      requestedTier: worker.cheaper.model.tier,
+      policy: policy.model,
+      config: deps.modelConfig,
     });
 
-    if (abortReason !== undefined) {
-      const reason = abortReason;
-      await throwClassified(abortError(reason));
-    }
+    const sandboxed = createSandboxedTools({
+      root: deps.root,
+      symlinkPolicy: policy.filesystem.symlinks,
+      journal,
+      names: effectiveTools,
+      maxToolCalls: policy.execution.maxToolCalls,
+      onLimit: () => requestAbort("maxToolCalls"),
+    });
 
-    if (outcome.kind === "rejected") {
-      const err = outcome.err;
-      if (err instanceof CheaperError) throw await withRunMeta(err);
-      throw new WorkerRunError(
-        "PROVIDER_FAILURE",
-        `session prompt failed: ${err instanceof Error ? err.message : String(err)}`,
-        {
-          cause: err instanceof Error ? err : undefined,
-          runMeta: await buildMeta(),
-        },
-      );
-    }
+    const { session } = await createWorkerSession({
+      cwd: deps.root,
+      model: resolved.model,
+      ...(deps.modelRuntime ? { modelRuntime: deps.modelRuntime } : {}),
+      systemPrompt: buildSystemPrompt(worker, sandboxed.toolNames),
+      customTools: sandboxed.tools,
+      toolNames: sandboxed.toolNames,
+      maxOutputTokens: policy.output.maxTokens,
+      transientRetries: policy.retry.transientAttempts,
+      ...(deps.streamFn ? { streamFn: deps.streamFn } : {}),
+    });
 
-    // provider レベルの終了エラー（retry 尽き・abort 以外の error stopReason）
-    const lastAssistant = lastAssistantStop(session.messages);
-    if (lastAssistant?.stopReason === "error") {
-      throw new WorkerRunError(
-        "PROVIDER_FAILURE",
-        `provider error: ${lastAssistant.errorMessage ?? "unknown"}`,
-        {
-          details: { errorMessage: lastAssistant.errorMessage },
-          runMeta: await buildMeta(),
-        },
-      );
-    }
-    if (lastAssistant?.stopReason === "aborted") {
-      await throwClassified(new CheaperError("ABORTED", "worker run aborted", {}));
-    }
+    const unsubscribe = session.subscribe((event) => {
+      collector.handleSessionEvent(event);
+      if (
+        event.type === "turn_end" &&
+        collector.snapshot().turns >= policy.execution.maxTurns &&
+        // run が継続する場合のみ abort（stop/error で終わる最終 turn では記録しない）
+        (event.message as { stopReason?: unknown }).stopReason === "toolUse"
+      ) {
+        requestAbort("maxTurns");
+      }
+    });
 
-    const extracted = extractOutput(session.messages, worker.outputSchema);
-    if (extracted.ok) {
+    const abortError = (reason: AbortReason) =>
+      new CheaperError(ABORT_CODES[reason], `worker run aborted: ${reason}`, {
+        details: { reason },
+      });
+
+    async function buildMeta(): Promise<WorkerRunMeta> {
+      const snap = collector.snapshot();
       return {
-        result: extracted.result,
-        meta: await buildMeta(),
+        model: { provider: resolved.info.provider, id: resolved.info.id, tier: resolved.tier },
+        usage: snap.usage,
+        turns: snap.turns,
+        toolCalls: sandboxed.budget.toolCalls,
+        rejectedToolCalls: sandboxed.budget.rejectedToolCalls,
+        repairs,
+        transientRetries: snap.transientRetries,
+        changes: await journal.finalize(),
       };
     }
 
-    // repair session（retry・timeout は同じタイマー内）。
-    // repair には外部 signal ではなく runAbort.signal を渡し、
-    // timeout/limit を含む全 abort trigger を repair にも伝える。
-    let result: Record<string, unknown>;
-    try {
-      const repaired = await repairOutput({
-        cwd: deps.root,
-        model: resolved.model,
-        ...(deps.modelRuntime ? { modelRuntime: deps.modelRuntime } : {}),
-        maxOutputTokens: policy.output.maxTokens,
-        schema: worker.outputSchema,
-        rawOutput: extracted.rawOutput,
-        errors: extracted.errors,
-        attempts: policy.output.repairAttempts,
-        transientRetries: policy.retry.transientAttempts,
-        collector,
-        ...(deps.streamFn ? { streamFn: deps.streamFn } : {}),
-        signal: runAbort.signal,
-        abortGraceMs: graceMs,
-        onAttempt: (n) => {
-          repairs = n;
-        },
+    /** CheaperError にその時点の meta snapshot を載せて WorkerRunError 化する。 */
+    const withRunMeta = async (err: CheaperError): Promise<WorkerRunError> => {
+      if (err instanceof WorkerRunError) return err;
+      return new WorkerRunError(err.code, err.message, {
+        ...(err.details !== undefined ? { details: err.details } : {}),
+        ...(err.cause !== undefined ? { cause: err.cause } : {}),
+        runMeta: await buildMeta(),
       });
-      result = repaired.result;
-    } catch (e) {
-      // repair 中に timeout/signal が落ちた場合は abort 分類を優先する
+    };
+
+    /** abort 系エラーは journal 非空なら PARTIAL_MUTATION で包む。 */
+    const throwClassified = async (err: CheaperError): Promise<never> => {
+      const meta = await buildMeta();
+      if (meta.changes.totals.files > 0) {
+        throw new WorkerRunError("PARTIAL_MUTATION", "worker aborted after partial mutations", {
+          details: { changes: meta.changes },
+          cause: err,
+          runMeta: meta,
+        });
+      }
+      throw await withRunMeta(err);
+    };
+
+    try {
+      const outcome = await promptWithAbortGrace(session, buildUserPrompt(deps.input), {
+        signal: runAbort.signal,
+        graceMs,
+      });
+
       if (abortReason !== undefined) {
         const reason = abortReason;
         await throwClassified(abortError(reason));
       }
-      if (e instanceof CheaperError) throw await withRunMeta(e);
-      throw e;
+
+      if (outcome.kind === "rejected") {
+        const err = outcome.err;
+        if (err instanceof CheaperError) throw await withRunMeta(err);
+        throw new WorkerRunError(
+          "PROVIDER_FAILURE",
+          `session prompt failed: ${err instanceof Error ? err.message : String(err)}`,
+          {
+            cause: err instanceof Error ? err : undefined,
+            runMeta: await buildMeta(),
+          },
+        );
+      }
+
+      // provider レベルの終了エラー（retry 尽き・abort 以外の error stopReason）
+      const lastAssistant = lastAssistantStop(session.messages);
+      if (lastAssistant?.stopReason === "error") {
+        throw new WorkerRunError(
+          "PROVIDER_FAILURE",
+          `provider error: ${lastAssistant.errorMessage ?? "unknown"}`,
+          {
+            details: { errorMessage: lastAssistant.errorMessage },
+            runMeta: await buildMeta(),
+          },
+        );
+      }
+      if (lastAssistant?.stopReason === "aborted") {
+        await throwClassified(new CheaperError("ABORTED", "worker run aborted", {}));
+      }
+
+      const extracted = extractOutput(session.messages, worker.outputSchema);
+      if (extracted.ok) {
+        return {
+          result: extracted.result,
+          meta: await buildMeta(),
+        };
+      }
+
+      // repair session（retry・timeout は同じタイマー内）。
+      // repair には外部 signal ではなく runAbort.signal を渡し、
+      // timeout/limit を含む全 abort trigger を repair にも伝える。
+      let result: Record<string, unknown>;
+      try {
+        const repaired = await repairOutput({
+          cwd: deps.root,
+          model: resolved.model,
+          ...(deps.modelRuntime ? { modelRuntime: deps.modelRuntime } : {}),
+          maxOutputTokens: policy.output.maxTokens,
+          schema: worker.outputSchema,
+          rawOutput: extracted.rawOutput,
+          errors: extracted.errors,
+          attempts: policy.output.repairAttempts,
+          transientRetries: policy.retry.transientAttempts,
+          collector,
+          ...(deps.streamFn ? { streamFn: deps.streamFn } : {}),
+          signal: runAbort.signal,
+          abortGraceMs: graceMs,
+          onAttempt: (n) => {
+            repairs = n;
+          },
+        });
+        result = repaired.result;
+      } catch (e) {
+        // repair 中に timeout/signal が落ちた場合は abort 分類を優先する
+        if (abortReason !== undefined) {
+          const reason = abortReason;
+          await throwClassified(abortError(reason));
+        }
+        if (e instanceof CheaperError) throw await withRunMeta(e);
+        throw e;
+      }
+      // repair が成功で解決しても、その間に abort が落ちていれば success を返さない
+      if (abortReason !== undefined) {
+        const reason = abortReason;
+        await throwClassified(abortError(reason));
+      }
+      const meta = await buildMeta();
+      return { result, meta };
+    } finally {
+      unsubscribe();
+      session.dispose();
     }
-    // repair が成功で解決しても、その間に abort が落ちていれば success を返さない
-    if (abortReason !== undefined) {
-      const reason = abortReason;
-      await throwClassified(abortError(reason));
-    }
-    const meta = await buildMeta();
-    return { result, meta };
   } finally {
     clearTimeout(timeout);
     deps.signal?.removeEventListener("abort", onSignalAbort);
-    unsubscribe();
-    session.dispose();
-  }
-
-  async function buildMeta(): Promise<WorkerRunMeta> {
-    const snap = collector.snapshot();
-    return {
-      model: { provider: resolved.info.provider, id: resolved.info.id, tier: resolved.tier },
-      usage: snap.usage,
-      turns: snap.turns,
-      toolCalls: sandboxed.budget.toolCalls,
-      rejectedToolCalls: sandboxed.budget.rejectedToolCalls,
-      repairs,
-      transientRetries: snap.transientRetries,
-      changes: await journal.finalize(),
-    };
   }
 }

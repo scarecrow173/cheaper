@@ -16,6 +16,7 @@ import {
 } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { ModelCatalog } from "../src/model-runtime.js";
 import { runWorker, WorkerRunError } from "../src/run.js";
 import { createFakePi, fauxAssistantMessage, fauxToolCall } from "./fixtures/fake-stream.js";
 
@@ -209,6 +210,27 @@ describe("runWorker", () => {
       ...(await deps(fake, worker(["read"]), p)),
       streamFn: hanging,
     }).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("TIMEOUT");
+  });
+
+  it("classifies timeout during model resolution as TIMEOUT", async () => {
+    // timeout は runWorker 開始時点から計測されるため、model 解決が
+    // timeout を跨いでも TIMEOUT に分類される（DESIGN-0004 / ADR-0010）
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const p = policy();
+    p.execution.timeoutMs = 30;
+    const d = await deps(fake, worker(["read"]), p);
+    const slowCatalog: ModelCatalog = {
+      getAvailable: async (providerId) => {
+        await new Promise((r) => setTimeout(r, 100));
+        return runtime.getAvailable(providerId);
+      },
+      getModel: (providerId, modelId) => runtime.getModel(providerId, modelId),
+    };
+    const err = await runWorker({ ...d, catalog: slowCatalog }).then(
       () => undefined,
       (e: unknown) => e,
     );
