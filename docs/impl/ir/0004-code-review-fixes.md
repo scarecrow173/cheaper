@@ -153,3 +153,4 @@ metadata:
 
 - POSIX 環境での case-sibling 統合テスト実動確認（CI が win32 のみなら手動）。
 - error envelope `meta` の runMeta 拡充を DESIGN-0005 に反映するかは任意（現状は実装先行、design 本文の error meta 記述は「取得不能のみ null」の範囲内）。
+- レビュー指摘 #6（`cheaper.input.schema` を必須化するか）はユーザー判断で対応なしと決定（2026-09-16）。任意項目のまま維持する DESIGN-0001 の契約を再確認した。
