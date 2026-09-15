@@ -1,7 +1,7 @@
 ---
 id: "TASK-0062"
 type: "task"
-status: "todo"
+status: "done"
 title: "Update README and add provider setup guide"
 created: "2026-09-16"
 updated: "2026-09-16"

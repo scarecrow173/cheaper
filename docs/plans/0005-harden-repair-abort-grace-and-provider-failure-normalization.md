@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0005"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Harden repair abort grace and provider failure normalization"
 created: "2026-09-16"
 updated: "2026-09-16"

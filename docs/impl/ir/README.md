@@ -12,3 +12,4 @@ Directory: `docs/impl/ir`
 | IMPL-0006 | Start Ollama container and pull model | completed | [0006-start-ollama-container-and-pull-model.md](./0006-start-ollama-container-and-pull-model.md) |
 | IMPL-0007 | Configure Pi models.json and cheaper models.yaml for Ollama | completed | [0007-configure-pi-and-cheaper-model-config-for-ollama.md](./0007-configure-pi-and-cheaper-model-config-for-ollama.md) |
 | IMPL-0008 | Run real-provider smoke test with Ollama | completed | [0008-run-real-provider-smoke-test-with-ollama.md](./0008-run-real-provider-smoke-test-with-ollama.md) |
+| IMPL-0009 | Repair abort grace and provider failure normalization | draft | [0009-repair-abort-grace-and-provider-failure-normalization.md](./0009-repair-abort-grace-and-provider-failure-normalization.md) |

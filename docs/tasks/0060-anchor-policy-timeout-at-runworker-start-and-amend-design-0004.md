@@ -1,7 +1,7 @@
 ---
 id: "TASK-0060"
 type: "task"
-status: "todo"
+status: "done"
 title: "Anchor policy timeout at runWorker start and amend DESIGN-0004"
 created: "2026-09-16"
 updated: "2026-09-16"

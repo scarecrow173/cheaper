@@ -1,7 +1,7 @@
 ---
 id: "TASK-0059"
 type: "task"
-status: "todo"
+status: "done"
 title: "Count consumed repair attempts in meta.repairs on failure"
 created: "2026-09-16"
 updated: "2026-09-16"

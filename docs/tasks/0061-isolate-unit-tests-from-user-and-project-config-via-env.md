@@ -1,7 +1,7 @@
 ---
 id: "TASK-0061"
 type: "task"
-status: "todo"
+status: "done"
 title: "Isolate unit tests from user and project config via env"
 created: "2026-09-16"
 updated: "2026-09-16"

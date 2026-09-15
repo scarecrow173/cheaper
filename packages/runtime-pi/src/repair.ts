@@ -105,14 +105,10 @@ export async function repairOutput(opts: RepairOptions): Promise<RepairResult> {
         : session.subscribe((event) => collector.handleSessionEvent(event));
     let extracted: ReturnType<typeof extractOutput> | undefined;
     try {
-      const outcome = await promptWithAbortGrace(
-        session,
-        repairUserPrompt(rawOutput, errors),
-        {
-          ...(opts.signal !== undefined ? { signal: opts.signal } : {}),
-          graceMs: opts.abortGraceMs ?? 5000,
-        },
-      );
+      const outcome = await promptWithAbortGrace(session, repairUserPrompt(rawOutput, errors), {
+        ...(opts.signal !== undefined ? { signal: opts.signal } : {}),
+        graceMs: opts.abortGraceMs ?? 5000,
+      });
       if (outcome.kind === "rejected") {
         const err = outcome.err;
         if (err instanceof CheaperError) throw err;

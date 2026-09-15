@@ -1,7 +1,7 @@
 ---
 id: "TASK-0058"
 type: "task"
-status: "todo"
+status: "done"
 title: "Apply abort grace and provider failure normalization to repair"
 created: "2026-09-16"
 updated: "2026-09-16"

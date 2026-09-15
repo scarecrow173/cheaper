@@ -1,7 +1,7 @@
 ---
 id: "TASK-0057"
 type: "task"
-status: "todo"
+status: "done"
 title: "Extract promptWithAbortGrace helper and apply to main run"
 created: "2026-09-16"
 updated: "2026-09-16"
