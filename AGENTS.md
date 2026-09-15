@@ -16,6 +16,17 @@ apm install    # apm.lock.yaml の SHA に基づき依存を再現インスト�
 
 コマンド実行は `mise exec -- <command>` 経由で行い、mise.toml が管理するツールバージョンを有効化する。
 
+## 検証用 Ollama コンテナ
+
+実 provider smoke 検証には Ollama を Docker コンテナで使う（ADR-0009）。ホストへのインストールは行わない。
+
+- 起動: `docker compose up -d`（`ollama/ollama` イメージ、`127.0.0.1:11434` 公開、`ollama` volume でモデル永続化）
+- モデル取得: `docker compose exec ollama ollama pull <model>`（例: `qwen3.5:4b` の量子化タグ）
+- 稼働確認: `curl http://localhost:11434/v1/models` がモデル一覧 JSON を返せば起動済み。応答しない・接続拒否の場合はコンテナが未起動なので `docker compose up -d` を実行する
+- 停止: `docker compose down`（volume は残る。モデルも消す場合は `docker compose down -v`）
+
+コンテナが起動していない状態で実 provider smoke を実行すると provider 到達不能で失敗する。上記の稼働確認で未起動に気づいたら起動してから再実行する。
+
 ## 開発原則
 
 SOLID・YAGNI・DRY・KISS に従い、現在の要件に必要な範囲で設計・実装する。

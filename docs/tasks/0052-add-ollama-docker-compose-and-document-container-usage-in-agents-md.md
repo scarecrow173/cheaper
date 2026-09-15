@@ -1,7 +1,7 @@
 ---
 id: "TASK-0052"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add Ollama docker-compose and document container usage in AGENTS.md"
 created: "2026-09-16"
 updated: "2026-09-16"
