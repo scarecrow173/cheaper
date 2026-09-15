@@ -15,6 +15,19 @@ mise install   # ツールチェーン (node / pnpm / python / uv / apm-cli)
 apm install    # APM 依存パッケージを各ターゲットへデプロイ
 ```
 
+## 使い方
+
+```bash
+mise exec -- pnpm -r build
+echo '{"task": "src/ のエントリポイントを特定して", "paths": ["src/**/*.ts"]}' \
+  | node packages/cli/bin/cheaper.js bulk-read
+```
+
+- `bulk-read` / `cheap-write` は built-in worker（`run <worker>` または `--worker-file` で任意 worker も可）
+- stdin に worker の input schema に従う JSON を渡すと、stdout に envelope 1 行（`ok`/`result`/`meta` または `error`）が返る
+- provider / model の設定方法は [docs/guides/providers.md](docs/guides/providers.md) を参照
+
 ## ステータス
 
-開発初期（設計フェーズ）。実装はこれから。
+V1 実装済み。fake stream に加え、Ollama（Docker）を実 provider とした smoke 検証済み。
+設計・検証の記録は `docs/`（spec / adr / design / plan / task / impl）を参照。
