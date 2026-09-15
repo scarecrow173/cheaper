@@ -10,4 +10,5 @@ Directory: `docs/impl/ir`
 | IMPL-0004 | Code review fixes (post-merge) | completed | [0004-code-review-fixes.md](./0004-code-review-fixes.md) |
 | IMPL-0005 | Add Ollama docker-compose and AGENTS.md container usage | completed | [0005-add-ollama-docker-compose-and-agents-md-container-usage.md](./0005-add-ollama-docker-compose-and-agents-md-container-usage.md) |
 | IMPL-0006 | Start Ollama container and pull model | completed | [0006-start-ollama-container-and-pull-model.md](./0006-start-ollama-container-and-pull-model.md) |
-| IMPL-0007 | Configure Pi models.json and cheaper models.yaml for Ollama | in-progress | [0007-configure-pi-and-cheaper-model-config-for-ollama.md](./0007-configure-pi-and-cheaper-model-config-for-ollama.md) |
+| IMPL-0007 | Configure Pi models.json and cheaper models.yaml for Ollama | completed | [0007-configure-pi-and-cheaper-model-config-for-ollama.md](./0007-configure-pi-and-cheaper-model-config-for-ollama.md) |
+| IMPL-0008 | Run real-provider smoke test with Ollama | completed | [0008-run-real-provider-smoke-test-with-ollama.md](./0008-run-real-provider-smoke-test-with-ollama.md) |

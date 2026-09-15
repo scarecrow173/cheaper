@@ -1,7 +1,7 @@
 ---
 id: "TASK-0055"
 type: "task"
-status: "todo"
+status: "done"
 title: "Run bulk-read and cheap-write smoke against Ollama"
 created: "2026-09-16"
 updated: "2026-09-16"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/0004-verify-cheaper-real-provider-path-with-ollama-on-docker.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/0008-run-real-provider-smoke-test-with-ollama.md"
   depends-on:
     - "docs/plans/0004-verify-cheaper-real-provider-path-with-ollama-on-docker.md"
     - "docs/tasks/0054-configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md"
@@ -40,7 +41,7 @@ relations:
 
 ## Work
 
-<!-- Describe the implementation slice. -->
+一時 workspace で `bulk-read` / `cheap-write` を実 provider（Ollama `qwen3.5:9b`）経由で実行し、envelope・meta.model・meta.usage・meta.changes（mutation journal）を実測確認した。
 
 ## Classification
 
@@ -48,20 +49,21 @@ relations:
 
 ## Upstream Documents
 
-- <!-- plan, spec, ADR, or task path -->
+- `docs/plans/0004-verify-cheaper-real-provider-path-with-ollama-on-docker.md`
 
 ## Dependencies
 
-- <!-- prerequisite, blocker, or related task -->
+- `docs/tasks/0054-configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md`
 
 ## Affected Files
 
-- <!-- file, directory, module, or interface -->
+- なし（外部状態: 一時 workspace、`~/.config/cheaper/policy.yaml`）
 
 ## Done When
 
-- [ ] <!-- completion criterion -->
+- [x] `bulk-read` / `cheap-write` が exit 0 で envelope 1 行を返す
 
 ## Verification
 
-- [ ] <!-- command, test, review step, or observable behavior -->
+- [x] `bulk-read`: exit 0、`meta.model.provider=ollama` / `id=qwen3.5:9b` / `tier=low`、実測 usage（total 2347 tokens）、`changes` 空（read-only として正しい）、`repairs: 2`
+- [x] `cheap-write`: exit 0、`meta.changes.files=[{path:"src/farewell.ts",kind:"created",linesAdded:9}]`（journal 実測）、ファイルが実際に作成された
