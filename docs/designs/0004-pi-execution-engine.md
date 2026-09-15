@@ -111,9 +111,9 @@ createAgentSession({
 
 - maxToolCalls: 登録する全 ToolDefinition の `execute` を wrap。実行前に `count >= maxToolCalls` なら `limit = "maxToolCalls"` を記録し `session.abort()`、error result を返す。それ以外は count++ して委譲
 - maxTurns: `turn_end` を数え、`turns >= maxTurns` かつその turn の assistant message に toolCall block が含まれる（続行しようとしている）場合 `limit = "maxTurns"` を記録し `abort()`
-- timeout: CLI 入口で `setTimeout(effectiveTimeoutMs)` → `reason = "timeout"` を記録し abort。provider retry・repair も同じタイマー内
+- timeout: `runWorker` 開始時点で `setTimeout(effectiveTimeoutMs)` → `reason = "timeout"` を記録し abort。provider retry・repair も同じタイマー内。これは agent execution timeout であり、model 解決・session 構築を含む run 区間を計測する。CLI 前段（stdin 読込・worker/policy 解決・runtime 初期化）は対象外（ADR-0010）
 - SIGINT/SIGTERM: `reason = "signal"` → abort
-- abort 猶予: `abort()` 呼び出し後 5 秒以内に `prompt()` が resolve しなければ待機を打ち切り、その時点の journal/usage で同じ分類経路に入る（stream が `options.signal` を無視した場合のハング防止。runtime-pi が `Promise.race` で実装し、cli はこれに依存して必ず envelope を出して exit する）
+- abort 猶予: `abort()` 呼び出し後 5 秒以内に `prompt()` が resolve しなければ待機を打ち切り、その時点の journal/usage で同じ分類経路に入る（stream が `options.signal` を無視した場合のハング防止。runtime-pi が `promptWithAbortGrace` で実装し、main session と repair session で共用する。cli はこれに依存して必ず envelope を出して exit する）
 - abort の集約: runWorker 内部 AbortController に timeout/外部 signal/limit を集約し、repair session へも同 signal を渡す（repair 中の timeout/abort で repair の prompt が settle し、repair 解決後にも abort 分類を再確認して success を返さない）
 - abort 後の分類: `prompt()` は abort 後も resolve する（実測）ため、resolve/reject どちらでも同一の分類経路に入る。reason に応じて `TIMEOUT` / `ABORTED` / `MAX_TURNS_EXCEEDED` / `MAX_TOOL_CALLS_EXCEEDED`。journal が非空なら `PARTIAL_MUTATION` で包み、`error.cause` に元エラー、`meta.changes` に変更一覧
 
@@ -129,7 +129,8 @@ createAgentSession({
 ### 出力抽出と repair
 
 - `session.messages` の最後の assistant message の text block 連結 → 先頭末尾の ```` ``` ```` フェンス除去 → `JSON.parse` → Ajv validate
-- repair（output-only）: 失敗時 `repairAttempts` 回まで**新規 session**（`noTools: "all"`、customTools なし、同 model、systemPrompt = 「以下の schema に適合する JSON のみを返せ」+ schema）に対し、user prompt = 前回 raw output + validation errors を投げる。tool が物理的に存在しないため「repair has no tools」が構造的に成立。尽きたら `INVALID_OUTPUT`（details: Ajv errors 先頭 20 件、rawOutput 先頭 2000 文字）
+- repair（output-only）: 失敗時 `repairAttempts` 回まで**新規 session**（`noTools: "all"`、customTools なし、同 model、systemPrompt = 「以下の schema に適合する JSON のみを返せ」+ schema）に対し、user prompt = 前回 raw output + validation errors を投げる。tool が物理的に存在しないため「repair has no tools」が構造的に成立。repair session の prompt rejection および `stopReason === "error"` の終了状態は main session と同じく `PROVIDER_FAILURE` に正規化する（ADR-0010）。尽きたら `INVALID_OUTPUT`（details: Ajv errors 先頭 20 件、rawOutput 先頭 2000 文字）
+- `meta.repairs` は消費した repair attempt 数を計上する。成功・失敗・中断を問わず実測値（`repairOutput` の `onAttempt` フックで attempt 開始時に更新）
 
 ### usage
 

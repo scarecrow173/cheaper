@@ -339,6 +339,60 @@ describe("runWorker", () => {
     expect((err as CheaperError).code).toBe("INVALID_OUTPUT");
   });
 
+  it("reports consumed repair attempts in meta.repairs on failure", async () => {
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage("bad"),
+        fauxAssistantMessage("bad"),
+        fauxAssistantMessage("bad"),
+      ],
+    });
+    const p = policy();
+    p.output.repairAttempts = 2;
+    const err = await runWorker(await deps(fake, worker(["read"]), p)).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("INVALID_OUTPUT");
+    expect((err as WorkerRunError).runMeta?.repairs).toBe(2);
+  });
+
+  it("maps a repair provider error end state to PROVIDER_FAILURE", async () => {
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage("not json"), // main → invalid output → repair へ
+        fauxAssistantMessage("", { stopReason: "error", errorMessage: "provider down" }),
+      ],
+    });
+    const err = await runWorker(await deps(fake, worker(["read"]), policy())).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("PROVIDER_FAILURE");
+  });
+
+  it("cuts off a repair session that ignores abort after the grace", async () => {
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage("not json"), // main → invalid output → repair へ
+        // repair session: abort signal を無視して settle しない応答
+        () => new Promise<AssistantMessage>(() => {}),
+      ],
+    });
+    const p = policy();
+    p.execution.timeoutMs = 30;
+    const startedAt = Date.now();
+    const err = await runWorker({
+      ...(await deps(fake, worker(["read"]), p)),
+      abortGraceMs: 30,
+    }).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("TIMEOUT");
+    expect(Date.now() - startedAt).toBeLessThan(2000);
+  });
+
   it("maps provider error end state to PROVIDER_FAILURE", async () => {
     const fake = createFakePi({
       responses: [fauxAssistantMessage("", { stopReason: "error", errorMessage: "provider down" })],

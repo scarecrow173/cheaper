@@ -57,3 +57,14 @@ Directory: `docs/tasks`
 | TASK-0049 | Run full build test and lint verification | done | [0049-run-full-build-test-and-lint-verification.md](./0049-run-full-build-test-and-lint-verification.md) |
 | TASK-0050 | Write implementation record and experiment log | done | [0050-write-implementation-record-and-experiment-log.md](./0050-write-implementation-record-and-experiment-log.md) |
 | TASK-0051 | Run document status audit | done | [0051-run-document-status-audit.md](./0051-run-document-status-audit.md) |
+| TASK-0052 | Add Ollama docker-compose and document container usage in AGENTS.md | done | [0052-add-ollama-docker-compose-and-document-container-usage-in-agents-md.md](./0052-add-ollama-docker-compose-and-document-container-usage-in-agents-md.md) |
+| TASK-0053 | Start Ollama container and pull qwen3.5 quantized model | done | [0053-start-ollama-container-and-pull-qwen3-5-quantized-model.md](./0053-start-ollama-container-and-pull-qwen3-5-quantized-model.md) |
+| TASK-0054 | Configure Pi models.json and cheaper models.yaml for Ollama provider | done | [0054-configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md](./0054-configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md) |
+| TASK-0055 | Run bulk-read and cheap-write smoke against Ollama | done | [0055-run-bulk-read-and-cheap-write-smoke-against-ollama.md](./0055-run-bulk-read-and-cheap-write-smoke-against-ollama.md) |
+| TASK-0056 | Record experiment log and verify test regression | done | [0056-record-experiment-log-and-verify-test-regression.md](./0056-record-experiment-log-and-verify-test-regression.md) |
+| TASK-0057 | Extract promptWithAbortGrace helper and apply to main run | todo | [0057-extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./0057-extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
+| TASK-0058 | Apply abort grace and provider failure normalization to repair | todo | [0058-apply-abort-grace-and-provider-failure-normalization-to-repair.md](./0058-apply-abort-grace-and-provider-failure-normalization-to-repair.md) |
+| TASK-0059 | Count consumed repair attempts in meta.repairs on failure | todo | [0059-count-consumed-repair-attempts-in-meta-repairs-on-failure.md](./0059-count-consumed-repair-attempts-in-meta-repairs-on-failure.md) |
+| TASK-0060 | Anchor policy timeout at runWorker start and amend DESIGN-0004 | todo | [0060-anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./0060-anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
+| TASK-0061 | Isolate unit tests from user and project config via env | todo | [0061-isolate-unit-tests-from-user-and-project-config-via-env.md](./0061-isolate-unit-tests-from-user-and-project-config-via-env.md) |
+| TASK-0062 | Update README and add provider setup guide | todo | [0062-update-readme-and-add-provider-setup-guide.md](./0062-update-readme-and-add-provider-setup-guide.md) |

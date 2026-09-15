@@ -2,6 +2,7 @@ import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { CheaperError, compileSchema } from "@cheaper/core";
+import type { AssistantMessage } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { repairOutput } from "../src/repair.js";
@@ -94,6 +95,54 @@ describe("repairOutput", () => {
     expect(details.errors.length).toBeLessThanOrEqual(20);
     expect(details.rawOutput.length).toBeLessThanOrEqual(2000);
     expect(fake.state.callCount).toBe(2);
+  });
+
+  it("normalizes a prompt rejection to PROVIDER_FAILURE", async () => {
+    const fake = createFakePi({ responses: [] });
+    const err = await repairOutput({
+      ...repairDeps(fake, 3),
+      streamFn: () => {
+        throw new Error("provider boom");
+      },
+    }).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("PROVIDER_FAILURE");
+  });
+
+  it("maps a provider error end state to PROVIDER_FAILURE", async () => {
+    const fake = createFakePi({
+      responses: [fauxAssistantMessage("", { stopReason: "error", errorMessage: "provider down" })],
+    });
+    const err = await repairOutput(repairDeps(fake, 3)).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("PROVIDER_FAILURE");
+    expect(fake.state.callCount).toBe(1);
+  });
+
+  it("cuts off a prompt that ignores abort after the abort grace", async () => {
+    const fake = createFakePi({
+      // abort signal を無視して settle しない応答
+      responses: [() => new Promise<AssistantMessage>(() => {})],
+    });
+    const ac = new AbortController();
+    const startedAt = Date.now();
+    const promise = repairOutput({
+      ...repairDeps(fake, 3),
+      signal: ac.signal,
+      abortGraceMs: 30,
+    });
+    setTimeout(() => ac.abort(), 20);
+    const err = await promise.then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    // grace 打ち切り → attempts を抜けて INVALID_OUTPUT（abort 分類は呼び出し側）
+    expect((err as CheaperError).code).toBe("INVALID_OUTPUT");
+    expect(Date.now() - startedAt).toBeLessThan(2000);
   });
 
   it("stops early when the outer signal is already aborted", async () => {

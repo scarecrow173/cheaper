@@ -40,6 +40,26 @@ export function extractLastAssistantText(messages: readonly unknown[]): string |
   return undefined;
 }
 
+/**
+ * 最後の assistant message の stopReason/errorMessage を返す。
+ * main / repair session の provider 終了状態正規化で共用する（DESIGN-0010）。
+ */
+export function lastAssistantStop(
+  messages: readonly unknown[],
+): { stopReason: string | undefined; errorMessage: string | undefined } | undefined {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (typeof m === "object" && m !== null && (m as { role?: unknown }).role === "assistant") {
+      const mm = m as { stopReason?: unknown; errorMessage?: unknown };
+      return {
+        stopReason: typeof mm.stopReason === "string" ? mm.stopReason : undefined,
+        errorMessage: typeof mm.errorMessage === "string" ? mm.errorMessage : undefined,
+      };
+    }
+  }
+  return undefined;
+}
+
 /** 先頭末尾の ``` フェンスを 1 組だけ除去する。 */
 export function stripCodeFence(text: string): string {
   let t = text.trim();

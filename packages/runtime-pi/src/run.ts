@@ -11,7 +11,8 @@ import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import type { ChangesSummary } from "./journal.js";
 import { MutationJournal } from "./journal.js";
 import { type ModelCatalog, resolvePiModel } from "./model-runtime.js";
-import { extractOutput } from "./output.js";
+import { extractOutput, lastAssistantStop } from "./output.js";
+import { promptWithAbortGrace } from "./prompt-grace.js";
 import { repairOutput } from "./repair.js";
 import { createWorkerSession, type StreamFnLike } from "./session.js";
 import { createSandboxedTools } from "./tools/registry.js";
@@ -128,10 +129,19 @@ export async function runWorker(
   let repairs = 0;
 
   let abortReason: AbortReason | undefined;
-  let resolveGrace: () => void = () => {};
-  const gracePromise = new Promise<void>((r) => {
-    resolveGrace = r;
-  });
+
+  function requestAbort(reason: AbortReason): void {
+    if (abortReason !== undefined) return;
+    abortReason = reason;
+    runAbort.abort();
+  }
+
+  // policy timeout は agent execution 区間（model 解決・session 構築を含む
+  // run 全体）を計測する。CLI 前段は対象外（DESIGN-0010 / ADR-0010）。
+  const timeout = setTimeout(() => requestAbort("timeout"), policy.execution.timeoutMs);
+  const onSignalAbort = () => requestAbort("signal");
+  deps.signal?.addEventListener("abort", onSignalAbort, { once: true });
+  if (deps.signal?.aborted) requestAbort("signal");
 
   const sandboxed = createSandboxedTools({
     root: deps.root,
@@ -154,14 +164,6 @@ export async function runWorker(
     ...(deps.streamFn ? { streamFn: deps.streamFn } : {}),
   });
 
-  function requestAbort(reason: AbortReason): void {
-    if (abortReason !== undefined) return;
-    abortReason = reason;
-    runAbort.abort();
-    void session.abort();
-    setTimeout(resolveGrace, graceMs);
-  }
-
   const unsubscribe = session.subscribe((event) => {
     collector.handleSessionEvent(event);
     if (
@@ -173,11 +175,6 @@ export async function runWorker(
       requestAbort("maxTurns");
     }
   });
-
-  const timeout = setTimeout(() => requestAbort("timeout"), policy.execution.timeoutMs);
-  const onSignalAbort = () => requestAbort("signal");
-  deps.signal?.addEventListener("abort", onSignalAbort, { once: true });
-  if (deps.signal?.aborted) requestAbort("signal");
 
   const abortError = (reason: AbortReason) =>
     new CheaperError(ABORT_CODES[reason], `worker run aborted: ${reason}`, {
@@ -208,14 +205,10 @@ export async function runWorker(
   };
 
   try {
-    const promptOutcome = session.prompt(buildUserPrompt(deps.input)).then(
-      () => ({ kind: "settled" as const }),
-      (err: unknown) => ({ kind: "rejected" as const, err }),
-    );
-    const outcome = await Promise.race([
-      promptOutcome,
-      gracePromise.then(() => ({ kind: "grace" as const })),
-    ]);
+    const outcome = await promptWithAbortGrace(session, buildUserPrompt(deps.input), {
+      signal: runAbort.signal,
+      graceMs,
+    });
 
     if (abortReason !== undefined) {
       const reason = abortReason;
@@ -277,8 +270,11 @@ export async function runWorker(
         collector,
         ...(deps.streamFn ? { streamFn: deps.streamFn } : {}),
         signal: runAbort.signal,
+        abortGraceMs: graceMs,
+        onAttempt: (n) => {
+          repairs = n;
+        },
       });
-      repairs = repaired.repairs;
       result = repaired.result;
     } catch (e) {
       // repair 中に timeout/signal が落ちた場合は abort 分類を優先する
@@ -316,20 +312,4 @@ export async function runWorker(
       changes: await journal.finalize(),
     };
   }
-}
-
-function lastAssistantStop(
-  messages: readonly unknown[],
-): { stopReason: string | undefined; errorMessage: string | undefined } | undefined {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i];
-    if (typeof m === "object" && m !== null && (m as { role?: unknown }).role === "assistant") {
-      const mm = m as { stopReason?: unknown; errorMessage?: unknown };
-      return {
-        stopReason: typeof mm.stopReason === "string" ? mm.stopReason : undefined,
-        errorMessage: typeof mm.errorMessage === "string" ? mm.errorMessage : undefined,
-      };
-    }
-  }
-  return undefined;
 }
