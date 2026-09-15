@@ -1,7 +1,7 @@
 ---
 id: "TASK-0007"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement worker frontmatter parser"
 created: "2026-09-15"
 updated: "2026-09-15"

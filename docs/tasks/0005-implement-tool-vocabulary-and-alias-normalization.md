@@ -1,7 +1,7 @@
 ---
 id: "TASK-0005"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement tool vocabulary and alias normalization"
 created: "2026-09-15"
 updated: "2026-09-15"

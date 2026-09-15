@@ -1,7 +1,7 @@
 ---
 id: "TASK-0006"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement config directory resolution"
 created: "2026-09-15"
 updated: "2026-09-15"

@@ -1,7 +1,7 @@
 ---
 id: "TASK-0003"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement core error model and exit code table"
 created: "2026-09-15"
 updated: "2026-09-15"

@@ -1,7 +1,7 @@
 ---
 id: "TASK-0010"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement worker resolver with origin precedence"
 created: "2026-09-15"
 updated: "2026-09-15"

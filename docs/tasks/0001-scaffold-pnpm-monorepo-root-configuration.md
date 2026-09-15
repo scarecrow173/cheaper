@@ -1,7 +1,7 @@
 ---
 id: "TASK-0001"
 type: "task"
-status: "todo"
+status: "done"
 title: "Scaffold pnpm monorepo root configuration"
 created: "2026-09-15"
 updated: "2026-09-15"

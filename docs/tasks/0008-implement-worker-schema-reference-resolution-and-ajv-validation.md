@@ -1,7 +1,7 @@
 ---
 id: "TASK-0008"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement worker schema reference resolution and Ajv validation"
 created: "2026-09-15"
 updated: "2026-09-15"

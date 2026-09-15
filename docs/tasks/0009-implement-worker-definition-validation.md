@@ -1,7 +1,7 @@
 ---
 id: "TASK-0009"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement worker definition validation"
 created: "2026-09-15"
 updated: "2026-09-15"

@@ -1,7 +1,7 @@
 ---
 id: "TASK-0002"
 type: "task"
-status: "todo"
+status: "done"
 title: "Create empty @cheaper/core package skeleton"
 created: "2026-09-15"
 updated: "2026-09-15"
