@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, type TestContext } from "v
 import type { CheaperError } from "../../src/errors.js";
 import {
   canonicalizeWorkspaceRoot,
+  isInsideWorkspaceRoot,
   resolveWorkspacePath,
   WorkspaceEscapeError,
 } from "../../src/workspace/paths.js";
@@ -100,6 +101,86 @@ describe("resolveWorkspacePath", () => {
     expect(dot.real).toBe(root);
     expect(dot.display).toBe(".");
   });
+});
+
+describe("isInsideWorkspaceRoot", () => {
+  const root = path.join("tmp", "work");
+
+  it("accepts the root itself and descendants", () => {
+    expect(isInsideWorkspaceRoot(root, root)).toBe(true);
+    expect(isInsideWorkspaceRoot(root, path.join(root, "a"))).toBe(true);
+  });
+
+  it("rejects siblings and prefix-confusable paths", () => {
+    expect(isInsideWorkspaceRoot(root, path.join("tmp", "workx", "a"))).toBe(false);
+    expect(isInsideWorkspaceRoot(root, path.join("tmp", "other"))).toBe(false);
+  });
+
+  it("is case-sensitive by default and with caseInsensitive: false", () => {
+    const candidate = path.join("tmp", "Work", "secret");
+    expect(isInsideWorkspaceRoot(root, candidate)).toBe(false);
+    expect(isInsideWorkspaceRoot(root, candidate, { caseInsensitive: false })).toBe(false);
+  });
+
+  it("accepts case-differing descendants with caseInsensitive: true", () => {
+    expect(
+      isInsideWorkspaceRoot(root, path.join("tmp", "Work", "secret"), {
+        caseInsensitive: true,
+      }),
+    ).toBe(true);
+  });
+});
+
+describe("resolveWorkspacePath case-sensitivity", () => {
+  // case-sensitive FS でのみ成立する迂回パターン。win32 では FS 自体が
+  // case-insensitive なため区別しない（比較も caseInsensitive: true で動く）。
+  it.skipIf(process.platform === "win32")(
+    "treats a differently-cased real dir sibling as outside the workspace",
+    async (ctx) => {
+      const dir = await makeTmpDir();
+      try {
+        const ws = path.join(dir, "Work");
+        const sibling = path.join(dir, "work");
+        await mkdir(ws, { recursive: true });
+        await mkdir(sibling, { recursive: true });
+        // macOS 等の case-insensitive FS では同一 dir になるため skip
+        if ((await realpath(ws)) === (await realpath(sibling))) ctx.skip();
+        await writeFile(path.join(sibling, "secret.txt"), "s");
+        const root = await canonicalizeWorkspaceRoot(ws);
+        await expect(
+          resolveWorkspacePath(root, path.join("..", "work", "secret.txt"), "deny"),
+        ).rejects.toBeInstanceOf(WorkspaceEscapeError);
+      } finally {
+        await cleanupTmpDir(dir);
+      }
+    },
+  );
+
+  it.skipIf(process.platform === "win32")(
+    "rejects a within-workspace symlink resolving to a differently-cased sibling",
+    async (ctx) => {
+      const dir = await makeTmpDir();
+      try {
+        const ws = path.join(dir, "Work");
+        const sibling = path.join(dir, "work");
+        await mkdir(ws, { recursive: true });
+        await mkdir(sibling, { recursive: true });
+        if ((await realpath(ws)) === (await realpath(sibling))) ctx.skip();
+        await writeFile(path.join(sibling, "secret.txt"), "s");
+        try {
+          await symlink(sibling, path.join(ws, "link"), "dir");
+        } catch {
+          ctx.skip(); // symlink 非対応環境
+        }
+        const root = await canonicalizeWorkspaceRoot(ws);
+        await expect(
+          resolveWorkspacePath(root, path.join("link", "secret.txt"), "within-workspace"),
+        ).rejects.toBeInstanceOf(WorkspaceEscapeError);
+      } finally {
+        await cleanupTmpDir(dir);
+      }
+    },
+  );
 });
 
 describe("resolveWorkspacePath symlink policy", () => {

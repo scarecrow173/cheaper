@@ -102,6 +102,25 @@ describe("grep tool", () => {
     );
   });
 
+  it("times out on catastrophic regex via the per-file watchdog", async () => {
+    // (a+)+$ に「'a' 列 + 非マッチ文字」で劇的な backtracking。
+    // eval worker がブロックされても watchdog（evalPerFileMs）で terminate し tool error になる。
+    await writeFile(path.join(root, "evil.txt"), `${"a".repeat(5000)}b\n`);
+    const t = createGrepTool({ root, symlinkPolicy: "deny", evalPerFileMs: 50 });
+    await expect(run(t, { pattern: "(a+)+$" })).rejects.toThrow(
+      "grep pattern evaluation timed out",
+    );
+  });
+
+  it("marks output truncated when the cumulative eval budget is exhausted", async () => {
+    await writeFile(path.join(root, "a.txt"), "hit\n");
+    await writeFile(path.join(root, "b.txt"), "hit\n");
+    // 累計上限 0 → 最初のファイル評価直後に打ち切り
+    const t = createGrepTool({ root, symlinkPolicy: "deny", evalTotalMs: 0 });
+    const out = await run(t, { pattern: "hit" });
+    expect(out).toContain("[truncated");
+  });
+
   it("never spawns an external process", async () => {
     const spy = vi.spyOn(childProcess, "spawn");
     await writeFile(path.join(root, "a.txt"), "hit\n");

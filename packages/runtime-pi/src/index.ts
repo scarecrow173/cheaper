@@ -15,7 +15,7 @@ export {
 } from "./model-runtime.js";
 export type { SchemaValidationError } from "./output.js";
 export type { RunWorkerDeps, WorkerRunMeta } from "./run.js";
-export { runWorker } from "./run.js";
+export { runWorker, WorkerRunError } from "./run.js";
 export type {
   StreamFnLike,
   WorkerSessionHandle,

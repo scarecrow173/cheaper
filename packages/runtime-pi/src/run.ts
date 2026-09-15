@@ -28,6 +28,29 @@ export interface WorkerRunMeta {
   changes: ChangesSummary;
 }
 
+/**
+ * runWorker の throw 経路で「その時点の meta snapshot」を運ぶ CheaperError。
+ * CLI の error envelope は `runMeta` から meta field を埋める
+ * （取得不能な field のみ null）。
+ */
+export class WorkerRunError extends CheaperError {
+  readonly runMeta: (Partial<WorkerRunMeta> & { durationMs?: number }) | undefined;
+
+  constructor(
+    code: ErrorCode,
+    message: string,
+    options?: {
+      details?: Record<string, unknown>;
+      cause?: unknown;
+      runMeta?: Partial<WorkerRunMeta> & { durationMs?: number };
+    },
+  ) {
+    super(code, message, options);
+    this.name = "WorkerRunError";
+    this.runMeta = options?.runMeta;
+  }
+}
+
 export interface RunWorkerDeps {
   worker: WorkerDefinition;
   input: unknown;
@@ -98,6 +121,11 @@ export async function runWorker(
   const journal = new MutationJournal();
   const collector = new UsageCollector();
   const graceMs = deps.abortGraceMs ?? 5000;
+  // run 全体の内部 abort。timeout・外部 signal・maxTurns/maxToolCalls の
+  // 全 trigger が requestAbort を経由してこれを fire する。repair session は
+  // runAbort.signal を受け取り、main session とは別に自分の session.abort() を呼ぶ。
+  const runAbort = new AbortController();
+  let repairs = 0;
 
   let abortReason: AbortReason | undefined;
   let resolveGrace: () => void = () => {};
@@ -129,6 +157,7 @@ export async function runWorker(
   function requestAbort(reason: AbortReason): void {
     if (abortReason !== undefined) return;
     abortReason = reason;
+    runAbort.abort();
     void session.abort();
     setTimeout(resolveGrace, graceMs);
   }
@@ -150,16 +179,32 @@ export async function runWorker(
   deps.signal?.addEventListener("abort", onSignalAbort, { once: true });
   if (deps.signal?.aborted) requestAbort("signal");
 
+  const abortError = (reason: AbortReason) =>
+    new CheaperError(ABORT_CODES[reason], `worker run aborted: ${reason}`, {
+      details: { reason },
+    });
+
+  /** CheaperError にその時点の meta snapshot を載せて WorkerRunError 化する。 */
+  const withRunMeta = async (err: CheaperError): Promise<WorkerRunError> => {
+    if (err instanceof WorkerRunError) return err;
+    return new WorkerRunError(err.code, err.message, {
+      ...(err.details !== undefined ? { details: err.details } : {}),
+      ...(err.cause !== undefined ? { cause: err.cause } : {}),
+      runMeta: await buildMeta(),
+    });
+  };
+
   /** abort 系エラーは journal 非空なら PARTIAL_MUTATION で包む。 */
   const throwClassified = async (err: CheaperError): Promise<never> => {
-    const changes = await journal.finalize();
-    if (changes.totals.files > 0) {
-      throw new CheaperError("PARTIAL_MUTATION", "worker aborted after partial mutations", {
-        details: { changes },
+    const meta = await buildMeta();
+    if (meta.changes.totals.files > 0) {
+      throw new WorkerRunError("PARTIAL_MUTATION", "worker aborted after partial mutations", {
+        details: { changes: meta.changes },
         cause: err,
+        runMeta: meta,
       });
     }
-    throw err;
+    throw await withRunMeta(err);
   };
 
   try {
@@ -174,30 +219,32 @@ export async function runWorker(
 
     if (abortReason !== undefined) {
       const reason = abortReason;
-      await throwClassified(
-        new CheaperError(ABORT_CODES[reason], `worker run aborted: ${reason}`, {
-          details: { reason },
-        }),
-      );
+      await throwClassified(abortError(reason));
     }
 
     if (outcome.kind === "rejected") {
       const err = outcome.err;
-      if (err instanceof CheaperError) throw err;
-      throw new CheaperError(
+      if (err instanceof CheaperError) throw await withRunMeta(err);
+      throw new WorkerRunError(
         "PROVIDER_FAILURE",
         `session prompt failed: ${err instanceof Error ? err.message : String(err)}`,
-        { cause: err instanceof Error ? err : undefined },
+        {
+          cause: err instanceof Error ? err : undefined,
+          runMeta: await buildMeta(),
+        },
       );
     }
 
     // provider レベルの終了エラー（retry 尽き・abort 以外の error stopReason）
     const lastAssistant = lastAssistantStop(session.messages);
     if (lastAssistant?.stopReason === "error") {
-      throw new CheaperError(
+      throw new WorkerRunError(
         "PROVIDER_FAILURE",
         `provider error: ${lastAssistant.errorMessage ?? "unknown"}`,
-        { details: { errorMessage: lastAssistant.errorMessage } },
+        {
+          details: { errorMessage: lastAssistant.errorMessage },
+          runMeta: await buildMeta(),
+        },
       );
     }
     if (lastAssistant?.stopReason === "aborted") {
@@ -212,8 +259,9 @@ export async function runWorker(
       };
     }
 
-    // repair session（retry・timeout は同じタイマー内）
-    let repairs = 0;
+    // repair session（retry・timeout は同じタイマー内）。
+    // repair には外部 signal ではなく runAbort.signal を渡し、
+    // timeout/limit を含む全 abort trigger を repair にも伝える。
     let result: Record<string, unknown>;
     try {
       const repaired = await repairOutput({
@@ -225,8 +273,10 @@ export async function runWorker(
         rawOutput: extracted.rawOutput,
         errors: extracted.errors,
         attempts: policy.output.repairAttempts,
+        transientRetries: policy.retry.transientAttempts,
+        collector,
         ...(deps.streamFn ? { streamFn: deps.streamFn } : {}),
-        ...(deps.signal ? { signal: deps.signal } : {}),
+        signal: runAbort.signal,
       });
       repairs = repaired.repairs;
       result = repaired.result;
@@ -234,16 +284,17 @@ export async function runWorker(
       // repair 中に timeout/signal が落ちた場合は abort 分類を優先する
       if (abortReason !== undefined) {
         const reason = abortReason;
-        await throwClassified(
-          new CheaperError(ABORT_CODES[reason], `worker run aborted: ${reason}`, {
-            details: { reason },
-          }),
-        );
+        await throwClassified(abortError(reason));
       }
+      if (e instanceof CheaperError) throw await withRunMeta(e);
       throw e;
     }
+    // repair が成功で解決しても、その間に abort が落ちていれば success を返さない
+    if (abortReason !== undefined) {
+      const reason = abortReason;
+      await throwClassified(abortError(reason));
+    }
     const meta = await buildMeta();
-    meta.repairs = repairs;
     return { result, meta };
   } finally {
     clearTimeout(timeout);
@@ -260,7 +311,7 @@ export async function runWorker(
       turns: snap.turns,
       toolCalls: sandboxed.budget.toolCalls,
       rejectedToolCalls: sandboxed.budget.rejectedToolCalls,
-      repairs: 0,
+      repairs,
       transientRetries: snap.transientRetries,
       changes: await journal.finalize(),
     };

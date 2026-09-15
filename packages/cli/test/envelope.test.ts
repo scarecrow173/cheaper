@@ -1,5 +1,5 @@
 import { CheaperError } from "@cheaper/core";
-import type { WorkerRunMeta } from "@cheaper/runtime-pi";
+import { WorkerRunError, type WorkerRunMeta } from "@cheaper/runtime-pi";
 import { describe, expect, it } from "vitest";
 import { envelopeJson, errorEnvelope, successEnvelope } from "../src/envelope.js";
 
@@ -81,6 +81,35 @@ describe("errorEnvelope", () => {
       files: [{ path: "a.ts", kind: "created", linesAdded: 1, linesDeleted: 0 }],
       totals: { files: 1, linesAdded: 1, linesDeleted: 0 },
     });
+  });
+
+  it("fills error meta from WorkerRunError.runMeta", () => {
+    const err = new WorkerRunError("TIMEOUT", "worker run aborted: timeout", {
+      details: { reason: "timeout" },
+      runMeta: { ...runMeta, turns: 3, repairs: 1 },
+    });
+    const env = errorEnvelope(err, { worker: "w", durationMs: 9 });
+    expect(env.error.code).toBe("TIMEOUT");
+    expect(env.meta.durationMs).toBe(9); // durationMs は常に CLI 計測値
+    expect(env.meta.model).toEqual(runMeta.model);
+    expect(env.meta.usage).toEqual(runMeta.usage);
+    expect(env.meta.turns).toBe(3);
+    expect(env.meta.toolCalls).toBe(0);
+    expect(env.meta.repairs).toBe(1);
+    expect(env.meta.changes).toEqual(runMeta.changes);
+  });
+
+  it("prefers runMeta.changes over details.changes", () => {
+    const changes = {
+      files: [{ path: "b.ts", kind: "modified" as const, linesAdded: 2, linesDeleted: 0 }],
+      totals: { files: 1, linesAdded: 2, linesDeleted: 0 },
+    };
+    const err = new WorkerRunError("PARTIAL_MUTATION", "partial", {
+      details: { changes: runMeta.changes },
+      runMeta: { ...runMeta, changes },
+    });
+    const env = errorEnvelope(err, { worker: null, durationMs: 1 });
+    expect(env.meta.changes).toEqual(changes);
   });
 
   it("maps unknown errors to INTERNAL_ERROR 70", () => {
