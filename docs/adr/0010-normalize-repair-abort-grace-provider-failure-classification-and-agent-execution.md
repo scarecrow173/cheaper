@@ -26,8 +26,7 @@ relations:
     - "../specs/0005-repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md"
     - "../designs/0004-pi-execution-engine.md"
     - "../impl/exp/0002-ollama-real-provider-smoke-verification.jsonl"
-  refines:
-    - "../designs/0004-pi-execution-engine.md"
+  refines: []
   refined-by: []
   derives-from:
     - "../discovery/0003-post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md"
