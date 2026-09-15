@@ -81,7 +81,7 @@ preferences:          # tier ごとの優先順。"<provider>/<modelId>" また�
 - 分類 priority: `overrides` > built-in 表 > cost heuristic > `medium`
 - built-in 表（model id 小文字、正規表現。high → low → medium の順に評価し最初の一致を採用）:
   - high: `opus`, `gpt-5(\.\d+)?-pro`, `\bo1(-pro)?\b`, `o3-pro`, `heavy`, `ultra`
-  - low: `haiku`, `mini`, `nano`, `flash`, `lite`, `small`, `codex-mini`, `\b(1|3|7|8)b\b`
+  - low: `haiku`, `\bmini\b`, `nano`, `flash`, `lite`, `small`, `codex-mini`, `\b(1|3|7|8)b\b`
   - medium: `sonnet`, `gpt-4o`, `gpt-4\.1`, `gpt-5(\.\d+)?$`, `gemini-.*-pro`, `\bo3\b`, `codex`
 - cost heuristic（Pi `Model.cost.output`、USD/1M token）: `< 2` → low、`≤ 20` → medium、`> 20` → high。cost 欠落・0 → medium
 - 選択: `requested > maxTier` → `POLICY_VIOLATION`（exit 4）。候補 = available ∩ tier。順序 = `preferences` のパターン順 → 残りを `(cost.input + cost.output)` 昇順 → provider → id で決定論的に
@@ -97,6 +97,7 @@ preferences:          # tier ごとの優先順。"<provider>/<modelId>" また�
 
 - built-in 正規表現表は新モデル登場で陳腐化する。`overrides` が逃げ道であり、表の変更は patch 更新で対応
 - cost heuristic は Pi metadata 依存。provider が cost を報告しない場合 medium へ倒れる（誤って安い枠に入れない方向に倒す）
+- 既知の限界: `o1-mini` / `o3-mini` 系は high パターン `\bo1(-pro)?\b` が先に評価され high に分類される（実装レビューで確認）。実際には安価な派生モデルだが、`models.yaml` の `overrides` が逃げ道として機能する。誤分類を直すにはパターンの後読みが必要になるため、V1 では記録のみで対応しない
 
 ## Deferred Design Concerns
 

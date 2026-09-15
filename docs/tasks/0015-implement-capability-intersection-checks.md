@@ -1,7 +1,7 @@
 ---
 id: "TASK-0015"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement capability intersection checks"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -64,18 +64,18 @@ PLAN-0001 step 15。capability 交差: requested tools ⊄ policy.tools.allow �
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] tools 欠落 details・tier 超過の各テストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] tools 欠落 details・tier 超過の各テストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/core test -- test/policy/capability.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/core test -- test/policy/capability.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

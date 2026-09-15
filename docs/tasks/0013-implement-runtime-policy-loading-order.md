@@ -1,7 +1,7 @@
 ---
 id: "TASK-0013"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement runtime policy loading order"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -65,18 +65,18 @@ PLAN-0001 step 13。§23 のロード順（built-in → user → project → CLI
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] ロード順・merge 結果・built-in policy.yaml が schema を通るテストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] ロード順・merge 結果・built-in policy.yaml が schema を通るテストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/core test -- test/policy/load.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/core test -- test/policy/load.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

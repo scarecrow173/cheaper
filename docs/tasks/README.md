@@ -16,17 +16,17 @@ Directory: `docs/tasks`
 | TASK-0008 | Implement worker schema reference resolution and Ajv validation | done | [0008-implement-worker-schema-reference-resolution-and-ajv-validation.md](./0008-implement-worker-schema-reference-resolution-and-ajv-validation.md) |
 | TASK-0009 | Implement worker definition validation | done | [0009-implement-worker-definition-validation.md](./0009-implement-worker-definition-validation.md) |
 | TASK-0010 | Implement worker resolver with origin precedence | done | [0010-implement-worker-resolver-with-origin-precedence.md](./0010-implement-worker-resolver-with-origin-precedence.md) |
-| TASK-0011 | Implement runtime policy schemas | todo | [0011-implement-runtime-policy-schemas.md](./0011-implement-runtime-policy-schemas.md) |
-| TASK-0012 | Implement runtime policy merge | todo | [0012-implement-runtime-policy-merge.md](./0012-implement-runtime-policy-merge.md) |
-| TASK-0013 | Implement runtime policy loading order | todo | [0013-implement-runtime-policy-loading-order.md](./0013-implement-runtime-policy-loading-order.md) |
-| TASK-0014 | Implement runtime policy CLI restriction | todo | [0014-implement-runtime-policy-cli-restriction.md](./0014-implement-runtime-policy-cli-restriction.md) |
-| TASK-0015 | Implement capability intersection checks | todo | [0015-implement-capability-intersection-checks.md](./0015-implement-capability-intersection-checks.md) |
-| TASK-0016 | Implement workspace path resolution with symlink policy | todo | [0016-implement-workspace-path-resolution-with-symlink-policy.md](./0016-implement-workspace-path-resolution-with-symlink-policy.md) |
+| TASK-0011 | Implement runtime policy schemas | done | [0011-implement-runtime-policy-schemas.md](./0011-implement-runtime-policy-schemas.md) |
+| TASK-0012 | Implement runtime policy merge | done | [0012-implement-runtime-policy-merge.md](./0012-implement-runtime-policy-merge.md) |
+| TASK-0013 | Implement runtime policy loading order | done | [0013-implement-runtime-policy-loading-order.md](./0013-implement-runtime-policy-loading-order.md) |
+| TASK-0014 | Implement runtime policy CLI restriction | done | [0014-implement-runtime-policy-cli-restriction.md](./0014-implement-runtime-policy-cli-restriction.md) |
+| TASK-0015 | Implement capability intersection checks | done | [0015-implement-capability-intersection-checks.md](./0015-implement-capability-intersection-checks.md) |
+| TASK-0016 | Implement workspace path resolution with symlink policy | done | [0016-implement-workspace-path-resolution-with-symlink-policy.md](./0016-implement-workspace-path-resolution-with-symlink-policy.md) |
 | TASK-0017 | Implement model tier ordering | done | [0017-implement-model-tier-ordering.md](./0017-implement-model-tier-ordering.md) |
-| TASK-0018 | Implement models.yaml config schema and merge | todo | [0018-implement-models-yaml-config-schema-and-merge.md](./0018-implement-models-yaml-config-schema-and-merge.md) |
-| TASK-0019 | Implement model tier classification | todo | [0019-implement-model-tier-classification.md](./0019-implement-model-tier-classification.md) |
-| TASK-0020 | Implement model candidate resolution and fallback | todo | [0020-implement-model-candidate-resolution-and-fallback.md](./0020-implement-model-candidate-resolution-and-fallback.md) |
-| TASK-0021 | Export core public API and run full verification | todo | [0021-export-core-public-api-and-run-full-verification.md](./0021-export-core-public-api-and-run-full-verification.md) |
+| TASK-0018 | Implement models.yaml config schema and merge | done | [0018-implement-models-yaml-config-schema-and-merge.md](./0018-implement-models-yaml-config-schema-and-merge.md) |
+| TASK-0019 | Implement model tier classification | done | [0019-implement-model-tier-classification.md](./0019-implement-model-tier-classification.md) |
+| TASK-0020 | Implement model candidate resolution and fallback | done | [0020-implement-model-candidate-resolution-and-fallback.md](./0020-implement-model-candidate-resolution-and-fallback.md) |
+| TASK-0021 | Export core public API and run full verification | done | [0021-export-core-public-api-and-run-full-verification.md](./0021-export-core-public-api-and-run-full-verification.md) |
 | TASK-0022 | Scaffold runtime-pi package with Pi import smoke test | todo | [0022-scaffold-runtime-pi-package-with-pi-import-smoke-test.md](./0022-scaffold-runtime-pi-package-with-pi-import-smoke-test.md) |
 | TASK-0023 | Implement mutation journal | todo | [0023-implement-mutation-journal.md](./0023-implement-mutation-journal.md) |
 | TASK-0024 | Implement boundary-checked tool operations with atomic writes | todo | [0024-implement-boundary-checked-tool-operations-with-atomic-writes.md](./0024-implement-boundary-checked-tool-operations-with-atomic-writes.md) |

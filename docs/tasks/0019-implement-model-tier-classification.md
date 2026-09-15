@@ -1,7 +1,7 @@
 ---
 id: "TASK-0019"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement model tier classification"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -63,18 +63,18 @@ PLAN-0001 step 19。tier 分類: overrides > built-in 正規表現表（DESIGN-0
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] 各分類経路・優先順位・cost 欠落のテストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] 各分類経路・優先順位・cost 欠落のテストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/core test -- test/model/classify.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/core test -- test/model/classify.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 

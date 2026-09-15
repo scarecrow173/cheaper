@@ -1,7 +1,7 @@
 ---
 id: "TASK-0020"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement model candidate resolution and fallback"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -66,18 +66,18 @@ PLAN-0001 step 20。`requested > maxTier` → `POLICY_VIOLATION`。候補 = avai
 
 ## Done When
 
-- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
-- [ ] 対象テストを実行し red を確認する
-- [ ] 最小実装を行う
-- [ ] 再実行で green を確認する
-- [ ] `pnpm biome check` と `tsc -b` が pass
-- [ ] 優先順位・fallback・unavailable details のテストが green
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] 優先順位・fallback・unavailable details のテストが green
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/core test -- test/model/resolve.test.ts` exits 0
-- [ ] `mise exec -- pnpm biome check .` exits 0
-- [ ] `mise exec -- pnpm tsc -b` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/core test -- test/model/resolve.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
 
 ## Out of Scope
 
