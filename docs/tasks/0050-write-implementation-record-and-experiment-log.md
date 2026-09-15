@@ -1,0 +1,77 @@
+---
+id: "TASK-0050"
+type: "task"
+status: "todo"
+title: "Write implementation record and experiment log"
+created: "2026-09-15"
+updated: "2026-09-15"
+owners: ["scarecrow173"]
+relations:
+  source: []
+  changes:
+    added: []
+    modified: []
+    deleted: []
+    renamed: []
+    moved: []
+    generated: []
+  implements:
+    - "docs/plans/0003-implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md"
+  implemented-by: []
+  depends-on:
+    - "docs/plans/0003-implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md"
+    - "docs/tasks/0049-run-full-build-test-and-lint-verification.md"
+  blocks: []
+  supersedes: []
+  superseded-by: []
+  related: []
+  refines: []
+  refined-by: []
+  derives-from:
+    - "docs/plans/0003-implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md"
+  derived-by: []
+  verifies: []
+  verified-by: []
+  references: []
+  defers: []
+  deferred-by: []
+---
+
+# Write implementation record and experiment log
+
+## Work
+
+PLAN-0003 step 12。`docs/impl/` に実装記録スキルの手順で implementation record（ir）1 本と experiment log（exp）を作成（PLAN-0001/0002 を含めた V1 全体の記録）。
+
+## Classification
+
+- `normal-plan-task`
+
+## Upstream Documents
+
+- `docs/plans/0003-implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md`
+
+## Dependencies
+
+- `docs/tasks/0049-run-full-build-test-and-lint-verification.md` — 依存先（Dependency Graph）
+
+## Affected Files
+
+- `docs/impl/`
+
+## Done When
+
+- [ ] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [ ] 対象テストを実行し red を確認する
+- [ ] 最小実装を行う
+- [ ] 再実行で green を確認する
+- [ ] `pnpm biome check` と `tsc -b` が pass
+- [ ] ir/exp がスキル規約どおり作成され index に載る
+
+## Verification
+
+- [ ] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js` exits 0
+
+## Out of Scope
+
+- doc audit 自体は TASK-0051。

@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0003"
 type: "plan"
-status: "draft"
+status: "approved"
 title: "Implement cheaper CLI, built-in workers and end-to-end verification"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -20,7 +20,20 @@ relations:
     - "docs/specs/0001-cheaper-v1-worker-runtime-cli.md"
     - "docs/specs/0002-bulk-reader-built-in-worker.md"
     - "docs/specs/0003-cheap-writer-built-in-worker.md"
-  implemented-by: []
+  implemented-by:
+    - "../tasks/0039-scaffold-cheaper-cli-package-with-bin-entry.md"
+    - "../tasks/0040-implement-cli-argument-parsing.md"
+    - "../tasks/0041-implement-input-reading-from-stdin-or-file.md"
+    - "../tasks/0042-implement-result-and-error-envelope-output.md"
+    - "../tasks/0043-implement-human-readable-text-format-output.md"
+    - "../tasks/0044-add-built-in-worker-json-schemas.md"
+    - "../tasks/0045-add-built-in-worker-definitions.md"
+    - "../tasks/0046-implement-cli-main-orchestration.md"
+    - "../tasks/0047-add-e2e-tests-for-non-execution-cli-paths.md"
+    - "../tasks/0048-add-fake-stream-hook-and-e2e-execution-tests.md"
+    - "../tasks/0049-run-full-build-test-and-lint-verification.md"
+    - "../tasks/0050-write-implementation-record-and-experiment-log.md"
+    - "../tasks/0051-run-document-status-audit.md"
   depends-on:
     - "docs/plans/0002-implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md"
   blocks: []

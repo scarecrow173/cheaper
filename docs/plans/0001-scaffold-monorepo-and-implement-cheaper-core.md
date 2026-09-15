@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0001"
 type: "plan"
-status: "draft"
+status: "approved"
 title: "Scaffold monorepo and implement @cheaper/core"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -18,7 +18,28 @@ relations:
     generated: []
   implements:
     - "docs/specs/0001-cheaper-v1-worker-runtime-cli.md"
-  implemented-by: []
+  implemented-by:
+    - "../tasks/0001-scaffold-pnpm-monorepo-root-configuration.md"
+    - "../tasks/0002-create-empty-cheaper-core-package-skeleton.md"
+    - "../tasks/0003-implement-core-error-model-and-exit-code-table.md"
+    - "../tasks/0004-implement-duration-parser.md"
+    - "../tasks/0005-implement-tool-vocabulary-and-alias-normalization.md"
+    - "../tasks/0006-implement-config-directory-resolution.md"
+    - "../tasks/0007-implement-worker-frontmatter-parser.md"
+    - "../tasks/0008-implement-worker-schema-reference-resolution-and-ajv-validation.md"
+    - "../tasks/0009-implement-worker-definition-validation.md"
+    - "../tasks/0010-implement-worker-resolver-with-origin-precedence.md"
+    - "../tasks/0011-implement-runtime-policy-schemas.md"
+    - "../tasks/0012-implement-runtime-policy-merge.md"
+    - "../tasks/0013-implement-runtime-policy-loading-order.md"
+    - "../tasks/0014-implement-runtime-policy-cli-restriction.md"
+    - "../tasks/0015-implement-capability-intersection-checks.md"
+    - "../tasks/0016-implement-workspace-path-resolution-with-symlink-policy.md"
+    - "../tasks/0017-implement-model-tier-ordering.md"
+    - "../tasks/0018-implement-models-yaml-config-schema-and-merge.md"
+    - "../tasks/0019-implement-model-tier-classification.md"
+    - "../tasks/0020-implement-model-candidate-resolution-and-fallback.md"
+    - "../tasks/0021-export-core-public-api-and-run-full-verification.md"
   depends-on: []
   blocks:
     - "docs/plans/0002-implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md"

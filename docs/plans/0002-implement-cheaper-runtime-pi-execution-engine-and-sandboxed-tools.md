@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0002"
 type: "plan"
-status: "draft"
+status: "approved"
 title: "Implement @cheaper/runtime-pi execution engine and sandboxed tools"
 created: "2026-09-15"
 updated: "2026-09-15"
@@ -18,7 +18,24 @@ relations:
     generated: []
   implements:
     - "docs/specs/0001-cheaper-v1-worker-runtime-cli.md"
-  implemented-by: []
+  implemented-by:
+    - "../tasks/0022-scaffold-runtime-pi-package-with-pi-import-smoke-test.md"
+    - "../tasks/0023-implement-mutation-journal.md"
+    - "../tasks/0024-implement-boundary-checked-tool-operations-with-atomic-writes.md"
+    - "../tasks/0025-implement-sandboxed-directory-walker.md"
+    - "../tasks/0026-implement-sandboxed-grep-tool.md"
+    - "../tasks/0027-implement-sandboxed-find-tool.md"
+    - "../tasks/0028-implement-tool-call-budget-wrapper.md"
+    - "../tasks/0029-implement-tool-registry-mapping-vocabulary-to-pi-tools.md"
+    - "../tasks/0030-implement-cheaperresourceloader-without-discovery.md"
+    - "../tasks/0031-add-scripted-fake-stream-test-fixture.md"
+    - "../tasks/0032-implement-pi-session-creation-with-maxtokens-injection.md"
+    - "../tasks/0033-implement-final-output-extraction-and-schema-validation.md"
+    - "../tasks/0034-implement-output-repair-session.md"
+    - "../tasks/0035-implement-usage-aggregation-from-message-end-events.md"
+    - "../tasks/0036-implement-modelruntime-adapter-to-core-model-shape.md"
+    - "../tasks/0037-implement-runworker-orchestration-with-limits-and-abort-classification.md"
+    - "../tasks/0038-export-runtime-pi-public-api-and-run-full-verification.md"
   depends-on:
     - "docs/plans/0001-scaffold-monorepo-and-implement-cheaper-core.md"
   blocks:
