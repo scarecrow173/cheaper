@@ -117,3 +117,9 @@ Chosen option: "YAML frontmatter + Markdown の宣言的定義", because メタ�
 ## More Information
 
 * 引継ぎ §2.3, §8–§16, §44
+
+## 更新履歴
+
+### 2026-09-15: `cheaper.input.schema` の追加
+
+* ユーザー承認により引継ぎ §12 を拡張し、`cheaper:` 配下に任意項目 `input.schema`（`{file}` / `{inline}` の exactly one）を追加した。ある場合は実行前に入力 JSON を検証し、不一致は `INVALID_INPUT`（exit 2）。frontmatter 厳格性（`cheaper:` 配下は `model`/`input`/`output` のみ）は維持。

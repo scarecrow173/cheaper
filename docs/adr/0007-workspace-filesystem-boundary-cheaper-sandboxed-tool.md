@@ -125,3 +125,11 @@ Chosen option: "(3) cheaper 提供の sandboxed tool 実装", because prompt 制
 * Pi security（no built-in sandbox）: https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/security.md
 * Pi custom tools（defineTool/customTools/TypeBox）: https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/sdk.md
 * 引継ぎ §2.5, §7, §10, §26, §31
+
+## 更新履歴
+
+### 2026-09-15: ハイブリッド方式の確定（実機プローブ結果）
+
+* `read`/`write`/`edit`/`ls` は Pi の tool factory（`createReadTool`/`createWriteTool`/`createEditTool`/`createLsTool`、いずれも package root export）に cheaper の boundary 付き `operations` を注入して再利用する。注入される path は `resolveToCwd` 済みの絶対パスであることを確認。
+* `grep`/`find` は cheaper 自前実装（`defineTool` + TypeBox + sandboxed walker）とする。理由: Pi grep は検索本体が `spawn(ensureTool("rg"))` で `GrepOperations` に search 差し替え点がなく、rg 子プロセスが operations 境界を迂回する。rg 未導入時の自動ダウンロードも発生する。find は `operations.glob` で fd を回避可能だが、grep と共通 walker を持つため自前で統一する。
+* boundary 強制（path canonicalize・workspace 内判定・symlink policy）はいずれの場合も cheaper 側コードが担う、という本 ADR の決定は変更しない。

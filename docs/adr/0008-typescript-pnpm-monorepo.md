@@ -114,3 +114,11 @@ Chosen option: "(2) 3 パッケージ monorepo", because Pi 非依存 core・Pi 
 
 * 引継ぎ §44, §45
 * mise.toml（Node/pnpm バージョン管理）、pnpm `minimum_release_age = 7d`
+
+## 更新履歴
+
+### 2026-09-15: 依存パッケージ承認と Biome 採用
+
+* ユーザー承認済み依存: runtime `@earendil-works/pi-coding-agent@0.85.1`, `@earendil-works/pi-ai@0.85.1`, `typebox`, `ajv`, `yaml`, `diff`。dev `typescript`, `vitest`, `@types/node`, `@biomejs/biome`。`minimum_release_age = 7d` を満たすバージョンを選ぶ。
+* linter/formatter は Biome（`biome.json`）を採用。
+* プローブで pnpm の ignored build scripts（esbuild/@google/genai/protobufjs）により `pnpm add` が exit 1 になることを確認。install 手順で `pnpm approve-builds`/`onlyBuiltDependencies` の扱いが必要（DESIGN-0008）。

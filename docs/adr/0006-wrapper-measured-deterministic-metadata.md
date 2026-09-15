@@ -110,3 +110,10 @@ Chosen option: "(3) wrapper が filesystem snapshot + Pi events から実測す�
 
 * 引継ぎ §2.6, §35, §38, §42
 * Pi usage イベント: https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/sdk.md
+
+## 更新履歴
+
+### 2026-09-15: 実測手段の具体化
+
+* 「wrapper 実測」の実装は mutation journal に確定: write/edit の `operations` 層でファイルごとの書き込み前内容（存在しなければ null）を記録し、終了時に disk 上の最終内容と比較、行差分は `diff` パッケージ `diffLines` で算出する。
+* 全域 snapshot を不要とした理由: cheaper の tool vocabulary に shell が無く、全書き込みが cheaper 提供 operations を通るため、journal が書き込みの全域をカバーする。

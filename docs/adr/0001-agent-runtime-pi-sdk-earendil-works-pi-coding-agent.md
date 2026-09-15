@@ -133,3 +133,13 @@ Chosen option: "(1) Pi SDK `createAgentSession` を in-process で利用する",
 * Full-control example（no discovery）: https://github.com/earendil-works/pi/blob/main/packages/coding-agent/examples/sdk/12-full-control.ts
 * パッケージ: `@earendil-works/pi-coding-agent` 0.85.1（npm、2026-09-05 更新）。rename 経緯は DISC-0001 参照
 * 引継ぎ §2.2
+
+## 更新履歴
+
+### 2026-09-15: 実機プローブ結果に基づく補足
+
+* maxTurns/maxToolCalls の強制方法を具体化: `AgentSession`/`AgentOptions` には maxTurns 相当が存在しないため、登録する全 `ToolDefinition` の `execute` を wrap して tool 実行前に budget 判定し、超過時は `session.abort()`。maxTurns は `turn_end` イベントを数えて同様に abort する。`Agent.beforeToolCall`/`shouldStopAfterTurn` hook は `AgentSession` が extension runner 経由で上書きするため直接代入は使わず、tool wrap + イベント監視の方式を採る。
+* retry は Pi `settings.retry`（`SettingsManager.inMemory({retry:{enabled,maxRetries}})`）に委ね、`auto_retry_start` イベント数を計測する。cheaper 独自 retry は持たない。
+* 実測: `createAgentSession({noTools:"builtin", tools:["<custom>"], customTools})` で組み込み tool が一切登録されず custom tool のみが登録されることを確認（0.85.1）。`noTools:"builtin"` 単独でも customTools は残る。
+* 実測: `session.abort()` 後も `prompt()` は resolve し、`agent_end`/`agent_settled` が発火する。abort 理由の分類は cheaper 側が記録する。
+* `output.maxTokens` は session オプションに存在しないため `session.agent.streamFunction` を wrap して注入する。`streamFunction === streamSimple` の内部チェックは要約系 auth（`_getSummarizationRequestAuth`）のみにあり、`compaction.enabled:false` で無効化する。
