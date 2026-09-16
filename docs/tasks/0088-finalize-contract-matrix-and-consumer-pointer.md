@@ -1,7 +1,7 @@
 ---
 id: "TASK-0088"
 type: "task"
-status: "todo"
+status: "done"
 title: "Finalize contract matrix and consumer pointer"
 created: "2026-09-17"
 updated: "2026-09-17"

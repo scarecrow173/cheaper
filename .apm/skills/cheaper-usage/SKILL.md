@@ -46,6 +46,9 @@ one workspace file so you can measure context cost before reading it.
   Substitute `cheaper` for the actual hook bundle directory name if the
   package was installed under a different name. Everywhere below,
   `cheaper <args>` means either form.
+- The pre-read hook currently functions on Windsurf only. For the
+  per-target contract, see the canonical matrix in DISC-0009
+  (`docs/discovery/0009-cross-agent-hook-distribution-and-contract-matrix.md`).
 
 ## stdin → stdout contract
 

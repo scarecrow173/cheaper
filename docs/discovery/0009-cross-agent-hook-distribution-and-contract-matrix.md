@@ -1,7 +1,7 @@
 ---
 id: "DISC-0009"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "Cross-agent hook distribution and per-agent hook contract matrix"
 created: "2026-09-17"
 updated: "2026-09-17"
@@ -35,7 +35,8 @@ relations:
   verifies:
     - "../designs/0013-apm-skills-and-pre-read-hook.md"
   verified-by: []
-  references: []
+  references:
+    - "https://github.com/openai/codex/issues/20204"
   defers: []
   deferred-by:
     - "./0005-windsurf-cascade-hooks-and-apm-hook-deployment.md"
@@ -177,6 +178,45 @@ config validation の実機確認は open item として残る）。
 | Codex | （read tool は `PreToolUse` を emit しない） | ❌ | upstream gap。現状 intercept 不可 |
 | agent-skills | hook 概念なし | N/A | skills のみの target |
 
+### Final per-target classification（TASK-0087 e2e で確定、TASK-0088 で close）
+
+Evidence: `packages/cli/test/e2e/apm-install-targets.test.ts`（TASK-0087。
+apm 0.28.0 に対する consumer install smoke — bundle layout・generated
+config・`pre_read_code` verbatim 登録・bundled CLI 実行を assert）と、
+windsurf については既存 `packages/cli/test/e2e/apm-install.test.ts`
+（hook が large file を exit 2 + delegation guidance で実際に block
+する実動作確認済み）。本表が per-target contract の **canonical
+matrix** であり、consumer 向け文書からは参照のみを張る。matrix 内容を
+README・skill・spec 等へ複写しない（DRY — SPEC-0013 / DESIGN-0018 §4）。
+
+| target | final classification | evidence |
+|---|---|---|
+| windsurf | **functional** | `apm-install.test.ts` — hook block 実動作確認済み（exit 2 + delegation guidance） |
+| claude | **deploys-but-noop** | `apm-install-targets.test.ts` — `pre_read_code` を verbatim 登録。native event は `PreToolUse` + matcher `Read` であり `pre_read_code` は発火しない |
+| cursor | **deploys-but-noop** | 同上 — `pre_read_code` verbatim 登録。native event は `beforeReadFile`（`failClosed` 未指定時は fail-open） |
+| copilot | **deploys-but-noop** | 同上 — `pre_read_code` verbatim 登録。native event は `preToolUse` + `toolName == "view"`。command hook は fail-closed（非 0 exit がすべて deny）で将来 adapter の不変条件 |
+| codex | **deploys-but-noop かつ unsupported** | 同上 — file-read tool が `PreToolUse` を emit しない upstream gap（openai/codex#20204）。adapter 対象外 |
+| agent-skills | **N/A（skills-only）** | 同上 — 4 skill の `SKILL.md` のみ deploy され、hook bundle / hook config の不存在を assert |
+
+#### e2e run で新たに観測された deploy facts（apm 0.28.0）
+
+- **copilot**: `apm install --target copilot` は
+  `.github/hooks/scripts/<dep>/` への deploy からすべての `.json`
+  file を除外する。`cli/version.json`、`cli/package.json`、
+  `cli/workers/schemas/*.json` が欠落するため、bundled
+  `cheaper.mjs --version` は "failed to resolve package version"
+  （exit 70）で失敗する（`count-tokens` は動作する）。将来の
+  copilot adapter は version 解決が copilot deploy では壊れている
+  点を考慮しなければならない
+- **codex / cursor**: apm は target の `hooks.json`（`hooks` 直下に
+  event を nest する shape）に加え、同じ `pre_read_code` 登録の
+  top-level event key shape を持つ `apm-hooks.json` を追加生成する
+  （`.codex/apm-hooks.json`、`.cursor/apm-hooks.json`。windsurf で
+  も `.windsurf/apm-hooks.json` が生成される）
+- **claude**: `.claude/apm-hooks.json` と `.claude/settings.json`
+  の双方を deploy する（nested `hooks → event → matcher → hooks`
+  shape、`${CLAUDE_PROJECT_DIR}` 補間はそのまま保持）
+
 ### Copilot の fail-closed 意味論反転
 
 現行 hook の contract は fail-open（測定不能・想定外入力では exit 0 で
@@ -227,10 +267,12 @@ generic adapter は「意図的 block 以外で絶対に非 0 exit しない」
 
 ## Promotion Candidates
 
-- [ ] spec-doc needed: cross-agent hook adapter の contract
+- [x] spec-doc needed: cross-agent hook adapter の contract
   （event 変換表・stdin/stdout mapping・fail 意味論の扱い・Codex 除外根拠）
-- [ ] adr-doc needed: non-windsurf target への hook 提供方針
+  → SPEC-0013（`docs/specs/0013-cross-agent-distribution-verification.md`）
+- [x] adr-doc needed: non-windsurf target への hook 提供方針
   （adapter 実装 vs skill のみ vs target 限定 deploy）
+  → ADR-0016（`docs/adr/0016-keep-verbatim-pre-read-code-as-noop-on-non-windsurf-targets.md`）
 
 ## Sources and Relations
 
