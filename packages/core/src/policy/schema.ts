@@ -7,7 +7,7 @@ import { TOOL_ALIASES, TOOL_NAMES, type ToolName } from "../tools/vocabulary.js"
 export interface RuntimePolicy {
   execution: { timeoutMs: number; maxTurns: number; maxToolCalls: number };
   tools: { allow: ToolName[] };
-  filesystem: { symlinks: "deny" | "within-workspace" };
+  filesystem: { symlinks: "deny" | "within-workspace"; denyPaths: string[] };
   model: { maxTier: Tier; tierFallback: "none" | "higher" };
   output: { maxTokens: number; repairAttempts: number };
   retry: { transientAttempts: number };
@@ -31,6 +31,7 @@ const TOOLS_PROPERTIES = {
 
 const FILESYSTEM_PROPERTIES = {
   symlinks: { type: "string", enum: ["deny", "within-workspace"] },
+  denyPaths: { type: "array", items: { type: "string" } },
 };
 
 const MODEL_PROPERTIES = {
@@ -142,7 +143,10 @@ export function normalizePolicy(raw: Record<string, unknown>): RuntimePolicy {
       maxToolCalls: execution.maxToolCalls as number,
     },
     tools: { allow: normalizePolicyTools(tools.allow) },
-    filesystem: { symlinks: filesystem.symlinks as "deny" | "within-workspace" },
+    filesystem: {
+      symlinks: filesystem.symlinks as "deny" | "within-workspace",
+      denyPaths: Array.isArray(filesystem.denyPaths) ? (filesystem.denyPaths as string[]) : [],
+    },
     model: {
       maxTier: model.maxTier as Tier,
       tierFallback: model.tierFallback as "none" | "higher",

@@ -70,6 +70,23 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     expect(await readFile(path.join(ws, "out.txt"), "utf8")).toBe("hello\n");
   });
 
+  it("code-write cannot write outside targets or read denied files", async () => {
+    await writeFile(path.join(ws, ".env"), "SECRET=1\n", "utf8");
+    const r = await runCheaper(["code-write", "--cwd", ws], {
+      env: { ...env, CHEAPER_TEST_FAKE_STREAM: fixture("scope-deny-fake.js") },
+      input: '{"task":"x","targets":[{"path":"out.txt","intent":"create"}]}',
+    });
+    expect(r.code).toBe(0);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect(e.ok).toBe(true);
+    const meta = e.meta as EnvelopeMeta & { rejectedToolCalls: number | null };
+    // scope 外 write + denied read の 2 件が tool error として拒否される
+    expect(meta.rejectedToolCalls).toBe(2);
+    expect(meta.changes?.totals.files ?? 0).toBe(0);
+    // 実 FS にも書き込まれていない
+    await expect(readFile(path.join(ws, "evil.txt"), "utf8")).rejects.toThrow();
+  });
+
   it("doc-write writes a document and returns unresolved items", async () => {
     const r = await runCheaper(["doc-write", "--cwd", ws], {
       env: { ...env, CHEAPER_TEST_FAKE_STREAM: fixture("doc-write-fake.js") },

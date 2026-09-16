@@ -32,7 +32,7 @@ Input (`code-writer` schema):
 | Field | Type | Meaning |
 |---|---|---|
 | `task` (required) | string ≤6000 | Precise description of the mechanical change |
-| `targets` (required) | array 1–20 | `{path, intent: create\|modify\|create-or-modify, notes?}` — the files the worker may touch |
+| `targets` (required) | array 1–20 | `{path, intent: create\|modify\|create-or-modify, notes?}` — the files the worker may touch. **Enforced by the runtime**: writes/edits outside `targets` fail as tool errors (`writeScope`) |
 | `references` | array ≤30 | Paths to read for conventions/examples |
 | `constraints` | array ≤20 | Hard rules (e.g. "no new dependencies") |
 

@@ -12,7 +12,7 @@ function completePolicy(): Record<string, unknown> {
     version: 1,
     execution: { timeout: "120s", maxTurns: 8, maxToolCalls: 64 },
     tools: { allow: ["read", "grep", "find", "ls", "write", "edit"] },
-    filesystem: { symlinks: "within-workspace" },
+    filesystem: { symlinks: "within-workspace", denyPaths: [] },
     model: { maxTier: "medium", tierFallback: "none" },
     output: { maxTokens: 2000, repairAttempts: 1 },
     retry: { transientAttempts: 1 },

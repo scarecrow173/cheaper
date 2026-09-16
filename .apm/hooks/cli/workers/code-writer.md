@@ -10,6 +10,7 @@ tools:
   - edit
   - count_tokens
 cheaper:
+  writeScope: targets
   model:
     tier: low
   input:

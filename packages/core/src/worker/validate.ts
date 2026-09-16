@@ -21,6 +21,12 @@ export interface WorkerDefinition {
     model: { tier: Tier };
     input?: { schema: SchemaRef };
     output: { schema: SchemaRef };
+    /**
+     * mutation を制限する input field 名（SPEC-0010）。
+     * 指定された field は string[] または `{path}` object[] で、
+     * その path 群以外への write/edit/mkdir は tool error になる。
+     */
+    writeScope?: string;
   };
   instructions: string;
   sourcePath: string;
@@ -30,7 +36,7 @@ export interface WorkerDefinition {
 }
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-const CHEAPER_KEYS = new Set(["model", "input", "output"]);
+const CHEAPER_KEYS = new Set(["model", "input", "output", "writeScope"]);
 const MODEL_KEYS = new Set(["tier"]);
 const IO_KEYS = new Set(["schema"]);
 
@@ -114,6 +120,11 @@ export async function validateWorkerDefinition(
     ? compileSchema(await loadSchema(inputRef, baseDir, "input"), "input")
     : undefined;
 
+  const writeScope = cheaper.writeScope;
+  if (writeScope !== undefined && (typeof writeScope !== "string" || writeScope.length === 0)) {
+    throw invalid(sourcePath, "writeScope-invalid");
+  }
+
   const def: WorkerDefinition = {
     name,
     description: fm.description,
@@ -129,6 +140,7 @@ export async function validateWorkerDefinition(
   };
   if (inputRef !== undefined) def.cheaper.input = { schema: inputRef };
   if (inputSchema !== undefined) def.inputSchema = inputSchema;
+  if (writeScope !== undefined) def.cheaper.writeScope = writeScope;
   return def;
 }
 

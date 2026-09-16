@@ -1,9 +1,13 @@
+import path from "node:path";
 import {
   CheaperError,
   checkCapabilities,
+  createPathDenylist,
   type ErrorCode,
   type ModelConfig,
   type RuntimePolicy,
+  resolveWorkspacePath,
+  type SymlinkPolicy,
   type Tier,
   type WorkerDefinition,
 } from "@cheaper/core";
@@ -100,6 +104,44 @@ function buildUserPrompt(input: unknown): string {
   return `Task input (JSON):\n${JSON.stringify(input, null, 2)}`;
 }
 
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+/**
+ * `cheaper.writeScope` で宣言された input field から write 許可 path 集合を
+ * 抽出し workspace 相対 display path に正規化する（DESIGN-0015）。
+ * field 不在・非 array・item 不正は fail closed で INVALID_INPUT。
+ */
+async function extractWriteScope(
+  worker: WorkerDefinition,
+  input: unknown,
+  root: string,
+  symlinkPolicy: SymlinkPolicy,
+): Promise<Set<string> | undefined> {
+  const field = worker.cheaper.writeScope;
+  if (field === undefined) return undefined;
+  const value = isPlainObject(input) ? input[field] : undefined;
+  const invalid = (reason: string) =>
+    new CheaperError("INVALID_INPUT", `writeScope field invalid: ${reason}`, {
+      details: { field, reason },
+    });
+  if (!Array.isArray(value)) throw invalid("missing-or-not-array");
+  const allowed = new Set<string>();
+  for (const item of value) {
+    const p =
+      typeof item === "string"
+        ? item
+        : isPlainObject(item) && typeof item.path === "string"
+          ? item.path
+          : undefined;
+    if (p === undefined) throw invalid("item-lacks-path");
+    const resolved = await resolveWorkspacePath(root, path.join(root, p), symlinkPolicy);
+    allowed.add(resolved.display);
+  }
+  return allowed;
+}
+
 /**
  * Worker を Pi session で 1 回実行する（DESIGN-0004）。
  * 制限（timeout/maxTurns/maxToolCalls/外部 signal）は cheaper 側で記録した
@@ -151,6 +193,13 @@ export async function runWorker(
       names: effectiveTools,
       maxToolCalls: policy.execution.maxToolCalls,
       onLimit: () => requestAbort("maxToolCalls"),
+      denylist: createPathDenylist(policy.filesystem.denyPaths),
+      writeScope: await extractWriteScope(
+        worker,
+        deps.input,
+        deps.root,
+        policy.filesystem.symlinks,
+      ),
     });
 
     const { session } = await createWorkerSession({

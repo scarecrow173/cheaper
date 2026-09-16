@@ -55,7 +55,7 @@ function policy(overrides: Partial<RuntimePolicy> = {}): RuntimePolicy {
   return {
     execution: { timeoutMs: 10_000, maxTurns: 10, maxToolCalls: 20 },
     tools: { allow: ["read", "grep", "find", "ls", "write", "edit"] },
-    filesystem: { symlinks: "deny" },
+    filesystem: { symlinks: "deny", denyPaths: [] },
     model: { maxTier: "high", tierFallback: "none" },
     output: { maxTokens: 1024, repairAttempts: 1 },
     retry: { transientAttempts: 0 },

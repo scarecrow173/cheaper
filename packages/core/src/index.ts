@@ -16,4 +16,5 @@ export * from "./worker/parse.js";
 export * from "./worker/resolve.js";
 export * from "./worker/schema.js";
 export * from "./worker/validate.js";
+export * from "./workspace/deny-paths.js";
 export * from "./workspace/paths.js";

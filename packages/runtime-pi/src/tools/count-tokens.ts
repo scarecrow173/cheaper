@@ -1,12 +1,18 @@
-import { countFileTokens, type SymlinkPolicy } from "@cheaper/core";
+import {
+  countFileTokens,
+  type PathDenylist,
+  resolveWorkspacePath,
+  type SymlinkPolicy,
+} from "@cheaper/core";
 import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { rethrowAsDenied } from "./walker.js";
+import { POLICY_DENIED_MESSAGE, rethrowAsDenied } from "./walker.js";
 
 export interface CountTokensToolOptions {
   /** canonical 化済み workspace root。 */
   root: string;
   symlinkPolicy: SymlinkPolicy;
+  denylist?: PathDenylist | undefined;
 }
 
 const countTokensSchema = Type.Object({
@@ -27,6 +33,12 @@ export function createCountTokensTool(opts: CountTokensToolOptions) {
     parameters: countTokensSchema,
     async execute(_toolCallId, params) {
       try {
+        if (opts.denylist !== undefined) {
+          const resolved = await resolveWorkspacePath(opts.root, params.path, opts.symlinkPolicy);
+          if (opts.denylist.isDenied(resolved.display)) {
+            throw new Error(POLICY_DENIED_MESSAGE);
+          }
+        }
         const result = await countFileTokens({
           root: opts.root,
           path: params.path,

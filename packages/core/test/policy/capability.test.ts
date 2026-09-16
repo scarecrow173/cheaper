@@ -10,7 +10,7 @@ function policy(overrides?: { allow?: ToolName[]; maxTier?: Tier }): RuntimePoli
   return {
     execution: { timeoutMs: 120_000, maxTurns: 8, maxToolCalls: 64 },
     tools: { allow: overrides?.allow ?? ["read", "grep", "find", "ls", "write", "edit"] },
-    filesystem: { symlinks: "within-workspace" },
+    filesystem: { symlinks: "within-workspace", denyPaths: [] },
     model: { maxTier: overrides?.maxTier ?? "medium", tierFallback: "none" },
     output: { maxTokens: 2000, repairAttempts: 1 },
     retry: { transientAttempts: 1 },
