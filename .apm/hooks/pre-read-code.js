@@ -11,6 +11,7 @@
 
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
+const path = require("node:path");
 
 const DEFAULT_THRESHOLD = 8192;
 
@@ -53,8 +54,17 @@ function main() {
   if (typeof filePath !== "string" || filePath === "") {
     process.exit(0);
   }
+  // Windsurf passes an absolute path; bulk-reader's input schema requires a
+  // workspace-relative path. Normalize against process.cwd() (the workspace
+  // root) and fail open on anything outside it.
+  const resolved = path.resolve(filePath);
+  const rel = path.relative(process.cwd(), resolved);
+  if (rel === "" || rel.startsWith("..") || path.isAbsolute(rel)) {
+    process.exit(0);
+  }
+  const relPosix = rel.split(path.sep).join("/");
   try {
-    if (!fs.statSync(filePath).isFile()) {
+    if (!fs.statSync(resolved).isFile()) {
       process.exit(0);
     }
   } catch {
@@ -64,7 +74,7 @@ function main() {
   const [cmd, prefix] = cheaperCommand();
   const run = spawnSync(
     cmd,
-    [...prefix, "count-tokens", filePath, "--cwd", process.cwd()],
+    [...prefix, "count-tokens", resolved, "--cwd", process.cwd()],
     { encoding: "utf8", timeout: 30_000 },
   );
   if (run.error || run.status !== 0) {
@@ -85,11 +95,13 @@ function main() {
   if (tokens <= limit) {
     process.exit(0);
   }
+  // Non-executable guidance only: never emit a shell command with the file
+  // path interpolated (quoting would break on adversarial names). The skill
+  // owns JSON/stdin assembly; we hand over the workspace-relative path.
   process.stderr.write(
-    `cheaper: '${envelope.result.path || filePath}' has ${tokens} tokens (threshold ${limit}). ` +
-      "Do not read it directly. Delegate to the cheaper bulk-reader instead " +
-      "(see the cheaper-bulk-read skill):\n" +
-      `echo '{"task":"<what you need from the file>","paths":["${filePath}"]}' | cheaper bulk-read\n`,
+    `cheaper: '${relPosix}' has ${tokens} tokens (threshold ${limit}).\n` +
+      "Do not read it directly. Delegate this file through the cheaper-bulk-read skill.\n" +
+      `workspace-relative path: ${relPosix}\n`,
   );
   process.exit(2);
 }

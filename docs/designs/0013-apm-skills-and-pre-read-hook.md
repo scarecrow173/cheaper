@@ -101,7 +101,10 @@ zero-dep CommonJS。処理:
 
 1. stdin を全部読み JSON.parse。失敗 → exit 0
 2. `agent_action_name !== "pre_read_code"` → exit 0
-3. `tool_info.file_path` を `fs.statSync`。非 file / 非存在 → exit 0
+3. `tool_info.file_path`（Windsurf は absolute path）を `path.resolve` →
+   `path.relative(cwd)` で workspace-relative POSIX path へ正規化。
+   workspace 外（`..` / absolute 残り）は exit 0（fail-open）。
+   `fs.statSync` で非 file / 非存在 → exit 0
 4. `cheaper count-tokens <abs path> --cwd <process.cwd()>` を
    `spawnSync` で実行（hook の cwd は workspace root が default）
    - CLI 解決: argv[2]（hooks.json が渡す bundled path、DESIGN-0014）→
@@ -116,10 +119,15 @@ default `8192`（ADR-0012 で DISC-0007 benchmark に基づき確定）。
 
 block message（stderr、agent が読む）:
 
+block message は非実行型 guidance のみ（file path を shell command へ
+raw interpolation しない — quoting を含む filename で command が壊れる
+ため）。JSON/stdin の組み立ては `cheaper-bulk-read` / `cheaper-usage`
+skill 側の責務:
+
 ```text
-cheaper: '<path>' has <N> tokens (threshold <T>). Do not read it directly.
-Delegate with `cheaper bulk-read` (see the cheaper-bulk-read skill):
-echo '{"task":"<goal>","paths":["<path>"]}' | cheaper bulk-read
+cheaper: '<relative path>' has <N> tokens (threshold <T>).
+Do not read it directly. Delegate this file through the cheaper-bulk-read skill.
+workspace-relative path: <relative path>
 ```
 
 ## Data and Control Flow

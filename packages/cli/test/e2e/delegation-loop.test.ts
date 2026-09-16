@@ -67,6 +67,16 @@ describe("delegation loop e2e: pre_read_code block -> bulk-read via bundled CLI"
     expect(hook.stderr).toContain("bulk-read");
     // file 本文は block 時点で parent context に入っていない
 
+    // Hook の guidance から workspace-relative path を取り出す。
+    // （absolute path 入力 → relative 出力の契約をここで検証する）
+    const relMatch = hook.stderr.match(/^workspace-relative path: (.+)$/m);
+    expect(relMatch).not.toBeNull();
+    const relPath = relMatch?.[1].trim() as string;
+    expect(relPath).toBe("big.txt");
+    // guidance は実行可能な shell command を含まない
+    expect(hook.stderr).not.toContain("echo ");
+    expect(hook.stderr).not.toContain("cheaper bulk-read\n");
+
     // 2. parent が guidance に従い bundled CLI で bulk-read を呼ぶ
     mkdirSync(path.join(consumer, ".cheaper"), { recursive: true });
     writeFileSync(
@@ -104,7 +114,7 @@ describe("delegation loop e2e: pre_read_code block -> bulk-read via bundled CLI"
         NODE_ENV: "test",
         CHEAPER_TEST_FAKE_STREAM: fixture,
       },
-      input: JSON.stringify({ task: "summarize big.txt", paths: ["big.txt"] }),
+      input: JSON.stringify({ task: "summarize big.txt", paths: [relPath] }),
       encoding: "utf8",
     });
 

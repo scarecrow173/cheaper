@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { cliRoot, makeIsolatedEnv } from "./helpers.js";
@@ -63,6 +63,37 @@ describe("pre_read_code hook (pre-read-code.js)", () => {
     expect(r.status).toBe(2);
     expect(r.stderr).toContain("tokens");
     expect(r.stderr).toContain("bulk-read");
+  });
+
+  it("emits a workspace-relative path and no shell command for absolute-path input", async () => {
+    await mkdir(path.join(ws, "sub"), { recursive: true });
+    await writeFile(
+      path.join(ws, "sub", "big.txt"),
+      "lorem ipsum dolor sit amet ".repeat(4000),
+      "utf8",
+    );
+    // Windsurf shape: tool_info.file_path は absolute path
+    const r = runHook(preRead(path.join(ws, "sub", "big.txt")), { cwd: ws, env });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain("workspace-relative path: sub/big.txt");
+    // guidance に実行可能な shell command / raw path interpolation が無いこと
+    expect(r.stderr).not.toContain("echo ");
+    expect(r.stderr).not.toContain(path.join(ws, "sub", "big.txt"));
+    expect(r.stderr).not.toContain("$");
+  });
+
+  it("does not break on filenames containing quotes", async () => {
+    const name = "it's a file.txt";
+    await writeFile(path.join(ws, name), "lorem ipsum dolor sit amet ".repeat(4000), "utf8");
+    const r = runHook(preRead(path.join(ws, name)), { cwd: ws, env });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain(`workspace-relative path: ${name}`);
+  });
+
+  it("fails open for paths outside the workspace", async () => {
+    const outside = path.join(dir, "outside.txt");
+    await writeFile(outside, "lorem ipsum dolor sit amet ".repeat(4000), "utf8");
+    expect(runHook(preRead(outside), { cwd: ws, env }).status).toBe(0);
   });
 
   it("allows a small file with exit 0", async () => {

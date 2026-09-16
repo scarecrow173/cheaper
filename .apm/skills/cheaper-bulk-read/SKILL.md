@@ -11,7 +11,9 @@ Use `bulk-read` instead of reading files directly when:
 
 - `cheaper count-tokens <path>` reports a file above the read threshold —
   loading it would burn your context on mostly-irrelevant content.
-- A `pre_read_code` hook blocked your read and told you to delegate.
+- A `pre_read_code` hook blocked your read and told you to delegate —
+  take the `workspace-relative path:` value from its output verbatim and
+  put it in `paths` (the schema requires workspace-relative paths).
 - You need findings across many files (call graph, feature location,
   impact analysis) where raw content is not what you need.
 
