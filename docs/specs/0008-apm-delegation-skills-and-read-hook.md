@@ -1,10 +1,10 @@
 ---
 id: "SPEC-0008"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "APM delegation skills and pre-read delegation hook"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

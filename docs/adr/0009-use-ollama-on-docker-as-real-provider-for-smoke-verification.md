@@ -1,10 +1,10 @@
 ---
 id: "ADR-0009"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "実 provider smoke 検証に Ollama on Docker を使う"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

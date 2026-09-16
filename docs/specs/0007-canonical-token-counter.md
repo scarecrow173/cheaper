@@ -1,10 +1,10 @@
 ---
 id: "SPEC-0007"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Canonical Token Counter, count_tokens tool, and count-tokens CLI"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

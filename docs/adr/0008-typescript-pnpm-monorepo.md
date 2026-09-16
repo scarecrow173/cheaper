@@ -1,10 +1,10 @@
 ---
 id: "ADR-0008"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "TypeScript + pnpm monorepo 構成"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

@@ -1,10 +1,10 @@
 ---
 id: "SPEC-0002"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "bulk-reader built-in Worker"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

@@ -2,9 +2,10 @@
 id: "PLAN-0010"
 type: "plan"
 status: "completed"
+test-spec-skip: "Verified by package unit/e2e test suites and CI; no dedicated test-spec doc authored."
 title: "Write-scope enforcement and privacy deny list"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -29,7 +30,8 @@ relations:
   related: []
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "../designs/0015-write-scope-and-privacy-deny.md"
   derived-by: []
   verifies: []
   verified-by: []

@@ -1,10 +1,10 @@
 ---
 id: "SPEC-0006"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "code-writer and doc-writer built-in Workers"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

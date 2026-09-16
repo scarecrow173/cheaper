@@ -1,10 +1,10 @@
 ---
 id: "ADR-0005"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Model tier 抽象と Model Resolver"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

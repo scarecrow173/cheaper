@@ -1,10 +1,10 @@
 ---
 id: "SPEC-0005"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Repair and abort hardening, telemetry consistency, and test hermeticity"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

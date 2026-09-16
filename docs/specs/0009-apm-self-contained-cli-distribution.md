@@ -1,10 +1,10 @@
 ---
 id: "SPEC-0009"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Self-contained cheaper CLI distribution inside the APM hook bundle"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

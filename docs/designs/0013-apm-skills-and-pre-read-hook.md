@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "APM skills and pre_read_code delegation hook"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -28,7 +28,8 @@ relations:
     - "../discovery/0005-windsurf-cascade-hooks-and-apm-hook-deployment.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "../adr/0012-default-large-read-threshold.md"
   derived-by: []
   verifies: []
   verified-by: []

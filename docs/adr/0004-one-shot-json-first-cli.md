@@ -1,10 +1,10 @@
 ---
 id: "ADR-0004"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "one-shot JSON-first CLI プロセスモデル"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:
