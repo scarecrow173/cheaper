@@ -59,7 +59,9 @@ function main() {
   // root) and fail open on anything outside it.
   const resolved = path.resolve(filePath);
   const rel = path.relative(process.cwd(), resolved);
-  if (rel === "" || rel.startsWith("..") || path.isAbsolute(rel)) {
+  // ".." alone or a "../" prefix means outside; a name merely starting with
+  // ".." (e.g. "..foo.ts") is still inside the workspace.
+  if (rel === "" || rel === ".." || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) {
     process.exit(0);
   }
   const relPosix = rel.split(path.sep).join("/");

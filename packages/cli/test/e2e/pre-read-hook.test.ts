@@ -90,6 +90,14 @@ describe("pre_read_code hook (pre-read-code.js)", () => {
     expect(r.stderr).toContain(`workspace-relative path: ${name}`);
   });
 
+  it("treats filenames starting with '..' as inside the workspace", async () => {
+    // "..foo.txt" は `..` + path.sep ではないので outside 扱いしてはいけない
+    await writeFile(path.join(ws, "..foo.txt"), "lorem ipsum dolor sit amet ".repeat(4000), "utf8");
+    const r = runHook(preRead(path.join(ws, "..foo.txt")), { cwd: ws, env });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain("workspace-relative path: ..foo.txt");
+  });
+
   it("fails open for paths outside the workspace", async () => {
     const outside = path.join(dir, "outside.txt");
     await writeFile(outside, "lorem ipsum dolor sit amet ".repeat(4000), "utf8");
