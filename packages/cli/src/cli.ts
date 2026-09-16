@@ -91,14 +91,19 @@ function defaultBuiltinDir(): string {
 
 /**
  * `CHEAPER_COUNT_MAX_BYTES` の解釈（DESIGN-0017）。
- * 正の整数のみ有効、不正値・未設定は core の default に任せるため
+ * 正の整数のみ有効: trim 後が 10 進数字列のみで構成され、
+ * `Number.isSafeInteger` かつ `n > 0` を満たす値だけを受け付ける。
+ * `parseInt` は使わない（`16MB` → 16、`1.5` → 1 のような部分 parse を
+ * 許容しないため）。不正値・未設定は core の default に任せるため
  * `undefined` を返す。
  */
 function countMaxBytes(env: NodeJS.ProcessEnv): number | undefined {
   const raw = env.CHEAPER_COUNT_MAX_BYTES;
   if (raw === undefined) return undefined;
-  const n = Number.parseInt(raw, 10);
-  return Number.isInteger(n) && n > 0 ? n : undefined;
+  const trimmed = raw.trim();
+  if (!/^\d+$/.test(trimmed)) return undefined;
+  const n = Number(trimmed);
+  return Number.isSafeInteger(n) && n > 0 ? n : undefined;
 }
 
 function invalidRequest(message: string, details?: Record<string, unknown>): CheaperError {

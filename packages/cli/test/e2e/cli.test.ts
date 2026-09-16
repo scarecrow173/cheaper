@@ -148,13 +148,29 @@ describe("cheaper count-tokens e2e", () => {
     expect(err.details).toMatchObject({ path: "big.bin", bytes: 64, maxBytes: 16 });
   });
 
-  it("falls back to the default cap on an invalid CHEAPER_COUNT_MAX_BYTES", async () => {
-    await writeFile(path.join(ws, "target.txt"), "hello world\n", "utf8");
-    const r = await runCheaper(["count-tokens", "target.txt", "--cwd", ws], {
-      env: { ...env, CHEAPER_COUNT_MAX_BYTES: "not-a-number" },
-    });
-    expect(r.code).toBe(0);
-    const e = expectEnvelopeOnly(r.stdout);
-    expect(e.ok).toBe(true);
-  });
+  // 64 bytes file: 緩い parse（parseInt）で 16/1 に潰れる値が旧実装では
+  // cap を踏んで FILE_TOO_LARGE になっていたはず、という区別が付く大きさ。
+  it.each([
+    "not-a-number",
+    "16MB", // 数字 prefix の部分 parse を許容しない
+    "1.5", // 整数でない
+    "0", // 正でない
+    "-1", // 負
+    "   ", // 空白のみ
+    "0x10", // 10 進数字列でない
+    "9007199254740993", // Number.MAX_SAFE_INTEGER 超過
+  ])(
+    "falls back to the default cap on an invalid CHEAPER_COUNT_MAX_BYTES (%s)",
+    async (value) => {
+      await writeFile(path.join(ws, "target.txt"), Buffer.alloc(64, 0x61));
+      const r = await runCheaper(["count-tokens", "target.txt", "--cwd", ws], {
+        env: { ...env, CHEAPER_COUNT_MAX_BYTES: value },
+      });
+      expect(r.code).toBe(0);
+      const e = expectEnvelopeOnly(r.stdout);
+      expect(e.ok).toBe(true);
+      const result = e.result as { bytes: number };
+      expect(result.bytes).toBe(64);
+    },
+  );
 });
