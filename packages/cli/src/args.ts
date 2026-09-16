@@ -22,7 +22,8 @@ const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
 const ALIAS_WORKERS: Record<string, string> = {
   "bulk-read": "bulk-reader",
-  "cheap-write": "cheap-writer",
+  "code-write": "code-writer",
+  "doc-write": "doc-writer",
 };
 
 function invalidRequest(message: string, details?: Record<string, unknown>): CheaperError {
@@ -55,7 +56,7 @@ function parseArgsSafe(argv: readonly string[]) {
 
 /**
  * `util.parseArgs` ベースの CLI 引数解析（DESIGN-0005）。
- * commands: `run <worker>` / `bulk-read` / `cheap-write`（run のエイリアス）。
+ * commands: `run <worker>` / `bulk-read` / `code-write` / `doc-write`（run のエイリアス）。
  * path 風 worker name は args 層で INVALID_WORKER_NAME に分類する。
  */
 export function parseCliArgs(argv: readonly string[]): ParsedCli {
@@ -73,7 +74,7 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
 
   const command = positionals[0];
   if (command === undefined) {
-    throw invalidRequest("command required: run | bulk-read | cheap-write");
+    throw invalidRequest("command required: run | bulk-read | code-write | doc-write");
   }
 
   const workerFile = values["worker-file"];

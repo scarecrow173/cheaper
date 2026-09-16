@@ -17,15 +17,23 @@ describe("parseCliArgs", () => {
     expect(r).toMatchObject({ kind: "run", workerName: "bulk-reader", format: "json" });
   });
 
-  it("maps bulk-read / cheap-write aliases to fixed worker names", () => {
+  it("maps bulk-read / code-write / doc-write aliases to fixed worker names", () => {
     expect(parseCliArgs(["bulk-read"])).toMatchObject({
       kind: "run",
       workerName: "bulk-reader",
     });
-    expect(parseCliArgs(["cheap-write"])).toMatchObject({
+    expect(parseCliArgs(["code-write"])).toMatchObject({
       kind: "run",
-      workerName: "cheap-writer",
+      workerName: "code-writer",
     });
+    expect(parseCliArgs(["doc-write"])).toMatchObject({
+      kind: "run",
+      workerName: "doc-writer",
+    });
+  });
+
+  it("rejects the removed cheap-write command", () => {
+    expect(codeOf(() => parseCliArgs(["cheap-write"]))).toBe("INVALID_REQUEST");
   });
 
   it("accepts --worker-file on run without a worker name", () => {

@@ -23,7 +23,7 @@ echo '{"task": "src/ のエントリポイントを特定して", "paths": ["src
   | node packages/cli/bin/cheaper.js bulk-read
 ```
 
-- `bulk-read` / `cheap-write` は built-in worker（`run <worker>` または `--worker-file` で任意 worker も可）
+- `bulk-read` / `code-write` / `doc-write` は built-in worker（`run <worker>` または `--worker-file` で任意 worker も可）
 - stdin に worker の input schema に従う JSON を渡すと、stdout に envelope 1 行（`ok`/`result`/`meta` または `error`）が返る
 - provider / model の設定方法は [docs/guides/providers.md](docs/guides/providers.md) を参照
 

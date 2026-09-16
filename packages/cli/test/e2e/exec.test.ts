@@ -55,9 +55,9 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     expect(r.stderr).toContain("model: cheaper-fake/fake-model (tier low)");
   });
 
-  it("cheap-write measures meta.changes from the journal, not the model", async () => {
-    const r = await runCheaper(["cheap-write", "--cwd", ws], {
-      env: { ...env, CHEAPER_TEST_FAKE_STREAM: fixture("cheap-write-fake.js") },
+  it("code-write measures meta.changes from the journal, not the model", async () => {
+    const r = await runCheaper(["code-write", "--cwd", ws], {
+      env: { ...env, CHEAPER_TEST_FAKE_STREAM: fixture("code-write-fake.js") },
       input: '{"task":"create out.txt","targets":[{"path":"out.txt","intent":"create"}]}',
     });
     expect(r.code).toBe(0);
@@ -68,6 +68,22 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     expect(meta.changes?.files.map((f) => f.path)).toContain("out.txt");
     // 実際に workspace へ書き込まれたこと
     expect(await readFile(path.join(ws, "out.txt"), "utf8")).toBe("hello\n");
+  });
+
+  it("doc-write writes a document and returns unresolved items", async () => {
+    const r = await runCheaper(["doc-write", "--cwd", ws], {
+      env: { ...env, CHEAPER_TEST_FAKE_STREAM: fixture("doc-write-fake.js") },
+      input:
+        '{"task":"write a guide","documentType":"guide","targets":[{"path":"docs/guide.md","intent":"create"}],"decisions":["d1"]}',
+    });
+    expect(r.code).toBe(0);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect(e.ok).toBe(true);
+    const result = e.result as Record<string, unknown>;
+    expect(result.unresolved).toEqual(["release date not provided"]);
+    const meta = e.meta as EnvelopeMeta;
+    expect(meta.changes?.files.map((f) => f.path)).toContain("docs/guide.md");
+    expect(await readFile(path.join(ws, "docs/guide.md"), "utf8")).toContain("# Guide");
   });
 
   it("accepts the scripted-response-array fixture form", async () => {

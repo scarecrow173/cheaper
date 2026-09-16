@@ -73,8 +73,8 @@ describe("errorEnvelope", () => {
         },
       },
     });
-    const env = errorEnvelope(err, { worker: "cheap-writer", durationMs: 5 });
-    expect(env.worker).toBe("cheap-writer");
+    const env = errorEnvelope(err, { worker: "code-writer", durationMs: 5 });
+    expect(env.worker).toBe("code-writer");
     expect(env.error.exitCode).toBe(9);
     expect(env.error.cause).toEqual({ code: "TIMEOUT", message: "t" });
     expect(env.meta.changes).toEqual({

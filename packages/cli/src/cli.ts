@@ -55,7 +55,8 @@ const HELP = `Usage: cheaper <command> [options]
 Commands:
   run <worker>           Run a named worker (or --worker-file <path>)
   bulk-read              Alias for: run bulk-reader
-  cheap-write            Alias for: run cheap-writer
+  code-write             Alias for: run code-writer
+  doc-write              Alias for: run doc-writer
 
 Options:
   --input <file|->       Task input JSON (default: stdin)
