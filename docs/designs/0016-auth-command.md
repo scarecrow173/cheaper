@@ -75,7 +75,10 @@ cheaper auth logout <provider>
 - `prompt({type:"select"})`: `--method` が options.id に一致すれば即答。
   なければ option を番号付きで stderr 表示して readline で選択。
   stdin 非 TTY かつ `--method` 未指定 → 使える method 一覧付きで error
-- `prompt({type:"manual_code"|"text"|"secret"})`: readline question
+- `prompt({type:"manual_code"|"text"})`: readline question
+- `prompt({type:"secret"})`: raw-mode no-echo 入力（readline は入力を
+  echo するため API key が画面に残るのを防ぐ）。`\x03`/AbortSignal で
+  中断。credential 値は stdout/stderr/envelope に出さない
 - `notify("auth_url")`: URL を stderr へ大きく表示 + `start`/`open`/
   `xdg-open` で best-effort 起動（失敗 ignore）
 - `notify("device_code")`: userCode + verificationUri + 有効秒数を表示

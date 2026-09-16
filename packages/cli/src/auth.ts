@@ -53,6 +53,59 @@ export function createTerminalInteraction(
   io: CliIo,
   opts: { method?: string | undefined; signal?: AbortSignal | undefined },
 ): AuthInteraction {
+  // secret prompt は terminal echo しない raw-mode 入力（readline question は
+  // 入力を echo するため API key が画面に残る）。raw mode では \x03 が
+  // SIGINT を生成しないので自分で中断処理する。
+  const askSecret = (message: string, promptSignal?: AbortSignal): Promise<string> =>
+    new Promise((resolve, reject) => {
+      io.stderr.write(message);
+      const stdin = io.stdin as NodeJS.ReadableStream & {
+        setRawMode?: (b: boolean) => void;
+        pause?: () => void;
+        resume?: () => void;
+      };
+      let buf = "";
+      const onAbort = () => {
+        cleanup();
+        reject(invalidRequest("login cancelled"));
+      };
+      const onData = (chunk: Buffer | string) => {
+        for (const ch of chunk.toString()) {
+          if (ch === "\r" || ch === "\n") {
+            cleanup();
+            resolve(buf);
+            return;
+          }
+          if (ch === "\x03") {
+            onAbort();
+            return;
+          }
+          if (ch === "\x7f" || ch === "\b") {
+            buf = buf.slice(0, -1);
+          } else {
+            buf += ch;
+          }
+        }
+      };
+      const cleanup = () => {
+        stdin.off("data", onData);
+        opts.signal?.removeEventListener("abort", onAbort);
+        promptSignal?.removeEventListener("abort", onAbort);
+        stdin.setRawMode?.(false);
+        stdin.pause?.();
+        io.stderr.write("\n");
+      };
+      opts.signal?.addEventListener("abort", onAbort, { once: true });
+      promptSignal?.addEventListener("abort", onAbort, { once: true });
+      if (opts.signal?.aborted === true || promptSignal?.aborted === true) {
+        onAbort();
+        return;
+      }
+      stdin.setRawMode?.(true);
+      stdin.resume?.();
+      stdin.on("data", onData);
+    });
+
   let rl: Interface | undefined;
   const ask = async (message: string, signal?: AbortSignal): Promise<string> => {
     rl ??= createInterface({ input: io.stdin, output: process.stderr });
@@ -134,6 +187,9 @@ export function createTerminalInteraction(
         throw invalidRequest(`auth ${p.type} prompt requires an interactive terminal`, {
           promptType: p.type,
         });
+      }
+      if (p.type === "secret") {
+        return askSecret(`${p.message}: `, p.signal);
       }
       return ask(`${p.message}: `, p.signal);
     },

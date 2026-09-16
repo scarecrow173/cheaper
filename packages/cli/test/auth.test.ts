@@ -240,6 +240,38 @@ describe("auth login", () => {
     expect(code).toBe(2);
   });
 
+  it("reads api_key secrets without echoing them to the terminal", async () => {
+    const keyProvider = {
+      id: "key-provider",
+      name: "Key Provider",
+      auth: { apiKey: { name: "Test API key", login: async () => ({}) } },
+    };
+    let entered = "";
+    const runtime = fakeRuntime({
+      getProvider: (id) => (id === "key-provider" ? keyProvider : undefined),
+      getProviders: () => [keyProvider],
+      login: async (_id, type, interaction) => {
+        expect(type).toBe("api_key");
+        entered = await interaction.prompt({ type: "secret", message: "API key" });
+        return { type: "api_key", key: entered };
+      },
+      checkAuth: async () => ({ type: "api_key" }),
+    });
+    // TTY stdin に key + Enter を feed。no-echo reader が値を受け取る。
+    const { io, out, err } = makeIo(`${SECRET}\n`, true);
+    const code = await runCli(
+      ["auth", "login", "key-provider", "--type", "api_key"],
+      io,
+      hooksFor(runtime),
+    );
+    expect(code).toBe(0);
+    expect(entered).toBe(SECRET);
+    // prompt メッセージは出るが secret 値自体は stderr/stdout/envelope に出ない
+    expect(err()).toContain("API key");
+    expect(err()).not.toContain(SECRET);
+    expect(out()).not.toContain(SECRET);
+  });
+
   it("rejects --type on non-login actions and invalid values", async () => {
     const { io } = makeIo();
     expect(await runCli(["auth", "status", "--type", "api_key"], io, hooksFor(fakeRuntime()))).toBe(

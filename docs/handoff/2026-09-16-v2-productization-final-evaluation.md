@@ -13,6 +13,9 @@
 - **強制（safety net）**: Windsurf `pre_read_code` hook が read 前に
   `count-tokens` を実行し、threshold 超過 file を exit 2 で block して
   bulk-read への guidance を返す（`.apm/hooks/pre-read-code.js`）。
+  `tool_info.file_path`（absolute）は workspace-relative POSIX path へ
+  正規化して guidance へ埋め込み、workspace 外は fail-open。guidance は
+  非実行型テキストのみ（shell command の raw interpolation なし）。
 
 ## 2. token 数はどこで・どの tokenizer で測定されるか
 
@@ -94,6 +97,8 @@ worker/配布物は provider 非依存。
 
 provider 認証は `cheaper auth login <provider>`（SPEC-0011）が Pi の
 `ModelRuntime.login` を吸収して実行 — standalone `pi` install は不要。
+`--type api_key` の対話 key 入力は raw-mode no-echo で読み、
+credential 値は stdout/stderr/envelope のいずれにも出ない（test で保証）。
 OpenAI ChatGPT subscription（`openai-codex` OAuth）での実測: login →
 `bulk-read` が `gpt-5.5` で完走（EXP-0004。`gpt-5.4` 系・codex-spark は
 ChatGPT account Codex では非対応、`gpt-5.5` / `gpt-5.6-*` / `gpt-6-astra`
