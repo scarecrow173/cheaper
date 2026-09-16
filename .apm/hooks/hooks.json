@@ -2,8 +2,8 @@
   "hooks": {
     "pre_read_code": [
       {
-        "command": "node ./pre-read-code.js",
-        "powershell": "node ./pre-read-code.js",
+        "command": "node ./pre-read-code.js \"./cli/bin/cheaper.mjs\"",
+        "powershell": "node ./pre-read-code.js \"./cli/bin/cheaper.mjs\"",
         "show_output": false
       }
     ]

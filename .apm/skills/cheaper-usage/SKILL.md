@@ -33,6 +33,20 @@ cheaper <command> [options]
 `count-tokens` never starts a model. It returns the canonical token count of
 one workspace file so you can measure context cost before reading it.
 
+## Locating the CLI
+
+- If `cheaper` is on `PATH`, use it directly.
+- In a Windsurf workspace where cheaper was installed via APM, a
+  self-contained copy ships inside the hook bundle:
+
+  ```bash
+  node .windsurf/hooks/cheaper/cli/bin/cheaper.mjs <command> [options]
+  ```
+
+  Substitute `cheaper` for the actual hook bundle directory name if the
+  package was installed under a different name. Everywhere below,
+  `cheaper <args>` means either form.
+
 ## stdin → stdout contract
 
 Worker runs read exactly one JSON document from stdin matching the worker's

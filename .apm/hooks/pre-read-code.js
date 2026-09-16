@@ -29,9 +29,11 @@ function threshold() {
 }
 
 // Returns [cmd, argsPrefix]: how to invoke the cheaper CLI.
+// Resolution order: argv[2] (bundled CLI path from hooks.json) >
+// CHEAPER_CLI env > `cheaper` on PATH. .js/.mjs paths run via node.
 function cheaperCommand() {
-  const explicit = process.env.CHEAPER_CLI;
-  if (explicit && explicit.endsWith(".js")) {
+  const explicit = process.argv[2] || process.env.CHEAPER_CLI;
+  if (explicit && /\.m?js$/.test(explicit)) {
     return [process.execPath, [explicit]];
   }
   return [explicit || "cheaper", []];

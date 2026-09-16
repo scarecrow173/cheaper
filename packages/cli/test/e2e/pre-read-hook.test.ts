@@ -7,14 +7,18 @@ import { cliRoot, makeIsolatedEnv } from "./helpers.js";
 const repoRoot = path.join(cliRoot, "..", "..");
 const hookScript = path.join(repoRoot, ".apm", "hooks", "pre-read-code.js");
 const cheaperBin = path.join(cliRoot, "bin", "cheaper.js");
+const bundledCli = path.join(repoRoot, ".apm", "hooks", "cli", "bin", "cheaper.mjs");
 
 interface HookResult {
   status: number | null;
   stderr: string;
 }
 
-function runHook(stdin: string, opts: { cwd: string; env?: Record<string, string> }): HookResult {
-  const r = spawnSync(process.execPath, [hookScript], {
+function runHook(
+  stdin: string,
+  opts: { cwd: string; env?: Record<string, string>; cliArg?: string },
+): HookResult {
+  const r = spawnSync(process.execPath, [hookScript, ...(opts.cliArg ? [opts.cliArg] : [])], {
     cwd: opts.cwd,
     env: opts.env,
     input: stdin,
@@ -34,6 +38,19 @@ describe("pre_read_code hook (pre-read-code.js)", () => {
   beforeEach(async () => {
     ({ dir, ws, env } = await makeIsolatedEnv());
     env.CHEAPER_CLI = cheaperBin;
+  });
+
+  it("blocks via the bundled CLI passed as argv[2] (production command shape)", async () => {
+    await writeFile(path.join(ws, "big.txt"), "lorem ipsum dolor sit amet ".repeat(4000), "utf8");
+    // CHEAPER_CLI を未設定にして argv[2] の解決だけで動くことを確認
+    const { CHEAPER_CLI: _dropped, ...envNoCli } = env;
+    const r = runHook(preRead(path.join(ws, "big.txt")), {
+      cwd: ws,
+      env: envNoCli,
+      cliArg: bundledCli,
+    });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain("bulk-read");
   });
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true });

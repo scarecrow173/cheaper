@@ -36,6 +36,11 @@ echo '{"task": "src/ のエントリポイントを特定して", "paths": ["src
 - hooks: Windsurf `pre_read_code` で read 前に `count-tokens` を実行し、
   threshold（default 8192、`CHEAPER_READ_TOKEN_THRESHOLD` で上書き可）超過
   の file read を block して bulk-read へ誘導する `pre-read-code.js`
+- `.apm/hooks/cli/` は `pnpm bundle` で生成する self-contained CLI bundle
+  （esbuild single-file + workers/ + policy.yaml）。commit 済みの生成物で、
+  `apm install --target windsurf` すると
+  `.windsurf/hooks/cheaper/cli/bin/cheaper.mjs` として deploy され、
+  hook と parent agent の双方が PATH 不要で CLI を利用できる
 - provider / model の設定方法は [docs/guides/providers.md](docs/guides/providers.md) を参照
 
 ## ステータス
