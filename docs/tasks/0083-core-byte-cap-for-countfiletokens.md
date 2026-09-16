@@ -1,7 +1,7 @@
 ---
 id: "TASK-0083"
 type: "task"
-status: "todo"
+status: "done"
 title: "Core byte cap for countFileTokens"
 created: "2026-09-17"
 updated: "2026-09-17"

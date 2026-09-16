@@ -1,7 +1,7 @@
 ---
 id: "TASK-0084"
 type: "task"
-status: "todo"
+status: "done"
 title: "CLI count-tokens env override and FILE_TOO_LARGE envelope"
 created: "2026-09-17"
 updated: "2026-09-17"

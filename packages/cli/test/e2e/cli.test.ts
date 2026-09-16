@@ -135,4 +135,26 @@ describe("cheaper count-tokens e2e", () => {
     const e = expectEnvelopeOnly(r.stdout);
     expect((e.error as { code: string }).code).toBe("INVALID_REQUEST");
   });
+
+  it("returns FILE_TOO_LARGE when bytes exceed CHEAPER_COUNT_MAX_BYTES", async () => {
+    await writeFile(path.join(ws, "big.bin"), Buffer.alloc(64, 0x61));
+    const r = await runCheaper(["count-tokens", "big.bin", "--cwd", ws], {
+      env: { ...env, CHEAPER_COUNT_MAX_BYTES: "16" },
+    });
+    expect(r.code).toBe(2);
+    const e = expectEnvelopeOnly(r.stdout);
+    const err = e.error as { code: string; details?: Record<string, unknown> };
+    expect(err.code).toBe("FILE_TOO_LARGE");
+    expect(err.details).toMatchObject({ path: "big.bin", bytes: 64, maxBytes: 16 });
+  });
+
+  it("falls back to the default cap on an invalid CHEAPER_COUNT_MAX_BYTES", async () => {
+    await writeFile(path.join(ws, "target.txt"), "hello world\n", "utf8");
+    const r = await runCheaper(["count-tokens", "target.txt", "--cwd", ws], {
+      env: { ...env, CHEAPER_COUNT_MAX_BYTES: "not-a-number" },
+    });
+    expect(r.code).toBe(0);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect(e.ok).toBe(true);
+  });
 });
