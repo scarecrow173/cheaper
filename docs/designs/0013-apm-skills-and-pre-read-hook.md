@@ -106,7 +106,12 @@ zero-dep CommonJS。処理:
    workspace 外（`..` / absolute 残り）は exit 0（fail-open）。
    `fs.statSync` で非 file / 非存在 → exit 0
 4. `cheaper count-tokens <abs path> --cwd <process.cwd()>` を
-   `spawnSync` で実行（hook の cwd は workspace root が default）
+   `spawnSync` で実行。hook の cwd は Windsurf の `working_directory`
+   default = **repo root**（workspace が git repo でない nested dir の
+   場合は親 repo root になる — EXP-0005 実測）。hooks.json の
+   `command`/`powershell` 内の相対 path も同じ場所から解決されるため、
+   consumer は自身の repo root（または独立 workspace root）として開く
+   必要がある。ずれた場合 hook script が起動せず fail-open で素通りする
    - CLI 解決: argv[2]（hooks.json が渡す bundled path、DESIGN-0014）→
      `process.env.CHEAPER_CLI` → `cheaper` on PATH。
      `.js`/`.mjs` で終わる path は `process.execPath`（node）で起動
