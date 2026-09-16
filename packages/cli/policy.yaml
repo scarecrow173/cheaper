@@ -13,6 +13,7 @@ tools:
     - ls
     - write
     - edit
+    - count_tokens
 
 filesystem:
   symlinks: within-workspace

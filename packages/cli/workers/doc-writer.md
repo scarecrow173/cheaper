@@ -8,6 +8,7 @@ tools:
   - ls
   - write
   - edit
+  - count_tokens
 cheaper:
   model:
     tier: low

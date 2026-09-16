@@ -1,4 +1,6 @@
-import { rm } from "node:fs/promises";
+import { realpath, rm, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { countFileTokens } from "@cheaper/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { expectEnvelopeOnly, makeIsolatedEnv, runCheaper } from "./helpers.js";
 
@@ -71,5 +73,66 @@ describe("cheaper CLI e2e (non-execution)", () => {
     const r = await runCheaper(["bulk-read", "--cwd", ws, "--format", "text"], { env });
     expect(r.code).toBe(2);
     expect(r.stdout.split("\n")[0]).toBe("error INVALID_REQUEST");
+  });
+});
+
+describe("cheaper count-tokens e2e", () => {
+  let dir: string;
+  let ws: string;
+  let env: Record<string, string>;
+
+  beforeEach(async () => {
+    ({ dir, ws, env } = await makeIsolatedEnv());
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("returns the canonical count as an envelope without touching a model", async () => {
+    await writeFile(path.join(ws, "target.txt"), "hello world\n", "utf8");
+    const r = await runCheaper(["count-tokens", "target.txt", "--cwd", ws], { env });
+    expect(r.code).toBe(0);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect(e.ok).toBe(true);
+    expect(e.worker).toBeNull();
+    const result = e.result as {
+      path: string;
+      tokens: number;
+      bytes: number;
+      tokenizer: { name: string; implementation: string; version: string };
+    };
+    expect(result.path).toBe("target.txt");
+    expect(result.bytes).toBe(12);
+    expect(result.tokenizer.name).toBe("o200k_base");
+    expect(result.tokenizer.implementation).toBe("js-tiktoken");
+    // CLI と core canonical 実装（= count_tokens tool）が同一 count を返す
+    const direct = await countFileTokens({
+      root: await realpath(ws),
+      path: "target.txt",
+      symlinkPolicy: "within-workspace",
+    });
+    expect(result.tokens).toBe(direct.tokens);
+    expect(result.tokenizer).toEqual(direct.tokenizer);
+  });
+
+  it("rejects paths outside the workspace with INVALID_REQUEST exit 2", async () => {
+    const r = await runCheaper(["count-tokens", "../outside.txt", "--cwd", ws], { env });
+    expect(r.code).toBe(2);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect((e.error as { code: string }).code).toBe("INVALID_REQUEST");
+  });
+
+  it("rejects missing files with INVALID_REQUEST exit 2", async () => {
+    const r = await runCheaper(["count-tokens", "missing.txt", "--cwd", ws], { env });
+    expect(r.code).toBe(2);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect((e.error as { code: string }).code).toBe("INVALID_REQUEST");
+  });
+
+  it("requires a path argument", async () => {
+    const r = await runCheaper(["count-tokens", "--cwd", ws], { env });
+    expect(r.code).toBe(2);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect((e.error as { code: string }).code).toBe("INVALID_REQUEST");
   });
 });

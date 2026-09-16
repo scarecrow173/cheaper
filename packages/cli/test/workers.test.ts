@@ -14,7 +14,7 @@ describe("built-in worker definitions", () => {
   it("bulk-reader resolves through core validate with read-only tools", async () => {
     const def = await resolveWorker("bulk-reader", dirs);
     expect(def.origin).toBe("builtin");
-    expect(def.tools).toEqual(["read", "grep", "find", "ls"]);
+    expect(def.tools).toEqual(["read", "grep", "find", "ls", "count_tokens"]);
     expect(def.tools).not.toContain("write");
     expect(def.tools).not.toContain("edit");
     expect(def.cheaper.model.tier).toBe("low");
@@ -25,7 +25,7 @@ describe("built-in worker definitions", () => {
   it("code-writer resolves through core validate with write tools", async () => {
     const def = await resolveWorker("code-writer", dirs);
     expect(def.origin).toBe("builtin");
-    expect(def.tools).toEqual(["read", "grep", "find", "ls", "write", "edit"]);
+    expect(def.tools).toEqual(["read", "grep", "find", "ls", "write", "edit", "count_tokens"]);
     expect(def.cheaper.model.tier).toBe("low");
     expect(def.inputSchema).toBeDefined();
     expect(def.outputSchema).toBeDefined();
@@ -34,7 +34,7 @@ describe("built-in worker definitions", () => {
   it("doc-writer resolves through core validate with write tools", async () => {
     const def = await resolveWorker("doc-writer", dirs);
     expect(def.origin).toBe("builtin");
-    expect(def.tools).toEqual(["read", "grep", "find", "ls", "write", "edit"]);
+    expect(def.tools).toEqual(["read", "grep", "find", "ls", "write", "edit", "count_tokens"]);
     expect(def.cheaper.model.tier).toBe("low");
     expect(def.inputSchema).toBeDefined();
     expect(def.outputSchema).toBeDefined();

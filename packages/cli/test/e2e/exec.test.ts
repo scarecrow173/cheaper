@@ -86,6 +86,35 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     expect(await readFile(path.join(ws, "docs/guide.md"), "utf8")).toContain("# Guide");
   });
 
+  it("count_tokens tool and count-tokens CLI return the same count (parity)", async () => {
+    await writeFile(path.join(ws, "parity.txt"), "the quick brown fox\n", "utf8");
+    const capture = path.join(dir, "tool-result.json");
+    const run = await runCheaper(["bulk-read", "--cwd", ws], {
+      env: {
+        ...env,
+        CHEAPER_TEST_FAKE_STREAM: fixture("count-tokens-fake.js"),
+        CHEAPER_TEST_CAPTURE: capture,
+      },
+      input: '{"task":"count parity.txt"}',
+    });
+    expect(run.code).toBe(0);
+    const toolResult = JSON.parse(await readFile(capture, "utf8")) as {
+      path: string;
+      tokens: number;
+      bytes: number;
+      tokenizer: unknown;
+    };
+    expect(toolResult.path).toBe("parity.txt");
+
+    const cli = await runCheaper(["count-tokens", "parity.txt", "--cwd", ws], { env });
+    expect(cli.code).toBe(0);
+    const e = expectEnvelopeOnly(cli.stdout);
+    const cliResult = e.result as { tokens: number; bytes: number; tokenizer: unknown };
+    expect(cliResult.tokens).toBe(toolResult.tokens);
+    expect(cliResult.bytes).toBe(toolResult.bytes);
+    expect(cliResult.tokenizer).toEqual(toolResult.tokenizer);
+  });
+
   it("accepts the scripted-response-array fixture form", async () => {
     const r = await runCheaper(["bulk-read", "--cwd", ws], {
       env: { ...env, CHEAPER_TEST_FAKE_STREAM: fixture("array-fake.js") },

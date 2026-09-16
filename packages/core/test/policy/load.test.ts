@@ -170,7 +170,7 @@ describe("packages/cli/policy.yaml (built-in canonical)", () => {
       });
       expect(policy).toEqual({
         execution: { timeoutMs: 120_000, maxTurns: 8, maxToolCalls: 64 },
-        tools: { allow: ["read", "grep", "find", "ls", "write", "edit"] },
+        tools: { allow: ["read", "grep", "find", "ls", "write", "edit", "count_tokens"] },
         filesystem: { symlinks: "within-workspace" },
         model: { maxTier: "medium", tierFallback: "none" },
         output: { maxTokens: 2000, repairAttempts: 1 },

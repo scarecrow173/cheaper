@@ -16,7 +16,16 @@ export interface RunCliArgs {
   quiet: boolean;
 }
 
-export type ParsedCli = { kind: "help" } | { kind: "version" } | RunCliArgs;
+export interface CountTokensCliArgs {
+  kind: "count-tokens";
+  /** 測定対象 file（workspace 相対または絶対 path）。 */
+  path: string;
+  cwd: string | undefined;
+  format: "json" | "text";
+  quiet: boolean;
+}
+
+export type ParsedCli = { kind: "help" } | { kind: "version" } | RunCliArgs | CountTokensCliArgs;
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
@@ -74,10 +83,39 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
 
   const command = positionals[0];
   if (command === undefined) {
-    throw invalidRequest("command required: run | bulk-read | code-write | doc-write");
+    throw invalidRequest(
+      "command required: run | bulk-read | code-write | doc-write | count-tokens",
+    );
   }
 
   const workerFile = values["worker-file"];
+
+  if (command === "count-tokens") {
+    if (positionals.length > 2) {
+      throw invalidRequest(`unexpected arguments: ${positionals.slice(2).join(" ")}`);
+    }
+    const target = positionals[1];
+    if (target === undefined) {
+      throw invalidRequest("count-tokens requires <path>");
+    }
+    if (workerFile !== undefined) {
+      throw invalidRequest("--worker-file is only valid for `run`");
+    }
+    if (values.timeout !== undefined) {
+      throw invalidRequest("--timeout is only valid for worker runs");
+    }
+    if (values.input !== "-") {
+      throw invalidRequest("--input is only valid for worker runs");
+    }
+    return {
+      kind: "count-tokens",
+      path: target,
+      cwd: values.cwd,
+      format,
+      quiet: values.quiet === true,
+    };
+  }
+
   let workerName: string | undefined;
 
   if (command === "run") {

@@ -122,3 +122,44 @@ describe("parseCliArgs", () => {
     expect(codeOf(() => parseCliArgs([]))).toBe("INVALID_REQUEST");
   });
 });
+
+describe("count-tokens", () => {
+  it("parses count-tokens <path> with --cwd/--format/--quiet", () => {
+    const r = parseCliArgs([
+      "count-tokens",
+      "src/a.ts",
+      "--cwd",
+      "/repo",
+      "--format",
+      "text",
+      "--quiet",
+    ]);
+    expect(r).toEqual({
+      kind: "count-tokens",
+      path: "src/a.ts",
+      cwd: "/repo",
+      format: "text",
+      quiet: true,
+    });
+  });
+
+  it("requires a path", () => {
+    expect(codeOf(() => parseCliArgs(["count-tokens"]))).toBe("INVALID_REQUEST");
+  });
+
+  it("rejects extra positionals", () => {
+    expect(codeOf(() => parseCliArgs(["count-tokens", "a.ts", "b.ts"]))).toBe("INVALID_REQUEST");
+  });
+
+  it("rejects worker-run options", () => {
+    expect(codeOf(() => parseCliArgs(["count-tokens", "a.ts", "--worker-file", "w.md"]))).toBe(
+      "INVALID_REQUEST",
+    );
+    expect(codeOf(() => parseCliArgs(["count-tokens", "a.ts", "--timeout", "30s"]))).toBe(
+      "INVALID_REQUEST",
+    );
+    expect(codeOf(() => parseCliArgs(["count-tokens", "a.ts", "--input", "x.json"]))).toBe(
+      "INVALID_REQUEST",
+    );
+  });
+});

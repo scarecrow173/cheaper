@@ -25,6 +25,7 @@ echo '{"task": "src/ のエントリポイントを特定して", "paths": ["src
 
 - `bulk-read` / `code-write` / `doc-write` は built-in worker（`run <worker>` または `--worker-file` で任意 worker も可）
 - stdin に worker の input schema に従う JSON を渡すと、stdout に envelope 1 行（`ok`/`result`/`meta` または `error`）が返る
+- `cheaper count-tokens <path>` は LLM を起動せず workspace file の canonical token count（js-tiktoken `o200k_base`）を返す。Worker 内の `count_tokens` tool と同一実装
 - provider / model の設定方法は [docs/guides/providers.md](docs/guides/providers.md) を参照
 
 ## ステータス

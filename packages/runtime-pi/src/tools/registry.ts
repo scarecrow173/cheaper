@@ -9,6 +9,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import type { MutationJournal } from "../journal.js";
 import { type ToolBudget, wrapToolBudget } from "./budget.js";
+import { createCountTokensTool } from "./count-tokens.js";
 import { createFindTool } from "./find.js";
 import { createGrepTool } from "./grep.js";
 import {
@@ -78,6 +79,8 @@ export function createSandboxedTools(opts: SandboxedToolsOptions): SandboxedTool
         return createGrepTool(walkOpts);
       case "find":
         return createFindTool(walkOpts);
+      case "count_tokens":
+        return createCountTokensTool(walkOpts);
       default: {
         // ToolName union 外は到達不能（capability check で既に UNKNOWN_TOOL 済み）
         const never: never = name;
