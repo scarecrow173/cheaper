@@ -68,3 +68,23 @@ Directory: `docs/tasks`
 | TASK-0060 | Anchor policy timeout at runWorker start and amend DESIGN-0004 | todo | [0060-anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./0060-anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
 | TASK-0061 | Isolate unit tests from user and project config via env | todo | [0061-isolate-unit-tests-from-user-and-project-config-via-env.md](./0061-isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-0062 | Update README and add provider setup guide | todo | [0062-update-readme-and-add-provider-setup-guide.md](./0062-update-readme-and-add-provider-setup-guide.md) |
+| TASK-0063 | Migrate cheap-writer to code-writer | done | [0063-migrate-cheap-writer-to-code-writer.md](./0063-migrate-cheap-writer-to-code-writer.md) |
+| TASK-0064 | Add doc-writer built-in Worker | done | [0064-add-doc-writer-worker.md](./0064-add-doc-writer-worker.md) |
+| TASK-0065 | Update docs indexes, supersede relations, and verify writer restructure | done | [0065-update-docs-and-verify-writer-restructure.md](./0065-update-docs-and-verify-writer-restructure.md) |
+| TASK-0066 | Implement core Token Counter with js-tiktoken | done | [0066-implement-core-token-counter.md](./0066-implement-core-token-counter.md) |
+| TASK-0067 | Add count_tokens portable tool | done | [0067-add-count-tokens-tool.md](./0067-add-count-tokens-tool.md) |
+| TASK-0068 | Add count-tokens CLI command | done | [0068-add-count-tokens-cli.md](./0068-add-count-tokens-cli.md) |
+| TASK-0069 | Token counter CLI/tool parity tests and full verification | done | [0069-token-counter-parity-and-verification.md](./0069-token-counter-parity-and-verification.md) |
+| TASK-0070 | Create cheaper-usage skill | done | [0070-create-cheaper-usage-skill.md](./0070-create-cheaper-usage-skill.md) |
+| TASK-0071 | Create worker delegation skills | done | [0071-create-worker-delegation-skills.md](./0071-create-worker-delegation-skills.md) |
+| TASK-0072 | Implement pre_read_code hook and e2e test | done | [0072-implement-pre-read-code-hook.md](./0072-implement-pre-read-code-hook.md) |
+| TASK-0073 | Update indexes and verify delegation layer | done | [0073-update-indexes-and-verify-delegation-layer.md](./0073-update-indexes-and-verify-delegation-layer.md) |
+| TASK-0074 | CLI bundle script and hook argv resolution | done | [0074-cli-bundle-script-and-hook-argv.md](./0074-cli-bundle-script-and-hook-argv.md) |
+| TASK-0075 | Consumer install smoke e2e and skill updates | done | [0075-consumer-install-smoke.md](./0075-consumer-install-smoke.md) |
+| TASK-0076 | Verify CLI bundle distribution | done | [0076-verify-cli-bundle-distribution.md](./0076-verify-cli-bundle-distribution.md) |
+| TASK-0077 | Delegation loop e2e (pre_read_code block to bundled bulk-read) | done | [0077-delegation-loop-e2e.md](./0077-delegation-loop-e2e.md) |
+| TASK-0078 | bulk-read delegation benchmark and read threshold decision | done | [0078-bulk-read-benchmark-and-threshold-decision.md](./0078-bulk-read-benchmark-and-threshold-decision.md) |
+| TASK-0079 | Core deny-path matcher, writeScope frontmatter, policy denyPaths | done | [0079-core-deny-matcher-and-write-scope-field.md](./0079-core-deny-matcher-and-write-scope-field.md) |
+| TASK-0080 | Runtime-pi scope and deny enforcement in sandboxed tools | done | [0080-runtime-scope-and-deny-enforcement.md](./0080-runtime-scope-and-deny-enforcement.md) |
+| TASK-0081 | Writer writeScope declaration and e2e verification | done | [0081-writer-write-scope-and-e2e-verification.md](./0081-writer-write-scope-and-e2e-verification.md) |
+| TASK-0082 | cheaper auth command (login/status/logout) | done | [0082-auth-command.md](./0082-auth-command.md) |

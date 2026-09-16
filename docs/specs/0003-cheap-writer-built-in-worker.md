@@ -1,10 +1,10 @@
 ---
 id: "SPEC-0003"
 type: "spec"
-status: "proposed"
+status: "superseded"
 title: "cheap-writer built-in Worker"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-16"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -22,7 +22,8 @@ relations:
     - "0001-cheaper-v1-worker-runtime-cli.md"
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "0006-code-writer-and-doc-writer-built-in-workers.md"
   related:
     - "../adr/0005-model-tier-model-resolver.md"
     - "../adr/0006-wrapper-measured-deterministic-metadata.md"

@@ -25,7 +25,7 @@ afterEach(async () => {
 });
 
 function setup(
-  names: Array<"read" | "grep" | "find" | "ls" | "write" | "edit">,
+  names: Array<"read" | "grep" | "find" | "ls" | "write" | "edit" | "count_tokens">,
   maxToolCalls = 100,
 ) {
   const journal = new MutationJournal();
@@ -43,9 +43,17 @@ function setup(
 
 describe("createSandboxedTools", () => {
   it("creates one ToolDefinition per vocabulary name with matching allowlist", () => {
-    const { reg } = setup(["read", "grep", "find", "ls", "write", "edit"]);
-    expect(reg.tools.map((t) => t.name)).toEqual(["read", "grep", "find", "ls", "write", "edit"]);
-    expect(reg.toolNames).toEqual(["read", "grep", "find", "ls", "write", "edit"]);
+    const { reg } = setup(["read", "grep", "find", "ls", "write", "edit", "count_tokens"]);
+    expect(reg.tools.map((t) => t.name)).toEqual([
+      "read",
+      "grep",
+      "find",
+      "ls",
+      "write",
+      "edit",
+      "count_tokens",
+    ]);
+    expect(reg.toolNames).toEqual(["read", "grep", "find", "ls", "write", "edit", "count_tokens"]);
   });
 
   it("creates a subset in the requested order", () => {

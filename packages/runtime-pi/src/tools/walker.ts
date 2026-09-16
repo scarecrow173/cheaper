@@ -3,12 +3,15 @@ import { type FileHandle, open, readdir, realpath, stat } from "node:fs/promises
 import path from "node:path";
 import {
   isInsideWorkspaceRoot,
+  type PathDenylist,
   resolveWorkspacePath,
   type SymlinkPolicy,
   WorkspaceEscapeError,
 } from "@cheaper/core";
 
 export const ACCESS_DENIED_MESSAGE = "Access denied: path is outside the workspace";
+export const POLICY_DENIED_MESSAGE = "Access denied: path is denied by policy";
+export const SCOPE_DENIED_MESSAGE = "Access denied: path is outside the write scope";
 
 /** tool 層の escape → error result 変換（operations.ts と同一メッセージ）。 */
 export function rethrowAsDenied(e: unknown): never {
@@ -18,9 +21,15 @@ export function rethrowAsDenied(e: unknown): never {
   throw e;
 }
 
-/** boundary 拒否の error result か（rejectedToolCalls 計上判定に使用）。 */
+const DENIED_MESSAGES = new Set([
+  ACCESS_DENIED_MESSAGE,
+  POLICY_DENIED_MESSAGE,
+  SCOPE_DENIED_MESSAGE,
+]);
+
+/** boundary/policy/scope 拒否の error result か（rejectedToolCalls 計上判定に使用）。 */
 export function isAccessDeniedError(e: unknown): boolean {
-  return e instanceof Error && e.message === ACCESS_DENIED_MESSAGE;
+  return e instanceof Error && DENIED_MESSAGES.has(e.message);
 }
 
 const MAX_FILE_BYTES = 1024 * 1024; // 1MB
@@ -31,6 +40,8 @@ export interface WalkOptions {
   /** canonical 化済み workspace root。 */
   root: string;
   symlinkPolicy: SymlinkPolicy;
+  /** privacy deny list。deny file は yield せず deny dir には潜らない。 */
+  denylist?: PathDenylist | undefined;
 }
 
 export interface WalkedFile {
@@ -83,6 +94,7 @@ const CASE_INSENSITIVE_FS = process.platform === "win32";
  */
 export async function* walkFiles(opts: WalkOptions, startAbs: string): AsyncGenerator<WalkedFile> {
   const start = await resolveWorkspacePath(opts.root, startAbs, opts.symlinkPolicy);
+  if (opts.denylist?.isDenied(start.display)) return;
   yield* walkDir(opts, start.real, start.real, new Set());
 }
 
@@ -99,8 +111,10 @@ async function* walkDir(
     return;
   }
   if (st.isFile()) {
+    const display = toDisplay(opts.root, logicalPath);
+    if (opts.denylist?.isDenied(display)) return;
     if (await isEligibleFile(fsPath)) {
-      yield { real: fsPath, display: toDisplay(opts.root, logicalPath) };
+      yield { real: fsPath, display };
     }
     return;
   }
@@ -127,6 +141,8 @@ async function* walkDir(
       if (SKIP_DIRS.has(entry.name)) continue;
       const childFs = path.join(fsPath, entry.name);
       const childLogical = path.join(logicalPath, entry.name);
+      // deny path（file/dir 両方）は walk 結果にも潜行にも出さない。
+      if (opts.denylist?.isDenied(toDisplay(opts.root, childLogical))) continue;
       if (entry.isSymbolicLink()) {
         if (opts.symlinkPolicy === "deny") continue;
         let target: string;

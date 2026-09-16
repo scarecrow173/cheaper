@@ -17,15 +17,23 @@ describe("parseCliArgs", () => {
     expect(r).toMatchObject({ kind: "run", workerName: "bulk-reader", format: "json" });
   });
 
-  it("maps bulk-read / cheap-write aliases to fixed worker names", () => {
+  it("maps bulk-read / code-write / doc-write aliases to fixed worker names", () => {
     expect(parseCliArgs(["bulk-read"])).toMatchObject({
       kind: "run",
       workerName: "bulk-reader",
     });
-    expect(parseCliArgs(["cheap-write"])).toMatchObject({
+    expect(parseCliArgs(["code-write"])).toMatchObject({
       kind: "run",
-      workerName: "cheap-writer",
+      workerName: "code-writer",
     });
+    expect(parseCliArgs(["doc-write"])).toMatchObject({
+      kind: "run",
+      workerName: "doc-writer",
+    });
+  });
+
+  it("rejects the removed cheap-write command", () => {
+    expect(codeOf(() => parseCliArgs(["cheap-write"]))).toBe("INVALID_REQUEST");
   });
 
   it("accepts --worker-file on run without a worker name", () => {
@@ -112,5 +120,46 @@ describe("parseCliArgs", () => {
 
   it("rejects bare invocation without command", () => {
     expect(codeOf(() => parseCliArgs([]))).toBe("INVALID_REQUEST");
+  });
+});
+
+describe("count-tokens", () => {
+  it("parses count-tokens <path> with --cwd/--format/--quiet", () => {
+    const r = parseCliArgs([
+      "count-tokens",
+      "src/a.ts",
+      "--cwd",
+      "/repo",
+      "--format",
+      "text",
+      "--quiet",
+    ]);
+    expect(r).toEqual({
+      kind: "count-tokens",
+      path: "src/a.ts",
+      cwd: "/repo",
+      format: "text",
+      quiet: true,
+    });
+  });
+
+  it("requires a path", () => {
+    expect(codeOf(() => parseCliArgs(["count-tokens"]))).toBe("INVALID_REQUEST");
+  });
+
+  it("rejects extra positionals", () => {
+    expect(codeOf(() => parseCliArgs(["count-tokens", "a.ts", "b.ts"]))).toBe("INVALID_REQUEST");
+  });
+
+  it("rejects worker-run options", () => {
+    expect(codeOf(() => parseCliArgs(["count-tokens", "a.ts", "--worker-file", "w.md"]))).toBe(
+      "INVALID_REQUEST",
+    );
+    expect(codeOf(() => parseCliArgs(["count-tokens", "a.ts", "--timeout", "30s"]))).toBe(
+      "INVALID_REQUEST",
+    );
+    expect(codeOf(() => parseCliArgs(["count-tokens", "a.ts", "--input", "x.json"]))).toBe(
+      "INVALID_REQUEST",
+    );
   });
 });

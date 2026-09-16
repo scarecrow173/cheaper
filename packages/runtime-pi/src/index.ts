@@ -4,6 +4,21 @@
  * 残りは meta/結果型と model 解決 adapter、session seam の型のみ公開する。
  */
 
+export type {
+  AuthEvent,
+  AuthInteraction,
+  AuthPrompt,
+  AuthRuntime,
+  AuthType,
+  ProviderAuthInfo,
+} from "./auth.js";
+export {
+  describeProviderAuth,
+  listProviderAuth,
+  loginProvider,
+  logoutProvider,
+  registerBundledOAuthFlows,
+} from "./auth.js";
 export type { ChangesSummary, FileChange } from "./journal.js";
 export { MutationJournal } from "./journal.js";
 export {

@@ -24,6 +24,15 @@ export interface SuccessEnvelope {
   meta: { durationMs: number } & WorkerRunMeta;
 }
 
+/** worker run を伴わない utility command（count-tokens 等）の success envelope。 */
+export interface UtilitySuccessEnvelope {
+  schemaVersion: typeof SCHEMA_VERSION;
+  ok: true;
+  worker: null;
+  result: Record<string, unknown>;
+  meta: { durationMs: number };
+}
+
 export interface ErrorEnvelope {
   schemaVersion: typeof SCHEMA_VERSION;
   ok: false;
@@ -39,7 +48,7 @@ export interface ErrorEnvelope {
   meta: ErrorEnvelopeMeta;
 }
 
-export type CliEnvelope = SuccessEnvelope | ErrorEnvelope;
+export type CliEnvelope = SuccessEnvelope | UtilitySuccessEnvelope | ErrorEnvelope;
 
 export function successEnvelope(opts: {
   worker: string;
@@ -53,6 +62,19 @@ export function successEnvelope(opts: {
     worker: opts.worker,
     result: opts.result,
     meta: { durationMs: opts.durationMs, ...opts.meta },
+  };
+}
+
+export function utilitySuccessEnvelope(opts: {
+  result: Record<string, unknown>;
+  durationMs: number;
+}): UtilitySuccessEnvelope {
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    ok: true,
+    worker: null,
+    result: opts.result,
+    meta: { durationMs: opts.durationMs },
   };
 }
 

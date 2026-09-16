@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   CheaperError,
   canonicalizeWorkspaceRoot,
+  countFileTokens,
   loadModelConfig,
   loadPolicy,
   parseDuration,
@@ -11,6 +12,7 @@ import {
   resolveWorkerFile,
   restrictPolicy,
   validateWorkerInput,
+  WorkspaceEscapeError,
 } from "@cheaper/core";
 import {
   createModelRuntime,
@@ -21,7 +23,14 @@ import {
   type WorkerRunMeta,
 } from "@cheaper/runtime-pi";
 import { parseCliArgs, type RunCliArgs } from "./args.js";
-import { type CliEnvelope, envelopeJson, errorEnvelope, successEnvelope } from "./envelope.js";
+import { executeAuth } from "./auth.js";
+import {
+  type CliEnvelope,
+  envelopeJson,
+  errorEnvelope,
+  successEnvelope,
+  utilitySuccessEnvelope,
+} from "./envelope.js";
 import { readTaskInput, type StdinLike } from "./input.js";
 import { formatText } from "./text-format.js";
 import { packageVersion } from "./version.js";
@@ -55,13 +64,20 @@ const HELP = `Usage: cheaper <command> [options]
 Commands:
   run <worker>           Run a named worker (or --worker-file <path>)
   bulk-read              Alias for: run bulk-reader
-  cheap-write            Alias for: run cheap-writer
+  code-write             Alias for: run code-writer
+  doc-write              Alias for: run doc-writer
+  count-tokens <path>    Count canonical tokens of a workspace file
+  auth status [provider] Show stored credentials and provider readiness
+  auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
+  auth logout <provider> Remove a provider credential
 
 Options:
   --input <file|->       Task input JSON (default: stdin)
   --worker-file <path>   Run an explicit worker file (run only)
   --cwd <path>           Workspace root (default: process.cwd())
   --timeout <duration>   Narrow policy timeout (e.g. 30s, 5m)
+  --method <id>          Auto-answer auth login select prompts (e.g. device)
+  --type <oauth|api_key> Auth method for 'auth login' (default: oauth)
   --format <json|text>   Output format (default: json)
   --quiet                Suppress stderr diagnostics
   --help                 Show this help
@@ -230,6 +246,49 @@ export async function runCli(
       io.stdout.write(`${packageVersion()}\n`);
       return 0;
     }
+    if (parsed.kind === "count-tokens") {
+      // LLM/model/worker 解決を伴わない測定専用経路（DESIGN-0012）。
+      // effective policy から filesystem.symlinks のみ使う。
+      const builtinDir = hooks.builtinDir ?? defaultBuiltinDir();
+      const root = await canonicalizeWorkspaceRoot(parsed.cwd ?? io.cwd);
+      const dirs = resolveConfigDirs({ cwd: root, builtinDir, env: io.env });
+      const policy = await loadPolicy({
+        builtinPolicyPath: path.join(builtinDir, "policy.yaml"),
+        userConfigDir: dirs.userConfigDir,
+        projectDir: dirs.projectDir,
+      });
+      const count = await countFileTokens({
+        root,
+        path: parsed.path,
+        symlinkPolicy: policy.filesystem.symlinks,
+      }).catch((e) => {
+        if (e instanceof WorkspaceEscapeError) {
+          throw new CheaperError("INVALID_REQUEST", e.message, {
+            details: { path: parsed.path },
+            cause: e,
+          });
+        }
+        if ((e as NodeJS.ErrnoException).code === "ENOENT") {
+          throw new CheaperError("INVALID_REQUEST", `file not found: ${parsed.path}`, {
+            details: { path: parsed.path },
+            cause: e,
+          });
+        }
+        throw e;
+      });
+      const envelope = utilitySuccessEnvelope({
+        result: { ...count },
+        durationMs: now() - startedAt,
+      });
+      io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
+      return 0;
+    }
+
+    if (parsed.kind === "auth") {
+      const { envelope, exitCode } = await executeAuth(parsed, io, hooks, startedAt);
+      io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
+      return exitCode;
+    }
 
     const { envelope, exitCode, modelLine } = await executeRun(
       parsed,
@@ -248,7 +307,7 @@ export async function runCli(
     let format: "json" | "text" = "json";
     try {
       const p = parseCliArgs(argv);
-      if (p.kind === "run") format = p.format;
+      if (p.kind === "run" || p.kind === "count-tokens" || p.kind === "auth") format = p.format;
     } catch {
       // args 自体が不正なら json のまま
     }

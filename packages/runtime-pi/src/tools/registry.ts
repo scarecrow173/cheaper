@@ -1,4 +1,4 @@
-import { CheaperError, type SymlinkPolicy, type ToolName } from "@cheaper/core";
+import { CheaperError, type PathDenylist, type SymlinkPolicy, type ToolName } from "@cheaper/core";
 import {
   createEditToolDefinition,
   createLsToolDefinition,
@@ -9,6 +9,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import type { MutationJournal } from "../journal.js";
 import { type ToolBudget, wrapToolBudget } from "./budget.js";
+import { createCountTokensTool } from "./count-tokens.js";
 import { createFindTool } from "./find.js";
 import { createGrepTool } from "./grep.js";
 import {
@@ -28,6 +29,10 @@ export interface SandboxedToolsOptions {
   maxToolCalls: number;
   /** maxToolCalls 到達時フック（run 側で session.abort() を起動）。 */
   onLimit: () => void;
+  /** privacy deny list（DESIGN-0015）。全 tool の path access に適用。 */
+  denylist?: PathDenylist | undefined;
+  /** write scope（正規化済み display path 集合）。設定時 write/edit/mkdir を制限。 */
+  writeScope?: ReadonlySet<string> | undefined;
 }
 
 export interface SandboxedTools {
@@ -44,8 +49,18 @@ export interface SandboxedTools {
  * grep/find は自前 tool。全 tool を budget wrap する。
  */
 export function createSandboxedTools(opts: SandboxedToolsOptions): SandboxedTools {
-  const opsOpts = { root: opts.root, symlinkPolicy: opts.symlinkPolicy, journal: opts.journal };
-  const walkOpts = { root: opts.root, symlinkPolicy: opts.symlinkPolicy };
+  const opsOpts = {
+    root: opts.root,
+    symlinkPolicy: opts.symlinkPolicy,
+    journal: opts.journal,
+    denylist: opts.denylist,
+    writeScope: opts.writeScope,
+  };
+  const walkOpts = {
+    root: opts.root,
+    symlinkPolicy: opts.symlinkPolicy,
+    denylist: opts.denylist,
+  };
   const tools: ToolDefinition[] = opts.names.map((name): ToolDefinition => {
     switch (name) {
       case "read":
@@ -78,6 +93,8 @@ export function createSandboxedTools(opts: SandboxedToolsOptions): SandboxedTool
         return createGrepTool(walkOpts);
       case "find":
         return createFindTool(walkOpts);
+      case "count_tokens":
+        return createCountTokensTool(walkOpts);
       default: {
         // ToolName union 外は到達不能（capability check で既に UNKNOWN_TOOL 済み）
         const never: never = name;

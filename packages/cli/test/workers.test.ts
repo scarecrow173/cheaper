@@ -14,7 +14,7 @@ describe("built-in worker definitions", () => {
   it("bulk-reader resolves through core validate with read-only tools", async () => {
     const def = await resolveWorker("bulk-reader", dirs);
     expect(def.origin).toBe("builtin");
-    expect(def.tools).toEqual(["read", "grep", "find", "ls"]);
+    expect(def.tools).toEqual(["read", "grep", "find", "ls", "count_tokens"]);
     expect(def.tools).not.toContain("write");
     expect(def.tools).not.toContain("edit");
     expect(def.cheaper.model.tier).toBe("low");
@@ -22,13 +22,26 @@ describe("built-in worker definitions", () => {
     expect(def.outputSchema).toBeDefined();
   });
 
-  it("cheap-writer resolves through core validate with write tools", async () => {
-    const def = await resolveWorker("cheap-writer", dirs);
+  it("code-writer resolves through core validate with write tools", async () => {
+    const def = await resolveWorker("code-writer", dirs);
     expect(def.origin).toBe("builtin");
-    expect(def.tools).toEqual(["read", "grep", "find", "ls", "write", "edit"]);
+    expect(def.tools).toEqual(["read", "grep", "find", "ls", "write", "edit", "count_tokens"]);
     expect(def.cheaper.model.tier).toBe("low");
     expect(def.inputSchema).toBeDefined();
     expect(def.outputSchema).toBeDefined();
+  });
+
+  it("doc-writer resolves through core validate with write tools", async () => {
+    const def = await resolveWorker("doc-writer", dirs);
+    expect(def.origin).toBe("builtin");
+    expect(def.tools).toEqual(["read", "grep", "find", "ls", "write", "edit", "count_tokens"]);
+    expect(def.cheaper.model.tier).toBe("low");
+    expect(def.inputSchema).toBeDefined();
+    expect(def.outputSchema).toBeDefined();
+  });
+
+  it("the removed cheap-writer worker no longer resolves", async () => {
+    await expect(resolveWorker("cheap-writer", dirs)).rejects.toThrowError();
   });
 
   it("bulk-reader input schema accepts a minimal input and rejects violations", async () => {
@@ -51,8 +64,8 @@ describe("built-in worker definitions", () => {
     );
   });
 
-  it("cheap-writer input schema enforces required targets", async () => {
-    const def = await resolveWorker("cheap-writer", dirs);
+  it("code-writer input schema enforces required targets", async () => {
+    const def = await resolveWorker("code-writer", dirs);
     expect(() =>
       validateWorkerInput(def, {
         task: "add tests",
@@ -96,8 +109,46 @@ describe("built-in worker definitions", () => {
     expect(bad.ok).toBe(false);
   });
 
-  it("cheap-writer output schema has no changed-files field", async () => {
-    const def = await resolveWorker("cheap-writer", dirs);
+  it("doc-writer input schema requires documentType and accepts decisions/facts", async () => {
+    const def = await resolveWorker("doc-writer", dirs);
+    expect(() =>
+      validateWorkerInput(def, {
+        task: "write an ADR for the tokenizer choice",
+        documentType: "adr",
+        targets: [{ path: "docs/adr/0011-tokenizer.md", intent: "create" }],
+        decisions: ["use js-tiktoken as the canonical tokenizer"],
+        facts: ["no tokenizer exists in the dependency tree"],
+        references: ["docs/specs/0001-cheaper-v1-worker-runtime-cli.md"],
+        constraints: ["follow MADR format"],
+      }),
+    ).not.toThrow();
+    // documentType は必須
+    expect(() =>
+      validateWorkerInput(def, {
+        task: "x",
+        targets: [{ path: "a.md", intent: "create" }],
+      }),
+    ).toThrowError(/input schema/);
+    // documentType の enum 外は拒否
+    expect(() =>
+      validateWorkerInput(def, {
+        task: "x",
+        documentType: "poem",
+        targets: [{ path: "a.md", intent: "create" }],
+      }),
+    ).toThrowError(/input schema/);
+    // workspace 外 path は拒否
+    expect(() =>
+      validateWorkerInput(def, {
+        task: "x",
+        documentType: "guide",
+        targets: [{ path: "../a.md", intent: "create" }],
+      }),
+    ).toThrowError(/input schema/);
+  });
+
+  it("code-writer output schema has no changed-files field", async () => {
+    const def = await resolveWorker("code-writer", dirs);
     const ok = def.outputSchema.validate({ summary: "s", notes: [], unresolved: [] });
     expect(ok.ok).toBe(true);
     const bad = def.outputSchema.validate({

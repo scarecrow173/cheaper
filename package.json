@@ -6,11 +6,13 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "biome check .",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "bundle": "node scripts/bundle-cli.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.13",
     "@types/node": "^26.5.1",
+    "esbuild": "0.28.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
   }

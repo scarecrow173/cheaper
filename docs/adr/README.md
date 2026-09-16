@@ -14,3 +14,5 @@ Directory: `docs/adr`
 | ADR-0008 | TypeScript + pnpm monorepo 構成 | proposed | [0008-typescript-pnpm-monorepo.md](./0008-typescript-pnpm-monorepo.md) |
 | ADR-0009 | 実 provider smoke 検証に Ollama on Docker を使う | proposed | [0009-use-ollama-on-docker-as-real-provider-for-smoke-verification.md](./0009-use-ollama-on-docker-as-real-provider-for-smoke-verification.md) |
 | ADR-0010 | Normalize repair abort grace, provider failure classification, and agent-execution timeout anchor | proposed | [0010-normalize-repair-abort-grace-provider-failure-classification-and-agent-execution.md](./0010-normalize-repair-abort-grace-provider-failure-classification-and-agent-execution.md) |
+| ADR-0011 | Use js-tiktoken o200k_base as the single canonical tokenizer | accepted | [0011-canonical-tokenizer-js-tiktoken.md](./0011-canonical-tokenizer-js-tiktoken.md) |
+| ADR-0012 | Keep 8192 tokens as the default large-read threshold for the pre_read_code hook | accepted | [0012-default-large-read-threshold.md](./0012-default-large-read-threshold.md) |

@@ -6,6 +6,7 @@ tools:
   - grep
   - find
   - ls
+  - count_tokens
 cheaper:
   model:
     tier: low

@@ -21,7 +21,7 @@ const runMeta: WorkerRunMeta = {
 describe("formatText", () => {
   it("starts with `ok` and shows worker/model/usage/changes table plus result JSON", () => {
     const env = successEnvelope({
-      worker: "cheap-writer",
+      worker: "code-writer",
       result: { summary: "done" },
       meta: runMeta,
       durationMs: 42,
@@ -30,7 +30,7 @@ describe("formatText", () => {
     const lines = out.split("\n");
     expect(lines[0]).toBe("ok");
     expect(out).toContain("worker:");
-    expect(out).toContain("cheap-writer");
+    expect(out).toContain("code-writer");
     expect(out).toContain("p/m");
     expect(out).toContain("tier low");
     expect(out).toContain("changes:");

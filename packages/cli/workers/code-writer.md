@@ -1,5 +1,5 @@
 ---
-name: cheap-writer
+name: code-writer
 description: Apply mechanical, pattern-based code changes directly to the workspace.
 tools:
   - read
@@ -8,15 +8,17 @@ tools:
   - ls
   - write
   - edit
+  - count_tokens
 cheaper:
+  writeScope: targets
   model:
     tier: low
   input:
     schema:
-      file: ./schemas/cheap-writer.input.schema.json
+      file: ./schemas/code-writer.input.schema.json
   output:
     schema:
-      file: ./schemas/cheap-writer.output.schema.json
+      file: ./schemas/code-writer.output.schema.json
 ---
 
 You are a careful code-generation worker. You apply mechanical changes (tests, DTOs,

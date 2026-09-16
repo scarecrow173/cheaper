@@ -1,4 +1,9 @@
-import type { CliEnvelope, ErrorEnvelope, SuccessEnvelope } from "./envelope.js";
+import type {
+  CliEnvelope,
+  ErrorEnvelope,
+  SuccessEnvelope,
+  UtilitySuccessEnvelope,
+} from "./envelope.js";
 
 function pretty(v: unknown): string {
   return JSON.stringify(v, null, 2);
@@ -19,6 +24,29 @@ function successText(env: SuccessEnvelope): string {
     lines.push(`  ${f.kind.padEnd(8)} ${f.path} (+${f.linesAdded}/-${f.linesDeleted})`);
   }
   lines.push("result:", pretty(env.result));
+  return `${lines.join("\n")}\n`;
+}
+
+function utilityText(env: UtilitySuccessEnvelope): string {
+  const r = env.result;
+  const lines: string[] = [`duration: ${env.meta.durationMs}ms`, "result:", pretty(r)];
+  const t = r.tokenizer as { name?: string; implementation?: string; version?: string } | undefined;
+  if (
+    typeof r.path === "string" &&
+    typeof r.tokens === "number" &&
+    t !== undefined &&
+    typeof t.name === "string"
+  ) {
+    lines.unshift(
+      "ok",
+      `path:      ${r.path}`,
+      `tokens:    ${r.tokens}`,
+      `bytes:     ${typeof r.bytes === "number" ? r.bytes : "-"}`,
+      `tokenizer: ${t.name} (${t.implementation ?? "?"} ${t.version ?? "?"})`,
+    );
+  } else {
+    lines.unshift("ok");
+  }
   return `${lines.join("\n")}\n`;
 }
 
@@ -46,5 +74,7 @@ function errorText(env: ErrorEnvelope): string {
 
 /** `--format text` の人間向け出力（DESIGN-0005）。機械可読ではない。 */
 export function formatText(env: CliEnvelope): string {
-  return env.ok ? successText(env) : errorText(env);
+  if (!env.ok) return errorText(env);
+  if (env.worker === null) return utilityText(env);
+  return successText(env);
 }

@@ -13,9 +13,12 @@ tools:
     - ls
     - write
     - edit
+    - count_tokens
 
 filesystem:
   symlinks: within-workspace
+  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern
+  denyPaths: []
 
 model:
   maxTier: medium

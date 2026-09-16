@@ -106,3 +106,59 @@ preferences:
   run 区間）。`--timeout` で narrow できるが policy 上限は越えられない
 - `CHEAPER_CONFIG_DIR` を smoke 用ディレクトリに向けると、普段のユーザー設定と
   検証設定を分離できる（`pnpm test` も user config を読まない hermetic 構成）
+
+## OpenAI（ChatGPT サブスクリプション / `openai-codex`）
+
+Pi には `openai-codex` provider が built-in であり、ChatGPT
+サブスクリプションの OAuth 認証（Codex 系モデル）で利用できる。
+API key は不要だが、初回のみ interactive な OAuth ログインが必要。
+
+### セットアップ（ユーザー操作）
+
+`pi` の standalone install は不要。`cheaper auth` が同じ Pi runtime の
+OAuth flow を内蔵しており、credential は同じ `auth.json` に保存される。
+
+1. `cheaper auth login openai-codex` を実行する（OAuth 対応 provider は
+   `anthropic` / `github-copilot` / `openrouter` / `xai` 等も同じ手順。
+   api_key 型は `--type api_key` で対話入力）。ブラウザが開き
+   ChatGPT アカウントへのサインインを求められる。browser が使えない
+   環境では `--method device` で device code flow を選べる
+   （device code は対象 URL と code が stderr に表示される）。
+   成功すると `%USERPROFILE%\.pi\agent\auth.json` に credential が保存される
+2. 確認:
+
+   ```bash
+   cheaper auth status openai-codex
+   # → result.providers[0].configured === true
+   ```
+
+### cheaper `models.yaml`
+
+利用する codex 系 model を low tier に pin する。ChatGPT アカウントの
+Codex での実測（EXP-0004）:
+
+- **対応**: `gpt-5.5`, `gpt-5.6-luna`, `gpt-5.6-sol`, `gpt-5.6-terra`,
+  `gpt-6-astra`
+- **非対応**（PROVIDER_FAILURE）: `gpt-5.4-mini`, `gpt-5.3-codex-spark`,
+  `gpt-5.4`
+
+```yaml
+version: 1
+overrides:
+  "openai-codex/gpt-5.5": low
+preferences:
+  low:
+    - "openai-codex/gpt-5.5"
+    - "ollama/*"   # ローカル fallback
+```
+
+### 検証
+
+```bash
+echo '{"task":"summarize","paths":["<file>"]}' | cheaper bulk-read --cwd <ws>
+# envelope の meta.model.provider が "openai-codex" になれば production provider 経由
+```
+
+- `openai-codex` は built-in provider のため `models.json` への provider
+  追加は不要（auth.json の OAuth credential のみで動く）
+- subscription 利用のため API 課金ではなく quota 消費。rate limit に注意

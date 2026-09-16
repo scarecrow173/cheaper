@@ -12,6 +12,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import {
+  type PathDenylist,
   type ResolvedWorkspacePath,
   resolveWorkspacePath,
   type SymlinkPolicy,
@@ -23,24 +24,49 @@ import type {
   WriteOperations,
 } from "@earendil-works/pi-coding-agent";
 import type { MutationJournal } from "../journal.js";
-import { rethrowAsDenied } from "./walker.js";
+import { POLICY_DENIED_MESSAGE, rethrowAsDenied, SCOPE_DENIED_MESSAGE } from "./walker.js";
 
 export interface BoundaryOperationsOptions {
   /** canonical 化済み workspace root（core `canonicalizeWorkspaceRoot` の戻り値）。 */
   root: string;
   symlinkPolicy: SymlinkPolicy;
   journal: MutationJournal;
+  /** privacy deny list（SPEC-0010）。match した path への全 access を拒否する。 */
+  denylist?: PathDenylist | undefined;
+  /**
+   * write scope（`cheaper.writeScope` 宣言 worker の targets、正規化済み
+   * display path 集合）。設定時、write/edit/mkdir による mutation は
+   * scope path に限られる。read 系は制限しない。
+   */
+  writeScope?: ReadonlySet<string> | undefined;
 }
 
 async function resolve(
   opts: BoundaryOperationsOptions,
   absolutePath: string,
 ): Promise<ResolvedWorkspacePath> {
+  let resolved: ResolvedWorkspacePath;
   try {
-    return await resolveWorkspacePath(opts.root, absolutePath, opts.symlinkPolicy);
+    resolved = await resolveWorkspacePath(opts.root, absolutePath, opts.symlinkPolicy);
   } catch (e) {
     rethrowAsDenied(e);
   }
+  if (opts.denylist?.isDenied(resolved.display)) {
+    throw new Error(POLICY_DENIED_MESSAGE);
+  }
+  return resolved;
+}
+
+/** write/edit/mkdir 用: boundary+deny のうえ write scope membership を要求する。 */
+async function resolveForWrite(
+  opts: BoundaryOperationsOptions,
+  absolutePath: string,
+): Promise<ResolvedWorkspacePath> {
+  const resolved = await resolve(opts, absolutePath);
+  if (opts.writeScope !== undefined && !opts.writeScope.has(resolved.display)) {
+    throw new Error(SCOPE_DENIED_MESSAGE);
+  }
+  return resolved;
 }
 
 /**
@@ -52,10 +78,12 @@ async function atomicWrite(
   absolutePath: string,
   content: string,
 ): Promise<void> {
-  const resolved = await resolve(opts, absolutePath);
+  const resolved = await resolveForWrite(opts, absolutePath);
   await opts.journal.captureBefore(resolved.real, resolved.display);
   const dir = path.dirname(resolved.real);
   const tmpCandidate = `.${path.basename(resolved.real)}.cheaper-tmp-${randomInt(0, 2 ** 31).toString(36)}`;
+  // tmp は target 認可済み write の実装詳細のため scope check は通さない
+  // （deny check は resolve 内で引き続き有効）。
   const tmpResolved = await resolve(opts, path.join(dir, tmpCandidate));
   const tmp = tmpResolved.real;
   try {
@@ -86,6 +114,14 @@ export function createWriteOperations(opts: BoundaryOperationsOptions): WriteOpe
     writeFile: (absolutePath, content) => atomicWrite(opts, absolutePath, content),
     mkdir: async (dir) => {
       const resolved = await resolve(opts, dir);
+      // write tool は target の parent dir を先に mkdir するため、scope path の
+      // 祖先 dir に限り許可する（dir 自体の scope membership は要求しない）。
+      if (opts.writeScope !== undefined) {
+        const d = resolved.display;
+        const allowed =
+          d === "." || [...opts.writeScope].some((t) => t === d || t.startsWith(`${d}/`));
+        if (!allowed) throw new Error(SCOPE_DENIED_MESSAGE);
+      }
       await mkdir(resolved.real, { recursive: true });
     },
   };
@@ -123,7 +159,12 @@ export function createLsOperations(opts: BoundaryOperationsOptions): LsOperation
     },
     readdir: async (absolutePath) => {
       const resolved = await resolve(opts, absolutePath);
-      return readdir(resolved.real);
+      const names = await readdir(resolved.real);
+      const denylist = opts.denylist;
+      if (denylist === undefined) return names;
+      const prefix = resolved.display === "." ? "" : `${resolved.display}/`;
+      // deny entry は listing に出さない（存在の秘匿）。
+      return names.filter((name) => !denylist.isDenied(`${prefix}${name}`));
     },
   };
 }

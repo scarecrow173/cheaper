@@ -150,18 +150,25 @@ apm_modules/
 # Only apm.yml and apm.lock.yaml are tracked
 .agents/
 .claude/agents/
+.claude/apm-hooks.json
 .claude/commands/
 .claude/hooks/
+.claude/settings.json
 .claude/skills/
 .codex/agents/
+.codex/apm-hooks.json
+.codex/hooks/
 .codex/hooks.json
 .codex/prompts/
 .cursor/agents/
+.cursor/apm-hooks.json
 .cursor/commands/
 .cursor/rules/
+.cursor/hooks/
 .cursor/hooks.json
 .cursor/mcp.json
 .github/agents/
+.github/apm-hooks.json
 .github/commands/
 .github/extensions/
 .github/hooks/
@@ -170,6 +177,9 @@ apm_modules/
 .github/skills/
 .github/copilot-instructions.md
 .windsurf/agents/
+.windsurf/apm-hooks.json
+.windsurf/hooks/
+.windsurf/hooks.json
 .windsurf/rules/
 .windsurf/workflows/
 
