@@ -106,3 +106,47 @@ preferences:
   run 区間）。`--timeout` で narrow できるが policy 上限は越えられない
 - `CHEAPER_CONFIG_DIR` を smoke 用ディレクトリに向けると、普段のユーザー設定と
   検証設定を分離できる（`pnpm test` も user config を読まない hermetic 構成）
+
+## OpenAI（ChatGPT サブスクリプション / `openai-codex`）
+
+Pi には `openai-codex` provider が built-in であり、ChatGPT
+サブスクリプションの OAuth 認証（Codex 系モデル）で利用できる。
+API key は不要だが、初回のみ interactive な OAuth ログインが必要。
+
+### セットアップ（ユーザー操作）
+
+1. `pi` を起動し login コマンドで `openai-codex` の OAuth フローを完了する
+   （ブラウザで ChatGPT アカウントにサインイン）。
+   成功すると `%USERPROFILE%\.pi\agent\auth.json` に credential が保存される
+2. 確認:
+
+   ```bash
+   pi auth check --provider openai-codex --json
+   # → {"status":"ready", ...}
+   ```
+
+### cheaper `models.yaml`
+
+利用する codex 系 model を low tier に pin する（例: `gpt-5.4-mini`。
+`pi auth check` や Pi の model catalog で利用可能 id を確認すること）:
+
+```yaml
+version: 1
+overrides:
+  "openai-codex/gpt-5.4-mini": low
+preferences:
+  low:
+    - "openai-codex/gpt-5.4-mini"
+    - "ollama/*"   # ローカル fallback
+```
+
+### 検証
+
+```bash
+echo '{"task":"summarize","paths":["<file>"]}' | cheaper bulk-read --cwd <ws>
+# envelope の meta.model.provider が "openai-codex" になれば production provider 経由
+```
+
+- `openai-codex` は built-in provider のため `models.json` への provider
+  追加は不要（auth.json の OAuth credential のみで動く）
+- subscription 利用のため API 課金ではなく quota 消費。rate limit に注意
