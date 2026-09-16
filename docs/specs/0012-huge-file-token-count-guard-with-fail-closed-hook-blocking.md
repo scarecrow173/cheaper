@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0012"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Huge-file token count guard with fail-closed hook blocking"
 created: "2026-09-17"
 updated: "2026-09-17"
@@ -54,7 +54,8 @@ block + bulk-read 委譲 guidance を返す（fail-closed）。
   `maxBytes` 超過なら typed error（例: `FileTooLargeError`）を投げる。
   `maxBytes` は option 注入で default は 16MB
 - CLI: `count-tokens` が cap error を専用 error code（envelope）に map。
-  `CHEAPER_COUNT_MAX_BYTES` env で cap を上書き可能
+  `CHEAPER_COUNT_MAX_BYTES` env で cap を上書き可能（CLI/hook 経路のみ。
+  runtime `count_tokens` tool は core default のまま）
 - hook: cap error code を含む envelope 応答、および spawn timeout/失敗
   以外の「測定不能だが file が存在して大きい」ケースを fail-open では
   なく block（exit 2 + 委譲 guidance）として扱う
@@ -95,7 +96,9 @@ OOM/timeout する。hook は測定失敗をすべて fail-open（exit 0）で�
 - bytes > `maxBytes`（default 16MB）の file は read/encode せず typed
   error で失敗する。CLI は専用 error code を envelope で返す
 - `CHEAPER_COUNT_MAX_BYTES` に正の整数を設定すると cap が上書きされる。
-  不正値は default にフォールバック
+  不正値は default にフォールバック。この env は CLI `count-tokens`
+  （hook が spawn する経路）にのみ適用され、runtime `count_tokens`
+  tool は core default 16MB を使い続ける
 - hook は cap error を検出したら閾値超過と同じ exit 2 block + 委譲
   guidance を出す。guidance には workspace-relative POSIX path を含める
 - hook の fail-open は「file が存在しない・workspace 外・input 異常」

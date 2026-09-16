@@ -84,7 +84,9 @@ Chosen option: "fail-closed byte cap"。
   `stat` で cap 超過を検出したら read/encode せず typed error を投げる
 - CLI `count-tokens` は cap error を専用 error code の envelope に map
   する。`CHEAPER_COUNT_MAX_BYTES` env で deployment ごとに cap を
-  上書き可能（ADR-0012 の threshold env と同型）
+  上書き可能（ADR-0012 の threshold env と同型）。この env 上書きは
+  CLI `count-tokens`（= hook 経路）のみに効き、runtime `count_tokens`
+  tool は core default 16MB のままとする
 - hook は cap error code を閾値超過と同等に扱い、exit 2 + bulk-read
   委譲 guidance を返す。fail-open は「file 不在・workspace 外・input
   異常」等の計測不能ケースに限定する
@@ -98,7 +100,11 @@ Chosen option: "fail-closed byte cap"。
 * Good, because guard が core にあるため CLI・tool・hook の全経路が
   同じ契約で守られる。
 * Bad, because 高圧縮率の巨大 file（bytes 大・tokens 小）は false
-  positive で block される。bulk-read が正常処理できるため実害は小さい。
+  positive で block される。parent context は保護されるが、委譲先の
+  bulk-reader は現状 file 全体を Buffer に読む `readFile` と 1MB 超を
+  skip する walker で構成されており、cap 超過 file を安全に処理できる
+  保証はまだない。bounded/chunked な巨大 file 対応は follow-up work
+  であり、現状では委譲自体が非常に大きな file で失敗しうる。
 * Bad, because cap 超過 file の正確な token 数は取得できない（envelope
   の error code で「測定不能」を表現する）。
 
@@ -118,7 +124,8 @@ hook fail-closed e2e・cap 未満の parity）で検証する。
 * Patterns to avoid: sampling による近似 count、hook 側でのみの guard、
   fail-open の対象拡大
 * Dependencies or configuration: `CHEAPER_COUNT_MAX_BYTES` env（正の
-  整数、不正値は default 16MB にフォールバック）
+  整数、不正値は default 16MB にフォールバック。CLI `count-tokens`
+  経路のみ有効で、`count_tokens` tool は core default を使う）
 
 ## Verification
 
@@ -143,7 +150,8 @@ hook fail-closed e2e・cap 未満の parity）で検証する。
 * Good, because 安全側に倒れ、OOM/timeout の原因を根本から除去する。
   byte size は決定的で実装が単純。
 * Bad, because 高圧縮率 file で false positive block が起きうる
-  （実害は小さい）。
+  （委譲先 bulk-reader の巨大 file 対応は follow-up work であり、
+  現状は委譲自体が失敗しうる）。
 
 ### 先頭 N bytes sampling
 
