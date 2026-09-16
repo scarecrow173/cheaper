@@ -26,6 +26,16 @@ echo '{"task": "src/ のエントリポイントを特定して", "paths": ["src
 - `bulk-read` / `code-write` / `doc-write` は built-in worker（`run <worker>` または `--worker-file` で任意 worker も可）
 - stdin に worker の input schema に従う JSON を渡すと、stdout に envelope 1 行（`ok`/`result`/`meta` または `error`）が返る
 - `cheaper count-tokens <path>` は LLM を起動せず workspace file の canonical token count（js-tiktoken `o200k_base`）を返す。Worker 内の `count_tokens` tool と同一実装
+
+## Parent agent への配布
+
+`.apm/` に parent agent 向け primitive を同梱している:
+
+- skills: `cheaper-usage`（CLI contract）、`cheaper-bulk-read` /
+  `cheaper-code-write` / `cheaper-doc-write`（各 worker への委譲方法）
+- hooks: Windsurf `pre_read_code` で read 前に `count-tokens` を実行し、
+  threshold（default 8192、`CHEAPER_READ_TOKEN_THRESHOLD` で上書き可）超過
+  の file read を block して bulk-read へ誘導する `pre-read-code.js`
 - provider / model の設定方法は [docs/guides/providers.md](docs/guides/providers.md) を参照
 
 ## ステータス

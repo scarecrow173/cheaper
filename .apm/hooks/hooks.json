@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "pre_read_code": [
+      {
+        "command": "node ./pre-read-code.js",
+        "powershell": "node ./pre-read-code.js",
+        "show_output": false
+      }
+    ]
+  }
+}

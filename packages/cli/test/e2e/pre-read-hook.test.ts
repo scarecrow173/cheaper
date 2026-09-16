@@ -1,0 +1,82 @@
+import { spawnSync } from "node:child_process";
+import { rm, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { cliRoot, makeIsolatedEnv } from "./helpers.js";
+
+const repoRoot = path.join(cliRoot, "..", "..");
+const hookScript = path.join(repoRoot, ".apm", "hooks", "pre-read-code.js");
+const cheaperBin = path.join(cliRoot, "bin", "cheaper.js");
+
+interface HookResult {
+  status: number | null;
+  stderr: string;
+}
+
+function runHook(stdin: string, opts: { cwd: string; env?: Record<string, string> }): HookResult {
+  const r = spawnSync(process.execPath, [hookScript], {
+    cwd: opts.cwd,
+    env: opts.env,
+    input: stdin,
+    encoding: "utf8",
+  });
+  return { status: r.status, stderr: r.stderr };
+}
+
+const preRead = (filePath: string) =>
+  JSON.stringify({ agent_action_name: "pre_read_code", tool_info: { file_path: filePath } });
+
+describe("pre_read_code hook (pre-read-code.js)", () => {
+  let dir: string;
+  let ws: string;
+  let env: Record<string, string>;
+
+  beforeEach(async () => {
+    ({ dir, ws, env } = await makeIsolatedEnv());
+    env.CHEAPER_CLI = cheaperBin;
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("blocks a large file with exit 2 and delegation guidance on stderr", async () => {
+    // 反復テキストで threshold を確実に超える file を作る
+    await writeFile(path.join(ws, "big.txt"), "lorem ipsum dolor sit amet ".repeat(4000), "utf8");
+    const r = runHook(preRead(path.join(ws, "big.txt")), { cwd: ws, env });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain("tokens");
+    expect(r.stderr).toContain("bulk-read");
+  });
+
+  it("allows a small file with exit 0", async () => {
+    await writeFile(path.join(ws, "small.txt"), "hello\n", "utf8");
+    const r = runHook(preRead(path.join(ws, "small.txt")), { cwd: ws, env });
+    expect(r.status).toBe(0);
+  });
+
+  it("blocks a small file when the threshold is lowered via env", async () => {
+    await writeFile(path.join(ws, "small.txt"), "hello world this is a file\n", "utf8");
+    const r = runHook(preRead(path.join(ws, "small.txt")), {
+      cwd: ws,
+      env: { ...env, CHEAPER_READ_TOKEN_THRESHOLD: "1" },
+    });
+    expect(r.status).toBe(2);
+  });
+
+  it("fails open for missing files, directories, and non-JSON stdin", async () => {
+    expect(runHook(preRead(path.join(ws, "missing.txt")), { cwd: ws, env }).status).toBe(0);
+    expect(runHook(preRead(ws), { cwd: ws, env }).status).toBe(0);
+    expect(runHook("not json", { cwd: ws, env }).status).toBe(0);
+  });
+
+  it("fails open for other hook events and when the CLI is unavailable", async () => {
+    await writeFile(path.join(ws, "big.txt"), "x ".repeat(20000), "utf8");
+    const other = JSON.stringify({
+      agent_action_name: "post_read_code",
+      tool_info: { file_path: path.join(ws, "big.txt") },
+    });
+    expect(runHook(other, { cwd: ws, env }).status).toBe(0);
+    const noCli = { ...env, CHEAPER_CLI: path.join(dir, "no-such-cli.js") };
+    expect(runHook(preRead(path.join(ws, "big.txt")), { cwd: ws, env: noCli }).status).toBe(0);
+  });
+});
