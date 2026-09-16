@@ -17,6 +17,7 @@ export {
   listProviderAuth,
   loginProvider,
   logoutProvider,
+  registerBundledOAuthFlows,
 } from "./auth.js";
 export type { ChangesSummary, FileChange } from "./journal.js";
 export { MutationJournal } from "./journal.js";

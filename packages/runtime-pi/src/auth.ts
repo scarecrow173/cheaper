@@ -6,11 +6,23 @@
  */
 import { CheaperError } from "@cheaper/core";
 import type { AuthInteraction, AuthType } from "@earendil-works/pi-ai";
+import { registerBunOAuthFlows } from "@earendil-works/pi-ai/bun-oauth";
 import type { createModelRuntime } from "./model-runtime.js";
 
 export type { AuthEvent, AuthInteraction, AuthPrompt, AuthType } from "@earendil-works/pi-ai";
 
 export type AuthRuntime = Awaited<ReturnType<typeof createModelRuntime>>;
+
+/**
+ * pi-ai は provider 別 OAuth flow を bundler が辿れない可変 specifier の
+ * dynamic import で読む（`dist/auth/oauth/load.js`）。esbuild の単一ファイル
+ * bundle ではこの import が解決不能になるため、bun-oauth entry が用意する
+ * static loader 登録で差し替える。非 bundle 環境で呼んでも无害（同じ flow
+ * module を eager import するだけ）。
+ */
+export function registerBundledOAuthFlows(): void {
+  registerBunOAuthFlows();
+}
 
 export interface ProviderAuthInfo {
   providerId: string;
