@@ -133,9 +133,12 @@ OAuth flow を内蔵しており、credential は同じ `auth.json` に保存さ
 ### cheaper `models.yaml`
 
 利用する codex 系 model を low tier に pin する。ChatGPT アカウントの
-Codex では一部 model が非対応（`gpt-5.4-mini` / `gpt-5.3-codex-spark` /
-`gpt-5.4` は実測で PROVIDER_FAILURE）。**`gpt-5.5` は実測で動作確認済み**
-（EXP-0004）:
+Codex での実測（EXP-0004）:
+
+- **対応**: `gpt-5.5`, `gpt-5.6-luna`, `gpt-5.6-sol`, `gpt-5.6-terra`,
+  `gpt-6-astra`
+- **非対応**（PROVIDER_FAILURE）: `gpt-5.4-mini`, `gpt-5.3-codex-spark`,
+  `gpt-5.4`
 
 ```yaml
 version: 1

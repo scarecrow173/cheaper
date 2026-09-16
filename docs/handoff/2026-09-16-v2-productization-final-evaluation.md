@@ -95,8 +95,9 @@ worker/配布物は provider 非依存。
 provider 認証は `cheaper auth login <provider>`（SPEC-0011）が Pi の
 `ModelRuntime.login` を吸収して実行 — standalone `pi` install は不要。
 OpenAI ChatGPT subscription（`openai-codex` OAuth）での実測: login →
-`bulk-read` が `gpt-5.5` で完走（EXP-0004。`gpt-5.4-mini` 等は ChatGPT
-account Codex では非対応のため `gpt-5.5` を pin）。
+`bulk-read` が `gpt-5.5` で完走（EXP-0004。`gpt-5.4` 系・codex-spark は
+ChatGPT account Codex では非対応、`gpt-5.5` / `gpt-5.6-*` / `gpt-6-astra`
+が対応確認済み）。
 
 ## 11. remote provider へ送ってはいけないデータの守り方
 
