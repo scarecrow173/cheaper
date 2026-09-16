@@ -22,3 +22,4 @@ Directory: `docs/designs`
 | DESIGN-0013 | APM skills and pre_read_code delegation hook | approved | [0013-apm-skills-and-pre-read-hook.md](./0013-apm-skills-and-pre-read-hook.md) |
 | DESIGN-0014 | cheaper CLI bundle layout inside .apm/hooks/cli | approved | [0014-cli-bundle-layout.md](./0014-cli-bundle-layout.md) |
 | DESIGN-0015 | Write-scope and privacy deny enforcement design | approved | [0015-write-scope-and-privacy-deny.md](./0015-write-scope-and-privacy-deny.md) |
+| DESIGN-0016 | cheaper auth command design (provider OAuth absorbed by the CLI) | approved | [0016-auth-command.md](./0016-auth-command.md) |

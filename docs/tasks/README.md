@@ -87,3 +87,4 @@ Directory: `docs/tasks`
 | TASK-0079 | Core deny-path matcher, writeScope frontmatter, policy denyPaths | done | [0079-core-deny-matcher-and-write-scope-field.md](./0079-core-deny-matcher-and-write-scope-field.md) |
 | TASK-0080 | Runtime-pi scope and deny enforcement in sandboxed tools | done | [0080-runtime-scope-and-deny-enforcement.md](./0080-runtime-scope-and-deny-enforcement.md) |
 | TASK-0081 | Writer writeScope declaration and e2e verification | done | [0081-writer-write-scope-and-e2e-verification.md](./0081-writer-write-scope-and-e2e-verification.md) |
+| TASK-0082 | cheaper auth command (login/status/logout) | done | [0082-auth-command.md](./0082-auth-command.md) |

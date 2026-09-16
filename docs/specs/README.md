@@ -16,3 +16,4 @@ Directory: `docs/specs`
 | SPEC-0008 | APM delegation skills and pre-read delegation hook | proposed | [0008-apm-delegation-skills-and-read-hook.md](./0008-apm-delegation-skills-and-read-hook.md) |
 | SPEC-0009 | Self-contained cheaper CLI distribution inside the APM hook bundle | proposed | [0009-apm-self-contained-cli-distribution.md](./0009-apm-self-contained-cli-distribution.md) |
 | SPEC-0010 | Write-scope enforcement and in-workspace privacy deny list | proposed | [0010-write-scope-and-privacy-deny.md](./0010-write-scope-and-privacy-deny.md) |
+| SPEC-0011 | cheaper auth command for provider login without a pi installation | proposed | [0011-auth-login-command.md](./0011-auth-login-command.md) |
