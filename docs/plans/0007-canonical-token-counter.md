@@ -1,0 +1,100 @@
+---
+id: "PLAN-0007"
+type: "plan"
+status: "completed"
+title: "Implement canonical Token Counter, count_tokens tool, and count-tokens CLI"
+created: "2026-09-16"
+updated: "2026-09-16"
+owners: ["scarecrow173"]
+relations:
+  source: []
+  changes:
+    added: []
+    modified: []
+    deleted: []
+    renamed: []
+    moved: []
+    generated: []
+  implements:
+    - "docs/specs/0007-canonical-token-counter.md"
+  implemented-by: []
+  depends-on:
+    - "docs/plans/0006-restructure-built-in-writer-workers.md"
+  blocks: []
+  supersedes: []
+  superseded-by: []
+  related:
+    - "docs/adr/0011-canonical-tokenizer-js-tiktoken.md"
+    - "docs/designs/0012-token-counter-contract.md"
+  refines: []
+  refined-by: []
+  derives-from:
+    - "docs/designs/0012-token-counter-contract.md"
+  derived-by: []
+  verifies: []
+  verified-by: []
+  references: []
+  defers: []
+  deferred-by: []
+---
+
+# Canonical Token Counter Implementation Plan
+
+## Goal
+
+`@cheaper/core` に js-tiktoken `o200k_base` ベースの canonical Token Counter を
+実装し、`count_tokens` tool と `count-tokens` CLI の 2 入口から共有する。
+
+## Upstream Documents
+
+- `docs/specs/0007-canonical-token-counter.md`
+- `docs/adr/0011-canonical-tokenizer-js-tiktoken.md`
+- `docs/designs/0012-token-counter-contract.md`
+
+## Design Inputs
+
+- `docs/designs/0012-token-counter-contract.md`（approved）
+
+## File Map
+
+- `packages/core/package.json` — `js-tiktoken` pin 追加
+- `packages/core/src/token/count.ts`（新規）+ `src/index.ts` export
+- `packages/core/src/tools/vocabulary.ts` — `count_tokens` 追加
+- `packages/core/test/token/count.test.ts`（新規）
+- `packages/runtime-pi/src/tools/registry.ts` + `tools/count-tokens.ts`（新規）
+- `packages/runtime-pi/test/tools/` — tool test
+- `packages/cli/src/args.ts`・`cli.ts` — `count-tokens` command
+- `packages/cli/policy.yaml`・`workers/*.md` — `count_tokens` allow/付与
+- `packages/cli/test/{args,main,e2e/*}` — command test
+
+## Implementation Sequence
+
+- [ ] core: js-tiktoken 導入 + `countFileTokens` + vocabulary 追加 + test
+- [ ] runtime-pi: `count_tokens` tool + registry 配線 + test
+- [ ] cli: `count-tokens` command + args/help + e2e test
+- [ ] builtin policy/worker frontmatter 更新 + 全体検証
+
+## Task Breakdown
+
+- TASK-0066: core Token Counter + vocabulary + js-tiktoken 導入
+- TASK-0067: `count_tokens` tool（runtime-pi registry + builtin 付与）
+- TASK-0068: `count-tokens` CLI command
+- TASK-0069: CLI/tool parity・境界 test と全体検証 + docs index
+
+## Verification
+
+- [ ] CLI と tool が同一 file で同一 count
+- [ ] workspace escape・symlink・不存在・binary の振る舞いが test 済み
+- [ ] `count-tokens` が model runtime を起動しない
+- [ ] 全 baseline green
+
+## Self-Review
+
+- [x] Every spec requirement maps to a task.
+- [x] No placeholders remain.
+- [x] File paths, relations, status values, and terminology are consistent.
+
+## Implementation Handoff
+
+- Recommended mode: inline execution（core→runtime-pi→cli の直列依存）
+- User approval required before dispatch: yes

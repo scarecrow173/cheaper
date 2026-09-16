@@ -12,3 +12,4 @@ Directory: `docs/plans`
 | PLAN-0004 | Verify cheaper real-provider path with Ollama on Docker | completed | [0004-verify-cheaper-real-provider-path-with-ollama-on-docker.md](./0004-verify-cheaper-real-provider-path-with-ollama-on-docker.md) |
 | PLAN-0005 | Harden repair abort grace and provider failure normalization | draft | [0005-harden-repair-abort-grace-and-provider-failure-normalization.md](./0005-harden-repair-abort-grace-and-provider-failure-normalization.md) |
 | PLAN-0006 | Restructure built-in writer Workers (code-writer + doc-writer) | completed | [0006-restructure-built-in-writer-workers.md](./0006-restructure-built-in-writer-workers.md) |
+| PLAN-0007 | Implement canonical Token Counter, count_tokens tool, and count-tokens CLI | completed | [0007-canonical-token-counter.md](./0007-canonical-token-counter.md) |

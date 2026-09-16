@@ -71,3 +71,7 @@ Directory: `docs/tasks`
 | TASK-0063 | Migrate cheap-writer to code-writer | done | [0063-migrate-cheap-writer-to-code-writer.md](./0063-migrate-cheap-writer-to-code-writer.md) |
 | TASK-0064 | Add doc-writer built-in Worker | done | [0064-add-doc-writer-worker.md](./0064-add-doc-writer-worker.md) |
 | TASK-0065 | Update docs indexes, supersede relations, and verify writer restructure | done | [0065-update-docs-and-verify-writer-restructure.md](./0065-update-docs-and-verify-writer-restructure.md) |
+| TASK-0066 | Implement core Token Counter with js-tiktoken | done | [0066-implement-core-token-counter.md](./0066-implement-core-token-counter.md) |
+| TASK-0067 | Add count_tokens portable tool | done | [0067-add-count-tokens-tool.md](./0067-add-count-tokens-tool.md) |
+| TASK-0068 | Add count-tokens CLI command | done | [0068-add-count-tokens-cli.md](./0068-add-count-tokens-cli.md) |
+| TASK-0069 | Token counter CLI/tool parity tests and full verification | done | [0069-token-counter-parity-and-verification.md](./0069-token-counter-parity-and-verification.md) |

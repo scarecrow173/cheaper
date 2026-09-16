@@ -12,3 +12,4 @@ Directory: `docs/specs`
 | SPEC-0004 | Ollama real-provider smoke verification | proposed | [0004-ollama-real-provider-smoke-verification.md](./0004-ollama-real-provider-smoke-verification.md) |
 | SPEC-0005 | Repair and abort hardening, telemetry consistency, and test hermeticity | draft | [0005-repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./0005-repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |
 | SPEC-0006 | code-writer and doc-writer built-in Workers | proposed | [0006-code-writer-and-doc-writer-built-in-workers.md](./0006-code-writer-and-doc-writer-built-in-workers.md) |
+| SPEC-0007 | Canonical Token Counter, count_tokens tool, and count-tokens CLI | proposed | [0007-canonical-token-counter.md](./0007-canonical-token-counter.md) |
