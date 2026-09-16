@@ -23,11 +23,27 @@ const outBin = path.join(outDir, "bin", "cheaper.mjs");
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(path.dirname(outBin), { recursive: true });
 
+// esbuild は root devDependency（pinned）。`pnpm exec` や shell 連結に
+// 頼らず、JS launcher を node で直接起動する（cross-platform、shell 解釈なし）。
+const esbuildJs = fileURLToPath(import.meta.resolve("esbuild/bin/esbuild"));
 const build = spawnSync(
-  "pnpm exec esbuild packages/cli/bin/cheaper.js --bundle --platform=node --format=esm --target=node20 --minify" +
-    ` --outfile=${path.relative(repoRoot, outBin)}`,
-  { cwd: repoRoot, shell: true, stdio: "inherit" },
+  process.execPath,
+  [
+    esbuildJs,
+    "packages/cli/bin/cheaper.js",
+    "--bundle",
+    "--platform=node",
+    "--format=esm",
+    "--target=node20",
+    "--minify",
+    `--outfile=${path.relative(repoRoot, outBin)}`,
+  ],
+  { cwd: repoRoot, stdio: "inherit" },
 );
+if (build.error) {
+  console.error(build.error.message);
+  process.exit(1);
+}
 if (build.status !== 0) {
   process.exit(build.status ?? 1);
 }
