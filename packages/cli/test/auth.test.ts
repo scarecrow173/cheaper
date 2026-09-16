@@ -199,6 +199,61 @@ describe("auth login", () => {
     expect(err()).toContain("browser|device");
   });
 
+  it("passes --type api_key through to the runtime login", async () => {
+    let seenType: string | undefined;
+    const keyProvider = {
+      id: "key-provider",
+      name: "Key Provider",
+      auth: { apiKey: { name: "Test API key", login: async () => ({}) } },
+    };
+    const runtime = fakeRuntime({
+      getProvider: (id) => (id === "key-provider" ? keyProvider : undefined),
+      getProviders: () => [keyProvider],
+      login: async (_id, type, interaction) => {
+        seenType = type;
+        await interaction.prompt({ type: "secret", message: "API key" }).catch(() => "");
+        return { type: "api_key", key: SECRET };
+      },
+      checkAuth: async () => ({ type: "api_key" }),
+    });
+    const { io, out, err } = makeIo();
+    const code = await runCli(
+      ["auth", "login", "key-provider", "--type", "api_key"],
+      io,
+      hooksFor(runtime),
+    );
+    expect(code).toBe(0);
+    expect(seenType).toBe("api_key");
+    const env = envelopeOf(out());
+    expect(env.result).toMatchObject({ provider: "key-provider", method: "api_key" });
+    expect(out()).not.toContain(SECRET);
+    expect(err()).not.toContain(SECRET);
+  });
+
+  it("rejects api_key login on providers without an interactive key login", async () => {
+    const { io } = makeIo();
+    const code = await runCli(
+      ["auth", "login", "test-provider", "--type", "api_key"],
+      io,
+      hooksFor(fakeRuntime()),
+    );
+    expect(code).toBe(2);
+  });
+
+  it("rejects --type on non-login actions and invalid values", async () => {
+    const { io } = makeIo();
+    expect(await runCli(["auth", "status", "--type", "api_key"], io, hooksFor(fakeRuntime()))).toBe(
+      2,
+    );
+    expect(
+      await runCli(
+        ["auth", "login", "test-provider", "--type", "bogus"],
+        io,
+        hooksFor(fakeRuntime()),
+      ),
+    ).toBe(2);
+  });
+
   it("rejects providers without oauth support", async () => {
     const runtime = fakeRuntime({
       getProvider: (id) =>

@@ -69,7 +69,9 @@ production provider E2E は OpenAI を target にするが、ユーザーは API
 
 ## 非要求
 
-- api_key 型 provider の login（`setRuntimeApiKey` は別 issue）
+- ~~api_key 型 provider の login~~（実装済み: `--type api_key` で
+  `runtime.login(providerId, "api_key", interaction)` を呼ぶ。secret prompt
+  は共通の interaction bridge が処理）
 - OAuth flow の再実装（pi-ai の provider-owned flow を使う）
 - TUI/リッチ UI
 

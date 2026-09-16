@@ -194,13 +194,13 @@ export async function executeAuth(
   if (hooks.signal?.aborted === true) ac.abort();
   try {
     const interaction = createTerminalInteraction(io, { method: args.method, signal: ac.signal });
-    const info = await loginProvider(runtime, provider, "oauth", interaction);
+    const info = await loginProvider(runtime, provider, args.authType, interaction);
     return {
       envelope: utilitySuccessEnvelope({
         result: {
           provider: info.providerId,
           authenticated: info.configured,
-          method: "oauth",
+          method: args.authType,
           subscription: info.subscription,
         },
         durationMs: now() - startedAt,

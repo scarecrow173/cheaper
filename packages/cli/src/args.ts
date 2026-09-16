@@ -33,6 +33,8 @@ export interface AuthCliArgs {
   provider: string | undefined;
   /** login の `select` prompt へ即答する option id（browser/device 等）。 */
   method: string | undefined;
+  /** login の auth type。既定 oauth。api_key は対話 key 入力。 */
+  authType: "oauth" | "api_key";
   format: "json" | "text";
   quiet: boolean;
 }
@@ -68,6 +70,7 @@ function parseArgsSafe(argv: readonly string[]) {
         cwd: { type: "string" },
         timeout: { type: "string" },
         method: { type: "string" },
+        type: { type: "string" },
         format: { type: "string", default: "json" },
         quiet: { type: "boolean", default: false },
         help: { type: "boolean", default: false },
@@ -125,8 +128,8 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
     if (values.input !== "-") {
       throw invalidRequest("--input is only valid for worker runs");
     }
-    if (values.method !== undefined) {
-      throw invalidRequest("--method is only valid for `auth login`");
+    if (values.method !== undefined || values.type !== undefined) {
+      throw invalidRequest("--method/--type are only valid for `auth login`");
     }
     return {
       kind: "count-tokens",
@@ -161,11 +164,19 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
     if (values.method !== undefined && action !== "login") {
       throw invalidRequest("--method is only valid for `auth login`");
     }
+    const type = values.type;
+    if (type !== undefined && action !== "login") {
+      throw invalidRequest("--type is only valid for `auth login`");
+    }
+    if (type !== undefined && type !== "oauth" && type !== "api_key") {
+      throw invalidRequest(`invalid --type: ${type} (expected oauth|api_key)`, { type });
+    }
     return {
       kind: "auth",
       action,
       provider,
       method: values.method,
+      authType: type ?? "oauth",
       format,
       quiet: values.quiet === true,
     };
@@ -196,8 +207,8 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
     throw invalidRequest(`unknown command: ${command}`, { command });
   }
 
-  if (values.method !== undefined) {
-    throw invalidRequest("--method is only valid for `auth login`");
+  if (values.method !== undefined || values.type !== undefined) {
+    throw invalidRequest("--method/--type are only valid for `auth login`");
   }
 
   if (workerName !== undefined && !NAME_PATTERN.test(workerName)) {

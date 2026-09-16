@@ -77,6 +77,7 @@ Options:
   --cwd <path>           Workspace root (default: process.cwd())
   --timeout <duration>   Narrow policy timeout (e.g. 30s, 5m)
   --method <id>          Auto-answer auth login select prompts (e.g. device)
+  --type <oauth|api_key> Auth method for 'auth login' (default: oauth)
   --format <json|text>   Output format (default: json)
   --quiet                Suppress stderr diagnostics
   --help                 Show this help

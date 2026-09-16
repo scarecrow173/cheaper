@@ -118,7 +118,9 @@ API key は不要だが、初回のみ interactive な OAuth ログインが必�
 `pi` の standalone install は不要。`cheaper auth` が同じ Pi runtime の
 OAuth flow を内蔵しており、credential は同じ `auth.json` に保存される。
 
-1. `cheaper auth login openai-codex` を実行する。ブラウザが開き
+1. `cheaper auth login openai-codex` を実行する（OAuth 対応 provider は
+   `anthropic` / `github-copilot` / `openrouter` / `xai` 等も同じ手順。
+   api_key 型は `--type api_key` で対話入力）。ブラウザが開き
    ChatGPT アカウントへのサインインを求められる。browser が使えない
    環境では `--method device` で device code flow を選べる
    （device code は対象 URL と code が stderr に表示される）。
