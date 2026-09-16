@@ -46,12 +46,15 @@ describe("APM consumer install smoke (windsurf target)", () => {
     // hook config + bundle deploy（bundle dir は dep dir 名 = "pkg"）
     const hooksJson = JSON.parse(
       readFileSync(path.join(consumer, ".windsurf", "hooks.json"), "utf8"),
-    ) as { hooks: Record<string, Array<{ command: string }>> };
+    ) as { hooks: Record<string, Array<{ command: string; powershell?: string }>> };
     const entry = hooksJson.hooks.pre_read_code?.[0];
     expect(entry).toBeDefined();
     const bundle = bundleRoot(consumer);
     expect(entry.command).toContain("pre-read-code.js");
     expect(entry.command).toContain("cli/bin/cheaper.mjs");
+    // powershell -Command collapses the hook's exit 2 to 1 unless the command
+    // propagates $LASTEXITCODE — without it Cascade never sees the block.
+    expect(entry.powershell).toContain("exit $LASTEXITCODE");
     const cli = bundledCli(consumer);
 
     // bundled CLI が動く
