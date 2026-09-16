@@ -13,3 +13,4 @@ Directory: `docs/discovery`
 | DISC-0005 | Windsurf Cascade hooks and APM hook deployment for pre-read delegation | resolved | [0005-windsurf-cascade-hooks-and-apm-hook-deployment.md](./0005-windsurf-cascade-hooks-and-apm-hook-deployment.md) |
 | DISC-0006 | Self-contained cheaper CLI distribution inside the APM hook bundle | resolved | [0006-apm-self-contained-cli-distribution.md](./0006-apm-self-contained-cli-distribution.md) |
 | DISC-0007 | bulk-read delegation benchmark and large-read threshold evidence | resolved | [0007-bulk-read-delegation-benchmark.md](./0007-bulk-read-delegation-benchmark.md) |
+| DISC-0009 | Cross-agent hook distribution and per-agent hook contract matrix | draft | [0009-cross-agent-hook-distribution-and-contract-matrix.md](./0009-cross-agent-hook-distribution-and-contract-matrix.md) |
