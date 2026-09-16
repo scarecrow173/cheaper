@@ -88,3 +88,6 @@ Directory: `docs/tasks`
 | TASK-0080 | Runtime-pi scope and deny enforcement in sandboxed tools | done | [0080-runtime-scope-and-deny-enforcement.md](./0080-runtime-scope-and-deny-enforcement.md) |
 | TASK-0081 | Writer writeScope declaration and e2e verification | done | [0081-writer-write-scope-and-e2e-verification.md](./0081-writer-write-scope-and-e2e-verification.md) |
 | TASK-0082 | cheaper auth command (login/status/logout) | done | [0082-auth-command.md](./0082-auth-command.md) |
+| TASK-0086 | Parameterize apm e2e fixture by target | todo | [0086-parameterize-apm-e2e-fixture-by-target.md](./0086-parameterize-apm-e2e-fixture-by-target.md) |
+| TASK-0087 | Per-target apm install verification e2e | todo | [0087-per-target-apm-install-verification-e2e.md](./0087-per-target-apm-install-verification-e2e.md) |
+| TASK-0088 | Finalize contract matrix and consumer pointer | todo | [0088-finalize-contract-matrix-and-consumer-pointer.md](./0088-finalize-contract-matrix-and-consumer-pointer.md) |
