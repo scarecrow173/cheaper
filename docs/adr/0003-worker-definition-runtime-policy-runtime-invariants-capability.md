@@ -1,10 +1,10 @@
 ---
 id: "ADR-0003"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Worker Definition / Runtime Policy / Runtime Invariants の三層 capability モデル"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

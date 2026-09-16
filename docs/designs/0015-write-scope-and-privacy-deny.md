@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "Write-scope and privacy deny enforcement design"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -28,7 +28,8 @@ relations:
     - "../designs/0002-workspace-filesystem-boundary-sandboxed-tools.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "../adr/0007-workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
   derived-by: []
   verifies: []
   verified-by: []

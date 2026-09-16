@@ -2,9 +2,10 @@
 id: "PLAN-0003"
 type: "plan"
 status: "completed"
+test-spec-skip: "Verified by package unit/e2e test suites and CI; no dedicated test-spec doc authored."
 title: "Implement cheaper CLI, built-in workers and end-to-end verification"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

@@ -1,10 +1,10 @@
 ---
 id: "ADR-0007"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "workspace filesystem boundary は cheaper 提供の sandboxed tool 実装で強制する"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

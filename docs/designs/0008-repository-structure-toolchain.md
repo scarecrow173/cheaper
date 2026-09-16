@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "リポジトリ構成とツールチェーン"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -16,7 +16,8 @@ relations:
     renamed: []
     moved: []
     generated: []
-  implements: []
+  implements:
+    - "../specs/0001-cheaper-v1-worker-runtime-cli.md"
   implemented-by: []
   depends-on: []
   blocks: []

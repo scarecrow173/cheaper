@@ -1,10 +1,10 @@
 ---
 id: "ADR-0002"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Worker を YAML frontmatter + Markdown の宣言的定義にする"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

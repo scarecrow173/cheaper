@@ -1,10 +1,10 @@
 ---
 id: "SPEC-0011"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "cheaper auth command for provider login without a pi installation"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

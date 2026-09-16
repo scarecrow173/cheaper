@@ -2,9 +2,10 @@
 id: "PLAN-0005"
 type: "plan"
 status: "completed"
+test-spec-skip: "Verified by package unit/e2e test suites and CI; no dedicated test-spec doc authored."
 title: "Harden repair abort grace and provider failure normalization"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source: []

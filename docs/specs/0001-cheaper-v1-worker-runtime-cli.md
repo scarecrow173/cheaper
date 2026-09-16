@@ -1,10 +1,10 @@
 ---
 id: "SPEC-0001"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "cheaper V1 Worker Runtime と CLI"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:

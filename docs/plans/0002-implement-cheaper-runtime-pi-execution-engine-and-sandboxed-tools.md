@@ -2,9 +2,10 @@
 id: "PLAN-0002"
 type: "plan"
 status: "completed"
+test-spec-skip: "Verified by package unit/e2e test suites and CI; no dedicated test-spec doc authored."
 title: "Implement @cheaper/runtime-pi execution engine and sandboxed tools"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:
