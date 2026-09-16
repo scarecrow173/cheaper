@@ -27,9 +27,11 @@ function invalidRequest(message: string, details?: Record<string, unknown>): Che
 
 /** auth_url を browser で開く best-effort。失敗しても flow は継続する。 */
 function openUrlBestEffort(url: string): void {
+  // Windows: spawn は `&` を escape しないため cmd のコマンド区切りになり、
+  // query 付き URL が切断される。明示的に quote して渡す。
   const cmd =
     process.platform === "win32"
-      ? { file: "cmd", args: ["/c", "start", "", url] }
+      ? { file: "cmd", args: ["/c", "start", "", `"${url}"`] }
       : process.platform === "darwin"
         ? { file: "open", args: [url] }
         : { file: "xdg-open", args: [url] };
