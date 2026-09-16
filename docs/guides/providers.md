@@ -132,16 +132,18 @@ OAuth flow を内蔵しており、credential は同じ `auth.json` に保存さ
 
 ### cheaper `models.yaml`
 
-利用する codex 系 model を low tier に pin する（例: `gpt-5.4-mini`。
-`cheaper auth status` の providers 一覧で利用可能 provider を確認できる）:
+利用する codex 系 model を low tier に pin する。ChatGPT アカウントの
+Codex では一部 model が非対応（`gpt-5.4-mini` / `gpt-5.3-codex-spark` /
+`gpt-5.4` は実測で PROVIDER_FAILURE）。**`gpt-5.5` は実測で動作確認済み**
+（EXP-0004）:
 
 ```yaml
 version: 1
 overrides:
-  "openai-codex/gpt-5.4-mini": low
+  "openai-codex/gpt-5.5": low
 preferences:
   low:
-    - "openai-codex/gpt-5.4-mini"
+    - "openai-codex/gpt-5.5"
     - "ollama/*"   # ローカル fallback
 ```
 

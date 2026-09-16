@@ -7,3 +7,4 @@ Directory: `docs/impl/exp`
 | [0001-pi-sdk-probe-and-test-stream-seam.jsonl](./0001-pi-sdk-probe-and-test-stream-seam.jsonl) |
 | [0002-ollama-real-provider-smoke-verification.jsonl](./0002-ollama-real-provider-smoke-verification.jsonl) |
 | [0003-bulk-read-delegation-benchmark.jsonl](./0003-bulk-read-delegation-benchmark.jsonl) |
+| [0004-openai-codex-subscription-e2e.jsonl](./0004-openai-codex-subscription-e2e.jsonl) |
