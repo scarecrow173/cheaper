@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0013"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Cross-agent distribution verification"
 created: "2026-09-17"
 updated: "2026-09-17"

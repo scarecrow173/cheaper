@@ -17,4 +17,4 @@ Directory: `docs/plans`
 | PLAN-0009 | Self-contained CLI bundle distribution | completed | [0009-self-contained-cli-bundle.md](./0009-self-contained-cli-bundle.md) |
 | PLAN-0010 | Write-scope enforcement and privacy deny list | completed | [0010-write-scope-and-privacy-deny.md](./0010-write-scope-and-privacy-deny.md) |
 | PLAN-0011 | cheaper auth command (provider login absorbed into the CLI) | completed | [0011-auth-command.md](./0011-auth-command.md) |
-| PLAN-0013 | Cross-agent distribution verification | in-progress | [0013-cross-agent-distribution-verification.md](./0013-cross-agent-distribution-verification.md) |
+| PLAN-0013 | Cross-agent distribution verification | completed | [0013-cross-agent-distribution-verification.md](./0013-cross-agent-distribution-verification.md) |
