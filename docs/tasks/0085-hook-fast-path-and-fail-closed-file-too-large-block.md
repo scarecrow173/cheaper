@@ -1,7 +1,7 @@
 ---
 id: "TASK-0085"
 type: "task"
-status: "todo"
+status: "done"
 title: "Hook fast-path and fail-closed FILE_TOO_LARGE block"
 created: "2026-09-17"
 updated: "2026-09-17"
