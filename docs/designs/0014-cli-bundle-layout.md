@@ -28,7 +28,8 @@ relations:
     - "../discovery/0006-apm-self-contained-cli-distribution.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "../adr/0013-distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"
   derived-by: []
   verifies: []
   verified-by: []

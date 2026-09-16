@@ -28,7 +28,8 @@ relations:
     - "../designs/0014-cli-bundle-layout.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "../adr/0014-absorb-provider-oauth-and-api-key-login-into-the-cheaper-cli-cheaper-auth.md"
   derived-by: []
   verifies: []
   verified-by: []
