@@ -14,3 +14,4 @@ Directory: `docs/plans`
 | PLAN-0006 | Restructure built-in writer Workers (code-writer + doc-writer) | completed | [0006-restructure-built-in-writer-workers.md](./0006-restructure-built-in-writer-workers.md) |
 | PLAN-0007 | Implement canonical Token Counter, count_tokens tool, and count-tokens CLI | completed | [0007-canonical-token-counter.md](./0007-canonical-token-counter.md) |
 | PLAN-0008 | Implement APM delegation skills and pre_read_code hook | in-progress | [0008-apm-delegation-layer.md](./0008-apm-delegation-layer.md) |
+| PLAN-0009 | Self-contained CLI bundle distribution | completed | [0009-self-contained-cli-bundle.md](./0009-self-contained-cli-bundle.md) |

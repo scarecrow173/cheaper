@@ -14,3 +14,4 @@ Directory: `docs/specs`
 | SPEC-0006 | code-writer and doc-writer built-in Workers | proposed | [0006-code-writer-and-doc-writer-built-in-workers.md](./0006-code-writer-and-doc-writer-built-in-workers.md) |
 | SPEC-0007 | Canonical Token Counter, count_tokens tool, and count-tokens CLI | proposed | [0007-canonical-token-counter.md](./0007-canonical-token-counter.md) |
 | SPEC-0008 | APM delegation skills and pre-read delegation hook | proposed | [0008-apm-delegation-skills-and-read-hook.md](./0008-apm-delegation-skills-and-read-hook.md) |
+| SPEC-0009 | Self-contained cheaper CLI distribution inside the APM hook bundle | proposed | [0009-apm-self-contained-cli-distribution.md](./0009-apm-self-contained-cli-distribution.md) |

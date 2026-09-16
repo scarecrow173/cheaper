@@ -79,3 +79,6 @@ Directory: `docs/tasks`
 | TASK-0071 | Create worker delegation skills | done | [0071-create-worker-delegation-skills.md](./0071-create-worker-delegation-skills.md) |
 | TASK-0072 | Implement pre_read_code hook and e2e test | done | [0072-implement-pre-read-code-hook.md](./0072-implement-pre-read-code-hook.md) |
 | TASK-0073 | Update indexes and verify delegation layer | done | [0073-update-indexes-and-verify-delegation-layer.md](./0073-update-indexes-and-verify-delegation-layer.md) |
+| TASK-0074 | CLI bundle script and hook argv resolution | done | [0074-cli-bundle-script-and-hook-argv.md](./0074-cli-bundle-script-and-hook-argv.md) |
+| TASK-0075 | Consumer install smoke e2e and skill updates | done | [0075-consumer-install-smoke.md](./0075-consumer-install-smoke.md) |
+| TASK-0076 | Verify CLI bundle distribution | done | [0076-verify-cli-bundle-distribution.md](./0076-verify-cli-bundle-distribution.md) |

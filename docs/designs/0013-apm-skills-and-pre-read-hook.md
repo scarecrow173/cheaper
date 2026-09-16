@@ -83,8 +83,8 @@ worker skill は `cheaper-usage` を名前参照し、CLI 細部を重複記述�
   "hooks": {
     "pre_read_code": [
       {
-        "command": "node ./pre-read-code.js",
-        "powershell": "node ./pre-read-code.js",
+        "command": "node ./pre-read-code.js \"./cli/bin/cheaper.mjs\"",
+        "powershell": "node ./pre-read-code.js \"./cli/bin/cheaper.mjs\"",
         "show_output": false
       }
     ]
@@ -104,8 +104,9 @@ zero-dep CommonJS。処理:
 3. `tool_info.file_path` を `fs.statSync`。非 file / 非存在 → exit 0
 4. `cheaper count-tokens <abs path> --cwd <process.cwd()>` を
    `spawnSync` で実行（hook の cwd は workspace root が default）
-   - CLI 解決: `process.env.CHEAPER_CLI` → `cheaper` on PATH。
-     `.js` で終わる path は `process.execPath`（node）で起動
+   - CLI 解決: argv[2]（hooks.json が渡す bundled path、DESIGN-0014）→
+     `process.env.CHEAPER_CLI` → `cheaper` on PATH。
+     `.js`/`.mjs` で終わる path は `process.execPath`（node）で起動
    - 起動失敗 / 非 0 exit / envelope 非 `ok` → exit 0（fail-open）
 5. `result.tokens > THRESHOLD` → stderr に guidance を書き exit 2。
    それ以外 → exit 0
