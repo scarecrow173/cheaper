@@ -1,7 +1,7 @@
 ---
 id: "TASK-0087"
 type: "task"
-status: "todo"
+status: "done"
 title: "Per-target apm install verification e2e"
 created: "2026-09-17"
 updated: "2026-09-17"
