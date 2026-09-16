@@ -83,3 +83,4 @@ Directory: `docs/tasks`
 | TASK-0075 | Consumer install smoke e2e and skill updates | done | [0075-consumer-install-smoke.md](./0075-consumer-install-smoke.md) |
 | TASK-0076 | Verify CLI bundle distribution | done | [0076-verify-cli-bundle-distribution.md](./0076-verify-cli-bundle-distribution.md) |
 | TASK-0077 | Delegation loop e2e (pre_read_code block to bundled bulk-read) | done | [0077-delegation-loop-e2e.md](./0077-delegation-loop-e2e.md) |
+| TASK-0078 | bulk-read delegation benchmark and read threshold decision | done | [0078-bulk-read-benchmark-and-threshold-decision.md](./0078-bulk-read-benchmark-and-threshold-decision.md) |

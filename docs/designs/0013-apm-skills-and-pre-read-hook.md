@@ -112,8 +112,7 @@ zero-dep CommonJS。処理:
    それ以外 → exit 0
 
 THRESHOLD = `parseInt(process.env.CHEAPER_READ_TOKEN_THRESHOLD)` または
-default `8192`（provisional。Phase 6 benchmark で確定値へ更新し、
-この default を docs から参照可能な定数として定義する）。
+default `8192`（ADR-0012 で DISC-0007 benchmark に基づき確定）。
 
 block message（stderr、agent が読む）:
 
