@@ -68,3 +68,6 @@ Directory: `docs/tasks`
 | TASK-0060 | Anchor policy timeout at runWorker start and amend DESIGN-0004 | todo | [0060-anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./0060-anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
 | TASK-0061 | Isolate unit tests from user and project config via env | todo | [0061-isolate-unit-tests-from-user-and-project-config-via-env.md](./0061-isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-0062 | Update README and add provider setup guide | todo | [0062-update-readme-and-add-provider-setup-guide.md](./0062-update-readme-and-add-provider-setup-guide.md) |
+| TASK-0063 | Migrate cheap-writer to code-writer | done | [0063-migrate-cheap-writer-to-code-writer.md](./0063-migrate-cheap-writer-to-code-writer.md) |
+| TASK-0064 | Add doc-writer built-in Worker | done | [0064-add-doc-writer-worker.md](./0064-add-doc-writer-worker.md) |
+| TASK-0065 | Update docs indexes, supersede relations, and verify writer restructure | done | [0065-update-docs-and-verify-writer-restructure.md](./0065-update-docs-and-verify-writer-restructure.md) |

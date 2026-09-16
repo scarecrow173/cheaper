@@ -1,10 +1,10 @@
 ---
 id: "DESIGN-0007"
 type: "design"
-status: "approved"
+status: "superseded"
 title: "cheap-writer contract"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-09-16"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -21,7 +21,8 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "0011-writer-worker-contracts.md"
   related:
     - "0002-workspace-filesystem-boundary-sandboxed-tools.md"
     - "0004-pi-execution-engine.md"
