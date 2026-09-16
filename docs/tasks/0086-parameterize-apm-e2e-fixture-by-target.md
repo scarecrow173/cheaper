@@ -1,7 +1,7 @@
 ---
 id: "TASK-0086"
 type: "task"
-status: "todo"
+status: "done"
 title: "Parameterize apm e2e fixture by target"
 created: "2026-09-17"
 updated: "2026-09-17"
