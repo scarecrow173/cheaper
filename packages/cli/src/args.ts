@@ -25,7 +25,24 @@ export interface CountTokensCliArgs {
   quiet: boolean;
 }
 
-export type ParsedCli = { kind: "help" } | { kind: "version" } | RunCliArgs | CountTokensCliArgs;
+export interface AuthCliArgs {
+  kind: "auth";
+  /** `auth status|login|logout` の action。 */
+  action: "status" | "login" | "logout";
+  /** login/logout 必須、status では optional filter。 */
+  provider: string | undefined;
+  /** login の `select` prompt へ即答する option id（browser/device 等）。 */
+  method: string | undefined;
+  format: "json" | "text";
+  quiet: boolean;
+}
+
+export type ParsedCli =
+  | { kind: "help" }
+  | { kind: "version" }
+  | RunCliArgs
+  | CountTokensCliArgs
+  | AuthCliArgs;
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
@@ -50,6 +67,7 @@ function parseArgsSafe(argv: readonly string[]) {
         "worker-file": { type: "string" },
         cwd: { type: "string" },
         timeout: { type: "string" },
+        method: { type: "string" },
         format: { type: "string", default: "json" },
         quiet: { type: "boolean", default: false },
         help: { type: "boolean", default: false },
@@ -84,7 +102,7 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
   const command = positionals[0];
   if (command === undefined) {
     throw invalidRequest(
-      "command required: run | bulk-read | code-write | doc-write | count-tokens",
+      "command required: run | bulk-read | code-write | doc-write | count-tokens | auth",
     );
   }
 
@@ -107,10 +125,47 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
     if (values.input !== "-") {
       throw invalidRequest("--input is only valid for worker runs");
     }
+    if (values.method !== undefined) {
+      throw invalidRequest("--method is only valid for `auth login`");
+    }
     return {
       kind: "count-tokens",
       path: target,
       cwd: values.cwd,
+      format,
+      quiet: values.quiet === true,
+    };
+  }
+
+  if (command === "auth") {
+    if (workerFile !== undefined) {
+      throw invalidRequest("--worker-file is only valid for `run`");
+    }
+    if (values.timeout !== undefined) {
+      throw invalidRequest("--timeout is only valid for worker runs");
+    }
+    if (values.input !== "-") {
+      throw invalidRequest("--input is only valid for worker runs");
+    }
+    const action = positionals[1];
+    if (action !== "status" && action !== "login" && action !== "logout") {
+      throw invalidRequest(`unknown auth action: ${String(action)} (expected status|login|logout)`);
+    }
+    if (positionals.length > 3) {
+      throw invalidRequest(`unexpected arguments: ${positionals.slice(3).join(" ")}`);
+    }
+    const provider = positionals[2];
+    if (provider === undefined && action !== "status") {
+      throw invalidRequest(`auth ${action} requires <provider>`);
+    }
+    if (values.method !== undefined && action !== "login") {
+      throw invalidRequest("--method is only valid for `auth login`");
+    }
+    return {
+      kind: "auth",
+      action,
+      provider,
+      method: values.method,
       format,
       quiet: values.quiet === true,
     };
@@ -139,6 +194,10 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
     workerName = ALIAS_WORKERS[command];
   } else {
     throw invalidRequest(`unknown command: ${command}`, { command });
+  }
+
+  if (values.method !== undefined) {
+    throw invalidRequest("--method is only valid for `auth login`");
   }
 
   if (workerName !== undefined && !NAME_PATTERN.test(workerName)) {

@@ -23,6 +23,7 @@ import {
   type WorkerRunMeta,
 } from "@cheaper/runtime-pi";
 import { parseCliArgs, type RunCliArgs } from "./args.js";
+import { executeAuth } from "./auth.js";
 import {
   type CliEnvelope,
   envelopeJson,
@@ -66,12 +67,16 @@ Commands:
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
   count-tokens <path>    Count canonical tokens of a workspace file
+  auth status [provider] Show stored credentials and provider readiness
+  auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
+  auth logout <provider> Remove a provider credential
 
 Options:
   --input <file|->       Task input JSON (default: stdin)
   --worker-file <path>   Run an explicit worker file (run only)
   --cwd <path>           Workspace root (default: process.cwd())
   --timeout <duration>   Narrow policy timeout (e.g. 30s, 5m)
+  --method <id>          Auto-answer auth login select prompts (e.g. device)
   --format <json|text>   Output format (default: json)
   --quiet                Suppress stderr diagnostics
   --help                 Show this help
@@ -278,6 +283,12 @@ export async function runCli(
       return 0;
     }
 
+    if (parsed.kind === "auth") {
+      const { envelope, exitCode } = await executeAuth(parsed, io, hooks, startedAt);
+      io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
+      return exitCode;
+    }
+
     const { envelope, exitCode, modelLine } = await executeRun(
       parsed,
       io,
@@ -295,7 +306,7 @@ export async function runCli(
     let format: "json" | "text" = "json";
     try {
       const p = parseCliArgs(argv);
-      if (p.kind === "run") format = p.format;
+      if (p.kind === "run" || p.kind === "count-tokens" || p.kind === "auth") format = p.format;
     } catch {
       // args 自体が不正なら json のまま
     }

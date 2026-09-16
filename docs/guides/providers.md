@@ -115,20 +115,25 @@ API key は不要だが、初回のみ interactive な OAuth ログインが必�
 
 ### セットアップ（ユーザー操作）
 
-1. `pi` を起動し login コマンドで `openai-codex` の OAuth フローを完了する
-   （ブラウザで ChatGPT アカウントにサインイン）。
+`pi` の standalone install は不要。`cheaper auth` が同じ Pi runtime の
+OAuth flow を内蔵しており、credential は同じ `auth.json` に保存される。
+
+1. `cheaper auth login openai-codex` を実行する。ブラウザが開き
+   ChatGPT アカウントへのサインインを求められる。browser が使えない
+   環境では `--method device` で device code flow を選べる
+   （device code は対象 URL と code が stderr に表示される）。
    成功すると `%USERPROFILE%\.pi\agent\auth.json` に credential が保存される
 2. 確認:
 
    ```bash
-   pi auth check --provider openai-codex --json
-   # → {"status":"ready", ...}
+   cheaper auth status openai-codex
+   # → result.providers[0].configured === true
    ```
 
 ### cheaper `models.yaml`
 
 利用する codex 系 model を low tier に pin する（例: `gpt-5.4-mini`。
-`pi auth check` や Pi の model catalog で利用可能 id を確認すること）:
+`cheaper auth status` の providers 一覧で利用可能 provider を確認できる）:
 
 ```yaml
 version: 1
