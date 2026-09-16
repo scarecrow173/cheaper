@@ -75,3 +75,7 @@ Directory: `docs/tasks`
 | TASK-0067 | Add count_tokens portable tool | done | [0067-add-count-tokens-tool.md](./0067-add-count-tokens-tool.md) |
 | TASK-0068 | Add count-tokens CLI command | done | [0068-add-count-tokens-cli.md](./0068-add-count-tokens-cli.md) |
 | TASK-0069 | Token counter CLI/tool parity tests and full verification | done | [0069-token-counter-parity-and-verification.md](./0069-token-counter-parity-and-verification.md) |
+| TASK-0070 | Create cheaper-usage skill | done | [0070-create-cheaper-usage-skill.md](./0070-create-cheaper-usage-skill.md) |
+| TASK-0071 | Create worker delegation skills | done | [0071-create-worker-delegation-skills.md](./0071-create-worker-delegation-skills.md) |
+| TASK-0072 | Implement pre_read_code hook and e2e test | done | [0072-implement-pre-read-code-hook.md](./0072-implement-pre-read-code-hook.md) |
+| TASK-0073 | Update indexes and verify delegation layer | done | [0073-update-indexes-and-verify-delegation-layer.md](./0073-update-indexes-and-verify-delegation-layer.md) |

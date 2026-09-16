@@ -10,3 +10,4 @@ Directory: `docs/discovery`
 | DISC-0002 | Real provider smoke verification via Ollama | resolved | [0002-real-provider-smoke-verification-via-ollama.md](./0002-real-provider-smoke-verification-via-ollama.md) |
 | DISC-0003 | Post-smoke code review findings on abort, repair, and timeout semantics | draft | [0003-post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md](./0003-post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md) |
 | DISC-0004 | V2 productization initiative briefing: worker restructure, token counting, APM delegation | resolved | [0004-v2-productization-initiative-briefing.md](./0004-v2-productization-initiative-briefing.md) |
+| DISC-0005 | Windsurf Cascade hooks and APM hook deployment for pre-read delegation | resolved | [0005-windsurf-cascade-hooks-and-apm-hook-deployment.md](./0005-windsurf-cascade-hooks-and-apm-hook-deployment.md) |

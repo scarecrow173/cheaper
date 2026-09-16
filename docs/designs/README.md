@@ -19,3 +19,4 @@ Directory: `docs/designs`
 | DESIGN-0010 | Repair abort and failure normalization hardening | draft | [0010-repair-abort-and-failure-normalization-hardening.md](./0010-repair-abort-and-failure-normalization-hardening.md) |
 | DESIGN-0011 | code-writer and doc-writer worker contracts | approved | [0011-writer-worker-contracts.md](./0011-writer-worker-contracts.md) |
 | DESIGN-0012 | Token counter contract (core module, count_tokens tool, count-tokens CLI) | approved | [0012-token-counter-contract.md](./0012-token-counter-contract.md) |
+| DESIGN-0013 | APM skills and pre_read_code delegation hook | approved | [0013-apm-skills-and-pre-read-hook.md](./0013-apm-skills-and-pre-read-hook.md) |
