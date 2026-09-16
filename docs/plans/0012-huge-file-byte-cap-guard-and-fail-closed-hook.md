@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0012"
 type: "plan"
-status: "in-progress"
+status: "completed"
 test-spec-skip: "Verified by package unit/e2e test suites and CI; no dedicated test-spec doc authored."
 title: "Huge-file byte cap guard and fail-closed hook"
 created: "2026-09-17"
