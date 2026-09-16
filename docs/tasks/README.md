@@ -82,3 +82,4 @@ Directory: `docs/tasks`
 | TASK-0074 | CLI bundle script and hook argv resolution | done | [0074-cli-bundle-script-and-hook-argv.md](./0074-cli-bundle-script-and-hook-argv.md) |
 | TASK-0075 | Consumer install smoke e2e and skill updates | done | [0075-consumer-install-smoke.md](./0075-consumer-install-smoke.md) |
 | TASK-0076 | Verify CLI bundle distribution | done | [0076-verify-cli-bundle-distribution.md](./0076-verify-cli-bundle-distribution.md) |
+| TASK-0077 | Delegation loop e2e (pre_read_code block to bundled bulk-read) | done | [0077-delegation-loop-e2e.md](./0077-delegation-loop-e2e.md) |

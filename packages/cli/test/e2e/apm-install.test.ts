@@ -1,41 +1,15 @@
 import { spawnSync } from "node:child_process";
-import {
-  cpSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { cliRoot } from "./helpers.js";
-
-const repoRoot = path.join(cliRoot, "..", "..");
-
-function apmAvailable(): boolean {
-  const r = spawnSync("apm", ["--version"], { shell: true, encoding: "utf8" });
-  return r.status === 0;
-}
-
-// local path dep として install できる最小 package（repo の .apm/ + 無依存
-// apm.yml）を作る。repo 本体は transitive remote deps と node_modules を
-// 含むため、そのままでは local dep に使えない（DESIGN-0014 / DISC-0006）。
-function makeConsumerLayout(root: string): { pkg: string; consumer: string } {
-  const pkg = path.join(root, "pkg");
-  const consumer = path.join(root, "consumer");
-  mkdirSync(pkg, { recursive: true });
-  mkdirSync(consumer, { recursive: true });
-  cpSync(path.join(repoRoot, ".apm"), path.join(pkg, ".apm"), { recursive: true });
-  writeFileSync(path.join(pkg, "apm.yml"), 'name: cheaper\nversion: "0.0.0"\n');
-  writeFileSync(
-    path.join(consumer, "apm.yml"),
-    'name: consumer\nversion: "0.0.1"\ntargets:\n- windsurf\ndependencies:\n  apm:\n  - path: ../pkg\n',
-  );
-  return { pkg, consumer };
-}
+import {
+  apmAvailable,
+  apmInstall,
+  bundledCli,
+  bundleRoot,
+  makeConsumerLayout,
+} from "./apm-fixture.js";
 
 describe("APM consumer install smoke (windsurf target)", () => {
   let root: string;
@@ -55,12 +29,7 @@ describe("APM consumer install smoke (windsurf target)", () => {
       t.skip("apm CLI not available on PATH");
       return;
     }
-    const install = spawnSync("apm", ["install", "--target", "windsurf"], {
-      cwd: consumer,
-      shell: true,
-      encoding: "utf8",
-      env: { ...process.env, HOME: root, USERPROFILE: root },
-    });
+    const install = apmInstall(consumer, root);
     expect(install.status).toBe(0);
 
     // skills deploy
@@ -80,13 +49,13 @@ describe("APM consumer install smoke (windsurf target)", () => {
     ) as { hooks: Record<string, Array<{ command: string }>> };
     const entry = hooksJson.hooks.pre_read_code?.[0];
     expect(entry).toBeDefined();
-    const bundleRoot = path.join(consumer, ".windsurf", "hooks", "pkg");
+    const bundle = bundleRoot(consumer);
     expect(entry.command).toContain("pre-read-code.js");
     expect(entry.command).toContain("cli/bin/cheaper.mjs");
-    const bundledCli = path.join(bundleRoot, "cli", "bin", "cheaper.mjs");
+    const cli = bundledCli(consumer);
 
     // bundled CLI が動く
-    const version = spawnSync(process.execPath, [bundledCli, "--version"], {
+    const version = spawnSync(process.execPath, [cli, "--version"], {
       cwd: consumer,
       encoding: "utf8",
     });
@@ -99,18 +68,14 @@ describe("APM consumer install smoke (windsurf target)", () => {
       "lorem ipsum dolor sit amet ".repeat(4000),
       "utf8",
     );
-    const hook = spawnSync(
-      process.execPath,
-      [path.join(bundleRoot, "pre-read-code.js"), bundledCli],
-      {
-        cwd: consumer,
-        input: JSON.stringify({
-          agent_action_name: "pre_read_code",
-          tool_info: { file_path: path.join(consumer, "big.txt") },
-        }),
-        encoding: "utf8",
-      },
-    );
+    const hook = spawnSync(process.execPath, [path.join(bundle, "pre-read-code.js"), cli], {
+      cwd: consumer,
+      input: JSON.stringify({
+        agent_action_name: "pre_read_code",
+        tool_info: { file_path: path.join(consumer, "big.txt") },
+      }),
+      encoding: "utf8",
+    });
     expect(hook.status).toBe(2);
     expect(hook.stderr).toContain("bulk-read");
   }, 120_000);
