@@ -8,3 +8,4 @@ Directory: `docs/impl/exp`
 | [0002-ollama-real-provider-smoke-verification.jsonl](./0002-ollama-real-provider-smoke-verification.jsonl) |
 | [0003-bulk-read-delegation-benchmark.jsonl](./0003-bulk-read-delegation-benchmark.jsonl) |
 | [0004-openai-codex-subscription-e2e.jsonl](./0004-openai-codex-subscription-e2e.jsonl) |
+| [0005-apm-windsurf-consumer-e2e.jsonl](./0005-apm-windsurf-consumer-e2e.jsonl) |
