@@ -84,3 +84,6 @@ Directory: `docs/tasks`
 | TASK-0076 | Verify CLI bundle distribution | done | [0076-verify-cli-bundle-distribution.md](./0076-verify-cli-bundle-distribution.md) |
 | TASK-0077 | Delegation loop e2e (pre_read_code block to bundled bulk-read) | done | [0077-delegation-loop-e2e.md](./0077-delegation-loop-e2e.md) |
 | TASK-0078 | bulk-read delegation benchmark and read threshold decision | done | [0078-bulk-read-benchmark-and-threshold-decision.md](./0078-bulk-read-benchmark-and-threshold-decision.md) |
+| TASK-0079 | Core deny-path matcher, writeScope frontmatter, policy denyPaths | done | [0079-core-deny-matcher-and-write-scope-field.md](./0079-core-deny-matcher-and-write-scope-field.md) |
+| TASK-0080 | Runtime-pi scope and deny enforcement in sandboxed tools | done | [0080-runtime-scope-and-deny-enforcement.md](./0080-runtime-scope-and-deny-enforcement.md) |
+| TASK-0081 | Writer writeScope declaration and e2e verification | done | [0081-writer-write-scope-and-e2e-verification.md](./0081-writer-write-scope-and-e2e-verification.md) |

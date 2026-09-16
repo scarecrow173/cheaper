@@ -15,3 +15,4 @@ Directory: `docs/specs`
 | SPEC-0007 | Canonical Token Counter, count_tokens tool, and count-tokens CLI | proposed | [0007-canonical-token-counter.md](./0007-canonical-token-counter.md) |
 | SPEC-0008 | APM delegation skills and pre-read delegation hook | proposed | [0008-apm-delegation-skills-and-read-hook.md](./0008-apm-delegation-skills-and-read-hook.md) |
 | SPEC-0009 | Self-contained cheaper CLI distribution inside the APM hook bundle | proposed | [0009-apm-self-contained-cli-distribution.md](./0009-apm-self-contained-cli-distribution.md) |
+| SPEC-0010 | Write-scope enforcement and in-workspace privacy deny list | proposed | [0010-write-scope-and-privacy-deny.md](./0010-write-scope-and-privacy-deny.md) |
