@@ -98,6 +98,7 @@ Directory: `docs/tasks`
 | TASK-0090 | Bounded read tool and registry swap | done | [0090-bounded-read-tool-and-registry-swap.md](./0090-bounded-read-tool-and-registry-swap.md) |
 | TASK-0091 | Streaming grep with batch protocol and bounded footer | done | [0091-streaming-grep-batch-protocol-and-bounded-footer.md](./0091-streaming-grep-batch-protocol-and-bounded-footer.md) |
 | TASK-0092 | Bulk-reader guidance, deny/registry parity, and final verification | done | [0092-bulk-reader-guidance-parity-and-final-verification.md](./0092-bulk-reader-guidance-parity-and-final-verification.md) |
+<<<<<<< HEAD
 | TASK-0093 | Auth URL opener seam and test isolation | done | [0093-auth-url-opener-seam-and-test-isolation.md](./0093-auth-url-opener-seam-and-test-isolation.md) |
 | TASK-0094 | Auth URL opener final verification and status sync | done | [0094-auth-url-opener-final-verification.md](./0094-auth-url-opener-final-verification.md) |
 | TASK-0095 | Move .apm primitives to nested distributable package | done | [0095-move-apm-primitives-to-distributable-package.md](./0095-move-apm-primitives-to-distributable-package.md) |
@@ -107,6 +108,8 @@ Directory: `docs/tasks`
 | TASK-0099 | Define mise setup/check TOML tasks and lockfile setting | done | [0099-define-mise-setup-check-tasks-and-lockfile-setting.md](./0099-define-mise-setup-check-tasks-and-lockfile-setting.md) |
 | TASK-0100 | Align CI with canonical setup/check entrypoints | done | [0100-align-ci-with-canonical-entrypoints.md](./0100-align-ci-with-canonical-entrypoints.md) |
 | TASK-0101 | Update docs and verify clean-state setup/check | done | [0101-update-docs-and-verify-clean-state-setup-check.md](./0101-update-docs-and-verify-clean-state-setup-check.md) |
+| TASK-0102 | Enforce grep batchMaxBytes invariant at construction | todo | [0102-enforce-grep-batch-max-bytes-invariant.md](./0102-enforce-grep-batch-max-bytes-invariant.md) |
+| TASK-0103 | grep batch invariant final verification | todo | [0103-grep-batch-invariant-final-verification.md](./0103-grep-batch-invariant-final-verification.md) |
 | TASK-0104 | Add version check and set scripts | done | [0104-add-version-check-and-set-scripts.md](./0104-add-version-check-and-set-scripts.md) |
 | TASK-0105 | Unify versions, wire check, and document release | done | [0105-unify-versions-wire-check-and-document-release.md](./0105-unify-versions-wire-check-and-document-release.md) |
 | TASK-0106 | Copilot adapter script, hooks.json registration, and stdin-injection tests | done | [0106-copilot-adapter-script-and-hook-tests.md](./0106-copilot-adapter-script-and-hook-tests.md) |
