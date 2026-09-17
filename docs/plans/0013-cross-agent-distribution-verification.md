@@ -55,9 +55,11 @@ metadata: {}
 
 `apm.yml` に宣言された全 target（copilot / codex / claude / cursor /
 windsurf / agent-skills）について、`apm install` の deploy 結果と
-generated hook config の挙動（functional / documented no-op）を
+generated hook config の deploy 証拠（functional /
+deploys-but-nonfunctional (expected no-op) の分類根拠）を
 table-driven e2e test と canonical contract matrix で検証済みの証拠
-として固定する。成果物は per-target の機能適応ではなく test と
+として固定する。expected no-op は documented contract からの推論で
+runtime loader の実機挙動は未検証とする。成果物は per-target の機能適応ではなく test と
 matrix という証拠である（SPEC-0013 / DESIGN-0018）。
 
 ## Scope
@@ -215,7 +217,7 @@ stream はない — 0087 は 0086 の fixture API に依存し、0088 は 0087
 | SPEC-0013 acceptance criterion | 対応 task / test |
 |--------------------------------|------------------|
 | 全 declared target の deploy 内容（hook bundle + generated config path/schema）を証明する automated test | TASK-0087 — `apm-install-targets.test.ts`（windsurf 含む 6 target。windsurf の runtime 挙動は既存 `apm-install.test.ts`） |
-| 各 target の deploy config が functional / no-op かと理由が canonical record に記載 | TASK-0087（`pre_read_code` event key verbatim assert で no-op を test 上に固定）+ TASK-0088（DISC-0009 への分類記録） |
+| 各 target の deploy config が functional / no-op かと理由が canonical record に記載 | TASK-0087（`pre_read_code` event key verbatim assert で expected no-op 分類の deploy evidence を固定。runtime loader 実機未検証）+ TASK-0088（DISC-0009 への分類記録） |
 | contract matrix が native event・stdin shape・blocking mechanism・Codex coverage gap・Copilot fail-closed を記録 | TASK-0088 — DISC-0009 既存 matrix への最終分類追記（既存記述 + evidence 参照で完結） |
 | 既存 windsurf e2e が引き続き pass | TASK-0086/0087 の verification（既存 file 無変更 + suite green） |
 | 各 target が functional / deploys-but-nonfunctional (expected no-op) / unsupported に分類 | TASK-0088 — DISC-0009 最終分類テーブル |

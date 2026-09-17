@@ -68,9 +68,10 @@ case でカバーする（DESIGN-0018 §2）。
 - `generatedConfigPaths(consumer, target)` の各 path が存在し
   `JSON.parse` 可能
 - config 内の登録 event key が **`pre_read_code` verbatim** である
-  ことを assert — deploy の証明であると同時に「この event は
-  non-windsurf では発火しない = documented no-op」を test 上の記録
-  として固定する（ADR-0016）
+  ことを assert — deploy の証明であると同時に expected no-op 分類の
+  根拠となる deploy evidence（event 名が native contract と不一致）
+  を test 上の記録として固定する。no-op 自体は documented
+  contract からの推論で runtime loader は実機未検証（ADR-0016）
 - bundled CLI が consumer workspace で動く:
   `node <cli> count-tokens <file> --cwd <consumer>` → exit 0
   （`process.execPath` 経由で spawn）。`--version` は

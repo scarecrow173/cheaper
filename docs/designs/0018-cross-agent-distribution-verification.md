@@ -141,9 +141,10 @@ hook 対象 5 target 共通:
   `cli/bin/cheaper.mjs`, `cli/workers/`, `cli/policy.yaml`
 - generated config が agent-correct path に存在し JSON parse 可能
 - config 内の登録 event key が **`pre_read_code` verbatim** であること
-  を assert — deploy の証明であると同時に、「この event は
-  non-windsurf では発火しない = documented no-op」を test 上の記録と
-  して固定する
+  を assert — deploy の証明であると同時に、expected no-op 分類の
+  根拠となる deploy evidence（event 名が native contract と不一致）
+  を test 上の記録として固定する。no-op 自体は documented
+  contract からの推論で runtime loader は実機未検証（ADR-0016）
 - bundled CLI が consumer workspace で動く:
   `node <cli> count-tokens <file> --cwd <consumer>` → exit 0
 
@@ -209,8 +210,8 @@ target 固有:
 - 新規 dependency なし。実行は `pnpm --filter cheaper test`、apm CLI
   不在環境では `apmAvailable()` で skip
 - **Copilot fail-closed caveat（将来 adapter の不変条件として固定）**:
-  現状の verbatim deploy が安全なのは `pre_read_code` が発火しない
-  ため。Copilot の command `preToolUse` hook は fail-closed であり、
+  現状の verbatim deploy が安全なのは documented contract 上
+  `pre_read_code` が発火しないため（runtime loader 実機未検証）。Copilot の command `preToolUse` hook は fail-closed であり、
   将来の adapter は「意図的 block 以外で絶対に non-zero exit /
   `permissionDecision: "deny"` を返さない」を保証しなければならない
   （fail-open 前提の現行 contract が Copilot では反転する）。本
