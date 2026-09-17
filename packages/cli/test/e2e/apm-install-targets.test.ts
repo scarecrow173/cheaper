@@ -94,7 +94,8 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
     }
 
     // 登録 event key が pre_read_code verbatim であることの記録
-    // （non-windsurf では発火しない documented no-op — ADR-0016）。
+    // （non-windsurf では documented contract 上 expected no-op。
+    // runtime loader の挙動は実機未検証 — ADR-0016）。
     if (target === "claude") {
       // .claude/settings.json: hooks → <event> → matcher → hooks の nested shape
       const settingsPath = configPaths.find((p) => p.endsWith("settings.json"));

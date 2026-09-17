@@ -85,10 +85,15 @@ pre-read interception が実現可能か、の 2 点を確定する。
 - **全 config が hook を Windsurf-native event name `pre_read_code` のまま
   登録している**。Claude / Codex / Cursor / Copilot 向け config でも
   event name は変換されず verbatim で書き込まれる
-- e2e coverage は現状 `packages/cli/test/e2e/apm-install.test.ts`
-  （windsurf target）のみ: minimal local package を consumer へ install し、
-  skills deploy・hooks.json shape・bundled CLI `--version`・large file が
-  exit 2 で block されることを assert している
+- e2e coverage:
+  - windsurf: `packages/cli/test/e2e/apm-install.test.ts` が install +
+    hook block の実動作を検証（skills deploy・hooks.json shape・
+    bundled CLI `--version`・large file が exit 2 で block）
+  - non-windsurf / agent-skills:
+    `packages/cli/test/e2e/apm-install-targets.test.ts` が
+    install・deploy layout・generated config・bundled CLI capability
+    を検証
+  - non-windsurf の agent runtime loader 実機 E2E は未実施
 - deployment drift の観測点: 本 repo 自身の `.windsurf/hooks.json` の
   `powershell` entry には `; exit $LASTEXITCODE` が無いが、package
   template の `.apm/hooks/hooks.json` には含まれる。dogfooded deployment

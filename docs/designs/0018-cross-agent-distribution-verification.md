@@ -100,7 +100,7 @@ windsurf target のみ。
   --target <target>` を spawn
 - `bundleRoot(consumer, target = "windsurf")`: target → deploy dir map
 - `generatedConfigPaths(consumer, target)`: target → 生成 config path
-  一覧（claude は 2 file、agent-skills は空）
+  一覧（claude / codex / cursor は 2 file、agent-skills は空）
 
 棄却: option (b)（per-target test file）は、差分が (target, deploy
 path, config path) のみで fixture boilerplate が 6 重複するため。
