@@ -1,7 +1,7 @@
 ---
 id: "ADR-0017"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "bulk-reader の巨大ファイル I/O を有界 read・streaming grep・path-only find にする"
 created: "2026-09-17"
 updated: "2026-09-17"

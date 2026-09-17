@@ -32,7 +32,8 @@ relations:
   refined-by: []
   derives-from:
     - "../adr/0017-bulk-reader-huge-file-safe-io.md"
-  derived-by: []
+  derived-by:
+    - "../plans/0014-bulk-reader-huge-file-safe-io.md"
   verifies: []
   verified-by: []
   references: []
