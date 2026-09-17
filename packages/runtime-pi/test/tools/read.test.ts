@@ -313,6 +313,171 @@ describe("bounded read: byteInLine 継続", () => {
   });
 });
 
+describe("bounded read: byte cap と UTF-8 文字境界", () => {
+  // continuation を辿って全 page を取得する（進行性の上限 50 回）。
+  async function paginate(
+    t: ReturnType<typeof createReadTool>,
+    p: { path: string; offset?: number; byteInLine?: number },
+  ) {
+    const pages: Array<{ body: string; details: ReadToolDetails }> = [];
+    let offset = p.offset ?? 1;
+    let byteInLine = p.byteInLine;
+    for (let i = 0; i < 50; i++) {
+      const { text, details } = await execute(t, {
+        path: p.path,
+        offset,
+        ...(byteInLine !== undefined ? { byteInLine } : {}),
+      });
+      let body = text;
+      const trailerIdx = body.indexOf("\n[");
+      if (trailerIdx >= 0) body = body.slice(0, trailerIdx);
+      pages.push({ body, details });
+      if (details.eof) return pages;
+      const cont = details.continuation;
+      expect(cont).toBeDefined();
+      offset = cont?.offset ?? 0;
+      byteInLine = cont?.byteInLine;
+    }
+    throw new Error("pagination did not terminate");
+  }
+
+  // byteInLine 再開 page の先頭 marker 行を外して本文だけ取り出す。
+  const stripMarker = (body: string): string => {
+    const nl = body.indexOf("\n");
+    return nl >= 0 ? body.slice(nl + 1) : "";
+  };
+
+  it("does not split a multi-byte char at the byte cap (lossless pagination)", async () => {
+    // "a"*63 + "€b": € は byte 63-65 の 3 byte。cap 64 では € が収まらない。
+    const src = `${"a".repeat(63)}€b`;
+    await writeFile(path.join(root, "cap-euro.txt"), src, "utf8");
+    const t = tool({ maxBytes: 64 });
+    const pages = await paginate(t, { path: "cap-euro.txt" });
+    // page1 は € を切断しない: U+FFFD なし、継続は € 先頭の byte 63。
+    expect(pages[0]?.body).toBe("a".repeat(63));
+    expect(pages[0]?.body).not.toContain("�");
+    expect(pages[0]?.details.continuation).toEqual({ offset: 1, byteInLine: 63 });
+    // 全 page の本文連結が元テキストを完全一致で復元する。
+    const joined =
+      (pages[0]?.body ?? "") +
+      pages
+        .slice(1)
+        .map((pg) => stripMarker(pg.body))
+        .join("");
+    expect(joined).toBe(src);
+  });
+
+  it("keeps byteInLine on a char boundary when the cap hits a multi-byte char mid-line", async () => {
+    // byteInLine>0 の再開 + cap が行途中の multibyte に当たるケース。
+    const src = `${"x".repeat(10)}€tail`; // byte 10-12 が €
+    await writeFile(path.join(root, "cap-euro-mid.txt"), src, "utf8");
+    const marker = "[partial line 1: continuing from byte 5]";
+    const maxBytes = Buffer.byteLength(marker, "utf8") + 1 + 5; // marker + `\n` + "x"*5 まで
+    const t = tool({ maxBytes });
+    const { text, details } = await execute(t, {
+      path: "cap-euro-mid.txt",
+      offset: 1,
+      byteInLine: 5,
+    });
+    const body = text.split("\n[").at(0) ?? "";
+    expect(body).toBe(`${marker}\n${"x".repeat(5)}`);
+    expect(body).not.toContain("�");
+    // 次の char は byte 10 の €（3B、残予算 0）。切断せず文字境界で継続する。
+    expect(details.continuation).toEqual({ offset: 1, byteInLine: 10 });
+    const pages = await paginate(t, { path: "cap-euro-mid.txt", offset: 1, byteInLine: 5 });
+    const joined = pages.map((pg) => stripMarker(pg.body)).join("");
+    expect(joined).toBe(src.slice(5)); // byteInLine=5 以降を欠落・重複なく復元
+  });
+
+  it("counts U+FFFD expansion of invalid bytes against the byte cap", async () => {
+    // 61 ASCII + [0xFF, 0xFE]: 各々 U+FFFD（3B）へ展開される。
+    const src = Buffer.concat([Buffer.from("a".repeat(61)), Buffer.from([0xff, 0xfe])]);
+    await writeFile(path.join(root, "cap-invalid.txt"), src);
+    const t = tool({ maxBytes: 64 });
+    const { text, details } = await execute(t, { path: "cap-invalid.txt" });
+    const body = text.split("\n[").at(0) ?? "";
+    // 0xFF → U+FFFD で 61+3=64 ≤ cap。0xFE は収まらず byteInLine 継続。
+    expect(body).toBe(`${"a".repeat(61)}�`);
+    expect(Buffer.byteLength(body, "utf8")).toBeLessThanOrEqual(64);
+    expect(details.continuation).toEqual({ offset: 1, byteInLine: 62 });
+    // 全 source byte が page またぎで 1 回ずつ表現される（0xFE → U+FFFD）。
+    const pages = await paginate(t, { path: "cap-invalid.txt" });
+    expect(pages).toHaveLength(2);
+    expect(stripMarker(pages[1]?.body ?? "")).toBe("�");
+  });
+
+  it("emits U+FFFD for an incomplete sequence at a genuine line tail (EOF)", async () => {
+    // EOF 直前の未完 sequence [E2 82] は continuation 待ちでなく不正 byte:
+    // 全消費して U+FFFD 1 個として emit する。
+    const src = Buffer.concat([Buffer.from("a".repeat(61)), Buffer.from([0xe2, 0x82])]);
+    await writeFile(path.join(root, "cap-tail.txt"), src);
+    const t = tool({ maxBytes: 64 });
+    const { text, details } = await execute(t, { path: "cap-tail.txt" });
+    expect(text).toBe(`${"a".repeat(61)}�`);
+    expect(details.eof).toBe(true);
+    expect(details.truncatedBy).toBeNull();
+  });
+
+  it("does not consume the incomplete tail on a budget cut", async () => {
+    // 同じ fixture で cap を 1 下げると tail の U+FFFD（3B）が収まらない。
+    // 予算切断では未完 tail を消費せず、次 call が emit する。
+    const t = tool({ maxBytes: 63 });
+    const pages = await paginate(t, { path: "cap-tail.txt" });
+    expect(pages[0]?.body).toBe("a".repeat(61));
+    expect(pages[0]?.body).not.toContain("�");
+    expect(pages[0]?.details.continuation).toEqual({ offset: 1, byteInLine: 61 });
+    expect(pages).toHaveLength(2);
+    expect(stripMarker(pages[1]?.body ?? "")).toBe("�");
+  });
+
+  it("does not split a 4-byte char at the byte cap", async () => {
+    // "a"*62 + U+10000（F0 90 80 80 = 4B）+ "b"。cap 63 では 4B char が収まらない。
+    const src = `${"a".repeat(62)}\u{10000}b`;
+    await writeFile(path.join(root, "cap-4byte.txt"), src, "utf8");
+    const t = tool({ maxBytes: 63 });
+    const pages = await paginate(t, { path: "cap-4byte.txt" });
+    expect(pages[0]?.body).toBe("a".repeat(62));
+    expect(pages[0]?.body).not.toContain("�");
+    expect(pages[0]?.details.continuation).toEqual({ offset: 1, byteInLine: 62 });
+    const joined =
+      (pages[0]?.body ?? "") +
+      pages
+        .slice(1)
+        .map((pg) => stripMarker(pg.body))
+        .join("");
+    expect(joined).toBe(src);
+  });
+
+  it("does not split a chunk-straddling multi-byte char at the byte cap", async () => {
+    // chunkBytes=46 で €（byte 45-47）が chunk 境界に跨ぎ、cap 46 がその途中に来る。
+    // byteInLine 継続は carry 分を含む未完 char の開始（byte 45）へ戻る。
+    const src = `${"a".repeat(45)}€${"z".repeat(10)}`;
+    await writeFile(path.join(root, "cap-chunk-euro.txt"), src, "utf8");
+    const t = tool({ chunkBytes: 46, maxBytes: 46 });
+    const pages = await paginate(t, { path: "cap-chunk-euro.txt" });
+    expect(pages[0]?.body).toBe("a".repeat(45));
+    expect(pages[0]?.body).not.toContain("�");
+    expect(pages[0]?.details.continuation).toEqual({ offset: 1, byteInLine: 45 });
+    const joined =
+      (pages[0]?.body ?? "") +
+      pages
+        .slice(1)
+        .map((pg) => stripMarker(pg.body))
+        .join("");
+    expect(joined).toBe(src);
+  });
+
+  it("decodes a multi-byte char split across a chunk boundary via carry", async () => {
+    // chunkBytes=3 で €（byte 2-4）が chunk 境界に跨ぐ。未完 prefix は次 region へ
+    // 持ち越して 1 文字として decode する。
+    await writeFile(path.join(root, "cap-chunk.txt"), "ab€cd\nxy\n", "utf8");
+    const t = tool({ chunkBytes: 3, maxBytes: 100 });
+    const { text, details } = await execute(t, { path: "cap-chunk.txt" });
+    expect(text).toBe("ab€cd\nxy\n");
+    expect(details.eof).toBe(true);
+  });
+});
+
 describe("bounded read: 明示 error", () => {
   it("rejects byteInLine without offset", async () => {
     const t = tool();

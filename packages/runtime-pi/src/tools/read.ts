@@ -88,7 +88,10 @@ interface ReadResult {
  * 行全体・file 全体を蓄積しない。行分割は raw Buffer 上の `0x0A` 走査で行い
  * （UTF-8 multibyte sequence に `0x0A` は現れないため安全）、decode は行単位で
  * `StringDecoder("utf8")` を使い不正 byte は U+FFFD に置換する。
- * `byteInLine` は常にファイル byte 基準。
+ * `byteInLine` は常にファイル byte 基準。byte 予算 R は「返却本文の
+ * decode 後 byte 数」に対する上限であり、multibyte char を予算・chunk 境界で
+ * 切断しない（未完 sequence は継続・次 region へ委ね、真の行末 tail のみ
+ * U+FFFD として消費する）。
  */
 async function readBounded(fh: FileHandle, size: number, p: ScanParams): Promise<ReadResult> {
   const buf = Buffer.alloc(p.chunkBytes);
@@ -189,7 +192,7 @@ async function readBounded(fh: FileHandle, size: number, p: ScanParams): Promise
   // 3. emit ループ。行ごとに残り byte 予算を引き、limit 行または maxBytes で継続を確定する。
   const decoder = new StringDecoder("utf8");
   const outLines: string[] = [];
-  let emittedBytes = 0; // join 後本文 byte 数（marker・行・`\n` 連結を含む）
+  let emittedBytes = 0; // join 後本文 byte 数（marker・行・`\n` 連結を含む、decode 後基準）
   let emittedLines = 0;
   let wroteSomething = false;
   let endLine = p.offset - 1;
@@ -211,16 +214,21 @@ async function readBounded(fh: FileHandle, size: number, p: ScanParams): Promise
   let curEmit = emitFrom;
 
   for (;;) {
-    const pieces: Buffer[] = [];
     const emitBeginInLine = curEmit - curStart;
-    let lineEmittedBytes = 0;
+    const lineEmitStart = curEmit;
+    let lineText = "";
+    let lineEmitted = false; // 1 文字でも emit したか（join 用 `\n` sep 計上の起点）
     let lineDone = false;
     let terminated = false;
     let budgetStop = false;
+    // region 末尾で未完だった UTF-8 sequence の prefix（≤3 byte、decoder 未投入）。
+    // 位置としては消費済みなので、未完 char の開始位置は curEmit - carry.length。
+    let carry = EMPTY;
 
     while (!lineDone && !budgetStop) {
       let regionEnd: number;
       let termHere = false;
+      let atEof = false;
       if (await ensure(curEmit)) {
         const nl = lfInChunk(curEmit);
         if (nl >= 0) {
@@ -231,30 +239,125 @@ async function readBounded(fh: FileHandle, size: number, p: ScanParams): Promise
         }
       } else {
         regionEnd = fileEnd;
+        atEof = true;
       }
-      const want = regionEnd - curEmit;
-      if (want > 0) {
-        // join 用 `\n` は本文 byte 予算に計上するが、separator 自体は
-        // outLines.join("\n") が供給するため pieces には入れない。
-        const sep = pieces.length === 0 && wroteSomething ? 1 : 0;
-        const take = Math.min(want, p.maxBytes - emittedBytes - sep);
-        if (take <= 0) {
+      const regionLen = Math.max(0, regionEnd - curEmit);
+      const regionBase = curEmit - chunkStart;
+      const wlen = carry.length + regionLen;
+      if (wlen > 0) {
+        // window = carry ++ region。WHATWG 規則で 1 文字ずつ
+        // （消費 src byte 数, emit する decode 後 byte 数）を確定し、
+        // 予算が尽きるか window 末尾で sequence が未完になる手前で止める。
+        const wat = (j: number): number =>
+          j < carry.length ? (carry[j] ?? 0) : (buf[regionBase + j - carry.length] ?? 0);
+        let j = 0; // 消費確定済みの window 先頭からの byte 数（常に文字境界）
+        let stop: "budget" | "incomplete" | null = null;
+        while (j < wlen) {
+          const b = wat(j);
+          let charLen = 0; // 消費する src byte 数（0 = window 末尾で未完）
+          let dec = 0; // emit する decode 後 byte 数
+          if (b < 0x80) {
+            charLen = 1;
+            dec = 1;
+          } else if (b < 0xc2 || b > 0xf4) {
+            // stray continuation・不正 lead（0x80-0xBF, 0xC0, 0xC1, 0xF5-0xFF）
+            charLen = 1;
+            dec = 3; // U+FFFD
+          } else {
+            const need = b < 0xe0 ? 1 : b < 0xf0 ? 2 : 3;
+            let valid = 0;
+            let malformed = false;
+            for (let k = 1; k <= need; k++) {
+              if (j + k >= wlen) break;
+              const c = wat(j + k);
+              // WHATWG 第 1 continuation 範囲
+              // （E0: A0-BF, ED: 80-9F, F0: 90-BF, F4: 80-8F, 他: 80-BF）。
+              let lo = 0x80;
+              let hi = 0xbf;
+              if (k === 1) {
+                if (b === 0xe0) lo = 0xa0;
+                else if (b === 0xed) hi = 0x9f;
+                else if (b === 0xf0) lo = 0x90;
+                else if (b === 0xf4) hi = 0x8f;
+              }
+              if (c < lo || c > hi) {
+                malformed = true;
+                break;
+              }
+              valid++;
+            }
+            if (malformed) {
+              // malformed subpart = lead + 有効 continuation 分を U+FFFD 1 個で消費
+              charLen = 1 + valid;
+              dec = 3;
+            } else if (valid === need) {
+              charLen = need + 1;
+              dec = need + 1;
+            }
+            // valid < need かつ不正 byte なし = window 末尾で未完（charLen 0 のまま）
+          }
+          if (charLen === 0) {
+            stop = "incomplete";
+            break;
+          }
+          // join 用 `\n` は本文 byte 予算に計上するが、separator 自体は
+          // outLines.join("\n") が供給するため piece には入れない。
+          const sep = !lineEmitted && wroteSomething ? 1 : 0;
+          if (emittedBytes + sep + dec > p.maxBytes) {
+            stop = "budget";
+            break;
+          }
+          emittedBytes += sep + dec;
+          lineEmitted = true;
+          j += charLen;
+        }
+        if (stop === "incomplete" && (termHere || atEof)) {
+          // region 末尾が真の行末（LF or EOF）: 未完 sequence は continuation 待ちでは
+          // なく不正 byte なので、残り全部を消費し U+FFFD 1 個（3 byte）として計上する。
+          const sep = !lineEmitted && wroteSomething ? 1 : 0;
+          if (emittedBytes + sep + 3 > p.maxBytes) {
+            stop = "budget"; // 予算切断では未完 tail を消費しない
+          } else {
+            emittedBytes += sep + 3;
+            lineEmitted = true;
+            j = wlen;
+            stop = null;
+          }
+        }
+        // 消費確定分（window 先頭 j byte = carry 残 + region 前方）を decode して連結。
+        if (j > 0) {
+          const fromCarry = Math.min(j, carry.length);
+          const fromRegion = Math.max(0, j - carry.length);
+          const piece =
+            fromCarry > 0
+              ? Buffer.concat([
+                  carry.subarray(0, fromCarry),
+                  buf.subarray(regionBase, regionBase + fromRegion),
+                ])
+              : buf.subarray(regionBase, regionBase + fromRegion);
+          lineText += decoder.write(piece);
+        }
+        if (stop === "budget") {
+          // 未完 char（carry 分を含む）は未消費へ戻す → byteInLine は常に文字境界。
+          curEmit += j - carry.length;
           budgetStop = true;
           break;
         }
-        emittedBytes += sep;
-        pieces.push(Buffer.from(buf.subarray(curEmit - chunkStart, curEmit - chunkStart + take)));
-        emittedBytes += take;
-        lineEmittedBytes += take;
-        curEmit += take;
-        if (curEmit < regionEnd) {
-          budgetStop = true;
-          break;
+        // region は位置として全消費。未完 prefix は carry が保持し次 region で再構成する。
+        curEmit += regionLen;
+        if (stop === "incomplete") {
+          const tail = buf.subarray(
+            regionBase + Math.max(0, j - carry.length),
+            regionBase + regionLen,
+          );
+          carry = j < carry.length ? Buffer.concat([carry.subarray(j), tail]) : Buffer.from(tail);
+        } else {
+          carry = EMPTY;
         }
         continue;
       }
-      // want === 0: 行末（`\n` 直上 or EOF）。空行は join 用 `\n` 分だけ予算を見る。
-      if (pieces.length === 0 && wroteSomething) {
+      // wlen === 0: 行末（`\n` 直上 or EOF）。空行は join 用 `\n` 分だけ予算を見る。
+      if (!lineEmitted && wroteSomething) {
         if (emittedBytes + 1 > p.maxBytes) {
           budgetStop = true;
           break;
@@ -265,22 +368,24 @@ async function readBounded(fh: FileHandle, size: number, p: ScanParams): Promise
       terminated = termHere;
     }
 
-    if (pieces.length > 0 || lineDone) {
+    if (lineEmitted || lineDone) {
       // 空行も join 要素として emit する（split("\n") 意味論の verbatim 連結）。
-      outLines.push(decoder.end(pieces.length > 0 ? Buffer.concat(pieces) : EMPTY));
+      // decoder.end() は emit 行ごとに 1 回。残存は真の行末 tail の未完 sequence
+      // のみなので U+FFFD に flush される（計上済み）。
+      outLines.push(lineText + decoder.end());
       endLine = lineNo;
       wroteSomething = true;
     }
 
     if (budgetStop) {
       truncatedBy = "bytes";
-      if (lineEmittedBytes === 0 && emitBeginInLine === 0) {
+      if (curEmit === lineEmitStart && emitBeginInLine === 0) {
         // byte cap が行境界で到達。
         continuation = { offset: lineNo };
         trailer = `[Reached ${formatLimit(p.maxBytes)} limit. Use offset=${lineNo} to continue.]`;
       } else {
-        // byte cap が行途中で到達。byteInLine 継続を返す。
-        const c = emitBeginInLine + lineEmittedBytes;
+        // byte cap が行途中で到達。byteInLine 継続を返す（常に UTF-8 文字境界）。
+        const c = curEmit - curStart;
         continuation = { offset: lineNo, byteInLine: c };
         trailer = `[Line ${lineNo} emitted bytes ${emitBeginInLine}-${c} (reached ${formatLimit(p.maxBytes)} limit). Use offset=${lineNo} byteInLine=${c} to continue.]`;
       }
