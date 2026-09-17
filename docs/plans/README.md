@@ -25,3 +25,4 @@ Directory: `docs/plans`
 | PLAN-0017 | Repository-owned setup/check entrypoints (mise run setup / mise run check) | completed | [0017-repo-owned-setup-check-entrypoints.md](./0017-repo-owned-setup-check-entrypoints.md) |
 | PLAN-0019 | Unified version source of truth | completed | [0019-unified-version-source-of-truth.md](./0019-unified-version-source-of-truth.md) |
 | PLAN-0020 | Copilot pre-read hook adapter | completed | [0020-copilot-pre-read-hook-adapter.md](./0020-copilot-pre-read-hook-adapter.md) |
+| PLAN-0021 | Real-provider worker E2E via Ollama | approved | [0021-ollama-real-provider-worker-e2e.md](./0021-ollama-real-provider-worker-e2e.md) |
