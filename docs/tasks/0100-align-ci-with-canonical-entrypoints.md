@@ -1,7 +1,7 @@
 ---
 id: "TASK-0100"
 type: "task"
-status: "todo"
+status: "done"
 title: "Align CI with canonical setup/check entrypoints and locked install"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -80,13 +80,13 @@ relations:
 
 ## Done When
 
-- [ ] `install_args: "--locked"` がある
-- [ ] 個別 pnpm step と bundle freshness step が canonical task に
+- [x] `install_args: "--locked"` がある
+- [x] 個別 pnpm step と bundle freshness step が canonical task に
       集約されている
-- [ ] `mise run setup` / `mise run check` を呼んでいる
+- [x] `mise run setup` / `mise run check` を呼んでいる
 
 ## Verification
 
-- [ ] yaml が valid（`pnpm lint` の biome 対象外だが push 後の CI
+- [x] yaml が valid（`pnpm lint` の biome 対象外だが push 後の CI
       で確認。ローカルでは actionlint 相当がなければ diff 目視 +
       worktree 検証の `mise run` 成功で代替）
