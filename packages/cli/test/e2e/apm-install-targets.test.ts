@@ -12,9 +12,11 @@ import {
   makeConsumerLayout,
 } from "./apm-fixture.js";
 
-// non-windsurf target の table-driven 検証。windsurf は
-// apm-install.test.ts が網羅済みのため対象外（DESIGN-0018 §2）。
-const HOOK_TARGETS = ["copilot", "codex", "claude", "cursor"] as const;
+// hook 対象 target の table-driven 検証。windsurf は
+// apm-install.test.ts が hooks.json + hook runtime 挙動を網羅済み
+// だが、generated config の完全性（apm-hooks.json を含む）は本 file
+// の windsurf case がカバーする（DESIGN-0018 §2）。
+const HOOK_TARGETS = ["windsurf", "copilot", "codex", "claude", "cursor"] as const;
 type HookTarget = (typeof HOOK_TARGETS)[number];
 
 const SKILL_NAMES = [
@@ -94,8 +96,9 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
     }
 
     // 登録 event key が pre_read_code verbatim であることの記録
-    // （non-windsurf では documented contract 上 expected no-op。
-    // runtime loader の挙動は実機未検証 — ADR-0016）。
+    // （windsurf では native event として発火。non-windsurf では
+    // documented contract 上 expected no-op。runtime loader の
+    // 挙動は実機未検証 — ADR-0016）。
     if (target === "claude") {
       // .claude/settings.json: hooks → <event> → matcher → hooks の nested shape
       const settingsPath = configPaths.find((p) => p.endsWith("settings.json"));
@@ -118,10 +121,11 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       expect(apmEntry.matcher).toBeDefined();
       expect(Array.isArray(apmEntry.hooks)).toBe(true);
     } else {
-      // codex / cursor / copilot: hooks.json（copilot は dep 名由来の
-      // <dep>-hooks.json）は `hooks` 直下に event を nest する shape。
-      // codex / cursor では apm が同じ登録を top-level event key shape の
-      // apm-hooks.json としても追加生成する（DISC-0009 観測事実）。
+      // windsurf / codex / cursor / copilot: hooks.json（copilot は
+      // dep 名由来の <dep>-hooks.json）は `hooks` 直下に event を
+      // nest する shape。windsurf / codex / cursor では apm が同じ
+      // 登録を top-level event key shape の apm-hooks.json としても
+      // 追加生成する（DISC-0009 観測事実）。
       for (const cfgPath of configPaths) {
         const cfg = readJson(cfgPath);
         const flat = path.basename(cfgPath) === "apm-hooks.json";
@@ -213,7 +217,7 @@ describe("APM consumer install smoke (agent-skills target)", () => {
     // に限定し、空 dir 生成等の apm 挙動変化には結合しない（DESIGN-0018 risks）。
     expect(bundleRoot(consumer, target)).toBeNull();
     expect(generatedConfigPaths(consumer, target)).toEqual([]);
-    for (const ht of ["windsurf", ...HOOK_TARGETS]) {
+    for (const ht of HOOK_TARGETS) {
       const b = bundleRoot(consumer, ht);
       if (b) {
         expect(existsSync(b), `${ht} bundle dir absent`).toBe(false);
