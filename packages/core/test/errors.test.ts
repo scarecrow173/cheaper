@@ -4,6 +4,7 @@ import { CheaperError, ERROR_TABLE, isCheaperError } from "../src/errors.js";
 const EXPECTED: Record<string, { exitCode: number; retryable: boolean }> = {
   INVALID_REQUEST: { exitCode: 2, retryable: false },
   INVALID_INPUT: { exitCode: 2, retryable: false },
+  FILE_TOO_LARGE: { exitCode: 2, retryable: false },
   WORKER_NOT_FOUND: { exitCode: 3, retryable: false },
   INVALID_WORKER_DEFINITION: { exitCode: 3, retryable: false },
   INVALID_WORKER_NAME: { exitCode: 3, retryable: false },

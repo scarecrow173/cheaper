@@ -11,6 +11,9 @@ Use `bulk-read` instead of reading files directly when:
 
 - `cheaper count-tokens <path>` reports a file above the read threshold —
   loading it would burn your context on mostly-irrelevant content.
+- `cheaper count-tokens <path>` fails with `error.code === "FILE_TOO_LARGE"`
+  — the file is too large to even measure, so it is certainly too large to
+  read directly. Do not retry `count-tokens`; delegate here.
 - A `pre_read_code` hook blocked your read and told you to delegate —
   take the `workspace-relative path:` value from its output verbatim and
   put it in `paths` (the schema requires workspace-relative paths).
@@ -56,7 +59,7 @@ tokens the cheaper model spent.
 ## Recommended flow
 
 ```text
-count-tokens says file is large
+count-tokens says file is large (over threshold or FILE_TOO_LARGE)
   → bulk-read with a precise task + the file in paths
   → consume summary/findings
   → if a finding needs exact code, Read only the suggested lines range

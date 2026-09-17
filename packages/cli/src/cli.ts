@@ -4,6 +4,7 @@ import {
   CheaperError,
   canonicalizeWorkspaceRoot,
   countFileTokens,
+  FileTooLargeError,
   loadModelConfig,
   loadPolicy,
   parseDuration,
@@ -86,6 +87,23 @@ Options:
 
 function defaultBuiltinDir(): string {
   return fileURLToPath(new URL("..", import.meta.url));
+}
+
+/**
+ * `CHEAPER_COUNT_MAX_BYTES` の解釈（DESIGN-0017）。
+ * 正の整数のみ有効: trim 後が 10 進数字列のみで構成され、
+ * `Number.isSafeInteger` かつ `n > 0` を満たす値だけを受け付ける。
+ * `parseInt` は使わない（`16MB` → 16、`1.5` → 1 のような部分 parse を
+ * 許容しないため）。不正値・未設定は core の default に任せるため
+ * `undefined` を返す。
+ */
+function countMaxBytes(env: NodeJS.ProcessEnv): number | undefined {
+  const raw = env.CHEAPER_COUNT_MAX_BYTES;
+  if (raw === undefined) return undefined;
+  const trimmed = raw.trim();
+  if (!/^\d+$/.test(trimmed)) return undefined;
+  const n = Number(trimmed);
+  return Number.isSafeInteger(n) && n > 0 ? n : undefined;
 }
 
 function invalidRequest(message: string, details?: Record<string, unknown>): CheaperError {
@@ -257,11 +275,19 @@ export async function runCli(
         userConfigDir: dirs.userConfigDir,
         projectDir: dirs.projectDir,
       });
+      const maxBytes = countMaxBytes(io.env);
       const count = await countFileTokens({
         root,
         path: parsed.path,
         symlinkPolicy: policy.filesystem.symlinks,
+        ...(maxBytes !== undefined ? { maxBytes } : {}),
       }).catch((e) => {
+        if (e instanceof FileTooLargeError) {
+          throw new CheaperError("FILE_TOO_LARGE", e.message, {
+            details: { path: e.path, bytes: e.bytes, maxBytes: e.maxBytes },
+            cause: e,
+          });
+        }
         if (e instanceof WorkspaceEscapeError) {
           throw new CheaperError("INVALID_REQUEST", e.message, {
             details: { path: parsed.path },

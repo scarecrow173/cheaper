@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -117,6 +118,41 @@ describe("pre_read_code hook (pre-read-code.js)", () => {
       env: { ...env, CHEAPER_READ_TOKEN_THRESHOLD: "1" },
     });
     expect(r.status).toBe(2);
+  });
+
+  it("blocks with exit 2 on a FILE_TOO_LARGE envelope (bytes over the cap)", async () => {
+    // fast-path を通過させるため token threshold も byte cap も小さくする
+    await writeFile(path.join(ws, "big.bin"), Buffer.alloc(64, 0x61));
+    const r = runHook(preRead(path.join(ws, "big.bin")), {
+      cwd: ws,
+      env: {
+        ...env,
+        CHEAPER_READ_TOKEN_THRESHOLD: "8",
+        CHEAPER_COUNT_MAX_BYTES: "16",
+      },
+    });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain("64 bytes");
+    expect(r.stderr).toContain("16-byte measurement cap");
+    expect(r.stderr).toContain("bulk-read");
+    expect(r.stderr).toContain("workspace-relative path: big.bin");
+  });
+
+  it("skips the CLI spawn for a file whose bytes fit the threshold", async () => {
+    await writeFile(path.join(ws, "small.txt"), "hello\n", "utf8");
+    const marker = path.join(dir, "cli-spawned.marker");
+    const fakeCli = path.join(dir, "fake-cli.js");
+    await writeFile(
+      fakeCli,
+      'require("node:fs").writeFileSync(process.env.FAKE_CLI_MARKER, "spawned");\n',
+      "utf8",
+    );
+    const r = runHook(preRead(path.join(ws, "small.txt")), {
+      cwd: ws,
+      env: { ...env, CHEAPER_CLI: fakeCli, FAKE_CLI_MARKER: marker },
+    });
+    expect(r.status).toBe(0);
+    expect(existsSync(marker)).toBe(false);
   });
 
   it("fails open for missing files, directories, and non-JSON stdin", async () => {

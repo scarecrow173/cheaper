@@ -16,10 +16,11 @@ Directory: `docs/designs`
 | DESIGN-0007 | cheap-writer contract | superseded | [0007-cheap-writer-contract.md](./0007-cheap-writer-contract.md) |
 | DESIGN-0008 | リポジトリ構成とツールチェーン | approved | [0008-repository-structure-toolchain.md](./0008-repository-structure-toolchain.md) |
 | DESIGN-0009 | Ollama real-provider smoke verification setup | approved | [0009-ollama-real-provider-smoke-verification-setup.md](./0009-ollama-real-provider-smoke-verification-setup.md) |
-| DESIGN-0010 | Repair abort and failure normalization hardening | draft | [0010-repair-abort-and-failure-normalization-hardening.md](./0010-repair-abort-and-failure-normalization-hardening.md) |
+| DESIGN-0010 | Repair abort and failure normalization hardening | approved | [0010-repair-abort-and-failure-normalization-hardening.md](./0010-repair-abort-and-failure-normalization-hardening.md) |
 | DESIGN-0011 | code-writer and doc-writer worker contracts | approved | [0011-writer-worker-contracts.md](./0011-writer-worker-contracts.md) |
 | DESIGN-0012 | Token counter contract (core module, count_tokens tool, count-tokens CLI) | approved | [0012-token-counter-contract.md](./0012-token-counter-contract.md) |
 | DESIGN-0013 | APM skills and pre_read_code delegation hook | approved | [0013-apm-skills-and-pre-read-hook.md](./0013-apm-skills-and-pre-read-hook.md) |
 | DESIGN-0014 | cheaper CLI bundle layout inside .apm/hooks/cli | approved | [0014-cli-bundle-layout.md](./0014-cli-bundle-layout.md) |
 | DESIGN-0015 | Write-scope and privacy deny enforcement design | approved | [0015-write-scope-and-privacy-deny.md](./0015-write-scope-and-privacy-deny.md) |
 | DESIGN-0016 | cheaper auth command design (provider OAuth absorbed by the CLI) | approved | [0016-auth-command.md](./0016-auth-command.md) |
+| DESIGN-0017 | Huge-file byte cap guard and fail-closed hook | draft | [0017-huge-file-byte-cap-guard-and-fail-closed-hook.md](./0017-huge-file-byte-cap-guard-and-fail-closed-hook.md) |
