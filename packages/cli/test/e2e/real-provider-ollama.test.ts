@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -103,6 +103,7 @@ describe("real-provider e2e (Ollama)", () => {
   let available = false;
   let root = "";
   let consumer = "";
+  let configDir = "";
   let cli: string | null = null;
   let env: Record<string, string> = {};
 
@@ -118,7 +119,7 @@ describe("real-provider e2e (Ollama)", () => {
     if (cli === null || !existsSync(cli)) return;
 
     const piAgent = path.join(root, "pi-agent");
-    const configDir = path.join(root, "cheaper-config");
+    configDir = path.join(root, "cheaper-config");
     mkdirSync(piAgent, { recursive: true });
     mkdirSync(configDir, { recursive: true });
     writeFileSync(path.join(piAgent, "models.json"), modelsJson());
@@ -168,6 +169,26 @@ describe("real-provider e2e (Ollama)", () => {
     return e;
   }
 
+  // SPEC-0022: delegation ごとの実測 usage が <CHEAPER_CONFIG_DIR>/
+  // usage.jsonl に継続記録されることを検証する。
+  function expectUsageRecord(worker: string) {
+    const logPath = path.join(configDir, "usage.jsonl");
+    expect(existsSync(logPath), `usage.jsonl exists for ${worker}`).toBe(true);
+    const records = readFileSync(logPath, "utf8")
+      .split("\n")
+      .filter((l) => l !== "")
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+    const rec = records.find(
+      (r) =>
+        r.kind === "run" &&
+        r.worker === worker &&
+        (r.model as Record<string, unknown> | undefined)?.provider === PROVIDER,
+    );
+    expect(rec, `usage.jsonl run record for ${worker}`).toBeDefined();
+    const usage = rec?.usage as Record<string, unknown> | undefined;
+    expect(Number(usage?.input)).toBeGreaterThan(0);
+  }
+
   it("bulk-read reaches Ollama and returns findings", async (t) => {
     if (!available) {
       t.skip("Ollama container or model not reachable; set up per AGENTS.md");
@@ -190,6 +211,7 @@ describe("real-provider e2e (Ollama)", () => {
     const e = expectRealEnvelope(r, "bulk-reader");
     const result = e.result as Record<string, unknown>;
     expect(Array.isArray(result.findings)).toBe(true);
+    expectUsageRecord("bulk-reader");
   }, 600_000);
 
   it("code-write reaches Ollama and creates a file", async (t) => {
@@ -211,6 +233,7 @@ describe("real-provider e2e (Ollama)", () => {
     const files = changes?.files;
     expect(Array.isArray(files) && files.length > 0).toBe(true);
     expect(existsSync(path.join(consumer, "src", "farewell.ts"))).toBe(true);
+    expectUsageRecord("code-writer");
   }, 600_000);
 
   it("doc-write reaches Ollama and creates a document", async (t) => {
@@ -229,5 +252,6 @@ describe("real-provider e2e (Ollama)", () => {
     );
     expectRealEnvelope(r, "doc-writer");
     expect(existsSync(path.join(consumer, "docs", "hello.md"))).toBe(true);
+    expectUsageRecord("doc-writer");
   }, 600_000);
 });
