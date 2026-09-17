@@ -27,6 +27,7 @@ describe("createLineFramer", () => {
       { line: "a", lineNo: 1, rawBytes: 1 },
       { line: "bb", lineNo: 2, rawBytes: 2 },
       { line: "ccc", lineNo: 3, rawBytes: 3 },
+      { line: "", lineNo: 4, rawBytes: 0 }, // LF 終端の末尾空行（split parity）
     ]);
     expect(oversized).toEqual([]);
   });
@@ -38,8 +39,8 @@ describe("createLineFramer", () => {
     framer.feed(Buffer.from("orld\nnex"));
     framer.feed(Buffer.from("t\n"));
     framer.flush();
-    expect(lines.map((l) => l.line)).toEqual(["hello world", "next"]);
-    expect(lines.map((l) => l.lineNo)).toEqual([1, 2]);
+    expect(lines.map((l) => l.line)).toEqual(["hello world", "next", ""]);
+    expect(lines.map((l) => l.lineNo)).toEqual([1, 2, 3]);
   });
 
   it("keeps multibyte UTF-8 split across chunks intact (rawBytes stays byte-based)", () => {
@@ -48,7 +49,10 @@ describe("createLineFramer", () => {
     framer.feed(buf.subarray(0, 4)); // multibyte sequence の途中で分割
     framer.feed(buf.subarray(4));
     framer.flush();
-    expect(lines).toEqual([{ line: "あいう", lineNo: 1, rawBytes: 9 }]);
+    expect(lines).toEqual([
+      { line: "あいう", lineNo: 1, rawBytes: 9 },
+      { line: "", lineNo: 2, rawBytes: 0 }, // LF 終端の末尾空行（split parity）
+    ]);
   });
 
   it("discards a line over maxLineBytes and emits onOversized once", () => {
@@ -57,7 +61,7 @@ describe("createLineFramer", () => {
     framer.feed(Buffer.from("this line is way too long\n"));
     framer.feed(Buffer.from("tail\n"));
     framer.flush();
-    expect(lines.map((l) => l.line)).toEqual(["ok", "tail"]);
+    expect(lines.map((l) => l.line)).toEqual(["ok", "tail", ""]);
     expect(oversized).toEqual([2]);
   });
 
@@ -67,7 +71,7 @@ describe("createLineFramer", () => {
     framer.feed(Buffer.from("xxxxx\n")); // line 2 oversized
     framer.feed(Buffer.from("yy\n"));
     framer.flush();
-    expect(lines.map((l) => l.lineNo)).toEqual([1, 3]);
+    expect(lines.map((l) => l.lineNo)).toEqual([1, 3, 4]); // 末尾空行（split parity）
     expect(oversized).toEqual([2]);
   });
 
@@ -77,7 +81,10 @@ describe("createLineFramer", () => {
     framer.feed(Buffer.from("defgh")); // pendingBytes 3 + 5 > 4 → oversized、\n まで破棄
     framer.feed(Buffer.from("ij\nkl\n"));
     framer.flush();
-    expect(lines).toEqual([{ line: "kl", lineNo: 2, rawBytes: 2 }]);
+    expect(lines).toEqual([
+      { line: "kl", lineNo: 2, rawBytes: 2 },
+      { line: "", lineNo: 3, rawBytes: 0 }, // LF 終端の末尾空行（split parity）
+    ]);
     expect(oversized).toEqual([1]);
   });
 
@@ -89,14 +96,45 @@ describe("createLineFramer", () => {
     expect(lines.map((l) => l.lineNo)).toEqual([1, 2]);
   });
 
-  it("emits nothing on flush when input ends with a newline or is empty", () => {
-    const a = collect(1024);
-    a.framer.feed(Buffer.from("a\n"));
-    a.framer.flush();
-    expect(a.lines.map((l) => l.line)).toEqual(["a"]);
-    const b = collect(1024);
-    b.framer.flush();
-    expect(b.lines).toEqual([]);
+  it('emits a trailing empty line on flush when input ends with a newline (split("\\n") parity)', () => {
+    const { framer, lines } = collect(1024);
+    framer.feed(Buffer.from("a\n"));
+    framer.flush();
+    // "a\n".split("\n") === ["a", ""]
+    expect(lines.map((l) => l.line)).toEqual(["a", ""]);
+    expect(lines.map((l) => l.lineNo)).toEqual([1, 2]);
+  });
+
+  it('emits a single empty line on flush for empty input (split("\\n") parity)', () => {
+    const { framer, lines } = collect(1024);
+    framer.flush();
+    // "".split("\n") === [""]
+    expect(lines).toEqual([{ line: "", lineNo: 1, rawBytes: 0 }]);
+  });
+
+  it('emits every trailing empty line for consecutive newlines (split("\\n") parity)', () => {
+    const { framer, lines } = collect(1024);
+    framer.feed(Buffer.from("a\n\n"));
+    framer.flush();
+    // "a\n\n".split("\n") === ["a", "", ""]
+    expect(lines.map((l) => l.line)).toEqual(["a", "", ""]);
+    expect(lines.map((l) => l.lineNo)).toEqual([1, 2, 3]);
+  });
+
+  it("emits no extra empty line when input ends without a newline", () => {
+    const { framer, lines } = collect(1024);
+    framer.feed(Buffer.from("a"));
+    framer.flush();
+    expect(lines.map((l) => l.line)).toEqual(["a"]);
+  });
+
+  it("does not emit a trailing empty line when an oversized line is discarded at EOF", () => {
+    const { framer, lines, oversized } = collect(4);
+    framer.feed(Buffer.from("a\n"));
+    framer.feed(Buffer.from("discarded-long-line"));
+    framer.flush();
+    expect(lines.map((l) => l.line)).toEqual(["a"]);
+    expect(oversized).toEqual([2]);
   });
 
   it("reports an oversized unterminated line via onOversized only at flush", () => {
@@ -111,13 +149,16 @@ describe("createLineFramer", () => {
     const { framer, lines } = collect(1024);
     framer.feed(Buffer.from("a\r\nb\r\n"));
     framer.flush();
-    expect(lines.map((l) => l.line)).toEqual(["a\r", "b\r"]);
+    expect(lines.map((l) => l.line)).toEqual(["a\r", "b\r", ""]);
   });
 
   it("replaces invalid UTF-8 bytes with U+FFFD", () => {
     const { framer, lines } = collect(1024);
     framer.feed(Buffer.from([0x61, 0xff, 0x62, 0x0a]));
     framer.flush();
-    expect(lines).toEqual([{ line: "a�b", lineNo: 1, rawBytes: 3 }]);
+    expect(lines).toEqual([
+      { line: "a�b", lineNo: 1, rawBytes: 3 },
+      { line: "", lineNo: 2, rawBytes: 0 }, // LF 終端の末尾空行（split parity）
+    ]);
   });
 });

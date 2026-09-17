@@ -5,7 +5,8 @@
  * `maxLineBytes` を超えた行は蓄積を止めて次の `\n` まで破棄モードに入り、
  * `onOversized` を発行して行番号を消費する（保持量は chunk + maxLineBytes
  * 以下で、入力総 byte 数 N に依存しない）。`\r` は行内容に残す
- * （既存 `split("\n")` との parity）。
+ * （既存 `split("\n")` との parity）。空入力・LF 終端入力では EOF の
+ * `flush()` が末尾の空行 `""` を 1 行 emit する（同じく split parity）。
  */
 
 const LF = 0x0a;
@@ -21,7 +22,10 @@ export interface LineFramerOptions {
 
 export interface LineFramer {
   feed(buf: Buffer): void;
-  /** EOF の未終端行を 1 行として emit する。 */
+  /**
+   * EOF の未終端行を 1 行として emit する。入力が空または LF 終端の場合は
+   * `split("\n")` parity として末尾の空行 `""` も emit する。
+   */
   flush(): void;
 }
 
@@ -30,6 +34,10 @@ export function createLineFramer(opts: LineFramerOptions): LineFramer {
   let pendingBytes = 0;
   let discarding = false;
   let lineNo = 1;
+  // split("\n") parity 用: 空入力・LF 終端入力では末尾に空行が 1 行続く。
+  // flush でその空行を emit するため、最後に fed された byte を追跡する。
+  let sawAny = false;
+  let lastByteWasLF = false;
 
   const takePending = (): Buffer => {
     const raw = pending.length === 1 ? (pending[0] as Buffer) : Buffer.concat(pending);
@@ -40,6 +48,10 @@ export function createLineFramer(opts: LineFramerOptions): LineFramer {
 
   return {
     feed(buf: Buffer): void {
+      if (buf.length > 0) {
+        sawAny = true;
+        lastByteWasLF = buf[buf.length - 1] === LF;
+      }
       let i = 0;
       while (i < buf.length) {
         const nl = buf.indexOf(LF, i);
@@ -75,10 +87,19 @@ export function createLineFramer(opts: LineFramerOptions): LineFramer {
       }
     },
     flush(): void {
-      if (discarding || pendingBytes === 0) return;
-      const raw = takePending();
-      opts.onLine(raw.toString("utf8"), lineNo, raw.length);
-      lineNo++;
+      // oversized 行を破棄したまま EOF に達した場合は何も emit しない
+      if (discarding) return;
+      if (pendingBytes > 0) {
+        const raw = takePending();
+        opts.onLine(raw.toString("utf8"), lineNo, raw.length);
+        lineNo++;
+        return;
+      }
+      // split("\n") parity: 空入力または LF 終端なら末尾の空行を 1 行 emit する
+      if (!sawAny || lastByteWasLF) {
+        opts.onLine("", lineNo, 0);
+        lineNo++;
+      }
     },
   };
 }

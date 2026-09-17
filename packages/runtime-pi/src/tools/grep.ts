@@ -226,7 +226,8 @@ export interface GrepToolOptions extends WalkOptions {
 interface PendingLine {
   lineNo: number;
   text: string;
-  rawBytes: number;
+  /** worker へ送る decoded payload の UTF-8 byte 長（batch byte 計上用）。 */
+  payloadBytes: number;
 }
 
 interface SkipBucket {
@@ -462,33 +463,37 @@ export function createGrepTool(opts: GrepToolOptions) {
 
           // pendingLines から batch を組み立て送信する。batch は
           // batchMaxLines 行・batchMaxBytes byte・oversized 行を挟む行番号の
-          // 不連続のいずれかで締める。force 時は partial batch も送る。
+          // 不連続のいずれかで締める。byte 計上は worker に実際に送る
+          // decoded payload の UTF-8 byte 長で行い（rawBytes だと U+FFFD
+          // 展開で実 payload が B を超え得る）、B は hard cap として
+          // 超える行を積む前に締める。force 時は partial batch も送る。
           const drain = async (force: boolean): Promise<void> => {
             while (!fileAbandoned && stopReason === undefined) {
-              while (
-                batchLines.length < batchMaxLines &&
-                batchBytes < batchMaxBytes &&
-                pendingLines.length > 0
-              ) {
+              let closedByBytes = false;
+              while (batchLines.length < batchMaxLines && pendingLines.length > 0) {
                 const head = pendingLines[0] as PendingLine;
                 if (batchLines.length > 0 && head.lineNo !== batchStart + batchLines.length) {
                   break; // oversized 行を挟む不連続 → 現在 batch を締める
                 }
+                // B は hard cap: 次行を足すと超えるなら現在 batch を締める。
+                // 空 batch には必ず積むため、1 行が B を超える場合（縮退した
+                // test 注入 limit でのみ到達可能。実 limit では L が decoded
+                // payload を B 未満に抑える）も 1 行 batch として送られ、
+                // 進行は保証される。
+                if (batchLines.length > 0 && batchBytes + head.payloadBytes > batchMaxBytes) {
+                  closedByBytes = true;
+                  break;
+                }
                 pendingLines.shift();
                 if (batchLines.length === 0) batchStart = head.lineNo;
                 batchLines.push(head.text);
-                batchBytes += head.rawBytes;
+                batchBytes += head.payloadBytes;
               }
               if (batchLines.length === 0) return;
               const closedByGap =
                 pendingLines.length > 0 &&
                 (pendingLines[0] as PendingLine).lineNo !== batchStart + batchLines.length;
-              if (
-                batchLines.length < batchMaxLines &&
-                batchBytes < batchMaxBytes &&
-                !closedByGap &&
-                !force
-              ) {
+              if (batchLines.length < batchMaxLines && !closedByBytes && !closedByGap && !force) {
                 return; // partial batch は次の feed/EOF まで保留
               }
               // 送信前に残予算を検査（超過なら送らずに打ち切る）
@@ -515,8 +520,12 @@ export function createGrepTool(opts: GrepToolOptions) {
 
           const framer = createLineFramer({
             maxLineBytes,
-            onLine: (line, lineNo, rawBytes) => {
-              pendingLines.push({ lineNo, text: line, rawBytes });
+            onLine: (line, lineNo) => {
+              pendingLines.push({
+                lineNo,
+                text: line,
+                payloadBytes: Buffer.byteLength(line, "utf8"),
+              });
             },
             onOversized: (lineNo) => {
               recordSkip(skipped.oversized, `${file.display}:${lineNo}`);

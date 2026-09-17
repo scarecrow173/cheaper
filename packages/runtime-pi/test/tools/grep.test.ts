@@ -227,6 +227,24 @@ describe("grep tool: parity", () => {
     expect(out).toBe("t.txt:1: hit");
   });
 
+  it('matches ^$ on line 1 of an empty file (split("\\n") parity)', async () => {
+    await writeFile(path.join(root, "empty.txt"), "");
+    const out = await run(tool(), { pattern: "^$" });
+    expect(out).toBe("empty.txt:1: ");
+  });
+
+  it('matches ^$ on the trailing empty line of a newline-terminated file (split("\\n") parity)', async () => {
+    await writeFile(path.join(root, "a.txt"), "a\n");
+    const out = await run(tool(), { pattern: "^$" });
+    expect(out).toBe("a.txt:2: ");
+  });
+
+  it("does not produce a trailing empty line for a file without a final newline", async () => {
+    await writeFile(path.join(root, "a.txt"), "a");
+    const out = await run(tool(), { pattern: "^$" });
+    expect(out).toBe("(no matches)");
+  });
+
   it("returns a no-matches marker when nothing matched", async () => {
     await writeFile(path.join(root, "a.txt"), "zzz\n");
     const out = await run(tool(), { pattern: "qqq" });
@@ -319,6 +337,35 @@ describe("grep tool: streaming / batch protocol", () => {
     expect(out).toBe("o.txt:6: hit6\n[skipped: oversized-line — o.txt:5]");
     const starts = batchLog.map((b) => b.startLine);
     expect(starts).toEqual([1, 6]);
+  });
+
+  it("closes a batch before adding a line that would exceed batchMaxBytes", async () => {
+    // batchMaxBytes=10: "aaa"+"bbb"+"cccc" = ちょうど 10 byte で 1 batch。
+    // "ddd" を足すと 13 > 10 なので次 batch に締める（B は hard cap）。
+    await writeFile(path.join(root, "b.txt"), "aaa\nbbb\ncccc\nddd\n", "utf8");
+    const out = await run(tool({ batchMaxBytes: 10, batchMaxLines: 100 }), {
+      pattern: "ddd",
+      glob: "b.txt",
+    });
+    expect(out).toBe("b.txt:4: ddd");
+    expect(batchLog.length).toBeGreaterThanOrEqual(2);
+    for (const b of batchLog) {
+      expect(b.bytes).toBeLessThanOrEqual(10);
+    }
+    expect(batchLog.map((b) => b.startLine)).toEqual([1, 4]);
+  });
+
+  it("still sends a single line whose payload exceeds batchMaxBytes as a one-line batch", async () => {
+    // 縮退注入でのみ到達する経路: 1 行 payload > B でも 1 行 batch で送り、
+    // 進行が保証される（実 limit では L が decoded payload を B 未満に抑える）。
+    await writeFile(path.join(root, "big.txt"), "0123456789\nhit\n", "utf8");
+    const out = await run(tool({ batchMaxBytes: 4, maxLineBytes: 100 }), {
+      pattern: "hit",
+      glob: "big.txt",
+    });
+    expect(out).toBe("big.txt:2: hit");
+    expect(batchLog[0]?.lines).toBe(1);
+    expect(batchLog[0]?.bytes).toBe(10); // B=4 超過だが単独 batch で送られる
   });
 });
 
@@ -421,17 +468,20 @@ describe("grep tool: eval budgets and deadline", () => {
   });
 
   it("accumulates the total eval budget and stops the scan", async () => {
-    // 1 batch あたり 40ms 計上 → evalTotalMs=80 は 3 batch 目の送信前に超過。
-    // 先頭の一致は部分結果として残り、走査停止で b.txt は検索されない。
+    // opendir の列挙順は FS 依存なので、両 file を同形にして列挙順に依存しない
+    // assertion にする。先に走査された file が total 予算を使い切り、走査全体が
+    // 止まるため、もう一方の file は一切報告されない。
     const lines = Array.from({ length: 300 }, (_, i) => `l${i}`).join("\n");
     await writeFile(path.join(root, "a.txt"), `hit\n${lines}\n`);
-    await writeFile(path.join(root, "b.txt"), "hit\n");
+    await writeFile(path.join(root, "b.txt"), `hit\n${lines}\n`);
     const t = tool({ batchMaxLines: 3, evalTotalMs: 80, now: fakeClock() });
     const out = await run(t, { pattern: "hit" });
-    expect(out).toContain("a.txt:1: hit");
-    expect(out).toContain("[skipped: timeout — a.txt]");
     expect(out).toContain("[truncated: evaluation time limit reached]");
-    expect(out).not.toContain("b.txt");
+    // 先に走査された 1 file だけが match と timeout skip に現れる
+    const scanned = ["a.txt", "b.txt"].filter((name) => out.includes(name));
+    expect(scanned).toHaveLength(1);
+    expect(out).toContain(`${scanned[0]}:1: hit`);
+    expect(out).toContain(`[skipped: timeout — ${scanned[0]}]`);
   });
 
   it("stops at the scan deadline and returns partial results with a footer", async () => {

@@ -47,7 +47,8 @@ describe("find tool", () => {
     await writeFile(path.join(root, "sub", "b.txt"), "x");
     await writeFile(path.join(root, "c.md"), "x");
     const out = await run(tool(), { pattern: "**/*.txt" });
-    expect(out).toBe("a.txt\nsub/b.txt");
+    // opendir の列挙順は FS 依存のため集合として比較する
+    expect(out.split("\n").sort()).toEqual(["a.txt", "sub/b.txt"]);
   });
 
   it("matches top-level glob without crossing directories", async () => {
