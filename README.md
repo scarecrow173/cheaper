@@ -10,10 +10,17 @@ frontier model に巨大なコンテキストの読み込みや機械的なコ�
 
 ## セットアップ
 
+fresh clone / fresh worktree では、repository-owned contract として
+以下を実行する:
+
 ```bash
-mise install   # ツールチェーン (node / pnpm / python / uv / apm-cli)
-apm install    # APM 依存パッケージを各ターゲットへデプロイ
+mise run setup   # toolchain + 依存 + build outputs を復元
+mise run check   # CI と同等の検証（lint / typecheck / test / bundle freshness）
 ```
+
+`mise run setup` は内部的に `pnpm install --frozen-lockfile` →
+`apm install` → `pnpm build` を実行し、toolchain 自体は
+`mise.toml` + `mise.lock`（lockfile 優先解決）で再現される。
 
 ## 使い方
 

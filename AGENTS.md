@@ -10,11 +10,18 @@ frontier model のコストを抑えるため、巨大コンテキストの処�
 ## セットアップ
 
 ```bash
-mise install   # mise.toml のツールチェーンをインストール
-apm install    # apm.lock.yaml の SHA に基づき依存を再現インストール
+mise run setup   # fresh checkout を開発可能にする canonical setup contract
+mise run check   # CI と同等の canonical verification contract
 ```
 
+`mise run setup` は toolchain（`mise.toml` + `mise.lock` の locked version）に加え、
+`pnpm install --frozen-lockfile` → `apm install` → `pnpm build` を復元する。
 コマンド実行は `mise exec -- <command>` 経由で行い、mise.toml が管理するツールバージョンを有効化する。
+
+fresh worktree では `node_modules`・`dist`・`apm_modules`・APM deploy 生成物が
+存在しない前提で `mise run setup` を実行すること。worktree の作成・sibling
+worktree の探索・他 worktree の生成物（node_modules / dist / APM artifact）
+の流用は Agent の責務ではなく、各 worktree は独立した checkout として扱う。
 
 root の `apm.yml` は development-only project であり、cheaper 自身の
 skill/hook は deploy されない。consumer へ配布する APM package は
