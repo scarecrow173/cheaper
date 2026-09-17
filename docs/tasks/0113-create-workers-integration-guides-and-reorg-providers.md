@@ -1,7 +1,7 @@
 ---
 id: "TASK-0113"
 type: "task"
-status: "todo"
+status: "done"
 title: "Create workers/integration guides and reorganize providers.md"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -120,4 +120,17 @@ relations:
 
 ## Verification results
 
-（未実施）
+- `docs/guides/workers.md`・`docs/guides/parent-agent-integration.md`
+  を作成、`docs/guides/providers.md` を user-facing に再編。
+- worker 名・tool 一覧・input schema（bulk-reader: task/paths/
+  hints/maxFindings、code-writer: task/targets/references/
+  constraints、doc-writer: task/documentType/targets/decisions/
+  facts/references/constraints）は各 schema JSON・worker 定義と
+  一致。writeScope: targets の記載も worker 定義と一致。
+- hooks.json の `pre_read_code`・skill 名（cheaper-usage/
+  cheaper-bulk-read/cheaper-code-write/cheaper-doc-write）・
+  threshold 8192・CHEAPER_READ_TOKEN_THRESHOLD・fail-open は
+  `pre-read-code.js` と一致。
+- providers.md から docker compose/NVIDIA toolkit・EXP-* 実測・
+  repair 内部実装（repair.ts 言及）を除去し、smoke 手順は
+  CONTRIBUTING.md の「実 provider 検証」節へ集約済み。

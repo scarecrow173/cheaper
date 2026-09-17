@@ -1,7 +1,7 @@
 ---
 id: "TASK-0112"
 type: "task"
-status: "todo"
+status: "done"
 title: "Create usage/configuration guides and CONTRIBUTING.md"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -117,4 +117,18 @@ DESIGN-0028 の content responsibility map に従い、3 文書を実コード
 
 ## Verification results
 
-（未実施）
+- `docs/guides/usage.md`・`docs/guides/configuration.md`・
+  `CONTRIBUTING.md` を作成。
+- 記載 command（run/bulk-read/code-write/doc-write/count-tokens/
+  auth status|login|logout）・option（--input/--worker-file/--cwd/
+  --timeout/--method/--type/--format/--quiet/--help/--version）は
+  `args.ts`・HELP（`cli.ts`）と一致。
+- config dir 解決（CHEAPER_CONFIG_DIR → XDG_CONFIG_HOME →
+  ~/.config/cheaper、project `.cheaper/`）・policy 実値
+  （timeout 120s/maxTurns 8/maxToolCalls 64/tools 7 種/
+  symlinks within-workspace/maxTier medium/tierFallback none/
+  maxTokens 2000/repairAttempts 1/transientAttempts 1）は
+  `dirs.ts`・`packages/cli/policy.yaml` と一致。
+- env vars（CHEAPER_CONFIG_DIR・CHEAPER_COUNT_MAX_BYTES・
+  CHEAPER_READ_TOKEN_THRESHOLD・PI_CODING_AGENT_DIR）は
+  `cli.ts`・`dirs.ts`・`pre-read-code.js` と一致。
