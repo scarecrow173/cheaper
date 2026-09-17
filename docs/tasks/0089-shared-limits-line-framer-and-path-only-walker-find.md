@@ -1,7 +1,7 @@
 ---
 id: "TASK-0089"
 type: "task"
-status: "todo"
+status: "done"
 title: "Shared limits, line framer, and path-only walker/find"
 created: "2026-09-17"
 updated: "2026-09-17"

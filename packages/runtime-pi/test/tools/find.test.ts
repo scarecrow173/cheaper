@@ -1,9 +1,16 @@
 import childProcess from "node:child_process";
-import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createFindTool } from "../../src/tools/find.js";
+
+// path-only 化の検証用: open/readFile を呼び出し計数だけする spy に差し替える
+// （実装は actual に透過。ESM namespace は spyOn 不可のため module mock を使う）。
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, open: vi.fn(actual.open), readFile: vi.fn(actual.readFile) };
+});
 
 let dir: string;
 let root: string;
@@ -82,6 +89,53 @@ describe("find tool", () => {
     await expect(run(tool(), { pattern: "*", path: ".." })).rejects.toThrow(
       "Access denied: path is outside the workspace",
     );
+  });
+
+  it("lists files regardless of size or content", async () => {
+    await writeFile(path.join(root, "big.txt"), Buffer.alloc(1024 * 1024 + 1, 0x61));
+    const bin = Buffer.alloc(64, 0x61);
+    bin[10] = 0;
+    await writeFile(path.join(root, "bin.dat"), bin);
+    await writeFile(path.join(root, "small.txt"), "x");
+    const out = await run(tool(), { pattern: "**/*" });
+    expect(out).toContain("big.txt");
+    expect(out).toContain("bin.dat");
+    expect(out).toContain("small.txt");
+  });
+
+  it("performs no content I/O on enumerated files (path-only)", async () => {
+    const fsp = await import("node:fs/promises");
+    vi.mocked(fsp.open).mockClear();
+    vi.mocked(fsp.readFile).mockClear();
+    await writeFile(path.join(root, "a.txt"), "x");
+    const out = await run(tool(), { pattern: "*" });
+    // 列挙自体が成立している（空 walk による vacuous pass ではない）こと
+    expect(out).toBe("a.txt");
+    expect(fsp.open).not.toHaveBeenCalled();
+    expect(fsp.readFile).not.toHaveBeenCalled();
+  });
+
+  it("reports enumeration failures in a bounded skipped footer", async (ctx) => {
+    try {
+      await symlink(path.join(root, "no-such-target"), path.join(root, "dangling"), "junction");
+    } catch (e) {
+      console.warn(`symlink unavailable, skipping: ${String(e)}`);
+      ctx.skip();
+    }
+    await writeFile(path.join(root, "ok.txt"), "x");
+    const out = await run(tool("within-workspace"), { pattern: "**/*" });
+    expect(out).toBe("ok.txt\n[skipped: unreadable — dangling]");
+  });
+
+  it("emits the skipped footer after (no matches)", async (ctx) => {
+    try {
+      await symlink(path.join(root, "no-such-target"), path.join(root, "dangling"), "junction");
+    } catch (e) {
+      console.warn(`symlink unavailable, skipping: ${String(e)}`);
+      ctx.skip();
+    }
+    const out = await run(tool("within-workspace"), { pattern: "**/*.txt" });
+    expect(out).toBe("(no matches)\n[skipped: unreadable — dangling]");
   });
 
   it("never spawns an external process", async () => {
