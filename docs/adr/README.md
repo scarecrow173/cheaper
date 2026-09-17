@@ -26,3 +26,4 @@ Directory: `docs/adr`
 | ADR-0018 | auth interaction の browser 起動を注入可能な URL opener seam にする | accepted | [0018-inject-url-opener-seam-for-auth-interaction.md](./0018-inject-url-opener-seam-for-auth-interaction.md) |
 | ADR-0019 | development APM project と distributable cheaper package を nested package で物理分離する | accepted | [0019-separate-dev-apm-project-via-nested-distributable-package.md](./0019-separate-dev-apm-project-via-nested-distributable-package.md) |
 | ADR-0020 | canonical setup/check entrypoint を mise TOML task として mise.toml に定義する | accepted | [0020-canonical-setup-check-entrypoints-as-mise-toml-tasks.md](./0020-canonical-setup-check-entrypoints-as-mise-toml-tasks.md) |
+| ADR-0022 | packages/cli/package.json を canonical version source とし check script で一致を強制する | accepted | [0022-cli-package-json-as-canonical-version-with-check-enforcement.md](./0022-cli-package-json-as-canonical-version-with-check-enforcement.md) |
