@@ -14,7 +14,7 @@ relations:
     - "../../packages/runtime-pi/src/tools/grep.ts"
     - "../../packages/runtime-pi/src/tools/find.ts"
     - "../../packages/runtime-pi/src/tools/count-tokens.ts"
-    - "../../.apm/hooks/pre-read-code.js"
+    - "../../packages/apm/.apm/hooks/pre-read-code.js"
   changes:
     added: []
     modified: []

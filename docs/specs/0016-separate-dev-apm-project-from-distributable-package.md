@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0016"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Separate the development APM project from the distributable cheaper package"
 created: "2026-09-18"
 updated: "2026-09-18"

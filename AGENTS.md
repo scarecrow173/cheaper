@@ -16,6 +16,11 @@ apm install    # apm.lock.yaml の SHA に基づき依存を再現インスト�
 
 コマンド実行は `mise exec -- <command>` 経由で行い、mise.toml が管理するツールバージョンを有効化する。
 
+root の `apm.yml` は development-only project であり、cheaper 自身の
+skill/hook は deploy されない。consumer へ配布する APM package は
+`packages/apm/`（`apm.yml` + `.apm/` primitives）に分離されており、
+bundled CLI は `pnpm bundle` で `packages/apm/.apm/hooks/cli/` へ生成する。
+
 ## 検証用 Ollama コンテナ
 
 実 provider smoke 検証には Ollama を Docker コンテナで使う（ADR-0009）。ホストへのインストールは行わない。

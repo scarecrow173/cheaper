@@ -1,7 +1,7 @@
 ---
 id: "TASK-0098"
 type: "task"
-status: "todo"
+status: "done"
 title: "Update README/AGENTS for dev/distribution split and run final verification"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -112,16 +112,45 @@ node .claude/skills/doc-status/scripts/audit_docs.js --type all
 
 ## Done When
 
-- [ ] README が `packages/apm` への install 参照と責務分離を説明
-- [ ] AGENTS.md が新構造に整合
-- [ ] 上記検証コマンドが全て exit 0 で結果が記録されている
-- [ ] SPEC-0016/PLAN-0016/TASK-0095..0098 と各 index の status が
+- [x] README が `packages/apm` への install 参照と責務分離を説明
+- [x] AGENTS.md が新構造に整合
+- [x] 上記検証コマンドが全て exit 0 で結果が記録されている
+- [x] SPEC-0016/PLAN-0016/TASK-0095..0098 と各 index の status が
       同期されている
 
 ## Verification
 
-- [ ] `mise exec -- pnpm -r build` / `pnpm lint` / `pnpm typecheck`
+- [x] `mise exec -- pnpm -r build` / `pnpm lint` / `pnpm typecheck`
       / `pnpm test` が exit 0
-- [ ] bundle 再生成後 `git diff --exit-code --
+- [x] bundle 再生成後 `git diff --exit-code --
       packages/apm/.apm/hooks/cli` が clean
-- [ ] `audit_docs.js --type all` が no findings
+- [x] `audit_docs.js --type all` が no findings
+
+## Verification results
+
+2026-09-18 実施（Windows / node v26.8.2 / pnpm 11.0.0）。
+
+| Command | Result |
+|---------|--------|
+| `mise exec -- pnpm -r build` | exit 0（core / runtime-pi / cli tsc -b 全 Done） |
+| `mise exec -- pnpm lint` | exit 0（biome check、141 files / warnings のみ） |
+| `mise exec -- pnpm typecheck` | exit 0（tsc -b） |
+| `mise exec -- pnpm --filter cheaper exec tsc --noEmit -p .` | exit 0 |
+| `mise exec -- pnpm --filter cheaper test` | exit 0（14 files / 131 tests pass） |
+| `mise exec -- node scripts/bundle-cli.mjs` | exit 0 → `packages/apm/.apm/hooks/cli`（12.2 MiB） |
+| `git diff --exit-code -- packages/apm/.apm/hooks/cli` | exit 0（freshness clean） |
+| `node .claude/skills/doc-status/scripts/audit_docs.js --type all` | exit 0（185 files / no findings） |
+
+test 内訳の要点:
+
+- `test/e2e/apm-package-layout.test.ts`（5 tests）: root `.apm/` 不存在・
+  `packages/apm` package layout・dev-only root manifest の静的検証と、
+  `.apm/` を持たない dev-project fixture への `apm install` が
+  cheaper-* skill/hook を deploy しない実測（apm CLI 存在環境で実行、
+  約 6.7s）。
+- `test/e2e/apm-install*.test.ts`: consumer workspace へ実
+  `packages/apm` package を local path dep として install し、全
+  target（windsurf/copilot/codex/claude/cursor/agent-skills）で
+  skills/hook bundle/bundled CLI の deploy と動作を確認。
+- `pre-read-code.js` は `packages/**` lint scope 入りに伴い biome
+  format を適用（挙動変更なし）。

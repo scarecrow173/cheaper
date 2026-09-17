@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0016"
 type: "plan"
-status: "approved"
+status: "completed"
 test-spec-skip: "Verified by package unit/e2e test suites and CI; no dedicated test-spec doc authored."
 title: "Development APM project / distributable package separation"
 created: "2026-09-18"
