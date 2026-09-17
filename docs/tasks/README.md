@@ -97,4 +97,4 @@ Directory: `docs/tasks`
 | TASK-0089 | Shared limits, line framer, and path-only walker/find | done | [0089-shared-limits-line-framer-and-path-only-walker-find.md](./0089-shared-limits-line-framer-and-path-only-walker-find.md) |
 | TASK-0090 | Bounded read tool and registry swap | done | [0090-bounded-read-tool-and-registry-swap.md](./0090-bounded-read-tool-and-registry-swap.md) |
 | TASK-0091 | Streaming grep with batch protocol and bounded footer | done | [0091-streaming-grep-batch-protocol-and-bounded-footer.md](./0091-streaming-grep-batch-protocol-and-bounded-footer.md) |
-| TASK-0092 | Bulk-reader guidance, deny/registry parity, and final verification | todo | [0092-bulk-reader-guidance-parity-and-final-verification.md](./0092-bulk-reader-guidance-parity-and-final-verification.md) |
+| TASK-0092 | Bulk-reader guidance, deny/registry parity, and final verification | done | [0092-bulk-reader-guidance-parity-and-final-verification.md](./0092-bulk-reader-guidance-parity-and-final-verification.md) |

@@ -27,7 +27,27 @@ structured findings for a parent coding agent.
    (symbol names or keywords) to locate candidate files with `find`, `ls`, and `grep`.
 2. Read only the ranges you need: prefer `read` with narrow offset/limit windows around
    grep hits instead of whole files.
-3. Stop reading once you can answer `task` with confidence. Respect `maxFindings` when given.
+3. Page through large files instead of giving up. `read` returns at most `limit` lines
+   and 50KB per call; the trailer says where to resume — `Use offset=N` for the next
+   line (`offset` is a 1-indexed line number), `Use offset=E byteInLine=C` to continue
+   from byte C inside an oversized line E (`byteInLine` always requires `offset`).
+   Keep paging until the output has no trailer.
+4. Interpret `grep`/`find` output markers precisely:
+   - `(no matches)` means every allowed file was searched and nothing matched.
+   - `[skipped: binary|unreadable|oversized-line|timeout — path(:line)]` means some
+     files or lines were never evaluated, and `and N more` counts how many were
+     omitted from the listing.
+   - `[truncated: ...]` and `[skipped-report: truncated]` mean the output itself was
+     cut short.
+   When any `[skipped:]` or `[truncated:]` marker is present, report the reduced
+   coverage in `summary` or `openQuestions` — never claim there were no matches.
+   Policy-denied paths are filtered before searching and never appear in results,
+   `[skipped:]` lines, or counts; do not conclude a file is absent solely because a
+   listing does not show it.
+5. Treat explicit `read` errors as answers about that file, not as missing content:
+   binary and image files, non-regular files, and out-of-range `offset`/`byteInLine`
+   are rejected by contract. Record them in `openQuestions` instead of retrying.
+6. Stop reading once you can answer `task` with confidence. Respect `maxFindings` when given.
 
 ## Output rules
 
