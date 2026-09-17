@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0014"
 type: "plan"
-status: "approved"
+status: "completed"
 test-spec-skip: "Verified by package unit/e2e test suites and CI; no dedicated test-spec doc authored."
 title: "Bulk-reader huge-file safe I/O"
 created: "2026-09-17"

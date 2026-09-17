@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0014"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "Bulk-reader huge-file safe I/O"
 created: "2026-09-17"
 updated: "2026-09-17"

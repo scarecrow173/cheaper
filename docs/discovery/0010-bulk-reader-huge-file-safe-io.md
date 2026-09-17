@@ -1,7 +1,7 @@
 ---
 id: "DISC-0010"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "bulk-reader の巨大ファイル安全 I/O"
 created: "2026-09-17"
 updated: "2026-09-17"
