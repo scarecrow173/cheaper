@@ -1,7 +1,7 @@
 ---
 id: "TASK-0104"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add version check and set scripts"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -78,8 +78,21 @@ DESIGN-0024 どおり、version 一致検証 `scripts/check-version.mjs` と
 
 ## Acceptance
 
-- [ ] 全宣言が一致する状態で `check-version.mjs` が exit 0。
-- [ ] 宣言をずらすと exit 1 + 不一致 file が列挙される。
-- [ ] `set-version.mjs <semver>` が対象 file を一括更新し、不正引数で
+- [x] 全宣言が一致する状態で `check-version.mjs` が exit 0。
+- [x] 宣言をずらすと exit 1 + 不一致 file が列挙される。
+- [x] `set-version.mjs <semver>` が対象 file を一括更新し、不正引数で
       exit 1 になる。
-- [ ] `pnpm lint`（biome の対象に入る場合）が pass する。
+- [x] `pnpm lint`（biome の対象に入る場合）が pass する。
+
+## Result
+
+実施済み（2026-09-18）。`check-version.mjs` は発散状態（cli 0.0.0 vs
+apm.yml 1.0.0）を正しく exit 1 で検出し、`set-version.mjs 1.0.0` は
+4 file を一括更新後に生成物 `version.json` の不一致を検出して bundle
+再生成を促した。bundle 再生成後 `version check OK: 1.0.0`。
+不正引数・引数なしは usage + exit 1。
+
+実装中の修正: 初版は `apmText.replace(...) === apmText` を「version 行
+なし」の検出に使っていたが、同一値への idempotent bump で誤検出した
+ため、行存在チェックと置換を分離した。lint pass（既存生成物の
+warning のみ）。

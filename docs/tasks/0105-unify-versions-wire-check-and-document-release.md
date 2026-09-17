@@ -1,7 +1,7 @@
 ---
 id: "TASK-0105"
 type: "task"
-status: "todo"
+status: "done"
 title: "Unify versions, wire check, and document release"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -90,8 +90,21 @@ node packages/cli/bin/cheaper.js --version   # 1.0.0 を返すこと
 
 ## Acceptance
 
-- [ ] 全宣言・`version.json`・`--version` が `1.0.0` を返す。
-- [ ] `mise run check` が version check を含めて全 pass。
-- [ ] `docs/guides/release.md` が存在し、bump→検証→commit→確認の
+- [x] 全宣言・`version.json`・`--version` が `1.0.0` を返す。
+- [x] `mise run check` が version check を含めて全 pass。
+- [x] `docs/guides/release.md` が存在し、bump→検証→commit→確認の
       流れが記されている。
-- [ ] audit clean。
+- [x] audit clean。
+
+## Result
+
+実施済み（2026-09-18）。宣言 3 file を `1.0.0` に統一し bundle 再生成
+（`version.json` のみ変化、`cheaper.mjs` 非変化 — version 定数非埋込を
+確認）。`mise.toml` check task に `check-version.mjs` を `pnpm lint` 後に
+組み込み。`docs/guides/release.md` に canonical source・宣言一覧・
+bump/release 手順・dev project 対象外を記述。AGENTS.md に pointer 追加
+（README には該当節がなく追加せず）。
+
+`mise run check` 全 pass: lint（warning のみ）→ version check OK: 1.0.0
+→ typecheck → 656 tests（core 270 / runtime-pi 255 / cli 131）→
+bundle 再生成 → freshness clean。`cheaper --version` = 1.0.0。

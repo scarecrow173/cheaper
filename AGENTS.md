@@ -56,6 +56,12 @@ SOLID・YAGNI・DRY・KISS に従い、現在の要件に必要な範囲で設�
 - コミットメッセージは Conventional Commits に従う（`feat:`, `fix:`, `docs:`, `chore:` 等 + 命令形の要約）
 - コミットは意味のある境界で分割し、適宜行う。無関係な変更を1コミットにまとめず、1コミットが1つの論理的な変更を表すようにする
 
+## Version と release
+
+製品 version の canonical source は `packages/cli/package.json`。bump と
+release の手順は `docs/guides/release.md` に従う。version 宣言の不一致は
+`mise run check`（`scripts/check-version.mjs`）が検出する。
+
 ## 境界
 
 - **Always**: 変更後は関連する検証（型チェック・テスト等）を実行してから完了とする

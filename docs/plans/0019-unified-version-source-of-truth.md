@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0019"
 type: "plan"
-status: "approved"
+status: "completed"
 test-spec-skip: "Verified by check-version.mjs itself plus package test suites; no dedicated test-spec doc authored."
 title: "Unified version source of truth"
 created: "2026-09-18"

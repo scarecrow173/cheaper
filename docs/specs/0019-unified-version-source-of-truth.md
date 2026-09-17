@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0019"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "Unified version and release source of truth"
 created: "2026-09-18"
 updated: "2026-09-18"
