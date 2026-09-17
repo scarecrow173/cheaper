@@ -4,7 +4,7 @@ type: "discovery"
 status: "resolved"
 title: "Cross-agent hook distribution and per-agent hook contract matrix"
 created: "2026-09-17"
-updated: "2026-09-17"
+updated: "2026-09-18"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -196,7 +196,7 @@ config validation の実機確認は open item として残る）。
 | Windsurf | `pre_read_code` | ✅ | 検証済み・現行のまま動作 |
 | Claude Code | `PreToolUse` + `matcher: "Read"` | ✅ | event/matcher 変換 + stdin shape adapter |
 | Cursor | `beforeReadFile` | ✅ | event + output contract adapter |
-| Copilot | `preToolUse` + `toolName == "view"` | ✅ 要注 | fail-closed 意味論への adapter（後述） |
+| Copilot | `preToolUse` + `toolName == "view"` | ✅ adapter 実装済み | `pre-read-code-copilot.js`（DESIGN-0025）。stdout deny JSON + 常に exit 0 で fail-closed 意味論を吸収 |
 | Codex | （read tool は `PreToolUse` を emit しない） | ❌ | upstream gap。現状 intercept 不可 |
 | agent-skills | hook 概念なし | N/A | skills のみの target |
 
@@ -214,9 +214,9 @@ README・skill・spec 等へ複写しない（DRY — SPEC-0013 / DESIGN-0018 §
 | target | final classification | evidence |
 |---|---|---|
 | windsurf | **functional** | `apm-install.test.ts` — hook block 実動作確認済み（exit 2 + delegation guidance） |
-| claude | **deploys-but-nonfunctional (expected no-op)** | `apm-install-targets.test.ts` — `pre_read_code` を verbatim 登録。native event は `PreToolUse` + matcher `Read` であり `pre_read_code` は発火しない |
+| claude | **deploys-but-nonfunctional (expected no-op)** | `apm-install-targets.test.ts` — `pre_read_code` を verbatim 登録。native event は `PreToolUse` + matcher `Read` であり `pre_read_code` は発火しない。`preToolUse` 登録は PascalCase `PreToolUse` に正規化され live になるが、copilot adapter は claude payload shape と不一致で全 exit 0 素通し（実質 no-op） |
 | cursor | **deploys-but-nonfunctional (expected no-op)** | 同上 — `pre_read_code` verbatim 登録。native event は `beforeReadFile`（`failClosed` 未指定時は fail-open） |
-| copilot | **deploys-but-nonfunctional (expected no-op)。配布物も一部破損** | 同上 — `pre_read_code` verbatim 登録。native event は `preToolUse` + `toolName == "view"`。command hook は fail-closed（非 0 exit がすべて deny）で将来 adapter の不変条件。加えて `.json` 全欠落で `--version` は exit 70、file-schema worker（bulk-read / code-write / doc-write）は `OUTPUT_SCHEMA_NOT_FOUND`（exit 3）で不動（`count-tokens` は動作）— いずれも同 e2e で実測 |
+| copilot | **functional（adapter 経由）。配布物は一部破損（`.json` 欠落、upstream 待ち）** | 同上 — `preToolUse` 登録が native に発火し `pre-read-code-copilot.js` が動作（stdin 注入 e2e で block/allow/never-nonzero を assert、generated config の `preToolUse` 登録も assert）。`.json` 全欠落で `--version` は exit 70、file-schema worker（bulk-read / code-write / doc-write）は `OUTPUT_SCHEMA_NOT_FOUND`（exit 3）で不動のまま（既知の制限、ADR-0023 option i で upstream 修正待ち + drift-signal assert 維持）。`count-tokens` は動作するため adapter 自体は `.json` 非依存 |
 | codex | **deploys-but-nonfunctional (expected no-op) かつ unsupported** | 同上 — file-read tool が `PreToolUse` を emit しない upstream gap（`read_file`/`grep` は openai/codex#18491、`list_dir`/`view_image` は #20204）。adapter 対象外 |
 | agent-skills | **N/A（skills-only）** | 同上 — 4 skill の `SKILL.md` のみ deploy され、hook bundle / hook config の不存在を assert |
 
@@ -240,9 +240,10 @@ runtime loader が未知 event を accept/ignore する挙動は実機 E2E
   input 順に load されるため output 側を先に検出）で失敗する。
   `count-tokens` は動作し、worker の `.md` 本体は deploy される。
   いずれも `apm-install-targets.test.ts` の copilot case で
-  assert 済み。将来の copilot adapter は version 解決と
-  file-schema worker が copilot deploy では壊れている点を
-  考慮しなければならない
+  assert 済み。copilot adapter（pre-read-code-copilot.js）は
+  `count-tokens` のみを使うため `.json` 欠落の影響を受けない。
+  `--version` と file-schema worker の破損は upstream 修正待ち
+  の既知の制限として残る（ADR-0023）
 - **codex / cursor / windsurf**: apm は target の `hooks.json`
   （`hooks` 直下に event を nest する shape）に加え、同じ
   `pre_read_code` 登録の top-level event key shape を持つ
@@ -251,7 +252,13 @@ runtime loader が未知 event を accept/ignore する挙動は実機 E2E
   `apm-install-targets.test.ts` で assert 済み）
 - **claude**: `.claude/apm-hooks.json` と `.claude/settings.json`
   の双方を deploy する（nested `hooks → event → matcher → hooks`
-  shape、`${CLAUDE_PROJECT_DIR}` 補間はそのまま保持）
+  shape、`${CLAUDE_PROJECT_DIR}` 補間はそのまま保持）。**claude
+  adapter は event 名を native casing に正規化する**: hooks.json の
+  `preToolUse`（camelCase）は `PreToolUse`（PascalCase、matcher `*`）
+  として live 登録される（2026-09-18 実測、copilot adapter 追加時に
+  観測）。copilot adapter は claude payload（`tool_name` /
+  `tool_input`）と contract が合わないため全 exit 0 素通しで
+  実質 no-op
 
 ### Copilot の fail-closed 意味論反転
 
@@ -294,9 +301,10 @@ generic adapter は「意図的 block 以外で絶対に非 0 exit しない」
   出すか（per-agent 実機 validation が必要。no-op は doc + deploy
   証拠で支持されるが runtime loader の accept/ignore 自体は実機
   未検証で、startup での noise も未検証）
-- Copilot fail-closed の下で adapter が「意図的 block 以外で非 0 exit
-  しない」をどう保証するか（内部エラーを stdout JSON deny と区別する
-  設計が必要）
+- ~~Copilot fail-closed の下で adapter が「意図的 block 以外で非 0 exit
+  しない」をどう保証するか~~ → ADR-0023 / DESIGN-0025 で解決: adapter
+  は全経路で exit 0、block のみ stdout deny JSON で表現（stdin 注入
+  e2e で never-nonzero を assert）
 - hook script の per-agent stdin/stdout 変換をどの層に置くか
   （bundle 内 wrapper script / generated config 差し替え /
   APM package 側の manifest 拡張）

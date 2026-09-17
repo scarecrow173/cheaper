@@ -110,4 +110,4 @@ Directory: `docs/tasks`
 | TASK-0104 | Add version check and set scripts | done | [0104-add-version-check-and-set-scripts.md](./0104-add-version-check-and-set-scripts.md) |
 | TASK-0105 | Unify versions, wire check, and document release | done | [0105-unify-versions-wire-check-and-document-release.md](./0105-unify-versions-wire-check-and-document-release.md) |
 | TASK-0106 | Copilot adapter script, hooks.json registration, and stdin-injection tests | done | [0106-copilot-adapter-script-and-hook-tests.md](./0106-copilot-adapter-script-and-hook-tests.md) |
-| TASK-0107 | Copilot deploy/config e2e asserts, DISC-0009 matrix update, and final verification | todo | [0107-copilot-deploy-e2e-matrix-and-final-verification.md](./0107-copilot-deploy-e2e-matrix-and-final-verification.md) |
+| TASK-0107 | Copilot deploy/config e2e asserts, DISC-0009 matrix update, and final verification | done | [0107-copilot-deploy-e2e-matrix-and-final-verification.md](./0107-copilot-deploy-e2e-matrix-and-final-verification.md) |

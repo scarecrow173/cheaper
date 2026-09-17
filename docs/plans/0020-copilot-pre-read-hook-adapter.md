@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0020"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Copilot pre-read hook adapter — implementation plan"
 test-spec-skip: "Verified by package e2e test suites (stdin-injection and apm-install-targets); no dedicated test-spec doc authored."
 created: "2026-09-18"

@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0020"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "Copilot per-target pre-read hook adapter"
 created: "2026-09-18"
 updated: "2026-09-18"

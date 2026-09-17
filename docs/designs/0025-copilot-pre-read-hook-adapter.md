@@ -142,13 +142,18 @@ guidance は windsurf hook と同一文言（stderr → reason field に写像�
 }
 ```
 
-APM は event 名を verbatim で全 target config に書き込む。copilot
-では `preToolUse` が native に発火し `pre_read_code` は no-op、
-windsurf では逆になる。powershell の `; exit $LASTEXITCODE` は
-windsurf 側の exit 伝播に必要なため pre_read_code には残すが、
-copilot adapter は常に 0 を返すため adapter 側では不要
-（verbatim deploy される entry 内の field は各 target で単に
-無視される想定）。
+APM は event 名をほぼ verbatim で全 target config に書き込む。
+copilot では `preToolUse` が native に発火し `pre_read_code` は
+no-op、windsurf では逆になる。**例外（実測）**: apm 0.28.0 の
+claude adapter は event 名を native casing に正規化するため、
+`preToolUse` は claude config では PascalCase `PreToolUse`
+（matcher `*`）として live 登録される。ただし claude の stdin
+shape（`tool_name` / `tool_input`）は本 adapter の
+`toolName` / `toolArgs` と一致しないため、adapter は全 payload を
+exit 0 で素通しし実質 no-op となる。powershell の
+`; exit $LASTEXITCODE` は windsurf 側の exit 伝播に必要なため
+pre_read_code には残すが、copilot adapter は常に 0 を返すため
+adapter 側では不要。
 
 ### `.json` asset gap の扱い（ADR-0023 option i）
 

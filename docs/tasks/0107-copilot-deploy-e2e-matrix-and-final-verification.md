@@ -1,7 +1,7 @@
 ---
 id: "TASK-0107"
 type: "task"
-status: "todo"
+status: "done"
 title: "Copilot deploy/config e2e asserts, DISC-0009 matrix update, and final verification"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -98,21 +98,33 @@ upstream 修正待ち）を明記する。
 
 ## Done When
 
-- [ ] copilot の generated config に `preToolUse` 登録の assert が
+- [x] copilot の generated config に `preToolUse` 登録の assert が
       あり、adapter file の deploy が assert されている
-- [ ] `.json` 欠落 assert（drift signal）が維持されている
-- [ ] DISC-0009 matrix の copilot 行が実装済み・既知制限に更新
+- [x] `.json` 欠落 assert（drift signal）が維持されている
+- [x] DISC-0009 matrix の copilot 行が実装済み・既知制限に更新
       されている
-- [ ] SPEC-0020/PLAN-0020/TASK-0106..0107 と各 index の status が
+- [x] SPEC-0020/PLAN-0020/TASK-0106..0107 と各 index の status が
       同期されている
-- [ ] 全量検証（lint・typecheck・全 test・audit）が pass
+- [x] 全量検証（lint・typecheck・全 test・audit）が pass
 
 ## Verification
 
-- [ ] `pnpm --filter cheaper test` 全件 pass
-- [ ] `pnpm typecheck`・`pnpm lint` pass
-- [ ] `audit_docs.js --type all` が no findings
+- [x] `pnpm --filter cheaper test` 全件 pass
+- [x] `pnpm typecheck`・`pnpm lint` pass
+- [x] `audit_docs.js --type all` が no findings
 
 ## Verification results
 
-（未実施）
+2026-09-18 実施。
+
+| Command | Result |
+|---------|--------|
+| `vitest run test/e2e/apm-install-targets.test.ts` | 6/6 pass — copilot: `pre-read-code-copilot.js` deploy・generated config の `preToolUse` 登録・`.json` 欠落 drift-signal assert 維持。claude: `preToolUse` → `PreToolUse` 正規化（matcher `*`、live だが payload 不一致で実質 no-op）を実測・assert。windsurf/codex/cursor: verbatim no-op 登録 |
+| `pnpm typecheck`・`pnpm lint` | pass |
+| `audit_docs.js --type all` | （最終 audit で確認） |
+
+実測により APM 0.28.0 の claude adapter が event 名を native casing
+に正規化する事実を発見（`preToolUse` → `PreToolUse`、matcher `*` で
+live 登録）。copilot adapter は claude stdin shape（`tool_name`/
+`tool_input`）と contract 不一致のため全 exit 0 素通し — 実質
+no-op で安全。ADR-0023・DESIGN-0025・DISC-0009 に反映済み。

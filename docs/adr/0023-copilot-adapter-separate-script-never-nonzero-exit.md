@@ -121,10 +121,14 @@ script）、(b) fail-closed 意味論での block/素通しの表現、(c) `hook
 - **`hooks.json` に `preToolUse` event を追加宣言する**（`pre_read_code`
   と併記）。APM は event 名を verbatim で全 target config に書き込む
   ため、copilot の generated config には `preToolUse` 登録が入り
-  native に発火し、他 target では no-op となる。claude の native
-  event は PascalCase `PreToolUse` であり、camelCase `preToolUse` は
-  別名として no-op と推定される（case 非区別の runtime である場合は
-  誤発火しうる — Open Question として記録し、実機検証で確認する）。
+  native に発火し、他 target では no-op となる。**実測による
+  追記**: apm 0.28.0 の claude adapter は event 名を native casing
+  に正規化するため、`preToolUse` は claude config では PascalCase
+  `PreToolUse`（matcher `*`）として **live 登録される**（no-op 想定
+  は誤りだった）。ただし claude の stdin shape（`tool_name` /
+  `tool_input`）は本 adapter の `toolName` / `toolArgs` と一致
+  しないため、adapter は全 payload を exit 0 で素通しし、実質
+  no-op として安全に振る舞う。
 - **`toolArgs` normalize**: string なら `JSON.parse`（失敗時 exit 0）、
   object なら直接使用。path key は `path` / `file_path` / `filePath`
   の順で探索する。
@@ -141,7 +145,9 @@ script）、(b) fail-closed 意味論での block/素通しの表現、(c) `hook
   ため `.json` gap の影響を受けない）。
 - 全 target の generated config に `preToolUse` 登録が入る。native
   event を持たない target では dead registration（現行の
-  `pre_read_code` と同じ no-op 状態）。
+  `pre_read_code` と同じ no-op 状態）。claude では `PreToolUse` に
+  正規化され live 登録されるが、payload shape 不一致で実質
+  no-op（tool call 毎に node spawn が走る overhead のみ）。
 - adapter 誤動作（内部 error）は deny ではなく素通しになる —
   fail-open のため大 file が読まれるが、agent 全体が stop することは
   ない。
@@ -161,10 +167,11 @@ script）、(b) fail-closed 意味論での block/素通しの表現、(c) `hook
 
 ## Open Questions
 
-- claude runtime が event 名を case-insensitive に解釈するか —
-  `preToolUse` 登録が claude で誤発火しうるか（実機未検証。
-  adapter script 側も `toolName`/`toolArgs` payload でない入力は
-  exit 0 で素通しするため、誤発火しても無害の見込み）。
+- ~~claude での `preToolUse` 登録の扱い~~ → 実測で解決: apm が
+  `PreToolUse`（PascalCase、matcher `*`）に正規化して live 登録する。
+  claude の payload shape は adapter の contract と不一致のため全て
+  exit 0 素通し（実質 no-op）。apm-install-targets.test.ts の claude
+  case で assert 済み。
 - copilot `view` tool の `toolArgs` の実際の key（`path` 等）は
   runtime 未検証 — normalize が複数 key を許容するため網羅されるが、
   実機検証で確定したい。

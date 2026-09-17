@@ -62,6 +62,7 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
     expect(bundle).not.toBeNull();
     for (const rel of [
       "pre-read-code.js",
+      "pre-read-code-copilot.js",
       path.join("cli", "bin", "cheaper.mjs"),
       path.join("cli", "workers"),
       path.join("cli", "policy.yaml"),
@@ -120,6 +121,22 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       expect(apmEntry).toBeDefined();
       expect(apmEntry.matcher).toBeDefined();
       expect(Array.isArray(apmEntry.hooks)).toBe(true);
+      // apm の claude adapter は event 名を native casing に正規化する:
+      // `preToolUse`（camelCase）は PascalCase `PreToolUse` に変換され、
+      // matcher `*` で live 登録される。ただし claude の stdin shape
+      // （`tool_name`/`tool_input`）は copilot adapter の `toolName`/
+      // `toolArgs` と一致しないため、adapter は全 payload を exit 0 で
+      // 素通しする — 実質 no-op（ADR-0023 で実測確認）。
+      const preToolEntry = (settingsEvents.PreToolUse as JsonObject[])[0];
+      expect(preToolEntry).toBeDefined();
+      expect(preToolEntry.matcher).toBeDefined();
+      expect(String((preToolEntry.hooks as JsonObject[])[0].command)).toContain(
+        "pre-read-code-copilot.js",
+      );
+      // apm-hooks.json 側も同じく PascalCase に正規化される
+      const apmPreToolEntry = (apmHooks.PreToolUse as JsonObject[])[0];
+      expect(apmPreToolEntry).toBeDefined();
+      expect(apmPreToolEntry.matcher).toBeDefined();
     } else {
       // windsurf / codex / cursor / copilot: hooks.json（copilot は
       // dep 名由来の <dep>-hooks.json）は `hooks` 直下に event を
@@ -135,6 +152,15 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
         expect(Array.isArray(entries), `${target}: ${cfgPath}`).toBe(true);
         expect(entries.length).toBeGreaterThan(0);
         expect(String(entries[0].command)).toContain("pre-read-code.js");
+        // preToolUse（copilot native event）の登録も verbatim で全
+        // target config に入る。copilot では functional、他 target
+        // では unknown event として no-op（ADR-0023）。
+        const preToolEntries = (
+          flat ? cfg.preToolUse : (cfg.hooks as JsonObject).preToolUse
+        ) as JsonObject[];
+        expect(Array.isArray(preToolEntries), `${target}: ${cfgPath} preToolUse`).toBe(true);
+        expect(preToolEntries.length).toBeGreaterThan(0);
+        expect(String(preToolEntries[0].command)).toContain("pre-read-code-copilot.js");
         if (!flat && (target === "cursor" || target === "copilot")) {
           expect(cfg.version).toBe(1);
         }
