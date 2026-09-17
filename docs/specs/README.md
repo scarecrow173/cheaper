@@ -18,3 +18,4 @@ Directory: `docs/specs`
 | SPEC-0010 | Write-scope enforcement and in-workspace privacy deny list | implemented | [0010-write-scope-and-privacy-deny.md](./0010-write-scope-and-privacy-deny.md) |
 | SPEC-0011 | cheaper auth command for provider login without a pi installation | implemented | [0011-auth-login-command.md](./0011-auth-login-command.md) |
 | SPEC-0012 | Huge-file token count guard with fail-closed hook blocking | implemented | [0012-huge-file-token-count-guard-with-fail-closed-hook-blocking.md](./0012-huge-file-token-count-guard-with-fail-closed-hook-blocking.md) |
+| SPEC-0013 | Cross-agent distribution verification | implemented | [0013-cross-agent-distribution-verification.md](./0013-cross-agent-distribution-verification.md) |

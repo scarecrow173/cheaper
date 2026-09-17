@@ -88,6 +88,9 @@ Directory: `docs/tasks`
 | TASK-0080 | Runtime-pi scope and deny enforcement in sandboxed tools | done | [0080-runtime-scope-and-deny-enforcement.md](./0080-runtime-scope-and-deny-enforcement.md) |
 | TASK-0081 | Writer writeScope declaration and e2e verification | done | [0081-writer-write-scope-and-e2e-verification.md](./0081-writer-write-scope-and-e2e-verification.md) |
 | TASK-0082 | cheaper auth command (login/status/logout) | done | [0082-auth-command.md](./0082-auth-command.md) |
-| TASK-0083 | Core byte cap for countFileTokens | todo | [0083-core-byte-cap-for-countfiletokens.md](./0083-core-byte-cap-for-countfiletokens.md) |
-| TASK-0084 | CLI count-tokens env override and FILE_TOO_LARGE envelope | todo | [0084-cli-count-tokens-env-override-and-file-too-large-envelope.md](./0084-cli-count-tokens-env-override-and-file-too-large-envelope.md) |
-| TASK-0085 | Hook fast-path and fail-closed FILE_TOO_LARGE block | todo | [0085-hook-fast-path-and-fail-closed-file-too-large-block.md](./0085-hook-fast-path-and-fail-closed-file-too-large-block.md) |
+| TASK-0083 | Core byte cap for countFileTokens | done | [0083-core-byte-cap-for-countfiletokens.md](./0083-core-byte-cap-for-countfiletokens.md) |
+| TASK-0084 | CLI count-tokens env override and FILE_TOO_LARGE envelope | done | [0084-cli-count-tokens-env-override-and-file-too-large-envelope.md](./0084-cli-count-tokens-env-override-and-file-too-large-envelope.md) |
+| TASK-0085 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [0085-hook-fast-path-and-fail-closed-file-too-large-block.md](./0085-hook-fast-path-and-fail-closed-file-too-large-block.md) |
+| TASK-0086 | Parameterize apm e2e fixture by target | done | [0086-parameterize-apm-e2e-fixture-by-target.md](./0086-parameterize-apm-e2e-fixture-by-target.md) |
+| TASK-0087 | Per-target apm install verification e2e | done | [0087-per-target-apm-install-verification-e2e.md](./0087-per-target-apm-install-verification-e2e.md) |
+| TASK-0088 | Finalize contract matrix and consumer pointer | done | [0088-finalize-contract-matrix-and-consumer-pointer.md](./0088-finalize-contract-matrix-and-consumer-pointer.md) |

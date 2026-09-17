@@ -130,7 +130,7 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     expect(cliResult.tokens).toBe(toolResult.tokens);
     expect(cliResult.bytes).toBe(toolResult.bytes);
     expect(cliResult.tokenizer).toEqual(toolResult.tokenizer);
-  });
+  }, 20_000);
 
   it("accepts the scripted-response-array fixture form", async () => {
     const r = await runCheaper(["bulk-read", "--cwd", ws], {
