@@ -32,6 +32,8 @@ relations:
   derived-by:
     - "../specs/0013-cross-agent-distribution-verification.md"
     - "../adr/0016-keep-verbatim-pre-read-code-as-noop-on-non-windsurf-targets.md"
+    - "../specs/0020-copilot-pre-read-hook-adapter.md"
+    - "../adr/0023-copilot-adapter-separate-script-never-nonzero-exit.md"
   verifies:
     - "../designs/0013-apm-skills-and-pre-read-hook.md"
   verified-by: []

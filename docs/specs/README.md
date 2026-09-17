@@ -24,3 +24,4 @@ Directory: `docs/specs`
 | SPEC-0016 | Separate the development APM project from the distributable cheaper package | implemented | [0016-separate-dev-apm-project-from-distributable-package.md](./0016-separate-dev-apm-project-from-distributable-package.md) |
 | SPEC-0017 | Repository-owned setup contract for fresh checkouts | implemented | [0017-repo-owned-setup-contract-for-fresh-checkouts.md](./0017-repo-owned-setup-contract-for-fresh-checkouts.md) |
 | SPEC-0019 | Unified version and release source of truth | implemented | [0019-unified-version-source-of-truth.md](./0019-unified-version-source-of-truth.md) |
+| SPEC-0020 | Copilot per-target pre-read hook adapter | approved | [0020-copilot-pre-read-hook-adapter.md](./0020-copilot-pre-read-hook-adapter.md) |
