@@ -26,3 +26,4 @@ Directory: `docs/designs`
 | DESIGN-0017 | Huge-file byte cap guard and fail-closed hook | approved | [0017-huge-file-byte-cap-guard-and-fail-closed-hook.md](./0017-huge-file-byte-cap-guard-and-fail-closed-hook.md) |
 | DESIGN-0018 | Cross-agent distribution verification | approved | [0018-cross-agent-distribution-verification.md](./0018-cross-agent-distribution-verification.md) |
 | DESIGN-0019 | Bulk-reader huge-file safe I/O | approved | [0019-bulk-reader-huge-file-safe-io.md](./0019-bulk-reader-huge-file-safe-io.md) |
+| DESIGN-0020 | Auth URL opener seam (injectable browser launch) | approved | [0020-auth-url-opener-seam.md](./0020-auth-url-opener-seam.md) |
