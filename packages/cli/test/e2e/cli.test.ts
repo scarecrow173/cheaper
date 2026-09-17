@@ -159,18 +159,15 @@ describe("cheaper count-tokens e2e", () => {
     "   ", // 空白のみ
     "0x10", // 10 進数字列でない
     "9007199254740993", // Number.MAX_SAFE_INTEGER 超過
-  ])(
-    "falls back to the default cap on an invalid CHEAPER_COUNT_MAX_BYTES (%s)",
-    async (value) => {
-      await writeFile(path.join(ws, "target.txt"), Buffer.alloc(64, 0x61));
-      const r = await runCheaper(["count-tokens", "target.txt", "--cwd", ws], {
-        env: { ...env, CHEAPER_COUNT_MAX_BYTES: value },
-      });
-      expect(r.code).toBe(0);
-      const e = expectEnvelopeOnly(r.stdout);
-      expect(e.ok).toBe(true);
-      const result = e.result as { bytes: number };
-      expect(result.bytes).toBe(64);
-    },
-  );
+  ])("falls back to the default cap on an invalid CHEAPER_COUNT_MAX_BYTES (%s)", async (value) => {
+    await writeFile(path.join(ws, "target.txt"), Buffer.alloc(64, 0x61));
+    const r = await runCheaper(["count-tokens", "target.txt", "--cwd", ws], {
+      env: { ...env, CHEAPER_COUNT_MAX_BYTES: value },
+    });
+    expect(r.code).toBe(0);
+    const e = expectEnvelopeOnly(r.stdout);
+    expect(e.ok).toBe(true);
+    const result = e.result as { bytes: number };
+    expect(result.bytes).toBe(64);
+  });
 });
