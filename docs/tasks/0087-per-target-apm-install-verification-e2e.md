@@ -45,22 +45,26 @@ relations:
 ## Work
 
 新規 `packages/cli/test/e2e/apm-install-targets.test.ts` を作成し、
-non-windsurf 5 target（`copilot`, `codex`, `claude`, `cursor`,
-`agent-skills`）を table-driven で回す。windsurf は既存
-`apm-install.test.ts` が網羅済みのため対象外（DESIGN-0018 §2）。
+6 target（`windsurf`, `copilot`, `codex`, `claude`, `cursor`,
+`agent-skills`）を table-driven で回す。windsurf の hook runtime
+挙動は既存 `apm-install.test.ts` が網羅済みだが、generated
+config の完全性（`apm-hooks.json` を含む）は本 file の windsurf
+case でカバーする（DESIGN-0018 §2）。
 
 既存パターン踏襲: `beforeEach` で `apmAvailable()` 判定 +
 `mkdtempSync` + `makeConsumerLayout(root, target)`、各 `it` 先頭で
 `apmAvailable()` なければ `t.skip("apm CLI not available on PATH")`、
 `afterEach` で `rmSync`。
 
-### hook 対象 4 target 共通 assertion（DESIGN-0018 §3）
+### hook 対象 5 target 共通 assertion（DESIGN-0018 §3）
 
 - `apmInstall(consumer, root, target)` の `status === 0`
 - bundle layout が存在: `<bundleRoot>/pre-read-code.js`、
-  `cli/bin/cheaper.mjs`、`cli/version.json`、`cli/workers/`、
-  `cli/policy.yaml`（`cli/package.json` は APM が deploy 対象外にする
-  ため sidecar は `version.json` — DESIGN-0018 §3 注記）
+  `cli/bin/cheaper.mjs`、`cli/workers/`、`cli/policy.yaml`
+  （`cli/version.json` は **non-copilot のみ** — copilot は
+  `.json` 欠落で存在しない。`cli/package.json` は APM が deploy
+  対象外にするため sidecar は `version.json` — DESIGN-0018 §3
+  注記）
 - `generatedConfigPaths(consumer, target)` の各 path が存在し
   `JSON.parse` 可能
 - config 内の登録 event key が **`pre_read_code` verbatim** である
@@ -68,9 +72,11 @@ non-windsurf 5 target（`copilot`, `codex`, `claude`, `cursor`,
   non-windsurf では発火しない = documented no-op」を test 上の記録
   として固定する（ADR-0016）
 - bundled CLI が consumer workspace で動く:
-  `node <cli> --version` → exit 0 + `/^\d+\.\d+\.\d+$/`、
   `node <cli> count-tokens <file> --cwd <consumer>` → exit 0
-  （`process.execPath` 経由で spawn）
+  （`process.execPath` 経由で spawn）。`--version` は
+  **non-copilot のみ** exit 0 + `/^\d+\.\d+\.\d+$/` を assert
+  — copilot は `version.json` 欠落により exit 70
+  （"failed to resolve package version"）が期待値
 
 ### target 固有 assertion
 
@@ -79,8 +85,20 @@ non-windsurf 5 target（`copilot`, `codex`, `claude`, `cursor`,
   双方が存在し、settings.json が nested `hooks → event → matcher →
   hooks` shape で `pre_read_code` を verbatim 含む
   （`${CLAUDE_PROJECT_DIR}` 補間はそのまま残る）
+- `windsurf` / `codex` / `cursor`: `hooks.json`（`hooks` 直下に
+  event を nest）に加え、同じ `pre_read_code` 登録を top-level
+  event key shape で持つ `apm-hooks.json` が生成されることを
+  assert（apm 0.28.0 実測）
 - `copilot`: `.github/hooks/` 配下の `*-hooks.json` は file 名が dep
   名由来のため hardcode せず `readdirSync` で一意に解決する
+- `copilot` の `.json` 欠落（現状の観測挙動の記録）: APM 0.28.0 は
+  copilot の scripts deploy から全 `.json` を除外するため
+  `cli/version.json`・`cli/package.json`・
+  `cli/workers/schemas/*.json` が存在しないことを assert。
+  併せて `--version` → exit 70（"failed to resolve package
+  version"）、file-schema worker（bulk-read）→
+  `OUTPUT_SCHEMA_NOT_FOUND`（exit 3）を expected failure として
+  assert する（`count-tokens` は exit 0）
 - `agent-skills`: `.agents/skills/` 配下に 4 skill
   （`cheaper-usage` / `cheaper-bulk-read` / `cheaper-code-write` /
   `cheaper-doc-write`）の `SKILL.md` が deploy され、hook bundle
@@ -115,8 +133,9 @@ default は既存 call site 互換用）。
 
 ## Done When
 
-- [ ] 5 target の `it` が個別に記録され、hook 対象 4 target は共通 +
-      固有 assertion を全て満たす
+- [ ] 6 target の `it` が個別に記録され、hook 対象 5 target は共通 +
+      固有 assertion を全て満たす（copilot は `--version` exit 70 /
+      worker exit 3 の expected failure を含む）
 - [ ] `agent-skills` は skills deploy あり・hook 不存在の assert が
       入る
 - [ ] 既存 e2e file が無変更のまま pass / skip する
@@ -124,7 +143,7 @@ default は既存 call site 互換用）。
 ## Verification
 
 - [ ] `mise exec -- pnpm -F cheaper test -- apm-install-targets` が
-      exit 0（apm 有環境では 5 target pass、不在では skip）
+      exit 0（apm 有環境では 6 target pass、不在では skip）
 - [ ] `mise exec -- pnpm -F cheaper test` が exit 0（`apm-install` /
       `pre-read-hook` / `delegation-loop` 含む全 suite green — windsurf
       regression なし）

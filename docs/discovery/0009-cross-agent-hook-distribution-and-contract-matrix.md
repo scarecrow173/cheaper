@@ -36,6 +36,7 @@ relations:
     - "../designs/0013-apm-skills-and-pre-read-hook.md"
   verified-by: []
   references:
+    - "https://github.com/openai/codex/issues/18491"
     - "https://github.com/openai/codex/issues/20204"
   defers: []
   deferred-by:
@@ -72,12 +73,14 @@ pre-read interception が実現可能か、の 2 点を確定する。
   - `.cursor/hooks/cheaper/`
   - `.github/hooks/scripts/cheaper/`
   - `.claude/hooks/cheaper/`
-- 各 bundle の内容は同一: `pre-read-code.js` + `cli/`（bundled
-  `cheaper.mjs`）
+- 各 bundle は同一の source（`pre-read-code.js` + `cli/`（bundled
+  `cheaper.mjs`））を deploy するが、**copilot だけは `.json` asset
+  がすべて欠落する**（`cli/version.json`・`cli/package.json`・
+  `cli/workers/schemas/*.json`。後述の e2e 観測 facts 参照）
 - 生成された per-target hook config（gitignore 対象、`apm install` が生成）:
-  - `.windsurf/hooks.json`
-  - `.codex/hooks.json`
-  - `.cursor/hooks.json`（`"version": 1` を含む）
+  - `.windsurf/hooks.json` + `.windsurf/apm-hooks.json`
+  - `.codex/hooks.json` + `.codex/apm-hooks.json`
+  - `.cursor/hooks.json`（`"version": 1` を含む）+ `.cursor/apm-hooks.json`
   - `.github/hooks/cheaper-hooks.json`（`"version": 1`）
   - `.claude/apm-hooks.json` + `.claude/settings.json`
     （Claude 固有の nested `matcher`/`hooks` shape、
@@ -88,8 +91,10 @@ pre-read interception が実現可能か、の 2 点を確定する。
 - e2e coverage:
   - windsurf: `packages/cli/test/e2e/apm-install.test.ts` が install +
     hook block の実動作を検証（skills deploy・hooks.json shape・
-    bundled CLI `--version`・large file が exit 2 で block）
-  - non-windsurf / agent-skills:
+    bundled CLI `--version`・large file が exit 2 で block）。
+    generated config の完全性（`apm-hooks.json` を含む）は
+    `apm-install-targets.test.ts` の windsurf case もカバーする
+  - 全 hook target + agent-skills:
     `packages/cli/test/e2e/apm-install-targets.test.ts` が
     install・deploy layout・generated config・bundled CLI capability
     を検証
@@ -126,10 +131,12 @@ pre-read interception が実現可能か、の 2 点を確定する。
 - hooks は存在する（`~/.codex/hooks.json`, `.codex/hooks.json`,
   `config.toml` の `[hooks]`）。Claude-compatible な `PreToolUse` と
   `permissionDecision` stdout contract を持つ
-- **しかし** GitHub issue `openai/codex#20204` によると `PreToolUse` を
-  emit するのは `shell`/`unified_exec`（`tool_name: "Bash"` として）、
-  `apply_patch`、MCP handler のみ。file-read tool（`read_file`,
-  `list_dir`）は event を emit **しない**
+- **しかし** upstream issue によると `PreToolUse` を emit するのは
+  `shell`/`unified_exec`（`tool_name: "Bash"` として）、
+  `apply_patch`、MCP handler のみ。file-read tool は event を emit
+  **しない** — `read_file` / `grep` の gap は `openai/codex#18491`
+  （open）、`list_dir` / `view_image` は `openai/codex#20204` が
+  直接の evidence
 - 現状 upstream で pre-read interception は **不可能**
 
 #### Cursor
@@ -151,8 +158,14 @@ pre-read interception が実現可能か、の 2 点を確定する。
 hooks-reference
 
 - event `preToolUse` を `.github/hooks/*.json`（`version: 1`）に登録
-- stdin: `toolName` / `toolArgs`（`toolArgs` は parse が必要な
-  **JSON 文字列**）
+- stdin: `toolName` / `toolArgs`。**`toolArgs` の型は公式 doc 間で
+  揺れる**: hooks reference は camelCase `preToolUse` payload を
+  `toolArgs: unknown`（object として渡される）と定義する一方、
+  PascalCase `PreToolUse` payload は `tool_input: unknown`
+  （JSON 文字列を parse）であり、Copilot CLI hooks tutorial は
+  `toolArgs` を JSON 文字列として説明する。adapter は `string |
+  object` の両方を normalize しなければならず、string +
+  `JSON.parse` を前提にしてはならない
 - `toolName == "view"` に match させると file read を intercept できる
 - block は stdout `{permissionDecision: "deny", permissionDecisionReason}`
 - **CRITICAL**: command `preToolUse` hook は **fail-closed** — 非 0 exit は
@@ -202,7 +215,7 @@ README・skill・spec 等へ複写しない（DRY — SPEC-0013 / DESIGN-0018 §
 | claude | **deploys-but-nonfunctional (expected no-op)** | `apm-install-targets.test.ts` — `pre_read_code` を verbatim 登録。native event は `PreToolUse` + matcher `Read` であり `pre_read_code` は発火しない |
 | cursor | **deploys-but-nonfunctional (expected no-op)** | 同上 — `pre_read_code` verbatim 登録。native event は `beforeReadFile`（`failClosed` 未指定時は fail-open） |
 | copilot | **deploys-but-nonfunctional (expected no-op)。配布物も一部破損** | 同上 — `pre_read_code` verbatim 登録。native event は `preToolUse` + `toolName == "view"`。command hook は fail-closed（非 0 exit がすべて deny）で将来 adapter の不変条件。加えて `.json` 全欠落で `--version` は exit 70、file-schema worker（bulk-read / code-write / doc-write）は `OUTPUT_SCHEMA_NOT_FOUND`（exit 3）で不動（`count-tokens` は動作）— いずれも同 e2e で実測 |
-| codex | **deploys-but-nonfunctional (expected no-op) かつ unsupported** | 同上 — file-read tool が `PreToolUse` を emit しない upstream gap（openai/codex#20204）。adapter 対象外 |
+| codex | **deploys-but-nonfunctional (expected no-op) かつ unsupported** | 同上 — file-read tool が `PreToolUse` を emit しない upstream gap（`read_file`/`grep` は openai/codex#18491、`list_dir`/`view_image` は #20204）。adapter 対象外 |
 | agent-skills | **N/A（skills-only）** | 同上 — 4 skill の `SKILL.md` のみ deploy され、hook bundle / hook config の不存在を assert |
 
 注: 「expected no-op」の分類は generated config の静的検証と各
@@ -228,11 +241,12 @@ runtime loader が未知 event を accept/ignore する挙動は実機 E2E
   assert 済み。将来の copilot adapter は version 解決と
   file-schema worker が copilot deploy では壊れている点を
   考慮しなければならない
-- **codex / cursor**: apm は target の `hooks.json`（`hooks` 直下に
-  event を nest する shape）に加え、同じ `pre_read_code` 登録の
-  top-level event key shape を持つ `apm-hooks.json` を追加生成する
-  （`.codex/apm-hooks.json`、`.cursor/apm-hooks.json`。windsurf で
-  も `.windsurf/apm-hooks.json` が生成される）
+- **codex / cursor / windsurf**: apm は target の `hooks.json`
+  （`hooks` 直下に event を nest する shape）に加え、同じ
+  `pre_read_code` 登録の top-level event key shape を持つ
+  `apm-hooks.json` を追加生成する（`.codex/apm-hooks.json`、
+  `.cursor/apm-hooks.json`、`.windsurf/apm-hooks.json`。いずれも
+  `apm-install-targets.test.ts` で assert 済み）
 - **claude**: `.claude/apm-hooks.json` と `.claude/settings.json`
   の双方を deploy する（nested `hooks → event → matcher → hooks`
   shape、`${CLAUDE_PROJECT_DIR}` 補間はそのまま保持）
@@ -267,7 +281,8 @@ generic adapter は「意図的 block 以外で絶対に非 0 exit しない」
 - （hypothesis）cross-agent 対応するなら、単一 script + per-agent
   stdin/stdout 変換 adapter が必要。event name・stdin shape
   （`tool_info.file_path` / `tool_input.file_path` / `file_path` /
-  `toolArgs` JSON 文字列）・block 表現（exit 2 / stdout JSON /
+  `toolArgs` — doc 間で `string | object` の揺れがあり normalize
+  要）・block 表現（exit 2 / stdout JSON /
   `permissionDecision` / `permission`）・fail 意味論（fail-open /
   fail-closed / `failClosed` flag）の 4 軸が target 毎に異なる
 
@@ -305,4 +320,6 @@ generic adapter は「意図的 block 以外で絶対に非 0 exit しない」
 - Claude Code hooks: <https://code.claude.com/docs/en/hooks>
 - Cursor hooks: <https://cursor.com/docs/hooks>
 - GitHub Copilot hooks: <https://docs.github.com/en/copilot/concepts/agents/hooks>
-- Codex PreToolUse emit gap: GitHub issue `openai/codex#20204`
+- Codex PreToolUse emit gap: GitHub issue `openai/codex#18491`
+  （`read_file` / `grep`）、`openai/codex#20204`
+  （`list_dir` / `view_image`）

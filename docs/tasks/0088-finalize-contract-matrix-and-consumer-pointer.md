@@ -35,6 +35,7 @@ relations:
     - "docs/adr/0016-keep-verbatim-pre-read-code-as-noop-on-non-windsurf-targets.md"
   verified-by: []
   references:
+    - "https://github.com/openai/codex/issues/18491"
     - "https://github.com/openai/codex/issues/20204"
   defers: []
   deferred-by: []
@@ -58,10 +59,10 @@ contract matrix を canonical 化し、consumer 向け文書に pointer を
 | target | classification | evidence |
 | --- | --- | --- |
 | windsurf | functional | 既存 `apm-install.test.ts`（hook block 実動作確認済み） |
-| claude | deploys-but-noop | `apm-install-targets.test.ts` — `pre_read_code` verbatim 登録、native event は `PreToolUse` + matcher `Read` |
-| cursor | deploys-but-noop | 同上 — native event は `beforeReadFile`（`failClosed` 未指定時は fail-open） |
-| copilot | deploys-but-noop | 同上 — native event は `preToolUse` + `toolName == "view"`。command hook は fail-closed（非 0 exit が deny）で将来 adapter の不変条件 |
-| codex | deploys-but-noop かつ unsupported | 同上 — file-read tool が `PreToolUse` を emit しない upstream gap（openai/codex#20204）。adapter 対象外 |
+| claude | deploys-but-nonfunctional (expected no-op) | `apm-install-targets.test.ts` — `pre_read_code` verbatim 登録、native event は `PreToolUse` + matcher `Read` |
+| cursor | deploys-but-nonfunctional (expected no-op) | 同上 — native event は `beforeReadFile`（`failClosed` 未指定時は fail-open） |
+| copilot | deploys-but-nonfunctional (expected no-op)。配布物も一部破損 | 同上 — native event は `preToolUse` + `toolName == "view"`。command hook は fail-closed（非 0 exit が deny）で将来 adapter の不変条件。加えて `.json` 全欠落で `--version` exit 70・file-schema worker は `OUTPUT_SCHEMA_NOT_FOUND`（exit 3） |
+| codex | deploys-but-nonfunctional (expected no-op) かつ unsupported | 同上 — file-read tool が `PreToolUse` を emit しない upstream gap（openai/codex#18491・#20204）。adapter 対象外 |
 | agent-skills | N/A（skills-only） | 同上 — hook bundle / config 不存在を assert |
 
 evidence 参照として `packages/cli/test/e2e/apm-install-targets.test.ts`
@@ -106,8 +107,9 @@ matrix 内容を複写し得る全 doc。
 ## Done When
 
 - [ ] DISC-0009 matrix に 6 target の最終分類（functional /
-      deploys-but-noop / unsupported / N/A）と Codex coverage gap・
-      Copilot fail-closed semantics・test evidence 参照が記録されている
+      deploys-but-nonfunctional (expected no-op) / unsupported /
+      N/A）と Codex coverage gap・Copilot fail-closed semantics・
+      test evidence 参照が記録されている
 - [ ] cheaper-usage SKILL.md "Locating the CLI" 節に matrix への
       pointer があり、contract 知識の複写がない
 

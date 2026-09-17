@@ -72,9 +72,11 @@ plan 分割はしない。
 - `packages/cli/test/e2e/apm-fixture.ts` の target パラメータ化
   （default `"windsurf"` で後方互換）
 - 新規 `packages/cli/test/e2e/apm-install-targets.test.ts` による
-  non-windsurf 5 target の table-driven install verification
-- DISC-0009 への最終分類（functional / deploys-but-noop /
-  unsupported / N/A）と test evidence 参照の追記
+  6 target（windsurf 含む全 hook target + agent-skills）の
+  table-driven install verification
+- DISC-0009 への最終分類（functional /
+  deploys-but-nonfunctional (expected no-op) / unsupported /
+  N/A）と test evidence 参照の追記
 - `.apm/skills/cheaper-usage/SKILL.md` "Locating the CLI" 節への
   matrix pointer 1 文の追加（contract 知識の複写はしない — DRY）
 
@@ -115,7 +117,7 @@ plan 分割はしない。
 | Path | Responsibility | Notes |
 |------|----------------|-------|
 | `packages/cli/test/e2e/apm-fixture.ts` | `makeConsumerLayout` / `apmInstall` / `bundleRoot` / `bundledCli` を `target` パラメータ化、`generatedConfigPaths` を新規追加 | TASK-0086。全引数 `target = "windsurf"` default で既存 call site 無変更 |
-| `packages/cli/test/e2e/apm-install-targets.test.ts` | non-windsurf 5 target の table-driven install verification e2e | TASK-0087。新規 file。`apmAvailable()` で skip |
+| `packages/cli/test/e2e/apm-install-targets.test.ts` | 6 target（windsurf 含む全 hook target + agent-skills）の table-driven install verification e2e | TASK-0087。新規 file。`apmAvailable()` で skip。windsurf は generated config 完全性のみ（runtime 挙動は既存 file） |
 | `docs/discovery/0009-cross-agent-hook-distribution-and-contract-matrix.md` | 最終分類 + test evidence 参照の追記（canonical matrix の確定） | TASK-0088 |
 | `.apm/skills/cheaper-usage/SKILL.md` | "Locating the CLI" 節に matrix pointer 1 文追加 | TASK-0088。contract 複写禁止 |
 | `docs/plans/README.md` / `docs/tasks/README.md` | index 更新 | 本 doc 群の作成時に実施済み |
@@ -129,10 +131,10 @@ plan 分割はしない。
 
 | target | bundleRoot | generated config |
 | --- | --- | --- |
-| `windsurf` | `.windsurf/hooks/pkg` | `.windsurf/hooks.json` |
+| `windsurf` | `.windsurf/hooks/pkg` | `.windsurf/hooks.json` + `.windsurf/apm-hooks.json` |
 | `claude` | `.claude/hooks/pkg` | `.claude/apm-hooks.json` + `.claude/settings.json` |
-| `codex` | `.codex/hooks/pkg` | `.codex/hooks.json` |
-| `cursor` | `.cursor/hooks/pkg` | `.cursor/hooks.json` |
+| `codex` | `.codex/hooks/pkg` | `.codex/hooks.json` + `.codex/apm-hooks.json` |
+| `cursor` | `.cursor/hooks/pkg` | `.cursor/hooks.json` + `.cursor/apm-hooks.json` |
 | `copilot` | `.github/hooks/scripts/pkg` | `.github/hooks/<dep>-hooks.json`（dep 名由来 → readdirSync で解決） |
 | `agent-skills` | （hook deploy なし） | （なし） |
 
@@ -140,8 +142,10 @@ plan 分割はしない。
 
 - [ ] TASK-0086: `apm-fixture.ts` を target パラメータ化し、既存
       windsurf e2e が無変更で pass することを確認
-- [ ] TASK-0087: `apm-install-targets.test.ts` を新規作成し、5
-      target の assertion を table-driven で実装・実行
+- [ ] TASK-0087: `apm-install-targets.test.ts` を新規作成し、6
+      target の assertion を table-driven で実装・実行（copilot は
+      `.json` 欠落による `--version` exit 70 / worker exit 3 を
+      expected failure として assert）
 - [ ] TASK-0088: DISC-0009 に最終分類と evidence 参照を追記し、
       cheaper-usage SKILL.md に pointer を追加
 
@@ -201,20 +205,20 @@ stream はない — 0087 は 0086 の fixture API に依存し、0088 は 0087
 | Step | Verification command or criteria | Pass condition |
 |------|----------------------------------|----------------|
 | TASK-0086 | `mise exec -- pnpm -F cheaper test` | 既存 e2e が無変更で pass（apm 不在時は skip）。fixture の型エラーなし |
-| TASK-0087 | `mise exec -- pnpm -F cheaper test -- apm-install-targets` | 5 target の `it` が個別に pass（apm 不在時は skip） |
+| TASK-0087 | `mise exec -- pnpm -F cheaper test -- apm-install-targets` | 6 target の `it` が個別に pass（apm 不在時は skip）。copilot の `--version` は exit 70 が期待値 |
 | TASK-0087 (regression) | `mise exec -- pnpm -F cheaper test` | `apm-install` / `pre-read-hook` / `delegation-loop` 含む全 suite green |
-| TASK-0088 | `grep -n "functional\|deploys-but-noop" docs/discovery/0009-*.md` | 最終分類行が存在し、Codex に openai/codex#20204 参照がある |
+| TASK-0088 | `grep -n "functional\|deploys-but-nonfunctional" docs/discovery/0009-*.md` | 最終分類行が存在し、Codex に openai/codex#18491・#20204 参照がある |
 | TASK-0088 | `grep -n "DISC-0009\|contract" .apm/skills/cheaper-usage/SKILL.md` | "Locating the CLI" 節に matrix pointer があり、matrix 内容の複写がない |
 
 ### SPEC-0013 acceptance criteria → task/test mapping
 
 | SPEC-0013 acceptance criterion | 対応 task / test |
 |--------------------------------|------------------|
-| 全 declared target の deploy 内容（hook bundle + generated config path/schema）を証明する automated test | TASK-0087 — `apm-install-targets.test.ts`（non-windsurf 5 target）+ 既存 `apm-install.test.ts`（windsurf） |
+| 全 declared target の deploy 内容（hook bundle + generated config path/schema）を証明する automated test | TASK-0087 — `apm-install-targets.test.ts`（windsurf 含む 6 target。windsurf の runtime 挙動は既存 `apm-install.test.ts`） |
 | 各 target の deploy config が functional / no-op かと理由が canonical record に記載 | TASK-0087（`pre_read_code` event key verbatim assert で no-op を test 上に固定）+ TASK-0088（DISC-0009 への分類記録） |
 | contract matrix が native event・stdin shape・blocking mechanism・Codex coverage gap・Copilot fail-closed を記録 | TASK-0088 — DISC-0009 既存 matrix への最終分類追記（既存記述 + evidence 参照で完結） |
 | 既存 windsurf e2e が引き続き pass | TASK-0086/0087 の verification（既存 file 無変更 + suite green） |
-| 各 target が functional / deploys-but-noop / unsupported に分類 | TASK-0088 — DISC-0009 最終分類テーブル |
+| 各 target が functional / deploys-but-nonfunctional (expected no-op) / unsupported に分類 | TASK-0088 — DISC-0009 最終分類テーブル |
 
 ## Open Questions / Gaps
 
@@ -223,8 +227,9 @@ stream はない — 0087 は 0086 の fixture API に依存し、0088 は 0087
   実測で確認する（assertion 範囲は DESIGN-0018 で固定済みのため
   blocker ではない）
 - per-agent 実機での config validation（未知 event を error なく
-  ignore するか）は自動化不能 — SPEC-0013 に従い公式 doc 証拠
-  （DISC-0009）で補完する
+  ignore するか）は自動化不能 — 公式 doc 証拠（DISC-0009）は
+  補完であって runtime 検証の代替にはならず、residual gap として
+  残る（SPEC-0013 が許容済みの trade-off）
 
 ## Self-Review
 
@@ -248,9 +253,9 @@ stream はない — 0087 は 0086 の fixture API に依存し、0088 は 0087
 
 ## Review Handoff
 
-- 前提: DESIGN-0018 は approved。SPEC-0013 は `proposed` のままだが
-  design gate（approved design の存在）は満たしており、spec 内容と
-  design 内容の間に矛盾はない
+- 前提: DESIGN-0018 は approved、SPEC-0013 は `implemented`。
+  design gate（approved design の存在）は満たされており、spec
+  内容と design 内容の間に矛盾はない
 - 番号予約: PLAN-0012・TASK-0083..0085 は並行 branch
   （feature/huge-file-token-guard, PR #4）のため本 plan は
   PLAN-0013 / TASK-0086..0088 を使用

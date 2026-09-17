@@ -61,9 +61,10 @@ matrix という証拠である。
   名、deploy された `pre_read_code` config が no-op かどうか、windsurf
   contract との stdin/stdout/blocking の差分、機能的な pre-read
   blocking の実現可能性
-- per-target config validation: 各 agent の hook config loader が未知の
-  `pre_read_code` event を error なく accept/ignore するか（自動化可能な
-  範囲は test で、それ以外は公式 doc・config validation による証拠）
+- per-target config validation: generated config の shape と
+  `pre_read_code` event の verbatim 登録を deploy 層で検証する
+  （各 agent の runtime loader が未知 event を accept/ignore する
+  挙動は実機未検証 — 公式 doc の contract 証拠に留める）
 - windsurf 経路の regression-free 維持（既存 test の結果は不変）
 
 ## Why Now
@@ -78,7 +79,8 @@ e2e 検証は windsurf target のみ（`packages/cli/test/e2e/apm-install.test.t
 外部 contract 調査（DISC-0009）により、`pre_read_code` が Claude Code
 （`PreToolUse` + matcher `Read`）、Cursor（`beforeReadFile`）、Copilot
 （`view` toolName の `preToolUse`）には存在せず、deploy された config は
-それらでは no-op（無害だが非機能）になること、Codex CLI の hook は file
+それらでは expected no-op（documented contract ベースの推論。runtime
+loader 実機未検証）になること、Codex CLI の hook は file
 read を intercept できないこと（upstream issue openai/codex#20204）、
 Copilot の command hook は fail-closed（非 zero exit が deny）、Cursor は
 `failClosed: true` を付けない限り fail-open であることが判明した。
@@ -103,10 +105,12 @@ Copilot の command hook は fail-closed（非 zero exit が deny）、Cursor �
   layout、生成 config の存在/shape、bundled CLI の `--version` /
   `count-tokens` 実行
 - canonical contract matrix の文書化 — recognized event 名、deploy
-  config の no-op 判定、stdin/stdout/blocking の windsurf contract との
+  config の expected no-op 判定（documented contract ベース、runtime
+  未検証）、stdin/stdout/blocking の windsurf contract との
   delta、pre-read blocking の実現可能性
-- per-target config validation — 未知 `pre_read_code` event を各 agent
-  の hook config loader が error なく accept/ignore するかの証拠
+- per-target config validation — generated config の存在・shape・
+  `pre_read_code` event の verbatim 登録という deploy 層の証拠
+  （runtime loader の accept/ignore は対象外）
 - windsurf path の regression-free 維持（既存 test の outcome 不変）
 
 ### Out of Scope
@@ -130,7 +134,9 @@ Copilot の command hook は fail-closed（非 zero exit が deny）、Cursor �
 - 自動化可能な検証（install layout、生成 config schema、CLI 実行）は
   test 化し、自動化できない contract 確認は文書化された手順と公式 doc
   引用の証拠とする
-- 既存 windsurf e2e は変更せず、結果を維持する
+- 既存 windsurf e2e は変更せず、結果を維持する。windsurf の
+  generated config 完全性（`apm-hooks.json` を含む）は
+  `apm-install-targets.test.ts` の windsurf case でカバーする
 
 ## Acceptance Criteria
 
@@ -145,8 +151,9 @@ Copilot の command hook は fail-closed（非 zero exit が deny）、Cursor �
       upstream coverage gap と Copilot の fail-closed semantics を含む
 - [ ] 既存 windsurf e2e（`apm-install.test.ts`、`pre-read-hook.test.ts`、
       `delegation-loop.test.ts`）が引き続き pass する
-- [ ] 各 target が functional / deploys-but-noop / unsupported のいずれか
-      に分類され、後続判断の入力となる
+- [ ] 各 target が functional /
+      deploys-but-nonfunctional (expected no-op) / unsupported の
+      いずれかに分類され、後続判断の入力となる
 
 ## Deferred Design Concerns
 

@@ -59,8 +59,11 @@ contract matrix という証拠である。
 おり、DISC-0009 の調査により non-windsurf target では **documented
 no-op** になることが確定済み（documented contract ベースの分類で
 runtime loader の実機挙動は未検証。ADR-0016 で維持決定）。e2e
-coverage は `packages/cli/test/e2e/apm-install.test.ts` の
-windsurf target のみ。
+coverage は 2 file: `packages/cli/test/e2e/apm-install.test.ts`
+（windsurf の install + hook runtime 挙動）と
+`packages/cli/test/e2e/apm-install-targets.test.ts`（全 hook
+target + agent-skills の table-driven smoke。windsurf の
+generated config 完全性はこちらでカバー）。
 
 ## Scope
 
@@ -100,7 +103,8 @@ windsurf target のみ。
   --target <target>` を spawn
 - `bundleRoot(consumer, target = "windsurf")`: target → deploy dir map
 - `generatedConfigPaths(consumer, target)`: target → 生成 config path
-  一覧（claude / codex / cursor は 2 file、agent-skills は空）
+  一覧（windsurf / claude / codex / cursor は 2 file、agent-skills
+  は空）
 
 棄却: option (b)（per-target test file）は、差分が (target, deploy
 path, config path) のみで fixture boilerplate が 6 重複するため。
@@ -111,7 +115,7 @@ target map（consumer fixture では dep dir 名 = `pkg`）:
 
 | target | bundleRoot | generated config |
 | --- | --- | --- |
-| `windsurf` | `.windsurf/hooks/pkg` | `.windsurf/hooks.json`（+ `.windsurf/apm-hooks.json` も生成されるが既存 test の対象外） |
+| `windsurf` | `.windsurf/hooks/pkg` | `.windsurf/hooks.json` + `.windsurf/apm-hooks.json` |
 | `claude` | `.claude/hooks/pkg` | `.claude/apm-hooks.json` + `.claude/settings.json` |
 | `codex` | `.codex/hooks/pkg` | `.codex/hooks.json` + `.codex/apm-hooks.json` |
 | `cursor` | `.cursor/hooks/pkg` | `.cursor/hooks.json` + `.cursor/apm-hooks.json` |
@@ -121,13 +125,16 @@ target map（consumer fixture では dep dir 名 = `pkg`）:
 ### 2. Test file
 
 新規 `packages/cli/test/e2e/apm-install-targets.test.ts`。table は
-non-windsurf 5 target（`copilot`, `codex`, `claude`, `cursor`,
-`agent-skills`）を回す — windsurf は既存 file が網羅済みで重複させない。
-`apmAvailable()` による skip は既存パターン踏襲。
+hook 対象 5 target（`windsurf`, `copilot`, `codex`, `claude`,
+`cursor`）+ `agent-skills` を回す。windsurf は既存 file が
+hooks.json + hook runtime 挙動を網羅済みだが、generated config の
+完全性（`apm-hooks.json` を含む）は既存 file の対象外のため本
+table の windsurf case でカバーする。`apmAvailable()` による
+skip は既存パターン踏襲。
 
 ### 3. Per-target assertions
 
-hook 対象 4 target 共通:
+hook 対象 5 target 共通:
 
 - `install.status === 0`
 - bundle layout が存在: `<bundleRoot>/pre-read-code.js`,
@@ -147,9 +154,9 @@ target 固有:
   存在し、settings.json が nested `hooks → event → matcher → hooks`
   shape で `pre_read_code` を verbatim 含む（`${CLAUDE_PROJECT_DIR}`
   補間はそのまま残る）
-- `codex` / `cursor`: `hooks.json` に加え、同じ `pre_read_code` 登録を
-  top-level event key shape で持つ `apm-hooks.json` も生成される
-  （apm 0.28.0 実測。windsurf でも生成されるが本 test の対象外）
+- `windsurf` / `codex` / `cursor`: `hooks.json` に加え、同じ
+  `pre_read_code` 登録を top-level event key shape で持つ
+  `apm-hooks.json` も生成される（apm 0.28.0 実測）
 - `copilot`: `.github/hooks/` 配下の `*-hooks.json` は file 名が dep
   名由来のため hardcode せず `readdirSync` で一意に解決する
 - `copilot` の version / schema 欠落（現状の観測挙動の記録であって
@@ -222,6 +229,11 @@ target 固有:
   の assert は generated config file と bundle dir に限定する
 - fixture の default `"windsurf"` は call site を守るための互換層
   であり、新規 code からは必ず明示 target を渡す
+- APM version は unpinned（mise 経由で `latest`）。copilot の
+  expected-failure assert（`.json` 欠落・`--version` exit 70・
+  worker `OUTPUT_SCHEMA_NOT_FOUND`）は APM が `.json` stripping を
+  修正した時点で fail し始める — test 破壊ではなく contract drift
+  の検出 signal として扱う
 
 ## Deferred Design Concerns
 

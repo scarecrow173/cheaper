@@ -35,6 +35,7 @@ relations:
   verified-by:
     - "../specs/0013-cross-agent-distribution-verification.md"
   references:
+    - "https://github.com/openai/codex/issues/18491"
     - "https://github.com/openai/codex/issues/20204"
   defers: []
   deferred-by: []
@@ -70,15 +71,16 @@ contract の組合せに基づく）。target ごとの実態は以下の通り:
   block は stdout の `permissionDecision` で行う。command hook は
   **fail-closed** であり、non-zero exit は deny として扱われる
 - **Codex**: file read を intercept する hook が存在しない
-  （upstream issue openai/codex#20204）。hook による large-read
-  block は原理的に不可能
+  （upstream issue openai/codex#18491・#20204）。hook による
+  large-read block は原理的に不可能
 - **agent-skills**: skills のみの target で hook deploy 対象外
 
 つまり non-windsurf の 4 target では hook config が deploy されるが、
 documented contract 上は対応する event が発火しないため hook は
-silent な no-op になる（runtime loader の accept/ignore 挙動は実機
-E2E 未検証）。この状態を「そのまま残す」「今すぐ直す」
-「target を削る」のどれで扱うかが本 ADR の決定対象である。
+**expected no-op** になる（documented contract ベースの推論で
+あり、runtime loader の accept/ignore 挙動は実機 E2E 未検証）。
+この状態を「そのまま残す」「今すぐ直す」「target を削る」の
+どれで扱うかが本 ADR の決定対象である。
 
 ## Decision Drivers
 
@@ -94,8 +96,9 @@ E2E 未検証）。この状態を「そのまま残す」「今すぐ直す」
   含まれる。単一の変更に束ねると検証不能な変更になる
 - 検証と分類を先に行い、各 target の適合は独立に reviewable な
   単位で後続させる incremental delivery を守る
-- no-op である hook は fail-open かつ harmless であること。
-  誤った deny を出さない限り残してよい
+- no-op である hook は fail-open かつ harmless であると
+  documented contract 上期待されること（runtime loader の実機
+  挙動は未検証）。誤った deny を出さない限り残してよい
 
 ## Considered Options
 
@@ -119,7 +122,7 @@ adapt per-target later）。
   **documented no-op** として維持する
 - 各 target の hook contract（event 名・stdin schema・stdout/block
   semantics・coverage 可否）を canonical contract matrix
-  （DISC-0009 / SPEC-0013）に記録し、分類の single source of truth
+  （DISC-0009 のみ）に記録し、分類の single source of truth
   とする
 - functional adapter は本 ADR では作らない。target ごとに独立した
   follow-up の ADR/spec chain で、matrix の検証済み contract に
@@ -128,9 +131,9 @@ adapt per-target later）。
   - Copilot の command hook は fail-closed。adapter は deny を
     意図する場合のみ non-zero exit / `permissionDecision` を返し、
     異常系・未対応入力では deny しないこと
-  - Codex は file read を intercept できない（openai/codex#20204）。
-    adapter を書く対象ではなく、matrix 上の coverage gap として
-    記録し続けること
+  - Codex は file read を intercept できない（openai/codex#18491・
+    #20204）。adapter を書く対象ではなく、matrix 上の coverage
+    gap として記録し続けること
 
 ### Consequences
 
@@ -143,8 +146,9 @@ adapt per-target later）。
   後続させられる（per-target risk isolation）
 * Good, because skills は引き続き全 target へ deploy され、
   agent-agnostic な価値を失わない
-* Bad, because non-windsurf の 4 target では hook が silently no-op
-  であり、large-read block / `bulk-read` 委譲が働かない。ユーザーは
+* Bad, because non-windsurf の 4 target では hook が expected
+  no-op（documented contract ベース、runtime 未検証）であり、
+  large-read block / `bulk-read` 委譲が働かない。ユーザーは
   skills のみを得る。canonical matrix にこの挙動を明記して緩和する
 * Bad, because 「hook が入っているのに効かない」状態は matrix を
   読まない限り発見しにくい。matrix の記録が事実上の要件になる
@@ -164,8 +168,9 @@ loader での挙動は E2E 未検証である（DISC-0009 matrix 注記参照）
   `.apm/hooks/hooks.json` / `.apm/hooks/pre-read-code.js` /
   `.apm/hooks/cli/`（変更なし — verbatim deploy 維持）、
   `docs/discovery/0009-cross-agent-hook-distribution-and-contract-matrix.md`
-  および `docs/specs/0013-cross-agent-distribution-verification.md`
-  （canonical contract matrix の記録先）
+  （canonical contract matrix の記録先は DISC-0009 のみ）および
+  `docs/specs/0013-cross-agent-distribution-verification.md`
+  （検証要件）
 * Patterns to follow: per-target の挙動分類は canonical contract
   matrix を single source of truth として記録する。functional
   adapter は target ごとの別 ADR/spec chain で扱う
@@ -187,7 +192,7 @@ loader での挙動は E2E 未検証である（DISC-0009 matrix 注記参照）
 * [ ] canonical contract matrix に各 target の event 名・stdin
       schema・stdout/block semantics が記録されている
 * [ ] Codex の coverage gap（read intercept 不可、
-      openai/codex#20204）が matrix に明記されている
+      openai/codex#18491・#20204）が matrix に明記されている
 * [ ] non-windsurf targets の hook が documented no-op として
       matrix / spec に記述されている
 * [ ] 本変更で per-target adapter が実装されていない
@@ -203,7 +208,8 @@ loader での挙動は E2E 未検証である（DISC-0009 matrix 注記参照）
 * Good, because 各 target の適合が独立に reviewable な単位に
   なり、matrix という検証済みの判断材料が先に残る
 * Bad, because non-windsurf ユーザーは skills を得るが hook は
-  silently dead なまま。block 機能の欠如がユーザーから見えにくい
+  documented no-op のまま（runtime loader 実機未検証）。block
+  機能の欠如がユーザーから見えにくい
 
 ### Uniform adapter now
 
@@ -219,16 +225,20 @@ loader での挙動は E2E 未検証である（DISC-0009 matrix 注記参照）
   消せる
 * Bad, because agent-agnostic で全 target で有用な skills
   （`cheaper-bulk-read` 等）の deploy まで失われる。hook の
-  no-op は harmless なので、skills を犠牲にする理由にならない
+  expected no-op は documented contract 上 harmless と期待される
+  ため、skills を犠牲にする理由にならない
 
 ## More Information
 
 * `docs/discovery/0009-cross-agent-hook-distribution-and-contract-matrix.md`
   — per-target hook contract の調査・分類根拠
 * `docs/specs/0013-cross-agent-distribution-verification.md`
-  — cross-agent 配布検証仕様（canonical contract matrix）
+  — cross-agent 配布検証仕様
 * ADR-0013 — verbatim `pre_read_code` deploy を含む hook bundle
   配布の前提決定
 * ADR-0012 — hook が担う large-read block の threshold 決定
-* <https://github.com/openai/codex/issues/20204> — Codex の file
-  read interception 欠如を追跡する upstream issue
+* <https://github.com/openai/codex/issues/18491> — Codex の
+  `read_file` / `grep` が `PreToolUse` を emit しない gap を追跡する
+  upstream issue
+* <https://github.com/openai/codex/issues/20204> — Codex の
+  `list_dir` / `view_image` の同 gap を追跡する upstream issue
