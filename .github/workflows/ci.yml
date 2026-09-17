@@ -23,7 +23,7 @@ jobs:
       - run: pnpm test
 
       - name: bundle freshness
-        # 生成物 .apm/hooks/cli が source と同期しているか検査する
+        # 生成物 packages/apm/.apm/hooks/cli が source と同期しているか検査する
         run: |
           node scripts/bundle-cli.mjs
-          git diff --exit-code -- .apm/hooks/cli
+          git diff --exit-code -- packages/apm/.apm/hooks/cli

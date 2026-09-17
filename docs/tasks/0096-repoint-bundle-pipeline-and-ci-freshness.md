@@ -1,7 +1,7 @@
 ---
 id: "TASK-0096"
 type: "task"
-status: "todo"
+status: "done"
 title: "Repoint bundle pipeline and CI freshness check to packages/apm"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -90,12 +90,12 @@ bundle freshness check の `git diff --exit-code -- .apm/hooks/cli`
 
 ## Done When
 
-- [ ] `bundle-cli.mjs` が `packages/apm/.apm/hooks/cli` へ出力する
-- [ ] bundle 再生成が exit 0 で、新 path に生成物がある
-- [ ] CI freshness check が新 path を `git diff` 対象にしている
+- [x] `bundle-cli.mjs` が `packages/apm/.apm/hooks/cli` へ出力する
+- [x] bundle 再生成が exit 0 で、新 path に生成物がある
+- [x] CI freshness check が新 path を `git diff` 対象にしている
 
 ## Verification
 
-- [ ] `mise exec -- node scripts/bundle-cli.mjs` が exit 0
-- [ ] `git diff --exit-code -- packages/apm/.apm/hooks/cli` が
+- [x] `mise exec -- node scripts/bundle-cli.mjs` が exit 0
+- [x] `git diff --exit-code -- packages/apm/.apm/hooks/cli` が
       再生成後に clean（差分があれば commit 済み）
