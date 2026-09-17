@@ -1,7 +1,7 @@
 ---
 id: "TASK-0095"
 type: "task"
-status: "todo"
+status: "done"
 title: "Move .apm primitives to nested distributable package and make root apm.yml dev-only"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -106,12 +106,12 @@ README/AGENTS.md は TASK-0096〜0098 の担当。
 
 ## Done When
 
-- [ ] `packages/apm/.apm/` に hooks/skills 全 tree が移動している
-- [ ] repository root に `.apm/` が存在しない
-- [ ] `packages/apm/apm.yml` が DESIGN-0021 通りの最小 manifest
-- [ ] root `apm.yml` が `name: cheaper-dev` で `includes` を持たない
+- [x] `packages/apm/.apm/` に hooks/skills 全 tree が移動している
+- [x] repository root に `.apm/` が存在しない
+- [x] `packages/apm/apm.yml` が DESIGN-0021 通りの最小 manifest
+- [x] root `apm.yml` が `name: cheaper-dev` で `includes` を持たない
 
 ## Verification
 
-- [ ] `git status` で rename として追跡されている
-- [ ] `ls packages/apm/.apm/hooks` / `skills` で移動内容を確認
+- [x] `git status` で rename として追跡されている
+- [x] `ls packages/apm/.apm/hooks` / `skills` で移動内容を確認

@@ -1,6 +1,6 @@
-name: cheaper
+name: cheaper-dev
 version: 1.0.0
-description: APM project for cheaper
+description: Development APM project for cheaper (dev tooling and doc-driven workflow dependencies)
 author: scarecrow173
 targets:
 - copilot
@@ -16,6 +16,5 @@ dependencies:
   - scarecrow173/apm-packages/packages/steer-enterprise-web-research#main
   - scarecrow173/apm-packages/packages/doc-driven-dev#main
   mcp: []
-includes: auto
 scripts: {}
 
