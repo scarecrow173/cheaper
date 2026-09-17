@@ -1,7 +1,7 @@
 ---
 id: "TASK-0091"
 type: "task"
-status: "todo"
+status: "done"
 title: "Streaming grep with batch protocol and bounded footer"
 created: "2026-09-17"
 updated: "2026-09-17"
