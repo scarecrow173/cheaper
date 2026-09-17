@@ -1,7 +1,7 @@
 ---
 id: "TASK-0110"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement usage-log writer and CLI wiring with unit tests"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -98,17 +98,28 @@ DESIGN-0027 に従い `packages/cli/src/usage-log.ts` を新設し、
 
 ## Done When
 
-- [ ] `usage-log.ts` が DESIGN-0027 の API・record shape を実装
-- [ ] `cli.ts` の 3 経路（run success/run error/count-tokens）
+- [x] `usage-log.ts` が DESIGN-0027 の API・record shape を実装
+- [x] `cli.ts` の 3 経路（run success/run error/count-tokens）
       から記録される
-- [ ] unit test が全 pass・lint・typecheck が pass
+- [x] unit test が全 pass・lint・typecheck が pass
 
 ## Verification
 
-- [ ] `vitest run test/usage-log.test.ts` pass
-- [ ] `pnpm typecheck`・`pnpm lint` pass
-- [ ] 既存 cli test 群に回帰がないこと
+- [x] `vitest run test/usage-log.test.ts` pass（8/8）
+- [x] `pnpm typecheck`・`pnpm lint` pass
+- [x] 既存 cli test 群に回帰がないこと
 
 ## Verification results
 
-（未実施）
+- `packages/cli/src/usage-log.ts` 新設: `UsageLogRecord`・
+  `buildUsageRecord`・`appendUsageLog`・`recordUsage`（swallow +
+  stderr diagnostic をここに集約）。
+- `cli.ts`: `executeRun` に `onRunContext` callback を追加し
+  root/userConfigDir を runCli へ伝搬。run success・run error
+  （catch）・count-tokens の 3 箇所で `recordUsage` を呼ぶ。
+- `vitest run test/usage-log.test.ts`: 8/8 pass（record shape・
+  append・swallow/quiet）。
+- `vitest run test/envelope.test.ts test/main.test.ts`: 回帰なし。
+- `pnpm typecheck` pass・`pnpm lint` pass（warning は既存のみ）。
+- 補足: `exactOptionalPropertyTypes` のため ctx の `now` は
+  `(() => Date) | undefined` で受ける。
