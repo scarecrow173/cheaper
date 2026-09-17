@@ -1,7 +1,7 @@
 ---
 id: "TASK-0108"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement real-provider worker e2e and verify against live Ollama"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -94,16 +94,25 @@ DESIGN-0026 どおりに実装し、稼働中の Ollama コンテナに対して
 
 ## Done When
 
-- [ ] test file が DESIGN-0026 どおりに実装されている
-- [ ] Ollama 稼働環境で 3 worker test が実 provider で pass
-- [ ] `meta.model.provider === "ollama"`・usage 正値・成果物が
+- [x] test file が DESIGN-0026 どおりに実装されている
+- [x] Ollama 稼働環境で 3 worker test が実 provider で pass
+- [x] `meta.model.provider === "ollama"`・usage 正値・成果物が
       assert されている
 
 ## Verification
 
-- [ ] `vitest run test/e2e/real-provider-ollama.test.ts`（live）pass
-- [ ] `pnpm typecheck`・`pnpm lint` pass
+- [x] `vitest run test/e2e/real-provider-ollama.test.ts`（live）pass
+- [x] `pnpm typecheck`・`pnpm lint` pass
 
 ## Verification results
 
-（未実施）
+2026-09-18 実施（Docker Ollama コンテナ稼働・`qwen3.5:9b` pull 済み）。
+
+| Command | Result |
+|---------|--------|
+| `vitest run test/e2e/real-provider-ollama.test.ts` | 3/3 pass — bulk-read（7.3s）・code-write（4.1s）・doc-write（10.8s）が apm install した bundled CLI 経由で Ollama に実到達。envelope ok・`meta.model.provider==="ollama"`・`meta.model.id==="qwen3.5:9b"`・usage 正値・findings/changes/files 作成を実測 |
+| `pnpm typecheck` | pass |
+| `pnpm lint` | pass（warnings のみ — 既存生成物・hook のもの） |
+
+2 回目の実行でも 3/3 pass（flaky なし）。lint 修正は fixture 文字列
+（template literal 回避）と assert 形状のみで test 意味は不変。
