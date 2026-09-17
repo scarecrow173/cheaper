@@ -1,7 +1,7 @@
 ---
 id: "TASK-0093"
 type: "task"
-status: "todo"
+status: "done"
 title: "Auth URL opener seam and test isolation"
 created: "2026-09-18"
 updated: "2026-09-18"

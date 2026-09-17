@@ -53,6 +53,8 @@ export interface CliHooks {
   ) => Promise<{ result: Record<string, unknown>; meta: WorkerRunMeta }>;
   /** ModelRuntime 生成差し替え seam（単体テスト用）。 */
   createModelRuntime?: () => Promise<Runtime> | Runtime;
+  /** browser 起動差し替え seam（単体テスト用。未指定時は OS opener）。 */
+  openUrl?: (url: string) => void;
   /** built-in worker/policy の親 dir（既定: このパッケージ root）。 */
   builtinDir?: string;
   /** 外部 abort（テスト用。本番は process の SIGINT/SIGTERM を中継）。 */

@@ -1,7 +1,7 @@
 ---
 id: "TASK-0094"
 type: "task"
-status: "todo"
+status: "done"
 title: "Auth URL opener final verification and status sync"
 created: "2026-09-18"
 updated: "2026-09-18"

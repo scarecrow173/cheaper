@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0015"
 type: "plan"
-status: "approved"
+status: "completed"
 test-spec-skip: "Verified by package unit test suite (auth.test.ts spy/no-op seam); no dedicated test-spec doc authored."
 title: "Injectable auth URL opener seam for hermetic tests"
 created: "2026-09-18"

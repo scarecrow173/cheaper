@@ -20,4 +20,4 @@ Directory: `docs/specs`
 | SPEC-0012 | Huge-file token count guard with fail-closed hook blocking | implemented | [0012-huge-file-token-count-guard-with-fail-closed-hook-blocking.md](./0012-huge-file-token-count-guard-with-fail-closed-hook-blocking.md) |
 | SPEC-0013 | Cross-agent distribution verification | implemented | [0013-cross-agent-distribution-verification.md](./0013-cross-agent-distribution-verification.md) |
 | SPEC-0014 | Bulk-reader huge-file safe I/O | implemented | [0014-bulk-reader-huge-file-safe-io.md](./0014-bulk-reader-huge-file-safe-io.md) |
-| SPEC-0015 | Auth tests do not launch the OS default browser | proposed | [0015-auth-tests-do-not-launch-os-browser.md](./0015-auth-tests-do-not-launch-os-browser.md) |
+| SPEC-0015 | Auth tests do not launch the OS default browser | implemented | [0015-auth-tests-do-not-launch-os-browser.md](./0015-auth-tests-do-not-launch-os-browser.md) |

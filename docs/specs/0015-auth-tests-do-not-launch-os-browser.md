@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0015"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Auth tests do not launch the OS default browser"
 created: "2026-09-18"
 updated: "2026-09-18"

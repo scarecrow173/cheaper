@@ -98,5 +98,5 @@ Directory: `docs/tasks`
 | TASK-0090 | Bounded read tool and registry swap | done | [0090-bounded-read-tool-and-registry-swap.md](./0090-bounded-read-tool-and-registry-swap.md) |
 | TASK-0091 | Streaming grep with batch protocol and bounded footer | done | [0091-streaming-grep-batch-protocol-and-bounded-footer.md](./0091-streaming-grep-batch-protocol-and-bounded-footer.md) |
 | TASK-0092 | Bulk-reader guidance, deny/registry parity, and final verification | done | [0092-bulk-reader-guidance-parity-and-final-verification.md](./0092-bulk-reader-guidance-parity-and-final-verification.md) |
-| TASK-0093 | Auth URL opener seam and test isolation | todo | [0093-auth-url-opener-seam-and-test-isolation.md](./0093-auth-url-opener-seam-and-test-isolation.md) |
-| TASK-0094 | Auth URL opener final verification and status sync | todo | [0094-auth-url-opener-final-verification.md](./0094-auth-url-opener-final-verification.md) |
+| TASK-0093 | Auth URL opener seam and test isolation | done | [0093-auth-url-opener-seam-and-test-isolation.md](./0093-auth-url-opener-seam-and-test-isolation.md) |
+| TASK-0094 | Auth URL opener final verification and status sync | done | [0094-auth-url-opener-final-verification.md](./0094-auth-url-opener-final-verification.md) |

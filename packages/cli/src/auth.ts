@@ -51,7 +51,11 @@ function openUrlBestEffort(url: string): void {
  */
 export function createTerminalInteraction(
   io: CliIo,
-  opts: { method?: string | undefined; signal?: AbortSignal | undefined },
+  opts: {
+    method?: string | undefined;
+    signal?: AbortSignal | undefined;
+    openUrl?: ((url: string) => void) | undefined;
+  },
 ): AuthInteraction {
   // secret prompt は terminal echo しない raw-mode 入力（readline question は
   // 入力を echo するため API key が画面に残る）。raw mode では \x03 が
@@ -133,7 +137,7 @@ export function createTerminalInteraction(
         case "auth_url":
           io.stderr.write(`\nOpen this URL to sign in:\n  ${event.url}\n\n`);
           if (event.instructions !== undefined) io.stderr.write(`${event.instructions}\n`);
-          openUrlBestEffort(event.url);
+          (opts.openUrl ?? openUrlBestEffort)(event.url);
           break;
         case "device_code":
           io.stderr.write(`\nGo to ${event.verificationUri} and enter code: ${event.userCode}\n`);
@@ -205,7 +209,11 @@ type Runtime = AuthRuntime;
 export async function executeAuth(
   args: AuthCliArgs,
   io: CliIo,
-  hooks: { createModelRuntime?: () => Promise<Runtime> | Runtime; signal?: AbortSignal },
+  hooks: {
+    createModelRuntime?: () => Promise<Runtime> | Runtime;
+    signal?: AbortSignal;
+    openUrl?: (url: string) => void;
+  },
   startedAt: number,
 ): Promise<{ envelope: CliEnvelope; exitCode: number }> {
   const runtime = await (hooks.createModelRuntime ?? createModelRuntime)();
@@ -249,7 +257,11 @@ export async function executeAuth(
   hooks.signal?.addEventListener("abort", onAbort, { once: true });
   if (hooks.signal?.aborted === true) ac.abort();
   try {
-    const interaction = createTerminalInteraction(io, { method: args.method, signal: ac.signal });
+    const interaction = createTerminalInteraction(io, {
+      method: args.method,
+      signal: ac.signal,
+      openUrl: hooks.openUrl,
+    });
     const info = await loginProvider(runtime, provider, args.authType, interaction);
     return {
       envelope: utilitySuccessEnvelope({
