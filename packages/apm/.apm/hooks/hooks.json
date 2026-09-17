@@ -6,6 +6,13 @@
         "powershell": "node ./pre-read-code.js \"./cli/bin/cheaper.mjs\"; exit $LASTEXITCODE",
         "show_output": false
       }
+    ],
+    "preToolUse": [
+      {
+        "command": "node ./pre-read-code-copilot.js \"./cli/bin/cheaper.mjs\"",
+        "powershell": "node ./pre-read-code-copilot.js \"./cli/bin/cheaper.mjs\"",
+        "show_output": false
+      }
     ]
   }
 }

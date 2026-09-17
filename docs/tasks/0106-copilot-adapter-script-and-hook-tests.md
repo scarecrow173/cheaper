@@ -1,7 +1,7 @@
 ---
 id: "TASK-0106"
 type: "task"
-status: "todo"
+status: "done"
 title: "Copilot adapter script, hooks.json registration, and stdin-injection tests"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -98,20 +98,28 @@ block は stdout deny JSON。
 
 ## Done When
 
-- [ ] copilot shape stdin（object/string toolArgs）で threshold 超過
+- [x] copilot shape stdin（object/string toolArgs）で threshold 超過
       file が stdout deny JSON + exit 0 で block される
-- [ ] 全異常経路で `status === 0`（非 0 exit の不存在）が assert
+- [x] 全異常経路で `status === 0`（非 0 exit の不存在）が assert
       されている
-- [ ] `hooks.json` に `preToolUse` 登録が追加され `pre_read_code`
+- [x] `hooks.json` に `preToolUse` 登録が追加され `pre_read_code`
       が無変更
-- [ ] 新規 test file 全件 pass、既存 pre-read-hook test も pass
+- [x] 新規 test file 全件 pass、既存 pre-read-hook test も pass
 
 ## Verification
 
-- [ ] `pnpm --filter cheaper test -- copilot-pre-read-hook` pass
-- [ ] `pnpm --filter cheaper test -- pre-read-hook` pass（回帰なし）
-- [ ] `pnpm typecheck`・`pnpm lint` pass
+- [x] `vitest run test/e2e/copilot-pre-read-hook.test.ts` pass
+- [x] `vitest run test/e2e/pre-read-hook.test.ts` pass（回帰なし）
+- [x] `pnpm typecheck`・`pnpm lint` pass
 
 ## Verification results
 
-（未実施）
+2026-09-18 実施。
+
+| Command | Result |
+|---------|--------|
+| `vitest run test/e2e/copilot-pre-read-hook.test.ts` | 10/10 pass — object/string toolArgs・FILE_TOO_LARGE・never-nonzero（9 異常経路すべて status===0）・fast path・bundled CLI argv[2] を網羅 |
+| `vitest run test/e2e/pre-read-hook.test.ts test/e2e/apm-install-targets.test.ts` | 18/18 pass — windsurf hook・全 target deploy の回帰なし（preToolUse verbatim 登録は no-op として安全） |
+| `pnpm typecheck` | pass |
+| `pnpm lint` | pass（warnings のみ — pre-read-code.js 既存の useOptionalChain と同一 pattern・生成物サイズ警告） |
+| `node --check pre-read-code-copilot.js` | SYNTAX_OK |
