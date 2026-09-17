@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0023"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "User-facing documentation information architecture"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -136,16 +136,16 @@ setup contract）が完了し、path・command が確定したため IA を
 
 ## Acceptance Criteria
 
-- [ ] README が issue の 11 項目構成（header/why/capabilities/
+- [x] README が issue の 11 項目構成（header/why/capabilities/
       how it works/basic usage/workers/config overview/
       integration/docs/development/status）に準拠している
-- [ ] README に repository build/bundle 内部手順が無い
-- [ ] 5 本の user guide（usage・configuration・providers・
+- [x] README に repository build/bundle 内部手順が無い
+- [x] 5 本の user guide（usage・configuration・providers・
       workers・parent-agent-integration）が存在する
-- [ ] `docs/README.md`・`CONTRIBUTING.md` が存在する
-- [ ] README・index の全 relative link が有効
-- [ ] 記載コマンド・path・worker 名・env var が実装と一致する
-- [ ] license・installation method を仮決めしていない
+- [x] `docs/README.md`・`CONTRIBUTING.md` が存在する
+- [x] README・index の全 relative link が有効
+- [x] 記載コマンド・path・worker 名・env var が実装と一致する
+- [x] license・installation method を仮決めしていない
 
 ## Sources and Relations
 

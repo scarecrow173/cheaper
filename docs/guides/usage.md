@@ -75,7 +75,7 @@ echo '{"task": "User 型に email フィールドを追加",
 echo '{"task": "setup 手順を整理して",
        "documentType": "guide",
        "targets": [{"path": "docs/setup.md", "intent": "create"}],
-       "decisions": ["setup は mise run setup に一本化"]}' \
+       "decisions": ["セットアップは install.sh に一本化"]}' \
   | cheaper doc-write --cwd /path/to/workspace
 
 # custom worker file を直接実行
@@ -90,7 +90,7 @@ cheaper bulk-read --input task.json --cwd /path/to/workspace
 ```bash
 cheaper count-tokens src/huge.ts
 # → {"ok":true,"result":{"path":"src/huge.ts","tokens":12345,
-#    "bytes":...,"tokenizer":"js-tiktoken:o200k_base"},"meta":{...}}
+#    "bytes":...,"tokenizer":{"name":"o200k_base",...}},"meta":{...}}
 ```
 
 model 解決・worker 実行を伴わない測定専用コマンド。file が

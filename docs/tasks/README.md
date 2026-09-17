@@ -117,4 +117,4 @@ Directory: `docs/tasks`
 | TASK-0111 | Usage-log e2e assertions, docs, bundle regen, status sync, final verification | done | [0111-usage-log-e2e-docs-and-final-verification.md](./0111-usage-log-e2e-docs-and-final-verification.md) |
 | TASK-0112 | Create usage/configuration guides and CONTRIBUTING.md | done | [0112-create-usage-configuration-guides-and-contributing.md](./0112-create-usage-configuration-guides-and-contributing.md) |
 | TASK-0113 | Create workers/integration guides and reorganize providers.md | done | [0113-create-workers-integration-guides-and-reorg-providers.md](./0113-create-workers-integration-guides-and-reorg-providers.md) |
-| TASK-0114 | Restructure README, create docs index, and run final verification | todo | [0114-restructure-readme-docs-index-and-final-verification.md](./0114-restructure-readme-docs-index-and-final-verification.md) |
+| TASK-0114 | Restructure README, create docs index, and run final verification | done | [0114-restructure-readme-docs-index-and-final-verification.md](./0114-restructure-readme-docs-index-and-final-verification.md) |

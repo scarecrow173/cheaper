@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0023"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "User-facing documentation IA — implementation plan"
 test-spec-skip: "Documentation-only change; verified by link/contract checks against implementation, not executable tests."
 created: "2026-09-18"

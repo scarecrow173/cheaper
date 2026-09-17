@@ -1,7 +1,7 @@
 ---
 id: "TASK-0114"
 type: "task"
-status: "todo"
+status: "done"
 title: "Restructure README, create docs index, and run final verification"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -109,4 +109,22 @@ relations:
 
 ## Verification results
 
-（未実施）
+- `README.md` を 11 項目構成で再構成（header/why/capabilities/
+  how-it-works/basic-usage/workers/config/integration/docs/
+  development/status）。main flow に `mise`・`pnpm`・build・
+  bundle・`.apm`・source path・smoke 履歴が無いことを rg で
+  確認済み。
+- `docs/README.md` を user/contributor/architecture の 3 分類
+  index として作成。各 directory に「何の記録か」1 文を付与。
+- 全 relative link（README・docs/README・CONTRIBUTING・
+  5 guide）を node スクリプトで機械検証 — 全て実在、broken 0。
+- contract 突合: command・option は `args.ts`/HELP と一致、
+  exit code 一覧は `errors.ts` と一致、config dir・env var は
+  `dirs.ts`/`cli.ts`/`pre-read-code.js` と一致、policy 実値は
+  `packages/cli/policy.yaml` と一致、worker schema は各
+  schema JSON と一致、hooks/skills/threshold は `hooks.json`/
+  `pre-read-code.js` と一致。
+- `audit_docs.js --type all`: 211 files、no findings。
+- `mise run check` exit 0（lint warning 4 = 既存、typecheck、
+  core 270 + runtime-pi 255 + cli 143 tests、real-provider e2e
+  3 件 live pass、bundle freshness clean）。
