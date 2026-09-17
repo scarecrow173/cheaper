@@ -1,15 +1,31 @@
-import { readFile } from "node:fs/promises";
+import { type FileHandle, open } from "node:fs/promises";
 import path from "node:path";
 import { Worker } from "node:worker_threads";
 import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { rethrowAsDenied, type WalkOptions, walkFiles } from "./walker.js";
+import {
+  GREP_BATCH_MAX_BYTES,
+  GREP_BATCH_MAX_LINES,
+  GREP_EVAL_PER_FILE_MS,
+  GREP_EVAL_TOTAL_MS,
+  GREP_MAX_LINE_BYTES,
+  GREP_OUTPUT_LINE_MAX_CHARS,
+  GREP_OUTPUT_MAX_BYTES,
+  GREP_PATTERN_MAX_CHARS,
+  GREP_SCAN_DEADLINE_MS,
+  GREP_WORKER_MAX_OLD_SPACE_MB,
+  IO_CHUNK_BYTES,
+  SKIP_FOOTER_MAX_BYTES,
+  SKIP_FOOTER_MAX_ENTRIES,
+  SKIP_PATH_MAX_CHARS,
+} from "./limits.js";
+import { createLineFramer } from "./line-framer.js";
+import { rethrowAsDenied, sniffTextFile, type WalkOptions, walkFiles } from "./walker.js";
 
 const DEFAULT_MAX_RESULTS = 100;
 const MAX_MAX_RESULTS = 500;
-const DEFAULT_EVAL_PER_FILE_MS = 5_000;
-const DEFAULT_EVAL_TOTAL_MS = 60_000;
 const EVAL_TIMEOUT_MESSAGE = "grep pattern evaluation timed out";
+const ABORTED_MESSAGE = "Operation aborted";
 
 const grepSchema = Type.Object({
   pattern: Type.String({ description: "JavaScript regular expression" }),
@@ -26,10 +42,11 @@ const grepSchema = Type.Object({
  * regex 評価だけを逃がす worker の自己完結 eval ソース。
  * `new Worker(code, { eval: true })` で動くためファイル配置不要（vitest/dist 両対応）。
  * `require("node:worker_threads").parentPort` のみ使用し、他 import は持たない。
- * 行ごとに `re.test` するだけの純粋処理。catastrophic backtracking でブロックされても
- * main thread の event loop は止まらず、`terminate()` で強制停止できる。
+ * `batch` メッセージの `lines` 各行に `re.test` するだけの純粋処理で、
+ * batch 内 0-indexed の一致 index 配列を返す。catastrophic backtracking で
+ * ブロックされても main thread の event loop は止まらず、`terminate()` で強制停止できる。
  */
-const GREP_EVAL_WORKER_SOURCE = String.raw`
+const GREP_EVAL_WORKER_SOURCE = `
 "use strict";
 const { parentPort } = require("node:worker_threads");
 let re = null;
@@ -47,9 +64,9 @@ parentPort.on("message", (msg) => {
     }
     return;
   }
-  if (msg.type === "file" && re !== null) {
+  if (msg.type === "batch" && re !== null) {
     const matched = [];
-    const lines = String(msg.text).split("\n");
+    const lines = msg.lines;
     for (let i = 0; i < lines.length; i++) {
       if (re.test(lines[i])) matched.push(i);
     }
@@ -66,41 +83,45 @@ interface GrepWorkerReply {
 }
 
 interface PendingEval {
+  id: number;
   resolve: (matched: number[]) => void;
   reject: (err: Error) => void;
   timer: NodeJS.Timeout;
 }
 
 /**
- * eval worker の薄いラッパー。`init` で pattern を送り、`file` メッセージごとに
- * match 行 index 配列を受け取る。1 ファイル評価が `perFileMs` を超えたら
- * `worker.terminate()` し `EVAL_TIMEOUT_MESSAGE` の普通の Error で reject
- * （tool error 扱い・rejectedToolCalls には計上されない）。
+ * eval worker の薄いラッパー。`init` で pattern を送り、`batch` メッセージごとに
+ * batch 内 0-indexed の一致 index 配列を受け取る。未応答 batch は常に最大 1 で、
+ * `evaluate` は前の batch の result を受け取ってからしか呼ばれない。
+ * `watchMs` は呼び出し側が per-file・total・scan deadline の残予算の最小値として
+ * 計算して渡し、超過で `terminate()` して `EVAL_TIMEOUT_MESSAGE` で reject する。
+ * `resourceLimits.maxOldGenerationSizeMb` で worker heap も上限化する（DESIGN-0019）。
  */
 class GrepEvalWorker {
   private readonly worker: Worker;
   private nextId = 0;
-  private readonly pending = new Map<number, PendingEval>();
+  private pending: PendingEval | undefined;
   private dead = false;
 
-  constructor(
-    pattern: string,
-    flags: string,
-    private readonly perFileMs: number,
-  ) {
-    this.worker = new Worker(GREP_EVAL_WORKER_SOURCE, { eval: true });
+  constructor(pattern: string, flags: string) {
+    this.worker = new Worker(GREP_EVAL_WORKER_SOURCE, {
+      eval: true,
+      resourceLimits: { maxOldGenerationSizeMb: GREP_WORKER_MAX_OLD_SPACE_MB },
+    });
     this.worker.on("message", (msg: GrepWorkerReply) => {
       if (msg === null || typeof msg !== "object") return;
       if (msg.type === "result" && typeof msg.id === "number") {
-        const p = this.pending.get(msg.id);
-        if (p !== undefined) {
-          this.pending.delete(msg.id);
+        const p = this.pending;
+        if (p !== undefined && p.id === msg.id) {
+          this.pending = undefined;
           clearTimeout(p.timer);
           p.resolve(Array.isArray(msg.matched) ? (msg.matched as number[]) : []);
         }
       } else if (msg.type === "error") {
-        // init 失敗（main 側で事前検証済みのため到達しない想定だが fail closed）
+        // init 失敗（main 側で事前検証済みのため到達しない想定だが fail closed）。
+        // 後続の再生成に stale worker を残さないよう terminate も行う。
         this.failAll(new Error(`invalid grep pattern: ${String(msg.message)}`));
+        void this.worker.terminate();
       }
     });
     this.worker.on("error", (err) => {
@@ -109,35 +130,59 @@ class GrepEvalWorker {
     this.worker.postMessage({ type: "init", pattern, flags });
   }
 
-  evaluate(display: string, text: string): Promise<number[]> {
-    if (this.dead) return Promise.reject(new Error(EVAL_TIMEOUT_MESSAGE));
+  get isDead(): boolean {
+    return this.dead;
+  }
+
+  evaluate(
+    display: string,
+    startLine: number,
+    lines: string[],
+    watchMs: number,
+  ): Promise<number[]> {
+    if (this.dead || this.pending !== undefined) {
+      return Promise.reject(new Error(EVAL_TIMEOUT_MESSAGE));
+    }
     const id = this.nextId++;
     return new Promise<number[]>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        this.pending.delete(id);
-        this.dead = true;
-        void this.worker.terminate();
-        reject(new Error(EVAL_TIMEOUT_MESSAGE));
-      }, this.perFileMs);
-      this.pending.set(id, {
+      const timer = setTimeout(
+        () => {
+          this.pending = undefined;
+          this.dead = true;
+          void this.worker.terminate();
+          reject(new Error(EVAL_TIMEOUT_MESSAGE));
+        },
+        Math.max(1, watchMs),
+      );
+      this.pending = {
+        id,
         resolve: (matched) => {
           clearTimeout(timer);
+          this.pending = undefined;
           resolve(matched);
         },
         reject: (err) => {
           clearTimeout(timer);
+          this.pending = undefined;
           reject(err);
         },
         timer,
-      });
-      this.worker.postMessage({ type: "file", id, display, text });
+      };
+      this.worker.postMessage({ type: "batch", id, display, startLine, lines });
     });
+  }
+
+  /** per-file 予算超過などで worker を止める。後続 file 用に呼び出し側が再生成する。 */
+  kill(): void {
+    this.failAll(new Error(EVAL_TIMEOUT_MESSAGE));
+    void this.worker.terminate();
   }
 
   private failAll(err: Error): void {
     this.dead = true;
-    for (const [id, p] of this.pending) {
-      this.pending.delete(id);
+    const p = this.pending;
+    this.pending = undefined;
+    if (p !== undefined) {
       clearTimeout(p.timer);
       p.reject(err);
     }
@@ -150,27 +195,70 @@ class GrepEvalWorker {
 }
 
 export interface GrepToolOptions extends WalkOptions {
-  /** 1 ファイルの regex 評価 watchdog ms（既定 5000）。超過で tool error。 */
+  /** 同一 file の全 batch に累積される regex 評価予算 ms（既定 `GREP_EVAL_PER_FILE_MS`）。超過で file を timeout skip。 */
   evalPerFileMs?: number;
-  /** 1 回の grep 呼び出しの累計 regex 評価上限 ms（既定 60000）。超過で truncated。 */
+  /** 1 回の grep 呼び出しの累計 regex 評価上限 ms（既定 `GREP_EVAL_TOTAL_MS`）。超過で走査停止。 */
   evalTotalMs?: number;
+  /** walk+I/O+eval 待機を含む走査全体の wall-clock deadline ms（既定 `GREP_SCAN_DEADLINE_MS`）。 */
+  scanDeadlineMs?: number;
+  /** `FileHandle.read` chunk byte 数の縮退注入（既定 `IO_CHUNK_BYTES`）。テスト用。 */
+  chunkBytes?: number;
+  /** 評価対象にする 1 行の raw byte 上限の縮退注入（既定 `GREP_MAX_LINE_BYTES`）。テスト用。 */
+  maxLineBytes?: number;
+  /** 1 batch の行数上限の縮退注入（既定 `GREP_BATCH_MAX_LINES`）。テスト用。 */
+  batchMaxLines?: number;
+  /** 1 batch の行テキスト合計 byte 上限の縮退注入（既定 `GREP_BATCH_MAX_BYTES`）。テスト用。 */
+  batchMaxBytes?: number;
+  /** 出力本文の総 byte 上限の縮退注入（既定 `GREP_OUTPUT_MAX_BYTES`）。テスト用。 */
+  outputMaxBytes?: number;
+  /** 出力 1 行の表示文字数上限の縮退注入（既定 `GREP_OUTPUT_LINE_MAX_CHARS`）。テスト用。 */
+  outputLineMaxChars?: number;
+  /** skip 理由ごとの代表 path 件数の縮退注入（既定 `SKIP_FOOTER_MAX_ENTRIES`）。テスト用。 */
+  skipFooterMaxEntries?: number;
+  /** footer 内 1 path の表示文字数の縮退注入（既定 `SKIP_PATH_MAX_CHARS`）。テスト用。 */
+  skipPathMaxChars?: number;
+  /** skip footer 全体の byte 上限の縮退注入（既定 `SKIP_FOOTER_MAX_BYTES`）。テスト用。 */
+  skipFooterMaxBytes?: number;
+  /** eval 予算・deadline の時間源の差し替え（既定 `performance.now`）。テスト用。 */
+  now?: () => number;
+}
+
+interface PendingLine {
+  lineNo: number;
+  text: string;
+  /** worker へ送る decoded payload の UTF-8 byte 長（batch byte 計上用）。 */
+  payloadBytes: number;
+}
+
+interface SkipBucket {
+  shown: string[];
+  total: number;
 }
 
 /**
- * 自前 sandboxed grep（DESIGN-0002）。外部プロセス（rg 等）を spawn せず、
- * 共有 walker で `.git`/`node_modules`/バイナリ/1MB 超を skip する。
- * 正規表現評価は eval worker で行い、event loop ブロック（ReDoS）を防ぐ。
+ * 自前 sandboxed grep（DESIGN-0002 / DESIGN-0019）。外部プロセス（rg 等）を
+ * spawn せず、path-only `walkFiles` → `sniffTextFile` → `IO_CHUNK_BYTES` chunk
+ * 読み取り → `createLineFramer` → batch protocol（K 行 / B byte 締め・未応答 1）
+ * で eval worker に流す streaming 構成。全文 `readFile` はしない。
+ * eval 予算は per-file（batch 間累積・超過で timeout skip + worker 再生成）と
+ * total（超過で走査停止）を持ち、scan deadline は部分結果 + footer で返す。
  * 出力: match は `path:line: text`、context 行は `path-line- text`、
- * 非連続ブロック間に `--`。
+ * 非連続ブロック間に `--`。binary/unreadable/oversized-line/timeout は有界
+ * footer で報告する（deny 対象は walker filter 段で消えるため一切出ない）。
  */
 export function createGrepTool(opts: GrepToolOptions) {
   return defineTool({
     name: "grep",
     label: "grep",
     description:
-      "Search file contents with a JavaScript regular expression. Returns matching lines as path:line: text. Skips .git, node_modules, binary files, and files over 1MB.",
+      "Search file contents with a JavaScript regular expression. Returns matching lines as path:line: text. Searches allowed files of any size; binary files, unreadable files, oversized lines, and per-file evaluation timeouts are skipped and reported in a bounded footer. Skips .git and node_modules.",
     parameters: grepSchema,
-    async execute(_toolCallId, params) {
+    async execute(_toolCallId, params, signal) {
+      if (params.pattern.length > GREP_PATTERN_MAX_CHARS) {
+        throw new Error(
+          `invalid grep pattern: pattern exceeds ${GREP_PATTERN_MAX_CHARS} characters`,
+        );
+      }
       const flags = params.ignoreCase === true ? "i" : "";
       let re: RegExp;
       try {
@@ -181,78 +269,343 @@ export function createGrepTool(opts: GrepToolOptions) {
       const startAbs = params.path ?? ".";
       const maxResults = Math.min(params.maxResults ?? DEFAULT_MAX_RESULTS, MAX_MAX_RESULTS);
       const context = params.context ?? 0;
-      const perFileMs = opts.evalPerFileMs ?? DEFAULT_EVAL_PER_FILE_MS;
-      const totalMs = opts.evalTotalMs ?? DEFAULT_EVAL_TOTAL_MS;
+      const perFileMs = opts.evalPerFileMs ?? GREP_EVAL_PER_FILE_MS;
+      const totalMs = opts.evalTotalMs ?? GREP_EVAL_TOTAL_MS;
+      const now = opts.now ?? (() => performance.now());
+      const deadlineAt = now() + (opts.scanDeadlineMs ?? GREP_SCAN_DEADLINE_MS);
+      const chunkBytes = opts.chunkBytes ?? IO_CHUNK_BYTES;
+      const maxLineBytes = opts.maxLineBytes ?? GREP_MAX_LINE_BYTES;
+      const batchMaxLines = opts.batchMaxLines ?? GREP_BATCH_MAX_LINES;
+      const batchMaxBytes = opts.batchMaxBytes ?? GREP_BATCH_MAX_BYTES;
+      const outputMaxBytes = opts.outputMaxBytes ?? GREP_OUTPUT_MAX_BYTES;
+      const outputLineMaxChars = opts.outputLineMaxChars ?? GREP_OUTPUT_LINE_MAX_CHARS;
+      const footerMaxEntries = opts.skipFooterMaxEntries ?? SKIP_FOOTER_MAX_ENTRIES;
+      const pathMaxChars = opts.skipPathMaxChars ?? SKIP_PATH_MAX_CHARS;
+      const footerMaxBytes = opts.skipFooterMaxBytes ?? SKIP_FOOTER_MAX_BYTES;
 
-      const evaluator = new GrepEvalWorker(re.source, re.flags, perFileMs);
-      const out: string[] = [];
+      let evaluator = new GrepEvalWorker(re.source, re.flags);
+      let onAbort: (() => void) | undefined;
+      const abortPromise =
+        signal === undefined
+          ? undefined
+          : new Promise<never>((_resolve, reject) => {
+              onAbort = () => reject(new Error(ABORTED_MESSAGE));
+              if (signal.aborted) onAbort();
+              else signal.addEventListener("abort", onAbort, { once: true });
+            });
+      // race で負けた側の reject が未処理にならないよう握りつぶす
+      void abortPromise?.catch(() => {});
+
+      const outLines: string[] = [];
+      let outBytes = 0;
       let matches = 0;
-      let truncated = false;
-      let evalTruncated = false;
-      let evalTotal = 0;
+      let evalTotalMs = 0;
+      // 走査停止理由。先に立ったものを記録し、部分結果 + marker として返す（error にしない）。
+      let stopReason: "result-cap" | "output" | "eval" | "deadline" | undefined;
+      // 各 reason の代表 entry は footerMaxEntries 件まで保持し、残りは total で
+      // `and N more` に集計する（oversized 行が大量にあっても蓄積は有界）。
+      const skipped: Record<"binary" | "unreadable" | "oversized" | "timeout", SkipBucket> = {
+        binary: { shown: [], total: 0 },
+        unreadable: { shown: [], total: 0 },
+        oversized: { shown: [], total: 0 },
+        timeout: { shown: [], total: 0 },
+      };
+      const recordSkip = (bucket: SkipBucket, entry: string): void => {
+        bucket.total++;
+        if (bucket.shown.length < footerMaxEntries) {
+          bucket.shown.push(entry.length > pathMaxChars ? entry.slice(0, pathMaxChars) : entry);
+        }
+      };
+
+      // abort は cleanup 後に reject、deadline は部分結果 + marker で走査を止める。
+      const checkScan = (): void => {
+        if (signal?.aborted) throw new Error(ABORTED_MESSAGE);
+        if (now() >= deadlineAt) stopReason ??= "deadline";
+      };
+
+      const emitRaw = (s: string): boolean => {
+        const need = Buffer.byteLength(s, "utf8") + (outLines.length > 0 ? 1 : 0);
+        if (outBytes + need > outputMaxBytes) {
+          stopReason ??= "output";
+          return false;
+        }
+        outLines.push(s);
+        outBytes += need;
+        return true;
+      };
+
       try {
-        outer: for await (const file of walkFiles(opts, startAbs)) {
+        for await (const file of walkFiles(opts, startAbs, (issue) => {
+          recordSkip(skipped.unreadable, issue.display);
+        })) {
+          checkScan();
+          if (stopReason !== undefined) break;
           if (params.glob !== undefined && !path.posix.matchesGlob(file.display, params.glob)) {
             continue;
           }
-          let text: string;
-          try {
-            text = await readFile(file.real, "utf8");
-          } catch {
+          const sniff = await sniffTextFile(file.real);
+          if (sniff === "binary") {
+            recordSkip(skipped.binary, file.display);
             continue;
           }
-          const t0 = performance.now();
-          const matchedAt = await evaluator.evaluate(file.display, text);
-          evalTotal += performance.now() - t0;
-          if (matchedAt.length === 0) {
-            if (evalTotal >= totalMs) {
-              evalTruncated = true;
-              break;
+          if (sniff === "unreadable") {
+            recordSkip(skipped.unreadable, file.display);
+            continue;
+          }
+          const fh: FileHandle | undefined = await open(file.real, "r").catch(() => undefined);
+          if (fh === undefined) {
+            recordSkip(skipped.unreadable, file.display);
+            continue;
+          }
+
+          // per-file 状態。batch は常に連続行番号を保つ（oversized 行は行番号を
+          // 消費するためそこで batch を締め、0-indexed ↔ 絶対行番号の写像を維持する）。
+          const pendingLines: PendingLine[] = [];
+          const ring: { lineNo: number; text: string }[] = [];
+          let batchLines: string[] = [];
+          let batchStart = 0;
+          let batchBytes = 0;
+          let fileEvalMs = 0;
+          let openBlockTo = 0;
+          let lastEmitted = 0;
+          let needSep = false;
+          let fileAbandoned = false;
+          let fileBatches = 0;
+
+          const emitText = (isMatch: boolean, lineNo: number, text: string): boolean => {
+            const t =
+              text.length > outputLineMaxChars
+                ? `${text.slice(0, outputLineMaxChars)}... [truncated]`
+                : text;
+            return emitRaw(
+              isMatch ? `${file.display}:${lineNo}: ${t}` : `${file.display}-${lineNo}- ${t}`,
+            );
+          };
+
+          // batch 送信 → result 待ち → context 付き出力。eval 待ちの間は read が
+          // 進まない（未応答 batch 最大 1 の backpressure）。
+          const sendBatch = async (): Promise<void> => {
+            const lines = batchLines;
+            const start = batchStart;
+            batchLines = [];
+            batchBytes = 0;
+            fileBatches++;
+            if (evaluator.isDead) evaluator = new GrepEvalWorker(re.source, re.flags);
+            const watchMs = Math.min(
+              perFileMs - fileEvalMs,
+              totalMs - evalTotalMs,
+              deadlineAt - now(),
+            );
+            const t0 = now();
+            let matched: number[];
+            try {
+              const evalP = evaluator.evaluate(file.display, start, lines, watchMs);
+              matched =
+                abortPromise === undefined
+                  ? await evalP
+                  : await Promise.race([evalP, abortPromise]);
+            } catch (e) {
+              if (signal?.aborted) throw new Error(ABORTED_MESSAGE);
+              if (e instanceof Error && e.message === EVAL_TIMEOUT_MESSAGE) {
+                evalTotalMs += now() - t0;
+                recordSkip(skipped.timeout, file.display);
+                if (now() >= deadlineAt) stopReason ??= "deadline";
+                else if (evalTotalMs >= totalMs) stopReason ??= "eval";
+                else fileAbandoned = true; // per-file 予算超過 → 当該 file を捨てて次へ
+                return;
+              }
+              throw e;
             }
-            continue;
-          }
-          const lines = text.split("\n");
-          // context 込みの出力ブロックを構築（重なりはマージ）
-          const blocks: Array<{ from: number; to: number }> = [];
-          for (const i of matchedAt) {
-            const from = Math.max(0, i - context);
-            const to = Math.min(lines.length - 1, i + context);
-            const last = blocks[blocks.length - 1];
-            if (last !== undefined && from <= last.to + 1) last.to = Math.max(last.to, to);
-            else blocks.push({ from, to });
-          }
-          let firstBlock = true;
-          for (const block of blocks) {
-            if (context > 0 && !firstBlock) out.push("--");
-            firstBlock = false;
-            for (let i = block.from; i <= block.to; i++) {
-              const isMatch = matchedAt.includes(i);
-              const line = lines[i] as string;
-              out.push(
-                isMatch ? `${file.display}:${i + 1}: ${line}` : `${file.display}-${i + 1}- ${line}`,
-              );
+            const dt = now() - t0;
+            fileEvalMs += dt;
+            evalTotalMs += dt;
+
+            // batch 内 0-indexed matched を startLine で絶対行番号へ写像し、
+            // ring（前 context）と pending countdown（後 context）で block merge しながら
+            // 出力へ流す。全行配列・全一致配列は作らない。
+            const lookup = (lineNo: number): string | undefined =>
+              lineNo >= start ? lines[lineNo - start] : ring.find((r) => r.lineNo === lineNo)?.text;
+            let mi = 0;
+            for (let n = start; n < start + lines.length; n++) {
+              const isMatch = mi < matched.length && matched[mi] === n - start;
               if (isMatch) {
+                mi++;
+                const from = Math.max(1, n - context);
+                if (from > openBlockTo + 1 && needSep && context > 0 && !emitRaw("--")) {
+                  break;
+                }
+                for (let i = Math.max(from, lastEmitted + 1); i < n; i++) {
+                  const t = lookup(i);
+                  if (t !== undefined && !emitText(false, i, t)) break;
+                }
+                if (stopReason !== undefined) break;
+                if (!emitText(true, n, lines[n - start] as string)) break;
+                needSep = true;
+                openBlockTo = Math.max(openBlockTo, n + context);
+                lastEmitted = n;
                 matches++;
                 if (matches >= maxResults) {
-                  truncated = true;
-                  break outer;
+                  stopReason ??= "result-cap";
+                  break;
                 }
+              } else if (n <= openBlockTo) {
+                if (!emitText(false, n, lines[n - start] as string)) break;
+                lastEmitted = n;
               }
             }
+
+            // ring を次 batch の pre-context 用に更新（直近 context 行のみ保持）
+            for (let i = 0; i < lines.length; i++) {
+              ring.push({ lineNo: start + i, text: lines[i] as string });
+            }
+            while (ring.length > context) ring.shift();
+          };
+
+          // pendingLines から batch を組み立て送信する。batch は
+          // batchMaxLines 行・batchMaxBytes byte・oversized 行を挟む行番号の
+          // 不連続のいずれかで締める。byte 計上は worker に実際に送る
+          // decoded payload の UTF-8 byte 長で行い（rawBytes だと U+FFFD
+          // 展開で実 payload が B を超え得る）、B は hard cap として
+          // 超える行を積む前に締める。force 時は partial batch も送る。
+          const drain = async (force: boolean): Promise<void> => {
+            while (!fileAbandoned && stopReason === undefined) {
+              let closedByBytes = false;
+              while (batchLines.length < batchMaxLines && pendingLines.length > 0) {
+                const head = pendingLines[0] as PendingLine;
+                if (batchLines.length > 0 && head.lineNo !== batchStart + batchLines.length) {
+                  break; // oversized 行を挟む不連続 → 現在 batch を締める
+                }
+                // B は hard cap: 次行を足すと超えるなら現在 batch を締める。
+                // 空 batch には必ず積むため、1 行が B を超える場合（縮退した
+                // test 注入 limit でのみ到達可能。実 limit では L が decoded
+                // payload を B 未満に抑える）も 1 行 batch として送られ、
+                // 進行は保証される。
+                if (batchLines.length > 0 && batchBytes + head.payloadBytes > batchMaxBytes) {
+                  closedByBytes = true;
+                  break;
+                }
+                pendingLines.shift();
+                if (batchLines.length === 0) batchStart = head.lineNo;
+                batchLines.push(head.text);
+                batchBytes += head.payloadBytes;
+              }
+              if (batchLines.length === 0) return;
+              const closedByGap =
+                pendingLines.length > 0 &&
+                (pendingLines[0] as PendingLine).lineNo !== batchStart + batchLines.length;
+              if (batchLines.length < batchMaxLines && !closedByBytes && !closedByGap && !force) {
+                return; // partial batch は次の feed/EOF まで保留
+              }
+              // 送信前に残予算を検査（超過なら送らずに打ち切る）
+              if (fileEvalMs >= perFileMs) {
+                recordSkip(skipped.timeout, file.display);
+                evaluator.kill();
+                fileAbandoned = true;
+                return;
+              }
+              if (evalTotalMs >= totalMs) {
+                // file 未着手なら名指ししない（scan-level の停止は marker が担う）
+                if (fileBatches > 0) recordSkip(skipped.timeout, file.display);
+                stopReason ??= "eval";
+                return;
+              }
+              if (now() >= deadlineAt) {
+                if (fileBatches > 0) recordSkip(skipped.timeout, file.display);
+                stopReason ??= "deadline";
+                return;
+              }
+              await sendBatch();
+            }
+          };
+
+          const framer = createLineFramer({
+            maxLineBytes,
+            onLine: (line, lineNo) => {
+              pendingLines.push({
+                lineNo,
+                text: line,
+                payloadBytes: Buffer.byteLength(line, "utf8"),
+              });
+            },
+            onOversized: (lineNo) => {
+              recordSkip(skipped.oversized, `${file.display}:${lineNo}`);
+            },
+          });
+
+          try {
+            const buf = Buffer.alloc(chunkBytes);
+            let pos = 0;
+            for (;;) {
+              checkScan();
+              if (stopReason !== undefined || fileAbandoned) break;
+              let bytesRead: number;
+              try {
+                ({ bytesRead } = await fh.read(buf, 0, chunkBytes, pos));
+              } catch {
+                // 途中 I/O error → file は不完全。unreadable skip として記録し次へ。
+                recordSkip(skipped.unreadable, file.display);
+                fileAbandoned = true;
+                break;
+              }
+              if (bytesRead === 0) break;
+              pos += bytesRead;
+              // framer は pending を subarray view で保持するため、buf 再利用前に
+              // copy を渡す（chunk 境界をまたぐ行の破壊を防ぐ）。
+              framer.feed(Buffer.from(buf.subarray(0, bytesRead)));
+              await drain(false);
+            }
+            if (!fileAbandoned && stopReason === undefined) {
+              framer.flush();
+              await drain(true);
+            }
+          } finally {
+            await fh.close();
           }
-          if (evalTotal >= totalMs) {
-            evalTruncated = true;
-            break;
-          }
+          if (stopReason !== undefined) break;
         }
       } catch (e) {
         rethrowAsDenied(e);
       } finally {
+        if (signal !== undefined && onAbort !== undefined) {
+          signal.removeEventListener("abort", onAbort);
+        }
         await evaluator.dispose();
       }
-      if (truncated) out.push(`[truncated: more matches]`);
-      if (evalTruncated) out.push(`[truncated: evaluation time limit reached]`);
-      const body = out.length === 0 ? "(no matches)" : out.join("\n");
+
+      const footer: string[] = [];
+      // [skipped: ...] 行。1 entry ≤ pathMaxChars、skipped 部全体は
+      // footerMaxBytes byte で締め、超過は [skipped-report: truncated] で示す。
+      let skippedBytes = 0;
+      let skippedReportTruncated = false;
+      for (const [reason, bucket] of [
+        ["binary", skipped.binary],
+        ["unreadable", skipped.unreadable],
+        ["oversized-line", skipped.oversized],
+        ["timeout", skipped.timeout],
+      ] as const) {
+        if (bucket.total === 0) continue;
+        const more = bucket.total - bucket.shown.length;
+        const list =
+          more > 0
+            ? `${bucket.shown.length > 0 ? `${bucket.shown.join(", ")}, ` : ""}and ${more} more`
+            : bucket.shown.join(", ");
+        const line = `[skipped: ${reason} — ${list}]`;
+        const need = Buffer.byteLength(line, "utf8") + (footer.length > 0 ? 1 : 0);
+        if (skippedBytes + need > footerMaxBytes) {
+          skippedReportTruncated = true;
+          break;
+        }
+        footer.push(line);
+        skippedBytes += need;
+      }
+      if (stopReason === "eval") footer.push("[truncated: evaluation time limit reached]");
+      if (stopReason === "deadline") footer.push("[truncated: scan deadline reached]");
+      if (stopReason === "result-cap") footer.push("[truncated: more matches]");
+      if (stopReason === "output") footer.push("[truncated: output limit reached]");
+      if (skippedReportTruncated) footer.push("[skipped-report: truncated]");
+
+      let body = outLines.length === 0 ? "(no matches)" : outLines.join("\n");
+      if (footer.length > 0) body += `\n${footer.join("\n")}`;
       return { content: [{ type: "text" as const, text: body }], details: undefined };
     },
   });

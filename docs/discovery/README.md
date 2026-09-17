@@ -15,3 +15,4 @@ Directory: `docs/discovery`
 | DISC-0007 | bulk-read delegation benchmark and large-read threshold evidence | resolved | [0007-bulk-read-delegation-benchmark.md](./0007-bulk-read-delegation-benchmark.md) |
 | DISC-0008 | Huge-file token count guard and fail-closed hook behavior | resolved | [0008-huge-file-token-count-guard-and-fail-closed-hook-behavior.md](./0008-huge-file-token-count-guard-and-fail-closed-hook-behavior.md) |
 | DISC-0009 | Cross-agent hook distribution and per-agent hook contract matrix | resolved | [0009-cross-agent-hook-distribution-and-contract-matrix.md](./0009-cross-agent-hook-distribution-and-contract-matrix.md) |
+| DISC-0010 | bulk-reader の巨大ファイル安全 I/O | draft | [0010-bulk-reader-huge-file-safe-io.md](./0010-bulk-reader-huge-file-safe-io.md) |

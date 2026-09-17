@@ -20,7 +20,6 @@ import {
 import type {
   EditOperations,
   LsOperations,
-  ReadOperations,
   WriteOperations,
 } from "@earendil-works/pi-coding-agent";
 import type { MutationJournal } from "../journal.js";
@@ -92,21 +91,6 @@ async function atomicWrite(
   } finally {
     await unlink(tmp).catch(() => {});
   }
-}
-
-export function createReadOperations(opts: BoundaryOperationsOptions): ReadOperations {
-  return {
-    readFile: async (absolutePath) => {
-      const resolved = await resolve(opts, absolutePath);
-      return readFile(resolved.real);
-    },
-    access: async (absolutePath) => {
-      const resolved = await resolve(opts, absolutePath);
-      await access(resolved.real, constants.R_OK);
-    },
-    // detectImageMimeType は提供しない。Pi 側は未提供時に画像検出を skip し、
-    // ops.readFile 経由のテキスト読みに倒れるため boundary 迂回はない（IR 記録）。
-  };
 }
 
 export function createWriteOperations(opts: BoundaryOperationsOptions): WriteOperations {

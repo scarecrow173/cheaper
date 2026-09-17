@@ -1,8 +1,9 @@
 import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { createPathDenylist } from "@cheaper/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { walkFiles } from "../../src/tools/walker.js";
+import { sniffTextFile, type WalkIssue, walkFiles } from "../../src/tools/walker.js";
 
 let dir: string;
 let root: string;
@@ -15,9 +16,13 @@ afterEach(async () => {
   await rm(dir, { recursive: true, force: true });
 });
 
-async function collect(startAbs: string, policy: "deny" | "within-workspace" = "deny") {
+async function collect(
+  startAbs: string,
+  policy: "deny" | "within-workspace" = "deny",
+  onIssue?: (issue: WalkIssue) => void,
+) {
   const out: string[] = [];
-  for await (const f of walkFiles({ root, symlinkPolicy: policy }, startAbs)) {
+  for await (const f of walkFiles({ root, symlinkPolicy: policy }, startAbs, onIssue)) {
     out.push(f.display);
   }
   return out.sort();
@@ -51,18 +56,46 @@ describe("walkFiles", () => {
     expect(await collect(root)).toEqual(["src.txt"]);
   });
 
-  it("skips files larger than 1MB", async () => {
+  it("yields files regardless of size (over 1MB)", async () => {
     await writeFile(path.join(root, "big.bin"), Buffer.alloc(1024 * 1024 + 1, 0x61));
     await writeFile(path.join(root, "small.txt"), "x");
-    expect(await collect(root)).toEqual(["small.txt"]);
+    expect(await collect(root)).toEqual(["big.bin", "small.txt"]);
   });
 
-  it("skips binary files (NUL within first 8KiB)", async () => {
+  it("yields binary files (path-only enumeration)", async () => {
     const bin = Buffer.alloc(64, 0x61);
     bin[10] = 0;
     await writeFile(path.join(root, "bin.dat"), bin);
     await writeFile(path.join(root, "text.txt"), "no nul here");
-    expect(await collect(root)).toEqual(["text.txt"]);
+    expect(await collect(root)).toEqual(["bin.dat", "text.txt"]);
+  });
+
+  it("reports dangling symlinks via onIssue under within-workspace", async (ctx) => {
+    try {
+      await symlink(path.join(root, "no-such-target"), path.join(root, "dangling"), "junction");
+    } catch (e) {
+      console.warn(`symlink unavailable, skipping: ${String(e)}`);
+      ctx.skip();
+    }
+    await writeFile(path.join(root, "f.txt"), "x");
+    const issues: WalkIssue[] = [];
+    const files = await collect(root, "within-workspace", (i) => issues.push(i));
+    expect(files).toEqual(["f.txt"]);
+    expect(issues).toEqual([{ display: "dangling", reason: "unreadable" }]);
+  });
+
+  it("never surfaces denied paths in results or onIssue", async () => {
+    // built-in deny pattern（.env）に match する file を置く
+    await writeFile(path.join(root, ".env"), "SECRET=1\n");
+    await writeFile(path.join(root, "ok.txt"), "x");
+    const issues: WalkIssue[] = [];
+    const out: string[] = [];
+    const opts = { root, symlinkPolicy: "deny" as const, denylist: createPathDenylist() };
+    for await (const f of walkFiles(opts, root, (i) => issues.push(i))) {
+      out.push(f.display);
+    }
+    expect(out).toEqual(["ok.txt"]);
+    expect(issues).toEqual([]);
   });
 
   it("does not follow symlinks under deny policy", async (ctx) => {
@@ -119,5 +152,30 @@ describe("walkFiles", () => {
     await writeFile(path.join(root, "f.txt"), "x");
     const files = await collect(root, "within-workspace");
     expect(files).toEqual(["f.txt"]);
+  });
+});
+
+describe("sniffTextFile", () => {
+  it("returns text for a plain text file", async () => {
+    await writeFile(path.join(root, "t.txt"), "hello\n");
+    expect(await sniffTextFile(path.join(root, "t.txt"))).toBe("text");
+  });
+
+  it("returns binary when NUL appears within the first 8KiB", async () => {
+    const bin = Buffer.alloc(64, 0x61);
+    bin[10] = 0;
+    await writeFile(path.join(root, "b.dat"), bin);
+    expect(await sniffTextFile(path.join(root, "b.dat"))).toBe("binary");
+  });
+
+  it("returns text when NUL exists only beyond the first 8KiB (bounded sniff)", async () => {
+    const buf = Buffer.alloc(10 * 1024, 0x61);
+    buf[9 * 1024] = 0;
+    await writeFile(path.join(root, "late-nul.bin"), buf);
+    expect(await sniffTextFile(path.join(root, "late-nul.bin"))).toBe("text");
+  });
+
+  it("returns unreadable for a missing file", async () => {
+    expect(await sniffTextFile(path.join(root, "missing.txt"))).toBe("unreadable");
   });
 });

@@ -15,7 +15,6 @@ import { MutationJournal } from "../../src/journal.js";
 import {
   createEditOperations,
   createLsOperations,
-  createReadOperations,
   createWriteOperations,
 } from "../../src/tools/operations.js";
 
@@ -37,7 +36,6 @@ function ops(policy: "deny" | "within-workspace" = "deny") {
   const opts = { root, symlinkPolicy: policy, journal };
   return {
     journal,
-    read: createReadOperations(opts),
     write: createWriteOperations(opts),
     edit: createEditOperations(opts),
     ls: createLsOperations(opts),
@@ -45,18 +43,18 @@ function ops(policy: "deny" | "within-workspace" = "deny") {
 }
 
 describe("boundary-checked operations", () => {
-  it("reads a file inside the workspace", async () => {
-    const { read } = ops();
+  it("reads a file inside the workspace via edit ops", async () => {
+    const { edit } = ops();
     await writeFile(path.join(root, "a.txt"), "hello", "utf8");
-    const buf = await read.readFile(path.join(root, "a.txt"));
+    const buf = await edit.readFile(path.join(root, "a.txt"));
     expect(buf.toString("utf8")).toBe("hello");
   });
 
   it("denies read of ../ and absolute paths outside the workspace", async () => {
-    const { read } = ops();
-    await expect(read.access(path.join(root, "..", "x.txt"))).rejects.toThrow(DENIED);
-    await expect(read.readFile(path.join(root, "..", "x.txt"))).rejects.toThrow(DENIED);
-    await expect(read.readFile(path.join(tmpdir(), "outside-of-ws.txt"))).rejects.toThrow(DENIED);
+    const { edit } = ops();
+    await expect(edit.access(path.join(root, "..", "x.txt"))).rejects.toThrow(DENIED);
+    await expect(edit.readFile(path.join(root, "..", "x.txt"))).rejects.toThrow(DENIED);
+    await expect(edit.readFile(path.join(tmpdir(), "outside-of-ws.txt"))).rejects.toThrow(DENIED);
   });
 
   it("denies write/mkdir outside the workspace", async () => {
@@ -146,8 +144,8 @@ describe("boundary-checked operations", () => {
         console.warn(`symlink unavailable, skipping: ${String(e)}`);
         ctx.skip();
       }
-      const { read } = ops("deny");
-      await expect(read.readFile(path.join(link, "f.txt"))).rejects.toThrow(DENIED);
+      const { edit } = ops("deny");
+      await expect(edit.readFile(path.join(link, "f.txt"))).rejects.toThrow(DENIED);
     } finally {
       await rm(outside, { recursive: true, force: true });
     }
@@ -168,9 +166,9 @@ describe("boundary-checked operations", () => {
         console.warn(`symlink unavailable, skipping: ${String(e)}`);
         ctx.skip();
       }
-      const { read } = ops("within-workspace");
-      expect((await read.readFile(linkIn)).toString("utf8")).toBe("t");
-      await expect(read.readFile(linkOut)).rejects.toThrow(DENIED);
+      const { edit } = ops("within-workspace");
+      expect((await edit.readFile(linkIn)).toString("utf8")).toBe("t");
+      await expect(edit.readFile(linkOut)).rejects.toThrow(DENIED);
     } finally {
       await rm(outside, { recursive: true, force: true });
     }

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createPathDenylist } from "@cheaper/core";
@@ -6,7 +6,11 @@ import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MutationJournal } from "../../src/journal.js";
 import { createSandboxedTools } from "../../src/tools/registry.js";
-import { POLICY_DENIED_MESSAGE, SCOPE_DENIED_MESSAGE } from "../../src/tools/walker.js";
+import {
+  ACCESS_DENIED_MESSAGE,
+  POLICY_DENIED_MESSAGE,
+  SCOPE_DENIED_MESSAGE,
+} from "../../src/tools/walker.js";
 
 function byName(tools: ToolDefinition[], name: string): ToolDefinition {
   const t = tools.find((x) => x.name === name);
@@ -169,5 +173,107 @@ describe("privacy deny list", () => {
     const text = JSON.stringify(result.content);
     expect(text).not.toContain("internal");
     expect(text).toContain("normal.txt");
+  });
+
+  it("keeps denied paths out of grep results, skipped lines, and 'and N more' counts", async () => {
+    // 許可 binary 21 件で代表 20 + `and 1 more`。deny 対象が skip bucket に
+    // 混入すれば件数か entry 名で漏れる（存在秘匿の回帰。PLAN-0014 Risk #5）。
+    // deny 側も binary にしておき、漏れた場合は必ず binary 件数を増やす形にする。
+    await writeFile(path.join(root, ".env"), Buffer.from([0x53, 0x00]));
+    await writeFile(path.join(root, ".ssh", "id_rsa"), Buffer.from([0x4b, 0x00]));
+    await mkdir(path.join(root, "vault", "deep"), { recursive: true });
+    await writeFile(path.join(root, "vault", "v.dat"), Buffer.from([0x61, 0x00]));
+    await writeFile(path.join(root, "vault", "deep", "x.pem"), Buffer.from([0x62, 0x00]));
+    for (let i = 0; i < 21; i++) {
+      await writeFile(
+        path.join(root, `b${String(i).padStart(2, "0")}.dat`),
+        Buffer.from([0x61, 0x00, 0x62]),
+      );
+    }
+    const { reg } = setup({ denyPaths: ["vault/**"] });
+    const result = await call(byName(reg.tools, "grep"), { pattern: "secret" });
+    const text = JSON.stringify(result.content);
+    expect(text).toContain("normal.txt:1: hello secret");
+    expect(text).toContain("[skipped: binary — ");
+    expect(text).toContain("and 1 more");
+    expect(text).not.toContain("vault");
+    expect(text).not.toContain(".env");
+    expect(text).not.toContain(".ssh");
+    expect(text).not.toContain("id_rsa");
+    expect(text).not.toContain(".pem");
+  });
+
+  it("keeps denied paths out of find results and skipped lines", async () => {
+    await mkdir(path.join(root, "internal", "sub"), { recursive: true });
+    await writeFile(path.join(root, "internal", "plan.md"), "x", "utf8");
+    // 許可側に 1 件だけ列挙失敗を作り、skipped 行に deny 名が混ざらないことを見る。
+    let symlinked = true;
+    try {
+      await symlink(path.join(root, "no-such-target"), path.join(root, "dangling"), "junction");
+    } catch (e) {
+      console.warn(`symlink unavailable, skipped-line assertion relaxed: ${String(e)}`);
+      symlinked = false;
+    }
+    const { reg } = setup({ denyPaths: ["internal/**"] });
+    const result = await call(byName(reg.tools, "find"), { pattern: "**/*" });
+    const text = JSON.stringify(result.content);
+    expect(text).toContain("normal.txt");
+    expect(text).not.toContain("internal");
+    expect(text).not.toContain(".env");
+    expect(text).not.toContain(".ssh");
+    expect(text).not.toContain("id_rsa");
+    if (symlinked) {
+      expect(text).toContain("[skipped: unreadable — dangling]");
+    }
+  });
+
+  it("returns empty coverage for a denied search root without naming it", async () => {
+    const { reg } = setup();
+    const g = await call(byName(reg.tools, "grep"), { pattern: "KEY", path: ".ssh" });
+    const gText = JSON.stringify(g.content);
+    expect(gText).toContain("(no matches)");
+    expect(gText).not.toContain(".ssh");
+    expect(gText).not.toContain("id_rsa");
+    const f = await call(byName(reg.tools, "find"), { pattern: "**/*", path: ".ssh" });
+    const fText = JSON.stringify(f.content);
+    expect(fText).toContain("(no matches)");
+    expect(fText).not.toContain(".ssh");
+    expect(fText).not.toContain("id_rsa");
+  });
+
+  it("rejects read of custom-denied paths with the policy message", async () => {
+    const { reg } = setup({ denyPaths: ["normal.txt"] });
+    await expect(call(byName(reg.tools, "read"), { path: "normal.txt" })).rejects.toThrow(
+      POLICY_DENIED_MESSAGE,
+    );
+  });
+
+  it("surfaces directly-specified boundary violations as tool errors, not skipped entries", async () => {
+    const { reg } = setup();
+    await expect(call(byName(reg.tools, "grep"), { pattern: "x", path: ".." })).rejects.toThrow(
+      ACCESS_DENIED_MESSAGE,
+    );
+    await expect(call(byName(reg.tools, "find"), { pattern: "*", path: ".." })).rejects.toThrow(
+      ACCESS_DENIED_MESSAGE,
+    );
+  });
+});
+
+describe("read-only tool parity", () => {
+  it("leaves the journal diff unchanged across read/grep/find/count_tokens calls", async () => {
+    // write-scope 内で 1 file を作成して journal に非空の差分を載せ、
+    // read 系 tool が write 系 syscall を呼ばないことを finalize 差分で確認する
+    // （PLAN-0014 Risk #10 の回帰）。
+    const { reg, journal } = setup({ writeScope: ["tracked.txt"] });
+    await call(byName(reg.tools, "write"), { path: "tracked.txt", content: "needle\n" });
+    const before = await journal.finalize();
+    expect(before.files).toHaveLength(1);
+    await call(byName(reg.tools, "read"), { path: "tracked.txt" });
+    await call(byName(reg.tools, "grep"), { pattern: "needle" });
+    await call(byName(reg.tools, "find"), { pattern: "**/*" });
+    await call(byName(reg.tools, "ls"), {});
+    await call(byName(reg.tools, "count_tokens"), { path: "tracked.txt" });
+    const after = await journal.finalize();
+    expect(after).toEqual(before);
   });
 });
