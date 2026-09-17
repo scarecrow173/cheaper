@@ -26,4 +26,4 @@ Directory: `docs/specs`
 | SPEC-0019 | Unified version and release source of truth | implemented | [0019-unified-version-source-of-truth.md](./0019-unified-version-source-of-truth.md) |
 | SPEC-0020 | Copilot per-target pre-read hook adapter | implemented | [0020-copilot-pre-read-hook-adapter.md](./0020-copilot-pre-read-hook-adapter.md) |
 | SPEC-0021 | Real-provider E2E for built-in workers via Ollama container | implemented | [0021-ollama-real-provider-worker-e2e.md](./0021-ollama-real-provider-worker-e2e.md) |
-| SPEC-0022 | Continuous usage measurement log for delegations | approved | [0022-delegation-usage-measurement-log.md](./0022-delegation-usage-measurement-log.md) |
+| SPEC-0022 | Continuous usage measurement log for delegations | implemented | [0022-delegation-usage-measurement-log.md](./0022-delegation-usage-measurement-log.md) |

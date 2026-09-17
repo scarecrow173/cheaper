@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0022"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Delegation usage measurement log — implementation plan"
 test-spec-skip: "Verified by unit tests and e2e assertions inside the implementation tasks; no separate test-spec artifact needed."
 created: "2026-09-18"

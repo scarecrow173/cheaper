@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0022"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "Continuous usage measurement log for delegations"
 created: "2026-09-18"
 updated: "2026-09-18"

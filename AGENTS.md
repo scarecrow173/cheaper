@@ -41,6 +41,10 @@ bundled CLI は `pnpm bundle` で `packages/apm/.apm/hooks/cli/` へ生成する
 
 `packages/cli/test/e2e/real-provider-ollama.test.ts` はコンテナ起動 + モデル pull 済み（default `qwen3.5:9b`、`CHEAPER_E2E_OLLAMA_MODEL` で override 可）であれば `pnpm test` 内で実 provider 検証（bulk-read / code-write / doc-write → bundled CLI → Ollama）を自動実行する。未起動・モデル不在・apm 不在のときは自動 skip するため、CI では実行されない。
 
+## delegation 計測ログ
+
+`cheaper run`（worker alias 含む）と `count-tokens` の実行結果は、`<userConfigDir>/usage.jsonl`（既定 `~/.config/cheaper/usage.jsonl`、`CHEAPER_CONFIG_DIR` で変更可）へ 1 行 JSONL で継続記録される（ADR-0025）。record は `kind:"run"`（worker・model・usage・durationMs）または `kind:"count"`（path・tokens・bytes）。書き込みは best-effort で、失敗しても exit code・stdout は変わらない。workspace・`.cheaper/` には書き込まない。集計コマンドは未実装 — parent agent が JSONL を直接読んで参照する。
+
 ## 開発原則
 
 SOLID・YAGNI・DRY・KISS に従い、現在の要件に必要な範囲で設計・実装する。

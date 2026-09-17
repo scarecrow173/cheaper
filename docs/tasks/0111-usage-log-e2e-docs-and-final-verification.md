@@ -1,7 +1,7 @@
 ---
 id: "TASK-0111"
 type: "task"
-status: "todo"
+status: "done"
 title: "Usage-log e2e assertions, docs, bundle regen, status sync, final verification"
 created: "2026-09-18"
 updated: "2026-09-18"
