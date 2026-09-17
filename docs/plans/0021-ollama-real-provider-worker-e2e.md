@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0021"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Real-provider worker E2E via Ollama — implementation plan"
 test-spec-skip: "The deliverable is itself an e2e test specification in executable form; verified by running it against a live Ollama container."
 created: "2026-09-18"

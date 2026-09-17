@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0021"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "Real-provider E2E for built-in workers via Ollama container"
 created: "2026-09-18"
 updated: "2026-09-18"
