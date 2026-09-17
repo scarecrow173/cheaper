@@ -44,7 +44,7 @@ metadata:
   discovery:
     question: "apm install が全 target へ deploy した pre_read_code hook は各 agent で機能するか。機能しない場合、native contract で pre-read blocking は実現可能か"
     scope: "本 repo への apm install 実 deploy 結果 + 各 agent 公式 hook ドキュメントの contract 調査"
-    outcome: "non-windsurf では pre_read_code 登録は no-op（DESIGN-0013 の想定通り）。Claude/Cursor/Copilot は adapter で実現可能、Codex は upstream gap で不可"
+    outcome: "non-windsurf では pre_read_code 登録は documented contract 上 no-op（runtime loader 実機未検証。DESIGN-0013 の想定通り）。Claude/Cursor/Copilot は adapter で実現可能、Codex は upstream gap で不可"
 ---
 
 # DISC-0009: Cross-agent hook distribution and per-agent hook contract matrix
@@ -162,8 +162,10 @@ hooks-reference
 ### deploy された `pre_read_code` 登録の実効性
 
 Claude / Codex / Cursor / Copilot 向け config に書き込まれた
-`pre_read_code` 登録は **no-op** である。各 agent はこの event name を
-認識しないため hook は一度も発火しない。無害だが機能もしない —
+`pre_read_code` 登録は **no-op** である — これは documented event
+contract に基づく推論であり、実 agent の runtime loader での
+accept/ignore 挙動は実機 E2E 未検証。各 agent はこの event name を
+認識しないため hook は一度も発火しないはず。無害だが機能もしない —
 DESIGN-0013 の「未知 event は no-op の想定」と整合する（per-target
 config validation の実機確認は open item として残る）。
 
@@ -192,11 +194,18 @@ README・skill・spec 等へ複写しない（DRY — SPEC-0013 / DESIGN-0018 §
 | target | final classification | evidence |
 |---|---|---|
 | windsurf | **functional** | `apm-install.test.ts` — hook block 実動作確認済み（exit 2 + delegation guidance） |
-| claude | **deploys-but-noop** | `apm-install-targets.test.ts` — `pre_read_code` を verbatim 登録。native event は `PreToolUse` + matcher `Read` であり `pre_read_code` は発火しない |
-| cursor | **deploys-but-noop** | 同上 — `pre_read_code` verbatim 登録。native event は `beforeReadFile`（`failClosed` 未指定時は fail-open） |
-| copilot | **deploys-but-noop** | 同上 — `pre_read_code` verbatim 登録。native event は `preToolUse` + `toolName == "view"`。command hook は fail-closed（非 0 exit がすべて deny）で将来 adapter の不変条件 |
-| codex | **deploys-but-noop かつ unsupported** | 同上 — file-read tool が `PreToolUse` を emit しない upstream gap（openai/codex#20204）。adapter 対象外 |
+| claude | **deploys-but-nonfunctional (expected no-op)** | `apm-install-targets.test.ts` — `pre_read_code` を verbatim 登録。native event は `PreToolUse` + matcher `Read` であり `pre_read_code` は発火しない |
+| cursor | **deploys-but-nonfunctional (expected no-op)** | 同上 — `pre_read_code` verbatim 登録。native event は `beforeReadFile`（`failClosed` 未指定時は fail-open） |
+| copilot | **deploys-but-nonfunctional (expected no-op)。配布物も一部破損** | 同上 — `pre_read_code` verbatim 登録。native event は `preToolUse` + `toolName == "view"`。command hook は fail-closed（非 0 exit がすべて deny）で将来 adapter の不変条件。加えて `.json` 全欠落で `--version` は exit 70、file-schema worker（bulk-read / code-write / doc-write）は `OUTPUT_SCHEMA_NOT_FOUND`（exit 3）で不動（`count-tokens` は動作）— いずれも同 e2e で実測 |
+| codex | **deploys-but-nonfunctional (expected no-op) かつ unsupported** | 同上 — file-read tool が `PreToolUse` を emit しない upstream gap（openai/codex#20204）。adapter 対象外 |
 | agent-skills | **N/A（skills-only）** | 同上 — 4 skill の `SKILL.md` のみ deploy され、hook bundle / hook config の不存在を assert |
+
+注: 「expected no-op」の分類は generated config の静的検証と各
+agent の documented event contract からの推論であり、実 agent の
+runtime loader が未知 event を accept/ignore する挙動は実機 E2E
+未検証（実 binary を実行していない）。観測 metadata: e2e は
+**apm 0.28.0** に対する実測、外部 contract 調査は **2026-09-17**
+時点の公式 doc に基づく — upstream の contract drift はあり得る。
 
 #### e2e run で新たに観測された deploy facts（apm 0.28.0）
 
@@ -205,9 +214,15 @@ README・skill・spec 等へ複写しない（DRY — SPEC-0013 / DESIGN-0018 §
   file を除外する。`cli/version.json`、`cli/package.json`、
   `cli/workers/schemas/*.json` が欠落するため、bundled
   `cheaper.mjs --version` は "failed to resolve package version"
-  （exit 70）で失敗する（`count-tokens` は動作する）。将来の
-  copilot adapter は version 解決が copilot deploy では壊れている
-  点を考慮しなければならない
+  （exit 70）で失敗し、file schema を参照する worker
+  （bulk-read / code-write / doc-write）は worker definition load
+  時に `OUTPUT_SCHEMA_NOT_FOUND`（exit 3、schema は output →
+  input 順に load されるため output 側を先に検出）で失敗する。
+  `count-tokens` は動作し、worker の `.md` 本体は deploy される。
+  いずれも `apm-install-targets.test.ts` の copilot case で
+  assert 済み。将来の copilot adapter は version 解決と
+  file-schema worker が copilot deploy では壊れている点を
+  考慮しなければならない
 - **codex / cursor**: apm は target の `hooks.json`（`hooks` 直下に
   event を nest する shape）に加え、同じ `pre_read_code` 登録の
   top-level event key shape を持つ `apm-hooks.json` を追加生成する
@@ -236,10 +251,11 @@ generic adapter は「意図的 block 以外で絶対に非 0 exit しない」
 
 ## Tentative Conclusions
 
-- （confirmed）`apm install` は hook bundle を全 target に機械的に
-  deploy するが、event name の変換は行わない。`pre_read_code` のままの
-  登録は non-windsurf target では no-op で、害はないが pre-read blocking
-  としても機能しない
+- （confirmed: e2e 実測）`apm install` は hook bundle を全 target に
+  機械的に deploy するが、event name の変換は行わない
+- （inferred: documented contract ベース、runtime loader 実機未検証）
+  `pre_read_code` のままの登録は non-windsurf target では no-op で、
+  害はないが pre-read blocking としても機能しないはず
 - （confirmed）pre-read interception は Windsurf・Claude Code・Cursor・
   Copilot で native contract により実現可能。Codex は upstream の
   event emit gap により現状不可能。agent-skills は対象外
@@ -253,8 +269,9 @@ generic adapter は「意図的 block 以外で絶対に非 0 exit しない」
 ## Open Questions
 
 - 各 agent の hook config で認識されない event name が warning / error を
-  出すか（per-agent 実機 validation が必要。no-op 確認済みだが
-  startup での noise は未検証）
+  出すか（per-agent 実機 validation が必要。no-op は doc + deploy
+  証拠で支持されるが runtime loader の accept/ignore 自体は実機
+  未検証で、startup での noise も未検証）
 - Copilot fail-closed の下で adapter が「意図的 block 以外で非 0 exit
   しない」をどう保証するか（内部エラーを stdout JSON deny と区別する
   設計が必要）

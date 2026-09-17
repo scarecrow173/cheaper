@@ -57,8 +57,10 @@ contract matrix という証拠である。
 を全 hook 対象 target へ deploy する。生成される per-target hook config
 はすべて Windsurf native event `pre_read_code` を verbatim で登録して
 おり、DISC-0009 の調査により non-windsurf target では **documented
-no-op** になることが確定済み（ADR-0016 で維持決定）。e2e coverage は
-`packages/cli/test/e2e/apm-install.test.ts` の windsurf target のみ。
+no-op** になることが確定済み（documented contract ベースの分類で
+runtime loader の実機挙動は未検証。ADR-0016 で維持決定）。e2e
+coverage は `packages/cli/test/e2e/apm-install.test.ts` の
+windsurf target のみ。
 
 ## Scope
 
@@ -109,10 +111,10 @@ target map（consumer fixture では dep dir 名 = `pkg`）:
 
 | target | bundleRoot | generated config |
 | --- | --- | --- |
-| `windsurf` | `.windsurf/hooks/pkg` | `.windsurf/hooks.json` |
+| `windsurf` | `.windsurf/hooks/pkg` | `.windsurf/hooks.json`（+ `.windsurf/apm-hooks.json` も生成されるが既存 test の対象外） |
 | `claude` | `.claude/hooks/pkg` | `.claude/apm-hooks.json` + `.claude/settings.json` |
-| `codex` | `.codex/hooks/pkg` | `.codex/hooks.json` |
-| `cursor` | `.cursor/hooks/pkg` | `.cursor/hooks.json` |
+| `codex` | `.codex/hooks/pkg` | `.codex/hooks.json` + `.codex/apm-hooks.json` |
+| `cursor` | `.cursor/hooks/pkg` | `.cursor/hooks.json` + `.cursor/apm-hooks.json` |
 | `copilot` | `.github/hooks/scripts/pkg` | `.github/hooks/<dep>-hooks.json` |
 | `agent-skills` | （hook deploy なし） | （なし） |
 
@@ -129,29 +131,39 @@ hook 対象 4 target 共通:
 
 - `install.status === 0`
 - bundle layout が存在: `<bundleRoot>/pre-read-code.js`,
-  `cli/bin/cheaper.mjs`, `cli/version.json`, `cli/workers/`,
-  `cli/policy.yaml`
-  - 注: `cli/package.json` は APM が hook bundle descriptor として
-    deploy 対象外にするため、sidecar は `version.json`
-    （`scripts/bundle-cli.mjs` が生成）
+  `cli/bin/cheaper.mjs`, `cli/workers/`, `cli/policy.yaml`
 - generated config が agent-correct path に存在し JSON parse 可能
 - config 内の登録 event key が **`pre_read_code` verbatim** であること
   を assert — deploy の証明であると同時に、「この event は
   non-windsurf では発火しない = documented no-op」を test 上の記録と
   して固定する
 - bundled CLI が consumer workspace で動く:
-  `node <cli> --version` → exit 0 + `/^\d+\.\d+\.\d+$/`、
   `node <cli> count-tokens <file> --cwd <consumer>` → exit 0
 
 target 固有:
 
-- `cursor` / `copilot`: config の `version === 1`
+- `cursor` / `copilot`: hooks.json 系 config の `version === 1`
 - `claude`: `.claude/apm-hooks.json` と `.claude/settings.json` の双方が
   存在し、settings.json が nested `hooks → event → matcher → hooks`
   shape で `pre_read_code` を verbatim 含む（`${CLAUDE_PROJECT_DIR}`
   補間はそのまま残る）
+- `codex` / `cursor`: `hooks.json` に加え、同じ `pre_read_code` 登録を
+  top-level event key shape で持つ `apm-hooks.json` も生成される
+  （apm 0.28.0 実測。windsurf でも生成されるが本 test の対象外）
 - `copilot`: `.github/hooks/` 配下の `*-hooks.json` は file 名が dep
   名由来のため hardcode せず `readdirSync` で一意に解決する
+- `copilot` の version / schema 欠落（現状の観測挙動の記録であって
+  ideal layout ではない）: APM 0.28.0 は copilot の scripts bundle
+  からすべての `.json` を除外するため `cli/version.json`・
+  `cli/package.json`・`cli/workers/schemas/*.json` が deploy されない
+  （`cli/package.json` は APM が hook bundle descriptor として deploy
+  対象外にするため、version の sidecar は `version.json` —
+  `scripts/bundle-cli.mjs` が生成）。このため `--version` は exit 70
+  （"failed to resolve package version"）で失敗し、file-schema
+  worker は schema 欠落で `OUTPUT_SCHEMA_NOT_FOUND`（exit 3）に
+  なる — 実装はこれを assert として記録する。non-copilot target
+  では `cli/version.json` 存在 + `--version` → exit 0 +
+  `/^\d+\.\d+\.\d+$/` を引き続き assert する
 - `agent-skills`: `.agents/skills/` 配下に 4 skill の `SKILL.md` が
   deploy され、hook bundle / hook config が **存在しない** ことを
   assert（skills-only deploy が正しい挙動）
@@ -160,9 +172,13 @@ target 固有:
 
 - canonical location は **DISC-0009 のみ**。同 doc の per-target matrix
   に最終分類（windsurf = functional / claude・cursor・copilot =
-  deploys-but-noop / codex = deploys-but-noop かつ unsupported
+  deploys-but-nonfunctional (expected no-op) / codex =
+  deploys-but-nonfunctional (expected no-op) かつ unsupported
   （openai/codex#20204 の coverage gap）/ agent-skills = N/A
-  skills-only）と本 test への evidence 参照を追記して close する
+  skills-only）と本 test への evidence 参照を追記して close する。
+  「expected no-op」は documented contract ベースの分類であり、
+  runtime loader の accept/ignore 挙動は実機 E2E 未検証である旨を
+  matrix 注記として添える
 - consumer 向け文書には pointer のみ: `.apm/skills/cheaper-usage/
   SKILL.md` の "Locating the CLI" 節に 1 文「pre-read hook は現状
   Windsurf でのみ機能する。per-target contract は DISC-0009 の
@@ -227,8 +243,9 @@ target 固有:
 - [ ] 既存 `apm-install.test.ts` / `pre-read-hook.test.ts` /
       `delegation-loop.test.ts` が無変更で pass（windsurf regression
       なし）
-- [ ] DISC-0009 matrix に最終分類（functional / deploys-but-noop /
-      unsupported / N/A）と Codex coverage gap・Copilot fail-closed
-      semantics が記録されている
+- [ ] DISC-0009 matrix に最終分類（functional /
+      deploys-but-nonfunctional (expected no-op) / unsupported /
+      N/A）と Codex coverage gap・Copilot fail-closed semantics が
+      記録されている
 - [ ] `cheaper-usage` SKILL.md に matrix への pointer があり、
       contract 知識の複写が存在しない

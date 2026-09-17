@@ -56,8 +56,10 @@ ADR-0013）と target ごとに生成される hook config を deploy するが�
 すべての config が Windsurf 固有の event 名 `pre_read_code` を
 verbatim で登録する。
 
-調査（DISC-0009）により、`pre_read_code` event が存在するのは
-Windsurf のみであることが確定した。target ごとの実態は以下の通り:
+公式ドキュメント調査（DISC-0009）により、`pre_read_code` event が
+存在するのは Windsurf のみであることが確定した（runtime loader の
+実機検証は未実施 — 後述の通り deploy 層の検証と documented
+contract の組合せに基づく）。target ごとの実態は以下の通り:
 
 - **Claude Code**: `PreToolUse` hook + matcher `Read` が必要。
   stdin は `tool_input.file_path`、block は exit code 2 または
@@ -73,9 +75,10 @@ Windsurf のみであることが確定した。target ごとの実態は以下�
 - **agent-skills**: skills のみの target で hook deploy 対象外
 
 つまり non-windsurf の 4 target では hook config が deploy されるが、
-対応する event が発火しないため hook は silent な no-op になる。
-この状態を「そのまま残す」「今すぐ直す」「target を削る」のどれで
-扱うかが本 ADR の決定対象である。
+documented contract 上は対応する event が発火しないため hook は
+silent な no-op になる（runtime loader の accept/ignore 挙動は実機
+E2E 未検証）。この状態を「そのまま残す」「今すぐ直す」
+「target を削る」のどれで扱うかが本 ADR の決定対象である。
 
 ## Decision Drivers
 
@@ -151,6 +154,9 @@ adapt per-target later）。
 DISC-0009 の調査で各 target の hook contract が実測・分類され、
 SPEC-0013 の cross-agent distribution verification で verbatim
 deploy の挙動（windsurf で機能、non-windsurf で no-op）が検証される。
+なお non-windsurf の no-op 分類は deploy/config 層の検証と
+documented event contract に基づくものであり、実 agent の runtime
+loader での挙動は E2E 未検証である（DISC-0009 matrix 注記参照）。
 
 ## Implementation Plan
 
