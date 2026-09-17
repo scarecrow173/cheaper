@@ -340,32 +340,30 @@ describe("grep tool: streaming / batch protocol", () => {
   });
 
   it("closes a batch before adding a line that would exceed batchMaxBytes", async () => {
-    // batchMaxBytes=10: "aaa"+"bbb"+"cccc" = ちょうど 10 byte で 1 batch。
-    // "ddd" を足すと 13 > 10 なので次 batch に締める（B は hard cap）。
+    // batchMaxBytes=12 (invariant: B >= 3 * L = 3 * 4): "aaa"+"bbb"+"cccc"
+    // = 10 byte で 1 batch。"ddd" を足すと 13 > 12 なので次 batch に締める
+    // （B は hard cap）。
     await writeFile(path.join(root, "b.txt"), "aaa\nbbb\ncccc\nddd\n", "utf8");
-    const out = await run(tool({ batchMaxBytes: 10, batchMaxLines: 100 }), {
+    const out = await run(tool({ maxLineBytes: 4, batchMaxBytes: 12, batchMaxLines: 100 }), {
       pattern: "ddd",
       glob: "b.txt",
     });
     expect(out).toBe("b.txt:4: ddd");
     expect(batchLog.length).toBeGreaterThanOrEqual(2);
     for (const b of batchLog) {
-      expect(b.bytes).toBeLessThanOrEqual(10);
+      expect(b.bytes).toBeLessThanOrEqual(12);
     }
     expect(batchLog.map((b) => b.startLine)).toEqual([1, 4]);
   });
 
-  it("still sends a single line whose payload exceeds batchMaxBytes as a one-line batch", async () => {
-    // 縮退注入でのみ到達する経路: 1 行 payload > B でも 1 行 batch で送り、
-    // 進行が保証される（実 limit では L が decoded payload を B 未満に抑える）。
-    await writeFile(path.join(root, "big.txt"), "0123456789\nhit\n", "utf8");
-    const out = await run(tool({ batchMaxBytes: 4, maxLineBytes: 100 }), {
-      pattern: "hit",
-      glob: "big.txt",
-    });
-    expect(out).toBe("big.txt:2: hit");
-    expect(batchLog[0]?.lines).toBe(1);
-    expect(batchLog[0]?.bytes).toBe(10); // B=4 超過だが単独 batch で送られる
+  it("rejects tool construction when batchMaxBytes < 3 * maxLineBytes", () => {
+    // invariant: B >= 3 * L（1 行の最大 decoded payload が 1 batch に
+    // 収まること）。違反する option 組み合わせは構築時に reject される。
+    expect(() => tool({ batchMaxBytes: 4, maxLineBytes: 100 })).toThrow(/batchMaxBytes/);
+    // batchMaxBytes のみ小さい場合も、L は既定 256KiB で 3 * L に届かず reject。
+    expect(() => tool({ batchMaxBytes: 10 })).toThrow(/batchMaxBytes/);
+    // 境界値: B = 3 * L は受理される。
+    expect(() => tool({ maxLineBytes: 4, batchMaxBytes: 12 })).not.toThrow();
   });
 });
 

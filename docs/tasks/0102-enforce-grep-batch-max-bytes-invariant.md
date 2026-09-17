@@ -1,7 +1,7 @@
 ---
 id: "TASK-0102"
 type: "task"
-status: "todo"
+status: "done"
 title: "Enforce grep batchMaxBytes invariant at construction"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -92,10 +92,20 @@ invariant の構築時検証と option JSDoc を追加し、違反注入を使�
 
 ## Acceptance
 
-- [ ] `grep.ts` に構築時 invariant 検証と JSDoc が追加され、
+- [x] `grep.ts` に構築時 invariant 検証と JSDoc が追加され、
       batch 締めロジック・既定値は不変。
-- [ ] 違反 option（`B < 3 * L`）での `createGrepTool` 呼び出しが
+- [x] 違反 option（`B < 3 * L`）での `createGrepTool` 呼び出しが
       `batchMaxBytes` を含む error message で throw する test が
       ある。
-- [ ] batch 締め test が invariant 適合 fixture で通る。
-- [ ] `packages/runtime-pi` の test・typecheck・lint が pass する。
+- [x] batch 締め test が invariant 適合 fixture で通る。
+- [x] `packages/runtime-pi` の test・typecheck・lint が pass する。
+
+## Result
+
+実施済み（2026-09-18）。`createGrepTool` 冒頭に `B >= 3 * L` の構築時
+検証を追加し、両 option の JSDoc に invariant と根拠を明記。batch
+締めロジック・既定値・framer は不変（diff で確認: batch 関連行
+0 変更）。`grep.test.ts`: batch 締め test は `maxLineBytes: 4` +
+`batchMaxBytes: 12` の適合 fixture へ、単独行 over-B test は構築時
+reject 検証（2 ケース + 境界値受理）へ置き換え。runtime-pi 255 test
+全 pass、typecheck・lint clean。

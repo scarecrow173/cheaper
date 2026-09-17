@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0018"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "grep batchMaxBytes / decoded line payload invariant"
 created: "2026-09-18"
 updated: "2026-09-18"

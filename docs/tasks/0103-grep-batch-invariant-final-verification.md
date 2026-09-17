@@ -1,7 +1,7 @@
 ---
 id: "TASK-0103"
 type: "task"
-status: "todo"
+status: "done"
 title: "grep batch invariant final verification"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -72,6 +72,22 @@ mise exec -- node .claude/skills/doc-status/scripts/audit_docs.js --type all
 
 ## Acceptance
 
-- [ ] 上記全コマンドが pass し、結果が本 task に記録されている。
-- [ ] SPEC-0018 / PLAN-0018 の status 同期と index 更新が
+- [x] 上記全コマンドが pass し、結果が本 task に記録されている。
+- [x] SPEC-0018 / PLAN-0018 の status 同期と index 更新が
       完了している。
+
+## Result
+
+検証済み（2026-09-18、`feature/grep-batch-max-bytes-invariant`）:
+
+- `pnpm typecheck`: pass
+- `pnpm lint`: pass（131 files checked）
+- `pnpm --filter @cheaper/runtime-pi test`: 255 tests 全 pass
+  （新規 reject 検証 + 適合 fixture の batch 締め test を含む）
+- `audit_docs.js --type all`: 183 files, no findings
+- `git diff` 構造確認: batch 締めロジック・既定値・framer・
+  `limits.ts` に変更なし（batch 関連行 0 変更）。`.apm/hooks/cli`
+  diff 空 — bundle 非影響（runtime-pi tool は bundled CLI 非含有）。
+
+SPEC-0018 acceptance criteria 全項目充足。SPEC-0018 → implemented、
+PLAN-0018 → completed に同期。

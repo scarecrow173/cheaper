@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0018"
 type: "plan"
-status: "approved"
+status: "completed"
 test-spec-skip: "Verified by package unit test suite; no dedicated test-spec doc authored."
 title: "grep batchMaxBytes invariant enforcement"
 created: "2026-09-18"
