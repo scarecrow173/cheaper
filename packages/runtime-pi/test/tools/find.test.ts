@@ -28,14 +28,12 @@ function tool(policy: "deny" | "within-workspace" = "deny") {
   return createFindTool({ root, symlinkPolicy: policy });
 }
 
-async function run(t: ReturnType<typeof tool>, params: Record<string, unknown>): Promise<string> {
-  const result = await t.execute(
-    "call-1",
-    params as never,
-    undefined,
-    undefined,
-    undefined as never,
-  );
+async function run(
+  t: ReturnType<typeof tool>,
+  params: Record<string, unknown>,
+  signal?: AbortSignal,
+): Promise<string> {
+  const result = await t.execute("call-1", params as never, signal, undefined, undefined as never);
   return result.content
     .filter((c): c is { type: "text"; text: string } => c.type === "text")
     .map((c) => c.text)
@@ -125,6 +123,34 @@ describe("find tool", () => {
     await writeFile(path.join(root, "ok.txt"), "x");
     const out = await run(tool("within-workspace"), { pattern: "**/*" });
     expect(out).toBe("ok.txt\n[skipped: unreadable — dangling]");
+  });
+
+  it("bounds skipped representatives and counts the rest as 'and N more'", async (ctx) => {
+    try {
+      for (let i = 0; i < 26; i++) {
+        await symlink(
+          path.join(root, `no-such-${i}`),
+          path.join(root, `dangling-${String(i).padStart(2, "0")}`),
+          "junction",
+        );
+      }
+    } catch (e) {
+      console.warn(`symlink unavailable, skipping: ${String(e)}`);
+      ctx.skip();
+    }
+    const out = await run(tool("within-workspace"), { pattern: "**/*" });
+    expect(out).toContain("[skipped: unreadable — ");
+    expect(out).toContain("and 6 more");
+    // 代表 entry は 20 件まで（蓄積が有界なので全 26 件は出ない）
+    const shown = out.match(/dangling-\d\d/g) ?? [];
+    expect(shown.length).toBeLessThanOrEqual(20);
+  });
+
+  it("rejects with Operation aborted on signal abort", async () => {
+    await writeFile(path.join(root, "a.txt"), "x");
+    const ctrl = new AbortController();
+    ctrl.abort();
+    await expect(run(tool(), { pattern: "*" }, ctrl.signal)).rejects.toThrow("Operation aborted");
   });
 
   it("emits the skipped footer after (no matches)", async (ctx) => {

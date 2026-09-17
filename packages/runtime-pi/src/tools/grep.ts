@@ -118,8 +118,10 @@ class GrepEvalWorker {
           p.resolve(Array.isArray(msg.matched) ? (msg.matched as number[]) : []);
         }
       } else if (msg.type === "error") {
-        // init 失敗（main 側で事前検証済みのため到達しない想定だが fail closed）
+        // init 失敗（main 側で事前検証済みのため到達しない想定だが fail closed）。
+        // 後続の再生成に stale worker を残さないよう terminate も行う。
         this.failAll(new Error(`invalid grep pattern: ${String(msg.message)}`));
+        void this.worker.terminate();
       }
     });
     this.worker.on("error", (err) => {

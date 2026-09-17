@@ -275,6 +275,26 @@ describe("bounded read: byteInLine 継続", () => {
     expect(details.continuation).toEqual({ offset: 2, byteInLine: 1 });
   });
 
+  it("preserves byteInLine in the continuation when the cap hits at the resume point", async () => {
+    // partial marker (42B) が予算を使い切り、行 byte を 1 byte も emit せず
+    // cap に到達するケース。再開時に [0, emitBeginInLine) を再 emit しないよう
+    // continuation は byteInLine を保持しなければならない。
+    const src = "0123456789".repeat(100); // 1000 bytes, no newline
+    await writeFile(path.join(root, "cap-resume.txt"), src, "utf8");
+    const t = tool({ maxBytes: 42 });
+    const { text, details } = await execute(t, {
+      path: "cap-resume.txt",
+      offset: 1,
+      byteInLine: 100,
+    });
+    expect(text).toBe(
+      "[partial line 1: continuing from byte 100]\n" +
+        "[Line 1 emitted bytes 100-100 (reached 42B limit). Use offset=1 byteInLine=100 to continue.]",
+    );
+    expect(details.truncatedBy).toBe("bytes");
+    expect(details.continuation).toEqual({ offset: 1, byteInLine: 100 });
+  });
+
   it("reports line-boundary byte cap with offset continuation", async () => {
     await writeFile(path.join(root, "cap2.txt"), "aaaa\nbbbb\n", "utf8");
     const t = tool({ maxBytes: 5 });

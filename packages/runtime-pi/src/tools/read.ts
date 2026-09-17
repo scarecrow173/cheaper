@@ -274,7 +274,7 @@ async function readBounded(fh: FileHandle, size: number, p: ScanParams): Promise
 
     if (budgetStop) {
       truncatedBy = "bytes";
-      if (lineEmittedBytes === 0) {
+      if (lineEmittedBytes === 0 && emitBeginInLine === 0) {
         // byte cap が行境界で到達。
         continuation = { offset: lineNo };
         trailer = `[Reached ${formatLimit(p.maxBytes)} limit. Use offset=${lineNo} to continue.]`;

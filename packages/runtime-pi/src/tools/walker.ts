@@ -1,5 +1,5 @@
 import type { Dirent, Stats } from "node:fs";
-import { type FileHandle, open, readdir, realpath, stat } from "node:fs/promises";
+import { type FileHandle, open, opendir, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import {
   isInsideWorkspaceRoot,
@@ -141,38 +141,50 @@ async function* walkDir(
   if (ancestors.has(canonical)) return; // symlink cycle 防止
   ancestors.add(canonical);
   try {
-    let entries: Dirent[] | undefined;
-    try {
-      entries = await readdir(fsPath, { withFileTypes: true });
-    } catch {
+    // opendir + 逐次 read で 1 dir あたりの保持を O(1) entries にする
+    // （readdir(withFileTypes) は全 entry を一度に buffer する）。
+    const dir = await opendir(fsPath).catch(() => undefined);
+    if (dir === undefined) {
       onIssue?.({ display: display(), reason: "unreadable" });
       return;
     }
-    for (const entry of entries) {
-      if (SKIP_DIRS.has(entry.name)) continue;
-      const childFs = path.join(fsPath, entry.name);
-      const childLogical = path.join(logicalPath, entry.name);
-      // deny path（file/dir 両方）は walk 結果にも潜行にも onIssue にも出さない。
-      if (opts.denylist?.isDenied(toDisplay(opts.root, childLogical))) continue;
-      if (entry.isSymbolicLink()) {
-        if (opts.symlinkPolicy === "deny") continue;
-        let target: string;
+    try {
+      for (;;) {
+        let entry: Dirent | null;
         try {
-          target = await realpath(childFs);
+          entry = await dir.read();
         } catch {
-          onIssue?.({ display: toDisplay(opts.root, childLogical), reason: "unreadable" });
-          continue; // dangling symlink → 列挙失敗として通知
+          onIssue?.({ display: display(), reason: "unreadable" });
+          break;
         }
-        if (!isInsideWorkspaceRoot(opts.root, target, { caseInsensitive: CASE_INSENSITIVE_FS })) {
-          continue;
+        if (entry === null) break;
+        if (SKIP_DIRS.has(entry.name)) continue;
+        const childFs = path.join(fsPath, entry.name);
+        const childLogical = path.join(logicalPath, entry.name);
+        // deny path（file/dir 両方）は walk 結果にも潜行にも onIssue にも出さない。
+        if (opts.denylist?.isDenied(toDisplay(opts.root, childLogical))) continue;
+        if (entry.isSymbolicLink()) {
+          if (opts.symlinkPolicy === "deny") continue;
+          let target: string;
+          try {
+            target = await realpath(childFs);
+          } catch {
+            onIssue?.({ display: toDisplay(opts.root, childLogical), reason: "unreadable" });
+            continue; // dangling symlink → 列挙失敗として通知
+          }
+          if (!isInsideWorkspaceRoot(opts.root, target, { caseInsensitive: CASE_INSENSITIVE_FS })) {
+            continue;
+          }
+          // realpath 側を辿り、表示は論理 path（symlink 名）を維持
+          yield* walkDir(opts, target, childLogical, ancestors, onIssue);
+        } else if (entry.isDirectory()) {
+          yield* walkDir(opts, childFs, childLogical, ancestors, onIssue);
+        } else if (entry.isFile()) {
+          yield { real: childFs, display: toDisplay(opts.root, childLogical) };
         }
-        // realpath 側を辿り、表示は論理 path（symlink 名）を維持
-        yield* walkDir(opts, target, childLogical, ancestors, onIssue);
-      } else if (entry.isDirectory()) {
-        yield* walkDir(opts, childFs, childLogical, ancestors, onIssue);
-      } else if (entry.isFile()) {
-        yield { real: childFs, display: toDisplay(opts.root, childLogical) };
       }
+    } finally {
+      await dir.close().catch(() => {});
     }
   } finally {
     ancestors.delete(canonical);
