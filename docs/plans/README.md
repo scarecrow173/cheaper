@@ -27,3 +27,4 @@ Directory: `docs/plans`
 | PLAN-0020 | Copilot pre-read hook adapter | completed | [0020-copilot-pre-read-hook-adapter.md](./0020-copilot-pre-read-hook-adapter.md) |
 | PLAN-0021 | Real-provider worker E2E via Ollama | completed | [0021-ollama-real-provider-worker-e2e.md](./0021-ollama-real-provider-worker-e2e.md) |
 | PLAN-0022 | Delegation usage measurement log | completed | [0022-delegation-usage-measurement-log.md](./0022-delegation-usage-measurement-log.md) |
+| PLAN-0023 | User-facing documentation IA — implementation plan | approved | [0023-user-facing-docs-information-architecture.md](./0023-user-facing-docs-information-architecture.md) |
