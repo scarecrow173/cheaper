@@ -1,7 +1,7 @@
 ---
 id: "SPEC-0017"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Repository-owned setup contract for fresh checkouts/worktrees"
 created: "2026-09-18"
 updated: "2026-09-18"

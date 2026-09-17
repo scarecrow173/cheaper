@@ -1,7 +1,7 @@
 ---
 id: "PLAN-0017"
 type: "plan"
-status: "approved"
+status: "completed"
 test-spec-skip: "Verified by clean-state worktree verification, CI parity, and existing test suite; no dedicated test-spec doc authored."
 title: "Repository-owned setup/check entrypoints (mise run setup / mise run check)"
 created: "2026-09-18"

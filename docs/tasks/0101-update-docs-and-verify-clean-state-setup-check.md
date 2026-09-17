@@ -1,7 +1,7 @@
 ---
 id: "TASK-0101"
 type: "task"
-status: "todo"
+status: "done"
 title: "Update README/AGENTS for canonical contract and verify clean-state setup/check"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -110,16 +110,33 @@ mise run check
 
 ## Done When
 
-- [ ] README が `mise run setup` / `mise run check` の contract を
+- [x] README が `mise run setup` / `mise run check` の contract を
       説明
-- [ ] AGENTS.md が同じ contract と worktree 前提注意を記載
-- [ ] clean-state（fresh worktree）で `mise run setup` →
+- [x] AGENTS.md が同じ contract と worktree 前提注意を記載
+- [x] clean-state（fresh worktree）で `mise run setup` →
       `mise run check` が exit 0 の実測記録がある
-- [ ] SPEC-0017/PLAN-0017/TASK-0099..0101 と各 index の status が
+- [x] SPEC-0017/PLAN-0017/TASK-0099..0101 と各 index の status が
       同期されている
 
 ## Verification
 
-- [ ] clean-state で `mise run setup` が exit 0
-- [ ] clean-state で `mise run check` が exit 0
-- [ ] `audit_docs.js --type all` が no findings
+- [x] clean-state で `mise run setup` が exit 0
+- [x] clean-state で `mise run check` が exit 0
+- [x] `audit_docs.js --type all` が no findings
+
+## Verification results
+
+2026-09-18 実施（Windows / node v26.8.2 / pnpm 11.0.0 / mise 2026.5.11）。
+`git worktree add /tmp/cheaper-fresh HEAD` で作った fresh checkout
+（`node_modules`・`dist`・`apm_modules`・APM deploy 生成物なし、
+committed state のみ）で実測。
+
+| Command | Result |
+|---------|--------|
+| `mise trust` | fresh checkout では mise の trust 機構により初回のみ必要（標準挙動） |
+| `mise run setup` | exit 0 — `pnpm install --frozen-lockfile`（175 packages、14.9s）→ `apm install`（25 deps を lock 済み SHA で復元、36.5s、cheaper-* の self-deploy なし）→ `pnpm build`（3 packages 全 Done） |
+| `mise run check` | exit 0 — `pnpm lint`（warnings のみ）→ `pnpm typecheck` → `pnpm test`（core 270 + runtime-pi 255 + cli 131 = 656 tests 全 pass）→ `node scripts/bundle-cli.mjs` → `git diff --exit-code -- packages/apm/.apm/hooks/cli`（clean） |
+
+検証後 `git worktree remove` 済み。setup 内で apm が repo root の
+`.apm/`（self-install）を deploy しないことも合わせて確認
+（dev deps のみ integrated）。
