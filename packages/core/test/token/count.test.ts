@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   canonicalizeWorkspaceRoot,
   countFileTokens,
+  DEFAULT_COUNT_MAX_BYTES,
+  FileTooLargeError,
   TOKENIZER_IDENTITY,
   TOKENIZER_VERSION,
   WorkspaceEscapeError,
@@ -108,6 +110,39 @@ describe("countFileTokens", () => {
     await expect(
       countFileTokens({ root, path: "missing.txt", symlinkPolicy: "deny" }),
     ).rejects.toThrowError();
+  });
+
+  it("throws FileTooLargeError when bytes exceed maxBytes, without counting", async () => {
+    await writeFile(path.join(dir, "big.bin"), Buffer.alloc(64, 0x61));
+    const err = await countFileTokens({
+      root,
+      path: "big.bin",
+      symlinkPolicy: "deny",
+      maxBytes: 16,
+    }).catch((e) => e);
+    expect(err).toBeInstanceOf(FileTooLargeError);
+    expect(err.path).toBe("big.bin");
+    expect(err.bytes).toBe(64);
+    expect(err.maxBytes).toBe(16);
+  });
+
+  it("accepts a file whose size equals maxBytes", async () => {
+    await writeFile(path.join(dir, "exact.txt"), "x".repeat(16));
+    const r = await countFileTokens({
+      root,
+      path: "exact.txt",
+      symlinkPolicy: "deny",
+      maxBytes: 16,
+    });
+    expect(r.bytes).toBe(16);
+    expect(r.tokens).toBeGreaterThan(0);
+  });
+
+  it("uses DEFAULT_COUNT_MAX_BYTES when maxBytes is omitted", async () => {
+    expect(DEFAULT_COUNT_MAX_BYTES).toBe(16 * 1024 * 1024);
+    await writeFile(path.join(dir, "small.txt"), "hello\n");
+    const r = await countFileTokens({ root, path: "small.txt", symlinkPolicy: "deny" });
+    expect(r.bytes).toBe(6);
   });
 });
 

@@ -65,11 +65,19 @@ function main() {
     process.exit(0);
   }
   const relPosix = rel.split(path.sep).join("/");
+  let st;
   try {
-    if (!fs.statSync(resolved).isFile()) {
+    st = fs.statSync(resolved);
+    if (!st.isFile()) {
       process.exit(0);
     }
   } catch {
+    process.exit(0);
+  }
+  // Fast path (DESIGN-0017): tokens <= bytes always holds, so a file whose
+  // size fits the threshold can never exceed it — skip the CLI spawn.
+  const limit = threshold();
+  if (st.size <= limit) {
     process.exit(0);
   }
 
@@ -79,20 +87,36 @@ function main() {
     [...prefix, "count-tokens", resolved, "--cwd", process.cwd()],
     { encoding: "utf8", timeout: 30_000 },
   );
-  if (run.error || run.status !== 0) {
+  if (run.error) {
     process.exit(0);
   }
   let envelope;
   try {
     envelope = JSON.parse(run.stdout);
   } catch {
+    envelope = null;
+  }
+  // A parseable envelope is authoritative even on non-zero exit: a
+  // FILE_TOO_LARGE refusal is a measured verdict (fail-closed), unlike
+  // infra failures which stay fail-open.
+  if (envelope && envelope.error && envelope.error.code === "FILE_TOO_LARGE") {
+    const det = envelope.error.details || {};
+    const bytes = typeof det.bytes === "number" ? det.bytes : st.size;
+    const capText = typeof det.maxBytes === "number" ? ` (exceeds the ${det.maxBytes}-byte measurement cap)` : "";
+    process.stderr.write(
+      `cheaper: '${relPosix}' is ${bytes} bytes${capText}.\n` +
+        "Do not read it directly. Delegate this file through the cheaper-bulk-read skill.\n" +
+        `workspace-relative path: ${relPosix}\n`,
+    );
+    process.exit(2);
+  }
+  if (run.status !== 0 || !envelope) {
     process.exit(0);
   }
   if (!envelope.ok || !envelope.result || typeof envelope.result.tokens !== "number") {
     process.exit(0);
   }
 
-  const limit = threshold();
   const { tokens } = envelope.result;
   if (tokens <= limit) {
     process.exit(0);

@@ -62,17 +62,17 @@ Directory: `docs/tasks`
 | TASK-0054 | Configure Pi models.json and cheaper models.yaml for Ollama provider | done | [0054-configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md](./0054-configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md) |
 | TASK-0055 | Run bulk-read and cheap-write smoke against Ollama | done | [0055-run-bulk-read-and-cheap-write-smoke-against-ollama.md](./0055-run-bulk-read-and-cheap-write-smoke-against-ollama.md) |
 | TASK-0056 | Record experiment log and verify test regression | done | [0056-record-experiment-log-and-verify-test-regression.md](./0056-record-experiment-log-and-verify-test-regression.md) |
-| TASK-0057 | Extract promptWithAbortGrace helper and apply to main run | todo | [0057-extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./0057-extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
-| TASK-0058 | Apply abort grace and provider failure normalization to repair | todo | [0058-apply-abort-grace-and-provider-failure-normalization-to-repair.md](./0058-apply-abort-grace-and-provider-failure-normalization-to-repair.md) |
-| TASK-0059 | Count consumed repair attempts in meta.repairs on failure | todo | [0059-count-consumed-repair-attempts-in-meta-repairs-on-failure.md](./0059-count-consumed-repair-attempts-in-meta-repairs-on-failure.md) |
-| TASK-0060 | Anchor policy timeout at runWorker start and amend DESIGN-0004 | todo | [0060-anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./0060-anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
-| TASK-0061 | Isolate unit tests from user and project config via env | todo | [0061-isolate-unit-tests-from-user-and-project-config-via-env.md](./0061-isolate-unit-tests-from-user-and-project-config-via-env.md) |
-| TASK-0062 | Update README and add provider setup guide | todo | [0062-update-readme-and-add-provider-setup-guide.md](./0062-update-readme-and-add-provider-setup-guide.md) |
+| TASK-0057 | Extract promptWithAbortGrace helper and apply to main run | done | [0057-extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./0057-extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
+| TASK-0058 | Apply abort grace and provider failure normalization to repair | done | [0058-apply-abort-grace-and-provider-failure-normalization-to-repair.md](./0058-apply-abort-grace-and-provider-failure-normalization-to-repair.md) |
+| TASK-0059 | Count consumed repair attempts in meta.repairs on failure | done | [0059-count-consumed-repair-attempts-in-meta-repairs-on-failure.md](./0059-count-consumed-repair-attempts-in-meta-repairs-on-failure.md) |
+| TASK-0060 | Anchor policy timeout at runWorker start and amend DESIGN-0004 | done | [0060-anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./0060-anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
+| TASK-0061 | Isolate unit tests from user and project config via env | done | [0061-isolate-unit-tests-from-user-and-project-config-via-env.md](./0061-isolate-unit-tests-from-user-and-project-config-via-env.md) |
+| TASK-0062 | Update README and add provider setup guide | done | [0062-update-readme-and-add-provider-setup-guide.md](./0062-update-readme-and-add-provider-setup-guide.md) |
 | TASK-0063 | Migrate cheap-writer to code-writer | done | [0063-migrate-cheap-writer-to-code-writer.md](./0063-migrate-cheap-writer-to-code-writer.md) |
 | TASK-0064 | Add doc-writer built-in Worker | done | [0064-add-doc-writer-worker.md](./0064-add-doc-writer-worker.md) |
 | TASK-0065 | Update docs indexes, supersede relations, and verify writer restructure | done | [0065-update-docs-and-verify-writer-restructure.md](./0065-update-docs-and-verify-writer-restructure.md) |
 | TASK-0066 | Implement core Token Counter with js-tiktoken | done | [0066-implement-core-token-counter.md](./0066-implement-core-token-counter.md) |
-| TASK-0067 | Add count_tokens portable tool | done | [0067-add-count-tokens-tool.md](./0067-add-count-tokens-tool.md) |
+| TASK-0067 | Add count_tokens tool to runtime-pi registry and built-in workers | done | [0067-add-count-tokens-tool.md](./0067-add-count-tokens-tool.md) |
 | TASK-0068 | Add count-tokens CLI command | done | [0068-add-count-tokens-cli.md](./0068-add-count-tokens-cli.md) |
 | TASK-0069 | Token counter CLI/tool parity tests and full verification | done | [0069-token-counter-parity-and-verification.md](./0069-token-counter-parity-and-verification.md) |
 | TASK-0070 | Create cheaper-usage skill | done | [0070-create-cheaper-usage-skill.md](./0070-create-cheaper-usage-skill.md) |
@@ -88,6 +88,9 @@ Directory: `docs/tasks`
 | TASK-0080 | Runtime-pi scope and deny enforcement in sandboxed tools | done | [0080-runtime-scope-and-deny-enforcement.md](./0080-runtime-scope-and-deny-enforcement.md) |
 | TASK-0081 | Writer writeScope declaration and e2e verification | done | [0081-writer-write-scope-and-e2e-verification.md](./0081-writer-write-scope-and-e2e-verification.md) |
 | TASK-0082 | cheaper auth command (login/status/logout) | done | [0082-auth-command.md](./0082-auth-command.md) |
-| TASK-0086 | Parameterize apm e2e fixture by target | todo | [0086-parameterize-apm-e2e-fixture-by-target.md](./0086-parameterize-apm-e2e-fixture-by-target.md) |
-| TASK-0087 | Per-target apm install verification e2e | todo | [0087-per-target-apm-install-verification-e2e.md](./0087-per-target-apm-install-verification-e2e.md) |
-| TASK-0088 | Finalize contract matrix and consumer pointer | todo | [0088-finalize-contract-matrix-and-consumer-pointer.md](./0088-finalize-contract-matrix-and-consumer-pointer.md) |
+| TASK-0083 | Core byte cap for countFileTokens | done | [0083-core-byte-cap-for-countfiletokens.md](./0083-core-byte-cap-for-countfiletokens.md) |
+| TASK-0084 | CLI count-tokens env override and FILE_TOO_LARGE envelope | done | [0084-cli-count-tokens-env-override-and-file-too-large-envelope.md](./0084-cli-count-tokens-env-override-and-file-too-large-envelope.md) |
+| TASK-0085 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [0085-hook-fast-path-and-fail-closed-file-too-large-block.md](./0085-hook-fast-path-and-fail-closed-file-too-large-block.md) |
+| TASK-0086 | Parameterize apm e2e fixture by target | done | [0086-parameterize-apm-e2e-fixture-by-target.md](./0086-parameterize-apm-e2e-fixture-by-target.md) |
+| TASK-0087 | Per-target apm install verification e2e | done | [0087-per-target-apm-install-verification-e2e.md](./0087-per-target-apm-install-verification-e2e.md) |
+| TASK-0088 | Finalize contract matrix and consumer pointer | done | [0088-finalize-contract-matrix-and-consumer-pointer.md](./0088-finalize-contract-matrix-and-consumer-pointer.md) |

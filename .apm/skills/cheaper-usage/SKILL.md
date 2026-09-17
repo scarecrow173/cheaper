@@ -94,7 +94,7 @@ Key points:
 | Code | Meaning |
 |---|---|
 | 0 | Success |
-| 2 | Invalid request or input (bad args, bad stdin JSON) |
+| 2 | Invalid request or input (bad args, bad stdin JSON) — or a measured refusal such as `FILE_TOO_LARGE`; inspect `error.code` |
 | 3 | Worker/schema/model-config resolution failure |
 | 4 | Policy violation |
 | 5 | Model tier unavailable or provider failure (retryable) |
@@ -103,6 +103,16 @@ Key points:
 | 8 | Aborted |
 | 9 | Partial mutation — the worker wrote files but did not finish cleanly |
 | 70 | Internal error |
+
+Exit 2 alone does **not** mean "invalid input" — always inspect
+`error.code` in the envelope. In particular `error.code ===
+"FILE_TOO_LARGE"` (exit 2, non-retryable) is returned by `count-tokens`
+when the file exceeds the measurement byte cap: an accurate token count
+cannot be obtained. Do **not** retry `count-tokens` — treat the file as
+large/unmeasurable and delegate it to `bulk-read`. `error.details`
+carries `path`, `bytes`, and `maxBytes`. The cap defaults to 16 MiB and
+can be overridden with the `CHEAPER_COUNT_MAX_BYTES` env var (positive
+integer, bytes; invalid values fall back to the default).
 
 ## Provider and model selection
 
@@ -116,6 +126,9 @@ the cheaper repository.
 
 - Before reading a file you suspect is large, run
   `cheaper count-tokens <path> --cwd <workspace>` and check `result.tokens`.
+- If `count-tokens` answers `ok: false` with `error.code ===
+  "FILE_TOO_LARGE"`, skip straight to `bulk-read` — the file is too large
+  to measure, so it is certainly too large to load into your context.
 - Delegate large-file reading to `bulk-read` (see the `cheaper-bulk-read`
   skill), mechanical code changes to `code-write` (`cheaper-code-write`),
   and mechanical document work to `doc-write` (`cheaper-doc-write`).
