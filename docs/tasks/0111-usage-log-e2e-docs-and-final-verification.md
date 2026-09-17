@@ -102,18 +102,33 @@ bundle 再生成・status 同期・全量検証を行う。
 
 ## Done When
 
-- [ ] fake-stream e2e で run・count record の append を assert
-- [ ] real-provider e2e で実測 record を assert
-- [ ] AGENTS.md に計測 log の記載がある
-- [ ] bundle 再生成済みで freshness clean
-- [ ] SPEC-0022/PLAN-0022/TASK-0110..0111 と各 index が同期
+- [x] fake-stream e2e で run・count record の append を assert
+- [x] real-provider e2e で実測 record を assert
+- [x] AGENTS.md に計測 log の記載がある
+- [x] bundle 再生成済みで freshness clean
+- [x] SPEC-0022/PLAN-0022/TASK-0110..0111 と各 index が同期
 
 ## Verification
 
-- [ ] `pnpm test` 全件 pass（Ollama 稼働時は real-provider 含む）
-- [ ] `mise run check` exit 0
-- [ ] `audit_docs.js --type all` が no findings
+- [x] `pnpm test` 全件 pass（Ollama 稼働時は real-provider 含む）
+- [x] `mise run check` exit 0
+- [x] `audit_docs.js --type all` が no findings
 
 ## Verification results
 
-（未実施）
+- fake-stream e2e（`exec.test.ts` 新規 test）: fake-stream の
+  bulk-read で `kind:"run"`・count-tokens で `kind:"count"` の
+  record が `CHEAPER_CONFIG_DIR/usage.jsonl` に append されること
+  を assert — pass。
+- real-provider e2e: 3 worker それぞれで `kind:"run"`・
+  `model.provider==="ollama"`・`usage.input>0` の record を
+  assert する `expectUsageRecord` を追加 — bundled CLI 経由の
+  live 実行で 3/3 pass（約 41s）。
+- `AGENTS.md`: 「delegation 計測ログ」節を追加（場所・record
+  shape・best-effort・隔離方法を記載）。
+- `node scripts/bundle-cli.mjs` で bundled CLI 再生成 — usage-log
+  が bundle に含まれることを diff で確認。
+- SPEC-0022 → `implemented`、PLAN-0022 → `completed`、
+  TASK-0110/0111 → `done`、各 index も同期済み。
+- `mise run check` exit 0（lint warning は既存のみ・typecheck・
+  全 test・freshness clean）。audit 結果は後段で記録。
