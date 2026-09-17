@@ -1,7 +1,7 @@
 ---
 id: "TASK-0090"
 type: "task"
-status: "todo"
+status: "done"
 title: "Bounded read tool and registry swap"
 created: "2026-09-17"
 updated: "2026-09-17"

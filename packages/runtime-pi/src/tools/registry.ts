@@ -2,7 +2,6 @@ import { CheaperError, type PathDenylist, type SymlinkPolicy, type ToolName } fr
 import {
   createEditToolDefinition,
   createLsToolDefinition,
-  createReadToolDefinition,
   createWriteToolDefinition,
   defineTool,
   type ToolDefinition,
@@ -12,12 +11,8 @@ import { type ToolBudget, wrapToolBudget } from "./budget.js";
 import { createCountTokensTool } from "./count-tokens.js";
 import { createFindTool } from "./find.js";
 import { createGrepTool } from "./grep.js";
-import {
-  createEditOperations,
-  createLsOperations,
-  createReadOperations,
-  createWriteOperations,
-} from "./operations.js";
+import { createEditOperations, createLsOperations, createWriteOperations } from "./operations.js";
+import { createReadTool } from "./read.js";
 
 export interface SandboxedToolsOptions {
   /** canonical 化済み workspace root。 */
@@ -44,9 +39,9 @@ export interface SandboxedTools {
 }
 
 /**
- * ToolName → Pi ToolDefinition 生成（DESIGN-0002/0004）。
- * read/write/edit/ls は Pi の createXxxToolDefinition に boundary 付き operations を注入し、
- * grep/find は自前 tool。全 tool を budget wrap する。
+ * ToolName → Pi ToolDefinition 生成（DESIGN-0002/0004/0019）。
+ * write/edit/ls は Pi の createXxxToolDefinition に boundary 付き operations を注入し、
+ * read/grep/find は自前 tool。全 tool を budget wrap する。
  */
 export function createSandboxedTools(opts: SandboxedToolsOptions): SandboxedTools {
   const opsOpts = {
@@ -64,13 +59,7 @@ export function createSandboxedTools(opts: SandboxedToolsOptions): SandboxedTool
   const tools: ToolDefinition[] = opts.names.map((name): ToolDefinition => {
     switch (name) {
       case "read":
-        // defineTool は runtime identity。& AnyToolDefinition 交差を得て
-        // ToolDefinition[]（default generic）へ代入可能にするための型上の wrap。
-        return defineTool(
-          createReadToolDefinition(opts.root, {
-            operations: createReadOperations(opsOpts),
-          }),
-        );
+        return createReadTool(opsOpts);
       case "write":
         return defineTool(
           createWriteToolDefinition(opts.root, {

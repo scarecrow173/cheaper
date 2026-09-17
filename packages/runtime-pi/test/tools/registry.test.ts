@@ -76,7 +76,7 @@ describe("createSandboxedTools", () => {
     expect(changes.files[0]?.kind).toBe("created");
   });
 
-  it("read tool reads via boundary ops", async () => {
+  it("read tool returns bounded verbatim content with details", async () => {
     await writeFile(path.join(root, "r.txt"), "body\n", "utf8");
     const { reg } = setup(["read"]);
     const result = await first(reg.tools).execute(
@@ -86,11 +86,32 @@ describe("createSandboxedTools", () => {
       undefined,
       undefined as never,
     );
-    const text = result.content
-      .filter((c): c is { type: "text"; text: string } => c.type === "text")
-      .map((c) => c.text)
-      .join("");
-    expect(text).toContain("body");
+    const textBlocks = result.content.filter(
+      (c): c is { type: "text"; text: string } => c.type === "text",
+    );
+    // 応答は verbatim テキスト 1 ブロック（DESIGN-0019 の新契約）。
+    expect(textBlocks).toHaveLength(1);
+    expect(textBlocks[0]?.text).toContain("body");
+    expect(result.details).toMatchObject({
+      startLine: 1,
+      endLine: 2,
+      eof: true,
+      truncatedBy: null,
+      totalLines: 2,
+    });
+  });
+
+  it("read tool denies workspace escapes", async () => {
+    const { reg } = setup(["read"]);
+    await expect(
+      first(reg.tools).execute(
+        "c1",
+        { path: "../evil.txt" } as never,
+        undefined,
+        undefined,
+        undefined as never,
+      ),
+    ).rejects.toThrow(ACCESS_DENIED_MESSAGE);
   });
 
   it("edit tool applies edits via boundary ops", async () => {

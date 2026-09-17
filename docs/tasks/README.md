@@ -95,6 +95,6 @@ Directory: `docs/tasks`
 | TASK-0087 | Per-target apm install verification e2e | done | [0087-per-target-apm-install-verification-e2e.md](./0087-per-target-apm-install-verification-e2e.md) |
 | TASK-0088 | Finalize contract matrix and consumer pointer | done | [0088-finalize-contract-matrix-and-consumer-pointer.md](./0088-finalize-contract-matrix-and-consumer-pointer.md) |
 | TASK-0089 | Shared limits, line framer, and path-only walker/find | done | [0089-shared-limits-line-framer-and-path-only-walker-find.md](./0089-shared-limits-line-framer-and-path-only-walker-find.md) |
-| TASK-0090 | Bounded read tool and registry swap | todo | [0090-bounded-read-tool-and-registry-swap.md](./0090-bounded-read-tool-and-registry-swap.md) |
+| TASK-0090 | Bounded read tool and registry swap | done | [0090-bounded-read-tool-and-registry-swap.md](./0090-bounded-read-tool-and-registry-swap.md) |
 | TASK-0091 | Streaming grep with batch protocol and bounded footer | todo | [0091-streaming-grep-batch-protocol-and-bounded-footer.md](./0091-streaming-grep-batch-protocol-and-bounded-footer.md) |
 | TASK-0092 | Bulk-reader guidance, deny/registry parity, and final verification | todo | [0092-bulk-reader-guidance-parity-and-final-verification.md](./0092-bulk-reader-guidance-parity-and-final-verification.md) |
