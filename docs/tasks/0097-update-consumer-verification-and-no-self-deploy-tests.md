@@ -1,7 +1,7 @@
 ---
 id: "TASK-0097"
 type: "task"
-status: "todo"
+status: "done"
 title: "Update consumer e2e fixtures to packages/apm and add no-self-deploy verification"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -107,13 +107,13 @@ DESIGN-0021 の 2 層検証を追加する:
 
 ## Done When
 
-- [ ] 全 e2e が repo `.apm/` ではなく `packages/apm/` を参照する
-- [ ] repo 内 `.apm/` path の二重管理がなく fixture 定数から導出
-- [ ] root `.apm/` 不存在と package layout の静的検証がある
-- [ ] dev-project fixture の no-self-deploy e2e がある（apm 不在
+- [x] 全 e2e が repo `.apm/` ではなく `packages/apm/` を参照する
+- [x] repo 内 `.apm/` path の二重管理がなく fixture 定数から導出
+- [x] root `.apm/` 不存在と package layout の静的検証がある
+- [x] dev-project fixture の no-self-deploy e2e がある（apm 不在
       環境では skip）
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter cheaper test` が exit 0
-- [ ] `mise exec -- pnpm lint` / typecheck が exit 0
+- [x] `mise exec -- pnpm --filter cheaper test` が exit 0
+- [x] `mise exec -- pnpm lint` / typecheck が exit 0

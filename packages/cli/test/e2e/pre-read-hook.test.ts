@@ -3,12 +3,12 @@ import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { apmPackageDir } from "./apm-fixture.js";
 import { cliRoot, makeIsolatedEnv } from "./helpers.js";
 
-const repoRoot = path.join(cliRoot, "..", "..");
-const hookScript = path.join(repoRoot, ".apm", "hooks", "pre-read-code.js");
+const hookScript = path.join(apmPackageDir, ".apm", "hooks", "pre-read-code.js");
 const cheaperBin = path.join(cliRoot, "bin", "cheaper.js");
-const bundledCli = path.join(repoRoot, ".apm", "hooks", "cli", "bin", "cheaper.mjs");
+const bundledCli = path.join(apmPackageDir, ".apm", "hooks", "cli", "bin", "cheaper.mjs");
 
 interface HookResult {
   status: number | null;

@@ -5,14 +5,21 @@ import { cliRoot } from "./helpers.js";
 
 const repoRoot = path.join(cliRoot, "..", "..");
 
+// 配布用 APM package（apm.yml + .apm/ primitives）の repo 内 path。
+// consumer e2e はこの package だけを一時 workspace へコピーして install
+// する。repo root の development project は直接参照しない（DESIGN-0021）。
+export const apmPackageDir = path.join(repoRoot, "packages", "apm");
+
 export function apmAvailable(): boolean {
   const r = spawnSync("apm", ["--version"], { shell: true, encoding: "utf8" });
   return r.status === 0;
 }
 
-// local path dep として install できる最小 package（repo の .apm/ + 無依存
-// apm.yml）を作る。repo 本体は transitive remote deps と node_modules を
-// 含むため、そのままでは local dep に使えない（DESIGN-0014 / DISC-0006）。
+// local path dep として install する実 distribution package の写しを
+// 作る。packages/apm（apm.yml + .apm/ primitives）をそのままコピーし、
+// repo 本体（development project）は transitive remote deps と
+// node_modules を含むため local dep には使わない
+// （DESIGN-0014 / DISC-0006 / DESIGN-0021）。
 export function makeConsumerLayout(
   root: string,
   target = "windsurf",
@@ -21,8 +28,7 @@ export function makeConsumerLayout(
   const consumer = path.join(root, "consumer");
   mkdirSync(pkg, { recursive: true });
   mkdirSync(consumer, { recursive: true });
-  cpSync(path.join(repoRoot, ".apm"), path.join(pkg, ".apm"), { recursive: true });
-  writeFileSync(path.join(pkg, "apm.yml"), 'name: cheaper\nversion: "0.0.0"\n');
+  cpSync(apmPackageDir, pkg, { recursive: true });
   writeFileSync(
     path.join(consumer, "apm.yml"),
     `name: consumer\nversion: "0.0.1"\ntargets:\n- ${target}\ndependencies:\n  apm:\n  - path: ../pkg\n`,
