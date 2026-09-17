@@ -1,5 +1,7 @@
 [settings]
 minimum_release_age = "7d"
+# mise.lock を維持し、install/use で locked version を優先させる
+lockfile = true
 
 [env]
 UV_EXCLUDE_NEWER = "1 week"
@@ -12,3 +14,25 @@ uv = "0.11"
 # apm.lock.yaml は apm 0.28.0 で生成。0.30.0 は Windows で path dep 解決が
 # 壊れているため lock 生成版に pin する。
 "pipx:apm-cli"  = { version = "0.28.0", uvx_args = "--prerelease allow" }
+
+# Repository-owned setup contract: fresh checkout を開発可能にする
+# canonical entrypoint。toolchain は mise.toml + mise.lock で復元される。
+[tasks.setup]
+description = "Restore Node/APM dependencies and build outputs for a fresh checkout"
+run = [
+  "pnpm install --frozen-lockfile",
+  "apm install",
+  "pnpm build",
+]
+
+# Canonical verification contract: CI と同等の検証。
+# セットアップ済み checkout を対象とし、setup には依存しない。
+[tasks.check]
+description = "Verify the checkout: lint, typecheck, test, bundle freshness"
+run = [
+  "pnpm lint",
+  "pnpm typecheck",
+  "pnpm test",
+  "node scripts/bundle-cli.mjs",
+  "git diff --exit-code -- packages/apm/.apm/hooks/cli",
+]

@@ -1,7 +1,7 @@
 ---
 id: "TASK-0099"
 type: "task"
-status: "todo"
+status: "done"
 title: "Define mise setup/check TOML tasks and lockfile setting"
 created: "2026-09-18"
 updated: "2026-09-18"
@@ -107,14 +107,14 @@ README/AGENTS.md（TASK-0101）。
 
 ## Done When
 
-- [ ] `[settings]` に `lockfile = true` がある
-- [ ] `[tasks.setup]` が `pnpm install --frozen-lockfile` /
+- [x] `[settings]` に `lockfile = true` がある
+- [x] `[tasks.setup]` が `pnpm install --frozen-lockfile` /
       `apm install` / `pnpm build` を含む
-- [ ] `[tasks.check]` が lint/typecheck/test/bundle freshness を
+- [x] `[tasks.check]` が lint/typecheck/test/bundle freshness を
       含み `depends` を持たない
-- [ ] `mise tasks` に両 task が表示され `mise run setup` が exit 0
+- [x] `mise tasks` に両 task が表示され `mise run setup` が exit 0
 
 ## Verification
 
-- [ ] `mise tasks` で一覧確認
-- [ ] `mise run setup` が exit 0
+- [x] `mise tasks` で一覧確認
+- [x] `mise run setup` が exit 0
