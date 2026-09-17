@@ -16,7 +16,8 @@ relations:
     moved: []
     generated: []
   implements: []
-  implemented-by: []
+  implemented-by:
+    - "../designs/0019-bulk-reader-huge-file-safe-io.md"
   depends-on:
     - "./0010-write-scope-and-privacy-deny.md"
   blocks: []

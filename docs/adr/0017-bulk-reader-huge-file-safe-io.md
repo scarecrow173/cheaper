@@ -33,7 +33,8 @@ relations:
   derives-from:
     - "../discovery/0010-bulk-reader-huge-file-safe-io.md"
     - "../specs/0014-bulk-reader-huge-file-safe-io.md"
-  derived-by: []
+  derived-by:
+    - "../designs/0019-bulk-reader-huge-file-safe-io.md"
   verifies: []
   verified-by: []
   references: []
