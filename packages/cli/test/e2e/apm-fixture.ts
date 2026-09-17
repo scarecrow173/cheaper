@@ -61,15 +61,25 @@ export function bundledCli(consumer: string, target = "windsurf"): string | null
 }
 
 // target → 生成される hook config file の consumer 相対 path。
-// agent-skills は hook config を生成しない。
+// codex / cursor は hooks.json（`hooks` 直下に event を nest）に加え、
+// 同じ登録の top-level event key shape の apm-hooks.json も生成される
+// （apm 0.28.0 実測。windsurf でも生成されるが本 map の対象外 —
+// apm-install.test.ts が windsurf を網羅する）。agent-skills は
+// hook config を生成しない。
 const GENERATED_CONFIGS: Record<string, string[][]> = {
   windsurf: [[".windsurf", "hooks.json"]],
   claude: [
     [".claude", "apm-hooks.json"],
     [".claude", "settings.json"],
   ],
-  codex: [[".codex", "hooks.json"]],
-  cursor: [[".cursor", "hooks.json"]],
+  codex: [
+    [".codex", "hooks.json"],
+    [".codex", "apm-hooks.json"],
+  ],
+  cursor: [
+    [".cursor", "hooks.json"],
+    [".cursor", "apm-hooks.json"],
+  ],
   "agent-skills": [],
 };
 

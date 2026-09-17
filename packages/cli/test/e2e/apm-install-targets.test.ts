@@ -30,8 +30,8 @@ function readJson(file: string): JsonObject {
   return JSON.parse(readFileSync(file, "utf8")) as JsonObject;
 }
 
-function runCli(cli: string, args: string[], cwd: string) {
-  return spawnSync(process.execPath, [cli, ...args], { cwd, encoding: "utf8" });
+function runCli(cli: string, args: string[], cwd: string, input?: string) {
+  return spawnSync(process.execPath, [cli, ...args], { cwd, encoding: "utf8", input });
 }
 
 describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: HookTarget) => {
@@ -70,7 +70,18 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       // DESIGN-0018 §3 との差分を記録: APM 0.28.0 は copilot の scripts
       // deploy から *.json を除外するため cli/version.json（と
       // package.json / workers/schemas/*.json）は deploy されない。
+      // worker の .md 本体は残る。
       expect(existsSync(path.join(bundle as string, "cli", "version.json"))).toBe(false);
+      expect(existsSync(path.join(bundle as string, "cli", "package.json"))).toBe(false);
+      expect(existsSync(path.join(bundle as string, "cli", "workers", "bulk-reader.md"))).toBe(
+        true,
+      );
+      for (const rel of [
+        path.join("cli", "workers", "schemas", "bulk-reader.input.schema.json"),
+        path.join("cli", "workers", "schemas", "bulk-reader.output.schema.json"),
+      ]) {
+        expect(existsSync(path.join(bundle as string, rel)), `${target}: ${rel}`).toBe(false);
+      }
     } else {
       expect(existsSync(path.join(bundle as string, "cli", "version.json"))).toBe(true);
     }
@@ -106,15 +117,22 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       expect(apmEntry.matcher).toBeDefined();
       expect(Array.isArray(apmEntry.hooks)).toBe(true);
     } else {
-      // codex / cursor / copilot: <config>.hooks.<event>
-      const cfg = readJson(configPaths[0]);
-      const events = cfg.hooks as JsonObject;
-      const entries = events.pre_read_code as JsonObject[];
-      expect(Array.isArray(entries), `${target}: hooks.pre_read_code`).toBe(true);
-      expect(entries.length).toBeGreaterThan(0);
-      expect(String(entries[0].command)).toContain("pre-read-code.js");
-      if (target === "cursor" || target === "copilot") {
-        expect(cfg.version).toBe(1);
+      // codex / cursor / copilot: hooks.json（copilot は dep 名由来の
+      // <dep>-hooks.json）は `hooks` 直下に event を nest する shape。
+      // codex / cursor では apm が同じ登録を top-level event key shape の
+      // apm-hooks.json としても追加生成する（DISC-0009 観測事実）。
+      for (const cfgPath of configPaths) {
+        const cfg = readJson(cfgPath);
+        const flat = path.basename(cfgPath) === "apm-hooks.json";
+        const entries = (
+          flat ? cfg.pre_read_code : (cfg.hooks as JsonObject).pre_read_code
+        ) as JsonObject[];
+        expect(Array.isArray(entries), `${target}: ${cfgPath}`).toBe(true);
+        expect(entries.length).toBeGreaterThan(0);
+        expect(String(entries[0].command)).toContain("pre-read-code.js");
+        if (!flat && (target === "cursor" || target === "copilot")) {
+          expect(cfg.version).toBe(1);
+        }
       }
     }
 
@@ -139,6 +157,22 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       // する（現状の deploy gap を記録。count-tokens は上で動作確認済み）。
       expect(version.status).not.toBe(0);
       expect(version.stdout + version.stderr).toContain("failed to resolve package version");
+
+      // schemas/*.json の欠落は file-schema worker も壊す: worker
+      // definition load が provider/model 呼出し前に schema 欠落で
+      // 失敗するため auth なしで決定的に再現する。実測では schema が
+      // output → input の順に load されるため OUTPUT_SCHEMA_NOT_FOUND
+      // (exit 3) が先に出る。
+      const bulk = runCli(
+        cli as string,
+        ["bulk-read", "--cwd", consumer],
+        consumer,
+        JSON.stringify({ task: "t", paths: ["sample.txt"] }),
+      );
+      expect(bulk.status, bulk.stderr).toBe(3);
+      const env = JSON.parse(bulk.stdout) as JsonObject;
+      expect(env.ok).toBe(false);
+      expect((env.error as JsonObject).code).toBe("OUTPUT_SCHEMA_NOT_FOUND");
     } else {
       expect(version.status, version.stderr).toBe(0);
       expect(version.stdout.trim()).toMatch(/^\d+\.\d+\.\d+$/);
