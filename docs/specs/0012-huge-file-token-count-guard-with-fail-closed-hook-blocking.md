@@ -56,9 +56,11 @@ block + bulk-read 委譲 guidance を返す（fail-closed）。
 - CLI: `count-tokens` が cap error を専用 error code（envelope）に map。
   `CHEAPER_COUNT_MAX_BYTES` env で cap を上書き可能（CLI/hook 経路のみ。
   runtime `count_tokens` tool は core default のまま）
-- hook: cap error code を含む envelope 応答、および spawn timeout/失敗
-  以外の「測定不能だが file が存在して大きい」ケースを fail-open では
-  なく block（exit 2 + 委譲 guidance）として扱う
+- hook: core が決定的に `FILE_TOO_LARGE` と判定した巨大 file、および
+  正常 count で threshold 超過の file を block（exit 2 + 委譲
+  guidance）として扱う。spawn error / timeout / stdout parse 不能 /
+  `FILE_TOO_LARGE` 以外の `ok:false` などの infra 障害は従来どおり
+  fail-open（exit 0）を維持する
 - bytes ≤ token threshold の file は `tokens ≤ bytes` の性質から encode
   せず即座に「閾値以下」と判定できる（実装の最適化余地として記録）
 
@@ -73,7 +75,9 @@ OOM/timeout する。hook は測定失敗をすべて fail-open（exit 0）で�
 ## Users and Value
 
 - parent agent: 巨大 file の直接 read による context 破壊を防ぐ
-- consumer: 壊れた/遅い環境でも hook が fail-open せず安全側に倒れる
+- consumer: 測定不能な巨大 file は安全側に倒れる（fail-closed）。
+  一方で CLI の spawn error / timeout 等の infra 障害では従来どおり
+  fail-open を維持し、通常 read を阻害しない
 
 ## Scope
 
@@ -101,8 +105,11 @@ OOM/timeout する。hook は測定失敗をすべて fail-open（exit 0）で�
   tool は core default 16MB を使い続ける
 - hook は cap error を検出したら閾値超過と同じ exit 2 block + 委譲
   guidance を出す。guidance には workspace-relative POSIX path を含める
-- hook の fail-open は「file が存在しない・workspace 外・input 異常」
-  等の計測不能ケースに限定され、存在する巨大 file は block される
+- hook の fail-closed は「`FILE_TOO_LARGE` または正常 count で
+  threshold 超過」に限定される。file 不在・workspace 外・input 異常、
+  および CLI spawn error / timeout / parse 不能 / その他の infra
+  error は fail-open（既存契約維持）であり、infra 障害で存在する
+  file が block されることはない
 - cap 未満の file の count 結果は一切変わらない（canonical count 契約
   維持）
 

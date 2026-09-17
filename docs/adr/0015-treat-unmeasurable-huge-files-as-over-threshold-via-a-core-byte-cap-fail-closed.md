@@ -88,8 +88,10 @@ Chosen option: "fail-closed byte cap"。
   CLI `count-tokens`（= hook 経路）のみに効き、runtime `count_tokens`
   tool は core default 16MB のままとする
 - hook は cap error code を閾値超過と同等に扱い、exit 2 + bulk-read
-  委譲 guidance を返す。fail-open は「file 不在・workspace 外・input
-  異常」等の計測不能ケースに限定する
+  委譲 guidance を返す。fail-closed は「`FILE_TOO_LARGE` または正常
+  count で threshold 超過」に限定し、file 不在・workspace 外・input
+  異常・CLI spawn error / timeout / parse 不能などの infra 障害は
+  従来どおり fail-open（exit 0）を維持する
 - `tokens ≤ bytes` が常に成立するため、bytes ≤ threshold の file は
   encode なしに「閾値以下」と判定できる（実装上の最適化として許容）
 

@@ -124,7 +124,10 @@ hook: envelope.error.code === FILE_TOO_LARGE → exit 2 + 委譲 guidance
 ## Risks and Trade-offs
 
 - 高圧縮率 file（bytes 大・tokens 小）の false positive block →
-  bulk-read が正常処理するため実害小。cap は env で調整可
+  parent context は保護されるが、現状の bulk-reader は whole-file
+  Buffer 化 + >1MB skip walker で huge-file-safe I/O を保証しない。
+  bounded/chunked 対応は follow-up であり、委譲自体が失敗しうる。
+  cap は env で調整可
 - fast-path は「bytes ≤ threshold → tokens ≤ threshold」の決定的性質に
   依存。tokenizer 差異で崩れない（1 token ≥ 1 byte は encoding に依らず
   成立）
