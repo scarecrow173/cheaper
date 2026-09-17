@@ -24,3 +24,4 @@ Directory: `docs/adr`
 | ADR-0016 | Keep the verbatim pre_read_code deployment as a documented no-op on non-Windsurf targets and defer per-target hook adapters | accepted | [0016-keep-verbatim-pre-read-code-as-noop-on-non-windsurf-targets.md](./0016-keep-verbatim-pre-read-code-as-noop-on-non-windsurf-targets.md) |
 | ADR-0017 | bulk-reader の巨大ファイル I/O を有界 read・streaming grep・path-only find にする | accepted | [0017-bulk-reader-huge-file-safe-io.md](./0017-bulk-reader-huge-file-safe-io.md) |
 | ADR-0018 | auth interaction の browser 起動を注入可能な URL opener seam にする | accepted | [0018-inject-url-opener-seam-for-auth-interaction.md](./0018-inject-url-opener-seam-for-auth-interaction.md) |
+| ADR-0019 | development APM project と distributable cheaper package を nested package で物理分離する | accepted | [0019-separate-dev-apm-project-via-nested-distributable-package.md](./0019-separate-dev-apm-project-via-nested-distributable-package.md) |

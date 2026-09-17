@@ -100,3 +100,7 @@ Directory: `docs/tasks`
 | TASK-0092 | Bulk-reader guidance, deny/registry parity, and final verification | done | [0092-bulk-reader-guidance-parity-and-final-verification.md](./0092-bulk-reader-guidance-parity-and-final-verification.md) |
 | TASK-0093 | Auth URL opener seam and test isolation | done | [0093-auth-url-opener-seam-and-test-isolation.md](./0093-auth-url-opener-seam-and-test-isolation.md) |
 | TASK-0094 | Auth URL opener final verification and status sync | done | [0094-auth-url-opener-final-verification.md](./0094-auth-url-opener-final-verification.md) |
+| TASK-0095 | Move .apm primitives to nested distributable package | todo | [0095-move-apm-primitives-to-distributable-package.md](./0095-move-apm-primitives-to-distributable-package.md) |
+| TASK-0096 | Repoint bundle pipeline and CI freshness check | todo | [0096-repoint-bundle-pipeline-and-ci-freshness.md](./0096-repoint-bundle-pipeline-and-ci-freshness.md) |
+| TASK-0097 | Update consumer verification and no-self-deploy tests | todo | [0097-update-consumer-verification-and-no-self-deploy-tests.md](./0097-update-consumer-verification-and-no-self-deploy-tests.md) |
+| TASK-0098 | Update docs and run final verification | todo | [0098-update-readme-agents-and-final-verification.md](./0098-update-readme-agents-and-final-verification.md) |
