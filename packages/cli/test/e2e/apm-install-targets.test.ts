@@ -158,9 +158,10 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
 
     const version = runCli(cli as string, ["--version"], consumer);
     if (target === "copilot") {
-      // version.json が deploy されないため --version は version 解決に失敗
-      // する（現状の deploy gap を記録。count-tokens は上で動作確認済み）。
-      expect(version.status).not.toBe(0);
+      // version.json が deploy されないため --version は exit 70 で
+      // version 解決に失敗する（現状の deploy gap を記録。
+      // count-tokens は上で動作確認済み）。
+      expect(version.status).toBe(70);
       expect(version.stdout + version.stderr).toContain("failed to resolve package version");
 
       // schemas/*.json の欠落は file-schema worker も壊す: worker
