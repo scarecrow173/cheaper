@@ -1,11 +1,11 @@
-// Generates .apm/hooks/cli/ — the self-contained cheaper CLI shipped inside
-// the APM hook bundle (DESIGN-0014). Run via `pnpm bundle`.
+// Generates packages/apm/.apm/hooks/cli/ — the self-contained cheaper CLI
+// shipped inside the APM hook bundle (DESIGN-0014). Run via `pnpm bundle`.
 //
 // Layout produced:
-//   .apm/hooks/cli/bin/cheaper.mjs   esbuild ESM bundle (minified)
-//   .apm/hooks/cli/package.json      {name, version} from packages/cli
-//   .apm/hooks/cli/workers/          copied worker definitions + schemas
-//   .apm/hooks/cli/policy.yaml       copied built-in policy
+//   packages/apm/.apm/hooks/cli/bin/cheaper.mjs   esbuild ESM bundle (minified)
+//   packages/apm/.apm/hooks/cli/package.json      {name, version} from packages/cli
+//   packages/apm/.apm/hooks/cli/workers/          copied worker definitions + schemas
+//   packages/apm/.apm/hooks/cli/policy.yaml       copied built-in policy
 //
 // The generated tree is committed so git/local-path consumers get a working
 // CLI without a build step.
@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const cliPkg = path.join(repoRoot, "packages", "cli");
-const outDir = path.join(repoRoot, ".apm", "hooks", "cli");
+const outDir = path.join(repoRoot, "packages", "apm", ".apm", "hooks", "cli");
 const outBin = path.join(outDir, "bin", "cheaper.mjs");
 
 rmSync(outDir, { recursive: true, force: true });

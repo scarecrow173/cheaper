@@ -1,5 +1,3 @@
-"use strict";
-
 // cheaper pre_read_code hook (DESIGN-0013).
 // Windsurf Cascade calls this before reading a code file. We measure the
 // file's canonical token count via `cheaper count-tokens`; if it exceeds the
@@ -82,11 +80,10 @@ function main() {
   }
 
   const [cmd, prefix] = cheaperCommand();
-  const run = spawnSync(
-    cmd,
-    [...prefix, "count-tokens", resolved, "--cwd", process.cwd()],
-    { encoding: "utf8", timeout: 30_000 },
-  );
+  const run = spawnSync(cmd, [...prefix, "count-tokens", resolved, "--cwd", process.cwd()], {
+    encoding: "utf8",
+    timeout: 30_000,
+  });
   if (run.error) {
     process.exit(0);
   }
@@ -102,7 +99,8 @@ function main() {
   if (envelope && envelope.error && envelope.error.code === "FILE_TOO_LARGE") {
     const det = envelope.error.details || {};
     const bytes = typeof det.bytes === "number" ? det.bytes : st.size;
-    const capText = typeof det.maxBytes === "number" ? ` (exceeds the ${det.maxBytes}-byte measurement cap)` : "";
+    const capText =
+      typeof det.maxBytes === "number" ? ` (exceeds the ${det.maxBytes}-byte measurement cap)` : "";
     process.stderr.write(
       `cheaper: '${relPosix}' is ${bytes} bytes${capText}.\n` +
         "Do not read it directly. Delegate this file through the cheaper-bulk-read skill.\n" +

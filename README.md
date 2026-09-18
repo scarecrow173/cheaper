@@ -29,18 +29,30 @@ echo '{"task": "src/ のエントリポイントを特定して", "paths": ["src
 
 ## Parent agent への配布
 
-`.apm/` に parent agent 向け primitive を同梱している:
+配布用 APM package は `packages/apm/` に分離されている（repository root の
+`apm.yml` は development-only で、root の `apm install` は cheaper 自身の
+skill/hook を deploy しない）。consumer はこの package を依存として
+install する:
+
+```yaml
+dependencies:
+  apm:
+  - scarecrow173/cheaper/packages/apm#main   # virtual package 参照
+  # または local path: - path: ../cheaper/packages/apm
+```
+
+`packages/apm/.apm/` に parent agent 向け primitive を同梱している:
 
 - skills: `cheaper-usage`（CLI contract）、`cheaper-bulk-read` /
   `cheaper-code-write` / `cheaper-doc-write`（各 worker への委譲方法）
 - hooks: Windsurf `pre_read_code` で read 前に `count-tokens` を実行し、
   threshold（default 8192、`CHEAPER_READ_TOKEN_THRESHOLD` で上書き可）超過
   の file read を block して bulk-read へ誘導する `pre-read-code.js`
-- `.apm/hooks/cli/` は `pnpm bundle` で生成する self-contained CLI bundle
-  （esbuild single-file + workers/ + policy.yaml）。commit 済みの生成物で、
-  `apm install --target windsurf` すると
-  `.windsurf/hooks/cheaper/cli/bin/cheaper.mjs` として deploy され、
-  hook と parent agent の双方が PATH 不要で CLI を利用できる
+- `packages/apm/.apm/hooks/cli/` は `pnpm bundle` で生成する
+  self-contained CLI bundle（esbuild single-file + workers/ +
+  policy.yaml）。commit 済みの生成物で、`apm install --target windsurf`
+  すると `.windsurf/hooks/<dep-name>/cli/bin/cheaper.mjs` として deploy
+  され、hook と parent agent の双方が PATH 不要で CLI を利用できる
 - provider / model の設定方法は [docs/guides/providers.md](docs/guides/providers.md) を参照
 
 ## ステータス

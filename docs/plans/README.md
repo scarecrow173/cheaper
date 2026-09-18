@@ -21,3 +21,4 @@ Directory: `docs/plans`
 | PLAN-0013 | Cross-agent distribution verification | completed | [0013-cross-agent-distribution-verification.md](./0013-cross-agent-distribution-verification.md) |
 | PLAN-0014 | Bulk-reader huge-file safe I/O | completed | [0014-bulk-reader-huge-file-safe-io.md](./0014-bulk-reader-huge-file-safe-io.md) |
 | PLAN-0015 | Injectable auth URL opener seam for hermetic tests | completed | [0015-auth-url-opener-seam.md](./0015-auth-url-opener-seam.md) |
+| PLAN-0016 | Development APM project / distributable package separation | completed | [0016-dev-apm-and-distributable-package-separation.md](./0016-dev-apm-and-distributable-package-separation.md) |
