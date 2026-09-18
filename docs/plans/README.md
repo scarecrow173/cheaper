@@ -8,6 +8,7 @@ Directory: `docs/plans`
 | --- | --- | --- | --- |
 | PLAN-034r05iHE1FbkoW7f4XJXS | Implement APM delegation skills and pre_read_code hook | completed | [apm-delegation-layer.md](./apm-delegation-layer.md) |
 | PLAN-034r05iHE1FbkoZibpg86T | cheaper auth command (provider login absorbed into the CLI) | completed | [auth-command.md](./auth-command.md) |
+| PLAN-zDQIdChPXY1lrGJyzZTiQc | Route auth text/select prompts through the injected CliIo stderr | in-progress | [auth-io-boundary.md](./auth-io-boundary.md) |
 | PLAN-034r05iHE1Fbkp4xxlyMdV | Injectable auth URL opener seam for hermetic tests | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
 | PLAN-034r05iHE1Fbkp3qMZZB17 | Bulk-reader huge-file safe I/O | completed | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | PLAN-034r05iHE1FbkoVrzp9sac | Implement canonical Token Counter, count_tokens tool, and count-tokens CLI | completed | [canonical-token-counter.md](./canonical-token-counter.md) |

@@ -8,6 +8,7 @@ Directory: `docs/adr`
 | --- | --- | --- | --- |
 | ADR-034r05iHrZUE6W71rbZ6aR | Absorb provider OAuth and API-key login into the cheaper CLI (cheaper auth) | accepted | [absorb-provider-oauth-and-api-key-login-into-the-cheaper-cli-cheaper-auth.md](./absorb-provider-oauth-and-api-key-login-into-the-cheaper-cli-cheaper-auth.md) |
 | ADR-034r05iHfSMW9SGV4dpcy2 | Agent Runtime として Pi SDK (@earendil-works/pi-coding-agent) を採用する | accepted | [agent-runtime-pi-sdk-earendil-works-pi-coding-agent.md](./agent-runtime-pi-sdk-earendil-works-pi-coding-agent.md) |
+| ADR-pINoxFu3eduWaJCNBtOT1M | auth text/select prompt を injected CliIo の stderr writer へ bridge する | accepted | [auth-terminal-prompt-io-boundary.md](./auth-terminal-prompt-io-boundary.md) |
 | ADR-034r05iHrZUE6WjfsVTWjO | real-provider e2e は Ollama auto-detect skip + apm install 隔離 consumer で実 provider 到達を検証する | accepted | [auto-detect-skip-real-provider-e2e-via-isolated-consumer.md](./auto-detect-skip-real-provider-e2e-via-isolated-consumer.md) |
 | ADR-034r05iHrZUE6Wb2K7GmPw | bulk-reader の巨大ファイル I/O を有界 read・streaming grep・path-only find にする | accepted | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | ADR-034r05iHrZUE6WeDAi63F3 | canonical setup/check entrypoint を mise TOML task として mise.toml に定義する | accepted | [canonical-setup-check-entrypoints-as-mise-toml-tasks.md](./canonical-setup-check-entrypoints-as-mise-toml-tasks.md) |
