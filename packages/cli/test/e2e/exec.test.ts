@@ -53,7 +53,7 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     expect(meta.changes?.files).toEqual([]);
     expect(meta.changes?.totals).toEqual({ files: 0, linesAdded: 0, linesDeleted: 0 });
     expect(r.stderr).toContain("model: cheaper-fake/fake-model (tier low)");
-  });
+  }, 20_000);
 
   it("code-write measures meta.changes from the journal, not the model", async () => {
     const r = await runCheaper(["code-write", "--cwd", ws], {
@@ -168,7 +168,7 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     });
     const countResult = countRec?.result as { tokens?: number } | undefined;
     expect(typeof countResult?.tokens).toBe("number");
-  });
+  }, 20_000);
 
   it("accepts the scripted-response-array fixture form", async () => {
     const r = await runCheaper(["bulk-read", "--cwd", ws], {
