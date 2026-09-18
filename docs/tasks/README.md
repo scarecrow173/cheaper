@@ -111,3 +111,5 @@ Directory: `docs/tasks`
 | TASK-0105 | Unify versions, wire check, and document release | done | [0105-unify-versions-wire-check-and-document-release.md](./0105-unify-versions-wire-check-and-document-release.md) |
 | TASK-0106 | Copilot adapter script, hooks.json registration, and stdin-injection tests | done | [0106-copilot-adapter-script-and-hook-tests.md](./0106-copilot-adapter-script-and-hook-tests.md) |
 | TASK-0107 | Copilot deploy/config e2e asserts, DISC-0009 matrix update, and final verification | done | [0107-copilot-deploy-e2e-matrix-and-final-verification.md](./0107-copilot-deploy-e2e-matrix-and-final-verification.md) |
+| TASK-0108 | Implement real-provider worker e2e and verify against live Ollama | done | [0108-implement-ollama-real-provider-e2e.md](./0108-implement-ollama-real-provider-e2e.md) |
+| TASK-0109 | Verify skip path, document e2e in AGENTS.md, sync statuses, final verification | done | [0109-skip-path-docs-and-final-verification.md](./0109-skip-path-docs-and-final-verification.md) |

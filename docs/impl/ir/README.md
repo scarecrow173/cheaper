@@ -18,3 +18,4 @@ Directory: `docs/impl/ir`
 | IMPL-0012 | Repository-owned setup/check entrypoints (PLAN-0017) | completed | [0012-repo-owned-setup-check-entrypoints.md](./0012-repo-owned-setup-check-entrypoints.md) |
 | IMPL-0014 | Unified version source of truth | completed | [0014-unified-version-source-of-truth.md](./0014-unified-version-source-of-truth.md) |
 | IMPL-0015 | Copilot pre-read hook adapter (PLAN-0020) | completed | [0015-copilot-pre-read-hook-adapter.md](./0015-copilot-pre-read-hook-adapter.md) |
+| IMPL-0016 | Real-provider worker E2E via Ollama (PLAN-0021) | completed | [0016-ollama-real-provider-worker-e2e.md](./0016-ollama-real-provider-worker-e2e.md) |

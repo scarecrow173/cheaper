@@ -39,6 +39,8 @@ bundled CLI は `pnpm bundle` で `packages/apm/.apm/hooks/cli/` へ生成する
 
 コンテナが起動していない状態で実 provider smoke を実行すると provider 到達不能で失敗する。上記の稼働確認で未起動に気づいたら起動してから再実行する。
 
+`packages/cli/test/e2e/real-provider-ollama.test.ts` はコンテナ起動 + モデル pull 済み（default `qwen3.5:9b`、`CHEAPER_E2E_OLLAMA_MODEL` で override 可）であれば `pnpm test` 内で実 provider 検証（bulk-read / code-write / doc-write → bundled CLI → Ollama）を自動実行する。未起動・モデル不在・apm 不在のときは自動 skip するため、CI では実行されない。
+
 ## 開発原則
 
 SOLID・YAGNI・DRY・KISS に従い、現在の要件に必要な範囲で設計・実装する。
