@@ -1,27 +1,29 @@
 # Implementation Records
 
+<!-- doc-suite:generated-index -->
+
 Directory: `docs/impl/ir`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
-| IMPL-0001 | Implement @cheaper/core (PLAN-0001) | completed | [0001-implement-cheaper-core-plan-0001.md](./0001-implement-cheaper-core-plan-0001.md) |
-| IMPL-0002 | Implement @cheaper/runtime-pi (PLAN-0002) | completed | [0002-implement-cheaper-runtime-pi-plan-0002.md](./0002-implement-cheaper-runtime-pi-plan-0002.md) |
-| IMPL-0003 | Implement cheaper CLI and built-in workers (PLAN-0003) | completed | [0003-implement-cheaper-cli-and-built-in-workers-plan-0003.md](./0003-implement-cheaper-cli-and-built-in-workers-plan-0003.md) |
-| IMPL-0004 | Code review fixes (post-merge) | completed | [0004-code-review-fixes.md](./0004-code-review-fixes.md) |
-| IMPL-0005 | Add Ollama docker-compose and AGENTS.md container usage | completed | [0005-add-ollama-docker-compose-and-agents-md-container-usage.md](./0005-add-ollama-docker-compose-and-agents-md-container-usage.md) |
-| IMPL-0006 | Start Ollama container and pull model | completed | [0006-start-ollama-container-and-pull-model.md](./0006-start-ollama-container-and-pull-model.md) |
-| IMPL-0007 | Configure Pi models.json and cheaper models.yaml for Ollama | completed | [0007-configure-pi-and-cheaper-model-config-for-ollama.md](./0007-configure-pi-and-cheaper-model-config-for-ollama.md) |
-| IMPL-0008 | Run real-provider smoke test with Ollama | completed | [0008-run-real-provider-smoke-test-with-ollama.md](./0008-run-real-provider-smoke-test-with-ollama.md) |
-| IMPL-0009 | Repair abort grace and provider failure normalization | completed | [0009-repair-abort-grace-and-provider-failure-normalization.md](./0009-repair-abort-grace-and-provider-failure-normalization.md) |
-| IMPL-0010 | Auth URL opener seam (PLAN-0015) | completed | [0010-auth-url-opener-seam.md](./0010-auth-url-opener-seam.md) |
-| IMPL-0011 | Separate development APM project from distributable package (PLAN-0016) | completed | [0011-dev-apm-and-distributable-package-separation.md](./0011-dev-apm-and-distributable-package-separation.md) |
-| IMPL-0012 | Repository-owned setup/check entrypoints (PLAN-0017) | completed | [0012-repo-owned-setup-check-entrypoints.md](./0012-repo-owned-setup-check-entrypoints.md) |
-| IMPL-0013 | grep batchMaxBytes invariant enforcement | completed | [0013-grep-batch-max-bytes-invariant.md](./0013-grep-batch-max-bytes-invariant.md) |
-| IMPL-0014 | Unified version source of truth | completed | [0014-unified-version-source-of-truth.md](./0014-unified-version-source-of-truth.md) |
-| IMPL-0015 | Copilot pre-read hook adapter (PLAN-0020) | completed | [0015-copilot-pre-read-hook-adapter.md](./0015-copilot-pre-read-hook-adapter.md) |
-| IMPL-0016 | Real-provider worker E2E via Ollama (PLAN-0021) | completed | [0016-ollama-real-provider-worker-e2e.md](./0016-ollama-real-provider-worker-e2e.md) |
-| IMPL-0017 | Delegation usage measurement log (PLAN-0022) | completed | [0017-delegation-usage-measurement-log.md](./0017-delegation-usage-measurement-log.md) |
-| IMPL-0018 | User-facing documentation information architecture (PLAN-0023) | completed | [0018-user-facing-docs-information-architecture.md](./0018-user-facing-docs-information-architecture.md) |
-| IMPL-0019 | Pi state paths under userConfigDir/pi (PLAN-0024) | completed | [0019-pi-state-under-userconfigdir-pi.md](./0019-pi-state-under-userconfigdir-pi.md) |
-| IMPL-0020 | Provider-only registration layer (PLAN-0025) | completed | [0020-provider-only-registration-layer.md](./0020-provider-only-registration-layer.md) |
-| IMPL-0021 | Devin Local provider plugin (PLAN-0026) | completed | [0021-devin-local-provider-plugin.md](./0021-devin-local-provider-plugin.md) |
+| IMPL-034r05iHy2gdnpmfo09FGX | Add Ollama docker-compose and AGENTS.md container usage | completed | [add-ollama-docker-compose-and-agents-md-container-usage.md](./add-ollama-docker-compose-and-agents-md-container-usage.md) |
+| IMPL-034r05iHy2gdnpt2vgHZ55 | Auth URL opener seam (PLAN-034r05iHE1Fbkp4xxlyMdV) | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
+| IMPL-034r05iHy2gdnpkXDh47a6 | Code review fixes (post-merge) | completed | [code-review-fixes.md](./code-review-fixes.md) |
+| IMPL-034r05iHy2gdnpoDlOXUs6 | Configure Pi models.json and cheaper models.yaml for Ollama | completed | [configure-pi-and-cheaper-model-config-for-ollama.md](./configure-pi-and-cheaper-model-config-for-ollama.md) |
+| IMPL-034r05iHy2gdnpyISCbZJu | Copilot pre-read hook adapter (PLAN-034r05iHE1FbkpaEpZrthK) | completed | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
+| IMPL-034r05iHy2gdnpARFuxZVi | Delegation usage measurement log (PLAN-034r05iHE1Fbkpd5tkg6Gs) | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
+| IMPL-034r05iHy2gdnpusDjHBDw | Separate development APM project from distributable package (PLAN-034r05iHE1Fbkp5YZSKJM2) | completed | [dev-apm-and-distributable-package-separation.md](./dev-apm-and-distributable-package-separation.md) |
+| IMPL-034r05iHy2gdnpG0UOqdhK | Devin Local provider plugin (PLAN-034r05iHK8bA7g45xvDT4a) | completed | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
+| IMPL-034r05iHy2gdnpwO94elRp | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
+| IMPL-034r05iHy2gdnpjoHb5OTl | Implement cheaper CLI and built-in workers (PLAN-034r05iHy2gdnpJFiMWhkY) | completed | [implement-cheaper-cli-and-built-in-workers-plan-0003.md](./implement-cheaper-cli-and-built-in-workers-plan-0003.md) |
+| IMPL-034r05iHy2gdnpgYK6Sj6D | Implement @cheaper/core (PLAN-034r05iHy2gdnpHMZZk4ZU) | completed | [implement-cheaper-core-plan-0001.md](./implement-cheaper-core-plan-0001.md) |
+| IMPL-034r05iHy2gdnpj3u9aHj7 | Implement @cheaper/runtime-pi (PLAN-034r05iHy2gdnpIrX0mTIb) | completed | [implement-cheaper-runtime-pi-plan-0002.md](./implement-cheaper-runtime-pi-plan-0002.md) |
+| IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
+| IMPL-034r05iHy2gdnpDWUS1IzV | Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg) | completed | [pi-state-under-userconfigdir-pi.md](./pi-state-under-userconfigdir-pi.md) |
+| IMPL-034r05iHy2gdnpELwCtyPv | Provider-only registration layer (PLAN-034r05iHK8bA7g2BMsfjFu) | completed | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
+| IMPL-034r05iHy2gdnpr4JOT5qQ | Repair abort grace and provider failure normalization | completed | [repair-abort-grace-and-provider-failure-normalization.md](./repair-abort-grace-and-provider-failure-normalization.md) |
+| IMPL-034r05iHy2gdnpv1ZWjBbz | Repository-owned setup/check entrypoints (PLAN-034r05iHE1Fbkp7833DuTu) | completed | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |
+| IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
+| IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |
+| IMPL-034r05iHy2gdnpx0u8vJaz | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
+| IMPL-034r05iHy2gdnpCk8YlDWb | User-facing documentation information architecture (PLAN-034r05iHE1FbkpeFEXECDx) | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |

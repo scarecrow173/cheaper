@@ -20,7 +20,7 @@
 ## 2. token 数はどこで・どの tokenizer で測定されるか
 
 `@cheaper/core` の `countFileTokens`（`src/token/count.ts`）が唯一の実装。
-tokenizer は `js-tiktoken@1.0.21` / `o200k_base`（ADR-0011）。
+tokenizer は `js-tiktoken@1.0.21` / `o200k_base`（ADR-034r05iHrZUE6W3U1rbJq4）。
 結果に `{name, implementation, version}` を含む。
 
 ## 3. CLI と count_tokens tool は同一実装か
@@ -34,7 +34,7 @@ count"）で tool 結果と CLI 出力の一致を検証済み。
 ## 4. large file の threshold と実測根拠
 
 **8192 tokens**（`CHEAPER_READ_TOKEN_THRESHOLD` で上書き可）。根拠は
-DISC-0007 / ADR-0012 / EXP-0003:
+DISC-034r05iHy2gdnpb598KIca / ADR-034r05iHrZUE6W4XOqUBih / EXP-0003:
 
 - 本 repo 293 file 計測: >8k は lockfile 2 件のみ（corpus の 0.7%）
 - Ollama 実 provider で 6.3k file の bulk-read → parent 受信 ~260 tok
@@ -95,7 +95,7 @@ Worker frontmatter が logical tier（`low`/`medium`/`high`）のみ宣言。
 実行時に resolve される。policy `model.maxTier` が上限を強制。
 worker/配布物は provider 非依存。
 
-provider 認証は `cheaper auth login <provider>`（SPEC-0011）が Pi の
+provider 認証は `cheaper auth login <provider>`（SPEC-034r05iHK8bA7ghSWRbNU8）が Pi の
 `ModelRuntime.login` を吸収して実行 — standalone `pi` install は不要。
 `--type api_key` の対話 key 入力は raw-mode no-echo で読み、
 credential 値は stdout/stderr/envelope のいずれにも出ない（test で保証）。
@@ -108,7 +108,7 @@ ChatGPT account Codex では非対応、`gpt-5.5` / `gpt-5.6-*` / `gpt-6-astra`
 
 - workspace boundary: 全 tool が `resolveWorkspacePath` 経由で workspace 外
   access を拒否（symlink policy 含む）
-- privacy deny（SPEC-0010）: built-in `DEFAULT_DENY_PATHS`（`.env*`、`*.pem`、
+- privacy deny（SPEC-034r05iHK8bA7ggPjqIA9E）: built-in `DEFAULT_DENY_PATHS`（`.env*`、`*.pem`、
   `id_rsa`、`.ssh/**` 等）+ `filesystem.denyPaths` が read/write/edit/ls/
   count_tokens を拒否し、grep/find/ls の結果からも除外
 - worker output schema が file 本文を返さない構造を強制

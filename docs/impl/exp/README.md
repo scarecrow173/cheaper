@@ -1,11 +1,13 @@
 # Experiment Logs
 
+<!-- doc-suite:generated-index -->
+
 Directory: `docs/impl/exp`
 
 | File |
 | --- |
-| [0001-pi-sdk-probe-and-test-stream-seam.jsonl](./0001-pi-sdk-probe-and-test-stream-seam.jsonl) |
-| [0002-ollama-real-provider-smoke-verification.jsonl](./0002-ollama-real-provider-smoke-verification.jsonl) |
-| [0003-bulk-read-delegation-benchmark.jsonl](./0003-bulk-read-delegation-benchmark.jsonl) |
-| [0004-openai-codex-subscription-e2e.jsonl](./0004-openai-codex-subscription-e2e.jsonl) |
-| [0005-apm-windsurf-consumer-e2e.jsonl](./0005-apm-windsurf-consumer-e2e.jsonl) |
+| [apm-windsurf-consumer-e2e.jsonl](./apm-windsurf-consumer-e2e.jsonl) |
+| [bulk-read-delegation-benchmark.jsonl](./bulk-read-delegation-benchmark.jsonl) |
+| [ollama-real-provider-smoke-verification.jsonl](./ollama-real-provider-smoke-verification.jsonl) |
+| [openai-codex-subscription-e2e.jsonl](./openai-codex-subscription-e2e.jsonl) |
+| [pi-sdk-probe-and-test-stream-seam.jsonl](./pi-sdk-probe-and-test-stream-seam.jsonl) |

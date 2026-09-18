@@ -96,7 +96,7 @@ cheaper count-tokens src/huge.ts
 model 解決・worker 実行を伴わない測定専用コマンド。file が
 `CHEAPER_COUNT_MAX_BYTES`（default 16 MiB）を超える場合は
 `FILE_TOO_LARGE` で失敗する（巨大 file は測定不能として
-fail-closed、ADR-0015）。worker 内で使える `count_tokens` tool と
+fail-closed、ADR-034r05iHrZUE6W82VsDbPq）。worker 内で使える `count_tokens` tool と
 同一実装。
 
 ## auth
@@ -121,4 +121,4 @@ provider 一覧・認証方法の詳細は [providers ガイド](./providers.md)
 `run` と `count-tokens` は `<userConfigDir>/usage.jsonl` に
 計測 record（worker・model・usage・duration・success/error）を
 best-effort で append する。書き込み失敗は stdout・exit code に
-影響しない（ADR-0025）。
+影響しない（ADR-034r05iHrZUE6WljM1ZMiX）。

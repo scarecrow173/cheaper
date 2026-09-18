@@ -63,7 +63,7 @@ hook の動作は target の hook event 体系に依存する。
   （`pre-read-code-copilot.js`）が動作する。Copilot では非 0
   exit が deny 扱いになるため、adapter は常に exit 0 で終了し、
   threshold 超過の `view` tool 呼び出しだけを stdout の
-  `{"permissionDecision":"deny"}` で block する（ADR-0023）。
+  `{"permissionDecision":"deny"}` で block する（ADR-034r05iHrZUE6WizQ4LgPa）。
   既知の制限として、現行の APM は copilot target へ `.json`
   asset を deploy しないため、file-schema worker（bulk-read /
   code-write / doc-write）は upstream 修正待ちの間利用できない
@@ -74,7 +74,7 @@ hook の動作は target の hook event 体系に依存する。
   発火し得るが、stdin shape が adapter の前提と異なるため常に
   素通し（exit 0）となり、いずれも no-op として動作する
   （登録は harmless、機能は無効）。target 固有の adapter 化は
-  今後の拡張余地（ADR-0016・DISC-0009）。
+  今後の拡張余地（ADR-034r05iHrZUE6W9RDF0V73・DISC-034r05iHy2gdnpdai9KGpW）。
 
 skills（`cheaper-usage` 等）は target 非依存で機能する。
 
@@ -110,6 +110,6 @@ workspace 内 file のみを対象とし、boundary 外・binary・
 
 - CLI contract: [usage ガイド](./usage.md)
 - provider / auth 設定: [providers ガイド](./providers.md)
-- 設計記録: `docs/designs/0013-apm-skills-and-pre-read-hook.md`・
-  `docs/adr/0013-distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md`・
-  `docs/discovery/0009-cross-agent-hook-distribution-and-contract-matrix.md`
+- 設計記録: `docs/designs/apm-skills-and-pre-read-hook.md`・
+  `docs/adr/distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md`・
+  `docs/discovery/cross-agent-hook-distribution-and-contract-matrix.md`
