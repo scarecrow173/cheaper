@@ -23,6 +23,8 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpIRiZMox8 | Anchor policy timeout at runWorker start and amend DESIGN-034r05iHrZUE6WvaQsRRsM | done | [anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
 | TASK-034r05iHQeQpDpHsFsVyxq | Apply abort grace and provider failure normalization to repair | done | [apply-abort-grace-and-provider-failure-normalization-to-repair.md](./apply-abort-grace-and-provider-failure-normalization-to-repair.md) |
 | TASK-034r05iHQeQpDqapXCLs3G | cheaper auth command (login/status/logout) | done | [auth-command.md](./auth-command.md) |
+| TASK-AZSy7cWtCdKaL5D2ro8TWy | Auth I/O boundary final verification and status sync | todo | [auth-io-boundary-final-verification.md](./auth-io-boundary-final-verification.md) |
+| TASK-FP5YNv1aQHfB69NlhCQJbG | Auth prompt I/O boundary routing and TTY prompt tests | done | [auth-io-boundary-prompt-routing-and-tests.md](./auth-io-boundary-prompt-routing-and-tests.md) |
 | TASK-034r05iHQeQpDqpy4V1ZNo | Auth URL opener final verification and status sync | done | [auth-url-opener-final-verification.md](./auth-url-opener-final-verification.md) |
 | TASK-034r05iHQeQpDqovKmKaZC | Auth URL opener seam and test isolation | done | [auth-url-opener-seam-and-test-isolation.md](./auth-url-opener-seam-and-test-isolation.md) |
 | TASK-034r05iHQeQpDqkDLrHBxb | Bounded read tool and registry swap | done | [bounded-read-tool-and-registry-swap.md](./bounded-read-tool-and-registry-swap.md) |
