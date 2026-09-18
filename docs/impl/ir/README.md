@@ -16,3 +16,4 @@ Directory: `docs/impl/ir`
 | IMPL-0010 | Auth URL opener seam (PLAN-0015) | completed | [0010-auth-url-opener-seam.md](./0010-auth-url-opener-seam.md) |
 | IMPL-0011 | Separate development APM project from distributable package (PLAN-0016) | completed | [0011-dev-apm-and-distributable-package-separation.md](./0011-dev-apm-and-distributable-package-separation.md) |
 | IMPL-0012 | Repository-owned setup/check entrypoints (PLAN-0017) | completed | [0012-repo-owned-setup-check-entrypoints.md](./0012-repo-owned-setup-check-entrypoints.md) |
+| IMPL-0014 | Unified version source of truth | completed | [0014-unified-version-source-of-truth.md](./0014-unified-version-source-of-truth.md) |

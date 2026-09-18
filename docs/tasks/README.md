@@ -107,3 +107,5 @@ Directory: `docs/tasks`
 | TASK-0099 | Define mise setup/check TOML tasks and lockfile setting | done | [0099-define-mise-setup-check-tasks-and-lockfile-setting.md](./0099-define-mise-setup-check-tasks-and-lockfile-setting.md) |
 | TASK-0100 | Align CI with canonical setup/check entrypoints | done | [0100-align-ci-with-canonical-entrypoints.md](./0100-align-ci-with-canonical-entrypoints.md) |
 | TASK-0101 | Update docs and verify clean-state setup/check | done | [0101-update-docs-and-verify-clean-state-setup-check.md](./0101-update-docs-and-verify-clean-state-setup-check.md) |
+| TASK-0104 | Add version check and set scripts | done | [0104-add-version-check-and-set-scripts.md](./0104-add-version-check-and-set-scripts.md) |
+| TASK-0105 | Unify versions, wire check, and document release | done | [0105-unify-versions-wire-check-and-document-release.md](./0105-unify-versions-wire-check-and-document-release.md) |
