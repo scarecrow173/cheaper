@@ -136,6 +136,7 @@ describe("auth login", () => {
 
   it("auto-answers select prompts via --method and never prints secrets", async () => {
     const prompts: AuthPrompt[] = [];
+    const openedUrls: string[] = [];
     const runtime = fakeRuntime({
       login: async (_id, _type, interaction) => {
         const selected = await interaction.prompt({
@@ -147,7 +148,6 @@ describe("auth login", () => {
           ],
         });
         prompts.push({ type: "select", message: `selected:${selected}`, options: [] });
-        interaction.notify({ type: "auth_url", url: "https://example.test/auth" });
         interaction.notify({
           type: "device_code",
           userCode: "ABCD-1234",
@@ -161,12 +161,12 @@ describe("auth login", () => {
     const code = await runCli(
       ["auth", "login", "test-provider", "--method", "device"],
       io,
-      hooksFor(runtime),
+      hooksFor(runtime, { openUrl: (url) => openedUrls.push(url) }),
     );
     expect(code).toBe(0);
     expect(prompts[0]?.message).toBe("selected:device");
-    expect(err()).toContain("https://example.test/auth");
     expect(err()).toContain("ABCD-1234");
+    expect(openedUrls).toEqual([]);
     const env = envelopeOf(out());
     expect(env.ok).toBe(true);
     expect(env.result).toMatchObject({
@@ -175,6 +175,31 @@ describe("auth login", () => {
       method: "oauth",
       subscription: true,
     });
+    expect(out()).not.toContain(SECRET);
+    expect(err()).not.toContain(SECRET);
+  });
+
+  it("requests a browser launch through the injected openUrl hook on auth_url", async () => {
+    const openedUrls: string[] = [];
+    const runtime = fakeRuntime({
+      login: async (_id, _type, interaction) => {
+        interaction.notify({ type: "auth_url", url: "https://example.test/auth" });
+        return { accessToken: SECRET, refreshToken: SECRET };
+      },
+      checkAuth: async () => ({ type: "oauth" }),
+    });
+    const { io, out, err } = makeIo();
+    const code = await runCli(
+      ["auth", "login", "test-provider"],
+      io,
+      hooksFor(runtime, { openUrl: (url) => openedUrls.push(url) }),
+    );
+    expect(code).toBe(0);
+    expect(openedUrls).toEqual(["https://example.test/auth"]);
+    expect(err()).toContain("https://example.test/auth");
+    const env = envelopeOf(out());
+    expect(env.ok).toBe(true);
+    expect(env.result).toMatchObject({ provider: "test-provider", authenticated: true });
     expect(out()).not.toContain(SECRET);
     expect(err()).not.toContain(SECRET);
   });

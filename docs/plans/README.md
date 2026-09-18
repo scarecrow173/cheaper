@@ -19,4 +19,5 @@ Directory: `docs/plans`
 | PLAN-0011 | cheaper auth command (provider login absorbed into the CLI) | completed | [0011-auth-command.md](./0011-auth-command.md) |
 | PLAN-0012 | Huge-file byte cap guard and fail-closed hook | completed | [0012-huge-file-byte-cap-guard-and-fail-closed-hook.md](./0012-huge-file-byte-cap-guard-and-fail-closed-hook.md) |
 | PLAN-0013 | Cross-agent distribution verification | completed | [0013-cross-agent-distribution-verification.md](./0013-cross-agent-distribution-verification.md) |
-| PLAN-0014 | Bulk-reader huge-file safe I/O | approved | [0014-bulk-reader-huge-file-safe-io.md](./0014-bulk-reader-huge-file-safe-io.md) |
+| PLAN-0014 | Bulk-reader huge-file safe I/O | completed | [0014-bulk-reader-huge-file-safe-io.md](./0014-bulk-reader-huge-file-safe-io.md) |
+| PLAN-0015 | Injectable auth URL opener seam for hermetic tests | completed | [0015-auth-url-opener-seam.md](./0015-auth-url-opener-seam.md) |
