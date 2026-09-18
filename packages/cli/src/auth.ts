@@ -11,6 +11,7 @@ import {
   type AuthInteraction,
   type AuthPrompt,
   type AuthRuntime,
+  type CreateCheaperModelRuntimeOptions,
   createModelRuntime,
   describeProviderAuth,
   listProviderAuth,
@@ -210,13 +211,13 @@ export async function executeAuth(
   args: AuthCliArgs,
   io: CliIo,
   hooks: {
-    createModelRuntime?: () => Promise<Runtime> | Runtime;
+    createModelRuntime?: (options?: CreateCheaperModelRuntimeOptions) => Promise<Runtime> | Runtime;
     signal?: AbortSignal;
     openUrl?: (url: string) => void;
   },
   startedAt: number,
 ): Promise<{ envelope: CliEnvelope; exitCode: number }> {
-  const runtime = await (hooks.createModelRuntime ?? createModelRuntime)();
+  const runtime = await (hooks.createModelRuntime ?? createModelRuntime)({ env: io.env });
   const now = Date.now;
 
   if (args.action === "status") {

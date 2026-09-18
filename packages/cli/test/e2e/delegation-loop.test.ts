@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -101,6 +101,7 @@ describe("delegation loop e2e: pre_read_code block -> bulk-read via bundled CLI"
         openQuestions: [],
       }),
     );
+    const configDir = path.join(root, "cheaper-config");
     const run = spawnSync(process.execPath, [cli, "bulk-read", "--cwd", consumer], {
       cwd: consumer,
       env: {
@@ -108,9 +109,8 @@ describe("delegation loop e2e: pre_read_code block -> bulk-read via bundled CLI"
         SystemRoot: process.env.SystemRoot ?? "",
         HOME: root,
         USERPROFILE: root,
-        PI_CODING_AGENT_DIR: path.join(root, "pi-agent"),
         PI_OFFLINE: "1",
-        CHEAPER_CONFIG_DIR: path.join(root, "cheaper-config"),
+        CHEAPER_CONFIG_DIR: configDir,
         NODE_ENV: "test",
         CHEAPER_TEST_FAKE_STREAM: fixture,
       },
@@ -135,5 +135,14 @@ describe("delegation loop e2e: pre_read_code block -> bulk-read via bundled CLI"
     expect(meta.model).toEqual(
       expect.objectContaining({ provider: "cheaper-fake", id: "fake-model" }),
     );
+
+    // Pi state は CHEAPER_CONFIG_DIR/pi 配下に集約され、workspace の
+    // .cheaper/ には credential・Pi file が出ない（SPEC-0024）。
+    expect(existsSync(path.join(configDir, "pi"))).toBe(true);
+    expect(
+      readdirSync(path.join(consumer, ".cheaper")).filter((f) =>
+        /^(auth|models|models-store)\.json$/.test(f),
+      ),
+    ).toEqual([]);
   }, 180_000);
 });

@@ -9,8 +9,9 @@ endpoint・認証は Pi の `models.json` と credential で、cheaper
 
 | ファイル | 場所 | 役割 |
 | --- | --- | --- |
-| `models.json` | `~/.pi/agent/models.json`（`PI_CODING_AGENT_DIR` で変更可） | Pi の provider・model 定義・endpoint |
-| `auth.json` | 同上 dir | OAuth credential・API key（login で永続化） |
+| `models.json` | `<userConfigDir>/pi/models.json` | Pi の provider・model 定義・endpoint |
+| `auth.json` | `<userConfigDir>/pi/auth.json` | OAuth credential・API key（login で永続化） |
+| `models-store.json` | `<userConfigDir>/pi/models-store.json` | Pi の model catalog cache |
 | `models.yaml` | `<userConfigDir>/models.yaml` → `<cwd>/.cheaper/models.yaml` | cheaper の tier 分類・preference |
 | `policy.yaml` | 同上 | execution・tools・model・output・retry の policy override |
 
@@ -19,6 +20,14 @@ endpoint・認証は Pi の `models.json` と credential で、cheaper
 （詳細は [configuration ガイド](./configuration.md)）。後から
 読んだ層が前の層を上書きする（project が user より優先）。
 環境依存設定はリポジトリへコミットしない。
+
+Pi の永続 file は `<userConfigDir>/pi/` に集約される。
+cheaper は `PI_CODING_AGENT_DIR` を参照せず、Pi の既定 dir
+（`~/.pi/agent`）には書き込まない。credential を含むため
+project-local `.cheaper/` にも置かない — `.cheaper/` は
+worker・`models.yaml`・`policy.yaml` の project override
+専用。`cheaper auth`・worker 実行の双方が同じ credential
+store（`<userConfigDir>/pi/auth.json`）を参照する。
 
 ## Ollama（ローカル provider）
 

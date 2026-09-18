@@ -1,7 +1,17 @@
+import { mkdtemp, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { CheaperError, type ModelConfig } from "@cheaper/core";
 import type { Api, Model } from "@earendil-works/pi-ai";
-import { describe, expect, it } from "vitest";
-import { type ModelCatalog, resolvePiModel, toModelInfo } from "../src/model-runtime.js";
+import { ModelRuntime } from "@earendil-works/pi-coding-agent";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  createModelRuntime,
+  type ModelCatalog,
+  resolvePiModel,
+  resolvePiStatePaths,
+  toModelInfo,
+} from "../src/model-runtime.js";
 
 function piModel(provider: string, id: string, maxTokens = 8192): Model<Api> {
   return {
@@ -97,5 +107,68 @@ describe("resolvePiModel", () => {
       (e: unknown) => e,
     );
     expect((err as CheaperError).code).toBe("POLICY_VIOLATION");
+  });
+});
+
+describe("resolvePiStatePaths", () => {
+  it("places auth/models/models-store under <userConfigDir>/pi", () => {
+    const p = resolvePiStatePaths("/cfg");
+    expect(p.piDir).toBe(path.join("/cfg", "pi"));
+    expect(p.authPath).toBe(path.join("/cfg", "pi", "auth.json"));
+    expect(p.modelsPath).toBe(path.join("/cfg", "pi", "models.json"));
+    expect(p.modelsStorePath).toBe(path.join("/cfg", "pi", "models-store.json"));
+  });
+});
+
+describe("createModelRuntime", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("creates <CHEAPER_CONFIG_DIR>/pi and passes its paths to ModelRuntime.create", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cheaper-mr-"));
+    const spy = vi.spyOn(ModelRuntime, "create").mockResolvedValue({} as ModelRuntime);
+    await createModelRuntime({ env: { CHEAPER_CONFIG_DIR: dir } });
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authPath: path.join(dir, "pi", "auth.json"),
+        modelsPath: path.join(dir, "pi", "models.json"),
+        modelsStorePath: path.join(dir, "pi", "models-store.json"),
+      }),
+    );
+    const st = await stat(path.join(dir, "pi"));
+    expect(st.isDirectory()).toBe(true);
+    if (process.platform !== "win32") {
+      expect(st.mode & 0o777).toBe(0o700);
+    }
+  });
+
+  it("lets caller-provided paths override the cheaper defaults", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cheaper-mr-"));
+    const spy = vi.spyOn(ModelRuntime, "create").mockResolvedValue({} as ModelRuntime);
+    await createModelRuntime({
+      env: { CHEAPER_CONFIG_DIR: dir },
+      authPath: path.join(dir, "custom-auth.json"),
+      modelsPath: null,
+    });
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authPath: path.join(dir, "custom-auth.json"),
+        modelsPath: null,
+        modelsStorePath: path.join(dir, "pi", "models-store.json"),
+      }),
+    );
+  });
+
+  it("resolves the config dir via HOME when CHEAPER_CONFIG_DIR is unset", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cheaper-mr-"));
+    const spy = vi.spyOn(ModelRuntime, "create").mockResolvedValue({} as ModelRuntime);
+    await createModelRuntime({ env: { HOME: dir, USERPROFILE: dir } });
+    const expected = path.join(dir, ".config", "cheaper", "pi");
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ authPath: path.join(expected, "auth.json") }),
+    );
+    expect((await stat(expected)).isDirectory()).toBe(true);
   });
 });

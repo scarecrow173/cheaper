@@ -1,8 +1,11 @@
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
 import {
   CheaperError,
   type ModelConfig,
   type ModelInfo,
   resolveModel,
+  resolveUserConfigDir,
   type Tier,
 } from "@cheaper/core";
 import type { Api, Model } from "@earendil-works/pi-ai";
@@ -28,15 +31,59 @@ export function toModelInfo(m: Model<Api>): ModelInfo {
 }
 
 /**
+ * `createModelRuntime` の options。Pi の `CreateModelRuntimeOptions`
+ * に cheaper 固有の `env` seam を加えたもの。
+ */
+export interface CreateCheaperModelRuntimeOptions extends CreateModelRuntimeOptions {
+  /**
+   * user-scope config dir 解決に使う env。未指定時は `process.env`。
+   * test は `CHEAPER_CONFIG_DIR` を tmpdir に向けて注入する。
+   */
+  env?: NodeJS.ProcessEnv;
+}
+
+/**
+ * Pi 永続 state（auth.json / models.json / models-store.json）の
+ * 保存先を組み立てる唯一の場所（ADR-0027）。
+ * `<userConfigDir>/pi/` 配下に固定する。
+ */
+export function resolvePiStatePaths(userConfigDir: string): {
+  piDir: string;
+  authPath: string;
+  modelsPath: string;
+  modelsStorePath: string;
+} {
+  const piDir = path.join(userConfigDir, "pi");
+  return {
+    piDir,
+    authPath: path.join(piDir, "auth.json"),
+    modelsPath: path.join(piDir, "models.json"),
+    modelsStorePath: path.join(piDir, "models-store.json"),
+  };
+}
+
+/**
  * CLI 用の薄い ModelRuntime factory。cli が `@earendil-works/*` に
  * 直接依存しないよう、生成だけをここに閉じ込める。
  * 返り値は ModelCatalog を満たすので `runWorker` の catalog/modelRuntime
  * 双方にそのまま渡せる。
+ *
+ * Pi state は cheaper の user-scope config dir 配下（`<dir>/pi/`）に
+ * 集約する（SPEC-0024 / ADR-0027）。`PI_CODING_AGENT_DIR` は使わない。
+ * caller が `authPath` 等を明示した場合は既定より優先される。
  */
 export async function createModelRuntime(
-  options?: CreateModelRuntimeOptions,
+  options?: CreateCheaperModelRuntimeOptions,
 ): Promise<ModelRuntime> {
-  return ModelRuntime.create(options);
+  const { env, ...rest } = options ?? {};
+  const paths = resolvePiStatePaths(resolveUserConfigDir({ env }));
+  await mkdir(paths.piDir, { recursive: true, mode: 0o700 });
+  return ModelRuntime.create({
+    authPath: paths.authPath,
+    modelsPath: paths.modelsPath,
+    modelsStorePath: paths.modelsStorePath,
+    ...rest,
+  });
 }
 
 export interface ResolvedPiModel {

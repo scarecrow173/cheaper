@@ -22,10 +22,12 @@ export {
 export type { ChangesSummary, FileChange } from "./journal.js";
 export { MutationJournal } from "./journal.js";
 export {
+  type CreateCheaperModelRuntimeOptions,
   createModelRuntime,
   type ModelCatalog,
   type ResolvedPiModel,
   resolvePiModel,
+  resolvePiStatePaths,
   toModelInfo,
 } from "./model-runtime.js";
 export type { SchemaValidationError } from "./output.js";

@@ -118,11 +118,11 @@ describe("real-provider e2e (Ollama)", () => {
     cli = bundledCli(consumer, "windsurf");
     if (cli === null || !existsSync(cli)) return;
 
-    const piAgent = path.join(root, "pi-agent");
     configDir = path.join(root, "cheaper-config");
-    mkdirSync(piAgent, { recursive: true });
+    const piDir = path.join(configDir, "pi");
+    mkdirSync(piDir, { recursive: true });
     mkdirSync(configDir, { recursive: true });
-    writeFileSync(path.join(piAgent, "models.json"), modelsJson());
+    writeFileSync(path.join(piDir, "models.json"), modelsJson());
     writeFileSync(path.join(configDir, "models.yaml"), modelsYaml());
     writeFileSync(path.join(configDir, "policy.yaml"), policyYaml());
 
@@ -131,7 +131,6 @@ describe("real-provider e2e (Ollama)", () => {
       ...(process.env.SystemRoot !== undefined ? { SystemRoot: process.env.SystemRoot } : {}),
       HOME: root,
       USERPROFILE: root,
-      PI_CODING_AGENT_DIR: piAgent,
       CHEAPER_CONFIG_DIR: configDir,
       NODE_ENV: "production",
     };
