@@ -118,7 +118,20 @@ provider 一覧・認証方法の詳細は [providers ガイド](./providers.md)
 
 ## 計測 log
 
-`run` と `count-tokens` は `<userConfigDir>/usage.jsonl` に
-計測 record（worker・model・usage・duration・success/error）を
-best-effort で append する。書き込み失敗は stdout・exit code に
-影響しない（ADR-034r05iHrZUE6WljM1ZMiX）。
+`run`（worker alias 含む）と `count-tokens` の実行結果は、
+記録対象に限り `<userConfigDir>/usage.jsonl` へ計測 record
+（worker・model・usage・duration・success/error）を
+best-effort で append する。書き込み失敗は stdout・exit code
+に影響しない（ADR-034r05iHrZUE6WljM1ZMiX）。
+
+記録対象は以下に限られる:
+
+- `run`: 成功した run と、error envelope が `meta.model` と
+  `meta.usage` を持つ失敗（usage-bearing failure）。worker・
+  model 解決前の input/config error など usage を持たない失敗は
+  記録されない。
+- `count-tokens`: token count が成功し `tokens` を返した実行。
+  `FILE_TOO_LARGE`・file not found・workspace escape 等の失敗は
+  記録されない。
+- `auth`・`--help`・`--version` 等の utility command は記録
+  対象外。
