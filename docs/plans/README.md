@@ -15,7 +15,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1Fbkp2TZ2Z666 | Cross-agent distribution verification | completed | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
 | PLAN-034r05iHE1Fbkpd5tkg6Gs | Delegation usage measurement log — implementation plan | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
 | PLAN-034r05iHE1Fbkp5YZSKJM2 | Development APM project / distributable package separation | completed | [dev-apm-and-distributable-package-separation.md](./dev-apm-and-distributable-package-separation.md) |
-| PLAN-034r05iHK8bA7g45xvDT4a | Devin Local provider plugin — implementation plan | implemented | [devin-local-provider-plugin-implementation-plan.md](./devin-local-provider-plugin-implementation-plan.md) |
+| PLAN-034r05iHK8bA7g45xvDT4a | Devin Local provider plugin — implementation plan | completed | [devin-local-provider-plugin-implementation-plan.md](./devin-local-provider-plugin-implementation-plan.md) |
 | PLAN-034r05iHE1Fbkp8emdVve6 | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | PLAN-034r05iHE1FbkoSqLEHZrV | Harden repair abort grace and provider failure normalization | completed | [harden-repair-abort-grace-and-provider-failure-normalization.md](./harden-repair-abort-grace-and-provider-failure-normalization.md) |
 | PLAN-034r05iHE1Fbkp0Gokdq8Z | Huge-file byte cap guard and fail-closed hook | completed | [huge-file-byte-cap-guard-and-fail-closed-hook.md](./huge-file-byte-cap-guard-and-fail-closed-hook.md) |
@@ -23,11 +23,13 @@ Directory: `docs/plans`
 | PLAN-034r05iHy2gdnpIrX0mTIb | Implement @cheaper/runtime-pi execution engine and sandboxed tools | completed | [implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md](./implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md) |
 | PLAN-034r05iHE1FbkpcKKUUZ58 | Real-provider worker E2E via Ollama — implementation plan | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | PLAN-034r05iHK8bA7g23Opaicg | Pi state under userConfigDir/pi — implementation plan | completed | [pi-state-under-userconfigdir-pi-implementation-plan.md](./pi-state-under-userconfigdir-pi-implementation-plan.md) |
+| PLAN-034r2qodyxvN3g3xktwPOF | provider/auth guide runtime sync — implementation plan | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | PLAN-034r05iHK8bA7g2BMsfjFu | Provider-only registration layer — implementation plan | completed | [provider-only-registration-layer-implementation-plan.md](./provider-only-registration-layer-implementation-plan.md) |
 | PLAN-034r05iHE1Fbkp7833DuTu | Repository-owned setup/check entrypoints (mise run setup / mise run check) | completed | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |
 | PLAN-034r05iHE1FbkoTVD7CTNi | Restructure built-in writer Workers (code-writer + doc-writer) | completed | [restructure-built-in-writer-workers.md](./restructure-built-in-writer-workers.md) |
 | PLAN-034r05iHy2gdnpHMZZk4ZU | Scaffold monorepo and implement @cheaper/core | completed | [scaffold-monorepo-and-implement-cheaper-core.md](./scaffold-monorepo-and-implement-cheaper-core.md) |
 | PLAN-034r05iHE1FbkoWI8p70oC | Self-contained CLI bundle distribution | completed | [self-contained-cli-bundle.md](./self-contained-cli-bundle.md) |
+| PLAN-000004taRcf5XDevo8jYJz | distributed skill / parent-agent guide sync — implementation plan | completed | [synchronize-distributed-skill-and-parent-agent-guide.md](./synchronize-distributed-skill-and-parent-agent-guide.md) |
 | PLAN-034r05iHE1Fbkp9wtiAJ7A | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | PLAN-034r05iHE1FbkpeFEXECDx | User-facing documentation IA — implementation plan | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | PLAN-034r05iHy2gdnpLvJw9CNY | Verify cheaper real-provider path with Ollama on Docker | completed | [verify-cheaper-real-provider-path-with-ollama-on-docker.md](./verify-cheaper-real-provider-path-with-ollama-on-docker.md) |

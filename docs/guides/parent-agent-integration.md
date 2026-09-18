@@ -29,9 +29,15 @@ cheaper は parent agent へ以下を配布する（APM package 経由）:
 - **hooks**（`pre_read_code`）: read 前に `count-tokens` を実行し、
   threshold（default 8192 token、
   `CHEAPER_READ_TOKEN_THRESHOLD` で上書き）を超える file の
-  read を block して `bulk-read` へ誘導する。計測不能・
-  判定不能なケースは fail-open（exit 0 で素通し）なので、
-  設定が壊れていても通常の read が止まらない。
+  read を block して `bulk-read` へ誘導する。malformed payload・
+  file 不存在・非 file・workspace 外・CLI 起動失敗・出力の
+  parse 失敗といった infrastructure failure は fail-open
+  （素通し）なので、設定が壊れていても通常の read が止まらない。
+  一方、`count-tokens` が parseable な `FILE_TOO_LARGE` envelope
+  を返した場合は「計測不能だが確実に巨大」と authoritative に
+  判定して fail-closed で block する（Windsurf: exit 2、
+  Copilot: `permissionDecision: "deny"` + exit 0 — SPEC-0012 /
+  DESIGN-0017 の意図的仕様）。
 - **bundled CLI**: self-contained の `cheaper` CLI（skills/hooks
   が内部から直接呼べる）
 
@@ -62,7 +68,8 @@ hook の動作は target の hook event 体系に依存する。
 - **Copilot**: `preToolUse` event 経由で adapter
   （`pre-read-code-copilot.js`）が動作する。Copilot では非 0
   exit が deny 扱いになるため、adapter は常に exit 0 で終了し、
-  threshold 超過の `view` tool 呼び出しだけを stdout の
+  threshold 超過または `FILE_TOO_LARGE` verdict の `view` tool
+  呼び出しだけを stdout の
   `{"permissionDecision":"deny"}` で block する（ADR-034r05iHrZUE6WizQ4LgPa）。
   既知の制限として、現行の APM は copilot target へ `.json`
   asset を deploy しないため、file-schema worker（bulk-read /
@@ -88,9 +95,12 @@ skills（`cheaper-usage` 等）は target 非依存で機能する。
 ## 閾値の設定
 
 `CHEAPER_READ_TOKEN_THRESHOLD` で large-read threshold（default
-8192 token）を変更できる。hook 内の `count-tokens` 呼び出しは
-workspace 内 file のみを対象とし、boundary 外・binary・
-計測不能な file は fail-open（素通し）になる。
+8192 token）を変更できる。hook の判定は workspace 内 file に
+対する `count-tokens` の結果 envelope のみに依存する。
+workspace 外・不存在・非 file・CLI 起動失敗・出力の parse 失敗
+などの infrastructure failure は fail-open（素通し）で、
+parseable な `FILE_TOO_LARGE` envelope は fail-closed で
+block される。
 
 ## 連携の確認
 

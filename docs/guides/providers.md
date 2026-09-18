@@ -122,9 +122,18 @@ cheaper auth status openai-codex
 # → result.providers[0].configured === true なら configured
 ```
 
-OAuth 対応 provider は `anthropic` / `github-copilot` /
-`openrouter` / `xai` 等も同じ手順。api_key 型は
-`--type api_key` で対話入力。
+OAuth login は `auth status` が `methods` に `oauth` を
+示す provider で同じ手順を使える（例: `anthropic` /
+`github-copilot` / `openrouter` / `kimi-coding` /
+`radius` / bundled `devin`）。browser auth_url flow と
+device code flow のどちらが走るかは provider が提示する
+method に従う。
+
+API key 型の provider は `cheaper auth login <provider>
+--type api_key` で対話入力するか、`XAI_API_KEY` のような
+provider 別の環境変数で credential を解決する。各
+provider が受け付ける login method は `cheaper auth
+status` で確認するのが canonical。
 
 ### cheaper `models.yaml`
 
@@ -139,9 +148,12 @@ preferences:
 ```
 
 利用する codex 系 model はアカウント側で利用可能なものを
-`overrides` で low に pin する。対応状況は契約プランや API の
-提供状態に依存するため、実際に `auth status` で確認して
-model 一覧を確認する。
+`overrides` で low に pin する。`auth status` は
+provider の auth capability（login method・
+subscription flag）と configured state・credential
+metadata を確認するコマンドであり、model catalog は
+返さない。model の実利用確認は worker 実行の result
+envelope `meta.model` で行う（下記「検証」参照）。
 
 ### 検証
 
@@ -158,10 +170,12 @@ echo '{"task":"summarize","paths":["<file>"]}' | cheaper bulk-read --cwd <ws>
 
 ## その他の provider
 
-Pi runtime がサポートする provider は `cheaper auth status` で
-一覧できる（login 可能な method も表示）。`models.json` に
-OpenAI 互換 endpoint を持つ任意の provider を追加することも
-可能（`api: "openai-completions"` + `baseUrl`）。
+Pi runtime がサポートする provider と、各 provider が
+受け付ける login method（`methods` の `oauth` /
+`api_key`）は `cheaper auth status` で確認するのが
+canonical。`models.json` に OpenAI 互換 endpoint を持つ
+任意の provider を追加することも可能（`api:
+"openai-completions"` + `baseUrl`）。
 
 ### bundled provider plugin
 
