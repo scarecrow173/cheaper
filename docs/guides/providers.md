@@ -204,9 +204,11 @@ access を対象とする。
   catalog で置き換える。thinking level は variant suffix
   から `thinkingLevelMap` へ写像される。
 - **logout**: `cheaper auth logout devin` で Pi 側の stored
-  credential を削除。isolated data dir 内の
-  `credentials.toml` は残る（global 汚染は無く、次回
-  login で再利用される）。
+  credential を削除し、isolated env で `devin auth logout`
+  を実行して cheaper-owned の `credentials.toml` も削除する
+  （Devin CLI 未到達時も file 削除は best-effort で行う）。
+  次回 `cheaper auth login devin` は `devin auth login` を
+  再実行する。
 - Devin 固有の slash command / Pi tool / event handler は
   持ち込まない（provider-only contract、ADR-0028）。
 

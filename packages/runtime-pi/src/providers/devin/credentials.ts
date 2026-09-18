@@ -5,7 +5,7 @@
  * 改変（ADR-0029）。global credential・Devin Desktop credential
  * は暗黙利用しない。
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import type { DevinCli } from "./cli.js";
 
@@ -74,9 +74,12 @@ export async function devinAuthStatus(
       timeoutMs: 15_000,
     });
     const text = `${stdout}\n${stderr}`.trim();
-    const loggedIn = code === 0 && /logged in/i.test(text);
+    // CLI が応答したときはその判定を authoritative にする。
+    // credentials.toml は revoked/expired な stale token を持ちうるため、
+    // 存在だけで logged-in とみなすと logout 後の再 login で
+    // `devin auth login` が再実行されない（PR #30 review）。
     return {
-      loggedIn: loggedIn || creds !== null,
+      loggedIn: code === 0 && /logged in/i.test(text),
       summary: text || (creds !== null ? "credentials.toml present" : "not signed in"),
     };
   } catch (error) {
@@ -116,4 +119,26 @@ export async function loginWithDevinCli(cli: DevinCli, dataDir: string): Promise
     );
   }
   return creds;
+}
+
+/**
+ * `cheaper auth logout devin` の provider 側 cleanup。
+ * isolated env で `devin auth logout` を実行し、cheaper-owned の
+ * credentials.toml を削除する。credentials.toml が残ると次回
+ * login が stale token を再利用してしまう（PR #30 review）。
+ * Devin CLI 未到達・ファイル削除失敗は best-effort — Pi credential
+ * は `logoutProvider` が既に削除済みで、cheaper 側の logout は
+ * 成立している。
+ */
+export async function logoutDevinSession(cli: DevinCli, dataDir: string): Promise<void> {
+  try {
+    await cli.run(["auth", "logout"], { timeoutMs: 15_000 });
+  } catch {
+    // Devin CLI 未到達でも cheaper 側の logout は続行する
+  }
+  try {
+    rmSync(devinCredentialsPath(dataDir), { force: true });
+  } catch {
+    // credentials.toml 削除失敗も致命的ではない
+  }
 }

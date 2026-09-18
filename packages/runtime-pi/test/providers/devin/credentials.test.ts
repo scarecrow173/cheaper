@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -9,6 +9,7 @@ import {
   devinCredentialsPath,
   devinDataDir,
   loginWithDevinCli,
+  logoutDevinSession,
   readDevinCredentials,
 } from "../../../src/providers/devin/credentials.js";
 
@@ -117,10 +118,24 @@ describe("devinAuthStatus", () => {
     expect(status.loggedIn).toBe(true);
   });
 
-  it("reports logged in when credentials.toml exists even if status fails", async () => {
+  it("treats the CLI verdict as authoritative over a stale credentials.toml", async () => {
     const dir = await tmpdir_();
     await writeCredentials(dir);
     const { cli } = cliStub(() => ({ stdout: "", stderr: "not signed in", code: 1 }));
+    const status = await devinAuthStatus(cli, dir);
+    // credentials.toml は revoked/expired な stale token を持ちうるため、
+    // CLI が応答した場合は存在だけでは logged-in にしない
+    expect(status.loggedIn).toBe(false);
+  });
+
+  it("falls back to credentials.toml presence when the CLI is unreachable", async () => {
+    const dir = await tmpdir_();
+    await writeCredentials(dir);
+    const cli: DevinCli = {
+      bin: "devin",
+      run: () => Promise.reject(new Error("spawn devin ENOENT")),
+      version: () => Promise.resolve(null),
+    };
     const status = await devinAuthStatus(cli, dir);
     expect(status.loggedIn).toBe(true);
   });
@@ -172,5 +187,60 @@ describe("loginWithDevinCli", () => {
     const { cli } = cliStub(() => ({ stdout: "", stderr: "", code: 0 }));
 
     await expect(loginWithDevinCli(cli, dir)).rejects.toThrow(/credentials\.toml/);
+  });
+
+  it("re-runs `devin auth login` when credentials.toml is stale (CLI not signed in)", async () => {
+    const dir = await tmpdir_();
+    await writeCredentials(dir);
+    const { cli, calls } = cliStub((args) => {
+      if (args[0] === "auth" && args[1] === "status") {
+        return { stdout: "", stderr: "not signed in", code: 1 };
+      }
+      if (args[0] === "auth" && args[1] === "login") {
+        // fake CLI: 再 login で rotated token を書き直す
+        writeFileSync(devinCredentialsPath(dir), 'api_key = "devin-rotated-key"\n');
+        return { stdout: "", stderr: "", code: 0 };
+      }
+      return { stdout: "", stderr: "", code: 1 };
+    });
+
+    const creds = await loginWithDevinCli(cli, dir);
+    // stale credential を再利用せず `devin auth login` を再実行する
+    expect(calls).toEqual([
+      ["auth", "status"],
+      ["auth", "login"],
+    ]);
+    expect(creds.apiKey).toBe("devin-rotated-key");
+  });
+});
+
+describe("logoutDevinSession", () => {
+  it("runs `devin auth logout` and removes the cheaper-owned credentials.toml", async () => {
+    const dir = await tmpdir_();
+    const credPath = await writeCredentials(dir);
+    const { cli, calls } = cliStub(() => ({ stdout: "", stderr: "", code: 0 }));
+
+    await logoutDevinSession(cli, dir);
+    expect(calls).toEqual([["auth", "logout"]]);
+    expect(existsSync(credPath)).toBe(false);
+  });
+
+  it("still removes credentials.toml when the Devin CLI is unreachable", async () => {
+    const dir = await tmpdir_();
+    const credPath = await writeCredentials(dir);
+    const cli: DevinCli = {
+      bin: "devin",
+      run: () => Promise.reject(new Error("spawn devin ENOENT")),
+      version: () => Promise.resolve(null),
+    };
+
+    await logoutDevinSession(cli, dir);
+    expect(existsSync(credPath)).toBe(false);
+  });
+
+  it("succeeds when credentials.toml is already absent", async () => {
+    const dir = await tmpdir_();
+    const { cli } = cliStub(() => ({ stdout: "", stderr: "", code: 0 }));
+    await expect(logoutDevinSession(cli, dir)).resolves.toBeUndefined();
   });
 });

@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -90,10 +90,12 @@ describe("devin provider plugin", () => {
 
     const provider = runtime.getProvider("devin");
     expect(provider).toBeDefined();
-    expect(runtime.getModel("devin", "claude-opus-5-high")).toBeDefined();
+    expect(runtime.getModel("devin", "claude-opus-5")).toBeDefined();
 
     const auth = await describeProviderAuth(runtime, "devin");
     expect(auth.methods).toEqual(["oauth"]);
+    // Devin CLI の account-backed session なので subscription provider
+    expect(auth.subscription).toBe(true);
     expect(auth.configured).toBe(false);
   });
 
@@ -171,5 +173,28 @@ describe("devin provider plugin", () => {
     const info = await logoutProvider(runtime, "devin");
     expect(info.configured).toBe(false);
     expect(await runtime.getAvailable("devin")).toHaveLength(0);
+  });
+
+  it("closes the cheaper-owned Devin session on logout and re-runs `devin auth login`", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cheaper-devin-plugin-"));
+    const dataDir = devinDataDir(dir);
+    const { runner, calls } = fakeDevin({ dataDirFor: () => dataDir });
+    const runtime = await makeRuntime({ CHEAPER_CONFIG_DIR: dir }, runner);
+
+    await loginProvider(runtime, "devin", "oauth", INTERACTION);
+    const credPath = devinCredentialsPath(dataDir);
+    expect(existsSync(credPath)).toBe(true);
+
+    await logoutProvider(runtime, "devin");
+    // isolated env で `devin auth logout` が走り、cheaper-owned の
+    // credentials.toml が削除される（残ると次回 login が stale token を再利用する）
+    expect(calls.some((c) => c.args[0] === "auth" && c.args[1] === "logout")).toBe(true);
+    expect(existsSync(credPath)).toBe(false);
+
+    calls.length = 0;
+    await loginProvider(runtime, "devin", "oauth", INTERACTION);
+    // stale credential 再利用ではなく `devin auth login` が再実行される
+    expect(calls.some((c) => c.args[0] === "auth" && c.args[1] === "login")).toBe(true);
+    expect((await describeProviderAuth(runtime, "devin")).configured).toBe(true);
   });
 });

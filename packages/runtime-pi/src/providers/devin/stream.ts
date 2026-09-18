@@ -1,7 +1,9 @@
 /**
  * Vendored from pi-devin (https://github.com/kashyab12/pi-devin)
  * Copyright (c) 2026 Kashyab Ambarani — MIT License (see NOTICE).
- * Modifications: none beyond attribution header and repo lint style.
+ * Modifications: `reader.closed`/`body.cancel()` の unhandled rejection
+ * 対策は mizorewww/pi-devin の修正を反映。それ以外は attribution
+ * header と repo lint style のみ。
  */
 
 import { randomUUID } from "node:crypto";
@@ -340,6 +342,10 @@ async function* streamChatEvents(args: {
   if (!resp.body) throw new Error("GetChatMessage returned an empty body");
 
   const reader = resp.body.getReader();
+  // reader.closed は socket が応答途中で死ぬと storedError で reject される。
+  // 誰も await しないので、そのままだと unhandledRejection で process が
+  // 落ちる（upstream mizorewww/pi-devin の同修正を移植）。
+  void reader.closed.catch(() => {});
   const queue: Buffer[] = [];
   let queued = 0;
   let sawEos = false;
@@ -425,7 +431,10 @@ async function* streamChatEvents(args: {
       // ignore
     }
     try {
-      void resp.body?.cancel();
+      // errored stream では cancel() が rejected promise を返す。
+      // `void` してしまうと try/catch の外へ unhandled rejection として
+      // 漏れるため await する（upstream mizorewww/pi-devin の同修正を移植）。
+      await resp.body?.cancel();
     } catch {
       // ignore
     }

@@ -127,9 +127,11 @@ describe("createModelRuntime", () => {
 
   function mockCreate() {
     const refresh = vi.fn().mockResolvedValue({ aborted: false, errors: new Map() });
-    const spy = vi
-      .spyOn(ModelRuntime, "create")
-      .mockResolvedValue({ refresh, registerProvider: () => {} } as unknown as ModelRuntime);
+    const spy = vi.spyOn(ModelRuntime, "create").mockResolvedValue({
+      refresh,
+      registerProvider: () => {},
+      logout: () => Promise.resolve(),
+    } as unknown as ModelRuntime);
     return { spy, refresh };
   }
 
