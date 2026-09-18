@@ -98,7 +98,8 @@ fail-open / fail-closed contract を guide 上でどう表現するか。
   非 file / workspace 外 / CLI 起動失敗 / output 非 parseable /
   非 0 exit）= fail-open と parseable `FILE_TOO_LARGE` envelope
   = fail-closed を明確に区別する**（採用 — 実装 contract と
-  SPEC-0012 / DESIGN-0017 の意図に一致）。target 別の表面形
+  SPEC-034r05iHK8bA7gjwZTji8t / DESIGN-034r05iHy2gdnoLt52txFG
+  の意図に一致）。target 別の表面形
   （Windsurf: exit 2 / Copilot: `permissionDecision: "deny"` +
   exit 0）を併記する。
 - **B: 「巨大 file は fail-closed、その他は fail-open」とだけ
@@ -189,6 +190,6 @@ providers.md を canonical source とすること・`FILE_TOO_LARGE`
   `packages/apm/.apm/hooks/pre-read-code-copilot.js`、
   `packages/cli/src/auth.ts`
 - 関連: ADR-034r05iHrZUE6WizQ4LgPa（Copilot adapter は非 0 exit
-  を出さない）、DESIGN-0017 系
+  を出さない）、DESIGN-034r05iHy2gdnoLt52txFG 系
   `huge-file-byte-cap-guard-and-fail-closed-hook`（FILE_TOO_LARGE
   fail-closed 仕様）

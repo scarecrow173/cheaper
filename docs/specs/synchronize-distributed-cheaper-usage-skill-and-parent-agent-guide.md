@@ -73,7 +73,8 @@ Issue #34: main の parent-agent integration 実装と documentation を
    `.cheaper/` には置かない（#33 で最小修正済み、本 spec で全面同期）。
 4. `parent-agent-integration.md` が「計測不能・判定不能は fail-open」
    と一般化しているが、parseable な `FILE_TOO_LARGE` envelope は
-   SPEC-0012 / DESIGN-0017 で意図的に fail-closed（Windsurf: exit 2、
+   SPEC-034r05iHK8bA7gjwZTji8t / DESIGN-034r05iHy2gdnoLt52txFG で
+   意図的に fail-closed（Windsurf: exit 2、
    Copilot: `permissionDecision: "deny"` + exit 0）としている。
 
 `cheaper-usage` は parent agent が実際に読む instruction なので、

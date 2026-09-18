@@ -76,7 +76,7 @@ contract に修正する:
 - Claude / Codex / Cursor: hook 登録は deploy されるが no-op
   （functional hook ではない）
 
-canonical matrix（DISC-0009 系
+canonical matrix（DISC-034r05iHy2gdnpdai9KGpW 系
 `cross-agent-hook-distribution-and-contract-matrix`）への参照は
 維持する。
 

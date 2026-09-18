@@ -36,8 +36,9 @@ cheaper は parent agent へ以下を配布する（APM package 経由）:
   一方、`count-tokens` が parseable な `FILE_TOO_LARGE` envelope
   を返した場合は「計測不能だが確実に巨大」と authoritative に
   判定して fail-closed で block する（Windsurf: exit 2、
-  Copilot: `permissionDecision: "deny"` + exit 0 — SPEC-0012 /
-  DESIGN-0017 の意図的仕様）。
+  Copilot: `permissionDecision: "deny"` + exit 0 —
+  SPEC-034r05iHK8bA7gjwZTji8t /
+  DESIGN-034r05iHy2gdnoLt52txFG の意図的仕様）。
 - **bundled CLI**: self-contained の `cheaper` CLI（skills/hooks
   が内部から直接呼べる）
 

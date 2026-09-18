@@ -1,5 +1,5 @@
 /**
- * `cheaper auth` — provider 認証を CLI に吸収する（SPEC-0011 / DESIGN-0016）。
+ * `cheaper auth` — provider 認証を CLI に吸収する（SPEC-034r05iHK8bA7ghSWRbNU8 / DESIGN-034r05iHy2gdnoJ5j3v9Nk）。
  * standalone `pi` は要求しない。ModelRuntime が authPath へ credential を
  * 永続化する。token 等の secret 値は stdout/stderr いずれにも出さない。
  */

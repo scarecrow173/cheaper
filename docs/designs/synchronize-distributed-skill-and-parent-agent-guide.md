@@ -126,7 +126,7 @@ contract に同期する。実装コードは変更しない。
      な large/unmeasurable verdict）→ Windsurf exit 2 +
      stderr guidance、Copilot `deny()` + exit 0
    - 閾値超過の measured tokens → 同じく block
-3. target 別挙動を canonical matrix（DISC-0009 系
+3. target 別挙動を canonical matrix（DISC-034r05iHy2gdnpdai9KGpW 系
    `cross-agent-hook-distribution-and-contract-matrix`）と既存
    guide 記述・E2E に合わせて skill へ簡潔に反映する。
 4. credential 記述を `<userConfigDir>/pi/auth.json`

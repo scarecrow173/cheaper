@@ -61,7 +61,8 @@ hook 実装（`pre-read-code.js` / `pre-read-code-copilot.js`）の
 - **fail-closed**（read を block）:
   - `count-tokens` が parseable な `FILE_TOO_LARGE` envelope を
     返した場合 — 計測不能だが確実に巨大と authoritative に
-    判定する verdict（SPEC-0012 / DESIGN-0017）
+    判定する verdict（SPEC-034r05iHK8bA7gjwZTji8t /
+    DESIGN-034r05iHy2gdnoLt52txFG）
     - Windsurf: exit 2 + stderr guidance
     - Copilot: `{"permissionDecision":"deny"}` + exit 0
   - measured tokens が threshold 超過の場合も同じく block
