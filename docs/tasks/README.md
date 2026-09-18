@@ -113,3 +113,5 @@ Directory: `docs/tasks`
 | TASK-0107 | Copilot deploy/config e2e asserts, DISC-0009 matrix update, and final verification | done | [0107-copilot-deploy-e2e-matrix-and-final-verification.md](./0107-copilot-deploy-e2e-matrix-and-final-verification.md) |
 | TASK-0108 | Implement real-provider worker e2e and verify against live Ollama | done | [0108-implement-ollama-real-provider-e2e.md](./0108-implement-ollama-real-provider-e2e.md) |
 | TASK-0109 | Verify skip path, document e2e in AGENTS.md, sync statuses, final verification | done | [0109-skip-path-docs-and-final-verification.md](./0109-skip-path-docs-and-final-verification.md) |
+| TASK-0110 | Implement usage-log writer and CLI wiring with unit tests | done | [0110-implement-usage-log-writer-and-cli-wiring.md](./0110-implement-usage-log-writer-and-cli-wiring.md) |
+| TASK-0111 | Usage-log e2e assertions, docs, bundle regen, status sync, final verification | done | [0111-usage-log-e2e-docs-and-final-verification.md](./0111-usage-log-e2e-docs-and-final-verification.md) |

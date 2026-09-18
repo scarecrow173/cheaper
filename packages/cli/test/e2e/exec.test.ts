@@ -53,7 +53,7 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     expect(meta.changes?.files).toEqual([]);
     expect(meta.changes?.totals).toEqual({ files: 0, linesAdded: 0, linesDeleted: 0 });
     expect(r.stderr).toContain("model: cheaper-fake/fake-model (tier low)");
-  });
+  }, 20_000);
 
   it("code-write measures meta.changes from the journal, not the model", async () => {
     const r = await runCheaper(["code-write", "--cwd", ws], {
@@ -130,6 +130,44 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     expect(cliResult.tokens).toBe(toolResult.tokens);
     expect(cliResult.bytes).toBe(toolResult.bytes);
     expect(cliResult.tokenizer).toEqual(toolResult.tokenizer);
+  }, 20_000);
+
+  it("appends run and count records to <CHEAPER_CONFIG_DIR>/usage.jsonl", async () => {
+    // SPEC-0022: delegation 計測の継続記録（ADR-0025）。
+    const run = await runCheaper(["bulk-read", "--cwd", ws], {
+      env: { ...env, CHEAPER_TEST_FAKE_STREAM: fixture("bulk-read-fake.js") },
+      input: '{"task":"summarize"}',
+    });
+    expect(run.code).toBe(0);
+
+    await writeFile(path.join(ws, "note.txt"), "hello world\n", "utf8");
+    const count = await runCheaper(["count-tokens", "note.txt", "--cwd", ws], { env });
+    expect(count.code).toBe(0);
+
+    const logPath = path.join(env.CHEAPER_CONFIG_DIR as string, "usage.jsonl");
+    const records = (await readFile(logPath, "utf8"))
+      .split("\n")
+      .filter((l) => l !== "")
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+
+    const runRec = records.find((r) => r.kind === "run");
+    expect(runRec).toMatchObject({
+      schemaVersion: 1,
+      worker: "bulk-reader",
+      ok: true,
+      model: { provider: "cheaper-fake", id: "fake-model", tier: "low" },
+    });
+    expect(runRec?.usage).toBeDefined();
+
+    const countRec = records.find((r) => r.kind === "count");
+    expect(countRec).toMatchObject({
+      schemaVersion: 1,
+      worker: null,
+      ok: true,
+      result: { path: "note.txt" },
+    });
+    const countResult = countRec?.result as { tokens?: number } | undefined;
+    expect(typeof countResult?.tokens).toBe("number");
   }, 20_000);
 
   it("accepts the scripted-response-array fixture form", async () => {

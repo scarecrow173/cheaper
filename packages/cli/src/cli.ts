@@ -34,6 +34,7 @@ import {
 } from "./envelope.js";
 import { readTaskInput, type StdinLike } from "./input.js";
 import { formatText } from "./text-format.js";
+import { recordUsage } from "./usage-log.js";
 import { packageVersion } from "./version.js";
 
 export interface CliIo {
@@ -158,12 +159,14 @@ async function executeRun(
   hooks: CliHooks,
   startedAt: number,
   onWorkerResolved?: (name: string) => void,
+  onRunContext?: (ctx: { root: string; userConfigDir: string }) => void,
 ): Promise<{ envelope: CliEnvelope; exitCode: number; modelLine?: string }> {
   const builtinDir = hooks.builtinDir ?? defaultBuiltinDir();
   const now = hooks.now ?? Date.now;
 
   const root = await canonicalizeWorkspaceRoot(args.cwd ?? io.cwd);
   const dirs = resolveConfigDirs({ cwd: root, builtinDir, env: io.env });
+  onRunContext?.({ root, userConfigDir: dirs.userConfigDir });
 
   const worker =
     args.workerFile !== undefined
@@ -255,6 +258,17 @@ export async function runCli(
   const now = hooks.now ?? Date.now;
   const startedAt = now();
   let workerName: string | null = null;
+  let runRoot: string | undefined;
+  let runUserConfigDir: string | undefined;
+  // executeRun が途中で throw した場合の記録用 fallback（resolveConfigDirs
+  // は純粋関数で、userConfigDir は env だけに依存する）。
+  const resolvedUserConfigDir = () =>
+    runUserConfigDir ??
+    resolveConfigDirs({
+      cwd: runRoot ?? io.cwd,
+      builtinDir: hooks.builtinDir ?? defaultBuiltinDir(),
+      env: io.env,
+    }).userConfigDir;
 
   try {
     const parsed = parseCliArgs(argv);
@@ -309,6 +323,14 @@ export async function runCli(
         durationMs: now() - startedAt,
       });
       io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
+      recordUsage({
+        env: envelope,
+        root,
+        userConfigDir: dirs.userConfigDir,
+        stderr: io.stderr,
+        quiet: parsed.quiet,
+        now: () => new Date(now()),
+      });
       return 0;
     }
 
@@ -326,21 +348,45 @@ export async function runCli(
       (name) => {
         workerName = name;
       },
+      (ctx) => {
+        runRoot = ctx.root;
+        runUserConfigDir = ctx.userConfigDir;
+      },
     );
     if (modelLine !== undefined && !parsed.quiet) io.stderr.write(`${modelLine}\n`);
     io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
+    recordUsage({
+      env: envelope,
+      root: runRoot ?? parsed.cwd ?? io.cwd,
+      userConfigDir: resolvedUserConfigDir(),
+      stderr: io.stderr,
+      quiet: parsed.quiet,
+      now: () => new Date(now()),
+    });
     return exitCode;
   } catch (err) {
     const envelope = errorEnvelope(err, { worker: workerName, durationMs: now() - startedAt });
     let format: "json" | "text" = "json";
+    let quiet = false;
     try {
       const p = parseCliArgs(argv);
-      if (p.kind === "run" || p.kind === "count-tokens" || p.kind === "auth") format = p.format;
+      if (p.kind === "run" || p.kind === "count-tokens" || p.kind === "auth") {
+        format = p.format;
+        quiet = p.quiet;
+      }
     } catch {
       // args 自体が不正なら json のまま
     }
     io.stderr.write(`error ${envelope.error.code}: ${envelope.error.message}\n`);
     io.stdout.write(format === "text" ? formatText(envelope) : envelopeJson(envelope));
+    recordUsage({
+      env: envelope,
+      root: runRoot ?? io.cwd,
+      userConfigDir: resolvedUserConfigDir(),
+      stderr: io.stderr,
+      quiet,
+      now: () => new Date(now()),
+    });
     return envelope.error.exitCode;
   }
 }
