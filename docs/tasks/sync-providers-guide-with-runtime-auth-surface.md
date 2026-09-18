@@ -1,7 +1,7 @@
 ---
 id: "TASK-034r2qodyq0oWVUNGquMgr"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Sync providers.md guide with runtime auth surface"
 created: "2026-09-19"
 updated: "2026-09-19"
@@ -101,20 +101,20 @@ relations:
 
 ## Done When
 
-- [ ] OAuth 例示から `xai` が除去され、auth type が明確に分けられている
-- [ ] `auth status` が model 一覧を返すような記述がない
-- [ ] `auth status` が auth capability / configured state の
+- [x] OAuth 例示から `xai` が除去され、auth type が明確に分けられている
+- [x] `auth status` が model 一覧を返すような記述がない
+- [x] `auth status` が auth capability / configured state の
   確認コマンドとして明記されている
-- [ ] model 実利用確認が `meta.model` で説明されている
-- [ ] `auth status` が provider/auth surface の canonical 確認
+- [x] model 実利用確認が `meta.model` で説明されている
+- [x] `auth status` が provider/auth surface の canonical 確認
   command として示されている
 
 ## Verification
 
-- [ ] `rg "xai" docs/guides/providers.md` — OAuth 例示文脈に
+- [x] `rg "xai" docs/guides/providers.md` — OAuth 例示文脈に
   残っていないこと
-- [ ] `cheaper auth status` / `cheaper auth status xai` の実
+- [x] `cheaper auth status` / `cheaper auth status xai` の実
   output と記述が一致すること
-- [ ] `rg "auth status" docs/guides/providers.md` の記述が実
+- [x] `rg "auth status" docs/guides/providers.md` の記述が実
   contract（credential・methods・subscription・configured）と
   一致すること

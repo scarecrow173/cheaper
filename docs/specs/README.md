@@ -30,6 +30,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7g9KcsCqKj | Repair and abort hardening, telemetry consistency, and test hermeticity | implemented | [repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |
 | SPEC-034r05iHK8bA7gpcCJQya9 | Repository-owned setup contract for fresh checkouts/worktrees | implemented | [repo-owned-setup-contract-for-fresh-checkouts.md](./repo-owned-setup-contract-for-fresh-checkouts.md) |
 | SPEC-034r05iHK8bA7go4BQtGNS | Separate the development APM project from the distributable cheaper package | implemented | [separate-dev-apm-project-from-distributable-package.md](./separate-dev-apm-project-from-distributable-package.md) |
+| SPEC-003hd7W00xCikuCXnwHA4C | Synchronize distributed cheaper-usage skill and parent-agent integration guide | implemented | [synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md](./synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md) |
 | SPEC-034r05iHK8bA7grnYLdwgl | Unified version and release source of truth | implemented | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | SPEC-034r05iHK8bA7gw94zcNpw | User-facing documentation information architecture | implemented | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | SPEC-034r05iHK8bA7ggPjqIA9E | Write-scope enforcement and in-workspace privacy deny list | implemented | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |

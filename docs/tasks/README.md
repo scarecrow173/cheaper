@@ -35,6 +35,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqGn3BDa9i | Copilot deploy/config e2e asserts, DISC-034r05iHy2gdnpdai9KGpW matrix update, and final verification | done | [copilot-deploy-e2e-matrix-and-final-verification.md](./copilot-deploy-e2e-matrix-and-final-verification.md) |
 | TASK-034r05iHQeQpDqc1Novy9f | Core byte cap for countFileTokens | done | [core-byte-cap-for-countfiletokens.md](./core-byte-cap-for-countfiletokens.md) |
 | TASK-034r05iHQeQpDq7ypvNXB2 | Core deny-path matcher, writeScope frontmatter, policy denyPaths | done | [core-deny-matcher-and-write-scope-field.md](./core-deny-matcher-and-write-scope-field.md) |
+| TASK-002DRbiVRuFJ5XWHvsWW6i | Correct fail-open/fail-closed contract in parent-agent guide and verify consistency | done | [correct-fail-open-fail-closed-contract-in-parent-agent-guide.md](./correct-fail-open-fail-closed-contract-in-parent-agent-guide.md) |
 | TASK-034r05iHQeQpDpIa7OmcYd | Count consumed repair attempts in meta.repairs on failure | done | [count-consumed-repair-attempts-in-meta-repairs-on-failure.md](./count-consumed-repair-attempts-in-meta-repairs-on-failure.md) |
 | TASK-034r05iHQeQpDpVUAMbEeR | Create cheaper-usage skill | done | [create-cheaper-usage-skill.md](./create-cheaper-usage-skill.md) |
 | TASK-034r05iHK8bA7gD3wnFQ3l | Create empty @cheaper/core package skeleton | done | [create-empty-cheaper-core-package-skeleton.md](./create-empty-cheaper-core-package-skeleton.md) |
@@ -114,6 +115,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqJ0Qc4762 | Verify skip path, document e2e in AGENTS.md, sync statuses, final verification | done | [skip-path-docs-and-final-verification.md](./skip-path-docs-and-final-verification.md) |
 | TASK-034r05iHQeQpDpB3QaYlPY | Start Ollama container and pull qwen3.5 quantized model | done | [start-ollama-container-and-pull-qwen3-5-quantized-model.md](./start-ollama-container-and-pull-qwen3-5-quantized-model.md) |
 | TASK-034r05iHQeQpDqlvQrRhaE | Streaming grep with batch protocol and bounded footer | done | [streaming-grep-batch-protocol-and-bounded-footer.md](./streaming-grep-batch-protocol-and-bounded-footer.md) |
+| TASK-06WDQr0NHYErusR6Cmye43 | Sync cheaper-usage SKILL.md with current CLI and hook surface | done | [sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md](./sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md) |
 | TASK-034r2qodyq0oWVUNGquMgr | Sync providers.md guide with runtime auth surface | done | [sync-providers-guide-with-runtime-auth-surface.md](./sync-providers-guide-with-runtime-auth-surface.md) |
 | TASK-034r05iHQeQpDpUao5Hjj3 | Token counter CLI/tool parity tests and full verification | done | [token-counter-parity-and-verification.md](./token-counter-parity-and-verification.md) |
 | TASK-034r05iHQeQpDqD0biyV0P | Unify versions, wire check, and document release | done | [unify-versions-wire-check-and-document-release.md](./unify-versions-wire-check-and-document-release.md) |

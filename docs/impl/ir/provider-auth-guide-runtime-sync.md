@@ -125,6 +125,12 @@ state の canonical 確認コマンドとして明記し、model 一覧取得を
   可能性は残るが、`auth status` を canonical 確認 command
   として導線を張る構成で影響を限定している。
 
+## Related Experiments
+
+### Adopted
+
+なし。
+
 ## Follow-ups
 
 - Issue #34: distributed `cheaper-usage` skill および

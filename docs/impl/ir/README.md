@@ -14,6 +14,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpARFuxZVi | Delegation usage measurement log (PLAN-034r05iHE1Fbkpd5tkg6Gs) | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
 | IMPL-034r05iHy2gdnpusDjHBDw | Separate development APM project from distributable package (PLAN-034r05iHE1Fbkp5YZSKJM2) | completed | [dev-apm-and-distributable-package-separation.md](./dev-apm-and-distributable-package-separation.md) |
 | IMPL-034r05iHy2gdnpG0UOqdhK | Devin Local provider plugin (PLAN-034r05iHK8bA7g45xvDT4a) | completed | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
+| IMPL-03kR39KNEJ13KN9NwesVWy | distributed skill and parent-agent guide sync (PLAN-000004taRcf5XDevo8jYJz) | draft | [distributed-skill-and-parent-agent-guide-sync.md](./distributed-skill-and-parent-agent-guide-sync.md) |
 | IMPL-034r05iHy2gdnpwO94elRp | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | IMPL-034r05iHy2gdnpjoHb5OTl | Implement cheaper CLI and built-in workers (PLAN-034r05iHy2gdnpJFiMWhkY) | completed | [implement-cheaper-cli-and-built-in-workers-plan-0003.md](./implement-cheaper-cli-and-built-in-workers-plan-0003.md) |
 | IMPL-034r05iHy2gdnpgYK6Sj6D | Implement @cheaper/core (PLAN-034r05iHy2gdnpHMZZk4ZU) | completed | [implement-cheaper-core-plan-0001.md](./implement-cheaper-core-plan-0001.md) |
