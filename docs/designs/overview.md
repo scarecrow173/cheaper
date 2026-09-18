@@ -16,19 +16,19 @@ relations:
   supersedes: []
   superseded-by: []
   related:
-    - "0001-worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md"
-    - "0002-workspace-filesystem-boundary-sandboxed-tools.md"
-    - "0003-model-resolver.md"
-    - "0004-pi-execution-engine.md"
-    - "0005-cli-contract-envelope-exit-codes.md"
-    - "0006-bulk-reader-contract.md"
-    - "0007-cheap-writer-contract.md"
-    - "0008-repository-structure-toolchain.md"
+    - "worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md"
+    - "workspace-filesystem-boundary-sandboxed-tools.md"
+    - "model-resolver.md"
+    - "pi-execution-engine.md"
+    - "cli-contract-envelope-exit-codes.md"
+    - "bulk-reader-contract.md"
+    - "cheap-writer-contract.md"
+    - "repository-structure-toolchain.md"
   refines: []
   refined-by: []
   derives-from:
-    - "../specs/0001-cheaper-v1-worker-runtime-cli.md"
-    - "../adr/0008-typescript-pnpm-monorepo.md"
+    - "../specs/cheaper-v1-worker-runtime-cli.md"
+    - "../adr/typescript-pnpm-monorepo.md"
   derived-by: []
   verifies: []
   verified-by: []
@@ -50,14 +50,14 @@ relations:
 
 | 段階（引継ぎ §4） | 担当 design |
 | --- | --- |
-| CLI 引数解析・stdin 入力・envelope 出力・exit code | DESIGN-0005 |
-| Worker 解決・frontmatter 検証・input schema 検証 | DESIGN-0001 |
-| Runtime Policy ロード/マージ・CLI restriction・capability 交差 | DESIGN-0001 |
-| Model tier 分類・available model 選択 | DESIGN-0003 |
-| sandboxed tool 実装・workspace boundary・mutation journal | DESIGN-0002 |
-| Pi session 実行・制限強制・abort 分類・retry・repair・usage | DESIGN-0004 |
-| built-in Worker 定義（bulk-reader / cheap-writer） | DESIGN-0006 / DESIGN-0007 |
-| リポジトリ構成・ツールチェーン | DESIGN-0008 |
+| CLI 引数解析・stdin 入力・envelope 出力・exit code | DESIGN-034r05iHrZUE6WvDuYjZB4 |
+| Worker 解決・frontmatter 検証・input schema 検証 | DESIGN-034r05iHrZUE6WrdtQIOmE |
+| Runtime Policy ロード/マージ・CLI restriction・capability 交差 | DESIGN-034r05iHrZUE6WrdtQIOmE |
+| Model tier 分類・available model 選択 | DESIGN-034r05iHrZUE6Wu1cMdeJ1 |
+| sandboxed tool 実装・workspace boundary・mutation journal | DESIGN-034r05iHrZUE6WsgJOy6Ny |
+| Pi session 実行・制限強制・abort 分類・retry・repair・usage | DESIGN-034r05iHrZUE6WvaQsRRsM |
+| built-in Worker 定義（bulk-reader / cheap-writer） | DESIGN-034r05iHrZUE6WxkSJi9GF / DESIGN-034r05iHrZUE6Wy5X0Hc88 |
+| リポジトリ構成・ツールチェーン | DESIGN-034r05iHrZUE6Wzyjd1NS8 |
 
 ## Data Flow
 
@@ -81,17 +81,17 @@ relations:
 
 - Node 26 / pnpm 11 / ESM only / `minimum_release_age = 7d`
 - `@cheaper/core` は `@earendil-works/*` に依存しない
-- Pi SDK の sandbox 不在・maxTurns 不在を cheaper 側コードで補完する（ADR-0001/0007）
+- Pi SDK の sandbox 不在・maxTurns 不在を cheaper 側コードで補完する（ADR-034r05iHfSMW9SGV4dpcy2/0007）
 
 ## Detailed Design Documents
 
 読み順: 0008 → 0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007
 
-- [0008 リポジトリ構成とツールチェーン](./0008-repository-structure-toolchain.md)
-- [0001 コアドメインモデル](./0001-worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md)
-- [0002 workspace filesystem boundary と sandboxed tools](./0002-workspace-filesystem-boundary-sandboxed-tools.md)
-- [0003 Model Resolver](./0003-model-resolver.md)
-- [0004 Pi 実行エンジン](./0004-pi-execution-engine.md)
-- [0005 CLI contract](./0005-cli-contract-envelope-exit-codes.md)
-- [0006 bulk-reader contract](./0006-bulk-reader-contract.md)
-- [0007 cheap-writer contract](./0007-cheap-writer-contract.md)
+- [0008 リポジトリ構成とツールチェーン](./repository-structure-toolchain.md)
+- [0001 コアドメインモデル](./worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md)
+- [0002 workspace filesystem boundary と sandboxed tools](./workspace-filesystem-boundary-sandboxed-tools.md)
+- [0003 Model Resolver](./model-resolver.md)
+- [0004 Pi 実行エンジン](./pi-execution-engine.md)
+- [0005 CLI contract](./cli-contract-envelope-exit-codes.md)
+- [0006 bulk-reader contract](./bulk-reader-contract.md)
+- [0007 cheap-writer contract](./cheap-writer-contract.md)

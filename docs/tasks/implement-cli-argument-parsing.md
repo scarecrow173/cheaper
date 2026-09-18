@@ -1,0 +1,81 @@
+---
+id: "TASK-034r05iHK8bA7hoW2XFV4o"
+type: "task"
+status: "done"
+title: "Implement CLI argument parsing"
+created: "2026-09-15"
+updated: "2026-09-15"
+owners: ["scarecrow173"]
+relations:
+  source: []
+  changes:
+    added: []
+    modified: []
+    deleted: []
+    renamed: []
+    moved: []
+    generated: []
+  implements:
+    - "docs/plans/implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md"
+  implemented-by: []
+  depends-on:
+    - "docs/plans/implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md"
+    - "docs/tasks/scaffold-cheaper-cli-package-with-bin-entry.md"
+  blocks: []
+  supersedes: []
+  superseded-by: []
+  related: []
+  refines: []
+  refined-by: []
+  derives-from:
+    - "docs/plans/implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md"
+  derived-by: []
+  verifies: []
+  verified-by: []
+  references: []
+  defers: []
+  deferred-by: []
+---
+
+# Implement CLI argument parsing
+
+## Work
+
+PLAN-034r05iHy2gdnpJFiMWhkY step 2。`util.parseArgs`: commands `run <worker>`/`bulk-read`/`cheap-write`（後者は run のエイリアス）、options `--input`(既定 -)/`--worker-file`（run 専用・worker と併用不可）/`--cwd`/`--timeout`/`--format json|text`/`--quiet`/`--help`/`--version`。path 風 name は `INVALID_WORKER_NAME`。
+
+## Classification
+
+- `normal-plan-task`
+
+## Upstream Documents
+
+- `docs/plans/implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md`
+- `docs/designs/cli-contract-envelope-exit-codes.md`
+
+## Dependencies
+
+- `docs/tasks/scaffold-cheaper-cli-package-with-bin-entry.md` — 依存先（Dependency Graph）
+
+## Affected Files
+
+- `packages/cli/src/args.ts`
+- `packages/cli/test/args.test.ts`
+
+## Done When
+
+- [x] 失敗するテスト（または scaffold 検証コマンド）を書く
+- [x] 対象テストを実行し red を確認する
+- [x] 最小実装を行う
+- [x] 再実行で green を確認する
+- [x] `pnpm biome check` と `tsc -b` が pass
+- [x] 各 option・併用不可・path 風 name のテストが green
+
+## Verification
+
+- [x] `mise exec -- pnpm --filter cheaper test -- test/args.test.ts` exits 0
+- [x] `mise exec -- pnpm biome check .` exits 0
+- [x] `mise exec -- pnpm tsc -b` exits 0
+
+## Out of Scope
+
+- stdin/ファイル読取は TASK-034r05iHK8bA7hpwOJHzxF。

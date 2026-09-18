@@ -6,29 +6,29 @@ Directory: `docs/specs`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
-| SPEC-0001 | cheaper V1 Worker Runtime と CLI | implemented | [0001-cheaper-v1-worker-runtime-cli.md](./0001-cheaper-v1-worker-runtime-cli.md) |
-| SPEC-0002 | bulk-reader built-in Worker | implemented | [0002-bulk-reader-built-in-worker.md](./0002-bulk-reader-built-in-worker.md) |
-| SPEC-0003 | cheap-writer built-in Worker | superseded | [0003-cheap-writer-built-in-worker.md](./0003-cheap-writer-built-in-worker.md) |
-| SPEC-0004 | Ollama real-provider smoke verification | implemented | [0004-ollama-real-provider-smoke-verification.md](./0004-ollama-real-provider-smoke-verification.md) |
-| SPEC-0005 | Repair and abort hardening, telemetry consistency, and test hermeticity | implemented | [0005-repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./0005-repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |
-| SPEC-0006 | code-writer and doc-writer built-in Workers | implemented | [0006-code-writer-and-doc-writer-built-in-workers.md](./0006-code-writer-and-doc-writer-built-in-workers.md) |
-| SPEC-0007 | Canonical Token Counter, count_tokens tool, and count-tokens CLI | implemented | [0007-canonical-token-counter.md](./0007-canonical-token-counter.md) |
-| SPEC-0008 | APM delegation skills and pre-read delegation hook | implemented | [0008-apm-delegation-skills-and-read-hook.md](./0008-apm-delegation-skills-and-read-hook.md) |
-| SPEC-0009 | Self-contained cheaper CLI distribution inside the APM hook bundle | implemented | [0009-apm-self-contained-cli-distribution.md](./0009-apm-self-contained-cli-distribution.md) |
-| SPEC-0010 | Write-scope enforcement and in-workspace privacy deny list | implemented | [0010-write-scope-and-privacy-deny.md](./0010-write-scope-and-privacy-deny.md) |
-| SPEC-0011 | cheaper auth command for provider login without a pi installation | implemented | [0011-auth-login-command.md](./0011-auth-login-command.md) |
-| SPEC-0012 | Huge-file token count guard with fail-closed hook blocking | implemented | [0012-huge-file-token-count-guard-with-fail-closed-hook-blocking.md](./0012-huge-file-token-count-guard-with-fail-closed-hook-blocking.md) |
-| SPEC-0013 | Cross-agent distribution verification | implemented | [0013-cross-agent-distribution-verification.md](./0013-cross-agent-distribution-verification.md) |
-| SPEC-0014 | Bulk-reader huge-file safe I/O | implemented | [0014-bulk-reader-huge-file-safe-io.md](./0014-bulk-reader-huge-file-safe-io.md) |
-| SPEC-0015 | Auth tests do not launch the OS default browser | implemented | [0015-auth-tests-do-not-launch-os-browser.md](./0015-auth-tests-do-not-launch-os-browser.md) |
-| SPEC-0016 | Separate the development APM project from the distributable cheaper package | implemented | [0016-separate-dev-apm-project-from-distributable-package.md](./0016-separate-dev-apm-project-from-distributable-package.md) |
-| SPEC-0017 | Repository-owned setup contract for fresh checkouts/worktrees | implemented | [0017-repo-owned-setup-contract-for-fresh-checkouts.md](./0017-repo-owned-setup-contract-for-fresh-checkouts.md) |
-| SPEC-0018 | grep batchMaxBytes / decoded line payload invariant | implemented | [0018-grep-batch-max-bytes-line-payload-invariant.md](./0018-grep-batch-max-bytes-line-payload-invariant.md) |
-| SPEC-0019 | Unified version and release source of truth | implemented | [0019-unified-version-source-of-truth.md](./0019-unified-version-source-of-truth.md) |
-| SPEC-0020 | Copilot per-target pre-read hook adapter | implemented | [0020-copilot-pre-read-hook-adapter.md](./0020-copilot-pre-read-hook-adapter.md) |
-| SPEC-0021 | Real-provider E2E for built-in workers via Ollama container | implemented | [0021-ollama-real-provider-worker-e2e.md](./0021-ollama-real-provider-worker-e2e.md) |
-| SPEC-0022 | Continuous usage measurement log for delegations | implemented | [0022-delegation-usage-measurement-log.md](./0022-delegation-usage-measurement-log.md) |
-| SPEC-0023 | User-facing documentation information architecture | implemented | [0023-user-facing-docs-information-architecture.md](./0023-user-facing-docs-information-architecture.md) |
-| SPEC-0024 | Pi auth and model state under the Cheaper config directory | implemented | [0024-pi-state-under-cheaper-config-dir.md](./0024-pi-state-under-cheaper-config-dir.md) |
-| SPEC-0025 | Provider-only registration layer without Pi extensions | implemented | [0025-provider-only-registration-layer.md](./0025-provider-only-registration-layer.md) |
-| SPEC-0026 | Devin Local as a bundled Pi provider | implemented | [0026-devin-local-bundled-provider.md](./0026-devin-local-bundled-provider.md) |
+| SPEC-034r05iHK8bA7gexEML9oZ | APM delegation skills and pre-read delegation hook | implemented | [apm-delegation-skills-and-read-hook.md](./apm-delegation-skills-and-read-hook.md) |
+| SPEC-034r05iHK8bA7gffRgD3Fp | Self-contained cheaper CLI distribution inside the APM hook bundle | implemented | [apm-self-contained-cli-distribution.md](./apm-self-contained-cli-distribution.md) |
+| SPEC-034r05iHK8bA7ghSWRbNU8 | cheaper auth command for provider login without a pi installation | implemented | [auth-login-command.md](./auth-login-command.md) |
+| SPEC-034r05iHK8bA7gmLlq6ikw | Auth tests do not launch the OS default browser | implemented | [auth-tests-do-not-launch-os-browser.md](./auth-tests-do-not-launch-os-browser.md) |
+| SPEC-034r05iHK8bA7g6PcCiDBp | bulk-reader built-in Worker | implemented | [bulk-reader-built-in-worker.md](./bulk-reader-built-in-worker.md) |
+| SPEC-034r05iHK8bA7gkTEj7TdU | Bulk-reader huge-file safe I/O | implemented | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
+| SPEC-034r05iHK8bA7gdbCbWupr | Canonical Token Counter, count_tokens tool, and count-tokens CLI | implemented | [canonical-token-counter.md](./canonical-token-counter.md) |
+| SPEC-034r05iHK8bA7g7YRKGyQr | cheap-writer built-in Worker | superseded | [cheap-writer-built-in-worker.md](./cheap-writer-built-in-worker.md) |
+| SPEC-034r05iHK8bA7g59V25ltC | cheaper V1 Worker Runtime と CLI | implemented | [cheaper-v1-worker-runtime-cli.md](./cheaper-v1-worker-runtime-cli.md) |
+| SPEC-034r05iHK8bA7gaTnVhXWI | code-writer and doc-writer built-in Workers | implemented | [code-writer-and-doc-writer-built-in-workers.md](./code-writer-and-doc-writer-built-in-workers.md) |
+| SPEC-034r05iHK8bA7gsvijtkou | Copilot per-target pre-read hook adapter | implemented | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
+| SPEC-034r05iHK8bA7gky93Dal0 | Cross-agent distribution verification | implemented | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
+| SPEC-034r05iHK8bA7gveeDA5HC | Continuous usage measurement log for delegations | implemented | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
+| SPEC-034r05iHK8bA7gAHzYnfP8 | Devin Local as a bundled Pi provider | implemented | [devin-local-bundled-provider.md](./devin-local-bundled-provider.md) |
+| SPEC-034r05iHK8bA7gqGaD6qpk | grep batchMaxBytes / decoded line payload invariant | implemented | [grep-batch-max-bytes-line-payload-invariant.md](./grep-batch-max-bytes-line-payload-invariant.md) |
+| SPEC-034r05iHK8bA7gjwZTji8t | Huge-file token count guard with fail-closed hook blocking | implemented | [huge-file-token-count-guard-with-fail-closed-hook-blocking.md](./huge-file-token-count-guard-with-fail-closed-hook-blocking.md) |
+| SPEC-034r05iHK8bA7g9pm5z8s2 | Ollama real-provider smoke verification | implemented | [ollama-real-provider-smoke-verification.md](./ollama-real-provider-smoke-verification.md) |
+| SPEC-034r05iHK8bA7guAnTdpdi | Real-provider E2E for built-in workers via Ollama container | implemented | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
+| SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |
+| SPEC-034r05iHK8bA7gz3bFqgXr | Provider-only registration layer without Pi extensions | implemented | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
+| SPEC-034r05iHK8bA7g9KcsCqKj | Repair and abort hardening, telemetry consistency, and test hermeticity | implemented | [repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |
+| SPEC-034r05iHK8bA7gpcCJQya9 | Repository-owned setup contract for fresh checkouts/worktrees | implemented | [repo-owned-setup-contract-for-fresh-checkouts.md](./repo-owned-setup-contract-for-fresh-checkouts.md) |
+| SPEC-034r05iHK8bA7go4BQtGNS | Separate the development APM project from the distributable cheaper package | implemented | [separate-dev-apm-project-from-distributable-package.md](./separate-dev-apm-project-from-distributable-package.md) |
+| SPEC-034r05iHK8bA7grnYLdwgl | Unified version and release source of truth | implemented | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
+| SPEC-034r05iHK8bA7gw94zcNpw | User-facing documentation information architecture | implemented | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
+| SPEC-034r05iHK8bA7ggPjqIA9E | Write-scope enforcement and in-workspace privacy deny list | implemented | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |

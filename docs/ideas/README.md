@@ -6,4 +6,4 @@ Directory: `docs/ideas`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
-| IDEA-0001 | Provider lifecycle hooks in CheaperProviderPlugin contract | parked | [0001-provider-lifecycle-hooks-in-cheaperproviderplugin-contract.md](./0001-provider-lifecycle-hooks-in-cheaperproviderplugin-contract.md) |
+| IDEA-034r05iHy2gdnpfT84JZ5h | Provider lifecycle hooks in CheaperProviderPlugin contract | parked | [provider-lifecycle-hooks-in-cheaperproviderplugin-contract.md](./provider-lifecycle-hooks-in-cheaperproviderplugin-contract.md) |

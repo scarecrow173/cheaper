@@ -7,34 +7,34 @@ Directory: `docs/designs`
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
 | DESIGN-OVERVIEW | System Design Overview | draft | [overview.md](./overview.md) |
-| DESIGN-0001 | コアドメインモデル: Worker Definition・Resolver・Runtime Policy・tool vocabulary・error model | approved | [0001-worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md](./0001-worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md) |
-| DESIGN-0002 | workspace filesystem boundary と sandboxed tools | approved | [0002-workspace-filesystem-boundary-sandboxed-tools.md](./0002-workspace-filesystem-boundary-sandboxed-tools.md) |
-| DESIGN-0003 | Model Resolver | approved | [0003-model-resolver.md](./0003-model-resolver.md) |
-| DESIGN-0004 | Pi 実行エンジン: session・制限・abort・retry・出力抽出・repair・usage | approved | [0004-pi-execution-engine.md](./0004-pi-execution-engine.md) |
-| DESIGN-0005 | CLI contract・result/error envelope・exit code | approved | [0005-cli-contract-envelope-exit-codes.md](./0005-cli-contract-envelope-exit-codes.md) |
-| DESIGN-0006 | bulk-reader contract | approved | [0006-bulk-reader-contract.md](./0006-bulk-reader-contract.md) |
-| DESIGN-0007 | cheap-writer contract | superseded | [0007-cheap-writer-contract.md](./0007-cheap-writer-contract.md) |
-| DESIGN-0008 | リポジトリ構成とツールチェーン | approved | [0008-repository-structure-toolchain.md](./0008-repository-structure-toolchain.md) |
-| DESIGN-0009 | Ollama real-provider smoke verification setup | approved | [0009-ollama-real-provider-smoke-verification-setup.md](./0009-ollama-real-provider-smoke-verification-setup.md) |
-| DESIGN-0010 | Repair abort and failure normalization hardening | approved | [0010-repair-abort-and-failure-normalization-hardening.md](./0010-repair-abort-and-failure-normalization-hardening.md) |
-| DESIGN-0011 | code-writer and doc-writer worker contracts | approved | [0011-writer-worker-contracts.md](./0011-writer-worker-contracts.md) |
-| DESIGN-0012 | Token counter contract (core module, count_tokens tool, count-tokens CLI) | approved | [0012-token-counter-contract.md](./0012-token-counter-contract.md) |
-| DESIGN-0013 | APM skills and pre_read_code delegation hook | approved | [0013-apm-skills-and-pre-read-hook.md](./0013-apm-skills-and-pre-read-hook.md) |
-| DESIGN-0014 | cheaper CLI bundle layout inside .apm/hooks/cli | approved | [0014-cli-bundle-layout.md](./0014-cli-bundle-layout.md) |
-| DESIGN-0015 | Write-scope and privacy deny enforcement design | approved | [0015-write-scope-and-privacy-deny.md](./0015-write-scope-and-privacy-deny.md) |
-| DESIGN-0016 | cheaper auth command design (provider OAuth absorbed by the CLI) | approved | [0016-auth-command.md](./0016-auth-command.md) |
-| DESIGN-0017 | Huge-file byte cap guard and fail-closed hook | approved | [0017-huge-file-byte-cap-guard-and-fail-closed-hook.md](./0017-huge-file-byte-cap-guard-and-fail-closed-hook.md) |
-| DESIGN-0018 | Cross-agent distribution verification | approved | [0018-cross-agent-distribution-verification.md](./0018-cross-agent-distribution-verification.md) |
-| DESIGN-0019 | Bulk-reader huge-file safe I/O | approved | [0019-bulk-reader-huge-file-safe-io.md](./0019-bulk-reader-huge-file-safe-io.md) |
-| DESIGN-0020 | Auth URL opener seam (injectable browser launch) | approved | [0020-auth-url-opener-seam.md](./0020-auth-url-opener-seam.md) |
-| DESIGN-0021 | Development APM project / distributable cheaper package layout | approved | [0021-dev-apm-project-and-distributable-package-layout.md](./0021-dev-apm-project-and-distributable-package-layout.md) |
-| DESIGN-0022 | Repository-owned setup/check entrypoints via mise TOML tasks | approved | [0022-repo-owned-setup-check-entrypoints.md](./0022-repo-owned-setup-check-entrypoints.md) |
-| DESIGN-0023 | grep batchMaxBytes invariant enforcement | approved | [0023-grep-batch-max-bytes-invariant-enforcement.md](./0023-grep-batch-max-bytes-invariant-enforcement.md) |
-| DESIGN-0024 | Unified version source of truth | approved | [0024-unified-version-source-of-truth.md](./0024-unified-version-source-of-truth.md) |
-| DESIGN-0025 | Copilot pre-read hook adapter | approved | [0025-copilot-pre-read-hook-adapter.md](./0025-copilot-pre-read-hook-adapter.md) |
-| DESIGN-0026 | Real-provider worker E2E via Ollama | approved | [0026-ollama-real-provider-worker-e2e.md](./0026-ollama-real-provider-worker-e2e.md) |
-| DESIGN-0027 | Delegation usage measurement log (usage.jsonl) | approved | [0027-delegation-usage-measurement-log.md](./0027-delegation-usage-measurement-log.md) |
-| DESIGN-0028 | User-facing documentation information architecture | approved | [0028-user-facing-docs-information-architecture.md](./0028-user-facing-docs-information-architecture.md) |
-| DESIGN-0029 | Pi state paths under userConfigDir/pi | approved | [0029-pi-state-paths-under-userconfigdir-pi.md](./0029-pi-state-paths-under-userconfigdir-pi.md) |
-| DESIGN-0030 | Provider-only registration layer | approved | [0030-provider-only-registration-layer.md](./0030-provider-only-registration-layer.md) |
-| DESIGN-0031 | Devin Local provider plugin | implemented | [0031-devin-local-provider-plugin.md](./0031-devin-local-provider-plugin.md) |
+| DESIGN-034r05iHy2gdnoFHbdllXV | APM skills and pre_read_code delegation hook | approved | [apm-skills-and-pre-read-hook.md](./apm-skills-and-pre-read-hook.md) |
+| DESIGN-034r05iHy2gdnoJ5j3v9Nk | cheaper auth command design (provider OAuth absorbed by the CLI) | approved | [auth-command.md](./auth-command.md) |
+| DESIGN-034r05iHy2gdnoOvi1vrou | Auth URL opener seam (injectable browser launch) | approved | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
+| DESIGN-034r05iHrZUE6WxkSJi9GF | bulk-reader contract | approved | [bulk-reader-contract.md](./bulk-reader-contract.md) |
+| DESIGN-034r05iHy2gdnoNaWH2bos | Bulk-reader huge-file safe I/O | approved | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
+| DESIGN-034r05iHrZUE6Wy5X0Hc88 | cheap-writer contract | superseded | [cheap-writer-contract.md](./cheap-writer-contract.md) |
+| DESIGN-034r05iHy2gdnoH3XDJcXx | cheaper CLI bundle layout inside .apm/hooks/cli | approved | [cli-bundle-layout.md](./cli-bundle-layout.md) |
+| DESIGN-034r05iHrZUE6WvDuYjZB4 | CLI contract・result/error envelope・exit code | approved | [cli-contract-envelope-exit-codes.md](./cli-contract-envelope-exit-codes.md) |
+| DESIGN-034r05iHy2gdnoUHGunDtE | Copilot pre-read hook adapter | approved | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
+| DESIGN-034r05iHy2gdnoLTC43RP5 | Cross-agent distribution verification | approved | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
+| DESIGN-034r05iHy2gdnoXu6h71XL | Delegation usage measurement log (usage.jsonl) | approved | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
+| DESIGN-034r05iHy2gdnoPoUu7BiO | Development APM project / distributable cheaper package layout | approved | [dev-apm-project-and-distributable-package-layout.md](./dev-apm-project-and-distributable-package-layout.md) |
+| DESIGN-034r05iHy2gdnp1MdNwuw6 | Devin Local provider plugin | implemented | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
+| DESIGN-034r05iHy2gdnoS2PWvNo0 | grep batchMaxBytes invariant enforcement | approved | [grep-batch-max-bytes-invariant-enforcement.md](./grep-batch-max-bytes-invariant-enforcement.md) |
+| DESIGN-034r05iHy2gdnoLt52txFG | Huge-file byte cap guard and fail-closed hook | approved | [huge-file-byte-cap-guard-and-fail-closed-hook.md](./huge-file-byte-cap-guard-and-fail-closed-hook.md) |
+| DESIGN-034r05iHrZUE6Wu1cMdeJ1 | Model Resolver | approved | [model-resolver.md](./model-resolver.md) |
+| DESIGN-034r05iHrZUE6WBzjS90b8 | Ollama real-provider smoke verification setup | approved | [ollama-real-provider-smoke-verification-setup.md](./ollama-real-provider-smoke-verification-setup.md) |
+| DESIGN-034r05iHy2gdnoWvkDigEM | Real-provider worker E2E via Ollama | approved | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
+| DESIGN-034r05iHrZUE6WvaQsRRsM | Pi 実行エンジン: session・制限・abort・retry・出力抽出・repair・usage | approved | [pi-execution-engine.md](./pi-execution-engine.md) |
+| DESIGN-034r05iHy2gdnoZAxhwPFa | Pi state paths under userConfigDir/pi | approved | [pi-state-paths-under-userconfigdir-pi.md](./pi-state-paths-under-userconfigdir-pi.md) |
+| DESIGN-034r05iHy2gdnp0zOYnFNU | Provider-only registration layer | approved | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
+| DESIGN-034r05iHy2gdnoCKJhKNGD | Repair abort and failure normalization hardening | approved | [repair-abort-and-failure-normalization-hardening.md](./repair-abort-and-failure-normalization-hardening.md) |
+| DESIGN-034r05iHy2gdnoRcfSVFq3 | Repository-owned setup/check entrypoints via mise TOML tasks | approved | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |
+| DESIGN-034r05iHrZUE6Wzyjd1NS8 | リポジトリ構成とツールチェーン | approved | [repository-structure-toolchain.md](./repository-structure-toolchain.md) |
+| DESIGN-034r05iHy2gdnoEfk3jERu | Token counter contract (core module, count_tokens tool, count-tokens CLI) | approved | [token-counter-contract.md](./token-counter-contract.md) |
+| DESIGN-034r05iHy2gdnoT4LG4KTu | Unified version source of truth | approved | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
+| DESIGN-034r05iHy2gdnoY3GBf8iz | User-facing documentation information architecture | approved | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
+| DESIGN-034r05iHrZUE6WrdtQIOmE | コアドメインモデル: Worker Definition・Resolver・Runtime Policy・tool vocabulary・error model | approved | [worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md](./worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md) |
+| DESIGN-034r05iHrZUE6WsgJOy6Ny | workspace filesystem boundary と sandboxed tools | approved | [workspace-filesystem-boundary-sandboxed-tools.md](./workspace-filesystem-boundary-sandboxed-tools.md) |
+| DESIGN-034r05iHy2gdnoIvdC141H | Write-scope and privacy deny enforcement design | approved | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |
+| DESIGN-034r05iHy2gdnoDFAeW1DN | code-writer and doc-writer worker contracts | approved | [writer-worker-contracts.md](./writer-worker-contracts.md) |

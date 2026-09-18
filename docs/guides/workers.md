@@ -97,5 +97,5 @@ runtime は `policy.yaml` の以下を参照して worker を制約する
 ## 関連
 
 - CLI 呼び出し: [usage ガイド](./usage.md)
-- worker 定義の設計根拠: `docs/designs/0011-writer-worker-contracts.md`・
-  `docs/specs/0006-code-writer-and-doc-writer-built-in-workers.md`
+- worker 定義の設計根拠: `docs/designs/writer-worker-contracts.md`・
+  `docs/specs/code-writer-and-doc-writer-built-in-workers.md`

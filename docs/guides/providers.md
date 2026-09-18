@@ -167,7 +167,7 @@ OpenAI 互換 endpoint を持つ任意の provider を追加することも
 
 Pi built-in に無い provider は、cheaper が明示的に bundle
 する provider plugin として `ModelRuntime` に登録される
-（ADR-0028）。plugin は provider の metadata・auth flow・
+（ADR-034r05iHrZUE6WoaNDNjvX）。plugin は provider の metadata・auth flow・
 model catalog・`streamSimple` 等の model transport を登録
 でき、`cheaper auth status/login/logout`・model の tier
 解決から通常の provider と同様に扱える。
@@ -180,7 +180,7 @@ extension loader は有効化しない。external provider package
 ### Devin Local（bundled）
 
 provider id `devin` は Devin CLI / Devin Local の model 群を
-使う bundled provider plugin（SPEC-0026 / ADR-0029）。Devin
+使う bundled provider plugin（SPEC-034r05iHK8bA7gAHzYnfP8 / ADR-034r05iHrZUE6WqcIaH1CU）。Devin
 Cloud Agent API ではなく、ローカルの Devin CLI 経由の model
 access を対象とする。
 
@@ -210,7 +210,7 @@ access を対象とする。
   次回 `cheaper auth login devin` は `devin auth login` を
   再実行する。
 - Devin 固有の slash command / Pi tool / event handler は
-  持ち込まない（provider-only contract、ADR-0028）。
+  持ち込まない（provider-only contract、ADR-034r05iHrZUE6WoaNDNjvX）。
 
 ## 関連
 

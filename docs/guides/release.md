@@ -1,7 +1,7 @@
 # Version と release 手順
 
 製品 version の **canonical source of truth は `packages/cli/package.json`**
-（ADR-0022）。`cheaper --version`、配布 manifest `packages/apm/apm.yml`、
+（ADR-034r05iHrZUE6WgAk8Cpqq）。`cheaper --version`、配布 manifest `packages/apm/apm.yml`、
 bundle 内 `version.json`、各 workspace package の `version` field はすべて
 この値と一致しなければならない。
 
@@ -19,7 +19,7 @@ bundle 内 `version.json`、各 workspace package の `version` field はすべ�
 ## 不一致の検出
 
 `node scripts/check-version.mjs` が全宣言を canonical と照合する。
-`mise run check`（SPEC-0017 の canonical verification entrypoint）に
+`mise run check`（SPEC-034r05iHK8bA7gpcCJQya9 の canonical verification entrypoint）に
 組み込まれているため、CI を含む通常の検証経路で自動的に検出される。
 不一致があれば file 名と値を列挙して exit 1。
 

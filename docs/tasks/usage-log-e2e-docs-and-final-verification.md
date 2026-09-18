@@ -1,0 +1,134 @@
+---
+id: "TASK-034r05iHQeQpDqKGWioCow"
+type: "task"
+status: "done"
+title: "Usage-log e2e assertions, docs, bundle regen, status sync, final verification"
+created: "2026-09-18"
+updated: "2026-09-18"
+owners: ["scarecrow173"]
+relations:
+  source: []
+  changes:
+    added: []
+    modified: []
+    deleted: []
+    renamed: []
+    moved: []
+    generated: []
+  implements:
+    - "docs/plans/delegation-usage-measurement-log.md"
+  implemented-by: []
+  depends-on:
+    - "docs/plans/delegation-usage-measurement-log.md"
+    - "docs/tasks/implement-usage-log-writer-and-cli-wiring.md"
+  blocks: []
+  supersedes: []
+  superseded-by: []
+  related:
+    - "docs/designs/delegation-usage-measurement-log.md"
+    - "docs/specs/delegation-usage-measurement-log.md"
+  refines: []
+  refined-by: []
+  derives-from: []
+  derived-by: []
+  verifies:
+    - "docs/specs/delegation-usage-measurement-log.md"
+  verified-by: []
+  references: []
+  defers: []
+  deferred-by: []
+---
+
+# TASK-034r05iHQeQpDqKGWioCow: e2e assertions, docs, bundle regen, final verification
+
+## Work
+
+PLAN-034r05iHE1Fbkpd5tkg6Gs の仕上げ task。e2e での記録 assert・ドキュメント・
+bundle 再生成・status 同期・全量検証を行う。
+
+### 1. e2e assert 追加
+
+- fake-stream e2e（`exec.test.ts` または専用 test）:
+  `CHEAPER_CONFIG_DIR` を tmpdir に向けた consumer run で
+  `usage.jsonl` に `kind:"run"` record があることを assert。
+  `count-tokens` 実行で `kind:"count"` record があることを
+  assert。
+- `real-provider-ollama.test.ts`: 各 worker run 後に
+  `usage.jsonl` へ `kind:"run"`・`model.provider==="ollama"`・
+  `usage.input > 0` の record が append されたことを assert
+  （既存の CHEAPER_CONFIG_DIR fixture をそのまま使う）。
+
+### 2. `AGENTS.md` 記載
+
+計測 log（`<userConfigDir>/usage.jsonl`、record shape、
+`CHEAPER_CONFIG_DIR` で隔離可能、best-effort）を 2〜3 行で
+記載。
+
+### 3. bundle 再生成
+
+`node scripts/bundle-cli.mjs` で bundled CLI を再生成し、
+`git diff` で `cheaper.mjs` に usage-log が含まれることを確認
+（freshness gate 対象のため必須）。
+
+### 4. status 同期
+
+- SPEC-034r05iHK8bA7gveeDA5HC → `implemented`
+- PLAN-034r05iHE1Fbkpd5tkg6Gs → `completed`
+- TASK-034r05iHQeQpDqJKnzydzW・0111 → `done`
+- 各 index の status を同期
+
+## Classification
+
+- `normal-plan-task`
+
+## Upstream Documents
+
+- `docs/plans/delegation-usage-measurement-log.md`
+- `docs/designs/delegation-usage-measurement-log.md`
+- `docs/specs/delegation-usage-measurement-log.md`
+
+## Dependencies
+
+- `docs/tasks/implement-usage-log-writer-and-cli-wiring.md`
+  （writer + 配線が実装済みである前提）
+
+## Affected Files
+
+- `packages/cli/test/e2e/exec.test.ts`（modify）
+- `packages/cli/test/e2e/real-provider-ollama.test.ts`（modify）
+- `AGENTS.md`（modify）
+- `packages/apm/.apm/hooks/cli/bin/cheaper.mjs`（generated）
+- status 同期対象の各 doc・index
+
+## Done When
+
+- [x] fake-stream e2e で run・count record の append を assert
+- [x] real-provider e2e で実測 record を assert
+- [x] AGENTS.md に計測 log の記載がある
+- [x] bundle 再生成済みで freshness clean
+- [x] SPEC-034r05iHK8bA7gveeDA5HC/PLAN-034r05iHE1Fbkpd5tkg6Gs/TASK-034r05iHQeQpDqJKnzydzW..0111 と各 index が同期
+
+## Verification
+
+- [x] `pnpm test` 全件 pass（Ollama 稼働時は real-provider 含む）
+- [x] `mise run check` exit 0
+- [x] `audit_docs.js --type all` が no findings
+
+## Verification results
+
+- fake-stream e2e（`exec.test.ts` 新規 test）: fake-stream の
+  bulk-read で `kind:"run"`・count-tokens で `kind:"count"` の
+  record が `CHEAPER_CONFIG_DIR/usage.jsonl` に append されること
+  を assert — pass。
+- real-provider e2e: 3 worker それぞれで `kind:"run"`・
+  `model.provider==="ollama"`・`usage.input>0` の record を
+  assert する `expectUsageRecord` を追加 — bundled CLI 経由の
+  live 実行で 3/3 pass（約 41s）。
+- `AGENTS.md`: 「delegation 計測ログ」節を追加（場所・record
+  shape・best-effort・隔離方法を記載）。
+- `node scripts/bundle-cli.mjs` で bundled CLI 再生成 — usage-log
+  が bundle に含まれることを diff で確認。
+- SPEC-034r05iHK8bA7gveeDA5HC → `implemented`、PLAN-034r05iHE1Fbkpd5tkg6Gs → `completed`、
+  TASK-034r05iHQeQpDqJKnzydzW/0111 → `done`、各 index も同期済み。
+- `mise run check` exit 0（lint warning は既存のみ・typecheck・
+  全 test・freshness clean）。audit 結果は後段で記録。
