@@ -16,6 +16,7 @@ import {
   WorkspaceEscapeError,
 } from "@cheaper/core";
 import {
+  type CreateCheaperModelRuntimeOptions,
   createModelRuntime,
   type ModelCatalog,
   type RunWorkerDeps,
@@ -53,7 +54,7 @@ export interface CliHooks {
     deps: RunWorkerDeps,
   ) => Promise<{ result: Record<string, unknown>; meta: WorkerRunMeta }>;
   /** ModelRuntime 生成差し替え seam（単体テスト用）。 */
-  createModelRuntime?: () => Promise<Runtime> | Runtime;
+  createModelRuntime?: (options?: CreateCheaperModelRuntimeOptions) => Promise<Runtime> | Runtime;
   /** browser 起動差し替え seam（単体テスト用。未指定時は OS opener）。 */
   openUrl?: (url: string) => void;
   /** built-in worker/policy の親 dir（既定: このパッケージ root）。 */
@@ -202,7 +203,7 @@ async function executeRun(
     projectDir: dirs.projectDir,
   });
 
-  const runtime = await (hooks.createModelRuntime ?? createModelRuntime)();
+  const runtime = await (hooks.createModelRuntime ?? createModelRuntime)({ env: io.env });
   const streamFn = await loadTestStreamFn(io.env, runtime);
 
   // timeout タイマーは runtime-pi 内の policy.execution.timeoutMs が担う。

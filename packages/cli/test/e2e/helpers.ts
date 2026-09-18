@@ -63,7 +63,6 @@ export async function makeIsolatedEnv(): Promise<{
     ...(process.env.TMP !== undefined ? { TMP: process.env.TMP } : {}),
     HOME: dir,
     USERPROFILE: dir,
-    PI_CODING_AGENT_DIR: path.join(dir, "pi-agent"),
     PI_OFFLINE: "1",
     CHEAPER_CONFIG_DIR: path.join(dir, "cheaper-config"),
     NODE_ENV: "production",

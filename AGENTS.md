@@ -45,6 +45,8 @@ bundled CLI は `pnpm bundle` で `packages/apm/.apm/hooks/cli/` へ生成する
 
 `cheaper run`（worker alias 含む）と `count-tokens` の実行結果は、`<userConfigDir>/usage.jsonl`（既定 `~/.config/cheaper/usage.jsonl`、`CHEAPER_CONFIG_DIR` で変更可）へ 1 行 JSONL で継続記録される（ADR-0025）。record は `kind:"run"`（worker・model・usage・durationMs）または `kind:"count"`（path・tokens・bytes）。書き込みは best-effort で、失敗しても exit code・stdout は変わらない。workspace・`.cheaper/` には書き込まない。集計コマンドは未実装 — parent agent が JSONL を直接読んで参照する。
 
+Pi `ModelRuntime` の永続 file（`auth.json` / `models.json` / `models-store.json`）は `<userConfigDir>/pi/` 配下に保存される（ADR-0027）。`PI_CODING_AGENT_DIR` は参照せず、`.cheaper/` には credential を置かない。
+
 ## 開発原則
 
 SOLID・YAGNI・DRY・KISS に従い、現在の要件に必要な範囲で設計・実装する。

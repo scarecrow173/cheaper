@@ -25,7 +25,8 @@ Directory: `docs/plans`
 | PLAN-0017 | Repository-owned setup/check entrypoints (mise run setup / mise run check) | completed | [0017-repo-owned-setup-check-entrypoints.md](./0017-repo-owned-setup-check-entrypoints.md) |
 | PLAN-0018 | grep batchMaxBytes invariant enforcement | completed | [0018-grep-batch-max-bytes-invariant.md](./0018-grep-batch-max-bytes-invariant.md) |
 | PLAN-0019 | Unified version source of truth | completed | [0019-unified-version-source-of-truth.md](./0019-unified-version-source-of-truth.md) |
-| PLAN-0020 | Copilot pre-read hook adapter | completed | [0020-copilot-pre-read-hook-adapter.md](./0020-copilot-pre-read-hook-adapter.md) |
-| PLAN-0021 | Real-provider worker E2E via Ollama | completed | [0021-ollama-real-provider-worker-e2e.md](./0021-ollama-real-provider-worker-e2e.md) |
-| PLAN-0022 | Delegation usage measurement log | completed | [0022-delegation-usage-measurement-log.md](./0022-delegation-usage-measurement-log.md) |
+| PLAN-0020 | Copilot pre-read hook adapter — implementation plan | completed | [0020-copilot-pre-read-hook-adapter.md](./0020-copilot-pre-read-hook-adapter.md) |
+| PLAN-0021 | Real-provider worker E2E via Ollama — implementation plan | completed | [0021-ollama-real-provider-worker-e2e.md](./0021-ollama-real-provider-worker-e2e.md) |
+| PLAN-0022 | Delegation usage measurement log — implementation plan | completed | [0022-delegation-usage-measurement-log.md](./0022-delegation-usage-measurement-log.md) |
 | PLAN-0023 | User-facing documentation IA — implementation plan | completed | [0023-user-facing-docs-information-architecture.md](./0023-user-facing-docs-information-architecture.md) |
+| PLAN-0024 | Pi state under userConfigDir/pi — implementation plan | completed | [0024-pi-state-under-userconfigdir-pi-implementation-plan.md](./0024-pi-state-under-userconfigdir-pi-implementation-plan.md) |
