@@ -20,6 +20,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpj3u9aHj7 | Implement @cheaper/runtime-pi (PLAN-034r05iHy2gdnpIrX0mTIb) | completed | [implement-cheaper-runtime-pi-plan-0002.md](./implement-cheaper-runtime-pi-plan-0002.md) |
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | IMPL-034r05iHy2gdnpDWUS1IzV | Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg) | completed | [pi-state-under-userconfigdir-pi.md](./pi-state-under-userconfigdir-pi.md) |
+| IMPL-034r2qodykm6M1ReYSbIkc | provider/auth guide runtime sync (PLAN-034r2qodyxvN3g3xktwPOF) | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | IMPL-034r05iHy2gdnpELwCtyPv | Provider-only registration layer (PLAN-034r05iHK8bA7g2BMsfjFu) | completed | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
 | IMPL-034r05iHy2gdnpr4JOT5qQ | Repair abort grace and provider failure normalization | completed | [repair-abort-grace-and-provider-failure-normalization.md](./repair-abort-grace-and-provider-failure-normalization.md) |
 | IMPL-034r05iHy2gdnpv1ZWjBbz | Repository-owned setup/check entrypoints (PLAN-034r05iHE1Fbkp7833DuTu) | completed | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |

@@ -118,9 +118,10 @@ integer, bytes; invalid values fall back to the default).
 
 Worker runs resolve a model through cheaper's tier system (low/medium/high)
 and project/user `models.yaml` overrides — you do not pass a model name.
-`meta.model` reports what was actually used. Provider credentials and the
-model map are configured in the project; see `docs/guides/providers.md` in
-the cheaper repository.
+`meta.model` reports what was actually used. Provider credentials are
+stored user-scope under `<userConfigDir>/pi/` (managed via `cheaper
+auth`) — not in the project. The model map is configured via
+`models.yaml`; see `docs/guides/providers.md` in the cheaper repository.
 
 ## Delegation guidance
 

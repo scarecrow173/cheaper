@@ -1,4 +1,4 @@
-# ADR Documents
+# Architecture Decision Records
 
 <!-- doc-suite:generated-index -->
 
@@ -24,6 +24,7 @@ Directory: `docs/adr`
 | ADR-034r05iHrZUE6W2tpzbgKv | Normalize repair abort grace, provider failure classification, and agent-execution timeout anchor | accepted | [normalize-repair-abort-grace-provider-failure-classification-and-agent-execution.md](./normalize-repair-abort-grace-provider-failure-classification-and-agent-execution.md) |
 | ADR-034r05iHlWosDpKs4eBT59 | one-shot JSON-first CLI プロセスモデル | accepted | [one-shot-json-first-cli.md](./one-shot-json-first-cli.md) |
 | ADR-034r05iHrZUE6Wn59hpaOg | Pi persistent state は userConfigDir/pi 配下へ ModelRuntime.create の明示 path で集約する | accepted | [pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md](./pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md) |
+| ADR-034r2qodyqNY09yFc1ftZd | provider/auth guide は auth status を canonical surface として auth type 別に記述する | accepted | [provider-auth-guide-auth-status-canonical-surface-auth-type.md](./provider-auth-guide-auth-status-canonical-surface-auth-type.md) |
 | ADR-034r05iHrZUE6WoaNDNjvX | provider 拡張は Pi extension loader ではなく bundled provider plugin の明示 register で行う | accepted | [provider-only-registration-via-explicit-bundled-plugin-contract.md](./provider-only-registration-via-explicit-bundled-plugin-contract.md) |
 | ADR-034r05iHrZUE6Wm3dGBfWb | README は user-facing entrypoint に限定し、canonical source は目的別 guide に分離する | accepted | [readme-as-user-entrypoint-with-canonical-guides.md](./readme-as-user-entrypoint-with-canonical-guides.md) |
 | ADR-034r05iHrZUE6WdKBH2eNM | development APM project と distributable cheaper package を nested package で物理分離する | accepted | [separate-dev-apm-project-via-nested-distributable-package.md](./separate-dev-apm-project-via-nested-distributable-package.md) |
