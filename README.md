@@ -37,7 +37,7 @@ install する:
 ```yaml
 dependencies:
   apm:
-  - scarecrow173/cheaper/packages/apm@main   # virtual package 参照
+  - scarecrow173/cheaper/packages/apm#main   # virtual package 参照
   # または local path: - path: ../cheaper/packages/apm
 ```
 

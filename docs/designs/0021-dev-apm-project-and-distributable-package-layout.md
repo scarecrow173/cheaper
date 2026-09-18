@@ -112,7 +112,7 @@ author: scarecrow173
 - `includes` も持たない。`.apm/` は pack/install の既定 source であり、
   package は hook bundle + skills の primitives layout として解釈される。
 - consumer からの参照は virtual package
-  （`owner/repo/packages/apm@ref`）または local `path:` dep。
+  （`owner/repo/packages/apm#ref`）または local `path:` dep。
 
 ## Bundle Pipeline
 

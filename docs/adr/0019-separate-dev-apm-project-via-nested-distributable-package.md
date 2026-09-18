@@ -121,7 +121,7 @@ development dependencies の宣言に限定する。
   自身の skills / hooks は deploy されない。
 - `.apm/` 前提の実行可能参照（bundle script・CI・e2e fixture）は
   `packages/apm/.apm/` へ追従する。
-- consumer の install reference は `owner/repo/packages/apm@ref` 相当の
+- consumer の install reference は `owner/repo/packages/apm#ref` 相当の
   virtual package または local `path:` となる。
 - 旧 root `.apm/` layout との compatibility shim は提供しない。
 - Issue #7 はこの分離済み root APM project を前提に setup contract を

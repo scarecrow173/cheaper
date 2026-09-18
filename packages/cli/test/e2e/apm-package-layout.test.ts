@@ -56,6 +56,28 @@ describe("development / distributable APM package separation", () => {
     const yml = readFileSync(path.join(apmPackageDir, "apm.yml"), "utf8");
     expect(yml).toMatch(/^name: cheaper$/m);
   });
+
+  it("documents remote dependency refs with the APM #ref grammar", () => {
+    // APM v0.28.0 の manifest grammar は
+    // `owner/repo[/virtual_path][#ref]`。`@ref` は invalid なので、
+    // consumer-facing の記述が `@` 形式へ drift しないことを静的に
+    // guard する。
+    const docs = [
+      "README.md",
+      "docs/guides/parent-agent-integration.md",
+      "docs/adr/0019-separate-dev-apm-project-via-nested-distributable-package.md",
+      "docs/designs/0021-dev-apm-project-and-distributable-package-layout.md",
+    ];
+    const refs: string[] = [];
+    for (const rel of docs) {
+      const p = path.join(repoRoot, rel);
+      if (!existsSync(p)) continue;
+      const text = readFileSync(p, "utf8");
+      expect(text, rel).not.toMatch(/packages\/apm@/);
+      refs.push(...(text.match(/packages\/apm#[\w./-]*/g) ?? []));
+    }
+    expect(refs.length).toBeGreaterThan(0);
+  });
 });
 
 describe("root development project install does not self-deploy", () => {
