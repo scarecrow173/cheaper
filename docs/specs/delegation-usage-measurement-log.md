@@ -4,7 +4,7 @@ type: "spec"
 status: "implemented"
 title: "Continuous usage measurement log for delegations"
 created: "2026-09-18"
-updated: "2026-09-18"
+updated: "2026-09-19"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -28,7 +28,8 @@ relations:
     - "../designs/cli-contract-envelope-exit-codes.md"
     - "../impl/ir/run-real-provider-smoke-test-with-ollama.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "./usage-log-recording-scope-docs.md"
   derives-from: []
   derived-by: []
   verifies: []
@@ -71,11 +72,13 @@ cheaper の存在意義は parent agent の context・cost 削減だが、
 
 ### In Scope
 
-- `run` 系コマンド（`run <worker>`・worker alias）の成功・
-  error-with-meta envelope から usage 記録を 1 行 JSONL で
-  append する（`<userConfigDir>/usage.jsonl`）。
+- `run` 系コマンド（`run <worker>`・worker alias）のうち、
+  success envelope と `meta.model`・`meta.usage` を持つ error
+  envelope（usage-bearing failure）から usage 記録を 1 行
+  JSONL で append する（`<userConfigDir>/usage.jsonl`）。
 - `count-tokens` の測定結果（path・tokens・bytes）を同じ file に
-  記録する（事前見積として実測と突き合わせ可能にする）。
+  記録する（事前見積として実測と突き合わせ可能にする）。記録は
+  token count が成功し `tokens` を持つ実行に限る。
 - 記録は best-effort: 書き込み失敗が exit code・stdout envelope
   contract を変えない。
 - 記録経路の unit test・fake-stream e2e・real-provider e2e での
@@ -86,6 +89,10 @@ cheaper の存在意義は parent agent の context・cost 削減だが、
 - JSONL の集計・summary コマンド（JSONL 自体が parent の読める
   形。集計 UI は follow-up）。
 - auth・help・version 等の計測対象外コマンドの記録。
+- `meta.model`・`meta.usage` を持たない run failure（worker・
+  model 解決前の input/config error 等）や、失敗した
+  count-tokens（`FILE_TOO_LARGE`・file not found・workspace
+  escape 等）の記録 — いずれも usage/測定結果を持たず記録対象外。
 - log rotation・retention（YAGNI。file は 1 行/ run で増え方は
   緩やか）。
 - parent agent 側の skill への参照手順組み込み（docs 記載まで）。
@@ -116,9 +123,12 @@ cheaper の存在意義は parent agent の context・cost 削減だが、
 
 ## Acceptance Criteria
 
-- [ ] `run` 実行ごとに `usage.jsonl` へ 1 行の run record が
-      append される（success・usage 付き error の両方）。
-- [ ] `count-tokens` 実行ごとに count record が append される。
+- [ ] `run` のうち success と `meta.model`・`meta.usage` を持つ
+      error の実行に限り、`usage.jsonl` へ 1 行の run record が
+      append される（usage を持たない failure は記録されない）。
+- [ ] `count-tokens` のうち token count が成功し `tokens` を
+      持つ実行に限り、count record が append される（
+      `FILE_TOO_LARGE` 等の失敗は記録されない）。
 - [ ] log 書き込み不可の環境でも CLI の exit code・stdout が
       変わらない。
 - [ ] real-provider e2e が log record を assert する。

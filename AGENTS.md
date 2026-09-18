@@ -43,7 +43,7 @@ bundled CLI は `pnpm bundle` で `packages/apm/.apm/hooks/cli/` へ生成する
 
 ## delegation 計測ログ
 
-`cheaper run`（worker alias 含む）と `count-tokens` の実行結果は、`<userConfigDir>/usage.jsonl`（既定 `~/.config/cheaper/usage.jsonl`、`CHEAPER_CONFIG_DIR` で変更可）へ 1 行 JSONL で継続記録される（ADR-0025）。record は `kind:"run"`（worker・model・usage・durationMs）または `kind:"count"`（path・tokens・bytes）。書き込みは best-effort で、失敗しても exit code・stdout は変わらない。workspace・`.cheaper/` には書き込まない。集計コマンドは未実装 — parent agent が JSONL を直接読んで参照する。
+`cheaper run`（worker alias 含む）と `count-tokens` の実行結果は、記録対象に限り `<userConfigDir>/usage.jsonl`（既定 `~/.config/cheaper/usage.jsonl`、`CHEAPER_CONFIG_DIR` で変更可）へ 1 行 JSONL で継続記録される（ADR-0025）。record は `kind:"run"`（worker・model・usage・durationMs）または `kind:"count"`（path・tokens・bytes）。記録対象は run の success と `meta.model`・`meta.usage` を持つ error（usage-bearing failure）、および `tokens` を返した count-tokens の成功に限られる — worker/model 解決前の error 等 usage を持たない failure、失敗した count-tokens、auth/help/version 等の utility command は記録されない。書き込みは best-effort で、失敗しても exit code・stdout は変わらない。workspace・`.cheaper/` には書き込まない。集計コマンドは未実装 — parent agent が JSONL を直接読んで参照する。
 
 Pi `ModelRuntime` の永続 file（`auth.json` / `models.json` / `models-store.json`）は `<userConfigDir>/pi/` 配下に保存される（ADR-0027）。`PI_CODING_AGENT_DIR` は参照せず、`.cheaper/` には credential を置かない。
 
