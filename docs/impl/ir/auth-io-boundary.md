@@ -92,33 +92,52 @@ Issue #36。
     answer`: `type: "text"` prompt の response が runtime へ渡り、prompt
     message が injected stderr に出ることを検証。
 
-### Alternatives rejected
+### Decisions During Implementation
 
-- `io.stderr` の直接代入（`output: io.stderr`）: `createInterface` の
-  `output` 型が `WritableStream` を要求し `pnpm typecheck` で reject。
-- `io.stderr` の常時 `Writable` adapter wrap: adapter は TTY 性を
-  失わせ、本番 interactive prompt の入力 echo が消える回帰になる
-  ため不採用（ADR-pINoxFu3eduWaJCNBtOT1M で比較記録）。
-- `CliIo.stderr` の型を `Writable` へ変更: 公開 contract と全 test
-  helper を壊すため不採用。
-
-### Notes
-
+- `io.stderr` の直接代入（`output: io.stderr`）は不採用:
+  `createInterface` の `output` 型が `WritableStream` を要求し
+  `pnpm typecheck` で reject。
+- `io.stderr` の常時 `Writable` adapter wrap は不採用: adapter は
+  TTY 性を失わせ、本番 interactive prompt の入力 echo が消える
+  回帰になる（ADR-pINoxFu3eduWaJCNBtOT1M で比較記録）。
+- `CliIo.stderr` の型を `Writable` へ変更は不採用: 公開 contract
+  と全 test helper を壊すため。
 - secret prompt は raw-mode 独自 reader（readline 非経由）で既に
   boundary 内にあり、no-echo 動作は不変。
 - `openUrlBestEffort` の `spawn` 等、prompt 出力と無関係な経路は
   対象外（issue の方針どおり）。
 
-## Verification
+## Related Experiments
+
+### Adopted
+
+なし。
+
+### Rejected
+
+なし。
+
+## Validation
 
 - `pnpm test`（packages/cli）: 157 tests すべて pass。新規 2 テストを
   含む auth.test.ts 17 tests pass。
 - 回帰: secret no-echo・`--method` auto-answer・non-TTY select fail・
   auth_url opener seam・device_code・cancellation の既存テストが
   変わらず pass。
-- `mise run check`: pass（lint・version・typecheck・test・bundle
-  freshness）。
+- `mise run check`: lint・version・typecheck・bundle freshness は
+  pass。`pnpm test` 内で `packages/runtime-pi` の grep tool 大容量
+  file（100MB）走査 test が eval budget timeout で fail するが、
+  未変更の main checkout でも同一 fail を確認済み（CI は pass）の
+  ためこの環境固有の既知問題であり #36 の回帰ではない。auth 関連の
+  検証はすべて pass。
+
+## Risks
+
+- なし。
 
 ## Follow-ups
 
-- なし。
+- `packages/runtime-pi` の grep tool eval budget test はこの環境で
+  5s/file budget を超過し fail する（main でも再現、CI は pass）。
+  環境依存のため #36 では対処しないが、Windows 環境での再現性を
+  調べる別 issue 化を検討する余地あり。
