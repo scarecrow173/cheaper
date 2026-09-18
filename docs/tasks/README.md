@@ -100,13 +100,13 @@ Directory: `docs/tasks`
 | TASK-0092 | Bulk-reader guidance, deny/registry parity, and final verification | done | [0092-bulk-reader-guidance-parity-and-final-verification.md](./0092-bulk-reader-guidance-parity-and-final-verification.md) |
 | TASK-0093 | Auth URL opener seam and test isolation | done | [0093-auth-url-opener-seam-and-test-isolation.md](./0093-auth-url-opener-seam-and-test-isolation.md) |
 | TASK-0094 | Auth URL opener final verification and status sync | done | [0094-auth-url-opener-final-verification.md](./0094-auth-url-opener-final-verification.md) |
-| TASK-0095 | Move .apm primitives to nested distributable package | done | [0095-move-apm-primitives-to-distributable-package.md](./0095-move-apm-primitives-to-distributable-package.md) |
-| TASK-0096 | Repoint bundle pipeline and CI freshness check | done | [0096-repoint-bundle-pipeline-and-ci-freshness.md](./0096-repoint-bundle-pipeline-and-ci-freshness.md) |
-| TASK-0097 | Update consumer verification and no-self-deploy tests | done | [0097-update-consumer-verification-and-no-self-deploy-tests.md](./0097-update-consumer-verification-and-no-self-deploy-tests.md) |
-| TASK-0098 | Update docs and run final verification | done | [0098-update-readme-agents-and-final-verification.md](./0098-update-readme-agents-and-final-verification.md) |
+| TASK-0095 | Move .apm primitives to nested distributable package and make root apm.yml dev-only | done | [0095-move-apm-primitives-to-distributable-package.md](./0095-move-apm-primitives-to-distributable-package.md) |
+| TASK-0096 | Repoint bundle pipeline and CI freshness check to packages/apm | done | [0096-repoint-bundle-pipeline-and-ci-freshness.md](./0096-repoint-bundle-pipeline-and-ci-freshness.md) |
+| TASK-0097 | Update consumer e2e fixtures to packages/apm and add no-self-deploy verification | done | [0097-update-consumer-verification-and-no-self-deploy-tests.md](./0097-update-consumer-verification-and-no-self-deploy-tests.md) |
+| TASK-0098 | Update README/AGENTS for dev/distribution split and run final verification | done | [0098-update-readme-agents-and-final-verification.md](./0098-update-readme-agents-and-final-verification.md) |
 | TASK-0099 | Define mise setup/check TOML tasks and lockfile setting | done | [0099-define-mise-setup-check-tasks-and-lockfile-setting.md](./0099-define-mise-setup-check-tasks-and-lockfile-setting.md) |
-| TASK-0100 | Align CI with canonical setup/check entrypoints | done | [0100-align-ci-with-canonical-entrypoints.md](./0100-align-ci-with-canonical-entrypoints.md) |
-| TASK-0101 | Update docs and verify clean-state setup/check | done | [0101-update-docs-and-verify-clean-state-setup-check.md](./0101-update-docs-and-verify-clean-state-setup-check.md) |
+| TASK-0100 | Align CI with canonical setup/check entrypoints and locked install | done | [0100-align-ci-with-canonical-entrypoints.md](./0100-align-ci-with-canonical-entrypoints.md) |
+| TASK-0101 | Update README/AGENTS for canonical contract and verify clean-state setup/check | done | [0101-update-docs-and-verify-clean-state-setup-check.md](./0101-update-docs-and-verify-clean-state-setup-check.md) |
 | TASK-0102 | Enforce grep batchMaxBytes invariant at construction | done | [0102-enforce-grep-batch-max-bytes-invariant.md](./0102-enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-0103 | grep batch invariant final verification | done | [0103-grep-batch-invariant-final-verification.md](./0103-grep-batch-invariant-final-verification.md) |
 | TASK-0104 | Add version check and set scripts | done | [0104-add-version-check-and-set-scripts.md](./0104-add-version-check-and-set-scripts.md) |
@@ -120,3 +120,6 @@ Directory: `docs/tasks`
 | TASK-0112 | Create usage/configuration guides and CONTRIBUTING.md | done | [0112-create-usage-configuration-guides-and-contributing.md](./0112-create-usage-configuration-guides-and-contributing.md) |
 | TASK-0113 | Create workers/integration guides and reorganize providers.md | done | [0113-create-workers-integration-guides-and-reorg-providers.md](./0113-create-workers-integration-guides-and-reorg-providers.md) |
 | TASK-0114 | Restructure README, create docs index, and run final verification | done | [0114-restructure-readme-docs-index-and-final-verification.md](./0114-restructure-readme-docs-index-and-final-verification.md) |
+| TASK-0115 | Add resolveUserConfigDir helper and Pi state path wiring | done | [0115-add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md](./0115-add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md) |
+| TASK-0116 | Wire env into createModelRuntime callers and update e2e isolation | done | [0116-wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./0116-wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
+| TASK-0117 | Update docs, regenerate bundle, and run final verification | done | [0117-update-docs-regenerate-bundle-and-run-final-verification.md](./0117-update-docs-regenerate-bundle-and-run-final-verification.md) |

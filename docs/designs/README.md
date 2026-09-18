@@ -35,3 +35,4 @@ Directory: `docs/designs`
 | DESIGN-0026 | Real-provider worker E2E via Ollama | approved | [0026-ollama-real-provider-worker-e2e.md](./0026-ollama-real-provider-worker-e2e.md) |
 | DESIGN-0027 | Delegation usage measurement log (usage.jsonl) | approved | [0027-delegation-usage-measurement-log.md](./0027-delegation-usage-measurement-log.md) |
 | DESIGN-0028 | User-facing documentation information architecture | approved | [0028-user-facing-docs-information-architecture.md](./0028-user-facing-docs-information-architecture.md) |
+| DESIGN-0029 | Pi state paths under userConfigDir/pi | approved | [0029-pi-state-paths-under-userconfigdir-pi.md](./0029-pi-state-paths-under-userconfigdir-pi.md) |

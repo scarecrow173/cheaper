@@ -32,3 +32,4 @@ Directory: `docs/adr`
 | ADR-0024 | real-provider e2e は Ollama auto-detect skip + apm install 隔離 consumer で実 provider 到達を検証する | accepted | [0024-auto-detect-skip-real-provider-e2e-via-isolated-consumer.md](./0024-auto-detect-skip-real-provider-e2e-via-isolated-consumer.md) |
 | ADR-0025 | delegation 計測は userConfigDir の usage.jsonl への best-effort append とする | accepted | [0025-usage-jsonl-in-user-config-dir-best-effort-append.md](./0025-usage-jsonl-in-user-config-dir-best-effort-append.md) |
 | ADR-0026 | README は user-facing entrypoint に限定し、canonical source は目的別 guide に分離する | accepted | [0026-readme-as-user-entrypoint-with-canonical-guides.md](./0026-readme-as-user-entrypoint-with-canonical-guides.md) |
+| ADR-0027 | Pi persistent state は userConfigDir/pi 配下へ ModelRuntime.create の明示 path で集約する | accepted | [0027-pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md](./0027-pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md) |
