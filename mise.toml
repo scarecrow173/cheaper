@@ -32,6 +32,7 @@ description = "Verify the checkout: lint, typecheck, test, bundle freshness"
 run = [
   "pnpm lint",
   "node scripts/check-version.mjs",
+  "node scripts/check-doc-ids.mjs",
   "pnpm typecheck",
   "pnpm test",
   "node scripts/bundle-cli.mjs",
