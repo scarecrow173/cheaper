@@ -32,6 +32,7 @@ canonical document として管理する。
 
 | 種類 | 場所 | 内容 |
 | --- | --- | --- |
+| idea | [ideas/](ideas/) | 未採用・保留中の設計案、promote/discard 待ちの deferred point |
 | spec | [specs/](specs/) | 何を作るか・受け入れ条件 |
 | ADR | [adr/](adr/) | 重要な設計決定とその根拠 |
 | design | [designs/](designs/) | spec/ADR を実装可能な形に詳細化した設計 |
