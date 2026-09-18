@@ -61,11 +61,20 @@ one workspace file so you can measure context cost before reading it.
     target, so file-schema workers (`bulk-read` / `code-write` /
     `doc-write`) cannot run there until the upstream fix lands —
     `count-tokens` and the hook adapter still work.
-  - **Claude / Codex / Cursor** — the hook registration is deployed
-    but the targets never fire a matching event, so it is a no-op
-    (harmless, disabled).
-  For the per-target contract, see the canonical matrix in DISC-0009
-  (`docs/discovery/0009-cross-agent-hook-distribution-and-contract-matrix.md`).
+- On the remaining targets the hook registration is deployed but
+  inert (harmless no-op, feature disabled):
+  - **Claude Code** — the `preToolUse` registration is normalized to
+    `PreToolUse` and can fire live, but the stdin payload shape does
+    not match the Copilot adapter's contract, so the adapter always
+    passes through (exit 0).
+  - **OpenAI Codex** — hooks exist, but file-read tools do not emit
+    `PreToolUse` (upstream gap `openai/codex#18491`), so the hook
+    never runs.
+  - **Cursor** — no matching native event/adapter support, so the
+    registration stays inert.
+  For the per-target contract, see the canonical matrix in
+  DISC-034r05iHy2gdnpdai9KGpW
+  (`docs/discovery/cross-agent-hook-distribution-and-contract-matrix.md`).
 
 ## stdin → stdout contract
 
