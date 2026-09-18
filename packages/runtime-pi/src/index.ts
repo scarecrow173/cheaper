@@ -36,6 +36,15 @@ export {
   type CheaperProviderPlugin,
   type ProviderPluginContext,
 } from "./provider-plugin.js";
+export {
+  type DevinCli,
+  DevinCliNotFoundError,
+  type DevinCliRunner,
+} from "./providers/devin/cli.js";
+export {
+  createDevinProviderPlugin,
+  type DevinProviderPluginDeps,
+} from "./providers/devin/plugin.js";
 export type { RunWorkerDeps, WorkerRunMeta } from "./run.js";
 export { runWorker, WorkerRunError } from "./run.js";
 export type {

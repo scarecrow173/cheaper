@@ -177,6 +177,39 @@ extension loader は有効化しない。external provider package
 の discovery / load も行わない — 登録対象は cheaper が
 明示的に bundle する plugin のみ。
 
+### Devin Local（bundled）
+
+provider id `devin` は Devin CLI / Devin Local の model 群を
+使う bundled provider plugin（SPEC-0026 / ADR-0029）。Devin
+Cloud Agent API ではなく、ローカルの Devin CLI 経由の model
+access を対象とする。
+
+- **前提**: `devin` CLI が PATH 上にあること。binary は
+  `DEVIN_CLI` env で明示指定もできる。
+- **login**: `cheaper auth login devin`（oauth method）—
+  cheaper 専用の data dir を child process env
+  （`XDG_DATA_HOME`、Windows では `LOCALAPPDATA` 併用）へ
+  設定した状態で `devin auth login` をそのまま実行する。
+  Devin CLI 自身の対話 flow が走り、生成された
+  `credentials.toml` を cheaper が読んで Pi credential
+  として永続化する。
+- **credential の隔離**: Devin CLI の data dir は
+  `<userConfigDir>/providers/devin/data/` 配下に閉じ込め
+  られる（`<data>/devin/credentials.toml`）。global の
+  `~/.local/share/devin` や Devin Desktop の credential は
+  暗黙利用しない。`process.env` は変更されない。
+- **model catalog**: `devin models list --format json` の
+  live catalog が優先。認証前は最小の bootstrap list で
+  provider を認識させ、login 直後・refresh 時に live
+  catalog で置き換える。thinking level は variant suffix
+  から `thinkingLevelMap` へ写像される。
+- **logout**: `cheaper auth logout devin` で Pi 側の stored
+  credential を削除。isolated data dir 内の
+  `credentials.toml` は残る（global 汚染は無く、次回
+  login で再利用される）。
+- Devin 固有の slash command / Pi tool / event handler は
+  持ち込まない（provider-only contract、ADR-0028）。
+
 ## 関連
 
 - config dir・優先度・policy.yaml: [configuration ガイド](./configuration.md)

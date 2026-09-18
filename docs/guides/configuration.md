@@ -115,12 +115,15 @@ output:
 | `CHEAPER_CONFIG_DIR` | user config dir を任意の場所に変更する。test 隔離・検証用設定の分離に使う |
 | `CHEAPER_COUNT_MAX_BYTES` | `count-tokens` の byte cap（default 16 MiB）。正の整数のみ有効 |
 | `CHEAPER_READ_TOKEN_THRESHOLD` | parent-agent hook の large-read threshold（default 8192 token）。詳細は [integration ガイド](./parent-agent-integration.md) |
+| `DEVIN_CLI` | `devin` provider が使う Devin CLI binary の path。未設定時は PATH 上の `devin` |
 
 Pi runtime の永続 file（`auth.json`・`models.json`・
 `models-store.json`）は user config dir 配下の `pi/` に
 保存される（`<userConfigDir>/pi/`）。`PI_CODING_AGENT_DIR`
-は cheaper では使用しない。詳細は
-[providers ガイド](./providers.md)。
+は cheaper では使用しない。`devin` provider の Devin CLI
+credential は `<userConfigDir>/providers/devin/data/`
+配下の child-process 専用 data dir に閉じ込められる。
+詳細は [providers ガイド](./providers.md)。
 
 ## 関連
 

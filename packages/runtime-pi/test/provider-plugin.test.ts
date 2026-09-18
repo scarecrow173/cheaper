@@ -20,8 +20,8 @@ function tmpEnv() {
 }
 
 describe("bundledProviderPlugins", () => {
-  it("returns an empty list until cheaper bundles a provider plugin", () => {
-    expect(bundledProviderPlugins()).toEqual([]);
+  it("bundles the Devin Local provider plugin", () => {
+    expect(bundledProviderPlugins().map((p) => p.id)).toEqual(["devin"]);
   });
 });
 

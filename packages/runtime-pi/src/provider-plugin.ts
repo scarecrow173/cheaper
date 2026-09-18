@@ -1,4 +1,5 @@
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
+import { createDevinProviderPlugin } from "./providers/devin/plugin.js";
 
 /**
  * plugin が provider 登録に使う最小 context（ADR-0028）。
@@ -40,9 +41,8 @@ export interface CheaperProviderPlugin {
 
 /**
  * cheaper が明示的に bundle する provider plugin の一覧。
- * external discovery は行わない（ADR-0028）。Devin Local
- * provider（Issue #27）はここへ追加する。
+ * external discovery は行わない（ADR-0028）。
  */
 export function bundledProviderPlugins(): readonly CheaperProviderPlugin[] {
-  return [];
+  return [createDevinProviderPlugin()];
 }
