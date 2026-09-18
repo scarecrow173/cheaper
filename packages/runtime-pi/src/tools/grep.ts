@@ -203,11 +203,20 @@ export interface GrepToolOptions extends WalkOptions {
   scanDeadlineMs?: number;
   /** `FileHandle.read` chunk byte 数の縮退注入（既定 `IO_CHUNK_BYTES`）。テスト用。 */
   chunkBytes?: number;
-  /** 評価対象にする 1 行の raw byte 上限の縮退注入（既定 `GREP_MAX_LINE_BYTES`）。テスト用。 */
+  /**
+   * 評価対象にする 1 行の raw byte 上限の縮退注入（既定 `GREP_MAX_LINE_BYTES`）。テスト用。
+   * raw byte の行は UTF-8 decode で最大 3 倍へ展開しうる（invalid byte →
+   * U+FFFD 3 byte）ため、decoded payload は最大 `3 * maxLineBytes`。
+   */
   maxLineBytes?: number;
   /** 1 batch の行数上限の縮退注入（既定 `GREP_BATCH_MAX_LINES`）。テスト用。 */
   batchMaxLines?: number;
-  /** 1 batch の行テキスト合計 byte 上限の縮退注入（既定 `GREP_BATCH_MAX_BYTES`）。テスト用。 */
+  /**
+   * 1 batch の行テキスト合計 byte 上限の縮退注入（既定 `GREP_BATCH_MAX_BYTES`）。テスト用。
+   * invariant: `batchMaxBytes >= 3 * maxLineBytes`（1 行の最大 decoded
+   * payload が空 batch に収まり、「1 batch ≤ B」が厳密に保たれる）。
+   * 違反する組み合わせは `createGrepTool` 構築時に reject される。
+   */
   batchMaxBytes?: number;
   /** 出力本文の総 byte 上限の縮退注入（既定 `GREP_OUTPUT_MAX_BYTES`）。テスト用。 */
   outputMaxBytes?: number;
@@ -247,6 +256,18 @@ interface SkipBucket {
  * footer で報告する（deny 対象は walker filter 段で消えるため一切出ない）。
  */
 export function createGrepTool(opts: GrepToolOptions) {
+  // invariant: B >= 3 * L。1 行の最大 decoded payload（invalid UTF-8 byte が
+  // U+FFFD 3 byte へ展開しうるため 3 * maxLineBytes）が空 batch に収まる
+  // ことを要求し、「1 batch ≤ B」を厳密に保つ。違反は縮退注入でのみ
+  // 発生しうるため、構築時に reject する。
+  const effMaxLineBytes = opts.maxLineBytes ?? GREP_MAX_LINE_BYTES;
+  const effBatchMaxBytes = opts.batchMaxBytes ?? GREP_BATCH_MAX_BYTES;
+  if (effBatchMaxBytes < 3 * effMaxLineBytes) {
+    throw new Error(
+      `grep: batchMaxBytes (${effBatchMaxBytes}) must be >= 3 * maxLineBytes ` +
+        `(${3 * effMaxLineBytes}); a single decoded line payload must fit in one batch`,
+    );
+  }
   return defineTool({
     name: "grep",
     label: "grep",

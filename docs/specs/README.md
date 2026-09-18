@@ -23,6 +23,7 @@ Directory: `docs/specs`
 | SPEC-0015 | Auth tests do not launch the OS default browser | implemented | [0015-auth-tests-do-not-launch-os-browser.md](./0015-auth-tests-do-not-launch-os-browser.md) |
 | SPEC-0016 | Separate the development APM project from the distributable cheaper package | implemented | [0016-separate-dev-apm-project-from-distributable-package.md](./0016-separate-dev-apm-project-from-distributable-package.md) |
 | SPEC-0017 | Repository-owned setup contract for fresh checkouts | implemented | [0017-repo-owned-setup-contract-for-fresh-checkouts.md](./0017-repo-owned-setup-contract-for-fresh-checkouts.md) |
+| SPEC-0018 | grep batchMaxBytes / decoded line payload invariant | implemented | [0018-grep-batch-max-bytes-line-payload-invariant.md](./0018-grep-batch-max-bytes-line-payload-invariant.md) |
 | SPEC-0019 | Unified version and release source of truth | implemented | [0019-unified-version-source-of-truth.md](./0019-unified-version-source-of-truth.md) |
 | SPEC-0020 | Copilot per-target pre-read hook adapter | implemented | [0020-copilot-pre-read-hook-adapter.md](./0020-copilot-pre-read-hook-adapter.md) |
 | SPEC-0021 | Real-provider E2E for built-in workers via Ollama container | implemented | [0021-ollama-real-provider-worker-e2e.md](./0021-ollama-real-provider-worker-e2e.md) |

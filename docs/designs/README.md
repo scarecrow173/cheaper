@@ -29,6 +29,7 @@ Directory: `docs/designs`
 | DESIGN-0020 | Auth URL opener seam (injectable browser launch) | approved | [0020-auth-url-opener-seam.md](./0020-auth-url-opener-seam.md) |
 | DESIGN-0021 | Development APM project / distributable cheaper package layout | approved | [0021-dev-apm-project-and-distributable-package-layout.md](./0021-dev-apm-project-and-distributable-package-layout.md) |
 | DESIGN-0022 | Repository-owned setup/check entrypoints via mise TOML tasks | approved | [0022-repo-owned-setup-check-entrypoints.md](./0022-repo-owned-setup-check-entrypoints.md) |
+| DESIGN-0023 | grep batchMaxBytes invariant enforcement | approved | [0023-grep-batch-max-bytes-invariant-enforcement.md](./0023-grep-batch-max-bytes-invariant-enforcement.md) |
 | DESIGN-0024 | Unified version source of truth | approved | [0024-unified-version-source-of-truth.md](./0024-unified-version-source-of-truth.md) |
 | DESIGN-0025 | Copilot pre-read hook adapter | approved | [0025-copilot-pre-read-hook-adapter.md](./0025-copilot-pre-read-hook-adapter.md) |
 | DESIGN-0026 | Real-provider worker E2E via Ollama | approved | [0026-ollama-real-provider-worker-e2e.md](./0026-ollama-real-provider-worker-e2e.md) |
