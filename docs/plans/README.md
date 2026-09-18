@@ -24,3 +24,4 @@ Directory: `docs/plans`
 | PLAN-0016 | Development APM project / distributable package separation | completed | [0016-dev-apm-and-distributable-package-separation.md](./0016-dev-apm-and-distributable-package-separation.md) |
 | PLAN-0017 | Repository-owned setup/check entrypoints (mise run setup / mise run check) | completed | [0017-repo-owned-setup-check-entrypoints.md](./0017-repo-owned-setup-check-entrypoints.md) |
 | PLAN-0019 | Unified version source of truth | completed | [0019-unified-version-source-of-truth.md](./0019-unified-version-source-of-truth.md) |
+| PLAN-0020 | Copilot pre-read hook adapter | completed | [0020-copilot-pre-read-hook-adapter.md](./0020-copilot-pre-read-hook-adapter.md) |

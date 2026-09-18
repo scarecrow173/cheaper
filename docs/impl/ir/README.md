@@ -17,3 +17,4 @@ Directory: `docs/impl/ir`
 | IMPL-0011 | Separate development APM project from distributable package (PLAN-0016) | completed | [0011-dev-apm-and-distributable-package-separation.md](./0011-dev-apm-and-distributable-package-separation.md) |
 | IMPL-0012 | Repository-owned setup/check entrypoints (PLAN-0017) | completed | [0012-repo-owned-setup-check-entrypoints.md](./0012-repo-owned-setup-check-entrypoints.md) |
 | IMPL-0014 | Unified version source of truth | completed | [0014-unified-version-source-of-truth.md](./0014-unified-version-source-of-truth.md) |
+| IMPL-0015 | Copilot pre-read hook adapter (PLAN-0020) | completed | [0015-copilot-pre-read-hook-adapter.md](./0015-copilot-pre-read-hook-adapter.md) |

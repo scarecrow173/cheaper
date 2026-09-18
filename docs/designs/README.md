@@ -30,3 +30,4 @@ Directory: `docs/designs`
 | DESIGN-0021 | Development APM project / distributable cheaper package layout | approved | [0021-dev-apm-project-and-distributable-package-layout.md](./0021-dev-apm-project-and-distributable-package-layout.md) |
 | DESIGN-0022 | Repository-owned setup/check entrypoints via mise TOML tasks | approved | [0022-repo-owned-setup-check-entrypoints.md](./0022-repo-owned-setup-check-entrypoints.md) |
 | DESIGN-0024 | Unified version source of truth | approved | [0024-unified-version-source-of-truth.md](./0024-unified-version-source-of-truth.md) |
+| DESIGN-0025 | Copilot pre-read hook adapter | approved | [0025-copilot-pre-read-hook-adapter.md](./0025-copilot-pre-read-hook-adapter.md) |
