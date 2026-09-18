@@ -114,6 +114,6 @@ PLAN-034r2puWPUDxxDyfTSffZR の唯一の task。DESIGN-034r2lHf6FAFVelj9LrhZh
 
 ## Verification
 
-- [ ] `mise run check` exit 0
+- [x] `mise run check` exit 0
 - [x] `node .agents/skills/doc-status/scripts/audit_docs.js --type all` no findings
 - [x] 3 文書の grep で曖昧表現（「実行ごとに記録」等）が残らない

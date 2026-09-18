@@ -95,15 +95,15 @@ TASK-034r2qodyq0oWVUNGquMgr の修正後、周辺文書との整合を確認し
 
 ## Done When
 
-- [ ] 4 つの整合確認対象に providers.md 修正と矛盾する記述が
+- [x] 4 つの整合確認対象に providers.md 修正と矛盾する記述が
   ない（または最小修正済み）
-- [ ] 上流 doc の status が同期されている
-- [ ] `audit_docs.js --type all` が findings なし
-- [ ] `mise run check` が pass
+- [x] 上流 doc の status が同期されている
+- [x] `audit_docs.js --type all` が findings なし
+- [x] `mise run check` が pass
 
 ## Verification
 
-- [ ] `rg -n "auth|oauth|xai|provider" docs/guides/usage.md
+- [x] `rg -n "auth|oauth|xai|provider" docs/guides/usage.md
   docs/guides/configuration.md README.md` で矛盾記述を総当たり確認
-- [ ] `audit_docs.js --type all` no findings
-- [ ] `mise run check` pass
+- [x] `audit_docs.js --type all` no findings
+- [x] `mise run check` pass
