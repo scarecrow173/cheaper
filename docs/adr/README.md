@@ -1,4 +1,4 @@
-# ADR Documents
+# Architecture Decision Records
 
 <!-- doc-suite:generated-index -->
 
@@ -29,6 +29,7 @@ Directory: `docs/adr`
 | ADR-034r05iHrZUE6WdKBH2eNM | development APM project と distributable cheaper package を nested package で物理分離する | accepted | [separate-dev-apm-project-via-nested-distributable-package.md](./separate-dev-apm-project-via-nested-distributable-package.md) |
 | ADR-034r05iHrZUE6W82VsDbPq | Treat unmeasurable huge files as over-threshold via a core byte cap (fail-closed) | accepted | [treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md](./treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md) |
 | ADR-034r05iHlWosDpP8BzaVZ8 | TypeScript + pnpm monorepo 構成 | accepted | [typescript-pnpm-monorepo.md](./typescript-pnpm-monorepo.md) |
+| ADR-034r2eId2hXJGWDjBylKVE | usage.jsonl の記録対象 contract は実装を canonical として文書を揃える | accepted | [usage-jsonl-contract-canonical.md](./usage-jsonl-contract-canonical.md) |
 | ADR-034r05iHrZUE6WljM1ZMiX | delegation 計測は userConfigDir の usage.jsonl への best-effort append とする | accepted | [usage-jsonl-in-user-config-dir-best-effort-append.md](./usage-jsonl-in-user-config-dir-best-effort-append.md) |
 | ADR-034r05iHlWosDpQ6Z1LgJo | 実 provider smoke 検証に Ollama on Docker を使う | accepted | [use-ollama-on-docker-as-real-provider-for-smoke-verification.md](./use-ollama-on-docker-as-real-provider-for-smoke-verification.md) |
 | ADR-034r05iHlWosDpJ3DpG3XW | Worker Definition / Runtime Policy / Runtime Invariants の三層 capability モデル | accepted | [worker-definition-runtime-policy-runtime-invariants-capability.md](./worker-definition-runtime-policy-runtime-invariants-capability.md) |

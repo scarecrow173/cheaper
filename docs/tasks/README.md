@@ -19,6 +19,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7hdI3bUubr | Add scripted fake stream test fixture | done | [add-scripted-fake-stream-test-fixture.md](./add-scripted-fake-stream-test-fixture.md) |
 | TASK-034r05iHQeQpDqCTYluKr1 | Add version check and set scripts | done | [add-version-check-and-set-scripts.md](./add-version-check-and-set-scripts.md) |
 | TASK-034r05iHQeQpDqx9iKaroO | Align CI with canonical setup/check entrypoints and locked install | done | [align-ci-with-canonical-entrypoints.md](./align-ci-with-canonical-entrypoints.md) |
+| TASK-034r2ruj7LGYlehohv1Xjs | Align usage-log docs with recording contract | todo | [align-usage-log-docs-with-recording-contract.md](./align-usage-log-docs-with-recording-contract.md) |
 | TASK-034r05iHQeQpDpIRiZMox8 | Anchor policy timeout at runWorker start and amend DESIGN-034r05iHrZUE6WvaQsRRsM | done | [anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
 | TASK-034r05iHQeQpDpHsFsVyxq | Apply abort grace and provider failure normalization to repair | done | [apply-abort-grace-and-provider-failure-normalization-to-repair.md](./apply-abort-grace-and-provider-failure-normalization-to-repair.md) |
 | TASK-034r05iHQeQpDqapXCLs3G | cheaper auth command (login/status/logout) | done | [auth-command.md](./auth-command.md) |
