@@ -31,3 +31,4 @@ Directory: `docs/specs`
 | SPEC-0023 | User-facing documentation information architecture | implemented | [0023-user-facing-docs-information-architecture.md](./0023-user-facing-docs-information-architecture.md) |
 | SPEC-0024 | Pi auth and model state under the Cheaper config directory | implemented | [0024-pi-state-under-cheaper-config-dir.md](./0024-pi-state-under-cheaper-config-dir.md) |
 | SPEC-0025 | Provider-only registration layer without Pi extensions | implemented | [0025-provider-only-registration-layer.md](./0025-provider-only-registration-layer.md) |
+| SPEC-0026 | Devin Local as a bundled Pi provider | implemented | [0026-devin-local-bundled-provider.md](./0026-devin-local-bundled-provider.md) |

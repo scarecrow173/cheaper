@@ -126,3 +126,6 @@ Directory: `docs/tasks`
 | TASK-0118 | Add provider plugin contract and registration order | done | [0118-add-provider-plugin-contract-and-registration-order.md](./0118-add-provider-plugin-contract-and-registration-order.md) |
 | TASK-0119 | Provider plugin tests and resource isolation verification | done | [0119-provider-plugin-tests-and-resource-isolation.md](./0119-provider-plugin-tests-and-resource-isolation.md) |
 | TASK-0120 | Update docs, regenerate bundle, and run final verification | done | [0120-docs-status-sync-bundle-and-final-verification.md](./0120-docs-status-sync-bundle-and-final-verification.md) |
+| TASK-0121 | Vendor Devin protocol modules and CLI/credentials adapters | done | [0121-vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./0121-vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
+| TASK-0122 | Devin provider plugin registration and tests | done | [0122-devin-provider-plugin-registration-and-tests.md](./0122-devin-provider-plugin-registration-and-tests.md) |
+| TASK-0123 | Devin provider docs, status sync, bundle, and final verification | done | [0123-devin-docs-status-sync-bundle-and-final-verification.md](./0123-devin-docs-status-sync-bundle-and-final-verification.md) |

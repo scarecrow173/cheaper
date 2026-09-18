@@ -37,3 +37,4 @@ Directory: `docs/designs`
 | DESIGN-0028 | User-facing documentation information architecture | approved | [0028-user-facing-docs-information-architecture.md](./0028-user-facing-docs-information-architecture.md) |
 | DESIGN-0029 | Pi state paths under userConfigDir/pi | approved | [0029-pi-state-paths-under-userconfigdir-pi.md](./0029-pi-state-paths-under-userconfigdir-pi.md) |
 | DESIGN-0030 | Provider-only registration layer | approved | [0030-provider-only-registration-layer.md](./0030-provider-only-registration-layer.md) |
+| DESIGN-0031 | Devin Local provider plugin | implemented | [0031-devin-local-provider-plugin.md](./0031-devin-local-provider-plugin.md) |
