@@ -25,3 +25,4 @@ Directory: `docs/adr`
 | ADR-0017 | bulk-reader の巨大ファイル I/O を有界 read・streaming grep・path-only find にする | accepted | [0017-bulk-reader-huge-file-safe-io.md](./0017-bulk-reader-huge-file-safe-io.md) |
 | ADR-0018 | auth interaction の browser 起動を注入可能な URL opener seam にする | accepted | [0018-inject-url-opener-seam-for-auth-interaction.md](./0018-inject-url-opener-seam-for-auth-interaction.md) |
 | ADR-0019 | development APM project と distributable cheaper package を nested package で物理分離する | accepted | [0019-separate-dev-apm-project-via-nested-distributable-package.md](./0019-separate-dev-apm-project-via-nested-distributable-package.md) |
+| ADR-0020 | canonical setup/check entrypoint を mise TOML task として mise.toml に定義する | accepted | [0020-canonical-setup-check-entrypoints-as-mise-toml-tasks.md](./0020-canonical-setup-check-entrypoints-as-mise-toml-tasks.md) |

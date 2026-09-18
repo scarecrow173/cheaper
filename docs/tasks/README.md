@@ -104,3 +104,6 @@ Directory: `docs/tasks`
 | TASK-0096 | Repoint bundle pipeline and CI freshness check | done | [0096-repoint-bundle-pipeline-and-ci-freshness.md](./0096-repoint-bundle-pipeline-and-ci-freshness.md) |
 | TASK-0097 | Update consumer verification and no-self-deploy tests | done | [0097-update-consumer-verification-and-no-self-deploy-tests.md](./0097-update-consumer-verification-and-no-self-deploy-tests.md) |
 | TASK-0098 | Update docs and run final verification | done | [0098-update-readme-agents-and-final-verification.md](./0098-update-readme-agents-and-final-verification.md) |
+| TASK-0099 | Define mise setup/check TOML tasks and lockfile setting | done | [0099-define-mise-setup-check-tasks-and-lockfile-setting.md](./0099-define-mise-setup-check-tasks-and-lockfile-setting.md) |
+| TASK-0100 | Align CI with canonical setup/check entrypoints | done | [0100-align-ci-with-canonical-entrypoints.md](./0100-align-ci-with-canonical-entrypoints.md) |
+| TASK-0101 | Update docs and verify clean-state setup/check | done | [0101-update-docs-and-verify-clean-state-setup-check.md](./0101-update-docs-and-verify-clean-state-setup-check.md) |

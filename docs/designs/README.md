@@ -28,3 +28,4 @@ Directory: `docs/designs`
 | DESIGN-0019 | Bulk-reader huge-file safe I/O | approved | [0019-bulk-reader-huge-file-safe-io.md](./0019-bulk-reader-huge-file-safe-io.md) |
 | DESIGN-0020 | Auth URL opener seam (injectable browser launch) | approved | [0020-auth-url-opener-seam.md](./0020-auth-url-opener-seam.md) |
 | DESIGN-0021 | Development APM project / distributable cheaper package layout | approved | [0021-dev-apm-project-and-distributable-package-layout.md](./0021-dev-apm-project-and-distributable-package-layout.md) |
+| DESIGN-0022 | Repository-owned setup/check entrypoints via mise TOML tasks | approved | [0022-repo-owned-setup-check-entrypoints.md](./0022-repo-owned-setup-check-entrypoints.md) |

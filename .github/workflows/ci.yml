@@ -15,15 +15,9 @@ jobs:
         with:
           # リポジトリの mise.toml minimum_release_age と同じ方針
           minimum_release_age: 7d
+          # mise.lock に基づく locked install を明示
+          install_args: "--locked"
 
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
-
-      - name: bundle freshness
-        # 生成物 packages/apm/.apm/hooks/cli が source と同期しているか検査する
-        run: |
-          node scripts/bundle-cli.mjs
-          git diff --exit-code -- packages/apm/.apm/hooks/cli
+      # repository-owned contract と同じ entrypoint を利用する
+      - run: mise run setup
+      - run: mise run check

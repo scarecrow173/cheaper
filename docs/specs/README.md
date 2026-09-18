@@ -22,3 +22,4 @@ Directory: `docs/specs`
 | SPEC-0014 | Bulk-reader huge-file safe I/O | implemented | [0014-bulk-reader-huge-file-safe-io.md](./0014-bulk-reader-huge-file-safe-io.md) |
 | SPEC-0015 | Auth tests do not launch the OS default browser | implemented | [0015-auth-tests-do-not-launch-os-browser.md](./0015-auth-tests-do-not-launch-os-browser.md) |
 | SPEC-0016 | Separate the development APM project from the distributable cheaper package | implemented | [0016-separate-dev-apm-project-from-distributable-package.md](./0016-separate-dev-apm-project-from-distributable-package.md) |
+| SPEC-0017 | Repository-owned setup contract for fresh checkouts | implemented | [0017-repo-owned-setup-contract-for-fresh-checkouts.md](./0017-repo-owned-setup-contract-for-fresh-checkouts.md) |
