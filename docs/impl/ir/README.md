@@ -24,3 +24,4 @@ Directory: `docs/impl/ir`
 | IMPL-0018 | User-facing documentation information architecture (PLAN-0023) | completed | [0018-user-facing-docs-information-architecture.md](./0018-user-facing-docs-information-architecture.md) |
 | IMPL-0019 | Pi state paths under userConfigDir/pi (PLAN-0024) | completed | [0019-pi-state-under-userconfigdir-pi.md](./0019-pi-state-under-userconfigdir-pi.md) |
 | IMPL-0020 | Provider-only registration layer (PLAN-0025) | completed | [0020-provider-only-registration-layer.md](./0020-provider-only-registration-layer.md) |
+| IMPL-0021 | Devin Local provider plugin (PLAN-0026) | completed | [0021-devin-local-provider-plugin.md](./0021-devin-local-provider-plugin.md) |
