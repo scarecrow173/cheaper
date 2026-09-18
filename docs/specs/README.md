@@ -27,3 +27,4 @@ Directory: `docs/specs`
 | SPEC-0020 | Copilot per-target pre-read hook adapter | implemented | [0020-copilot-pre-read-hook-adapter.md](./0020-copilot-pre-read-hook-adapter.md) |
 | SPEC-0021 | Real-provider E2E for built-in workers via Ollama container | implemented | [0021-ollama-real-provider-worker-e2e.md](./0021-ollama-real-provider-worker-e2e.md) |
 | SPEC-0022 | Continuous usage measurement log for delegations | implemented | [0022-delegation-usage-measurement-log.md](./0022-delegation-usage-measurement-log.md) |
+| SPEC-0023 | User-facing documentation information architecture | implemented | [0023-user-facing-docs-information-architecture.md](./0023-user-facing-docs-information-architecture.md) |
