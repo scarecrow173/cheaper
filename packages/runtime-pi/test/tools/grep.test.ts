@@ -146,7 +146,13 @@ function tool(opts?: GrepToolOptions) {
 }
 
 function bigTool(opts?: GrepToolOptions) {
-  return createGrepTool({ root: bigRoot, symlinkPolicy: "deny", ...opts });
+  return createGrepTool({
+    root: bigRoot,
+    symlinkPolicy: "deny",
+    evalPerFileMs: 600_000,
+    evalTotalMs: 600_000,
+    ...opts,
+  });
 }
 
 async function run(
