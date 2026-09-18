@@ -19,9 +19,12 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7hdI3bUubr | Add scripted fake stream test fixture | done | [add-scripted-fake-stream-test-fixture.md](./add-scripted-fake-stream-test-fixture.md) |
 | TASK-034r05iHQeQpDqCTYluKr1 | Add version check and set scripts | done | [add-version-check-and-set-scripts.md](./add-version-check-and-set-scripts.md) |
 | TASK-034r05iHQeQpDqx9iKaroO | Align CI with canonical setup/check entrypoints and locked install | done | [align-ci-with-canonical-entrypoints.md](./align-ci-with-canonical-entrypoints.md) |
+| TASK-034r2ruj7LGYlehohv1Xjs | Align usage-log docs with recording contract | done | [align-usage-log-docs-with-recording-contract.md](./align-usage-log-docs-with-recording-contract.md) |
 | TASK-034r05iHQeQpDpIRiZMox8 | Anchor policy timeout at runWorker start and amend DESIGN-034r05iHrZUE6WvaQsRRsM | done | [anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
 | TASK-034r05iHQeQpDpHsFsVyxq | Apply abort grace and provider failure normalization to repair | done | [apply-abort-grace-and-provider-failure-normalization-to-repair.md](./apply-abort-grace-and-provider-failure-normalization-to-repair.md) |
 | TASK-034r05iHQeQpDqapXCLs3G | cheaper auth command (login/status/logout) | done | [auth-command.md](./auth-command.md) |
+| TASK-AZSy7cWtCdKaL5D2ro8TWy | Auth I/O boundary final verification and status sync | todo | [auth-io-boundary-final-verification.md](./auth-io-boundary-final-verification.md) |
+| TASK-FP5YNv1aQHfB69NlhCQJbG | Auth prompt I/O boundary routing and TTY prompt tests | done | [auth-io-boundary-prompt-routing-and-tests.md](./auth-io-boundary-prompt-routing-and-tests.md) |
 | TASK-034r05iHQeQpDqpy4V1ZNo | Auth URL opener final verification and status sync | done | [auth-url-opener-final-verification.md](./auth-url-opener-final-verification.md) |
 | TASK-034r05iHQeQpDqovKmKaZC | Auth URL opener seam and test isolation | done | [auth-url-opener-seam-and-test-isolation.md](./auth-url-opener-seam-and-test-isolation.md) |
 | TASK-034r05iHQeQpDqkDLrHBxb | Bounded read tool and registry swap | done | [bounded-read-tool-and-registry-swap.md](./bounded-read-tool-and-registry-swap.md) |
@@ -35,6 +38,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqGn3BDa9i | Copilot deploy/config e2e asserts, DISC-034r05iHy2gdnpdai9KGpW matrix update, and final verification | done | [copilot-deploy-e2e-matrix-and-final-verification.md](./copilot-deploy-e2e-matrix-and-final-verification.md) |
 | TASK-034r05iHQeQpDqc1Novy9f | Core byte cap for countFileTokens | done | [core-byte-cap-for-countfiletokens.md](./core-byte-cap-for-countfiletokens.md) |
 | TASK-034r05iHQeQpDq7ypvNXB2 | Core deny-path matcher, writeScope frontmatter, policy denyPaths | done | [core-deny-matcher-and-write-scope-field.md](./core-deny-matcher-and-write-scope-field.md) |
+| TASK-002DRbiVRuFJ5XWHvsWW6i | Correct fail-open/fail-closed contract in parent-agent guide and verify consistency | done | [correct-fail-open-fail-closed-contract-in-parent-agent-guide.md](./correct-fail-open-fail-closed-contract-in-parent-agent-guide.md) |
 | TASK-034r05iHQeQpDpIa7OmcYd | Count consumed repair attempts in meta.repairs on failure | done | [count-consumed-repair-attempts-in-meta-repairs-on-failure.md](./count-consumed-repair-attempts-in-meta-repairs-on-failure.md) |
 | TASK-034r05iHQeQpDpVUAMbEeR | Create cheaper-usage skill | done | [create-cheaper-usage-skill.md](./create-cheaper-usage-skill.md) |
 | TASK-034r05iHK8bA7gD3wnFQ3l | Create empty @cheaper/core package skeleton | done | [create-empty-cheaper-core-package-skeleton.md](./create-empty-cheaper-core-package-skeleton.md) |
@@ -114,6 +118,8 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqJ0Qc4762 | Verify skip path, document e2e in AGENTS.md, sync statuses, final verification | done | [skip-path-docs-and-final-verification.md](./skip-path-docs-and-final-verification.md) |
 | TASK-034r05iHQeQpDpB3QaYlPY | Start Ollama container and pull qwen3.5 quantized model | done | [start-ollama-container-and-pull-qwen3-5-quantized-model.md](./start-ollama-container-and-pull-qwen3-5-quantized-model.md) |
 | TASK-034r05iHQeQpDqlvQrRhaE | Streaming grep with batch protocol and bounded footer | done | [streaming-grep-batch-protocol-and-bounded-footer.md](./streaming-grep-batch-protocol-and-bounded-footer.md) |
+| TASK-06WDQr0NHYErusR6Cmye43 | Sync cheaper-usage SKILL.md with current CLI and hook surface | done | [sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md](./sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md) |
+| TASK-034r2qodyq0oWVUNGquMgr | Sync providers.md guide with runtime auth surface | done | [sync-providers-guide-with-runtime-auth-surface.md](./sync-providers-guide-with-runtime-auth-surface.md) |
 | TASK-034r05iHQeQpDpUao5Hjj3 | Token counter CLI/tool parity tests and full verification | done | [token-counter-parity-and-verification.md](./token-counter-parity-and-verification.md) |
 | TASK-034r05iHQeQpDqD0biyV0P | Unify versions, wire check, and document release | done | [unify-versions-wire-check-and-document-release.md](./unify-versions-wire-check-and-document-release.md) |
 | TASK-034r05iHQeQpDqtGttOcbh | Update consumer e2e fixtures to packages/apm and add no-self-deploy verification | done | [update-consumer-verification-and-no-self-deploy-tests.md](./update-consumer-verification-and-no-self-deploy-tests.md) |
@@ -126,6 +132,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqKGWioCow | Usage-log e2e assertions, docs, bundle regen, status sync, final verification | done | [usage-log-e2e-docs-and-final-verification.md](./usage-log-e2e-docs-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
+| TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |
 | TASK-034r05iHQeQpDqac6FjqrJ | Writer writeScope declaration and e2e verification | done | [writer-write-scope-and-e2e-verification.md](./writer-write-scope-and-e2e-verification.md) |

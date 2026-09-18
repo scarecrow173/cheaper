@@ -224,6 +224,66 @@ describe("auth login", () => {
     expect(err()).toContain("browser|device");
   });
 
+  it("routes an interactive TTY select prompt through the injected io.stderr", async () => {
+    let selected = "";
+    const runtime = fakeRuntime({
+      login: async (_id, _type, interaction) => {
+        selected = await interaction.prompt({
+          type: "select",
+          message: "Choose login method",
+          options: [
+            { id: "browser", label: "Browser" },
+            { id: "device", label: "Device code", description: "For headless" },
+          ],
+        });
+        return { accessToken: SECRET, refreshToken: SECRET };
+      },
+      checkAuth: async () => ({ type: "oauth" }),
+    });
+    // TTY stdin に "2" + Enter を feed。prompt 表示は injected stderr へ出る。
+    const { io, out, err } = makeIo("2\n", true);
+    const code = await runCli(
+      ["auth", "login", "test-provider"],
+      io,
+      hooksFor(runtime, { openUrl: () => {} }),
+    );
+    expect(code).toBe(0);
+    expect(selected).toBe("device");
+    expect(err()).toContain("Choose login method");
+    expect(err()).toContain("1) Browser");
+    expect(err()).toContain("2) Device code");
+    expect(err()).toContain("select [1-2]:");
+    expect(envelopeOf(out()).ok).toBe(true);
+    expect(out()).not.toContain(SECRET);
+    expect(err()).not.toContain(SECRET);
+  });
+
+  it("routes a text prompt through the injected io.stderr and returns the answer", async () => {
+    let answered = "";
+    const runtime = fakeRuntime({
+      login: async (_id, _type, interaction) => {
+        answered = await interaction.prompt({
+          type: "text",
+          message: "Paste authorization code",
+        });
+        return { accessToken: SECRET, refreshToken: SECRET };
+      },
+      checkAuth: async () => ({ type: "oauth" }),
+    });
+    const { io, out, err } = makeIo("code-123\n", true);
+    const code = await runCli(
+      ["auth", "login", "test-provider"],
+      io,
+      hooksFor(runtime, { openUrl: () => {} }),
+    );
+    expect(code).toBe(0);
+    expect(answered).toBe("code-123");
+    expect(err()).toContain("Paste authorization code");
+    expect(envelopeOf(out()).ok).toBe(true);
+    expect(out()).not.toContain(SECRET);
+    expect(err()).not.toContain(SECRET);
+  });
+
   it("passes --type api_key through to the runtime login", async () => {
     let seenType: string | undefined;
     const keyProvider = {

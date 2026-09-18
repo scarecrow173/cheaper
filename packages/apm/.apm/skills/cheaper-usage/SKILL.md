@@ -19,6 +19,9 @@ cheaper <command> [options]
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
   count-tokens <path>    Count canonical tokens of a workspace file
+  auth status [provider] Show stored credentials and provider readiness
+  auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
+  auth logout <provider> Remove a provider credential
 ```
 
 | Option | Meaning |
@@ -27,6 +30,8 @@ cheaper <command> [options]
 | `--worker-file <path>` | Run an explicit worker file (`run` only) |
 | `--cwd <path>` | Workspace root (default: current directory) |
 | `--timeout <duration>` | Narrow policy timeout (e.g. `30s`, `5m`) |
+| `--method <id>` | Auto-answer auth login select prompts (e.g. `device`) |
+| `--type <oauth\|api_key>` | Auth method for `auth login` (default: `oauth`) |
 | `--format <json\|text>` | Output format (default: `json`) |
 | `--quiet` | Suppress stderr diagnostics |
 
@@ -46,9 +51,30 @@ one workspace file so you can measure context cost before reading it.
   Substitute `cheaper` for the actual hook bundle directory name if the
   package was installed under a different name. Everywhere below,
   `cheaper <args>` means either form.
-- The pre-read hook currently functions on Windsurf only. For the
-  per-target contract, see the canonical matrix in DISC-0009
-  (`docs/discovery/0009-cross-agent-hook-distribution-and-contract-matrix.md`).
+- The pre-read hook is functional on two targets:
+  - **Windsurf** — native `pre_read_code` event; oversized reads are
+    blocked (exit 2) with a redirect to `bulk-read`.
+  - **GitHub Copilot** — `preToolUse` adapter
+    (`pre-read-code-copilot.js`); oversized `view` calls are denied
+    via `{"permissionDecision":"deny"}` on stdout with exit 0. Note
+    the known gap: APM does not deploy `.json` assets to the copilot
+    target, so file-schema workers (`bulk-read` / `code-write` /
+    `doc-write`) cannot run there until the upstream fix lands —
+    `count-tokens` and the hook adapter still work.
+- On the remaining targets the hook registration is deployed but
+  inert (harmless no-op, feature disabled):
+  - **Claude Code** — the `preToolUse` registration is normalized to
+    `PreToolUse` and can fire live, but the stdin payload shape does
+    not match the Copilot adapter's contract, so the adapter always
+    passes through (exit 0).
+  - **OpenAI Codex** — hooks exist, but file-read tools do not emit
+    `PreToolUse` (upstream gap `openai/codex#18491`), so the hook
+    never runs.
+  - **Cursor** — no matching native event/adapter support, so the
+    registration stays inert.
+  For the per-target contract, see the canonical matrix in
+  DISC-034r05iHy2gdnpdai9KGpW
+  (`docs/discovery/cross-agent-hook-distribution-and-contract-matrix.md`).
 
 ## stdin → stdout contract
 
@@ -118,9 +144,11 @@ integer, bytes; invalid values fall back to the default).
 
 Worker runs resolve a model through cheaper's tier system (low/medium/high)
 and project/user `models.yaml` overrides — you do not pass a model name.
-`meta.model` reports what was actually used. Provider credentials and the
-model map are configured in the project; see `docs/guides/providers.md` in
-the cheaper repository.
+`meta.model` reports what was actually used. Provider credentials are
+stored user-scope in `<userConfigDir>/pi/auth.json` (managed via
+`cheaper auth login` / `auth logout` / `auth status`) — never in the
+project or `.cheaper/`. The model map is configured via
+`models.yaml`; see `docs/guides/providers.md` in the cheaper repository.
 
 ## Delegation guidance
 
