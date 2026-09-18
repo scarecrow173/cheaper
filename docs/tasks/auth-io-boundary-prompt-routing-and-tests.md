@@ -1,7 +1,7 @@
 ---
 id: "TASK-FP5YNv1aQHfB69NlhCQJbG"
 type: "task"
-status: "todo"
+status: "done"
 title: "Auth prompt I/O boundary routing and TTY prompt tests"
 created: "2026-09-19"
 updated: "2026-09-19"

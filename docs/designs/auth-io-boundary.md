@@ -51,32 +51,26 @@ metadata: {}
 `readline/promises` の `createInterface({ input: io.stdin, output: process.stderr })`
 を使い、`CliIo` boundary の外へ出力している。secret prompt は独自の
 raw-mode reader（`io.stderr.write()` + stdin）で既に boundary 内にある。
-ADR-pINoxFu3eduWaJCNBtOT1M の Option 1 に従い、`io.stderr` を
-`stream.Writable` で薄く wrap して `createInterface` の `output` へ渡す。
+ADR-pINoxFu3eduWaJCNBtOT1M の Option 1 に従い、`createInterface` の
+`output` を `io.stderr` へ直接差し替える。
 
 ## Design
 
-### Prompt output adapter
+### Prompt output の差し替え
 
-`createTerminalInteraction` 内に、injected writer を `Writable` へ変換する
-最小の adapter を 1 箇所だけ置く。
-
-```ts
-const promptOutput = new Writable({
-  write(chunk, _encoding, callback) {
-    io.stderr.write(chunk.toString());
-    callback();
-  },
-});
-```
-
-`ask()` の `createInterface` はこの adapter を `output` に使う。
+`ask()` の `createInterface` の `output` を `io.stderr` に変更する。
 
 ```ts
-rl ??= createInterface({ input: io.stdin, output: promptOutput });
+rl ??= createInterface({ input: io.stdin, output: io.stderr });
 ```
 
-- adapter は write forward のみで state を持たない。
+- readline は non-Writable の `output` を non-terminal として扱い
+  `write()` のみを呼ぶ（Node 26 で実測済み）。テストの plain object
+  writer はそのまま prompt を受け取る。
+- 本番の `io.stderr` は `process.stderr` 自身なので、terminal mode・
+  入力 echo・AbortSignal 連携を含む動作が現行と完全に同一。
+- `io.stderr` を `Writable` adapter で wrap すると TTY 性を失い、
+  本番 interactive prompt の入力 echo が消える回帰になるため採用しない。
 - `CliIo` type・`io.stderr` contract・本番の `process.stderr` 注入は
   すべて不変。
 - `process.stderr` への直接参照は auth interaction の通常 prompt 出力

@@ -80,29 +80,39 @@ metadata:
 
 ## Considered Options
 
-- **Option 1**: `io.stderr` を `stream.Writable` で薄く wrap し、
-  `createInterface` の `output` へ渡す。write は `io.stderr.write()` へ
-  forward するだけの adapter。
-- **Option 2**: `CliIo.stderr` の型を `stream.Writable` に変更し、
+- **Option 1**: `io.stderr` をそのまま `createInterface` の `output` へ渡す。
+  readline は non-Writable の output を non-terminal として扱い `write()`
+  のみを呼ぶ（Node 26 で実測済み）。本番の `io.stderr` は
+  `process.stderr` 自身なので terminal mode・echo 動作は従来と同一。
+- **Option 2**: `io.stderr` を `stream.Writable` で薄く wrap して
+  `output` へ渡す。
+- **Option 3**: `CliIo.stderr` の型を `stream.Writable` に変更し、
   `io.stderr` をそのまま `output` へ渡す。
-- **Option 3**: readline をやめて select/text prompt も `io.stderr.write()`
+- **Option 4**: readline をやめて select/text prompt も `io.stderr.write()`
   + 独自入力 reader で実装する（secret prompt と同じ方式）。
 
 ## Decision Outcome
 
-**Option 1** を採用する。`createTerminalInteraction` 内で `io.stderr` を
-forward する最小の `Writable` adapter を 1 箇所だけ生成し、
-`createInterface({ input: io.stdin, output: <adapter> })` とする。
+**Option 1** を採用する。`createInterface` の `output` を
+`process.stderr` から `io.stderr` へ差し替えるだけの 1 行変更にする。
 
 理由は次のとおり。
 
-- `CliIo` の公開型は一切変わらず、本番 (`process.stderr`) とテスト
-  (plain object) の双方の注入がそのまま動く。表現ドリフトを起こさない。
-- Option 2 は `CliIo.stderr` を `Writable` 必須にし、既存の minimal
+- 本番では `io.stderr === process.stderr` なので terminal mode・入力
+  echo・AbortSignal 連携を含む動作が現行と完全に同一。テストでは
+  non-terminal として prompt 文字列が injected writer へ届くことを
+  実測で確認した（`rl.terminal === false`、`question()` が prompt を
+  output へ書き込む）。
+- Option 2 の `Writable` adapter は TTY 性を失わせ、本番 interactive
+  prompt の入力 echo を消してしまう回帰になる。adapter を噛ませず
+  直接渡す方が動作を保ててより小さい。
+- Option 3 は `CliIo.stderr` を `Writable` 必須にし、既存の minimal
   contract と全 test helper の型を壊す。issue の「既存 abstraction を
   壊さない最小構成」に反する。
-- Option 3 は readline が提供する echo・編集・AbortSignal 連携を自前で
+- Option 4 は readline が提供する echo・編集・AbortSignal 連携を自前で
   再実装することになり、変更面が本題より大きく回帰リスクも高い。
+
+`CliIo` の公開型・test seam・secret prompt 実装は一切変わらない。
 
 ## Consequences
 
@@ -110,5 +120,5 @@ forward する最小の `Writable` adapter を 1 箇所だけ生成し、
   すべて injected `io.stderr` を経由し、テストで完全に観測できる。
 - `process.stderr` への直接参照は `openUrlBestEffort` の OS opener 等、
   auth interaction の通常 prompt 出力とは無関係な経路を除き消える。
-- adapter は write forward のみで state を持たず、secret no-echo
-  実装には関与しない。
+- secret no-echo 実装・`CliIo` 公開型・`--method` auto-answer には
+  関与しない。

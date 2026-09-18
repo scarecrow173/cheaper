@@ -113,7 +113,7 @@ export function createTerminalInteraction(
 
   let rl: Interface | undefined;
   const ask = async (message: string, signal?: AbortSignal): Promise<string> => {
-    rl ??= createInterface({ input: io.stdin, output: process.stderr });
+    rl ??= createInterface({ input: io.stdin, output: io.stderr });
     const signals = [opts.signal, signal].filter((s): s is AbortSignal => s !== undefined);
     const combined =
       signals.length === 0
