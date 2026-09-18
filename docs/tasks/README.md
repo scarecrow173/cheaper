@@ -23,7 +23,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpIRiZMox8 | Anchor policy timeout at runWorker start and amend DESIGN-034r05iHrZUE6WvaQsRRsM | done | [anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
 | TASK-034r05iHQeQpDpHsFsVyxq | Apply abort grace and provider failure normalization to repair | done | [apply-abort-grace-and-provider-failure-normalization-to-repair.md](./apply-abort-grace-and-provider-failure-normalization-to-repair.md) |
 | TASK-034r05iHQeQpDqapXCLs3G | cheaper auth command (login/status/logout) | done | [auth-command.md](./auth-command.md) |
-| TASK-AZSy7cWtCdKaL5D2ro8TWy | Auth I/O boundary final verification and status sync | todo | [auth-io-boundary-final-verification.md](./auth-io-boundary-final-verification.md) |
+| TASK-AZSy7cWtCdKaL5D2ro8TWy | Auth I/O boundary final verification and status sync | done | [auth-io-boundary-final-verification.md](./auth-io-boundary-final-verification.md) |
 | TASK-FP5YNv1aQHfB69NlhCQJbG | Auth prompt I/O boundary routing and TTY prompt tests | done | [auth-io-boundary-prompt-routing-and-tests.md](./auth-io-boundary-prompt-routing-and-tests.md) |
 | TASK-034r05iHQeQpDqpy4V1ZNo | Auth URL opener final verification and status sync | done | [auth-url-opener-final-verification.md](./auth-url-opener-final-verification.md) |
 | TASK-034r05iHQeQpDqovKmKaZC | Auth URL opener seam and test isolation | done | [auth-url-opener-seam-and-test-isolation.md](./auth-url-opener-seam-and-test-isolation.md) |
@@ -98,6 +98,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gN2lJtm5b | Implement worker resolver with origin precedence | done | [implement-worker-resolver-with-origin-precedence.md](./implement-worker-resolver-with-origin-precedence.md) |
 | TASK-034r05iHK8bA7gKN1oXRb8 | Implement worker schema reference resolution and Ajv validation | done | [implement-worker-schema-reference-resolution-and-ajv-validation.md](./implement-worker-schema-reference-resolution-and-ajv-validation.md) |
 | TASK-034r05iHK8bA7gUBy3ygQD | Implement workspace path resolution with symlink policy | done | [implement-workspace-path-resolution-with-symlink-policy.md](./implement-workspace-path-resolution-with-symlink-policy.md) |
+| TASK-034r6roOdgb1mKbE0LLAv3 | inject generous eval budget into bigTool factory | done | [inject-eval-budget-bigtool.md](./inject-eval-budget-bigtool.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
 | TASK-034r05iHQeQpDqrbmtswfZ | Move .apm primitives to nested distributable package and make root apm.yml dev-only | done | [move-apm-primitives-to-distributable-package.md](./move-apm-primitives-to-distributable-package.md) |
