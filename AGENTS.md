@@ -47,6 +47,8 @@ bundled CLI は `pnpm bundle` で `packages/apm/.apm/hooks/cli/` へ生成する
 
 Pi `ModelRuntime` の永続 file（`auth.json` / `models.json` / `models-store.json`）は `<userConfigDir>/pi/` 配下に保存される（ADR-0027）。`PI_CODING_AGENT_DIR` は参照せず、`.cheaper/` には credential を置かない。
 
+Pi built-in に無い provider は `CheaperProviderPlugin` contract で明示 bundle する（ADR-0028）。`devin` provider は Devin CLI 委譲 auth + `<userConfigDir>/providers/devin/data/` 隔離の bundled plugin（ADR-0029）— Pi extension loader・global Devin credential は使わない。
+
 ## 開発原則
 
 SOLID・YAGNI・DRY・KISS に従い、現在の要件に必要な範囲で設計・実装する。

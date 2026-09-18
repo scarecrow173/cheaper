@@ -129,7 +129,7 @@ describe("createModelRuntime", () => {
     const refresh = vi.fn().mockResolvedValue({ aborted: false, errors: new Map() });
     const spy = vi
       .spyOn(ModelRuntime, "create")
-      .mockResolvedValue({ refresh } as unknown as ModelRuntime);
+      .mockResolvedValue({ refresh, registerProvider: () => {} } as unknown as ModelRuntime);
     return { spy, refresh };
   }
 
