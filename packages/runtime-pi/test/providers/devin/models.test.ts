@@ -72,7 +72,8 @@ describe("modelsFromCatalog", () => {
     expect(models).toHaveLength(2);
 
     const opus = models[0];
-    expect(opus?.id).toBe("claude-opus-5-high");
+    // reasoning family の Pi-facing id は family id（variant uid ではない）
+    expect(opus?.id).toBe("claude-opus-5");
     expect(opus?.name).toBe("Claude Opus 5");
     expect(opus?.reasoning).toBe(true);
     expect(opus?.thinkingLevelMap?.low).toBe("claude-opus-5-low");
@@ -81,6 +82,18 @@ describe("modelsFromCatalog", () => {
     expect(opus?.maxTokens).toBe(128_000);
     expect(opus?.cost.input).toBe(5);
     expect(opus?.cost.output).toBe(25);
+  });
+
+  it("marks levels the family does not ship as explicit null", () => {
+    const models = modelsFromCatalog(CATALOG);
+    const map = models[0]?.thinkingLevelMap;
+    // catalog が low/high のみ持つ family では、未対応 level は
+    // undefined ではなく null — Pi が「対応あり」と誤認しない
+    expect(map?.off).toBeNull();
+    expect(map?.minimal).toBeNull();
+    expect(map?.medium).toBeNull();
+    expect(map?.xhigh).toBeNull();
+    expect(map?.max).toBeNull();
   });
 
   it("filters priority/fast variants from the thinking map source", () => {
@@ -149,5 +162,27 @@ describe("resolveModelUid", () => {
 
   it("returns the model id unchanged without a map", () => {
     expect(resolveModelUid("m", undefined, "high")).toBe("m");
+  });
+
+  it("maps the family id to the wire variant uid", () => {
+    const models = modelsFromCatalog(CATALOG);
+    const opus = models[0];
+    // Pi-facing id（family id）が wire 上の variant UID に解決される
+    expect(resolveModelUid(opus?.id ?? "", opus?.thinkingLevelMap, "low")).toBe(
+      "claude-opus-5-low",
+    );
+    expect(resolveModelUid(opus?.id ?? "", opus?.thinkingLevelMap, "high")).toBe(
+      "claude-opus-5-high",
+    );
+  });
+
+  it("falls back to the preferred default for explicitly-null levels", () => {
+    const models = modelsFromCatalog(CATALOG);
+    const opus = models[0];
+    // null level は Pi 側で選択不可になる前提の defensive fallback —
+    // wire に流す場合も存在しない variant UID にはならない
+    expect(resolveModelUid(opus?.id ?? "", opus?.thinkingLevelMap, "off")).toBe(
+      "claude-opus-5-high",
+    );
   });
 });

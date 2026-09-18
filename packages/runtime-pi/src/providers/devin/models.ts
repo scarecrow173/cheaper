@@ -4,7 +4,10 @@
  * Vendored from pi-devin (https://github.com/kashyab12/pi-devin)
  * Copyright (c) 2026 Kashyab Ambarani — MIT License (see NOTICE).
  * Modifications: `loadCliCatalog` を cheaper の DevinCli adapter
- * 経由に変更、catalog 型・変換ロジックは流用。
+ * 経由に変更。catalog 型・変換ロジックは流用。
+ * `familyToModels`/`FALLBACK_MODELS` は mizorewww/pi-devin の
+ * thinkingLevelMap 修正（未対応 level の明示 null・family id を
+ * Pi-facing id に）を反映済み。
  */
 import type { ThinkingLevelMap } from "@earendil-works/pi-ai";
 import type { ProviderModelConfig } from "@earendil-works/pi-coding-agent";
@@ -113,6 +116,13 @@ function familyToModels(family: DevinFamily): ProviderModelConfig[] {
       thinkingLevelMap[level] = variant.model_uid;
     }
   }
+  // Pi は map に無い level を「対応あり」と扱い、null だけが非対応を
+  // 示す。family が出荷しない level は明示的に null にして、picker が
+  // 存在しない variant へ default fallback するのを防ぐ
+  //（upstream mizorewww/pi-devin の同修正を移植）。
+  for (const level of THINKING_ORDER) {
+    if (thinkingLevelMap[level] === undefined) thinkingLevelMap[level] = null;
+  }
 
   const defaultUid =
     preferredDefault(thinkingLevelMap) ?? source[0]?.model_uid ?? family.family_uid;
@@ -124,9 +134,15 @@ function familyToModels(family: DevinFamily): ProviderModelConfig[] {
   );
   const reasoning = mappedLevels.length > 1;
 
+  // thinking map がある限り Pi-facing id は wire に出ない
+  //（resolveModelUid が常に variant UID へ写像する）ため、reasoning
+  // family では family id を Pi-facing id にし、model id に "-high"
+  // を焼き込まない（upstream mizorewww/pi-devin の同修正を移植）。
+  const familyId = family.slug || family.family_uid || defaultUid;
+
   return [
     {
-      id: defaultUid,
+      id: reasoning ? familyId : defaultUid,
       name: family.family_label || family.slug || defaultUid,
       reasoning,
       thinkingLevelMap: reasoning ? thinkingLevelMap : undefined,
@@ -145,10 +161,12 @@ function familyToModels(family: DevinFamily): ProviderModelConfig[] {
  */
 export const FALLBACK_MODELS: ProviderModelConfig[] = [
   {
-    id: "claude-opus-5-high",
+    id: "claude-opus-5",
     name: "Claude Opus 5",
     reasoning: true,
     thinkingLevelMap: {
+      off: null,
+      minimal: null,
       low: "claude-opus-5-low",
       medium: "claude-opus-5-medium",
       high: "claude-opus-5-high",
@@ -161,10 +179,12 @@ export const FALLBACK_MODELS: ProviderModelConfig[] = [
     maxTokens: 128_000,
   },
   {
-    id: "claude-5-fable-high",
+    id: "claude-fable-5",
     name: "Claude Fable 5",
     reasoning: true,
     thinkingLevelMap: {
+      off: null,
+      minimal: null,
       low: "claude-5-fable-low",
       medium: "claude-5-fable-medium",
       high: "claude-5-fable-high",
@@ -177,11 +197,12 @@ export const FALLBACK_MODELS: ProviderModelConfig[] = [
     maxTokens: 128_000,
   },
   {
-    id: "gpt-5-6-sol-high",
+    id: "gpt-5.6-sol",
     name: "GPT-5.6 Sol",
     reasoning: true,
     thinkingLevelMap: {
       off: "gpt-5-6-sol-none",
+      minimal: null,
       low: "gpt-5-6-sol-low",
       medium: "gpt-5-6-sol-medium",
       high: "gpt-5-6-sol-high",
@@ -197,6 +218,15 @@ export const FALLBACK_MODELS: ProviderModelConfig[] = [
     id: "swe-1-7",
     name: "SWE-1.7",
     reasoning: true,
+    thinkingLevelMap: {
+      off: null,
+      minimal: null,
+      low: null,
+      medium: "swe-1-7-medium",
+      high: "swe-1-7",
+      xhigh: null,
+      max: null,
+    },
     input: ["text", "image"],
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     contextWindow: 262_000,

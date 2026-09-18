@@ -9,7 +9,12 @@ import type { OAuthCredentials } from "@earendil-works/pi-ai";
 import type { ProviderModelConfig } from "@earendil-works/pi-coding-agent";
 import type { CheaperProviderPlugin } from "../../provider-plugin.js";
 import { createDevinCli, type DevinCliRunner } from "./cli.js";
-import { devinDataDir, loginWithDevinCli, readDevinCredentials } from "./credentials.js";
+import {
+  devinDataDir,
+  loginWithDevinCli,
+  logoutDevinSession,
+  readDevinCredentials,
+} from "./credentials.js";
 import { FALLBACK_MODELS, loadCliCatalog, modelsFromCatalog } from "./models.js";
 import { streamDevin } from "./stream.js";
 
@@ -49,6 +54,9 @@ export function createDevinProviderPlugin(deps?: DevinProviderPluginDeps): Cheap
           models,
           oauth: {
             name: "Devin CLI",
+            // Devin CLI の account/subscription-backed session を使うため
+            // auth metadata 上も subscription provider として扱う。
+            isSubscription: true,
             async login(): Promise<OAuthCredentials> {
               const creds = await loginWithDevinCli(cli, dataDir);
               // login 直後に live catalog を反映（失敗しても login 自体は成功）。
@@ -77,6 +85,18 @@ export function createDevinProviderPlugin(deps?: DevinProviderPluginDeps): Cheap
       };
 
       registerModels(FALLBACK_MODELS);
+
+      // Pi には provider 単位の logout hook が無いため、devin の
+      // logout 時に cheaper-owned session（credentials.toml）も閉じる
+      // よう runtime.logout を wrap する。残すと次回 login が stale
+      // token を再利用する（PR #30 review）。
+      const originalLogout = runtime.logout.bind(runtime);
+      runtime.logout = async (providerId, options) => {
+        await originalLogout(providerId, options);
+        if (providerId === PROVIDER_ID) {
+          await logoutDevinSession(cli, dataDir);
+        }
+      };
     },
   };
 }
