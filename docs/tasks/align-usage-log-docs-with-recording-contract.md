@@ -1,10 +1,10 @@
 ---
 id: "TASK-034r2ruj7LGYlehohv1Xjs"
 type: "task"
-status: "todo"
+status: "done"
 title: "Align usage-log docs with recording contract"
 created: "2026-09-18"
-updated: "2026-09-18"
+updated: "2026-09-19"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -105,15 +105,15 @@ PLAN-034r2puWPUDxxDyfTSffZR の唯一の task。DESIGN-034r2lHf6FAFVelj9LrhZh
 
 ## Done When
 
-- [ ] 3 文書の記録対象記述が `buildUsageRecord()` の条件と一致
-- [ ] usage-bearing failure / pre-run failure の区別が明記
-- [ ] successful count / failed count の区別が明記
-- [ ] auth/help/version が対象外として一貫
-- [ ] 保存先・best-effort・quiet の記述が不変
-- [ ] `git diff -- packages/` が空
+- [x] 3 文書の記録対象記述が `buildUsageRecord()` の条件と一致
+- [x] usage-bearing failure / pre-run failure の区別が明記
+- [x] successful count / failed count の区別が明記
+- [x] auth/help/version が対象外として一貫
+- [x] 保存先・best-effort・quiet の記述が不変
+- [x] `git diff -- packages/` が空
 
 ## Verification
 
 - [ ] `mise run check` exit 0
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --type all` no findings
-- [ ] 3 文書の grep で曖昧表現（「実行ごとに記録」等）が残らない
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --type all` no findings
+- [x] 3 文書の grep で曖昧表現（「実行ごとに記録」等）が残らない

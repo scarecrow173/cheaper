@@ -1,10 +1,10 @@
 ---
 id: "SPEC-034r2eqGCyFZr7j0uSfst0"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Usage log recording scope documentation contract"
 created: "2026-09-18"
-updated: "2026-09-18"
+updated: "2026-09-19"
 owners: ["scarecrow173"]
 relations:
   source:

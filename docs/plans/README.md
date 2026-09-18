@@ -29,7 +29,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHy2gdnpHMZZk4ZU | Scaffold monorepo and implement @cheaper/core | completed | [scaffold-monorepo-and-implement-cheaper-core.md](./scaffold-monorepo-and-implement-cheaper-core.md) |
 | PLAN-034r05iHE1FbkoWI8p70oC | Self-contained CLI bundle distribution | completed | [self-contained-cli-bundle.md](./self-contained-cli-bundle.md) |
 | PLAN-034r05iHE1Fbkp9wtiAJ7A | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
-| PLAN-034r2puWPUDxxDyfTSffZR | Align usage.jsonl recording-scope docs — implementation plan | approved | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
+| PLAN-034r2puWPUDxxDyfTSffZR | Align usage.jsonl recording-scope docs — implementation plan | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
 | PLAN-034r05iHE1FbkpeFEXECDx | User-facing documentation IA — implementation plan | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | PLAN-034r05iHy2gdnpLvJw9CNY | Verify cheaper real-provider path with Ollama on Docker | completed | [verify-cheaper-real-provider-path-with-ollama-on-docker.md](./verify-cheaper-real-provider-path-with-ollama-on-docker.md) |
 | PLAN-034r05iHE1FbkoYP7AZgHF | Write-scope enforcement and privacy deny list | completed | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |

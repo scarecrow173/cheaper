@@ -1,11 +1,11 @@
 ---
 id: "PLAN-034r2puWPUDxxDyfTSffZR"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Align usage.jsonl recording-scope docs — implementation plan"
 test-spec-skip: "Doc-only wording alignment; verified by doc audit and diff review inside the task, not by executable behavior tests."
 created: "2026-09-18"
-updated: "2026-09-18"
+updated: "2026-09-19"
 owners: ["scarecrow173"]
 relations:
   source:
