@@ -101,8 +101,9 @@ user config は `~/.config/cheaper`（`CHEAPER_CONFIG_DIR` で変更
 skills（`cheaper-usage`・各 worker 向け skill）と hooks
 （`pre_read_code` — 大きな read を threshold で検出して
 bulk-read へ誘導）を配布する。hook の動作は target の hook
-event 体系に依存し、Windsurf では native 動作、その他 target
-では no-op になる（設計記録参照）。install 方法・target 別
+event 体系に依存し、Windsurf では native 動作、Copilot では
+`preToolUse` adapter 経由で動作、その他 target では現状
+no-op になる（設計記録参照）。install 方法・target 別
 挙動・確認手順は
 [parent-agent 連携ガイド](docs/guides/parent-agent-integration.md)
 を参照。

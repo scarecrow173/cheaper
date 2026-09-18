@@ -44,7 +44,7 @@ consumer（親 agent 環境）は `cheaper` の distributable APM package
 # consumer の apm.yml
 dependencies:
   apm:
-  - scarecrow173/cheaper/packages/apm@main   # virtual package 参照
+  - scarecrow173/cheaper/packages/apm#main   # virtual package 参照
   # または local path: - path: ../cheaper/packages/apm
 ```
 
@@ -59,11 +59,22 @@ hook の動作は target の hook event 体系に依存する。
 - **Windsurf**: `pre_read_code` event が native で、read 前に
   hook が実行される。threshold 超過 file は block + bulk-read
   への誘導メッセージが返る。
-- **その他 target**（Claude / Codex / Copilot / Cursor 等）:
-  同じ hook 登録が deploy されるが、`pre_read_code` event を
-  発火しないため no-op として動作する（登録は harmless、
-  機能は無効）。target 固有の adapter 化は今後の拡張余地
-  （ADR-0016・DISC-0009）。
+- **Copilot**: `preToolUse` event 経由で adapter
+  （`pre-read-code-copilot.js`）が動作する。Copilot では非 0
+  exit が deny 扱いになるため、adapter は常に exit 0 で終了し、
+  threshold 超過の `view` tool 呼び出しだけを stdout の
+  `{"permissionDecision":"deny"}` で block する（ADR-0023）。
+  既知の制限として、現行の APM は copilot target へ `.json`
+  asset を deploy しないため、file-schema worker（bulk-read /
+  code-write / doc-write）は upstream 修正待ちの間利用できない
+  （`count-tokens` と hook adapter は動作する）。
+- **その他 target**（Claude / Codex / Cursor 等）: hook 登録は
+  deploy されるが、`pre_read_code` event を発火しない。
+  Claude では `preToolUse` 登録が `PreToolUse` に正規化されて
+  発火し得るが、stdin shape が adapter の前提と異なるため常に
+  素通し（exit 0）となり、いずれも no-op として動作する
+  （登録は harmless、機能は無効）。target 固有の adapter 化は
+  今後の拡張余地（ADR-0016・DISC-0009）。
 
 skills（`cheaper-usage` 等）は target 非依存で機能する。
 

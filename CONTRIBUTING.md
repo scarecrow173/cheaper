@@ -19,10 +19,13 @@ fresh checkout で `mise` の trust を求められた場合は `mise trust`
 を実行する。
 
 `mise run check` は CI と同等の検証を実行する: `pnpm lint` →
+`node scripts/check-version.mjs`（version 宣言の一致）→
 `pnpm typecheck` → `pnpm test` → `node scripts/bundle-cli.mjs`
 （bundle 再生成）→ `git diff --exit-code -- packages/apm/.apm/hooks/cli`
 （bundle freshness）。CLI ソースを変更した場合は bundle 再生成と
-そのコミットが必要。
+そのコミットが必要。version は `packages/cli/package.json` が
+canonical で、bump は `node scripts/set-version.mjs <version>` で
+行う（[release ガイド](docs/guides/release.md)・ADR-0022）。
 
 ## テスト
 
