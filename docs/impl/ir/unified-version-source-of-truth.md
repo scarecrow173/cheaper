@@ -1,5 +1,5 @@
 ---
-id: "IMPL-0014"
+id: "IMPL-034r05iHy2gdnpx0u8vJaz"
 type: "impl"
 status: "completed"
 title: "Unified version source of truth"
@@ -34,24 +34,24 @@ relations:
     moved: []
     generated: []
   implements:
-    - "docs/tasks/0104-add-version-check-and-set-scripts.md"
-    - "docs/tasks/0105-unify-versions-wire-check-and-document-release.md"
+    - "docs/tasks/add-version-check-and-set-scripts.md"
+    - "docs/tasks/unify-versions-wire-check-and-document-release.md"
   implemented-by: []
   depends-on: []
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/specs/0019-unified-version-source-of-truth.md"
-    - "docs/adr/0022-cli-package-json-as-canonical-version-with-check-enforcement.md"
-    - "docs/designs/0024-unified-version-source-of-truth.md"
-    - "docs/plans/0019-unified-version-source-of-truth.md"
+    - "docs/specs/unified-version-source-of-truth.md"
+    - "docs/adr/cli-package-json-as-canonical-version-with-check-enforcement.md"
+    - "docs/designs/unified-version-source-of-truth.md"
+    - "docs/plans/unified-version-source-of-truth.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by: []
   verifies:
-    - "docs/specs/0019-unified-version-source-of-truth.md"
+    - "docs/specs/unified-version-source-of-truth.md"
   verified-by: []
   references: []
   defers: []
@@ -76,7 +76,7 @@ metadata:
 
 ## Context
 
-TASK-0104 / TASK-0105（PLAN-0019 / SPEC-0019 / ADR-0022 / DESIGN-0024）
+TASK-034r05iHQeQpDqCTYluKr1 / TASK-034r05iHQeQpDqD0biyV0P（PLAN-034r05iHE1Fbkp9wtiAJ7A / SPEC-034r05iHK8bA7grnYLdwgl / ADR-034r05iHrZUE6WgAk8Cpqq / DESIGN-034r05iHy2gdnoT4LG4KTu）
 に従う。branch: `feature/unify-version-source-of-truth`
 （`feature/repo-setup-contract` 上に stack — #9 の `packages/apm` layout
 と #7 の `mise run check` entrypoint を前提とする）。
@@ -110,14 +110,27 @@ TASK-0104 / TASK-0105（PLAN-0019 / SPEC-0019 / ADR-0022 / DESIGN-0024）
 
 - **canonical = cli package.json**: `--version` の既存読み取り経路
   （package.json → version.json fallback）と一致し、表現ドリフトなし
-  （ADR-0022 option A）。
+  （ADR-034r05iHrZUE6WgAk8Cpqq option A）。
 - **宣言 + 検証（生成ではなく）**: 手書き manifest の生成管理を避け、
   宣言のまま残して check で一致を強制する構成を選択（同 ADR）。
 - **idempotent bump の対応**: 初版 `set-version.mjs` は
   `replace(...) === text` を「version 行なし」判定に使い、同一値への
   bump で誤検出した。行存在チェック（`test()`）と置換を分離して修正。
 
-## Verification
+## Related Experiments
+
+### Adopted
+
+- check script を `mise run check`（SPEC-034r05iHK8bA7gpcCJQya9 canonical entrypoint）へ
+  組み込み、CI 側に別途 check を足さない構成。SPEC-034r05iHK8bA7gpcCJQya9 の
+  local/CI/agent parity の利点がそのまま効く。
+
+### Rejected
+
+- apm.yml を canonical にする案、および VERSION file を新設して全宣言を
+  生成する案（ADR-034r05iHrZUE6WgAk8Cpqq Considered Options 参照）。
+
+## Validation
 
 - `check-version.mjs`: 発散状態で正しく exit 1 + file 列挙、統一後に
   `version check OK: 1.0.0`。
@@ -129,15 +142,10 @@ TASK-0104 / TASK-0105（PLAN-0019 / SPEC-0019 / ADR-0022 / DESIGN-0024）
 - `cheaper --version` = `1.0.0`。
 - `audit_docs.js --type all`: 198 files、no findings。
 
-## Related Experiments
+## Risks
 
-### Adopted
+- なし。
 
-- check script を `mise run check`（SPEC-0017 canonical entrypoint）へ
-  組み込み、CI 側に別途 check を足さない構成。SPEC-0017 の
-  local/CI/agent parity の利点がそのまま効く。
+## Follow-ups
 
-### Rejected
-
-- apm.yml を canonical にする案、および VERSION file を新設して全宣言を
-  生成する案（ADR-0022 Considered Options 参照）。
+- なし。

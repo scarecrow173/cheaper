@@ -1,15 +1,15 @@
 ---
-id: "DESIGN-0031"
+id: "DESIGN-034r05iHy2gdnp1MdNwuw6"
 type: "design"
-status: "implemented"
+status: "approved"
 title: "Devin Local provider plugin"
 created: "2026-09-18"
 updated: "2026-09-18"
 owners: ["scarecrow173"]
 relations:
   source:
-    - "../specs/0026-devin-local-bundled-provider.md"
-    - "../adr/0029-devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
+    - "../specs/devin-local-bundled-provider.md"
+    - "../adr/devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
   changes:
     added: []
     modified: []
@@ -18,22 +18,22 @@ relations:
     moved: []
     generated: []
   implements:
-    - "../specs/0026-devin-local-bundled-provider.md"
-    - "../adr/0029-devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
+    - "../specs/devin-local-bundled-provider.md"
+    - "../adr/devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
   implemented-by: []
   depends-on:
-    - "./0030-provider-only-registration-layer.md"
-    - "./0029-pi-state-paths-under-userconfigdir-pi.md"
+    - "./provider-only-registration-layer.md"
+    - "./pi-state-paths-under-userconfigdir-pi.md"
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "./0016-auth-command.md"
+    - "./auth-command.md"
   refines: []
   refined-by: []
   derives-from:
-    - "../specs/0026-devin-local-bundled-provider.md"
-    - "../adr/0029-devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
+    - "../specs/devin-local-bundled-provider.md"
+    - "../adr/devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
   derived-by: []
   verifies: []
   verified-by: []
@@ -46,8 +46,8 @@ relations:
 
 ## Context
 
-SPEC-0026 / ADR-0029 の実装設計。`devin` provider を
-`CheaperProviderPlugin`（DESIGN-0030）として実装し、
+SPEC-034r05iHK8bA7gAHzYnfP8 / ADR-034r05iHrZUE6WqcIaH1CU の実装設計。`devin` provider を
+`CheaperProviderPlugin`（DESIGN-034r05iHy2gdnp0zOYnFNU）として実装し、
 `bundledProviderPlugins()` に登録する。認証・catalog は
 Devin CLI child process（isolated env）へ委譲し、model
 transport は upstream `pi-devin`（MIT）を vendoring した
@@ -67,7 +67,7 @@ Connect-RPC stream で実装する。
 ### Out of Scope
 
 - `extensions/index.ts` 相当（slash command・event
-  handler）は持ち込まない（ADR-0028 の責務境界）
+  handler）は持ち込まない（ADR-034r05iHrZUE6WoaNDNjvX の責務境界）
 - real-account test の必須化
 - Devin Cloud Agent API・PAT・ACP
 

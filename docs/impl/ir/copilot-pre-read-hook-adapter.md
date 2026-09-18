@@ -1,8 +1,8 @@
 ---
-id: "IMPL-0015"
+id: "IMPL-034r05iHy2gdnpyISCbZJu"
 type: "impl"
 status: "completed"
-title: "Copilot pre-read hook adapter (PLAN-0020)"
+title: "Copilot pre-read hook adapter (PLAN-034r05iHE1FbkpaEpZrthK)"
 created: "2026-09-18"
 updated: "2026-09-18"
 owners: ["scarecrow173"]
@@ -20,30 +20,30 @@ relations:
       - type: "file"
         path: "packages/cli/test/e2e/apm-install-targets.test.ts"
       - type: "file"
-        path: "docs/discovery/0009-cross-agent-hook-distribution-and-contract-matrix.md"
+        path: "docs/discovery/cross-agent-hook-distribution-and-contract-matrix.md"
     deleted: []
     renamed: []
     moved: []
     generated: []
   implements:
-    - "docs/tasks/0106-copilot-adapter-script-and-hook-tests.md"
-    - "docs/tasks/0107-copilot-deploy-e2e-matrix-and-final-verification.md"
+    - "docs/tasks/copilot-adapter-script-and-hook-tests.md"
+    - "docs/tasks/copilot-deploy-e2e-matrix-and-final-verification.md"
   implemented-by: []
   depends-on:
-    - "docs/plans/0020-copilot-pre-read-hook-adapter.md"
+    - "docs/plans/copilot-pre-read-hook-adapter.md"
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/designs/0025-copilot-pre-read-hook-adapter.md"
-    - "docs/specs/0020-copilot-pre-read-hook-adapter.md"
-    - "docs/adr/0023-copilot-adapter-separate-script-never-nonzero-exit.md"
+    - "docs/designs/copilot-pre-read-hook-adapter.md"
+    - "docs/specs/copilot-pre-read-hook-adapter.md"
+    - "docs/adr/copilot-adapter-separate-script-never-nonzero-exit.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by: []
   verifies:
-    - "docs/specs/0020-copilot-pre-read-hook-adapter.md"
+    - "docs/specs/copilot-pre-read-hook-adapter.md"
   verified-by: []
   references: []
   defers: []
@@ -54,7 +54,7 @@ metadata:
     rejected: []
 ---
 
-# Copilot pre-read hook adapter (PLAN-0020)
+# Copilot pre-read hook adapter (PLAN-034r05iHE1FbkpaEpZrthK)
 
 ## Summary
 
@@ -69,8 +69,8 @@ copilot の generated config に登録される。
 
 ## Context
 
-TASK-0106〜0107（PLAN-0020 / SPEC-0020 / ADR-0023 / DESIGN-0025）に
-従う。Issue #10。DISC-0009 の contract matrix に基づく最初の
+TASK-034r05iHQeQpDqFsYcuUHl〜0107（PLAN-034r05iHE1FbkpaEpZrthK / SPEC-034r05iHK8bA7gsvijtkou / ADR-034r05iHrZUE6WizQ4LgPa / DESIGN-034r05iHy2gdnoUHGunDtE）に
+従う。Issue #10。DISC-034r05iHy2gdnpdai9KGpW の contract matrix に基づく最初の
 per-target adapter で、claude・cursor への pattern を確立した。
 Codex は upstream が read event を emit しないため対象外のまま。
 
@@ -108,7 +108,7 @@ Codex は upstream が read event を emit しないため対象外のまま。
 
 ### Decisions During Implementation
 
-- **`.json` asset gap は upstream 待ち（ADR-0023 option i）**:
+- **`.json` asset gap は upstream 待ち（ADR-034r05iHrZUE6WizQ4LgPa option i）**:
   adapter は `count-tokens` のみ使用で `.json` 非依存。`--version`
   と file-schema worker の copilot deploy 破損は expected-failure
   assert（drift signal）+ matrix 明記で維持し、asset 名変更や
@@ -124,6 +124,16 @@ Codex は upstream が read event を emit しないため対象外のまま。
 - **共有 module を作らない**: adapter を self-contained file とし、
   asset 欠落や load 失敗が全 adapter に波及する経路を作らない
   （per-target risk isolation、issue #10 の要求）
+
+## Related Experiments
+
+### Adopted
+
+なし。
+
+### Rejected
+
+なし。
 
 ## Validation
 

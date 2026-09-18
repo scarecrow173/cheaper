@@ -1,8 +1,8 @@
 ---
-id: "IMPL-0021"
+id: "IMPL-034r05iHy2gdnpG0UOqdhK"
 type: "impl"
 status: "completed"
-title: "Devin Local provider plugin (PLAN-0026)"
+title: "Devin Local provider plugin (PLAN-034r05iHK8bA7g45xvDT4a)"
 created: "2026-09-18"
 updated: "2026-09-18"
 owners: ["scarecrow173"]
@@ -60,25 +60,25 @@ relations:
       - type: "file"
         path: "packages/apm/.apm/hooks/cli/bin/cheaper.mjs"
   implements:
-    - "docs/tasks/0121-vendor-devin-protocol-modules-and-cli-credentials-adapters.md"
-    - "docs/tasks/0122-devin-provider-plugin-registration-and-tests.md"
-    - "docs/tasks/0123-devin-docs-status-sync-bundle-and-final-verification.md"
+    - "docs/tasks/vendor-devin-protocol-modules-and-cli-credentials-adapters.md"
+    - "docs/tasks/devin-provider-plugin-registration-and-tests.md"
+    - "docs/tasks/devin-docs-status-sync-bundle-and-final-verification.md"
   implemented-by: []
   depends-on:
-    - "docs/plans/0026-devin-local-provider-plugin-implementation-plan.md"
+    - "docs/plans/devin-local-provider-plugin-implementation-plan.md"
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/designs/0031-devin-local-provider-plugin.md"
-    - "docs/specs/0026-devin-local-bundled-provider.md"
-    - "docs/adr/0029-devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
+    - "docs/designs/devin-local-provider-plugin.md"
+    - "docs/specs/devin-local-bundled-provider.md"
+    - "docs/adr/devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by: []
   verifies:
-    - "docs/specs/0026-devin-local-bundled-provider.md"
+    - "docs/specs/devin-local-bundled-provider.md"
   verified-by: []
   references: []
   defers: []
@@ -89,7 +89,7 @@ metadata:
     rejected: []
 ---
 
-# Devin Local provider plugin (PLAN-0026)
+# Devin Local provider plugin (PLAN-034r05iHK8bA7g45xvDT4a)
 
 ## Summary
 
@@ -107,9 +107,9 @@ credential は暗黙利用しない）。
 
 ## Context
 
-TASK-0121/0122/0123（PLAN-0026 / SPEC-0026 / ADR-0029 /
-DESIGN-0031）に従う。Issue #27。Issue #26 の
-provider-only registration contract（ADR-0028）の最初の
+TASK-034r05iHWkNF7zNyXgVkrI/0122/0123（PLAN-034r05iHK8bA7g45xvDT4a / SPEC-034r05iHK8bA7gAHzYnfP8 / ADR-034r05iHrZUE6WqcIaH1CU /
+DESIGN-034r05iHy2gdnp1MdNwuw6）に従う。Issue #27。Issue #26 の
+provider-only registration contract（ADR-034r05iHrZUE6WoaNDNjvX）の最初の
 consumer。
 
 ## Implementation
@@ -164,7 +164,7 @@ consumer。
   `devin models list` を呼ぶ。login 直後は plugin 内で
   `registerProvider` を再実行して live catalog を即時反映。
 - `getApiKey` は credentials.toml（rotated token 拾い）を
-  優先し stored credential に fallback（DESIGN-0031 通り）。
+  優先し stored credential に fallback（DESIGN-034r05iHy2gdnp1MdNwuw6 通り）。
   stream は `options.apiKey` のみ使用。
 - `metadata.ts` の `PRODUCT_JSON` は macOS の Devin.app
   product.json（存在時のみ version 検出に使用、credential
@@ -172,7 +172,17 @@ consumer。
 - `logout` は Pi credential 削除のみ。credentials.toml は
   isolated dir に残り次回 login で再利用（global 汚染なし）。
 
-## Verification
+## Related Experiments
+
+### Adopted
+
+なし。
+
+### Rejected
+
+なし。
+
+## Validation
 
 - `pnpm typecheck`: pass
 - `pnpm --filter @cheaper/runtime-pi test`: 305 pass
@@ -182,3 +192,11 @@ consumer。
 - bundled CLI `auth status devin` が `methods:["oauth"]`・
   `configured:false` を返すことを実機確認
 - `pnpm bundle` 再生成、`mise run check` 予定
+
+## Risks
+
+- なし。
+
+## Follow-ups
+
+- なし。

@@ -1,8 +1,8 @@
 ---
-id: "IMPL-0016"
+id: "IMPL-034r05iHy2gdnpA8pNjTuA"
 type: "impl"
 status: "completed"
-title: "Real-provider worker E2E via Ollama (PLAN-0021)"
+title: "Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58)"
 created: "2026-09-18"
 updated: "2026-09-18"
 owners: ["scarecrow173"]
@@ -20,24 +20,24 @@ relations:
     moved: []
     generated: []
   implements:
-    - "docs/tasks/0108-implement-ollama-real-provider-e2e.md"
-    - "docs/tasks/0109-skip-path-docs-and-final-verification.md"
+    - "docs/tasks/implement-ollama-real-provider-e2e.md"
+    - "docs/tasks/skip-path-docs-and-final-verification.md"
   implemented-by: []
   depends-on:
-    - "docs/plans/0021-ollama-real-provider-worker-e2e.md"
+    - "docs/plans/ollama-real-provider-worker-e2e.md"
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/designs/0026-ollama-real-provider-worker-e2e.md"
-    - "docs/specs/0021-ollama-real-provider-worker-e2e.md"
-    - "docs/adr/0024-auto-detect-skip-real-provider-e2e-via-isolated-consumer.md"
+    - "docs/designs/ollama-real-provider-worker-e2e.md"
+    - "docs/specs/ollama-real-provider-worker-e2e.md"
+    - "docs/adr/auto-detect-skip-real-provider-e2e-via-isolated-consumer.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by: []
   verifies:
-    - "docs/specs/0021-ollama-real-provider-worker-e2e.md"
+    - "docs/specs/ollama-real-provider-worker-e2e.md"
   verified-by: []
   references: []
   defers: []
@@ -48,7 +48,7 @@ metadata:
     rejected: []
 ---
 
-# Real-provider worker E2E via Ollama (PLAN-0021)
+# Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58)
 
 ## Summary
 
@@ -61,8 +61,8 @@ doc-write の 3 worker を bundled consumer CLI 経由で実 provider
 
 ## Context
 
-TASK-0108/0109（PLAN-0021 / SPEC-0021 / ADR-0024 / DESIGN-0026）
-に従う。Issue #12。PLAN-0016 の distributable package 分離を
+TASK-034r05iHQeQpDqHVQkd8t7/0109（PLAN-034r05iHE1FbkpcKKUUZ58 / SPEC-034r05iHK8bA7guAnTdpdi / ADR-034r05iHrZUE6WjfsVTWjO / DESIGN-034r05iHy2gdnoWvkDigEM）
+に従う。Issue #12。PLAN-034r05iHE1Fbkp5YZSKJM2 の distributable package 分離を
 前提に、`makeConsumerLayout` + `apmInstall` の既存 fixture で
 `packages/apm` を隔離 consumer に install してから bundled CLI
 を実行する（repo-local `.apm` 開発資産は使わない）。
@@ -97,7 +97,7 @@ TASK-0108/0109（PLAN-0021 / SPEC-0021 / ADR-0024 / DESIGN-0026）
   `pnpm test` が壊れないことが Issue の要件
 - **品質 assert をしない**: model 出力の良し悪しではなく provider
   到達・envelope contract・成果物生成のみを検証し、model version
-  差による flakiness を避ける（SPEC-0021 の受け入れ条件）
+  差による flakiness を避ける（SPEC-034r05iHK8bA7guAnTdpdi の受け入れ条件）
 - **fixture 内の template literal 回避**: fixture ソース内の
   `` `hi ${name}` `` が biome の `noTemplateCurlyInString` を
   踏むため文字列連結に変更
@@ -105,6 +105,16 @@ TASK-0108/0109（PLAN-0021 / SPEC-0021 / ADR-0024 / DESIGN-0026）
   Chaining` を避けるため local 変数に取り `Array.isArray` で assert
 - **IMPL 番号**: in-flight で 0010（#8）・0013（#14）・0014
   （#11）・0015（#10）が使用済みのため 0016
+
+## Related Experiments
+
+### Adopted
+
+なし。
+
+### Rejected
+
+なし。
 
 ## Validation
 

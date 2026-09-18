@@ -1,8 +1,8 @@
 ---
-id: "IMPL-0012"
+id: "IMPL-034r05iHy2gdnpv1ZWjBbz"
 type: "impl"
 status: "completed"
-title: "Repository-owned setup/check entrypoints (PLAN-0017)"
+title: "Repository-owned setup/check entrypoints (PLAN-034r05iHE1Fbkp7833DuTu)"
 created: "2026-09-18"
 updated: "2026-09-18"
 owners: ["scarecrow173"]
@@ -26,25 +26,25 @@ relations:
     moved: []
     generated: []
   implements:
-    - "docs/tasks/0099-define-mise-setup-check-tasks-and-lockfile-setting.md"
-    - "docs/tasks/0100-align-ci-with-canonical-entrypoints.md"
-    - "docs/tasks/0101-update-docs-and-verify-clean-state-setup-check.md"
+    - "docs/tasks/define-mise-setup-check-tasks-and-lockfile-setting.md"
+    - "docs/tasks/align-ci-with-canonical-entrypoints.md"
+    - "docs/tasks/update-docs-and-verify-clean-state-setup-check.md"
   implemented-by: []
   depends-on:
-    - "docs/plans/0017-repo-owned-setup-check-entrypoints.md"
+    - "docs/plans/repo-owned-setup-check-entrypoints.md"
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/designs/0022-repo-owned-setup-check-entrypoints.md"
-    - "docs/specs/0017-repo-owned-setup-contract-for-fresh-checkouts.md"
-    - "docs/adr/0020-canonical-setup-check-entrypoints-as-mise-toml-tasks.md"
+    - "docs/designs/repo-owned-setup-check-entrypoints.md"
+    - "docs/specs/repo-owned-setup-contract-for-fresh-checkouts.md"
+    - "docs/adr/canonical-setup-check-entrypoints-as-mise-toml-tasks.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by: []
   verifies:
-    - "docs/specs/0017-repo-owned-setup-contract-for-fresh-checkouts.md"
+    - "docs/specs/repo-owned-setup-contract-for-fresh-checkouts.md"
   verified-by: []
   references: []
   defers: []
@@ -55,7 +55,7 @@ metadata:
     rejected: []
 ---
 
-# Repository-owned setup/check entrypoints (PLAN-0017)
+# Repository-owned setup/check entrypoints (PLAN-034r05iHE1Fbkp7833DuTu)
 
 ## Summary
 
@@ -68,8 +68,8 @@ CI の `--locked` install で実現。
 
 ## Context
 
-TASK-0099〜0101（PLAN-0017 / SPEC-0017 / ADR-0020 / DESIGN-0022）に
-従う。Issue #7。PLAN-0016（Issue #9）の dev/distribution 分離を
+TASK-034r05iHQeQpDqvWrATTbr〜0101（PLAN-034r05iHE1Fbkp7833DuTu / SPEC-034r05iHK8bA7gpcCJQya9 / ADR-034r05iHrZUE6WeDAi63F3 / DESIGN-034r05iHy2gdnoRcfSVFq3）に
+従う。Issue #7。PLAN-034r05iHE1Fbkp5YZSKJM2（Issue #9）の dev/distribution 分離を
 前提に、root `apm.yml` が development-only である状態で canonical
 bootstrap contract を定義した。
 
@@ -83,7 +83,7 @@ bootstrap contract を定義した。
   と `[tasks.check]`（`pnpm lint` → `pnpm typecheck` → `pnpm test`
   → `node scripts/bundle-cli.mjs` → `git diff --exit-code --
   packages/apm/.apm/hooks/cli`）を追加。`check` には `depends` を
-  付けず責務を分離（ADR-0020）
+  付けず責務を分離（ADR-034r05iHrZUE6WeDAi63F3）
 - `apm.lock.yaml`: `mise run setup` 内の `apm install` 実行で
   refresh され、旧 root `.apm/` layout の self-deploy 記録（71
   件相当）が除去された。dev-only project の正しい反映
@@ -111,6 +111,16 @@ bootstrap contract を定義した。
   lockfile 優先）ため、task 内で `mise install` を呼ばず
   declarative に委ねる
 - **IMPL 番号**: #8 PR が 0010、#9 が 0011 を使用するため 0012
+
+## Related Experiments
+
+### Adopted
+
+なし。
+
+### Rejected
+
+なし。
 
 ## Validation
 

@@ -1,8 +1,8 @@
 ---
-id: "IMPL-0018"
+id: "IMPL-034r05iHy2gdnpCk8YlDWb"
 type: "impl"
 status: "completed"
-title: "User-facing documentation information architecture (PLAN-0023)"
+title: "User-facing documentation information architecture (PLAN-034r05iHE1FbkpeFEXECDx)"
 created: "2026-09-18"
 updated: "2026-09-18"
 owners: ["scarecrow173"]
@@ -32,25 +32,25 @@ relations:
     moved: []
     generated: []
   implements:
-    - "docs/tasks/0112-create-usage-configuration-guides-and-contributing.md"
-    - "docs/tasks/0113-create-workers-integration-guides-and-reorg-providers.md"
-    - "docs/tasks/0114-restructure-readme-docs-index-and-final-verification.md"
+    - "docs/tasks/create-usage-configuration-guides-and-contributing.md"
+    - "docs/tasks/create-workers-integration-guides-and-reorg-providers.md"
+    - "docs/tasks/restructure-readme-docs-index-and-final-verification.md"
   implemented-by: []
   depends-on:
-    - "docs/plans/0023-user-facing-docs-information-architecture.md"
+    - "docs/plans/user-facing-docs-information-architecture.md"
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/specs/0023-user-facing-docs-information-architecture.md"
-    - "docs/designs/0028-user-facing-docs-information-architecture.md"
-    - "docs/adr/0026-readme-as-user-entrypoint-with-canonical-guides.md"
+    - "docs/specs/user-facing-docs-information-architecture.md"
+    - "docs/designs/user-facing-docs-information-architecture.md"
+    - "docs/adr/readme-as-user-entrypoint-with-canonical-guides.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by: []
   verifies:
-    - "docs/specs/0023-user-facing-docs-information-architecture.md"
+    - "docs/specs/user-facing-docs-information-architecture.md"
   verified-by: []
   references: []
   defers: []
@@ -61,21 +61,21 @@ metadata:
     rejected: []
 ---
 
-# User-facing documentation information architecture (PLAN-0023)
+# User-facing documentation information architecture (PLAN-034r05iHE1FbkpeFEXECDx)
 
 ## Summary
 
 README を user-facing entrypoint に再構成し、利用・設定・provider・
 worker・parent-agent 連携の 5 guide・CONTRIBUTING.md・docs index
-を整備した。Issue #15（TASK-0112/0113/0114、PLAN-0023 /
-SPEC-0023 / ADR-0026 / DESIGN-0028）に従う。コード変更は無く、
+を整備した。Issue #15（TASK-034r05iHQeQpDqMino3Zou/0113/0114、PLAN-034r05iHE1FbkpeFEXECDx /
+SPEC-034r05iHK8bA7gw94zcNpw / ADR-034r05iHrZUE6Wm3dGBfWb / DESIGN-034r05iHy2gdnoY3GBf8iz）に従う。コード変更は無く、
 全てドキュメント再構成。
 
 ## Context
 
 旧 README は 68 行で目的・repository setup・source tree 実行・
 `.apm` 内部構造・smoke 履歴が混在し、利用者の入口として
-機能していなかった。SPEC-0023/ADR-0026 に従い、利用者向けの
+機能していなかった。SPEC-034r05iHK8bA7gw94zcNpw/ADR-034r05iHrZUE6Wm3dGBfWb に従い、利用者向けの
 入口は README に限定し、contract の canonical source は目的別
 guide に分離、開発者向け記録は CONTRIBUTING/docs index に
 寄せた。
@@ -127,7 +127,17 @@ guide に分離、開発者向け記録は CONTRIBUTING/docs index に
   「experimental・contract 変更可能性」を自然に触れ、install
   手順・license は記載しない（issue の out-of-scope）。
 
-## Verification
+## Related Experiments
+
+### Adopted
+
+なし。
+
+### Rejected
+
+なし。
+
+## Validation
 
 - `audit_docs.js --type all`: 211 files、no findings
 - link 検証: README・docs/README・CONTRIBUTING・5 guide の
@@ -136,3 +146,12 @@ guide に分離、開発者向け記録は CONTRIBUTING/docs index に
   var が実装と一致
 - `mise run check` exit 0（lint warning 4・typecheck・
   668 tests・real-provider e2e 3 件 live・freshness clean）
+
+## Risks
+
+- なし。
+
+## Follow-ups
+
+- installation method・license の記載（issue の out-of-scope。
+  決定後に追記）。

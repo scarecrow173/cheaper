@@ -1,7 +1,7 @@
 ---
-id: "PLAN-0026"
+id: "PLAN-034r05iHK8bA7g45xvDT4a"
 type: "plan"
-status: "implemented"
+status: "completed"
 title: "Devin Local provider plugin — implementation plan"
 test-spec-skip: "Verified by unit tests inside the implementation tasks; no separate test-spec artifact needed."
 created: "2026-09-18"
@@ -9,8 +9,8 @@ updated: "2026-09-18"
 owners: ["scarecrow173"]
 relations:
   source:
-    - "../specs/0026-devin-local-bundled-provider.md"
-    - "../designs/0031-devin-local-provider-plugin.md"
+    - "../specs/devin-local-bundled-provider.md"
+    - "../designs/devin-local-provider-plugin.md"
   changes:
     added: []
     modified: []
@@ -19,13 +19,13 @@ relations:
     moved: []
     generated: []
   implements:
-    - "../designs/0031-devin-local-provider-plugin.md"
+    - "../designs/devin-local-provider-plugin.md"
   implemented-by:
-    - "../tasks/0121-vendor-devin-protocol-modules-and-cli-credentials-adapters.md"
-    - "../tasks/0122-devin-provider-plugin-registration-and-tests.md"
-    - "../tasks/0123-devin-docs-status-sync-bundle-and-final-verification.md"
+    - "../tasks/vendor-devin-protocol-modules-and-cli-credentials-adapters.md"
+    - "../tasks/devin-provider-plugin-registration-and-tests.md"
+    - "../tasks/devin-docs-status-sync-bundle-and-final-verification.md"
   depends-on:
-    - "../adr/0029-devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
+    - "../adr/devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
   blocks: []
   supersedes: []
   superseded-by: []
@@ -33,7 +33,7 @@ relations:
   refines: []
   refined-by: []
   derives-from:
-    - "../designs/0031-devin-local-provider-plugin.md"
+    - "../designs/devin-local-provider-plugin.md"
   derived-by: []
   verifies: []
   verified-by: []
@@ -63,12 +63,12 @@ credentials/model adapter → plugin 登録 → test → docs）。
 
 ## Upstream Documents
 
-- `docs/specs/0026-devin-local-bundled-provider.md`
-- `docs/adr/0029-devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md`
+- `docs/specs/devin-local-bundled-provider.md`
+- `docs/adr/devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md`
 
 ## Design Inputs
 
-- `docs/designs/0031-devin-local-provider-plugin.md`
+- `docs/designs/devin-local-provider-plugin.md`
 - upstream `pi-devin`（kashyab12、MIT）src 一式
 
 ## File Map
@@ -95,10 +95,10 @@ credentials/model adapter → plugin 登録 → test → docs）。
 
 ## Implementation Sequence
 
-- [ ] TASK-0121: vendored protocol module + CLI/credentials/
+- [ ] TASK-034r05iHWkNF7zNyXgVkrI: vendored protocol module + CLI/credentials/
       models adapter + attribution
-- [ ] TASK-0122: plugin registration + unit test 一式
-- [ ] TASK-0123: docs + status sync + bundle regen + final
+- [ ] TASK-034r05iHWkNF7zNWvK4AnL: plugin registration + unit test 一式
+- [ ] TASK-034r05iHWkNF7zPe6DL42d: docs + status sync + bundle regen + final
       verification
 
 ## Dependencies and Risks
@@ -117,7 +117,7 @@ credentials/model adapter → plugin 登録 → test → docs）。
 
 ## Task Breakdown
 
-- TASK-0121 → TASK-0122 → TASK-0123（直列）
+- TASK-034r05iHWkNF7zNyXgVkrI → TASK-034r05iHWkNF7zNWvK4AnL → TASK-034r05iHWkNF7zPe6DL42d（直列）
 
 ## Verification
 

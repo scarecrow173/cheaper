@@ -1,8 +1,8 @@
 ---
-id: "IMPL-0017"
+id: "IMPL-034r05iHy2gdnpARFuxZVi"
 type: "impl"
 status: "completed"
-title: "Delegation usage measurement log (PLAN-0022)"
+title: "Delegation usage measurement log (PLAN-034r05iHE1Fbkpd5tkg6Gs)"
 created: "2026-09-18"
 updated: "2026-09-18"
 owners: ["scarecrow173"]
@@ -30,24 +30,24 @@ relations:
       - type: "file"
         path: "packages/apm/.apm/hooks/cli/bin/cheaper.mjs"
   implements:
-    - "docs/tasks/0110-implement-usage-log-writer-and-cli-wiring.md"
-    - "docs/tasks/0111-usage-log-e2e-docs-and-final-verification.md"
+    - "docs/tasks/implement-usage-log-writer-and-cli-wiring.md"
+    - "docs/tasks/usage-log-e2e-docs-and-final-verification.md"
   implemented-by: []
   depends-on:
-    - "docs/plans/0022-delegation-usage-measurement-log.md"
+    - "docs/plans/delegation-usage-measurement-log.md"
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/designs/0027-delegation-usage-measurement-log.md"
-    - "docs/specs/0022-delegation-usage-measurement-log.md"
-    - "docs/adr/0025-usage-jsonl-in-user-config-dir-best-effort-append.md"
+    - "docs/designs/delegation-usage-measurement-log.md"
+    - "docs/specs/delegation-usage-measurement-log.md"
+    - "docs/adr/usage-jsonl-in-user-config-dir-best-effort-append.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by: []
   verifies:
-    - "docs/specs/0022-delegation-usage-measurement-log.md"
+    - "docs/specs/delegation-usage-measurement-log.md"
   verified-by: []
   references: []
   defers: []
@@ -58,7 +58,7 @@ metadata:
     rejected: []
 ---
 
-# Delegation usage measurement log (PLAN-0022)
+# Delegation usage measurement log (PLAN-034r05iHE1Fbkpd5tkg6Gs)
 
 ## Summary
 
@@ -71,8 +71,8 @@ JSONL で継続記録する仕組みを実装した。記録は best-effort で�
 
 ## Context
 
-TASK-0110/0111（PLAN-0022 / SPEC-0022 / ADR-0025 / DESIGN-0027）
-に従う。Issue #13。SPEC-0021 の real-provider e2e が `meta.usage`
+TASK-034r05iHQeQpDqJKnzydzW/0111（PLAN-034r05iHE1Fbkpd5tkg6Gs / SPEC-034r05iHK8bA7gveeDA5HC / ADR-034r05iHrZUE6WljM1ZMiX / DESIGN-034r05iHy2gdnoXu6h71XL）
+に従う。Issue #13。SPEC-034r05iHK8bA7guAnTdpdi の real-provider e2e が `meta.usage`
 の実測 assert 経路を確立済みのため、本実装では log への append
 経路と実測 record の assert を追加した。
 
@@ -116,9 +116,19 @@ TASK-0110/0111（PLAN-0022 / SPEC-0022 / ADR-0025 / DESIGN-0027）
   を用意（resolveConfigDirs は純粋関数）。
 - **error envelope は usage ありのみ記録**: `meta.usage===null`
   （worker 解決失敗等）は record を作らない — usage の無い
-  delegation は計測対象外（SPEC-0022 の「usage 付き error」）。
+  delegation は計測対象外（SPEC-034r05iHK8bA7gveeDA5HC の「usage 付き error」）。
 - **IMPL 番号**: in-flight で 0010（#8）・0013（#14）・0014
   （#11）・0015（#10）・0016（#12）が使用済みのため 0017。
+
+## Related Experiments
+
+### Adopted
+
+なし。
+
+### Rejected
+
+なし。
 
 ## Validation
 

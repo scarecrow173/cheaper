@@ -1,8 +1,8 @@
 ---
-id: "IMPL-0020"
+id: "IMPL-034r05iHy2gdnpELwCtyPv"
 type: "impl"
 status: "completed"
-title: "Provider-only registration layer (PLAN-0025)"
+title: "Provider-only registration layer (PLAN-034r05iHK8bA7g2BMsfjFu)"
 created: "2026-09-18"
 updated: "2026-09-18"
 owners: ["scarecrow173"]
@@ -30,25 +30,25 @@ relations:
       - type: "file"
         path: "packages/apm/.apm/hooks/cli/bin/cheaper.mjs"
   implements:
-    - "docs/tasks/0118-add-provider-plugin-contract-and-registration-order.md"
-    - "docs/tasks/0119-provider-plugin-tests-and-resource-isolation.md"
-    - "docs/tasks/0120-docs-status-sync-bundle-and-final-verification.md"
+    - "docs/tasks/add-provider-plugin-contract-and-registration-order.md"
+    - "docs/tasks/provider-plugin-tests-and-resource-isolation.md"
+    - "docs/tasks/docs-status-sync-bundle-and-final-verification.md"
   implemented-by: []
   depends-on:
-    - "docs/plans/0025-provider-only-registration-layer-implementation-plan.md"
+    - "docs/plans/provider-only-registration-layer-implementation-plan.md"
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/designs/0030-provider-only-registration-layer.md"
-    - "docs/specs/0025-provider-only-registration-layer.md"
-    - "docs/adr/0028-provider-only-registration-via-explicit-bundled-plugin-contract.md"
+    - "docs/designs/provider-only-registration-layer.md"
+    - "docs/specs/provider-only-registration-layer.md"
+    - "docs/adr/provider-only-registration-via-explicit-bundled-plugin-contract.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by: []
   verifies:
-    - "docs/specs/0025-provider-only-registration-layer.md"
+    - "docs/specs/provider-only-registration-layer.md"
   verified-by: []
   references: []
   defers: []
@@ -59,7 +59,7 @@ metadata:
     rejected: []
 ---
 
-# Provider-only registration layer (PLAN-0025)
+# Provider-only registration layer (PLAN-034r05iHK8bA7g2BMsfjFu)
 
 ## Summary
 
@@ -74,8 +74,8 @@ await refresh する初期化順を導入した。
 
 ## Context
 
-TASK-0118/0119/0120（PLAN-0025 / SPEC-0025 / ADR-0028 /
-DESIGN-0030）に従う。Issue #26。#27（Devin Local provider）
+TASK-034r05iHWkNF7zJyX85ZOT/0119/0120（PLAN-034r05iHK8bA7g2BMsfjFu / SPEC-034r05iHK8bA7gz3bFqgXr / ADR-034r05iHrZUE6WoaNDNjvX /
+DESIGN-034r05iHy2gdnp0zOYnFNU）に従う。Issue #26。#27（Devin Local provider）
 がこの contract の最初の consumer になる。bundled registry
 は現時点で空 — 本変更は拡張点と初期化順の骨格のみを固定
 する。
@@ -116,7 +116,17 @@ DESIGN-0030）に従う。Issue #26。#27（Devin Local provider）
 - plugin 無し構成の外部挙動は現行と同一（manual refresh は
   create 時 refresh を等値 mirror）。
 
-## Verification
+## Related Experiments
+
+### Adopted
+
+なし。
+
+### Rejected
+
+なし。
+
+## Validation
 
 - `pnpm typecheck`: green
 - `pnpm lint`（biome）: 新規 error/warning なし
@@ -151,3 +161,12 @@ DESIGN-0030）に従う。Issue #26。#27（Devin Local provider）
       resolution に参加できる（`getAvailable` →
       `resolvePiModel` の通常経路）
 - [x] provider registration の unit/integration test がある
+
+## Risks
+
+- なし。
+
+## Follow-ups
+
+- Issue #27: bundled provider plugin の `ModelRuntime` 登録
+  （registry は実装済み・現時点は空）。

@@ -1,5 +1,5 @@
 ---
-id: "IMPL-0013"
+id: "IMPL-034r05iHy2gdnpwO94elRp"
 type: "impl"
 status: "completed"
 title: "grep batchMaxBytes invariant enforcement"
@@ -20,24 +20,24 @@ relations:
     moved: []
     generated: []
   implements:
-    - "docs/tasks/0102-enforce-grep-batch-max-bytes-invariant.md"
-    - "docs/tasks/0103-grep-batch-invariant-final-verification.md"
+    - "docs/tasks/enforce-grep-batch-max-bytes-invariant.md"
+    - "docs/tasks/grep-batch-invariant-final-verification.md"
   implemented-by: []
   depends-on: []
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/specs/0018-grep-batch-max-bytes-line-payload-invariant.md"
-    - "docs/adr/0021-grep-batch-max-bytes-invariant-reject-at-construction.md"
-    - "docs/designs/0023-grep-batch-max-bytes-invariant-enforcement.md"
-    - "docs/plans/0018-grep-batch-max-bytes-invariant.md"
+    - "docs/specs/grep-batch-max-bytes-line-payload-invariant.md"
+    - "docs/adr/grep-batch-max-bytes-invariant-reject-at-construction.md"
+    - "docs/designs/grep-batch-max-bytes-invariant-enforcement.md"
+    - "docs/plans/grep-batch-max-bytes-invariant.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by: []
   verifies:
-    - "docs/specs/0018-grep-batch-max-bytes-line-payload-invariant.md"
+    - "docs/specs/grep-batch-max-bytes-line-payload-invariant.md"
   verified-by: []
   references: []
   defers: []
@@ -61,7 +61,7 @@ invalid UTF-8 byte の U+FFFD 展開（1 byte → 3 byte）により最大
 
 ## Context
 
-TASK-0102 / TASK-0103（PLAN-0018 / SPEC-0018 / ADR-0021 / DESIGN-0023）
+TASK-034r05iHQeQpDqzPOrhXsY / TASK-034r05iHQeQpDqAVvmTPpC（PLAN-034r05iHE1Fbkp8emdVve6 / SPEC-034r05iHK8bA7gqGaD6qpk / ADR-034r05iHrZUE6WgelFx89a / DESIGN-034r05iHy2gdnoS2PWvNo0）
 に従う。branch: `feature/grep-batch-max-bytes-invariant`。
 
 ## Implementation
@@ -95,22 +95,13 @@ TASK-0102 / TASK-0103（PLAN-0018 / SPEC-0018 / ADR-0021 / DESIGN-0023）
 
 - **reject を選択**（記録のみ/clamp ではなく）: issue の懸念は「test-only
   注入の production 格上げ時に invariant が暗黙のまま残る」こと。
-  fail-fast の構築時 reject がこのリスクを直接解消する（ADR-0021）。
+  fail-fast の構築時 reject がこのリスクを直接解消する（ADR-034r05iHrZUE6WgelFx89a）。
 - **検証位置は `createGrepTool`**: option は構築時に固定されるため
   execute 内ではなく構築時に検査。`execute` の解決式と同じ既定適用を
   使うため不整合なし。
 - **防御コードは維持**: `batchLines.length > 0` ガードは invariant
   適合時も batch 締め判定に必要な条件であり、将来の変更で invariant が
   再び破られた場合の forward-progress 保護として残す。
-
-## Verification
-
-- `pnpm --filter @cheaper/runtime-pi test`: 255 tests 全 pass
-- `pnpm typecheck`: pass
-- `pnpm lint`: pass（131 files、warning のみ）
-- `audit_docs.js --type all`: 183 files、no findings
-- `git diff` 構造確認: batch 締め・既定値・`limits.ts` 変更なし、
-  `.apm/hooks/cli` diff 空（bundle 非影響）
 
 ## Related Experiments
 
@@ -121,4 +112,21 @@ TASK-0102 / TASK-0103（PLAN-0018 / SPEC-0018 / ADR-0021 / DESIGN-0023）
 ### Rejected
 
 - clamp（`batchMaxBytes = max(B, 3*L)`）: 注入者の意図を黙って変え、
-  test が観測したい batch 締め条件を破壊するため不採用（ADR-0021）。
+  test が観測したい batch 締め条件を破壊するため不採用（ADR-034r05iHrZUE6WgelFx89a）。
+
+## Validation
+
+- `pnpm --filter @cheaper/runtime-pi test`: 255 tests 全 pass
+- `pnpm typecheck`: pass
+- `pnpm lint`: pass（131 files、warning のみ）
+- `audit_docs.js --type all`: 183 files、no findings
+- `git diff` 構造確認: batch 締め・既定値・`limits.ts` 変更なし、
+  `.apm/hooks/cli` diff 空（bundle 非影響）
+
+## Risks
+
+- なし。
+
+## Follow-ups
+
+- なし。

@@ -1,8 +1,8 @@
 ---
-id: "IMPL-0011"
+id: "IMPL-034r05iHy2gdnpusDjHBDw"
 type: "impl"
 status: "completed"
-title: "Separate development APM project from distributable package (PLAN-0016)"
+title: "Separate development APM project from distributable package (PLAN-034r05iHE1Fbkp5YZSKJM2)"
 created: "2026-09-18"
 updated: "2026-09-18"
 owners: ["scarecrow173"]
@@ -30,7 +30,7 @@ relations:
       - type: "file"
         path: "AGENTS.md"
       - type: "file"
-        path: "docs/discovery/0010-bulk-reader-huge-file-safe-io.md"
+        path: "docs/discovery/bulk-reader-huge-file-safe-io.md"
     deleted: []
     renamed: []
     moved:
@@ -38,26 +38,26 @@ relations:
         path: ".apm/ -> packages/apm/.apm/"
     generated: []
   implements:
-    - "docs/tasks/0095-move-apm-primitives-to-distributable-package.md"
-    - "docs/tasks/0096-repoint-bundle-pipeline-and-ci-freshness.md"
-    - "docs/tasks/0097-update-consumer-verification-and-no-self-deploy-tests.md"
-    - "docs/tasks/0098-update-readme-agents-and-final-verification.md"
+    - "docs/tasks/move-apm-primitives-to-distributable-package.md"
+    - "docs/tasks/repoint-bundle-pipeline-and-ci-freshness.md"
+    - "docs/tasks/update-consumer-verification-and-no-self-deploy-tests.md"
+    - "docs/tasks/update-readme-agents-and-final-verification.md"
   implemented-by: []
   depends-on:
-    - "docs/plans/0016-dev-apm-and-distributable-package-separation.md"
+    - "docs/plans/dev-apm-and-distributable-package-separation.md"
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/designs/0021-dev-apm-project-and-distributable-package-layout.md"
-    - "docs/specs/0016-separate-dev-apm-project-from-distributable-package.md"
-    - "docs/adr/0019-separate-dev-apm-project-via-nested-distributable-package.md"
+    - "docs/designs/dev-apm-project-and-distributable-package-layout.md"
+    - "docs/specs/separate-dev-apm-project-from-distributable-package.md"
+    - "docs/adr/separate-dev-apm-project-via-nested-distributable-package.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by: []
   verifies:
-    - "docs/specs/0016-separate-dev-apm-project-from-distributable-package.md"
+    - "docs/specs/separate-dev-apm-project-from-distributable-package.md"
   verified-by: []
   references: []
   defers: []
@@ -68,7 +68,7 @@ metadata:
     rejected: []
 ---
 
-# Separate development APM project from distributable package (PLAN-0016)
+# Separate development APM project from distributable package (PLAN-034r05iHE1Fbkp5YZSKJM2)
 
 ## Summary
 
@@ -82,7 +82,7 @@ development-only manifest（`name: cheaper-dev`、`includes` 削除）に
 
 ## Context
 
-TASK-0095〜0098（PLAN-0016 / SPEC-0016 / ADR-0019 / DESIGN-0021）に
+TASK-034r05iHQeQpDqrbmtswfZ〜0098（PLAN-034r05iHE1Fbkp5YZSKJM2 / SPEC-034r05iHK8bA7go4BQtGNS / ADR-034r05iHrZUE6WdKBH2eNM / DESIGN-034r05iHy2gdnoPoUu7BiO）に
 従う。Issue #9。旧 layout では root `apm install` が `.apm/` の
 cheaper-* skill/hook を自身の開発環境へ deploy し、開発用依存と
 配布物の責務が分離できていなかった。
@@ -132,9 +132,19 @@ cheaper-* skill/hook を自身の開発環境へ deploy し、開発用依存と
 - **dev-project fixture の最小化**: root `apm.yml` の remote dep を
   そのまま install すると非 hermetic になるため、同形の
   `.apm/` なし project を最小 manifest（name/targets のみ）で作り
-  no-self-deploy を実測する方式にした（DESIGN-0021 通り）
+  no-self-deploy を実測する方式にした（DESIGN-034r05iHy2gdnoPoUu7BiO 通り）
 - **IMPL 番号**: #8 の PR が open のまま 0010 を使っているため、
   merge 時の衝突回避で 0011 を採用
+
+## Related Experiments
+
+### Adopted
+
+なし。
+
+### Rejected
+
+なし。
 
 ## Validation
 
@@ -156,7 +166,7 @@ cheaper-* skill/hook を自身の開発環境へ deploy し、開発用依存と
 ## Risks
 
 - root を直接 install していた consumer は `packages/apm` sub-path
-  参照への変更が必要（ADR-0019 で互換 shim を提供しない判断済み。
+  参照への変更が必要（ADR-034r05iHrZUE6WdKBH2eNM で互換 shim を提供しない判断済み。
   README に記載）
 - `apm.lock.yaml` は root に残り dev deps を lock し続ける。dep ref
   は不変のため lock の再生成は不要

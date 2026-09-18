@@ -1,8 +1,8 @@
 ---
-id: "IMPL-0010"
+id: "IMPL-034r05iHy2gdnpt2vgHZ55"
 type: "impl"
 status: "completed"
-title: "Auth URL opener seam (PLAN-0015)"
+title: "Auth URL opener seam (PLAN-034r05iHE1Fbkp4xxlyMdV)"
 created: "2026-09-18"
 updated: "2026-09-18"
 owners: ["scarecrow173"]
@@ -26,18 +26,18 @@ relations:
       - type: "file"
         path: ".apm/hooks/cli/bin/cheaper.mjs"
   implements:
-    - "docs/tasks/0093-auth-url-opener-seam-and-test-isolation.md"
-    - "docs/tasks/0094-auth-url-opener-final-verification.md"
+    - "docs/tasks/auth-url-opener-seam-and-test-isolation.md"
+    - "docs/tasks/auth-url-opener-final-verification.md"
   implemented-by: []
   depends-on: []
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/specs/0015-auth-tests-do-not-launch-os-browser.md"
-    - "docs/adr/0018-inject-url-opener-seam-for-auth-interaction.md"
-    - "docs/designs/0020-auth-url-opener-seam.md"
-    - "docs/plans/0015-auth-url-opener-seam.md"
+    - "docs/specs/auth-tests-do-not-launch-os-browser.md"
+    - "docs/adr/inject-url-opener-seam-for-auth-interaction.md"
+    - "docs/designs/auth-url-opener-seam.md"
+    - "docs/plans/auth-url-opener-seam.md"
   refines: []
   refined-by: []
   derives-from: []
@@ -53,7 +53,7 @@ metadata:
     rejected: []
 ---
 
-# Auth URL opener seam (PLAN-0015)
+# Auth URL opener seam (PLAN-034r05iHE1Fbkp4xxlyMdV)
 
 ## Summary
 
@@ -63,7 +63,7 @@ Issue #8 対応。auth の browser 起動を `CliHooks.openUrl` 経由の注入 
 
 ## Context
 
-TASK-0093〜0094（PLAN-0015 / SPEC-0015 / ADR-0018 / DESIGN-0020）に従う。
+TASK-034r05iHQeQpDqovKmKaZC〜0094（PLAN-034r05iHE1Fbkp4xxlyMdV / SPEC-034r05iHK8bA7gmLlq6ikw / ADR-034r05iHrZUE6WcElqgQIr / DESIGN-034r05iHy2gdnoOvi1vrou）に従う。
 
 ## Implementation
 
@@ -91,6 +91,16 @@ TASK-0093〜0094（PLAN-0015 / SPEC-0015 / ADR-0018 / DESIGN-0020）に従う。
 - **実 OS opener のテスト**: `openUrlBestEffort` 自体のユニットテストは
   追加しない（OS 依存・外部プロセス）。seam 未到達の構造で保証する
 
+## Related Experiments
+
+### Adopted
+
+なし。
+
+### Rejected
+
+なし。
+
 ## Validation
 
 - `mise exec -- pnpm lint`: biome check 131 files、問題なし
@@ -100,6 +110,10 @@ TASK-0093〜0094（PLAN-0015 / SPEC-0015 / ADR-0018 / DESIGN-0020）に従う。
 - テスト実行で OS opener が spawn されないこと: `--method device` が
   起動要求を発生させず（spy 未呼出）、`auth_url` を扱うテストは注入
   spy 経由で既定 opener に到達しない
+
+## Risks
+
+- なし。
 
 ## Follow-ups
 

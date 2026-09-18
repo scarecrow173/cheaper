@@ -1,5 +1,5 @@
 ---
-id: "SPEC-0025"
+id: "SPEC-034r05iHK8bA7gz3bFqgXr"
 type: "spec"
 status: "implemented"
 title: "Provider-only registration layer without Pi extensions"
@@ -19,13 +19,13 @@ relations:
   implements: []
   implemented-by: []
   depends-on:
-    - "./0024-pi-state-under-cheaper-config-dir.md"
+    - "./pi-state-under-cheaper-config-dir.md"
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "./0011-auth-login-command.md"
-    - "./0003-model-resolver.md"
+    - "./auth-login-command.md"
+    - "../designs/model-resolver.md"
   refines: []
   refined-by: []
   derives-from: []
@@ -70,7 +70,7 @@ extension / skill / prompt template / theme / AGENTS.md を
 ## Why Now
 
 Worker の実行環境を最小化するため、`CheaperResourceLoader`
-は外部 resource を読まない設計になっている（DESIGN-0004）。
+は外部 resource を読まない設計になっている（DESIGN-034r05iHrZUE6WvaQsRRsM）。
 一方で Devin Local 等の Pi built-in に無い provider を追加
 する拡張点が必要になった（Issue #26、#27 が依存）。
 
@@ -171,11 +171,11 @@ Pi 0.85.1 の `ModelRuntime` は extension loader を介さず
 
 - Issue #26: 要件の起点（責務境界・初期化順・CLI/auth 統合・
   non-goals・acceptance criteria）。
-- SPEC-0024 / ADR-0027: `createModelRuntime()` の userConfigDir
+- SPEC-034r05iHK8bA7gxlRVZtAv / ADR-034r05iHrZUE6Wn59hpaOg: `createModelRuntime()` の userConfigDir
   解決と env seam — plugin context が再利用する初期化経路。
-- SPEC-0011 / ADR-0014: `cheaper auth` の provider auth 統合 —
+- SPEC-034r05iHK8bA7ghSWRbNU8 / ADR-034r05iHrZUE6W71rbZ6aR: `cheaper auth` の provider auth 統合 —
   plugin provider が乗る対象。
-- DESIGN-0004: `CheaperResourceLoader` の最小 resource 設計 —
+- DESIGN-034r05iHrZUE6WvaQsRRsM: `CheaperResourceLoader` の最小 resource 設計 —
   維持すべき制約。
 - `packages/runtime-pi/src/model-runtime.ts`: `createModelRuntime()`
   と `ModelCatalog`。

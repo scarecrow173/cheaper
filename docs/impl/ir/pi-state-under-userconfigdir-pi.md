@@ -1,8 +1,8 @@
 ---
-id: "IMPL-0019"
+id: "IMPL-034r05iHy2gdnpDWUS1IzV"
 type: "impl"
 status: "completed"
-title: "Pi state paths under userConfigDir/pi (PLAN-0024)"
+title: "Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg)"
 created: "2026-09-18"
 updated: "2026-09-18"
 owners: ["scarecrow173"]
@@ -42,25 +42,25 @@ relations:
       - type: "file"
         path: "packages/apm/.apm/hooks/cli/bin/cheaper.mjs"
   implements:
-    - "docs/tasks/0115-add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md"
-    - "docs/tasks/0116-wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md"
-    - "docs/tasks/0117-update-docs-regenerate-bundle-and-run-final-verification.md"
+    - "docs/tasks/add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md"
+    - "docs/tasks/wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md"
+    - "docs/tasks/update-docs-regenerate-bundle-and-run-final-verification.md"
   implemented-by: []
   depends-on:
-    - "docs/plans/0024-pi-state-under-userconfigdir-pi-implementation-plan.md"
+    - "docs/plans/pi-state-under-userconfigdir-pi-implementation-plan.md"
   blocks: []
   supersedes: []
   superseded-by: []
   related:
-    - "docs/designs/0029-pi-state-paths-under-userconfigdir-pi.md"
-    - "docs/specs/0024-pi-state-under-cheaper-config-dir.md"
-    - "docs/adr/0027-pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md"
+    - "docs/designs/pi-state-paths-under-userconfigdir-pi.md"
+    - "docs/specs/pi-state-under-cheaper-config-dir.md"
+    - "docs/adr/pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by: []
   verifies:
-    - "docs/specs/0024-pi-state-under-cheaper-config-dir.md"
+    - "docs/specs/pi-state-under-cheaper-config-dir.md"
   verified-by: []
   references: []
   defers: []
@@ -71,7 +71,7 @@ metadata:
     rejected: []
 ---
 
-# Pi state paths under userConfigDir/pi (PLAN-0024)
+# Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg)
 
 ## Summary
 
@@ -86,8 +86,8 @@ Pi `ModelRuntime` の永続 file（`auth.json` / `models.json` /
 
 ## Context
 
-TASK-0115/0116/0117（PLAN-0024 / SPEC-0024 / ADR-0027 /
-DESIGN-0029）に従う。Issue #25。runtime 生成経路は CLI の
+TASK-034r05iHWkNF7zFyMzc7zU/0116/0117（PLAN-034r05iHK8bA7g23Opaicg / SPEC-034r05iHK8bA7gxlRVZtAv / ADR-034r05iHrZUE6Wn59hpaOg /
+DESIGN-034r05iHy2gdnoZAxhwPFa）に従う。Issue #25。runtime 生成経路は CLI の
 `executeRun`・`executeAuth` の 2 箇所のみのため、path policy
 を factory 内に閉じることで「auth と worker が同じ credential
 store を参照する」を構造的に保証した。
@@ -124,14 +124,24 @@ store を参照する」を構造的に保証した。
 ### Decisions / Notes
 
 - `mkdir` 失敗は throw として表面化（Pi 既定 dir への silent
-  fallback をしない fail-closed 方針、ADR-0027）。
+  fallback をしない fail-closed 方針、ADR-034r05iHrZUE6Wn59hpaOg）。
 - credential file の `0600` contract は Pi 側に委ね、cheaper は
   dir の `0700`（POSIX）のみ明示。Windows では `mode` は無視
   される。
 - `~/.pi/agent` からの migration・fallback・暗黙 import は
   Issue #25 の方針どおり未実装。
 
-## Verification
+## Related Experiments
+
+### Adopted
+
+なし。
+
+### Rejected
+
+なし。
+
+## Validation
 
 - `pnpm typecheck`: green
 - `pnpm lint`（biome）: 新規 error/warning なし（既存 6
@@ -166,3 +176,13 @@ store を参照する」を構造的に保証した。
 - [x] `PI_CODING_AGENT_DIR` に依存しない（全参照を除去）
 - [x] auth 関連テストが実 credential を触らない（tmpdir 隔離）
 - [x] docs の保存場所説明が実装と一致
+
+## Risks
+
+- Windows では dir mode（`0700`）が無視される。credential file の
+  `0600` contract は Pi 側に委譲。
+
+## Follow-ups
+
+- Issue #25: `~/.pi/agent` からの migration・fallback・暗黙
+  import（方針どおり未実装）。
