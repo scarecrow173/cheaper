@@ -51,26 +51,40 @@ metadata: {}
 `readline/promises` の `createInterface({ input: io.stdin, output: process.stderr })`
 を使い、`CliIo` boundary の外へ出力している。secret prompt は独自の
 raw-mode reader（`io.stderr.write()` + stdin）で既に boundary 内にある。
-ADR-pINoxFu3eduWaJCNBtOT1M の Option 1 に従い、`createInterface` の
-`output` を `io.stderr` へ直接差し替える。
+ADR-pINoxFu3eduWaJCNBtOT1M の Option 1 に従い、`io.stderr` が
+`Writable` のときはそのまま、plain object の injected writer のとき
+だけ write forward の `Writable` で wrap して `createInterface` の
+`output` へ渡す conditional pass-through にする。
 
 ## Design
 
-### Prompt output の差し替え
+### Prompt output の pass-through
 
-`ask()` の `createInterface` の `output` を `io.stderr` に変更する。
+`createTerminalInteraction` 内に prompt 用 output を 1 箇所だけ生成し、
+`ask()` の `createInterface` がそれを使う。
 
 ```ts
-rl ??= createInterface({ input: io.stdin, output: io.stderr });
+const promptOutput =
+  io.stderr instanceof Writable
+    ? io.stderr
+    : new Writable({
+        write(chunk, _encoding, callback) {
+          io.stderr.write(chunk.toString());
+          callback();
+        },
+      });
+
+rl ??= createInterface({ input: io.stdin, output: promptOutput });
 ```
 
-- readline は non-Writable の `output` を non-terminal として扱い
-  `write()` のみを呼ぶ（Node 26 で実測済み）。テストの plain object
-  writer はそのまま prompt を受け取る。
-- 本番の `io.stderr` は `process.stderr` 自身なので、terminal mode・
-  入力 echo・AbortSignal 連携を含む動作が現行と完全に同一。
-- `io.stderr` を `Writable` adapter で wrap すると TTY 性を失い、
-  本番 interactive prompt の入力 echo が消える回帰になるため採用しない。
+- `createInterface` の `output` 型は `WritableStream` を要求するため、
+  `{ write(s) }` の `io.stderr` を直接渡すと `pnpm typecheck` で
+  reject される（runtime は受け付けるが型が通らない）。
+- 常時 `Writable` wrap は adapter が `isTTY` を持たず readline の
+  terminal mode が off になり、本番 interactive prompt の入力 echo が
+  消える回帰になる（Node 26 で実測）。`instanceof` pass-through なら
+  本番は `process.stderr` をそのまま通し terminal mode・echo・
+  AbortSignal 連携が現行と同一。
 - `CliIo` type・`io.stderr` contract・本番の `process.stderr` 注入は
   すべて不変。
 - `process.stderr` への直接参照は auth interaction の通常 prompt 出力

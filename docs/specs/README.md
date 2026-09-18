@@ -8,7 +8,7 @@ Directory: `docs/specs`
 | --- | --- | --- | --- |
 | SPEC-034r05iHK8bA7gexEML9oZ | APM delegation skills and pre-read delegation hook | implemented | [apm-delegation-skills-and-read-hook.md](./apm-delegation-skills-and-read-hook.md) |
 | SPEC-034r05iHK8bA7gffRgD3Fp | Self-contained cheaper CLI distribution inside the APM hook bundle | implemented | [apm-self-contained-cli-distribution.md](./apm-self-contained-cli-distribution.md) |
-| SPEC-WdXXEoaAmbOafvuIpM6FFT | Keep interactive auth prompts inside the injected CLI I/O boundary | approved | [auth-io-boundary.md](./auth-io-boundary.md) |
+| SPEC-WdXXEoaAmbOafvuIpM6FFT | Keep interactive auth prompts inside the injected CLI I/O boundary | implemented | [auth-io-boundary.md](./auth-io-boundary.md) |
 | SPEC-034r05iHK8bA7ghSWRbNU8 | cheaper auth command for provider login without a pi installation | implemented | [auth-login-command.md](./auth-login-command.md) |
 | SPEC-034r05iHK8bA7gmLlq6ikw | Auth tests do not launch the OS default browser | implemented | [auth-tests-do-not-launch-os-browser.md](./auth-tests-do-not-launch-os-browser.md) |
 | SPEC-034r05iHK8bA7g6PcCiDBp | bulk-reader built-in Worker | implemented | [bulk-reader-built-in-worker.md](./bulk-reader-built-in-worker.md) |

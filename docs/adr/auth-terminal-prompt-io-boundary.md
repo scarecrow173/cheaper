@@ -80,36 +80,40 @@ metadata:
 
 ## Considered Options
 
-- **Option 1**: `io.stderr` をそのまま `createInterface` の `output` へ渡す。
-  readline は non-Writable の output を non-terminal として扱い `write()`
-  のみを呼ぶ（Node 26 で実測済み）。本番の `io.stderr` は
-  `process.stderr` 自身なので terminal mode・echo 動作は従来と同一。
-- **Option 2**: `io.stderr` を `stream.Writable` で薄く wrap して
+- **Option 1**: `io.stderr` が既に `Writable`（本番の `process.stderr`）
+  ならそのまま `output` へ渡し、plain object の injected writer
+  （テスト）のときだけ write forward の `Writable` で wrap する
+  conditional pass-through。
+- **Option 2**: `io.stderr` をそのまま `output` へ渡す（cast なし）。
+- **Option 3**: `io.stderr` を常に `stream.Writable` で wrap して
   `output` へ渡す。
-- **Option 3**: `CliIo.stderr` の型を `stream.Writable` に変更し、
+- **Option 4**: `CliIo.stderr` の型を `stream.Writable` に変更し、
   `io.stderr` をそのまま `output` へ渡す。
-- **Option 4**: readline をやめて select/text prompt も `io.stderr.write()`
+- **Option 5**: readline をやめて select/text prompt も `io.stderr.write()`
   + 独自入力 reader で実装する（secret prompt と同じ方式）。
 
 ## Decision Outcome
 
-**Option 1** を採用する。`createInterface` の `output` を
-`process.stderr` から `io.stderr` へ差し替えるだけの 1 行変更にする。
+**Option 1** を採用する。`createTerminalInteraction` 内で
+`io.stderr instanceof Writable ? io.stderr : forwardAdapter` を 1 箇所だけ
+生成し、`createInterface({ input: io.stdin, output: <pass-through> })`
+とする。
 
 理由は次のとおり。
 
-- 本番では `io.stderr === process.stderr` なので terminal mode・入力
-  echo・AbortSignal 連携を含む動作が現行と完全に同一。テストでは
-  non-terminal として prompt 文字列が injected writer へ届くことを
-  実測で確認した（`rl.terminal === false`、`question()` が prompt を
-  output へ書き込む）。
-- Option 2 の `Writable` adapter は TTY 性を失わせ、本番 interactive
-  prompt の入力 echo を消してしまう回帰になる。adapter を噛ませず
-  直接渡す方が動作を保ててより小さい。
-- Option 3 は `CliIo.stderr` を `Writable` 必須にし、既存の minimal
+- `createInterface` の `output` 型は `WritableStream` を要求するため、
+  `{ write(s) }` の `io.stderr` を直接渡す Option 2 は `pnpm typecheck`
+  で reject される（runtime は受け付けるが型が通らない）。
+- Option 3 の常時 wrap は adapter が `isTTY` を持たず readline の
+  terminal mode が off になり、本番 interactive prompt の入力 echo が
+  消える回帰になる（Node 26 で実測）。
+- Option 1 は本番で `process.stderr` をそのまま通すため terminal
+  mode・入力 echo・AbortSignal 連携が現行と完全に同一で、テストでは
+  forward `Writable` 経由で prompt 文字列が injected writer へ届く。
+- Option 4 は `CliIo.stderr` を `Writable` 必須にし、既存の minimal
   contract と全 test helper の型を壊す。issue の「既存 abstraction を
   壊さない最小構成」に反する。
-- Option 4 は readline が提供する echo・編集・AbortSignal 連携を自前で
+- Option 5 は readline が提供する echo・編集・AbortSignal 連携を自前で
   再実装することになり、変更面が本題より大きく回帰リスクも高い。
 
 `CliIo` の公開型・test seam・secret prompt 実装は一切変わらない。

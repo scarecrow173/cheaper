@@ -1,7 +1,7 @@
 ---
 id: "PLAN-zDQIdChPXY1lrGJyzZTiQc"
 type: "plan"
-status: "in-progress"
+status: "completed"
 test-spec-skip: "Verified by package unit test suite (auth.test.ts injected-io assertions); no dedicated test-spec doc authored."
 title: "Route auth text/select prompts through the injected CliIo stderr"
 created: "2026-09-19"

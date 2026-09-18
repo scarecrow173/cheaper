@@ -1,7 +1,7 @@
 ---
 id: "SPEC-WdXXEoaAmbOafvuIpM6FFT"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "Keep interactive auth prompts inside the injected CLI I/O boundary"
 created: "2026-09-19"
 updated: "2026-09-19"
@@ -105,12 +105,12 @@ coverage gap がある（GitHub issue #36）。
 
 ## Acceptance Criteria
 
-- [ ] auth interaction の prompt output がすべて injected CLI I/O boundary 内にある
-- [ ] 通常の text/select prompt で `process.stderr` を直接使わない
-- [ ] interactive select/text prompt の test coverage が追加される
-- [ ] secret no-echo contract が維持される
-- [ ] auth URL opener seam / device flow / `--method` / cancellation が回帰しない
-- [ ] `mise run check` が pass する
+- [x] auth interaction の prompt output がすべて injected CLI I/O boundary 内にある
+- [x] 通常の text/select prompt で `process.stderr` を直接使わない
+- [x] interactive select/text prompt の test coverage が追加される
+- [x] secret no-echo contract が維持される
+- [x] auth URL opener seam / device flow / `--method` / cancellation が回帰しない
+- [x] `mise run check` が pass する
 
 ## Risks
 

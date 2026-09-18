@@ -5,6 +5,7 @@
  */
 import { spawn } from "node:child_process";
 import { createInterface, type Interface } from "node:readline/promises";
+import { Writable } from "node:stream";
 import { CheaperError } from "@cheaper/core";
 import {
   type AuthEvent,
@@ -111,9 +112,23 @@ export function createTerminalInteraction(
       stdin.on("data", onData);
     });
 
+  // readline の output は Writable を要求する。本番の io.stderr は
+  // process.stderr 自身（TTY）なのでそのまま渡して terminal mode を保ち、
+  // plain object の injected writer（テスト）だけは write を forward する
+  // Writable で wrap する。どちらも prompt 出力は CliIo boundary 内に出る。
+  const promptOutput =
+    io.stderr instanceof Writable
+      ? io.stderr
+      : new Writable({
+          write(chunk, _encoding, callback) {
+            io.stderr.write(chunk.toString());
+            callback();
+          },
+        });
+
   let rl: Interface | undefined;
   const ask = async (message: string, signal?: AbortSignal): Promise<string> => {
-    rl ??= createInterface({ input: io.stdin, output: io.stderr });
+    rl ??= createInterface({ input: io.stdin, output: promptOutput });
     const signals = [opts.signal, signal].filter((s): s is AbortSignal => s !== undefined);
     const combined =
       signals.length === 0
