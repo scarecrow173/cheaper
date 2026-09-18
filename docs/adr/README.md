@@ -33,3 +33,4 @@ Directory: `docs/adr`
 | ADR-0025 | delegation 計測は userConfigDir の usage.jsonl への best-effort append とする | accepted | [0025-usage-jsonl-in-user-config-dir-best-effort-append.md](./0025-usage-jsonl-in-user-config-dir-best-effort-append.md) |
 | ADR-0026 | README は user-facing entrypoint に限定し、canonical source は目的別 guide に分離する | accepted | [0026-readme-as-user-entrypoint-with-canonical-guides.md](./0026-readme-as-user-entrypoint-with-canonical-guides.md) |
 | ADR-0027 | Pi persistent state は userConfigDir/pi 配下へ ModelRuntime.create の明示 path で集約する | accepted | [0027-pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md](./0027-pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md) |
+| ADR-0028 | provider 拡張は Pi extension loader ではなく bundled provider plugin の明示 register で行う | accepted | [0028-provider-only-registration-via-explicit-bundled-plugin-contract.md](./0028-provider-only-registration-via-explicit-bundled-plugin-contract.md) |

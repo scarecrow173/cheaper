@@ -30,3 +30,4 @@ Directory: `docs/plans`
 | PLAN-0022 | Delegation usage measurement log — implementation plan | completed | [0022-delegation-usage-measurement-log.md](./0022-delegation-usage-measurement-log.md) |
 | PLAN-0023 | User-facing documentation IA — implementation plan | completed | [0023-user-facing-docs-information-architecture.md](./0023-user-facing-docs-information-architecture.md) |
 | PLAN-0024 | Pi state under userConfigDir/pi — implementation plan | completed | [0024-pi-state-under-userconfigdir-pi-implementation-plan.md](./0024-pi-state-under-userconfigdir-pi-implementation-plan.md) |
+| PLAN-0025 | Provider-only registration layer — implementation plan | completed | [0025-provider-only-registration-layer-implementation-plan.md](./0025-provider-only-registration-layer-implementation-plan.md) |
