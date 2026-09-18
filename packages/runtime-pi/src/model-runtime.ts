@@ -10,6 +10,11 @@ import {
 } from "@cheaper/core";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { type CreateModelRuntimeOptions, ModelRuntime } from "@earendil-works/pi-coding-agent";
+import {
+  bundledProviderPlugins,
+  type CheaperProviderPlugin,
+  type ProviderPluginContext,
+} from "./provider-plugin.js";
 
 /**
  * ModelRuntime のうち runtime-pi が必要とする最小面。
@@ -40,6 +45,11 @@ export interface CreateCheaperModelRuntimeOptions extends CreateModelRuntimeOpti
    * test は `CHEAPER_CONFIG_DIR` を tmpdir に向けて注入する。
    */
   env?: NodeJS.ProcessEnv;
+  /**
+   * 登録する provider plugin。未指定時は `bundledProviderPlugins()`
+   *（ADR-0028）。test はこの seam で fake plugin を注入する。
+   */
+  providerPlugins?: readonly CheaperProviderPlugin[];
 }
 
 /**
@@ -71,19 +81,53 @@ export function resolvePiStatePaths(userConfigDir: string): {
  * Pi state は cheaper の user-scope config dir 配下（`<dir>/pi/`）に
  * 集約する（SPEC-0024 / ADR-0027）。`PI_CODING_AGENT_DIR` は使わない。
  * caller が `authPath` 等を明示した場合は既定より優先される。
+ *
+ * bundled provider plugin は最初の availability/model resolution
+ * より前に登録するため（ADR-0028）、create 時 refresh を遅延し、
+ * plugin 登録後に create と同値の `refresh()` を実行する。
+ * caller が `refreshOnCreate: false` を明示した場合は manual
+ * refresh を省略する。
  */
 export async function createModelRuntime(
   options?: CreateCheaperModelRuntimeOptions,
 ): Promise<ModelRuntime> {
-  const { env, ...rest } = options ?? {};
-  const paths = resolvePiStatePaths(resolveUserConfigDir({ env }));
+  const { env, providerPlugins, ...rest } = options ?? {};
+  const effectiveEnv = env ?? process.env;
+  const userConfigDir = resolveUserConfigDir({ env });
+  const paths = resolvePiStatePaths(userConfigDir);
   await mkdir(paths.piDir, { recursive: true, mode: 0o700 });
-  return ModelRuntime.create({
+  const runtime = await ModelRuntime.create({
     authPath: paths.authPath,
     modelsPath: paths.modelsPath,
     modelsStorePath: paths.modelsStorePath,
     ...rest,
+    refreshOnCreate: false,
   });
+  const context: ProviderPluginContext = { env: effectiveEnv, userConfigDir };
+  for (const plugin of providerPlugins ?? bundledProviderPlugins()) {
+    await plugin.register(runtime, context);
+  }
+  if (rest.refreshOnCreate === false) return runtime;
+  // ModelRuntime.create の create 時 refresh と同値に mirror する
+  //（allowModelNetwork && PI_OFFLINE 未設定、timeout + signal 合成）。
+  const allowNetwork = rest.allowModelNetwork === true && effectiveEnv.PI_OFFLINE === undefined;
+  const timeoutMs = rest.modelRefreshTimeoutMs;
+  const controller = allowNetwork && timeoutMs !== undefined ? new AbortController() : undefined;
+  const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : undefined;
+  const signal = controller
+    ? rest.signal !== undefined
+      ? AbortSignal.any([rest.signal, controller.signal])
+      : controller.signal
+    : rest.signal;
+  try {
+    await runtime.refresh({
+      allowNetwork,
+      ...(signal !== undefined ? { signal } : {}),
+    });
+  } finally {
+    if (timeout !== undefined) clearTimeout(timeout);
+  }
+  return runtime;
 }
 
 export interface ResolvedPiModel {

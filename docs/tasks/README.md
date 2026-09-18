@@ -123,3 +123,6 @@ Directory: `docs/tasks`
 | TASK-0115 | Add resolveUserConfigDir helper and Pi state path wiring | done | [0115-add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md](./0115-add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md) |
 | TASK-0116 | Wire env into createModelRuntime callers and update e2e isolation | done | [0116-wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./0116-wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-0117 | Update docs, regenerate bundle, and run final verification | done | [0117-update-docs-regenerate-bundle-and-run-final-verification.md](./0117-update-docs-regenerate-bundle-and-run-final-verification.md) |
+| TASK-0118 | Add provider plugin contract and registration order | done | [0118-add-provider-plugin-contract-and-registration-order.md](./0118-add-provider-plugin-contract-and-registration-order.md) |
+| TASK-0119 | Provider plugin tests and resource isolation verification | done | [0119-provider-plugin-tests-and-resource-isolation.md](./0119-provider-plugin-tests-and-resource-isolation.md) |
+| TASK-0120 | Update docs, regenerate bundle, and run final verification | done | [0120-docs-status-sync-bundle-and-final-verification.md](./0120-docs-status-sync-bundle-and-final-verification.md) |

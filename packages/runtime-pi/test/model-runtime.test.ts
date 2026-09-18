@@ -125,9 +125,17 @@ describe("createModelRuntime", () => {
     vi.restoreAllMocks();
   });
 
+  function mockCreate() {
+    const refresh = vi.fn().mockResolvedValue({ aborted: false, errors: new Map() });
+    const spy = vi
+      .spyOn(ModelRuntime, "create")
+      .mockResolvedValue({ refresh } as unknown as ModelRuntime);
+    return { spy, refresh };
+  }
+
   it("creates <CHEAPER_CONFIG_DIR>/pi and passes its paths to ModelRuntime.create", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "cheaper-mr-"));
-    const spy = vi.spyOn(ModelRuntime, "create").mockResolvedValue({} as ModelRuntime);
+    const { spy } = mockCreate();
     await createModelRuntime({ env: { CHEAPER_CONFIG_DIR: dir } });
 
     expect(spy).toHaveBeenCalledWith(
@@ -146,7 +154,7 @@ describe("createModelRuntime", () => {
 
   it("lets caller-provided paths override the cheaper defaults", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "cheaper-mr-"));
-    const spy = vi.spyOn(ModelRuntime, "create").mockResolvedValue({} as ModelRuntime);
+    const { spy } = mockCreate();
     await createModelRuntime({
       env: { CHEAPER_CONFIG_DIR: dir },
       authPath: path.join(dir, "custom-auth.json"),
@@ -163,12 +171,57 @@ describe("createModelRuntime", () => {
 
   it("resolves the config dir via HOME when CHEAPER_CONFIG_DIR is unset", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "cheaper-mr-"));
-    const spy = vi.spyOn(ModelRuntime, "create").mockResolvedValue({} as ModelRuntime);
+    const { spy } = mockCreate();
     await createModelRuntime({ env: { HOME: dir, USERPROFILE: dir } });
     const expected = path.join(dir, ".config", "cheaper", "pi");
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({ authPath: path.join(expected, "auth.json") }),
     );
     expect((await stat(expected)).isDirectory()).toBe(true);
+  });
+
+  it("defers the create refresh, then registers plugins before awaiting refresh", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cheaper-mr-"));
+    const { spy, refresh } = mockCreate();
+    const order: string[] = [];
+    const plugin = {
+      id: "recorder",
+      register: vi.fn(() => {
+        order.push("register");
+      }),
+    };
+    refresh.mockImplementation(() => {
+      order.push("refresh");
+      return Promise.resolve({ aborted: false, errors: new Map() });
+    });
+    await createModelRuntime({
+      env: { CHEAPER_CONFIG_DIR: dir },
+      providerPlugins: [plugin],
+    });
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ refreshOnCreate: false }));
+    expect(order).toEqual(["register", "refresh"]);
+  });
+
+  it("skips the manual refresh when caller sets refreshOnCreate: false", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cheaper-mr-"));
+    const { refresh } = mockCreate();
+    await createModelRuntime({
+      env: { CHEAPER_CONFIG_DIR: dir },
+      refreshOnCreate: false,
+      providerPlugins: [],
+    });
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("mirrors create-time allowNetwork from allowModelNetwork and PI_OFFLINE", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cheaper-mr-"));
+    const { refresh } = mockCreate();
+    await createModelRuntime({
+      env: { CHEAPER_CONFIG_DIR: dir, PI_OFFLINE: "1" },
+      allowModelNetwork: true,
+      providerPlugins: [],
+    });
+    expect(refresh).toHaveBeenCalledWith(expect.objectContaining({ allowNetwork: false }));
   });
 });

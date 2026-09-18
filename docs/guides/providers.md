@@ -163,6 +163,20 @@ Pi runtime がサポートする provider は `cheaper auth status` で
 OpenAI 互換 endpoint を持つ任意の provider を追加することも
 可能（`api: "openai-completions"` + `baseUrl`）。
 
+### bundled provider plugin
+
+Pi built-in に無い provider は、cheaper が明示的に bundle
+する provider plugin として `ModelRuntime` に登録される
+（ADR-0028）。plugin は provider の metadata・auth flow・
+model catalog・`streamSimple` 等の model transport を登録
+でき、`cheaper auth status/login/logout`・model の tier
+解決から通常の provider と同様に扱える。
+
+Worker の実行環境を最小化するため、Pi の general-purpose
+extension loader は有効化しない。external provider package
+の discovery / load も行わない — 登録対象は cheaper が
+明示的に bundle する plugin のみ。
+
 ## 関連
 
 - config dir・優先度・policy.yaml: [configuration ガイド](./configuration.md)
