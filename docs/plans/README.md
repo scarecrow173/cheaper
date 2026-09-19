@@ -14,7 +14,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1FbkoVrzp9sac | Implement canonical Token Counter, count_tokens tool, and count-tokens CLI | completed | [canonical-token-counter.md](./canonical-token-counter.md) |
 | PLAN-034r05iHE1FbkpaEpZrthK | Copilot pre-read hook adapter — implementation plan | completed | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | PLAN-034r05iHE1Fbkp2TZ2Z666 | Cross-agent distribution verification | completed | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
-| PLAN-034rAaIojIXLbCI0pJGpYg | Cross-agent native routing adapters implementation | draft | [cross-agent-native-routing-adapters-implementation.md](./cross-agent-native-routing-adapters-implementation.md) |
+| PLAN-034rAaIojIXLbCI0pJGpYg | Cross-agent native routing adapters implementation | approved | [cross-agent-native-routing-adapters-implementation.md](./cross-agent-native-routing-adapters-implementation.md) |
 | PLAN-034r05iHE1Fbkpd5tkg6Gs | Delegation usage measurement log — implementation plan | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
 | PLAN-034r05iHE1Fbkp5YZSKJM2 | Development APM project / distributable package separation | completed | [dev-apm-and-distributable-package-separation.md](./dev-apm-and-distributable-package-separation.md) |
 | PLAN-034r05iHK8bA7g45xvDT4a | Devin Local provider plugin — implementation plan | completed | [devin-local-provider-plugin-implementation-plan.md](./devin-local-provider-plugin-implementation-plan.md) |
@@ -34,6 +34,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1FbkoTVD7CTNi | Restructure built-in writer Workers (code-writer + doc-writer) | completed | [restructure-built-in-writer-workers.md](./restructure-built-in-writer-workers.md) |
 | PLAN-034r05iHy2gdnpHMZZk4ZU | Scaffold monorepo and implement @cheaper/core | completed | [scaffold-monorepo-and-implement-cheaper-core.md](./scaffold-monorepo-and-implement-cheaper-core.md) |
 | PLAN-034r05iHE1FbkoWI8p70oC | Self-contained CLI bundle distribution | completed | [self-contained-cli-bundle.md](./self-contained-cli-bundle.md) |
+| PLAN-034rBrrA2j5usWH2G77b8G | Shell read-candidate extraction implementation | approved | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
 | PLAN-000004taRcf5XDevo8jYJz | distributed skill / parent-agent guide sync — implementation plan | completed | [synchronize-distributed-skill-and-parent-agent-guide.md](./synchronize-distributed-skill-and-parent-agent-guide.md) |
 | PLAN-034r05iHE1Fbkp9wtiAJ7A | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | PLAN-034r2puWPUDxxDyfTSffZR | Align usage.jsonl recording-scope docs — implementation plan | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |

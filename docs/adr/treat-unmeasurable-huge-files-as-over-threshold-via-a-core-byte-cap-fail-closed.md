@@ -26,6 +26,7 @@ relations:
   superseded-by: []
   related:
     - "../specs/huge-file-token-count-guard-with-fail-closed-hook-blocking.md"
+    - "../specs/shell-read-large-file-blocking.md"
   refines: []
   refined-by: []
   derives-from:

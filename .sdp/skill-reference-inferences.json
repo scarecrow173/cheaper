@@ -934,7 +934,7 @@
       "provides": [
         {
           "capability": "test_spec_authoring",
-          "description": "Record what a test must guarantee and why as a canonical test specification document linked to specs, designs, or ADRs"
+          "description": "Record what a test must guarantee and why as a canonical test specification with Feature/Rule/Example structure linked to verified specs, designs, or ADRs"
         }
       ],
       "uses": [],
@@ -947,7 +947,7 @@
       "tags": [
         "document",
         "test",
-        "spec"
+        "specification"
       ]
     },
     {

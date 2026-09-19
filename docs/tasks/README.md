@@ -6,7 +6,7 @@ Directory: `docs/tasks`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
-| TASK-034rAcFy8if4UmbPEMTdg1 | Adapter contract tests and APM install E2E assertions | todo | [adapter-contract-tests-and-apm-install-e2e-assertions.md](./adapter-contract-tests-and-apm-install-e2e-assertions.md) |
+| TASK-034rAcFy8if4UmbPEMTdg1 | Adapter contract tests and APM install E2E assertions | done | [adapter-contract-tests-and-apm-install-e2e-assertions.md](./adapter-contract-tests-and-apm-install-e2e-assertions.md) |
 | TASK-034r05iHQeQpDpq6zeHAT0 | Add built-in worker definitions | done | [add-built-in-worker-definitions.md](./add-built-in-worker-definitions.md) |
 | TASK-034r05iHQeQpDppVaGtCgu | Add built-in worker JSON schemas | done | [add-built-in-worker-json-schemas.md](./add-built-in-worker-json-schemas.md) |
 | TASK-034rzRuCuCgZ08BmHTCqgz | Add cheaper usage aggregation command with filters and estimated savings | done | [add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md](./add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md) |
@@ -41,7 +41,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqdc3mJN2b | CLI count-tokens env override and FILE_TOO_LARGE envelope | done | [cli-count-tokens-env-override-and-file-too-large-envelope.md](./cli-count-tokens-env-override-and-file-too-large-envelope.md) |
 | TASK-034r05iHQeQpDpByADDPCn | Configure Pi models.json and cheaper models.yaml for Ollama provider | done | [configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md](./configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md) |
 | TASK-034r05iHQeQpDq2z00rDnn | Consumer install smoke e2e and skill updates | done | [consumer-install-smoke.md](./consumer-install-smoke.md) |
-| TASK-034rAcG63A1KaVZH5VyAWA | Contract matrix and parent-agent guide updates | todo | [contract-matrix-and-parent-agent-guide-updates.md](./contract-matrix-and-parent-agent-guide-updates.md) |
+| TASK-034rAcG63A1KaVZH5VyAWA | Contract matrix and parent-agent guide updates | done | [contract-matrix-and-parent-agent-guide-updates.md](./contract-matrix-and-parent-agent-guide-updates.md) |
 | TASK-034r05iHQeQpDqFsYcuUHl | Copilot adapter script, hooks.json registration, and stdin-injection tests | done | [copilot-adapter-script-and-hook-tests.md](./copilot-adapter-script-and-hook-tests.md) |
 | TASK-034r05iHQeQpDqGn3BDa9i | Copilot deploy/config e2e asserts, DISC-034r05iHy2gdnpdai9KGpW matrix update, and final verification | done | [copilot-deploy-e2e-matrix-and-final-verification.md](./copilot-deploy-e2e-matrix-and-final-verification.md) |
 | TASK-034r05iHQeQpDqc1Novy9f | Core byte cap for countFileTokens | done | [core-byte-cap-for-countfiletokens.md](./core-byte-cap-for-countfiletokens.md) |
@@ -113,7 +113,7 @@ Directory: `docs/tasks`
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
 | TASK-034r05iHQeQpDqrbmtswfZ | Move .apm primitives to nested distributable package and make root apm.yml dev-only | done | [move-apm-primitives-to-distributable-package.md](./move-apm-primitives-to-distributable-package.md) |
-| TASK-034rAcF1RPJJogj2vzFDrF | New adapter scripts and hooks.json event registration | todo | [new-adapter-scripts-and-hooks-json-event-registration.md](./new-adapter-scripts-and-hooks-json-event-registration.md) |
+| TASK-034rAcF1RPJJogj2vzFDrF | New adapter scripts and hooks.json event registration | done | [new-adapter-scripts-and-hooks-json-event-registration.md](./new-adapter-scripts-and-hooks-json-event-registration.md) |
 | TASK-034r05iHQeQpDqgk8XoZ8E | Parameterize apm e2e fixture by target | done | [parameterize-apm-e2e-fixture-by-target.md](./parameterize-apm-e2e-fixture-by-target.md) |
 | TASK-034r05iHQeQpDqhxabCiHf | Per-target apm install verification e2e | done | [per-target-apm-install-verification-e2e.md](./per-target-apm-install-verification-e2e.md) |
 | TASK-034r05iHWkNF7zKMZPhFky | Provider plugin tests and resource isolation verification | done | [provider-plugin-tests-and-resource-isolation.md](./provider-plugin-tests-and-resource-isolation.md) |
@@ -128,7 +128,10 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gC9ZdvYF9 | Scaffold pnpm monorepo root configuration | done | [scaffold-pnpm-monorepo-root-configuration.md](./scaffold-pnpm-monorepo-root-configuration.md) |
 | TASK-034r05iHK8bA7h2hF1efor | Scaffold runtime-pi package with Pi import smoke test | done | [scaffold-runtime-pi-package-with-pi-import-smoke-test.md](./scaffold-runtime-pi-package-with-pi-import-smoke-test.md) |
 | TASK-034r05iHQeQpDqj5TapRlr | Shared limits, line framer, and path-only walker/find | done | [shared-limits-line-framer-and-path-only-walker-find.md](./shared-limits-line-framer-and-path-only-walker-find.md) |
-| TASK-034rAcEwRUaAkZ0KOCmc9J | Shared routing policy module and Windsurf adapter refactor | todo | [shared-routing-policy-module-and-windsurf-adapter-refactor.md](./shared-routing-policy-module-and-windsurf-adapter-refactor.md) |
+| TASK-034rAcEwRUaAkZ0KOCmc9J | Shared routing policy module and Windsurf adapter refactor | done | [shared-routing-policy-module-and-windsurf-adapter-refactor.md](./shared-routing-policy-module-and-windsurf-adapter-refactor.md) |
+| TASK-034rBt3hfF2knHMAeo5KhB | Shell read-candidate extractor in routing-policy | done | [shell-read-candidate-extractor-in-routing-policy.md](./shell-read-candidate-extractor-in-routing-policy.md) |
+| TASK-034rBt3LLoIUcFHjk4gRlI | Shell-read blocking contract tests | done | [shell-read-contract-tests.md](./shell-read-contract-tests.md) |
+| TASK-034rBt4e20Wrlc3FH3NQWd | Shell-read docs and final verification | done | [shell-read-docs-and-final-verification.md](./shell-read-docs-and-final-verification.md) |
 | TASK-034r05iHQeQpDqJ0Qc4762 | Verify skip path, document e2e in AGENTS.md, sync statuses, final verification | done | [skip-path-docs-and-final-verification.md](./skip-path-docs-and-final-verification.md) |
 | TASK-034r05iHQeQpDpB3QaYlPY | Start Ollama container and pull qwen3.5 quantized model | done | [start-ollama-container-and-pull-qwen3-5-quantized-model.md](./start-ollama-container-and-pull-qwen3-5-quantized-model.md) |
 | TASK-034r05iHQeQpDqlvQrRhaE | Streaming grep with batch protocol and bounded footer | done | [streaming-grep-batch-protocol-and-bounded-footer.md](./streaming-grep-batch-protocol-and-bounded-footer.md) |

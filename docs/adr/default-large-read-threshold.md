@@ -26,6 +26,7 @@ relations:
   related:
     - "../specs/apm-delegation-skills-and-read-hook.md"
     - "../designs/apm-skills-and-pre-read-hook.md"
+    - "../specs/shell-read-large-file-blocking.md"
   refines: []
   refined-by: []
   derives-from:

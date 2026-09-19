@@ -13,8 +13,9 @@
 //   { decision: "allow" }
 //   { decision: "deny", reason: string }   // multi-line guidance text
 //
-// `shell` requests currently always allow; issue #42 connects read
-// candidate extraction here without touching any adapter.
+// `shell` requests extract read candidates (cat/head/tail/less/more
+// file operands) via a conservative tokenizer and evaluate each
+// through the same file-read policy — no adapter changes needed.
 
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
@@ -132,8 +133,241 @@ function evaluateFileRead(request, opts) {
   };
 }
 
-function evaluateShell(_request, _opts) {
-  // Seam for issue #42: shell read candidate extraction plugs in here.
+// Conservative shell tokenizer for issue #42 (ADR-034rBhRB7QyWkAxRiTDXXq).
+// It never executes or expands anything: quoting only delimits tokens, and
+// a token containing shell metacharacters is flagged `unsafe` so its whole
+// segment is skipped (fail-open — a missed detection, never a false block).
+// Returns null on unrecoverable input (e.g. an unterminated quote).
+
+const SEGMENT_UNSAFE = /[<>]/;
+const TOKEN_UNSAFE = /[$`*?[\]~(){}!]/;
+const ENV_PREFIX = /^[A-Za-z_][A-Za-z0-9_]*=/;
+// A backslash escapes the next character only when that character is a
+// shell metachar or whitespace; otherwise it stays literal so Windows-style
+// paths such as `src\dir\file.txt` survive tokenization.
+const ESCAPABLE = /[\s'"\\|&;<>$`*?[\](){}!#~]/;
+
+function tokenizeShell(command) {
+  const segments = [];
+  let tokens = [];
+  let unsafe = false;
+  let text = "";
+  let tokenUnsafe = false;
+  let quote = null; // null | "'" | '"'
+  let hasToken = false;
+
+  const endToken = () => {
+    if (hasToken) {
+      tokens.push({ text, unsafe: tokenUnsafe });
+      text = "";
+      tokenUnsafe = false;
+      hasToken = false;
+    }
+  };
+  const endSegment = () => {
+    endToken();
+    segments.push({ tokens, unsafe });
+    tokens = [];
+    unsafe = false;
+  };
+
+  for (let i = 0; i < command.length; i++) {
+    const ch = command[i];
+    if (quote === "'") {
+      if (ch === "'") {
+        quote = null;
+      } else {
+        text += ch;
+        hasToken = true;
+      }
+      continue;
+    }
+    if (quote === '"') {
+      if (ch === '"') {
+        quote = null;
+      } else if (ch === "\\" && i + 1 < command.length && ESCAPABLE.test(command[i + 1])) {
+        text += command[++i];
+        hasToken = true;
+      } else {
+        text += ch;
+        hasToken = true;
+        if (ch === "$" || ch === "`") tokenUnsafe = true;
+      }
+      continue;
+    }
+    // Unquoted context.
+    if (ch === "#" && !hasToken) {
+      // Comment: skip to the next line.
+      while (i < command.length && command[i] !== "\n") i++;
+      continue;
+    }
+    if (ch === " " || ch === "\t" || ch === "\r") {
+      endToken();
+      continue;
+    }
+    if (ch === "\n" || ch === ";") {
+      endSegment();
+      continue;
+    }
+    if (ch === "|" || ch === "&") {
+      if (command[i + 1] === ch) i++; // || or &&
+      endSegment();
+      continue;
+    }
+    if (SEGMENT_UNSAFE.test(ch)) {
+      // Redirection makes the whole segment uninterpretable for us.
+      unsafe = true;
+      continue;
+    }
+    if (ch === "'" || ch === '"') {
+      quote = ch;
+      hasToken = true;
+      continue;
+    }
+    if (ch === "\\") {
+      if (i + 1 < command.length && ESCAPABLE.test(command[i + 1])) {
+        text += command[++i];
+      } else {
+        text += ch;
+      }
+      hasToken = true;
+      continue;
+    }
+    if (TOKEN_UNSAFE.test(ch)) tokenUnsafe = true;
+    text += ch;
+    hasToken = true;
+  }
+  if (quote !== null) return null; // unterminated quote
+  endSegment();
+  return segments;
+}
+
+// Read commands and the options that consume a separate value token.
+// `plusOptions` marks commands whose `+`-prefixed tokens are options too
+// (less `+F` / `+123`, more `+/<pattern>` / `+<line>`).
+const READ_COMMANDS = {
+  cat: { valueOptions: new Set(), plusOptions: false },
+  head: { valueOptions: new Set(["-n", "-c", "--lines", "--bytes"]), plusOptions: false },
+  tail: {
+    valueOptions: new Set([
+      "-n",
+      "-c",
+      "-s",
+      "--lines",
+      "--bytes",
+      "--sleep-interval",
+      "--pid",
+      "--max-unchanged-stats",
+    ]),
+    plusOptions: false,
+  },
+  less: {
+    valueOptions: new Set([
+      "-o",
+      "-O",
+      "-p",
+      "-k",
+      "-P",
+      "-t",
+      "-T",
+      "-D",
+      "--log-file",
+      "--pattern",
+      "--tags",
+      "--tag-file",
+      "--prompt",
+    ]),
+    plusOptions: true,
+  },
+  more: { valueOptions: new Set(["-n", "-p", "-t"]), plusOptions: true },
+};
+
+function commandName(token) {
+  const base = token.replace(/^.*[\\/]/, "");
+  return base.replace(/\.(exe|bat|cmd)$/i, "");
+}
+
+// Commands that change the effective cwd for later segments (POSIX
+// builtins plus cmd/PowerShell aliases). We do not track where they go —
+// a read candidate after one resolves against a different cwd than the
+// hook's, so it is ambiguous and must fail open rather than risk a
+// false block (or a false pass) from the wrong base directory.
+const CWD_CHANGING_COMMANDS = new Set(["cd", "chdir", "pushd", "popd", "set-location", "sl"]);
+
+// Extracts file operands of read commands from a shell command string.
+// Returns [] when the command is unparseable or nothing safely readable
+// is referenced; callers treat [] as fail-open.
+function extractReadCandidates(command) {
+  const segments = tokenizeShell(command);
+  if (!segments) return [];
+  const candidates = [];
+  let cwdAmbiguous = false;
+  for (const segment of segments) {
+    const { tokens } = segment;
+    let i = 0;
+    while (i < tokens.length && ENV_PREFIX.test(tokens[i].text)) i++;
+    const head = tokens[i];
+    if (!head || head.unsafe) continue;
+    if (CWD_CHANGING_COMMANDS.has(commandName(head.text).toLowerCase())) {
+      cwdAmbiguous = true;
+      continue;
+    }
+    if (cwdAmbiguous || segment.unsafe) continue;
+    const spec = READ_COMMANDS[commandName(head.text)];
+    if (!spec) continue;
+    const operands = [];
+    let optionsEnded = false;
+    let skipValue = false;
+    let abandoned = false;
+    for (let j = i + 1; j < tokens.length; j++) {
+      const tok = tokens[j];
+      if (skipValue) {
+        skipValue = false;
+        continue;
+      }
+      if (tok.unsafe) {
+        abandoned = true;
+        break;
+      }
+      const t = tok.text;
+      if (!optionsEnded) {
+        if (t === "--") {
+          optionsEnded = true;
+          continue;
+        }
+        if (t.startsWith("-") || (spec.plusOptions && t.startsWith("+"))) {
+          if (spec.valueOptions.has(t)) skipValue = true;
+          continue;
+        }
+      }
+      operands.push(t);
+    }
+    if (!abandoned) candidates.push(...operands);
+  }
+  return [...new Set(candidates)];
+}
+
+function evaluateShell(request, opts) {
+  const candidates = extractReadCandidates(request.command);
+  for (const candidate of candidates) {
+    const verdict = evaluateFileRead(
+      {
+        kind: "file-read",
+        path: candidate,
+        cwd: request.cwd,
+        sourceTool: request.sourceTool,
+      },
+      opts,
+    );
+    if (verdict.decision === "deny") {
+      return {
+        decision: "deny",
+        reason:
+          `cheaper: blocked shell command '${request.command.replace(/\s+/g, " ").trim()}'.\n` +
+          verdict.reason,
+      };
+    }
+  }
   return { decision: "allow" };
 }
 
