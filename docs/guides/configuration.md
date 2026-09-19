@@ -62,16 +62,25 @@ preferences:
   wildcard 可）。解決時にその tier の候補を優先する。
 
 tier 分類の priority は `overrides` → bundled curated exceptions →
-unclassified（effective tier は `medium`）の順。price ベースの
-自動分類（`tierSource: "auto"`）は別 issue（#46）で導入予定の
-ため、現状は override・exception のいずれにも該当しない model は
-すべて unclassified → `medium` になる。`ollama/*` のような local
-model は curated exception で `low` に固定済み。
-pricing metadata 自体は Pi の runtime catalog（models.dev 由来）を
-canonical とし、欠損分は bundled snapshot で補完される。
-各 model の effective tier と分類・pricing の由来は
-`cheaper models` で確認できる。詳細は
-[providers ガイド](./providers.md)。
+auto 分類 → unclassified（effective tier は `medium`）の順。
+pricing は Pi の runtime catalog（models.dev 由来）を canonical
+とし、欠損分は bundled snapshot で補完される。
+
+auto 分類は利用可能な（exclude 適用後の）priced model 集合の
+**相対 ranking** で行う。worker の workload profile
+`outputPerInput`（平均 output token / input token、既定 `1.0`）
+から各 model の `effectiveCost = input + output * outputPerInput`
+（USD/1M token）を計算し、effectiveCost の percentile が
+下位 1/3 → `low`、中位 1/3 → `medium`、上位 1/3 → `high`
+となる。同額の model は同一 percentile・同一 tier にまとめられ、
+priced model が 1 つだけの場合は `medium` になる。pricing 欠落・
+合計 0 の model は ranking 母集団に入らず unclassified →
+`medium` とする。`ollama/*` のような local model は curated
+exception で `low` に固定済み。各 model の effective tier と
+分類・pricing の由来（`tierSource`・`effectiveCost`・
+`effectiveCostPercentile`）は `cheaper models` で確認できる
+（`--worker <name>` で特定 worker の workload を基準にできる）。
+詳細は [providers ガイド](./providers.md)。
 
 ## `policy.yaml`
 

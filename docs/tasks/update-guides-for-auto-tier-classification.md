@@ -1,7 +1,7 @@
 ---
 id: "TASK-nG7Lngq2AuUQEzF33IkneZ"
 type: "task"
-status: "todo"
+status: "done"
 title: "Update user guides for auto tier classification"
 created: "2026-09-20"
 updated: "2026-09-20"

@@ -84,13 +84,18 @@ preferences:
 ```
 
 - tier 分類は `overrides` → bundled curated exceptions →
-  unclassified（**medium**）の順で決まる。price ベースの自動分類は
-  別 issue（#46）で導入予定のため、現状は override・exception
-  非該当の model はすべて `medium` になる。local model
-  （`ollama/*`）は curated exception で `low` に固定されている。
-  model ごとの effective tier と由来は `cheaper models` で確認
-  できる。`4b` / `9b` のような suffix は `overrides` で low に
-  pin する。
+  auto 分類 → unclassified（**medium**）の順で決まる。auto
+  分類は worker の `outputPerInput`（既定 `1.0`）から
+  `effectiveCost = input + output * outputPerInput` を計算し、
+  利用可能な priced model 集合の percentile で下位 1/3 → low、
+  中位 1/3 → medium、上位 1/3 → high に分ける。pricing は Pi の
+  runtime catalog（models.dev 由来）が canonical で、local
+  model（`ollama/*`）は curated exception で `low` に固定されて
+  いる。model ごとの effective tier と由来（`tierSource`・
+  `effectiveCost`・`effectiveCostPercentile`）は `cheaper
+  models` で確認できる。`--worker <name>` で特定 worker の
+  workload profile を基準にした ranking を表示できる。
+  `4b` / `9b` のような suffix は `overrides` で low に pin する。
 - built-in worker は `tier: low` 要求 + built-in policy は
   `tierFallback: none` なので、low tier に解決できる model が
   1 つ必要。

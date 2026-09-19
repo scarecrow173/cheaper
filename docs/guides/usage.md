@@ -36,6 +36,7 @@ Commands:
 | `--model <provider>/<id>` | tier 解決を bypass して model を直接指定する（`run` とエイリアスのみ） |
 | `--provider <id>` | `models` の出力を provider で絞る |
 | `--tier <low\|medium\|high>` | `models` の出力を effective tier で絞る |
+| `--worker <name>` | `models` の auto tier 分類をその worker の workload profile で計算する |
 | `--format <json\|text>` | stdout の形式（既定: `json`） |
 | `--quiet` | stderr の diagnostics を抑制する |
 | `--help` / `--version` | help / version 表示 |
@@ -53,8 +54,9 @@ Commands:
 - `meta` には `durationMs`・`model`（`provider`・`id`・`tier`・
   `selection`（`"tier"` | `"explicit"`）・`tierSource`
   （`"explicit-override"` | `"curated-exception"` | `"auto"` |
-  `"unclassified"`。`"auto"` は #46 の自動分類用に予約された値で
-  現状は出力されない））・`usage`（input/output/
+  `"unclassified"`）。`tierSource === "auto"` のときは分類根拠の
+  `effectiveCost`・`effectiveCostPercentile`・
+  `workload.outputPerInput` も入る）・`usage`（input/output/
   cacheRead/cacheWrite/totalTokens/costUsd）・`turns`・`toolCalls`・
   `repairs`・`changes` 等が入る。`changes` は runtime が計測した
   filesystem 変更の要約。
@@ -107,6 +109,7 @@ availability は通常どおり enforce される（`meta.model.selection`
 cheaper models                        # 利用可能な全 model を一覧
 cheaper models --provider anthropic   # provider で絞る
 cheaper models --tier low             # effective tier で絞る
+cheaper models --worker bulk-reader   # bulk-reader の workload で auto 分類
 ```
 
 runtime が認識する available catalog の各 model について、
@@ -115,6 +118,11 @@ runtime が認識する available catalog の各 model について、
 （`runtime-catalog` または `bundled-snapshot`）・snapshot version /
 更新日などの freshness）を `result.models[]` で返す。pricing を
 持たない model は `pricing: null` になる（error にはしない）。
+`tierSource` が `"auto"` の model には分類根拠として
+`effectiveCost`・`effectiveCostPercentile`・
+`workload.outputPerInput` も付く。`--worker` を指定するとその
+worker の `cheaper.model.workload.outputPerInput` を ranking の
+基準に使う（省略時は既定 `1.0`）。
 
 ## count-tokens
 

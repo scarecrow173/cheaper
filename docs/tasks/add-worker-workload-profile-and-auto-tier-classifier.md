@@ -1,7 +1,7 @@
 ---
 id: "TASK-TttCTIVey8FHby8zR3UDqb"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Add worker workload profile and auto tier classifier"
 created: "2026-09-20"
 updated: "2026-09-20"

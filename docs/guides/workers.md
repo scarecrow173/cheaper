@@ -20,6 +20,8 @@ tools:
 cheaper:
   model:
     tier: low
+    workload:
+      outputPerInput: 0.3
   input:
     schema:
       file: ./schemas/my-worker.input.schema.json
@@ -36,6 +38,11 @@ You are a worker that ...（instruction 本文）
   でさらに制限される（両方で許可された tool のみ有効）。
 - `cheaper.model.tier`: 要求する model tier（`low`/`medium`/
   `high`）。`policy.yaml` の `model.maxTier` が上限。
+- `cheaper.model.workload.outputPerInput`: 平均 output token /
+  input token の比（省略時 `1.0`）。auto tier 分類の
+  `effectiveCost = input + output * outputPerInput` に使われ、
+  worker ごとに同じ model 集合でも tier 境界が変わり得る。
+  read 偏重なら小さく（例: `0.05`）、生成偏重なら大きくする。
 - `cheaper.input.schema` / `cheaper.output.schema`: JSON Schema
   file への path（worker file からの相対 path）。
 - `cheaper.writeScope`: `targets` を指定すると、runtime が
@@ -44,11 +51,14 @@ You are a worker that ...（instruction 本文）
 
 ## built-in worker
 
-| worker | alias | 目的 | tools |
-| --- | --- | --- | --- |
-| `bulk-reader` | `bulk-read` | 大規模 read・抽出・圧縮された構造化 findings を返す（read-only） | read, grep, find, ls, count_tokens |
-| `code-writer` | `code-write` | 機械的・pattern ベースのコード生成・変更を workspace に適用する | read, grep, find, ls, write, edit, count_tokens |
-| `doc-writer` | `doc-write` | decisions/facts から document を生成する | read, grep, find, ls, write, edit, count_tokens |
+| worker | alias | 目的 | `outputPerInput` | tools |
+| --- | --- | --- | --- | --- |
+| `bulk-reader` | `bulk-read` | 大規模 read・抽出・圧縮された構造化 findings を返す（read-only） | `0.05` | read, grep, find, ls, count_tokens |
+| `code-writer` | `code-write` | 機械的・pattern ベースのコード生成・変更を workspace に適用する | `0.3` | read, grep, find, ls, write, edit, count_tokens |
+| `doc-writer` | `doc-write` | decisions/facts から document を生成する | `1.0` | read, grep, find, ls, write, edit, count_tokens |
+
+`outputPerInput` の built-in 値は暫定の推定値であり、
+telemetry（usage log）による検証は follow-up 予定。
 
 writer 系 2 worker は `writeScope: targets` で、`targets[].path`
 以外への write を runtime が強制的に禁止する。

@@ -1,7 +1,7 @@
 ---
 id: "TASK-vhu8Z2b2Ylehk8LEqt43Ke"
 type: "task"
-status: "todo"
+status: "done"
 title: "Wire auto classification into resolver, runtime, and CLI"
 created: "2026-09-20"
 updated: "2026-09-20"
