@@ -31,7 +31,8 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/model-pricing-catalog-and-curated-exceptions.md"
-  derived-by: []
+  derived-by:
+    - "../designs/model-pricing-catalog-and-curated-exceptions.md"
   verifies: []
   verified-by: []
   references: []

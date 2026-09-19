@@ -29,6 +29,7 @@ relations:
     - "model-tier-model-resolver.md"
     - "usage-jsonl-contract-canonical.md"
     - "../specs/model-pricing-catalog.md"
+    - "../designs/model-pricing-catalog-and-curated-exceptions.md"
   refines: []
   refined-by: []
   derives-from:
