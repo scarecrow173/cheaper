@@ -56,8 +56,7 @@ describe("toModelInfo", () => {
 
 describe("resolvePiModel", () => {
   it("resolves a tier-matched Pi model", async () => {
-    // override/exception 非該当の model は unclassified → medium 扱い
-    // （auto 分類は #46 scope で #45 では生成しない）
+    // effectiveCost ranking で haiku が最安 → low に分類される（issue #46）
     const cat = catalog([
       piModel("anthropic", "claude-haiku-4", 8192, {
         input: 0.5,
@@ -65,16 +64,33 @@ describe("resolvePiModel", () => {
         cacheRead: 0.05,
         cacheWrite: 0.6,
       }),
+      piModel("anthropic", "claude-sonnet-4", 8192, {
+        input: 3,
+        output: 15,
+        cacheRead: 0.3,
+        cacheWrite: 3.75,
+      }),
+      piModel("anthropic", "claude-opus-4", 8192, {
+        input: 15,
+        output: 75,
+        cacheRead: 1.5,
+        cacheWrite: 18.75,
+      }),
     ]);
     const r = await resolvePiModel({
       catalog: cat,
-      requestedTier: "medium",
+      requestedTier: "low",
       policy: { maxTier: "high", tierFallback: "none" },
       config,
     });
-    expect(r.tier).toBe("medium");
-    expect(r.tierSource).toBe("unclassified");
+    expect(r.tier).toBe("low");
+    expect(r.tierSource).toBe("auto");
     expect(r.selection).toBe("tier");
+    expect(r.auto).toMatchObject({
+      effectiveCost: 1.5,
+      effectiveCostPercentile: 1 / 6,
+      outputPerInput: 1.0,
+    });
     expect(r.pricing).toMatchObject({ input: 0.5, output: 1, source: "runtime-catalog" });
     expect(r.model.id).toBe("claude-haiku-4");
     expect(r.model.provider).toBe("anthropic");
@@ -84,6 +100,30 @@ describe("resolvePiModel", () => {
       cost: { input: 0.5, output: 1, cacheRead: 0.05, cacheWrite: 0.6 },
       maxTokens: 8192,
     });
+  });
+
+  it("shifts the auto classification by worker outputPerInput", async () => {
+    // output 偏重の workload では output 単価の高い model が不利になる
+    const cat = catalog([
+      piModel("a", "cheap-in", 8192, { input: 0.1, output: 10, cacheRead: 0, cacheWrite: 0 }),
+      piModel("b", "cheap-out", 8192, { input: 5, output: 0.1, cacheRead: 0, cacheWrite: 0 }),
+    ]);
+    const readHeavy = await resolvePiModel({
+      catalog: cat,
+      requestedTier: "low",
+      policy: { maxTier: "high", tierFallback: "none" },
+      config,
+      outputPerInput: 0.01,
+    });
+    expect(readHeavy.model.id).toBe("cheap-in");
+    const writeHeavy = await resolvePiModel({
+      catalog: cat,
+      requestedTier: "low",
+      policy: { maxTier: "high", tierFallback: "none" },
+      config,
+      outputPerInput: 100,
+    });
+    expect(writeHeavy.model.id).toBe("cheap-out");
   });
 
   it("throws MODEL_TIER_UNAVAILABLE with noAuthenticatedModels on empty availability", async () => {
@@ -139,7 +179,7 @@ describe("resolveExplicitPiModel", () => {
     });
     expect(r.selection).toBe("explicit");
     expect(r.tier).toBe("medium");
-    expect(r.tierSource).toBe("unclassified");
+    expect(r.tierSource).toBe("auto");
     expect(r.model.id).toBe("claude-sonnet-4");
     expect(r.info.provider).toBe("anthropic");
   });

@@ -88,7 +88,7 @@ export function resolveModel(opts: {
   }
 
   const classifications = classifyModels(eligible, config, {
-    outputPerInput: opts.outputPerInput,
+    ...(opts.outputPerInput !== undefined ? { outputPerInput: opts.outputPerInput } : {}),
   });
   const byTier = new Map<
     Tier,
@@ -164,7 +164,7 @@ export function resolveExplicitModel(opts: {
   }
   const eligible = available.filter((m) => !isExcludedModel(m, config));
   const autoContext = buildAutoTierContext(eligible, {
-    outputPerInput: opts.outputPerInput,
+    ...(opts.outputPerInput !== undefined ? { outputPerInput: opts.outputPerInput } : {}),
   });
   const pricing = resolvePricing(model);
   const classification = classifyModel(model, config, { pricing, autoContext });

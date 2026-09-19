@@ -98,6 +98,55 @@ describe("runWorker", () => {
     expect(r.meta.changes.totals.files).toBe(0);
   });
 
+  it("auto 分類は meta.model に effectiveCost/percentile/workload を記録する", async () => {
+    const fake = createFakePi({
+      models: [
+        {
+          id: "fake-model",
+          name: "Fake Model",
+          cost: { input: 0.5, output: 1, cacheRead: 0, cacheWrite: 0 },
+        },
+        {
+          id: "fake-mid",
+          name: "Fake Mid",
+          cost: { input: 3, output: 15, cacheRead: 0, cacheWrite: 0 },
+        },
+        {
+          id: "fake-high",
+          name: "Fake High",
+          cost: { input: 15, output: 75, cacheRead: 0, cacheWrite: 0 },
+        },
+      ],
+      responses: [fauxAssistantMessage('{"ok":true}')],
+    });
+    const w = worker(["read"]);
+    w.cheaper.model.workload = { outputPerInput: 0.3 };
+    const base = await deps(fake, w, policy());
+    // 実 catalog には環境依存の model が混ざるため、ranking 母集団を
+    // fake model に限定して auto 分類を決定的に検証する。
+    const fakeOnly = {
+      getAvailable: async () =>
+        (await base.catalog.getAvailable()).filter((m) => m.provider === "cheaper-fake"),
+      getModel: (p: string, id: string) => base.catalog.getModel(p, id),
+    };
+    const r = await runWorker({
+      ...base,
+      catalog: fakeOnly,
+      modelConfig: { overrides: {}, preferences: {} },
+    });
+    expect(r.result).toEqual({ ok: true });
+    expect(r.meta.model).toEqual({
+      provider: "cheaper-fake",
+      id: "fake-model",
+      tier: "low",
+      selection: "tier",
+      tierSource: "auto",
+      effectiveCost: 0.8,
+      effectiveCostPercentile: 1 / 6,
+      workload: { outputPerInput: 0.3 },
+    });
+  });
+
   it("--model 直接指定は selection=explicit で同じ model を解決する", async () => {
     const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
     const base = await deps(fake, worker(["read"]), policy());

@@ -204,9 +204,10 @@ describe("buildAutoTierContext", () => {
 describe("classifyModel unclassified", () => {
   it("missing cost → medium / unclassified", () => {
     const ctx = buildAutoTierContext([model("a", { input: 1, output: 1 })]);
-    expect(
-      classifyModel(model("unmatched-model-xyz"), EMPTY, { autoContext: ctx }),
-    ).toEqual({ tier: "medium", source: "unclassified" });
+    expect(classifyModel(model("unmatched-model-xyz"), EMPTY, { autoContext: ctx })).toEqual({
+      tier: "medium",
+      source: "unclassified",
+    });
   });
 
   it("zero cost は free の観測だが自動で low にしない → medium / unclassified", () => {

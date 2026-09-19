@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
+  buildAutoTierContext,
   CheaperError,
   canonicalizeWorkspaceRoot,
   classifyModel,
@@ -89,6 +90,7 @@ Options:
   --model <prov>/<id>    Run with an explicit model instead of a tier
   --provider <id>        Filter 'models' output by provider
   --tier <low|med|high>  Filter 'models' output by effective tier
+  --worker <name>        Rank 'models' auto tiers by a worker's workload
   --method <id>          Auto-answer auth login select prompts (e.g. device)
   --type <oauth|api_key> Auth method for 'auth login' (default: oauth)
   --format <json|text>   Output format (default: json)
@@ -257,10 +259,12 @@ async function executeRun(
 }
 
 /**
- * `cheaper models`（issue #45）。runtime の available catalog を列挙し、
- * 各 model に exclude・effective pricing・classification を適用した
- * 一覧を `result.models[]` で返す。worker run を伴わないため utility
- * envelope を使う。
+ * `cheaper models`（issue #45 / #46）。runtime の available catalog を
+ * 列挙し、各 model に exclude・effective pricing・classification を
+ * 適用した一覧を `result.models[]` で返す。auto 分類は `--worker`
+ * の workload profile（未指定は `DEFAULT_OUTPUT_PER_INPUT`）を基準に
+ * eligible 母集団の相対 ranking で行う。worker run を伴わないため
+ * utility envelope を使う。
  */
 async function executeModels(
   args: ModelsCliArgs,
@@ -276,19 +280,37 @@ async function executeModels(
     userConfigDir: dirs.userConfigDir,
     projectDir: dirs.projectDir,
   });
+  let outputPerInput: number | undefined;
+  if (args.worker !== undefined) {
+    const worker = await resolveWorker(args.worker, dirs);
+    outputPerInput = worker.cheaper.model.workload?.outputPerInput;
+  }
   const runtime = await (hooks.createModelRuntime ?? createModelRuntime)({ env: io.env });
   const available = (await runtime.getAvailable()).map(toModelInfo);
+  // ranking 母集団は exclude 適用後の eligible model。excluded 行の
+  // 分類は表示用で、母集団自体には入れない（issue #46）。
+  const autoContext = buildAutoTierContext(
+    available.filter((m) => !isExcludedModel(m, modelConfig)),
+    { ...(outputPerInput !== undefined ? { outputPerInput } : {}) },
+  );
   const models = available
     .filter((m) => args.provider === undefined || m.provider === args.provider)
     .map((m) => {
       const pricing = resolvePricing(m);
-      const classification = classifyModel(m, modelConfig);
+      const classification = classifyModel(m, modelConfig, { pricing, autoContext });
       return {
         provider: m.provider,
         id: m.id,
         excluded: isExcludedModel(m, modelConfig),
         tier: classification.tier,
         tierSource: classification.source,
+        ...(classification.auto !== undefined
+          ? {
+              effectiveCost: classification.auto.effectiveCost,
+              effectiveCostPercentile: classification.auto.effectiveCostPercentile,
+              workload: { outputPerInput: classification.auto.outputPerInput },
+            }
+          : {}),
         pricing: pricing ?? null,
       };
     })

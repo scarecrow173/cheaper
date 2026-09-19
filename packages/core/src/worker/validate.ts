@@ -153,9 +153,7 @@ export async function validateWorkerDefinition(
     cheaper: {
       model: {
         tier,
-        ...(outputPerInput !== undefined
-          ? { workload: { outputPerInput } }
-          : {}),
+        ...(outputPerInput !== undefined ? { workload: { outputPerInput } } : {}),
       },
       output: { schema: outputRef },
     },
