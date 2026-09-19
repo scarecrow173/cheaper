@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rBt3hfF2knHMAeo5KhB"
 type: "task"
-status: "todo"
+status: "done"
 title: "Shell read-candidate extractor in routing-policy"
 created: "2026-09-20"
 updated: "2026-09-20"
@@ -70,13 +70,13 @@ block された command を添える。解釈不能構文・対象外 command・
 
 ## Done When
 
-- [ ] `evaluateShell` が対象 command の operand を抽出して
+- [x] `evaluateShell` が対象 command の operand を抽出して
       `evaluateFileRead` へ判定を委譲する
-- [ ] deny reason が command・file・token/threshold または
+- [x] deny reason が command・file・token/threshold または
       `FILE_TOO_LARGE`・`bulk-read` 誘導を含む
-- [ ] 解釈不能構文・対象外 command・operand なしで allow を返す
+- [x] 解釈不能構文・対象外 command・operand なしで allow を返す
 
 ## Verification
 
-- [ ] `node -e` 等で `evaluate({kind:"shell", command:"cat <big>"})` が
+- [x] `node -e` 等で `evaluate({kind:"shell", command:"cat <big>"})` が
       deny を返すことを確認（contract test は後続 task）
