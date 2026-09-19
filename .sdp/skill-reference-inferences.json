@@ -324,6 +324,28 @@
       ]
     },
     {
+      "name": "doc-maintenance",
+      "review_status": "reviewed",
+      "provides": [
+        {
+          "capability": "doc_maintenance",
+          "description": "Repair deterministic document inconsistencies, regenerate managed indexes, and normalize document paths diagnosed by doc-status"
+        }
+      ],
+      "uses": [],
+      "execution_policy": {
+        "strictness": "flexible",
+        "sequence_required": false,
+        "allow_step_reordering": true,
+        "allow_partial_application": true
+      },
+      "tags": [
+        "document",
+        "maintenance",
+        "repair"
+      ]
+    },
+    {
       "name": "doc-status",
       "review_status": "reviewed",
       "provides": [
@@ -897,6 +919,28 @@
         "testing",
         "tdd",
         "verification"
+      ]
+    },
+    {
+      "name": "test-spec-doc",
+      "review_status": "reviewed",
+      "provides": [
+        {
+          "capability": "test_spec_authoring",
+          "description": "Record what a test must guarantee and why as a canonical test specification with Feature/Rule/Example structure linked to verified specs, designs, or ADRs"
+        }
+      ],
+      "uses": [],
+      "execution_policy": {
+        "strictness": "flexible",
+        "sequence_required": false,
+        "allow_step_reordering": true,
+        "allow_partial_application": true
+      },
+      "tags": [
+        "document",
+        "test",
+        "specification"
       ]
     },
     {
