@@ -19,6 +19,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gaTnVhXWI | code-writer and doc-writer built-in Workers | implemented | [code-writer-and-doc-writer-built-in-workers.md](./code-writer-and-doc-writer-built-in-workers.md) |
 | SPEC-034r05iHK8bA7gsvijtkou | Copilot per-target pre-read hook adapter | implemented | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | SPEC-034r05iHK8bA7gky93Dal0 | Cross-agent distribution verification | implemented | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
+| SPEC-034rzTJydXfLvQhTIqiDqW | Cross-agent native routing adapters over APM distribution | draft | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
 | SPEC-034r05iHK8bA7gveeDA5HC | Continuous usage measurement log for delegations | implemented | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
 | SPEC-034r05iHK8bA7gAHzYnfP8 | Devin Local as a bundled Pi provider | implemented | [devin-local-bundled-provider.md](./devin-local-bundled-provider.md) |
 | SPEC-034r05iHK8bA7gqGaD6qpk | grep batchMaxBytes / decoded line payload invariant | implemented | [grep-batch-max-bytes-line-payload-invariant.md](./grep-batch-max-bytes-line-payload-invariant.md) |
