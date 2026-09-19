@@ -27,6 +27,8 @@ relations:
   superseded-by: []
   related:
     - "worker-definition-runtime-policy-runtime-invariants-capability.md"
+    - "price-based-percentile-auto-tier-classification.md"
+    - "../specs/auto-tier-classification.md"
   refines: []
   refined-by: []
   derives-from:

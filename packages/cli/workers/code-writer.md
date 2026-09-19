@@ -13,6 +13,9 @@ cheaper:
   writeScope: targets
   model:
     tier: low
+    workload:
+      # spec+context に対して中程度の code output を生成する workload
+      outputPerInput: 0.3
   input:
     schema:
       file: ./schemas/code-writer.input.schema.json

@@ -24,6 +24,8 @@ export interface ModelsCliArgs {
   provider: string | undefined;
   /** `--tier <low|medium|high>` filter（effective tier 基準）。 */
   tier: Tier | undefined;
+  /** `--worker <name>`: auto 分類の基準 workload profile（issue #46）。 */
+  worker: string | undefined;
   cwd: string | undefined;
   format: "json" | "text";
   quiet: boolean;
@@ -145,12 +147,10 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
   }
 
   const workerFile = values["worker-file"];
-  // --model/--provider は run/models と意味を共有するため usage 専用には
-  // 含めない（usage では record filter、run では explicit model 指定）。
-  const usageOnlyOptionUsed =
-    values.since !== undefined ||
-    values.worker !== undefined ||
-    values["compare-model"] !== undefined;
+  // --model/--provider/--worker は run/models と意味を共有するため usage 専用には
+  // 含めない（usage では record filter、run では explicit model 指定、
+  // models では auto 分類の workload profile）。
+  const usageOnlyOptionUsed = values.since !== undefined || values["compare-model"] !== undefined;
 
   if (command === "usage") {
     if (positionals.length > 1) {
@@ -181,7 +181,7 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
   }
 
   if (usageOnlyOptionUsed) {
-    throw invalidRequest("--since/--worker/--compare-model are only valid for `usage`");
+    throw invalidRequest("--since/--compare-model are only valid for `usage`");
   }
 
   if (command === "count-tokens") {
@@ -207,8 +207,8 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
     if (values.model !== undefined) {
       throw invalidRequest("--model is only valid for worker runs or `usage`");
     }
-    if (values.provider !== undefined) {
-      throw invalidRequest("--provider is only valid for `models` or `usage`");
+    if (values.provider !== undefined || values.worker !== undefined) {
+      throw invalidRequest("--provider/--worker are only valid for `models` or `usage`");
     }
     if (values.tier !== undefined) {
       throw invalidRequest("--tier is only valid for `models`");
@@ -245,10 +245,17 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
     if (tier !== undefined && !(TIERS as readonly string[]).includes(tier)) {
       throw invalidRequest(`invalid --tier: ${tier} (expected ${TIERS.join("|")})`, { tier });
     }
+    const worker = values.worker;
+    if (worker !== undefined && !NAME_PATTERN.test(worker)) {
+      throw new CheaperError("INVALID_WORKER_NAME", `invalid worker name: ${worker}`, {
+        details: { name: worker },
+      });
+    }
     return {
       kind: "models",
       provider: values.provider,
       tier: tier as Tier | undefined,
+      worker,
       cwd: values.cwd,
       format,
       quiet: values.quiet === true,
@@ -289,8 +296,8 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
     if (values.model !== undefined) {
       throw invalidRequest("--model is only valid for worker runs or `usage`");
     }
-    if (values.provider !== undefined) {
-      throw invalidRequest("--provider is only valid for `models` or `usage`");
+    if (values.provider !== undefined || values.worker !== undefined) {
+      throw invalidRequest("--provider/--worker are only valid for `models` or `usage`");
     }
     if (values.tier !== undefined) {
       throw invalidRequest("--tier is only valid for `models`");
@@ -334,8 +341,8 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
   if (values.method !== undefined || values.type !== undefined) {
     throw invalidRequest("--method/--type are only valid for `auth login`");
   }
-  if (values.provider !== undefined) {
-    throw invalidRequest("--provider is only valid for `models` or `usage`");
+  if (values.provider !== undefined || values.worker !== undefined) {
+    throw invalidRequest("--provider/--worker are only valid for `models` or `usage`");
   }
   if (values.tier !== undefined) {
     throw invalidRequest("--tier is only valid for `models`");

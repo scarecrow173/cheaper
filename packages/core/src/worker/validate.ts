@@ -18,7 +18,15 @@ export interface WorkerDefinition {
   description: string;
   tools: ToolName[];
   cheaper: {
-    model: { tier: Tier };
+    model: {
+      tier: Tier;
+      /**
+       * workload profile（issue #46）。`outputPerInput` は input
+       * 1 token あたりの output token 比率で auto tier 分類の
+       * effectiveCost に使う。未指定時は `DEFAULT_OUTPUT_PER_INPUT`。
+       */
+      workload?: { outputPerInput: number };
+    };
     input?: { schema: SchemaRef };
     output: { schema: SchemaRef };
     /**
@@ -37,7 +45,8 @@ export interface WorkerDefinition {
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const CHEAPER_KEYS = new Set(["model", "input", "output", "writeScope"]);
-const MODEL_KEYS = new Set(["tier"]);
+const MODEL_KEYS = new Set(["tier", "workload"]);
+const WORKLOAD_KEYS = new Set(["outputPerInput"]);
 const IO_KEYS = new Set(["schema"]);
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
@@ -102,6 +111,18 @@ export async function validateWorkerDefinition(
   if (!isTier(model.tier)) throw invalid(sourcePath, "tier-invalid");
   const tier = model.tier;
 
+  const workload = model.workload;
+  let outputPerInput: number | undefined;
+  if (workload !== undefined) {
+    if (!isPlainObject(workload)) throw invalid(sourcePath, "workload-invalid");
+    requireStrictKeys(workload, WORKLOAD_KEYS, "workload", sourcePath);
+    const opi = workload.outputPerInput;
+    if (typeof opi !== "number" || !Number.isFinite(opi) || opi < 0) {
+      throw invalid(sourcePath, "workload-outputPerInput-invalid");
+    }
+    outputPerInput = opi;
+  }
+
   const output = cheaper.output;
   if (!isPlainObject(output)) throw invalid(sourcePath, "output-missing");
   requireStrictKeys(output, IO_KEYS, "output", sourcePath);
@@ -130,7 +151,10 @@ export async function validateWorkerDefinition(
     description: fm.description,
     tools,
     cheaper: {
-      model: { tier },
+      model: {
+        tier,
+        ...(outputPerInput !== undefined ? { workload: { outputPerInput } } : {}),
+      },
       output: { schema: outputRef },
     },
     instructions: parsed.body,

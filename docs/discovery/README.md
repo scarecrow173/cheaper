@@ -7,6 +7,7 @@ Directory: `docs/discovery`
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
 | DISC-034r05iHy2gdnp9k0MK7uO | Self-contained cheaper CLI distribution inside the APM hook bundle | resolved | [apm-self-contained-cli-distribution.md](./apm-self-contained-cli-distribution.md) |
+| DISC-Hsh18eGWIzyBCzpfoRxUb3 | auto-tier-classification-effective-cost | resolved | [auto-tier-classification-effective-cost.md](./auto-tier-classification-effective-cost.md) |
 | DISC-034r05iHy2gdnpb598KIca | bulk-read delegation benchmark and large-read threshold evidence | resolved | [bulk-read-delegation-benchmark.md](./bulk-read-delegation-benchmark.md) |
 | DISC-034r05iHy2gdnpeCjN4yfM | bulk-reader の巨大ファイル安全 I/O | resolved | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | DISC-034r05iHy2gdnp377SlYbj | cheaper V1 実装引継ぎの整理と Pi SDK 現状確認 | resolved | [cheaper-v1-pi-sdk.md](./cheaper-v1-pi-sdk.md) |

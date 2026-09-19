@@ -46,13 +46,7 @@ function makeIo(stdinText = '{"task":"x"}', env: NodeJS.ProcessEnv = {}, isTTY =
 }
 
 const meta: WorkerRunMeta = {
-  model: {
-    provider: "p",
-    id: "m",
-    tier: "low",
-    selection: "tier",
-    tierSource: "explicit-override",
-  },
+  model: { provider: "p", id: "m", tier: "low", selection: "tier", tierSource: "auto" },
   usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, totalTokens: 3, costUsd: 0 },
   turns: 1,
   toolCalls: 0,
@@ -155,7 +149,7 @@ describe("runCli", () => {
       id: "m",
       tier: "low",
       selection: "tier",
-      tierSource: "explicit-override",
+      tierSource: "auto",
     });
     expect(err()).toBe("model: p/m (tier low)\n");
     expect(seen?.worker.name).toBe("bulk-reader");
@@ -218,13 +212,16 @@ describe("runCli", () => {
       expect(env.worker).toBeNull();
       const models = env.result.models as Array<Record<string, unknown>>;
       expect(models).toHaveLength(2);
-      // pricing はあっても auto 分類しない（#46 scope）→ medium / unclassified
+      // effectiveCost=1.8（最安、percentile 0.25）→ auto low（issue #46）
       expect(models[0]).toMatchObject({
         provider: "anthropic",
         id: "claude-haiku-4-5",
         excluded: false,
-        tier: "medium",
-        tierSource: "unclassified",
+        tier: "low",
+        tierSource: "auto",
+        effectiveCost: 1.8,
+        effectiveCostPercentile: 0.25,
+        workload: { outputPerInput: 1.0 },
       });
       expect(models[0]?.pricing).toMatchObject({
         input: 0.8,
@@ -232,7 +229,8 @@ describe("runCli", () => {
         source: "runtime-catalog",
         unit: "usd-per-1m-tokens",
       });
-      expect(models[1]).toMatchObject({ id: "gpt-5", tier: "medium", tierSource: "unclassified" });
+      // effectiveCost=11.25（最高、percentile 0.75）→ auto high
+      expect(models[1]).toMatchObject({ id: "gpt-5", tier: "high", tierSource: "auto" });
     });
 
     it("applies --provider and --tier filters", async () => {
@@ -249,23 +247,13 @@ describe("runCli", () => {
 
       const tierRun = makeIo();
       const code2 = await runCli(
-        ["models", "--tier", "medium"],
+        ["models", "--tier", "low"],
         tierRun.io,
         hooks({ createModelRuntime: async () => fakeCatalog() as never }),
       );
       expect(code2).toBe(0);
       const models2 = JSON.parse(tierRun.out()).result.models as Array<Record<string, unknown>>;
-      expect(models2.map((m) => m.id)).toEqual(["claude-haiku-4-5", "gpt-5"]);
-
-      const lowRun = makeIo();
-      const code3 = await runCli(
-        ["models", "--tier", "low"],
-        lowRun.io,
-        hooks({ createModelRuntime: async () => fakeCatalog() as never }),
-      );
-      expect(code3).toBe(0);
-      const models3 = JSON.parse(lowRun.out()).result.models as Array<Record<string, unknown>>;
-      expect(models3).toHaveLength(0);
+      expect(models2.map((m) => m.id)).toEqual(["claude-haiku-4-5"]);
     });
 
     it("marks models.yaml exclude matches as excluded", async () => {

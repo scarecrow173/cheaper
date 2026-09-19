@@ -26,7 +26,9 @@ relations:
   superseded-by: []
   related:
     - "./model-resolver.md"
+    - "./auto-tier-classification.md"
     - "../adr/pricing-metadata-layer-and-curated-exceptions.md"
+    - "../discovery/auto-tier-classification-effective-cost.md"
   refines: []
   refined-by: []
   derives-from:

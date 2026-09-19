@@ -34,6 +34,9 @@ interface ModelRow {
   excluded?: boolean;
   tier?: string;
   tierSource?: string;
+  effectiveCost?: number;
+  effectiveCostPercentile?: number;
+  workload?: { outputPerInput?: number };
   pricing?: {
     input?: number;
     output?: number;
@@ -46,7 +49,12 @@ interface ModelRow {
 function modelRowText(m: ModelRow): string {
   const key = `${m.provider ?? "?"}/${m.id ?? "?"}`;
   const state = m.excluded === true ? "excluded" : "available";
-  const tier = `tier=${m.tier ?? "?"} (${m.tierSource ?? "?"})`;
+  const auto =
+    typeof m.effectiveCost === "number" && typeof m.effectiveCostPercentile === "number"
+      ? ` eff=$${m.effectiveCost}/1M p=${m.effectiveCostPercentile.toFixed(2)}` +
+        ` opi=${m.workload?.outputPerInput ?? "?"}`
+      : "";
+  const tier = `tier=${m.tier ?? "?"} (${m.tierSource ?? "?"})${auto}`;
   const p = m.pricing;
   const price =
     p == null || typeof p.input !== "number" || typeof p.output !== "number"

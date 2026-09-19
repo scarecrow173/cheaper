@@ -1,6 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import {
+  type AutoClassificationDetail,
   CheaperError,
   type ModelConfig,
   type ModelInfo,
@@ -147,6 +148,8 @@ export interface ResolvedPiModel {
   tierSource: TierSource;
   /** effective pricing（unpriced なら undefined）。 */
   pricing?: ModelPricing;
+  /** auto 分類の根拠（tierSource === "auto" のときのみ存在）。 */
+  auto?: AutoClassificationDetail;
   /** "tier" = tier resolver 経路、"explicit" = `--model` 直接指定。 */
   selection: "tier" | "explicit";
   /** core 側の解決済み model 情報（meta.model 用）。 */
@@ -161,6 +164,7 @@ function toResolvedPiModel(
     tier: Tier;
     tierSource: TierSource;
     pricing?: ModelPricing;
+    auto?: AutoClassificationDetail;
     selection: "tier" | "explicit";
   },
 ): ResolvedPiModel {
@@ -177,6 +181,7 @@ function toResolvedPiModel(
     tier: resolved.tier,
     tierSource: resolved.tierSource,
     ...(resolved.pricing !== undefined ? { pricing: resolved.pricing } : {}),
+    ...(resolved.auto !== undefined ? { auto: resolved.auto } : {}),
     selection: resolved.selection,
     info: resolved.model,
   };
@@ -192,6 +197,8 @@ export async function resolvePiModel(opts: {
   requestedTier: Tier;
   policy: { maxTier: Tier; tierFallback: "none" | "higher" };
   config: ModelConfig;
+  /** Worker workload profile（issue #46）。未指定は core default。 */
+  outputPerInput?: number;
 }): Promise<ResolvedPiModel> {
   const available = (await opts.catalog.getAvailable()).map(toModelInfo);
   const resolved = resolveModel({
@@ -199,6 +206,7 @@ export async function resolvePiModel(opts: {
     requestedTier: opts.requestedTier,
     policy: opts.policy,
     config: opts.config,
+    ...(opts.outputPerInput !== undefined ? { outputPerInput: opts.outputPerInput } : {}),
   });
   return toResolvedPiModel(opts.catalog, resolved);
 }
@@ -213,6 +221,8 @@ export async function resolveExplicitPiModel(opts: {
   ref: { provider: string; id: string };
   policy: { maxTier: Tier };
   config: ModelConfig;
+  /** Worker workload profile（policy 判定用 tier の分類に使う）。 */
+  outputPerInput?: number;
 }): Promise<ResolvedPiModel> {
   const available = (await opts.catalog.getAvailable()).map(toModelInfo);
   const resolved = resolveExplicitModel({
@@ -220,6 +230,7 @@ export async function resolveExplicitPiModel(opts: {
     ref: opts.ref,
     policy: opts.policy,
     config: opts.config,
+    ...(opts.outputPerInput !== undefined ? { outputPerInput: opts.outputPerInput } : {}),
   });
   return toResolvedPiModel(opts.catalog, resolved);
 }

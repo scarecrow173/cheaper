@@ -35,6 +35,10 @@ export interface WorkerRunMeta {
     selection: "tier" | "explicit";
     /** tier の provenance（explicit-override / curated-exception / auto / unclassified）。 */
     tierSource: TierSource;
+    /** auto 分類の根拠（tierSource === "auto" のときのみ存在、issue #46）。 */
+    effectiveCost?: number;
+    effectiveCostPercentile?: number;
+    workload?: { outputPerInput: number };
   };
   usage: WorkerUsage;
   turns: number;
@@ -199,6 +203,7 @@ export async function runWorker(
   if (deps.signal?.aborted) requestAbort("signal");
 
   try {
+    const outputPerInput = worker.cheaper.model.workload?.outputPerInput;
     const resolved = await (async () => {
       if (deps.explicitModel === undefined) {
         return resolvePiModel({
@@ -206,6 +211,7 @@ export async function runWorker(
           requestedTier: worker.cheaper.model.tier,
           policy: policy.model,
           config: deps.modelConfig,
+          ...(outputPerInput !== undefined ? { outputPerInput } : {}),
         });
       }
       const ref = parseModelRef(deps.explicitModel);
@@ -221,6 +227,7 @@ export async function runWorker(
         ref,
         policy: { maxTier: policy.model.maxTier },
         config: deps.modelConfig,
+        ...(outputPerInput !== undefined ? { outputPerInput } : {}),
       });
     })();
 
@@ -282,6 +289,13 @@ export async function runWorker(
           tier: resolved.tier,
           selection: resolved.selection,
           tierSource: resolved.tierSource,
+          ...(resolved.auto !== undefined
+            ? {
+                effectiveCost: resolved.auto.effectiveCost,
+                effectiveCostPercentile: resolved.auto.effectiveCostPercentile,
+                workload: { outputPerInput: resolved.auto.outputPerInput },
+              }
+            : {}),
         },
         usage: snap.usage,
         turns: snap.turns,
