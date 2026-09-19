@@ -351,8 +351,39 @@ describe("shell read blocking policy (canonical shell request)", () => {
   it("evaluates each segment of piped and chained commands", () => {
     denied("cat big.txt | grep foo");
     allowed("grep foo small.txt | head"); // 後段 head は operand なし
-    denied("cd src && cat big.txt"); // cwd 追跡しない既知制限の挙動を固定
+    allowed("cd src && cat big.txt"); // cwd 遷移の後段は ambiguous → fail-open
+    denied("cat big.txt && cd src"); // cwd 遷移より前の segment は従来通り判定
     denied("cat small.txt ; cat big.txt");
+  });
+
+  // cwd 遷移 command の後段にある read candidate は、実際に読まれる
+  // file を hook cwd 基準で特定できないため ambiguous → fail-open と
+  // する（issue #42 review 指摘）。root と src/ に同名でサイズの異なる
+  // fixture を置き、誤 block・誤 pass の両方向を固定する。
+  it("fails open for reads after a cwd-changing command (both fixture directions)", async () => {
+    const src = path.join(ws, "src");
+    await mkdir(src);
+
+    // false-positive 側: hook cwd の big.txt は large だが実際に読まれる
+    // src/big.txt は small。cwd を追跡しないまま block すると誤 block
+    // になるため fail-open でなければならない。
+    await writeFile(path.join(src, "big.txt"), "hello\n");
+    for (const command of [
+      "cd src && cat big.txt",
+      "cd src; cat big.txt",
+      "pushd src && cat big.txt",
+      "Set-Location src && cat big.txt",
+    ]) {
+      allowed(command);
+    }
+
+    // false-negative 側: hook cwd に big.txt が無く実体 src/big.txt が
+    // large でも、ambiguous な後段は見逃す（許容済みの既知制限）。
+    // path が直接特定できる `cat src/big.txt` は変わらず deny。
+    await rm(path.join(ws, "big.txt"));
+    await writeFile(path.join(src, "big.txt"), BIG_TEXT);
+    allowed("cd src && cat big.txt");
+    denied("cat src/big.txt");
   });
 
   it("fails open for ambiguous or unsupported shell syntax", () => {

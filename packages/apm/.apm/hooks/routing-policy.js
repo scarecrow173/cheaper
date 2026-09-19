@@ -287,6 +287,13 @@ function commandName(token) {
   return base.replace(/\.(exe|bat|cmd)$/i, "");
 }
 
+// Commands that change the effective cwd for later segments (POSIX
+// builtins plus cmd/PowerShell aliases). We do not track where they go —
+// a read candidate after one resolves against a different cwd than the
+// hook's, so it is ambiguous and must fail open rather than risk a
+// false block (or a false pass) from the wrong base directory.
+const CWD_CHANGING_COMMANDS = new Set(["cd", "chdir", "pushd", "popd", "set-location", "sl"]);
+
 // Extracts file operands of read commands from a shell command string.
 // Returns [] when the command is unparseable or nothing safely readable
 // is referenced; callers treat [] as fail-open.
@@ -294,12 +301,18 @@ function extractReadCandidates(command) {
   const segments = tokenizeShell(command);
   if (!segments) return [];
   const candidates = [];
+  let cwdAmbiguous = false;
   for (const segment of segments) {
     const { tokens } = segment;
     let i = 0;
     while (i < tokens.length && ENV_PREFIX.test(tokens[i].text)) i++;
     const head = tokens[i];
-    if (!head || segment.unsafe || head.unsafe) continue;
+    if (!head || head.unsafe) continue;
+    if (CWD_CHANGING_COMMANDS.has(commandName(head.text).toLowerCase())) {
+      cwdAmbiguous = true;
+      continue;
+    }
+    if (cwdAmbiguous || segment.unsafe) continue;
     const spec = READ_COMMANDS[commandName(head.text)];
     if (!spec) continue;
     const operands = [];
