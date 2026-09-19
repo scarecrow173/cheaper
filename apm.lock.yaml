@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-09-19T08:42:09.895150+00:00'
+generated_at: '2026-09-19T09:12:48.497177+00:00'
 apm_version: 0.28.0
 dependencies:
 - repo_url: scarecrow173/apm-packages
@@ -6324,6 +6324,138 @@ deployments:
   - microsoft/apm/packages/apm-guide
   active_owner: microsoft/apm/packages/apm-guide
   content_hash: sha256:f6cded3e7eef97ad8fff06208bcfd5a0beafb9cfe810f78e10294c90e16fd8ae
+- kind: uri
+  target: mcp
+  value: mise
+  runtime: claude
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: serena
+  runtime: claude
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: mise
+  runtime: codex
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: serena
+  runtime: codex
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: mise
+  runtime: cursor
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: serena
+  runtime: cursor
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: mise
+  runtime: vscode
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: serena
+  runtime: vscode
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: mise
+  runtime: windsurf
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: serena
+  runtime: windsurf
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+mcp_servers:
+- mise
+- serena
+mcp_configs:
+  mise:
+    name: mise
+    transport: stdio
+    args:
+    - mcp
+    registry: false
+    command: mise
+  serena:
+    name: serena
+    transport: stdio
+    args:
+    - -p
+    - '3.13'
+    - --from
+    - serena-agent
+    - serena
+    - start-mcp-server
+    - --context
+    - ide
+    - --project-from-cwd
+    registry: false
+    command: uvx
+mcp_target_servers:
+  claude:
+  - mise
+  - serena
+  codex:
+  - mise
+  - serena
+  cursor:
+  - mise
+  - serena
+  vscode:
+  - mise
+  - serena
+  windsurf:
+  - mise
+  - serena
 local_deployed_files:
 - .agents/skills/cheaper-bulk-read
 - .agents/skills/cheaper-bulk-read/SKILL.md
