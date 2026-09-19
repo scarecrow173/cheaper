@@ -22,11 +22,7 @@ uv = "0.11"
 description = "Restore Node/APM dependencies and build outputs for a fresh checkout"
 run = [
   "pnpm install --frozen-lockfile",
-  "apm install --only apm",
-  # MCP は project-scoped target のみ。windsurf (legacy Cascade) は user-global
-  # config (~/.codeium/windsurf/mcp_config.json) しか持たず repo 外への副作用に
-  # なるため除外する。Devin Local は project の .mcp.json を読むため別途不要。
-  "apm install --only mcp --exclude windsurf",
+  "apm install",
   "pnpm build",
 ]
 
