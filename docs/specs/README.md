@@ -11,6 +11,7 @@ Directory: `docs/specs`
 | SPEC-WdXXEoaAmbOafvuIpM6FFT | Keep interactive auth prompts inside the injected CLI I/O boundary | implemented | [auth-io-boundary.md](./auth-io-boundary.md) |
 | SPEC-034r05iHK8bA7ghSWRbNU8 | cheaper auth command for provider login without a pi installation | implemented | [auth-login-command.md](./auth-login-command.md) |
 | SPEC-034r05iHK8bA7gmLlq6ikw | Auth tests do not launch the OS default browser | implemented | [auth-tests-do-not-launch-os-browser.md](./auth-tests-do-not-launch-os-browser.md) |
+| SPEC-H9CuNdGONsV6HEHetvRCxh | Worker workload と effectiveCost による自動 tier 分類 | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
 | SPEC-034r05iHK8bA7g6PcCiDBp | bulk-reader built-in Worker | implemented | [bulk-reader-built-in-worker.md](./bulk-reader-built-in-worker.md) |
 | SPEC-034r05iHK8bA7gkTEj7TdU | Bulk-reader huge-file safe I/O | implemented | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | SPEC-034r05iHK8bA7gdbCbWupr | Canonical Token Counter, count_tokens tool, and count-tokens CLI | implemented | [canonical-token-counter.md](./canonical-token-counter.md) |
