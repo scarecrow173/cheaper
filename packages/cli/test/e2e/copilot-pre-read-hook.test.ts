@@ -170,10 +170,10 @@ describe("copilot preToolUse hook (pre-read-code-copilot.js)", () => {
     // `bash` / `powershell` / `shell` は canonical shell request へ
     // normalize される。policy は現状 allow seam のため silent exit 0。
     for (const toolName of ["bash", "powershell", "shell"]) {
-      const r = runHook(
-        JSON.stringify({ toolName, toolArgs: { command: "cat big.txt" } }),
-        { cwd: ws, env },
-      );
+      const r = runHook(JSON.stringify({ toolName, toolArgs: { command: "cat big.txt" } }), {
+        cwd: ws,
+        env,
+      });
       expect(r.status).toBe(0);
       expect(r.stdout).not.toContain("permissionDecision");
     }
@@ -190,10 +190,10 @@ describe("copilot preToolUse hook (pre-read-code-copilot.js)", () => {
     // 誤発火した場合、cursor permission hook の「exit 0 + schema 不適合
     // は block」に備えて schema 適合の allow JSON を返す
     //（DESIGN-034rA79Uog7JOa7evw6rOL）。
-    const r = runHook(
-      JSON.stringify({ tool_name: "Shell", tool_input: { command: "ls" } }),
-      { cwd: ws, env },
-    );
+    const r = runHook(JSON.stringify({ tool_name: "Shell", tool_input: { command: "ls" } }), {
+      cwd: ws,
+      env,
+    });
     expect(r.status).toBe(0);
     const out = JSON.parse(r.stdout.trim());
     expect(out.permission).toBe("allow");

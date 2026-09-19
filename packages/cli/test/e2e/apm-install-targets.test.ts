@@ -149,12 +149,10 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       const preToolGroups = settingsEvents.PreToolUse as JsonObject[];
       const nativeGroup = preToolGroups.find((g) => g.matcher === "Read|Bash|PowerShell");
       expect(nativeGroup).toBeDefined();
-      expect(
-        String(((nativeGroup as JsonObject).hooks as JsonObject[])[0].command),
-      ).toContain("pre-read-code-pretooluse.js");
-      const copilotGroup = preToolGroups.find(
-        (g) => g.matcher === "view|bash|powershell|shell",
+      expect(String(((nativeGroup as JsonObject).hooks as JsonObject[])[0].command)).toContain(
+        "pre-read-code-pretooluse.js",
       );
+      const copilotGroup = preToolGroups.find((g) => g.matcher === "view|bash|powershell|shell");
       expect(copilotGroup).toBeDefined();
     } else {
       // windsurf / codex / cursor / copilot: hooks.json（copilot は

@@ -17,10 +17,10 @@ function main() {
   } catch {
     process.exit(0);
   }
-  if (!input || input.agent_action_name !== "pre_read_code") {
+  if (input?.agent_action_name !== "pre_read_code") {
     process.exit(0);
   }
-  const filePath = input.tool_info && input.tool_info.file_path;
+  const filePath = input.tool_info?.file_path;
   if (typeof filePath !== "string" || filePath === "") {
     process.exit(0);
   }

@@ -73,12 +73,12 @@ function evaluateFileRead(request, opts) {
   // Fast path (DESIGN-0017): tokens <= bytes always holds, so a file
   // whose size fits the threshold can never exceed it — skip the CLI
   // spawn.
-  const limit = threshold(opts && opts.env);
+  const limit = threshold(opts?.env);
   if (st.size <= limit) {
     return { decision: "allow" };
   }
 
-  const [cmd, prefix] = cheaperCommand(opts && opts.cli, opts && opts.env);
+  const [cmd, prefix] = cheaperCommand(opts?.cli, opts?.env);
   const run = spawnSync(cmd, [...prefix, "count-tokens", resolved, "--cwd", cwd], {
     encoding: "utf8",
     timeout: 30_000,
@@ -95,7 +95,7 @@ function evaluateFileRead(request, opts) {
   // A parseable envelope is authoritative even on non-zero exit: a
   // FILE_TOO_LARGE refusal is a measured verdict (fail-closed), unlike
   // infra failures which stay fail-open.
-  if (envelope && envelope.error && envelope.error.code === "FILE_TOO_LARGE") {
+  if (envelope?.error && envelope.error.code === "FILE_TOO_LARGE") {
     const det = envelope.error.details || {};
     const bytes = typeof det.bytes === "number" ? det.bytes : st.size;
     const capText =
