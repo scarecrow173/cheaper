@@ -34,7 +34,8 @@ relations:
     - "../adr/conservative-shell-read-candidate-extraction-inside-the-shared-routing-policy.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/shell-read-blocking-contract-tests.md"
   references: []
   defers: []
   deferred-by: []

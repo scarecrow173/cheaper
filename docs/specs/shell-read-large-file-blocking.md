@@ -35,7 +35,8 @@ relations:
     - "../discovery/shell-read-large-file-detection-boundary.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/shell-read-blocking-contract-tests.md"
   references: []
   defers: []
   deferred-by: []
