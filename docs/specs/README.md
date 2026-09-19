@@ -24,6 +24,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gqGaD6qpk | grep batchMaxBytes / decoded line payload invariant | implemented | [grep-batch-max-bytes-line-payload-invariant.md](./grep-batch-max-bytes-line-payload-invariant.md) |
 | SPEC-034r6kd649rTDnOi828voj | Stabilize environment-sensitive grep eval-budget tests | implemented | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | SPEC-034r05iHK8bA7gjwZTji8t | Huge-file token count guard with fail-closed hook blocking | implemented | [huge-file-token-count-guard-with-fail-closed-hook-blocking.md](./huge-file-token-count-guard-with-fail-closed-hook-blocking.md) |
+| SPEC-034rzI0xebTv8HszaX6Tvw | Model pricing catalog and curated exceptions | approved | [model-pricing-catalog.md](./model-pricing-catalog.md) |
 | SPEC-034r05iHK8bA7g9pm5z8s2 | Ollama real-provider smoke verification | implemented | [ollama-real-provider-smoke-verification.md](./ollama-real-provider-smoke-verification.md) |
 | SPEC-034r05iHK8bA7guAnTdpdi | Real-provider E2E for built-in workers via Ollama container | implemented | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |

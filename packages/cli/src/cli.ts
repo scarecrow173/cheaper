@@ -3,12 +3,15 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   CheaperError,
   canonicalizeWorkspaceRoot,
+  classifyModel,
   countFileTokens,
   FileTooLargeError,
+  isExcludedModel,
   loadModelConfig,
   loadPolicy,
   parseDuration,
   resolveConfigDirs,
+  resolvePricing,
   resolveWorker,
   resolveWorkerFile,
   restrictPolicy,
@@ -22,9 +25,10 @@ import {
   type RunWorkerDeps,
   runWorker,
   type StreamFnLike,
+  toModelInfo,
   type WorkerRunMeta,
 } from "@cheaper/runtime-pi";
-import { parseCliArgs, type RunCliArgs } from "./args.js";
+import { type ModelsCliArgs, parseCliArgs, type RunCliArgs } from "./args.js";
 import { executeAuth } from "./auth.js";
 import {
   type CliEnvelope,
@@ -72,6 +76,7 @@ Commands:
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
   count-tokens <path>    Count canonical tokens of a workspace file
+  models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
@@ -81,6 +86,9 @@ Options:
   --worker-file <path>   Run an explicit worker file (run only)
   --cwd <path>           Workspace root (default: process.cwd())
   --timeout <duration>   Narrow policy timeout (e.g. 30s, 5m)
+  --model <prov>/<id>    Run with an explicit model instead of a tier
+  --provider <id>        Filter 'models' output by provider
+  --tier <low|med|high>  Filter 'models' output by effective tier
   --method <id>          Auto-answer auth login select prompts (e.g. device)
   --type <oauth|api_key> Auth method for 'auth login' (default: oauth)
   --format <json|text>   Output format (default: json)
@@ -227,6 +235,7 @@ async function executeRun(
       catalog: runtime as ModelCatalog,
       modelRuntime: runtime,
       signal: ac.signal,
+      ...(args.model !== undefined ? { explicitModel: args.model } : {}),
       ...(streamFn !== undefined ? { streamFn } : {}),
     };
     const { result, meta } = await (hooks.runWorker ?? runWorker)(deps);
@@ -245,6 +254,49 @@ async function executeRun(
     process.off("SIGTERM", onSigterm);
     hooks.signal?.removeEventListener("abort", onAbort);
   }
+}
+
+/**
+ * `cheaper models`（issue #45）。runtime の available catalog を列挙し、
+ * 各 model に exclude・effective pricing・classification を適用した
+ * 一覧を `result.models[]` で返す。worker run を伴わないため utility
+ * envelope を使う。
+ */
+async function executeModels(
+  args: ModelsCliArgs,
+  io: CliIo,
+  hooks: CliHooks,
+  startedAt: number,
+): Promise<{ envelope: CliEnvelope; exitCode: number }> {
+  const now = hooks.now ?? Date.now;
+  const builtinDir = hooks.builtinDir ?? defaultBuiltinDir();
+  const root = await canonicalizeWorkspaceRoot(args.cwd ?? io.cwd);
+  const dirs = resolveConfigDirs({ cwd: root, builtinDir, env: io.env });
+  const modelConfig = await loadModelConfig({
+    userConfigDir: dirs.userConfigDir,
+    projectDir: dirs.projectDir,
+  });
+  const runtime = await (hooks.createModelRuntime ?? createModelRuntime)({ env: io.env });
+  const available = (await runtime.getAvailable()).map(toModelInfo);
+  const models = available
+    .filter((m) => args.provider === undefined || m.provider === args.provider)
+    .map((m) => {
+      const pricing = resolvePricing(m);
+      const classification = classifyModel(m, modelConfig);
+      return {
+        provider: m.provider,
+        id: m.id,
+        excluded: isExcludedModel(m, modelConfig),
+        tier: classification.tier,
+        tierSource: classification.source,
+        pricing: pricing ?? null,
+      };
+    })
+    .filter((m) => args.tier === undefined || m.tier === args.tier);
+  return {
+    envelope: utilitySuccessEnvelope({ result: { models }, durationMs: now() - startedAt }),
+    exitCode: 0,
+  };
 }
 
 /**
@@ -333,6 +385,12 @@ export async function runCli(
         now: () => new Date(now()),
       });
       return 0;
+    }
+
+    if (parsed.kind === "models") {
+      const { envelope, exitCode } = await executeModels(parsed, io, hooks, startedAt);
+      io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
+      return exitCode;
     }
 
     if (parsed.kind === "auth") {

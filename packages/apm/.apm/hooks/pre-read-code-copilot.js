@@ -80,7 +80,7 @@ function main() {
   } catch {
     process.exit(0);
   }
-  if (!input || input.toolName !== "view") {
+  if (input?.toolName !== "view") {
     process.exit(0);
   }
   const filePath = extractFilePath(input.toolArgs);
@@ -131,7 +131,7 @@ function main() {
   // A parseable envelope is authoritative even on non-zero exit: a
   // FILE_TOO_LARGE refusal is a measured verdict, unlike infra failures
   // which stay fail-open.
-  if (envelope && envelope.error && envelope.error.code === "FILE_TOO_LARGE") {
+  if (envelope?.error && envelope.error.code === "FILE_TOO_LARGE") {
     const det = envelope.error.details || {};
     const bytes = typeof det.bytes === "number" ? det.bytes : st.size;
     const capText =

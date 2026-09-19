@@ -45,10 +45,10 @@ function main() {
   } catch {
     process.exit(0);
   }
-  if (!input || input.agent_action_name !== "pre_read_code") {
+  if (input?.agent_action_name !== "pre_read_code") {
     process.exit(0);
   }
-  const filePath = input.tool_info && input.tool_info.file_path;
+  const filePath = input.tool_info?.file_path;
   if (typeof filePath !== "string" || filePath === "") {
     process.exit(0);
   }
@@ -96,7 +96,7 @@ function main() {
   // A parseable envelope is authoritative even on non-zero exit: a
   // FILE_TOO_LARGE refusal is a measured verdict (fail-closed), unlike
   // infra failures which stay fail-open.
-  if (envelope && envelope.error && envelope.error.code === "FILE_TOO_LARGE") {
+  if (envelope?.error && envelope.error.code === "FILE_TOO_LARGE") {
     const det = envelope.error.details || {};
     const bytes = typeof det.bytes === "number" ? det.bytes : st.size;
     const capText =

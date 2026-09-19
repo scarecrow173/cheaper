@@ -15,6 +15,7 @@ Commands:
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
   count-tokens <path>    Count canonical tokens of a workspace file
+  models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
@@ -32,6 +33,9 @@ Commands:
 | `--worker-file <path>` | 明示的な worker file を実行する（`run` のみ） |
 | `--cwd <path>` | workspace root（既定: カレントディレクトリ） |
 | `--timeout <duration>` | policy timeout を narrow する（例: `30s`, `5m`）。policy 上限は越えられない |
+| `--model <provider>/<id>` | tier 解決を bypass して model を直接指定する（`run` とエイリアスのみ） |
+| `--provider <id>` | `models` の出力を provider で絞る |
+| `--tier <low\|medium\|high>` | `models` の出力を effective tier で絞る |
 | `--format <json\|text>` | stdout の形式（既定: `json`） |
 | `--quiet` | stderr の diagnostics を抑制する |
 | `--help` / `--version` | help / version 表示 |
@@ -46,7 +50,11 @@ Commands:
   `{"schemaVersion":1,"ok":true,"worker":"...","result":{...},
   "meta":{...}}`、失敗時は `{"ok":false,"error":{"code":...,`
   `"message":...,"exitCode":...,"retryable":...},"meta":{...}}`。
-- `meta` には `durationMs`・`model`・`usage`（input/output/
+- `meta` には `durationMs`・`model`（`provider`・`id`・`tier`・
+  `selection`（`"tier"` | `"explicit"`）・`tierSource`
+  （`"explicit-override"` | `"curated-exception"` | `"auto"` |
+  `"unclassified"`。`"auto"` は #46 の自動分類用に予約された値で
+  現状は出力されない））・`usage`（input/output/
   cacheRead/cacheWrite/totalTokens/costUsd）・`turns`・`toolCalls`・
   `repairs`・`changes` 等が入る。`changes` は runtime が計測した
   filesystem 変更の要約。
@@ -83,7 +91,30 @@ echo '{"task": "..."}' | cheaper run --worker-file ./my-worker.md
 
 # input を file から読む
 cheaper bulk-read --input task.json --cwd /path/to/workspace
+
+# model を直接指定して実行（tier 解決を bypass）
+echo '{"task": "..."}' | cheaper bulk-read --model anthropic/claude-haiku-4-5
 ```
+
+`--model <provider>/<id>` は tier 候補選択を bypass するが、
+`models.yaml` の `exclude`・policy の `maxTier`・catalog の
+availability は通常どおり enforce される（`meta.model.selection`
+が `"explicit"` として記録される）。
+
+## models
+
+```bash
+cheaper models                        # 利用可能な全 model を一覧
+cheaper models --provider anthropic   # provider で絞る
+cheaper models --tier low             # effective tier で絞る
+```
+
+runtime が認識する available catalog の各 model について、
+`excluded`（models.yaml の `exclude` 適用結果）・effective
+`tier`・`tierSource`・`pricing`（input/output 価格・`source`
+（`runtime-catalog` または `bundled-snapshot`）・snapshot version /
+更新日などの freshness）を `result.models[]` で返す。pricing を
+持たない model は `pricing: null` になる（error にはしない）。
 
 ## count-tokens
 

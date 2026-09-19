@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
@@ -46,7 +46,13 @@ function makeIo(stdinText = '{"task":"x"}', env: NodeJS.ProcessEnv = {}, isTTY =
 }
 
 const meta: WorkerRunMeta = {
-  model: { provider: "p", id: "m", tier: "low" },
+  model: {
+    provider: "p",
+    id: "m",
+    tier: "low",
+    selection: "tier",
+    tierSource: "explicit-override",
+  },
   usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, totalTokens: 3, costUsd: 0 },
   turns: 1,
   toolCalls: 0,
@@ -144,10 +150,139 @@ describe("runCli", () => {
     const env = JSON.parse(out());
     expect(env).toMatchObject({ schemaVersion: 1, ok: true, worker: "bulk-reader" });
     expect(env.result).toEqual({ ok: true });
-    expect(env.meta.model).toEqual({ provider: "p", id: "m", tier: "low" });
+    expect(env.meta.model).toEqual({
+      provider: "p",
+      id: "m",
+      tier: "low",
+      selection: "tier",
+      tierSource: "explicit-override",
+    });
     expect(err()).toBe("model: p/m (tier low)\n");
     expect(seen?.worker.name).toBe("bulk-reader");
     expect(seen?.policy.execution.timeoutMs).toBe(120_000);
+  });
+
+  it("passes --model through to runWorker deps as explicitModel", async () => {
+    const { io } = makeIo();
+    let seen: RunWorkerDeps | undefined;
+    const code = await runCli(
+      ["bulk-read", "--model", "cheaper-fake/fake-model"],
+      io,
+      hooks({
+        runWorker: async (deps) => {
+          seen = deps;
+          return { result: { ok: true }, meta };
+        },
+      }),
+    );
+    expect(code).toBe(0);
+    expect(seen?.explicitModel).toBe("cheaper-fake/fake-model");
+  });
+
+  it("emits INVALID_REQUEST for a malformed --model", async () => {
+    const { io, out } = makeIo();
+    expect(await runCli(["bulk-read", "--model", "no-slash"], io, hooks())).toBe(2);
+    expect(JSON.parse(out()).error.code).toBe("INVALID_REQUEST");
+  });
+
+  describe("models command", () => {
+    function fakeCatalog() {
+      return {
+        getAvailable: async () => [
+          {
+            provider: "anthropic",
+            id: "claude-haiku-4-5",
+            cost: { input: 0.8, output: 1, cacheRead: 0.08, cacheWrite: 1 },
+            maxTokens: 8192,
+          },
+          {
+            provider: "openai",
+            id: "gpt-5",
+            cost: { input: 1.25, output: 10, cacheRead: 0, cacheWrite: 0 },
+            maxTokens: 8192,
+          },
+        ],
+      };
+    }
+
+    it("lists models with excluded/tier/tierSource/pricing metadata", async () => {
+      const { io, out } = makeIo();
+      const code = await runCli(
+        ["models"],
+        io,
+        hooks({ createModelRuntime: async () => fakeCatalog() as never }),
+      );
+      expect(code).toBe(0);
+      const env = JSON.parse(out());
+      expect(env.ok).toBe(true);
+      expect(env.worker).toBeNull();
+      const models = env.result.models as Array<Record<string, unknown>>;
+      expect(models).toHaveLength(2);
+      // pricing はあっても auto 分類しない（#46 scope）→ medium / unclassified
+      expect(models[0]).toMatchObject({
+        provider: "anthropic",
+        id: "claude-haiku-4-5",
+        excluded: false,
+        tier: "medium",
+        tierSource: "unclassified",
+      });
+      expect(models[0]?.pricing).toMatchObject({
+        input: 0.8,
+        output: 1,
+        source: "runtime-catalog",
+        unit: "usd-per-1m-tokens",
+      });
+      expect(models[1]).toMatchObject({ id: "gpt-5", tier: "medium", tierSource: "unclassified" });
+    });
+
+    it("applies --provider and --tier filters", async () => {
+      const providerRun = makeIo();
+      const code = await runCli(
+        ["models", "--provider", "openai"],
+        providerRun.io,
+        hooks({ createModelRuntime: async () => fakeCatalog() as never }),
+      );
+      expect(code).toBe(0);
+      const models = JSON.parse(providerRun.out()).result.models as Array<Record<string, unknown>>;
+      expect(models).toHaveLength(1);
+      expect(models[0]?.provider).toBe("openai");
+
+      const tierRun = makeIo();
+      const code2 = await runCli(
+        ["models", "--tier", "medium"],
+        tierRun.io,
+        hooks({ createModelRuntime: async () => fakeCatalog() as never }),
+      );
+      expect(code2).toBe(0);
+      const models2 = JSON.parse(tierRun.out()).result.models as Array<Record<string, unknown>>;
+      expect(models2.map((m) => m.id)).toEqual(["claude-haiku-4-5", "gpt-5"]);
+
+      const lowRun = makeIo();
+      const code3 = await runCli(
+        ["models", "--tier", "low"],
+        lowRun.io,
+        hooks({ createModelRuntime: async () => fakeCatalog() as never }),
+      );
+      expect(code3).toBe(0);
+      const models3 = JSON.parse(lowRun.out()).result.models as Array<Record<string, unknown>>;
+      expect(models3).toHaveLength(0);
+    });
+
+    it("marks models.yaml exclude matches as excluded", async () => {
+      const { io, out } = makeIo();
+      const projectDir = path.join(io.cwd, ".cheaper");
+      mkdirSync(projectDir, { recursive: true });
+      writeFileSync(path.join(projectDir, "models.yaml"), 'version: 1\nexclude: ["openai/*"]\n');
+      const code = await runCli(
+        ["models"],
+        io,
+        hooks({ createModelRuntime: async () => fakeCatalog() as never }),
+      );
+      expect(code).toBe(0);
+      const models = JSON.parse(out()).result.models as Array<Record<string, unknown>>;
+      expect(models.find((m) => m.provider === "openai")?.excluded).toBe(true);
+      expect(models.find((m) => m.provider === "anthropic")?.excluded).toBe(false);
+    });
   });
 
   it("narrows the policy timeout when --timeout is within bounds", async () => {

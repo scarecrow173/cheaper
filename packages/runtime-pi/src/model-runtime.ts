@@ -4,9 +4,12 @@ import {
   CheaperError,
   type ModelConfig,
   type ModelInfo,
+  type ModelPricing,
+  resolveExplicitModel,
   resolveModel,
   resolveUserConfigDir,
   type Tier,
+  type TierSource,
 } from "@cheaper/core";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { type CreateModelRuntimeOptions, ModelRuntime } from "@earendil-works/pi-coding-agent";
@@ -30,7 +33,12 @@ export function toModelInfo(m: Model<Api>): ModelInfo {
   return {
     provider: m.provider,
     id: m.id,
-    cost: { input: m.cost.input, output: m.cost.output },
+    cost: {
+      input: m.cost.input,
+      output: m.cost.output,
+      cacheRead: m.cost.cacheRead,
+      cacheWrite: m.cost.cacheWrite,
+    },
     maxTokens: m.maxTokens,
   };
 }
@@ -135,8 +143,43 @@ export interface ResolvedPiModel {
   model: Model<Api>;
   /** 実際に選ばれた tier。 */
   tier: Tier;
+  /** tier の provenance（meta.model.tierSource 用）。 */
+  tierSource: TierSource;
+  /** effective pricing（unpriced なら undefined）。 */
+  pricing?: ModelPricing;
+  /** "tier" = tier resolver 経路、"explicit" = `--model` 直接指定。 */
+  selection: "tier" | "explicit";
   /** core 側の解決済み model 情報（meta.model 用）。 */
   info: ModelInfo;
+}
+
+/** core ResolvedModel → catalog.getModel で Pi Model に実体解決する共通後段。 */
+function toResolvedPiModel(
+  catalog: ModelCatalog,
+  resolved: {
+    model: ModelInfo;
+    tier: Tier;
+    tierSource: TierSource;
+    pricing?: ModelPricing;
+    selection: "tier" | "explicit";
+  },
+): ResolvedPiModel {
+  const model = catalog.getModel(resolved.model.provider, resolved.model.id);
+  if (model === undefined) {
+    throw new CheaperError(
+      "INTERNAL_ERROR",
+      `resolved model disappeared: ${resolved.model.provider}/${resolved.model.id}`,
+      { details: { provider: resolved.model.provider, id: resolved.model.id } },
+    );
+  }
+  return {
+    model,
+    tier: resolved.tier,
+    tierSource: resolved.tierSource,
+    ...(resolved.pricing !== undefined ? { pricing: resolved.pricing } : {}),
+    selection: resolved.selection,
+    info: resolved.model,
+  };
 }
 
 /**
@@ -157,13 +200,26 @@ export async function resolvePiModel(opts: {
     policy: opts.policy,
     config: opts.config,
   });
-  const model = opts.catalog.getModel(resolved.model.provider, resolved.model.id);
-  if (model === undefined) {
-    throw new CheaperError(
-      "INTERNAL_ERROR",
-      `resolved model disappeared: ${resolved.model.provider}/${resolved.model.id}`,
-      { details: { provider: resolved.model.provider, id: resolved.model.id } },
-    );
-  }
-  return { model, tier: resolved.tier, info: resolved.model };
+  return toResolvedPiModel(opts.catalog, resolved);
+}
+
+/**
+ * `--model <provider>/<id>` 直接指定の Pi model 解決。tier candidate
+ * 選択を bypass するが exclude・availability・maxTier は
+ * core `resolveExplicitModel` が enforce する（issue #45）。
+ */
+export async function resolveExplicitPiModel(opts: {
+  catalog: ModelCatalog;
+  ref: { provider: string; id: string };
+  policy: { maxTier: Tier };
+  config: ModelConfig;
+}): Promise<ResolvedPiModel> {
+  const available = (await opts.catalog.getAvailable()).map(toModelInfo);
+  const resolved = resolveExplicitModel({
+    available,
+    ref: opts.ref,
+    policy: opts.policy,
+    config: opts.config,
+  });
+  return toResolvedPiModel(opts.catalog, resolved);
 }

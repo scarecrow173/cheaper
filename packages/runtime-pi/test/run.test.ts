@@ -87,6 +87,8 @@ describe("runWorker", () => {
       provider: "cheaper-fake",
       id: "fake-model",
       tier: "low",
+      selection: "tier",
+      tierSource: "explicit-override",
     });
     expect(r.meta.turns).toBe(1);
     expect(r.meta.toolCalls).toBe(0);
@@ -94,6 +96,54 @@ describe("runWorker", () => {
     expect(r.meta.repairs).toBe(0);
     expect(r.meta.usage.output).toBeGreaterThanOrEqual(0);
     expect(r.meta.changes.totals.files).toBe(0);
+  });
+
+  it("--model 直接指定は selection=explicit で同じ model を解決する", async () => {
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const base = await deps(fake, worker(["read"]), policy());
+    const r = await runWorker({ ...base, explicitModel: "cheaper-fake/fake-model" });
+    expect(r.result).toEqual({ ok: true });
+    expect(r.meta.model).toEqual({
+      provider: "cheaper-fake",
+      id: "fake-model",
+      tier: "low",
+      selection: "explicit",
+      tierSource: "explicit-override",
+    });
+  });
+
+  it("--model 指定が exclude に一致すると POLICY_VIOLATION", async () => {
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const base = await deps(fake, worker(["read"]), policy());
+    const err = await runWorker({
+      ...base,
+      explicitModel: "cheaper-fake/fake-model",
+      modelConfig: { overrides: {}, preferences: {}, exclude: ["cheaper-fake/*"] },
+    }).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("POLICY_VIOLATION");
+  });
+
+  it("--model 指定が catalog に無いと MODEL_TIER_UNAVAILABLE", async () => {
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const base = await deps(fake, worker(["read"]), policy());
+    const err = await runWorker({ ...base, explicitModel: "cheaper-fake/no-such" }).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("MODEL_TIER_UNAVAILABLE");
+  });
+
+  it("--model の形式不正 → INVALID_REQUEST", async () => {
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const base = await deps(fake, worker(["read"]), policy());
+    const err = await runWorker({ ...base, explicitModel: "no-slash" }).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("INVALID_REQUEST");
   });
 
   it("executes sandboxed tools and records changes", async () => {

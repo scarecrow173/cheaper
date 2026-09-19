@@ -1,12 +1,20 @@
 import { CheaperError } from "../errors.js";
-import { classifyModel, type ModelInfo } from "./classify.js";
+import { classifyModel, type ModelInfo, type TierSource } from "./classify.js";
 import type { ModelConfig } from "./config.js";
+import { type ModelPricing, resolvePricing } from "./pricing.js";
+import { matchModelPattern, modelKey } from "./ref.js";
 import { compareTier, nextTier, TIERS, type Tier } from "./tier.js";
 
 export interface ResolvedModel {
   model: ModelInfo;
   /** 実際に選ばれた tier（fallback 時は要求と異なりうる）。 */
   tier: Tier;
+  /** tier の provenance（explicit-override / curated-exception / auto / unclassified）。 */
+  tierSource: TierSource;
+  /** effective pricing（unpriced なら undefined）。 */
+  pricing?: ModelPricing;
+  /** "tier" = tier resolver 経路、"explicit" = `--model` 直接指定。 */
+  selection: "tier" | "explicit";
 }
 
 function totalCost(m: ModelInfo): number {
@@ -19,9 +27,9 @@ function byCostThenProviderThenId(a: ModelInfo, b: ModelInfo): number {
   );
 }
 
-function matchesPattern(m: ModelInfo, pattern: string): boolean {
-  if (pattern.endsWith("/*")) return m.provider === pattern.slice(0, -2);
-  return `${m.provider}/${m.id}` === pattern;
+/** `config.exclude`（exact + provider/* wildcard）に一致するか。 */
+export function isExcludedModel(m: ModelInfo, config: ModelConfig): boolean {
+  return (config.exclude ?? []).some((pattern) => matchModelPattern(m.provider, m.id, pattern));
 }
 
 /**
@@ -32,7 +40,7 @@ function orderCandidates(candidates: ModelInfo[], patterns: string[]): ModelInfo
   const remaining = [...candidates];
   const picked: ModelInfo[] = [];
   for (const pattern of patterns) {
-    const hit = remaining.filter((m) => matchesPattern(m, pattern));
+    const hit = remaining.filter((m) => matchModelPattern(m.provider, m.id, pattern));
     hit.sort(byCostThenProviderThenId);
     picked.push(...hit);
     for (const m of hit) remaining.splice(remaining.indexOf(m), 1);
@@ -42,9 +50,9 @@ function orderCandidates(candidates: ModelInfo[], patterns: string[]): ModelInfo
 }
 
 /**
- * 候補 = available ∩ classify==tier。requested > maxTier → POLICY_VIOLATION。
- * 候補空 && tierFallback==="higher" → 1 段ずつ上へ maxTier まで。
- * 尽きれば MODEL_TIER_UNAVAILABLE（details.candidatesPerTier）。
+ * 候補 = available ∖ exclude ∩ classify==tier。requested > maxTier →
+ * POLICY_VIOLATION。候補空 && tierFallback==="higher" → 1 段ずつ上へ
+ * maxTier まで。尽きれば MODEL_TIER_UNAVAILABLE（details.candidatesPerTier）。
  */
 export function resolveModel(opts: {
   available: ModelInfo[];
@@ -54,7 +62,8 @@ export function resolveModel(opts: {
 }): ResolvedModel {
   const { available, requestedTier, policy, config } = opts;
 
-  if (available.length === 0) {
+  const eligible = available.filter((m) => !isExcludedModel(m, config));
+  if (eligible.length === 0) {
     throw new CheaperError("MODEL_TIER_UNAVAILABLE", "no authenticated models available", {
       details: { noAuthenticatedModels: true },
     });
@@ -67,18 +76,36 @@ export function resolveModel(opts: {
     );
   }
 
-  const byTier = new Map<Tier, ModelInfo[]>();
-  for (const m of available) {
-    const tier = classifyModel(m, config);
-    const list = byTier.get(tier) ?? [];
-    list.push(m);
-    byTier.set(tier, list);
+  const byTier = new Map<
+    Tier,
+    { model: ModelInfo; classification: ReturnType<typeof classifyModel>; pricing?: ModelPricing }[]
+  >();
+  for (const m of eligible) {
+    const pricing = resolvePricing(m);
+    const classification = classifyModel(m, config);
+    const list = byTier.get(classification.tier) ?? [];
+    list.push({ model: m, classification, ...(pricing !== undefined ? { pricing } : {}) });
+    byTier.set(classification.tier, list);
   }
 
   let tier: Tier | undefined = requestedTier;
   while (tier !== undefined && compareTier(tier, policy.maxTier) <= 0) {
-    const ordered = orderCandidates(byTier.get(tier) ?? [], config.preferences[tier] ?? []);
-    if (ordered.length > 0) return { model: ordered[0] as ModelInfo, tier };
+    const entries = byTier.get(tier) ?? [];
+    const ordered = orderCandidates(
+      entries.map((e) => e.model),
+      config.preferences[tier] ?? [],
+    );
+    if (ordered.length > 0) {
+      const model = ordered[0] as ModelInfo;
+      const entry = entries.find((e) => e.model === model) as (typeof entries)[number];
+      return {
+        model,
+        tier,
+        tierSource: entry.classification.source,
+        ...(entry.pricing !== undefined ? { pricing: entry.pricing } : {}),
+        selection: "tier",
+      };
+    }
     if (policy.tierFallback !== "higher") break;
     tier = nextTier(tier);
   }
@@ -87,4 +114,58 @@ export function resolveModel(opts: {
   throw new CheaperError("MODEL_TIER_UNAVAILABLE", `no model available for tier ${requestedTier}`, {
     details: { requestedTier, candidatesPerTier },
   });
+}
+
+/**
+ * `--model <provider>/<id>` 直接指定の resolver。tier candidate 選択は
+ * bypass するが、exclude・availability・maxTier policy は突破しない
+ * （issue #45）。
+ */
+export function resolveExplicitModel(opts: {
+  available: ModelInfo[];
+  ref: { provider: string; id: string };
+  policy: { maxTier: Tier };
+  config: ModelConfig;
+}): ResolvedModel {
+  const { available, ref, policy, config } = opts;
+  const target: ModelInfo = { provider: ref.provider, id: ref.id };
+
+  if (isExcludedModel(target, config)) {
+    throw new CheaperError(
+      "POLICY_VIOLATION",
+      `model ${modelKey(ref.provider, ref.id)} is excluded by models config`,
+      { details: { reason: "model-excluded", model: modelKey(ref.provider, ref.id) } },
+    );
+  }
+  const model = available.find((m) => m.provider === ref.provider && m.id === ref.id);
+  if (model === undefined) {
+    throw new CheaperError(
+      "MODEL_TIER_UNAVAILABLE",
+      `model ${modelKey(ref.provider, ref.id)} is not available`,
+      { details: { reason: "model-unavailable", model: modelKey(ref.provider, ref.id) } },
+    );
+  }
+  const pricing = resolvePricing(model);
+  const classification = classifyModel(model, config);
+  if (compareTier(classification.tier, policy.maxTier) > 0) {
+    throw new CheaperError(
+      "POLICY_VIOLATION",
+      `model ${modelKey(ref.provider, ref.id)} tier ${classification.tier} exceeds policy maxTier ${policy.maxTier}`,
+      {
+        details: {
+          reason: "model-exceeds-max-tier",
+          model: modelKey(ref.provider, ref.id),
+          tier: classification.tier,
+          maxTier: policy.maxTier,
+        },
+      },
+    );
+  }
+  return {
+    model,
+    tier: classification.tier,
+    tierSource: classification.source,
+    ...(pricing !== undefined ? { pricing } : {}),
+    selection: "explicit",
+  };
 }

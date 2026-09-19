@@ -1,5 +1,5 @@
 import { parseArgs } from "node:util";
-import { CheaperError } from "@cheaper/core";
+import { CheaperError, parseModelRef, TIERS, type Tier } from "@cheaper/core";
 
 export interface RunCliArgs {
   kind: "run";
@@ -12,6 +12,19 @@ export interface RunCliArgs {
   cwd: string | undefined;
   /** `--timeout` の生文字列。main 側で parseDuration する。 */
   timeout: string | undefined;
+  /** `--model <provider>/<id>` 直接指定（issue #45）。 */
+  model: string | undefined;
+  format: "json" | "text";
+  quiet: boolean;
+}
+
+export interface ModelsCliArgs {
+  kind: "models";
+  /** `--provider <id>` filter。 */
+  provider: string | undefined;
+  /** `--tier <low|medium|high>` filter（effective tier 基準）。 */
+  tier: Tier | undefined;
+  cwd: string | undefined;
   format: "json" | "text";
   quiet: boolean;
 }
@@ -44,7 +57,8 @@ export type ParsedCli =
   | { kind: "version" }
   | RunCliArgs
   | CountTokensCliArgs
-  | AuthCliArgs;
+  | AuthCliArgs
+  | ModelsCliArgs;
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
@@ -71,6 +85,9 @@ function parseArgsSafe(argv: readonly string[]) {
         timeout: { type: "string" },
         method: { type: "string" },
         type: { type: "string" },
+        model: { type: "string" },
+        provider: { type: "string" },
+        tier: { type: "string" },
         format: { type: "string", default: "json" },
         quiet: { type: "boolean", default: false },
         help: { type: "boolean", default: false },
@@ -105,7 +122,7 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
   const command = positionals[0];
   if (command === undefined) {
     throw invalidRequest(
-      "command required: run | bulk-read | code-write | doc-write | count-tokens | auth",
+      "command required: run | bulk-read | code-write | doc-write | count-tokens | models | auth",
     );
   }
 
@@ -131,9 +148,45 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
     if (values.method !== undefined || values.type !== undefined) {
       throw invalidRequest("--method/--type are only valid for `auth login`");
     }
+    if (values.model !== undefined) {
+      throw invalidRequest("--model is only valid for worker runs");
+    }
+    if (values.provider !== undefined || values.tier !== undefined) {
+      throw invalidRequest("--provider/--tier are only valid for `models`");
+    }
     return {
       kind: "count-tokens",
       path: target,
+      cwd: values.cwd,
+      format,
+      quiet: values.quiet === true,
+    };
+  }
+
+  if (command === "models") {
+    if (positionals.length > 1) {
+      throw invalidRequest(`unexpected arguments: ${positionals.slice(1).join(" ")}`);
+    }
+    if (workerFile !== undefined || values.model !== undefined) {
+      throw invalidRequest("--worker-file/--model are only valid for worker runs");
+    }
+    if (values.timeout !== undefined) {
+      throw invalidRequest("--timeout is only valid for worker runs");
+    }
+    if (values.input !== "-") {
+      throw invalidRequest("--input is only valid for worker runs");
+    }
+    if (values.method !== undefined || values.type !== undefined) {
+      throw invalidRequest("--method/--type are only valid for `auth login`");
+    }
+    const tier = values.tier;
+    if (tier !== undefined && !(TIERS as readonly string[]).includes(tier)) {
+      throw invalidRequest(`invalid --tier: ${tier} (expected ${TIERS.join("|")})`, { tier });
+    }
+    return {
+      kind: "models",
+      provider: values.provider,
+      tier: tier as Tier | undefined,
       cwd: values.cwd,
       format,
       quiet: values.quiet === true,
@@ -170,6 +223,12 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
     }
     if (type !== undefined && type !== "oauth" && type !== "api_key") {
       throw invalidRequest(`invalid --type: ${type} (expected oauth|api_key)`, { type });
+    }
+    if (values.model !== undefined) {
+      throw invalidRequest("--model is only valid for worker runs");
+    }
+    if (values.provider !== undefined || values.tier !== undefined) {
+      throw invalidRequest("--provider/--tier are only valid for `models`");
     }
     return {
       kind: "auth",
@@ -210,10 +269,20 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
   if (values.method !== undefined || values.type !== undefined) {
     throw invalidRequest("--method/--type are only valid for `auth login`");
   }
+  if (values.provider !== undefined || values.tier !== undefined) {
+    throw invalidRequest("--provider/--tier are only valid for `models`");
+  }
 
   if (workerName !== undefined && !NAME_PATTERN.test(workerName)) {
     throw new CheaperError("INVALID_WORKER_NAME", `invalid worker name: ${workerName}`, {
       details: { name: workerName },
+    });
+  }
+
+  const model = values.model;
+  if (model !== undefined && parseModelRef(model) === undefined) {
+    throw invalidRequest(`invalid --model reference: ${model} (expected <provider>/<id>)`, {
+      model,
     });
   }
 
@@ -224,6 +293,7 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
     input: values.input ?? "-",
     cwd: values.cwd,
     timeout: values.timeout,
+    model,
     format,
     quiet: values.quiet === true,
   };

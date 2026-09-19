@@ -5,16 +5,18 @@ import {
   createPathDenylist,
   type ErrorCode,
   type ModelConfig,
+  parseModelRef,
   type RuntimePolicy,
   resolveWorkspacePath,
   type SymlinkPolicy,
   type Tier,
+  type TierSource,
   type WorkerDefinition,
 } from "@cheaper/core";
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import type { ChangesSummary } from "./journal.js";
 import { MutationJournal } from "./journal.js";
-import { type ModelCatalog, resolvePiModel } from "./model-runtime.js";
+import { type ModelCatalog, resolveExplicitPiModel, resolvePiModel } from "./model-runtime.js";
 import { extractOutput, lastAssistantStop } from "./output.js";
 import { promptWithAbortGrace } from "./prompt-grace.js";
 import { repairOutput } from "./repair.js";
@@ -23,7 +25,15 @@ import { createSandboxedTools } from "./tools/registry.js";
 import { UsageCollector, type WorkerUsage } from "./usage.js";
 
 export interface WorkerRunMeta {
-  model: { provider: string; id: string; tier: Tier };
+  model: {
+    provider: string;
+    id: string;
+    tier: Tier;
+    /** "tier" = tier resolver 経路、"explicit" = `--model` 直接指定。 */
+    selection: "tier" | "explicit";
+    /** tier の provenance（explicit-override / curated-exception / auto / unclassified）。 */
+    tierSource: TierSource;
+  };
   usage: WorkerUsage;
   turns: number;
   toolCalls: number;
@@ -65,6 +75,12 @@ export interface RunWorkerDeps {
   modelConfig: ModelConfig;
   /** model 解決用 catalog（実運用では ModelRuntime）。 */
   catalog: ModelCatalog;
+  /**
+   * `--model <provider>/<id>` 直接指定（issue #45）。指定時は tier
+   * 候補選択を bypass するが exclude・availability・policy.maxTier
+   * は enforce される。
+   */
+  explicitModel?: string;
   /** session 用 ModelRuntime。通常は catalog と同じ実体。 */
   modelRuntime?: ModelRuntime;
   /** テスト用 stream seam。session.agent.streamFunction の差し替え元。 */
@@ -179,12 +195,30 @@ export async function runWorker(
   if (deps.signal?.aborted) requestAbort("signal");
 
   try {
-    const resolved = await resolvePiModel({
-      catalog: deps.catalog,
-      requestedTier: worker.cheaper.model.tier,
-      policy: policy.model,
-      config: deps.modelConfig,
-    });
+    const resolved = await (async () => {
+      if (deps.explicitModel === undefined) {
+        return resolvePiModel({
+          catalog: deps.catalog,
+          requestedTier: worker.cheaper.model.tier,
+          policy: policy.model,
+          config: deps.modelConfig,
+        });
+      }
+      const ref = parseModelRef(deps.explicitModel);
+      if (ref === undefined) {
+        throw new CheaperError(
+          "INVALID_REQUEST",
+          `invalid --model reference: ${deps.explicitModel} (expected <provider>/<id>)`,
+          { details: { reason: "invalid-model-ref", model: deps.explicitModel } },
+        );
+      }
+      return resolveExplicitPiModel({
+        catalog: deps.catalog,
+        ref,
+        policy: { maxTier: policy.model.maxTier },
+        config: deps.modelConfig,
+      });
+    })();
 
     const sandboxed = createSandboxedTools({
       root: deps.root,
@@ -234,7 +268,13 @@ export async function runWorker(
     async function buildMeta(): Promise<WorkerRunMeta> {
       const snap = collector.snapshot();
       return {
-        model: { provider: resolved.info.provider, id: resolved.info.id, tier: resolved.tier },
+        model: {
+          provider: resolved.info.provider,
+          id: resolved.info.id,
+          tier: resolved.tier,
+          selection: resolved.selection,
+          tierSource: resolved.tierSource,
+        },
         usage: snap.usage,
         turns: snap.turns,
         toolCalls: sandboxed.budget.toolCalls,

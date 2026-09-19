@@ -57,6 +57,58 @@ describe("parseCliArgs", () => {
     );
   });
 
+  it("parses --model <provider>/<id> on run and aliases", () => {
+    expect(parseCliArgs(["run", "w", "--model", "anthropic/claude-haiku-4-5"])).toMatchObject({
+      kind: "run",
+      model: "anthropic/claude-haiku-4-5",
+    });
+    expect(parseCliArgs(["bulk-read", "--model", "openai-codex/gpt-5.1"])).toMatchObject({
+      kind: "run",
+      workerName: "bulk-reader",
+      model: "openai-codex/gpt-5.1",
+    });
+  });
+
+  it("rejects malformed --model references", () => {
+    expect(codeOf(() => parseCliArgs(["bulk-read", "--model", "no-slash"]))).toBe(
+      "INVALID_REQUEST",
+    );
+    expect(codeOf(() => parseCliArgs(["bulk-read", "--model", "p/"]))).toBe("INVALID_REQUEST");
+    expect(codeOf(() => parseCliArgs(["bulk-read", "--model", "/m"]))).toBe("INVALID_REQUEST");
+  });
+
+  it("rejects --model on count-tokens, auth, and models", () => {
+    expect(codeOf(() => parseCliArgs(["count-tokens", "f.txt", "--model", "p/m"]))).toBe(
+      "INVALID_REQUEST",
+    );
+    expect(codeOf(() => parseCliArgs(["auth", "status", "--model", "p/m"]))).toBe(
+      "INVALID_REQUEST",
+    );
+    expect(codeOf(() => parseCliArgs(["models", "--model", "p/m"]))).toBe("INVALID_REQUEST");
+  });
+
+  it("parses `models` with --provider and --tier filters", () => {
+    expect(parseCliArgs(["models"])).toMatchObject({ kind: "models", provider: undefined });
+    expect(parseCliArgs(["models", "--provider", "anthropic", "--tier", "low"])).toMatchObject({
+      kind: "models",
+      provider: "anthropic",
+      tier: "low",
+    });
+  });
+
+  it("rejects invalid --tier and run-only options on models", () => {
+    expect(codeOf(() => parseCliArgs(["models", "--tier", "extreme"]))).toBe("INVALID_REQUEST");
+    expect(codeOf(() => parseCliArgs(["models", "--input", "f.json"]))).toBe("INVALID_REQUEST");
+    expect(codeOf(() => parseCliArgs(["models", "extra"]))).toBe("INVALID_REQUEST");
+  });
+
+  it("rejects --provider/--tier on run", () => {
+    expect(codeOf(() => parseCliArgs(["bulk-read", "--provider", "anthropic"]))).toBe(
+      "INVALID_REQUEST",
+    );
+    expect(codeOf(() => parseCliArgs(["bulk-read", "--tier", "low"]))).toBe("INVALID_REQUEST");
+  });
+
   it("rejects path-like worker names as INVALID_WORKER_NAME", () => {
     expect(codeOf(() => parseCliArgs(["run", "./foo.md"]))).toBe("INVALID_WORKER_NAME");
     expect(codeOf(() => parseCliArgs(["run", "Foo"]))).toBe("INVALID_WORKER_NAME");
