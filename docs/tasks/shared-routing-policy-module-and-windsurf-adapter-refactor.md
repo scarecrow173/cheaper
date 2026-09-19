@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rAcEwRUaAkZ0KOCmc9J"
 type: "task"
-status: "todo"
+status: "done"
 title: "Shared routing policy module and Windsurf adapter refactor"
 created: "2026-09-19"
 updated: "2026-09-19"

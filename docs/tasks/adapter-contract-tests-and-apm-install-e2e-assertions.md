@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rAcFy8if4UmbPEMTdg1"
 type: "task"
-status: "todo"
+status: "done"
 title: "Adapter contract tests and APM install E2E assertions"
 created: "2026-09-19"
 updated: "2026-09-19"

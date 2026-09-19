@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rAcG63A1KaVZH5VyAWA"
 type: "task"
-status: "todo"
+status: "done"
 title: "Contract matrix and parent-agent guide updates"
 created: "2026-09-19"
 updated: "2026-09-19"

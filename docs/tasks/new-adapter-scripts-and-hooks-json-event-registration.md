@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rAcF1RPJJogj2vzFDrF"
 type: "task"
-status: "todo"
+status: "done"
 title: "New adapter scripts and hooks.json event registration"
 created: "2026-09-19"
 updated: "2026-09-19"
