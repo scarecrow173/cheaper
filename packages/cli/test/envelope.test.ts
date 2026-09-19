@@ -4,7 +4,13 @@ import { describe, expect, it } from "vitest";
 import { envelopeJson, errorEnvelope, successEnvelope } from "../src/envelope.js";
 
 const runMeta: WorkerRunMeta = {
-  model: { provider: "p", id: "m", tier: "low" },
+  model: {
+    provider: "p",
+    id: "m",
+    tier: "low",
+    selection: "tier",
+    tierSource: "explicit-override",
+  },
   usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, totalTokens: 3, costUsd: 0 },
   turns: 1,
   toolCalls: 0,
@@ -29,7 +35,7 @@ describe("successEnvelope", () => {
       result: { ok: true },
       meta: {
         durationMs: 12,
-        model: { provider: "p", id: "m", tier: "low" },
+        model: runMeta.model,
         usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, totalTokens: 3, costUsd: 0 },
         turns: 1,
         toolCalls: 0,

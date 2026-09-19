@@ -76,13 +76,15 @@ estimated savings を別枠表示する。
 - `packages/cli/src/text-format.ts`: usage 集計の text 表示
   （Estimated 行は `Estimated` prefix 必須）。
 - `packages/cli/src/pricing.ts`（新規）:
-  `<userConfigDir>/pricing.json` の読み取りと stale 判定。
+  `<userConfigDir>/pricing.json` を core `PricingSnapshot`
+  contract の bridge として読み取る（stale 判定は
+  `usage-report.ts` 側）。
 - `docs/guides/usage.md`: 指標定義・限界・`usage` command。
 
 ### Out of Scope
 
 - pricing metadata の取得・更新（#45 の scope。ここでは
-  `pricing.json` の consumer contract のみ）。
+  core `resolvePricing` への接続と `pricing.json` bridge のみ）。
 - usage.jsonl の rotation、per-tool 内訳、記録対象の拡大。
 - `count` record への savings（offload の概念がない）。
 
@@ -105,13 +107,17 @@ estimated savings を別枠表示する。
    には出さない — token のみ）。
 2. run 終了時: `buildMeta` が `savings = { sourceTokens,
    returnedTokens: countTextTokens(JSON.stringify(result)),
-   avoidedContextTokens: max(0, source - returned) }` を返す。
-   error 経路では `returnedTokens: 0`。
+   avoidedContextTokens: max(0, source - returned),
+   directlyComparable: isDirectlyComparableWorker(worker) }` を
+   返す。error 経路では `returnedTokens: 0`。
 3. recordUsage: `meta.savings` を record.savings へ転写。
 4. `cheaper usage`: `<userConfigDir>/usage.jsonl` を per-line
    parse（破損行 skip）→ filter → 集計 → envelope result または
-   text 出力。`--compare-model` 指定時のみ `pricing.json` を読み、
-   対象 entry が存在かつ stale でなければ estimated を算出。
+   text 出力。`--compare-model` 指定時は runtime catalog の
+   `model.cost` → `pricing.json` snapshot → bundled snapshot の
+   順に core `resolvePricing` で価格を解決し、stale でなく
+   `directlyComparable: true` の run があれば comparable subset
+   のみを母数に estimated を算出。
 
 ## Non-Functional Constraints
 
@@ -131,9 +137,11 @@ estimated savings を別枠表示する。
 - error run の `avoidedContextTokens = sourceTokens` は「処理を
   途中まで offload した」実測であり、過大表示ではないが、
   guide で error run の扱いを明記する。
-- pricing.json の schema は本 issue の minimal contract。#45 が
-  別 schema で来た場合は adapter を挟む（現時点では深追い
-  しない）。
+- `pricing.json` は core `PricingSnapshot` と同一 schema の
+  user override bridge に限定する（独自 contract は持たない）。
+- `directlyComparable` の判定は worker 定義（`writeScope`・
+  mutating tool の有無）に基づく構造的判定であり、worker 名の
+  hardcode ではない。
 
 ## Deferred Design Concerns
 

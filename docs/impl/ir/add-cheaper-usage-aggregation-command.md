@@ -61,13 +61,16 @@ pricing は issue #45 の generic seam として consumer 側のみ実装。
   `--since` / `--worker` / `--provider` / `--model` /
   `--compare-model` / `--format` / `--quiet` の parse を追加。
 - `packages/cli/src/pricing.ts`（新規）:
-  `<userConfigDir>/pricing.json` の読み込み、`checkedAt` の 30 日
-  stale 判定。
+  `<userConfigDir>/pricing.json` を core `PricingSnapshot`
+  contract の bridge として読み込む。
 - `packages/cli/src/usage-report.ts`（新規）: JSONL 読み込み
   （malformed 行 skip・missing = empty）、`kind:"run"` のみ集計、
   filter、actual usage totals / turns / toolCalls / durationMs /
-  measured savings totals、estimated 計算（fresh な pricing +
-  compare model が揃う場合のみ、provenance 付き）。
+  measured savings totals（+ `directlyComparable` run のみの
+  comparable subset）、estimated 計算（core `resolvePricing` で
+  runtime catalog → `pricing.json` → bundled snapshot の順に
+  fresh な価格が解決でき、かつ comparable run がある場合のみ、
+  provenance 付き）。stale 判定（`updatedAt` 30 日超）もここ。
 - `packages/cli/src/cli.ts`: `usage` 分岐。utility-style envelope
   で `result` に集計値を返し、usage 自身は usage.jsonl に記録
   しない。
@@ -101,11 +104,10 @@ pricing は issue #45 の generic seam として consumer 側のみ実装。
 
 ## Risks
 
-- `pricing.json` のスキーマは #45 の実装と要整合（consumer は
-  `models["<provider>/<id>"]` + per-million USD + `checkedAt` を
-  期待）。
+- bundled snapshot の `updatedAt` は release 時点で固定される
+  ため、30 日超で snapshot 由来の estimated が stale 判定で
+  非出力になる（runtime catalog 価格は stale 対象外）。
 
 ## Follow-ups
 
-- #45 で pricing metadata の取得・更新 layer が実装された際、
-  契約の相互確認。
+- なし（#45 の pricing layer へ接続済み）。

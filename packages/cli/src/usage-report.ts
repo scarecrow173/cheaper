@@ -1,7 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
-import { loadPricingEntry, type PricingEntry } from "./pricing.js";
+import {
+  type ModelInfo,
+  type ModelPricing,
+  type PricingSource,
+  resolvePricing,
+} from "@cheaper/core";
+import { loadPricingSnapshot } from "./pricing.js";
 import { USAGE_LOG_FILENAME, type UsageLogRecord } from "./usage-log.js";
+
+/** snapshot の updatedAt がこの期間より古い pricing は stale とみなす。 */
+export const PRICING_STALE_MS = 30 * 24 * 3_600_000;
 
 export interface UsageFilters {
   /** ts >= now - sinceMs の record のみ対象。 */
@@ -35,13 +44,30 @@ export interface UsageReport {
     sourceTokens: number;
     returnedTokens: number;
     avoidedContextTokens: number;
+    /**
+     * `directlyComparable` worker のみの subset。estimated の母数。
+     * write 系 worker（code-writer / doc-writer 等）の run は
+     * 直接比較が成立しないため含まない。
+     */
+    comparable: {
+      runs: number;
+      sourceTokens: number;
+      returnedTokens: number;
+      costUsd: number;
+    };
   };
   estimated?: {
     compareModel: string;
     estimatedParentEquivalentCostUsd: number;
     estimatedSavingsUsd: number;
     estimatedSavingsPercent: number | null;
-    pricing: { source: string; checkedAt: string; stale: boolean };
+    /** pricing の provenance。`pricing.json` は user 提供 snapshot。 */
+    pricing: {
+      source: PricingSource | "pricing.json";
+      updatedAt?: string;
+      snapshotVersion?: string;
+      stale: boolean;
+    };
   };
 }
 
@@ -112,7 +138,13 @@ export function aggregate(records: UsageLogRecord[]): Omit<UsageReport, "estimat
     turns: 0,
     toolCalls: 0,
     durationMs: 0,
-    measured: { runs: 0, sourceTokens: 0, returnedTokens: 0, avoidedContextTokens: 0 },
+    measured: {
+      runs: 0,
+      sourceTokens: 0,
+      returnedTokens: 0,
+      avoidedContextTokens: 0,
+      comparable: { runs: 0, sourceTokens: 0, returnedTokens: 0, costUsd: 0 },
+    },
   };
   for (const r of records) {
     if (r.ok) report.ok += 1;
@@ -134,62 +166,107 @@ export function aggregate(records: UsageLogRecord[]): Omit<UsageReport, "estimat
       report.measured.sourceTokens += r.savings.sourceTokens;
       report.measured.returnedTokens += r.savings.returnedTokens;
       report.measured.avoidedContextTokens += r.savings.avoidedContextTokens;
+      // 直接比較が成立する worker の run のみ estimated の母数にする。
+      // 旧 record（flag 不在）や write 系 worker は comparable に含めない。
+      if (r.savings.directlyComparable === true) {
+        report.measured.comparable.runs += 1;
+        report.measured.comparable.sourceTokens += r.savings.sourceTokens;
+        report.measured.comparable.returnedTokens += r.savings.returnedTokens;
+        report.measured.comparable.costUsd += r.usage?.costUsd ?? 0;
+      }
     }
   }
   return report;
 }
 
 /**
- * comparison model の pricing entry がある場合のみ estimated を返す。
- * parentEquiv = (sourceTokens * input + returnedTokens * output) / 1e6
- * で「同じ量を親 model で直接処理した場合」の概算を出し、実 worker
- * cost との差を savings とする。stale な pricing では算出しない。
+ * comparison model の pricing が解決でき、かつ直接比較可能な measured
+ * run がある場合のみ estimated を返す。
+ * parentEquiv = (comparable.sourceTokens * input + comparable.returnedTokens
+ * * output) / 1e6 で「同じ量を親 model で直接処理した場合」の概算を出し、
+ * comparable run の実 worker cost との差を savings とする。
+ * `pricing.stale`（updatedAt が PRICING_STALE_MS 超）では算出しない。
  */
 export function estimate(
   agg: Omit<UsageReport, "estimated">,
-  pricing: { entry: PricingEntry; stale: boolean },
+  pricing: ModelPricing & { stale: boolean; provenance: PricingSource | "pricing.json" },
   compareModel: string,
 ): UsageReport["estimated"] {
   if (pricing.stale) return undefined;
-  const { inputPerMillionUsd, outputPerMillionUsd } = pricing.entry;
-  const parentEquiv =
-    (agg.measured.sourceTokens * inputPerMillionUsd +
-      agg.measured.returnedTokens * outputPerMillionUsd) /
-    1e6;
-  const savings = parentEquiv - agg.usage.costUsd;
+  const c = agg.measured.comparable;
+  if (c.runs === 0) return undefined;
+  const parentEquiv = (c.sourceTokens * pricing.input + c.returnedTokens * pricing.output) / 1e6;
+  const savings = parentEquiv - c.costUsd;
   return {
     compareModel,
     estimatedParentEquivalentCostUsd: parentEquiv,
     estimatedSavingsUsd: savings,
     estimatedSavingsPercent: parentEquiv > 0 ? (savings / parentEquiv) * 100 : null,
     pricing: {
-      source: pricing.entry.source,
-      checkedAt: pricing.entry.checkedAt,
+      source: pricing.provenance,
+      ...(pricing.updatedAt !== undefined ? { updatedAt: pricing.updatedAt } : {}),
+      ...(pricing.snapshotVersion !== undefined
+        ? { snapshotVersion: pricing.snapshotVersion }
+        : {}),
       stale: false,
     },
   };
 }
 
+/** snapshot 由来 pricing の updatedAt が stale か（updatedAt 不在＝runtime-catalog は stale にしない）。 */
+function isStalePricing(pricing: ModelPricing, now: () => number): boolean {
+  if (pricing.updatedAt === undefined) return false;
+  const updatedMs = Date.parse(pricing.updatedAt);
+  return Number.isNaN(updatedMs) || now() - updatedMs > PRICING_STALE_MS;
+}
+
 /**
- * usage.jsonl → filter → 集計 →（compare-model + pricing が揃えば）
- * estimated まで一括で組み立てる。
+ * usage.jsonl → filter → 集計 →（compare-model + pricing が揃い、
+ * 直接比較可能な run があるときのみ）estimated まで一括で組み立てる。
+ *
+ * pricing は core の pricing layer（`resolvePricing`）で解決する:
+ * runtime catalog（`compareCatalogModel.cost`）→ user 提供の
+ * `<userConfigDir>/pricing.json` snapshot → bundled snapshot の順。
  */
 export function buildUsageReport(opts: {
   userConfigDir: string;
   filters: UsageFilters;
   compareModel?: string | undefined;
+  /**
+   * `--compare-model` の runtime catalog 観測（`toModelInfo` 済み）。
+   * 未取得・catalog に無い場合は省略し、snapshot のみが参照される。
+   */
+  compareCatalogModel?: ModelInfo | undefined;
   now?: () => number;
 }): UsageReport {
   const now = opts.now ?? Date.now;
   const records = filterRunRecords(readUsageRecords(opts.userConfigDir), opts.filters, now);
   const agg = aggregate(records);
   if (opts.compareModel === undefined) return agg;
-  const pricing = loadPricingEntry({
-    userConfigDir: opts.userConfigDir,
-    model: opts.compareModel,
-    now,
-  });
-  if (pricing === null) return agg;
-  const estimated = estimate(agg, pricing, opts.compareModel);
+  const ref = splitModelRef(opts.compareModel);
+  if (ref === null) return agg;
+  const model: ModelInfo = opts.compareCatalogModel ?? { provider: ref.provider, id: ref.id };
+
+  const userSnapshot = loadPricingSnapshot(opts.userConfigDir);
+  // runtime-catalog cost は resolvePricing 内で最優先される。
+  // snapshot 由来が user file から返った場合は provenance を "pricing.json"
+  // に読み替える。
+  let pricing: ModelPricing | undefined;
+  let provenance: PricingSource | "pricing.json" | undefined;
+  if (userSnapshot !== null) {
+    pricing = resolvePricing(model, userSnapshot);
+    if (pricing !== undefined) {
+      provenance = pricing.source === "bundled-snapshot" ? "pricing.json" : pricing.source;
+    }
+  }
+  pricing ??= resolvePricing(model);
+  provenance ??= pricing?.source;
+  if (pricing === undefined || provenance === undefined) return agg;
+
+  const estimated = estimate(
+    agg,
+    { ...pricing, stale: isStalePricing(pricing, now), provenance },
+    opts.compareModel,
+  );
   return estimated === undefined ? agg : { ...agg, estimated };
 }

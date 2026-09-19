@@ -196,13 +196,20 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     expect(r.code).toBe(0);
     const e = expectEnvelopeOnly(r.stdout);
     const meta = e.meta as {
-      savings?: { sourceTokens: number; returnedTokens: number; avoidedContextTokens: number };
+      savings?: {
+        sourceTokens: number;
+        returnedTokens: number;
+        avoidedContextTokens: number;
+        directlyComparable: boolean;
+      };
     };
     expect(meta.savings?.sourceTokens).toBeGreaterThan(0);
     expect(meta.savings?.returnedTokens).toBeGreaterThan(0);
     expect(meta.savings?.avoidedContextTokens).toBe(
       Math.max(0, (meta.savings?.sourceTokens ?? 0) - (meta.savings?.returnedTokens ?? 0)),
     );
+    // bulk-reader は read-only のため直接比較可能
+    expect(meta.savings?.directlyComparable).toBe(true);
     // read output が返却 result を大きく上回る fixture
     expect(meta.savings?.avoidedContextTokens).toBeGreaterThan(0);
 
@@ -265,28 +272,25 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     });
     expect(run.code).toBe(0);
 
-    // pricing.json なし → estimated 非出力
-    const noPricing = await runCheaper(["usage", "--compare-model", "openai/gpt-5"], { env });
+    // pricing.json なし + catalog/snapshot に無い model → estimated 非出力
+    const noPricing = await runCheaper(["usage", "--compare-model", "e2e-prov/model-x"], { env });
     expect(
       (JSON.parse(noPricing.stdout) as { result: { estimated?: unknown } }).result.estimated,
     ).toBeUndefined();
 
-    // 新鮮な pricing.json → estimated 出力
+    // 新鮮な pricing.json（core PricingSnapshot contract）→ estimated 出力
     await mkdir(env.CHEAPER_CONFIG_DIR as string, { recursive: true });
     await writeFile(
       path.join(env.CHEAPER_CONFIG_DIR as string, "pricing.json"),
       JSON.stringify({
-        models: {
-          "openai/gpt-5": {
-            inputPerMillionUsd: 3,
-            outputPerMillionUsd: 15,
-            checkedAt: new Date().toISOString(),
-            source: "e2e-fixture",
-          },
-        },
+        version: "e2e",
+        updatedAt: new Date().toISOString(),
+        models: { "e2e-prov/model-x": { input: 3, output: 15 } },
       }),
     );
-    const withPricing = await runCheaper(["usage", "--compare-model", "openai/gpt-5"], { env });
+    const withPricing = await runCheaper(["usage", "--compare-model", "e2e-prov/model-x"], {
+      env,
+    });
     const est = (
       JSON.parse(withPricing.stdout) as {
         result: {
@@ -300,9 +304,46 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
         };
       }
     ).result.estimated;
-    expect(est?.compareModel).toBe("openai/gpt-5");
+    expect(est?.compareModel).toBe("e2e-prov/model-x");
     expect(est?.estimatedParentEquivalentCostUsd).toBeGreaterThan(0);
-    expect(est?.pricing).toMatchObject({ source: "e2e-fixture", stale: false });
+    expect(est?.pricing).toMatchObject({ source: "pricing.json", stale: false });
+  }, 30_000);
+
+  it("does not emit estimated savings for non-comparable (write) workers", async () => {
+    const run = await runCheaper(["code-write", "--cwd", ws], {
+      env: { ...env, CHEAPER_TEST_FAKE_STREAM: fixture("code-write-fake.js") },
+      input: '{"task":"create out.txt","targets":[{"path":"out.txt","intent":"create"}]}',
+    });
+    expect(run.code).toBe(0);
+    // measured savings は記録されるが directlyComparable=false
+    const meta = (
+      JSON.parse(run.stdout) as {
+        meta: { savings?: { directlyComparable: boolean } };
+      }
+    ).meta;
+    expect(meta.savings?.directlyComparable).toBe(false);
+
+    await mkdir(env.CHEAPER_CONFIG_DIR as string, { recursive: true });
+    await writeFile(
+      path.join(env.CHEAPER_CONFIG_DIR as string, "pricing.json"),
+      JSON.stringify({
+        version: "e2e",
+        updatedAt: new Date().toISOString(),
+        models: { "e2e-prov/model-x": { input: 3, output: 15 } },
+      }),
+    );
+    const usage = await runCheaper(["usage", "--compare-model", "e2e-prov/model-x"], { env });
+    const result = (
+      JSON.parse(usage.stdout) as {
+        result: {
+          measured: { runs: number };
+          estimated?: unknown;
+        };
+      }
+    ).result;
+    // measured には残るが estimated は算出されない
+    expect(result.measured.runs).toBe(1);
+    expect(result.estimated).toBeUndefined();
   }, 30_000);
 
   it("ignores CHEAPER_TEST_FAKE_STREAM when NODE_ENV is not test", async () => {

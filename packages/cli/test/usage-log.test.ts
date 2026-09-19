@@ -8,7 +8,13 @@ import { errorEnvelope, successEnvelope, utilitySuccessEnvelope } from "../src/e
 import { appendUsageLog, buildUsageRecord, recordUsage } from "../src/usage-log.js";
 
 const runMeta: WorkerRunMeta = {
-  model: { provider: "ollama", id: "qwen3.5:9b", tier: "low" },
+  model: {
+    provider: "ollama",
+    id: "qwen3.5:9b",
+    tier: "low",
+    selection: "tier",
+    tierSource: "explicit-override",
+  },
   usage: { input: 100, output: 20, cacheRead: 0, cacheWrite: 0, totalTokens: 120, costUsd: 0 },
   turns: 2,
   toolCalls: 1,
@@ -18,7 +24,12 @@ const runMeta: WorkerRunMeta = {
   changes: { files: [], totals: { files: 0, linesAdded: 0, linesDeleted: 0 } },
 };
 
-const savings = { sourceTokens: 800, returnedTokens: 12, avoidedContextTokens: 788 };
+const savings = {
+  sourceTokens: 800,
+  returnedTokens: 12,
+  avoidedContextTokens: 788,
+  directlyComparable: true,
+};
 
 const NOW = () => new Date("2026-09-18T00:00:00.000Z");
 
@@ -39,7 +50,7 @@ describe("buildUsageRecord", () => {
       root: "/ws",
       ok: true,
       durationMs: 42,
-      model: { provider: "ollama", id: "qwen3.5:9b", tier: "low" },
+      model: runMeta.model,
       usage: runMeta.usage,
       turns: 2,
       toolCalls: 1,
@@ -90,7 +101,12 @@ describe("buildUsageRecord", () => {
     const err = new WorkerRunError("PARTIAL_MUTATION", "boom", {
       runMeta: {
         ...runMeta,
-        savings: { sourceTokens: 500, returnedTokens: 0, avoidedContextTokens: 500 },
+        savings: {
+          sourceTokens: 500,
+          returnedTokens: 0,
+          avoidedContextTokens: 500,
+          directlyComparable: true,
+        },
       },
     });
     const env = errorEnvelope(err, { worker: "bulk-reader", durationMs: 9 });
@@ -98,7 +114,12 @@ describe("buildUsageRecord", () => {
     expect(rec).toMatchObject({
       kind: "run",
       ok: false,
-      savings: { sourceTokens: 500, returnedTokens: 0, avoidedContextTokens: 500 },
+      savings: {
+        sourceTokens: 500,
+        returnedTokens: 0,
+        avoidedContextTokens: 500,
+        directlyComparable: true,
+      },
     });
   });
 

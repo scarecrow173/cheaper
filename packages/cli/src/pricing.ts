@@ -1,47 +1,30 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { PricingSnapshot, PricingSnapshotEntry } from "@cheaper/core";
 
 export const PRICING_FILENAME = "pricing.json";
-/** checkedAt がこの期間より古い pricing は stale とみなす。 */
-export const PRICING_STALE_MS = 30 * 24 * 3_600_000;
 
-export interface PricingEntry {
-  inputPerMillionUsd: number;
-  outputPerMillionUsd: number;
-  checkedAt: string;
-  source: string;
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-export interface ResolvedPricing {
-  entry: PricingEntry;
-  stale: boolean;
-}
-
-function isPricingEntry(v: unknown): v is PricingEntry {
-  if (typeof v !== "object" || v === null) return false;
-  const e = v as Record<string, unknown>;
-  return (
-    typeof e.inputPerMillionUsd === "number" &&
-    typeof e.outputPerMillionUsd === "number" &&
-    typeof e.checkedAt === "string" &&
-    typeof e.source === "string"
-  );
+function isNonNegativeNumber(v: unknown): v is number {
+  return typeof v === "number" && Number.isFinite(v) && v >= 0;
 }
 
 /**
- * `<userConfigDir>/pricing.json` から `<provider>/<id>` の価格 entry を
- * 読む consumer contract（#45 が供給元。ここでは読み取りのみ）。
- * file 不在・parse 失敗・model 欠損・entry 不正は「pricing 不明」と
- * して null を返す（throw しない）。
+ * `<userConfigDir>/pricing.json` を user 提供の pricing snapshot として読む。
+ * 形式は core の bundled snapshot（`PricingSnapshot`: `{version, updatedAt,
+ * models: {"<provider>/<id>": {input, output, ...}}}`）と同一で、core
+ * `resolvePricing` の snapshot 引数としてそのまま渡せる bridge
+ * （ADR-034rzI0Yqw3L8AFM9diZct の snapshot contract に整合）。
+ * file 不在・parse 失敗・shape 不正は null を返す（読み取り専用・fail soft）。
+ * entry 単位の不正はその entry のみ skip する。
  */
-export function loadPricingEntry(opts: {
-  userConfigDir: string;
-  model: string;
-  now?: () => number;
-}): ResolvedPricing | null {
+export function loadPricingSnapshot(userConfigDir: string): PricingSnapshot | null {
   let raw: string;
   try {
-    raw = fs.readFileSync(path.join(opts.userConfigDir, PRICING_FILENAME), "utf8");
+    raw = fs.readFileSync(path.join(userConfigDir, PRICING_FILENAME), "utf8");
   } catch {
     return null;
   }
@@ -51,12 +34,23 @@ export function loadPricingEntry(opts: {
   } catch {
     return null;
   }
-  const models = (parsed as { models?: unknown } | null)?.models;
-  if (typeof models !== "object" || models === null) return null;
-  const entry = (models as Record<string, unknown>)[opts.model];
-  if (!isPricingEntry(entry)) return null;
+  if (!isPlainObject(parsed)) return null;
+  const { version, updatedAt, models } = parsed;
+  if (typeof version !== "string" || typeof updatedAt !== "string") return null;
+  if (!isPlainObject(models)) return null;
 
-  const checkedMs = Date.parse(entry.checkedAt);
-  const stale = Number.isNaN(checkedMs) || (opts.now ?? Date.now)() - checkedMs > PRICING_STALE_MS;
-  return { entry, stale };
+  const entries: Record<string, PricingSnapshotEntry> = {};
+  for (const [key, e] of Object.entries(models)) {
+    if (!isPlainObject(e)) continue;
+    const { input, output, cacheRead, cacheWrite, updatedAt: entryUpdatedAt } = e;
+    if (!isNonNegativeNumber(input) || !isNonNegativeNumber(output)) continue;
+    entries[key] = {
+      input,
+      output,
+      ...(isNonNegativeNumber(cacheRead) ? { cacheRead } : {}),
+      ...(isNonNegativeNumber(cacheWrite) ? { cacheWrite } : {}),
+      ...(typeof entryUpdatedAt === "string" ? { updatedAt: entryUpdatedAt } : {}),
+    };
+  }
+  return { version, updatedAt, models: entries };
 }

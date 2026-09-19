@@ -1,63 +1,89 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadPricingEntry, PRICING_STALE_MS } from "../src/pricing.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { loadPricingSnapshot } from "../src/pricing.js";
 
-const NOW = Date.parse("2026-09-19T00:00:00.000Z");
-const entry = {
-  inputPerMillionUsd: 3,
-  outputPerMillionUsd: 15,
-  checkedAt: "2026-09-18T00:00:00.000Z",
-  source: "test",
-};
+let dir: string | null = null;
+afterEach(() => {
+  if (dir !== null) fs.rmSync(dir, { recursive: true, force: true });
+  dir = null;
+});
 
-function write(dir: string, body: unknown): void {
-  fs.writeFileSync(path.join(dir, "pricing.json"), JSON.stringify(body));
+function makeDir(): string {
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), "cheaper-pricing-"));
+  return dir;
 }
 
-describe("loadPricingEntry", () => {
-  let dir: string;
-  beforeEach(() => {
-    dir = fs.mkdtempSync(path.join(os.tmpdir(), "pricing-"));
-  });
-  afterEach(() => {
-    fs.rmSync(dir, { recursive: true, force: true });
+function writePricing(body: unknown): void {
+  fs.writeFileSync(
+    path.join(dir as string, "pricing.json"),
+    typeof body === "string" ? body : JSON.stringify(body),
+    "utf8",
+  );
+}
+
+describe("loadPricingSnapshot", () => {
+  it("returns null when the file is missing", () => {
+    expect(loadPricingSnapshot(makeDir())).toBeNull();
   });
 
-  it("returns null when pricing.json does not exist", () => {
-    expect(loadPricingEntry({ userConfigDir: dir, model: "a/b" })).toBeNull();
+  it("returns null for malformed JSON or missing fields", () => {
+    const d = makeDir();
+    writePricing("{ not json");
+    expect(loadPricingSnapshot(d)).toBeNull();
+    writePricing({ version: "2026-09-18" });
+    expect(loadPricingSnapshot(d)).toBeNull();
+    writePricing({ version: "v", updatedAt: "2026-09-18", models: "nope" });
+    expect(loadPricingSnapshot(d)).toBeNull();
   });
 
-  it("returns null when pricing.json is malformed", () => {
-    fs.writeFileSync(path.join(dir, "pricing.json"), "not json{");
-    expect(loadPricingEntry({ userConfigDir: dir, model: "a/b" })).toBeNull();
+  it("parses a snapshot file matching the core PricingSnapshot contract", () => {
+    const d = makeDir();
+    writePricing({
+      version: "2026-09-18",
+      updatedAt: "2026-09-18T00:00:00.000Z",
+      models: {
+        "ollama/qwen3.5:9b": {
+          input: 0.1,
+          output: 0.3,
+          cacheRead: 0.05,
+          cacheWrite: 0.2,
+          updatedAt: "2026-09-18",
+        },
+      },
+    });
+    expect(loadPricingSnapshot(d)).toEqual({
+      version: "2026-09-18",
+      updatedAt: "2026-09-18T00:00:00.000Z",
+      models: {
+        "ollama/qwen3.5:9b": {
+          input: 0.1,
+          output: 0.3,
+          cacheRead: 0.05,
+          cacheWrite: 0.2,
+          updatedAt: "2026-09-18",
+        },
+      },
+    });
   });
 
-  it("returns null when the model entry is missing or invalid", () => {
-    write(dir, { models: { "other/x": entry, "bad/entry": { inputPerMillionUsd: "x" } } });
-    expect(loadPricingEntry({ userConfigDir: dir, model: "a/b" })).toBeNull();
-    expect(loadPricingEntry({ userConfigDir: dir, model: "bad/entry" })).toBeNull();
-  });
-
-  it("returns a fresh entry as non-stale", () => {
-    write(dir, { models: { "openai/gpt-5": entry } });
-    const r = loadPricingEntry({ userConfigDir: dir, model: "openai/gpt-5", now: () => NOW });
-    expect(r).toEqual({ entry, stale: false });
-  });
-
-  it("marks entries older than 30 days as stale", () => {
-    const old = { ...entry, checkedAt: "2026-08-01T00:00:00.000Z" };
-    write(dir, { models: { "openai/gpt-5": old } });
-    const r = loadPricingEntry({ userConfigDir: dir, model: "openai/gpt-5", now: () => NOW });
-    expect(NOW - Date.parse(old.checkedAt)).toBeGreaterThan(PRICING_STALE_MS);
-    expect(r?.stale).toBe(true);
-  });
-
-  it("marks an unparseable checkedAt as stale", () => {
-    write(dir, { models: { "openai/gpt-5": { ...entry, checkedAt: "not-a-date" } } });
-    expect(
-      loadPricingEntry({ userConfigDir: dir, model: "openai/gpt-5", now: () => NOW })?.stale,
-    ).toBe(true);
+  it("skips invalid model entries while keeping valid ones", () => {
+    const d = makeDir();
+    writePricing({
+      version: "v1",
+      updatedAt: "2026-09-18",
+      models: {
+        "a/b": { input: 1, output: 2 },
+        "c/d": { input: -1, output: 2 },
+        "e/f": { input: 1 },
+        "g/h": "garbage",
+      },
+    });
+    expect(loadPricingSnapshot(d)).toEqual({
+      version: "v1",
+      updatedAt: "2026-09-18",
+      models: { "a/b": { input: 1, output: 2 } },
+    });
   });
 });

@@ -129,8 +129,9 @@ export function formatUsageReport(r: UsageReport): string {
   if (e !== undefined) {
     const pct =
       e.estimatedSavingsPercent !== null ? ` (${e.estimatedSavingsPercent.toFixed(1)}%)` : "";
+    const updated = e.pricing.updatedAt !== undefined ? ` updatedAt=${e.pricing.updatedAt}` : "";
     lines.push(
-      `Estimated (compare=${e.compareModel}, pricing=${e.pricing.source} checkedAt=${e.pricing.checkedAt}):`,
+      `Estimated (compare=${e.compareModel}, pricing=${e.pricing.source}${updated}):`,
       `  parent equivalent: $${e.estimatedParentEquivalentCostUsd.toFixed(6)}`,
       `  savings:           $${e.estimatedSavingsUsd.toFixed(6)}${pct}`,
     );

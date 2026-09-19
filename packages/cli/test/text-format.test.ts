@@ -5,7 +5,13 @@ import { errorEnvelope, successEnvelope } from "../src/envelope.js";
 import { formatText } from "../src/text-format.js";
 
 const runMeta: WorkerRunMeta = {
-  model: { provider: "p", id: "m", tier: "low" },
+  model: {
+    provider: "p",
+    id: "m",
+    tier: "low",
+    selection: "tier",
+    tierSource: "explicit-override",
+  },
   usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, totalTokens: 3, costUsd: 0.0012 },
   turns: 2,
   toolCalls: 1,

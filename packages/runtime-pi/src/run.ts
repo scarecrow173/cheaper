@@ -5,6 +5,7 @@ import {
   countTextTokens,
   createPathDenylist,
   type ErrorCode,
+  isDirectlyComparableWorker,
   type ModelConfig,
   parseModelRef,
   type RuntimePolicy,
@@ -293,6 +294,7 @@ export async function runWorker(
           sourceTokens,
           returnedTokens,
           avoidedContextTokens: Math.max(0, sourceTokens - returnedTokens),
+          directlyComparable: isDirectlyComparableWorker(worker),
         },
       };
     }

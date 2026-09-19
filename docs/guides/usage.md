@@ -172,9 +172,10 @@ best-effort で append する。書き込み失敗は stdout・exit code
   記録対象外。
 
 run record には加えて `turns`・`toolCalls`・`savings`（実測
-offload）が載る。いずれも optional で、古い cheaper が書いた
-record には存在しない。count record には `savings` はない
-（offload の概念がないため）。
+offload。`directlyComparable` flag を含む）が載る。いずれも
+optional で、古い cheaper が書いた record には存在しない
+（`savings` 内の `directlyComparable` も同様）。count record
+には `savings` はない（offload の概念がないため）。
 
 ## 実測 savings（actual / measured / estimated の区別）
 
@@ -197,10 +198,14 @@ record には存在しない。count record には `savings` はない
 
 - `sourceTokens` は tool output の和であり、grep の file 一覧や
   error text も含む。親が同じ量を消費したとは限らない近似値。
-- `code-writer` / `doc-writer` のような生成系 worker では
-  `sourceTokens` が小さいかゼロになり、`avoidedContextTokens` は
-  0 になり得る。これは正しい挙動（offload が無い）であり、
-  不自然な savings 率は出さない。
+- `savings.directlyComparable` は「source↔returned が親 model の
+  直接実行と比較可能か」の flag。`write`/`edit` tool または
+  `writeScope` を持つ mutation 系 worker（code-writer /
+  doc-writer 等）では返却 result が ingest 内容の圧縮表現に
+  ならないため `false` になる。`savings` 自体は全 worker で
+  計測されるが、estimated の母数には `directlyComparable: true`
+  の record のみ入る（flag を持たない旧 record は非 comparable
+  扱い）。
 - estimated 値は comparison model と pricing metadata が揃った
   ときだけ出る。価格不明の場合に推定値を捏造しない。
 
@@ -227,19 +232,50 @@ cheaper usage --format text                     # 人間向け表示
 
 ### estimated savings
 
-`--compare-model <provider>/<id>` を指定すると、
-`<userConfigDir>/pricing.json`（`models["<provider>/<id>"]` に
-`inputPerMillionUsd`・`outputPerMillionUsd`・`checkedAt`・
-`source` を持つ JSON）を参照する。次のすべてが揃ったときのみ
-`estimated` section を出力する:
+`--compare-model <provider>/<id>` を指定すると、core の pricing
+layer（`resolvePricing`）で comparison model の価格を解決する。
+参照順は次の通り:
+
+1. runtime catalog の `model.cost`（`source: "runtime-catalog"`。
+   catalog に対象 model があれば常に最優先）
+2. `<userConfigDir>/pricing.json`（core `PricingSnapshot` と同一
+   形式の user 提供 snapshot。`source: "pricing.json"`）
+3. bundled snapshot（`source: "bundled-snapshot"`）
+
+次のすべてが揃ったときのみ `estimated` section を出力する:
 
 1. `--compare-model` が指定されている
-2. pricing.json に対象 model の entry がある
-3. `checkedAt` が 30 日以内（それ以上古い・parse 不可は stale）
+2. 上記のいずれかで対象 model の価格が解決できる
+3. 価格の `updatedAt` が 30 日以内（それ以上古い・parse 不可は
+   stale。`updatedAt` を持たない runtime-catalog 価格は stale に
+   しない）
+4. `savings.directlyComparable: true` の run が 1 件以上ある
+   （write 系 worker のみでは算出しない）
 
-算出式は `estimatedParentEquivalentCostUsd = (sourceTokens ×
-input価格 + returnedTokens × output価格) / 1,000,000`（親 model
-で同量を直接処理した場合の概算）、`estimatedSavingsUsd =
-parentEquivalent - 実 worker costUsd`。`--format text` では
-`Estimated` prefix の行として出る。pricing.json の供給・更新は
-別コンポーネントの責務（issue #45）。
+算出式は `estimatedParentEquivalentCostUsd = (comparable.sourceTokens ×
+input価格 + comparable.returnedTokens × output価格) / 1,000,000`
+（親 model で同量を直接処理した場合の概算）、`estimatedSavingsUsd =
+parentEquivalent - comparable run の実 worker costUsd 合計`。
+`--format text` では `Estimated` prefix の行として出る。
+
+`pricing.json` の形式は bundled snapshot と同じ:
+
+```json
+{
+  "version": "YYYY-MM-DD",
+  "updatedAt": "YYYY-MM-DD",
+  "models": {
+    "<provider>/<id>": {
+      "input": 3.0,
+      "output": 15.0,
+      "cacheRead": 0.3,
+      "cacheWrite": 3.75,
+      "updatedAt": "YYYY-MM-DD"
+    }
+  }
+}
+```
+
+`cacheRead`・`cacheWrite`・entry の `updatedAt` は省略可。不正な
+entry は skip され、file 全体が不正・不在の場合は bundled
+snapshot へ fall back する。価格単位は USD / 1M tokens 固定。

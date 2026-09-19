@@ -103,18 +103,23 @@ Chosen option: "A + i + α"。
   context 再送を含み過大、paths 事前計測（C）は worker が実際に
   読んだ範囲と乖離するため採用しない。
 - **record schema**: `savings: { sourceTokens, returnedTokens,
-  avoidedContextTokens }` を run record の optional field として
-  追加し `schemaVersion: 1` を維持する（option i）。未知 field を
-  無視する consumer を壊さず、既存 record との混在を許容する。
-  envelope 側は success `meta` に同値の `savings`（実測 3 field
-  のみ）を optional で載せる。
+  avoidedContextTokens, directlyComparable }` を run record の
+  optional field として追加し `schemaVersion: 1` を維持する
+  （option i）。未知 field を無視する consumer を壊さず、既存
+  record との混在を許容する。`directlyComparable` は「親 model
+  との直接比較が成立する workload か」の flag で、
+  `write`/`edit` tool または `writeScope` を持たない worker
+  のみ true（flag 不在の旧 record は非 comparable 扱い）。
+  envelope 側は success `meta` に同値の `savings` を optional
+  で載せる。
 - **estimated**: comparison model は `cheaper usage
-  --compare-model <provider/id>` で指定する。pricing は
-  `<userConfigDir>/pricing.json`（`models` map:
-  `"<provider>/<id>" → { inputPerMillionUsd, outputPerMillionUsd,
-  checkedAt, source }`）を読む minimal contract とし、file 不在・
-  model 不明・stale（checkedAt が 30 日超または欠損）なら
-  estimated を出力しない。#45 の実装名には依存しない。
+  --compare-model <provider/id>` で指定する。pricing は core
+  の `resolvePricing`（#45）で解決し、runtime catalog の
+  `model.cost` → `<userConfigDir>/pricing.json`（core
+  `PricingSnapshot` と同一形式の user 提供 bridge）→ bundled
+  snapshot の順に参照する。価格不明・stale（snapshot 由来の
+  `updatedAt` が 30 日超）・`directlyComparable: true` の run
+  が 0 件のいずれかなら estimated を出力しない。
 
 ### Consequences
 
@@ -122,14 +127,19 @@ Chosen option: "A + i + α"。
   code-writer / doc-writer にも同じ計測が適用される。
 * Good, because `schemaVersion` 据え置きで既存 consumer・
   集計の後方互換が保たれる。
-* Good, because pricing seam を file contract に限定することで
-  #45 の完了を待たずに本 issue を完遂できる。
+* Good, because pricing 解決を core の `resolvePricing` に
+  委譲することで runtime catalog・bundled snapshot どちらの
+  価格でも estimated が発火し、独自の consumer contract を
+  持ち込まない（`pricing.json` は同じ `PricingSnapshot` 形式の
+  user override bridge に限定）。
 * Bad, because tool output には grep/find の listing や error
   message も含まれ、「source file の内容量」と厳密には一致
   しない — 「親 context に投入されなかった token 数」という
   定義で文書化して吸収する。
-* Bad, because pricing.json を書く側が無い間は estimated が常に
-  非表示になる（機能として存在するが発動しない）。
+* Bad, because bundled snapshot の `updatedAt` は release 時点で
+  固定されるため、30 日超で stale 扱いとなり snapshot 由来の
+  estimated は表示されなくなる（runtime catalog 価格は
+  `updatedAt` を持たず stale にしない）。
 
 ### Confirmation
 

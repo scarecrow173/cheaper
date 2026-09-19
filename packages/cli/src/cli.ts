@@ -9,6 +9,7 @@ import {
   isExcludedModel,
   loadModelConfig,
   loadPolicy,
+  type ModelInfo,
   parseDuration,
   resolveConfigDirs,
   resolvePricing,
@@ -305,6 +306,31 @@ async function executeModels(
 }
 
 /**
+ * `cheaper usage --compare-model` 用に runtime catalog から対象 model の
+ * 観測（cost 等）を取る（issue #45 pricing layer の runtime-catalog source）。
+ * 集計自体は read-only が本筋のため、catalog 不在・runtime 初期化失敗は
+ * estimated を諦めるだけで report には影響させない（best-effort）。
+ * `refreshOnCreate: false` で network refresh を行わず、persisted catalog
+ * と builtin の static model だけを見る。
+ */
+async function lookupCatalogModel(
+  ref: { provider: string; id: string },
+  io: CliIo,
+  hooks: CliHooks,
+): Promise<ModelInfo | undefined> {
+  try {
+    const runtime = await (hooks.createModelRuntime ?? createModelRuntime)({
+      env: io.env,
+      refreshOnCreate: false,
+    });
+    const model = runtime.getModel(ref.provider, ref.id);
+    return model === undefined ? undefined : toModelInfo(model);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * CLI オーケストレーション（DESIGN-0005）。
  * stdout には envelope 1 つ（+末尾改行）のみ書く。未捕捉例外は INTERNAL_ERROR(70)。
  */
@@ -421,6 +447,8 @@ export async function runCli(
         builtinDir: hooks.builtinDir ?? defaultBuiltinDir(),
         env: io.env,
       });
+      const compareModelRef =
+        parsed.compareModel !== undefined ? splitModelRef(parsed.compareModel) : null;
       const report = buildUsageReport({
         userConfigDir: dirs.userConfigDir,
         filters: {
@@ -430,6 +458,11 @@ export async function runCli(
           ...(parsed.model !== undefined ? { model: parsed.model } : {}),
         },
         ...(parsed.compareModel !== undefined ? { compareModel: parsed.compareModel } : {}),
+        // runtime catalog の cost を estimated の第1供給源として渡す
+        //（未取得でも snapshot 経路で試行される）。
+        ...(compareModelRef !== null && compareModelRef !== undefined
+          ? { compareCatalogModel: await lookupCatalogModel(compareModelRef, io, hooks) }
+          : {}),
         now,
       });
       if (parsed.format === "text") {

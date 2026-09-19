@@ -39,12 +39,19 @@ const outputSchema = compileSchema(
   "output",
 );
 
-function worker(tools: WorkerDefinition["tools"]): WorkerDefinition {
+function worker(
+  tools: WorkerDefinition["tools"],
+  opts?: { writeScope?: string },
+): WorkerDefinition {
   return {
     name: "test-worker",
     description: "test",
     tools,
-    cheaper: { model: { tier: "low" }, output: { schema: { inline: {} } } },
+    cheaper: {
+      model: { tier: "low" },
+      output: { schema: { inline: {} } },
+      ...(opts?.writeScope !== undefined ? { writeScope: opts.writeScope } : {}),
+    },
     instructions: "Do the task.",
     sourcePath: "test-worker.md",
     origin: "explicit",
@@ -526,7 +533,22 @@ describe("runWorker", () => {
       sourceTokens: 0,
       returnedTokens: countTextTokens(JSON.stringify(r.result)),
       avoidedContextTokens: 0,
+      directlyComparable: true,
     });
+  });
+
+  it("marks savings as not directly comparable for write-capable workers", async () => {
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const r = await runWorker(await deps(fake, worker(["read", "write"]), policy()));
+    expect(r.meta.savings?.directlyComparable).toBe(false);
+  });
+
+  it("marks savings as not directly comparable when writeScope is declared", async () => {
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const d = await deps(fake, worker(["read"], { writeScope: "targets" }), policy());
+    d.input = { task: "x", targets: [] };
+    const r = await runWorker(d);
+    expect(r.meta.savings?.directlyComparable).toBe(false);
   });
 
   it("reports sourceTokens as fully avoided on usage-bearing failure", async () => {

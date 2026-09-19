@@ -20,6 +20,14 @@ export interface WorkerSavings {
   sourceTokens: number;
   returnedTokens: number;
   avoidedContextTokens: number;
+  /**
+   * source↔returned を親 model の直接実行コストと直接比較できる
+   * workload か（read-only worker のみ true。core の
+   * `isDirectlyComparableWorker` で判定）。false の record は
+   * `cheaper usage` の estimated 算出の母数に含めない。
+   * 旧 schema の record には存在しない（非 comparable 扱い）。
+   */
+  directlyComparable: boolean;
 }
 
 export interface UsageSnapshot {
