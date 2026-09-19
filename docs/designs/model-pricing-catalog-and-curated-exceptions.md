@@ -1,5 +1,5 @@
 ---
-id: "DESIGN-034rzI0Yx1Pqr2WkVg8cV3"
+id: "DESIGN-034rzP2XX0QSo5LRQDfr9B"
 type: "design"
 status: "approved"
 title: "model pricing catalog and curated exceptions"
