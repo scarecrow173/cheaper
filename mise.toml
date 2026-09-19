@@ -32,14 +32,12 @@ run = [
 
 # Windsurf の MCP config は user-global のみで project-scoped を持たないため、
 # 通常の setup では書き込まない。必要な場合のみ実行する opt-in task。
-# --target は effective target set 全体を指定するため、既存の project-scoped
-# 4 target を残した上で windsurf を追加する (windsurf 単独指定だと既存 entry が
-# stale として削除される)。--target 経由の windsurf は lockfile の
-# mcp_target_servers に記録されないため、lockfile は汚れず次回 setup の
-# reconcile 対象にもならない。
+# --root で lockfile 等の状態を gitignore 済みの tmp/ 配下に隔離する。
+# これにより project の apm.lock.yaml に windsurf ownership が記録されず、
+# 次回 setup (--exclude windsurf) の stale cleanup 対象にもならない。
 [tasks."setup:mcp-windsurf"]
 description = "Opt-in: write MCP servers to the user-global Windsurf mcp_config.json"
-run = "apm install --only mcp --target vscode,codex,claude,cursor,windsurf"
+run = "apm install --only mcp --target windsurf --root tmp/mcp-windsurf"
 
 # Canonical verification contract: CI と同等の検証。
 # セットアップ済み checkout を対象とし、setup には依存しない。
