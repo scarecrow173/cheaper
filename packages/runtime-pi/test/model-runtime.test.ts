@@ -8,12 +8,18 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createModelRuntime,
   type ModelCatalog,
+  resolveExplicitPiModel,
   resolvePiModel,
   resolvePiStatePaths,
   toModelInfo,
 } from "../src/model-runtime.js";
 
-function piModel(provider: string, id: string, maxTokens = 8192): Model<Api> {
+function piModel(
+  provider: string,
+  id: string,
+  maxTokens = 8192,
+  cost = { input: 1, output: 2, cacheRead: 0, cacheWrite: 0 },
+): Model<Api> {
   return {
     id,
     name: id,
@@ -22,7 +28,7 @@ function piModel(provider: string, id: string, maxTokens = 8192): Model<Api> {
     baseUrl: "http://localhost",
     reasoning: false,
     input: ["text"],
-    cost: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0 },
+    cost,
     contextWindow: 128000,
     maxTokens,
   };
@@ -42,7 +48,7 @@ describe("toModelInfo", () => {
     expect(toModelInfo(piModel("p", "m", 4096))).toEqual({
       provider: "p",
       id: "m",
-      cost: { input: 1, output: 2 },
+      cost: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0 },
       maxTokens: 4096,
     });
   });
@@ -50,20 +56,32 @@ describe("toModelInfo", () => {
 
 describe("resolvePiModel", () => {
   it("resolves a tier-matched Pi model", async () => {
-    const cat = catalog([piModel("anthropic", "claude-haiku-4")]);
+    // override/exception 非該当の model は unclassified → medium 扱い
+    // （auto 分類は #46 scope で #45 では生成しない）
+    const cat = catalog([
+      piModel("anthropic", "claude-haiku-4", 8192, {
+        input: 0.5,
+        output: 1,
+        cacheRead: 0.05,
+        cacheWrite: 0.6,
+      }),
+    ]);
     const r = await resolvePiModel({
       catalog: cat,
-      requestedTier: "low",
+      requestedTier: "medium",
       policy: { maxTier: "high", tierFallback: "none" },
       config,
     });
-    expect(r.tier).toBe("low");
+    expect(r.tier).toBe("medium");
+    expect(r.tierSource).toBe("unclassified");
+    expect(r.selection).toBe("tier");
+    expect(r.pricing).toMatchObject({ input: 0.5, output: 1, source: "runtime-catalog" });
     expect(r.model.id).toBe("claude-haiku-4");
     expect(r.model.provider).toBe("anthropic");
     expect(r.info).toEqual({
       provider: "anthropic",
       id: "claude-haiku-4",
-      cost: { input: 1, output: 2 },
+      cost: { input: 0.5, output: 1, cacheRead: 0.05, cacheWrite: 0.6 },
       maxTokens: 8192,
     });
   });
@@ -107,6 +125,50 @@ describe("resolvePiModel", () => {
       (e: unknown) => e,
     );
     expect((err as CheaperError).code).toBe("POLICY_VIOLATION");
+  });
+});
+
+describe("resolveExplicitPiModel", () => {
+  it("resolves the referenced model with selection=explicit", async () => {
+    const cat = catalog([piModel("anthropic", "claude-sonnet-4")]);
+    const r = await resolveExplicitPiModel({
+      catalog: cat,
+      ref: { provider: "anthropic", id: "claude-sonnet-4" },
+      policy: { maxTier: "high" },
+      config,
+    });
+    expect(r.selection).toBe("explicit");
+    expect(r.tier).toBe("medium");
+    expect(r.tierSource).toBe("unclassified");
+    expect(r.model.id).toBe("claude-sonnet-4");
+    expect(r.info.provider).toBe("anthropic");
+  });
+
+  it("excluded model → POLICY_VIOLATION even though it is available", async () => {
+    const cat = catalog([piModel("openai", "gpt-5")]);
+    const err = await resolveExplicitPiModel({
+      catalog: cat,
+      ref: { provider: "openai", id: "gpt-5" },
+      policy: { maxTier: "high" },
+      config: { overrides: {}, preferences: {}, exclude: ["openai/*"] },
+    }).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("POLICY_VIOLATION");
+  });
+
+  it("unknown ref → MODEL_TIER_UNAVAILABLE", async () => {
+    const err = await resolveExplicitPiModel({
+      catalog: catalog([piModel("a", "m")]),
+      ref: { provider: "a", id: "other" },
+      policy: { maxTier: "high" },
+      config,
+    }).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as CheaperError).code).toBe("MODEL_TIER_UNAVAILABLE");
   });
 });
 

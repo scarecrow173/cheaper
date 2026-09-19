@@ -26,6 +26,7 @@ export {
   createModelRuntime,
   type ModelCatalog,
   type ResolvedPiModel,
+  resolveExplicitPiModel,
   resolvePiModel,
   resolvePiStatePaths,
   toModelInfo,
@@ -53,5 +54,5 @@ export type {
   WorkerSessionOptions,
 } from "./session.js";
 export { createWorkerSession } from "./session.js";
-export type { UsageSnapshot, WorkerUsage } from "./usage.js";
+export type { UsageSnapshot, WorkerSavings, WorkerUsage } from "./usage.js";
 export { UsageCollector } from "./usage.js";

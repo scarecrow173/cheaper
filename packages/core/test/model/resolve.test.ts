@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CheaperError } from "../../src/errors.js";
 import type { ModelInfo } from "../../src/model/classify.js";
 import type { ModelConfig } from "../../src/model/config.js";
-import { resolveModel } from "../../src/model/resolve.js";
+import { resolveExplicitModel, resolveModel } from "../../src/model/resolve.js";
 import type { Tier } from "../../src/model/tier.js";
 
 const NO_PREF: ModelConfig = { overrides: {}, preferences: {} };
@@ -162,6 +162,63 @@ describe("resolveModel", () => {
     }
   });
 
+  it("resolved model に selection/tierSource/pricing を返す", () => {
+    const out = resolveModel({
+      available: [m("p", "x", { input: 0.1, output: 0.5 })],
+      requestedTier: "medium",
+      policy: { maxTier: "high", tierFallback: "none" },
+      config: NO_PREF,
+    });
+    expect(out.selection).toBe("tier");
+    expect(out.tierSource).toBe("unclassified");
+    expect(out.pricing).toMatchObject({ input: 0.1, output: 0.5, source: "runtime-catalog" });
+  });
+
+  it("exclude に一致する model は candidate から外れて選ばれない", () => {
+    const config: ModelConfig = {
+      overrides: { "p/excluded": "low", "p/kept": "low" },
+      preferences: {},
+      exclude: ["p/excluded"],
+    };
+    const out = resolveModel({
+      available: [
+        m("p", "excluded", { input: 0.01, output: 0.01 }),
+        m("p", "kept", { input: 5, output: 1 }),
+      ],
+      requestedTier: "low",
+      policy: { maxTier: "high", tierFallback: "none" },
+      config,
+    });
+    expect(out.model.id).toBe("kept");
+  });
+
+  it("provider/* wildcard の exclude も candidate から外す", () => {
+    const config: ModelConfig = {
+      overrides: { "p/x": "low", "q/y": "low" },
+      preferences: {},
+      exclude: ["p/*"],
+    };
+    const out = resolveModel({
+      available: [m("p", "x"), m("q", "y")],
+      requestedTier: "low",
+      policy: { maxTier: "high", tierFallback: "none" },
+      config,
+    });
+    expect(out.model.provider).toBe("q");
+  });
+
+  it("全 model が exclude → MODEL_TIER_UNAVAILABLE", () => {
+    const config: ModelConfig = { overrides: {}, preferences: {}, exclude: ["p/*"] };
+    expect(() =>
+      resolveModel({
+        available: [m("p", "x")],
+        requestedTier: "low",
+        policy: { maxTier: "high", tierFallback: "none" },
+        config,
+      }),
+    ).toThrow(/no authenticated models/);
+  });
+
   it("never falls back to lower tiers", () => {
     const config = cfg({ "p/lowm": "low" });
     // request medium, only low exists, fallback higher → high has nothing → unavailable
@@ -173,5 +230,79 @@ describe("resolveModel", () => {
         config,
       }),
     ).toThrow();
+  });
+});
+
+describe("resolveExplicitModel", () => {
+  const POLICY = { maxTier: "high" as const };
+
+  it("available な model を selection=explicit で返す（tier 候補選択を bypass）", () => {
+    const out = resolveExplicitModel({
+      available: [m("p", "x", { input: 1, output: 30 }), m("q", "cheaper")],
+      ref: { provider: "p", id: "x" },
+      policy: POLICY,
+      config: NO_PREF,
+    });
+    expect(out.model).toMatchObject({ provider: "p", id: "x" });
+    expect(out.selection).toBe("explicit");
+    expect(out.tier).toBe("medium");
+    expect(out.tierSource).toBe("unclassified");
+    expect(out.pricing).toMatchObject({ source: "runtime-catalog" });
+  });
+
+  it("exclude 一致 → POLICY_VIOLATION model-excluded（--model でも突破不可）", () => {
+    const config: ModelConfig = { overrides: {}, preferences: {}, exclude: ["openai/*"] };
+    try {
+      resolveExplicitModel({
+        available: [m("openai", "gpt-5")],
+        ref: { provider: "openai", id: "gpt-5" },
+        policy: POLICY,
+        config,
+      });
+      expect.unreachable();
+    } catch (e) {
+      const err = e as CheaperError;
+      expect(err.code).toBe("POLICY_VIOLATION");
+      expect(err.details?.reason).toBe("model-excluded");
+    }
+  });
+
+  it("catalog 不在 → MODEL_TIER_UNAVAILABLE（availability を bypass しない）", () => {
+    try {
+      resolveExplicitModel({
+        available: [m("p", "x")],
+        ref: { provider: "foo", id: "bar" },
+        policy: POLICY,
+        config: NO_PREF,
+      });
+      expect.unreachable();
+    } catch (e) {
+      const err = e as CheaperError;
+      expect(err.code).toBe("MODEL_TIER_UNAVAILABLE");
+      expect(err.details?.reason).toBe("model-unavailable");
+    }
+  });
+
+  it("unclassified（medium 扱い）の model は maxTier=medium で解決できる", () => {
+    const out = resolveExplicitModel({
+      available: [m("p", "x", { input: 1, output: 30 })],
+      ref: { provider: "p", id: "x" },
+      policy: { maxTier: "medium" },
+      config: NO_PREF,
+    });
+    expect(out.tier).toBe("medium");
+    expect(out.tierSource).toBe("unclassified");
+  });
+
+  it("override tier でも maxTier を超えれば POLICY_VIOLATION", () => {
+    const config: ModelConfig = { overrides: { "p/x": "high" }, preferences: {} };
+    expect(() =>
+      resolveExplicitModel({
+        available: [m("p", "x", { input: 0.1, output: 0.5 })],
+        ref: { provider: "p", id: "x" },
+        policy: { maxTier: "medium" },
+        config,
+      }),
+    ).toThrow(/exceeds policy maxTier/);
   });
 });

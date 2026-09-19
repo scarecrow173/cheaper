@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   canonicalizeWorkspaceRoot,
   countFileTokens,
+  countTextTokens,
   DEFAULT_COUNT_MAX_BYTES,
   FileTooLargeError,
   TOKENIZER_IDENTITY,
@@ -143,6 +144,32 @@ describe("countFileTokens", () => {
     await writeFile(path.join(dir, "small.txt"), "hello\n");
     const r = await countFileTokens({ root, path: "small.txt", symlinkPolicy: "deny" });
     expect(r.bytes).toBe(6);
+  });
+});
+
+describe("countTextTokens", () => {
+  it("counts an empty string as zero tokens", () => {
+    expect(countTextTokens("")).toBe(0);
+  });
+
+  it("counts arbitrary text deterministically with the canonical tokenizer", () => {
+    const text = "日本語のテキスト。🚀 emoji と éàü 混在。\n";
+    const first = countTextTokens(text);
+    expect(first).toBeGreaterThan(0);
+    expect(first).toBe(countTextTokens(text));
+  });
+
+  it("matches countFileTokens for the same content", async () => {
+    const dir = await makeTmpDir();
+    try {
+      const root = await canonicalizeWorkspaceRoot(dir);
+      const text = "hello world\n";
+      await writeFile(path.join(dir, "a.txt"), text);
+      const r = await countFileTokens({ root, path: "a.txt", symlinkPolicy: "deny" });
+      expect(countTextTokens(text)).toBe(r.tokens);
+    } finally {
+      await cleanupTmpDir(dir);
+    }
   });
 });
 

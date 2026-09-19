@@ -1,5 +1,10 @@
 import { CheaperError, isCheaperError } from "@cheaper/core";
-import type { ChangesSummary, WorkerRunMeta, WorkerUsage } from "@cheaper/runtime-pi";
+import type {
+  ChangesSummary,
+  WorkerRunMeta,
+  WorkerSavings,
+  WorkerUsage,
+} from "@cheaper/runtime-pi";
 
 export const SCHEMA_VERSION = 1 as const;
 
@@ -14,6 +19,8 @@ export interface ErrorEnvelopeMeta {
   repairs: number | null;
   transientRetries: number | null;
   changes: ChangesSummary | null;
+  /** 失敗 run の offload 実測（result 無し = returnedTokens 0）。 */
+  savings: WorkerSavings | null;
 }
 
 export interface SuccessEnvelope {
@@ -100,6 +107,7 @@ function errorMeta(durationMs: number | null, err: unknown): ErrorEnvelopeMeta {
     repairs: runMeta?.repairs ?? null,
     transientRetries: runMeta?.transientRetries ?? null,
     changes: runMeta?.changes ?? changes,
+    savings: runMeta?.savings ?? null,
   };
 }
 

@@ -332,7 +332,14 @@
           "description": "Repair deterministic document inconsistencies, regenerate managed indexes, and normalize document paths diagnosed by doc-status"
         }
       ],
-      "uses": [],
+      "uses": [
+        {
+          "capability": "doc_status_audit",
+          "required": false,
+          "default_skill": "doc-status",
+          "override_allowed": true
+        }
+      ],
       "execution_policy": {
         "strictness": "flexible",
         "sequence_required": false,

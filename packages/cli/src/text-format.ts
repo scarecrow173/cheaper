@@ -4,6 +4,7 @@ import type {
   SuccessEnvelope,
   UtilitySuccessEnvelope,
 } from "./envelope.js";
+import type { UsageReport } from "./usage-report.js";
 
 function pretty(v: unknown): string {
   return JSON.stringify(v, null, 2);
@@ -27,9 +28,48 @@ function successText(env: SuccessEnvelope): string {
   return `${lines.join("\n")}\n`;
 }
 
+interface ModelRow {
+  provider?: string;
+  id?: string;
+  excluded?: boolean;
+  tier?: string;
+  tierSource?: string;
+  pricing?: {
+    input?: number;
+    output?: number;
+    source?: string;
+    snapshotVersion?: string;
+    updatedAt?: string;
+  } | null;
+}
+
+function modelRowText(m: ModelRow): string {
+  const key = `${m.provider ?? "?"}/${m.id ?? "?"}`;
+  const state = m.excluded === true ? "excluded" : "available";
+  const tier = `tier=${m.tier ?? "?"} (${m.tierSource ?? "?"})`;
+  const p = m.pricing;
+  const price =
+    p == null || typeof p.input !== "number" || typeof p.output !== "number"
+      ? "unpriced"
+      : `in=$${p.input} out=$${p.output}/1M (${p.source ?? "?"}` +
+        `${p.snapshotVersion !== undefined ? `@${p.snapshotVersion}` : ""}` +
+        `${p.updatedAt !== undefined ? `, ${p.updatedAt}` : ""})`;
+  return `  ${key.padEnd(44)} ${state.padEnd(9)} ${tier.padEnd(28)} ${price}`;
+}
+
 function utilityText(env: UtilitySuccessEnvelope): string {
   const r = env.result;
   const lines: string[] = [`duration: ${env.meta.durationMs}ms`, "result:", pretty(r)];
+  const models = r.models;
+  if (Array.isArray(models)) {
+    return [
+      "ok",
+      `models: ${models.length}`,
+      ...(models as ModelRow[]).map(modelRowText),
+      `duration: ${env.meta.durationMs}ms`,
+      "",
+    ].join("\n");
+  }
   const t = r.tokenizer as { name?: string; implementation?: string; version?: string } | undefined;
   if (
     typeof r.path === "string" &&
@@ -69,6 +109,33 @@ function errorText(env: ErrorEnvelope): string {
     }
   }
   lines.push("error:", pretty(e));
+  return `${lines.join("\n")}\n`;
+}
+
+/**
+ * `cheaper usage --format text` の人間向け出力（機械可読ではない）。
+ * estimated 行は算出できたときのみ `Estimated` prefix 付きで出す。
+ */
+export function formatUsageReport(r: UsageReport): string {
+  const lines = [
+    "ok",
+    `runs:          ${r.records} (ok=${r.ok} errors=${r.errors})`,
+    `worker tokens: in=${r.usage.input} out=${r.usage.output} cacheRead=${r.usage.cacheRead} cacheWrite=${r.usage.cacheWrite} total=${r.usage.totalTokens}`,
+    `worker cost:   $${r.usage.costUsd.toFixed(6)}`,
+    `turns:         ${r.turns}  toolCalls=${r.toolCalls}  duration=${r.durationMs}ms`,
+    `avoided parent context: source=${r.measured.sourceTokens} returned=${r.measured.returnedTokens} avoided=${r.measured.avoidedContextTokens} (${r.measured.runs} runs measured)`,
+  ];
+  const e = r.estimated;
+  if (e !== undefined) {
+    const pct =
+      e.estimatedSavingsPercent !== null ? ` (${e.estimatedSavingsPercent.toFixed(1)}%)` : "";
+    const updated = e.pricing.updatedAt !== undefined ? ` updatedAt=${e.pricing.updatedAt}` : "";
+    lines.push(
+      `Estimated (compare=${e.compareModel}, pricing=${e.pricing.source}${updated}):`,
+      `  parent equivalent: $${e.estimatedParentEquivalentCostUsd.toFixed(6)}`,
+      `  savings:           $${e.estimatedSavingsUsd.toFixed(6)}${pct}`,
+    );
+  }
   return `${lines.join("\n")}\n`;
 }
 
