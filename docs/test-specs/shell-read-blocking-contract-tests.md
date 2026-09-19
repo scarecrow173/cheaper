@@ -33,7 +33,6 @@ relations:
   verifies:
     - "docs/specs/shell-read-large-file-blocking.md"
     - "docs/designs/shell-read-candidate-extraction.md"
-    - "docs/plans/shell-read-candidate-extraction-implementation.md"
   verified-by: []
   references: []
   defers: []
