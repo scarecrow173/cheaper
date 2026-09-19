@@ -47,7 +47,8 @@ relations:
 - Ollama `qwen3.5:4b` での bulk-read 実委譲測定（file tokens vs
   parent 受信 result tokens vs worker usage vs wall time）
 - cost break-even と非コスト要因（latency, false positive）の分析
-- DISC-034r05iHy2gdnpb598KIca・ADR-034r05iHrZUE6W4XOqUBih・EXP-0003 に記録し、DESIGN-034r05iHy2gdnoFHbdllXV の provisional
+- DISC-034r05iHy2gdnpb598KIca・ADR-034r05iHrZUE6W4XOqUBih・
+  `docs/impl/exp/bulk-read-delegation-benchmark.jsonl` に記録し、DESIGN-034r05iHy2gdnoFHbdllXV の provisional
   注記を更新
 
 ## Acceptance Criteria
@@ -59,5 +60,5 @@ relations:
 
 ## Done
 
-- DISC-034r05iHy2gdnpb598KIca (benchmark), ADR-034r05iHrZUE6W4XOqUBih (decision), EXP-0003 (experiment log)
+- DISC-034r05iHy2gdnpb598KIca (benchmark), ADR-034r05iHrZUE6W4XOqUBih (decision), `docs/impl/exp/bulk-read-delegation-benchmark.jsonl` (experiment log)
 - threshold 値自体は変更なし（provisional 8192 を確定）のためコード差分なし
