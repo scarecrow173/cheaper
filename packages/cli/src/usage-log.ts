@@ -22,6 +22,9 @@ export interface UsageLogRecord {
    * 旧 schema の record / count record には存在しない）。
    */
   savings?: WorkerSavings;
+  /** run record のみ。旧 schema の record には存在しない。 */
+  turns?: number;
+  toolCalls?: number;
   error?: { code: string };
   result?: { path?: string; tokens?: number; bytes?: number };
 }
@@ -69,6 +72,8 @@ export function buildUsageRecord(
       ok: true,
       model: env.meta.model,
       usage: env.meta.usage,
+      turns: env.meta.turns,
+      toolCalls: env.meta.toolCalls,
       // savings は runtime が提供したときだけ載せる（後方互換）
       ...(env.meta.savings ? { savings: env.meta.savings } : {}),
     };
@@ -83,6 +88,8 @@ export function buildUsageRecord(
     ok: false,
     model: env.meta.model,
     usage: env.meta.usage,
+    ...(env.meta.turns !== null ? { turns: env.meta.turns } : {}),
+    ...(env.meta.toolCalls !== null ? { toolCalls: env.meta.toolCalls } : {}),
     ...(env.meta.savings ? { savings: env.meta.savings } : {}),
     error: { code: env.error.code },
   };

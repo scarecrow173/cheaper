@@ -41,6 +41,8 @@ describe("buildUsageRecord", () => {
       durationMs: 42,
       model: { provider: "ollama", id: "qwen3.5:9b", tier: "low" },
       usage: runMeta.usage,
+      turns: 2,
+      toolCalls: 1,
     });
   });
 
