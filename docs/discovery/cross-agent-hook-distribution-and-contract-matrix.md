@@ -4,7 +4,7 @@ type: "discovery"
 status: "resolved"
 title: "Cross-agent hook distribution and per-agent hook contract matrix"
 created: "2026-09-17"
-updated: "2026-09-18"
+updated: "2026-09-19"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -47,7 +47,7 @@ metadata:
   discovery:
     question: "apm install が全 target へ deploy した pre_read_code hook は各 agent で機能するか。機能しない場合、native contract で pre-read blocking は実現可能か"
     scope: "本 repo への apm install 実 deploy 結果 + 各 agent 公式 hook ドキュメントの contract 調査"
-    outcome: "non-windsurf では pre_read_code 登録は documented contract 上 no-op（runtime loader 実機未検証。DESIGN-034r05iHy2gdnoFHbdllXV の想定通り）。Claude/Cursor/Copilot は adapter で実現可能、Codex は upstream gap で不可"
+    outcome: "non-windsurf では pre_read_code 登録は documented contract 上 no-op（runtime loader 実機未検証。DESIGN-034r05iHy2gdnoFHbdllXV の想定通り）。Claude/Cursor/Copilot は adapter で実現済み、Codex は file-read upstream gap により shell のみ対応（issue #43 で実装済み）"
 ---
 
 # DISC-034r05iHy2gdnpdai9KGpW: Cross-agent hook distribution and per-agent hook contract matrix
@@ -139,7 +139,17 @@ pre-read interception が実現可能か、の 2 点を確定する。
   **しない** — `read_file` / `grep` の gap は `openai/codex#18491`
   （open）、`list_dir` / `view_image` は `openai/codex#20204` が
   直接の evidence
-- 現状 upstream で pre-read interception は **不可能**
+- **2026-09-19 再検証（issue #43 / DISC-034rA43JiB611pUjLPA4yR）**:
+  `PreToolUse` は matcher group（`{matcher, hooks:[{type:"command",
+  command}]}`）で `.codex/hooks.json` に登録でき、APM がこの nested
+  shape を verbatim pass-through することを実測確認。shell
+  invocation（`tool_name:"Bash"`、`tool_input.command`）は intercept
+  可能になったため、Codex adapter は shell request までをカバーする。
+  file-read interception は read 系 tool が `PreToolUse` を emit
+  しない upstream gap が残存するため依然 **不可能**。hook 変更には
+  Codex の trust review が必要で、`hookSpecificOutput` deny の
+  runtime 解釈は実機未検証（unsupported field による hook failure
+  は tool call 継続 = fail-open 側に倒れる）
 
 #### Cursor
 
@@ -213,11 +223,11 @@ README・skill・spec 等へ複写しない（DRY — SPEC-034r05iHK8bA7gky93Dal
 
 | target | final classification | evidence |
 |---|---|---|
-| windsurf | **functional** | `apm-install.test.ts` — hook block 実動作確認済み（exit 2 + delegation guidance） |
-| claude | **deploys-but-nonfunctional (expected no-op)** | `apm-install-targets.test.ts` — `pre_read_code` を verbatim 登録。native event は `PreToolUse` + matcher `Read` であり `pre_read_code` は発火しない。`preToolUse` 登録は PascalCase `PreToolUse` に正規化され live になるが、copilot adapter は claude payload shape と不一致で全 exit 0 素通し（実質 no-op） |
-| cursor | **deploys-but-nonfunctional (expected no-op)** | 同上 — `pre_read_code` verbatim 登録。native event は `beforeReadFile`（`failClosed` 未指定時は fail-open） |
-| copilot | **functional（adapter 経由）。配布物は一部破損（`.json` 欠落、upstream 待ち）** | 同上 — `preToolUse` 登録が native に発火し `pre-read-code-copilot.js` が動作（stdin 注入 e2e で block/allow/never-nonzero を assert、generated config の `preToolUse` 登録も assert）。`.json` 全欠落で `--version` は exit 70、file-schema worker（bulk-read / code-write / doc-write）は `OUTPUT_SCHEMA_NOT_FOUND`（exit 3）で不動のまま（既知の制限、ADR-034r05iHrZUE6WizQ4LgPa option i で upstream 修正待ち + drift-signal assert 維持）。`count-tokens` は動作するため adapter 自体は `.json` 非依存 |
-| codex | **deploys-but-nonfunctional (expected no-op) かつ unsupported** | 同上 — file-read tool が `PreToolUse` を emit しない upstream gap（`read_file`/`grep` は openai/codex#18491、`list_dir`/`view_image` は #20204）。adapter 対象外 |
+| windsurf | **functional（file-read + shell seam）** | `apm-install.test.ts` — `pre_read_code` block 実動作確認済み（exit 2 + delegation guidance）。`pre_run_command` 登録を追加し shell invocation が canonical shell request へ到達（stdin 注入 e2e で assert） |
+| claude | **functional（adapter 経由）** | `apm-install-targets.test.ts` — `PreToolUse` に `matcher: "Read\|Bash\|PowerShell"` の nested group が `pre-read-code-pretooluse.js` へ live 登録。stdin 注入 e2e で Read deny / Bash allow / fail-open を assert。`pre_read_code` 等の foreign event は引き続き no-op |
+| cursor | **functional（adapter 経由）** | 同上 — `beforeReadFile` / `beforeShellExecution` が `pre-read-code-cursor.js` へ登録。stdin 注入 e2e で file-read deny（`{permission:"deny"}`）/ shell allow / schema 適合応答を assert |
+| copilot | **functional（adapter 経由）。配布物は一部破損（`.json` 欠落、upstream 待ち）** | 同上 — `preToolUse` 登録（matcher `view\|bash\|powershell\|shell`）が native に発火し `pre-read-code-copilot.js` が動作（stdin 注入 e2e で block/allow/never-nonzero/shell seam を assert）。`.json` 全欠落で `--version` は exit 70、file-schema worker（bulk-read / code-write / doc-write）は `OUTPUT_SCHEMA_NOT_FOUND`（exit 3）で不動のまま（既知の制限、ADR-034r05iHrZUE6WizQ4LgPa option i で upstream 修正待ち + drift-signal assert 維持）。`count-tokens` は動作するため adapter 自体は `.json` 非依存 |
+| codex | **shell-only functional（adapter 経由）。file-read は unsupported** | 同上 — `PreToolUse` nested group（`matcher: "Read\|Bash\|PowerShell"`）が `.codex/hooks.json` に verbatim deploy され、shell invocation は canonical shell request へ到達。file-read tool が `PreToolUse` を emit しない upstream gap（`read_file`/`grep` は openai/codex#18491、`list_dir`/`view_image` は #20204）は残存し file-read interception は不可。`hookSpecificOutput` deny の runtime 解釈は実機未検証 |
 | agent-skills | **N/A（skills-only）** | 同上 — 4 skill の `SKILL.md` のみ deploy され、hook bundle / hook config の不存在を assert |
 
 注: 「expected no-op」の分類は generated config の静的検証と各

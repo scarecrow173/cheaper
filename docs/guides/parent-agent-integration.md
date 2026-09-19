@@ -65,24 +65,39 @@ hook の動作は target の hook event 体系に依存する。
 
 - **Windsurf**: `pre_read_code` event が native で、read 前に
   hook が実行される。threshold 超過 file は block + bulk-read
-  への誘導メッセージが返る。
-- **Copilot**: `preToolUse` event 経由で adapter
-  （`pre-read-code-copilot.js`）が動作する。Copilot では非 0
-  exit が deny 扱いになるため、adapter は常に exit 0 で終了し、
-  threshold 超過または `FILE_TOO_LARGE` verdict の `view` tool
-  呼び出しだけを stdout の
-  `{"permissionDecision":"deny"}` で block する（ADR-034r05iHrZUE6WizQ4LgPa）。
-  既知の制限として、現行の APM は copilot target へ `.json`
-  asset を deploy しないため、file-schema worker（bulk-read /
-  code-write / doc-write）は upstream 修正待ちの間利用できない
+  への誘導メッセージが返る。`pre_run_command` event は shell
+  command を adapter が受け取る seam として登録済みで、現状は
+  常に allow（shell 内の file read 検出は別途実装）。
+- **Claude Code**: `PreToolUse`（`Read` / `Bash` / `PowerShell`
+  matcher）経由で adapter（`pre-read-code-pretooluse.js`）が
+  動作する。deny は stdout の `hookSpecificOutput.permissionDecision:
+  "deny"` JSON で返し、adapter は常に exit 0。
+- **Cursor**: `beforeReadFile` / `beforeShellExecution` event
+  経由で adapter（`pre-read-code-cursor.js`）が動作する。応答は
+  `{"permission":"deny"}` JSON（allow 経路でも
+  `{"permission":"allow"}` を emit して schema 適合を保つ）。
+- **Copilot**: `preToolUse` event（matcher `view|bash|powershell|
+  shell`）経由で adapter（`pre-read-code-copilot.js`）が動作
+  する。Copilot では非 0 exit が deny 扱いになるため、adapter
+  は常に exit 0 で終了し、threshold 超過または
+  `FILE_TOO_LARGE` verdict の `view` tool 呼び出しだけを
+  stdout の `{"permissionDecision":"deny"}` で block する
+  （ADR-034r05iHrZUE6WizQ4LgPa）。shell tool（`bash` /
+  `powershell` / `shell`）も canonical shell request へ到達する
+  seam として処理する（現状は常に allow）。既知の制限として、
+  現行の APM は copilot target へ `.json` asset を deploy
+  しないため、file-schema worker（bulk-read / code-write /
+  doc-write）は upstream 修正待ちの間利用できない
   （`count-tokens` と hook adapter は動作する）。
-- **その他 target**（Claude / Codex / Cursor 等）: hook 登録は
-  deploy されるが、`pre_read_code` event を発火しない。
-  Claude では `preToolUse` 登録が `PreToolUse` に正規化されて
-  発火し得るが、stdin shape が adapter の前提と異なるため常に
-  素通し（exit 0）となり、いずれも no-op として動作する
-  （登録は harmless、機能は無効）。target 固有の adapter 化は
-  今後の拡張余地（ADR-034r05iHrZUE6W9RDF0V73・DISC-034r05iHy2gdnpdai9KGpW）。
+- **Codex**: `PreToolUse`（`Read|Bash|PowerShell` matcher、
+  Claude と同一の nested group 登録）経由で adapter
+  （`pre-read-code-pretooluse.js`）が shell invocation を受け取る
+  seam として動作する。**file-read interception は unsupported**
+  — Codex の read 系 tool は `PreToolUse` を emit しない
+  upstream gap（openai/codex#18491・#20204）が残存する。
+- **その他 target**（agent-skills 等）: hook 登録は deploy されるが、
+  認識されない event 名（例: `pre_read_code`）の登録は no-op と
+  して扱われる（登録は harmless。DISC-034r05iHy2gdnpdai9KGpW）。
 
 skills（`cheaper-usage` 等）は target 非依存で機能する。
 

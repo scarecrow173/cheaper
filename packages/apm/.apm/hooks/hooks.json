@@ -7,10 +7,43 @@
         "show_output": false
       }
     ],
+    "pre_run_command": [
+      {
+        "command": "node ./pre-run-command.js \"./cli/bin/cheaper.mjs\"",
+        "powershell": "node ./pre-run-command.js \"./cli/bin/cheaper.mjs\"; exit $LASTEXITCODE",
+        "show_output": false
+      }
+    ],
     "preToolUse": [
       {
         "command": "node ./pre-read-code-copilot.js \"./cli/bin/cheaper.mjs\"",
         "powershell": "node ./pre-read-code-copilot.js \"./cli/bin/cheaper.mjs\"",
+        "show_output": false,
+        "matcher": "view|bash|powershell|shell"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read|Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./pre-read-code-pretooluse.js \"./cli/bin/cheaper.mjs\""
+          }
+        ]
+      }
+    ],
+    "beforeReadFile": [
+      {
+        "command": "node ./pre-read-code-cursor.js \"./cli/bin/cheaper.mjs\"",
+        "powershell": "node ./pre-read-code-cursor.js \"./cli/bin/cheaper.mjs\"",
+        "show_output": false
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "node ./pre-read-code-cursor.js \"./cli/bin/cheaper.mjs\"",
+        "powershell": "node ./pre-read-code-cursor.js \"./cli/bin/cheaper.mjs\"",
         "show_output": false
       }
     ]
