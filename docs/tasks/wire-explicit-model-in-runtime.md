@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rzWSt1O4qIT7hk0bnds"
 type: "task"
-status: "todo"
+status: "done"
 title: "Wire explicit model selection and meta in runtime-pi"
 created: "2026-09-19"
 updated: "2026-09-19"

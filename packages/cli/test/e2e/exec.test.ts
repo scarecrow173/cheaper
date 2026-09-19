@@ -49,7 +49,13 @@ describe("cheaper CLI e2e (execution via CHEAPER_TEST_FAKE_STREAM)", () => {
     expect(result.summary).toBe("workspace summary");
     expect(result.findings).toHaveLength(1);
     const meta = e.meta as EnvelopeMeta;
-    expect(meta.model).toEqual({ provider: "cheaper-fake", id: "fake-model", tier: "low" });
+    expect(meta.model).toEqual({
+      provider: "cheaper-fake",
+      id: "fake-model",
+      tier: "low",
+      selection: "tier",
+      tierSource: "explicit-override",
+    });
     expect(meta.changes?.files).toEqual([]);
     expect(meta.changes?.totals).toEqual({ files: 0, linesAdded: 0, linesDeleted: 0 });
     expect(r.stderr).toContain("model: cheaper-fake/fake-model (tier low)");

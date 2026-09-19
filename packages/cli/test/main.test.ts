@@ -46,7 +46,7 @@ function makeIo(stdinText = '{"task":"x"}', env: NodeJS.ProcessEnv = {}, isTTY =
 }
 
 const meta: WorkerRunMeta = {
-  model: { provider: "p", id: "m", tier: "low" },
+  model: { provider: "p", id: "m", tier: "low", selection: "tier", tierSource: "auto" },
   usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, totalTokens: 3, costUsd: 0 },
   turns: 1,
   toolCalls: 0,
@@ -144,7 +144,13 @@ describe("runCli", () => {
     const env = JSON.parse(out());
     expect(env).toMatchObject({ schemaVersion: 1, ok: true, worker: "bulk-reader" });
     expect(env.result).toEqual({ ok: true });
-    expect(env.meta.model).toEqual({ provider: "p", id: "m", tier: "low" });
+    expect(env.meta.model).toEqual({
+      provider: "p",
+      id: "m",
+      tier: "low",
+      selection: "tier",
+      tierSource: "auto",
+    });
     expect(err()).toBe("model: p/m (tier low)\n");
     expect(seen?.worker.name).toBe("bulk-reader");
     expect(seen?.policy.execution.timeoutMs).toBe(120_000);

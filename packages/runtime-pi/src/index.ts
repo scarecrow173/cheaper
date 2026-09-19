@@ -26,6 +26,7 @@ export {
   createModelRuntime,
   type ModelCatalog,
   type ResolvedPiModel,
+  resolveExplicitPiModel,
   resolvePiModel,
   resolvePiStatePaths,
   toModelInfo,
