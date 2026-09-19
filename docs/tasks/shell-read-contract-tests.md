@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rBt3LLoIUcFHjk4gRlI"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Shell-read blocking contract tests"
 created: "2026-09-20"
 updated: "2026-09-20"
@@ -71,11 +71,12 @@ override、file-read との verdict 共有）を網羅する。
 
 ## Done When
 
-- [ ] issue #42 の test リストに対応する case が全て存在する
-- [ ] file-read と shell-read が同一 file に同一 verdict を返す
+- [x] issue #42 の test リストに対応する case が全て存在する
+- [x] file-read と shell-read が同一 file に同一 verdict を返す
       regression test がある
 
 ## Verification
 
-- [ ] `pnpm --filter @cheaper/cli test -- cross-agent-routing-adapters`
-      が全件 pass
+- [x] `mise exec -- pnpm --filter cheaper exec vitest run
+      test/e2e/cross-agent-routing-adapters.test.ts` が全件 pass
+      （31 tests、2026-09-20 実測）

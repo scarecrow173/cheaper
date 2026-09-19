@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rBt4e20Wrlc3FH3NQWd"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Shell-read docs and final verification"
 created: "2026-09-20"
 updated: "2026-09-20"
