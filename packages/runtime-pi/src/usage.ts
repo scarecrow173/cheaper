@@ -9,6 +9,19 @@ export interface WorkerUsage {
   costUsd: number;
 }
 
+/**
+ * 親コンテキストからの offload 実測（実際値。推定ではない）。
+ * - `sourceTokens`: 全 tool output text の canonical token 和
+ * - `returnedTokens`: 成功時は `JSON.stringify(result)` の token 数。
+ *   失敗で result が無いときは 0
+ * - `avoidedContextTokens`: `max(0, sourceTokens - returnedTokens)`
+ */
+export interface WorkerSavings {
+  sourceTokens: number;
+  returnedTokens: number;
+  avoidedContextTokens: number;
+}
+
 export interface UsageSnapshot {
   usage: WorkerUsage;
   turns: number;

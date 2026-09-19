@@ -56,6 +56,14 @@ export const TOKENIZER_IDENTITY: TokenizerIdentity = {
 // BPE rank table は module scope で 1 度だけロードする。
 const encoding = getEncoding(TOKENIZER_NAME);
 
+/**
+ * 任意の文字列の canonical token 数を返す（o200k_base）。
+ * tool output・result JSON 等、file 以外の計測用。
+ */
+export function countTextTokens(text: string): number {
+  return encoding.encode(text).length;
+}
+
 export interface CountFileTokensOptions {
   /** canonical 化済み workspace root。 */
   root: string;
