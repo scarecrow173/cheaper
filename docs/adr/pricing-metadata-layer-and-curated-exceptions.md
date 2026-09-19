@@ -28,7 +28,10 @@ relations:
   related:
     - "model-tier-model-resolver.md"
     - "usage-jsonl-contract-canonical.md"
+    - "price-based-percentile-auto-tier-classification.md"
     - "../specs/model-pricing-catalog.md"
+    - "../specs/auto-tier-classification.md"
+    - "../discovery/auto-tier-classification-effective-cost.md"
     - "../designs/model-pricing-catalog-and-curated-exceptions.md"
   refines: []
   refined-by: []

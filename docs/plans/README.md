@@ -21,7 +21,7 @@ Directory: `docs/plans`
 | PLAN-034r6qeRCCYRZy0etnrPfy | inject explicit eval budget into large-fixture grep tests | completed | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | PLAN-034r05iHE1FbkoSqLEHZrV | Harden repair abort grace and provider failure normalization | completed | [harden-repair-abort-grace-and-provider-failure-normalization.md](./harden-repair-abort-grace-and-provider-failure-normalization.md) |
 | PLAN-034r05iHE1Fbkp0Gokdq8Z | Huge-file byte cap guard and fail-closed hook | completed | [huge-file-byte-cap-guard-and-fail-closed-hook.md](./huge-file-byte-cap-guard-and-fail-closed-hook.md) |
-| PLAN-eDDZBS6ncoMf6TOdM7tDSW | implement auto tier classification | approved | [implement-auto-tier-classification.md](./implement-auto-tier-classification.md) |
+| PLAN-eDDZBS6ncoMf6TOdM7tDSW | implement auto tier classification | completed | [implement-auto-tier-classification.md](./implement-auto-tier-classification.md) |
 | PLAN-034r05iHy2gdnpJFiMWhkY | Implement cheaper CLI, built-in workers and end-to-end verification | completed | [implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md](./implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md) |
 | PLAN-034r05iHy2gdnpIrX0mTIb | Implement @cheaper/runtime-pi execution engine and sandboxed tools | completed | [implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md](./implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md) |
 | PLAN-034rzUgf26bzSEwLr1L6Pl | implement model pricing catalog and curated exceptions | approved | [implement-model-pricing-catalog.md](./implement-model-pricing-catalog.md) |

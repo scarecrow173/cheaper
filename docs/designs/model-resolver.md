@@ -25,6 +25,8 @@ relations:
   related:
     - "worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md"
     - "pi-execution-engine.md"
+    - "auto-tier-classification.md"
+    - "../discovery/auto-tier-classification-effective-cost.md"
   refines: []
   refined-by: []
   derives-from:
