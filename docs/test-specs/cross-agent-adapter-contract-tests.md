@@ -32,6 +32,9 @@ relations:
   verifies:
     - "docs/specs/cross-agent-native-routing-adapters-over-apm-distribution.md"
     - "docs/designs/cross-agent-native-routing-adapter-architecture.md"
+    - "docs/tasks/shared-routing-policy-module-and-windsurf-adapter-refactor.md"
+    - "docs/tasks/new-adapter-scripts-and-hooks-json-event-registration.md"
+    - "docs/tasks/adapter-contract-tests-and-apm-install-e2e-assertions.md"
   verified-by: []
   references: []
   defers: []
