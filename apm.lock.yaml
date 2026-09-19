@@ -1,11 +1,11 @@
 lockfile_version: '1'
-generated_at: '2026-09-19T12:26:49.368965+00:00'
+generated_at: '2026-09-19T12:59:06.081510+00:00'
 apm_version: 0.28.0
 dependencies:
 - repo_url: scarecrow173/apm-packages
   name: basic-dev-foundation
   host: github.com
-  resolved_commit: 52f894c27ae812846d3606df12bed0eb034c29fe
+  resolved_commit: 559ac447c4937cdf53d71d043d8b1142bb6fd74c
   resolved_ref: main
   version: 0.1.0
   virtual_path: packages/basic-dev-foundation
@@ -16,7 +16,7 @@ dependencies:
 - repo_url: scarecrow173/apm-packages
   name: doc-driven-dev
   host: github.com
-  resolved_commit: 52f894c27ae812846d3606df12bed0eb034c29fe
+  resolved_commit: 559ac447c4937cdf53d71d043d8b1142bb6fd74c
   resolved_ref: main
   version: 0.1.0
   virtual_path: packages/doc-driven-dev
@@ -513,8 +513,8 @@ dependencies:
     .agents/skills/skill-discovery-protocol/assets/adapters/general.yaml: sha256:7bdfa2c3ec76623f66cb40c79f49035ce50ff66019432a6cacb487eb1a47116d
     .agents/skills/skill-discovery-protocol/docs/migration.ja.md: sha256:1df1fa134d88def38a597d40122e683eddb42ed1b9870fee5c7c215e537aeb3d
     .agents/skills/skill-discovery-protocol/docs/migration.md: sha256:d5d46f8ba87eec7d53d8b73b45144654f74b7f920b176766e0323439dfe7e728
-    .agents/skills/skill-discovery-protocol/references/cli-reference.ja.md: sha256:09f12a9a7ffefbd77b397b4ff32fcdf104b8a0e43f208d56a65f7130fe0b4b91
-    .agents/skills/skill-discovery-protocol/references/cli-reference.md: sha256:b6aed3afb14fca923be52d202d22d6006cd1b53e9067f293e93f793fc1afc19d
+    .agents/skills/skill-discovery-protocol/references/cli-reference.ja.md: sha256:227db060427b590147541a9adde50d6ae8230ea6ae37e4b6acfd3f61bf26b659
+    .agents/skills/skill-discovery-protocol/references/cli-reference.md: sha256:b433ccede2a23a31803d45662542d59333250307755ed3474b8b523e1b628b12
     .agents/skills/skill-discovery-protocol/references/gate-spec.ja.md: sha256:405873bc08b6c0074d96742fc5705b7bf29be920791f55d1d5b3d2e36742729d
     .agents/skills/skill-discovery-protocol/references/gate-spec.md: sha256:38c29c7cd98f126c83a75a580a9220ab9ee49d7b4d520167e38a269521883bb4
     .agents/skills/skill-discovery-protocol/references/operation-policy.ja.md: sha256:f3ffec7e3d080c2076936219b58542a61cf2c1d22ad5d151aa84c7c93d34d2ce
@@ -679,8 +679,8 @@ dependencies:
     .claude/skills/skill-discovery-protocol/assets/adapters/general.yaml: sha256:7bdfa2c3ec76623f66cb40c79f49035ce50ff66019432a6cacb487eb1a47116d
     .claude/skills/skill-discovery-protocol/docs/migration.ja.md: sha256:1df1fa134d88def38a597d40122e683eddb42ed1b9870fee5c7c215e537aeb3d
     .claude/skills/skill-discovery-protocol/docs/migration.md: sha256:d5d46f8ba87eec7d53d8b73b45144654f74b7f920b176766e0323439dfe7e728
-    .claude/skills/skill-discovery-protocol/references/cli-reference.ja.md: sha256:09f12a9a7ffefbd77b397b4ff32fcdf104b8a0e43f208d56a65f7130fe0b4b91
-    .claude/skills/skill-discovery-protocol/references/cli-reference.md: sha256:b6aed3afb14fca923be52d202d22d6006cd1b53e9067f293e93f793fc1afc19d
+    .claude/skills/skill-discovery-protocol/references/cli-reference.ja.md: sha256:227db060427b590147541a9adde50d6ae8230ea6ae37e4b6acfd3f61bf26b659
+    .claude/skills/skill-discovery-protocol/references/cli-reference.md: sha256:b433ccede2a23a31803d45662542d59333250307755ed3474b8b523e1b628b12
     .claude/skills/skill-discovery-protocol/references/gate-spec.ja.md: sha256:405873bc08b6c0074d96742fc5705b7bf29be920791f55d1d5b3d2e36742729d
     .claude/skills/skill-discovery-protocol/references/gate-spec.md: sha256:38c29c7cd98f126c83a75a580a9220ab9ee49d7b4d520167e38a269521883bb4
     .claude/skills/skill-discovery-protocol/references/operation-policy.ja.md: sha256:f3ffec7e3d080c2076936219b58542a61cf2c1d22ad5d151aa84c7c93d34d2ce
@@ -722,23 +722,23 @@ dependencies:
     .claude/skills/test-spec-doc/references/test-spec-conventions.ja.md: sha256:1ce8adffecacad2122d3daff83a5c29a0e48408aec62bee21e6504dc8bdc6252
     .claude/skills/test-spec-doc/references/test-spec-conventions.md: sha256:0972840a281a70137611561cfc33e7ca55955b80fc4cd7b7ecdfbb6b000b9b7d
     .claude/skills/test-spec-doc/scripts/new_test_spec.js: sha256:69d852f640b276b913cb0a58f0704137b22f53ada3ff0b73e28b8c8585e5eb0f
-  content_hash: sha256:e4929696f6548e5486c436b56f76bdb7f8733631bc5c5b5979d7d940145ac7d9
+  content_hash: sha256:b7ba623d0070b15d7fbec673c0abf96069d84f0839fe3cf3beaa91f52ed344f2
   declared_license: MIT
 - repo_url: scarecrow173/apm-packages
   name: recommended-dev-suite
   host: github.com
-  resolved_commit: 52f894c27ae812846d3606df12bed0eb034c29fe
+  resolved_commit: 559ac447c4937cdf53d71d043d8b1142bb6fd74c
   resolved_ref: main
   version: 0.1.0
   virtual_path: packages/recommended-dev-suite
   is_virtual: true
   package_type: apm_package
-  content_hash: sha256:c3657e949115ac8fa7143cf1dbcfaebc628a9fd64158e1790d73070554f86687
+  content_hash: sha256:3bf854cf7ebb9219d6e681eda38d913137c5124e3ba82e46a1fad613e4afe0f4
   declared_license: MIT
 - repo_url: scarecrow173/apm-packages
   name: steer-enterprise-web-research
   host: github.com
-  resolved_commit: 52f894c27ae812846d3606df12bed0eb034c29fe
+  resolved_commit: 559ac447c4937cdf53d71d043d8b1142bb6fd74c
   resolved_ref: main
   version: 0.1.0
   virtual_path: packages/steer-enterprise-web-research
@@ -3074,7 +3074,7 @@ deployments:
   owners:
   - scarecrow173/apm-packages/packages/doc-driven-dev
   active_owner: scarecrow173/apm-packages/packages/doc-driven-dev
-  content_hash: sha256:09f12a9a7ffefbd77b397b4ff32fcdf104b8a0e43f208d56a65f7130fe0b4b91
+  content_hash: sha256:227db060427b590147541a9adde50d6ae8230ea6ae37e4b6acfd3f61bf26b659
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/skill-discovery-protocol/references/cli-reference.md
@@ -3083,7 +3083,7 @@ deployments:
   owners:
   - scarecrow173/apm-packages/packages/doc-driven-dev
   active_owner: scarecrow173/apm-packages/packages/doc-driven-dev
-  content_hash: sha256:b6aed3afb14fca923be52d202d22d6006cd1b53e9067f293e93f793fc1afc19d
+  content_hash: sha256:b433ccede2a23a31803d45662542d59333250307755ed3474b8b523e1b628b12
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/skill-discovery-protocol/references/gate-spec.ja.md
@@ -5585,7 +5585,7 @@ deployments:
   owners:
   - scarecrow173/apm-packages/packages/doc-driven-dev
   active_owner: scarecrow173/apm-packages/packages/doc-driven-dev
-  content_hash: sha256:09f12a9a7ffefbd77b397b4ff32fcdf104b8a0e43f208d56a65f7130fe0b4b91
+  content_hash: sha256:227db060427b590147541a9adde50d6ae8230ea6ae37e4b6acfd3f61bf26b659
 - kind: project-relative
   target: claude
   value: .claude/skills/skill-discovery-protocol/references/cli-reference.md
@@ -5594,7 +5594,7 @@ deployments:
   owners:
   - scarecrow173/apm-packages/packages/doc-driven-dev
   active_owner: scarecrow173/apm-packages/packages/doc-driven-dev
-  content_hash: sha256:b6aed3afb14fca923be52d202d22d6006cd1b53e9067f293e93f793fc1afc19d
+  content_hash: sha256:b433ccede2a23a31803d45662542d59333250307755ed3474b8b523e1b628b12
 - kind: project-relative
   target: claude
   value: .claude/skills/skill-discovery-protocol/references/gate-spec.ja.md
