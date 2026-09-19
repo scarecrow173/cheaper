@@ -39,6 +39,10 @@ backend = "pipx:apm-cli"
 [tools."pipx:apm-cli".options]
 uvx_args = "--prerelease allow"
 
+[[tools."pipx:serena-agent"]]
+version = "1.7.0"
+backend = "pipx:serena-agent"
+
 [[tools.pnpm]]
 version = "11.26.0"
 backend = "aqua:pnpm/pnpm"
