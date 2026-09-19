@@ -30,9 +30,9 @@ relations:
   derives-from: []
   derived-by: []
   verifies: []
-  verified-by:
+  verified-by: []
+  references:
     - "docs/test-specs/cross-agent-adapter-contract-tests.md"
-  references: []
   defers: []
   deferred-by: []
 ---
