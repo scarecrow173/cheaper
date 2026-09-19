@@ -1,11 +1,11 @@
 lockfile_version: '1'
-generated_at: '2026-09-19T12:26:49.368965+00:00'
+generated_at: '2026-09-19T12:43:45.901881+00:00'
 apm_version: 0.28.0
 dependencies:
 - repo_url: scarecrow173/apm-packages
   name: basic-dev-foundation
   host: github.com
-  resolved_commit: 52f894c27ae812846d3606df12bed0eb034c29fe
+  resolved_commit: bb34d513b57a638a60eeab7c5df1a07afb94bed1
   resolved_ref: main
   version: 0.1.0
   virtual_path: packages/basic-dev-foundation
@@ -16,7 +16,7 @@ dependencies:
 - repo_url: scarecrow173/apm-packages
   name: doc-driven-dev
   host: github.com
-  resolved_commit: 52f894c27ae812846d3606df12bed0eb034c29fe
+  resolved_commit: bb34d513b57a638a60eeab7c5df1a07afb94bed1
   resolved_ref: main
   version: 0.1.0
   virtual_path: packages/doc-driven-dev
@@ -727,18 +727,18 @@ dependencies:
 - repo_url: scarecrow173/apm-packages
   name: recommended-dev-suite
   host: github.com
-  resolved_commit: 52f894c27ae812846d3606df12bed0eb034c29fe
+  resolved_commit: bb34d513b57a638a60eeab7c5df1a07afb94bed1
   resolved_ref: main
   version: 0.1.0
   virtual_path: packages/recommended-dev-suite
   is_virtual: true
   package_type: apm_package
-  content_hash: sha256:c3657e949115ac8fa7143cf1dbcfaebc628a9fd64158e1790d73070554f86687
+  content_hash: sha256:3bf854cf7ebb9219d6e681eda38d913137c5124e3ba82e46a1fad613e4afe0f4
   declared_license: MIT
 - repo_url: scarecrow173/apm-packages
   name: steer-enterprise-web-research
   host: github.com
-  resolved_commit: 52f894c27ae812846d3606df12bed0eb034c29fe
+  resolved_commit: bb34d513b57a638a60eeab7c5df1a07afb94bed1
   resolved_ref: main
   version: 0.1.0
   virtual_path: packages/steer-enterprise-web-research
