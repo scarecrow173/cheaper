@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034rzPZHq5JFQ3CVZCVLJo"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "Usage savings telemetry — implementation plan"
 test-spec-skip: "Verified by unit tests and fake-stream e2e assertions inside the implementation tasks; no separate test-spec artifact needed."
 created: "2026-09-19"

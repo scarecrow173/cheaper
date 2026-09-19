@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rzRugER0y7cQ2tlWjPp"
 type: "task"
-status: "todo"
+status: "done"
 title: "Extend usage.jsonl run record with savings section"
 created: "2026-09-19"
 updated: "2026-09-19"
@@ -85,11 +85,11 @@ option i）。
 
 ## Done When
 
-- [ ] run record に `savings` が optional field として記録される
-- [ ] 既存 record field・記録対象条件が不変
-- [ ] unit test pass
+- [x] run record に `savings` が optional field として記録される
+- [x] 既存 record field・記録対象条件が不変
+- [x] unit test pass
 
 ## Verification
 
-- [ ] `vitest run test/usage-log.test.ts` pass
-- [ ] `pnpm typecheck`・`pnpm lint` pass
+- [x] `vitest run test/usage-log.test.ts` pass
+- [x] `pnpm typecheck`・`pnpm lint` pass

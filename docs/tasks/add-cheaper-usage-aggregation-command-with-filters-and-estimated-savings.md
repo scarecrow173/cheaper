@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rzRuCuCgZ08BmHTCqgz"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add cheaper usage aggregation command with filters and estimated savings"
 created: "2026-09-19"
 updated: "2026-09-19"
@@ -126,12 +126,12 @@ estimated savings を別枠で算出する。
 
 ## Done When
 
-- [ ] `cheaper usage` が filter 付きで集計を出力する
-- [ ] estimated は 3 条件（compare-model・pricing entry・非
+- [x] `cheaper usage` が filter 付きで集計を出力する
+- [x] estimated は 3 条件（compare-model・pricing entry・非
       stale）揃ったときのみ出力される
-- [ ] unit test pass・typecheck・lint pass
+- [x] unit test pass・typecheck・lint pass
 
 ## Verification
 
-- [ ] `pnpm --filter @cheaper/cli test` pass
-- [ ] `pnpm typecheck`・`pnpm lint` pass
+- [x] `pnpm --filter @cheaper/cli test` pass
+- [x] `pnpm typecheck`・`pnpm lint` pass

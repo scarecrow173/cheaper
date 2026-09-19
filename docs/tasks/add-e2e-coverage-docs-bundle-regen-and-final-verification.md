@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rzRv1K2fmi2Igbdu5HG"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add e2e coverage, docs, bundle regen and final verification"
 created: "2026-09-19"
 updated: "2026-09-19"
@@ -89,13 +89,13 @@ e2e 検証・docs・bundle 再生成・最終検証を行う仕上げ task。
 
 ## Done When
 
-- [ ] fake-stream e2e で `meta.savings`・record `savings` を
+- [x] fake-stream e2e で `meta.savings`・record `savings` を
       assert できる
-- [ ] `cheaper usage` e2e が pass
-- [ ] docs に指標の定義と限界が記載される
-- [ ] `mise run check` pass
+- [x] `cheaper usage` e2e が pass
+- [x] docs に指標の定義と限界が記載される
+- [x] `mise run check` pass
 
 ## Verification
 
-- [ ] `pnpm test` 全 pass
-- [ ] `mise run check` pass
+- [x] `pnpm test` 全 pass
+- [x] `mise run check` pass

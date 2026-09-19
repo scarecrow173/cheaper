@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rzRtRHEEtyWvIINcDnL"
 type: "task"
-status: "todo"
+status: "done"
 title: "Measure tool output tokens and expose meta.savings"
 created: "2026-09-19"
 updated: "2026-09-19"
@@ -100,12 +100,12 @@ DESIGN-034rzNZ2BZGTPuOwHmyqh4 に従い、tool output の token 計測
 
 ## Done When
 
-- [ ] `countTextTokens` が core から export される
-- [ ] `meta.savings` が success/error 双方で組み立てられる
-- [ ] unit test pass・typecheck・lint pass
+- [x] `countTextTokens` が core から export される
+- [x] `meta.savings` が success/error 双方で組み立てられる
+- [x] unit test pass・typecheck・lint pass
 
 ## Verification
 
-- [ ] `pnpm --filter @cheaper/runtime-pi test` pass
-- [ ] `pnpm --filter @cheaper/core test` pass
-- [ ] `pnpm typecheck`・`pnpm lint` pass
+- [x] `pnpm --filter @cheaper/runtime-pi test` pass
+- [x] `pnpm --filter @cheaper/core test` pass
+- [x] `pnpm typecheck`・`pnpm lint` pass

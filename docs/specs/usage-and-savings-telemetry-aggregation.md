@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034rzGnCaRQc5ceI95lf5i"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "Usage and savings telemetry aggregation"
 created: "2026-09-19"
 updated: "2026-09-19"

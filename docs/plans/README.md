@@ -35,7 +35,7 @@ Directory: `docs/plans`
 | PLAN-000004taRcf5XDevo8jYJz | distributed skill / parent-agent guide sync — implementation plan | completed | [synchronize-distributed-skill-and-parent-agent-guide.md](./synchronize-distributed-skill-and-parent-agent-guide.md) |
 | PLAN-034r05iHE1Fbkp9wtiAJ7A | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | PLAN-034r2puWPUDxxDyfTSffZR | Align usage.jsonl recording-scope docs — implementation plan | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
-| PLAN-034rzPZHq5JFQ3CVZCVLJo | Usage savings telemetry — implementation plan | in-progress | [usage-savings-telemetry-implementation-plan.md](./usage-savings-telemetry-implementation-plan.md) |
+| PLAN-034rzPZHq5JFQ3CVZCVLJo | Usage savings telemetry — implementation plan | completed | [usage-savings-telemetry-implementation-plan.md](./usage-savings-telemetry-implementation-plan.md) |
 | PLAN-034r05iHE1FbkpeFEXECDx | User-facing documentation IA — implementation plan | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | PLAN-034r05iHy2gdnpLvJw9CNY | Verify cheaper real-provider path with Ollama on Docker | completed | [verify-cheaper-real-provider-path-with-ollama-on-docker.md](./verify-cheaper-real-provider-path-with-ollama-on-docker.md) |
 | PLAN-034r05iHE1FbkoYP7AZgHF | Write-scope enforcement and privacy deny list | completed | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |
