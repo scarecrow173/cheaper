@@ -215,3 +215,66 @@ describe("count-tokens", () => {
     );
   });
 });
+
+describe("usage", () => {
+  it("parses bare usage with defaults", () => {
+    expect(parseCliArgs(["usage"])).toEqual({
+      kind: "usage",
+      since: undefined,
+      worker: undefined,
+      provider: undefined,
+      model: undefined,
+      compareModel: undefined,
+      format: "json",
+      quiet: false,
+    });
+  });
+
+  it("parses all usage filters", () => {
+    const r = parseCliArgs([
+      "usage",
+      "--since",
+      "24h",
+      "--worker",
+      "bulk-reader",
+      "--provider",
+      "ollama",
+      "--model",
+      "ollama/qwen3.5:9b",
+      "--compare-model",
+      "openai/gpt-5",
+      "--format",
+      "text",
+    ]);
+    expect(r).toEqual({
+      kind: "usage",
+      since: "24h",
+      worker: "bulk-reader",
+      provider: "ollama",
+      model: "ollama/qwen3.5:9b",
+      compareModel: "openai/gpt-5",
+      format: "text",
+      quiet: false,
+    });
+  });
+
+  it("rejects extra positionals and worker-run/auth options", () => {
+    expect(codeOf(() => parseCliArgs(["usage", "extra"]))).toBe("INVALID_REQUEST");
+    expect(codeOf(() => parseCliArgs(["usage", "--input", "x.json"]))).toBe("INVALID_REQUEST");
+    expect(codeOf(() => parseCliArgs(["usage", "--timeout", "30s"]))).toBe("INVALID_REQUEST");
+    expect(codeOf(() => parseCliArgs(["usage", "--worker-file", "w.md"]))).toBe("INVALID_REQUEST");
+    expect(codeOf(() => parseCliArgs(["usage", "--method", "device"]))).toBe("INVALID_REQUEST");
+  });
+
+  it("rejects usage filters on other commands", () => {
+    expect(codeOf(() => parseCliArgs(["run", "bulk-reader", "--since", "1h"]))).toBe(
+      "INVALID_REQUEST",
+    );
+    expect(codeOf(() => parseCliArgs(["count-tokens", "a.ts", "--worker", "w"]))).toBe(
+      "INVALID_REQUEST",
+    );
+    expect(codeOf(() => parseCliArgs(["auth", "status", "--provider", "openai"]))).toBe(
+      "INVALID_REQUEST",
+    );
+  });
+});

@@ -27,6 +27,7 @@ relations:
   related:
     - "../designs/cli-contract-envelope-exit-codes.md"
     - "../impl/ir/run-real-provider-smoke-test-with-ollama.md"
+    - "./usage-and-savings-telemetry-aggregation.md"
   refines: []
   refined-by:
     - "./usage-log-recording-scope-docs.md"

@@ -11,6 +11,7 @@ import { type ToolBudget, wrapToolBudget } from "./budget.js";
 import { createCountTokensTool } from "./count-tokens.js";
 import { createFindTool } from "./find.js";
 import { createGrepTool } from "./grep.js";
+import { type ToolMeter, wrapToolMeter } from "./meter.js";
 import { createEditOperations, createLsOperations, createWriteOperations } from "./operations.js";
 import { createReadTool } from "./read.js";
 
@@ -36,6 +37,8 @@ export interface SandboxedTools {
   /** session.tools allowlist に渡す tool 名。 */
   toolNames: string[];
   budget: ToolBudget;
+  /** tool output の token 集計（meta.savings.sourceTokens の供給元）。 */
+  meter: ToolMeter;
 }
 
 /**
@@ -93,9 +96,16 @@ export function createSandboxedTools(opts: SandboxedToolsOptions): SandboxedTool
       }
     }
   });
-  const budgeted = wrapToolBudget(tools, {
+  // meter は budget 内側: budget を通過した call の成功 output のみ計測する。
+  const metered = wrapToolMeter(tools);
+  const budgeted = wrapToolBudget(metered.tools, {
     maxToolCalls: opts.maxToolCalls,
     onLimit: opts.onLimit,
   });
-  return { tools: budgeted.tools, toolNames: tools.map((t) => t.name), budget: budgeted.budget };
+  return {
+    tools: budgeted.tools,
+    toolNames: tools.map((t) => t.name),
+    budget: budgeted.budget,
+    meter: metered.meter,
+  };
 }

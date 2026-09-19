@@ -168,6 +168,24 @@ export async function validateWorkerDefinition(
   return def;
 }
 
+/** workspace を mutate しうる tool。直接比較可否の判定に使う。 */
+const MUTATING_TOOL_NAMES: ReadonlySet<ToolName> = new Set(["write", "edit"]);
+
+/**
+ * measured offload（`savings`）の source↔returned が「親 model の
+ * 直接実行」と比較可能な workload の worker か（SPEC-034rzGnCaRQc5ceI95lf5i
+ * requirement 2）。write 系 tool または `writeScope` を持つ mutation 系
+ * worker（code-writer / doc-writer 等）では、返却 result が ingest 内容の
+ * 圧縮表現にならないため直接比較は成立せず false を返す。
+ * read-only worker（bulk-reader 等）のみ true。
+ */
+export function isDirectlyComparableWorker(worker: WorkerDefinition): boolean {
+  return (
+    worker.cheaper.writeScope === undefined &&
+    !worker.tools.some((tool) => MUTATING_TOOL_NAMES.has(tool))
+  );
+}
+
 export function validateWorkerInput(def: WorkerDefinition, input: unknown): void {
   if (def.inputSchema === undefined) return;
   const result = def.inputSchema.validate(input);
