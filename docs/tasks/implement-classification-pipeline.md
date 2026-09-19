@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rzWJcbIzVxc1Lhk5bxB"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement classification pipeline and explicit model resolution"
 created: "2026-09-19"
 updated: "2026-09-19"

@@ -34,7 +34,10 @@ relations:
   derived-by:
     - "../designs/model-pricing-catalog-and-curated-exceptions.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/model-tier-classification-pipeline.md"
+    - "../test-specs/model-exclude-and-explicit-selection.md"
+    - "../test-specs/pricing-metadata-and-models-command.md"
   references: []
   defers: []
   deferred-by: []

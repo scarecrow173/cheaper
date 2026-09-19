@@ -1,0 +1,83 @@
+---
+id: "IMPL-034rAiKtIOGy4Ja8gzLN0C"
+type: "impl"
+status: "completed"
+title: "Implement classification pipeline and explicit resolver"
+created: "2026-09-19"
+updated: "2026-09-19"
+owners: []
+relations:
+  source: []
+  changes:
+    added: []
+    modified: []
+    deleted: []
+    renamed: []
+    moved: []
+    generated: []
+  implements:
+    - "docs/tasks/implement-classification-pipeline.md"
+  implemented-by: []
+  depends-on: []
+  blocks: []
+  supersedes: []
+  superseded-by: []
+  related: []
+  refines: []
+  refined-by: []
+  derives-from: []
+  derived-by: []
+  verifies: []
+  verified-by: []
+  references: []
+  defers: []
+  deferred-by: []
+metadata:
+  experiments:
+    adopted: []
+    rejected: []
+---
+
+# Implement classification pipeline and explicit resolver
+
+## Summary
+
+`classifyModel` を `Classification{tier,source}` を返す pipeline に変更し、regex の exhaustive 分類表を削除。`resolveModel` に exclude 適用・`tierSource`/`pricing`/`selection` 返却を追加し、`resolveExplicitModel` を新設した。
+
+## Context
+
+issue #45 / `docs/tasks/`・`docs/plans/implement-model-pricing-catalog.md`・`docs/designs/model-pricing-catalog-and-curated-exceptions.md` に従う。
+
+## Implementation
+
+### Changes
+
+- `src/model/classify.ts`: `TierSource`（explicit-override/curated-exception/auto/unclassified）・`BUILTIN_TABLE` 削除・priority `overrides > exceptions > auto heuristic > unclassified(medium)`・interim auto は `autoClassify` seam に隔離（#46 が差し替え）
+- `src/model/resolve.ts`: exclude を candidate set から先に除去（`isExcludedModel`）、`ResolvedModel` に `tierSource`/`pricing?`/`selection`、新規 `resolveExplicitModel`（exclude→POLICY_VIOLATION/model-excluded、catalog 不在→MODEL_TIER_UNAVAILABLE、effective tier>maxTier→POLICY_VIOLATION/model-exceeds-max-tier）
+
+### Decisions During Implementation
+
+- unclassified の effective tier は従来不変条件どおり medium、`source` で識別可能にした
+- `classifyModel` の返り値を `Classification` に変更（呼び出し側は resolve.ts のみで影響小）
+
+## Related Experiments
+
+### Adopted
+
+<!-- Record adopted experiment logs and why they were adopted. -->
+
+### Rejected
+
+<!-- Record rejected experiment logs and why they were rejected. -->
+
+## Validation
+
+`pnpm -F @cheaper/core test`・`pnpm -r build` 全 pass
+
+## Risks
+
+<!-- Record remaining risks. -->
+
+## Follow-ups
+
+<!-- Record follow-up tasks or next actions. -->

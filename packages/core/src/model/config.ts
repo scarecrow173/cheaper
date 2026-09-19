@@ -11,6 +11,8 @@ export interface ModelConfig {
   overrides: Record<string, Tier>;
   /** tier → ["<provider>/<modelId>" | "<provider>/*"] */
   preferences: Partial<Record<Tier, string[]>>;
+  /** resolution 対象外にする "<provider>/<modelId>" | "<provider>/*" の一覧 */
+  exclude?: string[];
 }
 
 const Ajv2020 = Ajv2020Ns.default;
@@ -36,6 +38,7 @@ export const MODELS_CONFIG_SCHEMA = {
         high: TIER_PREFERENCE,
       },
     },
+    exclude: { type: "array", items: { type: "string" } },
   },
 } as const;
 
@@ -101,13 +104,21 @@ export async function loadModelConfig(opts: {
   projectDir: string;
 }): Promise<ModelConfig> {
   let merged: Record<string, unknown> = {};
+  // exclude は deny list なので layer 間で union する（project layer が
+  // user の deny を置き換えない）。mergePolicyLayers の array-replace
+  // 対象から除くため merge 入力から分離して別途集める。
+  const excluded = new Set<string>();
   for (const filePath of [
     path.join(opts.userConfigDir, "models.yaml"),
     path.join(opts.projectDir, "models.yaml"),
   ]) {
     const raw = await readModelsConfig(filePath);
     if (raw === undefined) continue;
-    merged = mergePolicyLayers(merged, raw);
+    const { exclude, ...rest } = raw;
+    if (Array.isArray(exclude)) {
+      for (const pattern of exclude) excluded.add(pattern as string);
+    }
+    merged = mergePolicyLayers(merged, rest);
   }
   const overrides = (isPlainObject(merged.overrides) ? merged.overrides : {}) as Record<
     string,
@@ -119,5 +130,7 @@ export async function loadModelConfig(opts: {
     const v = prefRaw[tier];
     if (v !== undefined) preferences[tier] = v as string[];
   }
-  return { overrides, preferences };
+  const config: ModelConfig = { overrides, preferences };
+  if (excluded.size > 0) config.exclude = [...excluded];
+  return config;
 }

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rzWIEgBvwU5S4KYY68N"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add models.yaml exclude with union merge"
 created: "2026-09-19"
 updated: "2026-09-19"

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rzWI7U1txBCpGr7WZaJ"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add model pricing metadata layer and bundled data"
 created: "2026-09-19"
 updated: "2026-09-19"
