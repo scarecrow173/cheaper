@@ -14,6 +14,7 @@ uv = "0.11"
 # apm.lock.yaml は apm 0.28.0 で生成。0.30.0 は Windows で path dep 解決が
 # 壊れているため lock 生成版に pin する。
 "pipx:apm-cli"  = { version = "0.28.0", uvx_args = "--prerelease allow" }
+"pipx:serena-agent" = "1.7.0"
 
 # Repository-owned setup contract: fresh checkout を開発可能にする
 # canonical entrypoint。toolchain は mise.toml + mise.lock で復元される。
@@ -21,9 +22,22 @@ uv = "0.11"
 description = "Restore Node/APM dependencies and build outputs for a fresh checkout"
 run = [
   "pnpm install --frozen-lockfile",
-  "apm install",
+  "apm install --only apm",
+  # MCP は project-scoped target のみ。windsurf は user-global config
+  # (~/.codeium/windsurf/mcp_config.json) への書き込みになるため setup から外す
+  # (必要なら `mise run setup:mcp-windsurf` で opt-in)。
+  "apm install --only mcp --exclude windsurf",
   "pnpm build",
 ]
+
+# Windsurf の MCP config は user-global のみで project-scoped を持たないため、
+# 通常の setup では書き込まない。必要な場合のみ実行する opt-in task。
+# --root で lockfile 等の状態を gitignore 済みの tmp/ 配下に隔離する。
+# これにより project の apm.lock.yaml に windsurf ownership が記録されず、
+# 次回 setup (--exclude windsurf) の stale cleanup 対象にもならない。
+[tasks."setup:mcp-windsurf"]
+description = "Opt-in: write MCP servers to the user-global Windsurf mcp_config.json"
+run = "apm install --only mcp --target windsurf --root tmp/mcp-windsurf"
 
 # Canonical verification contract: CI と同等の検証。
 # セットアップ済み checkout を対象とし、setup には依存しない。

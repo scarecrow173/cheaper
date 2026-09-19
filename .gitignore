@@ -157,6 +157,7 @@ apm_modules/
 .claude/skills/
 .codex/agents/
 .codex/apm-hooks.json
+.codex/config.toml
 .codex/hooks/
 .codex/hooks.json
 .codex/prompts/
@@ -176,6 +177,9 @@ apm_modules/
 .github/prompts/
 .github/skills/
 .github/copilot-instructions.md
+.github/mcp.json
+.mcp.json
+.vscode/mcp.json
 .windsurf/agents/
 .windsurf/apm-hooks.json
 .windsurf/hooks/

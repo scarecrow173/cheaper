@@ -15,6 +15,22 @@ dependencies:
   - scarecrow173/apm-packages/packages/recommended-dev-suite#main
   - scarecrow173/apm-packages/packages/steer-enterprise-web-research#main
   - scarecrow173/apm-packages/packages/doc-driven-dev#main
-  mcp: []
+devDependencies:
+  mcp:
+  - name: serena
+    registry: false
+    transport: stdio
+    command: serena
+    args:
+    - start-mcp-server
+    - --context
+    - ide
+    - --project-from-cwd
+  - name: mise
+    registry: false
+    transport: stdio
+    command: mise
+    args:
+    - mcp
 scripts: {}
 
