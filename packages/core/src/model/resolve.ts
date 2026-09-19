@@ -1,7 +1,7 @@
 import { CheaperError } from "../errors.js";
 import { classifyModel, type ModelInfo, type TierSource } from "./classify.js";
 import type { ModelConfig } from "./config.js";
-import { resolvePricing, type ModelPricing } from "./pricing.js";
+import { type ModelPricing, resolvePricing } from "./pricing.js";
 import { matchModelPattern, modelKey } from "./ref.js";
 import { compareTier, nextTier, TIERS, type Tier } from "./tier.js";
 

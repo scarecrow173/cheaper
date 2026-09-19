@@ -238,9 +238,7 @@ describe("runCli", () => {
         hooks({ createModelRuntime: async () => fakeCatalog() as never }),
       );
       expect(code).toBe(0);
-      const models = JSON.parse(providerRun.out()).result.models as Array<
-        Record<string, unknown>
-      >;
+      const models = JSON.parse(providerRun.out()).result.models as Array<Record<string, unknown>>;
       expect(models).toHaveLength(1);
       expect(models[0]?.provider).toBe("openai");
 
@@ -259,10 +257,7 @@ describe("runCli", () => {
       const { io, out } = makeIo();
       const projectDir = path.join(io.cwd, ".cheaper");
       mkdirSync(projectDir, { recursive: true });
-      writeFileSync(
-        path.join(projectDir, "models.yaml"),
-        "version: 1\nexclude: [\"openai/*\"]\n",
-      );
+      writeFileSync(path.join(projectDir, "models.yaml"), 'version: 1\nexclude: ["openai/*"]\n');
       const code = await runCli(
         ["models"],
         io,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { findModelException } from "../../src/model/exceptions.js";
-import { resolvePricing, type PricingSnapshot } from "../../src/model/pricing.js";
+import { type PricingSnapshot, resolvePricing } from "../../src/model/pricing.js";
 import { matchModelPattern } from "../../src/model/ref.js";
 
 const SNAPSHOT: PricingSnapshot = {

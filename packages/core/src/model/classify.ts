@@ -1,6 +1,6 @@
 import type { ModelConfig } from "./config.js";
 import { findModelException } from "./exceptions.js";
-import { resolvePricing, type ModelPricing } from "./pricing.js";
+import { type ModelPricing, resolvePricing } from "./pricing.js";
 import { modelKey } from "./ref.js";
 import type { Tier } from "./tier.js";
 
