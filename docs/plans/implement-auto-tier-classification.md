@@ -1,7 +1,7 @@
 ---
 id: "PLAN-eDDZBS6ncoMf6TOdM7tDSW"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "implement auto tier classification"
 created: "2026-09-20"
 updated: "2026-09-20"
@@ -110,3 +110,24 @@ task: add-worker-workload-profile-and-auto-tier-classifier
 | `--model` bypass | resolve/cli test |
 | explainability metadata | run/models test |
 | `mise run check` | canonical verification |
+
+## Completion Evidence
+
+- 全 task（3/3）done。Implementation Record:
+  `docs/impl/ir/worker-workload-profile-auto-tier-classifier-core.md`、
+  `docs/impl/ir/auto-resolver-runtime-pi-cli.md`、
+  `docs/impl/ir/auto-tier.md`。
+- `mise run check` pass（lint / version / doc-ids / typecheck /
+  288+324+168 tests / bundle freshness）。Ollama 実 provider e2e 3 件も
+  pass。
+- 並列負荷時に apm install 系 e2e の `beforeEach` が 10s hookTimeout
+  を超える既知 flake を確認。`VITEST_MAX_WORKERS=2` で全件 pass、
+  単体実行でも pass。コード起因ではない。
+
+## Follow-ups（graph 外に持ち越し）
+
+- built-in worker の `outputPerInput` 初期値（0.05 / 0.3 / 1.0）は
+  暫定推定。issue #44 の usage telemetry（`usage.jsonl` の
+  input/output token 実測値）で検証・補正する follow-up を
+  `IMPL-034rC4j788MZLcUE8xHHP2` に記録。本 issue の完了条件には
+  含まれないため `followup-terminal` で triage。

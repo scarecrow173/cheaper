@@ -1,7 +1,7 @@
 ---
 id: "SPEC-H9CuNdGONsV6HEHetvRCxh"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "Worker workload と effectiveCost による自動 tier 分類"
 created: "2026-09-20"
 updated: "2026-09-20"
