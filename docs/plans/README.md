@@ -23,6 +23,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1Fbkp0Gokdq8Z | Huge-file byte cap guard and fail-closed hook | completed | [huge-file-byte-cap-guard-and-fail-closed-hook.md](./huge-file-byte-cap-guard-and-fail-closed-hook.md) |
 | PLAN-034r05iHy2gdnpJFiMWhkY | Implement cheaper CLI, built-in workers and end-to-end verification | completed | [implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md](./implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md) |
 | PLAN-034r05iHy2gdnpIrX0mTIb | Implement @cheaper/runtime-pi execution engine and sandboxed tools | completed | [implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md](./implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md) |
+| PLAN-034rzUgf26bzSEwLr1L6Pl | implement model pricing catalog and curated exceptions | approved | [implement-model-pricing-catalog.md](./implement-model-pricing-catalog.md) |
 | PLAN-034r05iHE1FbkpcKKUUZ58 | Real-provider worker E2E via Ollama — implementation plan | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | PLAN-034r05iHK8bA7g23Opaicg | Pi state under userConfigDir/pi — implementation plan | completed | [pi-state-under-userconfigdir-pi-implementation-plan.md](./pi-state-under-userconfigdir-pi-implementation-plan.md) |
 | PLAN-034r2qodyxvN3g3xktwPOF | provider/auth guide runtime sync — implementation plan | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
