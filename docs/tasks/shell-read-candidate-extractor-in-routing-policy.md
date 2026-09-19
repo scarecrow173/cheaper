@@ -18,7 +18,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/shell-read-candidate-extraction-implementation.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/shell-read-candidate-extraction-implementation.md"
   depends-on:
     - "docs/plans/shell-read-candidate-extraction-implementation.md"
   blocks: []

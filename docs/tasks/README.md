@@ -122,7 +122,7 @@ Directory: `docs/tasks`
 | TASK-034rAcEwRUaAkZ0KOCmc9J | Shared routing policy module and Windsurf adapter refactor | done | [shared-routing-policy-module-and-windsurf-adapter-refactor.md](./shared-routing-policy-module-and-windsurf-adapter-refactor.md) |
 | TASK-034rBt3hfF2knHMAeo5KhB | Shell read-candidate extractor in routing-policy | done | [shell-read-candidate-extractor-in-routing-policy.md](./shell-read-candidate-extractor-in-routing-policy.md) |
 | TASK-034rBt3LLoIUcFHjk4gRlI | Shell-read blocking contract tests | done | [shell-read-contract-tests.md](./shell-read-contract-tests.md) |
-| TASK-034rBt4e20Wrlc3FH3NQWd | Shell-read docs and final verification | todo | [shell-read-docs-and-final-verification.md](./shell-read-docs-and-final-verification.md) |
+| TASK-034rBt4e20Wrlc3FH3NQWd | Shell-read docs and final verification | done | [shell-read-docs-and-final-verification.md](./shell-read-docs-and-final-verification.md) |
 | TASK-034r05iHQeQpDqJ0Qc4762 | Verify skip path, document e2e in AGENTS.md, sync statuses, final verification | done | [skip-path-docs-and-final-verification.md](./skip-path-docs-and-final-verification.md) |
 | TASK-034r05iHQeQpDpB3QaYlPY | Start Ollama container and pull qwen3.5 quantized model | done | [start-ollama-container-and-pull-qwen3-5-quantized-model.md](./start-ollama-container-and-pull-qwen3-5-quantized-model.md) |
 | TASK-034r05iHQeQpDqlvQrRhaE | Streaming grep with batch protocol and bounded footer | done | [streaming-grep-batch-protocol-and-bounded-footer.md](./streaming-grep-batch-protocol-and-bounded-footer.md) |

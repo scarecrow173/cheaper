@@ -29,6 +29,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpr4JOT5qQ | Repair abort grace and provider failure normalization | completed | [repair-abort-grace-and-provider-failure-normalization.md](./repair-abort-grace-and-provider-failure-normalization.md) |
 | IMPL-034r05iHy2gdnpv1ZWjBbz | Repository-owned setup/check entrypoints (PLAN-034r05iHE1Fbkp7833DuTu) | completed | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
+| IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
 | IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |
 | IMPL-034r05iHy2gdnpx0u8vJaz | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | IMPL-034r2HoPHxqYBy0c98U70r | Align usage.jsonl recording-scope docs (PLAN-034r2puWPUDxxDyfTSffZR) | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |

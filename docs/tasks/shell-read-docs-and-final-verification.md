@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rBt4e20Wrlc3FH3NQWd"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Shell-read docs and final verification"
 created: "2026-09-20"
 updated: "2026-09-20"
@@ -18,7 +18,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/shell-read-candidate-extraction-implementation.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/shell-read-candidate-extraction-implementation.md"
   depends-on:
     - "docs/plans/shell-read-candidate-extraction-implementation.md"
     - "docs/tasks/shell-read-contract-tests.md"
@@ -67,9 +68,10 @@ verification を通す。
 
 ## Done When
 
-- [ ] guide に shell 経由検出の挙動・target 別対応・既知制限が記載される
-- [ ] `mise run check` が pass する
+- [x] guide に shell 経由検出の挙動・target 別対応・既知制限が記載される
+- [x] `mise run check` が pass する
 
 ## Verification
 
-- [ ] `mise run check`
+- [x] `mise run check`（2026-09-20 実測: lint / version / doc-id /
+      typecheck / pnpm -r test 全 pass、bundle 再生成 diff なし）

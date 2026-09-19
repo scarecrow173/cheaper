@@ -26,18 +26,21 @@ cheaper は parent agent へ以下を配布する（APM package 経由）:
     provider/model 設定）を agent へ教える
   - `cheaper-bulk-read` / `cheaper-code-write` /
     `cheaper-doc-write`: 各 built-in worker への委譲方法
-- **hooks**（`pre_read_code`）: read 前に `count-tokens` を実行し、
-  threshold（default 8192 token、
+- **hooks**（`pre_read_code` + shell hook）: read 前に
+  `count-tokens` を実行し、threshold（default 8192 token、
   `CHEAPER_READ_TOKEN_THRESHOLD` で上書き）を超える file の
-  read を block して `bulk-read` へ誘導する。malformed payload・
-  file 不存在・非 file・workspace 外・CLI 起動失敗・出力の
-  parse 失敗といった infrastructure failure は fail-open
-  （素通し）なので、設定が壊れていても通常の read が止まらない。
-  一方、`count-tokens` が parseable な `FILE_TOO_LARGE` envelope
-  を返した場合は「計測不能だが確実に巨大」と authoritative に
-  判定して fail-closed で block する（Windsurf: exit 2、
-  Copilot: `permissionDecision: "deny"` + exit 0 —
-  SPEC-034r05iHK8bA7gjwZTji8t /
+  read を block して `bulk-read` へ誘導する。read tool の直接
+  呼び出しに加え、`cat` / `head` / `tail` / `less` / `more`
+  による **shell 経由の file read も同一 policy で block**
+  される（issue #42、後述の「shell 経由の file read 検出」）。
+  malformed payload・file 不存在・非 file・workspace 外・CLI
+  起動失敗・出力の parse 失敗といった infrastructure failure
+  は fail-open（素通し）なので、設定が壊れていても通常の
+  read が止まらない。一方、`count-tokens` が parseable な
+  `FILE_TOO_LARGE` envelope を返した場合は「計測不能だが確実に
+  巨大」と authoritative に判定して fail-closed で block する
+  （Windsurf: exit 2、Copilot: `permissionDecision: "deny"` +
+  exit 0 — SPEC-034r05iHK8bA7gjwZTji8t /
   DESIGN-034r05iHy2gdnoLt52txFG の意図的仕様）。
 - **bundled CLI**: self-contained の `cheaper` CLI（skills/hooks
   が内部から直接呼べる）
@@ -66,12 +69,15 @@ hook の動作は target の hook event 体系に依存する。
 - **Windsurf**: `pre_read_code` event が native で、read 前に
   hook が実行される。threshold 超過 file は block + bulk-read
   への誘導メッセージが返る。`pre_run_command` event は shell
-  command を adapter が受け取る seam として登録済みで、現状は
-  常に allow（shell 内の file read 検出は別途実装）。
+  command を adapter が受け取り、`cat` / `head` / `tail` /
+  `less` / `more` による large-read は deny（exit 2 + stderr
+  の誘導メッセージ）で block される。
 - **Claude Code**: `PreToolUse`（`Read` / `Bash` / `PowerShell`
   matcher）経由で adapter（`pre-read-code-pretooluse.js`）が
-  動作する。deny は stdout の `hookSpecificOutput.permissionDecision:
-  "deny"` JSON で返し、adapter は常に exit 0。
+  動作する。`Read` の file-read に加え、`Bash` / `PowerShell`
+  の shell command 内の large-read も block される。deny は
+  stdout の `hookSpecificOutput.permissionDecision: "deny"`
+  JSON で返し、adapter は常に exit 0。
 - **Cursor**: `beforeReadFile` / `beforeShellExecution` event
   経由で adapter（`pre-read-code-cursor.js`）が動作する。応答は
   `{"permission":"deny"}` JSON（allow 経路でも
@@ -80,26 +86,57 @@ hook の動作は target の hook event 体系に依存する。
   shell`）経由で adapter（`pre-read-code-copilot.js`）が動作
   する。Copilot では非 0 exit が deny 扱いになるため、adapter
   は常に exit 0 で終了し、threshold 超過または
-  `FILE_TOO_LARGE` verdict の `view` tool 呼び出しだけを
-  stdout の `{"permissionDecision":"deny"}` で block する
-  （ADR-034r05iHrZUE6WizQ4LgPa）。shell tool（`bash` /
-  `powershell` / `shell`）も canonical shell request へ到達する
-  seam として処理する（現状は常に allow）。既知の制限として、
-  現行の APM は copilot target へ `.json` asset を deploy
-  しないため、file-schema worker（bulk-read / code-write /
-  doc-write）は upstream 修正待ちの間利用できない
-  （`count-tokens` と hook adapter は動作する）。
+  `FILE_TOO_LARGE` verdict の呼び出しだけを stdout の
+  `{"permissionDecision":"deny"}` で block する
+  （ADR-034r05iHrZUE6WizQ4LgPa）。`view` の file-read に加え、
+  shell tool（`bash` / `powershell` / `shell`）内の large-read
+  も同一 policy で block される。既知の制限として、現行の APM
+  は copilot target へ `.json` asset を deploy しないため、
+  file-schema worker（bulk-read / code-write / doc-write）は
+  upstream 修正待ちの間利用できない（`count-tokens` と hook
+  adapter は動作する）。
 - **Codex**: `PreToolUse`（`Read|Bash|PowerShell` matcher、
   Claude と同一の nested group 登録）経由で adapter
-  （`pre-read-code-pretooluse.js`）が shell invocation を受け取る
-  seam として動作する。**file-read interception は unsupported**
-  — Codex の read 系 tool は `PreToolUse` を emit しない
-  upstream gap（openai/codex#18491・#20204）が残存する。
+  （`pre-read-code-pretooluse.js`）が動作し、`Bash` /
+  `PowerShell` の shell command 内の large-read を block
+  できる。**file-read interception は unsupported** — Codex の
+  read 系 tool は `PreToolUse` を emit しない upstream gap
+  （openai/codex#18491・#20204）が残存する。
 - **その他 target**（agent-skills 等）: hook 登録は deploy されるが、
   認識されない event 名（例: `pre_read_code`）の登録は no-op と
   して扱われる（登録は harmless。DISC-034r05iHy2gdnpdai9KGpW）。
 
 skills（`cheaper-usage` 等）は target 非依存で機能する。
+
+## shell 経由の file read 検出（issue #42）
+
+read tool を介さない shell command 内の file read も、shared
+routing policy が保守的 parser で read candidate を抽出し、
+file-read と同一の `count-tokens` 判定へ流す。
+
+- **検出対象 command**: `cat` / `head` / `tail` / `less` /
+  `more`。option とその値（`head -n 200` 等）は path とみなさ
+  ない。複数 operand は全て判定し、1 件でも deny なら command
+  全体を block する。`|` / `||` / `&&` / `;` / 改行で区切った
+  各 segment を独立して評価する（`cat a | grep x` の前段、
+  `cd src && cat huge.ts` の後段など）。
+- **fail-open（allow）**: 対象外 command、operand なし
+  （`cat` 単体）、glob・`$`・backtick・`~`・redirect・未閉塞
+  quote など安全に path を特定できない構文、file 不存在・
+  directory・workspace 外 path、CLI 起動失敗、`count-tokens`
+  出力の parse 失敗、malformed hook payload。
+- **fail-closed（deny）**: token 数が threshold 超過、または
+  parseable な `FILE_TOO_LARGE` envelope。deny の診断には
+  block された command・対象 file・token 数または
+  `FILE_TOO_LARGE`・閾値・`bulk-read` への誘導が含まれる。
+- **既知の制限**:
+  - `cd` / cwd 遷移は追跡しない。`cd src && cat huge.ts` は
+    hook 起動時の cwd を基準に `huge.ts` を評価する。
+  - shell expansion・command substitution は実行しないため、
+    展開を伴う operand は fail-open で素通しになる。
+  - `sed` / `awk` / `python` 等の任意コマンド経由の read は
+    検出対象外（non-goal）。
+  - Codex の file-read interception は unsupported（前述）。
 
 ## 自動 vs 明示的な委譲
 
