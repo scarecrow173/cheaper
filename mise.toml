@@ -22,9 +22,19 @@ uv = "0.11"
 description = "Restore Node/APM dependencies and build outputs for a fresh checkout"
 run = [
   "pnpm install --frozen-lockfile",
-  "apm install",
+  "apm install --only apm",
+  # MCP は project-scoped target のみ。windsurf は user-global config
+  # (~/.codeium/windsurf/mcp_config.json) への書き込みになるため setup から外す
+  # (必要なら `mise run setup:mcp-windsurf` で opt-in)。
+  "apm install --only mcp --target vscode,codex,claude,cursor",
   "pnpm build",
 ]
+
+# Windsurf の MCP config は user-global のみ project-scoped を持たないため、
+# 通常の setup では書き込まない。必要な場合のみ実行する opt-in task。
+[tasks."setup:mcp-windsurf"]
+description = "Opt-in: write MCP servers to the user-global Windsurf mcp_config.json"
+run = "apm install --only mcp --target windsurf"
 
 # Canonical verification contract: CI と同等の検証。
 # セットアップ済み checkout を対象とし、setup には依存しない。

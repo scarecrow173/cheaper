@@ -15,6 +15,7 @@ dependencies:
   - scarecrow173/apm-packages/packages/recommended-dev-suite#main
   - scarecrow173/apm-packages/packages/steer-enterprise-web-research#main
   - scarecrow173/apm-packages/packages/doc-driven-dev#main
+devDependencies:
   mcp:
   - name: serena
     registry: false
