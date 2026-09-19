@@ -23,21 +23,12 @@ description = "Restore Node/APM dependencies and build outputs for a fresh check
 run = [
   "pnpm install --frozen-lockfile",
   "apm install --only apm",
-  # MCP は project-scoped target のみ。windsurf は user-global config
-  # (~/.codeium/windsurf/mcp_config.json) への書き込みになるため setup から外す
-  # (必要なら `mise run setup:mcp-windsurf` で opt-in)。
+  # MCP は project-scoped target のみ。windsurf (legacy Cascade) は user-global
+  # config (~/.codeium/windsurf/mcp_config.json) しか持たず repo 外への副作用に
+  # なるため除外する。Devin Local は project の .mcp.json を読むため別途不要。
   "apm install --only mcp --exclude windsurf",
   "pnpm build",
 ]
-
-# Windsurf の MCP config は user-global のみで project-scoped を持たないため、
-# 通常の setup では書き込まない。必要な場合のみ実行する opt-in task。
-# --root で lockfile 等の状態を gitignore 済みの tmp/ 配下に隔離する。
-# これにより project の apm.lock.yaml に windsurf ownership が記録されず、
-# 次回 setup (--exclude windsurf) の stale cleanup 対象にもならない。
-[tasks."setup:mcp-windsurf"]
-description = "Opt-in: write MCP servers to the user-global Windsurf mcp_config.json"
-run = "apm install --only mcp --target windsurf --root tmp/mcp-windsurf"
 
 # Canonical verification contract: CI と同等の検証。
 # セットアップ済み checkout を対象とし、setup には依存しない。
