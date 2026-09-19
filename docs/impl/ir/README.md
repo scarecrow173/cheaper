@@ -6,6 +6,7 @@ Directory: `docs/impl/ir`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
+| IMPL-034rAtxE2k5HhaePoxBbI3 | Add --model flag and models command | completed | [add-model-flag-and-models-command.md](./add-model-flag-and-models-command.md) |
 | IMPL-034rzZLq1nbnzN4CvDSAk5 | Add model pricing metadata layer and bundled data | completed | [add-model-pricing-metadata-layer-and-bundled-data.md](./add-model-pricing-metadata-layer-and-bundled-data.md) |
 | IMPL-034rAiJgmYQKgmJC2mF9zN | Add models.yaml exclude with union merge | completed | [add-models-yaml-exclude-with-union-merge.md](./add-models-yaml-exclude-with-union-merge.md) |
 | IMPL-034r05iHy2gdnpmfo09FGX | Add Ollama docker-compose and AGENTS.md container usage | completed | [add-ollama-docker-compose-and-agents-md-container-usage.md](./add-ollama-docker-compose-and-agents-md-container-usage.md) |
@@ -33,6 +34,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
 | IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |
 | IMPL-034r05iHy2gdnpx0u8vJaz | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
+| IMPL-034rAty3hDG6bnv9waKpx5 | Update guides for pricing catalog | completed | [update-guides-for-pricing-catalog.md](./update-guides-for-pricing-catalog.md) |
 | IMPL-034r2HoPHxqYBy0c98U70r | Align usage.jsonl recording-scope docs (PLAN-034r2puWPUDxxDyfTSffZR) | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
 | IMPL-034r05iHy2gdnpCk8YlDWb | User-facing documentation information architecture (PLAN-034r05iHE1FbkpeFEXECDx) | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |

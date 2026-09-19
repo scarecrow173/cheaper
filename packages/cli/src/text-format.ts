@@ -27,9 +27,48 @@ function successText(env: SuccessEnvelope): string {
   return `${lines.join("\n")}\n`;
 }
 
+interface ModelRow {
+  provider?: string;
+  id?: string;
+  excluded?: boolean;
+  tier?: string;
+  tierSource?: string;
+  pricing?: {
+    input?: number;
+    output?: number;
+    source?: string;
+    snapshotVersion?: string;
+    updatedAt?: string;
+  } | null;
+}
+
+function modelRowText(m: ModelRow): string {
+  const key = `${m.provider ?? "?"}/${m.id ?? "?"}`;
+  const state = m.excluded === true ? "excluded" : "available";
+  const tier = `tier=${m.tier ?? "?"} (${m.tierSource ?? "?"})`;
+  const p = m.pricing;
+  const price =
+    p == null || typeof p.input !== "number" || typeof p.output !== "number"
+      ? "unpriced"
+      : `in=$${p.input} out=$${p.output}/1M (${p.source ?? "?"}` +
+        `${p.snapshotVersion !== undefined ? `@${p.snapshotVersion}` : ""}` +
+        `${p.updatedAt !== undefined ? `, ${p.updatedAt}` : ""})`;
+  return `  ${key.padEnd(44)} ${state.padEnd(9)} ${tier.padEnd(28)} ${price}`;
+}
+
 function utilityText(env: UtilitySuccessEnvelope): string {
   const r = env.result;
   const lines: string[] = [`duration: ${env.meta.durationMs}ms`, "result:", pretty(r)];
+  const models = r.models;
+  if (Array.isArray(models)) {
+    return [
+      "ok",
+      `models: ${models.length}`,
+      ...(models as ModelRow[]).map(modelRowText),
+      `duration: ${env.meta.durationMs}ms`,
+      "",
+    ].join("\n");
+  }
   const t = r.tokenizer as { name?: string; implementation?: string; version?: string } | undefined;
   if (
     typeof r.path === "string" &&

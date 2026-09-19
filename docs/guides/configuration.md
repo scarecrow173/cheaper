@@ -35,12 +35,16 @@ user より優先。
 ## `models.yaml`
 
 provider `<provider>/<modelId>` → tier（`low`/`medium`/`high`）の
-割当と、tier ごとの model preference を定義する。
+割当、tier ごとの model preference、resolution 対象からの除外を
+定義する。
 
 ```yaml
 version: 1
 overrides:
   "ollama/qwen3.5:9b": low       # この model は low tier に pin
+exclude:
+  - "anthropic/claude-opus-4-5"  # 解決候補・--model 指定の双方から除外
+  - "github-copilot/*"           # provider 単位の wildcard も可
 preferences:
   low:
     - "ollama/*"                  # low tier でこの provider 系を優先
@@ -49,14 +53,25 @@ preferences:
 
 - `version` は必須（現在 `1`）。
 - `overrides` は `"<provider>/<modelId>"` → tier の map。built-in
-  分類を上書きできる。
+  の分類より常に優先される（分類 source は `explicit-override`）。
+- `exclude` は `"<provider>/<modelId>"` または `"<provider>/*"` の
+  配列。一致した model は tier 解決の候補から外れ、`--model` の
+  直接指定でも `POLICY_VIOLATION` になる。user / project 層の
+  `exclude` は union される（project 層が user の除外を消さない）。
 - `preferences` は tier → model pattern の配列（`provider/*` の
   wildcard 可）。解決時にその tier の候補を優先する。
 
-built-in の tier 分類は model id のパターン（`haiku|mini|nano|flash|
-lite|small|codex-mini|\b(1|3|7|8)b\b`）で low を判定する。`4b` /
-`9b` のような suffix は `overrides` で low に pin する。cost 0 /
-未分類は medium になる。詳細は
+tier 分類の priority は `overrides` → bundled curated exceptions →
+pricing heuristic（auto）→ unclassified（effective tier は
+`medium`）の順。pricing は Pi の runtime catalog（models.dev 由来）
+を canonical とし、欠損分は bundled snapshot で補完される。
+`pricing.output`（USD/1M token）が `<2 → low`、`≤20 → medium`、
+`>20 → high` の heuristic で自動分類される（interim。正式な
+formula は別 issue で導入予定）。pricing 欠落・0 の model は
+low に自動分類せず unclassified → `medium` とする。`ollama/*`
+のような local model は curated exception で `low` に固定済み。
+各 model の effective tier と分類・pricing の由来は
+`cheaper models` で確認できる。詳細は
 [providers ガイド](./providers.md)。
 
 ## `policy.yaml`

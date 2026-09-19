@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rzWTSt6UWHtrOMOegau"
 type: "task"
-status: "todo"
+status: "done"
 title: "Update guides for pricing catalog"
 created: "2026-09-19"
 updated: "2026-09-19"

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034rzWT9V9bHwEIcrmbTor"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add CLI --model flag and models command"
 created: "2026-09-19"
 updated: "2026-09-19"
