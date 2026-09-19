@@ -4,7 +4,7 @@ type: "impl"
 status: "completed"
 title: "Update guides for pricing catalog"
 created: "2026-09-19"
-updated: "2026-09-19"
+updated: "2026-09-20"
 owners: []
 relations:
   source: []
@@ -52,9 +52,9 @@ issue #45 / `docs/tasks/`・`docs/plans/implement-model-pricing-catalog.md`・`d
 
 ### Changes
 
-- `configuration.md`: models.yaml に `exclude` を追記、分類 priority（overrides→exceptions→auto→unclassified）と pricing source の説明に置き換え
+- `configuration.md`: models.yaml に `exclude` を追記、分類 priority（overrides→exceptions→unclassified。auto は #46 seam で未生成）と pricing source の説明に置き換え
 - `usage.md`: commands/options 一覧、`--model` の semantics、`models` コマンド節、meta.model の `selection`/`tierSource`
-- `providers.md`: 旧 regex 分類表の記述を pricing heuristic + curated exception に更新、`cheaper models` への案内を追加
+- `providers.md`: 旧 regex 分類表の記述を curated exception + overrides pin の説明に更新（price ベース自動分類は #46 scope で未実装）、`cheaper models` への案内を追加
 
 ### Decisions During Implementation
 

@@ -48,20 +48,16 @@ describe("classifyModel curated exceptions", () => {
   });
 });
 
-describe("classifyModel auto heuristic (interim, #46 replaces)", () => {
-  it.each([
-    [1.9, "low"],
-    [0.1, "low"],
-    [2, "medium"],
-    [20, "medium"],
-    [20.1, "high"],
-    [75, "high"],
-  ])("cost.output %d → %s / auto", (output, tier) => {
-    expect(classifyModel(model("unmatched-model-xyz", { input: 0.5, output }), EMPTY)).toEqual({
-      tier,
-      source: "auto",
-    });
-  });
+describe("classifyModel auto classification（#46 scope、#45 では未生成）", () => {
+  it.each([0.1, 1.9, 2, 20, 20.1, 75])(
+    "cost.output %d でも auto 分類せず medium / unclassified",
+    (output) => {
+      expect(classifyModel(model("unmatched-model-xyz", { input: 0.5, output }), EMPTY)).toEqual({
+        tier: "medium",
+        source: "unclassified",
+      });
+    },
+  );
 });
 
 describe("classifyModel unclassified", () => {

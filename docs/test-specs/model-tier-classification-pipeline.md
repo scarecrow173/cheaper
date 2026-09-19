@@ -4,7 +4,7 @@ type: "test-spec"
 status: "approved"
 title: "model tier classification pipeline"
 created: "2026-09-19"
-updated: "2026-09-19"
+updated: "2026-09-20"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -39,11 +39,12 @@ relations:
 
 ## Purpose
 
-分類 priority（exclude → explicit-override → curated-exception → auto →
-unclassified）と `tierSource` 記録の意図を保持する。#46 が interim auto
-classifier を正式 formula に差し替える際も、この spec が示す priority と
-source 命名は不変条件として残る。priority 自体が設計から外れた場合に
-廃止できる。
+分類 priority（exclude → explicit-override → curated-exception →
+unclassified）と `tierSource` 記録の意図を保持する。auto classifier
+stage（`tierSource: "auto"`）は #46 の scope であり #45 では生成
+しない。#46 が auto classifier を実装する際も、この spec が示す
+priority と source 命名は不変条件として残る。priority 自体が設計から
+外れた場合に廃止できる。
 
 ## Feature
 
@@ -51,8 +52,9 @@ source 命名は不変条件として残る。priority 自体が設計から外�
 
 ## Rules
 
-- 分類 priority は `overrides > curated exceptions > auto classifier >
-  unclassified` の順で最初に一致したものを採用する
+- 分類 priority は `overrides > curated exceptions > unclassified`
+  の順で最初に一致したものを採用する（auto classifier は #46 の
+  seam であり #45 では `auto` を生成しない）
 - 各結果は `tierSource`（`explicit-override` / `curated-exception` /
   `auto` / `unclassified`）を持つ
 - unclassified model の effective tier は `medium`（low にしない）
@@ -67,13 +69,14 @@ source 命名は不変条件として残る。priority 自体が設計から外�
   ある → tier=low, source=explicit-override
 - exception `ollama/*` に `ollama/qwen3` が一致 → source=
   curated-exception
-- exception 非該当で pricing.output=0.5 → auto heuristic で tier=low,
-  source=auto
+- exception 非該当で pricing.output=0.5 → #45 では自動分類しないため
+  tier=medium, source=unclassified
 - pricing も exception も無い model → tier=medium, source=unclassified
 
 ## Guarantees
 
-- override が例外・自動分類より常に優先される
+- override が例外より常に優先される（#46 で auto classifier が
+  追加されてもこの順位は維持される）
 - tier source が呼び出し側（resolver・`cheaper models`・meta）へ
   そのまま伝播する
 

@@ -4,7 +4,7 @@ type: "task"
 status: "done"
 title: "Implement classification pipeline and explicit model resolution"
 created: "2026-09-19"
-updated: "2026-09-19"
+updated: "2026-09-20"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -43,10 +43,10 @@ relations:
 ## Work
 
 `classify.ts` を pipeline 化して `{ tier, source: TierSource }` を
-返すようにし、`BUILTIN_TABLE` regex を削除して curated exceptions +
-interim cost heuristic に置き換える。`resolve.ts` で exclude 適用・
-`ResolvedModel` への `tierSource`/`pricing` 追加・
-`resolveExplicitModel` を実装する。
+返すようにし、`BUILTIN_TABLE` regex を削除して curated exceptions
+に置き換える（auto 分類は #46 の scope であり本 task では実装
+しない）。`resolve.ts` で exclude 適用・`ResolvedModel` への
+`tierSource`/`pricing` 追加・`resolveExplicitModel` を実装する。
 
 ## Classification
 
@@ -71,7 +71,8 @@ interim cost heuristic に置き換える。`resolve.ts` で exclude 適用・
 
 ## Done When
 
-- [ ] priority が override > exception > auto > unclassified
+- [ ] priority が override > exception > unclassified（`auto` は
+      #46 seam で #45 では生成しない）
 - [ ] exclude が resolver candidate set と explicit 指定の双方に効く
 - [ ] `resolveExplicitModel` が exclude/availability/maxTier を
       bypass しない

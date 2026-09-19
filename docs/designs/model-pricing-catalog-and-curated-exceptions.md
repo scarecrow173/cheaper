@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "model pricing catalog and curated exceptions"
 created: "2026-09-19"
-updated: "2026-09-19"
+updated: "2026-09-20"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -143,7 +143,7 @@ esbuild bundle（`scripts/bundle-cli.mjs`）で単一 `.mjs` に埋め込む
 export type TierSource =
   | "explicit-override"
   | "curated-exception"
-  | "auto"
+  | "auto"           // #46 が生成経路を追加する seam。#45 では生成しない
   | "unclassified";
 
 export interface Classification { tier: Tier; source: TierSource }
@@ -151,22 +151,20 @@ export interface Classification { tier: Tier; source: TierSource }
 export function classifyModel(
   model: ModelInfo,
   config: ModelConfig,
-  opts?: { pricing?: ModelPricing; exceptions?: ModelExceptions },
 ): Classification
 ```
 
 priority: `config.overrides` → bundled exceptions（exact →
-`provider/*`）→ interim auto classifier → unclassified。
+`provider/*`）→ unclassified。
 
-- interim auto classifier = 現行 cost heuristic をそのまま関数として
-  隔離（effective pricing の `output` threshold: `<2` low / `≤20`
-  medium / `>20` high）。#46 がこの seam を正式 formula に差し替える。
+- auto classifier stage は #46 の scope。#45 では `source: "auto"` を
+  生成する経路を持たず、override・exception 非該当の model はすべて
+  unclassified に落ちる（issue #45 追記により absolute USD
+  threshold の暫定実装は不採用）。`TierSource` の `"auto"` は #46 が
+  差し込む seam として union に残す。
 - `BUILTIN_TABLE` regex 分類は削除する。
 - unclassified は tier `medium` を返す（既存不変条件）が
   `source: "unclassified"` で区別できる。
-- pricing は `resolvePricing` の結果を `opts.pricing` で受け取る。
-  未指定時は `model.cost` からの direct 変換に fallback（後方互換の
-  ため、`pricing` 未供給でも従来どおり cost heuristic が効く）。
 
 ### `resolve.ts`（exclude + explicit + metadata 返却）
 
@@ -249,11 +247,11 @@ models path:
 
 ## Risks and Trade-offs
 
-- interim cost heuristic と #46 正式 formula の二重定義リスク →
-  seam（`opts.pricing` + classifier 関数分離）で隔離し、#46 は
-  auto stage の差し替えのみ行う
+- #46 の auto classifier 提供まで override/exception 非該当の
+  model は unclassified（medium 扱い）に倒れる → low tier が
+  必要な model は `overrides` で pin する運用でカバーする
 - regex 表削除で name-pattern 由来の分類が消える → exceptions +
-  pricing heuristic で代替。分類品質は #46 が担保する
+  #46 の auto classifier で代替。分類品質は #46 が担保する
 - `exclude` union merge は `mergePolicyLayers` の規則と異なる →
   deny list 性質上の意図的例外として design に明記
 

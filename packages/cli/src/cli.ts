@@ -282,7 +282,7 @@ async function executeModels(
     .filter((m) => args.provider === undefined || m.provider === args.provider)
     .map((m) => {
       const pricing = resolvePricing(m);
-      const classification = classifyModel(m, modelConfig, { pricing });
+      const classification = classifyModel(m, modelConfig);
       return {
         provider: m.provider,
         id: m.id,

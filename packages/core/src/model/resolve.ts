@@ -82,7 +82,7 @@ export function resolveModel(opts: {
   >();
   for (const m of eligible) {
     const pricing = resolvePricing(m);
-    const classification = classifyModel(m, config, { pricing });
+    const classification = classifyModel(m, config);
     const list = byTier.get(classification.tier) ?? [];
     list.push({ model: m, classification, ...(pricing !== undefined ? { pricing } : {}) });
     byTier.set(classification.tier, list);
@@ -146,7 +146,7 @@ export function resolveExplicitModel(opts: {
     );
   }
   const pricing = resolvePricing(model);
-  const classification = classifyModel(model, config, { pricing });
+  const classification = classifyModel(model, config);
   if (compareTier(classification.tier, policy.maxTier) > 0) {
     throw new CheaperError(
       "POLICY_VIOLATION",

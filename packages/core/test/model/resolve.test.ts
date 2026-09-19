@@ -165,12 +165,12 @@ describe("resolveModel", () => {
   it("resolved model に selection/tierSource/pricing を返す", () => {
     const out = resolveModel({
       available: [m("p", "x", { input: 0.1, output: 0.5 })],
-      requestedTier: "low",
+      requestedTier: "medium",
       policy: { maxTier: "high", tierFallback: "none" },
       config: NO_PREF,
     });
     expect(out.selection).toBe("tier");
-    expect(out.tierSource).toBe("auto");
+    expect(out.tierSource).toBe("unclassified");
     expect(out.pricing).toMatchObject({ input: 0.1, output: 0.5, source: "runtime-catalog" });
   });
 
@@ -245,8 +245,8 @@ describe("resolveExplicitModel", () => {
     });
     expect(out.model).toMatchObject({ provider: "p", id: "x" });
     expect(out.selection).toBe("explicit");
-    expect(out.tier).toBe("high");
-    expect(out.tierSource).toBe("auto");
+    expect(out.tier).toBe("medium");
+    expect(out.tierSource).toBe("unclassified");
     expect(out.pricing).toMatchObject({ source: "runtime-catalog" });
   });
 
@@ -283,20 +283,15 @@ describe("resolveExplicitModel", () => {
     }
   });
 
-  it("effective tier > maxTier → POLICY_VIOLATION（policy を bypass しない）", () => {
-    try {
-      resolveExplicitModel({
-        available: [m("p", "x", { input: 1, output: 30 })],
-        ref: { provider: "p", id: "x" },
-        policy: { maxTier: "medium" },
-        config: NO_PREF,
-      });
-      expect.unreachable();
-    } catch (e) {
-      const err = e as CheaperError;
-      expect(err.code).toBe("POLICY_VIOLATION");
-      expect(err.details?.reason).toBe("model-exceeds-max-tier");
-    }
+  it("unclassified（medium 扱い）の model は maxTier=medium で解決できる", () => {
+    const out = resolveExplicitModel({
+      available: [m("p", "x", { input: 1, output: 30 })],
+      ref: { provider: "p", id: "x" },
+      policy: { maxTier: "medium" },
+      config: NO_PREF,
+    });
+    expect(out.tier).toBe("medium");
+    expect(out.tierSource).toBe("unclassified");
   });
 
   it("override tier でも maxTier を超えれば POLICY_VIOLATION", () => {

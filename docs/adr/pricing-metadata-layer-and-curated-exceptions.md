@@ -4,7 +4,7 @@ type: "adr"
 status: "accepted"
 title: "Pricing metadata layer と curated exceptions"
 created: "2026-09-19"
-updated: "2026-09-19"
+updated: "2026-09-20"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -98,9 +98,13 @@ reproducibility を両立できるから。
   curated exceptions（`provider/model` → `{ tier, reason, source,
   checkedAt }`）へ置き換える
 * 分類 priority は `exclude（eligibility）> user override > curated
-  exception > auto classifier > unclassified`
-* auto classifier は #46 が実装する pluggable seam とし、#45 では既存
-  cost heuristic を interim 実装として `tierSource: "auto"` で維持する
+  exception > auto classifier（#46 seam）> unclassified`
+* auto classifier は #46 が実装する pluggable seam とする。#45 では
+  `tierSource: "auto"` を生成する経路を持たず（issue #45 追記で
+  absolute USD threshold の暫定実装は不採用とされたため）、
+  override・exception 非該当の model はすべて `unclassified`（effective
+  tier `medium`）になる。`TierSource` union の `"auto"` は #46 が
+  差し込む seam として残す
 * `exclude` は `models.yaml` の `exclude: string[]` で表現し、
   resolver candidate set と `--model` 直接指定の双方に適用する
 * `--model <provider>/<id>` は tier resolver を bypass するが
@@ -120,8 +124,9 @@ reproducibility を両立できるから。
   `ignore` を混ぜない設計になる。
 * Bad, because Pi catalog に存在しない provider/plugin model は
   bundled snapshot か exception で個別補完が必要。
-* Bad, because interim cost heuristic と #46 の正式 formula が一時的に
-  二重に存在し得る（seam として隔離して軽減）。
+* Bad, because #46 の auto classifier 提供まで override/exception
+  非該当の model はすべて unclassified（medium 扱い）に倒れるため、
+  low tier を使いたい model は `overrides` での pin が必要。
 
 ### Confirmation
 
@@ -146,8 +151,9 @@ reproducibility を両立できるから。
 
 ## Verification
 
-* [ ] exclude/override/exception/auto/unclassified の priority と
-      `tierSource` が単体テストで確認される
+* [ ] exclude/override/exception/unclassified の priority と
+      `tierSource` が単体テストで確認される（`auto` は #46 seam で
+      #45 では生成されないことも確認）
 * [ ] bundled snapshot が runtime catalog の欠損 pricing を補完する
       テスト
 * [ ] `--model` が exclude/availability/policy を bypass しないテスト

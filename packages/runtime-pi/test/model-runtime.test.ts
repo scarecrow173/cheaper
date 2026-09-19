@@ -56,7 +56,8 @@ describe("toModelInfo", () => {
 
 describe("resolvePiModel", () => {
   it("resolves a tier-matched Pi model", async () => {
-    // output < 2 は interim auto heuristic で low に分類される
+    // override/exception 非該当の model は unclassified → medium 扱い
+    // （auto 分類は #46 scope で #45 では生成しない）
     const cat = catalog([
       piModel("anthropic", "claude-haiku-4", 8192, {
         input: 0.5,
@@ -67,12 +68,12 @@ describe("resolvePiModel", () => {
     ]);
     const r = await resolvePiModel({
       catalog: cat,
-      requestedTier: "low",
+      requestedTier: "medium",
       policy: { maxTier: "high", tierFallback: "none" },
       config,
     });
-    expect(r.tier).toBe("low");
-    expect(r.tierSource).toBe("auto");
+    expect(r.tier).toBe("medium");
+    expect(r.tierSource).toBe("unclassified");
     expect(r.selection).toBe("tier");
     expect(r.pricing).toMatchObject({ input: 0.5, output: 1, source: "runtime-catalog" });
     expect(r.model.id).toBe("claude-haiku-4");
@@ -138,7 +139,7 @@ describe("resolveExplicitPiModel", () => {
     });
     expect(r.selection).toBe("explicit");
     expect(r.tier).toBe("medium");
-    expect(r.tierSource).toBe("auto");
+    expect(r.tierSource).toBe("unclassified");
     expect(r.model.id).toBe("claude-sonnet-4");
     expect(r.info.provider).toBe("anthropic");
   });

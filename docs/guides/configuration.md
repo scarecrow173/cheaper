@@ -62,14 +62,13 @@ preferences:
   wildcard 可）。解決時にその tier の候補を優先する。
 
 tier 分類の priority は `overrides` → bundled curated exceptions →
-pricing heuristic（auto）→ unclassified（effective tier は
-`medium`）の順。pricing は Pi の runtime catalog（models.dev 由来）
-を canonical とし、欠損分は bundled snapshot で補完される。
-`pricing.output`（USD/1M token）が `<2 → low`、`≤20 → medium`、
-`>20 → high` の heuristic で自動分類される（interim。正式な
-formula は別 issue で導入予定）。pricing 欠落・0 の model は
-low に自動分類せず unclassified → `medium` とする。`ollama/*`
-のような local model は curated exception で `low` に固定済み。
+unclassified（effective tier は `medium`）の順。price ベースの
+自動分類（`tierSource: "auto"`）は別 issue（#46）で導入予定の
+ため、現状は override・exception のいずれにも該当しない model は
+すべて unclassified → `medium` になる。`ollama/*` のような local
+model は curated exception で `low` に固定済み。
+pricing metadata 自体は Pi の runtime catalog（models.dev 由来）を
+canonical とし、欠損分は bundled snapshot で補完される。
 各 model の effective tier と分類・pricing の由来は
 `cheaper models` で確認できる。詳細は
 [providers ガイド](./providers.md)。

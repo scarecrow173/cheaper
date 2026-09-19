@@ -4,7 +4,7 @@ type: "spec"
 status: "approved"
 title: "Model pricing catalog and curated exceptions"
 created: "2026-09-19"
-updated: "2026-09-19"
+updated: "2026-09-20"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -89,8 +89,8 @@ classifier に任せる」「built-in は例外のみ」と方針転換された
   available/excluded・effective pricing・tier・tier source・pricing
   source/freshness を表示
 - `meta.model.selection`（`"tier"` / `"explicit"`）の記録
-- auto classifier の seam（#46 が差し込む interface）。暫定として既存の
-  cost heuristic を interim auto classifier として維持する
+- auto classifier の seam（#46 が差し込む interface）。#45 では
+  `auto` を生成する経路を持たない
 
 ## Out of Scope
 
@@ -110,15 +110,17 @@ classifier に任せる」「built-in は例外のみ」と方針転換された
 project/user exclude          → eligibility（tier ではない）
 project/user tier override    → tierSource = explicit-override
 built-in curated exception    → tierSource = curated-exception
-auto classifier（#46 seam）   → tierSource = auto
+auto classifier（#46 seam）   → tierSource = auto（#45 では生成しない）
 上記いずれも非該当            → tierSource = unclassified
 ```
 
 - `exclude` に一致する model は resolver の candidate set から除かれ、
   `--model` で明示指定されても拒否される（`POLICY_VIOLATION` 系 error）。
 - `overrides` は built-in exception より優先する。
-- auto classifier は #45 では既存 cost heuristic を暫定実装として持つ。
-  `tierSource: "auto"` として記録し、#46 が interface ごと差し替える。
+- auto classifier は #46 の scope。#45 では `tierSource: "auto"` を
+  生成する経路を持たず、override・exception のいずれにも該当しない
+  model はすべて unclassified になる。`TierSource` union の `"auto"`
+  は #46 が差し込む seam として残す。
 - unclassified model は既存不変条件どおり resolver 上 `medium` として
   扱うが、tier source 表示では `unclassified` と区別できる。
 - `ignore` を tier に混ぜない。除外は `exclude` のみで表現する。
@@ -156,10 +158,12 @@ auto classifier（#46 seam）   → tierSource = auto
       使われ、`exclude` 適用後の集合が tier 分類の対象になる
 - [ ] `models.yaml` の `exclude` が tier resolver の候補と `--model`
       指定の双方から model を除外する
-- [ ] `overrides` が built-in exception と auto classification より
-      優先される
-- [ ] built-in exception が auto classification より優先され、entry が
-      reason/source/checkedAt を持つ
+- [ ] `overrides` が built-in exception より優先される
+- [ ] built-in exception の entry が reason/source/checkedAt を持ち、
+      overrides に次ぐ priority で適用される
+- [ ] override・exception のいずれにも該当しない model が
+      unclassified（effective tier `medium`）になり、`tierSource:
+      "auto"` が #45 では生成されない
 - [ ] runtime catalog に pricing が無い model が bundled snapshot で
       補完される
 - [ ] pricing がどこにも無い model は unpriced として扱われ error に

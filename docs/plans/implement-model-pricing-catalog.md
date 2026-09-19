@@ -4,7 +4,7 @@ type: "plan"
 status: "approved"
 title: "implement model pricing catalog and curated exceptions"
 created: "2026-09-19"
-updated: "2026-09-19"
+updated: "2026-09-20"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -148,5 +148,6 @@ design（DESIGN-034rzP2XX0QSo5LRQDfr9B）どおりに実装する。
 
 ## Review Handoff
 
-- interim auto classifier は #46 で差し替わる前提の暫定実装。
-  review では seam の分離が保たれているかを確認。
+- auto classifier は #46 の scope。#45 では `tierSource: "auto"` を
+  生成する経路を実装しない。review では `TierSource` union の
+  `"auto"` seam が残り、かつ生成経路が存在しないことを確認。

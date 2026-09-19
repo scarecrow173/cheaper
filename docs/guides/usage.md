@@ -53,7 +53,8 @@ Commands:
 - `meta` には `durationMs`・`model`（`provider`・`id`・`tier`・
   `selection`（`"tier"` | `"explicit"`）・`tierSource`
   （`"explicit-override"` | `"curated-exception"` | `"auto"` |
-  `"unclassified"`））・`usage`（input/output/
+  `"unclassified"`。`"auto"` は #46 の自動分類用に予約された値で
+  現状は出力されない））・`usage`（input/output/
   cacheRead/cacheWrite/totalTokens/costUsd）・`turns`・`toolCalls`・
   `repairs`・`changes` 等が入る。`changes` は runtime が計測した
   filesystem 変更の要約。

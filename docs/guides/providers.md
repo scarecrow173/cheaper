@@ -84,13 +84,13 @@ preferences:
 ```
 
 - tier 分類は `overrides` → bundled curated exceptions →
-  pricing heuristic（`cost.output` USD/1M が `<2` → low、
-  `≤20` → medium、`>20` → high）→ unclassified（**medium**）の
-  順で決まる。pricing は Pi の runtime catalog（models.dev 由来）
-  が canonical で、local model（`ollama/*`）は curated exception
-  で `low` に固定されている。model ごとの effective tier と
-  由来は `cheaper models` で確認できる。`4b` / `9b` のような
-  suffix は `overrides` で low に pin する。
+  unclassified（**medium**）の順で決まる。price ベースの自動分類は
+  別 issue（#46）で導入予定のため、現状は override・exception
+  非該当の model はすべて `medium` になる。local model
+  （`ollama/*`）は curated exception で `low` に固定されている。
+  model ごとの effective tier と由来は `cheaper models` で確認
+  できる。`4b` / `9b` のような suffix は `overrides` で low に
+  pin する。
 - built-in worker は `tier: low` 要求 + built-in policy は
   `tierFallback: none` なので、low tier に解決できる model が
   1 つ必要。

@@ -4,7 +4,7 @@ type: "discovery"
 status: "resolved"
 title: "model-pricing-catalog-and-curated-exceptions"
 created: "2026-09-19"
-updated: "2026-09-19"
+updated: "2026-09-20"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -69,8 +69,10 @@ curated exceptions へどう置き換えるか、(c) exclude / explicit override
   ここを拡張する必要がある。
 - 分類 priority は issue 指定で `exclude > overrides > curated exception >
   auto classifier(#46) > unclassified`。#46 未実装の間の auto stage を
-  どうするかが設計論点（候補: 現行 cost heuristic を interim classifier
-  として温存 / unclassified → medium 扱い）。
+  どうするかが設計論点だった（候補: 現行 cost heuristic を interim
+  classifier として温存 / unclassified → medium 扱い）が、issue #45
+  追記で「自動分類の採否に依存させない」と明示され absolute USD
+  threshold は不採用。unclassified → medium 扱いに確定した。
 - `exclude` は tier ではなく eligibility の責務。resolver の candidate set
   形成と `--model` 直接指定の双方に効かせる必要がある。
 
@@ -81,8 +83,8 @@ curated exceptions へどう置き換えるか、(c) exclude / explicit override
 | pricing source: Pi runtime catalog の `Model.cost` を正準 source とし、cheaper 側は normalized view + 補完用 bundled snapshot を持つ | network 不要・models.dev 追従が Pi の更新に乗る・実装が薄い | Pi catalog に無い provider/plugin model は別途補完が要る | yes |
 | pricing source: LiteLLM/models.dev の全件 snapshot を cheaper が独自 bundle | Pi 非依存で provider 中立 | 全件データの保守・生成 pipeline・更新手順が要り、#45 の規模に対し過剰 | no（補完 snapshot のみ採用） |
 | pricing source: runtime に都度 fetch | 常に最新 | issue が明示する「実行ごとに network 必須にしない」に反する | no |
-| auto stage: 現行 cost.output heuristic を interim auto classifier として残し、#46 が差し替え | unclassified 増加による tier 退化を防げる | #46 の公式 formula と二重定義になるリスク | yes（seam として分離し暫定実装と明記） |
-| auto stage: #46 まで全て unclassified | 実装最小 | 未分類 → medium 扱いで low tier worker が高価 model を掴む退化 | no |
+| auto stage: 現行 cost.output heuristic を interim auto classifier として残し、#46 が差し替え | unclassified 増加による tier 退化を防げる | absolute USD threshold は #46 で不採用の方向のため rejected design を production に入れてしまう | no（issue #45 追記・review 指摘で不採用） |
+| auto stage: #46 まで全て unclassified | 実装最小・#45 が #46 の採否に依存しない | 未分類 → medium 扱いで low tier には overrides/exceptions の pin が要る | yes |
 | built-in regex 表: curated exceptions へ移行して削除 | issue の意図に忠実・表現 drift 解消 | 既知 model の名前一貫性が例外 entry の整備に依存 | yes |
 
 ## Tentative Conclusions and Hypotheses
