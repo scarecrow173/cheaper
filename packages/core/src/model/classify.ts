@@ -1,67 +1,48 @@
 import type { ModelConfig } from "./config.js";
+import { findModelException } from "./exceptions.js";
+import { modelKey } from "./ref.js";
 import type { Tier } from "./tier.js";
 
 /** Pi 型に依存しない core 側の最小 model shape。 */
 export interface ModelInfo {
   provider: string;
   id: string;
-  cost?: { input: number; output: number };
+  cost?: { input: number; output: number; cacheRead?: number; cacheWrite?: number };
   maxTokens?: number;
 }
 
 /**
- * DESIGN-0003 の built-in 分類表。model id を小文字化して評価し、
- * high → low → medium の順で最初に一致した tier を採用する。
+ * tier 分類の provenance。`cheaper models`・`meta.model.tierSource` で
+ * 検査可能にする（issue #45）。
  */
-const BUILTIN_TABLE: ReadonlyArray<{ tier: Tier; patterns: RegExp[] }> = [
-  {
-    tier: "high",
-    patterns: [/opus/, /gpt-5(\.\d+)?-pro/, /\bo1(-pro)?\b/, /o3-pro/, /heavy/, /ultra/],
-  },
-  {
-    tier: "low",
-    patterns: [
-      /haiku/,
-      /\bmini\b/, // "gemini" 内の部分文字列を誤 match させない（gemini-.*-pro は medium）
-      /nano/,
-      /flash/,
-      /lite/,
-      /small/,
-      /codex-mini/,
-      /\b(1|3|7|8)b\b/,
-    ],
-  },
-  {
-    tier: "medium",
-    patterns: [
-      /sonnet/,
-      /gpt-4o/,
-      /gpt-4\.1/,
-      /gpt-5(\.\d+)?$/,
-      /gemini-.*-pro/,
-      /\bo3\b/,
-      /codex/,
-    ],
-  },
-];
+export type TierSource =
+  /** models.yaml `overrides` の明示指定 */
+  | "explicit-override"
+  /** bundled curated exceptions（exhaustive な tier list ではない） */
+  | "curated-exception"
+  /** pricing metadata 由来の自動分類。#46 が生成経路を追加する seam で、#45 では生成しない */
+  | "auto"
+  /** どの分類根拠にも当たらず medium にフォールバック */
+  | "unclassified";
+
+export interface Classification {
+  tier: Tier;
+  source: TierSource;
+}
 
 /**
- * tier 分類 priority: overrides > built-in 表 > cost heuristic > medium。
- * cost heuristic は cost.output（USD/1M token）: <2 → low、≤20 → medium、>20 → high。
- * cost 欠落・0 → medium。
+ * tier 分類 pipeline。priority は `overrides > curated exceptions >
+ * unclassified` で最初に一致したものを採用する。price ベースの自動分類
+ * （`source: "auto"`）は #46 の scope であり #45 では生成しない
+ * （issue #45 追記）。unclassified の effective tier は `medium`
+ * （既存不変条件）だが `source` で区別できる。
  */
-export function classifyModel(model: ModelInfo, config: ModelConfig): Tier {
-  const override = config.overrides[`${model.provider}/${model.id}`];
-  if (override !== undefined) return override;
+export function classifyModel(model: ModelInfo, config: ModelConfig): Classification {
+  const override = config.overrides[modelKey(model.provider, model.id)];
+  if (override !== undefined) return { tier: override, source: "explicit-override" };
 
-  const id = model.id.toLowerCase();
-  for (const { tier, patterns } of BUILTIN_TABLE) {
-    if (patterns.some((p) => p.test(id))) return tier;
-  }
+  const exception = findModelException(model.provider, model.id);
+  if (exception !== undefined) return { tier: exception.tier, source: "curated-exception" };
 
-  const output = model.cost?.output;
-  if (output === undefined || output === 0) return "medium";
-  if (output < 2) return "low";
-  if (output <= 20) return "medium";
-  return "high";
+  return { tier: "medium", source: "unclassified" };
 }

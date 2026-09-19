@@ -3,12 +3,16 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   CheaperError,
   canonicalizeWorkspaceRoot,
+  classifyModel,
   countFileTokens,
   FileTooLargeError,
+  isExcludedModel,
   loadModelConfig,
   loadPolicy,
+  type ModelInfo,
   parseDuration,
   resolveConfigDirs,
+  resolvePricing,
   resolveWorker,
   resolveWorkerFile,
   restrictPolicy,
@@ -22,9 +26,10 @@ import {
   type RunWorkerDeps,
   runWorker,
   type StreamFnLike,
+  toModelInfo,
   type WorkerRunMeta,
 } from "@cheaper/runtime-pi";
-import { parseCliArgs, type RunCliArgs } from "./args.js";
+import { type ModelsCliArgs, parseCliArgs, type RunCliArgs } from "./args.js";
 import { executeAuth } from "./auth.js";
 import {
   type CliEnvelope,
@@ -34,8 +39,9 @@ import {
   utilitySuccessEnvelope,
 } from "./envelope.js";
 import { readTaskInput, type StdinLike } from "./input.js";
-import { formatText } from "./text-format.js";
+import { formatText, formatUsageReport } from "./text-format.js";
 import { recordUsage } from "./usage-log.js";
+import { buildUsageReport, splitModelRef } from "./usage-report.js";
 import { packageVersion } from "./version.js";
 
 export interface CliIo {
@@ -72,6 +78,8 @@ Commands:
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
   count-tokens <path>    Count canonical tokens of a workspace file
+  usage                  Aggregate usage.jsonl (worker cost / measured savings)
+  models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
@@ -81,8 +89,14 @@ Options:
   --worker-file <path>   Run an explicit worker file (run only)
   --cwd <path>           Workspace root (default: process.cwd())
   --timeout <duration>   Narrow policy timeout (e.g. 30s, 5m)
+  --model <prov>/<id>    run: explicit model; usage: filter by model
+  --provider <id>        models/usage: filter by provider
+  --tier <low|med|high>  Filter 'models' output by effective tier
   --method <id>          Auto-answer auth login select prompts (e.g. device)
   --type <oauth|api_key> Auth method for 'auth login' (default: oauth)
+  --since <duration>     usage: only records within the period (e.g. 24h)
+  --worker <name>        usage: filter by worker name
+  --compare-model <p/id> usage: estimate savings vs this model
   --format <json|text>   Output format (default: json)
   --quiet                Suppress stderr diagnostics
   --help                 Show this help
@@ -227,6 +241,7 @@ async function executeRun(
       catalog: runtime as ModelCatalog,
       modelRuntime: runtime,
       signal: ac.signal,
+      ...(args.model !== undefined ? { explicitModel: args.model } : {}),
       ...(streamFn !== undefined ? { streamFn } : {}),
     };
     const { result, meta } = await (hooks.runWorker ?? runWorker)(deps);
@@ -244,6 +259,74 @@ async function executeRun(
     process.off("SIGINT", onSigint);
     process.off("SIGTERM", onSigterm);
     hooks.signal?.removeEventListener("abort", onAbort);
+  }
+}
+
+/**
+ * `cheaper models`（issue #45）。runtime の available catalog を列挙し、
+ * 各 model に exclude・effective pricing・classification を適用した
+ * 一覧を `result.models[]` で返す。worker run を伴わないため utility
+ * envelope を使う。
+ */
+async function executeModels(
+  args: ModelsCliArgs,
+  io: CliIo,
+  hooks: CliHooks,
+  startedAt: number,
+): Promise<{ envelope: CliEnvelope; exitCode: number }> {
+  const now = hooks.now ?? Date.now;
+  const builtinDir = hooks.builtinDir ?? defaultBuiltinDir();
+  const root = await canonicalizeWorkspaceRoot(args.cwd ?? io.cwd);
+  const dirs = resolveConfigDirs({ cwd: root, builtinDir, env: io.env });
+  const modelConfig = await loadModelConfig({
+    userConfigDir: dirs.userConfigDir,
+    projectDir: dirs.projectDir,
+  });
+  const runtime = await (hooks.createModelRuntime ?? createModelRuntime)({ env: io.env });
+  const available = (await runtime.getAvailable()).map(toModelInfo);
+  const models = available
+    .filter((m) => args.provider === undefined || m.provider === args.provider)
+    .map((m) => {
+      const pricing = resolvePricing(m);
+      const classification = classifyModel(m, modelConfig);
+      return {
+        provider: m.provider,
+        id: m.id,
+        excluded: isExcludedModel(m, modelConfig),
+        tier: classification.tier,
+        tierSource: classification.source,
+        pricing: pricing ?? null,
+      };
+    })
+    .filter((m) => args.tier === undefined || m.tier === args.tier);
+  return {
+    envelope: utilitySuccessEnvelope({ result: { models }, durationMs: now() - startedAt }),
+    exitCode: 0,
+  };
+}
+
+/**
+ * `cheaper usage --compare-model` 用に runtime catalog から対象 model の
+ * 観測（cost 等）を取る（issue #45 pricing layer の runtime-catalog source）。
+ * 集計自体は read-only が本筋のため、catalog 不在・runtime 初期化失敗は
+ * estimated を諦めるだけで report には影響させない（best-effort）。
+ * `refreshOnCreate: false` で network refresh を行わず、persisted catalog
+ * と builtin の static model だけを見る。
+ */
+async function lookupCatalogModel(
+  ref: { provider: string; id: string },
+  io: CliIo,
+  hooks: CliHooks,
+): Promise<ModelInfo | undefined> {
+  try {
+    const runtime = await (hooks.createModelRuntime ?? createModelRuntime)({
+      env: io.env,
+      refreshOnCreate: false,
+    });
+    const model = runtime.getModel(ref.provider, ref.id);
+    return model === undefined ? undefined : toModelInfo(model);
+  } catch {
+    return undefined;
   }
 }
 
@@ -335,6 +418,71 @@ export async function runCli(
       return 0;
     }
 
+    if (parsed.kind === "usage") {
+      // usage.jsonl の read-only 集計。worker/model 解決を伴わないため
+      // config dir のみ解決する。usage command 自体は記録対象外。
+      let sinceMs: number | undefined;
+      if (parsed.since !== undefined) {
+        try {
+          sinceMs = parseDuration(parsed.since);
+        } catch {
+          throw invalidRequest(`invalid --since duration: ${parsed.since}`, {
+            since: parsed.since,
+          });
+        }
+      }
+      if (parsed.model !== undefined && splitModelRef(parsed.model) === null) {
+        throw invalidRequest(`invalid --model: ${parsed.model} (expected <provider>/<id>)`, {
+          model: parsed.model,
+        });
+      }
+      if (parsed.compareModel !== undefined && splitModelRef(parsed.compareModel) === null) {
+        throw invalidRequest(
+          `invalid --compare-model: ${parsed.compareModel} (expected <provider>/<id>)`,
+          { compareModel: parsed.compareModel },
+        );
+      }
+      const dirs = resolveConfigDirs({
+        cwd: io.cwd,
+        builtinDir: hooks.builtinDir ?? defaultBuiltinDir(),
+        env: io.env,
+      });
+      const compareModelRef =
+        parsed.compareModel !== undefined ? splitModelRef(parsed.compareModel) : null;
+      const report = buildUsageReport({
+        userConfigDir: dirs.userConfigDir,
+        filters: {
+          ...(sinceMs !== undefined ? { sinceMs } : {}),
+          ...(parsed.worker !== undefined ? { worker: parsed.worker } : {}),
+          ...(parsed.provider !== undefined ? { provider: parsed.provider } : {}),
+          ...(parsed.model !== undefined ? { model: parsed.model } : {}),
+        },
+        ...(parsed.compareModel !== undefined ? { compareModel: parsed.compareModel } : {}),
+        // runtime catalog の cost を estimated の第1供給源として渡す
+        //（未取得でも snapshot 経路で試行される）。
+        ...(compareModelRef !== null && compareModelRef !== undefined
+          ? { compareCatalogModel: await lookupCatalogModel(compareModelRef, io, hooks) }
+          : {}),
+        now,
+      });
+      if (parsed.format === "text") {
+        io.stdout.write(formatUsageReport(report));
+      } else {
+        const envelope = utilitySuccessEnvelope({
+          result: report as unknown as Record<string, unknown>,
+          durationMs: now() - startedAt,
+        });
+        io.stdout.write(envelopeJson(envelope));
+      }
+      return 0;
+    }
+
+    if (parsed.kind === "models") {
+      const { envelope, exitCode } = await executeModels(parsed, io, hooks, startedAt);
+      io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
+      return exitCode;
+    }
+
     if (parsed.kind === "auth") {
       const { envelope, exitCode } = await executeAuth(parsed, io, hooks, startedAt);
       io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
@@ -371,7 +519,12 @@ export async function runCli(
     let quiet = false;
     try {
       const p = parseCliArgs(argv);
-      if (p.kind === "run" || p.kind === "count-tokens" || p.kind === "auth") {
+      if (
+        p.kind === "run" ||
+        p.kind === "count-tokens" ||
+        p.kind === "usage" ||
+        p.kind === "auth"
+      ) {
         format = p.format;
         quiet = p.quiet;
       }

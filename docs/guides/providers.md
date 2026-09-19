@@ -83,10 +83,14 @@ preferences:
     - "ollama/*"
 ```
 
-- built-in の tier 分類は model id のパターン（`haiku|mini|nano|
-  flash|lite|small|codex-mini|\b(1|3|7|8)b\b`）で low を判定し、
-  cost 0 / 未分類は **medium** になる。`4b` / `9b` のような
-  suffix は `overrides` で low に pin する。
+- tier 分類は `overrides` → bundled curated exceptions →
+  unclassified（**medium**）の順で決まる。price ベースの自動分類は
+  別 issue（#46）で導入予定のため、現状は override・exception
+  非該当の model はすべて `medium` になる。local model
+  （`ollama/*`）は curated exception で `low` に固定されている。
+  model ごとの effective tier と由来は `cheaper models` で確認
+  できる。`4b` / `9b` のような suffix は `overrides` で low に
+  pin する。
 - built-in worker は `tier: low` 要求 + built-in policy は
   `tierFallback: none` なので、low tier に解決できる model が
   1 つ必要。
@@ -152,8 +156,10 @@ preferences:
 provider の auth capability（login method・
 subscription flag）と configured state・credential
 metadata を確認するコマンドであり、model catalog は
-返さない。model の実利用確認は worker 実行の result
-envelope `meta.model` で行う（下記「検証」参照）。
+返さない。available model の一覧・pricing・effective tier は
+`cheaper models` で確認し、実際に使われた model の確認は
+worker 実行の result envelope `meta.model` で行う
+（下記「検証」参照）。
 
 ### 検証
 

@@ -9,11 +9,16 @@ Directory: `docs/tasks`
 | TASK-034rAcFy8if4UmbPEMTdg1 | Adapter contract tests and APM install E2E assertions | todo | [adapter-contract-tests-and-apm-install-e2e-assertions.md](./adapter-contract-tests-and-apm-install-e2e-assertions.md) |
 | TASK-034r05iHQeQpDpq6zeHAT0 | Add built-in worker definitions | done | [add-built-in-worker-definitions.md](./add-built-in-worker-definitions.md) |
 | TASK-034r05iHQeQpDppVaGtCgu | Add built-in worker JSON schemas | done | [add-built-in-worker-json-schemas.md](./add-built-in-worker-json-schemas.md) |
+| TASK-034rzRuCuCgZ08BmHTCqgz | Add cheaper usage aggregation command with filters and estimated savings | done | [add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md](./add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md) |
+| TASK-034rzWT9V9bHwEIcrmbTor | Add CLI --model flag and models command | done | [add-cli-model-flag-and-models-command.md](./add-cli-model-flag-and-models-command.md) |
 | TASK-034r05iHQeQpDpSS51up2r | Add count-tokens CLI command | done | [add-count-tokens-cli.md](./add-count-tokens-cli.md) |
 | TASK-034r05iHQeQpDpSeJahHce | Add count_tokens tool to runtime-pi registry and built-in workers | done | [add-count-tokens-tool.md](./add-count-tokens-tool.md) |
 | TASK-034r05iHQeQpDpOWHdF7Wo | Add doc-writer built-in Worker | done | [add-doc-writer-worker.md](./add-doc-writer-worker.md) |
+| TASK-034rzRv1K2fmi2Igbdu5HG | Add e2e coverage, docs, bundle regen and final verification | done | [add-e2e-coverage-docs-bundle-regen-and-final-verification.md](./add-e2e-coverage-docs-bundle-regen-and-final-verification.md) |
 | TASK-034r05iHQeQpDpsYVkvsPX | Add e2e tests for non-execution CLI paths | done | [add-e2e-tests-for-non-execution-cli-paths.md](./add-e2e-tests-for-non-execution-cli-paths.md) |
 | TASK-034r05iHQeQpDpu1iPmr1q | Add fake stream hook and e2e execution tests | done | [add-fake-stream-hook-and-e2e-execution-tests.md](./add-fake-stream-hook-and-e2e-execution-tests.md) |
+| TASK-034rzWI7U1txBCpGr7WZaJ | Add model pricing metadata layer and bundled data | done | [add-model-pricing-metadata-layer.md](./add-model-pricing-metadata-layer.md) |
+| TASK-034rzWIEgBvwU5S4KYY68N | Add models.yaml exclude with union merge | done | [add-models-config-exclude.md](./add-models-config-exclude.md) |
 | TASK-034r05iHQeQpDpySHHPmpY | Add Ollama docker-compose and document container usage in AGENTS.md | done | [add-ollama-docker-compose-and-document-container-usage-in-agents-md.md](./add-ollama-docker-compose-and-document-container-usage-in-agents-md.md) |
 | TASK-034r05iHWkNF7zJyX85ZOT | Add provider plugin contract and registration order | done | [add-provider-plugin-contract-and-registration-order.md](./add-provider-plugin-contract-and-registration-order.md) |
 | TASK-034r05iHWkNF7zFyMzc7zU | Add resolveUserConfigDir helper and Pi state path wiring | done | [add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md](./add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md) |
@@ -55,6 +60,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
+| TASK-034rzRugER0y7cQ2tlWjPp | Extend usage.jsonl run record with savings section | done | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | TASK-034r05iHQeQpDpFFl8q6NC | Extract promptWithAbortGrace helper and apply to main run | done | [extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
 | TASK-034r05iHQeQpDqhWcXGfA0 | Finalize contract matrix and consumer pointer | done | [finalize-contract-matrix-and-consumer-pointer.md](./finalize-contract-matrix-and-consumer-pointer.md) |
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
@@ -62,6 +68,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7h4BqSHmqd | Implement boundary-checked tool operations with atomic writes | done | [implement-boundary-checked-tool-operations-with-atomic-writes.md](./implement-boundary-checked-tool-operations-with-atomic-writes.md) |
 | TASK-034r05iHK8bA7gTkcKo0xf | Implement capability intersection checks | done | [implement-capability-intersection-checks.md](./implement-capability-intersection-checks.md) |
 | TASK-034r05iHK8bA7hco9mHiho | Implement CheaperResourceLoader without discovery | done | [implement-cheaperresourceloader-without-discovery.md](./implement-cheaperresourceloader-without-discovery.md) |
+| TASK-034rzWJcbIzVxc1Lhk5bxB | Implement classification pipeline and explicit model resolution | done | [implement-classification-pipeline.md](./implement-classification-pipeline.md) |
 | TASK-034r05iHK8bA7hoW2XFV4o | Implement CLI argument parsing | done | [implement-cli-argument-parsing.md](./implement-cli-argument-parsing.md) |
 | TASK-034r05iHQeQpDpro7GvlKQ | Implement CLI main orchestration | done | [implement-cli-main-orchestration.md](./implement-cli-main-orchestration.md) |
 | TASK-034r05iHK8bA7gHSXhJFHL | Implement config directory resolution | done | [implement-config-directory-resolution.md](./implement-config-directory-resolution.md) |
@@ -102,6 +109,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gUBy3ygQD | Implement workspace path resolution with symlink policy | done | [implement-workspace-path-resolution-with-symlink-policy.md](./implement-workspace-path-resolution-with-symlink-policy.md) |
 | TASK-034r6roOdgb1mKbE0LLAv3 | inject generous eval budget into bigTool factory | done | [inject-eval-budget-bigtool.md](./inject-eval-budget-bigtool.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
+| TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
 | TASK-034r05iHQeQpDqrbmtswfZ | Move .apm primitives to nested distributable package and make root apm.yml dev-only | done | [move-apm-primitives-to-distributable-package.md](./move-apm-primitives-to-distributable-package.md) |
 | TASK-034rAcF1RPJJogj2vzFDrF | New adapter scripts and hooks.json event registration | todo | [new-adapter-scripts-and-hooks-json-event-registration.md](./new-adapter-scripts-and-hooks-json-event-registration.md) |
@@ -131,6 +139,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqylmM3Elr | Update README/AGENTS for canonical contract and verify clean-state setup/check | done | [update-docs-and-verify-clean-state-setup-check.md](./update-docs-and-verify-clean-state-setup-check.md) |
 | TASK-034r05iHQeQpDpQ62tRnRU | Update docs indexes, supersede relations, and verify writer restructure | done | [update-docs-and-verify-writer-restructure.md](./update-docs-and-verify-writer-restructure.md) |
 | TASK-034r05iHWkNF7zIILagCbE | Update docs, regenerate bundle, and run final verification | done | [update-docs-regenerate-bundle-and-run-final-verification.md](./update-docs-regenerate-bundle-and-run-final-verification.md) |
+| TASK-034rzWTSt6UWHtrOMOegau | Update guides for pricing catalog | done | [update-guides-for-pricing-catalog.md](./update-guides-for-pricing-catalog.md) |
 | TASK-034r05iHQeQpDpZOlmNJoM | Update indexes and verify delegation layer | done | [update-indexes-and-verify-delegation-layer.md](./update-indexes-and-verify-delegation-layer.md) |
 | TASK-034r05iHQeQpDqvqdt4mXS | Update README/AGENTS for dev/distribution split and run final verification | done | [update-readme-agents-and-final-verification.md](./update-readme-agents-and-final-verification.md) |
 | TASK-034r05iHQeQpDpMem6J7OE | Update README and add provider setup guide | done | [update-readme-and-add-provider-setup-guide.md](./update-readme-and-add-provider-setup-guide.md) |
@@ -139,5 +148,6 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
 | TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
+| TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |
 | TASK-034r05iHQeQpDqac6FjqrJ | Writer writeScope declaration and e2e verification | done | [writer-write-scope-and-e2e-verification.md](./writer-write-scope-and-e2e-verification.md) |

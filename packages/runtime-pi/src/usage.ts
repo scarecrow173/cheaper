@@ -9,6 +9,27 @@ export interface WorkerUsage {
   costUsd: number;
 }
 
+/**
+ * 親コンテキストからの offload 実測（実際値。推定ではない）。
+ * - `sourceTokens`: 全 tool output text の canonical token 和
+ * - `returnedTokens`: 成功時は `JSON.stringify(result)` の token 数。
+ *   失敗で result が無いときは 0
+ * - `avoidedContextTokens`: `max(0, sourceTokens - returnedTokens)`
+ */
+export interface WorkerSavings {
+  sourceTokens: number;
+  returnedTokens: number;
+  avoidedContextTokens: number;
+  /**
+   * source↔returned を親 model の直接実行コストと直接比較できる
+   * workload か（read-only worker のみ true。core の
+   * `isDirectlyComparableWorker` で判定）。false の record は
+   * `cheaper usage` の estimated 算出の母数に含めない。
+   * 旧 schema の record には存在しない（非 comparable 扱い）。
+   */
+  directlyComparable: boolean;
+}
+
 export interface UsageSnapshot {
   usage: WorkerUsage;
   turns: number;

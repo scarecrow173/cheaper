@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { WorkerUsage } from "@cheaper/runtime-pi";
+import type { WorkerSavings, WorkerUsage } from "@cheaper/runtime-pi";
 import type { CliEnvelope } from "./envelope.js";
 
 /** usage.jsonl の 1 行レコード（ADR-0025）。 */
@@ -17,6 +17,14 @@ export interface UsageLogRecord {
   durationMs: number | null;
   model?: { provider: string; id: string; tier: string };
   usage?: WorkerUsage;
+  /**
+   * 親コンテキスト offload の実測（run record のみ、optional。
+   * 旧 schema の record / count record には存在しない）。
+   */
+  savings?: WorkerSavings;
+  /** run record のみ。旧 schema の record には存在しない。 */
+  turns?: number;
+  toolCalls?: number;
   error?: { code: string };
   result?: { path?: string; tokens?: number; bytes?: number };
 }
@@ -64,6 +72,10 @@ export function buildUsageRecord(
       ok: true,
       model: env.meta.model,
       usage: env.meta.usage,
+      turns: env.meta.turns,
+      toolCalls: env.meta.toolCalls,
+      // savings は runtime が提供したときだけ載せる（後方互換）
+      ...(env.meta.savings ? { savings: env.meta.savings } : {}),
     };
   }
 
@@ -76,6 +88,9 @@ export function buildUsageRecord(
     ok: false,
     model: env.meta.model,
     usage: env.meta.usage,
+    ...(env.meta.turns !== null ? { turns: env.meta.turns } : {}),
+    ...(env.meta.toolCalls !== null ? { toolCalls: env.meta.toolCalls } : {}),
+    ...(env.meta.savings ? { savings: env.meta.savings } : {}),
     error: { code: env.error.code },
   };
 }

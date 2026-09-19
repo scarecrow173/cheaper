@@ -70,6 +70,31 @@ preferences:
     expect(config.preferences.medium).toEqual(["a/x"]);
   });
 
+  it("exclude は user と project で union される（project が user の deny を消さない）", async () => {
+    await writeFile(
+      path.join(userConfigDir, "models.yaml"),
+      `version: 1
+exclude: ["anthropic/claude-opus-4-5", "dup/x"]
+`,
+    );
+    await writeFile(
+      path.join(projectDir, "models.yaml"),
+      `version: 1
+exclude: ["openai/gpt-5-pro", "dup/x"]
+`,
+    );
+    const config = await loadModelConfig({ userConfigDir, projectDir });
+    expect(config.exclude).toEqual(
+      expect.arrayContaining(["anthropic/claude-opus-4-5", "openai/gpt-5-pro", "dup/x"]),
+    );
+    expect(config.exclude).toHaveLength(3);
+  });
+
+  it("exclude が無い layer では exclude は undefined のまま", async () => {
+    const config = await loadModelConfig({ userConfigDir, projectDir });
+    expect(config.exclude).toBeUndefined();
+  });
+
   it("rejects missing version", async () => {
     await writeFile(path.join(userConfigDir, "models.yaml"), "overrides: {}\n");
     await expect(loadModelConfig({ userConfigDir, projectDir })).rejects.toMatchObject({
