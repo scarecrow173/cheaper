@@ -1,5 +1,12 @@
 import { CheaperError } from "../errors.js";
-import { classifyModel, type ModelInfo, type TierSource } from "./classify.js";
+import {
+  type AutoClassificationDetail,
+  buildAutoTierContext,
+  classifyModel,
+  classifyModels,
+  type ModelInfo,
+  type TierSource,
+} from "./classify.js";
 import type { ModelConfig } from "./config.js";
 import { type ModelPricing, resolvePricing } from "./pricing.js";
 import { matchModelPattern, modelKey } from "./ref.js";
@@ -13,6 +20,8 @@ export interface ResolvedModel {
   tierSource: TierSource;
   /** effective pricing（unpriced なら undefined）。 */
   pricing?: ModelPricing;
+  /** auto 分類の根拠（tierSource === "auto" のときのみ存在）。 */
+  auto?: AutoClassificationDetail;
   /** "tier" = tier resolver 経路、"explicit" = `--model` 直接指定。 */
   selection: "tier" | "explicit";
 }
@@ -59,6 +68,8 @@ export function resolveModel(opts: {
   requestedTier: Tier;
   policy: { maxTier: Tier; tierFallback: "none" | "higher" };
   config: ModelConfig;
+  /** Worker workload profile（issue #46）。未指定は DEFAULT_OUTPUT_PER_INPUT。 */
+  outputPerInput?: number;
 }): ResolvedModel {
   const { available, requestedTier, policy, config } = opts;
 
@@ -76,13 +87,16 @@ export function resolveModel(opts: {
     );
   }
 
+  const classifications = classifyModels(eligible, config, {
+    outputPerInput: opts.outputPerInput,
+  });
   const byTier = new Map<
     Tier,
     { model: ModelInfo; classification: ReturnType<typeof classifyModel>; pricing?: ModelPricing }[]
   >();
   for (const m of eligible) {
     const pricing = resolvePricing(m);
-    const classification = classifyModel(m, config);
+    const classification = classifications.get(m) as ReturnType<typeof classifyModel>;
     const list = byTier.get(classification.tier) ?? [];
     list.push({ model: m, classification, ...(pricing !== undefined ? { pricing } : {}) });
     byTier.set(classification.tier, list);
@@ -103,6 +117,7 @@ export function resolveModel(opts: {
         tier,
         tierSource: entry.classification.source,
         ...(entry.pricing !== undefined ? { pricing: entry.pricing } : {}),
+        ...(entry.classification.auto !== undefined ? { auto: entry.classification.auto } : {}),
         selection: "tier",
       };
     }
@@ -126,6 +141,8 @@ export function resolveExplicitModel(opts: {
   ref: { provider: string; id: string };
   policy: { maxTier: Tier };
   config: ModelConfig;
+  /** Worker workload profile（policy 判定用 tier の分類に使う）。 */
+  outputPerInput?: number;
 }): ResolvedModel {
   const { available, ref, policy, config } = opts;
   const target: ModelInfo = { provider: ref.provider, id: ref.id };
@@ -145,8 +162,12 @@ export function resolveExplicitModel(opts: {
       { details: { reason: "model-unavailable", model: modelKey(ref.provider, ref.id) } },
     );
   }
+  const eligible = available.filter((m) => !isExcludedModel(m, config));
+  const autoContext = buildAutoTierContext(eligible, {
+    outputPerInput: opts.outputPerInput,
+  });
   const pricing = resolvePricing(model);
-  const classification = classifyModel(model, config);
+  const classification = classifyModel(model, config, { pricing, autoContext });
   if (compareTier(classification.tier, policy.maxTier) > 0) {
     throw new CheaperError(
       "POLICY_VIOLATION",
@@ -166,6 +187,7 @@ export function resolveExplicitModel(opts: {
     tier: classification.tier,
     tierSource: classification.source,
     ...(pricing !== undefined ? { pricing } : {}),
+    ...(classification.auto !== undefined ? { auto: classification.auto } : {}),
     selection: "explicit",
   };
 }

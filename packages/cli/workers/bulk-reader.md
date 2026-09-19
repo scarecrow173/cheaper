@@ -10,6 +10,9 @@ tools:
 cheaper:
   model:
     tier: low
+    workload:
+      # 大量 input に対して少量の構造化 output を返す workload
+      outputPerInput: 0.05
   input:
     schema:
       file: ./schemas/bulk-reader.input.schema.json
