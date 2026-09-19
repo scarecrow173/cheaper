@@ -14,6 +14,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1FbkoVrzp9sac | Implement canonical Token Counter, count_tokens tool, and count-tokens CLI | completed | [canonical-token-counter.md](./canonical-token-counter.md) |
 | PLAN-034r05iHE1FbkpaEpZrthK | Copilot pre-read hook adapter — implementation plan | completed | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | PLAN-034r05iHE1Fbkp2TZ2Z666 | Cross-agent distribution verification | completed | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
+| PLAN-034rAaIojIXLbCI0pJGpYg | Cross-agent native routing adapters implementation | draft | [cross-agent-native-routing-adapters-implementation.md](./cross-agent-native-routing-adapters-implementation.md) |
 | PLAN-034r05iHE1Fbkpd5tkg6Gs | Delegation usage measurement log — implementation plan | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
 | PLAN-034r05iHE1Fbkp5YZSKJM2 | Development APM project / distributable package separation | completed | [dev-apm-and-distributable-package-separation.md](./dev-apm-and-distributable-package-separation.md) |
 | PLAN-034r05iHK8bA7g45xvDT4a | Devin Local provider plugin — implementation plan | completed | [devin-local-provider-plugin-implementation-plan.md](./devin-local-provider-plugin-implementation-plan.md) |
