@@ -90,27 +90,34 @@ TSPEC-034rBrs4K5W7pe0ixjegZk）に従う。Issue #42。
   - `extractReadCandidates(command)`: env 代入 prefix を skip し、
     command 名（`.exe` / `.cmd` / `.bat` 等の Windows suffix 含む）
     を照合して、option を除いた operand を一意化して返す。
+    `cd` / `pushd` / `Set-Location` 等の cwd 遷移 command の後段
+    segment は read 対象を特定できない ambiguous として skip
+    する（fail-open）。
   - `evaluateShell(request, opts)`: 各 candidate を
     `evaluateFileRead` に委譲し、最初の deny で command 全体を
     deny。deny reason の先頭に正規化した command を付記する。
 - `packages/cli/test/e2e/cross-agent-routing-adapters.test.ts`
-  - canonical shell request 経路の contract test 16 case と、
+  - canonical shell request 経路の contract test 17 case と、
     4 target adapter（Windsurf exit 2 / pretooluse deny JSON /
     Cursor permission / Copilot permissionDecision）の native
     deny 表現を固定。
 - `docs/guides/parent-agent-integration.md`
   - 「shell 経由の file read 検出」節を追加し、対象 command・
-    target 別対応・fail-open/fail-closed・既知制限（cwd 追跡
-    なし・ambiguous syntax fail-open・任意コマンド non-goal・
-    Codex file-read unsupported）を記述。
+    target 別対応・fail-open/fail-closed・既知制限（cwd 遷移
+    後段の fail-open・ambiguous syntax fail-open・任意コマンド
+    non-goal・Codex file-read unsupported）を記述。
 
 ### Decisions During Implementation
 
 - deny 判定は `evaluateFileRead` への委譲のみとし、shell 側に
   threshold・workspace・`FILE_TOO_LARGE` ロジックを複製しない
   （DRY / SPEC-034rBhR3SNIRFZ1B6n26iH の同一判定要件）。
-- `cd` 追跡は行わず hook 起動時 cwd を基準に評価する。誤検出
-  ではなく既知制限として contract test と guide に固定した。
+- `cd` 追跡は行わない。当初は後段 read を hook 起動時 cwd を
+  基準に評価していたが、review で「実際に読まれる file と異なる
+  対象を判定し、誤 block・誤 pass の両方があり得る」と指摘された
+  ため、cwd 遷移 command の後段 segment を ambiguous として
+  fail-open に倒す実装へ修正し、contract test と guide を整合
+  させた。
 - 手動 smoke で `x`×9000 fixture が threshold 未達だった件は、
   token 数で閾値判定される仕様通りの挙動。test fixture は
   `lorem ipsum` 系の語列で token 数を確保する方式にした。
@@ -129,7 +136,7 @@ TSPEC-034rBrs4K5W7pe0ixjegZk）に従う。Issue #42。
 
 - `mise exec -- pnpm --filter cheaper exec vitest run
   test/e2e/cross-agent-routing-adapters.test.ts`:
-  31 tests 全件 pass（2026-09-20）。
+  32 tests 全件 pass（2026-09-20）。
 - `mise run check`: 後述の task 3 verification で実行。
 
 ## Risks

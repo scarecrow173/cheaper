@@ -68,8 +68,9 @@ large-read 判定（`evaluateFileRead`）へ流して allow/deny を返す。
   誤認しない。`--` 以降は operand。
 - Rule: 複数 operand のうち 1 つでも deny なら command 全体を deny。
 - Rule: 対象外 command・operand なし（`cat` 単独）・pipe 後段・
-  解釈不能構文（`$`・redirect・glob・未閉鎖 quote）・file 不存在・
-  directory・workspace 外 path・malformed payload・CLI 起動失敗・
+  解釈不能構文（`$`・redirect・glob・未閉鎖 quote）・`cd`/`pushd`
+  等の cwd 遷移 command の後段 segment・file 不存在・directory・
+  workspace 外 path・malformed payload・CLI 起動失敗・
   `count-tokens` output parse 失敗は全て allow（fail-open）。
 - Rule: `FILE_TOO_LARGE` envelope は fail-closed で deny。
 - Rule: `CHEAPER_READ_TOKEN_THRESHOLD` override は shell-read にも適用
@@ -89,8 +90,15 @@ large-read 判定（`evaluateFileRead`）へ流して allow/deny を返す。
   Given `grep foo small.txt | head` → allow（head の operand なし）。
 - Given `cat "path with spaces/big.txt"` → quoted path を1 operand として
   復元し deny。
-- Given `cd src && cat big.txt`（big.txt が hook cwd 直下に存在）→
-  deny（cwd 追跡しない既知制限の挙動を固定）。
+- Given `cd src && cat big.txt` → allow（cwd 遷移の後段は実際に
+  読まれる file を特定できないため ambiguous → fail-open）。
+- Given hook cwd の `big.txt` が large・`src/big.txt` が small で
+  `cd src && cat big.txt` → allow（誤 block しない regression）。
+- Given hook cwd に `big.txt` が無く `src/big.txt` が large で
+  `cd src && cat big.txt` → allow（検出漏れを許容する既知制限）。
+  同条件で `cat src/big.txt` → deny（直接特定できる path は判定）。
+- Given `cat big.txt && cd src` → deny（cwd 遷移より前の segment は
+  hook cwd 基準で判定できる）。
 - Given `cat $(ls)` / `cat *.txt` / `cat ~/secret` 等の解釈不能構文 →
   allow（fail-open）。
 - Given file-read `{kind:"file-read"}` と shell `cat <same file>` → 同一
@@ -110,7 +118,8 @@ large-read 判定（`evaluateFileRead`）へ流して allow/deny を返す。
 
 - `sed`/`awk`/`python` 等の任意 code 経由 read の検出。
 - 実 agent binary での runtime E2E。
-- `cd` / `pushd` による cwd 追跡。
+- `cd` / `pushd` による実 cwd の追跡（後段は ambiguous として
+  fail-open に倒す）。
 
 ## Risk
 

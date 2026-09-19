@@ -139,6 +139,8 @@ cross-agent adapter 構成が canonical shell request の seam を既に提供
 - [ ] `FILE_TOO_LARGE` envelope は fail-closed で deny される。
 - [ ] `CHEAPER_READ_TOKEN_THRESHOLD` override が shell-read にも効く。
 - [ ] 複数 file 指定で 1 つだけ巨大でも deny される。
+- [ ] `cd` 等で cwd が変わる segment の後段にある read candidate は
+      ambiguous として allow（fail-open）になる。
 - [ ] `cat a.ts | grep foo`、`cd src && cat huge.ts`、quoted path
       （`cat "path with spaces/file.ts"`）等の代表 command が test で固定される。
 - [ ] shell parser と token 判定が分離され、判定は `evaluateFileRead` を
@@ -154,9 +156,11 @@ cross-agent adapter 構成が canonical shell request の seam を既に提供
 - `sed`/`awk`/`perl`/`python`/`xargs`/`find -exec` 等の任意経路の封鎖は
   将来の拡張候補。parser は対象 command set を table 駆動にして拡張余地を
   残すが、本 issue では 5 command のみ実装する。
-- `cd` による segment 間の cwd 変化は追跡しない（`cd src && cat huge.ts`
-  は hook 実行 cwd 基準で `huge.ts` を解決する。実装上の既知制限として
-  docs に記録する）。
+- `cd` による segment 間の cwd 変化は追跡しない。cwd 遷移 command の
+  後段にある read candidate は実行時 cwd を特定できないため ambiguous
+  として fail-open する（`cd src && cat huge.ts` は block しない。
+  実体 `src/huge.ts` が巨大でも見逃す許容済みの検出漏れ）。実 cwd を
+  追跡する parser 拡張は将来の候補。
 
 ## Sources and Relations
 

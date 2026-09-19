@@ -88,7 +88,8 @@ canonical large-read 判定で block する。
 
 - tokenizer の誤 block リスク: 疑わしい構文（`$`・redirect・glob・
   未閉鎖 quote）は segment skip で fail-open に倒す設計で緩和。
-- `cd src && cat huge.ts` は hook cwd 基準で解決する既知制限。
+- `cd src && cat huge.ts` のように cwd 遷移の後段にある read は
+  実体を特定できないため ambiguous → fail-open とする既知制限。
 - test は stdin 注入 contract test で網羅し、実 agent binary への
   依存を持たない従来方針を維持する。
 

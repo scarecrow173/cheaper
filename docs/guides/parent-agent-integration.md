@@ -119,19 +119,25 @@ file-read と同一の `count-tokens` 判定へ流す。
   ない。複数 operand は全て判定し、1 件でも deny なら command
   全体を block する。`|` / `||` / `&&` / `;` / 改行で区切った
   各 segment を独立して評価する（`cat a | grep x` の前段、
-  `cd src && cat huge.ts` の後段など）。
+  `cat small.txt ; cat huge.ts` の後段など）。
 - **fail-open（allow）**: 対象外 command、operand なし
   （`cat` 単体）、glob・`$`・backtick・`~`・redirect・未閉塞
-  quote など安全に path を特定できない構文、file 不存在・
-  directory・workspace 外 path、CLI 起動失敗、`count-tokens`
-  出力の parse 失敗、malformed hook payload。
+  quote など安全に path を特定できない構文、`cd` / `pushd` /
+  `Set-Location` 等で cwd が変わる segment の後段にある read
+  candidate（実際に読まれる file を特定できないため ambiguous）、
+  file 不存在・directory・workspace 外 path、CLI 起動失敗、
+  `count-tokens` 出力の parse 失敗、malformed hook payload。
 - **fail-closed（deny）**: token 数が threshold 超過、または
   parseable な `FILE_TOO_LARGE` envelope。deny の診断には
   block された command・対象 file・token 数または
   `FILE_TOO_LARGE`・閾値・`bulk-read` への誘導が含まれる。
 - **既知の制限**:
-  - `cd` / cwd 遷移は追跡しない。`cd src && cat huge.ts` は
-    hook 起動時の cwd を基準に `huge.ts` を評価する。
+  - `cd` 等の cwd 遷移は追跡しない。`cd src && cat huge.ts` の
+    ように後段の read 対象が実行時 cwd に依存する command は
+    ambiguous として fail-open する。実体（`src/huge.ts`）が
+    threshold 超過でも見逃すが、誤 block を避ける保守設計として
+    受け入れる。`cat src/huge.ts` のように workspace 相対で
+    path を特定できる場合は通常どおり判定される。
   - shell expansion・command substitution は実行しないため、
     展開を伴う operand は fail-open で素通しになる。
   - `sed` / `awk` / `python` 等の任意コマンド経由の read は

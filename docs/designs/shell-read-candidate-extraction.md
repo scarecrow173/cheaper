@@ -103,6 +103,11 @@ payload は既に canonical `{kind:"shell", command, cwd}` request として
     segment から operand を集める。`env`・`sudo`・`command`・`xargs`
     等の wrapper は unwrap しない（先頭が対象 command でなければ skip）。
     `VAR=val` 形式の環境変数 prefix token は skip してよい。
+  - `cd` / `chdir` / `pushd` / `popd` / `Set-Location` 等の cwd 遷移
+    command が先頭の segment が現れた時点で、それ以降の segment の
+    read candidate は実行時 cwd を特定できない ambiguous として
+    skip する（fail-open。誤った基準 dir で判定して誤 block /
+    誤 pass を起こさない）。
 - `evaluateShell(request, opts)`
   - `extractReadCandidates` で得た各 path を `{kind:"file-read", path,
     cwd}` として既存 `evaluateFileRead` へ流す（直接内部呼出し。
@@ -143,10 +148,13 @@ native shell hook payload
 
 ## Risks and Trade-offs
 
-- 検出漏れ: `cd src && cat huge.ts` で `huge.ts` は hook cwd 基準で解決
-  される（`src/huge.ts` ではない）。workspace 内に同名 file が無ければ
-  allow。誤 block より検出漏れを選ぶ保守設計として受け入れ、docs に
-  既知制限として記録する。
+- cwd 遷移の後段: `cd src && cat huge.ts` の `huge.ts` を hook cwd
+  基準で解決すると、実際に読まれる `src/huge.ts` ではなく誤った
+  file を判定し、誤 block・誤 pass の両方があり得る。そのため
+  cwd 遷移 command の後段 segment は ambiguous として fail-open
+  に倒す。実体が巨大でも見逃す検出漏れは許容し、誤 block を
+  避ける保守設計とする。`cat src/huge.ts` のように path が直接
+  特定できる場合は変わらず判定される。
 - PowerShell 構文（`cat` alias → `Get-Content` 等）: operand 規則は
   POSIX 寄りだが、tokenize 自体は quote/空白で動くため代表形はカバー
   される。PowerShell 固有構文（`;`・`%` 等）は解釈不能 → fail-open。
