@@ -26,6 +26,8 @@ relations:
   related:
     - "./apm-skills-and-pre-read-hook.md"
     - "./copilot-pre-read-hook-adapter.md"
+    - "../specs/shell-read-large-file-blocking.md"
+    - "../adr/conservative-shell-read-candidate-extraction-inside-the-shared-routing-policy.md"
   refines: []
   refined-by: []
   derives-from:

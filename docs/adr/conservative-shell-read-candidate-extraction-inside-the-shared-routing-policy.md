@@ -28,7 +28,6 @@ relations:
   related:
     - "../designs/cross-agent-native-routing-adapter-architecture.md"
     - "../designs/huge-file-byte-cap-guard-and-fail-closed-hook.md"
-    - "../specs/shell-read-large-file-blocking.md"
   refines:
     - "../specs/shell-read-large-file-blocking.md"
   refined-by: []

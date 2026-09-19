@@ -26,6 +26,7 @@ relations:
     - "../adr/canonical-tokenizer-js-tiktoken.md"
     - "../adr/default-large-read-threshold.md"
     - "./bulk-read-delegation-benchmark.md"
+    - "./shell-read-large-file-detection-boundary.md"
   refines: []
   refined-by: []
   derives-from: []

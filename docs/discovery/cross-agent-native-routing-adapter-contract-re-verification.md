@@ -27,6 +27,7 @@ relations:
   superseded-by: []
   related:
     - "./cross-agent-hook-distribution-and-contract-matrix.md"
+    - "./shell-read-large-file-detection-boundary.md"
   refines: []
   refined-by: []
   derives-from: []
