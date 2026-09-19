@@ -8,7 +8,13 @@ import { errorEnvelope, successEnvelope, utilitySuccessEnvelope } from "../src/e
 import { appendUsageLog, buildUsageRecord, recordUsage } from "../src/usage-log.js";
 
 const runMeta: WorkerRunMeta = {
-  model: { provider: "ollama", id: "qwen3.5:9b", tier: "low" },
+  model: {
+    provider: "ollama",
+    id: "qwen3.5:9b",
+    tier: "low",
+    selection: "tier",
+    tierSource: "explicit-override",
+  },
   usage: { input: 100, output: 20, cacheRead: 0, cacheWrite: 0, totalTokens: 120, costUsd: 0 },
   turns: 2,
   toolCalls: 1,
@@ -16,6 +22,13 @@ const runMeta: WorkerRunMeta = {
   repairs: 0,
   transientRetries: 0,
   changes: { files: [], totals: { files: 0, linesAdded: 0, linesDeleted: 0 } },
+};
+
+const savings = {
+  sourceTokens: 800,
+  returnedTokens: 12,
+  avoidedContextTokens: 788,
+  directlyComparable: true,
 };
 
 const NOW = () => new Date("2026-09-18T00:00:00.000Z");
@@ -37,8 +50,10 @@ describe("buildUsageRecord", () => {
       root: "/ws",
       ok: true,
       durationMs: 42,
-      model: { provider: "ollama", id: "qwen3.5:9b", tier: "low" },
+      model: runMeta.model,
       usage: runMeta.usage,
+      turns: 2,
+      toolCalls: 1,
     });
   });
 
@@ -57,6 +72,62 @@ describe("buildUsageRecord", () => {
       usage: runMeta.usage,
       error: { code: "INVALID_OUTPUT" },
     });
+  });
+
+  it("carries savings into a run record when meta provides it", () => {
+    const env = successEnvelope({
+      worker: "bulk-reader",
+      result: { findings: [] },
+      meta: { ...runMeta, savings },
+      durationMs: 42,
+    });
+    const rec = buildUsageRecord(env, { root: "/ws", now: NOW });
+    expect(rec).toMatchObject({ kind: "run", savings });
+  });
+
+  it("omits savings when the envelope meta does not provide it", () => {
+    const env = successEnvelope({
+      worker: "bulk-reader",
+      result: {},
+      meta: runMeta,
+      durationMs: 1,
+    });
+    const rec = buildUsageRecord(env, { root: "/ws", now: NOW });
+    expect(rec).not.toBeNull();
+    expect("savings" in (rec as object)).toBe(false);
+  });
+
+  it("carries savings into a failed run record from runMeta", () => {
+    const err = new WorkerRunError("PARTIAL_MUTATION", "boom", {
+      runMeta: {
+        ...runMeta,
+        savings: {
+          sourceTokens: 500,
+          returnedTokens: 0,
+          avoidedContextTokens: 500,
+          directlyComparable: true,
+        },
+      },
+    });
+    const env = errorEnvelope(err, { worker: "bulk-reader", durationMs: 9 });
+    const rec = buildUsageRecord(env, { root: "/ws", now: NOW });
+    expect(rec).toMatchObject({
+      kind: "run",
+      ok: false,
+      savings: {
+        sourceTokens: 500,
+        returnedTokens: 0,
+        avoidedContextTokens: 500,
+        directlyComparable: true,
+      },
+    });
+  });
+
+  it("does not add savings to a count record", () => {
+    const env = utilitySuccessEnvelope({ result: { tokens: 10 }, durationMs: 1 });
+    const rec = buildUsageRecord(env, { root: "/ws", now: NOW });
+    expect(rec).not.toBeNull();
+    expect("savings" in (rec as object)).toBe(false);
   });
 
   it("returns null for an error envelope without usage", () => {

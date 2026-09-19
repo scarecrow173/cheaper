@@ -1,9 +1,10 @@
-import { mkdtemp, readFile, realpath, rm } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
   type CheaperError,
   compileSchema,
+  countTextTokens,
   type RuntimePolicy,
   type WorkerDefinition,
 } from "@cheaper/core";
@@ -38,12 +39,19 @@ const outputSchema = compileSchema(
   "output",
 );
 
-function worker(tools: WorkerDefinition["tools"]): WorkerDefinition {
+function worker(
+  tools: WorkerDefinition["tools"],
+  opts?: { writeScope?: string },
+): WorkerDefinition {
   return {
     name: "test-worker",
     description: "test",
     tools,
-    cheaper: { model: { tier: "low" }, output: { schema: { inline: {} } } },
+    cheaper: {
+      model: { tier: "low" },
+      output: { schema: { inline: {} } },
+      ...(opts?.writeScope !== undefined ? { writeScope: opts.writeScope } : {}),
+    },
     instructions: "Do the task.",
     sourcePath: "test-worker.md",
     origin: "explicit",
@@ -494,6 +502,76 @@ describe("runWorker", () => {
     expect(r.meta.transientRetries).toBe(1);
     expect(fake.state.callCount).toBe(2); // cheaper 独自 retry は無く Pi auto-retry のみ
   }, 15_000);
+
+  it("measures savings from tool output tokens and returned result", async () => {
+    // read output >> returned result になるよう十分な量の入力を読ませる
+    await writeFile(path.join(root, "big.txt"), "alpha beta gamma delta\n".repeat(50), "utf8");
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage(fauxToolCall("read", { path: "big.txt" }), {
+          stopReason: "toolUse",
+        }),
+        fauxAssistantMessage('{"ok":true}'),
+      ],
+    });
+    const r = await runWorker(await deps(fake, worker(["read"]), policy()));
+    const savings = r.meta.savings;
+    expect(savings).toBeDefined();
+    expect(savings?.sourceTokens).toBeGreaterThan(0);
+    expect(savings?.returnedTokens).toBe(countTextTokens(JSON.stringify(r.result)));
+    expect(savings?.avoidedContextTokens).toBe(
+      Math.max(0, (savings?.sourceTokens ?? 0) - (savings?.returnedTokens ?? 0)),
+    );
+    // この fixture では read output が result を大きく上回る
+    expect(savings?.avoidedContextTokens).toBeGreaterThan(0);
+  });
+
+  it("clamps avoidedContextTokens at zero when no tool output exists", async () => {
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const r = await runWorker(await deps(fake, worker(["read"]), policy()));
+    expect(r.meta.savings).toEqual({
+      sourceTokens: 0,
+      returnedTokens: countTextTokens(JSON.stringify(r.result)),
+      avoidedContextTokens: 0,
+      directlyComparable: true,
+    });
+  });
+
+  it("marks savings as not directly comparable for write-capable workers", async () => {
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const r = await runWorker(await deps(fake, worker(["read", "write"]), policy()));
+    expect(r.meta.savings?.directlyComparable).toBe(false);
+  });
+
+  it("marks savings as not directly comparable when writeScope is declared", async () => {
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const d = await deps(fake, worker(["read"], { writeScope: "targets" }), policy());
+    d.input = { task: "x", targets: [] };
+    const r = await runWorker(d);
+    expect(r.meta.savings?.directlyComparable).toBe(false);
+  });
+
+  it("reports sourceTokens as fully avoided on usage-bearing failure", async () => {
+    await writeFile(path.join(root, "a.txt"), "alpha beta gamma\n".repeat(20), "utf8");
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }), { stopReason: "toolUse" }),
+        fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }), { stopReason: "toolUse" }),
+        fauxAssistantMessage("unreached"),
+      ],
+    });
+    const p = policy();
+    p.execution.maxToolCalls = 1;
+    const err = await runWorker(await deps(fake, worker(["read"]), p)).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    const savings = (err as WorkerRunError).runMeta?.savings;
+    expect(savings).toBeDefined();
+    expect(savings?.sourceTokens).toBeGreaterThan(0);
+    expect(savings?.returnedTokens).toBe(0);
+    expect(savings?.avoidedContextTokens).toBe(savings?.sourceTokens);
+  });
 
   it("rejects worker tools outside policy allowlist", async () => {
     const fake = createFakePi({ responses: [fauxAssistantMessage("{}")] });

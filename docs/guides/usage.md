@@ -15,6 +15,7 @@ Commands:
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
   count-tokens <path>    Count canonical tokens of a workspace file
+  usage                  Aggregate usage.jsonl (worker cost / measured savings)
   models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
@@ -33,14 +34,15 @@ Commands:
 | `--worker-file <path>` | 明示的な worker file を実行する（`run` のみ） |
 | `--cwd <path>` | workspace root（既定: カレントディレクトリ） |
 | `--timeout <duration>` | policy timeout を narrow する（例: `30s`, `5m`）。policy 上限は越えられない |
-| `--model <provider>/<id>` | tier 解決を bypass して model を直接指定する（`run` とエイリアスのみ） |
-| `--provider <id>` | `models` の出力を provider で絞る |
+| `--model <provider>/<id>` | `run` では tier 解決を bypass する model 直接指定、`usage` では model filter |
+| `--provider <id>` | `models` の出力・`usage` の集計を provider で絞る |
 | `--tier <low\|medium\|high>` | `models` の出力を effective tier で絞る |
 | `--format <json\|text>` | stdout の形式（既定: `json`） |
 | `--quiet` | stderr の diagnostics を抑制する |
 | `--help` / `--version` | help / version 表示 |
 
 `--method`・`--type` は `auth login` 専用（下記参照）。
+`--since`・`--worker`・`--compare-model` は `usage` 専用（後述）。
 
 ## stdin / stdout 契約
 
@@ -57,7 +59,9 @@ Commands:
   現状は出力されない））・`usage`（input/output/
   cacheRead/cacheWrite/totalTokens/costUsd）・`turns`・`toolCalls`・
   `repairs`・`changes` 等が入る。`changes` は runtime が計測した
-  filesystem 変更の要約。
+  filesystem 変更の要約。`savings` は親コンテキスト offload の実測
+  （`sourceTokens` / `returnedTokens` / `avoidedContextTokens`、
+  後述の「実測 savings」）。
 - stderr には diagnostics（`model: provider/id (tier X)` や error
   要約）が出る。`--quiet` で抑制できる。
 - exit code は error.code に対応する（0=成功、2=入力不備、
@@ -164,5 +168,114 @@ best-effort で append する。書き込み失敗は stdout・exit code
 - `count-tokens`: token count が成功し `tokens` を返した実行。
   `FILE_TOO_LARGE`・file not found・workspace escape 等の失敗は
   記録されない。
-- `auth`・`--help`・`--version` 等の utility command は記録
-  対象外。
+- `auth`・`usage`・`--help`・`--version` 等の utility command は
+  記録対象外。
+
+run record には加えて `turns`・`toolCalls`・`savings`（実測
+offload。`directlyComparable` flag を含む）が載る。いずれも
+optional で、古い cheaper が書いた record には存在しない
+（`savings` 内の `directlyComparable` も同様）。count record
+には `savings` はない（offload の概念がないため）。
+
+## 実測 savings（actual / measured / estimated の区別）
+
+指標は次の 3 種に分かれる。混同しないこと。
+
+- **actual（実測）**: `meta.usage` / record の `usage`。
+  worker 実行そのものが消費した token と実コスト（`costUsd`）。
+- **measured（実測 offload）**: `savings.sourceTokens` は worker
+  が成功した tool call の出力テキストを canonical tokenizer
+  （o200k_base）で encode した和。`savings.returnedTokens` は
+  返却 result JSON の token 数。`savings.avoidedContextTokens =
+  max(0, sourceTokens - returnedTokens)` は「親コンテキストに
+  戻らなかった token 量」の近似。失敗 run は `returnedTokens:
+  0`（途中まで offload した実測として全量計上）。
+- **estimated（推定）**: `cheaper usage --compare-model` で算出
+  される `estimated*` 系値のみ。実測ではなく comparison model
+  の価格に基づく概算。
+
+限界:
+
+- `sourceTokens` は tool output の和であり、grep の file 一覧や
+  error text も含む。親が同じ量を消費したとは限らない近似値。
+- `savings.directlyComparable` は「source↔returned が親 model の
+  直接実行と比較可能か」の flag。`write`/`edit` tool または
+  `writeScope` を持つ mutation 系 worker（code-writer /
+  doc-writer 等）では返却 result が ingest 内容の圧縮表現に
+  ならないため `false` になる。`savings` 自体は全 worker で
+  計測されるが、estimated の母数には `directlyComparable: true`
+  の record のみ入る（flag を持たない旧 record は非 comparable
+  扱い）。
+- estimated 値は comparison model と pricing metadata が揃った
+  ときだけ出る。価格不明の場合に推定値を捏造しない。
+
+## usage（集計コマンド）
+
+`usage.jsonl` を read-only で集計する。`usage` 実行自体は
+記録されない。
+
+```bash
+cheaper usage                                   # 全 record を集計
+cheaper usage --since 24h                       # 期間 filter
+cheaper usage --worker bulk-reader              # worker filter
+cheaper usage --provider ollama                 # provider filter
+cheaper usage --model ollama/qwen3.5:9b         # model filter
+cheaper usage --compare-model openai/gpt-5      # estimated 算出
+cheaper usage --format text                     # 人間向け表示
+```
+
+集計対象は `kind:"run"` record のみ。usage.jsonl が無い・破損行
+が混じっていてもエラーにならない（破損行は skip、file 不在は
+0 件集計）。`result` には `records`（件数・ok/errors 内訳）・
+`usage` 合計・`turns`/`toolCalls`/`durationMs` 合計・`measured`
+（savings を持つ record のみを母数とする実測 offload）が入る。
+
+### estimated savings
+
+`--compare-model <provider>/<id>` を指定すると、core の pricing
+layer（`resolvePricing`）で comparison model の価格を解決する。
+参照順は次の通り:
+
+1. runtime catalog の `model.cost`（`source: "runtime-catalog"`。
+   catalog に対象 model があれば常に最優先）
+2. `<userConfigDir>/pricing.json`（core `PricingSnapshot` と同一
+   形式の user 提供 snapshot。`source: "pricing.json"`）
+3. bundled snapshot（`source: "bundled-snapshot"`）
+
+次のすべてが揃ったときのみ `estimated` section を出力する:
+
+1. `--compare-model` が指定されている
+2. 上記のいずれかで対象 model の価格が解決できる
+3. 価格の `updatedAt` が 30 日以内（それ以上古い・parse 不可は
+   stale。`updatedAt` を持たない runtime-catalog 価格は stale に
+   しない）
+4. `savings.directlyComparable: true` の run が 1 件以上ある
+   （write 系 worker のみでは算出しない）
+
+算出式は `estimatedParentEquivalentCostUsd = (comparable.sourceTokens ×
+input価格 + comparable.returnedTokens × output価格) / 1,000,000`
+（親 model で同量を直接処理した場合の概算）、`estimatedSavingsUsd =
+parentEquivalent - comparable run の実 worker costUsd 合計`。
+`--format text` では `Estimated` prefix の行として出る。
+
+`pricing.json` の形式は bundled snapshot と同じ:
+
+```json
+{
+  "version": "YYYY-MM-DD",
+  "updatedAt": "YYYY-MM-DD",
+  "models": {
+    "<provider>/<id>": {
+      "input": 3.0,
+      "output": 15.0,
+      "cacheRead": 0.3,
+      "cacheWrite": 3.75,
+      "updatedAt": "YYYY-MM-DD"
+    }
+  }
+}
+```
+
+`cacheRead`・`cacheWrite`・entry の `updatedAt` は省略可。不正な
+entry は skip され、file 全体が不正・不在の場合は bundled
+snapshot へ fall back する。価格単位は USD / 1M tokens 固定。

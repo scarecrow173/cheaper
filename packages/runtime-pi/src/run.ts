@@ -2,8 +2,10 @@ import path from "node:path";
 import {
   CheaperError,
   checkCapabilities,
+  countTextTokens,
   createPathDenylist,
   type ErrorCode,
+  isDirectlyComparableWorker,
   type ModelConfig,
   parseModelRef,
   type RuntimePolicy,
@@ -22,7 +24,7 @@ import { promptWithAbortGrace } from "./prompt-grace.js";
 import { repairOutput } from "./repair.js";
 import { createWorkerSession, type StreamFnLike } from "./session.js";
 import { createSandboxedTools } from "./tools/registry.js";
-import { UsageCollector, type WorkerUsage } from "./usage.js";
+import { UsageCollector, type WorkerSavings, type WorkerUsage } from "./usage.js";
 
 export interface WorkerRunMeta {
   model: {
@@ -41,6 +43,8 @@ export interface WorkerRunMeta {
   repairs: number;
   transientRetries: number;
   changes: ChangesSummary;
+  /** 親コンテキスト offload の実測（SPEC-034rzGnCaRQc5ceI95lf5i）。 */
+  savings?: WorkerSavings;
 }
 
 /**
@@ -265,8 +269,12 @@ export async function runWorker(
         details: { reason },
       });
 
-    async function buildMeta(): Promise<WorkerRunMeta> {
+    async function buildMeta(result?: Record<string, unknown>): Promise<WorkerRunMeta> {
       const snap = collector.snapshot();
+      // result があるときのみ returnedTokens を計測する。
+      // 失敗・中断では result が無いため 0（sourceTokens は全量 avoided 扱い）。
+      const sourceTokens = sandboxed.meter.sourceTokens;
+      const returnedTokens = result ? countTextTokens(JSON.stringify(result)) : 0;
       return {
         model: {
           provider: resolved.info.provider,
@@ -282,6 +290,12 @@ export async function runWorker(
         repairs,
         transientRetries: snap.transientRetries,
         changes: await journal.finalize(),
+        savings: {
+          sourceTokens,
+          returnedTokens,
+          avoidedContextTokens: Math.max(0, sourceTokens - returnedTokens),
+          directlyComparable: isDirectlyComparableWorker(worker),
+        },
       };
     }
 
@@ -352,7 +366,7 @@ export async function runWorker(
       if (extracted.ok) {
         return {
           result: extracted.result,
-          meta: await buildMeta(),
+          meta: await buildMeta(extracted.result),
         };
       }
 
@@ -394,7 +408,7 @@ export async function runWorker(
         const reason = abortReason;
         await throwClassified(abortError(reason));
       }
-      const meta = await buildMeta();
+      const meta = await buildMeta(result);
       return { result, meta };
     } finally {
       unsubscribe();

@@ -8,10 +8,12 @@ Directory: `docs/tasks`
 | --- | --- | --- | --- |
 | TASK-034r05iHQeQpDpq6zeHAT0 | Add built-in worker definitions | done | [add-built-in-worker-definitions.md](./add-built-in-worker-definitions.md) |
 | TASK-034r05iHQeQpDppVaGtCgu | Add built-in worker JSON schemas | done | [add-built-in-worker-json-schemas.md](./add-built-in-worker-json-schemas.md) |
+| TASK-034rzRuCuCgZ08BmHTCqgz | Add cheaper usage aggregation command with filters and estimated savings | done | [add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md](./add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md) |
 | TASK-034rzWT9V9bHwEIcrmbTor | Add CLI --model flag and models command | done | [add-cli-model-flag-and-models-command.md](./add-cli-model-flag-and-models-command.md) |
 | TASK-034r05iHQeQpDpSS51up2r | Add count-tokens CLI command | done | [add-count-tokens-cli.md](./add-count-tokens-cli.md) |
 | TASK-034r05iHQeQpDpSeJahHce | Add count_tokens tool to runtime-pi registry and built-in workers | done | [add-count-tokens-tool.md](./add-count-tokens-tool.md) |
 | TASK-034r05iHQeQpDpOWHdF7Wo | Add doc-writer built-in Worker | done | [add-doc-writer-worker.md](./add-doc-writer-worker.md) |
+| TASK-034rzRv1K2fmi2Igbdu5HG | Add e2e coverage, docs, bundle regen and final verification | done | [add-e2e-coverage-docs-bundle-regen-and-final-verification.md](./add-e2e-coverage-docs-bundle-regen-and-final-verification.md) |
 | TASK-034r05iHQeQpDpsYVkvsPX | Add e2e tests for non-execution CLI paths | done | [add-e2e-tests-for-non-execution-cli-paths.md](./add-e2e-tests-for-non-execution-cli-paths.md) |
 | TASK-034r05iHQeQpDpu1iPmr1q | Add fake stream hook and e2e execution tests | done | [add-fake-stream-hook-and-e2e-execution-tests.md](./add-fake-stream-hook-and-e2e-execution-tests.md) |
 | TASK-034rzWI7U1txBCpGr7WZaJ | Add model pricing metadata layer and bundled data | done | [add-model-pricing-metadata-layer.md](./add-model-pricing-metadata-layer.md) |
@@ -56,6 +58,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
+| TASK-034rzRugER0y7cQ2tlWjPp | Extend usage.jsonl run record with savings section | done | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | TASK-034r05iHQeQpDpFFl8q6NC | Extract promptWithAbortGrace helper and apply to main run | done | [extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
 | TASK-034r05iHQeQpDqhWcXGfA0 | Finalize contract matrix and consumer pointer | done | [finalize-contract-matrix-and-consumer-pointer.md](./finalize-contract-matrix-and-consumer-pointer.md) |
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
@@ -104,6 +107,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gUBy3ygQD | Implement workspace path resolution with symlink policy | done | [implement-workspace-path-resolution-with-symlink-policy.md](./implement-workspace-path-resolution-with-symlink-policy.md) |
 | TASK-034r6roOdgb1mKbE0LLAv3 | inject generous eval budget into bigTool factory | done | [inject-eval-budget-bigtool.md](./inject-eval-budget-bigtool.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
+| TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
 | TASK-034r05iHQeQpDqrbmtswfZ | Move .apm primitives to nested distributable package and make root apm.yml dev-only | done | [move-apm-primitives-to-distributable-package.md](./move-apm-primitives-to-distributable-package.md) |
 | TASK-034r05iHQeQpDqgk8XoZ8E | Parameterize apm e2e fixture by target | done | [parameterize-apm-e2e-fixture-by-target.md](./parameterize-apm-e2e-fixture-by-target.md) |

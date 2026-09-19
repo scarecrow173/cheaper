@@ -9,6 +9,7 @@ import {
   isExcludedModel,
   loadModelConfig,
   loadPolicy,
+  type ModelInfo,
   parseDuration,
   resolveConfigDirs,
   resolvePricing,
@@ -38,8 +39,9 @@ import {
   utilitySuccessEnvelope,
 } from "./envelope.js";
 import { readTaskInput, type StdinLike } from "./input.js";
-import { formatText } from "./text-format.js";
+import { formatText, formatUsageReport } from "./text-format.js";
 import { recordUsage } from "./usage-log.js";
+import { buildUsageReport, splitModelRef } from "./usage-report.js";
 import { packageVersion } from "./version.js";
 
 export interface CliIo {
@@ -76,6 +78,7 @@ Commands:
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
   count-tokens <path>    Count canonical tokens of a workspace file
+  usage                  Aggregate usage.jsonl (worker cost / measured savings)
   models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
@@ -86,11 +89,14 @@ Options:
   --worker-file <path>   Run an explicit worker file (run only)
   --cwd <path>           Workspace root (default: process.cwd())
   --timeout <duration>   Narrow policy timeout (e.g. 30s, 5m)
-  --model <prov>/<id>    Run with an explicit model instead of a tier
-  --provider <id>        Filter 'models' output by provider
+  --model <prov>/<id>    run: explicit model; usage: filter by model
+  --provider <id>        models/usage: filter by provider
   --tier <low|med|high>  Filter 'models' output by effective tier
   --method <id>          Auto-answer auth login select prompts (e.g. device)
   --type <oauth|api_key> Auth method for 'auth login' (default: oauth)
+  --since <duration>     usage: only records within the period (e.g. 24h)
+  --worker <name>        usage: filter by worker name
+  --compare-model <p/id> usage: estimate savings vs this model
   --format <json|text>   Output format (default: json)
   --quiet                Suppress stderr diagnostics
   --help                 Show this help
@@ -300,6 +306,31 @@ async function executeModels(
 }
 
 /**
+ * `cheaper usage --compare-model` 用に runtime catalog から対象 model の
+ * 観測（cost 等）を取る（issue #45 pricing layer の runtime-catalog source）。
+ * 集計自体は read-only が本筋のため、catalog 不在・runtime 初期化失敗は
+ * estimated を諦めるだけで report には影響させない（best-effort）。
+ * `refreshOnCreate: false` で network refresh を行わず、persisted catalog
+ * と builtin の static model だけを見る。
+ */
+async function lookupCatalogModel(
+  ref: { provider: string; id: string },
+  io: CliIo,
+  hooks: CliHooks,
+): Promise<ModelInfo | undefined> {
+  try {
+    const runtime = await (hooks.createModelRuntime ?? createModelRuntime)({
+      env: io.env,
+      refreshOnCreate: false,
+    });
+    const model = runtime.getModel(ref.provider, ref.id);
+    return model === undefined ? undefined : toModelInfo(model);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * CLI オーケストレーション（DESIGN-0005）。
  * stdout には envelope 1 つ（+末尾改行）のみ書く。未捕捉例外は INTERNAL_ERROR(70)。
  */
@@ -387,6 +418,65 @@ export async function runCli(
       return 0;
     }
 
+    if (parsed.kind === "usage") {
+      // usage.jsonl の read-only 集計。worker/model 解決を伴わないため
+      // config dir のみ解決する。usage command 自体は記録対象外。
+      let sinceMs: number | undefined;
+      if (parsed.since !== undefined) {
+        try {
+          sinceMs = parseDuration(parsed.since);
+        } catch {
+          throw invalidRequest(`invalid --since duration: ${parsed.since}`, {
+            since: parsed.since,
+          });
+        }
+      }
+      if (parsed.model !== undefined && splitModelRef(parsed.model) === null) {
+        throw invalidRequest(`invalid --model: ${parsed.model} (expected <provider>/<id>)`, {
+          model: parsed.model,
+        });
+      }
+      if (parsed.compareModel !== undefined && splitModelRef(parsed.compareModel) === null) {
+        throw invalidRequest(
+          `invalid --compare-model: ${parsed.compareModel} (expected <provider>/<id>)`,
+          { compareModel: parsed.compareModel },
+        );
+      }
+      const dirs = resolveConfigDirs({
+        cwd: io.cwd,
+        builtinDir: hooks.builtinDir ?? defaultBuiltinDir(),
+        env: io.env,
+      });
+      const compareModelRef =
+        parsed.compareModel !== undefined ? splitModelRef(parsed.compareModel) : null;
+      const report = buildUsageReport({
+        userConfigDir: dirs.userConfigDir,
+        filters: {
+          ...(sinceMs !== undefined ? { sinceMs } : {}),
+          ...(parsed.worker !== undefined ? { worker: parsed.worker } : {}),
+          ...(parsed.provider !== undefined ? { provider: parsed.provider } : {}),
+          ...(parsed.model !== undefined ? { model: parsed.model } : {}),
+        },
+        ...(parsed.compareModel !== undefined ? { compareModel: parsed.compareModel } : {}),
+        // runtime catalog の cost を estimated の第1供給源として渡す
+        //（未取得でも snapshot 経路で試行される）。
+        ...(compareModelRef !== null && compareModelRef !== undefined
+          ? { compareCatalogModel: await lookupCatalogModel(compareModelRef, io, hooks) }
+          : {}),
+        now,
+      });
+      if (parsed.format === "text") {
+        io.stdout.write(formatUsageReport(report));
+      } else {
+        const envelope = utilitySuccessEnvelope({
+          result: report as unknown as Record<string, unknown>,
+          durationMs: now() - startedAt,
+        });
+        io.stdout.write(envelopeJson(envelope));
+      }
+      return 0;
+    }
+
     if (parsed.kind === "models") {
       const { envelope, exitCode } = await executeModels(parsed, io, hooks, startedAt);
       io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
@@ -429,7 +519,12 @@ export async function runCli(
     let quiet = false;
     try {
       const p = parseCliArgs(argv);
-      if (p.kind === "run" || p.kind === "count-tokens" || p.kind === "auth") {
+      if (
+        p.kind === "run" ||
+        p.kind === "count-tokens" ||
+        p.kind === "usage" ||
+        p.kind === "auth"
+      ) {
         format = p.format;
         quiet = p.quiet;
       }
