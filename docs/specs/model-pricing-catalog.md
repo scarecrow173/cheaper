@@ -27,6 +27,7 @@ relations:
     - "../adr/model-tier-model-resolver.md"
     - "../adr/pricing-metadata-layer-and-curated-exceptions.md"
     - "../adr/usage-jsonl-contract-canonical.md"
+    - "../discovery/auto-tier-classification-effective-cost.md"
   refines: []
   refined-by: []
   derives-from:

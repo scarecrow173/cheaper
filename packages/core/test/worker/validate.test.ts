@@ -123,6 +123,56 @@ describe("validateWorkerDefinition", () => {
     ).rejects.toMatchObject({ code: "INVALID_WORKER_DEFINITION" });
   });
 
+  it("accepts workload.outputPerInput and keeps it on the definition", async () => {
+    const def = await validate(
+      workerContent({
+        cheaper: {
+          model: { tier: "low", workload: { outputPerInput: 0.05 } },
+          output: { schema: { inline: OUTPUT_SCHEMA } },
+        },
+      }),
+      dir,
+    );
+    expect(def.cheaper.model.workload).toEqual({ outputPerInput: 0.05 });
+  });
+
+  it("omits workload when not specified", async () => {
+    const def = await validate(workerContent(), dir);
+    expect(def.cheaper.model.workload).toBeUndefined();
+  });
+
+  it.each([
+    ["string", "many"],
+    ["negative", -0.1],
+    ["non-finite", Number.NaN],
+  ])("rejects invalid workload.outputPerInput (%s)", async (_label, value) => {
+    await expect(
+      validate(
+        workerContent({
+          cheaper: {
+            model: { tier: "low", workload: { outputPerInput: value } },
+            output: { schema: { inline: OUTPUT_SCHEMA } },
+          },
+        }),
+        dir,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_WORKER_DEFINITION" });
+  });
+
+  it("rejects unknown keys inside workload: (strict)", async () => {
+    await expect(
+      validate(
+        workerContent({
+          cheaper: {
+            model: { tier: "low", workload: { outputPerInput: 0.1, extra: 1 } },
+            output: { schema: { inline: OUTPUT_SCHEMA } },
+          },
+        }),
+        dir,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_WORKER_DEFINITION" });
+  });
+
   it("rejects invalid tier", async () => {
     await expect(
       validate(

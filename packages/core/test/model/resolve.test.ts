@@ -170,8 +170,38 @@ describe("resolveModel", () => {
       config: NO_PREF,
     });
     expect(out.selection).toBe("tier");
-    expect(out.tierSource).toBe("unclassified");
+    // 母集団 1 件 → p=0.5 → medium / auto（issue #46）
+    expect(out.tier).toBe("medium");
+    expect(out.tierSource).toBe("auto");
+    expect(out.auto).toMatchObject({
+      effectiveCost: 0.6,
+      effectiveCostPercentile: 0.5,
+      outputPerInput: 1,
+    });
     expect(out.pricing).toMatchObject({ input: 0.1, output: 0.5, source: "runtime-catalog" });
+  });
+
+  it("worker の outputPerInput が auto 分類に反映される", () => {
+    const available = [
+      m("p", "input-heavy", { input: 10, output: 1 }),
+      m("p", "output-heavy", { input: 1, output: 10 }),
+    ];
+    const reader = resolveModel({
+      available,
+      requestedTier: "low",
+      policy: { maxTier: "high", tierFallback: "none" },
+      config: NO_PREF,
+      outputPerInput: 0,
+    });
+    expect(reader.model.id).toBe("output-heavy");
+    const writer = resolveModel({
+      available,
+      requestedTier: "low",
+      policy: { maxTier: "high", tierFallback: "none" },
+      config: NO_PREF,
+      outputPerInput: 10,
+    });
+    expect(writer.model.id).toBe("input-heavy");
   });
 
   it("exclude に一致する model は candidate から外れて選ばれない", () => {
@@ -238,15 +268,21 @@ describe("resolveExplicitModel", () => {
 
   it("available な model を selection=explicit で返す（tier 候補選択を bypass）", () => {
     const out = resolveExplicitModel({
-      available: [m("p", "x", { input: 1, output: 30 }), m("q", "cheaper")],
+      available: [
+        m("p", "x", { input: 1, output: 30 }),
+        m("q", "cheap", { input: 0.1, output: 0.1 }),
+        m("q", "mid", { input: 1, output: 1 }),
+      ],
       ref: { provider: "p", id: "x" },
       policy: POLICY,
       config: NO_PREF,
     });
     expect(out.model).toMatchObject({ provider: "p", id: "x" });
     expect(out.selection).toBe("explicit");
-    expect(out.tier).toBe("medium");
-    expect(out.tierSource).toBe("unclassified");
+    // 母集団 3 件で最高 effectiveCost → high（issue #46）
+    expect(out.tier).toBe("high");
+    expect(out.tierSource).toBe("auto");
+    expect(out.auto?.effectiveCostPercentile).toBeCloseTo(5 / 6);
     expect(out.pricing).toMatchObject({ source: "runtime-catalog" });
   });
 
@@ -283,15 +319,24 @@ describe("resolveExplicitModel", () => {
     }
   });
 
-  it("unclassified（medium 扱い）の model は maxTier=medium で解決できる", () => {
-    const out = resolveExplicitModel({
-      available: [m("p", "x", { input: 1, output: 30 })],
-      ref: { provider: "p", id: "x" },
-      policy: { maxTier: "medium" },
-      config: NO_PREF,
-    });
-    expect(out.tier).toBe("medium");
-    expect(out.tierSource).toBe("unclassified");
+  it("effective tier > maxTier → POLICY_VIOLATION（policy を bypass しない）", () => {
+    try {
+      resolveExplicitModel({
+        available: [
+          m("p", "x", { input: 1, output: 30 }),
+          m("q", "cheap", { input: 0.1, output: 0.1 }),
+          m("q", "mid", { input: 1, output: 1 }),
+        ],
+        ref: { provider: "p", id: "x" },
+        policy: { maxTier: "medium" },
+        config: NO_PREF,
+      });
+      expect.unreachable();
+    } catch (e) {
+      const err = e as CheaperError;
+      expect(err.code).toBe("POLICY_VIOLATION");
+      expect(err.details?.reason).toBe("model-exceeds-max-tier");
+    }
   });
 
   it("override tier でも maxTier を超えれば POLICY_VIOLATION", () => {
