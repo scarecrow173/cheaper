@@ -2562,6 +2562,7 @@ Options:
   --model <prov>/<id>    Run with an explicit model instead of a tier
   --provider <id>        Filter 'models' output by provider
   --tier <low|med|high>  Filter 'models' output by effective tier
+  --worker <name>        Rank 'models' auto tiers by a worker's workload
   --method <id>          Auto-answer auth login select prompts (e.g. device)
   --type <oauth|api_key> Auth method for 'auth login' (default: oauth)
   --format <json|text>   Output format (default: json)
