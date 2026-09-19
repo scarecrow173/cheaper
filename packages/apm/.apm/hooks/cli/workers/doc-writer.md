@@ -13,6 +13,9 @@ cheaper:
   writeScope: targets
   model:
     tier: low
+    workload:
+      # document generation で output が大きい workload
+      outputPerInput: 1.0
   input:
     schema:
       file: ./schemas/doc-writer.input.schema.json
