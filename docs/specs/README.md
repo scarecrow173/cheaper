@@ -19,7 +19,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gaTnVhXWI | code-writer and doc-writer built-in Workers | implemented | [code-writer-and-doc-writer-built-in-workers.md](./code-writer-and-doc-writer-built-in-workers.md) |
 | SPEC-034r05iHK8bA7gsvijtkou | Copilot per-target pre-read hook adapter | implemented | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | SPEC-034r05iHK8bA7gky93Dal0 | Cross-agent distribution verification | implemented | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
-| SPEC-034rzTJydXfLvQhTIqiDqW | Cross-agent native routing adapters over APM distribution | draft | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
+| SPEC-034rzTJydXfLvQhTIqiDqW | Cross-agent native routing adapters over APM distribution | approved | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
 | SPEC-034r05iHK8bA7gveeDA5HC | Continuous usage measurement log for delegations | implemented | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
 | SPEC-034r05iHK8bA7gAHzYnfP8 | Devin Local as a bundled Pi provider | implemented | [devin-local-bundled-provider.md](./devin-local-bundled-provider.md) |
 | SPEC-034r05iHK8bA7gqGaD6qpk | grep batchMaxBytes / decoded line payload invariant | implemented | [grep-batch-max-bytes-line-payload-invariant.md](./grep-batch-max-bytes-line-payload-invariant.md) |
@@ -33,6 +33,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7g9KcsCqKj | Repair and abort hardening, telemetry consistency, and test hermeticity | implemented | [repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |
 | SPEC-034r05iHK8bA7gpcCJQya9 | Repository-owned setup contract for fresh checkouts/worktrees | implemented | [repo-owned-setup-contract-for-fresh-checkouts.md](./repo-owned-setup-contract-for-fresh-checkouts.md) |
 | SPEC-034r05iHK8bA7go4BQtGNS | Separate the development APM project from the distributable cheaper package | implemented | [separate-dev-apm-project-from-distributable-package.md](./separate-dev-apm-project-from-distributable-package.md) |
+| SPEC-034rBhR3SNIRFZ1B6n26iH | Shell-read large-file blocking via canonical routing policy | approved | [shell-read-large-file-blocking.md](./shell-read-large-file-blocking.md) |
 | SPEC-003hd7W00xCikuCXnwHA4C | Synchronize distributed cheaper-usage skill and parent-agent integration guide | implemented | [synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md](./synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md) |
 | SPEC-034r05iHK8bA7grnYLdwgl | Unified version and release source of truth | implemented | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | SPEC-034r2eqGCyFZr7j0uSfst0 | Usage log recording scope documentation contract | implemented | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
