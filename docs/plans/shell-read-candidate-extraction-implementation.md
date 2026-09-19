@@ -29,7 +29,8 @@ relations:
     - "docs/designs/shell-read-candidate-extraction.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "docs/test-specs/shell-read-blocking-contract-tests.md"
   references: []
   defers: []
   deferred-by: []
