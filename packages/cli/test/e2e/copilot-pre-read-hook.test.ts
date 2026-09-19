@@ -166,6 +166,40 @@ describe("copilot preToolUse hook (pre-read-code-copilot.js)", () => {
     }
   });
 
+  it("routes shell toolNames through the canonical shell seam (exit 0, silent)", async () => {
+    // `bash` / `powershell` / `shell` は canonical shell request へ
+    // normalize される。policy は現状 allow seam のため silent exit 0。
+    for (const toolName of ["bash", "powershell", "shell"]) {
+      const r = runHook(
+        JSON.stringify({ toolName, toolArgs: { command: "cat big.txt" } }),
+        { cwd: ws, env },
+      );
+      expect(r.status).toBe(0);
+      expect(r.stdout).not.toContain("permissionDecision");
+    }
+    // toolArgs の JSON 文字列揺れも shell で許容する
+    const r = runHook(
+      JSON.stringify({ toolName: "bash", toolArgs: JSON.stringify({ command: "ls" }) }),
+      { cwd: ws, env },
+    );
+    expect(r.status).toBe(0);
+  });
+
+  it("answers a dual-schema allow for foreign payload shapes (cross-fire safety)", async () => {
+    // claude/cursor 風の snake_case payload が copilot entry に
+    // 誤発火した場合、cursor permission hook の「exit 0 + schema 不適合
+    // は block」に備えて schema 適合の allow JSON を返す
+    //（DESIGN-034rA79Uog7JOa7evw6rOL）。
+    const r = runHook(
+      JSON.stringify({ tool_name: "Shell", tool_input: { command: "ls" } }),
+      { cwd: ws, env },
+    );
+    expect(r.status).toBe(0);
+    const out = JSON.parse(r.stdout.trim());
+    expect(out.permission).toBe("allow");
+    expect(out.permissionDecision).toBe("allow");
+  });
+
   it("fails open (exit 0) when the CLI is unavailable", async () => {
     await writeFile(path.join(ws, "big.txt"), "x ".repeat(20000), "utf8");
     const noCli = { ...env, CHEAPER_CLI: path.join(dir, "no-such-cli.js") };

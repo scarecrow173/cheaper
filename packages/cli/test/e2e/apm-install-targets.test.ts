@@ -61,8 +61,12 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
     const bundle = bundleRoot(consumer, target);
     expect(bundle).not.toBeNull();
     for (const rel of [
+      "routing-policy.js",
       "pre-read-code.js",
+      "pre-run-command.js",
       "pre-read-code-copilot.js",
+      "pre-read-code-pretooluse.js",
+      "pre-read-code-cursor.js",
       path.join("cli", "bin", "cheaper.mjs"),
       path.join("cli", "workers"),
       path.join("cli", "policy.yaml"),
@@ -122,14 +126,14 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       expect(apmEntry.matcher).toBeDefined();
       expect(Array.isArray(apmEntry.hooks)).toBe(true);
       // apm の claude adapter は event 名を native casing に正規化する:
-      // `preToolUse`（camelCase）は PascalCase `PreToolUse` に変換され、
-      // matcher `*` で live 登録される。ただし claude の stdin shape
-      // （`tool_name`/`tool_input`）は copilot adapter の `toolName`/
-      // `toolArgs` と一致しないため、adapter は全 payload を exit 0 で
-      // 素通しする — 実質 no-op（ADR-0023 で実測確認）。
+      // `preToolUse`（camelCase）は PascalCase `PreToolUse` に変換される。
+      // flat entry の matcher は lowercase `view|bash|powershell|shell`
+      // に限定済みで claude の tool 名（Read/Bash/…）には一致しないため
+      // copilot adapter は発火しない。claude native の Read/Bash/
+      // PowerShell は下の nested group が intercept する。
       const preToolEntry = (settingsEvents.PreToolUse as JsonObject[])[0];
       expect(preToolEntry).toBeDefined();
-      expect(preToolEntry.matcher).toBeDefined();
+      expect(preToolEntry.matcher).toBe("view|bash|powershell|shell");
       expect(String((preToolEntry.hooks as JsonObject[])[0].command)).toContain(
         "pre-read-code-copilot.js",
       );
@@ -137,6 +141,21 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       const apmPreToolEntry = (apmHooks.PreToolUse as JsonObject[])[0];
       expect(apmPreToolEntry).toBeDefined();
       expect(apmPreToolEntry.matcher).toBeDefined();
+      // native PreToolUse group（DESIGN-034rA79Uog7JOa7evw6rOL）:
+      // matcher Read|Bash|PowerShell で pre-read-code-pretooluse.js が
+      // live 登録される。copilot 由来の flat entry は lowercase matcher
+      // `view|bash|powershell|shell` を保持し、claude の capitalized
+      // tool 名には一致しない（cross-fire 防止）。
+      const preToolGroups = settingsEvents.PreToolUse as JsonObject[];
+      const nativeGroup = preToolGroups.find((g) => g.matcher === "Read|Bash|PowerShell");
+      expect(nativeGroup).toBeDefined();
+      expect(
+        String(((nativeGroup as JsonObject).hooks as JsonObject[])[0].command),
+      ).toContain("pre-read-code-pretooluse.js");
+      const copilotGroup = preToolGroups.find(
+        (g) => g.matcher === "view|bash|powershell|shell",
+      );
+      expect(copilotGroup).toBeDefined();
     } else {
       // windsurf / codex / cursor / copilot: hooks.json（copilot は
       // dep 名由来の <dep>-hooks.json）は `hooks` 直下に event を
@@ -154,15 +173,46 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
         expect(String(entries[0].command)).toContain("pre-read-code.js");
         // preToolUse（copilot native event）の登録も verbatim で全
         // target config に入る。copilot では functional、他 target
-        // では unknown event として no-op（ADR-0023）。
+        // では unknown event または matcher 不一致として no-op
+        //（ADR-0023 / DESIGN-034rA79Uog7JOa7evw6rOL）。
         const preToolEntries = (
           flat ? cfg.preToolUse : (cfg.hooks as JsonObject).preToolUse
         ) as JsonObject[];
         expect(Array.isArray(preToolEntries), `${target}: ${cfgPath} preToolUse`).toBe(true);
         expect(preToolEntries.length).toBeGreaterThan(0);
         expect(String(preToolEntries[0].command)).toContain("pre-read-code-copilot.js");
+        expect(preToolEntries[0].matcher).toBe("view|bash|powershell|shell");
         if (!flat && (target === "cursor" || target === "copilot")) {
           expect(cfg.version).toBe(1);
+        }
+        // per-target native event 登録（DESIGN-034rA79Uog7JOa7evw6rOL）。
+        // flat entry は `command`、nested matcher group は
+        // `hooks[].command` に script path を持つ。
+        const hooksObj = flat ? cfg : (cfg.hooks as JsonObject);
+        const entryCommand = (entry: JsonObject) =>
+          typeof entry.command === "string"
+            ? String(entry.command)
+            : String(((entry.hooks as JsonObject[]) ?? [{}])[0].command);
+        const nativeEvents: Record<string, Array<[string, string]>> = {
+          windsurf: [["pre_run_command", "pre-run-command.js"]],
+          // copilot では nested PreToolUse group が preToolUse array に
+          // merge されて現れる（matcher が lowercase tool 名に一致
+          // しないため実質 no-op — 登録形状の記録として assert）。
+          copilot: [["preToolUse", "pre-read-code-pretooluse.js"]],
+          codex: [["PreToolUse", "pre-read-code-pretooluse.js"]],
+          cursor: [
+            ["beforeReadFile", "pre-read-code-cursor.js"],
+            ["beforeShellExecution", "pre-read-code-cursor.js"],
+          ],
+        };
+        for (const [event, script] of nativeEvents[target] ?? []) {
+          const evEntries = hooksObj[event] as JsonObject[];
+          expect(Array.isArray(evEntries), `${target}: ${cfgPath} ${event}`).toBe(true);
+          expect(evEntries.length).toBeGreaterThan(0);
+          expect(
+            evEntries.some((e) => entryCommand(e).includes(script)),
+            `${target}: ${cfgPath} ${event} -> ${script}`,
+          ).toBe(true);
         }
       }
     }
