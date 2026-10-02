@@ -7,6 +7,7 @@ Directory: `docs/designs`
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
 | DESIGN-OVERVIEW | System Design Overview | draft | [overview.md](./overview.md) |
+| DESIGN-034z1EgnQwax4VamK2xmdT | APM executable payload layout and platform launchers | draft | [apm-executable-payload-layout-and-platform-launchers.md](./apm-executable-payload-layout-and-platform-launchers.md) |
 | DESIGN-034r05iHy2gdnoFHbdllXV | APM skills and pre_read_code delegation hook | approved | [apm-skills-and-pre-read-hook.md](./apm-skills-and-pre-read-hook.md) |
 | DESIGN-034r05iHy2gdnoJ5j3v9Nk | cheaper auth command design (provider OAuth absorbed by the CLI) | approved | [auth-command.md](./auth-command.md) |
 | DESIGN-Hz0wDP9E6GjkHNLwOEOGiw | Auth terminal prompt I/O boundary (injected stderr for text/select prompts) | approved | [auth-io-boundary.md](./auth-io-boundary.md) |
@@ -15,6 +16,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHrZUE6WxkSJi9GF | bulk-reader contract | approved | [bulk-reader-contract.md](./bulk-reader-contract.md) |
 | DESIGN-034r05iHy2gdnoNaWH2bos | Bulk-reader huge-file safe I/O | approved | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | DESIGN-034r05iHrZUE6Wy5X0Hc88 | cheap-writer contract | superseded | [cheap-writer-contract.md](./cheap-writer-contract.md) |
+| DESIGN-034z1EhuztlLSb2x2XXxgD | cheaper hook subcommands replacing Node-based hook adapters | draft | [cheaper-hook-subcommands-replacing-node-based-hook-adapters.md](./cheaper-hook-subcommands-replacing-node-based-hook-adapters.md) |
 | DESIGN-034r05iHy2gdnoH3XDJcXx | cheaper CLI bundle layout inside .apm/hooks/cli | approved | [cli-bundle-layout.md](./cli-bundle-layout.md) |
 | DESIGN-034r05iHrZUE6WvDuYjZB4 | CLI contract・result/error envelope・exit code | approved | [cli-contract-envelope-exit-codes.md](./cli-contract-envelope-exit-codes.md) |
 | DESIGN-034r05iHy2gdnoUHGunDtE | Copilot pre-read hook adapter | approved | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
@@ -37,6 +39,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHy2gdnoCKJhKNGD | Repair abort and failure normalization hardening | approved | [repair-abort-and-failure-normalization-hardening.md](./repair-abort-and-failure-normalization-hardening.md) |
 | DESIGN-034r05iHy2gdnoRcfSVFq3 | Repository-owned setup/check entrypoints via mise TOML tasks | approved | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |
 | DESIGN-034r05iHrZUE6Wzyjd1NS8 | リポジトリ構成とツールチェーン | approved | [repository-structure-toolchain.md](./repository-structure-toolchain.md) |
+| DESIGN-034z1EfqYaEBfyNvqZyFSD | SEA executable build pipeline and embedded resource resolution | draft | [sea-executable-build-pipeline-and-embedded-resource-resolution.md](./sea-executable-build-pipeline-and-embedded-resource-resolution.md) |
 | DESIGN-034rBoPPFNHXR5eSfv0hsO | Shell read-candidate extraction and shared large-read verdict | approved | [shell-read-candidate-extraction.md](./shell-read-candidate-extraction.md) |
 | DESIGN-0005kq1c3Wo7rdnwZR8Sp3 | Synchronize distributed cheaper-usage skill and parent-agent integration guide | approved | [synchronize-distributed-skill-and-parent-agent-guide.md](./synchronize-distributed-skill-and-parent-agent-guide.md) |
 | DESIGN-034r05iHy2gdnoEfk3jERu | Token counter contract (core module, count_tokens tool, count-tokens CLI) | approved | [token-counter-contract.md](./token-counter-contract.md) |

@@ -24,6 +24,9 @@ relations:
     - "bulk-reader-contract.md"
     - "cheap-writer-contract.md"
     - "repository-structure-toolchain.md"
+    - "sea-executable-build-pipeline-and-embedded-resource-resolution.md"
+    - "apm-executable-payload-layout-and-platform-launchers.md"
+    - "cheaper-hook-subcommands-replacing-node-based-hook-adapters.md"
   refines: []
   refined-by: []
   derives-from:
@@ -95,3 +98,9 @@ relations:
 - [0005 CLI contract](./cli-contract-envelope-exit-codes.md)
 - [0006 bulk-reader contract](./bulk-reader-contract.md)
 - [0007 cheap-writer contract](./cheap-writer-contract.md)
+
+## Standalone Executable Distribution（issue #71）
+
+- [SEA executable build pipeline と embedded resource 解決](./sea-executable-build-pipeline-and-embedded-resource-resolution.md)
+- [APM executable payload layout と platform launcher](./apm-executable-payload-layout-and-platform-launchers.md)
+- [cheaper hook subcommand 化による hook の脱 Node](./cheaper-hook-subcommands-replacing-node-based-hook-adapters.md)
