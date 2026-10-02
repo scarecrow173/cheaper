@@ -61,13 +61,10 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
     const bundle = bundleRoot(consumer, target);
     expect(bundle).not.toBeNull();
     for (const rel of [
-      "routing-policy.js",
-      "pre-read-code.js",
-      "pre-run-command.js",
-      "pre-read-code-copilot.js",
-      "pre-read-code-pretooluse.js",
-      "pre-read-code-cursor.js",
+      "cheaper",
+      "cheaper.ps1",
       path.join("cli", "bin", "cheaper.mjs"),
+      path.join("cli", "bin", "win32-x64", "cheaper.exe"),
       path.join("cli", "workers"),
       path.join("cli", "policy.yaml"),
     ]) {
