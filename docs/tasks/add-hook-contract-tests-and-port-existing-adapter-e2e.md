@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z52KS4mSEHAIf28JHuj"
 type: "task"
-status: "todo"
+status: "done"
 title: "add hook contract tests and port existing adapter e2e"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/hook-contract-tests-and-adapter-e2e-port.md"
   depends-on:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
     - "docs/tasks/add-cheaper-hook-command-with-target-adapters.md"

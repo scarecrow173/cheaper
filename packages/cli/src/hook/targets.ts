@@ -11,12 +11,7 @@ import { evaluate, type RoutingRequest, type Verdict } from "./routing-policy.js
 
 export type HookTarget = "windsurf" | "copilot" | "pretooluse" | "cursor";
 
-export const HOOK_TARGETS: readonly HookTarget[] = [
-  "windsurf",
-  "copilot",
-  "pretooluse",
-  "cursor",
-];
+export const HOOK_TARGETS: readonly HookTarget[] = ["windsurf", "copilot", "pretooluse", "cursor"];
 
 export interface HookResponse {
   /** stdout に書く text（無い場合は出力しない）。 */
@@ -43,11 +38,7 @@ function windsurfExpectedEvent(event: string): string | null {
 
 // --- windsurf: deny = stderr guidance + exit 2, allow = silent exit 0 ---
 
-function windsurfNormalize(
-  event: string,
-  input: unknown,
-  cwd: string,
-): RoutingRequest | null {
+function windsurfNormalize(event: string, input: unknown, cwd: string): RoutingRequest | null {
   const expected = windsurfExpectedEvent(event);
   if (expected === null || !input || typeof input !== "object") return null;
   const payload = input as {
@@ -219,8 +210,7 @@ function pretooluseRender(verdict: Verdict): HookResponse {
 function cursorNormalize(input: unknown, cwd: string): RoutingRequest | null {
   if (!input || typeof input !== "object") return null;
   const payload = input as { file_path?: unknown; command?: unknown; cwd?: unknown };
-  const payloadCwd =
-    typeof payload.cwd === "string" && payload.cwd !== "" ? payload.cwd : cwd;
+  const payloadCwd = typeof payload.cwd === "string" && payload.cwd !== "" ? payload.cwd : cwd;
   if (typeof payload.file_path === "string" && payload.file_path !== "") {
     return {
       kind: "file-read",

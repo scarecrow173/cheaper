@@ -9,10 +9,10 @@
 import type { CliHooks, CliIo } from "../cli.js";
 import {
   fallbackAllow,
-  handleHook,
   HOOK_TARGETS,
   type HookResponse,
   type HookTarget,
+  handleHook,
 } from "./targets.js";
 
 const KNOWN_EVENTS = new Set([
@@ -30,7 +30,6 @@ interface HookArgv {
 
 /** 緩い引数解析: 不正入力でも throw せず undefined を返す。 */
 function parseHookArgv(argv: readonly string[]): HookArgv {
-  let event: string | undefined;
   let target: string | undefined;
   const positional: string[] = [];
   for (let i = 0; i < argv.length; i++) {
@@ -40,16 +39,16 @@ function parseHookArgv(argv: readonly string[]): HookArgv {
       i++;
       continue;
     }
-    if (arg !== undefined && arg.startsWith("--target=")) {
+    if (arg?.startsWith("--target=")) {
       target = arg.slice("--target=".length);
       continue;
     }
-    if (arg !== undefined && arg.startsWith("-")) {
+    if (arg?.startsWith("-")) {
       continue; // 未知 option は無視（fail-open）
     }
     if (arg !== undefined) positional.push(arg);
   }
-  event = positional[0];
+  const event = positional[0];
   return {
     event,
     target: (HOOK_TARGETS as readonly string[]).includes(target ?? "")

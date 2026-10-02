@@ -32,7 +32,6 @@ import {
 import { type ModelsCliArgs, parseCliArgs, type RunCliArgs } from "./args.js";
 import { executeAuth } from "./auth.js";
 import { countWorkspaceFileTokens, defaultBuiltinDir } from "./count.js";
-import { executeHook } from "./hook/hook.js";
 import {
   type CliEnvelope,
   envelopeJson,
@@ -40,6 +39,7 @@ import {
   successEnvelope,
   utilitySuccessEnvelope,
 } from "./envelope.js";
+import { executeHook } from "./hook/hook.js";
 import { readTaskInput, type StdinLike } from "./input.js";
 import { formatText, formatUsageReport } from "./text-format.js";
 import { recordUsage } from "./usage-log.js";

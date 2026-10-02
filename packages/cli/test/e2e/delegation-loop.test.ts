@@ -3,13 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync 
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  apmAvailable,
-  apmInstall,
-  bundledCli,
-  bundleRoot,
-  makeConsumerLayout,
-} from "./apm-fixture.js";
+import { apmAvailable, apmInstall, bundledCli, makeConsumerLayout } from "./apm-fixture.js";
 import { expectEnvelopeOnly } from "./helpers.js";
 
 // import 不要の scripted-response-array fixture（bundled CLI が内蔵する
@@ -49,20 +43,23 @@ describe("delegation loop e2e: pre_read_code block -> bulk-read via bundled CLI"
     }
     expect(apmInstall(consumer, root).status).toBe(0);
     const cli = bundledCli(consumer);
-    const hookScript = path.join(bundleRoot(consumer), "pre-read-code.js");
 
     // 1. parent が large file を read しようとする → hook が block
     const bigContent = "lorem ipsum dolor sit amet ".repeat(4000);
     const bigPath = path.join(consumer, "big.txt");
     writeFileSync(bigPath, bigContent, "utf8");
-    const hook = spawnSync(process.execPath, [hookScript, cli], {
-      cwd: consumer,
-      input: JSON.stringify({
-        agent_action_name: "pre_read_code",
-        tool_info: { file_path: bigPath },
-      }),
-      encoding: "utf8",
-    });
+    const hook = spawnSync(
+      process.execPath,
+      [cli, "hook", "pre-read-code", "--target", "windsurf"],
+      {
+        cwd: consumer,
+        input: JSON.stringify({
+          agent_action_name: "pre_read_code",
+          tool_info: { file_path: bigPath },
+        }),
+        encoding: "utf8",
+      },
+    );
     expect(hook.status).toBe(2);
     expect(hook.stderr).toContain("bulk-read");
     // file 本文は block 時点で parent context に入っていない

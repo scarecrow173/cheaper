@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -40,7 +40,9 @@ describe("routing policy (cli port)", () => {
       expect(threshold({} as NodeJS.ProcessEnv)).toBe(8192);
       expect(threshold({ CHEAPER_READ_TOKEN_THRESHOLD: "1024" } as NodeJS.ProcessEnv)).toBe(1024);
       // JS 版と同じく parseInt の部分 parse を許容する
-      expect(threshold({ CHEAPER_READ_TOKEN_THRESHOLD: "1024abc" } as NodeJS.ProcessEnv)).toBe(1024);
+      expect(threshold({ CHEAPER_READ_TOKEN_THRESHOLD: "1024abc" } as NodeJS.ProcessEnv)).toBe(
+        1024,
+      );
       expect(threshold({ CHEAPER_READ_TOKEN_THRESHOLD: "0" } as NodeJS.ProcessEnv)).toBe(8192);
       expect(threshold({ CHEAPER_READ_TOKEN_THRESHOLD: "-5" } as NodeJS.ProcessEnv)).toBe(8192);
       expect(threshold({ CHEAPER_READ_TOKEN_THRESHOLD: "abc" } as NodeJS.ProcessEnv)).toBe(8192);
@@ -112,7 +114,14 @@ describe("routing policy (cli port)", () => {
     });
 
     it("allows malformed requests", async () => {
-      for (const req of [null, 42, "x", {}, { kind: "file-read" }, { kind: "file-read", path: "" }]) {
+      for (const req of [
+        null,
+        42,
+        "x",
+        {},
+        { kind: "file-read" },
+        { kind: "file-read", path: "" },
+      ]) {
         expect(await evaluate(req, opts)).toEqual({ decision: "allow" });
       }
     });
@@ -187,10 +196,7 @@ describe("routing policy (cli port)", () => {
         env: { ...env, CHEAPER_COUNT_MAX_BYTES: "1024" } as NodeJS.ProcessEnv,
         builtinDir: cliRoot,
       };
-      const v = await evaluate(
-        { kind: "file-read", path: "big.txt", cwd: ws },
-        strict,
-      );
+      const v = await evaluate({ kind: "file-read", path: "big.txt", cwd: ws }, strict);
       expect(v.decision).toBe("deny");
       if (v.decision === "deny") {
         expect(v.reason).toContain("bytes");

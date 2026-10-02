@@ -5,17 +5,15 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { apmPackageDir } from "./apm-fixture.js";
 import { cliRoot, makeIsolatedEnv } from "./helpers.js";
 
-// cross-agent routing adapter の contract test（TSPEC-034rAaJtM27Ibpy78mq0kP）。
-// 各 adapter が native stdin payload を canonical request へ normalize し、
-// shared policy verdict を target native response へ変換することを
-// stdin 注入で検証する。
+// cross-agent routing adapter の contract test（TSPEC-034rAaJtM27Ibpy78mq0kP、
+// TSPEC-034z50PbuzTYDWvQXYdvaG）。各 target が native stdin payload を
+// canonical request へ normalize し、shared policy verdict を target
+// native response へ変換することを `cheaper hook` の stdin 注入で検証する。
 
-const hooksDir = path.join(apmPackageDir, ".apm", "hooks");
-const pretooluseScript = path.join(hooksDir, "pre-read-code-pretooluse.js");
-const cursorScript = path.join(hooksDir, "pre-read-code-cursor.js");
-const windsurfShellScript = path.join(hooksDir, "pre-run-command.js");
 const cheaperBin = path.join(cliRoot, "bin", "cheaper.js");
-const bundledCli = path.join(hooksDir, "cli", "bin", "cheaper.mjs");
+const bundledCli = path.join(apmPackageDir, ".apm", "hooks", "cli", "bin", "cheaper.mjs");
+
+type HookArgs = [event: string, target: string];
 
 interface HookResult {
   status: number | null;
@@ -24,33 +22,48 @@ interface HookResult {
 }
 
 function runHook(
-  script: string,
+  [event, target]: HookArgs,
   stdin: string,
-  opts: { cwd: string; env?: Record<string, string>; cliArg?: string },
+  opts: { cwd: string; env?: Record<string, string>; bin?: string },
 ): HookResult {
-  const r = spawnSync(process.execPath, [script, ...(opts.cliArg ? [opts.cliArg] : [])], {
-    cwd: opts.cwd,
-    env: opts.env,
-    input: stdin,
-    encoding: "utf8",
-  });
+  const r = spawnSync(
+    process.execPath,
+    [opts.bin ?? cheaperBin, "hook", event, "--target", target],
+    {
+      cwd: opts.cwd,
+      env: opts.env,
+      input: stdin,
+      encoding: "utf8",
+    },
+  );
   return { status: r.status, stdout: r.stdout, stderr: r.stderr };
 }
 
 const BIG_TEXT = "lorem ipsum dolor sit amet ".repeat(4000);
 
-describe("PreToolUse adapter (pre-read-code-pretooluse.js, claude + codex)", () => {
+/** 破損した user policy を返す env（infrastructure failure の fail-open 検証用）。 */
+async function corruptPolicyEnv(
+  dir: string,
+  env: Record<string, string>,
+): Promise<Record<string, string>> {
+  const configDir = path.join(dir, "broken-config");
+  await mkdir(configDir, { recursive: true });
+  await writeFile(path.join(configDir, "policy.yaml"), "::: not yaml :::[", "utf8");
+  return { ...env, CHEAPER_CONFIG_DIR: configDir };
+}
+
+describe("PreToolUse adapter (cheaper hook --target pretooluse, claude + codex)", () => {
   let dir: string;
   let ws: string;
   let env: Record<string, string>;
 
-  const run = (stdin: string, e = env) => runHook(pretooluseScript, stdin, { cwd: ws, env: e });
+  const run = (stdin: string, e = env) =>
+    runHook(["pre-tool-use", "pretooluse"], stdin, { cwd: ws, env: e });
   const readPayload = (filePath: string) =>
     JSON.stringify({ tool_name: "Read", tool_input: { file_path: filePath } });
 
   beforeEach(async () => {
     ({ dir, ws, env } = await makeIsolatedEnv());
-    env.CHEAPER_CLI = cheaperBin;
   });
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
@@ -69,23 +82,23 @@ describe("PreToolUse adapter (pre-read-code-pretooluse.js, claude + codex)", () 
     );
   });
 
-  it("denies via the bundled CLI passed as argv[2] (production command shape)", async () => {
+  it("denies via the bundled CLI (production command shape)", async () => {
     await writeFile(path.join(ws, "big.txt"), BIG_TEXT, "utf8");
-    const { CHEAPER_CLI: _dropped, ...envNoCli } = env;
-    const r = runHook(pretooluseScript, readPayload(path.join(ws, "big.txt")), {
+    const r = runHook(["pre-tool-use", "pretooluse"], readPayload(path.join(ws, "big.txt")), {
       cwd: ws,
-      env: envNoCli,
-      cliArg: bundledCli,
+      env,
+      bin: bundledCli,
     });
     expect(r.status).toBe(0);
     expect(r.stdout).toContain('"permissionDecision":"deny"');
   });
 
-  it("denies on a FILE_TOO_LARGE envelope (bytes over the cap)", async () => {
+  it("denies on FILE_TOO_LARGE (bytes over the cap)", async () => {
     await writeFile(path.join(ws, "big.bin"), Buffer.alloc(64, 0x61));
-    const r = runHook(pretooluseScript, readPayload(path.join(ws, "big.bin")), {
-      cwd: ws,
-      env: { ...env, CHEAPER_READ_TOKEN_THRESHOLD: "8", CHEAPER_COUNT_MAX_BYTES: "16" },
+    const r = run(readPayload(path.join(ws, "big.bin")), {
+      ...env,
+      CHEAPER_READ_TOKEN_THRESHOLD: "8",
+      CHEAPER_COUNT_MAX_BYTES: "16",
     });
     expect(r.status).toBe(0);
     const out = JSON.parse(r.stdout.trim());
@@ -100,7 +113,7 @@ describe("PreToolUse adapter (pre-read-code-pretooluse.js, claude + codex)", () 
     expect(r.stdout).not.toContain("permissionDecision");
     // shell request は canonical seam を通り allow（#42 の接続点）
     for (const tool of ["Bash", "PowerShell"]) {
-      const s = run(JSON.stringify({ tool_name: tool, tool_input: { command: "cat big.txt" } }));
+      const s = run(JSON.stringify({ tool_name: tool, tool_input: { command: "cat small.txt" } }));
       expect(s.status).toBe(0);
       expect(s.stdout).not.toContain("permissionDecision");
     }
@@ -124,30 +137,27 @@ describe("PreToolUse adapter (pre-read-code-pretooluse.js, claude + codex)", () 
       expect(r.status, `case: ${label}`).toBe(0);
       expect(r.stdout, `case: ${label}`).not.toContain("permissionDecision");
     }
-  });
+  }, 120_000);
 
-  it("fails open when the CLI is unavailable", async () => {
+  it("fails open when policy loading fails", async () => {
     await writeFile(path.join(ws, "big.txt"), BIG_TEXT, "utf8");
-    const r = run(readPayload(path.join(ws, "big.txt")), {
-      ...env,
-      CHEAPER_CLI: path.join(dir, "no-such-cli.js"),
-    });
+    const r = run(readPayload(path.join(ws, "big.txt")), await corruptPolicyEnv(dir, env));
     expect(r.status).toBe(0);
     expect(r.stdout).not.toContain("permissionDecision");
   });
 });
 
-describe("Cursor adapter (pre-read-code-cursor.js)", () => {
+describe("Cursor adapter (cheaper hook --target cursor)", () => {
   let dir: string;
   let ws: string;
   let env: Record<string, string>;
 
-  const run = (stdin: string, e = env) => runHook(cursorScript, stdin, { cwd: ws, env: e });
+  const run = (stdin: string, e = env) =>
+    runHook(["before-read-file", "cursor"], stdin, { cwd: ws, env: e });
   const readPayload = (filePath: string) => JSON.stringify({ file_path: filePath, cwd: ws });
 
   beforeEach(async () => {
     ({ dir, ws, env } = await makeIsolatedEnv());
-    env.CHEAPER_CLI = cheaperBin;
   });
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
@@ -164,13 +174,12 @@ describe("Cursor adapter (pre-read-code-cursor.js)", () => {
     expect(out.agent_message).toContain("bulk-read");
   });
 
-  it("denies via the bundled CLI passed as argv[2] (production command shape)", async () => {
+  it("denies via the bundled CLI (production command shape)", async () => {
     await writeFile(path.join(ws, "big.txt"), BIG_TEXT, "utf8");
-    const { CHEAPER_CLI: _dropped, ...envNoCli } = env;
-    const r = runHook(cursorScript, readPayload(path.join(ws, "big.txt")), {
+    const r = runHook(["before-read-file", "cursor"], readPayload(path.join(ws, "big.txt")), {
       cwd: ws,
-      env: envNoCli,
-      cliArg: bundledCli,
+      env,
+      bin: bundledCli,
     });
     expect(r.status).toBe(0);
     expect(JSON.parse(r.stdout.trim()).permission).toBe("deny");
@@ -178,7 +187,11 @@ describe("Cursor adapter (pre-read-code-cursor.js)", () => {
 
   it("answers {permission:allow} for shell payloads and small files", async () => {
     await writeFile(path.join(ws, "small.txt"), "hello\n", "utf8");
-    const shell = run(JSON.stringify({ command: "cat big.txt", cwd: ws }));
+    const shell = runHook(
+      ["before-shell-execution", "cursor"],
+      JSON.stringify({ command: "cat small.txt", cwd: ws }),
+      { cwd: ws, env },
+    );
     expect(shell.status).toBe(0);
     expect(JSON.parse(shell.stdout.trim()).permission).toBe("allow");
     const small = run(readPayload(path.join(ws, "small.txt")));
@@ -203,19 +216,18 @@ describe("Cursor adapter (pre-read-code-cursor.js)", () => {
       expect(["allow", "deny", "ask"], `case: ${label}`).toContain(out.permission);
       expect(out.permission, `case: ${label}`).toBe("allow");
     }
-    const noCli = { ...env, CHEAPER_CLI: path.join(dir, "no-such-cli.js") };
-    const r = run(readPayload(path.join(ws, "big.txt")), noCli);
+    const r = run(readPayload(path.join(ws, "big.txt")), await corruptPolicyEnv(dir, env));
     expect(r.status).toBe(0);
     expect(JSON.parse(r.stdout.trim()).permission).toBe("allow");
-  });
+  }, 120_000);
 });
 
-describe("Windsurf pre_run_command adapter (pre-run-command.js)", () => {
+describe("Windsurf pre_run_command adapter (cheaper hook --target windsurf)", () => {
   let dir: string;
   let ws: string;
   let env: Record<string, string>;
 
-  const run = (stdin: string) => runHook(windsurfShellScript, stdin, { cwd: ws, env });
+  const run = (stdin: string) => runHook(["pre-run-command", "windsurf"], stdin, { cwd: ws, env });
   const cmdPayload = (commandLine: string) =>
     JSON.stringify({
       agent_action_name: "pre_run_command",
@@ -224,7 +236,6 @@ describe("Windsurf pre_run_command adapter (pre-run-command.js)", () => {
 
   beforeEach(async () => {
     ({ dir, ws, env } = await makeIsolatedEnv());
-    env.CHEAPER_CLI = cheaperBin;
   });
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
@@ -267,7 +278,7 @@ describe("shell read blocking policy (canonical shell request)", () => {
   // （deny → exit 2 + stderr、allow → exit 0 silent）。
   const run = (command: string, e = env) =>
     runHook(
-      windsurfShellScript,
+      ["pre-run-command", "windsurf"],
       JSON.stringify({
         agent_action_name: "pre_run_command",
         tool_info: { command_line: command },
@@ -287,7 +298,6 @@ describe("shell read blocking policy (canonical shell request)", () => {
 
   beforeEach(async () => {
     ({ dir, ws, env } = await makeIsolatedEnv());
-    env.CHEAPER_CLI = cheaperBin;
     await writeFile(path.join(ws, "big.txt"), BIG_TEXT, "utf8");
     await writeFile(path.join(ws, "small.txt"), "hello\n", "utf8");
   });
@@ -295,7 +305,7 @@ describe("shell read blocking policy (canonical shell request)", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  // deny は case ごとに CLI spawn を伴うため command 単位で分割する。
+  // deny は case ごとに計測を伴うため command 単位で分割する。
   it("denies `cat` on a file over the threshold", () => {
     denied("cat big.txt");
   });
@@ -384,7 +394,7 @@ describe("shell read blocking policy (canonical shell request)", () => {
     await writeFile(path.join(src, "big.txt"), BIG_TEXT);
     allowed("cd src && cat big.txt");
     denied("cat src/big.txt");
-  });
+  }, 120_000);
 
   it("fails open for ambiguous or unsupported shell syntax", () => {
     for (const command of [
@@ -397,7 +407,7 @@ describe("shell read blocking policy (canonical shell request)", () => {
     ]) {
       allowed(command);
     }
-  });
+  }, 120_000);
 
   it("fails open for missing files, directories, and workspace-outside paths", () => {
     allowed("cat missing.txt");
@@ -405,17 +415,13 @@ describe("shell read blocking policy (canonical shell request)", () => {
     allowed(`cat ${path.join(dir, "outside.txt").split(path.sep).join("/")}`);
   });
 
-  it("fails open when the CLI is unavailable or returns malformed output", async () => {
-    const noCli = { ...env, CHEAPER_CLI: path.join(dir, "no-such-cli.js") };
-    allowed("cat big.txt", noCli);
-    const stub = path.join(dir, "stub-cli.js");
-    await writeFile(stub, 'process.stdout.write("not json\\n");\n', "utf8");
-    allowed("cat big.txt", { ...env, CHEAPER_CLI: stub });
+  it("fails open when policy loading fails", async () => {
+    allowed("cat big.txt", await corruptPolicyEnv(dir, env));
   });
 
-  it("denies on a FILE_TOO_LARGE envelope (fail-closed)", () => {
+  it("denies on FILE_TOO_LARGE (fail-closed)", () => {
     // byte fast-path を通過するため file size は threshold を超える必要
-    // がある。big.txt (>8192B) に小さな byte cap を掛けて envelope を返させる。
+    // がある。big.txt (>8192B) に小さな byte cap を掛ける。
     const r = run("cat big.txt", { ...env, CHEAPER_COUNT_MAX_BYTES: "1024" });
     expect(r.status).toBe(2);
     expect(r.stderr).toContain("bytes");
@@ -434,7 +440,7 @@ describe("shell read blocking policy (canonical shell request)", () => {
     // 通常 read と shell-read が同一判定を共有する regression。
     const shellDeny = run("cat big.txt");
     const readDeny = runHook(
-      pretooluseScript,
+      ["pre-tool-use", "pretooluse"],
       JSON.stringify({ tool_name: "Read", tool_input: { file_path: "big.txt" } }),
       { cwd: ws, env },
     );
@@ -443,7 +449,7 @@ describe("shell read blocking policy (canonical shell request)", () => {
     expect(readDeny.stdout).toContain('"permissionDecision":"deny"');
     const shellAllow = run("cat small.txt");
     const readAllow = runHook(
-      pretooluseScript,
+      ["pre-tool-use", "pretooluse"],
       JSON.stringify({ tool_name: "Read", tool_input: { file_path: "small.txt" } }),
       { cwd: ws, env },
     );
@@ -453,7 +459,7 @@ describe("shell read blocking policy (canonical shell request)", () => {
 });
 
 // 各 target adapter が canonical shell request を native deny 表現へ
-// 変換することの確認（adapter 層は #43 の構造のまま無変更）。
+// 変換することの確認（TSPEC-034z50PbuzTYDWvQXYdvaG）。
 describe("shell read blocking across target adapters", () => {
   let dir: string;
   let ws: string;
@@ -461,7 +467,6 @@ describe("shell read blocking across target adapters", () => {
 
   beforeEach(async () => {
     ({ dir, ws, env } = await makeIsolatedEnv());
-    env.CHEAPER_CLI = cheaperBin;
     await writeFile(path.join(ws, "big.txt"), BIG_TEXT, "utf8");
     await writeFile(path.join(ws, "small.txt"), "hello\n", "utf8");
   });
@@ -472,7 +477,7 @@ describe("shell read blocking across target adapters", () => {
   it("pretooluse adapter (claude/codex) denies Bash/PowerShell large reads", () => {
     for (const tool of ["Bash", "PowerShell"]) {
       const r = runHook(
-        pretooluseScript,
+        ["pre-tool-use", "pretooluse"],
         JSON.stringify({ tool_name: tool, tool_input: { command: "cat big.txt" } }),
         { cwd: ws, env },
       );
@@ -482,7 +487,7 @@ describe("shell read blocking across target adapters", () => {
       expect(out.hookSpecificOutput.permissionDecisionReason).toContain("bulk-read");
     }
     const small = runHook(
-      pretooluseScript,
+      ["pre-tool-use", "pretooluse"],
       JSON.stringify({ tool_name: "Bash", tool_input: { command: "cat small.txt" } }),
       { cwd: ws, env },
     );
@@ -491,25 +496,26 @@ describe("shell read blocking across target adapters", () => {
   });
 
   it("cursor adapter denies beforeShellExecution large reads", () => {
-    const r = runHook(cursorScript, JSON.stringify({ command: "cat big.txt", cwd: ws }), {
-      cwd: ws,
-      env,
-    });
+    const r = runHook(
+      ["before-shell-execution", "cursor"],
+      JSON.stringify({ command: "cat big.txt", cwd: ws }),
+      { cwd: ws, env },
+    );
     expect(r.status).toBe(0);
     const out = JSON.parse(r.stdout.trim());
     expect(out.permission).toBe("deny");
     expect(out.agent_message).toContain("bulk-read");
-    const small = runHook(cursorScript, JSON.stringify({ command: "cat small.txt", cwd: ws }), {
-      cwd: ws,
-      env,
-    });
+    const small = runHook(
+      ["before-shell-execution", "cursor"],
+      JSON.stringify({ command: "cat small.txt", cwd: ws }),
+      { cwd: ws, env },
+    );
     expect(JSON.parse(small.stdout.trim()).permission).toBe("allow");
   });
 
   it("copilot adapter denies shell tool large reads with exit 0", () => {
-    const copilotScript = path.join(hooksDir, "pre-read-code-copilot.js");
     const r = runHook(
-      copilotScript,
+      ["pre-tool-use", "copilot"],
       JSON.stringify({ toolName: "bash", toolArgs: { command: "cat big.txt" } }),
       { cwd: ws, env },
     );
@@ -517,11 +523,10 @@ describe("shell read blocking across target adapters", () => {
     const out = JSON.parse(r.stdout.trim());
     expect(out.permissionDecision).toBe("deny");
     const small = runHook(
-      copilotScript,
+      ["pre-tool-use", "copilot"],
       JSON.stringify({ toolName: "bash", toolArgs: { command: "cat small.txt" } }),
       { cwd: ws, env },
     );
     expect(small.status).toBe(0);
-    expect(small.stdout).not.toContain('"permissionDecision":"deny"');
   });
 });

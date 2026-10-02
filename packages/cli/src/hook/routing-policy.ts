@@ -49,7 +49,7 @@ export type Verdict = { decision: "allow" } | { decision: "deny"; reason: string
 export interface EvaluateOptions {
   env?: NodeJS.ProcessEnv;
   /** built-in resources root（SEA では VFS root）。 */
-  builtinDir?: string;
+  builtinDir?: string | undefined;
 }
 
 export function threshold(env?: NodeJS.ProcessEnv): number {
@@ -125,7 +125,7 @@ async function evaluateFileRead(
     return { decision: "allow" };
   }
   const relPosix = rel.split(path.sep).join("/");
-  let st;
+  let st: fs.Stats;
   try {
     st = fs.statSync(resolved);
     if (!st.isFile()) {
