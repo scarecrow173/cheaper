@@ -1,0 +1,77 @@
+name: release
+
+# 手動実行のみ。自動 trigger は設けない（PLAN-034z2bk7AEzZ66Mt0uXCyJ）。
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (vX.Y.Z) — packages/cli/package.json の version と一致必須"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build-executable:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win32-x64
+            artifact: cheaper-windows-x64.exe
+          - os: ubuntu-latest
+            target: linux-x64
+            artifact: cheaper-linux-x64
+          - os: ubuntu-24.04-arm
+            target: linux-arm64
+            artifact: cheaper-linux-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - uses: jdx/mise-action@v4
+        with:
+          minimum_release_age: 7d
+          install_args: "--locked"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      # tag が packages/cli/package.json の version と一致しなければ fail。
+      # version 宣言 drift のある artifact を release しないためのゲート。
+      - name: Verify tag matches package version
+        shell: bash
+        run: |
+          pkg_version="$(node -p "require('./packages/cli/package.json').version")"
+          if [ "${{ inputs.tag }}" != "v${pkg_version}" ]; then
+            echo "tag ${{ inputs.tag }} does not match package version ${pkg_version}" >&2
+            exit 1
+          fi
+
+      - run: node scripts/build-executable.mjs --target ${{ matrix.target }}
+
+      - name: Smoke test executable
+        shell: bash
+        run: |
+          exe="dist/sea/${{ matrix.artifact }}"
+          reported="$("${exe}" --version)"
+          if [ "${reported}" != "${{ inputs.tag }}" ] && [ "v${reported}" != "${{ inputs.tag }}" ]; then
+            echo "executable --version ${reported} does not match tag ${{ inputs.tag }}" >&2
+            exit 1
+          fi
+          "${exe}" models > /dev/null
+
+      - name: Create release if missing
+        shell: bash
+        run: |
+          gh release view "${{ inputs.tag }}" > /dev/null 2>&1 \
+            || gh release create "${{ inputs.tag }}" --generate-notes
+
+      - run: gh release upload "${{ inputs.tag }}" "dist/sea/${{ matrix.artifact }}" --clobber

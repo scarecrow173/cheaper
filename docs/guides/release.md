@@ -46,8 +46,16 @@ mise run check                           # 全検証（version check 含む）
    まとめる（`release:` または `chore:` prefix）。
 5. `node packages/cli/bin/cheaper.js --version` と、bundle 内
    `version.json` が新しい値を返すことを目視確認する。
-6. tag / GitHub Release は現時点では自動化していない。必要なら
-   commit 後に `git tag v<X.Y.Z>` を手動で打つ。
+6. `git tag v<X.Y.Z>` で tag を打ち、push する。
+7. GitHub Actions の `release` workflow を**手動 dispatch** し、
+   `tag` input に `v<X.Y.Z>` を指定する。この workflow は
+   `workflow_dispatch` のみを trigger に持ち、自動では実行されない。
+   各 platform（Windows x64・Linux x64・Linux arm64）で SEA
+   executable を build・smoke し、Release `v<X.Y.Z>` に添付する。
+   macOS artifact は現時点では対象外。
+8. tag の `packages/cli/package.json` version が `v<X.Y.Z>` と一致
+   しない場合、workflow は version 検証で fail し artifact は
+   upload されない。その場合は宣言を修正してから再度 dispatch する。
 
 ## 注意
 

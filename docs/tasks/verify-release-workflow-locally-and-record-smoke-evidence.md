@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z2pjfqDxeH4X4QdxAQx"
 type: "task"
-status: "todo"
+status: "done"
 title: "Verify release workflow locally and record smoke evidence"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/integrate-sea-executables-into-tag-triggered-github-release-workflow.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/verify-release-workflow.md"
   depends-on:
     - "docs/plans/integrate-sea-executables-into-tag-triggered-github-release-workflow.md"
     - "docs/tasks/create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md"

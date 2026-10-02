@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z2paWfkTKout3vzftc8"
 type: "task"
-status: "todo"
+status: "done"
 title: "Create manual-dispatch release workflow with 3-platform SEA matrix"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/integrate-sea-executables-into-tag-triggered-github-release-workflow.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/create-manual-dispatch-release-workflow.md"
   depends-on:
     - "docs/plans/integrate-sea-executables-into-tag-triggered-github-release-workflow.md"
   blocks: []

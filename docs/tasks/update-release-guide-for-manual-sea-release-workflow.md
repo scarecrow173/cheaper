@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z2pbpAynIVRedenPgXa"
 type: "task"
-status: "todo"
+status: "done"
 title: "Update release guide for manual SEA release workflow"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/integrate-sea-executables-into-tag-triggered-github-release-workflow.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/update-release-guide.md"
   depends-on:
     - "docs/plans/integrate-sea-executables-into-tag-triggered-github-release-workflow.md"
   blocks: []
