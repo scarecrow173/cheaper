@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034z2ET4udxbq0djqYM2kl"
 type: "plan"
-status: "draft"
+status: "approved"
 title: "Assemble APM executable payload with platform launchers"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -82,8 +82,9 @@ subcommand 化と `hooks.json` 書き換えは別 plan（次の plan）で扱う
 - `scripts/build-apm-bundle.mjs` - 新規。`pnpm bundle` 出力 +
   `--exe-dir` で与えた executable 群を APM distribution tree に
   組み立てる
-- `packages/apm/.gitignore` または `.gitignore` - 変更。
-  executable の追跡方針を決める（下記 Risks / Open Questions 参照）
+- `.gitattributes` - 新規または変更。`cli/bin/<platform>/` 配下の
+  executable を `filter=lfs diff=lfs merge=lfs -text` で LFS 管理
+  に指定（追跡方針: コミットするが LFS。下記 Open Questions 参照）
 - `packages/apm/.apm/skills/cheaper-usage/` - 変更。CLI location
   guidance を executable 基準に更新
 
@@ -101,9 +102,9 @@ subcommand 化と `hooks.json` 書き換えは別 plan（次の plan）で扱う
       `cli/bin/<platform>/` へリネームコピー。`--exe-dir` 未指定時は
       executable を配置しない（host だけの部分 bundle を許容し、
       存在する platform のみ配置）
-- [ ] executable の git 追跡方針を実装（Open Questions の決定に
-      従う。未追跡なら ignore 追加 + freshness/存在検証の範囲を
-      launcher・構造に限定）
+- [ ] `.gitattributes` に executable パスの LFS 指定を追加し、
+      `git lfs install` 済み環境で add したとき pointer file 化を
+      確認（`git lfs status` / `git cat-file` で pointer 判定）
 - [ ] `mise run check` の bundle freshness step が新しい tree
       構成（launcher・executable）を壊さないことを確認、必要なら
       freshness 対象を調整
@@ -117,12 +118,13 @@ subcommand 化と `hooks.json` 書き換えは別 plan（次の plan）で扱う
 
 ## Dependencies and Risks
 
-- **executable の git 追跡（最重要）**: `packages/apm/.apm/hooks/cli/`
-  は現状 git 追跡済み（`cheaper.mjs`・`version.json`・`workers/` が
-  commit され `mise run check` が freshness diff を持つ）。design
-  どおり executable を `cli/bin/<platform>/` に置くと、追跡するなら
-  **3 target × ~110 MiB ≈ 330 MiB が恒久的に git 履歴に入る**。
-  Open Questions で方針決定を求める（下記参照）
+- **executable の git 追跡（決定済み: LFS）**: `packages/apm/.apm/
+  hooks/cli/` は現状 git 追跡済み（`cheaper.mjs`・`version.json`・
+  `workers/` が commit され `mise run check` が freshness diff を
+  持つ）。executable は `.gitattributes` の LFS rule で追跡するため、
+  repo 本体に入るのは pointer のみ、実体は LFS object store。
+  **前提条件: dev / CI 双方で `git lfs` が利用可能であること**
+  （checkout での smudge・freshness diff が pointer 比較になる）
 - **host 以外の executable の入手**: current host で build できるのは
   `win32-x64` のみ。linux 系は release workflow の artifact を
   `gh release download` 等で取得して `--exe-dir` に渡す想定。
@@ -153,6 +155,8 @@ subcommand 化と `hooks.json` 書き換えは別 plan（次の plan）で扱う
       exit code を伝播
 - [ ] `node scripts/build-apm-bundle.mjs --exe-dir dist/sea` が
       executable を `cli/bin/win32-x64/` に配置
+- [ ] `git lfs` が環境で利用可能で、add した executable が
+      pointer file として commit される
 - [ ] `pnpm bundle`（または `build-apm-bundle`）後の tree が
       freshness check と整合
 - [ ] `mise run check` pass
@@ -161,17 +165,15 @@ subcommand 化と `hooks.json` 書き換えは別 plan（次の plan）で扱う
 
 ## Open Questions / Gaps
 
-- **executable を git にコミットするか**（要ユーザー判断）:
-  - (a) コミットする — design の freshness 検証をそのまま適用。
-    しかし ~330 MiB が履歴に恒久的に残る
-  - (b) **コミットしない（推奨）** — `cli/bin/<platform>/` を
-    gitignore、`build-apm-bundle.mjs` は release/package 時に
-    実行して tree を組み立てる。freshness check は launcher と
-    既存 bundle asset（cheaper.mjs 等）のみを対象に維持。
-    release workflow に APM payload 組み立て step を将来追加可能
-  - design は「binary freshness を CI が検証」と記述するが、
-    追跡しない場合は「構造・launcher の freshness」+「release
-    artifact 由来の binary」の組み合わせで担保する
+- **executable の追跡方針（決定）**: コミットするが **Git LFS**
+  で管理する。`.gitattributes` に
+  `packages/apm/.apm/hooks/cli/bin/** filter=lfs diff=lfs merge=lfs
+  -text` を指定し、pointer のみ履歴に残す。freshness diff は
+  pointer 比較として機能する。
+  - 前提: dev 環境に `git lfs install` が必要（CI は
+    `actions/checkout` の `lfs: true` で対応）
+  - design の「binary freshness を CI が検証」は pointer レベルの
+    diff で維持される
 - `cheaper.ps1` のみで Windows を賄うか、`cheaper.cmd`/`.bat` が
   必要か（apm が Windows hook をどう起動するかに依存。
   hooks.json の現行 `powershell` キー構造から `.ps1` で足りる想定）
