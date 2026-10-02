@@ -41,13 +41,20 @@ one workspace file so you can measure context cost before reading it.
 ## Locating the CLI
 
 - If `cheaper` is on `PATH`, use it directly.
-- In a Windsurf workspace where cheaper was installed via APM, a
-  self-contained copy ships inside the hook bundle:
+- In a Windsurf workspace where cheaper was installed via APM, the
+  hook bundle ships a platform launcher plus standalone executables
+  (no Node.js required):
 
   ```bash
-  node .windsurf/hooks/cheaper/cli/bin/cheaper.mjs <command> [options]
+  .windsurf/hooks/cheaper/cheaper <command> [options]          # POSIX
+  pwsh .windsurf/hooks/cheaper/cheaper.ps1 <command> [options] # Windows
   ```
 
+  The launcher dispatches to `cli/bin/<platform>/cheaper[.exe]`.
+  During the transition period a JS bundle also ships at
+  `cli/bin/cheaper.mjs` (`node .windsurf/hooks/cheaper/cli/bin/cheaper.mjs
+  <command> [options]`), which requires Node.js on `PATH`; hook entries
+  will migrate to the launcher/executable path in a later phase.
   Substitute `cheaper` for the actual hook bundle directory name if the
   package was installed under a different name. Everywhere below,
   `cheaper <args>` means either form.

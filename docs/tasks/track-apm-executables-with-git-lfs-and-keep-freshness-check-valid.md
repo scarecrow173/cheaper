@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z3zPzG5T5Q8QpwsaoTJ"
 type: "task"
-status: "todo"
+status: "done"
 title: "Track APM executables with Git LFS and keep freshness check valid"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/assemble-apm-executable-payload-with-platform-launchers.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/track-executables-with-git-lfs.md"
   depends-on:
     - "docs/plans/assemble-apm-executable-payload-with-platform-launchers.md"
     - "docs/tasks/implement-build-apm-bundle-mjs-assembling-executables-into-hooks-tree.md"

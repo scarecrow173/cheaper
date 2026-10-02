@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z3zOydB4GluAraLc16E"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add POSIX and PowerShell platform launchers to hooks payload"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/assemble-apm-executable-payload-with-platform-launchers.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/add-platform-launchers-to-hooks-payload.md"
   depends-on:
     - "docs/plans/assemble-apm-executable-payload-with-platform-launchers.md"
   blocks: []

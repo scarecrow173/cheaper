@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z3zQE9PpSPE6CLsbpTP"
 type: "task"
-status: "todo"
+status: "done"
 title: "Verify launchers and APM payload assembly locally"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/assemble-apm-executable-payload-with-platform-launchers.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/verify-launchers-and-apm-payload.md"
   depends-on:
     - "docs/plans/assemble-apm-executable-payload-with-platform-launchers.md"
     - "docs/tasks/add-posix-and-powershell-platform-launchers-to-hooks-payload.md"

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z3zP5mtHjiKzurDeCDM"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement build-apm-bundle.mjs assembling executables into hooks tree"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/assemble-apm-executable-payload-with-platform-launchers.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/implement-build-apm-bundle.md"
   depends-on:
     - "docs/plans/assemble-apm-executable-payload-with-platform-launchers.md"
   blocks: []

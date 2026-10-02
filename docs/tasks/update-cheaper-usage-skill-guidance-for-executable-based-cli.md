@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z3zQ6V08kM7gUKnUzfL"
 type: "task"
-status: "todo"
+status: "done"
 title: "Update cheaper-usage skill guidance for executable-based CLI"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/assemble-apm-executable-payload-with-platform-launchers.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/update-cheaper-usage-guidance.md"
   depends-on:
     - "docs/plans/assemble-apm-executable-payload-with-platform-launchers.md"
   blocks: []

@@ -11,6 +11,7 @@ Directory: `docs/impl/ir`
 | IMPL-034rzZLq1nbnzN4CvDSAk5 | Add model pricing metadata layer and bundled data | completed | [add-model-pricing-metadata-layer-and-bundled-data.md](./add-model-pricing-metadata-layer-and-bundled-data.md) |
 | IMPL-034rAiJgmYQKgmJC2mF9zN | Add models.yaml exclude with union merge | completed | [add-models-yaml-exclude-with-union-merge.md](./add-models-yaml-exclude-with-union-merge.md) |
 | IMPL-034r05iHy2gdnpmfo09FGX | Add Ollama docker-compose and AGENTS.md container usage | completed | [add-ollama-docker-compose-and-agents-md-container-usage.md](./add-ollama-docker-compose-and-agents-md-container-usage.md) |
+| IMPL-034z3CD7wXV3MNmCy9JnHs | add platform launchers to hooks payload | draft | [add-platform-launchers-to-hooks-payload.md](./add-platform-launchers-to-hooks-payload.md) |
 | IMPL-034z1STQxtFa8POTFVCwbd | Add SEA entrypoint sea-main.ts | completed | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | IMPL-034rArskSHUOoayxrLW4s8 | Add usage telemetry e2e coverage docs and bundle regen | completed | [add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md](./add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md) |
 | IMPL-2OYQijUxRdsfa8Cig2DuQe | Auth text/select prompt I/O boundary routing (PLAN-zDQIdChPXY1lrGJyzZTiQc) | completed | [auth-io-boundary.md](./auth-io-boundary.md) |
@@ -20,7 +21,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpkXDh47a6 | Code review fixes (post-merge) | completed | [code-review-fixes.md](./code-review-fixes.md) |
 | IMPL-034r05iHy2gdnpoDlOXUs6 | Configure Pi models.json and cheaper models.yaml for Ollama | completed | [configure-pi-and-cheaper-model-config-for-ollama.md](./configure-pi-and-cheaper-model-config-for-ollama.md) |
 | IMPL-034r05iHy2gdnpyISCbZJu | Copilot pre-read hook adapter (PLAN-034r05iHE1FbkpaEpZrthK) | completed | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
-| IMPL-034z2rYkK5IZuxqTMYHtAs | create manual dispatch release workflow | draft | [create-manual-dispatch-release-workflow.md](./create-manual-dispatch-release-workflow.md) |
+| IMPL-034z2rYkK5IZuxqTMYHtAs | create manual dispatch release workflow | completed | [create-manual-dispatch-release-workflow.md](./create-manual-dispatch-release-workflow.md) |
 | IMPL-034rALLKuPPgsnclaaPRYT | Cross-agent native routing adapters over APM distribution | completed | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
 | IMPL-034r05iHy2gdnpARFuxZVi | Delegation usage measurement log (PLAN-034r05iHE1Fbkpd5tkg6Gs) | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
 | IMPL-034r05iHy2gdnpusDjHBDw | Separate development APM project from distributable package (PLAN-034r05iHE1Fbkp5YZSKJM2) | completed | [dev-apm-and-distributable-package-separation.md](./dev-apm-and-distributable-package-separation.md) |
@@ -30,6 +31,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z1ST2V3s2UsM4Mi2S87 | Extract shared esbuild bundle helper | completed | [extract-shared-esbuild-bundle-helper.md](./extract-shared-esbuild-bundle-helper.md) |
 | IMPL-034r05iHy2gdnpwO94elRp | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | IMPL-swcR6qnZBfKwyIdckqQxae | grep eval-budget test stability via explicit budget injection | completed | [grep-eval-budget-test-stability-via-explicit-budget-injection.md](./grep-eval-budget-test-stability-via-explicit-budget-injection.md) |
+| IMPL-034z3CDzdvjhrEshqx1zRg | implement build-apm-bundle | draft | [implement-build-apm-bundle.md](./implement-build-apm-bundle.md) |
 | IMPL-034z1SUivUVftC75FVZ3OG | Implement build-executable.mjs and Node bump | completed | [implement-build-executable-mjs-and-node-bump.md](./implement-build-executable-mjs-and-node-bump.md) |
 | IMPL-034r05iHy2gdnpjoHb5OTl | Implement cheaper CLI and built-in workers (PLAN-034r05iHy2gdnpJFiMWhkY) | completed | [implement-cheaper-cli-and-built-in-workers-plan-0003.md](./implement-cheaper-cli-and-built-in-workers-plan-0003.md) |
 | IMPL-034r05iHy2gdnpgYK6Sj6D | Implement @cheaper/core (PLAN-034r05iHy2gdnpHMZZk4ZU) | completed | [implement-cheaper-core-plan-0001.md](./implement-cheaper-core-plan-0001.md) |
@@ -45,13 +47,16 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
 | IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
 | IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |
+| IMPL-034z3CE24rUsOGqD0BfeqZ | track executables with git lfs | draft | [track-executables-with-git-lfs.md](./track-executables-with-git-lfs.md) |
 | IMPL-034r05iHy2gdnpx0u8vJaz | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | IMPL-034z1STqpGaGE7SWSnCLo3 | Unify packageVersion on builtinDir | completed | [unify-packageversion-on-builtindir.md](./unify-packageversion-on-builtindir.md) |
+| IMPL-034z3CEqPwEgMOcgeJ69S5 | update cheaper-usage guidance | draft | [update-cheaper-usage-guidance.md](./update-cheaper-usage-guidance.md) |
 | IMPL-034rAty3hDG6bnv9waKpx5 | Update guides for pricing catalog | completed | [update-guides-for-pricing-catalog.md](./update-guides-for-pricing-catalog.md) |
-| IMPL-034z2rYSzkxUjQSkAXW3IP | update release guide | draft | [update-release-guide.md](./update-release-guide.md) |
+| IMPL-034z2rYSzkxUjQSkAXW3IP | update release guide | completed | [update-release-guide.md](./update-release-guide.md) |
 | IMPL-034r2HoPHxqYBy0c98U70r | Align usage.jsonl recording-scope docs (PLAN-034r2puWPUDxxDyfTSffZR) | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
 | IMPL-034r05iHy2gdnpCk8YlDWb | User-facing documentation information architecture (PLAN-034r05iHE1FbkpeFEXECDx) | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
-| IMPL-034z2rZiB6WUNTje88kRt1 | verify release workflow | draft | [verify-release-workflow.md](./verify-release-workflow.md) |
+| IMPL-034z3CEPSQBJaEVBVxxzmL | verify launchers and apm payload | draft | [verify-launchers-and-apm-payload.md](./verify-launchers-and-apm-payload.md) |
+| IMPL-034z2rZiB6WUNTje88kRt1 | verify release workflow | completed | [verify-release-workflow.md](./verify-release-workflow.md) |
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |
 | IMPL-034rC4j788MZLcUE8xHHP2 | Worker workload profile と auto tier classifier の core 実装 | completed | [worker-workload-profile-auto-tier-classifier-core.md](./worker-workload-profile-auto-tier-classifier-core.md) |
