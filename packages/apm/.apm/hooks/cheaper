@@ -38,4 +38,14 @@ if [ ! -f "$exe" ]; then
   exit 1
 fi
 
+# A consumer clone without git-lfs smudge ships the pointer text instead
+# of the binary. Detect it and fail loudly — executing a pointer would
+# surface as an opaque "cannot execute" error (or worse, silently pass).
+if head -c 44 "$exe" 2>/dev/null | grep -q "version https://git-lfs"; then
+  echo "cheaper launcher: $exe is a Git LFS pointer, not the binary." >&2
+  echo "  install git-lfs and run 'git lfs pull' in the package cache," >&2
+  echo "  or re-run 'apm install' after 'git lfs install'." >&2
+  exit 1
+fi
+
 exec "$exe" "$@"

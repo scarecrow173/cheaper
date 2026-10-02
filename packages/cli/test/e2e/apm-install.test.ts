@@ -50,12 +50,17 @@ describe("APM consumer install smoke (windsurf target)", () => {
     const entry = hooksJson.hooks.pre_read_code?.[0];
     expect(entry).toBeDefined();
     const bundle = bundleRoot(consumer);
-    expect(entry.command).toContain("pre-read-code.js");
-    expect(entry.command).toContain("cli/bin/cheaper.mjs");
+    // executable 呼び出し: launcher 経由の `cheaper hook` であり、
+    // node / JS adapter 参照は残っていない
+    expect(entry.command).toContain("hook pre-read-code --target windsurf");
+    expect(entry.command).toContain("pkg/cheaper");
+    expect(entry.command).not.toContain("node ");
+    expect(entry.command).not.toContain(".js");
     // powershell -Command collapses the hook's exit 2 to 1 unless the command
     // propagates $LASTEXITCODE — without it Cascade never sees the block.
     expect(entry.powershell).toContain("exit $LASTEXITCODE");
     const cli = bundledCli(consumer);
+    expect(bundle).not.toBeNull();
 
     // bundled CLI が動く
     const version = spawnSync(process.execPath, [cli, "--version"], {
@@ -65,20 +70,24 @@ describe("APM consumer install smoke (windsurf target)", () => {
     expect(version.status).toBe(0);
     expect(version.stdout.trim()).toMatch(/^\d+\.\d+\.\d+$/);
 
-    // hook が large file を bundled CLI で block する
+    // hook が large file を bundled CLI の `cheaper hook` 経路で block する
     writeFileSync(
       path.join(consumer, "big.txt"),
       "lorem ipsum dolor sit amet ".repeat(4000),
       "utf8",
     );
-    const hook = spawnSync(process.execPath, [path.join(bundle, "pre-read-code.js"), cli], {
-      cwd: consumer,
-      input: JSON.stringify({
-        agent_action_name: "pre_read_code",
-        tool_info: { file_path: path.join(consumer, "big.txt") },
-      }),
-      encoding: "utf8",
-    });
+    const hook = spawnSync(
+      process.execPath,
+      [cli, "hook", "pre-read-code", "--target", "windsurf"],
+      {
+        cwd: consumer,
+        input: JSON.stringify({
+          agent_action_name: "pre_read_code",
+          tool_info: { file_path: path.join(consumer, "big.txt") },
+        }),
+        encoding: "utf8",
+      },
+    );
     expect(hook.status).toBe(2);
     expect(hook.stderr).toContain("bulk-read");
   }, 120_000);

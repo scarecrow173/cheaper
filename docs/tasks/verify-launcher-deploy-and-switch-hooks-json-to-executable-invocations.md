@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z52LkJfYTGEpl69G239"
 type: "task"
-status: "todo"
+status: "done"
 title: "verify launcher deploy and switch hooks.json to executable invocations"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/launcher-deploy-verify-and-hooks-json-switch.md"
   depends-on:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
     - "docs/tasks/add-cheaper-hook-command-with-target-adapters.md"

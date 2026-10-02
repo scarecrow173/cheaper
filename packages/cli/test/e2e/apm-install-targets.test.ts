@@ -118,8 +118,10 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       expect(settingsEntry.matcher).toBeDefined();
       const inner = settingsEntry.hooks as JsonObject[];
       expect(Array.isArray(inner)).toBe(true);
-      // ${CLAUDE_PROJECT_DIR} 補間はそのまま残る
-      expect(String(inner[0].command)).toContain("pre-read-code.js");
+      // ${CLAUDE_PROJECT_DIR} 補間はそのまま残る。command は JS
+      // adapter ではなく launcher 経由の `cheaper hook` 呼び出し。
+      expect(String(inner[0].command)).toContain("hook pre-read-code --target windsurf");
+      expect(String(inner[0].command)).not.toContain("node ");
       // .claude/apm-hooks.json は top-level event key + 同じ nested shape
       const apmEntry = (apmHooks.pre_read_code as JsonObject[])[0];
       expect(apmEntry).toBeDefined();
@@ -135,7 +137,7 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       expect(preToolEntry).toBeDefined();
       expect(preToolEntry.matcher).toBe("view|bash|powershell|shell");
       expect(String((preToolEntry.hooks as JsonObject[])[0].command)).toContain(
-        "pre-read-code-copilot.js",
+        "hook pre-tool-use --target copilot",
       );
       // apm-hooks.json 側も同じく PascalCase に正規化される
       const apmPreToolEntry = (apmHooks.PreToolUse as JsonObject[])[0];
@@ -150,7 +152,7 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       const nativeGroup = preToolGroups.find((g) => g.matcher === "Read|Bash|PowerShell");
       expect(nativeGroup).toBeDefined();
       expect(String(((nativeGroup as JsonObject).hooks as JsonObject[])[0].command)).toContain(
-        "pre-read-code-pretooluse.js",
+        "hook pre-tool-use --target pretooluse",
       );
       const copilotGroup = preToolGroups.find((g) => g.matcher === "view|bash|powershell|shell");
       expect(copilotGroup).toBeDefined();
@@ -168,7 +170,8 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
         ) as JsonObject[];
         expect(Array.isArray(entries), `${target}: ${cfgPath}`).toBe(true);
         expect(entries.length).toBeGreaterThan(0);
-        expect(String(entries[0].command)).toContain("pre-read-code.js");
+        expect(String(entries[0].command)).toContain("hook pre-read-code --target windsurf");
+        expect(String(entries[0].command)).not.toContain("node ");
         // preToolUse（copilot native event）の登録も verbatim で全
         // target config に入る。copilot では functional、他 target
         // では unknown event または matcher 不一致として no-op
@@ -178,7 +181,7 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
         ) as JsonObject[];
         expect(Array.isArray(preToolEntries), `${target}: ${cfgPath} preToolUse`).toBe(true);
         expect(preToolEntries.length).toBeGreaterThan(0);
-        expect(String(preToolEntries[0].command)).toContain("pre-read-code-copilot.js");
+        expect(String(preToolEntries[0].command)).toContain("hook pre-tool-use --target copilot");
         expect(preToolEntries[0].matcher).toBe("view|bash|powershell|shell");
         if (!flat && (target === "cursor" || target === "copilot")) {
           expect(cfg.version).toBe(1);
@@ -192,15 +195,15 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
             ? String(entry.command)
             : String(((entry.hooks as JsonObject[]) ?? [{}])[0].command);
         const nativeEvents: Record<string, Array<[string, string]>> = {
-          windsurf: [["pre_run_command", "pre-run-command.js"]],
+          windsurf: [["pre_run_command", "hook pre-run-command --target windsurf"]],
           // copilot では nested PreToolUse group が preToolUse array に
           // merge されて現れる（matcher が lowercase tool 名に一致
           // しないため実質 no-op — 登録形状の記録として assert）。
-          copilot: [["preToolUse", "pre-read-code-pretooluse.js"]],
-          codex: [["PreToolUse", "pre-read-code-pretooluse.js"]],
+          copilot: [["preToolUse", "hook pre-tool-use --target pretooluse"]],
+          codex: [["PreToolUse", "hook pre-tool-use --target pretooluse"]],
           cursor: [
-            ["beforeReadFile", "pre-read-code-cursor.js"],
-            ["beforeShellExecution", "pre-read-code-cursor.js"],
+            ["beforeReadFile", "hook before-read-file --target cursor"],
+            ["beforeShellExecution", "hook before-shell-execution --target cursor"],
           ],
         };
         for (const [event, script] of nativeEvents[target] ?? []) {
