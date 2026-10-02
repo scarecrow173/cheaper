@@ -6,8 +6,9 @@ Directory: `docs/test-specs`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
-| TSPEC-034z3yKWLolrImpMY8UMhZ | APM executable payload layout and launcher dispatch contract | draft | [apm-executable-payload-layout-and-launcher-dispatch-contract.md](./apm-executable-payload-layout-and-launcher-dispatch-contract.md) |
+| TSPEC-034z3yKWLolrImpMY8UMhZ | APM executable payload layout and launcher dispatch contract | proposed | [apm-executable-payload-layout-and-launcher-dispatch-contract.md](./apm-executable-payload-layout-and-launcher-dispatch-contract.md) |
 | TSPEC-CcB52hP0U8aHcOIhg0D0ge | auto tier classification by effectiveCost percentile | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
+| TSPEC-034z50PbuzTYDWvQXYdvaG | cheaper hook subcommands and hooks.json executable contract | draft | [cheaper-hook-subcommands-and-hooks-json-executable-contract.md](./cheaper-hook-subcommands-and-hooks-json-executable-contract.md) |
 | TSPEC-034rAaJtM27Ibpy78mq0kP | Cross-agent adapter contract tests | approved | [cross-agent-adapter-contract-tests.md](./cross-agent-adapter-contract-tests.md) |
 | TSPEC-034z1P09dg86lO9uB31cUi | Embedded builtin resource resolution across distribution forms | proposed | [embedded-builtin-resource-resolution-across-distribution-forms.md](./embedded-builtin-resource-resolution-across-distribution-forms.md) |
 | TSPEC-034rzVr1S8qFdi1JqWSN9Z | model exclude and explicit selection guards | approved | [model-exclude-and-explicit-selection.md](./model-exclude-and-explicit-selection.md) |

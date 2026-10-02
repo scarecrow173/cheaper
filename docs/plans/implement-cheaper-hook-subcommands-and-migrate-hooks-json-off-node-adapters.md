@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034z3OwYgplUxa7Usrjwxq"
 type: "plan"
-status: "draft"
+status: "approved"
 title: "Implement cheaper hook subcommands and migrate hooks.json off Node adapters"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -32,7 +32,8 @@ relations:
     - "docs/adr/distribute-cheaper-as-node-26-sea-standalone-executables-shared-by-direct-releas.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "docs/test-specs/cheaper-hook-subcommands-and-hooks-json-executable-contract.md"
   references: []
   defers: []
   deferred-by: []
