@@ -7,7 +7,7 @@ Directory: `docs/plans`
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
 | PLAN-034r05iHE1FbkoW7f4XJXS | Implement APM delegation skills and pre_read_code hook | completed | [apm-delegation-layer.md](./apm-delegation-layer.md) |
-| PLAN-034z2ET4udxbq0djqYM2kl | Assemble APM executable payload with platform launchers | draft | [assemble-apm-executable-payload-with-platform-launchers.md](./assemble-apm-executable-payload-with-platform-launchers.md) |
+| PLAN-034z2ET4udxbq0djqYM2kl | Assemble APM executable payload with platform launchers | completed | [assemble-apm-executable-payload-with-platform-launchers.md](./assemble-apm-executable-payload-with-platform-launchers.md) |
 | PLAN-034r05iHE1FbkoZibpg86T | cheaper auth command (provider login absorbed into the CLI) | completed | [auth-command.md](./auth-command.md) |
 | PLAN-zDQIdChPXY1lrGJyzZTiQc | Route auth text/select prompts through the injected CliIo stderr | completed | [auth-io-boundary.md](./auth-io-boundary.md) |
 | PLAN-034r05iHE1Fbkp4xxlyMdV | Injectable auth URL opener seam for hermetic tests | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
@@ -25,6 +25,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1Fbkp0Gokdq8Z | Huge-file byte cap guard and fail-closed hook | completed | [huge-file-byte-cap-guard-and-fail-closed-hook.md](./huge-file-byte-cap-guard-and-fail-closed-hook.md) |
 | PLAN-eDDZBS6ncoMf6TOdM7tDSW | implement auto tier classification | completed | [implement-auto-tier-classification.md](./implement-auto-tier-classification.md) |
 | PLAN-034r05iHy2gdnpJFiMWhkY | Implement cheaper CLI, built-in workers and end-to-end verification | completed | [implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md](./implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md) |
+| PLAN-034z3OwYgplUxa7Usrjwxq | Implement cheaper hook subcommands and migrate hooks.json off Node adapters | draft | [implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md](./implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md) |
 | PLAN-034r05iHy2gdnpIrX0mTIb | Implement @cheaper/runtime-pi execution engine and sandboxed tools | completed | [implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md](./implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md) |
 | PLAN-034rzUgf26bzSEwLr1L6Pl | implement model pricing catalog and curated exceptions | approved | [implement-model-pricing-catalog.md](./implement-model-pricing-catalog.md) |
 | PLAN-034z1M6zCAdKb12eiCWZRm | Implement Node 26 SEA standalone executable proof of concept | completed | [implement-node-26-sea-standalone-executable-proof-of-concept.md](./implement-node-26-sea-standalone-executable-proof-of-concept.md) |
