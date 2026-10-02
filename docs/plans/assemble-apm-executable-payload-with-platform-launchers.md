@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034z2ET4udxbq0djqYM2kl"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Assemble APM executable payload with platform launchers"
 created: "2026-10-02"
 updated: "2026-10-02"
