@@ -1,4 +1,4 @@
-import { rm, writeFile } from "node:fs/promises";
+import { rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -96,6 +96,17 @@ describe("routing policy (cli port)", () => {
       expect(v.reason).toContain("'big.bin' is 64 bytes");
       expect(v.reason).toContain("exceeds the 16-byte measurement cap");
       expect(v.reason).toContain("workspace-relative path: big.bin");
+    });
+
+    it("fails open under a symlinked cwd (parity quirk)", async () => {
+      // raw cwd で resolve した path を canonical root で数えるため、
+      // realpath と一致しない cwd では WorkspaceEscapeError → allow。
+      // request.cwd を直接与えるため platform 非依存に再現する。
+      const link = path.join(dir, "ws-link");
+      await symlink(ws, link, process.platform === "win32" ? "junction" : "dir");
+      await writeFile(path.join(ws, "big.txt"), BIG_TEXT, "utf8");
+      const v = await evaluate({ kind: "file-read", path: "big.txt", cwd: link }, opts);
+      expect(v).toEqual({ decision: "allow" });
     });
 
     it("fails open when the workspace root does not exist", async () => {

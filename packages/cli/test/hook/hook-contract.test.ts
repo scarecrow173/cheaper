@@ -117,19 +117,27 @@ describe("cheaper hook contract", () => {
       expect(r.stderr).toContain("bulk-read");
     });
 
-    it("fails open under a symlinked cwd (parity with the JS adapters)", async () => {
-      // raw cwd で resolve した path を canonical root で数えるため、
-      // realpath と一致しない cwd では WorkspaceEscapeError → allow。
-      // この quirk は JS adapter の挙動として維持する。
-      const link = path.join(dir, "ws-link");
-      await symlink(ws, link, process.platform === "win32" ? "junction" : "dir");
-      await writeFile(path.join(ws, "big.txt"), BIG_TEXT, "utf8");
-      const r = runHook(["pre-read-code", "--target", "windsurf"], windsurfRead("big.txt"), {
-        cwd: link,
-        env,
-      });
-      expect(r.status).toBe(0);
-    });
+    it.runIf(process.platform === "win32")(
+      "fails open under a symlinked cwd (parity with the JS adapters)",
+      async () => {
+        // raw cwd で resolve した path を canonical root で数えるため、
+        // realpath と一致しない cwd では WorkspaceEscapeError → allow。
+        // この quirk は JS adapter の挙動として維持する。
+        // spawn 経由では win32 限定でしか再現しない: POSIX では
+        // 子 process の process.cwd() が getcwd() により canonical
+        // 化され、symlink cwd が hook に届かない（deny になるのも
+        // JS adapter と同じ挙動）。policy 層の決定的な coverage は
+        // routing-policy.test.ts を参照。
+        const link = path.join(dir, "ws-link");
+        await symlink(ws, link, "junction");
+        await writeFile(path.join(ws, "big.txt"), BIG_TEXT, "utf8");
+        const r = runHook(["pre-read-code", "--target", "windsurf"], windsurfRead("big.txt"), {
+          cwd: link,
+          env,
+        });
+        expect(r.status).toBe(0);
+      },
+    );
   });
 
   describe("windsurf", () => {
