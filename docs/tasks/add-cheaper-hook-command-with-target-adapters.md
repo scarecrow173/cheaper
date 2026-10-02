@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z52ABwxDsaQWun7VUDu"
 type: "task"
-status: "todo"
+status: "done"
 title: "add cheaper hook command with target adapters"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/add-cheaper-hook-command-with-target-adapters.md"
   depends-on:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
     - "docs/tasks/port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md"

@@ -32,6 +32,7 @@ import {
 import { type ModelsCliArgs, parseCliArgs, type RunCliArgs } from "./args.js";
 import { executeAuth } from "./auth.js";
 import { countWorkspaceFileTokens, defaultBuiltinDir } from "./count.js";
+import { executeHook } from "./hook/hook.js";
 import {
   type CliEnvelope,
   envelopeJson,
@@ -82,6 +83,7 @@ Commands:
   usage                  Aggregate usage.jsonl (worker cost / measured savings)
   models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
+  hook <event>          Agent hook entry (internal; --target <agent>)
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
 
@@ -342,6 +344,12 @@ export async function runCli(
 ): Promise<number> {
   const now = hooks.now ?? Date.now;
   const startedAt = now();
+  // `hook` は envelope / recordUsage / 汎用 catch の対象外: target 別の
+  // ネイティブ contract（raw stdout / exit code）を持ち、全 error は
+  // 内部で fail-open に変換される（DESIGN-034z1EhuztlLSb2x2XXxgD）。
+  if (argv[0] === "hook") {
+    return executeHook(argv.slice(1), io, hooks);
+  }
   let workerName: string | null = null;
   let runRoot: string | undefined;
   let runUserConfigDir: string | undefined;
