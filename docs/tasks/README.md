@@ -23,7 +23,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHWkNF7zJyX85ZOT | Add provider plugin contract and registration order | done | [add-provider-plugin-contract-and-registration-order.md](./add-provider-plugin-contract-and-registration-order.md) |
 | TASK-034r05iHWkNF7zFyMzc7zU | Add resolveUserConfigDir helper and Pi state path wiring | done | [add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md](./add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md) |
 | TASK-034r05iHK8bA7hdI3bUubr | Add scripted fake stream test fixture | done | [add-scripted-fake-stream-test-fixture.md](./add-scripted-fake-stream-test-fixture.md) |
-| TASK-034z1POhgJ49oVv2arDj6X | Add SEA entrypoint sea-main.ts | todo | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
+| TASK-034z1POhgJ49oVv2arDj6X | Add SEA entrypoint sea-main.ts | done | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | TASK-034r05iHQeQpDqCTYluKr1 | Add version check and set scripts | done | [add-version-check-and-set-scripts.md](./add-version-check-and-set-scripts.md) |
 | TASK-TttCTIVey8FHby8zR3UDqb | Add worker workload profile and auto tier classifier | done | [add-worker-workload-profile-and-auto-tier-classifier.md](./add-worker-workload-profile-and-auto-tier-classifier.md) |
 | TASK-034r05iHQeQpDqx9iKaroO | Align CI with canonical setup/check entrypoints and locked install | done | [align-ci-with-canonical-entrypoints.md](./align-ci-with-canonical-entrypoints.md) |
@@ -51,6 +51,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpIa7OmcYd | Count consumed repair attempts in meta.repairs on failure | done | [count-consumed-repair-attempts-in-meta-repairs-on-failure.md](./count-consumed-repair-attempts-in-meta-repairs-on-failure.md) |
 | TASK-034r05iHQeQpDpVUAMbEeR | Create cheaper-usage skill | done | [create-cheaper-usage-skill.md](./create-cheaper-usage-skill.md) |
 | TASK-034r05iHK8bA7gD3wnFQ3l | Create empty @cheaper/core package skeleton | done | [create-empty-cheaper-core-package-skeleton.md](./create-empty-cheaper-core-package-skeleton.md) |
+| TASK-034z2paWfkTKout3vzftc8 | Create manual-dispatch release workflow with 3-platform SEA matrix | todo | [create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md](./create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md) |
 | TASK-034r05iHQeQpDqMino3Zou | Create usage/configuration guides and CONTRIBUTING.md | done | [create-usage-configuration-guides-and-contributing.md](./create-usage-configuration-guides-and-contributing.md) |
 | TASK-034r05iHQeQpDpWN0qICDI | Create worker delegation skills | done | [create-worker-delegation-skills.md](./create-worker-delegation-skills.md) |
 | TASK-034r05iHQeQpDqNHsAnxcJ | Create workers/integration guides and reorganize providers.md | done | [create-workers-integration-guides-and-reorg-providers.md](./create-workers-integration-guides-and-reorg-providers.md) |
@@ -64,12 +65,12 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
 | TASK-034rzRugER0y7cQ2tlWjPp | Extend usage.jsonl run record with savings section | done | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | TASK-034r05iHQeQpDpFFl8q6NC | Extract promptWithAbortGrace helper and apply to main run | done | [extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
-| TASK-034z1PGTvhoaHhdTUgPahz | Extract shared esbuild bundle helper from bundle-cli.mjs | todo | [extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md](./extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md) |
+| TASK-034z1PGTvhoaHhdTUgPahz | Extract shared esbuild bundle helper from bundle-cli.mjs | done | [extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md](./extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md) |
 | TASK-034r05iHQeQpDqhWcXGfA0 | Finalize contract matrix and consumer pointer | done | [finalize-contract-matrix-and-consumer-pointer.md](./finalize-contract-matrix-and-consumer-pointer.md) |
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
 | TASK-034r05iHQeQpDqeuofmk64 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [hook-fast-path-and-fail-closed-file-too-large-block.md](./hook-fast-path-and-fail-closed-file-too-large-block.md) |
 | TASK-034r05iHK8bA7h4BqSHmqd | Implement boundary-checked tool operations with atomic writes | done | [implement-boundary-checked-tool-operations-with-atomic-writes.md](./implement-boundary-checked-tool-operations-with-atomic-writes.md) |
-| TASK-034z1PSPnrFA3o7z3IYIUy | Implement build-executable.mjs and bump Node to >=26.9 | todo | [implement-build-executable-mjs-and-bump-node-to-26-9.md](./implement-build-executable-mjs-and-bump-node-to-26-9.md) |
+| TASK-034z1PSPnrFA3o7z3IYIUy | Implement build-executable.mjs and bump Node to >=26.9 | done | [implement-build-executable-mjs-and-bump-node-to-26-9.md](./implement-build-executable-mjs-and-bump-node-to-26-9.md) |
 | TASK-034r05iHK8bA7gTkcKo0xf | Implement capability intersection checks | done | [implement-capability-intersection-checks.md](./implement-capability-intersection-checks.md) |
 | TASK-034r05iHK8bA7hco9mHiho | Implement CheaperResourceLoader without discovery | done | [implement-cheaperresourceloader-without-discovery.md](./implement-cheaperresourceloader-without-discovery.md) |
 | TASK-034rzWJcbIzVxc1Lhk5bxB | Implement classification pipeline and explicit model resolution | done | [implement-classification-pipeline.md](./implement-classification-pipeline.md) |
@@ -141,7 +142,7 @@ Directory: `docs/tasks`
 | TASK-06WDQr0NHYErusR6Cmye43 | Sync cheaper-usage SKILL.md with current CLI and hook surface | done | [sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md](./sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md) |
 | TASK-034r2qodyq0oWVUNGquMgr | Sync providers.md guide with runtime auth surface | done | [sync-providers-guide-with-runtime-auth-surface.md](./sync-providers-guide-with-runtime-auth-surface.md) |
 | TASK-034r05iHQeQpDpUao5Hjj3 | Token counter CLI/tool parity tests and full verification | done | [token-counter-parity-and-verification.md](./token-counter-parity-and-verification.md) |
-| TASK-034z1PNNPwye2uvwy1eAG8 | Unify packageVersion resolution on builtinDir | todo | [unify-packageversion-resolution-on-builtindir.md](./unify-packageversion-resolution-on-builtindir.md) |
+| TASK-034z1PNNPwye2uvwy1eAG8 | Unify packageVersion resolution on builtinDir | done | [unify-packageversion-resolution-on-builtindir.md](./unify-packageversion-resolution-on-builtindir.md) |
 | TASK-034r05iHQeQpDqD0biyV0P | Unify versions, wire check, and document release | done | [unify-versions-wire-check-and-document-release.md](./unify-versions-wire-check-and-document-release.md) |
 | TASK-034r05iHQeQpDqtGttOcbh | Update consumer e2e fixtures to packages/apm and add no-self-deploy verification | done | [update-consumer-verification-and-no-self-deploy-tests.md](./update-consumer-verification-and-no-self-deploy-tests.md) |
 | TASK-034r05iHQeQpDqylmM3Elr | Update README/AGENTS for canonical contract and verify clean-state setup/check | done | [update-docs-and-verify-clean-state-setup-check.md](./update-docs-and-verify-clean-state-setup-check.md) |
@@ -152,11 +153,13 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpZOlmNJoM | Update indexes and verify delegation layer | done | [update-indexes-and-verify-delegation-layer.md](./update-indexes-and-verify-delegation-layer.md) |
 | TASK-034r05iHQeQpDqvqdt4mXS | Update README/AGENTS for dev/distribution split and run final verification | done | [update-readme-agents-and-final-verification.md](./update-readme-agents-and-final-verification.md) |
 | TASK-034r05iHQeQpDpMem6J7OE | Update README and add provider setup guide | done | [update-readme-and-add-provider-setup-guide.md](./update-readme-and-add-provider-setup-guide.md) |
+| TASK-034z2pbpAynIVRedenPgXa | Update release guide for manual SEA release workflow | todo | [update-release-guide-for-manual-sea-release-workflow.md](./update-release-guide-for-manual-sea-release-workflow.md) |
 | TASK-034r05iHQeQpDqKGWioCow | Usage-log e2e assertions, docs, bundle regen, status sync, final verification | done | [usage-log-e2e-docs-and-final-verification.md](./usage-log-e2e-docs-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
 | TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
-| TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | todo | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
+| TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | todo | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
+| TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
