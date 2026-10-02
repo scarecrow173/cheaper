@@ -27,6 +27,8 @@ relations:
     - "../designs/cli-bundle-layout.md"
     - "../plans/self-contained-cli-bundle.md"
     - "./default-large-read-threshold.md"
+    - "./distribute-cheaper-as-node-26-sea-standalone-executables-shared-by-direct-releas.md"
+    - "../specs/standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md"
   refines: []
   refined-by: []
   derives-from:
