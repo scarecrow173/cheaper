@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z52VFF0DTrVukTAbzaf"
 type: "task"
-status: "todo"
+status: "done"
 title: "update docs for executable-based hook invocation"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/docs-for-executable-hook-invocation.md"
   depends-on:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
     - "docs/tasks/verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md"
