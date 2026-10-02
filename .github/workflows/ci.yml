@@ -1,9 +1,9 @@
 name: ci
 
+# 手動実行のみ。ubuntu 上の mise run check は時間がかかるため
+# push/PR では自動起動せず、必要時に Actions から dispatch する。
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   verify:
