@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z1PSPnrFA3o7z3IYIUy"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement build-executable.mjs and bump Node to >=26.9"
 created: "2026-10-02"
 updated: "2026-10-02"

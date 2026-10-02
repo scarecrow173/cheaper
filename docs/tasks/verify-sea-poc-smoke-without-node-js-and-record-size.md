@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z1PTkni5iNJPysyfxRN"
 type: "task"
-status: "todo"
+status: "done"
 title: "Verify SEA PoC smoke without Node.js and record size"
 created: "2026-10-02"
 updated: "2026-10-02"

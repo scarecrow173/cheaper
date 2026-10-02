@@ -8,10 +8,14 @@ import { runCli } from "./cli.js";
 
 registerBundledOAuthFlows();
 
-process.exitCode = await runCli(process.argv.slice(2), {
-  stdin: process.stdin,
-  stdout: process.stdout,
-  stderr: process.stderr,
-  env: process.env,
-  cwd: process.cwd(),
-}, { builtinDir: import.meta.dirname });
+process.exitCode = await runCli(
+  process.argv.slice(2),
+  {
+    stdin: process.stdin,
+    stdout: process.stdout,
+    stderr: process.stderr,
+    env: process.env,
+    cwd: process.cwd(),
+  },
+  { builtinDir: import.meta.dirname },
+);

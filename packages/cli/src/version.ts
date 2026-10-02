@@ -11,9 +11,9 @@ export function packageVersion(builtinDir: string): string {
   for (const name of ["version.json", "package.json"]) {
     try {
       const pkg = JSON.parse(readFileSync(path.join(builtinDir, name), "utf8")) as {
-        version: string;
+        version?: unknown;
       };
-      return pkg.version;
+      if (typeof pkg.version === "string") return pkg.version;
     } catch {
       // try the next candidate
     }
