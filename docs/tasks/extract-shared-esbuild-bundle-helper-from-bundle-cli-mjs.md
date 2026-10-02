@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z1PGTvhoaHhdTUgPahz"
 type: "task"
-status: "todo"
+status: "done"
 title: "Extract shared esbuild bundle helper from bundle-cli.mjs"
 created: "2026-10-02"
 updated: "2026-10-02"

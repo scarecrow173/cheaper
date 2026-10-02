@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z1PNNPwye2uvwy1eAG8"
 type: "task"
-status: "todo"
+status: "done"
 title: "Unify packageVersion resolution on builtinDir"
 created: "2026-10-02"
 updated: "2026-10-02"

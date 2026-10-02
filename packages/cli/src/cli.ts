@@ -383,7 +383,7 @@ export async function runCli(
       return 0;
     }
     if (parsed.kind === "version") {
-      io.stdout.write(`${packageVersion()}\n`);
+      io.stdout.write(`${packageVersion(hooks.builtinDir ?? defaultBuiltinDir())}\n`);
       return 0;
     }
     if (parsed.kind === "count-tokens") {
