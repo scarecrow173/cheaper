@@ -29,6 +29,9 @@ relations:
   derived-by: []
   verifies:
     - "docs/plans/integrate-sea-executables-into-tag-triggered-github-release-workflow.md"
+    - "docs/tasks/create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md"
+    - "docs/tasks/update-release-guide-for-manual-sea-release-workflow.md"
+    - "docs/tasks/verify-release-workflow-locally-and-record-smoke-evidence.md"
   verified-by: []
   references: []
   defers: []

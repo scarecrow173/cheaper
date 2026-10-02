@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034z2bk7AEzZ66Mt0uXCyJ"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Integrate SEA executables into tag-triggered GitHub Release workflow"
 created: "2026-10-02"
 updated: "2026-10-02"
