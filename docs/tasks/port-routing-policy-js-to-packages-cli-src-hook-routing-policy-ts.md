@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z52uhywljSnrFmqDWjE"
 type: "task"
-status: "todo"
+status: "done"
 title: "port routing-policy.js to packages/cli/src/hook/routing-policy.ts"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/port-routing-policy-to-cli-hook-module.md"
   depends-on:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
   blocks: []

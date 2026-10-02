@@ -1,11 +1,10 @@
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import {
   buildAutoTierContext,
   CheaperError,
   canonicalizeWorkspaceRoot,
   classifyModel,
-  countFileTokens,
   FileTooLargeError,
   isExcludedModel,
   loadModelConfig,
@@ -32,6 +31,7 @@ import {
 } from "@cheaper/runtime-pi";
 import { type ModelsCliArgs, parseCliArgs, type RunCliArgs } from "./args.js";
 import { executeAuth } from "./auth.js";
+import { countWorkspaceFileTokens, defaultBuiltinDir } from "./count.js";
 import {
   type CliEnvelope,
   envelopeJson,
@@ -105,27 +105,6 @@ Options:
   --version              Show version
 `;
 
-function defaultBuiltinDir(): string {
-  return fileURLToPath(new URL("..", import.meta.url));
-}
-
-/**
- * `CHEAPER_COUNT_MAX_BYTES` の解釈（DESIGN-0017）。
- * 正の整数のみ有効: trim 後が 10 進数字列のみで構成され、
- * `Number.isSafeInteger` かつ `n > 0` を満たす値だけを受け付ける。
- * `parseInt` は使わない（`16MB` → 16、`1.5` → 1 のような部分 parse を
- * 許容しないため）。不正値・未設定は core の default に任せるため
- * `undefined` を返す。
- */
-function countMaxBytes(env: NodeJS.ProcessEnv): number | undefined {
-  const raw = env.CHEAPER_COUNT_MAX_BYTES;
-  if (raw === undefined) return undefined;
-  const trimmed = raw.trim();
-  if (!/^\d+$/.test(trimmed)) return undefined;
-  const n = Number(trimmed);
-  return Number.isSafeInteger(n) && n > 0 ? n : undefined;
-}
-
 function invalidRequest(message: string, details?: Record<string, unknown>): CheaperError {
   return new CheaperError("INVALID_REQUEST", message, details === undefined ? {} : { details });
 }
@@ -178,7 +157,7 @@ async function executeRun(
   onWorkerResolved?: (name: string) => void,
   onRunContext?: (ctx: { root: string; userConfigDir: string }) => void,
 ): Promise<{ envelope: CliEnvelope; exitCode: number; modelLine?: string }> {
-  const builtinDir = hooks.builtinDir ?? defaultBuiltinDir();
+  const builtinDir = hooks.builtinDir ?? defaultBuiltinDir;
   const now = hooks.now ?? Date.now;
 
   const root = await canonicalizeWorkspaceRoot(args.cwd ?? io.cwd);
@@ -279,7 +258,7 @@ async function executeModels(
   startedAt: number,
 ): Promise<{ envelope: CliEnvelope; exitCode: number }> {
   const now = hooks.now ?? Date.now;
-  const builtinDir = hooks.builtinDir ?? defaultBuiltinDir();
+  const builtinDir = hooks.builtinDir ?? defaultBuiltinDir;
   const root = await canonicalizeWorkspaceRoot(args.cwd ?? io.cwd);
   const dirs = resolveConfigDirs({ cwd: root, builtinDir, env: io.env });
   const modelConfig = await loadModelConfig({
@@ -372,7 +351,7 @@ export async function runCli(
     runUserConfigDir ??
     resolveConfigDirs({
       cwd: runRoot ?? io.cwd,
-      builtinDir: hooks.builtinDir ?? defaultBuiltinDir(),
+      builtinDir: hooks.builtinDir ?? defaultBuiltinDir,
       env: io.env,
     }).userConfigDir;
 
@@ -383,26 +362,18 @@ export async function runCli(
       return 0;
     }
     if (parsed.kind === "version") {
-      io.stdout.write(`${packageVersion(hooks.builtinDir ?? defaultBuiltinDir())}\n`);
+      io.stdout.write(`${packageVersion(hooks.builtinDir ?? defaultBuiltinDir)}\n`);
       return 0;
     }
     if (parsed.kind === "count-tokens") {
       // LLM/model/worker 解決を伴わない測定専用経路（DESIGN-0012）。
       // effective policy から filesystem.symlinks のみ使う。
-      const builtinDir = hooks.builtinDir ?? defaultBuiltinDir();
-      const root = await canonicalizeWorkspaceRoot(parsed.cwd ?? io.cwd);
-      const dirs = resolveConfigDirs({ cwd: root, builtinDir, env: io.env });
-      const policy = await loadPolicy({
-        builtinPolicyPath: path.join(builtinDir, "policy.yaml"),
-        userConfigDir: dirs.userConfigDir,
-        projectDir: dirs.projectDir,
-      });
-      const maxBytes = countMaxBytes(io.env);
-      const count = await countFileTokens({
-        root,
+      const builtinDir = hooks.builtinDir ?? defaultBuiltinDir;
+      const { count, root, userConfigDir } = await countWorkspaceFileTokens({
+        cwd: parsed.cwd ?? io.cwd,
         path: parsed.path,
-        symlinkPolicy: policy.filesystem.symlinks,
-        ...(maxBytes !== undefined ? { maxBytes } : {}),
+        builtinDir,
+        env: io.env,
       }).catch((e) => {
         if (e instanceof FileTooLargeError) {
           throw new CheaperError("FILE_TOO_LARGE", e.message, {
@@ -432,7 +403,7 @@ export async function runCli(
       recordUsage({
         env: envelope,
         root,
-        userConfigDir: dirs.userConfigDir,
+        userConfigDir,
         stderr: io.stderr,
         quiet: parsed.quiet,
         now: () => new Date(now()),
@@ -466,7 +437,7 @@ export async function runCli(
       }
       const dirs = resolveConfigDirs({
         cwd: io.cwd,
-        builtinDir: hooks.builtinDir ?? defaultBuiltinDir(),
+        builtinDir: hooks.builtinDir ?? defaultBuiltinDir,
         env: io.env,
       });
       const compareModelRef =
