@@ -77,6 +77,16 @@ bundle を再生成して最終検証を実施した。
 - `usage.jsonl` 非記録は意図的決定として `docs/guides/usage.md`
   と SKILL.md に明記
 
+## Related Experiments
+
+### Adopted
+
+- なし
+
+### Rejected
+
+- なし
+
 ## Validation
 
 - SEA exe（Node 非依存）で全 target の deny contract を実機確認:

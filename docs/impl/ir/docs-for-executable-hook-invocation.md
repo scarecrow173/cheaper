@@ -75,10 +75,24 @@ metadata:
   改訂しない（canonical record の原則）。更新はユーザー向け
   guide と配布 skill に限定
 
+## Related Experiments
+
+### Adopted
+
+- なし
+
+### Rejected
+
+- なし
+
 ## Validation
 
 - 記述の正確性は task 2–4 の実機検証結果（各 target の deny
   contract・deploy 実測）に基づく
+
+## Risks
+
+- なし
 
 ## Follow-ups
 
