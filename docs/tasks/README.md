@@ -20,6 +20,7 @@ Directory: `docs/tasks`
 | TASK-034rzWI7U1txBCpGr7WZaJ | Add model pricing metadata layer and bundled data | done | [add-model-pricing-metadata-layer.md](./add-model-pricing-metadata-layer.md) |
 | TASK-034rzWIEgBvwU5S4KYY68N | Add models.yaml exclude with union merge | done | [add-models-config-exclude.md](./add-models-config-exclude.md) |
 | TASK-034r05iHQeQpDpySHHPmpY | Add Ollama docker-compose and document container usage in AGENTS.md | done | [add-ollama-docker-compose-and-document-container-usage-in-agents-md.md](./add-ollama-docker-compose-and-document-container-usage-in-agents-md.md) |
+| TASK-034z3zOydB4GluAraLc16E | Add POSIX and PowerShell platform launchers to hooks payload | todo | [add-posix-and-powershell-platform-launchers-to-hooks-payload.md](./add-posix-and-powershell-platform-launchers-to-hooks-payload.md) |
 | TASK-034r05iHWkNF7zJyX85ZOT | Add provider plugin contract and registration order | done | [add-provider-plugin-contract-and-registration-order.md](./add-provider-plugin-contract-and-registration-order.md) |
 | TASK-034r05iHWkNF7zFyMzc7zU | Add resolveUserConfigDir helper and Pi state path wiring | done | [add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md](./add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md) |
 | TASK-034r05iHK8bA7hdI3bUubr | Add scripted fake stream test fixture | done | [add-scripted-fake-stream-test-fixture.md](./add-scripted-fake-stream-test-fixture.md) |
@@ -51,7 +52,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpIa7OmcYd | Count consumed repair attempts in meta.repairs on failure | done | [count-consumed-repair-attempts-in-meta-repairs-on-failure.md](./count-consumed-repair-attempts-in-meta-repairs-on-failure.md) |
 | TASK-034r05iHQeQpDpVUAMbEeR | Create cheaper-usage skill | done | [create-cheaper-usage-skill.md](./create-cheaper-usage-skill.md) |
 | TASK-034r05iHK8bA7gD3wnFQ3l | Create empty @cheaper/core package skeleton | done | [create-empty-cheaper-core-package-skeleton.md](./create-empty-cheaper-core-package-skeleton.md) |
-| TASK-034z2paWfkTKout3vzftc8 | Create manual-dispatch release workflow with 3-platform SEA matrix | todo | [create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md](./create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md) |
+| TASK-034z2paWfkTKout3vzftc8 | Create manual-dispatch release workflow with 3-platform SEA matrix | done | [create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md](./create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md) |
 | TASK-034r05iHQeQpDqMino3Zou | Create usage/configuration guides and CONTRIBUTING.md | done | [create-usage-configuration-guides-and-contributing.md](./create-usage-configuration-guides-and-contributing.md) |
 | TASK-034r05iHQeQpDpWN0qICDI | Create worker delegation skills | done | [create-worker-delegation-skills.md](./create-worker-delegation-skills.md) |
 | TASK-034r05iHQeQpDqNHsAnxcJ | Create workers/integration guides and reorganize providers.md | done | [create-workers-integration-guides-and-reorg-providers.md](./create-workers-integration-guides-and-reorg-providers.md) |
@@ -70,6 +71,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
 | TASK-034r05iHQeQpDqeuofmk64 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [hook-fast-path-and-fail-closed-file-too-large-block.md](./hook-fast-path-and-fail-closed-file-too-large-block.md) |
 | TASK-034r05iHK8bA7h4BqSHmqd | Implement boundary-checked tool operations with atomic writes | done | [implement-boundary-checked-tool-operations-with-atomic-writes.md](./implement-boundary-checked-tool-operations-with-atomic-writes.md) |
+| TASK-034z3zP5mtHjiKzurDeCDM | Implement build-apm-bundle.mjs assembling executables into hooks tree | todo | [implement-build-apm-bundle-mjs-assembling-executables-into-hooks-tree.md](./implement-build-apm-bundle-mjs-assembling-executables-into-hooks-tree.md) |
 | TASK-034z1PSPnrFA3o7z3IYIUy | Implement build-executable.mjs and bump Node to >=26.9 | done | [implement-build-executable-mjs-and-bump-node-to-26-9.md](./implement-build-executable-mjs-and-bump-node-to-26-9.md) |
 | TASK-034r05iHK8bA7gTkcKo0xf | Implement capability intersection checks | done | [implement-capability-intersection-checks.md](./implement-capability-intersection-checks.md) |
 | TASK-034r05iHK8bA7hco9mHiho | Implement CheaperResourceLoader without discovery | done | [implement-cheaperresourceloader-without-discovery.md](./implement-cheaperresourceloader-without-discovery.md) |
@@ -142,8 +144,10 @@ Directory: `docs/tasks`
 | TASK-06WDQr0NHYErusR6Cmye43 | Sync cheaper-usage SKILL.md with current CLI and hook surface | done | [sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md](./sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md) |
 | TASK-034r2qodyq0oWVUNGquMgr | Sync providers.md guide with runtime auth surface | done | [sync-providers-guide-with-runtime-auth-surface.md](./sync-providers-guide-with-runtime-auth-surface.md) |
 | TASK-034r05iHQeQpDpUao5Hjj3 | Token counter CLI/tool parity tests and full verification | done | [token-counter-parity-and-verification.md](./token-counter-parity-and-verification.md) |
+| TASK-034z3zPzG5T5Q8QpwsaoTJ | Track APM executables with Git LFS and keep freshness check valid | todo | [track-apm-executables-with-git-lfs-and-keep-freshness-check-valid.md](./track-apm-executables-with-git-lfs-and-keep-freshness-check-valid.md) |
 | TASK-034z1PNNPwye2uvwy1eAG8 | Unify packageVersion resolution on builtinDir | done | [unify-packageversion-resolution-on-builtindir.md](./unify-packageversion-resolution-on-builtindir.md) |
 | TASK-034r05iHQeQpDqD0biyV0P | Unify versions, wire check, and document release | done | [unify-versions-wire-check-and-document-release.md](./unify-versions-wire-check-and-document-release.md) |
+| TASK-034z3zQ6V08kM7gUKnUzfL | Update cheaper-usage skill guidance for executable-based CLI | todo | [update-cheaper-usage-skill-guidance-for-executable-based-cli.md](./update-cheaper-usage-skill-guidance-for-executable-based-cli.md) |
 | TASK-034r05iHQeQpDqtGttOcbh | Update consumer e2e fixtures to packages/apm and add no-self-deploy verification | done | [update-consumer-verification-and-no-self-deploy-tests.md](./update-consumer-verification-and-no-self-deploy-tests.md) |
 | TASK-034r05iHQeQpDqylmM3Elr | Update README/AGENTS for canonical contract and verify clean-state setup/check | done | [update-docs-and-verify-clean-state-setup-check.md](./update-docs-and-verify-clean-state-setup-check.md) |
 | TASK-034r05iHQeQpDpQ62tRnRU | Update docs indexes, supersede relations, and verify writer restructure | done | [update-docs-and-verify-writer-restructure.md](./update-docs-and-verify-writer-restructure.md) |
@@ -153,12 +157,13 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpZOlmNJoM | Update indexes and verify delegation layer | done | [update-indexes-and-verify-delegation-layer.md](./update-indexes-and-verify-delegation-layer.md) |
 | TASK-034r05iHQeQpDqvqdt4mXS | Update README/AGENTS for dev/distribution split and run final verification | done | [update-readme-agents-and-final-verification.md](./update-readme-agents-and-final-verification.md) |
 | TASK-034r05iHQeQpDpMem6J7OE | Update README and add provider setup guide | done | [update-readme-and-add-provider-setup-guide.md](./update-readme-and-add-provider-setup-guide.md) |
-| TASK-034z2pbpAynIVRedenPgXa | Update release guide for manual SEA release workflow | todo | [update-release-guide-for-manual-sea-release-workflow.md](./update-release-guide-for-manual-sea-release-workflow.md) |
+| TASK-034z2pbpAynIVRedenPgXa | Update release guide for manual SEA release workflow | done | [update-release-guide-for-manual-sea-release-workflow.md](./update-release-guide-for-manual-sea-release-workflow.md) |
 | TASK-034r05iHQeQpDqKGWioCow | Usage-log e2e assertions, docs, bundle regen, status sync, final verification | done | [usage-log-e2e-docs-and-final-verification.md](./usage-log-e2e-docs-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
 | TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
-| TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | todo | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
+| TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | todo | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |
+| TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |

@@ -33,7 +33,8 @@ relations:
     - "docs/adr/distribute-cheaper-as-node-26-sea-standalone-executables-shared-by-direct-releas.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "docs/test-specs/apm-executable-payload-layout-and-launcher-dispatch-contract.md"
   references: []
   defers: []
   deferred-by: []
