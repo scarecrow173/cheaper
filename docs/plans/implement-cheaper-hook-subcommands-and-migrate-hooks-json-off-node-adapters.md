@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034z3OwYgplUxa7Usrjwxq"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Implement cheaper hook subcommands and migrate hooks.json off Node adapters"
 created: "2026-10-02"
 updated: "2026-10-02"

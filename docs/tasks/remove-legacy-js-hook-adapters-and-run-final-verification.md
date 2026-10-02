@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z52W87FtawtD6bYW6RR"
 type: "task"
-status: "todo"
+status: "done"
 title: "remove legacy js hook adapters and run final verification"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/remove-legacy-js-adapters-and-final-verify.md"
   depends-on:
     - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
     - "docs/tasks/add-hook-contract-tests-and-port-existing-adapter-e2e.md"
