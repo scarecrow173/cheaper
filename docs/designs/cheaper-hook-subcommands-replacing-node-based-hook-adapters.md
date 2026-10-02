@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034z1EhuztlLSb2x2XXxgD"
 type: "design"
-status: "draft"
+status: "approved"
 title: "cheaper hook subcommands replacing Node-based hook adapters"
 created: "2026-10-02"
 updated: "2026-10-02"

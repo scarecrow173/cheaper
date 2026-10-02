@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034z1EfqYaEBfyNvqZyFSD"
 type: "design"
-status: "draft"
+status: "approved"
 title: "SEA executable build pipeline and embedded resource resolution"
 created: "2026-10-02"
 updated: "2026-10-02"

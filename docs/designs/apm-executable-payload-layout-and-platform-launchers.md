@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034z1EgnQwax4VamK2xmdT"
 type: "design"
-status: "draft"
+status: "approved"
 title: "APM executable payload layout and platform launchers"
 created: "2026-10-02"
 updated: "2026-10-02"
