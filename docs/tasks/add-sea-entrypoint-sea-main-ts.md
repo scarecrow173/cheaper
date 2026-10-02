@@ -1,7 +1,7 @@
 ---
 id: "TASK-034z1POhgJ49oVv2arDj6X"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add SEA entrypoint sea-main.ts"
 created: "2026-10-02"
 updated: "2026-10-02"
