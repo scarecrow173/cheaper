@@ -99,12 +99,13 @@ user config は `~/.config/cheaper`（`CHEAPER_CONFIG_DIR` で変更
 ## Parent-agent 連携
 
 skills（`cheaper-usage`・各 worker 向け skill）と hooks
-（`pre_read_code` — 大きな read を threshold で検出して
-bulk-read へ誘導）を配布する。hook の動作は target の hook
-event 体系に依存し、Windsurf では native 動作、Copilot では
-`preToolUse` adapter 経由で動作、その他 target では現状
-no-op になる（設計記録参照）。install 方法・target 別
-挙動・確認手順は
+（大きな read を threshold で検出して bulk-read へ誘導）を
+配布する。hook は deploy 済みの cheaper executable が
+`cheaper hook <event> --target <agent>` で処理し、Windsurf /
+Copilot / Claude / Cursor で動作する。Node.js は不要
+（executable 同梱のため）。Codex では file-read hook が
+upstream の hook event 未提供のため shell-read のみ有効
+（設計記録参照）。install 方法・target 別挙動・確認手順は
 [parent-agent 連携ガイド](docs/guides/parent-agent-integration.md)
 を参照。
 
