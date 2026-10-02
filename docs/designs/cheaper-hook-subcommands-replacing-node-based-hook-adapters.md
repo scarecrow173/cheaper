@@ -121,13 +121,16 @@ command surface の例:
 cheaper hook pre-read-code --target windsurf
 cheaper hook pre-run-command --target windsurf
 cheaper hook pre-tool-use --target copilot
-cheaper hook pre-tool-use --target claude
+cheaper hook pre-tool-use --target pretooluse   # claude / codex 共用
 cheaper hook before-read-file --target cursor
 cheaper hook before-shell-execution --target cursor
 ```
 
 cursor は現行 adapter が payload key（`file_path` / `command`）で両 event
 を区別するため、同一 adapter 実装を 2 event で共有してよい。
+claude・codex は hooks.json の `PreToolUse` nested entry を 1 command で
+共有する（command を target 別に分けられない）ため、両者を `pretooluse`
+という単一 target label に束ねる。
 
 ## Non-Functional Constraints
 
@@ -137,20 +140,54 @@ cursor は現行 adapter が payload key（`file_path` / `command`）で両 even
 - copilot adapter は非 0 exit を絶対に返さない。cursor は常に
   schema-valid permission JSON を返す
 - `count-tokens` は子 process spawn ではなく CLI 内部の同一 runtime
-  経路で評価し、`CHEAPER_CLI` / `node` 経由を前提にしない
+  経路で評価し、`CHEAPER_CLI` / `node` 経由を前提にしない。旧 30s
+  subprocess timeout は `AbortSignal.timeout(30_000)` で measured path を
+  囲んで等価に復元する（FIFO / device file / 死んだ network FS の
+  unbounded I/O hang を防ぐため）
+- `cheaper hook` 経路は runCli の envelope / `recordUsage` / 汎用 catch
+  から完全に分離する。最深部 catch-all で全 error（args parse 失敗・
+  policy 破損・cwd 不存在等を含む）を target 適合の allow + exit 0 に
+  変換し、`exit 2` / 非 0 が host 側で deny 意味を持つ経路への漏洩を
+  防ぐ。hook 経路は `usage.jsonl` に記録しない（意図的決定）
 - `CHEAPER_READ_TOKEN_THRESHOLD`（default 8192）などの環境変数契約は
   維持する
-- hooks.json の command は platform launcher 経由で executable を呼ぶ
-  形とし、adapter JS への `node` 参照を残さない
+- hooks.json の command は platform launcher / executable 経由とし、
+  adapter JS への `node` 参照を残さない。POSIX `command` は `./cheaper`
+  launcher を使うが、`powershell` key は ExecutionPolicy（Restricted）
+  を避けるため launcher を介さず `cli/bin/win32-x64/cheaper.exe` を直接
+  起動する。fail-closed target（copilot: 非 0 全 deny、cursor: 非 0 /
+  schema-invalid は block 扱いの可能性）の entry には shell 側 fail-open
+  （copilot `|| exit 0`、cursor `|| echo '{"permission":"allow"}'`）を
+  command に付与し、launcher/exe 不在・LFS pointer 化・deploy 欠損時の
+  deny-all を防ぐ。windsurf entry は exit 2 の deny 意味を潰さないよう
+  suffix を付けない
 
 ## Risks and Trade-offs
 
 - routing policy を CLI 内に移すと `cheaper count-tokens` の子 process
-  呼び出し（30s timeout）が in-process 評価に変わる。timeout 意味の
-  変化を受け入れるか、worker 側で明示的な bounded 実行を入れるかは
-  実装時に確認する
+  呼び出し（30s timeout）が in-process 評価に変わる。`maxBytes` の read
+  cap だけでは FIFO / device file の `readFile` hang や死んだ network FS
+  の `stat` hang を防げないため、measured path 全体を
+  `AbortSignal.timeout(30_000)` で囲んで旧 cap を復元する
+- `countFileTokens` には `isFile()` 判定がなく、containment → `isFile` →
+  byte fast path の順序を落とすと workspace 内 FIFO で無期限 block する。
+  移植時にこの順序を verbatim で維持する
+- `@cheaper/core` の tokenizer は module scope eager init のため、
+  `cheaper hook` の static import 経路に乗せると tool call 毎の hook
+  起動に decode コストが載る。count 系 import は byte fast path 通過後の
+  dynamic import に限定する
 - target 別 payload drift（copilot の `toolArgs` が object/string 両対応
   等）を contract test で固定しないと deploy 後に検出しにくい
+- symlinked cwd 環境では現行実装が常に fail-open 化する quirk がある
+  （raw cwd で resolve した path が canonical root と不一致 →
+  `WorkspaceEscapeError` → allow）。in-process 化でもこの quirk を再現し
+  て挙動不変を保つ
+- macOS 等の未同梱 platform では launcher が `exit 1` で fail し、
+  copilot の fail-closed 意味論（非 0 全 deny）で deny-all になる。
+  hooks.json の command 側 fail-open で吸収する
+- remote install で LFS smudge が無い consumer に executable が pointer
+  text のまま届く可能性がある。launcher で pointer 検出して明確な error
+  を出す
 - JS adapter 削除は破壊的変更になり得るため、移行期間中は旧 file を残し
   hooks.json の切替と削除を分ける
 
@@ -168,9 +205,14 @@ cursor は現行 adapter が payload key（`file_path` / `command`）で両 even
 - [ ] 各 target で stdin payload → stdout/stderr/exit code が現行 adapter
       と一致する contract test がある
 - [ ] `cheaper hook ...` が Node.js を使わずに executable から実行できる
-- [ ] `hooks.json` の command が launcher 経由の executable 呼び出しに
+- [ ] `hooks.json` の command が launcher / executable 経由の呼び出しに
       なり、`node` 参照を含まない
 - [ ] 旧 `pre-read-code*.js` / `pre-run-command.js` / `routing-policy.js`
       が移行後に削除される
 - [ ] `CHEAPER_READ_TOKEN_THRESHOLD` と `FILE_TOO_LARGE` fail-closed が
       executable 経路でも同じ意味を持つ
+- [ ] hook 処理中の例外（args parse 失敗・policy 破損・cwd 不存在等）が
+      runCli の汎用 catch まで到達せず、target 適合の allow + exit 0 に
+      変換される
+- [ ] measured path が `AbortSignal.timeout(30_000)` で旧 subprocess
+      timeout を復元している
