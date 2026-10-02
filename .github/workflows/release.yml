@@ -1,10 +1,7 @@
 name: release
 
 # 手動実行のみ。自動 trigger は設けない（PLAN-034z2bk7AEzZ66Mt0uXCyJ）。
-# TODO(temporary): pull_request trigger は payload executable を
-# GitHub runner 上で生成するための一時措置。binaries 採取後に除去する。
 on:
-  pull_request:
   workflow_dispatch:
     inputs:
       tag:
