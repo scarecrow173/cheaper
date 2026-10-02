@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034z1M6zCAdKb12eiCWZRm"
 type: "plan"
-status: "draft"
+status: "approved"
 title: "Implement Node 26 SEA standalone executable proof of concept"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -32,7 +32,9 @@ relations:
     - "docs/discovery/standalone-cheaper-executable-distribution-without-node-js.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "docs/test-specs/standalone-executable-contract-parity.md"
+    - "docs/test-specs/embedded-builtin-resource-resolution-across-distribution-forms.md"
   references: []
   defers: []
   deferred-by: []
