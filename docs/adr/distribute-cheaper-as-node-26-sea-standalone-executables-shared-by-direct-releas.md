@@ -1,10 +1,10 @@
 ---
 id: "ADR-034z1xMK43jRs3D79Urhpc"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Distribute cheaper as Node 26 SEA standalone executables shared by direct release and APM hook bundle payload"
 created: "2026-10-02"
-updated: "2026-10-02"
+updated: "2026-10-04"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -27,7 +27,8 @@ relations:
     - "./distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"
     - "../specs/standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "./version-pinned-launcher-acquisition.md"
   derives-from:
     - "../discovery/standalone-cheaper-executable-distribution-without-node-js.md"
   derived-by: []
@@ -45,6 +46,10 @@ metadata:
 ---
 
 # Distribute cheaper as Node 26 SEA standalone executables shared by direct release and APM hook bundle payload
+
+2026-10-04: issue #73-A の coordinator 承認により実装済み SEA 決定を accepted に整合した。
+[version 固定 acquisition ADR](version-pinned-launcher-acquisition.md) が取得経路を refine する。
+SEA/runtime の選択と既存 sibling payload は維持し、payload 削除は #73-C に委ねる。
 
 ## Context and Problem Statement
 
