@@ -26,22 +26,20 @@ const GATE_DEADLINE_MS = 1_000;
 
 function deferred() {
   let resolve!: () => void;
-  let reject!: (err: unknown) => void;
-  const promise = new Promise<void>((res, rej) => {
+  const promise = new Promise<void>((res) => {
     resolve = res;
-    reject = rej;
   });
-  return { promise, resolve, reject };
+  return { promise, resolve };
 }
 
 /** deadline 付き wait（unbounded await による hang を防ぐ）。 */
 function withDeadline(promise: Promise<void>): Promise<void> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, rej) =>
-      setTimeout(() => rej(new Error("gate deadline exceeded")), GATE_DEADLINE_MS),
-    ),
-  ]);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, rej) => {
+    timer = setTimeout(() => rej(new Error("gate deadline exceeded")), GATE_DEADLINE_MS);
+  });
+  // gate 早期解決時に timer が残らないよう確実に解除する
+  return Promise.race([promise, deadline]).finally(() => clearTimeout(timer));
 }
 
 async function makeSession(
