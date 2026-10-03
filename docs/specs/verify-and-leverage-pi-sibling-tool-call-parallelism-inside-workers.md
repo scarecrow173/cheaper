@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034zA513QKarQrr5SQtgp7"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "Verify and leverage Pi sibling tool-call parallelism inside Workers"
 created: "2026-10-04"
 updated: "2026-10-04"

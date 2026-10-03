@@ -1,7 +1,7 @@
 ---
 id: "ADR-034zA5nZuUdGLDMTGh2V6z"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Pi sibling tool-call parallelism via runtime output-contract guidance"
 created: "2026-10-04"
 updated: "2026-10-04"
