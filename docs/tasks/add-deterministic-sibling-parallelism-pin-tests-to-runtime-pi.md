@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zBIYG4bskj0L6ueomFK"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add deterministic sibling-parallelism pin tests to runtime-pi"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -165,15 +165,15 @@ strip、または property-assignment pattern `toolExecution\s*:` /
 
 ## Done When
 
-- [ ] `packages/runtime-pi/test/sibling-parallelism.test.ts` と
+- [x] `packages/runtime-pi/test/sibling-parallelism.test.ts` と
       `packages/runtime-pi/test/no-execution-mode.test.ts` の両方が
       存在する
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi exec vitest run test/sibling-parallelism.test.ts test/no-execution-mode.test.ts`
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi exec vitest run test/sibling-parallelism.test.ts test/no-execution-mode.test.ts`
       が exit 0（sibling-parallelism の 4 test 全 pass、初回 green）
-- [ ] `mise exec -- pnpm exec biome check packages/runtime-pi` が clean
+- [x] `mise exec -- pnpm exec biome check packages/runtime-pi` が clean
 - [ ] 2 test file が 1 つの論理変更として commit されている
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi exec vitest run test/sibling-parallelism.test.ts test/no-execution-mode.test.ts` exits 0
-- [ ] `mise exec -- pnpm exec biome check packages/runtime-pi` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi exec vitest run test/sibling-parallelism.test.ts test/no-execution-mode.test.ts` exits 0
+- [x] `mise exec -- pnpm exec biome check packages/runtime-pi` exits 0
