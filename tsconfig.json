@@ -2,6 +2,8 @@
   "files": [],
   "references": [
     { "path": "packages/core" },
+    { "path": "packages/tool-runtime" },
+    { "path": "packages/workflow" },
     { "path": "packages/runtime-pi" },
     { "path": "packages/cli" }
   ]

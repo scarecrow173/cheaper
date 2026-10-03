@@ -32,6 +32,12 @@ importers:
       '@cheaper/runtime-pi':
         specifier: workspace:*
         version: link:../runtime-pi
+      '@cheaper/tool-runtime':
+        specifier: workspace:*
+        version: link:../tool-runtime
+      '@cheaper/workflow':
+        specifier: workspace:*
+        version: link:../workflow
       yaml:
         specifier: ^2.9.1
         version: 2.9.1
@@ -53,6 +59,9 @@ importers:
       '@cheaper/core':
         specifier: workspace:*
         version: link:../core
+      '@cheaper/tool-runtime':
+        specifier: workspace:*
+        version: link:../tool-runtime
       '@earendil-works/pi-ai':
         specifier: 0.85.1
         version: 0.85.1(ws@8.21.3)
@@ -65,6 +74,27 @@ importers:
       typebox:
         specifier: ^1.3.7
         version: 1.3.7
+
+  packages/tool-runtime:
+    dependencies:
+      '@cheaper/core':
+        specifier: workspace:*
+        version: link:../core
+      diff:
+        specifier: ^9.0.0
+        version: 9.0.0
+      typebox:
+        specifier: ^1.3.7
+        version: 1.3.7
+
+  packages/workflow:
+    dependencies:
+      '@cheaper/core':
+        specifier: workspace:*
+        version: link:../core
+      '@cheaper/tool-runtime':
+        specifier: workspace:*
+        version: link:../tool-runtime
 
 packages:
 
