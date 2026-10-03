@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zBJ64O6cfOluLvLxYIO"
 type: "task"
-status: "todo"
+status: "done"
 title: "Append sibling tool-call parallelism section to execution-engine design doc"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -87,20 +87,20 @@ design の文書化 subsection に従い、追記セクションには以下を�
 
 ## Done When
 
-- [ ] `docs/designs/pi-execution-engine.md` 末尾に
+- [x] `docs/designs/pi-execution-engine.md` 末尾に
       `## Sibling tool-call parallelism` セクションが存在し、上記の
       必須内容（`toolExecution: "parallel"` 既定のそのまま利用 /
       parallel path semantics / 節約源 / `output.maxTokens` cap
       相互作用）が全て記述されている
-- [ ] approved doc への後追記である旨と、
+- [x] approved doc への後追記である旨と、
       DESIGN-034zAKcWuB8SuFkOePsubg / SPEC-034zA513QKarQrr5SQtgp7 /
       issue #55 への attribution が明記されている
-- [ ] front matter の `updated` が追記当日日付に更新されている
+- [x] front matter の `updated` が追記当日日付に更新されている
 
 ## Verification
 
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] Manual: `docs/designs/pi-execution-engine.md` の
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] Manual: `docs/designs/pi-execution-engine.md` の
       `## Sibling tool-call parallelism` セクションが plan T14 の
       content list（既定利用・parallel path semantics・節約源・cap
       相互作用・attribution・`updated` 更新）を全て含むことを確認
