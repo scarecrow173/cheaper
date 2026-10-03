@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "Pi 実行エンジン: session・制限・abort・retry・出力抽出・repair・usage"
 created: "2026-09-15"
-updated: "2026-09-16"
+updated: "2026-10-04"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -26,6 +26,7 @@ relations:
     - "worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md"
     - "workspace-filesystem-boundary-sandboxed-tools.md"
     - "model-resolver.md"
+    - "pi-sibling-tool-call-parallelism-inside-workers.md"
   refines: []
   refined-by: []
   derives-from:
@@ -162,3 +163,53 @@ createAgentSession({
 - [ ] Execution: repair は tool なし session で `repairAttempts` 回まで、尽きれば `INVALID_OUTPUT` exit 6
 - [ ] Execution: `auto_retry_start` が `meta.transientRetries` に計上され、cheaper 独自 retry が走らない
 - [ ] `stream` seam 経由の scripted fake stream で上記全てを再現できる
+
+## Sibling tool-call parallelism
+
+本セクションは approved 後追記（issue #55 /
+SPEC-034zA513QKarQrr5SQtgp7 / DESIGN-034zAKcWuB8SuFkOePsubg）であり、
+本 design の既存構造を変更しない。決定的 pin test は
+`packages/runtime-pi/test/sibling-parallelism.test.ts` が担う。
+
+### Pi の既定動作と cheaper の姿勢
+
+- pinned `pi-agent-core@0.85.1` の `Agent` は `toolExecution: "parallel"`
+  が既定であり、cheaper は `toolExecution` も per-tool の
+  `executionMode` も一切設定しない。単一 batch に
+  `executionMode: "sequential"` tool が 1 つでも混在すると batch 全体が
+  sequential path に落ちるため、このプロパティを追加しないことを
+  実装規約とし、`test/no-execution-mode.test.ts` の code-inspection
+  test で pin する。Worker 内 operation の並行度上限は将来の
+  ToolScheduler（issue #57）の責務であり、sibling batching とは別層
+- parallel path の semantics:
+  - eligible sibling call は `Promise.all` で overlap 実行される
+    （実行開始は call 順、完了 event は完了順）
+  - `toolResult` message は完了順ではなく**元の call 順**で emit される
+  - `stopReason: "length"`（出力 cap 超過で response 途中切り詰め）の
+    turn では、その batch の sibling call は**全員未実行の error
+    result** になる（引数 truncation 対策の fail-closed 挙動）
+  - 同一ファイルへの `write` / `edit` は Pi 側の
+    `withFileMutationQueue` で **call 順に直列化**される。cheaper の
+    sandboxed write/edit は `createWriteToolDefinition` /
+    `createEditToolDefinition` 経由でこの保護を継承する。read 系
+    （read / grep / find / count_tokens）は queue 対象外であり、同一
+    batch 内の mutation との ordering 保証はない
+
+### コスト上の含意と worker prompt guidance
+
+- 節約源は **Worker turn 数と、turn ごとに増大する input context の
+  反復送信の削減**である。並列化は tool call 自体の token 単価や
+  pricing を変えない。独立した read / search / counting を 1 つの
+  sibling batch にまとめることで `tool → model → tool → model` の
+  serial 反復を減らす
+- `output.maxTokens` cap（effective =
+  `min(policy.output.maxTokens, model.maxTokens)`、stream call ごとに
+  注入）との相互作用: batch と各 call の引数が cap を超えると
+  `stopReason: "length"` で sibling 全員が未実行 error になるため、
+  batch 粒度は cap に収まる大きさに保つ必要がある
+- この前提を model に伝えるため、`buildSystemPrompt`（`run.ts`）は
+  `toolNames` 非空時に 5 本の same-turn batching guidance bullet を
+  system prompt の `Available tools:` と `Output schema:` の間に emit
+  する（同一 turn 発行・polling 禁止・unsafe mutation batch 禁止・
+  output token cap・final contract 不変）。exact 文言は
+  DESIGN-034zAKcWuB8SuFkOePsubg が定義する

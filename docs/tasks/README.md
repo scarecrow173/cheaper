@@ -9,22 +9,24 @@ Directory: `docs/tasks`
 | TASK-034rAcFy8if4UmbPEMTdg1 | Adapter contract tests and APM install E2E assertions | done | [adapter-contract-tests-and-apm-install-e2e-assertions.md](./adapter-contract-tests-and-apm-install-e2e-assertions.md) |
 | TASK-034r05iHQeQpDpq6zeHAT0 | Add built-in worker definitions | done | [add-built-in-worker-definitions.md](./add-built-in-worker-definitions.md) |
 | TASK-034r05iHQeQpDppVaGtCgu | Add built-in worker JSON schemas | done | [add-built-in-worker-json-schemas.md](./add-built-in-worker-json-schemas.md) |
-| TASK-034z52ABwxDsaQWun7VUDu | add cheaper hook command with target adapters | todo | [add-cheaper-hook-command-with-target-adapters.md](./add-cheaper-hook-command-with-target-adapters.md) |
+| TASK-034z52ABwxDsaQWun7VUDu | add cheaper hook command with target adapters | done | [add-cheaper-hook-command-with-target-adapters.md](./add-cheaper-hook-command-with-target-adapters.md) |
 | TASK-034rzRuCuCgZ08BmHTCqgz | Add cheaper usage aggregation command with filters and estimated savings | done | [add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md](./add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md) |
 | TASK-034rzWT9V9bHwEIcrmbTor | Add CLI --model flag and models command | done | [add-cli-model-flag-and-models-command.md](./add-cli-model-flag-and-models-command.md) |
 | TASK-034r05iHQeQpDpSS51up2r | Add count-tokens CLI command | done | [add-count-tokens-cli.md](./add-count-tokens-cli.md) |
 | TASK-034r05iHQeQpDpSeJahHce | Add count_tokens tool to runtime-pi registry and built-in workers | done | [add-count-tokens-tool.md](./add-count-tokens-tool.md) |
+| TASK-034zBIYG4bskj0L6ueomFK | Add deterministic sibling-parallelism pin tests to runtime-pi | todo | [add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md](./add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md) |
 | TASK-034r05iHQeQpDpOWHdF7Wo | Add doc-writer built-in Worker | done | [add-doc-writer-worker.md](./add-doc-writer-worker.md) |
 | TASK-034rzRv1K2fmi2Igbdu5HG | Add e2e coverage, docs, bundle regen and final verification | done | [add-e2e-coverage-docs-bundle-regen-and-final-verification.md](./add-e2e-coverage-docs-bundle-regen-and-final-verification.md) |
 | TASK-034r05iHQeQpDpsYVkvsPX | Add e2e tests for non-execution CLI paths | done | [add-e2e-tests-for-non-execution-cli-paths.md](./add-e2e-tests-for-non-execution-cli-paths.md) |
 | TASK-034r05iHQeQpDpu1iPmr1q | Add fake stream hook and e2e execution tests | done | [add-fake-stream-hook-and-e2e-execution-tests.md](./add-fake-stream-hook-and-e2e-execution-tests.md) |
-| TASK-034z52KS4mSEHAIf28JHuj | add hook contract tests and port existing adapter e2e | todo | [add-hook-contract-tests-and-port-existing-adapter-e2e.md](./add-hook-contract-tests-and-port-existing-adapter-e2e.md) |
+| TASK-034z52KS4mSEHAIf28JHuj | add hook contract tests and port existing adapter e2e | done | [add-hook-contract-tests-and-port-existing-adapter-e2e.md](./add-hook-contract-tests-and-port-existing-adapter-e2e.md) |
 | TASK-034rzWI7U1txBCpGr7WZaJ | Add model pricing metadata layer and bundled data | done | [add-model-pricing-metadata-layer.md](./add-model-pricing-metadata-layer.md) |
 | TASK-034rzWIEgBvwU5S4KYY68N | Add models.yaml exclude with union merge | done | [add-models-config-exclude.md](./add-models-config-exclude.md) |
 | TASK-034r05iHQeQpDpySHHPmpY | Add Ollama docker-compose and document container usage in AGENTS.md | done | [add-ollama-docker-compose-and-document-container-usage-in-agents-md.md](./add-ollama-docker-compose-and-document-container-usage-in-agents-md.md) |
 | TASK-034z3zOydB4GluAraLc16E | Add POSIX and PowerShell platform launchers to hooks payload | done | [add-posix-and-powershell-platform-launchers-to-hooks-payload.md](./add-posix-and-powershell-platform-launchers-to-hooks-payload.md) |
 | TASK-034r05iHWkNF7zJyX85ZOT | Add provider plugin contract and registration order | done | [add-provider-plugin-contract-and-registration-order.md](./add-provider-plugin-contract-and-registration-order.md) |
 | TASK-034r05iHWkNF7zFyMzc7zU | Add resolveUserConfigDir helper and Pi state path wiring | done | [add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md](./add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md) |
+| TASK-034zBJ55ACvdlADYOtaKKc | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | todo | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
 | TASK-034r05iHK8bA7hdI3bUubr | Add scripted fake stream test fixture | done | [add-scripted-fake-stream-test-fixture.md](./add-scripted-fake-stream-test-fixture.md) |
 | TASK-034z1POhgJ49oVv2arDj6X | Add SEA entrypoint sea-main.ts | done | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | TASK-034r05iHQeQpDqCTYluKr1 | Add version check and set scripts | done | [add-version-check-and-set-scripts.md](./add-version-check-and-set-scripts.md) |
@@ -32,6 +34,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqx9iKaroO | Align CI with canonical setup/check entrypoints and locked install | done | [align-ci-with-canonical-entrypoints.md](./align-ci-with-canonical-entrypoints.md) |
 | TASK-034r2ruj7LGYlehohv1Xjs | Align usage-log docs with recording contract | done | [align-usage-log-docs-with-recording-contract.md](./align-usage-log-docs-with-recording-contract.md) |
 | TASK-034r05iHQeQpDpIRiZMox8 | Anchor policy timeout at runWorker start and amend DESIGN-034r05iHrZUE6WvaQsRRsM | done | [anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
+| TASK-034zBJ64O6cfOluLvLxYIO | Append sibling tool-call parallelism section to execution-engine design doc | todo | [append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md](./append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md) |
 | TASK-034r05iHQeQpDpHsFsVyxq | Apply abort grace and provider failure normalization to repair | done | [apply-abort-grace-and-provider-failure-normalization-to-repair.md](./apply-abort-grace-and-provider-failure-normalization-to-repair.md) |
 | TASK-034r05iHQeQpDqapXCLs3G | cheaper auth command (login/status/logout) | done | [auth-command.md](./auth-command.md) |
 | TASK-AZSy7cWtCdKaL5D2ro8TWy | Auth I/O boundary final verification and status sync | done | [auth-io-boundary-final-verification.md](./auth-io-boundary-final-verification.md) |
@@ -124,13 +127,14 @@ Directory: `docs/tasks`
 | TASK-034rAcF1RPJJogj2vzFDrF | New adapter scripts and hooks.json event registration | done | [new-adapter-scripts-and-hooks-json-event-registration.md](./new-adapter-scripts-and-hooks-json-event-registration.md) |
 | TASK-034r05iHQeQpDqgk8XoZ8E | Parameterize apm e2e fixture by target | done | [parameterize-apm-e2e-fixture-by-target.md](./parameterize-apm-e2e-fixture-by-target.md) |
 | TASK-034r05iHQeQpDqhxabCiHf | Per-target apm install verification e2e | done | [per-target-apm-install-verification-e2e.md](./per-target-apm-install-verification-e2e.md) |
-| TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | todo | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |
+| TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | done | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |
 | TASK-034r05iHWkNF7zKMZPhFky | Provider plugin tests and resource isolation verification | done | [provider-plugin-tests-and-resource-isolation.md](./provider-plugin-tests-and-resource-isolation.md) |
 | TASK-034r05iHQeQpDpEony1i5k | Record experiment log and verify test regression | done | [record-experiment-log-and-verify-test-regression.md](./record-experiment-log-and-verify-test-regression.md) |
-| TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | todo | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |
+| TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |
 | TASK-034r05iHQeQpDqsCIiTDOz | Repoint bundle pipeline and CI freshness check to packages/apm | done | [repoint-bundle-pipeline-and-ci-freshness.md](./repoint-bundle-pipeline-and-ci-freshness.md) |
 | TASK-034r05iHQeQpDqOOFD90gZ | Restructure README, create docs index, and run final verification | done | [restructure-readme-docs-index-and-final-verification.md](./restructure-readme-docs-index-and-final-verification.md) |
 | TASK-034r05iHQeQpDpDygNnvfq | Run bulk-read and cheap-write smoke against Ollama | done | [run-bulk-read-and-cheap-write-smoke-against-ollama.md](./run-bulk-read-and-cheap-write-smoke-against-ollama.md) |
+| TASK-034zBJcexygQMw7L8WTUYL | Run canonical verification and close out issue #55 implementation | todo | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
 | TASK-034r05iHQeQpDpyBKGfmKB | Run document status audit | done | [run-document-status-audit.md](./run-document-status-audit.md) |
 | TASK-034r05iHQeQpDpwgKKyE0K | Run full build test and lint verification | done | [run-full-build-test-and-lint-verification.md](./run-full-build-test-and-lint-verification.md) |
 | TASK-034r05iHQeQpDq84iLFgT3 | Runtime-pi scope and deny enforcement in sandboxed tools | done | [runtime-scope-and-deny-enforcement.md](./runtime-scope-and-deny-enforcement.md) |
@@ -155,7 +159,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqtGttOcbh | Update consumer e2e fixtures to packages/apm and add no-self-deploy verification | done | [update-consumer-verification-and-no-self-deploy-tests.md](./update-consumer-verification-and-no-self-deploy-tests.md) |
 | TASK-034r05iHQeQpDqylmM3Elr | Update README/AGENTS for canonical contract and verify clean-state setup/check | done | [update-docs-and-verify-clean-state-setup-check.md](./update-docs-and-verify-clean-state-setup-check.md) |
 | TASK-034r05iHQeQpDpQ62tRnRU | Update docs indexes, supersede relations, and verify writer restructure | done | [update-docs-and-verify-writer-restructure.md](./update-docs-and-verify-writer-restructure.md) |
-| TASK-034z52VFF0DTrVukTAbzaf | update docs for executable-based hook invocation | todo | [update-docs-for-executable-based-hook-invocation.md](./update-docs-for-executable-based-hook-invocation.md) |
+| TASK-034z52VFF0DTrVukTAbzaf | update docs for executable-based hook invocation | done | [update-docs-for-executable-based-hook-invocation.md](./update-docs-for-executable-based-hook-invocation.md) |
 | TASK-034r05iHWkNF7zIILagCbE | Update docs, regenerate bundle, and run final verification | done | [update-docs-regenerate-bundle-and-run-final-verification.md](./update-docs-regenerate-bundle-and-run-final-verification.md) |
 | TASK-nG7Lngq2AuUQEzF33IkneZ | Update user guides for auto tier classification | done | [update-guides-for-auto-tier-classification.md](./update-guides-for-auto-tier-classification.md) |
 | TASK-034rzWTSt6UWHtrOMOegau | Update guides for pricing catalog | done | [update-guides-for-pricing-catalog.md](./update-guides-for-pricing-catalog.md) |
@@ -167,7 +171,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
 | TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
-| TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | todo | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |
+| TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | done | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |
 | TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | done | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |

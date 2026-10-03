@@ -108,7 +108,7 @@ const ABORT_CODES: Record<AbortReason, ErrorCode> = {
   maxToolCalls: "MAX_TOOL_CALLS_EXCEEDED",
 };
 
-function buildSystemPrompt(worker: WorkerDefinition, toolNames: string[]): string {
+export function buildSystemPrompt(worker: WorkerDefinition, toolNames: string[]): string {
   const contract = [
     "",
     "## Output contract",
@@ -117,6 +117,17 @@ function buildSystemPrompt(worker: WorkerDefinition, toolNames: string[]): strin
     "- Do not wrap the JSON in markdown code fences or any surrounding prose.",
     "- All file paths are workspace-relative POSIX paths.",
     `- Available tools: ${toolNames.length > 0 ? toolNames.join(", ") : "none"}`,
+    // same-turn batching ガイダンス（issue #55 / DESIGN-034zAKcWuB8SuFkOePsubg）。
+    // tool 0 件の "none" と同居しないよう非空時のみ emit する。
+    ...(toolNames.length > 0
+      ? [
+          "- Independent tool calls must be issued together in the same assistant turn; do not serialize independent reads, searches, or token counting across multiple turns.",
+          "- Do not poll or re-ask whether a call finished: the runtime owns timeouts and process lifecycle, and every tool result is returned automatically as input for the next turn.",
+          "- Do not batch unsafe mutations: mutation calls that depend on each other or apply multiple mutations to the same target, and reads that expect the result of a sibling write or edit, are not independent — issue them in separate turns.",
+          "- Keep each same-turn batch and its per-call arguments small enough to fit within the output token limit applied to each response; an oversized response is truncated and every tool call in it fails unexecuted.",
+          "- This batching guidance does not change the final-message contract: the last message is still a single JSON object that validates against the output schema below.",
+        ]
+      : []),
     "",
     "Output schema:",
     JSON.stringify(worker.outputSchema.schema, null, 2),
