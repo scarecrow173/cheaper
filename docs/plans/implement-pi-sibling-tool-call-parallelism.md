@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zBjFcH4nDUr72Vc1XJ3"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Implement Pi sibling tool-call parallelism guidance and deterministic tests in runtime-pi"
 test-spec-skip: "Behavior guarantees are pinned by vitest files inside the implementation tasks (sibling-parallelism.test.ts / run-prompt.test.ts / no-execution-mode.test.ts); the approved design's Verification Notes already define the guarantees, so no separate test-spec artifact is needed."
 created: "2026-10-04"

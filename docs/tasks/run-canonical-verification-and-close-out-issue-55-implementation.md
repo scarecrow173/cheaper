@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zBJcexygQMw7L8WTUYL"
 type: "task"
-status: "todo"
+status: "done"
 title: "Run canonical verification and close out issue #55 implementation"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -84,10 +84,10 @@ prompt guidance + 再生成 bundle / doc）構成の最後の commit となる�
 
 ## Done When
 
-- [ ] `mise run check` が exit 0（lint・version・doc-ids・typecheck・
+- [x] `mise run check` が exit 0（lint・version・doc-ids・typecheck・
       test・bundle freshness の全 step pass）
-- [ ] Phase C の doc 追記が 1 つの論理変更として commit されている
+- [x] Phase C の doc 追記が 1 つの論理変更として commit されている
 
 ## Verification
 
-- [ ] `mise run check` exits 0
+- [x] `mise run check` exits 0
