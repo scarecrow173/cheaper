@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zBJ55ACvdlADYOtaKKc"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add same-turn batching guidance to buildSystemPrompt and regenerate bundle"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -134,17 +134,17 @@ commit する。
 
 ## Done When
 
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi test` が exit 0
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi test` が exit 0
       （新 test green + 既存 suite 無変更 pass）
-- [ ] `packages/apm/.apm/hooks/cli/bin/cheaper.mjs` が新 guidance を
+- [x] `packages/apm/.apm/hooks/cli/bin/cheaper.mjs` が新 guidance を
       含んで再生成され、`git diff --exit-code -- packages/apm/.apm/hooks/cli`
       が exit 0（regen 差分が commit 済みで working tree に残らない）
-- [ ] Phase B の変更（export + 5 bullet + test + 再生成 bundle）が
+- [x] Phase B の変更（export + 5 bullet + test + 再生成 bundle）が
       1 つの論理変更として commit されている
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi exec vitest run test/run-prompt.test.ts` exits 0
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi test` exits 0
-- [ ] `git diff --exit-code -- packages/apm/.apm/hooks/cli` exits 0
-- [ ] `mise exec -- pnpm exec biome check packages/runtime-pi` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi exec vitest run test/run-prompt.test.ts` exits 0
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi test` exits 0
+- [x] `git diff --exit-code -- packages/apm/.apm/hooks/cli` exits 0
+- [x] `mise exec -- pnpm exec biome check packages/runtime-pi` exits 0
