@@ -73,19 +73,20 @@ hook の動作は target の hook event 体系に依存する。
   `less` / `more` による large-read は deny（exit 2 + stderr
   の誘導メッセージ）で block される。
 - **Claude Code**: `PreToolUse`（`Read` / `Bash` / `PowerShell`
-  matcher）経由で adapter（`pre-read-code-pretooluse.js`）が
-  動作する。`Read` の file-read に加え、`Bash` / `PowerShell`
+  matcher）経由で `cheaper hook pre-tool-use --target pretooluse`
+  が動作する。`Read` の file-read に加え、`Bash` / `PowerShell`
   の shell command 内の large-read も block される。deny は
   stdout の `hookSpecificOutput.permissionDecision: "deny"`
-  JSON で返し、adapter は常に exit 0。
+  JSON で返し、常に exit 0。
 - **Cursor**: `beforeReadFile` / `beforeShellExecution` event
-  経由で adapter（`pre-read-code-cursor.js`）が動作する。応答は
-  `{"permission":"deny"}` JSON（allow 経路でも
-  `{"permission":"allow"}` を emit して schema 適合を保つ）。
+  経由で `cheaper hook before-read-file` / `before-shell-execution
+  --target cursor` が動作する。応答は `{"permission":"deny"}`
+  JSON（allow 経路でも `{"permission":"allow"}` を emit して
+  schema 適合を保つ）。
 - **Copilot**: `preToolUse` event（matcher `view|bash|powershell|
-  shell`）経由で adapter（`pre-read-code-copilot.js`）が動作
-  する。Copilot では非 0 exit が deny 扱いになるため、adapter
-  は常に exit 0 で終了し、threshold 超過または
+  shell`）経由で `cheaper hook pre-tool-use --target copilot`
+  が動作する。Copilot では非 0 exit が deny 扱いになるため、
+  hook は常に exit 0 で終了し、threshold 超過または
   `FILE_TOO_LARGE` verdict の呼び出しだけを stdout の
   `{"permissionDecision":"deny"}` で block する
   （ADR-034r05iHrZUE6WizQ4LgPa）。`view` の file-read に加え、
@@ -96,9 +97,9 @@ hook の動作は target の hook event 体系に依存する。
   upstream 修正待ちの間利用できない（`count-tokens` と hook
   adapter は動作する）。
 - **Codex**: `PreToolUse`（`Read|Bash|PowerShell` matcher、
-  Claude と同一の nested group 登録）経由で adapter
-  （`pre-read-code-pretooluse.js`）が動作し、`Bash` /
-  `PowerShell` の shell command 内の large-read を block
+  Claude と同一の nested group 登録）経由で
+  `cheaper hook pre-tool-use --target pretooluse` が動作し、
+  `Bash` / `PowerShell` の shell command 内の large-read を block
   できる。**file-read interception は unsupported** — Codex の
   read 系 tool は `PreToolUse` を emit しない upstream gap
   （openai/codex#18491・#20204）が残存する。
@@ -112,7 +113,8 @@ skills（`cheaper-usage` 等）は target 非依存で機能する。
 
 read tool を介さない shell command 内の file read も、shared
 routing policy が保守的 parser で read candidate を抽出し、
-file-read と同一の `count-tokens` 判定へ流す。
+file-read と同一の token 計測（`count-tokens` と同じ判定経路）で
+評価する。
 
 - **検出対象 command**: `cat` / `head` / `tail` / `less` /
   `more`。option とその値（`head -n 200` 等）は path とみなさ
@@ -154,19 +156,29 @@ file-read と同一の `count-tokens` 判定へ流す。
 ## 閾値の設定
 
 `CHEAPER_READ_TOKEN_THRESHOLD` で large-read threshold（default
-8192 token）を変更できる。hook の判定は workspace 内 file に
-対する `count-tokens` の結果 envelope のみに依存する。
-workspace 外・不存在・非 file・CLI 起動失敗・出力の parse 失敗
-などの infrastructure failure は fail-open（素通し）で、
-parseable な `FILE_TOO_LARGE` envelope は fail-closed で
-block される。
+8192 token）を変更できる。hook の判定は workspace 内 file に対する
+token 計測結果（`count-tokens` と同一経路）のみに依存する。
+workspace 外・不存在・非 file・CLI 起動失敗・計測失敗などの
+infrastructure failure は fail-open（素通し）で、`FILE_TOO_LARGE`
+（計測 byte cap 超過）は fail-closed で block される。
+
+hook 呼び出し自体は Node.js を必要としない。`hooks.json` の
+entry は POSIX では同梱 launcher（`./cheaper` → platform 別
+executable へ委譲）、Windows（powershell key）では
+`cli/bin/win32-x64/cheaper.exe` を直接起動する。platform
+executable が無い環境では JS bundle（`cli/bin/cheaper.mjs`）が
+手動 fallback として残る。hook 経路の計測は `usage.jsonl` に
+記録されない（telemetry 対象は明示的な `cheaper run` /
+`count-tokens` のみ）。
 
 ## 連携の確認
 
 ```bash
-# hook bundle に deploy された CLI の動作確認
-<deployed-hook>/cli/bin/cheaper.mjs --version
-<deployed-hook>/cli/bin/cheaper.mjs count-tokens <file>
+# hook bundle に deploy された CLI の動作確認（POSIX は launcher、
+# Windows は win32-x64 exe。JS bundle は Node があれば fallback 可）
+<deployed-hook>/cheaper --version                        # POSIX
+<deployed-hook>/cli/bin/win32-x64/cheaper.exe --version  # Windows
+<deployed-hook>/cheaper count-tokens <file>
 
 # skills/hooks が install されたかは target の config を確認
 # （例: .windsurf/hooks/ 等、target 固有の deploy path）

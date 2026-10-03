@@ -178,6 +178,9 @@ best-effort で append する。書き込み失敗は stdout・exit code
   記録されない。
 - `auth`・`usage`・`--help`・`--version` 等の utility command は
   記録対象外。
+- `hook`（agent hook 経路）は token 計測を行っても記録対象外。
+  hook 呼び出しは高頻度かつ infra 的な性質のため、telemetry には
+  載せない設計としている。
 
 run record には加えて `turns`・`toolCalls`・`savings`（実測
 offload。`directlyComparable` flag を含む）が載る。いずれも

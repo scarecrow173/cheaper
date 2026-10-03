@@ -14,6 +14,11 @@ mise run setup   # fresh checkout を開発可能にする canonical setup contr
 mise run check   # CI と同等の canonical verification contract
 ```
 
+`packages/apm/.apm/hooks/cli/bin/<platform>/` の SEA executable は Git
+LFS で管理する（`.gitattributes` 参照）。clone/pull する環境では事前に
+`git lfs install` が必要。CI の `actions/checkout` では `lfs: true`
+で対応する。
+
 `mise run setup` は toolchain（`mise.toml` + `mise.lock` の locked version）に加え、
 `pnpm install --frozen-lockfile` → `apm install` → `pnpm build` を復元する。
 コマンド実行は `mise exec -- <command>` 経由で行い、mise.toml が管理するツールバージョンを有効化する。

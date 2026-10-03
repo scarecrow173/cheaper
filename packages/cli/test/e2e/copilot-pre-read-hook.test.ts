@@ -1,12 +1,10 @@
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { apmPackageDir } from "./apm-fixture.js";
 import { cliRoot, makeIsolatedEnv } from "./helpers.js";
 
-const hookScript = path.join(apmPackageDir, ".apm", "hooks", "pre-read-code-copilot.js");
 const cheaperBin = path.join(cliRoot, "bin", "cheaper.js");
 const bundledCli = path.join(apmPackageDir, ".apm", "hooks", "cli", "bin", "cheaper.mjs");
 
@@ -18,14 +16,18 @@ interface HookResult {
 
 function runHook(
   stdin: string,
-  opts: { cwd: string; env?: Record<string, string>; cliArg?: string },
+  opts: { cwd: string; env?: Record<string, string>; bin?: string },
 ): HookResult {
-  const r = spawnSync(process.execPath, [hookScript, ...(opts.cliArg ? [opts.cliArg] : [])], {
-    cwd: opts.cwd,
-    env: opts.env,
-    input: stdin,
-    encoding: "utf8",
-  });
+  const r = spawnSync(
+    process.execPath,
+    [opts.bin ?? cheaperBin, "hook", "pre-tool-use", "--target", "copilot"],
+    {
+      cwd: opts.cwd,
+      env: opts.env,
+      input: stdin,
+      encoding: "utf8",
+    },
+  );
   return { status: r.status, stdout: r.stdout, stderr: r.stderr };
 }
 
@@ -45,14 +47,13 @@ function expectDeny(r: HookResult, relPath: string) {
   expect(out.permissionDecisionReason).toContain(`workspace-relative path: ${relPath}`);
 }
 
-describe("copilot preToolUse hook (pre-read-code-copilot.js)", () => {
+describe("copilot preToolUse hook (cheaper hook --target copilot)", () => {
   let dir: string;
   let ws: string;
   let env: Record<string, string>;
 
   beforeEach(async () => {
     ({ dir, ws, env } = await makeIsolatedEnv());
-    env.CHEAPER_CLI = cheaperBin;
   });
 
   it("denies a large file via object toolArgs with stdout deny JSON and exit 0", async () => {
@@ -68,14 +69,9 @@ describe("copilot preToolUse hook (pre-read-code-copilot.js)", () => {
     expectDeny(r, "big.txt");
   });
 
-  it("blocks via the bundled CLI passed as argv[2] (production command shape)", async () => {
+  it("denies via the bundled CLI (production command shape)", async () => {
     await writeFile(path.join(ws, "big.txt"), "lorem ipsum dolor sit amet ".repeat(4000), "utf8");
-    const { CHEAPER_CLI: _dropped, ...envNoCli } = env;
-    const r = runHook(preToolUse(path.join(ws, "big.txt")), {
-      cwd: ws,
-      env: envNoCli,
-      cliArg: bundledCli,
-    });
+    const r = runHook(preToolUse(path.join(ws, "big.txt")), { cwd: ws, env, bin: bundledCli });
     expectDeny(r, "big.txt");
   });
 
@@ -92,7 +88,7 @@ describe("copilot preToolUse hook (pre-read-code-copilot.js)", () => {
     expect(r.stdout).not.toContain("$");
   });
 
-  it("denies with exit 0 on a FILE_TOO_LARGE envelope (bytes over the cap)", async () => {
+  it("denies with exit 0 on FILE_TOO_LARGE (bytes over the cap)", async () => {
     await writeFile(path.join(ws, "big.bin"), Buffer.alloc(64, 0x61));
     const r = runHook(preToolUse(path.join(ws, "big.bin")), {
       cwd: ws,
@@ -126,23 +122,6 @@ describe("copilot preToolUse hook (pre-read-code-copilot.js)", () => {
     expectDeny(r, "small.txt");
   });
 
-  it("skips the CLI spawn for a file whose bytes fit the threshold", async () => {
-    await writeFile(path.join(ws, "small.txt"), "hello\n", "utf8");
-    const marker = path.join(dir, "cli-spawned.marker");
-    const fakeCli = path.join(dir, "fake-cli.js");
-    await writeFile(
-      fakeCli,
-      'require("node:fs").writeFileSync(process.env.FAKE_CLI_MARKER, "spawned");\n',
-      "utf8",
-    );
-    const r = runHook(preToolUse(path.join(ws, "small.txt")), {
-      cwd: ws,
-      env: { ...env, CHEAPER_CLI: fakeCli, FAKE_CLI_MARKER: marker },
-    });
-    expect(r.status).toBe(0);
-    expect(existsSync(marker)).toBe(false);
-  });
-
   it("never exits nonzero: malformed payloads and every fail-open path exit 0", async () => {
     await writeFile(path.join(ws, "big.txt"), "x ".repeat(20000), "utf8");
     const bigPath = path.join(ws, "big.txt");
@@ -164,11 +143,13 @@ describe("copilot preToolUse hook (pre-read-code-copilot.js)", () => {
       const r = runHook(stdin, { cwd: ws, env });
       expect(r.status, `case: ${label}`).toBe(0);
     }
-  });
+  }, 120_000);
 
   it("routes shell toolNames through the canonical shell seam (exit 0, silent)", async () => {
     // `bash` / `powershell` / `shell` は canonical shell request へ
-    // normalize される。policy は現状 allow seam のため silent exit 0。
+    // normalize される。小さな file への read command は allow で
+    // silent exit 0。
+    await writeFile(path.join(ws, "big.txt"), "hello\n", "utf8");
     for (const toolName of ["bash", "powershell", "shell"]) {
       const r = runHook(JSON.stringify({ toolName, toolArgs: { command: "cat big.txt" } }), {
         cwd: ws,
@@ -200,10 +181,15 @@ describe("copilot preToolUse hook (pre-read-code-copilot.js)", () => {
     expect(out.permissionDecision).toBe("allow");
   });
 
-  it("fails open (exit 0) when the CLI is unavailable", async () => {
+  it("fails open (exit 0) when policy loading fails", async () => {
     await writeFile(path.join(ws, "big.txt"), "x ".repeat(20000), "utf8");
-    const noCli = { ...env, CHEAPER_CLI: path.join(dir, "no-such-cli.js") };
-    const r = runHook(preToolUse(path.join(ws, "big.txt")), { cwd: ws, env: noCli });
+    const configDir = path.join(dir, "broken-config");
+    await mkdir(configDir, { recursive: true });
+    await writeFile(path.join(configDir, "policy.yaml"), "::: not yaml :::[", "utf8");
+    const r = runHook(preToolUse(path.join(ws, "big.txt")), {
+      cwd: ws,
+      env: { ...env, CHEAPER_CONFIG_DIR: configDir },
+    });
     expect(r.status).toBe(0);
     expect(r.stdout).not.toContain("permissionDecision");
   });

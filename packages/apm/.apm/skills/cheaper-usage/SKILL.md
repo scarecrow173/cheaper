@@ -41,37 +41,50 @@ one workspace file so you can measure context cost before reading it.
 ## Locating the CLI
 
 - If `cheaper` is on `PATH`, use it directly.
-- In a Windsurf workspace where cheaper was installed via APM, a
-  self-contained copy ships inside the hook bundle:
+- In a Windsurf workspace where cheaper was installed via APM, the
+  hook bundle ships a platform launcher plus standalone executables
+  (no Node.js required):
 
   ```bash
-  node .windsurf/hooks/cheaper/cli/bin/cheaper.mjs <command> [options]
+  .windsurf/hooks/cheaper/cheaper <command> [options]          # POSIX
+  pwsh .windsurf/hooks/cheaper/cheaper.ps1 <command> [options] # Windows
   ```
 
+  The launcher dispatches to `cli/bin/<platform>/cheaper[.exe]`.
+  A JS bundle also ships at `cli/bin/cheaper.mjs`
+  (`node .windsurf/hooks/cheaper/cli/bin/cheaper.mjs
+  <command> [options]`) as a fallback for environments where the
+  platform executable is missing (e.g. an unsupported OS); it
+  requires Node.js on `PATH`. Hook registrations invoke the
+  launcher/executable path directly via `cheaper hook
+  <event> --target <agent>`.
   Substitute `cheaper` for the actual hook bundle directory name if the
   package was installed under a different name. Everywhere below,
   `cheaper <args>` means either form.
-- The pre-read hook is functional on two targets:
+- The large-read hook is functional on these targets (all routed
+  through `cheaper hook <event> --target <agent>`; Node.js is not
+  required):
   - **Windsurf** — native `pre_read_code` event; oversized reads are
-    blocked (exit 2) with a redirect to `bulk-read`.
-  - **GitHub Copilot** — `preToolUse` adapter
-    (`pre-read-code-copilot.js`); oversized `view` calls are denied
-    via `{"permissionDecision":"deny"}` on stdout with exit 0. Note
-    the known gap: APM does not deploy `.json` assets to the copilot
-    target, so file-schema workers (`bulk-read` / `code-write` /
-    `doc-write`) cannot run there until the upstream fix lands —
-    `count-tokens` and the hook adapter still work.
-- On the remaining targets the hook registration is deployed but
-  inert (harmless no-op, feature disabled):
-  - **Claude Code** — the `preToolUse` registration is normalized to
-    `PreToolUse` and can fire live, but the stdin payload shape does
-    not match the Copilot adapter's contract, so the adapter always
-    passes through (exit 0).
-  - **OpenAI Codex** — hooks exist, but file-read tools do not emit
-    `PreToolUse` (upstream gap `openai/codex#18491`), so the hook
-    never runs.
-  - **Cursor** — no matching native event/adapter support, so the
-    registration stays inert.
+    blocked (exit 2) with a redirect to `bulk-read`. `pre_run_command`
+    also blocks large reads inside `cat`/`head`/`tail`/`less`/`more`
+    shell commands.
+  - **GitHub Copilot** — `preToolUse`; oversized `view` and shell-tool
+    calls are denied via `{"permissionDecision":"deny"}` on stdout
+    with exit 0. Note the known gap: APM does not deploy `.json`
+    assets to the copilot target, so file-schema workers (`bulk-read`
+    / `code-write` / `doc-write`) cannot run there until the
+    upstream fix lands — `count-tokens` and the hook still work.
+  - **Claude Code** — `PreToolUse` (`Read`/`Bash`/`PowerShell`
+    matcher); denies return `hookSpecificOutput.permissionDecision:
+    "deny"` on stdout with exit 0.
+  - **Cursor** — `beforeReadFile` / `beforeShellExecution`; every
+    response is a schema-valid `{"permission": ...}` JSON, exit 0.
+- On **OpenAI Codex** the same `PreToolUse` registration is deployed
+  and shell reads (`Bash`/`PowerShell`) are covered, but file-read
+  tools do not emit `PreToolUse` (upstream gap `openai/codex#18491`),
+  so file reads cannot be intercepted.
+- Hook executions do not write to `usage.jsonl`; only explicit
+  `cheaper run`/`count-tokens` calls are recorded.
   For the per-target contract, see the canonical matrix in
   DISC-034r05iHy2gdnpdai9KGpW
   (`docs/discovery/cross-agent-hook-distribution-and-contract-matrix.md`).

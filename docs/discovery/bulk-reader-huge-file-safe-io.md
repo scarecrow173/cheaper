@@ -14,7 +14,7 @@ relations:
     - "../../packages/runtime-pi/src/tools/grep.ts"
     - "../../packages/runtime-pi/src/tools/find.ts"
     - "../../packages/runtime-pi/src/tools/count-tokens.ts"
-    - "../../packages/apm/.apm/hooks/pre-read-code.js"
+    - "../../packages/cli/src/hook/routing-policy.ts"
   changes:
     added: []
     modified: []
@@ -68,7 +68,7 @@ relations:
 | grep | 適格ファイルを `readFile(real, 'utf8')` で全体読み込みする。正規表現評価は worker_thread に隔離され、per-file 5秒 / total 60秒の watchdog がある | 現状は 1MB 以下しか到達しない。walker のサイズ制限だけを外すと全体読み込みのリスクが拡大する。正規表現の隔離は I/O のメモリ上限を保証しない |
 | find | display path に対する glob 一致を調べ、内容を読まない | 内容を使わない検索にもサイズ・binary 判定が適用され、巨大ファイルを列挙できない |
 | count_tokens | core の `countFileTokens` を呼び、`FileTooLargeError` は tool error として伝播する | 16MB cap は維持する前提。安全な部分読み込みができても巨大ファイル全体の canonical token count が可能になるわけではない |
-| parent hook | `.apm/hooks/pre-read-code.js` は閾値超過または `FILE_TOO_LARGE` で直接 Read を exit 2 と委譲 guidance によりブロックする | parent の保護は既存対応済みだが、委譲先 bulk-reader の安全性・検索の完全性は別問題として残る |
+| parent hook | `cheaper hook`（`packages/cli/src/hook/`。旧 `.apm/hooks/pre-read-code.js`）は閾値超過または `FILE_TOO_LARGE` で直接 Read を deny と委譲 guidance によりブロックする | parent の保護は既存対応済みだが、委譲先 bulk-reader の安全性・検索の完全性は別問題として残る |
 
 Pi の契約確認先は `packages/runtime-pi/node_modules/@earendil-works/pi-coding-agent/dist/core/tools/read.d.ts`。これはインストール済み依存の型定義であり、永続的なリポジトリ内リンクではない。
 

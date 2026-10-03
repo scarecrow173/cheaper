@@ -1,9 +1,10 @@
-// cheaper shared routing policy (DESIGN-034rA79Uog7JOa7evw6rOL).
+// cheaper shared routing policy (DESIGN-034rA79Uog7JOa7evw6rOL),
+// ported from packages/apm/.apm/hooks/routing-policy.js.
 // Target adapters normalize native hook payloads into a canonical
 // routing request and call evaluate(); this module owns every
 // target-independent decision: workspace containment, the byte-size
-// fast path, `cheaper count-tokens` measurement, the token threshold,
-// and the FILE_TOO_LARGE fail-closed verdict.
+// fast path, in-process token measurement, the token threshold, and
+// the FILE_TOO_LARGE fail-closed verdict.
 //
 // Canonical requests:
 //   { kind: "file-read", path: string, cwd: string, sourceTool?: string }
@@ -17,42 +18,104 @@
 // file operands) via a conservative tokenizer and evaluate each
 // through the same file-read policy — no adapter changes needed.
 
-const { spawnSync } = require("node:child_process");
-const fs = require("node:fs");
-const path = require("node:path");
+import fs from "node:fs";
+import path from "node:path";
 
-const DEFAULT_THRESHOLD = 8192;
+export const DEFAULT_THRESHOLD = 8192;
 
-function readStdin() {
-  try {
-    return fs.readFileSync(0, "utf8");
-  } catch {
-    return "";
-  }
+// Legacy subprocess timeout: the JS policy spawned `cheaper
+// count-tokens` with a 30s limit. The in-process equivalent wraps the
+// measured path so hung I/O (FIFO, dead network FS) still resolves.
+const MEASURE_TIMEOUT_MS = 30_000;
+
+export interface FileReadRequest {
+  kind: "file-read";
+  path: string;
+  cwd?: string | undefined;
+  sourceTool?: string | undefined;
 }
 
-function threshold(env) {
+export interface ShellRequest {
+  kind: "shell";
+  command: string;
+  cwd?: string | undefined;
+  sourceTool?: string | undefined;
+}
+
+export type RoutingRequest = FileReadRequest | ShellRequest;
+
+export type Verdict = { decision: "allow" } | { decision: "deny"; reason: string };
+
+export interface EvaluateOptions {
+  env?: NodeJS.ProcessEnv;
+  /** built-in resources root（SEA では VFS root）。 */
+  builtinDir?: string | undefined;
+}
+
+export function threshold(env?: NodeJS.ProcessEnv): number {
   const raw = (env || process.env).CHEAPER_READ_TOKEN_THRESHOLD;
   const n = raw === undefined ? NaN : Number.parseInt(raw, 10);
   return Number.isInteger(n) && n > 0 ? n : DEFAULT_THRESHOLD;
 }
 
-// Returns [cmd, argsPrefix]: how to invoke the cheaper CLI.
-// Resolution order: explicit cli (adapter argv[2], bundled CLI path
-// from hooks.json) > CHEAPER_CLI env > `cheaper` on PATH.
-// .js/.mjs paths run via node.
-function cheaperCommand(cli, env) {
-  const explicit = cli || (env || process.env).CHEAPER_CLI;
-  if (explicit && /\.m?js$/.test(explicit)) {
-    return [process.execPath, [explicit]];
+async function withTimeout<T>(promise: Promise<T>): Promise<T> {
+  const signal = AbortSignal.timeout(MEASURE_TIMEOUT_MS);
+  let onAbort: (() => void) | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    onAbort = () => reject(new Error("token measurement timed out"));
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (onAbort) signal.removeEventListener("abort", onAbort);
   }
-  return [explicit || "cheaper", []];
+}
+
+/**
+ * token 計測を実行する。byte fast path 通過後にのみ呼ばれるため、
+ * tokenizer/policy 層の import コストはここに閉じ込める。
+ * error の種別は raw のまま呼び出し側へ伝播させる。
+ */
+async function measureTokens(
+  resolvedPath: string,
+  cwd: string,
+  opts: EvaluateOptions | undefined,
+): Promise<{ tokens: number } | { fileTooLarge: { bytes: number; maxBytes: number } } | null> {
+  let FileTooLargeError: typeof import("@cheaper/core").FileTooLargeError;
+  let countWorkspaceFileTokens: typeof import("../count.js").countWorkspaceFileTokens;
+  let defaultBuiltinDir: string;
+  try {
+    ({ FileTooLargeError } = await import("@cheaper/core"));
+    ({ countWorkspaceFileTokens, defaultBuiltinDir } = await import("../count.js"));
+  } catch {
+    return null;
+  }
+  try {
+    const result = await withTimeout(
+      countWorkspaceFileTokens({
+        cwd,
+        path: resolvedPath,
+        builtinDir: opts?.builtinDir ?? defaultBuiltinDir,
+        env: opts?.env ?? process.env,
+      }),
+    );
+    return { tokens: result.count.tokens };
+  } catch (e) {
+    if (e instanceof FileTooLargeError) {
+      return { fileTooLarge: { bytes: e.bytes, maxBytes: e.maxBytes } };
+    }
+    return null;
+  }
 }
 
 // The measured verdict is the only fail-closed outcome; every
 // infrastructure failure resolves to allow so a broken setup never
 // breaks normal tool calls.
-function evaluateFileRead(request, opts) {
+async function evaluateFileRead(
+  request: FileReadRequest,
+  opts: EvaluateOptions | undefined,
+): Promise<Verdict> {
   const cwd = request.cwd || process.cwd();
   const resolved = path.resolve(cwd, request.path);
   const rel = path.relative(cwd, resolved);
@@ -62,7 +125,7 @@ function evaluateFileRead(request, opts) {
     return { decision: "allow" };
   }
   const relPosix = rel.split(path.sep).join("/");
-  let st;
+  let st: fs.Stats;
   try {
     st = fs.statSync(resolved);
     if (!st.isFile()) {
@@ -72,51 +135,28 @@ function evaluateFileRead(request, opts) {
     return { decision: "allow" };
   }
   // Fast path (DESIGN-0017): tokens <= bytes always holds, so a file
-  // whose size fits the threshold can never exceed it — skip the CLI
-  // spawn.
+  // whose size fits the threshold can never exceed it — skip the
+  // measurement entirely (no tokenizer/policy import).
   const limit = threshold(opts?.env);
   if (st.size <= limit) {
     return { decision: "allow" };
   }
 
-  const [cmd, prefix] = cheaperCommand(opts?.cli, opts?.env);
-  const run = spawnSync(cmd, [...prefix, "count-tokens", resolved, "--cwd", cwd], {
-    encoding: "utf8",
-    timeout: 30_000,
-  });
-  if (run.error) {
+  const measured = await measureTokens(resolved, cwd, opts);
+  if (measured === null) {
     return { decision: "allow" };
   }
-  let envelope;
-  try {
-    envelope = JSON.parse(run.stdout);
-  } catch {
-    envelope = null;
-  }
-  // A parseable envelope is authoritative even on non-zero exit: a
-  // FILE_TOO_LARGE refusal is a measured verdict (fail-closed), unlike
-  // infra failures which stay fail-open.
-  if (envelope?.error && envelope.error.code === "FILE_TOO_LARGE") {
-    const det = envelope.error.details || {};
-    const bytes = typeof det.bytes === "number" ? det.bytes : st.size;
-    const capText =
-      typeof det.maxBytes === "number" ? ` (exceeds the ${det.maxBytes}-byte measurement cap)` : "";
+  if ("fileTooLarge" in measured) {
+    const { bytes, maxBytes } = measured.fileTooLarge;
     return {
       decision: "deny",
       reason:
-        `cheaper: '${relPosix}' is ${bytes} bytes${capText}.\n` +
+        `cheaper: '${relPosix}' is ${bytes} bytes (exceeds the ${maxBytes}-byte measurement cap).\n` +
         "Do not read it directly. Delegate this file through the cheaper-bulk-read skill.\n" +
         `workspace-relative path: ${relPosix}`,
     };
   }
-  if (run.status !== 0 || !envelope) {
-    return { decision: "allow" };
-  }
-  if (!envelope.ok || !envelope.result || typeof envelope.result.tokens !== "number") {
-    return { decision: "allow" };
-  }
-
-  const { tokens } = envelope.result;
+  const { tokens } = measured;
   if (tokens <= limit) {
     return { decision: "allow" };
   }
@@ -147,13 +187,23 @@ const ENV_PREFIX = /^[A-Za-z_][A-Za-z0-9_]*=/;
 // paths such as `src\dir\file.txt` survive tokenization.
 const ESCAPABLE = /[\s'"\\|&;<>$`*?[\](){}!#~]/;
 
-function tokenizeShell(command) {
-  const segments = [];
-  let tokens = [];
+interface ShellToken {
+  text: string;
+  unsafe: boolean;
+}
+
+interface ShellSegment {
+  tokens: ShellToken[];
+  unsafe: boolean;
+}
+
+export function tokenizeShell(command: string): ShellSegment[] | null {
+  const segments: ShellSegment[] = [];
+  let tokens: ShellToken[] = [];
   let unsafe = false;
   let text = "";
   let tokenUnsafe = false;
-  let quote = null; // null | "'" | '"'
+  let quote: "'" | '"' | null = null;
   let hasToken = false;
 
   const endToken = () => {
@@ -172,7 +222,7 @@ function tokenizeShell(command) {
   };
 
   for (let i = 0; i < command.length; i++) {
-    const ch = command[i];
+    const ch = command.charAt(i);
     if (quote === "'") {
       if (ch === "'") {
         quote = null;
@@ -185,8 +235,8 @@ function tokenizeShell(command) {
     if (quote === '"') {
       if (ch === '"') {
         quote = null;
-      } else if (ch === "\\" && i + 1 < command.length && ESCAPABLE.test(command[i + 1])) {
-        text += command[++i];
+      } else if (ch === "\\" && i + 1 < command.length && ESCAPABLE.test(command.charAt(i + 1))) {
+        text += command.charAt(++i);
         hasToken = true;
       } else {
         text += ch;
@@ -198,7 +248,7 @@ function tokenizeShell(command) {
     // Unquoted context.
     if (ch === "#" && !hasToken) {
       // Comment: skip to the next line.
-      while (i < command.length && command[i] !== "\n") i++;
+      while (i < command.length && command.charAt(i) !== "\n") i++;
       continue;
     }
     if (ch === " " || ch === "\t" || ch === "\r") {
@@ -210,7 +260,7 @@ function tokenizeShell(command) {
       continue;
     }
     if (ch === "|" || ch === "&") {
-      if (command[i + 1] === ch) i++; // || or &&
+      if (command.charAt(i + 1) === ch) i++; // || or &&
       endSegment();
       continue;
     }
@@ -225,8 +275,8 @@ function tokenizeShell(command) {
       continue;
     }
     if (ch === "\\") {
-      if (i + 1 < command.length && ESCAPABLE.test(command[i + 1])) {
-        text += command[++i];
+      if (i + 1 < command.length && ESCAPABLE.test(command.charAt(i + 1))) {
+        text += command.charAt(++i);
       } else {
         text += ch;
       }
@@ -245,7 +295,7 @@ function tokenizeShell(command) {
 // Read commands and the options that consume a separate value token.
 // `plusOptions` marks commands whose `+`-prefixed tokens are options too
 // (less `+F` / `+123`, more `+/<pattern>` / `+<line>`).
-const READ_COMMANDS = {
+const READ_COMMANDS: Record<string, { valueOptions: Set<string>; plusOptions: boolean }> = {
   cat: { valueOptions: new Set(), plusOptions: false },
   head: { valueOptions: new Set(["-n", "-c", "--lines", "--bytes"]), plusOptions: false },
   tail: {
@@ -282,7 +332,7 @@ const READ_COMMANDS = {
   more: { valueOptions: new Set(["-n", "-p", "-t"]), plusOptions: true },
 };
 
-function commandName(token) {
+function commandName(token: string): string {
   const base = token.replace(/^.*[\\/]/, "");
   return base.replace(/\.(exe|bat|cmd)$/i, "");
 }
@@ -297,15 +347,19 @@ const CWD_CHANGING_COMMANDS = new Set(["cd", "chdir", "pushd", "popd", "set-loca
 // Extracts file operands of read commands from a shell command string.
 // Returns [] when the command is unparseable or nothing safely readable
 // is referenced; callers treat [] as fail-open.
-function extractReadCandidates(command) {
+export function extractReadCandidates(command: string): string[] {
   const segments = tokenizeShell(command);
   if (!segments) return [];
-  const candidates = [];
+  const candidates: string[] = [];
   let cwdAmbiguous = false;
   for (const segment of segments) {
     const { tokens } = segment;
     let i = 0;
-    while (i < tokens.length && ENV_PREFIX.test(tokens[i].text)) i++;
+    while (i < tokens.length) {
+      const t = tokens[i];
+      if (t === undefined || !ENV_PREFIX.test(t.text)) break;
+      i++;
+    }
     const head = tokens[i];
     if (!head || head.unsafe) continue;
     if (CWD_CHANGING_COMMANDS.has(commandName(head.text).toLowerCase())) {
@@ -315,12 +369,13 @@ function extractReadCandidates(command) {
     if (cwdAmbiguous || segment.unsafe) continue;
     const spec = READ_COMMANDS[commandName(head.text)];
     if (!spec) continue;
-    const operands = [];
+    const operands: string[] = [];
     let optionsEnded = false;
     let skipValue = false;
     let abandoned = false;
     for (let j = i + 1; j < tokens.length; j++) {
       const tok = tokens[j];
+      if (tok === undefined) break;
       if (skipValue) {
         skipValue = false;
         continue;
@@ -347,10 +402,13 @@ function extractReadCandidates(command) {
   return [...new Set(candidates)];
 }
 
-function evaluateShell(request, opts) {
+async function evaluateShell(
+  request: ShellRequest,
+  opts: EvaluateOptions | undefined,
+): Promise<Verdict> {
   const candidates = extractReadCandidates(request.command);
   for (const candidate of candidates) {
-    const verdict = evaluateFileRead(
+    const verdict = await evaluateFileRead(
       {
         kind: "file-read",
         path: candidate,
@@ -371,23 +429,16 @@ function evaluateShell(request, opts) {
   return { decision: "allow" };
 }
 
-function evaluate(request, opts) {
+export async function evaluate(request: unknown, opts?: EvaluateOptions): Promise<Verdict> {
   if (!request || typeof request !== "object") {
     return { decision: "allow" };
   }
-  if (request.kind === "file-read" && typeof request.path === "string" && request.path !== "") {
-    return evaluateFileRead(request, opts);
+  const req = request as { kind?: unknown; path?: unknown; command?: unknown };
+  if (req.kind === "file-read" && typeof req.path === "string" && req.path !== "") {
+    return evaluateFileRead(request as FileReadRequest, opts);
   }
-  if (request.kind === "shell" && typeof request.command === "string" && request.command !== "") {
-    return evaluateShell(request, opts);
+  if (req.kind === "shell" && typeof req.command === "string" && req.command !== "") {
+    return evaluateShell(request as ShellRequest, opts);
   }
   return { decision: "allow" };
 }
-
-module.exports = {
-  DEFAULT_THRESHOLD,
-  readStdin,
-  threshold,
-  cheaperCommand,
-  evaluate,
-};

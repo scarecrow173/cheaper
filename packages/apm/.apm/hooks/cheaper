@@ -1,0 +1,51 @@
+#!/bin/sh
+# cheaper platform launcher（issue #71 / DESIGN-034z1EgnQwax4VamK2xmdT）。
+# business logic を持たず、platform を判定して sibling executable に
+# argv をそのまま exec 委譲する。未対応 platform や executable 不在時は
+# stderr に通知して非 0 で終了する（hook の silent no-op を防ぐ）。
+
+set -eu
+
+self_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+case "$(uname -s)" in
+  Linux) os=linux ;;
+  Darwin) os=darwin ;;
+  MINGW*|MSYS*|CYGWIN*) os=win32 ;;
+  *)
+    echo "cheaper launcher: unsupported OS: $(uname -s)" >&2
+    exit 1
+    ;;
+esac
+
+case "$(uname -m)" in
+  x86_64|amd64) arch=x64 ;;
+  aarch64|arm64) arch=arm64 ;;
+  *)
+    echo "cheaper launcher: unsupported arch: $(uname -m)" >&2
+    exit 1
+    ;;
+esac
+
+if [ "$os" = "win32" ]; then
+  exe="$self_dir/cli/bin/win32-x64/cheaper.exe"
+else
+  exe="$self_dir/cli/bin/$os-$arch/cheaper"
+fi
+
+if [ ! -f "$exe" ]; then
+  echo "cheaper launcher: no executable for $os-$arch (expected $exe)" >&2
+  exit 1
+fi
+
+# A consumer clone without git-lfs smudge ships the pointer text instead
+# of the binary. Detect it and fail loudly — executing a pointer would
+# surface as an opaque "cannot execute" error (or worse, silently pass).
+if head -c 44 "$exe" 2>/dev/null | grep -q "version https://git-lfs"; then
+  echo "cheaper launcher: $exe is a Git LFS pointer, not the binary." >&2
+  echo "  install git-lfs and run 'git lfs pull' in the package cache," >&2
+  echo "  or re-run 'apm install' after 'git lfs install'." >&2
+  exit 1
+fi
+
+exec "$exe" "$@"

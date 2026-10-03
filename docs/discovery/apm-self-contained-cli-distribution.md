@@ -25,6 +25,7 @@ relations:
   superseded-by: []
   related:
     - "../specs/apm-self-contained-cli-distribution.md"
+    - "./standalone-cheaper-executable-distribution-without-node-js.md"
   refines: []
   refined-by: []
   derives-from:
