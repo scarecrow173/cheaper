@@ -25,6 +25,7 @@ relations:
   related:
     - "worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md"
     - "pi-execution-engine.md"
+    - "pi-sibling-tool-call-parallelism-inside-workers.md"
   refines: []
   refined-by: []
   derives-from:

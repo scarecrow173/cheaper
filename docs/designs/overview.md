@@ -27,6 +27,7 @@ relations:
     - "sea-executable-build-pipeline-and-embedded-resource-resolution.md"
     - "apm-executable-payload-layout-and-platform-launchers.md"
     - "cheaper-hook-subcommands-replacing-node-based-hook-adapters.md"
+    - "pi-sibling-tool-call-parallelism-inside-workers.md"
   refines: []
   refined-by: []
   derives-from:
@@ -104,3 +105,7 @@ relations:
 - [SEA executable build pipeline と embedded resource 解決](./sea-executable-build-pipeline-and-embedded-resource-resolution.md)
 - [APM executable payload layout と platform launcher](./apm-executable-payload-layout-and-platform-launchers.md)
 - [cheaper hook subcommand 化による hook の脱 Node](./cheaper-hook-subcommands-replacing-node-based-hook-adapters.md)
+
+## Worker 内並列性（issue #55）
+
+- [Pi sibling tool-call parallelism inside Workers](./pi-sibling-tool-call-parallelism-inside-workers.md)

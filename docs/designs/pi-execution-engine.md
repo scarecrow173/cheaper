@@ -26,6 +26,7 @@ relations:
     - "worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md"
     - "workspace-filesystem-boundary-sandboxed-tools.md"
     - "model-resolver.md"
+    - "pi-sibling-tool-call-parallelism-inside-workers.md"
   refines: []
   refined-by: []
   derives-from:
