@@ -1,6 +1,8 @@
 name: release
 
 # 手動実行のみ。自動 trigger は設けない（PLAN-034z2bk7AEzZ66Mt0uXCyJ）。
+# payload binary の再生成は build-executables workflow を手動 dispatch
+# して行う（docs/guides/release.md の手順参照）。
 on:
   workflow_dispatch:
     inputs:
@@ -14,48 +16,30 @@ permissions:
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_REPO: ${{ github.repository }}
 
 jobs:
-  build-executable:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            target: win32-x64
-            artifact: cheaper-windows-x64.exe
-            payload: packages/apm/.apm/hooks/cli/bin/win32-x64/cheaper.exe
-          - os: ubuntu-latest
-            target: linux-x64
-            artifact: cheaper-linux-x64
-            payload: packages/apm/.apm/hooks/cli/bin/linux-x64/cheaper
-          - os: ubuntu-24.04-arm
-            target: linux-arm64
-            artifact: cheaper-linux-arm64
-            payload: packages/apm/.apm/hooks/cli/bin/linux-arm64/cheaper
-    runs-on: ${{ matrix.os }}
+  build-executables:
+    uses: ./.github/workflows/build-executables.yml
+    with:
+      ref: ${{ inputs.tag }}
+      strict_freshness: true
+
+  # Release 作成・upload は単一 job に集約する。matrix job がそれぞれ
+  # `gh release create` を試みると初回実行で duplicate create race が
+  # 起き、また一部 platform だけ先に公開される partial release に
+  # なり得るため。
+  publish-release:
+    needs: build-executables
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          # workflow_dispatch では tag を checkout。pull_request では
-          # 空文字となり event default（merge commit）が使われる。
           ref: ${{ inputs.tag }}
-          # payload executable は Git LFS 管理。freshness check が
-          # pointer ではなく実 binary と比較できるよう smudge する。
-          lfs: true
-
-      - uses: jdx/mise-action@v4
-        with:
-          minimum_release_age: 7d
-          install_args: "--locked"
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
 
       # tag が packages/cli/package.json の version と一致しなければ fail。
       # version 宣言 drift のある artifact を release しないためのゲート。
       - name: Verify tag matches package version
-        if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           pkg_version="$(node -p "require('./packages/cli/package.json').version")"
@@ -64,53 +48,6 @@ jobs:
             exit 1
           fi
 
-      - run: node scripts/build-executable.mjs --target ${{ matrix.target }}
-
-      - name: Smoke test executable
-        shell: bash
-        run: |
-          exe="dist/sea/${{ matrix.artifact }}"
-          reported="$("${exe}" --version)"
-          pkg_version="$(node -p "require('./packages/cli/package.json').version")"
-          if [ "${reported}" != "${pkg_version}" ]; then
-            echo "executable --version ${reported} does not match package version ${pkg_version}" >&2
-            exit 1
-          fi
-          "${exe}" models > /dev/null
-
-      # APM payload に同梱された executable が、この pipeline の build
-      # 結果と同一 artifact であることを byte 比較で保証する
-      # （stale / 別物の binary や payload 未同梱でも検出できる）。
-      # workflow_dispatch（正式 release 経路）でのみ strict に検査する。
-      - name: Verify committed APM payload matches built artifact
-        if: github.event_name == 'workflow_dispatch'
-        shell: bash
-        run: |
-          payload="${{ matrix.payload }}"
-          if [ ! -f "${payload}" ]; then
-            echo "no committed payload at ${payload} for target ${{ matrix.target }}" >&2
-            exit 1
-          fi
-          if ! cmp -s "dist/sea/${{ matrix.artifact }}" "${payload}"; then
-            echo "committed payload ${payload} differs from the freshly built artifact" >&2
-            echo "regenerate payload binaries via this workflow and commit them through Git LFS" >&2
-            exit 1
-          fi
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sea-${{ matrix.target }}
-          path: dist/sea/${{ matrix.artifact }}
-
-  # Release 作成・upload は単一 job に集約する。matrix job がそれぞれ
-  # `gh release create` を試みると初回実行で duplicate create race が
-  # 起き、また一部 platform だけ先に公開される partial release に
-  # なり得るため。
-  publish-release:
-    if: github.event_name == 'workflow_dispatch'
-    needs: build-executable
-    runs-on: ubuntu-latest
-    steps:
       - uses: actions/download-artifact@v4
         with:
           pattern: sea-*

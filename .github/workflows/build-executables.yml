@@ -1,0 +1,106 @@
+name: build-executables
+
+# 3 target の SEA executable を build して artifact として取得する
+# reusable workflow。2 つの呼び出し方がある:
+#
+# - workflow_call（release.yml から）: release tag を build し、
+#   strict_freshness で committed APM payload との byte 一致を強制する
+# - workflow_dispatch（手動）: 任意 ref から binary を生成する。
+#   version bump 後に APM payload を作り直す正式経路であり、
+#   得られた artifact を `build-apm-bundle.mjs --exe-dir` で
+#   payload に配置して commit する（docs/guides/release.md 参照）
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Build 対象の ref（branch/tag/SHA）"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+      strict_freshness:
+        description: "committed payload との byte 比較を hard-fail させる"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build-executable:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win32-x64
+            artifact: cheaper-windows-x64.exe
+            payload: packages/apm/.apm/hooks/cli/bin/win32-x64/cheaper.exe
+          - os: ubuntu-latest
+            target: linux-x64
+            artifact: cheaper-linux-x64
+            payload: packages/apm/.apm/hooks/cli/bin/linux-x64/cheaper
+          - os: ubuntu-24.04-arm
+            target: linux-arm64
+            artifact: cheaper-linux-arm64
+            payload: packages/apm/.apm/hooks/cli/bin/linux-arm64/cheaper
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          # payload executable は Git LFS 管理。freshness check が
+          # pointer ではなく実 binary と比較できるよう smudge する。
+          lfs: true
+
+      - uses: jdx/mise-action@v4
+        with:
+          minimum_release_age: 7d
+          install_args: "--locked"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - run: node scripts/build-executable.mjs --target ${{ matrix.target }}
+
+      - name: Smoke test executable
+        shell: bash
+        run: |
+          exe="dist/sea/${{ matrix.artifact }}"
+          reported="$("${exe}" --version)"
+          pkg_version="$(node -p "require('./packages/cli/package.json').version")"
+          if [ "${reported}" != "${pkg_version}" ]; then
+            echo "executable --version ${reported} does not match package version ${pkg_version}" >&2
+            exit 1
+          fi
+          "${exe}" models > /dev/null
+
+      # APM payload に同梱された executable が、この pipeline の build
+      # 結果と同一 artifact であることを byte 比較で保証する。
+      # strict_freshness（release 経路）では mismatch/未同梱を hard-fail、
+      # 手動 binary 採取では warning に留める（そちらは新 binary を
+      # 作るための経路であり、committed payload の差分は前提になる）。
+      - name: Compare committed APM payload with built artifact
+        shell: bash
+        env:
+          STRICT: ${{ inputs.strict_freshness }}
+        run: |
+          payload="${{ matrix.payload }}"
+          strict() { [ "${STRICT}" = "true" ]; }
+          flag() {
+            if strict; then echo "$1" >&2; exit 1;
+            else echo "::warning::$1"; exit 0; fi
+          }
+          if [ ! -f "${payload}" ]; then
+            flag "no committed payload at ${payload} for target ${{ matrix.target }}"
+          fi
+          if ! cmp -s "dist/sea/${{ matrix.artifact }}" "${payload}"; then
+            flag "committed payload ${payload} differs from the freshly built artifact — regenerate via this workflow and commit through Git LFS"
+          fi
+          echo "payload ${payload} is byte-identical to the built artifact"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sea-${{ matrix.target }}
+          path: dist/sea/${{ matrix.artifact }}
