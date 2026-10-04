@@ -26,6 +26,10 @@ on:
         required: false
         type: boolean
         default: false
+      expected_version:
+        description: "呼出元が固定したversion（不在なら従来経路を維持）"
+        required: false
+        type: string
 
 jobs:
   build-executable:
@@ -58,6 +62,14 @@ jobs:
         with:
           minimum_release_age: 7d
           install_args: "--locked"
+
+      - name: Verify expected release version before build
+        if: ${{ inputs.expected_version != '' }}
+        shell: bash
+        env:
+          EXPECTED_VERSION: ${{ inputs.expected_version }}
+        run: |
+          node -e 'if (require("./packages/cli/package.json").version !== process.env.EXPECTED_VERSION) throw new Error("expected release version mismatch");'
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build

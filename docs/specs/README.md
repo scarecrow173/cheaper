@@ -32,6 +32,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7g9pm5z8s2 | Ollama real-provider smoke verification | implemented | [ollama-real-provider-smoke-verification.md](./ollama-real-provider-smoke-verification.md) |
 | SPEC-034r05iHK8bA7guAnTdpdi | Real-provider E2E for built-in workers via Ollama container | implemented | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | SPEC-034zSPnVDi6fpHVc9ELgLW | Invocation-scoped OperationManager lifecycle | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
+| SPEC-034zSQV3zqlEncx2GoLKSR | One-dispatch release workflow | approved | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
 | SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |
 | SPEC-034r2qodmutbif9L0DLskN | Correct provider and auth documentation to match runtime capabilities | implemented | [provider-auth-docs-runtime-sync.md](./provider-auth-docs-runtime-sync.md) |
 | SPEC-034r05iHK8bA7gz3bFqgXr | Provider-only registration layer without Pi extensions | implemented | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |

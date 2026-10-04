@@ -31,6 +31,7 @@ Directory: `docs/adr`
 | ADR-034r05iHlWosDpLI5iJRbx | Model tier 抽象と Model Resolver | accepted | [model-tier-model-resolver.md](./model-tier-model-resolver.md) |
 | ADR-034rzTJYDRmre6D5OS8HDW | Normalize native hook payloads to a canonical routing request via per-target adapters and a shared policy module | accepted | [normalize-native-hook-payloads-to-a-canonical-routing-request-via-per-target-ada.md](./normalize-native-hook-payloads-to-a-canonical-routing-request-via-per-target-ada.md) |
 | ADR-034r05iHrZUE6W2tpzbgKv | Normalize repair abort grace, provider failure classification, and agent-execution timeout anchor | accepted | [normalize-repair-abort-grace-provider-failure-classification-and-agent-execution.md](./normalize-repair-abort-grace-provider-failure-classification-and-agent-execution.md) |
+| ADR-034zThoekpLqCcHhYO4MPe | One-dispatch release workflow | accepted | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
 | ADR-034r05iHlWosDpKs4eBT59 | one-shot JSON-first CLI プロセスモデル | accepted | [one-shot-json-first-cli.md](./one-shot-json-first-cli.md) |
 | ADR-034zT6bqTxOvK1nP0ELSyR | OperationManager の cancel 要求と実 settle を分離する | accepted | [operation-manager-settlement.md](./operation-manager-settlement.md) |
 | ADR-034r05iHrZUE6Wn59hpaOg | Pi persistent state は userConfigDir/pi 配下へ ModelRuntime.create の明示 path で集約する | accepted | [pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md](./pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md) |

@@ -24,6 +24,7 @@ relations:
   supersedes: []
   superseded-by: []
   related:
+    - "./one-dispatch-release-workflow.md"
     - "./distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"
     - "../specs/standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md"
   refines: []

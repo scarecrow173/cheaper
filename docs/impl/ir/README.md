@@ -38,6 +38,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpG0UOqdhK | Devin Local provider plugin (PLAN-034r05iHK8bA7g45xvDT4a) | completed | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
 | IMPL-03kR39KNEJ13KN9NwesVWy | distributed skill and parent-agent guide sync (PLAN-000004taRcf5XDevo8jYJz) | completed | [distributed-skill-and-parent-agent-guide-sync.md](./distributed-skill-and-parent-agent-guide-sync.md) |
 | IMPL-034z57kKSICF9N4av5oZ0f | docs for executable hook invocation | completed | [docs-for-executable-hook-invocation.md](./docs-for-executable-hook-invocation.md) |
+| IMPL-034zUCrFChJvE5zTGpzwnI | Document and verify one-dispatch release migration | completed | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
 | IMPL-034zRDctzhtdFQ6yVmTUAg | Document launcher distribution and verify acquisition | completed | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
 | IMPL-034rArrzNyFlCc39TNLU1X | Extend usage.jsonl run record with savings section | completed | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | IMPL-034z1ST2V3s2UsM4Mi2S87 | Extract shared esbuild bundle helper | completed | [extract-shared-esbuild-bundle-helper.md](./extract-shared-esbuild-bundle-helper.md) |
@@ -62,6 +63,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zTprBbdY0tsPiphc2wE | Operation manager state lifecycle | completed | [operation-manager-state-lifecycle.md](./operation-manager-state-lifecycle.md) |
 | IMPL-034r05iHy2gdnpDWUS1IzV | Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg) | completed | [pi-state-under-userconfigdir-pi.md](./pi-state-under-userconfigdir-pi.md) |
 | IMPL-034z57iY91Zc8YChIAuBty | port routing policy to cli hook module | completed | [port-routing-policy-to-cli-hook-module.md](./port-routing-policy-to-cli-hook-module.md) |
+| IMPL-034zU5o0mgVqx5ZwBdxc0L | Prepare one-dispatch release artifacts | completed | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
 | IMPL-034r2qodykm6M1ReYSbIkc | provider/auth guide runtime sync (PLAN-034r2qodyxvN3g3xktwPOF) | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | IMPL-034r05iHy2gdnpELwCtyPv | Provider-only registration layer (PLAN-034r05iHK8bA7g2BMsfjFu) | completed | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
 | IMPL-034z57lgR0CQbaWKMcKP6v | remove legacy js adapters and final verify | completed | [remove-legacy-js-adapters-and-final-verify.md](./remove-legacy-js-adapters-and-final-verify.md) |
@@ -84,6 +86,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |
 | IMPL-034zTIoMYLPhPUbedvunjx | wire-workflow-interface | completed | [wire-workflow-interface.md](./wire-workflow-interface.md) |
+| IMPL-034zUpcuJnZnznZ79UL3Q2 | Wire one-dispatch release publication | completed | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
 | IMPL-034rC4j788MZLcUE8xHHP2 | Worker workload profile と auto tier classifier の core 実装 | completed | [worker-workload-profile-auto-tier-classifier-core.md](./worker-workload-profile-auto-tier-classifier-core.md) |
 | IMPL-034zUfCug3Fz5ZzcrI1yhg | Workflow resource inference compilation | completed | [workflow-resource-inference-compilation.md](./workflow-resource-inference-compilation.md) |
 | IMPL-034zTWHPv92Mp7Ql9gnE5d | Workflow resource inference implementation | completed | [workflow-resource-inference-implementation.md](./workflow-resource-inference-implementation.md) |
