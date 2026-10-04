@@ -56,10 +56,10 @@ version 固定、公開整合性検査、offline/proxy 対応、stdin/argv/exit 
 
 ## Considered Options
 
-1. version 固定 Release asset を native downloader で取得して user cache に配置（採用）。
-2. LFS sibling のみ維持（取得 fallback を提供できない）。
-3. Release bundle を consumer が手動 download/install（remote URL 制約による 2 step）。
-4. Node downloader（Node 非依存要件に反する）。
+- version 固定 Release asset を native downloader で取得して user cache に配置（採用）。
+- LFS sibling のみ維持（取得 fallback を提供できない）。
+- Release bundle を consumer が手動 download/install（remote URL 制約による 2 step）。
+- Node downloader（Node 非依存要件に反する）。
 
 ## Decision Outcome
 

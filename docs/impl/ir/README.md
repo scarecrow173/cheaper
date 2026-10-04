@@ -9,7 +9,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z57jprjlY9PUYkFPIdl | add cheaper hook command with target adapters | completed | [add-cheaper-hook-command-with-target-adapters.md](./add-cheaper-hook-command-with-target-adapters.md) |
 | IMPL-034rArrYQRvXbeSRXD6HQQ | Add cheaper usage aggregation command | completed | [add-cheaper-usage-aggregation-command.md](./add-cheaper-usage-aggregation-command.md) |
 | IMPL-034zCh129JMqV5Z5ta5wG6 | Add deterministic sibling-parallelism pin tests to runtime-pi | completed | [add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md](./add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md) |
-| IMPL-034zQZYpiexj1ILiP9NuIH | Add launcher acquisition contract tests | in-progress | [add-launcher-acquisition-contract-tests.md](./add-launcher-acquisition-contract-tests.md) |
+| IMPL-034zQZYpiexj1ILiP9NuIH | Add launcher acquisition contract tests | completed | [add-launcher-acquisition-contract-tests.md](./add-launcher-acquisition-contract-tests.md) |
 | IMPL-034rAtxE2k5HhaePoxBbI3 | Add --model flag and models command | completed | [add-model-flag-and-models-command.md](./add-model-flag-and-models-command.md) |
 | IMPL-034rzZLq1nbnzN4CvDSAk5 | Add model pricing metadata layer and bundled data | completed | [add-model-pricing-metadata-layer-and-bundled-data.md](./add-model-pricing-metadata-layer-and-bundled-data.md) |
 | IMPL-034rAiJgmYQKgmJC2mF9zN | Add models.yaml exclude with union merge | completed | [add-models-yaml-exclude-with-union-merge.md](./add-models-yaml-exclude-with-union-merge.md) |
@@ -33,6 +33,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpG0UOqdhK | Devin Local provider plugin (PLAN-034r05iHK8bA7g45xvDT4a) | completed | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
 | IMPL-03kR39KNEJ13KN9NwesVWy | distributed skill and parent-agent guide sync (PLAN-000004taRcf5XDevo8jYJz) | completed | [distributed-skill-and-parent-agent-guide-sync.md](./distributed-skill-and-parent-agent-guide-sync.md) |
 | IMPL-034z57kKSICF9N4av5oZ0f | docs for executable hook invocation | completed | [docs-for-executable-hook-invocation.md](./docs-for-executable-hook-invocation.md) |
+| IMPL-034zRDctzhtdFQ6yVmTUAg | Document launcher distribution and verify acquisition | completed | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
 | IMPL-034rArrzNyFlCc39TNLU1X | Extend usage.jsonl run record with savings section | completed | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | IMPL-034z1ST2V3s2UsM4Mi2S87 | Extract shared esbuild bundle helper | completed | [extract-shared-esbuild-bundle-helper.md](./extract-shared-esbuild-bundle-helper.md) |
 | IMPL-034r05iHy2gdnpwO94elRp | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
@@ -44,7 +45,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpgYK6Sj6D | Implement @cheaper/core (PLAN-034r05iHy2gdnpHMZZk4ZU) | completed | [implement-cheaper-core-plan-0001.md](./implement-cheaper-core-plan-0001.md) |
 | IMPL-034r05iHy2gdnpj3u9aHj7 | Implement @cheaper/runtime-pi (PLAN-034r05iHy2gdnpIrX0mTIb) | completed | [implement-cheaper-runtime-pi-plan-0002.md](./implement-cheaper-runtime-pi-plan-0002.md) |
 | IMPL-034rAiKtIOGy4Ja8gzLN0C | Implement classification pipeline and explicit resolver | completed | [implement-classification-pipeline-and-explicit-resolver.md](./implement-classification-pipeline-and-explicit-resolver.md) |
-| IMPL-034zR9OQeNgEdCN2OMdt8I | Implement native launcher acquisition and hook routing | in-progress | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
+| IMPL-034zR9OQeNgEdCN2OMdt8I | Implement native launcher acquisition and hook routing | completed | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |

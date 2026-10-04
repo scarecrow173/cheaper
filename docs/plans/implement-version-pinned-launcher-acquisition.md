@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zQHj1WyOgBNLGbDaFY8"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "Implement version-pinned launcher acquisition"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -116,3 +116,6 @@ inline 実行。共有境界を持つため独立 dispatch は不要。design/pl
 
 ## 2026-10-04 coordinator verification policy update
 4 worker同時canonical checkによるhost contentionのため、canonical check deferred to coordinator merge run。workerはfocused suite GREEN、失敗CLI file単独rerun、lint/typecheck/build passとdocs/IR/commitを完了する。mise run checkの成功を主張しない。
+
+## Completion
+focused suite45passed/5skipped、existing e2e1passed/1skipped、lint/typecheck/build pass。owned doc audit blocking0、IR audit findings0。graph exit-audit全prerequisite passを確認。canonical checkは明示的にcoordinator merge runへdefer。

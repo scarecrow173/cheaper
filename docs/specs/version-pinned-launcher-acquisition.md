@@ -76,12 +76,12 @@ launcher 取得/version/cache/整合性/同時初回起動、PowerShell hook 経
 
 ## Acceptance Criteria
 
-- [ ] AC1: sh/pwsh の sibling/cache hit/cache miss（stub Release）を executable 経路で検証。
-- [ ] AC2: 破損/不一致/中断 download、wrong version、unsupported platform、cache 書込不可は stderr + 非 0、通常失敗後に partial を残さない。
-- [ ] AC3: 同時 2 process の first-run は binary/manifest の取得各 1 回で両 process 成功。
-- [ ] AC4: hook event + stdin JSON を使い stdin passthrough と exit code を検証し、PowerShell hooks.json に exe 直呼びがない。
+- [x] AC1: sh/pwsh の sibling/cache hit/cache miss（stub Release）を executable 経路で検証。
+- [x] AC2: 破損/不一致/中断 download、wrong version、unsupported platform、cache 書込不可は stderr + 非 0、通常失敗後に partial を残さない。
+- [x] AC3: 同時 2 process の first-run は binary/manifest の取得各 1 回で両 process 成功。
+- [x] AC4: hook event + stdin JSON を使い stdin passthrough と exit code を検証し、PowerShell hooks.json に exe 直呼びがない。
 - [ ] AC5: 現行 sibling LFS payload の既存 deployed e2e と mise run check が pass。
-- [ ] AC6: guide と終端 document chain の audit が pass。
+- [x] AC6: guide と終端 document chain の audit が pass。
 
 ## Deferred Design Concerns
 
@@ -90,3 +90,6 @@ launcher 取得/version/cache/整合性/同時初回起動、PowerShell hook 経
 ## Sources and Relations
 
 issue #73 Triage と discovery に基づく。SPEC-034z14nGIf6fXRtTskkrk8 の Node 非依存 standalone 要件を refine する。
+
+## Verification scope update 2026-10-04
+coordinator直接指示によりcanonical check deferred to coordinator merge run。AC5の既存deployed e2eはpass、worker範囲はfocused suite GREENとlint/typecheck/build pass。mise run checkのpassは未主張で、coordinatorのserial merge runで確認する。

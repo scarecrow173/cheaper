@@ -20,7 +20,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpsYVkvsPX | Add e2e tests for non-execution CLI paths | done | [add-e2e-tests-for-non-execution-cli-paths.md](./add-e2e-tests-for-non-execution-cli-paths.md) |
 | TASK-034r05iHQeQpDpu1iPmr1q | Add fake stream hook and e2e execution tests | done | [add-fake-stream-hook-and-e2e-execution-tests.md](./add-fake-stream-hook-and-e2e-execution-tests.md) |
 | TASK-034z52KS4mSEHAIf28JHuj | add hook contract tests and port existing adapter e2e | done | [add-hook-contract-tests-and-port-existing-adapter-e2e.md](./add-hook-contract-tests-and-port-existing-adapter-e2e.md) |
-| TASK-034zQTNEJMgP0EgzXJbGtM | Add launcher acquisition contract tests | in-progress | [add-launcher-acquisition-contract-tests.md](./add-launcher-acquisition-contract-tests.md) |
+| TASK-034zQTNEJMgP0EgzXJbGtM | Add launcher acquisition contract tests | done | [add-launcher-acquisition-contract-tests.md](./add-launcher-acquisition-contract-tests.md) |
 | TASK-034rzWI7U1txBCpGr7WZaJ | Add model pricing metadata layer and bundled data | done | [add-model-pricing-metadata-layer.md](./add-model-pricing-metadata-layer.md) |
 | TASK-034rzWIEgBvwU5S4KYY68N | Add models.yaml exclude with union merge | done | [add-models-config-exclude.md](./add-models-config-exclude.md) |
 | TASK-034r05iHQeQpDpySHHPmpY | Add Ollama docker-compose and document container usage in AGENTS.md | done | [add-ollama-docker-compose-and-document-container-usage-in-agents-md.md](./add-ollama-docker-compose-and-document-container-usage-in-agents-md.md) |
@@ -67,7 +67,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHWkNF7zPe6DL42d | Devin provider docs, status sync, bundle, and final verification | done | [devin-docs-status-sync-bundle-and-final-verification.md](./devin-docs-status-sync-bundle-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNWvK4AnL | Devin provider plugin registration and tests | done | [devin-provider-plugin-registration-and-tests.md](./devin-provider-plugin-registration-and-tests.md) |
 | TASK-034r05iHWkNF7zLmXY8W9D | Update docs, regenerate bundle, and run final verification | done | [docs-status-sync-bundle-and-final-verification.md](./docs-status-sync-bundle-and-final-verification.md) |
-| TASK-034zQTXMNDaUeqIR3aCRNf | Document launcher distribution and verify acquisition | todo | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
+| TASK-034zQTXMNDaUeqIR3aCRNf | Document launcher distribution and verify acquisition | done | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
@@ -98,7 +98,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7hj3YNSFb8 | Implement ModelRuntime adapter to core model shape | done | [implement-modelruntime-adapter-to-core-model-shape.md](./implement-modelruntime-adapter-to-core-model-shape.md) |
 | TASK-034r05iHK8bA7gX5ANC9Qn | Implement models.yaml config schema and merge | done | [implement-models-yaml-config-schema-and-merge.md](./implement-models-yaml-config-schema-and-merge.md) |
 | TASK-034r05iHK8bA7h3EuEqFny | Implement mutation journal | done | [implement-mutation-journal.md](./implement-mutation-journal.md) |
-| TASK-034zQTSDQA908MNdv5Qe8v | Implement native launcher acquisition and hook routing | todo | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
+| TASK-034zQTSDQA908MNdv5Qe8v | Implement native launcher acquisition and hook routing | done | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
 | TASK-034r05iHQeQpDqHVQkd8t7 | Implement real-provider worker e2e and verify against live Ollama | done | [implement-ollama-real-provider-e2e.md](./implement-ollama-real-provider-e2e.md) |
 | TASK-034r05iHK8bA7hgqNrs11u | Implement output repair session | done | [implement-output-repair-session.md](./implement-output-repair-session.md) |
 | TASK-034r05iHK8bA7he1WXwcBs | Implement Pi session creation with maxTokens injection | done | [implement-pi-session-creation-with-maxtokens-injection.md](./implement-pi-session-creation-with-maxtokens-injection.md) |
