@@ -59,6 +59,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | completed | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
+| IMPL-034A6i3cxbZXoHqDxhuyjB | Migrate native workflows and release guidance | in-progress | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | IMPL-034zTprBbdY0tsPiphc2wE | Operation manager state lifecycle | completed | [operation-manager-state-lifecycle.md](./operation-manager-state-lifecycle.md) |
 | IMPL-034r05iHy2gdnpDWUS1IzV | Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg) | completed | [pi-state-under-userconfigdir-pi.md](./pi-state-under-userconfigdir-pi.md) |
@@ -76,17 +77,19 @@ Directory: `docs/impl/ir`
 | IMPL-034z3CE24rUsOGqD0BfeqZ | track executables with git lfs | completed | [track-executables-with-git-lfs.md](./track-executables-with-git-lfs.md) |
 | IMPL-034r05iHy2gdnpx0u8vJaz | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | IMPL-034z1STqpGaGE7SWSnCLo3 | Unify packageVersion on builtinDir | completed | [unify-packageversion-on-builtindir.md](./unify-packageversion-on-builtindir.md) |
+| IMPL-034zXB37yW53DP9xUVf57j | Untrack payload and validate source assets | in-progress | [untrack-payload-and-validate-source-assets.md](./untrack-payload-and-validate-source-assets.md) |
 | IMPL-034z3CEqPwEgMOcgeJ69S5 | update cheaper-usage guidance | completed | [update-cheaper-usage-guidance.md](./update-cheaper-usage-guidance.md) |
 | IMPL-034rAty3hDG6bnv9waKpx5 | Update guides for pricing catalog | completed | [update-guides-for-pricing-catalog.md](./update-guides-for-pricing-catalog.md) |
 | IMPL-034z2rYSzkxUjQSkAXW3IP | update release guide | completed | [update-release-guide.md](./update-release-guide.md) |
 | IMPL-034r2HoPHxqYBy0c98U70r | Align usage.jsonl recording-scope docs (PLAN-034r2puWPUDxxDyfTSffZR) | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
 | IMPL-034r05iHy2gdnpCk8YlDWb | User-facing documentation information architecture (PLAN-034r05iHE1FbkpeFEXECDx) | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
+| IMPL-034A6mdUuMzX4DtyfiRMjx | Verify consumer acquisition and close migration | in-progress | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
 | IMPL-034z3CEPSQBJaEVBVxxzmL | verify launchers and apm payload | completed | [verify-launchers-and-apm-payload.md](./verify-launchers-and-apm-payload.md) |
 | IMPL-034z2rZiB6WUNTje88kRt1 | verify release workflow | completed | [verify-release-workflow.md](./verify-release-workflow.md) |
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |
-| IMPL-034zTIoMYLPhPUbedvunjx | wire-workflow-interface | completed | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | IMPL-034zUpcuJnZnznZ79UL3Q2 | Wire one-dispatch release publication | completed | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
+| IMPL-034zTIoMYLPhPUbedvunjx | wire-workflow-interface | completed | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | IMPL-034rC4j788MZLcUE8xHHP2 | Worker workload profile と auto tier classifier の core 実装 | completed | [worker-workload-profile-auto-tier-classifier-core.md](./worker-workload-profile-auto-tier-classifier-core.md) |
 | IMPL-034zUfCug3Fz5ZzcrI1yhg | Workflow resource inference compilation | completed | [workflow-resource-inference-compilation.md](./workflow-resource-inference-compilation.md) |
 | IMPL-034zTWHPv92Mp7Ql9gnE5d | Workflow resource inference implementation | completed | [workflow-resource-inference-implementation.md](./workflow-resource-inference-implementation.md) |

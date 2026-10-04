@@ -6,9 +6,10 @@ APM package の `cheaper`（POSIX sh）/ `cheaper.ps1`（Windows）は、sibling
 Node は不要。`latest` を参照せず、取得/検証失敗は stderr の診断と非0 exit で通知する。
 
 取得契約は [詳細設計](../designs/version-pinned-launcher-acquisition.md) を参照。
-LFS executable は #73-C のgit payload/LFS/CI移行まで保持する。
+Git source は platform executable を含まない。launcher と小さい CLI asset を install し、
+固定 Release から取得する。Git LFS の既存履歴は保持するが、新 binary は Git に追加しない。
 `release-acquisition` の1dispatchでraw3 / `SHA256SUMS` / APM archiveを公開する
-（[release手順](release.md)）。旧 `release` workflowはmanifestを付けないので、
+（[release手順](release.md)）。旧 `release` workflow は拒否 job として廃止済み。
 checksum manifest が公開されていない旧Releaseへの初回取得はfail closedする。
 
 ## Release archive を local path で install
@@ -132,13 +133,39 @@ preseed 後は network 不要だが、version.json と writable cache parent は
 
 APM 0.28.0 の Copilot deploy は `*.json` を除外し、version.json/package.json が届かない。
 sibling 不在かつ version.json 不在の場合は取得も cache 起動もせず明示失敗する。
-Copilot は現在 sibling を維持する必要があり、#73-C で payload を削除する前に
-deploy 可能な version 解決源を別変更で補完する。offline preseed でもこの制約は変わらない。
+Git-based binary-free acquisition の対象は Windsurf / Claude / Codex / Cursor。
+Copilot は release archive または local build の sibling を保持する。Copilot で
+binary-free install を有効化するには JSON deploy gap を別変更で先に解消する必要がある。
+offline preseed でもこの制約は変わらない。
 
 root apm.yml は development-only で cheaper 自身の hook を deploy しない。
 dev consumer は local SEA build の host executable を対応 sibling へ配置して使う。
 未 release の package version に Release download fallback を期待しない。
-local sibling を手動で取り除く移行や release 手順の変更はこの guide の対象外。
+local output は `cli/bin/*/` の ignore 対象。source checker は foreign binary の存在や
+byte 一致を要求せず、native build/smoke が executable の version・実行を検証する。
+
+## Git-based consumer の移行と復旧
+
+1. 新経路の初回公開はローカル検証だけでは未実証。移行先の immutable tag について
+   全 5 Release asset と 3 native smoke の成功を確認するまで切り替えない。
+2. 稼働中の consumer manifest/ref と deploy directory 全体（sibling を含む）を退避する。
+3. Windsurf / Claude / Codex / Cursor は APM dependency をその tag/ref に更新し、
+   `apm install --target <target>` を再実行する。version.json の deploy を確認する。
+4. 古い deploy に sibling が残った場合は、対応する
+   `cli/bin/<platform>/cheaper[.exe]` だけを除去し、launcher acquisition を使う。
+   Copilot にはこの除去手順を適用しない。
+5. 初回 hook は network/proxy と writable cache を必要とする。offline 環境は同 Release の
+   pair を preseed、または release archive を local path install する。
+   warm verified cache は network を使わない。cold offline は Release/SHA256SUMS、
+   proxy/mirror、offline preseed を示す stderr 診断と非 0 exit を返す。
+6. install/acquisition/hook が失敗したら、退避した manifest/ref と deploy directory を復元する。
+   maintainer は新 immutable version/tag で fix-forward する。binary 再追加、tag rewrite、
+   checksum 不在の旧 publication は復旧経路にしない。
+
+launcher の非 0 exit は launcher 層の契約。Cursor の host hook は失敗を
+`permission: allow` + exit 0 に変換し、Copilot entry も allow/exit 0 fallback を持つ。
+このため取得失敗時に host が deny する保証はなく、hook deny が失われる場合がある。
+各 host の実イベントでの挙動確認は local launcher テストとは別に行う。
 
 ## 中断と lock の復旧
 

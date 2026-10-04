@@ -64,11 +64,13 @@ describe.each(HOOK_TARGETS)("APM consumer install smoke (%s target)", (target: H
       "cheaper",
       "cheaper.ps1",
       path.join("cli", "bin", "cheaper.mjs"),
-      path.join("cli", "bin", "win32-x64", "cheaper.exe"),
       path.join("cli", "workers"),
       path.join("cli", "policy.yaml"),
     ]) {
       expect(existsSync(path.join(bundle as string, rel)), `${target}: ${rel}`).toBe(true);
+    }
+    for (const platform of ["win32-x64", "linux-x64", "linux-arm64"]) {
+      expect(existsSync(path.join(bundle as string, "cli", "bin", platform))).toBe(false);
     }
     if (target === "copilot") {
       // DESIGN-0018 §3 との差分を記録: APM 0.28.0 は copilot の scripts
