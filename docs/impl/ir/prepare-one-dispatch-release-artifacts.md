@@ -31,7 +31,11 @@ task graph の先頭sliceとしてstdlib manifest / snapshot境界を実装す�
 implementation-flowのdispatched-worker SUBAGENT-STOPにより明示planを直接実行する。
 superpowers:test-driven-developmentを適用し、ユーザーのfocused検証/ canonical deferを優先する。
 
-## Changes Made
+## Context
+
+承認済みspec/designのstrict manifestとsame-run snapshot契約をartifact境界で保証する。
+
+## Implementation
 
 strict ASCII/LF manifest、required raw3 mapping、streaming hash、version/tag gate、source非変更のstaged snapshot/tar.gz、dry-runを実装した。codeとcontractのfocused reviewでbasename/duplicate/hash/owned cleanupを確認した。
 
@@ -47,7 +51,11 @@ Windows tarでCRLF listingとPOSIX chmod非保存を観測したため、listing
 Biomeはroot設定でscripts/**を対象外とするため、scoped invocationはNo files processed。依存/configは変更せず、canonical pnpm lintを最終sliceで実行する。
 impl/ir indexは承認済み例外のupdateIndexForMarkdownDirによる再生成を使う。
 
-## Risks or Follow-ups
+## Related Experiments
+
+実験logは作成していない。既知の承認済み設計を実装し、Windowsのtar診断はfocused testのevidenceへ記録した。
+
+## Follow-ups
 
 実native3とRelease publishはCI-only。fixture rawbytesを実3target成功とは主張しない。
 canonical check deferred to coordinator merge run。
