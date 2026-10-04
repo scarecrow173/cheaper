@@ -130,8 +130,8 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gKN1oXRb8 | Implement worker schema reference resolution and Ajv validation | done | [implement-worker-schema-reference-resolution-and-ajv-validation.md](./implement-worker-schema-reference-resolution-and-ajv-validation.md) |
 | TASK-034zQvLk1Av5981u4ci8q4 | Implement workflow binding and definition contracts | done | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
 | TASK-034zQvM02qLs0os3ej72pP | Implement workflow compilation and public hooks | done | [implement-workflow-compilation-and-public-hooks.md](./implement-workflow-compilation-and-public-hooks.md) |
-| TASK-034zTTj0uuzqIXG4cbMoIO | Canonical workflow resource inference を実装する | done | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | TASK-034zTslwNSSK73F5SbJfe6 | implement-workflow-loader | done | [implement-workflow-loader.md](./implement-workflow-loader.md) |
+| TASK-034zTTj0uuzqIXG4cbMoIO | Canonical workflow resource inference を実装する | done | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | TASK-034r05iHK8bA7gUBy3ygQD | Implement workspace path resolution with symlink policy | done | [implement-workspace-path-resolution-with-symlink-policy.md](./implement-workspace-path-resolution-with-symlink-policy.md) |
 | TASK-034r6roOdgb1mKbE0LLAv3 | inject generous eval budget into bigTool factory | done | [inject-eval-budget-bigtool.md](./inject-eval-budget-bigtool.md) |
 | TASK-034zTTjWYMNKiiVb4ZZ6LV | Workflow compiler に resource inference を接続する | done | [integrate-workflow-resource-inference.md](./integrate-workflow-resource-inference.md) |

@@ -31,8 +31,8 @@ Directory: `docs/specs`
 | SPEC-034rzI0xebTv8HszaX6Tvw | Model pricing catalog and curated exceptions | approved | [model-pricing-catalog.md](./model-pricing-catalog.md) |
 | SPEC-034r05iHK8bA7g9pm5z8s2 | Ollama real-provider smoke verification | implemented | [ollama-real-provider-smoke-verification.md](./ollama-real-provider-smoke-verification.md) |
 | SPEC-034r05iHK8bA7guAnTdpdi | Real-provider E2E for built-in workers via Ollama container | implemented | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
-| SPEC-034zSPnVDi6fpHVc9ELgLW | Invocation-scoped OperationManager lifecycle | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | SPEC-034zSQV3zqlEncx2GoLKSR | One-dispatch release workflow | approved | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
+| SPEC-034zSPnVDi6fpHVc9ELgLW | Invocation-scoped OperationManager lifecycle | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |
 | SPEC-034r2qodmutbif9L0DLskN | Correct provider and auth documentation to match runtime capabilities | implemented | [provider-auth-docs-runtime-sync.md](./provider-auth-docs-runtime-sync.md) |
 | SPEC-034r05iHK8bA7gz3bFqgXr | Provider-only registration layer without Pi extensions | implemented | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
@@ -50,6 +50,6 @@ Directory: `docs/specs`
 | SPEC-034zA513QKarQrr5SQtgp7 | Verify and leverage Pi sibling tool-call parallelism inside Workers | approved | [verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md](./verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md) |
 | SPEC-034zIO2lm7gJPz6Gy4JIQP | Version-pinned launcher acquisition | approved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | SPEC-034zIKj7DJcwZFr3FvjLrP | Workflow JSON v1 を検証済み DAG へ compile する | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
-| SPEC-034zSWvgiB9gHQpjguNJ3M | Workflow resource inference 契約 | approved | [workflow-resource-inference.md](./workflow-resource-inference.md) |
 | SPEC-034zSVZlWjFAMpwmhsLTkx | 明示 workflow loader と公開 interface command の契約 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
+| SPEC-034zSWvgiB9gHQpjguNJ3M | Workflow resource inference 契約 | approved | [workflow-resource-inference.md](./workflow-resource-inference.md) |
 | SPEC-034r05iHK8bA7ggPjqIA9E | Write-scope enforcement and in-workspace privacy deny list | implemented | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |

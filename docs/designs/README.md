@@ -34,8 +34,8 @@ Directory: `docs/designs`
 | DESIGN-034r05iHrZUE6Wu1cMdeJ1 | Model Resolver | approved | [model-resolver.md](./model-resolver.md) |
 | DESIGN-034r05iHrZUE6WBzjS90b8 | Ollama real-provider smoke verification setup | approved | [ollama-real-provider-smoke-verification-setup.md](./ollama-real-provider-smoke-verification-setup.md) |
 | DESIGN-034r05iHy2gdnoWvkDigEM | Real-provider worker E2E via Ollama | approved | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
-| DESIGN-034zSP4AJ6aRzdtIxTHW1Y | OperationManager の state と bounded drain | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | DESIGN-034zTjGVOLExU7QfmMVo3c | One-dispatch release workflow | approved | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
+| DESIGN-034zSP4AJ6aRzdtIxTHW1Y | OperationManager の state と bounded drain | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | DESIGN-034r05iHrZUE6WvaQsRRsM | Pi 実行エンジン: session・制限・abort・retry・出力抽出・repair・usage | approved | [pi-execution-engine.md](./pi-execution-engine.md) |
 | DESIGN-034zAKcWuB8SuFkOePsubg | Pi sibling tool-call parallelism inside Workers | approved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DESIGN-034r05iHy2gdnoZAxhwPFa | Pi state paths under userConfigDir/pi | approved | [pi-state-paths-under-userconfigdir-pi.md](./pi-state-paths-under-userconfigdir-pi.md) |
@@ -56,8 +56,8 @@ Directory: `docs/designs`
 | DESIGN-034zQkHD65kAeG9xVGSoFX | Version-pinned launcher acquisition | approved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | DESIGN-034r05iHrZUE6WrdtQIOmE | コアドメインモデル: Worker Definition・Resolver・Runtime Policy・tool vocabulary・error model | approved | [worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md](./worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md) |
 | DESIGN-034zJ38fX1W3g0Zrceda1E | WorkflowCompiler の validation と materialization 境界 | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
-| DESIGN-034zSWw1LYrRvcB471oQm2 | Workflow resource inference port 実装 | approved | [workflow-resource-inference.md](./workflow-resource-inference.md) |
 | DESIGN-034zT2MINVpakJb3AhS0m5 | Workflow file loader と interface CLI の接続設計 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
+| DESIGN-034zSWw1LYrRvcB471oQm2 | Workflow resource inference port 実装 | approved | [workflow-resource-inference.md](./workflow-resource-inference.md) |
 | DESIGN-034r05iHrZUE6WsgJOy6Ny | workspace filesystem boundary と sandboxed tools | approved | [workspace-filesystem-boundary-sandboxed-tools.md](./workspace-filesystem-boundary-sandboxed-tools.md) |
 | DESIGN-034r05iHy2gdnoIvdC141H | Write-scope and privacy deny enforcement design | approved | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |
 | DESIGN-034r05iHy2gdnoDFAeW1DN | code-writer and doc-writer worker contracts | approved | [writer-worker-contracts.md](./writer-worker-contracts.md) |

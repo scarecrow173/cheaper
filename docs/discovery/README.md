@@ -17,8 +17,8 @@ Directory: `docs/discovery`
 | DISC-034rA43JiB611pUjLPA4yR | Cross-agent native routing adapter contract re-verification | resolved | [cross-agent-native-routing-adapter-contract-re-verification.md](./cross-agent-native-routing-adapter-contract-re-verification.md) |
 | DISC-034r05iHy2gdnpcXzmUKaV | Huge-file token count guard and fail-closed hook behavior | resolved | [huge-file-token-count-guard-and-fail-closed-hook-behavior.md](./huge-file-token-count-guard-and-fail-closed-hook-behavior.md) |
 | DISC-034rzGKaCRO8vRQUpNJvWd | model-pricing-catalog-and-curated-exceptions | resolved | [model-pricing-catalog-and-curated-exceptions.md](./model-pricing-catalog-and-curated-exceptions.md) |
-| DISC-034zSONEtz7Sfeq2UvbW3a | OperationManager の cancel と settle の境界 | resolved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | DISC-034zSP8CzaOAsOOhj0ZpcW | One-dispatch release workflow | resolved | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
+| DISC-034zSONEtz7Sfeq2UvbW3a | OperationManager の cancel と settle の境界 | resolved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | DISC-034zzZxx7gzas0a5Anlkwi | Pi sibling tool-call parallelism inside Workers | resolved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DISC-034r05iHy2gdnp6g5GTWKG | Post-smoke code review findings on abort, repair, and timeout semantics | resolved | [post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md](./post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md) |
 | DISC-034r05iHy2gdnp5sN3kF1s | Real provider smoke verification via Ollama | resolved | [real-provider-smoke-verification-via-ollama.md](./real-provider-smoke-verification-via-ollama.md) |
@@ -30,5 +30,5 @@ Directory: `docs/discovery`
 | DISC-034zIO1UQe9CI5VCzqot1c | Version-pinned launcher acquisition | resolved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | DISC-034r05iHy2gdnp9dPPZ28N | Windsurf Cascade hooks and APM hook deployment for pre-read delegation | resolved | [windsurf-cascade-hooks-and-apm-hook-deployment.md](./windsurf-cascade-hooks-and-apm-hook-deployment.md) |
 | DISC-034zIKizOrTom96Q19mbYE | Workflow contract compiler の責務と検証境界 | resolved | [workflow-compiler-boundaries.md](./workflow-compiler-boundaries.md) |
-| DISC-034zSWuKOprLRHraOiRn31 | Workflow inference の責務と情報源 | resolved | [workflow-resource-inference.md](./workflow-resource-inference.md) |
 | DISC-034zSVnLYkkFBYQvt56QNJ | Workflow file と compiler の接続境界を調査する | resolved | [workflow-file-interface.md](./workflow-file-interface.md) |
+| DISC-034zSWuKOprLRHraOiRn31 | Workflow inference の責務と情報源 | resolved | [workflow-resource-inference.md](./workflow-resource-inference.md) |

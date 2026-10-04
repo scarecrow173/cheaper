@@ -31,14 +31,14 @@ Directory: `docs/plans`
 | PLAN-034zQqWCWWNpushz8Itm5d | Implement core resource manifest normalization | completed | [implement-core-resource-manifest-normalization.md](./implement-core-resource-manifest-normalization.md) |
 | PLAN-034rzUgf26bzSEwLr1L6Pl | implement model pricing catalog and curated exceptions | approved | [implement-model-pricing-catalog.md](./implement-model-pricing-catalog.md) |
 | PLAN-034z1M6zCAdKb12eiCWZRm | Implement Node 26 SEA standalone executable proof of concept | completed | [implement-node-26-sea-standalone-executable-proof-of-concept.md](./implement-node-26-sea-standalone-executable-proof-of-concept.md) |
-| PLAN-034zTcqSwE6JHL46EJBnKP | OperationManager lifecycle の実装計画 | completed | [implement-operation-manager-lifecycle.md](./implement-operation-manager-lifecycle.md) |
 | PLAN-034zTJptHTdovrvYW7wQ1k | Implement one-dispatch release workflow | completed | [implement-one-dispatch-release-workflow.md](./implement-one-dispatch-release-workflow.md) |
+| PLAN-034zTcqSwE6JHL46EJBnKP | OperationManager lifecycle の実装計画 | completed | [implement-operation-manager-lifecycle.md](./implement-operation-manager-lifecycle.md) |
 | PLAN-034zBjFcH4nDUr72Vc1XJ3 | Implement Pi sibling tool-call parallelism guidance and deterministic tests in runtime-pi | completed | [implement-pi-sibling-tool-call-parallelism.md](./implement-pi-sibling-tool-call-parallelism.md) |
 | PLAN-034zThvLa4bK934vj52jaC | Implement run-scoped artifact store | completed | [implement-run-scoped-artifact-store.md](./implement-run-scoped-artifact-store.md) |
 | PLAN-034zQHj1WyOgBNLGbDaFY8 | Implement version-pinned launcher acquisition | completed | [implement-version-pinned-launcher-acquisition.md](./implement-version-pinned-launcher-acquisition.md) |
 | PLAN-034zQ9Pet2QAuh0FP3ku3u | Workflow contract compiler を実装する | completed | [implement-workflow-contract-compiler.md](./implement-workflow-contract-compiler.md) |
-| PLAN-034zTu37tgDGI306OPBitz | Workflow resource inference を実装する | completed | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | PLAN-034zTiB05IwVw2pDB34sLk | Workflow loader と公開 interface CLI を接続する | completed | [implement-workflow-file-interface.md](./implement-workflow-file-interface.md) |
+| PLAN-034zTu37tgDGI306OPBitz | Workflow resource inference を実装する | completed | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | PLAN-034z2bk7AEzZ66Mt0uXCyJ | Integrate SEA executables into tag-triggered GitHub Release workflow | completed | [integrate-sea-executables-into-tag-triggered-github-release-workflow.md](./integrate-sea-executables-into-tag-triggered-github-release-workflow.md) |
 | PLAN-034r05iHE1FbkpcKKUUZ58 | Real-provider worker E2E via Ollama — implementation plan | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | PLAN-034r05iHK8bA7g23Opaicg | Pi state under userConfigDir/pi — implementation plan | completed | [pi-state-under-userconfigdir-pi-implementation-plan.md](./pi-state-under-userconfigdir-pi-implementation-plan.md) |
