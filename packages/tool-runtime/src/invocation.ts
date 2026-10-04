@@ -2,7 +2,6 @@ import { CheaperError, type SymlinkPolicy } from "@cheaper/core";
 import { createToolRuntime, type ToolRuntime, type ToolRuntimeOptions } from "./registry.js";
 
 /** 後続 #56/#57/#61 で具体化する。値を作れる no-op service は公開しない。 */
-export type OperationManager = never;
 export type ToolScheduler = never;
 export type ResourceManager = never;
 export type ResourceLease = never;
