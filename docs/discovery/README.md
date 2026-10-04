@@ -25,3 +25,4 @@ Directory: `docs/discovery`
 | DISC-034rzEbmKarhQzw41fhumg | Usage and savings telemetry for delegation reduction | resolved | [usage-and-savings-telemetry-for-delegation-reduction.md](./usage-and-savings-telemetry-for-delegation-reduction.md) |
 | DISC-034r05iHy2gdnp7GkO7QDK | V2 productization initiative briefing: worker restructure, token counting, APM delegation | resolved | [v2-productization-initiative-briefing.md](./v2-productization-initiative-briefing.md) |
 | DISC-034r05iHy2gdnp9dPPZ28N | Windsurf Cascade hooks and APM hook deployment for pre-read delegation | resolved | [windsurf-cascade-hooks-and-apm-hook-deployment.md](./windsurf-cascade-hooks-and-apm-hook-deployment.md) |
+| DISC-034zIKizOrTom96Q19mbYE | Workflow contract compiler の責務と検証境界 | resolved | [workflow-compiler-boundaries.md](./workflow-compiler-boundaries.md) |
