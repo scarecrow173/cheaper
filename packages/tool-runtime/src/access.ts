@@ -158,6 +158,8 @@ export class ResourceAccess {
           this.options.symlinkPolicy,
         );
         args = { ...input, path: resolved.display };
+        if (this.options.denylist?.isDenied(resolved.display))
+          throw new Error(POLICY_DENIED_MESSAGE);
       }
       const declaration = createToolCatalog().get(name)?.resources?.(args);
       const manifest = await normalizeResourceManifest(

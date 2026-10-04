@@ -1,4 +1,3 @@
-import path from "node:path";
 import {
   CheaperError,
   checkCapabilities,
@@ -9,8 +8,6 @@ import {
   type ModelConfig,
   parseModelRef,
   type RuntimePolicy,
-  resolveWorkspacePath,
-  type SymlinkPolicy,
   type Tier,
   type TierSource,
   type WorkerDefinition,
@@ -159,15 +156,10 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 
 /**
  * `cheaper.writeScope` で宣言された input field から write 許可 path 集合を
- * 抽出し workspace 相対 display path に正規化する（DESIGN-0015）。
+ * raw path として抽出する。canonical identity は tool-runtime が確定する。
  * field 不在・非 array・item 不正は fail closed で INVALID_INPUT。
  */
-async function extractWriteScope(
-  worker: WorkerDefinition,
-  input: unknown,
-  root: string,
-  symlinkPolicy: SymlinkPolicy,
-): Promise<Set<string> | undefined> {
+function extractWriteScope(worker: WorkerDefinition, input: unknown): Set<string> | undefined {
   const field = worker.cheaper.writeScope;
   if (field === undefined) return undefined;
   const value = isPlainObject(input) ? input[field] : undefined;
@@ -185,8 +177,7 @@ async function extractWriteScope(
           ? item.path
           : undefined;
     if (p === undefined) throw invalid("item-lacks-path");
-    const resolved = await resolveWorkspacePath(root, path.join(root, p), symlinkPolicy);
-    allowed.add(resolved.display);
+    allowed.add(p);
   }
   return allowed;
 }
@@ -276,12 +267,11 @@ export async function runWorker(
       maxToolCalls: policy.execution.maxToolCalls,
       onLimit: () => requestAbort("maxToolCalls"),
       denylist: createPathDenylist(policy.filesystem.denyPaths),
-      writeScope: await extractWriteScope(
-        worker,
-        deps.input,
-        deps.root,
-        policy.filesystem.symlinks,
-      ),
+      writeScope: extractWriteScope(worker, deps.input),
+      observeAccess: (...args: Parameters<ToolRuntime["observeAccess"]>) => {
+        if (!toolScope) throw new CheaperError("INVALID_REQUEST", "missing tool scope");
+        return toolScope.observeAccess(...args);
+      },
     };
     toolScope = invocation.createWorkerScope({
       ...toolOptions,
@@ -293,6 +283,7 @@ export async function runWorker(
         ? { parentLease: deps.execution.parentLease }
         : {}),
     });
+    await toolScope.ready();
     const sandboxed = createSandboxedTools({ ...toolOptions, runtime: toolScope });
 
     const { session } = await createWorkerSession({

@@ -17,15 +17,21 @@ import {
   resolveWorkspacePath,
   type SymlinkPolicy,
 } from "@cheaper/core";
+import {
+  type AccessObserver,
+  ResourceAccess,
+  type ResourceScopeOptions,
+} from "@cheaper/tool-runtime";
 import type {
   EditOperations,
   LsOperations,
   WriteOperations,
 } from "@earendil-works/pi-coding-agent";
 import type { MutationJournal } from "../journal.js";
-import { POLICY_DENIED_MESSAGE, rethrowAsDenied, SCOPE_DENIED_MESSAGE } from "./walker.js";
+import { POLICY_DENIED_MESSAGE, rethrowAsDenied } from "./walker.js";
 
-export interface BoundaryOperationsOptions {
+export interface BoundaryOperationsOptions extends ResourceScopeOptions {
+  observeAccess?: AccessObserver | undefined;
   /** canonical 化済み workspace root（core `canonicalizeWorkspaceRoot` の戻り値）。 */
   root: string;
   symlinkPolicy: SymlinkPolicy;
@@ -34,10 +40,18 @@ export interface BoundaryOperationsOptions {
   denylist?: PathDenylist | undefined;
   /**
    * write scope（`cheaper.writeScope` 宣言 worker の targets、正規化済み
-   * display path 集合）。設定時、write/edit/mkdir による mutation は
+   * raw path 集合）。共通 ResourceAccess が canonical 化し write/edit/mkdir の mutation は
    * scope path に限られる。read 系は制限しない。
    */
-  writeScope?: ReadonlySet<string> | undefined;
+}
+
+function observer(
+  opts: BoundaryOperationsOptions,
+  names: readonly import("@cheaper/core").ToolName[],
+): AccessObserver {
+  if (opts.observeAccess) return opts.observeAccess;
+  const access = new ResourceAccess({ ...opts, names });
+  return (p, mode, scope, support) => access.observe(p, mode, scope, undefined, support);
 }
 
 async function resolve(
@@ -62,9 +76,7 @@ async function resolveForWrite(
   absolutePath: string,
 ): Promise<ResolvedWorkspacePath> {
   const resolved = await resolve(opts, absolutePath);
-  if (opts.writeScope !== undefined && !opts.writeScope.has(resolved.display)) {
-    throw new Error(SCOPE_DENIED_MESSAGE);
-  }
+  await opts.observeAccess?.(resolved.real, "exclusive");
   return resolved;
 }
 
@@ -94,41 +106,42 @@ async function atomicWrite(
 }
 
 export function createWriteOperations(opts: BoundaryOperationsOptions): WriteOperations {
+  const observed = { ...opts, observeAccess: observer(opts, ["write"]) };
   return {
-    writeFile: (absolutePath, content) => atomicWrite(opts, absolutePath, content),
+    writeFile: (absolutePath, content) => atomicWrite(observed, absolutePath, content),
     mkdir: async (dir) => {
       const resolved = await resolve(opts, dir);
       // write tool は target の parent dir を先に mkdir するため、scope path の
       // 祖先 dir に限り許可する（dir 自体の scope membership は要求しない）。
-      if (opts.writeScope !== undefined) {
-        const d = resolved.display;
-        const allowed =
-          d === "." || [...opts.writeScope].some((t) => t === d || t.startsWith(`${d}/`));
-        if (!allowed) throw new Error(SCOPE_DENIED_MESSAGE);
-      }
+      await observed.observeAccess(resolved.real, "exclusive", "exact", true);
       await mkdir(resolved.real, { recursive: true });
     },
   };
 }
 
 export function createEditOperations(opts: BoundaryOperationsOptions): EditOperations {
+  const observed = { ...opts, observeAccess: observer(opts, ["edit"]) };
   return {
     readFile: async (absolutePath) => {
       const resolved = await resolve(opts, absolutePath);
+      await observed.observeAccess(resolved.real, "shared");
       return readFile(resolved.real);
     },
-    writeFile: (absolutePath, content) => atomicWrite(opts, absolutePath, content),
+    writeFile: (absolutePath, content) => atomicWrite(observed, absolutePath, content),
     access: async (absolutePath) => {
       const resolved = await resolve(opts, absolutePath);
+      await observed.observeAccess(resolved.real, "shared");
       await access(resolved.real, constants.R_OK | constants.W_OK);
     },
   };
 }
 
 export function createLsOperations(opts: BoundaryOperationsOptions): LsOperations {
+  const observeAccess = observer(opts, ["ls"]);
   return {
     exists: async (absolutePath) => {
       const resolved = await resolve(opts, absolutePath);
+      await observeAccess(resolved.real, "shared");
       try {
         await access(resolved.real, constants.F_OK);
         return true;
@@ -138,11 +151,13 @@ export function createLsOperations(opts: BoundaryOperationsOptions): LsOperation
     },
     stat: async (absolutePath) => {
       const resolved = await resolve(opts, absolutePath);
+      await observeAccess(resolved.real, "shared");
       const st = await stat(resolved.real);
       return { isDirectory: () => st.isDirectory() };
     },
     readdir: async (absolutePath) => {
       const resolved = await resolve(opts, absolutePath);
+      await observeAccess(resolved.real, "shared", "subtree");
       const names = await readdir(resolved.real);
       const denylist = opts.denylist;
       if (denylist === undefined) return names;

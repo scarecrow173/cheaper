@@ -202,7 +202,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
 | TASK-034zTWiLbk14ZhGMpiNo7M | Wire one-dispatch release publication | done | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
-| TASK-034AaXZ7nc5LQuUvG9iFY8 | 実 I/O と Pi job lease を配線する | todo | [wire-resource-manager-observation.md](./wire-resource-manager-observation.md) |
+| TASK-034AaXZ7nc5LQuUvG9iFY8 | 実 I/O と Pi job lease を配線する | done | [wire-resource-manager-observation.md](./wire-resource-manager-observation.md) |
 | TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |
 | TASK-034zTsqC9tEk1qHUgWFefU | wire-workflow-interface | done | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |

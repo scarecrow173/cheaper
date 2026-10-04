@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AaXZ7nc5LQuUvG9iFY8"
 type: "task"
-status: "todo"
+status: "done"
 title: "実 I/O と Pi job lease を配線する"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -48,11 +48,11 @@ A の検証と実装 review 完了。
 ## Affected Files
 plan の File Map の当該 slice。hot files は対象外。
 ## Done When
-- [ ] linked test-spec の当該契約テストが pass。
-- [ ] coordinator implementation review 承認。
+- [x] linked test-spec の当該契約テストが pass。
+- [x] coordinator implementation review 承認。
 ## Verification
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi test` exits 0。
-- [ ] `mise exec -- pnpm lint` exits 0。
-- [ ] `mise exec -- pnpm typecheck` exits 0。
-- [ ] `mise exec -- pnpm build` exits 0。
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi test` exits 0。
+- [x] `mise exec -- pnpm lint` exits 0。
+- [x] `mise exec -- pnpm typecheck` exits 0。
+- [x] `mise exec -- pnpm build` exits 0。
 

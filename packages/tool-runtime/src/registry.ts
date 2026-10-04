@@ -117,7 +117,11 @@ export function createToolRuntime(
   ) => {
     const operation = active.getStore();
     if (!operation) throw invalidResource("observation requires active operation");
+    if (manager.get(operation.id).state !== "running")
+      throw invalidResource("operation has settled");
     await access.observe(p, mode, scope, operation, support);
+    if (manager.get(operation.id).state !== "running")
+      throw invalidResource("operation has settled");
   };
   const abort = (reason?: unknown) => controller.abort(reason);
   const onScopeAbort = () => manager.cancelOwner(ownerId, controller.signal.reason);
@@ -125,13 +129,13 @@ export function createToolRuntime(
   const definitions: CanonicalToolDefinition[] = opts.names.map((name) => {
     switch (name) {
       case "read":
-        return createReadTool(opts);
+        return createReadTool({ ...opts, observeAccess });
       case "grep":
-        return createGrepTool(opts);
+        return createGrepTool({ ...opts, observeAccess });
       case "find":
-        return createFindTool(opts);
+        return createFindTool({ ...opts, observeAccess });
       case "count_tokens":
-        return createCountTokensTool(opts);
+        return createCountTokensTool({ ...opts, observeAccess });
       default: {
         const metadata = catalog.get(name);
         if (!metadata) throw unknownTool(name);

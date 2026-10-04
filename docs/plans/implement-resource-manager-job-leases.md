@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034AadQgwgheMAV59FAcIZ"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "ResourceManager job lease を実装する"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -27,7 +27,7 @@ relations:
 | packages/tool-runtime/src/registry.ts | ready latch、prepared scope/observer、immutable submitted input、budget/meter glue |
 | packages/tool-runtime/src/operation.ts | queued canonical resourceClaims 記録 seam、既存六状態維持 |
 | packages/tool-runtime/src/index.ts | exports |
-| packages/tool-runtime/src/read.ts, count-tokens.ts, walker.ts | actual I/O observer port |
+| packages/tool-runtime/src/read.ts, count-tokens.ts, walker.ts, grep.ts | actual I/O observer port（sniff/open 直前を含む） |
 | packages/runtime-pi/src/run.ts | raw writeScope input extraction、session 前 ready、親借用維持 |
 | packages/runtime-pi/src/tools/operations.ts, registry.ts | shared scope 認可/observer の配線、journal/deny 維持 |
 | packages/tool-runtime/test/resources.test.ts | lease/scheduler/scope contract tests |

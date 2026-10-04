@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034A8kLznlxOOeccFx9SNM"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "ResourceManager job lifetime leases"
 created: "2026-10-05"
 updated: "2026-10-05"

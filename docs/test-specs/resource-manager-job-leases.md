@@ -1,13 +1,13 @@
 ---
 id: "TSPEC-034AaXPxCwdUwH1XaYc6Jn"
 type: "test-spec"
-status: "draft"
+status: "approved"
 title: "Resource lease の寿命とアクセス境界"
 created: "2026-10-05"
 updated: "2026-10-05"
 owners: ["scarecrow173"]
 relations:
-  source: []
+  source: ["https://github.com/scarecrow173/cheaper/issues/61"]
   changes:
     added: []
     modified: []
@@ -15,7 +15,9 @@ relations:
     renamed: []
     moved: []
     generated: []
-  implements: []
+  implements:
+    - "docs/tasks/implement-resource-manager-admission.md"
+    - "docs/tasks/wire-resource-manager-observation.md"
   implemented-by: []
   depends-on: []
   blocks: []
@@ -29,7 +31,9 @@ relations:
   derived-by: []
   verifies:
     - "docs/specs/resource-manager-job-leases.md"
-  verified-by: []
+  verified-by:
+    - "docs/impl/ir/resource-manager-admission.md"
+    - "docs/impl/ir/resource-manager-observation.md"
   references: []
   defers: []
   deferred-by: []

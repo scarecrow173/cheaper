@@ -36,6 +36,7 @@ export function isAccessDeniedError(e: unknown): boolean {
 const SKIP_DIRS = new Set([".git", "node_modules"]);
 
 export interface WalkOptions {
+  observeAccess?: import("./access.js").AccessObserver | undefined;
   /** canonical 化済み workspace root。 */
   root: string;
   symlinkPolicy: SymlinkPolicy;
@@ -69,7 +70,11 @@ function toDisplay(root: string, logicalAbs: string): string {
  * bounded 判定で size 判定は持たない。open/read 失敗は `"unreadable"` を返す
  * （fail closed だが理由を区別する）。
  */
-export async function sniffTextFile(real: string): Promise<"text" | "binary" | "unreadable"> {
+export async function sniffTextFile(
+  real: string,
+  observeAccess?: import("./access.js").AccessObserver,
+): Promise<"text" | "binary" | "unreadable"> {
+  await observeAccess?.(real, "shared");
   let fh: FileHandle | undefined;
   try {
     fh = await open(real, "r");
@@ -115,6 +120,9 @@ async function* walkDir(
   onIssue: WalkIssueHandler | undefined,
 ): AsyncGenerator<WalkedFile> {
   const display = () => toDisplay(opts.root, logicalPath);
+  // alias 経由でも実 path の deny entry は観測・I/O・存在通知の前に除外する。
+  if (opts.denylist?.isDenied(toDisplay(opts.root, fsPath))) return;
+  await opts.observeAccess?.(fsPath, "shared");
   let st: Stats | undefined;
   try {
     st = await stat(fsPath);
@@ -143,6 +151,7 @@ async function* walkDir(
   try {
     // opendir + 逐次 read で 1 dir あたりの保持を O(1) entries にする
     // （readdir(withFileTypes) は全 entry を一度に buffer する）。
+    await opts.observeAccess?.(fsPath, "shared", "subtree");
     const dir = await opendir(fsPath).catch(() => undefined);
     if (dir === undefined) {
       onIssue?.({ display: display(), reason: "unreadable" });
@@ -180,6 +189,8 @@ async function* walkDir(
         } else if (entry.isDirectory()) {
           yield* walkDir(opts, childFs, childLogical, ancestors, onIssue);
         } else if (entry.isFile()) {
+          if (opts.denylist?.isDenied(toDisplay(opts.root, childFs))) continue;
+          await opts.observeAccess?.(childFs, "shared");
           yield { real: childFs, display: toDisplay(opts.root, childLogical) };
         }
       }
