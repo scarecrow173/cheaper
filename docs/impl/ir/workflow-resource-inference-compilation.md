@@ -76,3 +76,5 @@ coordinator implementation review、chain status/index maintenance、scoped exit
 - 非 process job の process 宣言が tool/Worker の実 source を置き換えていた。新規 test は promise resolved の RED。process declaration は kind:tool/tool:process のみ受理する。
 - process config 自体が explicit source なので resources-omitted fallback diagnostic を付けない。
 - 修正後 workflow suite 108 tests / 5 files GREEN、pnpm lint/typecheck/build exit 0（2026-10-04 14:47 JST）。固定 core 型と approved design の authoritative exact target / process seam に合わせる source-layer correction。レビュー対象 commit に追加する。
+
+process outputs の subtree glob でも同じ safety/authority 分離を確認した。writes の保守的 root 拡大に基づく authority が追加 outside output を許す regression RED を確認し、process authority を ownership-normalized produces に変更。workflow suite 109 tests / 5 files GREEN、lint/typecheck/build exit 0。

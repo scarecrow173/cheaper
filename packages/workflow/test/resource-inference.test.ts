@@ -369,3 +369,15 @@ it("process source cannot replace another job kind authority", async () => {
     }),
   ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
 });
+
+it("process subtree glob ownership cannot authorize additional outside outputs", async () => {
+  const outputs = [subtree("out/**")];
+  await expect(
+    inference().infer({
+      a: {
+        ...tool("process", {}, { produces: [...outputs, exact("outside.json")] }),
+        process: { task: "generate", inputs: [], outputs },
+      },
+    }),
+  ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+});

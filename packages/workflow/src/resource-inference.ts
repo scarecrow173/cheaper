@@ -86,7 +86,7 @@ export class WorkspaceResourceInference implements ResourceInference {
           writes: declaration.outputs,
           produces: declaration.outputs,
         },
-        authority: manifest.writes,
+        authority: manifest.produces,
       };
     }
     if (item.job.kind === "tool") {
