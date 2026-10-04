@@ -161,4 +161,23 @@ describe("explicit workflow file loader", () => {
       });
     }
   });
+  it.runIf(process.platform === "win32")(
+    "rejects case aliases of real denied files and ancestors on Windows",
+    async () => {
+      await mkdir(path.join(root, "blocked"));
+      await writeFile(path.join(root, "blocked", "workflow.json"), JSON.stringify(definition()));
+      await writeFile(path.join(root, ".env"), JSON.stringify(definition()));
+      const factory = vi.fn(() => fixtures().compiler);
+      for (const opts of [
+        options("Blocked/workflow.json", ["blocked"]),
+        options("blocked/workflow.json", ["BLOCKED"]),
+        options(".ENV"),
+      ]) {
+        await expect(loadWorkflowFile(opts, factory)).rejects.toMatchObject({
+          code: "INVALID_REQUEST",
+        });
+      }
+      expect(factory).not.toHaveBeenCalled();
+    },
+  );
 });
