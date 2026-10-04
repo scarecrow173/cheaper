@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zQHAqgNJHPLssPVaFPR"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Core resource manifest verification"
 created: "2026-10-04"
 updated: "2026-10-04"

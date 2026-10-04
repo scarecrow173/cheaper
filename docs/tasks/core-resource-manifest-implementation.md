@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zQHzU6hKHiX9SIpdYgp"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Core resource manifest implementation"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -46,10 +46,10 @@ relations:
 
 ## Work Items
 
-- [ ] 対応 IR を開く。
-- [ ] resources/normalization.ts、predicates.ts、index.ts を作成する。
-- [ ] core/src/index.ts の既存 resources/types.js export 行を resources/index.js に置換する（既存型 export を resources/index.ts が保持）。
-- [ ] focused GREEN と core build を確認する。
+- [x] 対応 IR を source 変更前に開いた。
+- [x] resources/normalization.ts、predicates.ts、index.ts を作成した。
+- [x] core barrel の既存 resources export 行を置換し、固定型 export を維持した。
+- [x] focused GREEN（77 pass / 2 POSIX skip）と core build（exit 0）を確認した。
 
 ## Done When
 
@@ -57,6 +57,6 @@ types.ts / paths.ts / 依存 / hot file を変更せず named tests が pass。
 
 ## Verification
 
-- [ ] mise exec -- pnpm --filter @cheaper/core exec vitest run test/resources.test.ts が exit 0。
-- [ ] mise exec -- pnpm --filter @cheaper/core build が exit 0。
+- [x] mise exec -- pnpm --filter @cheaper/core exec vitest run test/resources.test.ts が exit 0。
+- [x] mise exec -- pnpm --filter @cheaper/core build が exit 0。
 

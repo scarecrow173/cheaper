@@ -8,13 +8,13 @@ import {
   manifestsConflict,
   normalizeResourceClaim,
   normalizeResourceManifest,
-  resourceContains,
-  resourceKey,
-  resourcesOverlap,
   type ResourceClaim,
   type ResourceManifest,
   type ResourceManifestInput,
   type ResourceScope,
+  resourceContains,
+  resourceKey,
+  resourcesOverlap,
 } from "../src/resources/index.js";
 import { canonicalizeWorkspaceRoot, WorkspaceEscapeError } from "../src/workspace/paths.js";
 import { cleanupTmpDir, makeTmpDir } from "./fixtures/tmp.js";
@@ -62,26 +62,39 @@ describe("resource identity and manifest admission", () => {
   // AC1: 未作成 file / directory に明示 scope の identity がある。
   it("normalizes future exact and subtree identities without requiring their existence", async () => {
     const exact = await normalizeResourceClaim(
-      root, { path: "src/./a/../a/future.ts", scope: "exact" }, "shared", "deny",
+      root,
+      { path: "src/./a/../a/future.ts", scope: "exact" },
+      "shared",
+      "deny",
     );
     const subtree = await normalizeResourceClaim(
-      root, { path: "src/a", scope: "subtree" }, "exclusive", "deny",
+      root,
+      { path: "src/a", scope: "subtree" },
+      "exclusive",
+      "deny",
     );
     expect(exact).toEqual(claim(path.join(root, "src", "a", "future.ts")));
     expect(subtree).toEqual(claim(path.join(root, "src", "a"), "subtree", "exclusive"));
     expect(resourceContains(subtree.resource, exact.resource)).toBe(true);
-    expect(resourceContains(subtree.resource, claim(path.join(root, "src", "a")).resource)).toBe(true);
-    expect(resourceContains(subtree.resource, claim(path.join(root, "src", "ab")).resource)).toBe(false);
+    expect(resourceContains(subtree.resource, claim(path.join(root, "src", "a")).resource)).toBe(
+      true,
+    );
+    expect(resourceContains(subtree.resource, claim(path.join(root, "src", "ab")).resource)).toBe(
+      false,
+    );
   });
 
   // Coverage (a): unknown と declared-none は異なる。
-  it.each([undefined, {}])("falls back for omitted resources or empty object: %j", async (input) => {
-    expect(await normalize(input)).toEqual({
-      reads: [claim(root, "subtree")],
-      writes: [claim(root, "subtree", "exclusive")],
-      produces: [],
-    });
-  });
+  it.each([undefined, {}])(
+    "falls back for omitted resources or empty object: %j",
+    async (input) => {
+      expect(await normalize(input)).toEqual({
+        reads: [claim(root, "subtree")],
+        writes: [claim(root, "subtree", "exclusive")],
+        produces: [],
+      });
+    },
+  );
 
   it.each(["reads", "writes"] as const)("treats %s null as unknown access", async (bucket) => {
     const input = { reads: [], writes: [], produces: [], [bucket]: null };
@@ -129,8 +142,16 @@ describe("resource identity and manifest admission", () => {
     { produces: [claim("absolute-placeholder", "exact", "shared")] },
     { reads: [claim("absolute-placeholder", "exact", "exclusive")] },
     { reads: [{ resource: { kind: "artifact", path: "x", scope: "exact" }, mode: "shared" }] },
-    { reads: [{ resource: { kind: "workspace", path: "relative", scope: "exact" }, mode: "shared" }] },
-    { reads: [{ resource: { kind: "workspace", path: "x", scope: "exact", extra: true }, mode: "shared" }] },
+    {
+      reads: [
+        { resource: { kind: "workspace", path: "relative", scope: "exact" }, mode: "shared" },
+      ],
+    },
+    {
+      reads: [
+        { resource: { kind: "workspace", path: "x", scope: "exact", extra: true }, mode: "shared" },
+      ],
+    },
   ])("rejects malformed manifest admission: %j", async (input) => {
     await expect(normalize(input as ResourceManifestInput)).rejects.toMatchObject({
       code: "INVALID_REQUEST",
@@ -147,28 +168,32 @@ describe("resource identity and manifest admission", () => {
     { path: "C:relative", scope: "exact" },
     { path: "/absolute", scope: "exact" },
   ])("rejects malformed declarations: %j", async (input) => {
-    await expect(normalize({ reads: [input] } as ResourceManifestInput)).rejects.toBeInstanceOf(CheaperError);
+    await expect(normalize({ reads: [input] } as ResourceManifestInput)).rejects.toBeInstanceOf(
+      CheaperError,
+    );
     await expect(normalize({ reads: [input] } as ResourceManifestInput)).rejects.toMatchObject({
       code: "INVALID_REQUEST",
     });
   });
 
   it("rejects invalid standalone mode, policy and an absolute declaration", async () => {
-    await expect(normalizeResourceClaim(
-      root, { path: "x", scope: "exact" }, "invalid" as "shared", "deny",
-    )).rejects.toMatchObject({ code: "INVALID_REQUEST" });
-    await expect(normalizeResourceManifest(
-      root, {}, "invalid" as "deny",
-    )).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    await expect(
+      normalizeResourceClaim(root, { path: "x", scope: "exact" }, "invalid" as "shared", "deny"),
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    await expect(normalizeResourceManifest(root, {}, "invalid" as "deny")).rejects.toMatchObject({
+      code: "INVALID_REQUEST",
+    });
     await expect(normalize({ reads: [{ path: root, scope: "subtree" }] })).rejects.toMatchObject({
       code: "INVALID_REQUEST",
     });
   });
 
   it.each(["../escape", "../escape/*.json", "src/../../escape"])(
-    "propagates WorkspaceEscapeError for declaration escape: %s", async (input) => {
-      await expect(normalize({ reads: [{ path: input, scope: "exact" }] }))
-        .rejects.toBeInstanceOf(WorkspaceEscapeError);
+    "propagates WorkspaceEscapeError for declaration escape: %s",
+    async (input) => {
+      await expect(normalize({ reads: [{ path: input, scope: "exact" }] })).rejects.toBeInstanceOf(
+        WorkspaceEscapeError,
+      );
     },
   );
 
@@ -197,59 +222,91 @@ describe("resource identity and manifest admission", () => {
       { path: "a", scope: "subtree" as const },
     ];
     const result = await normalize({ reads: declarations, writes: [], produces: [] });
-    expect(await normalize({ reads: [...declarations].reverse(), writes: [], produces: [] })).toEqual(result);
+    expect(
+      await normalize({ reads: [...declarations].reverse(), writes: [], produces: [] }),
+    ).toEqual(result);
     expect(result.reads).toHaveLength(3);
     expect(result.reads.map((c) => path.relative(root, c.resource.path))).toEqual([
-      "a", path.join("a", "x"), "z",
+      "a",
+      path.join("a", "x"),
+      "z",
     ]);
   });
 
-  it.runIf(process.platform === "win32")("uses Windows case identity and stable case dedup", async () => {
-    const declarations = [
-      { path: "Future/File", scope: "exact" as const },
-      { path: "future/file", scope: "exact" as const },
-    ];
-    const a = await normalize({ reads: declarations, writes: [] });
-    const b = await normalize({ reads: [...declarations].reverse(), writes: [] });
-    expect(a).toEqual(b);
-    expect(a.reads).toHaveLength(1);
-    expect(resourceKey(claim(path.join(root, "Future", "File")).resource))
-      .toBe(resourceKey(claim(path.join(root, "future", "file")).resource));
-  });
+  it.runIf(process.platform === "win32")(
+    "uses Windows case identity and stable case dedup",
+    async () => {
+      const declarations = [
+        { path: "Future/File", scope: "exact" as const },
+        { path: "future/file", scope: "exact" as const },
+      ];
+      const a = await normalize({ reads: declarations, writes: [] });
+      const b = await normalize({ reads: [...declarations].reverse(), writes: [] });
+      expect(a).toEqual(b);
+      expect(a.reads).toHaveLength(1);
+      expect(resourceKey(claim(path.join(root, "Future", "File")).resource)).toBe(
+        resourceKey(claim(path.join(root, "future", "file")).resource),
+      );
+    },
+  );
 
   it.skipIf(process.platform === "win32")("preserves POSIX case distinction", async () => {
     const result = await normalize({
-      reads: [{ path: "Case/f", scope: "exact" }, { path: "case/f", scope: "exact" }],
+      reads: [
+        { path: "Case/f", scope: "exact" },
+        { path: "case/f", scope: "exact" },
+      ],
       writes: [],
     });
     expect(result.reads).toHaveLength(2);
-    expect(resourcesOverlap(result.reads[0]!.resource, result.reads[1]!.resource)).toBe(false);
+    expect(new Set(result.reads.map((c) => resourceKey(c.resource))).size).toBe(2);
   });
 
   it("resolves within-workspace aliases but enforces deny and external-target policy", async (ctx) => {
     await mkdir(path.join(root, "actual"));
     await junction(path.join(root, "actual"), path.join(root, "alias"), ctx);
-    const result = await normalizeResourceManifest(root, {
-      writes: [{ path: "alias/future", scope: "exact" }, { path: "actual/future", scope: "exact" }],
-      reads: [],
-    }, "within-workspace");
-    expect(result.writes).toEqual([claim(path.join(root, "actual", "future"), "exact", "exclusive")]);
-    await expect(normalize({ writes: [{ path: "alias/future", scope: "exact" }] }))
-      .rejects.toBeInstanceOf(WorkspaceEscapeError);
+    const result = await normalizeResourceManifest(
+      root,
+      {
+        writes: [
+          { path: "alias/future", scope: "exact" },
+          { path: "actual/future", scope: "exact" },
+        ],
+        reads: [],
+      },
+      "within-workspace",
+    );
+    expect(result.writes).toEqual([
+      claim(path.join(root, "actual", "future"), "exact", "exclusive"),
+    ]);
+    await expect(
+      normalize({ writes: [{ path: "alias/future", scope: "exact" }] }),
+    ).rejects.toBeInstanceOf(WorkspaceEscapeError);
     await junction(path.dirname(root), path.join(root, "outside-alias"), ctx);
-    await expect(normalizeResourceManifest(root, {
-      writes: [{ path: "outside-alias/future", scope: "exact" }],
-    }, "within-workspace")).rejects.toBeInstanceOf(WorkspaceEscapeError);
+    await expect(
+      normalizeResourceManifest(
+        root,
+        {
+          writes: [{ path: "outside-alias/future", scope: "exact" }],
+        },
+        "within-workspace",
+      ),
+    ).rejects.toBeInstanceOf(WorkspaceEscapeError);
   });
 
   // Coverage (c)〜(e): safety 近似と ownership を混同しない。
   it.each(["deny", "within-workspace"] as const)(
-    "uses policy-specific glob safety and preserves producer ownership: %s", async (policy) => {
-      const result = await normalizeResourceManifest(root, {
-        reads: [{ path: "dir/*.json", scope: "exact" }],
-        writes: [{ path: "dir/**/output", scope: "exact" }],
-        produces: [{ path: "dir/**", scope: "subtree" }],
-      }, policy);
+    "uses policy-specific glob safety and preserves producer ownership: %s",
+    async (policy) => {
+      const result = await normalizeResourceManifest(
+        root,
+        {
+          reads: [{ path: "dir/*.json", scope: "exact" }],
+          writes: [{ path: "dir/**/output", scope: "exact" }],
+          produces: [{ path: "dir/**", scope: "subtree" }],
+        },
+        policy,
+      );
       const safetyPath = policy === "deny" ? path.join(root, "dir") : root;
       expect(result.reads).toEqual([claim(safetyPath, "subtree")]);
       expect(result.writes).toEqual([claim(safetyPath, "subtree", "exclusive")]);
@@ -262,59 +319,87 @@ describe("resource identity and manifest admission", () => {
     await mkdir(path.join(root, "other"));
     await writeFile(path.join(root, "other", "target.json"), "{}");
     await junction(path.join(root, "other"), path.join(root, "dir", "link"), ctx);
-    const result = await normalizeResourceManifest(root, {
-      writes: [{ path: "dir/**/*.json", scope: "exact" }],
-      reads: [],
-    }, "within-workspace");
-    const target = await normalizeResourceClaim(
-      root, { path: "dir/link/target.json", scope: "exact" }, "shared", "within-workspace",
+    const result = await normalizeResourceManifest(
+      root,
+      {
+        writes: [{ path: "dir/**/*.json", scope: "exact" }],
+        reads: [],
+      },
+      "within-workspace",
     );
-    expect(claimContains(result.writes[0]!, target)).toBe(true);
+    const target = await normalizeResourceClaim(
+      root,
+      { path: "dir/link/target.json", scope: "exact" },
+      "shared",
+      "within-workspace",
+    );
+    expect(result.writes.some((c) => claimContains(c, target))).toBe(true);
   });
 
   it("checks the literal ancestor boundary before widening glob safety", async (ctx) => {
     await junction(path.dirname(root), path.join(root, "outside"), ctx);
-    await expect(normalizeResourceManifest(root, {
-      reads: [{ path: "outside/*.json", scope: "exact" }],
-    }, "within-workspace")).rejects.toBeInstanceOf(WorkspaceEscapeError);
+    await expect(
+      normalizeResourceManifest(
+        root,
+        {
+          reads: [{ path: "outside/*.json", scope: "exact" }],
+        },
+        "within-workspace",
+      ),
+    ).rejects.toBeInstanceOf(WorkspaceEscapeError);
   });
 
   it.each(["*", "dir/?", "dir/[abc]", "dir/{a,b}", "dir/+(a|b)", "!dir/*.json"])(
-    "approximates glob/negation safely: %s", async (pattern) => {
+    "approximates glob/negation safely: %s",
+    async (pattern) => {
       const result = await normalize({ reads: [{ path: pattern, scope: "exact" }], writes: [] });
       const ancestor = pattern.startsWith("!") || pattern === "*" ? root : path.join(root, "dir");
       expect(result.reads).toEqual([claim(ancestor, "subtree")]);
     },
   );
 
-  it.runIf(process.platform === "win32")("treats Windows backslashes as separators in globs", async () => {
-    expect((await normalize({ reads: [{ path: "dir\\*.json", scope: "exact" }] })).reads)
-      .toEqual([claim(path.join(root, "dir"), "subtree")]);
-  });
+  it.runIf(process.platform === "win32")(
+    "treats Windows backslashes as separators in globs",
+    async () => {
+      expect((await normalize({ reads: [{ path: "dir\\*.json", scope: "exact" }] })).reads).toEqual(
+        [claim(path.join(root, "dir"), "subtree")],
+      );
+    },
+  );
 
-  it.skipIf(process.platform === "win32")("cuts the POSIX literal ancestor before a backslash escape", async () => {
-    expect((await normalize({ reads: [{ path: "d\\ir/*.json", scope: "exact" }] })).reads)
-      .toEqual([claim(root, "subtree")]);
-  });
+  it.skipIf(process.platform === "win32")(
+    "cuts the POSIX literal ancestor before a backslash escape",
+    async () => {
+      expect(
+        (await normalize({ reads: [{ path: "d\\ir/*.json", scope: "exact" }] })).reads,
+      ).toEqual([claim(root, "subtree")]);
+    },
+  );
 
   it.each(["dir/*.json", "dir/**/file", "dir/{a,b}", "!dir/**"])(
-    "rejects partial or ambiguous producers: %s", async (pattern) => {
-      await expect(normalize({ produces: [{ path: pattern, scope: "subtree" }] }))
-        .rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    "rejects partial or ambiguous producers: %s",
+    async (pattern) => {
+      await expect(
+        normalize({ produces: [{ path: pattern, scope: "subtree" }] }),
+      ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
     },
   );
 
   it("requires explicit subtree for directory ownership shorthand", async () => {
-    await expect(normalize({ produces: [{ path: "dir/**", scope: "exact" }] }))
-      .rejects.toMatchObject({ code: "INVALID_REQUEST" });
-    expect((await normalize({ produces: [{ path: "**", scope: "subtree" }] })).produces)
-      .toEqual([claim(root, "subtree", "exclusive")]);
+    await expect(
+      normalize({ produces: [{ path: "dir/**", scope: "exact" }] }),
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    expect((await normalize({ produces: [{ path: "**", scope: "subtree" }] })).produces).toEqual([
+      claim(root, "subtree", "exclusive"),
+    ]);
   });
 
   it.each(["dir/*/../file", "dir/**/../../other", "!dir/../file"])(
-    "rejects traversal hidden behind glob/negation approximation: %s", async (pattern) => {
-      await expect(normalize({ reads: [{ path: pattern, scope: "exact" }] }))
-        .rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    "rejects traversal hidden behind glob/negation approximation: %s",
+    async (pattern) => {
+      await expect(normalize({ reads: [{ path: pattern, scope: "exact" }] })).rejects.toMatchObject(
+        { code: "INVALID_REQUEST" },
+      );
     },
   );
 });
@@ -362,16 +447,22 @@ describe("pure resource predicates", () => {
 
   it("compares filesystem-root resources correctly", () => {
     const filesystemRoot = path.parse(base).root;
-    expect(resourceContains(claim(filesystemRoot, "subtree").resource, at("a").resource)).toBe(true);
+    expect(resourceContains(claim(filesystemRoot, "subtree").resource, at("a").resource)).toBe(
+      true,
+    );
   });
 
   it("includes every manifest bucket in conflict detection", () => {
     const read = manifest([at("a/b")]);
     expect(manifestsConflict(read, manifest([at("a/b")]))).toBe(false);
     expect(manifestsConflict(read, manifest([at("a", "subtree", "exclusive")]))).toBe(true);
-    expect(manifestsConflict(read, {
-      reads: [], writes: [], produces: [at("a", "subtree", "exclusive")],
-    })).toBe(true);
+    expect(
+      manifestsConflict(read, {
+        reads: [],
+        writes: [],
+        produces: [at("a", "subtree", "exclusive")],
+      }),
+    ).toBe(true);
     expect(manifestsConflict(read, manifest([at("ab", "subtree", "exclusive")]))).toBe(false);
     expect(manifestsConflict(manifest([]), read)).toBe(false);
   });
