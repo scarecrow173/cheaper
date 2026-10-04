@@ -30,6 +30,7 @@ relations:
   derived-by:
     - "../specs/version-pinned-launcher-acquisition.md"
     - "../adr/version-pinned-launcher-acquisition.md"
+    - "../designs/version-pinned-launcher-acquisition.md"
   verifies: []
   verified-by: []
   references: []

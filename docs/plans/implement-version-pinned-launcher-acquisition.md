@@ -9,7 +9,10 @@ owners: ["scarecrow173"]
 relations:
   source: []
   implements: ["../specs/version-pinned-launcher-acquisition.md"]
-  implemented-by: []
+  implemented-by:
+    - "../tasks/add-launcher-acquisition-contract-tests.md"
+    - "../tasks/implement-native-launcher-acquisition-and-hook-routing.md"
+    - "../tasks/document-launcher-distribution-and-verify-acquisition.md"
   depends-on: []
   blocks: []
   supersedes: []
@@ -22,7 +25,7 @@ relations:
     - "../adr/version-pinned-launcher-acquisition.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by: ["../test-specs/version-pinned-launcher-integrity-and-stream-preservation.md"]
   references: ["../adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md"]
   defers: []
   deferred-by: []
