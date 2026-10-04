@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zTslwNSSK73F5SbJfe6"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "implement-workflow-loader"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -17,7 +17,7 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-workflow-file-interface.md"
-  implemented-by: []
+  implemented-by: ["../impl/ir/implement-workflow-loader.md"]
   depends-on:
     - "docs/plans/implement-workflow-file-interface.md"
   blocks: []
@@ -53,8 +53,8 @@ loadWorkflowFile と validateInputs を既存 compiler 経路へ接続する。
 packages/workflow/src/{loader,compiler,index}.ts、packages/workflow/test/loader.test.ts。
 
 ## Done When
-- [ ] file/dynamic 同一経路、defaults/missing/unknown/schema、file errors/boundary/deny がテスト済み。
-- [ ] suite GREEN、IR 完了、論理 commit。
+- [x] file/dynamic 同一経路、defaults/missing/unknown/schema、file errors/boundary/deny がテスト済み。
+- [x] suite GREEN、IR 完了、論理 commit。
 
 ## Verification
 - mise exec -- pnpm exec vitest run packages/workflow/test
