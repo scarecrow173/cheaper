@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zXj9deJ0LTUdaiGwflX"
 type: "task"
-status: "todo"
+status: "done"
 title: "Bounded concurrency policy を導入する"
 created: "2026-10-04"
 updated: "2026-10-04"
