@@ -85,4 +85,10 @@ run-until-yield の plan focus により `implementation-to-followup-triage` →
 
 briefing gate の `considered-options` は、ルータが unordered list item のみを数えるため失敗した。coordinator の事前承認に従い、共有 ADR の選択肢1〜3の記号だけを変更し、別の docs(adr) commit とした。契約本文は変更していない。router/relations を変更して focus を迂回していない。
 
-follow-up は分類済み。#56/#57/#61 は共有契約の後続 scope、overview.md:49 は coordinator の非ブロッキング doc-only note とし、本 slice に未完了の実装 task はない。実装と Worker 配線を論理単位で commit した後に graph の terminal 状態を確認する。
+follow-up は分類済み。#56/#57/#61 は共有契約の後続 scope、overview.md:49 は coordinator の非ブロッキング doc-only note とし、本 slice に未完了の実装 task はない。実装と Worker 配線を論理単位で commit し、graph の complete(status=terminal)、blockers=[] を確認した。
+
+## Independent review
+
+requesting-code-review に従う独立 read-only review は `356838b..6f83f94` を対象に ACCEPT、confirmed P0/P1 なし。追加 test/full check/編集はしていない。journal/meta snapshot が outer finally の drain 前である点は base にも存在し、今回の差分で partial mutation 報告が壊れる concrete repro は確認できなかったため、非ブロッキングの観察として保持する。
+
+scheduler/resource/lease の実体と、model/session setup が永続停止する場合の await 全面改修は scope 外として評価を留保した。未実装の never 型・明示拒否と、setup 完了後に新 stream を始めない承認済み guard はレビュー対象に含めた。
