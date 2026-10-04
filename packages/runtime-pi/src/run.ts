@@ -238,6 +238,7 @@ export async function runWorker(
         root: deps.root,
         symlinkPolicy: policy.filesystem.symlinks,
         concurrency: policy.execution.concurrency,
+        process: policy.process,
         abortGraceMs: graceMs,
       });
     const outputPerInput = worker.cheaper.model.workload?.outputPerInput;
@@ -269,6 +270,7 @@ export async function runWorker(
     })();
 
     const toolOptions = {
+      process: policy.process,
       root: deps.root,
       symlinkPolicy: policy.filesystem.symlinks,
       journal,

@@ -17,6 +17,7 @@ tools:
     - write
     - edit
     - count_tokens
+    - process
 
 filesystem:
   symlinks: within-workspace

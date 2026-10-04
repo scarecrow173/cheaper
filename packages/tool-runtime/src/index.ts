@@ -10,6 +10,7 @@ export * from "./journal.js";
 export * from "./limits.js";
 export * from "./line-framer.js";
 export * from "./operation.js";
+export * from "./process.js";
 export * from "./read.js";
 export * from "./registry.js";
 export * from "./scheduler.js";

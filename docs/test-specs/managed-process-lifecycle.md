@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034A9yliLanxBMr6oB85Z7"
 type: "test-spec"
-status: "proposed"
+status: "approved"
 title: "managed process の bounded lifecycle と adapter 共有"
 created: "2026-10-04"
 updated: "2026-10-04"

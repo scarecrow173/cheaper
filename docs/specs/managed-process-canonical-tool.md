@@ -1,10 +1,10 @@
 ---
 id: "SPEC-034A8q6kmxcBsNF8zS9Cwn"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "policy-defined managed process を canonical tool として提供する"
 created: "2026-10-04"
-updated: "2026-10-04"
+updated: "2026-10-05"
 owners: ["scarecrow173"]
 relations:
   source: ["https://github.com/scarecrow173/cheaper/issues/59"]
@@ -68,14 +68,14 @@ Workflow author と親 Coding Agent が、予測可能な認可、出力上限�
 
 ## Acceptance Criteria
 
-- [ ] Pi adapter と Workflow compiler/materialization → direct canonical runtime が同じ task を呼べる。
-- [ ] unknown task、command 入力、shell argv、cwd escape、undeclared output scope を拒否する test が通る。
-- [ ] env 継承なし、argv literal、非ゼロ exit の failure と bounded diagnostics を実 process で確認する。
-- [ ] policy-aware ResourceManifest に inputs/outputs と producer edge が現れる。
-- [ ] 複数 owner の readonly process が process/maxOperations 上限を超えず、mutation は排他となる。
-- [ ] queued cancel は子を作らず、running cancel は管理下の実子と孫を終了し operation が cancelled になる。
-- [ ] declared-I/O trust boundary、shim 対応範囲、OS tracing 不在、setsid/re-parent 孫と正常終了後の孫残留検査が範囲外であることを guide に記録する。
-- [ ] project task が任意 executable を事前認可できる threat model と、.cheaper/** deny の適用限界を guide に記録する。
+- [x] Pi adapter と Workflow compiler/materialization → direct canonical runtime が同じ task を呼べる。
+- [x] unknown task、command 入力、shell argv、cwd escape、undeclared output scope を拒否する test が通る。
+- [x] env 継承なし、argv literal、非ゼロ exit の failure と bounded diagnostics を実 process で確認する。
+- [x] policy-aware ResourceManifest に inputs/outputs と producer edge が現れる。
+- [x] 複数 owner の readonly process が process/maxOperations 上限を超えず、mutation は排他となる。
+- [x] queued cancel は子を作らず、running cancel は管理下の実子と孫を終了し operation が cancelled になる。
+- [x] declared-I/O trust boundary、shim 対応範囲、OS tracing 不在、setsid/re-parent 孫と正常終了後の孫残留検査が範囲外であることを guide に記録する。
+- [x] project task が任意 executable を事前認可できる threat model と、.cheaper/** deny の適用限界を guide に記録する。
 
 ## Deferred Design Concerns
 

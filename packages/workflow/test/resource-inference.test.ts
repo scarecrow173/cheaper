@@ -312,17 +312,20 @@ describe("dependency, ownership and conflict", () => {
 });
 
 it("process-config-input-output-edge and undeclared-process-rejection", async () => {
-  const processJob = tool("process", {});
+  const processJob = tool("process", { task: "generate" });
   await expect(inference().infer({ a: processJob })).rejects.toMatchObject({
-    code: "INVALID_REQUEST",
+    code: "POLICY_VIOLATION",
   });
   const result = await inference().infer({
     a: { ...processJob, process: { task: "generate", inputs: [], outputs: [exact("out/a")] } },
-    b: { ...processJob, process: { task: "consume", inputs: [exact("out/a")], outputs: [] } },
+    b: {
+      ...tool("process", { task: "consume" }),
+      process: { task: "consume", inputs: [exact("out/a")], outputs: [] },
+    },
     empty: {
-      ...processJob,
+      ...tool("process", { task: "no-io" }),
       process: { task: "no-io", inputs: [], outputs: [] },
-      job: { ...processJob.job, resources: { reads: [], writes: [] } },
+      job: { ...processJob.job, input: { task: "no-io" }, resources: { reads: [], writes: [] } },
     },
   });
   expect(result.edges).toEqual([{ from: "a", to: "b" }]);
@@ -375,7 +378,7 @@ it("process subtree glob ownership cannot authorize additional outside outputs",
   await expect(
     inference().infer({
       a: {
-        ...tool("process", {}, { produces: [...outputs, exact("outside.json")] }),
+        ...tool("process", { task: "generate" }, { produces: [...outputs, exact("outside.json")] }),
         process: { task: "generate", inputs: [], outputs },
       },
     }),

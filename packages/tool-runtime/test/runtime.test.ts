@@ -22,7 +22,7 @@ const options = () => ({
 });
 
 describe("Pi-free canonical runtime", () => {
-  it("exposes seven schemas without a workspace or handlers", () => {
+  it("exposes eight schemas without a workspace or handlers", () => {
     const catalog = createToolCatalog();
     expect(catalog.list().map((t) => t.name)).toEqual([
       "read",
@@ -32,6 +32,7 @@ describe("Pi-free canonical runtime", () => {
       "grep",
       "find",
       "count_tokens",
+      "process",
     ]);
     expect(catalog.get("missing")).toBeUndefined();
     for (const t of catalog.list()) {

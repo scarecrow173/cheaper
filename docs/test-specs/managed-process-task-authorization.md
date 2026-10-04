@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034A9ykvVgiieTjkU129tm"
 type: "test-spec"
-status: "proposed"
+status: "approved"
 title: "managed process task の認可と resource ownership"
 created: "2026-10-04"
 updated: "2026-10-04"

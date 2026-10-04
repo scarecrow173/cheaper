@@ -1,10 +1,10 @@
 ---
 id: "PLAN-034A91M2XAsWK6QNypcEPX"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "managed process canonical tool を実装する"
 created: "2026-10-04"
-updated: "2026-10-04"
+updated: "2026-10-05"
 owners: ["scarecrow173"]
 relations:
   source: ["https://github.com/scarecrow173/cheaper/issues/59"]
@@ -74,22 +74,23 @@ relations:
 
 ## Implementation Sequence
 
-- [ ] plan 承認後、test-spec を作成する。
-- [ ] A/B の task と依存を作成し graph projection を確認する。
-- [ ] A の in-progress IR を開く。
-- [ ] core process policy の failing contract tests を実行する。
-- [ ] core config/resource 宣言の唯一の helper を実装する。
-- [ ] A の focused suite、lint/typecheck/build を検証する。
-- [ ] A の code/tests/IR/task を coherent commit にまとめる。
-- [ ] B の in-progress IR を開く。
-- [ ] 実 process、adapter、resource、scheduler の failing tests を実行する。
-- [ ] process を canonical runtime に登録し最初から capture と tree cancel を実装する。
-- [ ] invocation pool と scope policy を接続する。
-- [ ] Pi/Workflow adapter と guide を完成させる。
-- [ ] B focused suites と lint/typecheck/build を検証する。
-- [ ] coordinator に実装 review を ask し指摘を修正する。
-- [ ] task/IR/plan/spec を終端 status に更新し managed index を preview→apply する。
-- [ ] scoped exit-audit と最終 commit、report、worker_done を実施する。
+- [x] plan 承認後、test-spec を作成する。
+- [x] A/B の task と依存を作成し graph projection を確認する。
+- [x] A の in-progress IR を開く。
+- [x] core process policy の failing contract tests を実行する。
+- [x] core config/resource 宣言の唯一の helper を実装する。
+- [x] A の focused suite、lint/typecheck/build を検証する。
+- [x] A の code/tests/IR/task を coherent commit にまとめる。
+- [x] B の in-progress IR を開く。
+- [x] 実 process、adapter、resource、scheduler の failing tests を実行する。
+- [x] process を canonical runtime に登録し最初から capture と tree cancel を実装する。
+- [x] invocation pool と scope policy を接続する。
+- [x] Pi/Workflow adapter と guide を完成させる。
+- [x] B focused suites と lint/typecheck/build を検証する。
+- [x] coordinator に実装 review を ask し指摘を修正する。
+- [x] task/IR/plan/spec を終端 status に更新し managed index を preview→apply する。
+- [x] scoped exit-audit を実施する。
+- 最終 commit、report、worker_done は branch の終了 handoff として実施する。
 
 ## Dependencies and Risks
 
@@ -118,7 +119,7 @@ relations:
 
 ## Open Questions / Gaps
 
-未解決の要件はない。plan approval と implementation review は coordinator gate。test-spec status は proposed とし自己承認しない。
+未解決の要件はない。plan approval と implementation review は coordinator 承認済み。test-spec は coordinator が approved に更新（msg_53bfa57ca3c4 / msg_723cd17c4ff4）した。
 
 ## Self-Review
 

@@ -1,10 +1,10 @@
 ---
 id: "IMPL-034A9AU7e20SHvZ2sH66sP"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Implement managed process policy"
 created: "2026-10-04"
-updated: "2026-10-04"
+updated: "2026-10-05"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -74,7 +74,7 @@ argv は shell syntax と既知 shell/shim を拒否。cwd/env/config は schema
 - GREEN: `mise exec -- pnpm exec vitest run packages/core/test/policy packages/core/test/resources.test.ts` — 167 passed、2 platform skips、8 files passed。
 - `mise exec -- pnpm lint` / `pnpm typecheck` / `pnpm build` — pass。lint の既存 warnings は変更範囲外。
 - builtin policy 完全一致期待を process default に更新した。
-- implementation review は B 完了時に同じ change 全体を coordinator へ提出するため、IR は in-progress を維持する。
+- Coordinator implementation review: msg_602089b5d40f、APPROVED: implementation。P0/P1 無し、非ブロッキング P2 note を残す。
 
 ## Risks
 
@@ -82,4 +82,4 @@ declared I/O は OS tracing/sandbox ではない。executor/lifecycle は task B
 
 ## Follow-ups
 
-task B の実装と coordinator review。canonical check deferred to coordinator merge run。
+task B とともに実装 review 完了。canonical check deferred to coordinator merge run。

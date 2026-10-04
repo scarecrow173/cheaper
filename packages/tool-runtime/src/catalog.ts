@@ -1,9 +1,16 @@
 import path from "node:path";
-import type { ResourceManifestDeclaration, ToolName } from "@cheaper/core";
+import {
+  type ProcessPolicy,
+  processTaskResources,
+  type ResourceManifestDeclaration,
+  resolveProcessPolicy,
+  type ToolName,
+} from "@cheaper/core";
 import { Type } from "typebox";
 import { countTokensSchema } from "./count-tokens.js";
 import { findSchema } from "./find.js";
 import { grepSchema } from "./grep.js";
+import { processDetailsSchema, processSchema } from "./process.js";
 import { readSchema } from "./read.js";
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [k: string]: JsonValue };
@@ -97,6 +104,7 @@ const schemas = {
   grep: grepSchema,
   find: findSchema,
   count_tokens: countTokensSchema,
+  process: processSchema,
 };
 
 const readDetails = Type.Object({
@@ -121,9 +129,10 @@ const countDetails = Type.Object({
 });
 function outputSchema(name: ToolName): Record<string, unknown> {
   const result = structuredClone(resultSchema);
-  if (name === "read" || name === "count_tokens") {
+  if (name === "read" || name === "count_tokens" || name === "process") {
     const properties = result.properties as Record<string, unknown>;
-    properties.details = name === "read" ? readDetails : countDetails;
+    properties.details =
+      name === "read" ? readDetails : name === "process" ? processDetailsSchema : countDetails;
     result.required = ["content", "details"];
   }
   return result;
@@ -153,11 +162,17 @@ function resources(name: ToolName, input: JsonValue): ResourceManifestDeclaratio
 }
 
 /** metadata の取得に workspace/model/Pi/helper の構築は不要。caller の書換えを共有しない。 */
-export function createToolCatalog(): ToolCatalog {
+export function createToolCatalog(options?: {
+  process?: Partial<ProcessPolicy> | undefined;
+}): ToolCatalog {
+  const policy = resolveProcessPolicy(options?.process);
   const list = (): ToolMetadata[] =>
     Object.entries(schemas).map(([name, inputSchema]) => ({
       name: name as ToolName,
-      resources: (input) => resources(name as ToolName, input),
+      resources: (input) =>
+        name === "process"
+          ? processTaskResources(policy, (input as { task: string }).task)
+          : resources(name as ToolName, input),
       inputSchema: { ...structuredClone(inputSchema) },
       outputSchema: structuredClone(outputSchema(name as ToolName)),
     }));

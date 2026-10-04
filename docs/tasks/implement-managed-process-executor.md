@@ -1,10 +1,10 @@
 ---
 id: "TASK-034A9ymtnIQaZqcchZR6Bg"
 type: "task"
-status: "todo"
+status: "done"
 title: "managed process executor と adapter を実装する"
 created: "2026-10-04"
-updated: "2026-10-04"
+updated: "2026-10-05"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -62,12 +62,12 @@ native spawn、bounded capture、tree cleanup、scheduler pool、catalog/Worker/
 
 ## Done When
 
-- [ ] 実子と孫 cancel、bounded output、readonly pool/FIFO、Pi/Workflow 同一呼出し、producer authority が検証済み。
-- [ ] coordinator implementation review と scoped exit-audit が完了。
+- [x] 実子と孫 cancel、bounded output、readonly pool/FIFO、Pi/Workflow 同一呼出し、producer authority が検証済み。
+- [x] coordinator implementation review と scoped exit-audit が完了。
 
 ## Verification
 
-- [ ] `mise exec -- pnpm exec vitest run packages/tool-runtime/test packages/runtime-pi/test/process.test.ts packages/runtime-pi/test/tool-runtime-contract.test.ts packages/runtime-pi/test/tool-scheduler.test.ts packages/workflow/test` exits 0。
-- [ ] `mise exec -- pnpm lint` exits 0。
-- [ ] `mise exec -- pnpm typecheck` exits 0。
-- [ ] `mise exec -- pnpm build` exits 0。
+- [x] `mise exec -- pnpm exec vitest run packages/tool-runtime/test packages/runtime-pi/test/process.test.ts packages/runtime-pi/test/tool-runtime-contract.test.ts packages/runtime-pi/test/tool-scheduler.test.ts packages/workflow/test` exits 0。
+- [x] `mise exec -- pnpm lint` exits 0。
+- [x] `mise exec -- pnpm typecheck` exits 0。
+- [x] `mise exec -- pnpm build` exits 0。

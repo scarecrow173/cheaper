@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "managed process canonical executor の設計"
 created: "2026-10-04"
-updated: "2026-10-04"
+updated: "2026-10-05"
 owners: ["scarecrow173"]
 relations:
   source: ["https://github.com/scarecrow173/cheaper/issues/59"]
@@ -69,9 +69,10 @@ relations:
 
 - canonical execute → strict input validate → named task declaration → accounting → OperationManager queue → scheduler global + access + pool admission → resource/cwd validation → native spawn（stdin ignore）→ drain/capture → child close + cleanup → canonical result または TOOL_EXECUTION_FAILURE。境界拒否は既存 accounting 内で一度記録する。
 - executable: node は process.execPath が実体名 node/node.exe の時のみそれを使用（SEA の cheaper.exe を Node として再起動しない）。それ以外の node/ bare command は trusted host PATH の native executable を候補として解決。Windows は .exe/.com のみで .cmd/.bat/.ps1 に fallback しない。relative executable は validated workspace path。absolute executable は task policy が認可した OS executable として許可する。resolver unit test では SEA execPath と native Node PATH 候補を注入して確認する。
-- env は task.env だけ、Windows は SystemRoot のみ OS 用に補完。親 PATH/credential/NODE_OPTIONS は継承しない。task.env は明示 authorization として扱う。
+- env は task.env だけ、Windows は SystemRoot を OS 用に補完し、libuv が自動継承する required env は未指定時に空値で遮断する。NODE_V8_COVERAGE は own undefined で Node の自動補完を遮断する。親 PATH/credential/NODE_OPTIONS は継承しない。task.env は明示 authorization として扱う。
 - POSIX detached process group を SIGKILL、Windows SystemRoot/System32/taskkill.exe /PID n /T /F を shell:false/windowsHide:true で呼ぶ。cancel listener は close/cleanup 後に除去。cleanup failure は成功にせず、child error/close と cancel first reason を区別する。
 - 結果 details = task/state/exitCode/signal/stdout/stderr。各 stream は text/bytes/capturedBytes/truncated。nonzero exit は同じ bounded details を持つ error。cancel は原 reason を reject するため manager の cancelled state を保存する。
+- content の表示は64文字で折り返し、bounded でも高密度の長い文字列で同期 BPE 計測が停滞するのを避ける。正確な stream text は details に保持する。
 
 ## Non-Functional Constraints
 
@@ -96,6 +97,6 @@ non-goals の API を追加しない。#61 の ResourceManager は共有 ADR に
 ## Verification Notes
 
 - [x] coordinator 承認: msg_126e0d3e23d0、spec-approval / adr-acceptance / design-approval。hot-file 範囲は core vocabulary/policy/schema/load/worker predicate、builtin policy ×2、core/index.ts と tool-runtime/index.ts の export 行。
-- [ ] policy、tool-runtime、runtime-pi、workflow の focused suite と pnpm lint/typecheck/build を実行する。
-- [ ] cancellation は実 PID/孫 PID の生存確認を行い、output cap は実大量/binary出力で検証する。
-- [ ] resource-inference.test.ts の既存 process 未宣言ケース（review時314–318行）を、policy/catalog から解決不能なら fail closed、解決可能なら canonical manifest になる契約に更新する。
+- [x] policy、tool-runtime、runtime-pi、workflow の focused suite と pnpm lint/typecheck/build を実行する。
+- [x] cancellation は実 PID/孫 PID の生存確認を行い、output cap は実大量/binary出力で検証する。
+- [x] resource-inference.test.ts の既存 process 未宣言ケース（review時314–318行）を、policy/catalog から解決不能なら fail closed、解決可能なら canonical manifest になる契約に更新する。

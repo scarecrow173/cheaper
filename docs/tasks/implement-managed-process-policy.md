@@ -4,7 +4,7 @@ type: "task"
 status: "done"
 title: "managed process policy と resource 宣言を実装する"
 created: "2026-10-04"
-updated: "2026-10-04"
+updated: "2026-10-05"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -60,11 +60,11 @@ core に ProcessPolicy/task config resolver と pure resource 宣言を実装す
 
 ## Done When
 
-- [ ] strict task config、legacy/default、trusted/project cap、ResourceManifest ownership が検証済み。
+- [x] strict task config、legacy/default、trusted/project cap、ResourceManifest ownership が検証済み。
 
 ## Verification
 
-- [ ] `mise exec -- pnpm exec vitest run packages/core/test/policy packages/core/test/resources.test.ts` exits 0。
-- [ ] `mise exec -- pnpm lint` exits 0。
-- [ ] `mise exec -- pnpm typecheck` exits 0。
-- [ ] `mise exec -- pnpm build` exits 0。
+- [x] `mise exec -- pnpm exec vitest run packages/core/test/policy packages/core/test/resources.test.ts` exits 0。
+- [x] `mise exec -- pnpm lint` exits 0。
+- [x] `mise exec -- pnpm typecheck` exits 0。
+- [x] `mise exec -- pnpm build` exits 0。
