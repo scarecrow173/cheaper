@@ -49,4 +49,3 @@ artifact preparationがdoneでありsharedlibraryが使えること。
 
 - [x] `mise exec -- node --test scripts/test/release-workflow.test.mjs` exits 0（11pass）。
 - [x] root Biome設定はscripts/**をexclude。最終sliceでpnpm lintを実行しconfigは変更しない。
-

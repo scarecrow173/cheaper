@@ -151,4 +151,3 @@ wiringは#73-Cへdeferする（mise.tomlはこのsliceで変更しない）。
 native3はCI専用で本workerは実dispatchしない。localfocusedtest、fixturetar
 roundtripと可能なhostsmoke、pnpm lint/typecheck/build、scopedexit-auditを保存。
 canonical check deferred to coordinator merge run。CI-only項目をlocalPASSに含めない。
-

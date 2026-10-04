@@ -63,4 +63,3 @@ GitHub APIへの実write、実native3のPASS、署名、tagの外部変更の禁
 ## Risk
 
 dependency/publish順序やpermissionのdriftでpartial public releaseが生じる。API failureをabsenceとして扱うと誤った再作成を試みる。
-

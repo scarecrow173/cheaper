@@ -63,4 +63,3 @@ impl/ir indexは承認済み例外のupdateIndexForMarkdownDirによる再生成
 
 実native3とRelease publishはCI-only。fixture rawbytesを実3target成功とは主張しない。
 canonical check deferred to coordinator merge run。
-

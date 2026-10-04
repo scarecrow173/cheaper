@@ -49,4 +49,3 @@ PLAN-034zTJptHTdovrvYW7wQ1k の承認済み契約。完了後publication taskを
 
 - [x] `mise exec -- node --test scripts/test/release-artifacts.test.mjs` exits 0（15 pass / 1 Linux-only skip）。
 - [x] scoped Biomeの対象を確認。root設定がscripts/**をexcludeするためlint evidenceは最終sliceのpnpm lintに記録する（config変更なし）。
-

@@ -55,4 +55,3 @@ publication workflow taskがdone。
 - [x] `mise exec -- node scripts/check-doc-ids.mjs` exits 0。
 - [x] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type all --json` をchain+sharedADRでfilterしblocking0。
 - [x] Manual: named guide checksをreportへ記録（proseのsource-text snapshot testでpassを代用しない）。
-

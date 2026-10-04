@@ -188,4 +188,3 @@ SHA256SUMSを公開しないのでacquisitionfallbackはfailclosed。
 依存する3sliceをこのworkerで順に実行し、追加workerはdispatchしない。
 plan承認後にtest-specを作成してverified-byを張り、その後taskdoc/DAGを生成する。
 plan承認ゲート前にtask/codeを作らない。
-

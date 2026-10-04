@@ -63,4 +63,3 @@ R1/R2/R3/R6 とAC1/AC2/AC4/AC7のartifact境界をslice変更後も維持する�
 ## Risk
 
 形式driftはfirst-run failclosedを起こし、hash/coverage省略は誤配送・不完全bundleを見逃す。source変更は旧LFS経路を壊す。
-

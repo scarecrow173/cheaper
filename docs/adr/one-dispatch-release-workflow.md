@@ -126,4 +126,3 @@ workspace lease / runtime / package には変更を加えない。
 ## Revisit Conditions
 
 #73-C移行、target追加、署名導入、release復旧方針またはAPM archive format変更時に再検討する。
-
