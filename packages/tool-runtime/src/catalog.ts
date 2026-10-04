@@ -1,4 +1,5 @@
-import type { ToolName } from "@cheaper/core";
+import path from "node:path";
+import type { ResourceManifestDeclaration, ToolName } from "@cheaper/core";
 import { Type } from "typebox";
 import { countTokensSchema } from "./count-tokens.js";
 import { findSchema } from "./find.js";
@@ -8,6 +9,8 @@ import { readSchema } from "./read.js";
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [k: string]: JsonValue };
 export interface ToolMetadata {
   name: ToolName;
+  /** 実行せず input の既知アクセス範囲を宣言する。null は未知。 */
+  resources?: (input: JsonValue) => ResourceManifestDeclaration;
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
 }
@@ -126,11 +129,35 @@ function outputSchema(name: ToolName): Record<string, unknown> {
   return result;
 }
 
+function resources(name: ToolName, input: JsonValue): ResourceManifestDeclaration {
+  const subtree = name === "ls" || name === "grep" || name === "find";
+  const value =
+    input !== null && typeof input === "object" && !Array.isArray(input)
+      ? (input.path ?? (subtree ? "." : undefined))
+      : undefined;
+  // absolute input は D5 relative declaration に変換せず未知として公開する。
+  const known =
+    typeof value === "string" &&
+    value.length > 0 &&
+    !path.isAbsolute(value) &&
+    !path.win32.isAbsolute(value) &&
+    !/^[a-z]:/i.test(value);
+  const scope = known
+    ? [{ path: value, scope: subtree ? ("subtree" as const) : ("exact" as const) }]
+    : null;
+  return {
+    reads: name === "write" ? [] : scope,
+    writes: name === "write" || name === "edit" ? scope : [],
+    produces: [],
+  };
+}
+
 /** metadata の取得に workspace/model/Pi/helper の構築は不要。caller の書換えを共有しない。 */
 export function createToolCatalog(): ToolCatalog {
   const list = (): ToolMetadata[] =>
     Object.entries(schemas).map(([name, inputSchema]) => ({
       name: name as ToolName,
+      resources: (input) => resources(name as ToolName, input),
       inputSchema: { ...structuredClone(inputSchema) },
       outputSchema: structuredClone(outputSchema(name as ToolName)),
     }));

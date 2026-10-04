@@ -54,6 +54,7 @@ Directory: `docs/designs`
 | DESIGN-034zQkHD65kAeG9xVGSoFX | Version-pinned launcher acquisition | approved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | DESIGN-034r05iHrZUE6WrdtQIOmE | コアドメインモデル: Worker Definition・Resolver・Runtime Policy・tool vocabulary・error model | approved | [worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md](./worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md) |
 | DESIGN-034zJ38fX1W3g0Zrceda1E | WorkflowCompiler の validation と materialization 境界 | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
+| DESIGN-034zSWw1LYrRvcB471oQm2 | Workflow resource inference port 実装 | approved | [workflow-resource-inference.md](./workflow-resource-inference.md) |
 | DESIGN-034r05iHrZUE6WsgJOy6Ny | workspace filesystem boundary と sandboxed tools | approved | [workspace-filesystem-boundary-sandboxed-tools.md](./workspace-filesystem-boundary-sandboxed-tools.md) |
 | DESIGN-034r05iHy2gdnoIvdC141H | Write-scope and privacy deny enforcement design | approved | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |
 | DESIGN-034r05iHy2gdnoDFAeW1DN | code-writer and doc-writer worker contracts | approved | [writer-worker-contracts.md](./writer-worker-contracts.md) |

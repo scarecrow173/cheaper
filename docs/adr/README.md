@@ -48,5 +48,6 @@ Directory: `docs/adr`
 | ADR-034zIOoBXZtluQdBMlJQge | Version pinned launcher acquisition | accepted | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | ADR-034r05iHlWosDpJ3DpG3XW | Worker Definition / Runtime Policy / Runtime Invariants の三層 capability モデル | accepted | [worker-definition-runtime-policy-runtime-invariants-capability.md](./worker-definition-runtime-policy-runtime-invariants-capability.md) |
 | ADR-034r05iHlWosDpIq9VUsl7 | Worker を YAML frontmatter + Markdown の宣言的定義にする | accepted | [worker-yaml-frontmatter-markdown.md](./worker-yaml-frontmatter-markdown.md) |
+| ADR-034zTpAnvDWILMV1LH66Wd | Workflow の既知 resource と safety fallback を分離する | accepted | [workflow-resource-inference-sources.md](./workflow-resource-inference-sources.md) |
 | ADR-034r05iHlWosDpO699OwYF | workspace filesystem boundary は cheaper 提供の sandboxed tool 実装で強制する | accepted | [workspace-filesystem-boundary-cheaper-sandboxed-tool.md](./workspace-filesystem-boundary-cheaper-sandboxed-tool.md) |
 | ADR-034r05iHlWosDpMXiQ38yf | 決定論的メタデータは wrapper が実測する | accepted | [wrapper-measured-deterministic-metadata.md](./wrapper-measured-deterministic-metadata.md) |

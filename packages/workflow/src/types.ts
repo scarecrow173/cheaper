@@ -1,4 +1,9 @@
-import type { ResourceManifest, WorkerDefinition } from "@cheaper/core";
+import type {
+  ScopeDeclaration as CoreScopeDeclaration,
+  ResourceClaim,
+  ResourceManifest,
+  WorkerDefinition,
+} from "@cheaper/core";
 import type { JsonValue, ToolCatalog } from "@cheaper/tool-runtime";
 
 export type { JsonValue } from "@cheaper/tool-runtime";
@@ -40,13 +45,28 @@ export interface WorkerCatalog {
   /** 既存 loader が検証した metadata。Worker を実行しない。 */
   get(name: string): WorkerDefinition | undefined;
 }
+export interface ProcessResourceDeclaration {
+  task: string;
+  inputs: readonly CoreScopeDeclaration[];
+  outputs: readonly CoreScopeDeclaration[];
+}
+export interface ResourceConflict {
+  jobs: [string, string];
+  claims: [ResourceClaim, ResourceClaim];
+}
+export type ResourceInferenceDiagnostic =
+  | { kind: "fallback"; job: string; reason: string }
+  | (ResourceConflict & { kind: "dependency" | "conflict" });
 export interface ResourceInferenceJob {
+  process?: ProcessResourceDeclaration;
   job: WorkflowJob;
   worker?: WorkerDefinition;
 }
 export interface ResourceInferenceResult {
   manifests: Readonly<Record<string, ResourceManifest>>;
   edges: readonly DependencyEdge[];
+  conflicts?: readonly ResourceConflict[];
+  diagnostics?: readonly ResourceInferenceDiagnostic[];
 }
 export interface ResourceInference {
   /** D4 の正規化・fallback・writeScope 検査はこの port が所有する。 */

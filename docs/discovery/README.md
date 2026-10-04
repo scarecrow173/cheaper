@@ -28,3 +28,4 @@ Directory: `docs/discovery`
 | DISC-034zIO1UQe9CI5VCzqot1c | Version-pinned launcher acquisition | resolved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | DISC-034r05iHy2gdnp9dPPZ28N | Windsurf Cascade hooks and APM hook deployment for pre-read delegation | resolved | [windsurf-cascade-hooks-and-apm-hook-deployment.md](./windsurf-cascade-hooks-and-apm-hook-deployment.md) |
 | DISC-034zIKizOrTom96Q19mbYE | Workflow contract compiler の責務と検証境界 | resolved | [workflow-compiler-boundaries.md](./workflow-compiler-boundaries.md) |
+| DISC-034zSWuKOprLRHraOiRn31 | Workflow inference の責務と情報源 | resolved | [workflow-resource-inference.md](./workflow-resource-inference.md) |
