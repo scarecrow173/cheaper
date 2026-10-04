@@ -104,6 +104,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7h3EuEqFny | Implement mutation journal | done | [implement-mutation-journal.md](./implement-mutation-journal.md) |
 | TASK-034zQTSDQA908MNdv5Qe8v | Implement native launcher acquisition and hook routing | done | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
 | TASK-034r05iHQeQpDqHVQkd8t7 | Implement real-provider worker e2e and verify against live Ollama | done | [implement-ollama-real-provider-e2e.md](./implement-ollama-real-provider-e2e.md) |
+| TASK-034zTjT0KVd4s2TRC4Ux1B | Implement operation manager state lifecycle | done | [implement-operation-manager-state.md](./implement-operation-manager-state.md) |
 | TASK-034r05iHK8bA7hgqNrs11u | Implement output repair session | done | [implement-output-repair-session.md](./implement-output-repair-session.md) |
 | TASK-034r05iHK8bA7he1WXwcBs | Implement Pi session creation with maxTokens injection | done | [implement-pi-session-creation-with-maxtokens-injection.md](./implement-pi-session-creation-with-maxtokens-injection.md) |
 | TASK-034r05iHQeQpDpYxJZR1PT | Implement pre_read_code hook and e2e test | done | [implement-pre-read-code-hook.md](./implement-pre-read-code-hook.md) |
@@ -185,6 +186,7 @@ Directory: `docs/tasks`
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
+| TASK-034zTjXTqV7nvYYkf1bUH9 | Wire canonical operation ownership and abort | done | [wire-canonical-operation-ownership.md](./wire-canonical-operation-ownership.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
 | TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |

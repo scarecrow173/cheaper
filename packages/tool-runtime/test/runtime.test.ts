@@ -65,11 +65,13 @@ describe("Pi-free canonical runtime", () => {
     const r = createToolRuntime(options());
     await expect(r.execute(name as string, input)).rejects.toMatchObject({ code: "INVALID_INPUT" });
     expect(r.budget.toolCalls).toBe(0);
+    expect(r.operations()).toHaveLength(0);
     await r.dispose();
   });
   it.each(["write", "edit", "ls"] as const)("rejects unregistered %s", async (name) => {
     const r = createToolRuntime({ ...options(), names: [name] });
     await expect(r.execute(name, {})).rejects.toMatchObject({ code: "UNKNOWN_TOOL" });
+    expect(r.operations()).toHaveLength(0);
     await r.dispose();
   });
   it("reserves sibling budget once and meters successful text once", async () => {
@@ -92,6 +94,8 @@ describe("Pi-free canonical runtime", () => {
     expect(r.budget.rejectedToolCalls).toBe(1);
     expect(r.meter.sourceTokens).toBe(countTextTokens("done"));
     expect(onLimit).toHaveBeenCalledTimes(1);
+    expect(r.operations).toBeTypeOf("function");
+    expect(r.operations().map((op) => op.state)).toEqual(["completed"]);
     await r.dispose();
   });
   it("counts access rejects once without output tokens", async () => {
@@ -104,6 +108,9 @@ describe("Pi-free canonical runtime", () => {
     expect(r.budget.toolCalls).toBe(1);
     expect(r.budget.rejectedToolCalls).toBe(1);
     expect(r.meter.sourceTokens).toBe(0);
+    expect(r.operations).toBeTypeOf("function");
+    expect(r.operations().map((op) => op.state)).toEqual(["failed"]);
+    expect(r.operations()[0]?.error?.message).toContain("Access denied");
     await r.dispose();
   });
 });

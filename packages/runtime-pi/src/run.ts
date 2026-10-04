@@ -116,6 +116,12 @@ const ABORT_CODES: Record<AbortReason, ErrorCode> = {
   maxToolCalls: "MAX_TOOL_CALLS_EXCEEDED",
 };
 
+function abortError(reason: AbortReason): CheaperError {
+  return new CheaperError(ABORT_CODES[reason], `worker run aborted: ${reason}`, {
+    details: { reason },
+  });
+}
+
 export function buildSystemPrompt(worker: WorkerDefinition, toolNames: string[]): string {
   const contract = [
     "",
@@ -211,7 +217,7 @@ export async function runWorker(
   function requestAbort(reason: AbortReason): void {
     if (abortReason !== undefined) return;
     abortReason = reason;
-    runAbort.abort();
+    runAbort.abort(abortError(reason));
   }
 
   // policy timeout は agent execution 区間（model 解決・session 構築を含む
@@ -311,11 +317,6 @@ export async function runWorker(
         requestAbort("maxTurns");
       }
     });
-
-    const abortError = (reason: AbortReason) =>
-      new CheaperError(ABORT_CODES[reason], `worker run aborted: ${reason}`, {
-        details: { reason },
-      });
 
     async function buildMeta(result?: Record<string, unknown>): Promise<WorkerRunMeta> {
       const snap = collector.snapshot();

@@ -1,8 +1,8 @@
 import { CheaperError, type SymlinkPolicy } from "@cheaper/core";
+import { OperationManager, type OperationRecord } from "./operation.js";
 import { createToolRuntime, type ToolRuntime, type ToolRuntimeOptions } from "./registry.js";
 
-/** 後続 #56/#57/#61 で具体化する。値を作れる no-op service は公開しない。 */
-export type OperationManager = never;
+/** 後続 #57/#61 で具体化する。値を作れる no-op service は公開しない。 */
 export type ToolScheduler = never;
 export type ResourceManager = never;
 export type ResourceLease = never;
@@ -25,7 +25,8 @@ export interface InvocationToolRuntime {
   readonly root: string;
   readonly symlinkPolicy: SymlinkPolicy;
   createWorkerScope(options: WorkerScopeOptions): ToolRuntime;
-  abort(): void;
+  operations(ownerId?: string): readonly OperationRecord[];
+  abort(reason?: unknown): void;
   drain(): Promise<void>;
   dispose(): Promise<void>;
 }
@@ -41,9 +42,14 @@ export function createInvocationToolRuntime(
     throw invalidBinding("abort grace must be a finite nonnegative number");
   }
   const controller = new AbortController();
-  const abort = () => controller.abort();
-  opts.signal?.addEventListener("abort", abort, { once: true });
-  if (opts.signal?.aborted) abort();
+  const manager = new OperationManager({
+    signal: controller.signal,
+    abortGraceMs: opts.abortGraceMs ?? 5000,
+  });
+  const abort = (reason?: unknown) => controller.abort(reason);
+  const onExternalAbort = () => abort(opts.signal?.reason);
+  opts.signal?.addEventListener("abort", onExternalAbort, { once: true });
+  if (opts.signal?.aborted) onExternalAbort();
   const scopes = new Set<ToolRuntime>();
   const owners = new Set<string>();
   let disposed: Promise<void> | undefined;
@@ -59,13 +65,16 @@ export function createInvocationToolRuntime(
         throw invalidBinding("duplicate or empty owner");
       if (options.parentLease !== undefined)
         throw invalidBinding("parent lease is not implemented (#61)");
-      const scope = createToolRuntime({
-        ...options,
-        signal: options.signal
-          ? AbortSignal.any([controller.signal, options.signal])
-          : controller.signal,
-        abortGraceMs: options.abortGraceMs ?? opts.abortGraceMs,
-      });
+      const scope = createToolRuntime(
+        {
+          ...options,
+          signal: options.signal
+            ? AbortSignal.any([controller.signal, options.signal])
+            : controller.signal,
+          abortGraceMs: options.abortGraceMs ?? opts.abortGraceMs,
+        },
+        { manager, ownerId: options.ownerId },
+      );
       owners.add(options.ownerId);
       scopes.add(scope);
       const dispose = scope.dispose.bind(scope);
@@ -78,6 +87,7 @@ export function createInvocationToolRuntime(
       };
       return scope;
     },
+    operations: (ownerId) => manager.records(ownerId),
     abort,
     async drain() {
       abort();
@@ -89,7 +99,8 @@ export function createInvocationToolRuntime(
         try {
           await Promise.all([...scopes].map((scope) => scope.dispose()));
         } finally {
-          opts.signal?.removeEventListener("abort", abort);
+          await manager.dispose();
+          opts.signal?.removeEventListener("abort", onExternalAbort);
           scopes.clear();
         }
       })();
