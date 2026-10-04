@@ -2,6 +2,7 @@ import {
   CheaperError,
   claimContains,
   claimsConflict,
+  isMutatingTool,
   normalizeResourceClaim,
   normalizeResourceManifest,
   type ResourceClaim,
@@ -95,7 +96,7 @@ export class WorkspaceResourceInference implements ResourceInference {
     }
     const worker = item.worker;
     if (!worker) invalid("worker resource inference requires worker metadata");
-    const mutation = worker.tools.some((tool) => tool === "write" || tool === "edit");
+    const mutation = worker.tools.some(isMutatingTool);
     if (!mutation) return { declaration: { writes: [], produces: [] }, authority: [] };
     const field = worker.cheaper.writeScope;
     if (!field) return { declaration: {}, unknownAuthority: true };

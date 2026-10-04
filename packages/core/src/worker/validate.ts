@@ -171,6 +171,11 @@ export async function validateWorkerDefinition(
 /** workspace を mutate しうる tool。直接比較可否の判定に使う。 */
 const MUTATING_TOOL_NAMES: ReadonlySet<ToolName> = new Set(["write", "edit"]);
 
+/** mutation capability の正本。resource inference と accounting で同じ集合を使う。 */
+export function isMutatingTool(name: ToolName): boolean {
+  return MUTATING_TOOL_NAMES.has(name);
+}
+
 /**
  * measured offload（`savings`）の source↔returned が「親 model の
  * 直接実行」と比較可能な workload の worker か（SPEC-034rzGnCaRQc5ceI95lf5i
