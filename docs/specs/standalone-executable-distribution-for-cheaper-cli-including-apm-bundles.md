@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034z14nGIf6fXRtTskkrk8"
 type: "spec"
-status: "approved"
+status: "superseded"
 title: "Standalone executable distribution for cheaper CLI including APM bundles"
 created: "2026-10-02"
 updated: "2026-10-04"
@@ -23,7 +23,7 @@ relations:
     - "./apm-self-contained-cli-distribution.md"
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["SPEC-034zWqZR8Dmu9TXTR2qcsg"]
   related:
     - "../adr/distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"
     - "../adr/distribute-cheaper-as-node-26-sea-standalone-executables-shared-by-direct-releas.md"

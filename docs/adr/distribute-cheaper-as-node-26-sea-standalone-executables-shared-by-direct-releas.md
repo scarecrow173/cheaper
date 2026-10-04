@@ -1,7 +1,7 @@
 ---
 id: "ADR-034z1xMK43jRs3D79Urhpc"
 type: "adr"
-status: "accepted"
+status: "superseded"
 title: "Distribute cheaper as Node 26 SEA standalone executables shared by direct release and APM hook bundle payload"
 created: "2026-10-02"
 updated: "2026-10-04"
@@ -22,7 +22,7 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["ADR-034zWr0viJFoTiUALvhE6N"]
   related:
     - "./one-dispatch-release-workflow.md"
     - "./distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"

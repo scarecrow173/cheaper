@@ -6,7 +6,7 @@ Directory: `docs/test-specs`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
-| TSPEC-034z3yKWLolrImpMY8UMhZ | APM executable payload layout and launcher dispatch contract | proposed | [apm-executable-payload-layout-and-launcher-dispatch-contract.md](./apm-executable-payload-layout-and-launcher-dispatch-contract.md) |
+| TSPEC-034z3yKWLolrImpMY8UMhZ | APM executable payload layout and launcher dispatch contract | superseded | [apm-executable-payload-layout-and-launcher-dispatch-contract.md](./apm-executable-payload-layout-and-launcher-dispatch-contract.md) |
 | TSPEC-CcB52hP0U8aHcOIhg0D0ge | auto tier classification by effectiveCost percentile | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
 | TSPEC-034zQr5gZxyNe4nWC1uHHg | Canonical Tool Runtime の adapter parity と所有境界 | proposed | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | TSPEC-034z50PbuzTYDWvQXYdvaG | cheaper hook subcommands and hooks.json executable contract | proposed | [cheaper-hook-subcommands-and-hooks-json-executable-contract.md](./cheaper-hook-subcommands-and-hooks-json-executable-contract.md) |
@@ -16,6 +16,7 @@ Directory: `docs/test-specs`
 | TSPEC-034rzVr1S8qFdi1JqWSN9Z | model exclude and explicit selection guards | approved | [model-exclude-and-explicit-selection.md](./model-exclude-and-explicit-selection.md) |
 | TSPEC-034rzVqBmfD2pkA9f82Eoa | model tier classification pipeline | approved | [model-tier-classification-pipeline.md](./model-tier-classification-pipeline.md) |
 | TSPEC-034zTjObSJGccLlnwmHwVm | Operation lifecycle settlement guarantees | approved | [operation-lifecycle-settlement.md](./operation-lifecycle-settlement.md) |
+| TSPEC-034zXB13nuorLP81dn8ro8 | Payload-free source acquisition and native verification | proposed | [payload-free-source-acquisition-and-native-verification.md](./payload-free-source-acquisition-and-native-verification.md) |
 | TSPEC-034rzVrqJiXNDl2AF8eI5s | pricing metadata resolution and models command | approved | [pricing-metadata-and-models-command.md](./pricing-metadata-and-models-command.md) |
 | TSPEC-034zTWh6x6esCzZmjDdiT0 | Release manifest and snapshot integrity | proposed | [release-manifest-and-snapshot-integrity.md](./release-manifest-and-snapshot-integrity.md) |
 | TSPEC-034zTWhBVg6DzifF8qlhAc | Release publication and native smoke | proposed | [release-publication-and-native-smoke.md](./release-publication-and-native-smoke.md) |

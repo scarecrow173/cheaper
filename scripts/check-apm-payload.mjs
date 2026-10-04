@@ -1,85 +1,53 @@
-// Verifies the committed APM hook payload carries the expected set of
-// platform executables (issue #71): every supported target dir must
-// contain a real binary — not a Git LFS pointer — and the executable
-// matching the host platform must report the canonical package version.
-// Wired into `mise run check` so a missing/pointer/stale payload fails
-// locally as well as in CI.
-//
-// The byte-for-byte "same artifact as the release pipeline" guarantee
-// lives in .github/workflows/release.yml (freshness compare step); this
-// script is the host-side check that works without a release run.
-//
-// Keep EXPECTED_TARGETS in sync with the release.yml build matrix.
-
-import { execFileSync } from "node:child_process";
-import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from "node:fs";
+// Source assets are verified here; native builds and release smokes verify executables.
+import { lstatSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const repoRoot = fileURLToPath(new URL("..", import.meta.url));
-const payloadBin = path.join(repoRoot, "packages/apm/.apm/hooks/cli/bin");
+const workers = ["bulk-reader", "code-writer", "doc-writer"];
+const assets = ["cheaper", "cheaper.ps1", "hooks.json", "cli/version.json", "cli/bin/cheaper.mjs", "cli/policy.yaml",
+  ...workers.flatMap((name) => [`cli/workers/${name}.md`, `cli/workers/schemas/${name}.input.schema.json`, `cli/workers/schemas/${name}.output.schema.json`])];
 
-const EXPECTED_TARGETS = ["win32-x64", "linux-x64", "linux-arm64"];
-
-const LFS_MIN_SIZE = 1 * 1024 * 1024;
-
-function isLfsPointer(file) {
-  const buf = Buffer.alloc(64);
-  const fd = openSync(file, "r");
+export function checkApmPayload(repoRoot) {
+  const errors = [];
+  const contents = new Map();
+  for (const asset of assets) {
+    const relative = `packages/apm/.apm/hooks/${asset}`;
+    try {
+      const file = path.join(repoRoot, relative);
+      const stat = lstatSync(file);
+      if (!stat.isFile() || stat.size === 0) {
+        errors.push(`asset must be a nonempty regular file: ${relative}`);
+        continue;
+      }
+      const text = readFileSync(file, "utf8");
+      if (text.startsWith("version https://git-lfs")) {
+        errors.push(`asset is an LFS pointer: ${relative}`);
+        continue;
+      }
+      contents.set(asset, text);
+      if (asset.endsWith(".json")) {
+        try { JSON.parse(text); }
+        catch { errors.push(`invalid JSON: ${relative}`); }
+      }
+    } catch (error) {
+      errors.push(`asset missing or unreadable: ${relative} (${error.message})`);
+    }
+  }
   try {
-    readSync(fd, buf, 0, 64, 0);
-  } finally {
-    closeSync(fd);
+    const canonical = JSON.parse(readFileSync(path.join(repoRoot, "packages/cli/package.json"), "utf8")).version;
+    const metadata = contents.get("cli/version.json");
+    const match = metadata?.match(/^\s*\{\s*"version"\s*:\s*"([^"\s]+)"\s*\}\s*$/);
+    if (!match || match[1] !== canonical) errors.push(`version metadata must contain only canonical version ${canonical}`);
+  } catch (error) {
+    errors.push(`invalid canonical version JSON: ${error.message}`);
   }
-  return buf.toString("utf8", 0, 44).startsWith("version https://git-lfs");
+  return errors;
 }
 
-const hostTarget = `${process.platform}-${process.arch}`;
-const canonicalVersion = JSON.parse(
-  readFileSync(path.join(repoRoot, "packages/cli/package.json"), "utf8"),
-).version;
-
-let failed = false;
-for (const target of EXPECTED_TARGETS) {
-  const name = target === "win32-x64" ? "cheaper.exe" : "cheaper";
-  const exe = path.join(payloadBin, target, name);
-  const rel = path.relative(repoRoot, exe);
-  if (!existsSync(exe)) {
-    console.error(`payload missing: ${rel} (expected target ${target})`);
-    failed = true;
-    continue;
-  }
-  const size = statSync(exe).size;
-  if (size < LFS_MIN_SIZE || isLfsPointer(exe)) {
-    console.error(
-      `payload is not a real binary: ${rel} (${size} bytes — ` +
-        `looks like a Git LFS pointer; run 'git lfs pull')`,
-    );
-    failed = true;
-    continue;
-  }
-  if (target !== hostTarget) continue;
-  let reported;
-  try {
-    reported = execFileSync(exe, ["--version"], { encoding: "utf8" }).trim();
-  } catch (e) {
-    console.error(`payload executable failed to run: ${rel} (${e.message})`);
-    failed = true;
-    continue;
-  }
-  if (reported !== canonicalVersion) {
-    console.error(
-      `payload version mismatch: ${rel} reports ${reported}, canonical is ${canonicalVersion}`,
-    );
-    failed = true;
-  }
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const errors = checkApmPayload(fileURLToPath(new URL("..", import.meta.url)));
+  if (errors.length) {
+    console.error(errors.join("\n"));
+    process.exitCode = 1;
+  } else console.log("APM source assets OK (platform executables are acquired or locally built)");
 }
-
-if (failed) {
-  console.error(
-    "\nAPM payload check failed. Regenerate platform executables via the " +
-      "release workflow and commit them through Git LFS.",
-  );
-  process.exit(1);
-}
-console.log(`APM payload check OK: ${EXPECTED_TARGETS.join(", ")}`);
