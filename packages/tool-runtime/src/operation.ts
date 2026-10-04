@@ -147,6 +147,13 @@ export class OperationManager {
     return this.create(options);
   }
 
+  setResourceClaims(id: string, claims: readonly ResourceClaim[]): void {
+    const entry = this.entry(id);
+    if (entry.record.state !== "queued")
+      throw new CheaperError("INVALID_REQUEST", "resource preparation requires queued operation");
+    entry.record.resourceClaims = copyClaims(claims);
+  }
+
   start(id: string): OperationRecord {
     const entry = this.entry(id);
     assertOperationTransition(entry.record.state, "running");

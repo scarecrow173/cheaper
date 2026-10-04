@@ -1,11 +1,21 @@
-import { CheaperError, type ConcurrencyPolicy, type SymlinkPolicy } from "@cheaper/core";
+import {
+  CheaperError,
+  type ConcurrencyPolicy,
+  type SymlinkPolicy,
+  type ToolName,
+} from "@cheaper/core";
+import { ResourceAccess, type ResourceScopeOptions } from "./access.js";
 import { OperationManager, type OperationRecord } from "./operation.js";
 import { createToolRuntime, type ToolRuntime, type ToolRuntimeOptions } from "./registry.js";
+import { type ResourceLease, ResourceManager } from "./resources.js";
 import { ToolScheduler } from "./scheduler.js";
 
-/** 後続 #61 で具体化する。値を作れる no-op service は公開しない。 */
-export type ResourceManager = never;
-export type ResourceLease = never;
+export type { ResourceLease } from "./resources.js";
+export interface JobLeaseOptions extends ResourceScopeOptions {
+  ownerId: string;
+  names: readonly ToolName[];
+  signal?: AbortSignal;
+}
 export interface WorkerExecutionBinding {
   runtime: InvocationToolRuntime;
   ownerId: string;
@@ -25,6 +35,8 @@ export interface InvocationToolRuntimeOptions {
 export interface InvocationToolRuntime {
   readonly root: string;
   readonly symlinkPolicy: SymlinkPolicy;
+  acquireJobLease(options: JobLeaseOptions): Promise<ResourceLease>;
+  releaseJobLease(lease: ResourceLease): void;
   createWorkerScope(options: WorkerScopeOptions): ToolRuntime;
   operations(ownerId?: string): readonly OperationRecord[];
   abort(reason?: unknown): void;
@@ -47,7 +59,8 @@ export function createInvocationToolRuntime(
     signal: controller.signal,
     abortGraceMs: opts.abortGraceMs ?? 5000,
   });
-  const scheduler = new ToolScheduler(manager, opts.concurrency);
+  const resources = new ResourceManager(opts.root, opts.symlinkPolicy);
+  const scheduler = new ToolScheduler(manager, opts.concurrency, resources);
   const abort = (reason?: unknown) => controller.abort(reason);
   const onExternalAbort = () => abort(opts.signal?.reason);
   opts.signal?.addEventListener("abort", onExternalAbort, { once: true });
@@ -58,6 +71,24 @@ export function createInvocationToolRuntime(
   const runtime: InvocationToolRuntime = {
     root: opts.root,
     symlinkPolicy: opts.symlinkPolicy,
+    acquireJobLease(options) {
+      if (!options.ownerId) throw invalidBinding("empty lease owner");
+      const access = new ResourceAccess({
+        ...options,
+        root: resources.root,
+        symlinkPolicy: opts.symlinkPolicy,
+      });
+      return resources.request({
+        ownerId: options.ownerId,
+        kind: "job",
+        signal: options.signal
+          ? AbortSignal.any([controller.signal, options.signal])
+          : controller.signal,
+        prepare: () => access.prepare(),
+        start: (lease) => lease,
+      });
+    },
+    releaseJobLease: (lease) => resources.release(lease),
     createWorkerScope(options) {
       if (controller.signal.aborted) throw new Error("Invocation aborted");
       if (options.root !== opts.root) throw invalidBinding("root mismatch");
@@ -65,8 +96,7 @@ export function createInvocationToolRuntime(
         throw invalidBinding("symlink policy mismatch");
       if (owners.has(options.ownerId) || !options.ownerId)
         throw invalidBinding("duplicate or empty owner");
-      if (options.parentLease !== undefined)
-        throw invalidBinding("parent lease is not implemented (#61)");
+      if (options.parentLease !== undefined) resources.parent(options.parentLease, options.ownerId);
       const scope = createToolRuntime(
         {
           ...options,
@@ -75,7 +105,7 @@ export function createInvocationToolRuntime(
             : controller.signal,
           abortGraceMs: options.abortGraceMs ?? opts.abortGraceMs,
         },
-        { manager, scheduler, ownerId: options.ownerId },
+        { manager, scheduler, resources, ownerId: options.ownerId },
       );
       owners.add(options.ownerId);
       scopes.add(scope);
@@ -104,6 +134,7 @@ export function createInvocationToolRuntime(
           await manager.dispose();
           opts.signal?.removeEventListener("abort", onExternalAbort);
           scopes.clear();
+          resources.releaseJobs();
         }
       })();
       return disposed;

@@ -111,6 +111,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7hgqNrs11u | Implement output repair session | done | [implement-output-repair-session.md](./implement-output-repair-session.md) |
 | TASK-034r05iHK8bA7he1WXwcBs | Implement Pi session creation with maxTokens injection | done | [implement-pi-session-creation-with-maxtokens-injection.md](./implement-pi-session-creation-with-maxtokens-injection.md) |
 | TASK-034r05iHQeQpDpYxJZR1PT | Implement pre_read_code hook and e2e test | done | [implement-pre-read-code-hook.md](./implement-pre-read-code-hook.md) |
+| TASK-034AaXUraSXQKdlQ8s1p3p | Lease と atomic admission を実装する | done | [implement-resource-manager-admission.md](./implement-resource-manager-admission.md) |
 | TASK-034r05iHK8bA7hr4HQSPhD | Implement result and error envelope output | done | [implement-result-and-error-envelope-output.md](./implement-result-and-error-envelope-output.md) |
 | TASK-034r05iHK8bA7gRZ6ARuGy | Implement runtime policy CLI restriction | done | [implement-runtime-policy-cli-restriction.md](./implement-runtime-policy-cli-restriction.md) |
 | TASK-034r05iHK8bA7gQBQpBmLM | Implement runtime policy loading order | done | [implement-runtime-policy-loading-order.md](./implement-runtime-policy-loading-order.md) |
@@ -201,6 +202,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
 | TASK-034zTWiLbk14ZhGMpiNo7M | Wire one-dispatch release publication | done | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
+| TASK-034AaXZ7nc5LQuUvG9iFY8 | 実 I/O と Pi job lease を配線する | todo | [wire-resource-manager-observation.md](./wire-resource-manager-observation.md) |
 | TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |
 | TASK-034zTsqC9tEk1qHUgWFefU | wire-workflow-interface | done | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |

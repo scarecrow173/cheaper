@@ -22,6 +22,7 @@ Directory: `docs/test-specs`
 | TSPEC-034zTWh6x6esCzZmjDdiT0 | Release manifest and snapshot integrity | proposed | [release-manifest-and-snapshot-integrity.md](./release-manifest-and-snapshot-integrity.md) |
 | TSPEC-034zTWhBVg6DzifF8qlhAc | Release publication and native smoke | proposed | [release-publication-and-native-smoke.md](./release-publication-and-native-smoke.md) |
 | TSPEC-034z2o64UhWCtNmYIhRT20 | Release workflow manual-dispatch and artifact contract | proposed | [release-workflow-manual-dispatch-and-artifact-contract.md](./release-workflow-manual-dispatch-and-artifact-contract.md) |
+| TSPEC-034AaXPxCwdUwH1XaYc6Jn | Resource lease の寿命とアクセス境界 | draft | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | TSPEC-034zTn31vnH33RcM6g7VYS | Run-scoped artifact boundaries | proposed | [run-scoped-artifact-boundaries.md](./run-scoped-artifact-boundaries.md) |
 | TSPEC-034zXj8LyfXfYFb1U3o2tb | 共有 operation admission と cancellation | approved | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | TSPEC-034rBrs4K5W7pe0ixjegZk | Shell-read blocking contract tests | approved | [shell-read-blocking-contract-tests.md](./shell-read-blocking-contract-tests.md) |
