@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034zJ38fX1W3g0Zrceda1E"
 type: "design"
-status: "draft"
+status: "approved"
 title: "WorkflowCompiler の validation と materialization 境界"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -120,6 +120,8 @@ core の real-path normalization が非同期でも接続できるよう infer �
 
 resources が全て省略/{} の場合、正規化・producer 推論を実行したと主張せず compile し、runtime の conservative fallback を維持する。interface は port を呼ばず宣言の構造だけを検査する。
 
+`CompiledJob` は `manifest?: ResourceManifest` を持つ。port 実行時は `ResourceInferenceResult.manifests[jobId]` を各 `CompiledJob.manifest` に保持し、engine (#62) が参照できる形で公開する（全 job 分必須、欠落は失敗）。全 job が省略/`{}` で port 未実行の場合は `manifest` を持たず、runtime の conservative fallback を示す — この場合 `reads: []` 等の「宣言済み access なし」manifest は emit しない。
+
 ## Public Projection
 
 `WorkflowInterface = {schemaVersion:1,inputs:{name:{schema,required}},outputs:{name:{schema}}}`。
@@ -133,6 +135,6 @@ fake ToolCatalog/WorkerCatalog/ResourceInference を使い spec AC1–AC7 を検
 
 ## Approval and Current State
 
-2026-10-04: coordinator から `APPROVED: spec` を受信し spec を approved にした。design gate の質問 `msg_2b401cfb9478` は未回答であり、この design は draft のまま。graph の共有 ADR lineage による `focus-required` に対する運用判断も未受領。
+2026-10-04: coordinator から `APPROVED: spec` を受信し spec を approved にした。design gate `msg_2b401cfb9478` への回答は dispatch 中断により未着だったが、coordinator の review-protocol で CONFIRMED P1（`CompiledJob` の manifest 保持先が未規定）が指摘され、本節の修正（port 実行時の `CompiledJob.manifest` と port 未実行時の fallback 区別）を適用して **APPROVED: design** とされた。
 
-coordinator terminal の read-only tail に `Quota exhausted` / `Your daily usage quota has been exhausted` を確認した。process exit は確認していない。dispatch の self-approval 禁止を守り、plan/task/impl と product code は未着手。再開には coordinator の quota 回復と design/plan 承認が必要。
+graph の共有 ADR lineage による `focus-required` は coordinator 承認の運用例外で扱う: plan 作成までは同じ delegate 順を手動で踏み、自分の plan doc 作成後に `--focus docs/plans/<plan>.md` で router を再開する。
