@@ -1,8 +1,8 @@
 ---
 id: "TSPEC-034zQvKPjNkXAEgbZlzdcQ"
 type: "test-spec"
-status: "draft"
-title: "Workflow compiler contract guarantees"
+status: "proposed"
+title: "Workflow compiler の契約保証"
 created: "2026-10-04"
 updated: "2026-10-04"
 owners: []

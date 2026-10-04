@@ -12,28 +12,41 @@ export function isObject(value: unknown): value is Record<string, unknown> {
 export function cloneJson(value: unknown, code: ErrorCode = "INVALID_REQUEST"): JsonValue {
   const ancestors = new Set<object>();
   function visit(current: unknown): JsonValue {
-    if (current === null || typeof current === "string" || typeof current === "boolean") return current;
+    if (current === null || typeof current === "string" || typeof current === "boolean")
+      return current;
     if (typeof current === "number" && Number.isFinite(current)) return current;
-    if (typeof current !== "object" || current === null || (!Array.isArray(current) && !isObject(current))) {
+    if (
+      typeof current !== "object" ||
+      current === null ||
+      (!Array.isArray(current) && !isObject(current))
+    ) {
       throw new CheaperError(code, "value must be plain JSON");
     }
     if (ancestors.has(current)) throw new CheaperError(code, "cyclic JSON value");
     ancestors.add(current);
     try {
-      if (Object.getOwnPropertySymbols(current).length !== 0) throw new CheaperError(code, "symbol JSON key");
+      if (Object.getOwnPropertySymbols(current).length !== 0)
+        throw new CheaperError(code, "symbol JSON key");
       if (Array.isArray(current)) {
-        if (Object.keys(current).length !== current.length) throw new CheaperError(code, "sparse or extended JSON array");
+        if (Object.keys(current).length !== current.length)
+          throw new CheaperError(code, "sparse or extended JSON array");
         return Array.from({ length: current.length }, (_, index) => {
           const descriptor = Object.getOwnPropertyDescriptor(current, String(index));
-          if (!descriptor || !("value" in descriptor)) throw new CheaperError(code, "invalid JSON array entry");
+          if (!descriptor || !("value" in descriptor))
+            throw new CheaperError(code, "invalid JSON array entry");
           return visit(descriptor.value);
         });
       }
-      return Object.fromEntries(Object.getOwnPropertyNames(current).sort().map((key) => {
-        const descriptor = Object.getOwnPropertyDescriptor(current, key);
-        if (!descriptor || !("value" in descriptor) || !descriptor.enumerable) throw new CheaperError(code, "invalid JSON property");
-        return [key, visit(descriptor.value)];
-      }));
+      return Object.fromEntries(
+        Object.getOwnPropertyNames(current)
+          .sort()
+          .map((key) => {
+            const descriptor = Object.getOwnPropertyDescriptor(current, key);
+            if (!descriptor || !("value" in descriptor) || !descriptor.enumerable)
+              throw new CheaperError(code, "invalid JSON property");
+            return [key, visit(descriptor.value)];
+          }),
+      );
     } finally {
       ancestors.delete(current);
     }

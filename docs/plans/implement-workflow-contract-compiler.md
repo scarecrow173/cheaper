@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zQ9Pet2QAuh0FP3ku3u"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Workflow contract compiler を実装する"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -57,7 +57,7 @@ relations:
 | E | compiler/interface/index を実装する | D |
 | F | targeted tests と workflow build を実行する | E |
 | G | 実在 schema 互換 fixture と token-efficiency guidance を IR に記録する | F |
-| H | canonical check、doc-maintenance plan→apply、exit-audit を実行する | G |
+| H | canonical check（host contention 時は承認済み委譲方針）、doc-maintenance plan→apply、exit-audit を実行する | G |
 | I | 論理 commit、report と worker_done を送信する | H |
 
 critical path は A→B→C→D→E→F→G→H→I。型と snapshot を共有するため inline 実行。新たな worker は起動しない。task docs の各 slice は red/implementation/green を別 action として記録する。
@@ -85,7 +85,7 @@ critical path は A→B→C→D→E→F→G→H→I。型と snapshot を共有�
 | B/C | `mise exec -- pnpm --filter @cheaper/workflow test` | red: 未実装 contract failures、既存 guard pass |
 | D/E/F | 同 targeted test と `mise exec -- pnpm --filter @cheaper/workflow build` | AC1–AC5/resource/snapshot/型/guard pass |
 | G | IR fixture を compiler test と一致させる | 実在 schema 互換 fixture、AC7 guidance |
-| H | `mise run check`、doc-maintenance、focused exit-audit | exit 0、chain terminal、audit pass |
+| H | canonical check、doc-maintenance、focused exit-audit | focused suite/CLI 単独再実行/lint/typecheck/build pass、chain terminal、audit pass。canonical check deferred to coordinator merge run |
 | I | git status/log | scope 限定、logical commits、push なし |
 
 ## Self-Review / Review Handoff
@@ -95,5 +95,9 @@ AC1=inputs/default、AC2=bindings、AC3=DAG、AC4=job/output hooks、AC5=project
 ## Graph Resume
 
 run-until-yield。共有 ADR lineage による非 plan focus-required は coordinator 承認済み例外で手動 plan-doc→approval を実施。本 plan focus で router を再開する。承認未回答時は同じ ask を再開し待機する。
+
+
+
+AC7 guidance は本 chain の IR に記録する。coordinator plan review が IR のみも受理可と確認し、fixture を tests に一致させた。
 
 

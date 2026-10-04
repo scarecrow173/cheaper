@@ -50,9 +50,9 @@ export interface ResourceInferenceResult {
 }
 export interface ResourceInference {
   /** D4 の正規化・fallback・writeScope 検査はこの port が所有する。 */
-  infer(jobs: Readonly<Record<string, ResourceInferenceJob>>):
-    | ResourceInferenceResult
-    | Promise<ResourceInferenceResult>;
+  infer(
+    jobs: Readonly<Record<string, ResourceInferenceJob>>,
+  ): ResourceInferenceResult | Promise<ResourceInferenceResult>;
 }
 export interface WorkflowCompilerPorts {
   tools: ToolCatalog;

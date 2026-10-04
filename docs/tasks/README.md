@@ -118,8 +118,8 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gJlZFs4r8 | Implement worker frontmatter parser | done | [implement-worker-frontmatter-parser.md](./implement-worker-frontmatter-parser.md) |
 | TASK-034r05iHK8bA7gN2lJtm5b | Implement worker resolver with origin precedence | done | [implement-worker-resolver-with-origin-precedence.md](./implement-worker-resolver-with-origin-precedence.md) |
 | TASK-034r05iHK8bA7gKN1oXRb8 | Implement worker schema reference resolution and Ajv validation | done | [implement-worker-schema-reference-resolution-and-ajv-validation.md](./implement-worker-schema-reference-resolution-and-ajv-validation.md) |
-| TASK-034zQvLk1Av5981u4ci8q4 | Implement workflow binding and definition contracts | todo | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
-| TASK-034zQvM02qLs0os3ej72pP | Implement workflow compilation and public hooks | todo | [implement-workflow-compilation-and-public-hooks.md](./implement-workflow-compilation-and-public-hooks.md) |
+| TASK-034zQvLk1Av5981u4ci8q4 | Implement workflow binding and definition contracts | done | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
+| TASK-034zQvM02qLs0os3ej72pP | Implement workflow compilation and public hooks | done | [implement-workflow-compilation-and-public-hooks.md](./implement-workflow-compilation-and-public-hooks.md) |
 | TASK-034r05iHK8bA7gUBy3ygQD | Implement workspace path resolution with symlink policy | done | [implement-workspace-path-resolution-with-symlink-policy.md](./implement-workspace-path-resolution-with-symlink-policy.md) |
 | TASK-034r6roOdgb1mKbE0LLAv3 | inject generous eval budget into bigTool factory | done | [inject-eval-budget-bigtool.md](./inject-eval-budget-bigtool.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |

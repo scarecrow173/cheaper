@@ -17,4 +17,4 @@ Directory: `docs/test-specs`
 | TSPEC-034z2o64UhWCtNmYIhRT20 | Release workflow manual-dispatch and artifact contract | proposed | [release-workflow-manual-dispatch-and-artifact-contract.md](./release-workflow-manual-dispatch-and-artifact-contract.md) |
 | TSPEC-034rBrs4K5W7pe0ixjegZk | Shell-read blocking contract tests | approved | [shell-read-blocking-contract-tests.md](./shell-read-blocking-contract-tests.md) |
 | TSPEC-034z1OZC4sSkRlvZfFfIXt | Standalone executable contract parity | proposed | [standalone-executable-contract-parity.md](./standalone-executable-contract-parity.md) |
-| TSPEC-034zQvKPjNkXAEgbZlzdcQ | Workflow compiler contract guarantees | draft | [workflow-compiler-contract-guarantees.md](./workflow-compiler-contract-guarantees.md) |
+| TSPEC-034zQvKPjNkXAEgbZlzdcQ | Workflow compiler の契約保証 | proposed | [workflow-compiler-contract-guarantees.md](./workflow-compiler-contract-guarantees.md) |

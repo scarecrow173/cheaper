@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zQvM02qLs0os3ej72pP"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Implement workflow compilation and public hooks"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -58,7 +58,12 @@ relations:
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/workflow test` exits 0。
-- [ ] `mise exec -- pnpm --filter @cheaper/workflow build` exits 0。
-- [ ] `mise run check` exits 0（既知 timeout の場合のみ対象単独 pass 証跡）。
+- [x] `mise exec -- pnpm --filter @cheaper/workflow test` exits 0。
+- [x] `mise exec -- pnpm --filter @cheaper/workflow build` exits 0。
+- [x] focused suite、失敗した CLI file の単独再実行、lint/typecheck/build が pass。canonical check deferred to coordinator merge run。
 
+
+2026-10-04: workflow 75 tests/build pass。canonical は CLI 3 files / 5 cases の既知 20000ms timeout。対象を単独で順に再実行し 11/32/16 tests pass（既存 skip 1）、未到達の bundle/APM payload/freshness checks も pass。global canonical 初回 exit 0 は主張しない。
+
+
+Coordinator policy note により full canonical green は merge 時の serial run に defer。focused suite、single-file reruns、lint/typecheck/build の pass を完了条件とする。
