@@ -44,6 +44,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpwO94elRp | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | IMPL-swcR6qnZBfKwyIdckqQxae | grep eval-budget test stability via explicit budget injection | completed | [grep-eval-budget-test-stability-via-explicit-budget-injection.md](./grep-eval-budget-test-stability-via-explicit-budget-injection.md) |
 | IMPL-034z57jQrqVgbebkytTkwt | hook contract tests and adapter e2e port | completed | [hook-contract-tests-and-adapter-e2e-port.md](./hook-contract-tests-and-adapter-e2e-port.md) |
+| IMPL-034zTneiPeW23igPepp7ph | Implement bounded artifact store | completed | [implement-bounded-artifact-store.md](./implement-bounded-artifact-store.md) |
 | IMPL-034z3CDzdvjhrEshqx1zRg | implement build-apm-bundle | completed | [implement-build-apm-bundle.md](./implement-build-apm-bundle.md) |
 | IMPL-034z1SUivUVftC75FVZ3OG | Implement build-executable.mjs and Node bump | completed | [implement-build-executable-mjs-and-node-bump.md](./implement-build-executable-mjs-and-node-bump.md) |
 | IMPL-034r05iHy2gdnpjoHb5OTl | Implement cheaper CLI and built-in workers (PLAN-034r05iHy2gdnpJFiMWhkY) | completed | [implement-cheaper-cli-and-built-in-workers-plan-0003.md](./implement-cheaper-cli-and-built-in-workers-plan-0003.md) |

@@ -82,6 +82,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
 | TASK-034r05iHQeQpDqeuofmk64 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [hook-fast-path-and-fail-closed-file-too-large-block.md](./hook-fast-path-and-fail-closed-file-too-large-block.md) |
 | TASK-034r05iHK8bA7h4BqSHmqd | Implement boundary-checked tool operations with atomic writes | done | [implement-boundary-checked-tool-operations-with-atomic-writes.md](./implement-boundary-checked-tool-operations-with-atomic-writes.md) |
+| TASK-034zTn9hnvGsV4G8kGiHvT | Implement bounded artifact store | done | [implement-bounded-artifact-store.md](./implement-bounded-artifact-store.md) |
 | TASK-034z3zP5mtHjiKzurDeCDM | Implement build-apm-bundle.mjs assembling executables into hooks tree | done | [implement-build-apm-bundle-mjs-assembling-executables-into-hooks-tree.md](./implement-build-apm-bundle-mjs-assembling-executables-into-hooks-tree.md) |
 | TASK-034z1PSPnrFA3o7z3IYIUy | Implement build-executable.mjs and bump Node to >=26.9 | done | [implement-build-executable-mjs-and-bump-node-to-26-9.md](./implement-build-executable-mjs-and-bump-node-to-26-9.md) |
 | TASK-034r05iHK8bA7gTkcKo0xf | Implement capability intersection checks | done | [implement-capability-intersection-checks.md](./implement-capability-intersection-checks.md) |

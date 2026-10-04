@@ -1,3 +1,4 @@
+export * from "./artifacts.js";
 export * from "./bindings.js";
 export * from "./compiler.js";
 export * from "./dag.js";
