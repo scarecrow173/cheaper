@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034zQKrvQjUkhvZoLktZcb"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Core resource manifest tests"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -71,7 +71,7 @@ canonical manifest admission を declaration と同じ boundary に集約し、g
 
 ## Validation
 
-baseline: core 23 files / 291 passed / 2 skipped、exit 0。focused RED は未実行。
+baseline: core 23 files / 291 passed / 2 skipped、exit 0。focused RED: vitest run test/resources.test.ts は exit 1、Cannot find module '../src/resources/index.js'（1 failed suite / no tests）。未実装 API を原因とする期待どおりの RED を確認した。
 
 ## Risks
 

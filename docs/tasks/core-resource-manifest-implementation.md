@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zQHzU6hKHiX9SIpdYgp"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Core resource manifest implementation"
 created: "2026-10-04"
 updated: "2026-10-04"
