@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zTJptHTdovrvYW7wQ1k"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "Implement one-dispatch release workflow"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -159,6 +159,11 @@ AC6のbuild/lint/auditは実command結果で判定し、unit testだけでpass�
 CLI/package sourceは変更しないためcli package全testは実行しない。
 canonical check deferred to coordinator merge run。
 新suiteは新workflowpre-gateで実行しmise checkへのwiringは#73-Cへdeferする。
+
+2026-10-04実行結果: 3tasks done / 3IR completed。stdlib26pass / 0fail / 1Linux-only
+skip、pnpm lint/typecheck/buildとdoc-idcheckはexit0。Windowsのcommitted payloadを用いた
+APM Node-free host smokeはexit0、freshnative3/publicationはCI-only。
+guideのnamed manualreviewもPASS。最終scoped audit evidenceはmigration IRとworker reportへ保存する。
 
 ## Risks and Mitigations
 

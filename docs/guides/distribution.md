@@ -6,9 +6,42 @@ APM package の `cheaper`（POSIX sh）/ `cheaper.ps1`（Windows）は、sibling
 Node は不要。`latest` を参照せず、取得/検証失敗は stderr の診断と非0 exit で通知する。
 
 取得契約は [詳細設計](../designs/version-pinned-launcher-acquisition.md) を参照。
-この変更では LFS executable を削除しない。公開 Release の `SHA256SUMS` 生成は
-issue #73-B、git payload/LFS/CI の移行は #73-C が担う。
-checksum manifest が公開されていない Release への初回取得は失敗する。
+LFS executable は #73-C のgit payload/LFS/CI移行まで保持する。
+`release-acquisition` の1dispatchでraw3 / `SHA256SUMS` / APM archiveを公開する
+（[release手順](release.md)）。旧 `release` workflowはmanifestを付けないので、
+checksum manifest が公開されていない旧Releaseへの初回取得はfail closedする。
+
+## Release archive を local path で install
+
+同じ固定tagの `cheaper-apm-v<version>.tar.gz` をdownloadし、独立directoryへ展開する。
+archiveは `apm pack` ではなくroot `cheaper/` を持つplain package snapshotである。
+例としてversion1.0.0をconsumerの隣へ配置する:
+
+```sh
+mkdir release-v1.0.0
+gh release download v1.0.0 --repo scarecrow173/cheaper --pattern cheaper-apm-v1.0.0.tar.gz --dir release-v1.0.0
+tar -xzf release-v1.0.0/cheaper-apm-v1.0.0.tar.gz -C release-v1.0.0
+mkdir release-v1.0.0/consumer
+```
+
+`release-v1.0.0/consumer/apm.yml` にlocal path依存を指定する:
+
+```yaml
+name: consumer
+version: "0.0.1"
+targets:
+- windsurf
+dependencies:
+  apm:
+  - path: ../cheaper
+```
+
+consumerで `mise exec -- apm install --target windsurf` を実行する（consumer側の
+APM環境を使用）。archiveには同runのraw3、内部 `cli/SHA256SUMS`、version.json、
+primitivesを含み、Linux binariesは0755で保存する。workflowはWindows/Linux x64/Linux
+arm64でlocal install後のNode-free launcherを検証してから公開する。
+これは既存Git-based APM installを置換する強制移行ではなく追加の配布経路である。
+公開manifestのdigest対象はraw3でありarchive全体ではない。SHA-256は署名保証ではない。
 
 ## 対象と固定 version
 

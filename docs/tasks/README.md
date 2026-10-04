@@ -70,7 +70,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHWkNF7zPe6DL42d | Devin provider docs, status sync, bundle, and final verification | done | [devin-docs-status-sync-bundle-and-final-verification.md](./devin-docs-status-sync-bundle-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNWvK4AnL | Devin provider plugin registration and tests | done | [devin-provider-plugin-registration-and-tests.md](./devin-provider-plugin-registration-and-tests.md) |
 | TASK-034r05iHWkNF7zLmXY8W9D | Update docs, regenerate bundle, and run final verification | done | [docs-status-sync-bundle-and-final-verification.md](./docs-status-sync-bundle-and-final-verification.md) |
-| TASK-034zTWjm1NjME6ZzgLXNF7 | Document and verify one-dispatch release migration | todo | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
+| TASK-034zTWjm1NjME6ZzgLXNF7 | Document and verify one-dispatch release migration | done | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
 | TASK-034zQTXMNDaUeqIR3aCRNf | Document launcher distribution and verify acquisition | done | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |

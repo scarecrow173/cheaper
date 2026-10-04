@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zTWjm1NjME6ZzgLXNF7"
 type: "task"
-status: "todo"
+status: "done"
 title: "Document and verify one-dispatch release migration"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -9,7 +9,7 @@ owners: ["scarecrow173"]
 relations:
   source: []
   implements: ["../plans/implement-one-dispatch-release-workflow.md"]
-  implemented-by: []
+  implemented-by: ["../impl/ir/document-and-verify-one-dispatch-release-migration.md"]
   depends-on: ["../plans/implement-one-dispatch-release-workflow.md","./wire-one-dispatch-release-publication.md"]
   blocks: []
   supersedes: []
@@ -42,17 +42,17 @@ publication workflow taskがdone。
 
 ## Done When
 
-- [ ] acquisition互換は新経路のみ、旧sums無しfailclosed、CI-only、manualdraftrecovery、snapshotlocalinstallをguideへ記載。
-- [ ] V6 focused-standard-checks evidence、chain+sharedADR scopedblocker0、IR/index/plan/task終端statusとcommit。
-- [ ] reportにcanonical check deferred to coordinator merge runとglobalownership外findingsを明記。
+- [x] acquisition互換は新経路のみ、旧sums無しfailclosed、CI-only、manualdraftrecovery、snapshotlocalinstallをguideへ記載。
+- [x] V6 focused-standard-checks evidence、chain+sharedADR scopedblocker0、IR/index/plan/task終端statusとcommit。
+- [x] reportにcanonical check deferred to coordinator merge runとglobalownership外findingsを明記。
 
 ## Verification
 
-- [ ] `mise exec -- node --test scripts/test/release-artifacts.test.mjs scripts/test/release-workflow.test.mjs` exits 0。
-- [ ] `mise exec -- pnpm lint` exits 0。
-- [ ] `mise exec -- pnpm typecheck` exits 0。
-- [ ] `mise exec -- pnpm build` exits 0。
-- [ ] `mise exec -- node scripts/check-doc-ids.mjs` exits 0。
-- [ ] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type all --json` をchain+sharedADRでfilterしblocking0。
-- [ ] Manual: named guide checksをreportへ記録（proseのsource-text snapshot testでpassを代用しない）。
+- [x] `mise exec -- node --test scripts/test/release-artifacts.test.mjs scripts/test/release-workflow.test.mjs` exits 0。
+- [x] `mise exec -- pnpm lint` exits 0。
+- [x] `mise exec -- pnpm typecheck` exits 0。
+- [x] `mise exec -- pnpm build` exits 0。
+- [x] `mise exec -- node scripts/check-doc-ids.mjs` exits 0。
+- [x] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type all --json` をchain+sharedADRでfilterしblocking0。
+- [x] Manual: named guide checksをreportへ記録（proseのsource-text snapshot testでpassを代用しない）。
 
