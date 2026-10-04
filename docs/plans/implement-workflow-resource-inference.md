@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zTu37tgDGI306OPBitz"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Workflow resource inference を実装する"
 created: "2026-10-04"
 updated: "2026-10-04"

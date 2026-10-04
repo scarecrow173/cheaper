@@ -75,15 +75,15 @@ relations:
 10. caller の jobs/input/metadata を変更せず、同じ job 集合の順序を変えても manifest/edges/conflicts/diagnostics の JSON が一致する。
 
 ## Acceptance Criteria
-- [ ] AC1: built-in read/write/edit/ls/grep/find/count_tokens の metadata と入力から scope が得られ、metadata 未公開 tool は fallback。
-- [ ] AC2: Worker 明示 reads、writeScope targets、既知 scope 矛盾拒否、親 mkdir safety の挙動が検証できる。
-- [ ] AC3: future output の produces∩known/declared reads の edge と compiler の needs/from dedupe、cycle 拒否。
-- [ ] AC4: writes∩writes は conflict のみ、fallback read は invented dependency を作らない。
-- [ ] AC5: duplicate exact/subtree/canonical alias output は stable INVALID_REQUEST。
-- [ ] AC6: resources 省略/{} と reads:[] の差を検証する。
-- [ ] AC7: job/claim 順序と caller mutation によらず byte 一致し全 job manifest を返す。
-- [ ] AC8: core normalization/predicates を再利用し boundary escape と glob producer 拒否が伝播する。
-- [ ] AC9: process declaration seam は typed、inputs/outputs 欠落を拒否し outputs→inputs の edge を返す。
+- [x] AC1: built-in read/write/edit/ls/grep/find/count_tokens の metadata と入力から scope が得られ、metadata 未公開 tool は fallback。
+- [x] AC2: Worker 明示 reads、writeScope targets、既知 scope 矛盾拒否、親 mkdir safety の挙動が検証できる。
+- [x] AC3: future output の produces∩known/declared reads の edge と compiler の needs/from dedupe、cycle 拒否。
+- [x] AC4: writes∩writes は conflict のみ、fallback read は invented dependency を作らない。
+- [x] AC5: duplicate exact/subtree/canonical alias output は stable INVALID_REQUEST。
+- [x] AC6: resources 省略/{} と reads:[] の差を検証する。
+- [x] AC7: job/claim 順序と caller mutation によらず byte 一致し全 job manifest を返す。
+- [x] AC8: core normalization/predicates を再利用し boundary escape と glob producer 拒否が伝播する。
+- [x] AC9: process declaration seam は typed、inputs/outputs 欠落を拒否し outputs→inputs の edge を返す。
 
 ## Deferred Design Concerns
 process 実行は #59、artifact provenance は #66、dynamic discovery は issue #65 triage の既存 exclusion。既存 literal subtree symlink/hard-link/外部差替えの residual risk は core #65-A と同じ境界。

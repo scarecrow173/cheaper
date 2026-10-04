@@ -59,7 +59,7 @@ core normalizeResourceManifest/normalizeResourceClaim/resourceKey/claimContains/
 ## Validation
 - 実装前 RED: workflow test command exit 1（未実装 inference export を参照する新規テスト）。
 - 初回実装後 RED: 99 tests 中 process-config-input-output-edge の 1 failure。source outputs が fallback produces=[] へ消える責務違反を修正。
-- slice 1 checkpoint workflow suite GREEN: 100 tests / 5 files（2026-10-04）。
+- workflow suite GREEN（slice 1 checkpoint、2026-10-04）。最終 suite の実数は下記 109。
 - tool-runtime suite GREEN: 18 tests / 3 files。
 - pnpm lint / pnpm typecheck / pnpm build: exit 0。
 - canonical check deferred to coordinator merge run。
@@ -68,7 +68,7 @@ core normalizeResourceManifest/normalizeResourceClaim/resourceKey/claimContains/
 Worker ancestor mkdir は root exclusive safety で保守的に serialize し得る。process executor/engine/scheduler は別 issue の責務。
 
 ## Follow-ups
-slice 2 compiler consumer の統合を実施する。最終 review と scoped exit-audit はその後に実施。
+slice 2 compiler consumer の統合と review は完了。scoped exit-audit の記録は compilation IR に集約する。
 
 ## 最終 integration 検証
-implementation review は APPROVED（msg_fb4b2821f57e、最終 code head f4a9976）。自己点検の authority regressions を含む最終 workflow suite は 109 tests / 5 files、tool-runtime は 18 tests / 3 files。lint/typecheck/build exit 0。初期 slice の 100 / compiler 初回 106 / 修正途中 108 は履歴として区別する。P2 mutation predicate 共有は coordinator 直接指示に基づく最小 core export と workflow import で対応済み。
+implementation review は APPROVED（msg_fb4b2821f57e、最終 code head f4a9976）。自己点検の authority regressions を含む最終 workflow suite は 109 tests / 5 files、tool-runtime は 18 tests / 3 files。lint/typecheck/build exit 0。P2 mutation predicate 共有は coordinator 直接指示に基づく最小 core export と workflow import で対応済み。

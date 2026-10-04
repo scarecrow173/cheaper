@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034zUfCug3Fz5ZzcrI1yhg"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Workflow resource inference compilation"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -56,8 +56,8 @@ compiler.ts、compiler.test.ts。IR は編集前に in-progress で作成した�
 なし。
 
 ## Validation
-- RED: workflow suite 106 tests 中 3 failure。all-omitted port calls=0、missing manifest が resolve、diagnostics=undefined を確認。
-- compiler 初回 GREEN: workflow suite 106 tests / 5 files pass（2026-10-04 14:31 JST）。
+- RED: compiler contract 新規 case の 3 failure。all-omitted port calls=0、missing manifest が resolve、diagnostics=undefined を確認。
+- compiler 初回 GREEN: workflow suite pass（2026-10-04 14:31 JST）。
 - needs + $from + producer edge dedupe、inferred cycle rejection、既存 needs があっても duplicate producer rejection、metadata known consumer read、result deep clone を test で固定。
 - pnpm lint: exit 0。
 - pnpm typecheck: optional property construction の TS2375 を修正後 exit 0。
@@ -75,7 +75,7 @@ implementation review は APPROVED。残り P2 は非ブロッキング robustne
 - Worker target src/*.ts が一般 write normalization で root subtree に拡大し、無関係 output ownership を受理していた。新規 test は promise resolved の RED。authority は core ownership normalization（produces bucket）で exact literal を検査し、root mkdir safety は normalizeResourceClaim で別に作る。
 - 非 process job の process 宣言が tool/Worker の実 source を置き換えていた。新規 test は promise resolved の RED。process declaration は kind:tool/tool:process のみ受理する。
 - process config 自体が explicit source なので resources-omitted fallback diagnostic を付けない。
-- 修正後 workflow suite 108 tests / 5 files GREEN、pnpm lint/typecheck/build exit 0（2026-10-04 14:47 JST）。固定 core 型と approved design の authoritative exact target / process seam に合わせる source-layer correction。レビュー対象 commit に追加する。
+- source authority 修正後 workflow suite GREEN、pnpm lint/typecheck/build exit 0（2026-10-04 14:47 JST）。固定 core 型と approved design の authoritative exact target / process seam に合わせる source-layer correction。レビュー対象 commit に追加する。
 
 process outputs の subtree glob でも同じ safety/authority 分離を確認した。writes の保守的 root 拡大に基づく authority が追加 outside output を許す regression RED を確認し、process authority を ownership-normalized produces に変更。workflow suite 109 tests / 5 files GREEN、lint/typecheck/build exit 0。
 
@@ -84,3 +84,19 @@ msg_fb4b2821f57e は APPROVED: implementation review。最終検証は workflow 
 
 ## P2-1 mutation capability predicate 共有
 coordinator の直接指示に沿い、packages/core/src/worker/validate.ts の既存集合に委譲する isMutatingTool(name: ToolName): boolean を export した。既存 barrel が star export のため index の変更は不要。workflow は worker.tools.some(isMutatingTool) を使う。core 型と既存 accounting 判定の挙動は変更しない。core suite exit 0、workflow 109 tests / 5 files、lint/typecheck/build exit 0（2026-10-04 15:05 JST）。
+
+## Followup triage（分類完了）
+- mutation predicate 重複: 本 chain 内修正済み。core export 例外は coordinator 最新直接指示を根拠とする。
+- IR test count: 現行 suite 109 / tool-runtime 18 に統一済み。RED failure の個数と段階別 checkpoints は suite 実数と区別する。
+- direct port malformed nullable payload: deferred robustness。WorkflowCompiler の schema boundary が通常経路で拒否する contract 外入力。将来 #59 の port producer integration 時に boundary 検査の責務を確認する。現 slice の acceptance blocker ではない。
+- unknown-access diagnostics 重複/粒度: deferred optional diagnostic refinement。scheduler の順序を変更せず current evidence は保持する。
+- catalog descriptor isolated unit tests: deferred optional test-depth。実 catalog descriptor を利用する workflow source/consumer 契約 tests は GREEN。
+- core literal symlink/hard-link residual risk、process executor、scheduler/ResourceManager/engine: inherited/out-of-scope。現在の chain に未分類 followup、未達 acceptance、未完 task はない。
+
+## Graph checkpoint
+承認済み implementation を二 tasks done / 二 IR completed / plan completed として確定する。taskBudgetCount=2、maxHops=11、commitWaived=false。doc-maintenance plan→apply、IR index は approved exception の reused utility method で再生成する。global blockers は scope 外として記録し、chain+共有 ADR の scoped exit-audit を実施する。
+
+## Scoped exit-audit result
+2026-10-04: task named audit scoped findings=[]、impl-record audit 76 files/findings=[]。all named audit は 416 documents / 455 findings / blocking 41、全ての blocking は scope 外。chain+共有 ADR の scoped blocking=0（共有 ADR の既存 warning 2 件のみ）。global all pass は claim しない。
+doc-maintenance plan→apply の index 更新は反映済み。結果取得時の node-repl timeout 後の再 scan plan で actions=[] を確認。IR index は new_impl_record.js の updateIndexForMarkdownDir を一時 .cjs module から呼ぶ method 1 を使用し、一時 module を削除した。
+通常 exit-audit route は既存 global blockers により exit-audit-retry。承認済み scoped exception の実監査 evidence を根拠に declared runtime signal exit-audit-pass を供給し、exit-audit-to-complete、current=complete/status=terminal を確認した。graph/scripts/shared ADR の変更はない。

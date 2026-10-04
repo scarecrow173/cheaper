@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zTTjWYMNKiiVb4ZZ6LV"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Workflow compiler に resource inference を接続する"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "../plans/implement-workflow-resource-inference.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/workflow-resource-inference-compilation.md"
   depends-on:
     - "../plans/implement-workflow-resource-inference.md"
     - "implement-workflow-resource-inference.md"
@@ -55,11 +56,11 @@ canonical inference task done。未注入 + 非空 explicit resources の INVALI
 dedupe/cycle/clone、focused suites/required checks、scoped exit audit と durable report。
 
 ## Verification
-- [ ] `mise exec -- pnpm --filter @cheaper/workflow test` exits 0。
-- [ ] `mise exec -- pnpm --filter @cheaper/tool-runtime test` exits 0。
-- [ ] `mise exec -- pnpm lint` exits 0。
-- [ ] `mise exec -- pnpm typecheck` exits 0。
-- [ ] `mise exec -- pnpm build` exits 0。
+- [x] `mise exec -- pnpm --filter @cheaper/workflow test` exits 0。
+- [x] `mise exec -- pnpm --filter @cheaper/tool-runtime test` exits 0。
+- [x] `mise exec -- pnpm lint` exits 0。
+- [x] `mise exec -- pnpm typecheck` exits 0。
+- [x] `mise exec -- pnpm build` exits 0。
 
 ## Scope
 canonical check deferred to coordinator merge run。CLI/bundled payload は変更しない。
