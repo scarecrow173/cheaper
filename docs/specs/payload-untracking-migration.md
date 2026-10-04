@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034zWqZR8Dmu9TXTR2qcsg"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "Payload untracking migration"
 created: "2026-10-04"
 updated: "2026-10-04"

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zXB2z3uWw5lq9IyKOqe"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Verify consumer acquisition and close migration"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -17,7 +17,7 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-payload-untracking-migration.md"
-  implemented-by: []
+  implemented-by: ["IMPL-034A6mdUuMzX4DtyfiRMjx"]
   depends-on:
     - "docs/plans/implement-payload-untracking-migration.md"
     - "docs/tasks/migrate-native-workflows-and-release-guidance.md"
@@ -57,10 +57,10 @@ PLAN-034zXjR2oE7USB76eUPCAq、SPEC-034zWqZR8Dmu9TXTR2qcsg、DESIGN-034zWr0ZeceJC
 - 依存変更、履歴 rewrite、実 publish、cheaper.mjs refresh を行わない。
 
 ## Verification
-- [ ] mise exec -- pnpm --filter ./packages/cli exec vitest run test/e2e/launcher-acquisition.test.ts test/e2e/deployed-executable.test.ts test/e2e/apm-install-targets.test.ts test/e2e/apm-install.test.ts test/e2e/apm-package-layout.test.ts — exit 0
-- [ ] mise exec -- pnpm lint — exit 0
-- [ ] mise exec -- pnpm typecheck — exit 0
-- [ ] mise exec -- pnpm build — exit 0
+- [x] mise exec -- pnpm --filter ./packages/cli exec vitest run test/e2e/launcher-acquisition.test.ts test/e2e/deployed-executable.test.ts test/e2e/apm-install-targets.test.ts test/e2e/apm-install.test.ts test/e2e/apm-package-layout.test.ts — exit 0
+- [x] mise exec -- pnpm lint — exit 0
+- [x] mise exec -- pnpm typecheck — exit 0
+- [x] mise exec -- pnpm build — exit 0
 
 ## Notes
 canonical check deferred to coordinator merge run。global の他 chain findings は ownership 外として report する。

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zXB1vK84hUCtRlEyiqG"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Untrack payload and validate source assets"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -17,7 +17,7 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-payload-untracking-migration.md"
-  implemented-by: []
+  implemented-by: ["IMPL-034zXB37yW53DP9xUVf57j"]
   depends-on:
     - "docs/plans/implement-payload-untracking-migration.md"
   blocks: []
@@ -56,8 +56,8 @@ fresh setup と承認済み upstream が前提。 子 run は作らない。
 - 依存変更、履歴 rewrite、実 publish、cheaper.mjs refresh を行わない。
 
 ## Verification
-- [ ] mise exec -- node --test scripts/test/apm-payload.test.mjs — exit 0
-- [ ] mise exec -- node scripts/check-apm-payload.mjs — exit 0
+- [x] mise exec -- node --test scripts/test/apm-payload.test.mjs — exit 0
+- [x] mise exec -- node scripts/check-apm-payload.mjs — exit 0
 
 ## Notes
 canonical check deferred to coordinator merge run。global の他 chain findings は ownership 外として report する。

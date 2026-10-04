@@ -163,26 +163,37 @@ infrastructure failure は fail-open（素通し）で、`FILE_TOO_LARGE`
 （計測 byte cap 超過）は fail-closed で block される。
 
 hook 呼び出し自体は Node.js を必要としない。`hooks.json` の
-entry は POSIX では同梱 launcher（`./cheaper` → platform 別
-executable へ委譲）、Windows（powershell key）では
-`cli/bin/win32-x64/cheaper.exe` を直接起動する。platform
-executable が無い環境では JS bundle（`cli/bin/cheaper.mjs`）が
-手動 fallback として残る。hook 経路の計測は `usage.jsonl` に
+entry は POSIX では `./cheaper`、Windows（powershell key）では
+`./cheaper.ps1` の launcher を経由する。launcher は sibling executable を
+優先し、不在なら `cli/version.json` の固定 Release から SHA256SUMS で検証した
+executable を user cache へ取得して実行する。Git source は binary を含まない。
+offline preseed、初回取得失敗時の診断、Copilot の JSON deploy 制約と host の
+allow fallback は [配布・取得 guide](./distribution.md) を参照する。
+JS bundle（`cli/bin/cheaper.mjs`）の手動実行には Node.js が必要。
+hook 経路の計測は `usage.jsonl` に
 記録されない（telemetry 対象は明示的な `cheaper run` /
 `count-tokens` のみ）。
 
 ## 連携の確認
 
 ```bash
-# hook bundle に deploy された CLI の動作確認（POSIX は launcher、
-# Windows は win32-x64 exe。JS bundle は Node があれば fallback 可）
-<deployed-hook>/cheaper --version                        # POSIX
-<deployed-hook>/cli/bin/win32-x64/cheaper.exe --version  # Windows
-<deployed-hook>/cheaper count-tokens <file>
+# POSIX: deploy 済み launcher から sibling / verified cache の CLI を確認
+<deployed-hook>/cheaper --version
+<deployed-hook>/cheaper count-tokens src/huge.ts
 
 # skills/hooks が install されたかは target の config を確認
 # （例: .windsurf/hooks/ 等、target 固有の deploy path）
 ```
+
+Windows も executable の直接起動ではなく PowerShell launcher で確認する。
+
+```powershell
+& '<deployed-hook>/cheaper.ps1' --version
+& '<deployed-hook>/cheaper.ps1' count-tokens 'src/huge.ts'
+```
+
+初回取得には対応する固定 Release と network が必要。offline 環境の準備は
+[配布・取得 guide](./distribution.md#offline-preseed) を参照する。
 
 実際の e2e 検証手順は [CONTRIBUTING.md](../../CONTRIBUTING.md) の
 「実 provider 検証」を参照。

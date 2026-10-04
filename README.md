@@ -102,8 +102,10 @@ skills（`cheaper-usage`・各 worker 向け skill）と hooks
 （大きな read を threshold で検出して bulk-read へ誘導）を
 配布する。hook は deploy 済みの cheaper executable が
 `cheaper hook <event> --target <agent>` で処理し、Windsurf /
-Copilot / Claude / Cursor で動作する。Node.js は不要
-（executable 同梱のため）。Codex では file-read hook が
+Copilot / Claude / Cursor で動作する。Node.js は不要で、launcher が
+固定 Release の executable を検証して user cache へ取得する。
+Copilot は release archive/local build の sibling を保持する必要がある
+（[配布・取得 guide](docs/guides/distribution.md)）。Codex では file-read hook が
 upstream の hook event 未提供のため shell-read のみ有効
 （設計記録参照）。install 方法・target 別挙動・確認手順は
 [parent-agent 連携ガイド](docs/guides/parent-agent-integration.md)

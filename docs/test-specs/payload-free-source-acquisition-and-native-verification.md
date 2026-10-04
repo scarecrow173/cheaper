@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034zXB13nuorLP81dn8ro8"
 type: "test-spec"
-status: "proposed"
+status: "approved"
 title: "Payload-free source acquisition and native verification"
 created: "2026-10-04"
 updated: "2026-10-04"

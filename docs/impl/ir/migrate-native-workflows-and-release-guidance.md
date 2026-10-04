@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034A6i3cxbZXoHqDxhuyjB"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Migrate native workflows and release guidance"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -85,4 +85,4 @@ combined は 27 pass / 1 skip（POSIX tar mode）、release-green.log。
 
 ## Follow-ups
 
-coordinator implementation review。canonical check deferred to coordinator merge run。
+APPROVED: implementation-review / test-spec-approval を受領。canonical check deferred to coordinator merge run。

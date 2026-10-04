@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zXjR2oE7USB76eUPCAq"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Implement payload untracking migration"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -120,4 +120,7 @@ Copilot JSON deploy gap は別変更の blocking 前提（binary-free Copilot �
 dispatch 共通ルールの子 run 禁止に従い inline 実行する。review は coordinator が担当する。実装前に each task の IR を開き、失敗/修正/検証と graph checkpoint を記録する。
 
 ## Review Handoff
-plan-approval を ask し、APPROVED を受けるまで test-spec/task/実装を開始しない。upstream の spec/ADR/design は承認済み。
+plan-approval を ask し APPROVED を受領後に実装した。2026-10-04 に
+APPROVED: implementation-review / test-spec-approval（review-protocol、8 contract items verified）を受領。
+P1 の parent-agent guide を launcher/cache contract に修正し、P2 の README 同梱表現も整合させた。
+新 publish と foreign OS の実行、canonical check は coordinator merge/release run が担う。

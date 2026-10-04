@@ -33,7 +33,7 @@ Directory: `docs/plans`
 | PLAN-034z1M6zCAdKb12eiCWZRm | Implement Node 26 SEA standalone executable proof of concept | completed | [implement-node-26-sea-standalone-executable-proof-of-concept.md](./implement-node-26-sea-standalone-executable-proof-of-concept.md) |
 | PLAN-034zTJptHTdovrvYW7wQ1k | Implement one-dispatch release workflow | completed | [implement-one-dispatch-release-workflow.md](./implement-one-dispatch-release-workflow.md) |
 | PLAN-034zTcqSwE6JHL46EJBnKP | OperationManager lifecycle の実装計画 | completed | [implement-operation-manager-lifecycle.md](./implement-operation-manager-lifecycle.md) |
-| PLAN-034zXjR2oE7USB76eUPCAq | Implement payload untracking migration | approved | [implement-payload-untracking-migration.md](./implement-payload-untracking-migration.md) |
+| PLAN-034zXjR2oE7USB76eUPCAq | Implement payload untracking migration | completed | [implement-payload-untracking-migration.md](./implement-payload-untracking-migration.md) |
 | PLAN-034zBjFcH4nDUr72Vc1XJ3 | Implement Pi sibling tool-call parallelism guidance and deterministic tests in runtime-pi | completed | [implement-pi-sibling-tool-call-parallelism.md](./implement-pi-sibling-tool-call-parallelism.md) |
 | PLAN-034zThvLa4bK934vj52jaC | Implement run-scoped artifact store | completed | [implement-run-scoped-artifact-store.md](./implement-run-scoped-artifact-store.md) |
 | PLAN-034zQHj1WyOgBNLGbDaFY8 | Implement version-pinned launcher acquisition | completed | [implement-version-pinned-launcher-acquisition.md](./implement-version-pinned-launcher-acquisition.md) |
