@@ -1,0 +1,165 @@
+import {
+  CheaperError,
+  compileSchema,
+  type PathDenylist,
+  type SymlinkPolicy,
+  type ToolName,
+} from "@cheaper/core";
+import {
+  createToolBudget,
+  createToolMeter,
+  type ToolBudget,
+  type ToolMeter,
+} from "./accounting.js";
+import { type CanonicalToolResult, createToolCatalog, type ToolCatalog } from "./catalog.js";
+import { createCountTokensTool } from "./count-tokens.js";
+import { type CanonicalToolDefinition, validateToolInput } from "./definition.js";
+import { createFindTool } from "./find.js";
+import { createGrepTool } from "./grep.js";
+import { MutationJournal } from "./journal.js";
+import { createReadTool } from "./read.js";
+
+export type ToolHandler = (input: unknown, signal: AbortSignal) => Promise<CanonicalToolResult>;
+export type InjectedToolHandlers = Partial<Record<"write" | "edit" | "ls", ToolHandler>>;
+export interface ToolRuntimeOptions {
+  root: string;
+  symlinkPolicy: SymlinkPolicy;
+  names: readonly ToolName[];
+  maxToolCalls: number;
+  onLimit: () => void;
+  journal?: MutationJournal;
+  handlers?: InjectedToolHandlers;
+  denylist?: PathDenylist | undefined;
+  writeScope?: ReadonlySet<string> | undefined;
+  signal?: AbortSignal | undefined;
+  abortGraceMs?: number | undefined;
+}
+export interface ToolCallContext {
+  signal?: AbortSignal | undefined;
+}
+export interface ToolRuntime {
+  readonly catalog: ToolCatalog;
+  readonly journal: MutationJournal;
+  readonly budget: ToolBudget;
+  readonly meter: ToolMeter;
+  readonly definitions: readonly CanonicalToolDefinition[];
+  execute(name: string, input: unknown, context?: ToolCallContext): Promise<CanonicalToolResult>;
+  abort(): void;
+  drain(): Promise<void>;
+  dispose(): Promise<void>;
+}
+
+export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
+  const opts = { ...options, names: [...options.names], handlers: { ...options.handlers } };
+  if (
+    opts.abortGraceMs !== undefined &&
+    (!Number.isFinite(opts.abortGraceMs) || opts.abortGraceMs < 0)
+  ) {
+    throw new CheaperError("INVALID_REQUEST", "abort grace must be a finite nonnegative number");
+  }
+  const catalog = createToolCatalog();
+  const journal = opts.journal ?? new MutationJournal();
+  const accounting = createToolBudget(opts);
+  const metering = createToolMeter();
+  const controller = new AbortController();
+  const pending = new Set<Promise<CanonicalToolResult>>();
+  const abort = () => controller.abort();
+  const definitions: CanonicalToolDefinition[] = opts.names.map((name) => {
+    switch (name) {
+      case "read":
+        return createReadTool(opts);
+      case "grep":
+        return createGrepTool(opts);
+      case "find":
+        return createFindTool(opts);
+      case "count_tokens":
+        return createCountTokensTool(opts);
+      default: {
+        const metadata = catalog.get(name);
+        if (!metadata) throw unknownTool(name);
+        return {
+          name,
+          label: name,
+          description: `${name} workspace tool`,
+          parameters: metadata.inputSchema,
+          execute: async (input, signal) => {
+            const handler = opts.handlers?.[name];
+            if (!handler) throw unknownTool(name);
+            return handler(input, signal ?? controller.signal);
+          },
+        };
+      }
+    }
+  });
+  const registered = new Map(
+    definitions.map((definition) => [
+      definition.name,
+      { definition, schema: compileSchema({ ...definition.parameters }, "input") },
+    ]),
+  );
+  let disposed: Promise<void> | undefined;
+  opts.signal?.addEventListener("abort", abort, { once: true });
+  if (opts.signal?.aborted) abort();
+  const runtime: ToolRuntime = {
+    catalog,
+    journal,
+    budget: accounting.budget,
+    meter: metering.meter,
+    definitions,
+    async execute(name, input, context) {
+      if (controller.signal.aborted) throw new Error("Operation aborted");
+      const entry = registered.get(name as ToolName);
+      if (
+        !entry ||
+        (["write", "edit", "ls"].includes(name) &&
+          !opts.handlers?.[name as keyof InjectedToolHandlers])
+      )
+        throw unknownTool(name);
+      validateToolInput(name, entry.schema, input);
+      const signal = context?.signal
+        ? AbortSignal.any([controller.signal, context.signal])
+        : controller.signal;
+      if (signal.aborted) throw new Error("Operation aborted");
+      const call = accounting.run(() =>
+        metering.run(() => entry.definition.execute(input, signal)),
+      );
+      pending.add(call);
+      try {
+        return await call;
+      } finally {
+        pending.delete(call);
+      }
+    },
+    abort,
+    async drain() {
+      abort();
+      if (pending.size === 0) return;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          Promise.allSettled([...pending]),
+          new Promise<void>((resolve) => {
+            timer = setTimeout(resolve, opts.abortGraceMs ?? 5000);
+          }),
+        ]);
+      } finally {
+        if (timer) clearTimeout(timer);
+        pending.clear();
+      }
+    },
+    dispose() {
+      disposed ??= (async () => {
+        await runtime.drain();
+        opts.signal?.removeEventListener("abort", abort);
+      })();
+      return disposed;
+    },
+  };
+  return runtime;
+}
+
+function unknownTool(name: string): CheaperError {
+  return new CheaperError("UNKNOWN_TOOL", `unknown or unregistered tool: ${name}`, {
+    details: { tool: name },
+  });
+}
