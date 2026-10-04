@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zQHAqgNJHPLssPVaFPR"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Core resource manifest verification"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -46,11 +46,11 @@ canonical check と focused exit-audit により配布可能な終端状態を�
 
 ## Work Items
 
-- [ ] 対応 IR を開く。
-- [ ] mise run check を実行し末尾を report に保存する。
-- [ ] 自 chain の terminal status と reciprocal verified-by / verifies relation を更新する。
-- [ ] doc-maintenance plan → apply で generated index を再生成する。
-- [ ] followup-triage、focused exit-audit、scope 差分を記録する。
+- [x] 対応 IR を開く。
+- [x] mise run check の初回失敗と coordinator の延期指示を記録した。失敗4 file を単独再実行し、その結果と残存1 timeout の case-only pass を report に保存する。
+- [x] 自 chain の terminal status と reciprocal verified-by / verifies relation を更新する。
+- [x] doc-maintenance plan → apply で generated index を再生成する。
+- [x] followup-triage、focused exit-audit、scope 差分を記録する。
 
 ## Done When
 
@@ -58,8 +58,7 @@ plan completed / tasks done / impl completed と focused graph complete。残存
 
 ## Verification
 
-- [ ] mise run check が exit 0（既知 cli timeout は該当 file 単独 pass 証拠を併記）。
-- [ ] mise exec -- node scripts/check-doc-ids.mjs が exit 0。
-- [ ] git diff --check が exit 0。
-- [ ] focused graph exit-audit の各 gate が pass。
-
+- [x] focused suite 77 pass / 2 POSIX skip、lint/typecheck/build は exit 0。full canonical は msg_5463b4cce5a1 により deferred-to-coordinator。3 CLI files は単独 pass、hook-contract は 15 pass / 1 skip / 1 timeout、残存 case の単独実行は 1 pass / 16 skip。
+- [x] mise exec -- node scripts/check-doc-ids.mjs が exit 0。
+- [x] git diff --check が exit 0。
+- [x] focused graph exit-audit の各 gate が pass。

@@ -53,9 +53,9 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqGn3BDa9i | Copilot deploy/config e2e asserts, DISC-034r05iHy2gdnpdai9KGpW matrix update, and final verification | done | [copilot-deploy-e2e-matrix-and-final-verification.md](./copilot-deploy-e2e-matrix-and-final-verification.md) |
 | TASK-034r05iHQeQpDqc1Novy9f | Core byte cap for countFileTokens | done | [core-byte-cap-for-countfiletokens.md](./core-byte-cap-for-countfiletokens.md) |
 | TASK-034r05iHQeQpDq7ypvNXB2 | Core deny-path matcher, writeScope frontmatter, policy denyPaths | done | [core-deny-matcher-and-write-scope-field.md](./core-deny-matcher-and-write-scope-field.md) |
-| TASK-034zQHzU6hKHiX9SIpdYgp | Core resource manifest implementation | todo | [core-resource-manifest-implementation.md](./core-resource-manifest-implementation.md) |
-| TASK-034zQHzpSRfqiTLbSZYz5S | Core resource manifest tests | in-progress | [core-resource-manifest-tests.md](./core-resource-manifest-tests.md) |
-| TASK-034zQHAqgNJHPLssPVaFPR | Core resource manifest verification | todo | [core-resource-manifest-verification.md](./core-resource-manifest-verification.md) |
+| TASK-034zQHzU6hKHiX9SIpdYgp | Core resource manifest implementation | done | [core-resource-manifest-implementation.md](./core-resource-manifest-implementation.md) |
+| TASK-034zQHzpSRfqiTLbSZYz5S | Core resource manifest tests | done | [core-resource-manifest-tests.md](./core-resource-manifest-tests.md) |
+| TASK-034zQHAqgNJHPLssPVaFPR | Core resource manifest verification | done | [core-resource-manifest-verification.md](./core-resource-manifest-verification.md) |
 | TASK-002DRbiVRuFJ5XWHvsWW6i | Correct fail-open/fail-closed contract in parent-agent guide and verify consistency | done | [correct-fail-open-fail-closed-contract-in-parent-agent-guide.md](./correct-fail-open-fail-closed-contract-in-parent-agent-guide.md) |
 | TASK-034r05iHQeQpDpIa7OmcYd | Count consumed repair attempts in meta.repairs on failure | done | [count-consumed-repair-attempts-in-meta-repairs-on-failure.md](./count-consumed-repair-attempts-in-meta-repairs-on-failure.md) |
 | TASK-034r05iHQeQpDpVUAMbEeR | Create cheaper-usage skill | done | [create-cheaper-usage-skill.md](./create-cheaper-usage-skill.md) |

@@ -60,4 +60,3 @@ RED 証拠が IR にあり、全 named case に対応する test が存在する
 ## Notes
 
 platform 条件は host と skip を区別。scope 外 boundary は変更しない。
-

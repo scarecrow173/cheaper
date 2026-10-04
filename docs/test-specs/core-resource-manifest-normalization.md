@@ -89,4 +89,3 @@ lease / DAG inference / hard-link alias / claim 内 symlink の到達集合保�
 ## Risk
 
 within-workspace literal exact/subtree の内部 symlink は canonical claim 外へ到達し得る。producer ownership を拡大して解決しない。境界契約が変わる際に本保証と residual-risk を再検討する。
-

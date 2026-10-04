@@ -59,4 +59,3 @@ types.ts / paths.ts / 依存 / hot file を変更せず named tests が pass。
 
 - [x] mise exec -- pnpm --filter @cheaper/core exec vitest run test/resources.test.ts が exit 0。
 - [x] mise exec -- pnpm --filter @cheaper/core build が exit 0。
-

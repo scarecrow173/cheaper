@@ -78,14 +78,14 @@ lease / queue / DAG edge / duplicate producer の compiler 検査、artifact nam
 
 ## Acceptance Criteria
 
-- [ ] AC1: future exact / subtree、本体 / descendant / src/a と src/ab の分離。
-- [ ] AC2: workspace escape、symlink deny / within-workspace alias、platform 条件付き Windows case identity と POSIX case distinction。
-- [ ] AC3: mode 不整合拒否、unknown fallback、入力順に依存しない normalization / dedup。
-- [ ] AC4: reads/writes glob の ancestor safety と produces ownership の分離、dir/*.json 拒否 / dir/** 受理、不正入力拒否。
-- [ ] AC4a: within-workspace の dir/*.json は root subtree、deny では dir subtree。produces dir/** は両 policy で dir ownership を保持し、拡大しない。
-- [ ] AC4b: POSIX の d\\ir/*.json は root subtree に近似し、Windows の dir\\*.json は dir subtree（deny）へ近似する。
-- [ ] AC5: read/read 非 conflict、read/write と write/write conflict、ancestor overlap、独立 path の pure predicate 表。
-- [ ] AC6: 関連 test と mise run check、focused exit-audit が pass。
+- [x] AC1: future exact / subtree、本体 / descendant / src/a と src/ab の分離。
+- [x] AC2: workspace escape、symlink deny / within-workspace alias、platform 条件付き Windows case identity と POSIX case distinction。
+- [x] AC3: mode 不整合拒否、unknown fallback、入力順に依存しない normalization / dedup。
+- [x] AC4: reads/writes glob の ancestor safety と produces ownership の分離、dir/*.json 拒否 / dir/** 受理、不正入力拒否。
+- [x] AC4a: within-workspace の dir/*.json は root subtree、deny では dir subtree。produces dir/** は両 policy で dir ownership を保持し、拡大しない。
+- [x] AC4b: POSIX の d\\ir/*.json は root subtree に近似し、Windows の dir\\*.json は dir subtree（deny）へ近似する。
+- [x] AC5: read/read 非 conflict、read/write と write/write conflict、ancestor overlap、独立 path の pure predicate 表。
+- [x] AC6: 関連 test、lint/typecheck/build、focused exit-audit を確認した。full canonical は coordinator 指示 msg_5463b4cce5a1 により deferred-to-coordinator（CLI host contention、失敗 file の単独再実行結果を記録）。
 
 ## Deferred Design Concerns
 

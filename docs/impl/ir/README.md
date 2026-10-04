@@ -27,7 +27,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpyISCbZJu | Copilot pre-read hook adapter (PLAN-034r05iHE1FbkpaEpZrthK) | completed | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | IMPL-034zQU77PE0beEruVCSGYz | Core resource manifest implementation | completed | [core-resource-manifest-implementation.md](./core-resource-manifest-implementation.md) |
 | IMPL-034zQKrvQjUkhvZoLktZcb | Core resource manifest tests | completed | [core-resource-manifest-tests.md](./core-resource-manifest-tests.md) |
-| IMPL-034zR3fwmlg2mtdTgJxi2v | Core resource manifest verification | in-progress | [core-resource-manifest-verification.md](./core-resource-manifest-verification.md) |
+| IMPL-034zR3fwmlg2mtdTgJxi2v | Core resource manifest verification | completed | [core-resource-manifest-verification.md](./core-resource-manifest-verification.md) |
 | IMPL-034z2rYkK5IZuxqTMYHtAs | create manual dispatch release workflow | completed | [create-manual-dispatch-release-workflow.md](./create-manual-dispatch-release-workflow.md) |
 | IMPL-034rALLKuPPgsnclaaPRYT | Cross-agent native routing adapters over APM distribution | completed | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
 | IMPL-034r05iHy2gdnpARFuxZVi | Delegation usage measurement log (PLAN-034r05iHE1Fbkpd5tkg6Gs) | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |

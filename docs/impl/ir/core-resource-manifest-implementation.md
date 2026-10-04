@@ -85,4 +85,3 @@ within-workspace glob は literal ancestor の boundary 検査後に root subtre
 ## Follow-ups
 
 canonical check と graph exit-audit を verification task で行う。
-

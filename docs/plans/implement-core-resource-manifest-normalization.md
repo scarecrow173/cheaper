@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zQqWCWWNpushz8Itm5d"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "Implement core resource manifest normalization"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -88,14 +88,14 @@ docs/designs/core-resource-manifest-normalization.md（approved、msg_51dda51d3e
 
 ## Implementation Sequence
 
-- [ ] A: 承認後 test-spec と依存順 tasks を作成する。
-- [ ] B: AC1–5 / AC4a/4b の failing tests を書く。
-- [ ] C: focused test を実行して未実装 API による RED を確認する。
-- [ ] D: 正規化、predicates、export を実装する。
-- [ ] E: focused test と core build を実行し GREEN を確認する。
-- [ ] F: mise run check を実行する。
-- [ ] G: terminal status、IR、doc-maintenance index を更新する。
-- [ ] H: focused exit-audit を実行し、論理境界で commit する。
+- [x] A: 承認後 test-spec と依存順 tasks を作成する。
+- [x] B: AC1–5 / AC4a/4b の failing tests を書く。
+- [x] C: focused test を実行して未実装 API による RED を確認する。
+- [x] D: 正規化、predicates、export を実装する。
+- [x] E: focused test と core build を実行し GREEN を確認する。
+- [x] F: mise run check を実行する。
+- [x] G: terminal status、IR、doc-maintenance index を更新する。
+- [x] H: focused exit-audit を実行し、論理境界で commit する。
 
 ## Dependency Graph
 
@@ -140,7 +140,7 @@ critical path は A→H。単一契約の RED/GREEN 証拠を共有するため 
 | A | task graph projection | cycle / unresolved relation なし |
 | B,C | mise exec -- pnpm --filter @cheaper/core exec vitest run test/resources.test.ts | 未実装 module/export を理由に RED（baseline 291 pass / 2 skip） |
 | D,E | 上記 focused command と mise exec -- pnpm --filter @cheaper/core build | AC1–5 / AC4a/4b pass、exit 0 |
-| F | mise run check | exit 0。既知 cli timeout は該当 file 単独再実行証拠を記録 |
+| F | focused GREEN、lint/typecheck/build、失敗 CLI file 単独再実行 | coordinator 指示 msg_5463b4cce5a1 により full canonical は deferred-to-coordinator。初回 check と単独再実行の実測結果を保存 |
 | G | doc-maintenance plan → apply、doc id check | 自 chain index / ID 整合 |
 | H | focused graph exit-audit、git diff --check | exit-audit pass、空白エラーなし |
 
@@ -164,3 +164,7 @@ graph focus-required 例外は plan 作成前のみ coordinator 承認済み。�
 ## Review Handoff
 
 mode 導出と canonical claim 不整合拒否、policy 別 glob widening / producer 非拡大、POSIX escape、literal symlink residual-risk を重点確認。新規 dependency と hot file 変更なし。
+
+## Verification Amendment 2026-10-04
+
+coordinator 指示 msg_5463b4cce5a1: 4 worker の full check 並走による CLI host contention のため、worker の full canonical 再試行を停止。focused suite GREEN、失敗 file の単独再実行結果、lint/typecheck/build を worker の完了証拠とし、full canonical は統合時に coordinator が逐次実行する。bundle / APM freshness stage は worker で未到達。共有 ADR marker 3件の表示修正は追加の user pre-authorization に従う。AC2 / AC4b の POSIX 2件は Windows host 条件 skip として記録する。

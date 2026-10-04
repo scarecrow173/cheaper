@@ -43,7 +43,7 @@ metadata:
 
 ## Summary
 
-承認済み plan Coverage (a)〜(h) と AC1–5 の failing contract tests を作成する。
+承認済み plan Coverage (a)〜(h) と AC1–5 の failing contract tests を作成し、RED を確認した。
 
 ## Context
 
@@ -53,7 +53,7 @@ spec/design approval msg_51dda51d3eb5、plan approval msg_4f465c6e0d66（coordin
 
 ### Changes
 
-test/resources.test.ts を作成する。source は RED 確認後の implementation task が所有する。
+test/resources.test.ts を作成した。source は RED 確認後の implementation task が所有する。
 
 ### Decisions During Implementation
 
@@ -80,4 +80,3 @@ POSIX 条件は Windows host では skip。既存 workspace-root boundary と li
 ## Follow-ups
 
 RED 後 implementation task に進む。
-
