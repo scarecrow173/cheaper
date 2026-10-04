@@ -19,6 +19,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7g59V25ltC | cheaper V1 Worker Runtime と CLI | implemented | [cheaper-v1-worker-runtime-cli.md](./cheaper-v1-worker-runtime-cli.md) |
 | SPEC-034r05iHK8bA7gaTnVhXWI | code-writer and doc-writer built-in Workers | implemented | [code-writer-and-doc-writer-built-in-workers.md](./code-writer-and-doc-writer-built-in-workers.md) |
 | SPEC-034r05iHK8bA7gsvijtkou | Copilot per-target pre-read hook adapter | implemented | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
+| SPEC-034zIOnRXiXsUtWd4Z6edT | Core resource manifest normalization | approved | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | SPEC-034r05iHK8bA7gky93Dal0 | Cross-agent distribution verification | implemented | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
 | SPEC-034rzTJydXfLvQhTIqiDqW | Cross-agent native routing adapters over APM distribution | approved | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
 | SPEC-034r05iHK8bA7gveeDA5HC | Continuous usage measurement log for delegations | implemented | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |

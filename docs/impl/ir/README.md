@@ -8,16 +8,16 @@ Directory: `docs/impl/ir`
 | --- | --- | --- | --- |
 | IMPL-034z57jprjlY9PUYkFPIdl | add cheaper hook command with target adapters | completed | [add-cheaper-hook-command-with-target-adapters.md](./add-cheaper-hook-command-with-target-adapters.md) |
 | IMPL-034rArrYQRvXbeSRXD6HQQ | Add cheaper usage aggregation command | completed | [add-cheaper-usage-aggregation-command.md](./add-cheaper-usage-aggregation-command.md) |
-| IMPL-034zCh129JMqV5Z5ta5wG6 | Add deterministic sibling-parallelism pin tests to runtime-pi | in-progress | [add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md](./add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md) |
+| IMPL-034zCh129JMqV5Z5ta5wG6 | Add deterministic sibling-parallelism pin tests to runtime-pi | completed | [add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md](./add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md) |
 | IMPL-034rAtxE2k5HhaePoxBbI3 | Add --model flag and models command | completed | [add-model-flag-and-models-command.md](./add-model-flag-and-models-command.md) |
 | IMPL-034rzZLq1nbnzN4CvDSAk5 | Add model pricing metadata layer and bundled data | completed | [add-model-pricing-metadata-layer-and-bundled-data.md](./add-model-pricing-metadata-layer-and-bundled-data.md) |
 | IMPL-034rAiJgmYQKgmJC2mF9zN | Add models.yaml exclude with union merge | completed | [add-models-yaml-exclude-with-union-merge.md](./add-models-yaml-exclude-with-union-merge.md) |
 | IMPL-034r05iHy2gdnpmfo09FGX | Add Ollama docker-compose and AGENTS.md container usage | completed | [add-ollama-docker-compose-and-agents-md-container-usage.md](./add-ollama-docker-compose-and-agents-md-container-usage.md) |
 | IMPL-034z3CD7wXV3MNmCy9JnHs | add platform launchers to hooks payload | completed | [add-platform-launchers-to-hooks-payload.md](./add-platform-launchers-to-hooks-payload.md) |
-| IMPL-034zCh1C1Qy6Pc2cvIFlOP | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | in-progress | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
+| IMPL-034zCh1C1Qy6Pc2cvIFlOP | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | completed | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
 | IMPL-034z1STQxtFa8POTFVCwbd | Add SEA entrypoint sea-main.ts | completed | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | IMPL-034rArskSHUOoayxrLW4s8 | Add usage telemetry e2e coverage docs and bundle regen | completed | [add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md](./add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md) |
-| IMPL-034zCh2bBRGkSHaq79bBvu | Append sibling tool-call parallelism section to execution-engine design doc | in-progress | [append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md](./append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md) |
+| IMPL-034zCh2bBRGkSHaq79bBvu | Append sibling tool-call parallelism section to execution-engine design doc | completed | [append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md](./append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md) |
 | IMPL-2OYQijUxRdsfa8Cig2DuQe | Auth text/select prompt I/O boundary routing (PLAN-zDQIdChPXY1lrGJyzZTiQc) | completed | [auth-io-boundary.md](./auth-io-boundary.md) |
 | IMPL-034r05iHy2gdnpt2vgHZ55 | Auth URL opener seam (PLAN-034r05iHE1Fbkp4xxlyMdV) | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
 | IMPL-034rC4jywjUQYNL42ruw7Q | auto 分類の resolver / runtime-pi / CLI 統合 | completed | [auto-resolver-runtime-pi-cli.md](./auto-resolver-runtime-pi-cli.md) |
@@ -25,6 +25,9 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpkXDh47a6 | Code review fixes (post-merge) | completed | [code-review-fixes.md](./code-review-fixes.md) |
 | IMPL-034r05iHy2gdnpoDlOXUs6 | Configure Pi models.json and cheaper models.yaml for Ollama | completed | [configure-pi-and-cheaper-model-config-for-ollama.md](./configure-pi-and-cheaper-model-config-for-ollama.md) |
 | IMPL-034r05iHy2gdnpyISCbZJu | Copilot pre-read hook adapter (PLAN-034r05iHE1FbkpaEpZrthK) | completed | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
+| IMPL-034zQU77PE0beEruVCSGYz | Core resource manifest implementation | completed | [core-resource-manifest-implementation.md](./core-resource-manifest-implementation.md) |
+| IMPL-034zQKrvQjUkhvZoLktZcb | Core resource manifest tests | completed | [core-resource-manifest-tests.md](./core-resource-manifest-tests.md) |
+| IMPL-034zR3fwmlg2mtdTgJxi2v | Core resource manifest verification | completed | [core-resource-manifest-verification.md](./core-resource-manifest-verification.md) |
 | IMPL-034z2rYkK5IZuxqTMYHtAs | create manual dispatch release workflow | completed | [create-manual-dispatch-release-workflow.md](./create-manual-dispatch-release-workflow.md) |
 | IMPL-034rALLKuPPgsnclaaPRYT | Cross-agent native routing adapters over APM distribution | completed | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
 | IMPL-034r05iHy2gdnpARFuxZVi | Delegation usage measurement log (PLAN-034r05iHE1Fbkpd5tkg6Gs) | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |

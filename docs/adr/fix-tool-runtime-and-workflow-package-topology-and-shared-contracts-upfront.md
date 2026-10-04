@@ -72,9 +72,9 @@ epic #68 の子 issue（#56–#67, #69, #70）は複数 worktree で並列実装
 
 ## Considered Options
 
-1. 契約を固定せず各 issue に委ねる（却下: drift / 衝突）。
-2. core に全て入れる（却下: core が policy と execution を混在、Pi helper 注入の置き場がない）。
-3. runtime-pi 内に全て入れる（却下: Workflow が Pi 依存になる）。
+- 契約を固定せず各 issue に委ねる（却下: drift / 衝突）。
+- core に全て入れる（却下: core が policy と execution を混在、Pi helper 注入の置き場がない）。
+- runtime-pi 内に全て入れる（却下: Workflow が Pi 依存になる）。
 4. **採用**: `@cheaper/tool-runtime` と `@cheaper/workflow` を新設し、下記契約を固定する。
 
 ## Decision Outcome

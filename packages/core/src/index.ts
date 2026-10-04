@@ -13,7 +13,7 @@ export * from "./policy/load.js";
 export * from "./policy/merge.js";
 export * from "./policy/restrict.js";
 export * from "./policy/schema.js";
-export * from "./resources/types.js";
+export * from "./resources/index.js";
 export * from "./token/count.js";
 export * from "./tools/vocabulary.js";
 export * from "./worker/parse.js";
