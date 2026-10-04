@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034zIOnRXiXsUtWd4Z6edT"
 type: "spec"
-status: "approved"
+status: "proposed"
 title: "Core resource manifest normalization"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -65,7 +65,7 @@ lease / queue / DAG edge / duplicate producer の compiler 検査、artifact nam
 ## Requirements
 
 - 入力 scope は exact / subtree の明示値。subtree は本体と descendants。類似 prefix sibling は別 resource。
-- ResourceClaimDeclaration = ScopeDeclaration + mode。reads=shared / writes,produces=exclusive の違反を拒否する。
+- D5 の JSON 入力は ScopeDeclaration {path, scope}[]。mode は core の manifest 正規化が配列種別から導出する（reads=shared / writes,produces=exclusive）。core API は既存の canonical ResourceClaim[] も受理し、その場合は固定型の mode と bucket の不整合を拒否する。standalone claim 正規化は mode を独立引数で受ける。JSON protocol に ResourceClaim 表現や mode field は追加しない。
 - manifest 入力の reads / writes が省略または null なら root subtree の shared / exclusive。空配列は既知の access なし。produces は省略で空、null は拒否し ownership を推測しない。
 - resources オブジェクト自体の省略・空（{}）は D4 の conservative fallback（D5 の「省略 / 空」はこれを指す）。各配列の空配列（reads: [] 等）は「access が無いと宣言済み」の narrow manifest であり fallback ではない。未知 / broad access を表現する consumer（#64 compiler）は空配列ではなく key 自体を省略しなければならない。
 - canonical path は paths.ts の絶対 real 解決を保持する。比較 key のみ Windows で小文字化し case-insensitive、POSIX は case-sensitive。配列は比較 key / scope / mode と実 path の安定順に duplicate を除去する。
