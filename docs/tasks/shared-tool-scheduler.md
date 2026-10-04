@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zXj9La05SfBh0LjDsHA"
 type: "task"
-status: "todo"
+status: "done"
 title: "Invocation 共有 ToolScheduler を導入する"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -51,10 +51,12 @@ tool-runtime src/test、runtime-pi run/tools registryの最小配線とtests。w
 ## Done When
 AC1–6/AC8が決定的testでpass、capを実settleまで保持し、filesystem/writeScope/journalの既存testがpassする。
 ## Verification
-- [ ] mise exec -- pnpm --filter @cheaper/tool-runtime test がexit0。
-- [ ] mise exec -- pnpm --filter @cheaper/runtime-pi test がexit0。
-- [ ] mise exec -- pnpm lint がexit0。
-- [ ] mise exec -- pnpm typecheck がexit0。
-- [ ] mise exec -- pnpm build がexit0。
+- [x] mise exec -- pnpm --filter @cheaper/tool-runtime test がexit0（87 tests）。
+- [x] mise exec -- pnpm --filter @cheaper/runtime-pi test がexit0（371 tests）。
+- [x] mise exec -- pnpm lint がexit0（既存33 warnings）。
+- [x] mise exec -- pnpm typecheck がexit0。
+- [x] mise exec -- pnpm build がexit0。
+
+実装記録: ../impl/ir/shared-tool-scheduler.md。coordinator review msg_38cc34bdc53b は APPROVED: implementation、P0/P1 blocker無し。re-entrant admission guard は追加 RED→GREEN を確認した。
 ## Risks / Follow-ups
 per-resource設定でも本sliceはexclusive、#61がleaseを担当。process宣言seamは#59。canonical check deferred to coordinator merge run。

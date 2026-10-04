@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zWZgd5LEtlTQNGC5O8x"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "ToolScheduler と concurrency policy を実装する"
 created: "2026-10-04"
 updated: "2026-10-04"

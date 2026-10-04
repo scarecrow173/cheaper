@@ -1,9 +1,9 @@
-import { CheaperError, type SymlinkPolicy } from "@cheaper/core";
+import { CheaperError, type ConcurrencyPolicy, type SymlinkPolicy } from "@cheaper/core";
 import { OperationManager, type OperationRecord } from "./operation.js";
 import { createToolRuntime, type ToolRuntime, type ToolRuntimeOptions } from "./registry.js";
+import { ToolScheduler } from "./scheduler.js";
 
-/** 後続 #57/#61 で具体化する。値を作れる no-op service は公開しない。 */
-export type ToolScheduler = never;
+/** 後続 #61 で具体化する。値を作れる no-op service は公開しない。 */
 export type ResourceManager = never;
 export type ResourceLease = never;
 export interface WorkerExecutionBinding {
@@ -20,6 +20,7 @@ export interface InvocationToolRuntimeOptions {
   symlinkPolicy: SymlinkPolicy;
   signal?: AbortSignal;
   abortGraceMs?: number;
+  concurrency?: Partial<ConcurrencyPolicy> | undefined;
 }
 export interface InvocationToolRuntime {
   readonly root: string;
@@ -46,6 +47,7 @@ export function createInvocationToolRuntime(
     signal: controller.signal,
     abortGraceMs: opts.abortGraceMs ?? 5000,
   });
+  const scheduler = new ToolScheduler(manager, opts.concurrency);
   const abort = (reason?: unknown) => controller.abort(reason);
   const onExternalAbort = () => abort(opts.signal?.reason);
   opts.signal?.addEventListener("abort", onExternalAbort, { once: true });
@@ -73,7 +75,7 @@ export function createInvocationToolRuntime(
             : controller.signal,
           abortGraceMs: options.abortGraceMs ?? opts.abortGraceMs,
         },
-        { manager, ownerId: options.ownerId },
+        { manager, scheduler, ownerId: options.ownerId },
       );
       owners.add(options.ownerId);
       scopes.add(scope);

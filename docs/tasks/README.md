@@ -160,7 +160,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7h2hF1efor | Scaffold runtime-pi package with Pi import smoke test | done | [scaffold-runtime-pi-package-with-pi-import-smoke-test.md](./scaffold-runtime-pi-package-with-pi-import-smoke-test.md) |
 | TASK-034r05iHQeQpDqj5TapRlr | Shared limits, line framer, and path-only walker/find | done | [shared-limits-line-framer-and-path-only-walker-find.md](./shared-limits-line-framer-and-path-only-walker-find.md) |
 | TASK-034rAcEwRUaAkZ0KOCmc9J | Shared routing policy module and Windsurf adapter refactor | done | [shared-routing-policy-module-and-windsurf-adapter-refactor.md](./shared-routing-policy-module-and-windsurf-adapter-refactor.md) |
-| TASK-034zXj9La05SfBh0LjDsHA | Invocation 共有 ToolScheduler を導入する | todo | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
+| TASK-034zXj9La05SfBh0LjDsHA | Invocation 共有 ToolScheduler を導入する | done | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | TASK-034rBt3hfF2knHMAeo5KhB | Shell read-candidate extractor in routing-policy | done | [shell-read-candidate-extractor-in-routing-policy.md](./shell-read-candidate-extractor-in-routing-policy.md) |
 | TASK-034rBt3LLoIUcFHjk4gRlI | Shell-read blocking contract tests | done | [shell-read-contract-tests.md](./shell-read-contract-tests.md) |
 | TASK-034rBt4e20Wrlc3FH3NQWd | Shell-read docs and final verification | done | [shell-read-docs-and-final-verification.md](./shell-read-docs-and-final-verification.md) |

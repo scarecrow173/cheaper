@@ -237,6 +237,7 @@ export async function runWorker(
       createInvocationToolRuntime({
         root: deps.root,
         symlinkPolicy: policy.filesystem.symlinks,
+        concurrency: policy.execution.concurrency,
         abortGraceMs: graceMs,
       });
     const outputPerInput = worker.cheaper.model.workload?.outputPerInput;
