@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zQqWCWWNpushz8Itm5d"
 type: "plan"
-status: "approved"
+status: "in-progress"
 title: "Implement core resource manifest normalization"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -17,7 +17,10 @@ relations:
     generated: []
   implements:
     - "docs/specs/core-resource-manifest-normalization.md"
-  implemented-by: []
+  implemented-by:
+    - "../tasks/core-resource-manifest-tests.md"
+    - "../tasks/core-resource-manifest-implementation.md"
+    - "../tasks/core-resource-manifest-verification.md"
   depends-on: []
   blocks: []
   supersedes: []
@@ -30,7 +33,8 @@ relations:
     - "docs/designs/core-resource-manifest-normalization.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/core-resource-manifest-normalization.md"
   references:
     - "../adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md"
   defers: []
@@ -160,4 +164,3 @@ graph focus-required 例外は plan 作成前のみ coordinator 承認済み。�
 ## Review Handoff
 
 mode 導出と canonical claim 不整合拒否、policy 別 glob widening / producer 非拡大、POSIX escape、literal symlink residual-risk を重点確認。新規 dependency と hot file 変更なし。
-
