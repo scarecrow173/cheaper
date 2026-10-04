@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034zIUgKgoIuBD5BY6jLjf"
 type: "design"
-status: "draft"
+status: "approved"
 title: "Canonical Tool Runtime と Pi adapter"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -75,8 +75,13 @@ ToolRuntime は scheduler service を表す型ではなく、この slice の ca
 
 InvocationToolRuntime facade と WorkerExecutionBinding を公開し、RunWorkerDeps.execution
 を optional に追加する。facade が worker scope を作り、scope は registry/journal、
-AbortController、実行中 promise を保持する。abort は新規開始を拒否し running signal を伝え、
-drain は実行中 promise の settle を待つ。dispose は abort/drain と scope 解放を行う。
+AbortController、実行中 promise を保持する。abort は新規開始を拒否し running signal を伝える。
+drain は scope の AbortController を abort した後、実行中 promise の settle を abort grace
+（abortGraceMs、既定 5000ms — promptWithAbortGrace と同一の猶予契約）で bound する。grace
+経過後は待機を打ち切り、未 settle の promise は tracking から放棄する（late settle は無害に
+破棄）。dispose は abort + bounded drain と scope 解放を行い、必ず有限時間で return して
+single-Worker の outer finally を永久ブロックしない。grace 経過で drain を打ち切ることを
+contract test で pin する。
 single-Worker は runWorker が facade 一つを所有して outer finally で dispose する。
 borrowed binding は owner scope のみ dispose し facade を dispose しない。
 root/symlink policy 不一致、duplicate owner、parentLease の未対応利用は closed。
@@ -108,5 +113,6 @@ contract test で一致を確認する。Pi 自身の外側 argument validation 
 canonical runtime はその validation に依存せず独立に一回検証する。
 #56/#57/#61 の service 実装、lease borrowing、global concurrency は後続 issue。
 core の countFileTokens は signal を受け取らず、開始済み tokenization を途中停止できない。
-scope は開始前に abort を拒否し、開始済み call は実際の settle まで drain する。
+scope は開始前に abort を拒否し、開始済み call は abortGraceMs で bound された drain まで待つ
+（grace 経過で放棄される未完の tokenization は late settle として破棄される）。
 
