@@ -100,3 +100,5 @@ coordinator の直接指示に沿い、packages/core/src/worker/validate.ts の�
 2026-10-04: task named audit scoped findings=[]、impl-record audit 76 files/findings=[]。all named audit は 416 documents / 455 findings / blocking 41、全ての blocking は scope 外。chain+共有 ADR の scoped blocking=0（共有 ADR の既存 warning 2 件のみ）。global all pass は claim しない。
 doc-maintenance plan→apply の index 更新は反映済み。結果取得時の node-repl timeout 後の再 scan plan で actions=[] を確認。IR index は new_impl_record.js の updateIndexForMarkdownDir を一時 .cjs module から呼ぶ method 1 を使用し、一時 module を削除した。
 通常 exit-audit route は既存 global blockers により exit-audit-retry。承認済み scoped exception の実監査 evidence を根拠に declared runtime signal exit-audit-pass を供給し、exit-audit-to-complete、current=complete/status=terminal を確認した。graph/scripts/shared ADR の変更はない。
+
+coordinator は delta a070c6a も APPROVED とした。推奨された literal writeScope target 契約を spec に 1 行追記した（実装済み core ownership normalization の制約を明文化、behavior 変更なし）。
