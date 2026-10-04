@@ -8,6 +8,7 @@ Directory: `docs/test-specs`
 | --- | --- | --- | --- |
 | TSPEC-034z3yKWLolrImpMY8UMhZ | APM executable payload layout and launcher dispatch contract | proposed | [apm-executable-payload-layout-and-launcher-dispatch-contract.md](./apm-executable-payload-layout-and-launcher-dispatch-contract.md) |
 | TSPEC-CcB52hP0U8aHcOIhg0D0ge | auto tier classification by effectiveCost percentile | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
+| TSPEC-034zXj8km4o9pyOGLhz1oM | Concurrency policy の信頼境界 | approved | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
 | TSPEC-034zQr5gZxyNe4nWC1uHHg | Canonical Tool Runtime の adapter parity と所有境界 | proposed | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | TSPEC-034z50PbuzTYDWvQXYdvaG | cheaper hook subcommands and hooks.json executable contract | proposed | [cheaper-hook-subcommands-and-hooks-json-executable-contract.md](./cheaper-hook-subcommands-and-hooks-json-executable-contract.md) |
 | TSPEC-034zQHrk9A6Zc7rrSLGeHA | Core resource manifest normalization | draft | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
@@ -21,6 +22,7 @@ Directory: `docs/test-specs`
 | TSPEC-034zTWhBVg6DzifF8qlhAc | Release publication and native smoke | proposed | [release-publication-and-native-smoke.md](./release-publication-and-native-smoke.md) |
 | TSPEC-034z2o64UhWCtNmYIhRT20 | Release workflow manual-dispatch and artifact contract | proposed | [release-workflow-manual-dispatch-and-artifact-contract.md](./release-workflow-manual-dispatch-and-artifact-contract.md) |
 | TSPEC-034zTn31vnH33RcM6g7VYS | Run-scoped artifact boundaries | proposed | [run-scoped-artifact-boundaries.md](./run-scoped-artifact-boundaries.md) |
+| TSPEC-034zXj8LyfXfYFb1U3o2tb | 共有 operation admission と cancellation | approved | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | TSPEC-034rBrs4K5W7pe0ixjegZk | Shell-read blocking contract tests | approved | [shell-read-blocking-contract-tests.md](./shell-read-blocking-contract-tests.md) |
 | TSPEC-034z1OZC4sSkRlvZfFfIXt | Standalone executable contract parity | proposed | [standalone-executable-contract-parity.md](./standalone-executable-contract-parity.md) |
 | TSPEC-034zQTnsUJl3pXIuYsvZIQ | Version-pinned launcher integrity and stream preservation | draft | [version-pinned-launcher-integrity-and-stream-preservation.md](./version-pinned-launcher-integrity-and-stream-preservation.md) |

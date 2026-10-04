@@ -24,6 +24,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1FbkoSqLEHZrV | Harden repair abort grace and provider failure normalization | completed | [harden-repair-abort-grace-and-provider-failure-normalization.md](./harden-repair-abort-grace-and-provider-failure-normalization.md) |
 | PLAN-034r05iHE1Fbkp0Gokdq8Z | Huge-file byte cap guard and fail-closed hook | completed | [huge-file-byte-cap-guard-and-fail-closed-hook.md](./huge-file-byte-cap-guard-and-fail-closed-hook.md) |
 | PLAN-eDDZBS6ncoMf6TOdM7tDSW | implement auto tier classification | completed | [implement-auto-tier-classification.md](./implement-auto-tier-classification.md) |
+| PLAN-034zWZgd5LEtlTQNGC5O8x | ToolScheduler と concurrency policy を実装する | approved | [implement-bounded-tool-scheduler.md](./implement-bounded-tool-scheduler.md) |
 | PLAN-034zQ97RFO1AbY6enJw9jO | Canonical Tool Runtime を抽出して Pi adapter を接続する | completed | [implement-canonical-tool-runtime.md](./implement-canonical-tool-runtime.md) |
 | PLAN-034r05iHy2gdnpJFiMWhkY | Implement cheaper CLI, built-in workers and end-to-end verification | completed | [implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md](./implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md) |
 | PLAN-034z3OwYgplUxa7Usrjwxq | Implement cheaper hook subcommands and migrate hooks.json off Node adapters | completed | [implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md](./implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md) |

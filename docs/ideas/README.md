@@ -6,6 +6,7 @@ Directory: `docs/ideas`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
+| IDEA-034zWckq6QerjvcSiFzdmE | 操作並行度を canonical runtime で制限する | promoted | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
 | IDEA-034zIKQIT4QevaIv4SeLB7 | Canonical Tool Runtime 抽出 | promoted | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | IDEA-034zIHiBntz3Z0WJ9PdgNU | 再利用可能な Workflow contract を検証済み DAG へ compile する | promoted | [compile-workflow-contracts.md](./compile-workflow-contracts.md) |
 | IDEA-034zIIqQ6OptX5Bz9rXpiV | Core resource identity and conservative manifest normalization | promoted | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
