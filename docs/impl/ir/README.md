@@ -23,6 +23,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpt2vgHZ55 | Auth URL opener seam (PLAN-034r05iHE1Fbkp4xxlyMdV) | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
 | IMPL-034rC4jywjUQYNL42ruw7Q | auto 分類の resolver / runtime-pi / CLI 統合 | completed | [auto-resolver-runtime-pi-cli.md](./auto-resolver-runtime-pi-cli.md) |
 | IMPL-034rC4k38aJJf0vfVaefeV | auto tier 分類ガイドの更新 | completed | [auto-tier.md](./auto-tier.md) |
+| IMPL-034zTD17WKcBN1E1xeYf41 | Canonical operation ownership wiring | completed | [canonical-operation-ownership-wiring.md](./canonical-operation-ownership-wiring.md) |
 | IMPL-034zQtPhC1tLOPNry0QTLE | Canonical tool extraction | completed | [canonical-tool-extraction.md](./canonical-tool-extraction.md) |
 | IMPL-034r05iHy2gdnpkXDh47a6 | Code review fixes (post-merge) | completed | [code-review-fixes.md](./code-review-fixes.md) |
 | IMPL-034r05iHy2gdnpoDlOXUs6 | Configure Pi models.json and cheaper models.yaml for Ollama | completed | [configure-pi-and-cheaper-model-config-for-ollama.md](./configure-pi-and-cheaper-model-config-for-ollama.md) |
@@ -56,7 +57,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
-| IMPL-034zTprBbdY0tsPiphc2wE | Operation manager state lifecycle | in-progress | [operation-manager-state-lifecycle.md](./operation-manager-state-lifecycle.md) |
+| IMPL-034zTprBbdY0tsPiphc2wE | Operation manager state lifecycle | completed | [operation-manager-state-lifecycle.md](./operation-manager-state-lifecycle.md) |
 | IMPL-034r05iHy2gdnpDWUS1IzV | Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg) | completed | [pi-state-under-userconfigdir-pi.md](./pi-state-under-userconfigdir-pi.md) |
 | IMPL-034z57iY91Zc8YChIAuBty | port routing policy to cli hook module | completed | [port-routing-policy-to-cli-hook-module.md](./port-routing-policy-to-cli-hook-module.md) |
 | IMPL-034r2qodykm6M1ReYSbIkc | provider/auth guide runtime sync (PLAN-034r2qodyxvN3g3xktwPOF) | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |

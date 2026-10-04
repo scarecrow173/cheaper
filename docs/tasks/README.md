@@ -186,7 +186,7 @@ Directory: `docs/tasks`
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
-| TASK-034zTjXTqV7nvYYkf1bUH9 | Wire canonical operation ownership and abort | todo | [wire-canonical-operation-ownership.md](./wire-canonical-operation-ownership.md) |
+| TASK-034zTjXTqV7nvYYkf1bUH9 | Wire canonical operation ownership and abort | done | [wire-canonical-operation-ownership.md](./wire-canonical-operation-ownership.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
 | TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |

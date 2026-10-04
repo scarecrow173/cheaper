@@ -260,6 +260,7 @@ describe("operation state contract", () => {
     const op = m.create({ ...input, resourceClaims: [claim] });
     claim.resource.path = "/changed";
     const snapshot = m.get(op.id);
+    (snapshot as { state: string }).state = "failed";
     const exposed = snapshot.resourceClaims?.[0];
     if (!exposed) throw new Error("missing claim");
     exposed.resource.path = "/changed-snapshot";

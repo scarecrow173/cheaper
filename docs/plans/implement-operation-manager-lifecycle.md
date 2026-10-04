@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zTcqSwE6JHL46EJBnKP"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "OperationManager lifecycle の実装計画"
 created: "2026-10-04"
 updated: "2026-10-04"

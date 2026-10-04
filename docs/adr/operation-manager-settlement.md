@@ -61,9 +61,9 @@ scope disposal はその owner だけ、root disposal は全 owner を閉じる�
 
 ## Verification
 
-- [ ] transition matrix・first-cause・queued/running cancel・late fulfill/reject が pass。
-- [ ] 非協力 handler の finite drain、owned active=0、finishedAt absent、sibling 生存が pass。
-- [ ] tool-runtime focused suite・runtime-pi abort tests・lint/typecheck/build が pass。
+- [x] transition matrix・first-cause・queued/running cancel・late fulfill/reject が pass。
+- [x] 非協力 handler の finite drain、owned active=0、finishedAt absent、sibling 生存が pass。
+- [x] tool-runtime focused suite・runtime-pi abort tests・lint/typecheck/build が pass（IR に evidence）。
 
 ## Revisit Conditions
 

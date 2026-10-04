@@ -67,7 +67,7 @@ OperationManager.run は accounting の admitted callback 内から呼び、UNKN
 handler 内の boundary 拒否は failure として記録する。既存 budget は toolCalls と rejectedToolCalls を両方増加するため、この区別を維持する。
 toolCalls は admission 時、rejectedToolCalls は拒否時の既存規則を維持する。
 内部 snapshot に signal、state、timestamps、cancellation reason、settlement、owned、terminal result/error が含まれる。
-入力の object/claims と返却 record の mutable fields は copy し、consumer が state を直接変更できないようにする。
+resource claims と返却 record の mutable lifecycle fields は copy し、consumer が state を直接変更できないようにする。result は executor が返した値を保持し、深い immutable value の契約は導入しない。
 この snapshot は内部 runtime consumer 用で parent-visible polling API ではない。
 
 ## Risks and Trade-offs

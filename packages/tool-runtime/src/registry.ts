@@ -17,6 +17,7 @@ import { type CanonicalToolDefinition, validateToolInput } from "./definition.js
 import { createFindTool } from "./find.js";
 import { createGrepTool } from "./grep.js";
 import { MutationJournal } from "./journal.js";
+import { OperationManager, type OperationRecord } from "./operation.js";
 import { createReadTool } from "./read.js";
 
 export type ToolHandler = (input: unknown, signal: AbortSignal) => Promise<CanonicalToolResult>;
@@ -44,12 +45,21 @@ export interface ToolRuntime {
   readonly meter: ToolMeter;
   readonly definitions: readonly CanonicalToolDefinition[];
   execute(name: string, input: unknown, context?: ToolCallContext): Promise<CanonicalToolResult>;
-  abort(): void;
+  operations(): readonly OperationRecord[];
+  abort(reason?: unknown): void;
   drain(): Promise<void>;
   dispose(): Promise<void>;
 }
 
-export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
+interface OperationBinding {
+  manager: OperationManager;
+  ownerId: string;
+}
+
+export function createToolRuntime(
+  options: ToolRuntimeOptions,
+  binding?: OperationBinding,
+): ToolRuntime {
   const opts = { ...options, names: [...options.names], handlers: { ...options.handlers } };
   if (
     opts.abortGraceMs !== undefined &&
@@ -62,8 +72,12 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
   const accounting = createToolBudget(opts);
   const metering = createToolMeter();
   const controller = new AbortController();
-  const pending = new Set<Promise<CanonicalToolResult>>();
-  const abort = () => controller.abort();
+  const manager =
+    binding?.manager ?? new OperationManager({ abortGraceMs: opts.abortGraceMs ?? 5000 });
+  const ownerId = binding?.ownerId ?? "tool-runtime";
+  const abort = (reason?: unknown) => controller.abort(reason);
+  const onScopeAbort = () => manager.cancelOwner(ownerId, controller.signal.reason);
+  const onExternalAbort = () => abort(opts.signal?.reason);
   const definitions: CanonicalToolDefinition[] = opts.names.map((name) => {
     switch (name) {
       case "read":
@@ -98,8 +112,9 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
     ]),
   );
   let disposed: Promise<void> | undefined;
-  opts.signal?.addEventListener("abort", abort, { once: true });
-  if (opts.signal?.aborted) abort();
+  controller.signal.addEventListener("abort", onScopeAbort, { once: true });
+  opts.signal?.addEventListener("abort", onExternalAbort, { once: true });
+  if (opts.signal?.aborted) onExternalAbort();
   const runtime: ToolRuntime = {
     catalog,
     journal,
@@ -120,37 +135,24 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
         ? AbortSignal.any([controller.signal, context.signal])
         : controller.signal;
       if (signal.aborted) throw new Error("Operation aborted");
-      const call = accounting.run(() =>
-        metering.run(() => entry.definition.execute(input, signal)),
+      return accounting.run(() =>
+        manager.run({ ownerId, kind: "tool", toolName: name, signal }, (operationSignal) =>
+          metering.run(() => entry.definition.execute(input, operationSignal)),
+        ),
       );
-      pending.add(call);
-      try {
-        return await call;
-      } finally {
-        pending.delete(call);
-      }
     },
+    operations: () => manager.records(ownerId),
     abort,
     async drain() {
       abort();
-      if (pending.size === 0) return;
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      try {
-        await Promise.race([
-          Promise.allSettled([...pending]),
-          new Promise<void>((resolve) => {
-            timer = setTimeout(resolve, opts.abortGraceMs ?? 5000);
-          }),
-        ]);
-      } finally {
-        if (timer) clearTimeout(timer);
-        pending.clear();
-      }
+      await manager.drain(ownerId, opts.abortGraceMs ?? 5000);
     },
     dispose() {
       disposed ??= (async () => {
         await runtime.drain();
-        opts.signal?.removeEventListener("abort", abort);
+        opts.signal?.removeEventListener("abort", onExternalAbort);
+        controller.signal.removeEventListener("abort", onScopeAbort);
+        if (!binding) await manager.dispose();
       })();
       return disposed;
     },

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zTjXTqV7nvYYkf1bUH9"
 type: "task"
-status: "todo"
+status: "done"
 title: "Wire canonical operation ownership and abort"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -62,9 +62,9 @@ owned active=0 の finite disposal、sibling isolation、pre-abort/budget admiss
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/tool-runtime test` exits 0。
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi exec vitest run test/run.test.ts test/tools/registry.test.ts test/tool-runtime-contract.test.ts` exits 0。
-- [ ] `mise exec -- pnpm lint` exits 0。
-- [ ] `mise exec -- pnpm typecheck` exits 0。
-- [ ] `mise exec -- pnpm build` exits 0。
-- [ ] scoped doc-status の blocking=0。
+- [x] `mise exec -- pnpm --filter @cheaper/tool-runtime test` exits 0（74 tests）。
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi exec vitest run test/run.test.ts test/tools/registry.test.ts test/tool-runtime-contract.test.ts` exits 0（69 tests）。
+- [x] `mise exec -- pnpm lint` exits 0（既存 18 warnings）。
+- [x] `mise exec -- pnpm typecheck` exits 0。
+- [x] `mise exec -- pnpm build` exits 0。
+- [x] scoped doc-status の blocking=0（担当 chain + 共有 ADR、2026-10-04）。

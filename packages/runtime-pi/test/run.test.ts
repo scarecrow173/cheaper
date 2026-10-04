@@ -88,6 +88,80 @@ async function deps(fake: ReturnType<typeof createFakePi>, w: WorkerDefinition, 
 }
 
 describe("runWorker", () => {
+  it.each([
+    ["timeout", "TIMEOUT"],
+    ["signal", "ABORTED"],
+    ["maxTurns", "MAX_TURNS_EXCEEDED"],
+    ["maxToolCalls", "MAX_TOOL_CALLS_EXCEEDED"],
+  ] as const)(
+    "passes the first %s reason into its actual borrowed child scope",
+    async (trigger, code) => {
+      await writeFile(path.join(root, "a.txt"), "hello\n");
+      const invocation = toolRuntime.createInvocationToolRuntime({ root, symlinkPolicy: "deny" });
+      const opts = {
+        root,
+        symlinkPolicy: "deny" as const,
+        names: ["read"] as const,
+        maxToolCalls: 10,
+        onLimit: () => {},
+      };
+      const sibling = invocation.createWorkerScope({ ...opts, ownerId: "sibling" });
+      const createScope = invocation.createWorkerScope.bind(invocation);
+      let childSignal: AbortSignal | undefined;
+      const scopeSpy = vi.spyOn(invocation, "createWorkerScope").mockImplementation((options) => {
+        childSignal = options.signal;
+        return createScope(options);
+      });
+      const external = new AbortController();
+      const p = policy();
+      const fake =
+        trigger === "timeout" || trigger === "signal"
+          ? createFakePi({
+              responses: [
+                (_ctx, options) =>
+                  new Promise<AssistantMessage>((resolve) => {
+                    options?.signal?.addEventListener(
+                      "abort",
+                      () => resolve(fauxAssistantMessage("", { stopReason: "aborted" })),
+                      { once: true },
+                    );
+                    if (trigger === "signal") external.abort();
+                  }),
+              ],
+            })
+          : createFakePi({
+              responses: [
+                fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }), {
+                  stopReason: "toolUse",
+                }),
+                fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }), {
+                  stopReason: "toolUse",
+                }),
+                fauxAssistantMessage('{"ok":true}'),
+              ],
+            });
+      if (trigger === "timeout") p.execution.timeoutMs = 30;
+      if (trigger === "maxTurns") p.execution.maxTurns = 1;
+      if (trigger === "maxToolCalls") p.execution.maxToolCalls = 1;
+      try {
+        const error = await runWorker({
+          ...(await deps(fake, worker(["read"]), p)),
+          execution: { runtime: invocation, ownerId: "worker" },
+          signal: external.signal,
+          abortGraceMs: 20,
+        }).catch((error) => error as CheaperError);
+        expect((error as CheaperError).code).toBe(code);
+        expect(childSignal?.aborted).toBe(true);
+        expect(childSignal?.reason).toMatchObject({ code, details: { reason: trigger } });
+        expect(invocation.operations("worker").every((op) => !op.owned)).toBe(true);
+        expect((await sibling.execute("read", { path: "a.txt" })).content[0]?.text).toBe("hello\n");
+      } finally {
+        scopeSpy.mockRestore();
+        await invocation.dispose();
+      }
+    },
+  );
+
   it("owns one invocation and disposes it in finally", async () => {
     const create = toolRuntime.createInvocationToolRuntime;
     let dispose: ReturnType<typeof vi.spyOn> | undefined;
