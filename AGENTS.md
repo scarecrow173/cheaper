@@ -14,10 +14,11 @@ mise run setup   # fresh checkout を開発可能にする canonical setup contr
 mise run check   # CI と同等の canonical verification contract
 ```
 
-`packages/apm/.apm/hooks/cli/bin/<platform>/` の SEA executable は Git
-LFS で管理する（`.gitattributes` 参照）。clone/pull する環境では事前に
-`git lfs install` が必要。CI の `actions/checkout` では `lfs: true`
-で対応する。
+Git source は launcher と小さい CLI asset のみを保持し、SEA executable を含まない。
+hook は固定 version の Release/SHA256SUMS から検証済み user cache へ取得する。
+offline は同 Release の pair を preseed、dev は local SEA build を使う。
+`cli/bin/<platform>/` の local output は ignore し、binary を Git に追加しない。
+Git LFS の既存履歴は保持する。consumer の対象・移行手順は `docs/guides/distribution.md` を参照する。
 
 `mise run setup` は toolchain（`mise.toml` + `mise.lock` の locked version）に加え、
 `pnpm install --frozen-lockfile` → `apm install` → `pnpm build` を復元する。
@@ -88,4 +89,3 @@ release の手順は `docs/guides/release.md` に従う。version 宣言の不�
 文書、コメント、報告は日本語を基本とする。研究ノートに英語版は不要。ユーザーが言語を指定した場合はその指示を優先する。
 
 スキル、エージェントのペルソナ・プロンプト、MCP 定義、自動処理や言語処理の対象となる技術仕様では英語を使用できる。技術用語・製品名は原語のまま記す。
-

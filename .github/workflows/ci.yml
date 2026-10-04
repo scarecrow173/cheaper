@@ -8,11 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          # APM payload executable は Git LFS 管理。
-          # check-apm-payload.mjs が pointer を fail 判定するため
-          # smudge して実 binary を取得する。
-          lfs: true
 
       - uses: jdx/mise-action@v4
         with:

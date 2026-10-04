@@ -1,6 +1,6 @@
 name: release-acquisition
 
-# #73-B: 旧release/LFS経路を保持し、acquisition互換Releaseを1dispatchで組み立てる。
+# acquisition 互換 Release を固定 SHA から 1 dispatch で組み立てる唯一の公開経路。
 on:
   workflow_dispatch:
     inputs:
@@ -48,7 +48,6 @@ jobs:
     with:
       ref: ${{ needs.resolve-release.outputs.sha }}
       expected_version: ${{ needs.resolve-release.outputs.version }}
-      strict_freshness: false
 
   assemble-release:
     needs: [resolve-release, build-executables]
