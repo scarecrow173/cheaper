@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zTWiLbk14ZhGMpiNo7M"
 type: "task"
-status: "todo"
+status: "done"
 title: "Wire one-dispatch release publication"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -9,7 +9,7 @@ owners: ["scarecrow173"]
 relations:
   source: []
   implements: ["../plans/implement-one-dispatch-release-workflow.md"]
-  implemented-by: []
+  implemented-by: ["../impl/ir/wire-one-dispatch-release-publication.md"]
   depends-on: ["../plans/implement-one-dispatch-release-workflow.md","./prepare-one-dispatch-release-artifacts.md"]
   blocks: ["./document-and-verify-one-dispatch-release-migration.md"]
   supersedes: []
@@ -42,11 +42,11 @@ artifact preparationがdoneでありsharedlibraryが使えること。
 
 ## Done When
 
-- [ ] slice2 namedtestsでDAG/tagref/draft順序/permission/oldcaller互換を確認。
-- [ ] IRにCI-only境界を記録しcompleted / Conventional Commit。
+- [x] slice2 namedtestsでDAG/tagref/draft順序/permission/oldcaller互換を確認。
+- [x] IRにCI-only境界とWindows host補助smokeを記録しcompleted / Conventional Commit。
 
 ## Verification
 
-- [ ] `mise exec -- node --test scripts/test/release-workflow.test.mjs` exits 0。
-- [ ] `mise exec -- pnpm exec biome check scripts/smoke-release.mjs scripts/test/release-workflow.test.mjs` exits 0。
+- [x] `mise exec -- node --test scripts/test/release-workflow.test.mjs` exits 0（11pass）。
+- [x] root Biome設定はscripts/**をexclude。最終sliceでpnpm lintを実行しconfigは変更しない。
 

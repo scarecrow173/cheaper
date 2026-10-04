@@ -1,0 +1,157 @@
+name: release-acquisition
+
+# #73-B: 旧release/LFS経路を保持し、acquisition互換Releaseを1dispatchで組み立てる。
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "既存tag v<version>（canonical versionと一致必須）"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-acquisition-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  resolve-release:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: jdx/mise-action@v4
+        with:
+          minimum_release_age: 7d
+          install_args: "--locked"
+      - name: Verify release declarations and focused contracts
+        id: resolve
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          version="$(node --input-type=module -e 'import {verifyReleaseVersion} from "./scripts/lib/release-artifacts.mjs"; console.log(verifyReleaseVersion(process.cwd(), process.env.TAG));')"
+          node --test scripts/test/release-artifacts.test.mjs scripts/test/release-workflow.test.mjs
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  build-executables:
+    needs: resolve-release
+    uses: ./.github/workflows/build-executables.yml
+    with:
+      ref: ${{ needs.resolve-release.outputs.sha }}
+      expected_version: ${{ needs.resolve-release.outputs.version }}
+      strict_freshness: false
+
+  assemble-release:
+    needs: [resolve-release, build-executables]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve-release.outputs.sha }}
+      - uses: jdx/mise-action@v4
+        with:
+          minimum_release_age: 7d
+          install_args: "--locked"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: sea-*
+          merge-multiple: true
+          path: dist/sea
+      - name: Generate manifest and staged APM archive
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          node scripts/generate-release-checksums.mjs --asset-dir dist/sea --tag "$TAG"
+          node scripts/assemble-release-bundle.mjs --asset-dir dist/sea --out-dir dist/release --tag "$TAG"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-bundle
+          path: |
+            dist/release/SHA256SUMS
+            dist/release/cheaper-apm-*.tar.gz
+          if-no-files-found: error
+
+  smoke-bundle:
+    needs: [resolve-release, assemble-release]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve-release.outputs.sha }}
+      - uses: jdx/mise-action@v4
+        with:
+          minimum_release_age: 7d
+          install_args: "--locked"
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-bundle
+          path: dist/release
+      - name: APM install and Node-free native launcher smoke
+        shell: bash
+        env:
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist/extracted
+          tar -xzf "dist/release/cheaper-apm-v$VERSION.tar.gz" -C dist/extracted
+          node scripts/smoke-release.mjs --package-dir dist/extracted/cheaper --manifest dist/release/SHA256SUMS --version "$VERSION"
+
+  publish-release:
+    needs: [resolve-release, build-executables, assemble-release, smoke-bundle]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve-release.outputs.sha }}
+      - uses: jdx/mise-action@v4
+        with:
+          minimum_release_age: 7d
+          install_args: "--locked"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: sea-*
+          merge-multiple: true
+          path: dist/sea
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-bundle
+          path: dist/release
+      - name: Revalidate tag and upload draft before publication
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+          RESOLVED_SHA: ${{ needs.resolve-release.outputs.sha }}
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "refs/tags/$TAG"
+          test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "$RESOLVED_SHA"
+          cp dist/release/SHA256SUMS dist/sea/SHA256SUMS
+          node scripts/generate-release-checksums.mjs --asset-dir dist/sea --tag "$TAG" --verify
+          # API失敗をabsenceとみなさない。既存draft/publicをexact tagで拒否する。
+          gh api --paginate --slurp "repos/$GH_REPO/releases" > "$RUNNER_TEMP/releases.json"
+          RELEASE_LIST="$RUNNER_TEMP/releases.json" node --input-type=module -e 'import {readFileSync} from "node:fs"; const pages = JSON.parse(readFileSync(process.env.RELEASE_LIST)); if (!Array.isArray(pages) || pages.some(p => !Array.isArray(p))) throw new Error("invalid release-list response"); if (pages.flat().some(r => r.tag_name === process.env.TAG)) throw new Error("release already exists; inspect draft/public state manually");'
+          gh release create "$TAG" \
+            dist/sea/cheaper-linux-x64 dist/sea/cheaper-linux-arm64 dist/sea/cheaper-windows-x64.exe \
+            dist/release/SHA256SUMS "dist/release/cheaper-apm-v$VERSION.tar.gz" \
+            --draft --verify-tag --latest=false --generate-notes
+          gh release edit "$TAG" --draft=false --latest=false

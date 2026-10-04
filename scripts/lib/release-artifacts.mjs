@@ -26,7 +26,8 @@ export const releaseTargets = Object.freeze([
   Object.freeze({ target: "win32-x64", asset: "cheaper-windows-x64.exe", executable: "cheaper.exe" }),
 ]);
 
-const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+// #73-A launcherのsafe SemVer grammarをそのまま使用する。
+const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?(?:\+[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$/;
 const LFS_HEADER = "version https://git-lfs.github.com/spec/v1";
 
 export function verifyReleaseVersion(root, tag) {

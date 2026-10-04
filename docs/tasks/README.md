@@ -189,7 +189,7 @@ Directory: `docs/tasks`
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
-| TASK-034zTWiLbk14ZhGMpiNo7M | Wire one-dispatch release publication | todo | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
+| TASK-034zTWiLbk14ZhGMpiNo7M | Wire one-dispatch release publication | done | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
 | TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |
 | TASK-034r05iHQeQpDqac6FjqrJ | Writer writeScope declaration and e2e verification | done | [writer-write-scope-and-e2e-verification.md](./writer-write-scope-and-e2e-verification.md) |
