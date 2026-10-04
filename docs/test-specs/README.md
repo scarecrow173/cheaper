@@ -21,3 +21,5 @@ Directory: `docs/test-specs`
 | TSPEC-034z1OZC4sSkRlvZfFfIXt | Standalone executable contract parity | proposed | [standalone-executable-contract-parity.md](./standalone-executable-contract-parity.md) |
 | TSPEC-034zQTnsUJl3pXIuYsvZIQ | Version-pinned launcher integrity and stream preservation | draft | [version-pinned-launcher-integrity-and-stream-preservation.md](./version-pinned-launcher-integrity-and-stream-preservation.md) |
 | TSPEC-034zQvKPjNkXAEgbZlzdcQ | Workflow compiler の契約保証 | proposed | [workflow-compiler-contract-guarantees.md](./workflow-compiler-contract-guarantees.md) |
+| TSPEC-034zTsc3i9wPmxIsvuuyva | workflow-loader-contract | proposed | [workflow-loader-contract.md](./workflow-loader-contract.md) |
+| TSPEC-034zTsgOgsTzuFTcEztxzd | workflow-public-interface | proposed | [workflow-public-interface.md](./workflow-public-interface.md) |

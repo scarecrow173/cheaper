@@ -47,4 +47,5 @@ Directory: `docs/specs`
 | SPEC-034zA513QKarQrr5SQtgp7 | Verify and leverage Pi sibling tool-call parallelism inside Workers | approved | [verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md](./verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md) |
 | SPEC-034zIO2lm7gJPz6Gy4JIQP | Version-pinned launcher acquisition | approved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | SPEC-034zIKj7DJcwZFr3FvjLrP | Workflow JSON v1 を検証済み DAG へ compile する | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
+| SPEC-034zSVZlWjFAMpwmhsLTkx | workflow-file-interface | proposed | [workflow-file-interface.md](./workflow-file-interface.md) |
 | SPEC-034r05iHK8bA7ggPjqIA9E | Write-scope enforcement and in-workspace privacy deny list | implemented | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |

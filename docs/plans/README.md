@@ -34,6 +34,7 @@ Directory: `docs/plans`
 | PLAN-034zBjFcH4nDUr72Vc1XJ3 | Implement Pi sibling tool-call parallelism guidance and deterministic tests in runtime-pi | completed | [implement-pi-sibling-tool-call-parallelism.md](./implement-pi-sibling-tool-call-parallelism.md) |
 | PLAN-034zQHj1WyOgBNLGbDaFY8 | Implement version-pinned launcher acquisition | completed | [implement-version-pinned-launcher-acquisition.md](./implement-version-pinned-launcher-acquisition.md) |
 | PLAN-034zQ9Pet2QAuh0FP3ku3u | Workflow contract compiler を実装する | completed | [implement-workflow-contract-compiler.md](./implement-workflow-contract-compiler.md) |
+| PLAN-034zTiB05IwVw2pDB34sLk | implement-workflow-file-interface | draft | [implement-workflow-file-interface.md](./implement-workflow-file-interface.md) |
 | PLAN-034z2bk7AEzZ66Mt0uXCyJ | Integrate SEA executables into tag-triggered GitHub Release workflow | completed | [integrate-sea-executables-into-tag-triggered-github-release-workflow.md](./integrate-sea-executables-into-tag-triggered-github-release-workflow.md) |
 | PLAN-034r05iHE1FbkpcKKUUZ58 | Real-provider worker E2E via Ollama — implementation plan | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | PLAN-034r05iHK8bA7g23Opaicg | Pi state under userConfigDir/pi — implementation plan | completed | [pi-state-under-userconfigdir-pi-implementation-plan.md](./pi-state-under-userconfigdir-pi-implementation-plan.md) |

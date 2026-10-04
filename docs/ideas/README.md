@@ -13,3 +13,4 @@ Directory: `docs/ideas`
 | IDEA-034r05iHy2gdnpfT84JZ5h | Provider lifecycle hooks in CheaperProviderPlugin contract | parked | [provider-lifecycle-hooks-in-cheaperproviderplugin-contract.md](./provider-lifecycle-hooks-in-cheaperproviderplugin-contract.md) |
 | IDEA-034zzQkQLoqLftac2tPws5 | Verify and leverage Pi sibling tool-call parallelism inside Workers | promoted | [verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md](./verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md) |
 | IDEA-034zINY5tKFy4kx4xFaveB | Acquire version-pinned release binaries from platform launchers | promoted | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
+| IDEA-034zSTT1wmfJi1KmZtrY98 | 明示 workflow file の公開 interface を取得する | promoted | [workflow-file-interface.md](./workflow-file-interface.md) |
