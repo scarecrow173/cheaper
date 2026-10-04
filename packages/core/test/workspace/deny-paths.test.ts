@@ -39,6 +39,28 @@ describe("denyPatternToRegex", () => {
 });
 
 describe("createPathDenylist", () => {
+  it.each(["win32", "linux"])(
+    "respects %s filesystem casing for built-in and policy denies",
+    (platform) => {
+      const original = Object.getOwnPropertyDescriptor(process, "platform");
+      if (!original) throw new Error("process.platform descriptor missing");
+      Object.defineProperty(process, "platform", { value: platform });
+      try {
+        const list = createPathDenylist(["Blocked", "/Private/**"]);
+        const insensitive = platform === "win32";
+        for (const file of [".ENV", "certs/KEY.PEM", "blocked", "PRIVATE/data.json"]) {
+          expect(list.isDenied(file), file).toBe(insensitive);
+        }
+        expect(list.isDenied("Blocked")).toBe(true);
+        expect(list.isDenied("Private/data.json")).toBe(true);
+        expect(list.isDenied("sub/Private/data.json")).toBe(false);
+        expect(list.patterns).toEqual([...DEFAULT_DENY_PATHS, "Blocked", "/Private/**"]);
+      } finally {
+        Object.defineProperty(process, "platform", original);
+      }
+    },
+  );
+
   it("denies every DEFAULT_DENY_PATHS representative at any depth", () => {
     const list = createPathDenylist();
     for (const p of [

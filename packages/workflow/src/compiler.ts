@@ -176,6 +176,9 @@ export class WorkflowCompiler {
   validateDefinition(raw: unknown): WorkflowDefinition {
     return validateDefinition(raw, this.ports).definition;
   }
+  validateInputs(raw: unknown, inputs: unknown = {}): Record<string, JsonValue> {
+    return invocationInputs(validateDefinition(raw, this.ports), inputs);
+  }
 
   projectInterface(raw: unknown): WorkflowInterface {
     return projectWorkflowInterface(raw, this.ports);

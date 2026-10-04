@@ -130,6 +130,7 @@ Directory: `docs/tasks`
 | TASK-034zQvLk1Av5981u4ci8q4 | Implement workflow binding and definition contracts | done | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
 | TASK-034zQvM02qLs0os3ej72pP | Implement workflow compilation and public hooks | done | [implement-workflow-compilation-and-public-hooks.md](./implement-workflow-compilation-and-public-hooks.md) |
 | TASK-034zTTj0uuzqIXG4cbMoIO | Canonical workflow resource inference を実装する | done | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
+| TASK-034zTslwNSSK73F5SbJfe6 | implement-workflow-loader | done | [implement-workflow-loader.md](./implement-workflow-loader.md) |
 | TASK-034r05iHK8bA7gUBy3ygQD | Implement workspace path resolution with symlink policy | done | [implement-workspace-path-resolution-with-symlink-policy.md](./implement-workspace-path-resolution-with-symlink-policy.md) |
 | TASK-034r6roOdgb1mKbE0LLAv3 | inject generous eval budget into bigTool factory | done | [inject-eval-budget-bigtool.md](./inject-eval-budget-bigtool.md) |
 | TASK-034zTTjWYMNKiiVb4ZZ6LV | Workflow compiler に resource inference を接続する | done | [integrate-workflow-resource-inference.md](./integrate-workflow-resource-inference.md) |
@@ -193,5 +194,6 @@ Directory: `docs/tasks`
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
 | TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |
+| TASK-034zTsqC9tEk1qHUgWFefU | wire-workflow-interface | done | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |
 | TASK-034r05iHQeQpDqac6FjqrJ | Writer writeScope declaration and e2e verification | done | [writer-write-scope-and-e2e-verification.md](./writer-write-scope-and-e2e-verification.md) |

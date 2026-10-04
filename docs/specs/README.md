@@ -50,4 +50,5 @@ Directory: `docs/specs`
 | SPEC-034zIO2lm7gJPz6Gy4JIQP | Version-pinned launcher acquisition | approved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | SPEC-034zIKj7DJcwZFr3FvjLrP | Workflow JSON v1 を検証済み DAG へ compile する | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
 | SPEC-034zSWvgiB9gHQpjguNJ3M | Workflow resource inference 契約 | approved | [workflow-resource-inference.md](./workflow-resource-inference.md) |
+| SPEC-034zSVZlWjFAMpwmhsLTkx | 明示 workflow loader と公開 interface command の契約 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | SPEC-034r05iHK8bA7ggPjqIA9E | Write-scope enforcement and in-workspace privacy deny list | implemented | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |
