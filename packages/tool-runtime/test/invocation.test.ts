@@ -21,13 +21,13 @@ function options(): ToolRuntimeOptions {
   return {
     root: "/workspace",
     symlinkPolicy: "deny",
-    names: ["write"],
+    names: ["ls"],
     maxToolCalls: 20,
     onLimit: vi.fn(),
-    handlers: { write: async () => ({ content: [{ type: "text", text: "done" }] }) },
+    handlers: { ls: async () => ({ content: [{ type: "text", text: "done" }] }) },
   };
 }
-const input = { path: "a", content: "x" };
+const input = { path: "." };
 describe("invocation facade ownership", () => {
   it("records unique ids across owners and retains successful result and failed error", async () => {
     const invocation = createInvocationToolRuntime(options());
@@ -40,19 +40,19 @@ describe("invocation facade ownership", () => {
     const a = invocation.createWorkerScope({
       ...options(),
       ownerId: "a",
-      handlers: { write: async () => result },
+      handlers: { ls: async () => result },
     });
     const b = invocation.createWorkerScope({
       ...options(),
       ownerId: "b",
       handlers: {
-        write: async () => {
+        ls: async () => {
           throw error;
         },
       },
     });
-    expect(await a.execute("write", input)).toBe(result);
-    await expect(b.execute("write", input)).rejects.toBe(error);
+    expect(await a.execute("ls", input)).toBe(result);
+    await expect(b.execute("ls", input)).rejects.toBe(error);
     expect(invocation.operations().map((op) => [op.ownerId, op.state])).toEqual([
       ["a", "completed"],
       ["b", "failed"],
@@ -72,15 +72,15 @@ describe("invocation facade ownership", () => {
     const a = invocation.createWorkerScope({
       ...options(),
       ownerId: "a",
-      handlers: { write: async () => first.promise },
+      handlers: { ls: async () => first.promise },
     });
     const b = invocation.createWorkerScope({
       ...options(),
       ownerId: "b",
-      handlers: { write: async () => second.promise },
+      handlers: { ls: async () => second.promise },
     });
-    const pa = a.execute("write", input);
-    const pb = b.execute("write", input).then(
+    const pa = a.execute("ls", input);
+    const pb = b.execute("ls", input).then(
       (result) => ({ result }),
       (error) => ({ error }),
     );
@@ -117,17 +117,17 @@ describe("invocation facade ownership", () => {
       ...options(),
       ownerId: "a",
       signal: child.signal,
-      handlers: { write: async () => (++n === 1 ? first.promise : second.promise) },
+      handlers: { ls: async () => (++n === 1 ? first.promise : second.promise) },
     });
     const b = invocation.createWorkerScope({ ...options(), ownerId: "b" });
-    const p1 = a.execute("write", input, { signal: call.signal });
-    const p2 = a.execute("write", input);
+    const p1 = a.execute("ls", input, { signal: call.signal });
+    const p2 = a.execute("ls", input);
     expect(a.operations).toBeTypeOf("function");
     call.abort(new CheaperError("ABORTED", "call cancelled"));
     expect(a.operations().map((op) => op.signal.aborted)).toEqual([true, false]);
     child.abort(new CheaperError("TIMEOUT", "worker deadline"));
     expect(a.operations().map((op) => op.signal.aborted)).toEqual([true, true]);
-    await expect(a.execute("write", input)).rejects.toThrow("aborted");
+    await expect(a.execute("ls", input)).rejects.toBe(child.signal.reason);
     const result: CanonicalToolResult = { content: [{ type: "text", text: "done" }] };
     first.resolve(result);
     second.resolve(result);
@@ -137,9 +137,9 @@ describe("invocation facade ownership", () => {
       ["timed_out", "TIMEOUT"],
     ]);
     await a.dispose();
-    expect((await b.execute("write", input)).content[0]?.text).toBe("done");
+    expect((await b.execute("ls", input)).content[0]?.text).toBe("done");
     const c = invocation.createWorkerScope({ ...options(), ownerId: "c" });
-    expect((await c.execute("write", input)).content[0]?.text).toBe("done");
+    expect((await c.execute("ls", input)).content[0]?.text).toBe("done");
     await invocation.dispose();
   });
 
@@ -152,10 +152,10 @@ describe("invocation facade ownership", () => {
       const a = invocation.createWorkerScope({
         ...options(),
         ownerId: "a",
-        handlers: { write: async () => late.promise },
+        handlers: { ls: async () => late.promise },
       });
       const b = invocation.createWorkerScope({ ...options(), ownerId: "b" });
-      const pending = a.execute("write", input).then(
+      const pending = a.execute("ls", input).then(
         (result) => ({ result }),
         (error) => ({ error }),
       );
@@ -170,7 +170,7 @@ describe("invocation facade ownership", () => {
         detachedAt: expect.any(Number),
       });
       expect(a.operations()[0]?.finishedAt).toBeUndefined();
-      expect((await b.execute("write", input)).content[0]?.text).toBe("done");
+      expect((await b.execute("ls", input)).content[0]?.text).toBe("done");
       if (outcome === "fulfilled") late.resolve({ content: [{ type: "text", text: "late" }] });
       else late.reject(new Error("late failure"));
       await pending;
@@ -196,9 +196,9 @@ describe("invocation facade ownership", () => {
         ...options(),
         ownerId,
         abortGraceMs,
-        handlers: { write: async () => new Promise<CanonicalToolResult>(() => {}) },
+        handlers: { ls: async () => new Promise<CanonicalToolResult>(() => {}) },
       });
-      void scope.execute("write", input);
+      void scope.execute("ls", input);
     }
     expect(invocation.operations).toBeTypeOf("function");
     let disposed = false;
@@ -256,14 +256,14 @@ describe("invocation facade ownership", () => {
     });
     const b = invocation.createWorkerScope({ ...options(), ownerId: "b" });
     childAbort.abort();
-    await expect(a.execute("write", input)).rejects.toThrow("aborted");
+    await expect(a.execute("ls", input)).rejects.toThrow("aborted");
     await a.dispose();
-    expect((await b.execute("write", input)).content[0]?.text).toBe("done");
+    expect((await b.execute("ls", input)).content[0]?.text).toBe("done");
     expect(b.budget.toolCalls).toBe(1);
     const c = invocation.createWorkerScope({ ...options(), ownerId: "c" });
     invocation.abort();
-    await expect(b.execute("write", input)).rejects.toThrow("aborted");
-    await expect(c.execute("write", input)).rejects.toThrow("aborted");
+    await expect(b.execute("ls", input)).rejects.toThrow("aborted");
+    await expect(c.execute("ls", input)).rejects.toThrow("aborted");
     await invocation.dispose();
   });
   it("bounds drain for a non-cooperative handler and tolerates late settlement", async () => {
@@ -274,7 +274,7 @@ describe("invocation facade ownership", () => {
       ...options(),
       ownerId: "a",
       handlers: {
-        write: async (_, s) => {
+        ls: async (_, s) => {
           signal = s;
           await new Promise<void>((resolve) => {
             finish = resolve;
@@ -283,7 +283,7 @@ describe("invocation facade ownership", () => {
         },
       },
     });
-    const pending = scope.execute("write", input);
+    const pending = scope.execute("ls", input);
     expect(signal?.aborted).toBe(false);
     await invocation.dispose();
     expect(signal?.aborted).toBe(true);

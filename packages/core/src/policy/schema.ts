@@ -4,8 +4,38 @@ import { CheaperError } from "../errors.js";
 import { TIERS, type Tier } from "../model/tier.js";
 import { TOOL_ALIASES, TOOL_NAMES, type ToolName } from "../tools/vocabulary.js";
 
+export interface ConcurrencyPolicy {
+  maxOperations: number;
+  mutations: "serialized" | "per-resource";
+}
+
+const DEFAULT_CONCURRENCY: Readonly<ConcurrencyPolicy> = Object.freeze({
+  maxOperations: 8,
+  mutations: "serialized",
+});
+
+/** legacy policy と runtime options の既定・値検証を一箇所で所有する。 */
+export function resolveConcurrencyPolicy(input?: Partial<ConcurrencyPolicy>): ConcurrencyPolicy {
+  const maxOperations = input?.maxOperations ?? DEFAULT_CONCURRENCY.maxOperations;
+  const mutations = input?.mutations ?? DEFAULT_CONCURRENCY.mutations;
+  if (
+    !Number.isSafeInteger(maxOperations) ||
+    maxOperations < 1 ||
+    (mutations !== "serialized" && mutations !== "per-resource")
+  ) {
+    throw new CheaperError("INVALID_RUNTIME_POLICY", "invalid execution.concurrency");
+  }
+  return { maxOperations, mutations };
+}
+
 export interface RuntimePolicy {
-  execution: { timeoutMs: number; maxTurns: number; maxToolCalls: number };
+  execution: {
+    timeoutMs: number;
+    maxTurns: number;
+    maxToolCalls: number;
+    /** legacy typed policy の互換。normalizePolicy は常に補完する。 */
+    concurrency?: ConcurrencyPolicy;
+  };
   tools: { allow: ToolName[] };
   filesystem: { symlinks: "deny" | "within-workspace"; denyPaths: string[] };
   model: { maxTier: Tier; tierFallback: "none" | "higher" };
@@ -19,10 +49,15 @@ function objectSchema(required: string[], properties: Record<string, unknown>) {
   return { type: "object", additionalProperties: false, required, properties };
 }
 
+const CONCURRENCY_PROPERTIES = {
+  maxOperations: { type: "integer", minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  mutations: { type: "string", enum: ["serialized", "per-resource"] },
+};
 const EXECUTION_PROPERTIES = {
   timeout: { type: "string", pattern: DURATION_PATTERN.source },
   maxTurns: { type: "integer", minimum: 1 },
   maxToolCalls: { type: "integer", minimum: 1 },
+  concurrency: objectSchema(["maxOperations", "mutations"], CONCURRENCY_PROPERTIES),
 };
 
 const TOOLS_PROPERTIES = {
@@ -65,7 +100,10 @@ export const POLICY_COMPLETE_SCHEMA = objectSchema(
 
 export const POLICY_PARTIAL_SCHEMA = objectSchema(["version"], {
   version: VERSION_PROPERTY,
-  execution: objectSchema([], EXECUTION_PROPERTIES),
+  execution: objectSchema([], {
+    ...EXECUTION_PROPERTIES,
+    concurrency: objectSchema([], CONCURRENCY_PROPERTIES),
+  }),
   tools: objectSchema([], TOOLS_PROPERTIES),
   filesystem: objectSchema([], FILESYSTEM_PROPERTIES),
   model: objectSchema([], MODEL_PROPERTIES),
@@ -141,6 +179,9 @@ export function normalizePolicy(raw: Record<string, unknown>): RuntimePolicy {
       timeoutMs,
       maxTurns: execution.maxTurns as number,
       maxToolCalls: execution.maxToolCalls as number,
+      concurrency: resolveConcurrencyPolicy(
+        execution.concurrency as Partial<ConcurrencyPolicy> | undefined,
+      ),
     },
     tools: { allow: normalizePolicyTools(tools.allow) },
     filesystem: {

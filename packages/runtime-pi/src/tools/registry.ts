@@ -1,4 +1,4 @@
-import type { PathDenylist, SymlinkPolicy, ToolName } from "@cheaper/core";
+import type { ConcurrencyPolicy, PathDenylist, SymlinkPolicy, ToolName } from "@cheaper/core";
 import {
   type CanonicalToolResult,
   createToolRuntime,
@@ -29,6 +29,7 @@ export interface SandboxedToolsOptions {
   denylist?: PathDenylist | undefined;
   writeScope?: ReadonlySet<string> | undefined;
   runtime?: ToolRuntime;
+  concurrency?: Partial<ConcurrencyPolicy>;
 }
 export interface SandboxedTools {
   tools: ToolDefinition[];

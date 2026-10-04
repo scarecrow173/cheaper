@@ -1,6 +1,8 @@
 import {
   CheaperError,
+  type ConcurrencyPolicy,
   compileSchema,
+  isMutatingTool,
   type PathDenylist,
   type SymlinkPolicy,
   type ToolName,
@@ -19,6 +21,7 @@ import { createGrepTool } from "./grep.js";
 import { MutationJournal } from "./journal.js";
 import { OperationManager, type OperationRecord } from "./operation.js";
 import { createReadTool } from "./read.js";
+import { ToolScheduler } from "./scheduler.js";
 
 export type ToolHandler = (input: unknown, signal: AbortSignal) => Promise<CanonicalToolResult>;
 export type InjectedToolHandlers = Partial<Record<"write" | "edit" | "ls", ToolHandler>>;
@@ -34,6 +37,7 @@ export interface ToolRuntimeOptions {
   writeScope?: ReadonlySet<string> | undefined;
   signal?: AbortSignal | undefined;
   abortGraceMs?: number | undefined;
+  concurrency?: Partial<ConcurrencyPolicy> | undefined;
 }
 export interface ToolCallContext {
   signal?: AbortSignal | undefined;
@@ -53,6 +57,7 @@ export interface ToolRuntime {
 
 interface OperationBinding {
   manager: OperationManager;
+  scheduler: ToolScheduler;
   ownerId: string;
 }
 
@@ -75,6 +80,7 @@ export function createToolRuntime(
   const manager =
     binding?.manager ?? new OperationManager({ abortGraceMs: opts.abortGraceMs ?? 5000 });
   const ownerId = binding?.ownerId ?? "tool-runtime";
+  const scheduler = binding?.scheduler ?? new ToolScheduler(manager, opts.concurrency);
   const abort = (reason?: unknown) => controller.abort(reason);
   const onScopeAbort = () => manager.cancelOwner(ownerId, controller.signal.reason);
   const onExternalAbort = () => abort(opts.signal?.reason);
@@ -120,9 +126,12 @@ export function createToolRuntime(
     journal,
     budget: accounting.budget,
     meter: metering.meter,
-    definitions,
+    definitions: definitions.map((definition) => ({
+      ...definition,
+      execute: (input, signal) => runtime.execute(definition.name, input, { signal }),
+    })),
     async execute(name, input, context) {
-      if (controller.signal.aborted) throw new Error("Operation aborted");
+      if (controller.signal.aborted) throw controller.signal.reason;
       const entry = registered.get(name as ToolName);
       if (
         !entry ||
@@ -134,10 +143,12 @@ export function createToolRuntime(
       const signal = context?.signal
         ? AbortSignal.any([controller.signal, context.signal])
         : controller.signal;
-      if (signal.aborted) throw new Error("Operation aborted");
+      if (signal.aborted) throw signal.reason;
       return accounting.run(() =>
-        manager.run({ ownerId, kind: "tool", toolName: name, signal }, (operationSignal) =>
-          metering.run(() => entry.definition.execute(input, operationSignal)),
+        scheduler.run(
+          { ownerId, kind: "tool", toolName: name, signal },
+          { access: isMutatingTool(entry.definition.name) ? "exclusive" : "shared" },
+          (operationSignal) => metering.run(() => entry.definition.execute(input, operationSignal)),
         ),
       );
     },

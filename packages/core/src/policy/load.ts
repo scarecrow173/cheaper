@@ -3,7 +3,13 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { CheaperError } from "../errors.js";
 import { mergePolicyLayers } from "./merge.js";
-import { normalizePolicy, type RuntimePolicy, validatePolicySchema } from "./schema.js";
+import {
+  type ConcurrencyPolicy,
+  normalizePolicy,
+  type RuntimePolicy,
+  resolveConcurrencyPolicy,
+  validatePolicySchema,
+} from "./schema.js";
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -62,14 +68,26 @@ export async function loadPolicy(opts: {
   const builtinRaw = await readPolicyFile(opts.builtinPolicyPath, true);
   let effective = validatePolicySchema(builtinRaw, "complete");
 
-  for (const filePath of [
-    path.join(opts.userConfigDir, "policy.yaml"),
-    path.join(opts.projectDir, "policy.yaml"),
-  ]) {
-    const raw = await readPolicyFile(filePath, false);
-    if (raw === undefined) continue;
-    const partial = validatePolicySchema(raw, "partial");
-    effective = mergePolicyLayers(effective, partial);
+  const user = await readPolicyFile(path.join(opts.userConfigDir, "policy.yaml"), false);
+  if (user !== undefined) {
+    effective = mergePolicyLayers(effective, validatePolicySchema(user, "partial"));
+  }
+  // trusted merge 後、project restriction 前に legacy/partial omission を補完する。
+  const execution = effective.execution as Record<string, unknown>;
+  effective = {
+    ...effective,
+    execution: {
+      ...execution,
+      concurrency: resolveConcurrencyPolicy(
+        execution.concurrency as Partial<ConcurrencyPolicy> | undefined,
+      ),
+    },
+  };
+  const project = await readPolicyFile(path.join(opts.projectDir, "policy.yaml"), false);
+  if (project !== undefined) {
+    effective = mergePolicyLayers(effective, validatePolicySchema(project, "partial"), {
+      mode: "restrict-concurrency",
+    });
   }
 
   return normalizePolicy(validatePolicySchema(effective, "complete"));

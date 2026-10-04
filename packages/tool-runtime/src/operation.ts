@@ -193,6 +193,7 @@ export class OperationManager {
     }
   }
 
+  /** lifecycle の低水準 API。admission bound は持たず、tool 実行には ToolScheduler を使う。 */
   async run<T>(
     options: CreateOperationOptions,
     execute: (signal: AbortSignal) => Promise<T>,

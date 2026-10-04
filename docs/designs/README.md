@@ -13,6 +13,7 @@ Directory: `docs/designs`
 | DESIGN-Hz0wDP9E6GjkHNLwOEOGiw | Auth terminal prompt I/O boundary (injected stderr for text/select prompts) | approved | [auth-io-boundary.md](./auth-io-boundary.md) |
 | DESIGN-034r05iHy2gdnoOvi1vrou | Auth URL opener seam (injectable browser launch) | approved | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
 | DESIGN-C4VbdOatUn4aVt3blVe8pk | auto tier classification by workload effectiveCost percentile | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
+| DESIGN-034zWclUCjCIH7M27XEu4j | ToolScheduler の共有 admission 設計 | approved | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
 | DESIGN-034r05iHrZUE6WxkSJi9GF | bulk-reader contract | approved | [bulk-reader-contract.md](./bulk-reader-contract.md) |
 | DESIGN-034r05iHy2gdnoNaWH2bos | Bulk-reader huge-file safe I/O | approved | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | DESIGN-034zIUgKgoIuBD5BY6jLjf | Canonical Tool Runtime と Pi adapter | approved | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
