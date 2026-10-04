@@ -17,6 +17,7 @@ Directory: `docs/test-specs`
 | TSPEC-034rzVqBmfD2pkA9f82Eoa | model tier classification pipeline | approved | [model-tier-classification-pipeline.md](./model-tier-classification-pipeline.md) |
 | TSPEC-034rzVrqJiXNDl2AF8eI5s | pricing metadata resolution and models command | approved | [pricing-metadata-and-models-command.md](./pricing-metadata-and-models-command.md) |
 | TSPEC-034z2o64UhWCtNmYIhRT20 | Release workflow manual-dispatch and artifact contract | proposed | [release-workflow-manual-dispatch-and-artifact-contract.md](./release-workflow-manual-dispatch-and-artifact-contract.md) |
+| TSPEC-034zTn31vnH33RcM6g7VYS | Run-scoped artifact boundaries | proposed | [run-scoped-artifact-boundaries.md](./run-scoped-artifact-boundaries.md) |
 | TSPEC-034rBrs4K5W7pe0ixjegZk | Shell-read blocking contract tests | approved | [shell-read-blocking-contract-tests.md](./shell-read-blocking-contract-tests.md) |
 | TSPEC-034z1OZC4sSkRlvZfFfIXt | Standalone executable contract parity | proposed | [standalone-executable-contract-parity.md](./standalone-executable-contract-parity.md) |
 | TSPEC-034zQTnsUJl3pXIuYsvZIQ | Version-pinned launcher integrity and stream preservation | draft | [version-pinned-launcher-integrity-and-stream-preservation.md](./version-pinned-launcher-integrity-and-stream-preservation.md) |

@@ -1,4 +1,5 @@
 export * from "./accounting.js";
+export * from "./artifact.js";
 export * from "./catalog.js";
 export * from "./count-tokens.js";
 export * from "./definition.js";

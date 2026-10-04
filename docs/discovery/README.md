@@ -20,6 +20,7 @@ Directory: `docs/discovery`
 | DISC-034zzZxx7gzas0a5Anlkwi | Pi sibling tool-call parallelism inside Workers | resolved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DISC-034r05iHy2gdnp6g5GTWKG | Post-smoke code review findings on abort, repair, and timeout semantics | resolved | [post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md](./post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md) |
 | DISC-034r05iHy2gdnp5sN3kF1s | Real provider smoke verification via Ollama | resolved | [real-provider-smoke-verification-via-ollama.md](./real-provider-smoke-verification-via-ollama.md) |
+| DISC-034zSQKiU63uXPcMSjjodn | Run-scoped artifact boundaries | resolved | [run-scoped-artifact-boundaries.md](./run-scoped-artifact-boundaries.md) |
 | DISC-034rBfZ3dqNmEQGXCIwiLn | Shell-read large-file detection boundary and parser scope | resolved | [shell-read-large-file-detection-boundary.md](./shell-read-large-file-detection-boundary.md) |
 | DISC-034z139D701zQBBGzr0upE | Standalone cheaper executable distribution without Node.js | resolved | [standalone-cheaper-executable-distribution-without-node-js.md](./standalone-cheaper-executable-distribution-without-node-js.md) |
 | DISC-034rzEbmKarhQzw41fhumg | Usage and savings telemetry for delegation reduction | resolved | [usage-and-savings-telemetry-for-delegation-reduction.md](./usage-and-savings-telemetry-for-delegation-reduction.md) |

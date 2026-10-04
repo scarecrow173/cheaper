@@ -23,7 +23,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpt2vgHZ55 | Auth URL opener seam (PLAN-034r05iHE1Fbkp4xxlyMdV) | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
 | IMPL-034rC4jywjUQYNL42ruw7Q | auto 分類の resolver / runtime-pi / CLI 統合 | completed | [auto-resolver-runtime-pi-cli.md](./auto-resolver-runtime-pi-cli.md) |
 | IMPL-034rC4k38aJJf0vfVaefeV | auto tier 分類ガイドの更新 | completed | [auto-tier.md](./auto-tier.md) |
-| IMPL-034zQtPhC1tLOPNry0QTLE | Canonical tool extraction | in-progress | [canonical-tool-extraction.md](./canonical-tool-extraction.md) |
+| IMPL-034zQtPhC1tLOPNry0QTLE | Canonical tool extraction | completed | [canonical-tool-extraction.md](./canonical-tool-extraction.md) |
 | IMPL-034r05iHy2gdnpkXDh47a6 | Code review fixes (post-merge) | completed | [code-review-fixes.md](./code-review-fixes.md) |
 | IMPL-034r05iHy2gdnpoDlOXUs6 | Configure Pi models.json and cheaper models.yaml for Ollama | completed | [configure-pi-and-cheaper-model-config-for-ollama.md](./configure-pi-and-cheaper-model-config-for-ollama.md) |
 | IMPL-034r05iHy2gdnpyISCbZJu | Copilot pre-read hook adapter (PLAN-034r05iHE1FbkpaEpZrthK) | completed | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
@@ -43,16 +43,17 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpwO94elRp | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | IMPL-swcR6qnZBfKwyIdckqQxae | grep eval-budget test stability via explicit budget injection | completed | [grep-eval-budget-test-stability-via-explicit-budget-injection.md](./grep-eval-budget-test-stability-via-explicit-budget-injection.md) |
 | IMPL-034z57jQrqVgbebkytTkwt | hook contract tests and adapter e2e port | completed | [hook-contract-tests-and-adapter-e2e-port.md](./hook-contract-tests-and-adapter-e2e-port.md) |
+| IMPL-034zTneiPeW23igPepp7ph | Implement bounded artifact store | completed | [implement-bounded-artifact-store.md](./implement-bounded-artifact-store.md) |
 | IMPL-034z3CDzdvjhrEshqx1zRg | implement build-apm-bundle | completed | [implement-build-apm-bundle.md](./implement-build-apm-bundle.md) |
 | IMPL-034z1SUivUVftC75FVZ3OG | Implement build-executable.mjs and Node bump | completed | [implement-build-executable-mjs-and-node-bump.md](./implement-build-executable-mjs-and-node-bump.md) |
 | IMPL-034r05iHy2gdnpjoHb5OTl | Implement cheaper CLI and built-in workers (PLAN-034r05iHy2gdnpJFiMWhkY) | completed | [implement-cheaper-cli-and-built-in-workers-plan-0003.md](./implement-cheaper-cli-and-built-in-workers-plan-0003.md) |
 | IMPL-034r05iHy2gdnpgYK6Sj6D | Implement @cheaper/core (PLAN-034r05iHy2gdnpHMZZk4ZU) | completed | [implement-cheaper-core-plan-0001.md](./implement-cheaper-core-plan-0001.md) |
 | IMPL-034r05iHy2gdnpj3u9aHj7 | Implement @cheaper/runtime-pi (PLAN-034r05iHy2gdnpIrX0mTIb) | completed | [implement-cheaper-runtime-pi-plan-0002.md](./implement-cheaper-runtime-pi-plan-0002.md) |
 | IMPL-034rAiKtIOGy4Ja8gzLN0C | Implement classification pipeline and explicit resolver | completed | [implement-classification-pipeline-and-explicit-resolver.md](./implement-classification-pipeline-and-explicit-resolver.md) |
-| IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | in-progress | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
+| IMPL-034zR9OQeNgEdCN2OMdt8I | Implement native launcher acquisition and hook routing | completed | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
 | IMPL-034zQvMyE33qrrPAVVG0da | Implement workflow binding and definition contracts | completed | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
 | IMPL-034zQvN42aaLRbRi0R2fI4 | Implement workflow compilation and public hooks | completed | [implement-workflow-compilation-and-public-hooks.md](./implement-workflow-compilation-and-public-hooks.md) |
-| IMPL-034zR9OQeNgEdCN2OMdt8I | Implement native launcher acquisition and hook routing | completed | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
+| IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | completed | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
