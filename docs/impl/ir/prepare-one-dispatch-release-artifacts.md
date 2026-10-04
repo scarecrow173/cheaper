@@ -57,6 +57,10 @@ impl/ir indexは承認済み例外のupdateIndexForMarkdownDirによる再生成
 
 ## Follow-ups
 
+次sliceでsame-run workflowへ接続する。
+
+## Risks
+
 実native3とRelease publishはCI-only。fixture rawbytesを実3target成功とは主張しない。
 canonical check deferred to coordinator merge run。
 
