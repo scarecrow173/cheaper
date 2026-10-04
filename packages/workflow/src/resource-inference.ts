@@ -63,7 +63,9 @@ export class WorkspaceResourceInference implements ResourceInference {
   }
 
   private async source(item: ResourceInferenceJob): Promise<Source> {
-    if (item.process || (item.job.kind === "tool" && item.job.tool === "process")) {
+    const processJob = item.job.kind === "tool" && item.job.tool === "process";
+    if (item.process && !processJob) invalid("process declaration requires a process job");
+    if (processJob) {
       const declaration = item.process;
       if (
         !declaration ||
@@ -114,16 +116,8 @@ export class WorkspaceResourceInference implements ResourceInference {
         throw new CheaperError("INVALID_INPUT", "writeScope target must be a path");
       targets.push({ path: targetPath, scope: "exact" });
     }
-    const authority = await Promise.all(
-      targets.map((target) =>
-        normalizeResourceClaim(
-          this.options.workspaceRoot,
-          target,
-          "exclusive",
-          this.options.symlinkPolicy,
-        ),
-      ),
-    );
+    // authority は ownership 正規化で exact literal を検査する。安全性 glob 拡大を流用しない。
+    const authority = (await this.normalize({ reads: [], writes: [], produces: targets })).produces;
     if (unknown) return { declaration: {}, unknownAuthority: true };
     return { declaration: { writes: targets }, authority, ancestorMkdir: targets.length > 0 };
   }
@@ -187,11 +181,16 @@ export class WorkspaceResourceInference implements ResourceInference {
       )
         invalid(`unknown writeScope cannot certify declared mutation: ${id}`);
       if (source.ancestorMkdir) {
-        const safety = await this.normalize({ reads: [], produces: [] });
+        const safety = await normalizeResourceClaim(
+          this.options.workspaceRoot,
+          { path: ".", scope: "subtree" },
+          "exclusive",
+          this.options.symlinkPolicy,
+        );
         manifest.writes = (
           await normalizeResourceManifest(
             this.options.workspaceRoot,
-            { ...manifest, writes: [...manifest.writes, ...safety.writes] },
+            { ...manifest, writes: [...manifest.writes, safety] },
             this.options.symlinkPolicy,
           )
         ).writes;
@@ -207,7 +206,7 @@ export class WorkspaceResourceInference implements ResourceInference {
             : [],
       );
       if (
-        omitted ||
+        (omitted && !item.process) ||
         (source.declaration.reads == null && declared?.reads === undefined) ||
         (source.declaration.writes == null && declared?.writes === undefined)
       )

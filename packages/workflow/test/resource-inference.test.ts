@@ -338,3 +338,34 @@ it("job IDs including prototype keys remain own manifests", async () => {
   expect(Object.keys(result.manifests)).toEqual(["__proto__", "constructor", "toString"]);
   expect(Object.hasOwn(result.manifests, "__proto__")).toBe(true);
 });
+
+it("worker wildcard targets cannot expand authoritative output ownership", async () => {
+  const worker = fixtures().worker;
+  worker.tools = ["read", "write"];
+  worker.cheaper.writeScope = "targets";
+  worker.inputSchema = compileSchema({}, "input");
+  await expect(
+    inference().infer({
+      a: {
+        job: {
+          kind: "worker",
+          worker: worker.name,
+          input: { targets: ["src/*.ts"] },
+          resources: { reads: [], produces: [exact("unrelated.json")] },
+        },
+        worker,
+      },
+    }),
+  ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+});
+
+it("process source cannot replace another job kind authority", async () => {
+  await expect(
+    inference().infer({
+      a: {
+        ...tool("read", { path: "a" }),
+        process: { task: "generate", inputs: [], outputs: [exact("b")] },
+      },
+    }),
+  ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+});

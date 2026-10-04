@@ -70,3 +70,9 @@ fallback safety claim による conservative conflicts、Worker ancestor mkdir �
 
 ## Follow-ups
 coordinator implementation review、chain status/index maintenance、scoped exit-audit を実施する。
+
+## 自己点検での source boundary 修正
+- Worker target src/*.ts が一般 write normalization で root subtree に拡大し、無関係 output ownership を受理していた。新規 test は promise resolved の RED。authority は core ownership normalization（produces bucket）で exact literal を検査し、root mkdir safety は normalizeResourceClaim で別に作る。
+- 非 process job の process 宣言が tool/Worker の実 source を置き換えていた。新規 test は promise resolved の RED。process declaration は kind:tool/tool:process のみ受理する。
+- process config 自体が explicit source なので resources-omitted fallback diagnostic を付けない。
+- 修正後 workflow suite 108 tests / 5 files GREEN、pnpm lint/typecheck/build exit 0（2026-10-04 14:47 JST）。固定 core 型と approved design の authoritative exact target / process seam に合わせる source-layer correction。レビュー対象 commit に追加する。
