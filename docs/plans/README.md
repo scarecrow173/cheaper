@@ -30,6 +30,7 @@ Directory: `docs/plans`
 | PLAN-034z3OwYgplUxa7Usrjwxq | Implement cheaper hook subcommands and migrate hooks.json off Node adapters | completed | [implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md](./implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md) |
 | PLAN-034r05iHy2gdnpIrX0mTIb | Implement @cheaper/runtime-pi execution engine and sandboxed tools | completed | [implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md](./implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md) |
 | PLAN-034zQqWCWWNpushz8Itm5d | Implement core resource manifest normalization | completed | [implement-core-resource-manifest-normalization.md](./implement-core-resource-manifest-normalization.md) |
+| PLAN-034A91M2XAsWK6QNypcEPX | managed process canonical tool を実装する | draft | [implement-managed-process-canonical-tool.md](./implement-managed-process-canonical-tool.md) |
 | PLAN-034rzUgf26bzSEwLr1L6Pl | implement model pricing catalog and curated exceptions | approved | [implement-model-pricing-catalog.md](./implement-model-pricing-catalog.md) |
 | PLAN-034z1M6zCAdKb12eiCWZRm | Implement Node 26 SEA standalone executable proof of concept | completed | [implement-node-26-sea-standalone-executable-proof-of-concept.md](./implement-node-26-sea-standalone-executable-proof-of-concept.md) |
 | PLAN-034zTJptHTdovrvYW7wQ1k | Implement one-dispatch release workflow | completed | [implement-one-dispatch-release-workflow.md](./implement-one-dispatch-release-workflow.md) |

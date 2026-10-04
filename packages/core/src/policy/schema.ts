@@ -3,6 +3,7 @@ import { DURATION_PATTERN, parseDuration } from "../duration.js";
 import { CheaperError } from "../errors.js";
 import { TIERS, type Tier } from "../model/tier.js";
 import { TOOL_ALIASES, TOOL_NAMES, type ToolName } from "../tools/vocabulary.js";
+import { PROCESS_POLICY_PROPERTIES, type ProcessPolicy, resolveProcessPolicy } from "./process.js";
 
 export interface ConcurrencyPolicy {
   maxOperations: number;
@@ -29,6 +30,8 @@ export function resolveConcurrencyPolicy(input?: Partial<ConcurrencyPolicy>): Co
 }
 
 export interface RuntimePolicy {
+  /** legacy typed policy の互換。normalize/load は常に補完する。 */
+  process?: ProcessPolicy;
   execution: {
     timeoutMs: number;
     maxTurns: number;
@@ -89,6 +92,7 @@ export const POLICY_COMPLETE_SCHEMA = objectSchema(
   ["version", "execution", "tools", "filesystem", "model", "output", "retry"],
   {
     version: VERSION_PROPERTY,
+    process: objectSchema(["maxConcurrent", "tasks"], PROCESS_POLICY_PROPERTIES),
     execution: objectSchema(["timeout", "maxTurns", "maxToolCalls"], EXECUTION_PROPERTIES),
     tools: objectSchema(["allow"], TOOLS_PROPERTIES),
     filesystem: objectSchema(["symlinks"], FILESYSTEM_PROPERTIES),
@@ -100,6 +104,7 @@ export const POLICY_COMPLETE_SCHEMA = objectSchema(
 
 export const POLICY_PARTIAL_SCHEMA = objectSchema(["version"], {
   version: VERSION_PROPERTY,
+  process: objectSchema([], PROCESS_POLICY_PROPERTIES),
   execution: objectSchema([], {
     ...EXECUTION_PROPERTIES,
     concurrency: objectSchema([], CONCURRENCY_PROPERTIES),
@@ -175,6 +180,7 @@ export function normalizePolicy(raw: Record<string, unknown>): RuntimePolicy {
   const output = isPlainObject(raw.output) ? raw.output : {};
   const retry = isPlainObject(raw.retry) ? raw.retry : {};
   return {
+    process: resolveProcessPolicy(raw.process as Partial<ProcessPolicy> | undefined),
     execution: {
       timeoutMs,
       maxTurns: execution.maxTurns as number,

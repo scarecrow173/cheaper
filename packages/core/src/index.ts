@@ -11,6 +11,7 @@ export * from "./model/tier.js";
 export * from "./policy/capability.js";
 export * from "./policy/load.js";
 export * from "./policy/merge.js";
+export * from "./policy/process.js";
 export * from "./policy/restrict.js";
 export * from "./policy/schema.js";
 export * from "./resources/index.js";

@@ -3,6 +3,7 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { CheaperError } from "../errors.js";
 import { mergePolicyLayers } from "./merge.js";
+import { type ProcessPolicy, resolveProcessPolicy } from "./process.js";
 import {
   type ConcurrencyPolicy,
   normalizePolicy,
@@ -76,6 +77,7 @@ export async function loadPolicy(opts: {
   const execution = effective.execution as Record<string, unknown>;
   effective = {
     ...effective,
+    process: resolveProcessPolicy(effective.process as Partial<ProcessPolicy> | undefined),
     execution: {
       ...execution,
       concurrency: resolveConcurrencyPolicy(
