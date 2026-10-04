@@ -37,6 +37,8 @@ relations:
 
 # Workflow file loader と interface CLI の接続設計
 
+2026-10-04 coordinator scope amendment（ask msg_69bef75f648c）: Windows deny casing 回避は core matcher の責務。loader での補正は規則複製になるため禁止し、core denyPatternToRegex の win32 限定大小文字非依存比較と focused test を今回 slice の特例として許可する。POSIX の比較、pattern 表現、固定 resource/compiler 契約は変更しない。
+
 ## Context
 
 共有 ADR-034zGZpjoQlppwkkOs5gur D1/D5/D6 を継承する。overview.md を参照したうえで、既存 WorkflowCompiler と projectWorkflowInterface に明示 file/utility CLI を接続する。新しい schema/interface/resource 契約は追加しない。

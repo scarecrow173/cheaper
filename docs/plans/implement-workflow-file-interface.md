@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zTiB05IwVw2pDB34sLk"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Workflow loader と公開 interface CLI を接続する"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -17,7 +17,7 @@ relations:
     generated: []
   implements:
     - "../specs/workflow-file-interface.md"
-  implemented-by: []
+  implemented-by: ["../tasks/implement-workflow-loader.md", "../tasks/wire-workflow-interface.md"]
   depends-on: []
   blocks: []
   supersedes: []
@@ -55,6 +55,8 @@ loader → CLI の単一 critical path・同一 release intent のため一 plan
 - DESIGN-034zT2MINVpakJb3AhS0m5（coordinator APPROVED）。metadata error は catalog.get まで保留して canonical 検証優先順位を維持する。
 
 ## File Map
+
+- coordinator 特例許可の追加修正: `packages/core/src/workspace/deny-paths.ts` と `packages/core/test/workspace/deny-paths.test.ts`。Windows casing 回避を matcher 所有境界で修正し、loader の規則複製を防ぐ。
 
 - `packages/workflow/src/loader.ts`: boundary/deny/regular-file/JSON parse と compiler factory/validateDefinition 委譲。WorkspaceEscapeError/deny/読込失敗をここで INVALID_REQUEST に変換する。
 - `packages/workflow/src/compiler.ts`: validateInputs の公開、既存 invocationInputs を共有。
@@ -108,9 +110,9 @@ loader → CLI の単一 critical path・同一 release intent のため一 plan
 | --- | --- | --- |
 | A | `mise exec -- pnpm exec vitest run packages/workflow/test` | loader/API と既存 workflow suite GREEN |
 | B | `mise exec -- pnpm exec vitest run packages/cli/test/workflow-interface.test.ts` | 対象単独 GREEN |
-| B | `mise exec -- pnpm exec vitest run packages/cli/test/e2e/workflow-interface.test.ts` | built CLI の単独 GREEN |
+| B | `mise exec -- pnpm exec vitest run --config packages/cli/vitest.config.ts packages/cli/test/e2e/workflow-interface.test.ts` | built CLI の単独 GREEN |
 | 統合 | `mise exec -- pnpm lint` / `pnpm typecheck` / `pnpm build` | 各 exit 0 |
-| 文書 | doc-maintenance plan/apply、chain + shared ADR scoped exit-audit | scoped findings 0 |
+| 文書 | doc-maintenance plan/apply、chain + shared ADR scoped exit-audit | scoped blocking findings 0 |
 
 canonical check deferred to coordinator merge run。bundle は coordinator が refresh。
 
@@ -137,3 +139,11 @@ canonical check deferred to coordinator merge run。bundle は coordinator が r
 - 承認済み graph 運用例外: spec/design scoped audit + coordinator 承認を維持し、この plan の focus で graph を再開する。router/shared ADR は変更しない。
 
 2026-10-04: coordinator APPROVED: plan approval（P0/P1 なし）。path filter と error 変換層の記載を反映。
+
+## Completion Evidence
+
+独立 review で Windows deny casing 回避を検出し、一時 script で blocked は拒否・Blocked は受理と再現した。coordinator ask msg_69bef75f648c の回答で core の責務と判定され、core matcher の局所修正を特例許可。Task A/IR を再開し、implementation-retry で repair を実施した。修正後 core package 24 files/370 passed/4 skipped、workflow 5 files/85 tests、CLI unit 26/e2e 9 が GREEN、lint/typecheck/build pass。独立再レビューは P0/P1・minor なし。core 資源型・共有 ADR 等は変更していない。
+
+2026-10-04: Task A/B done、IR completed。workflow 5 files/84 tests、CLI unit 26、e2e 9、既存 args 31/main 22 が GREEN。lint/typecheck/build pass。doc-maintenance の type 別 plan/apply と impl-doc の updateIndexForMarkdownDir 再生成を実施。IR audit findings 0、chain + 共有 ADR の scoped blocking findings 0（共有 ADR の既存 reciprocal warning 2 件のみ）。global は 416 documents/455 findings/41 blocking で、別 chain の既存 findings は ownership 外。
+
+Graph trace: implementation-to-followup-triage → followup-triage-terminal → exit-audit。followup は対象 slice 内に新規 blocker なしと分類し、#62 の run/engine と bundle refresh/canonical verification は既定 downstream/coordinator の責務として維持する。canonical check deferred to coordinator merge run。

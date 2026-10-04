@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zTsqC9tEk1qHUgWFefU"
 type: "task"
-status: "todo"
+status: "done"
 title: "wire-workflow-interface"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -17,7 +17,7 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-workflow-file-interface.md"
-  implemented-by: []
+  implemented-by: ["../impl/ir/wire-workflow-interface.md"]
   depends-on:
     - "docs/plans/implement-workflow-file-interface.md"
     - "docs/tasks/implement-workflow-loader.md"
@@ -54,8 +54,8 @@ loader/API task が done 後に着手する。実装前に in-progress IR を開
 packages/cli/src/{args,cli}.ts、packages/cli/test/workflow-interface.test.ts、packages/cli/test/e2e/workflow-interface.test.ts。
 
 ## Done When
-- [ ] 既存 WorkflowInterface 型、option 限定、file errors、metadata precedence、非実行、JSON/text/exit が単独 test GREEN。
-- [ ] lint/typecheck/build GREEN、IR 完了、scoped audit、論理 commit。
+- [x] 既存 WorkflowInterface 型、option 限定、file errors、metadata precedence、非実行、JSON/text/exit が単独 test GREEN。
+- [x] lint/typecheck/build GREEN、IR 完了、scoped audit、論理 commit。
 
 ## Verification
 - mise exec -- pnpm exec vitest run packages/cli/test/workflow-interface.test.ts

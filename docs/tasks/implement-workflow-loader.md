@@ -52,6 +52,8 @@ loadWorkflowFile と validateInputs を既存 compiler 経路へ接続する。
 ## Affected Files
 packages/workflow/src/{loader,compiler,index}.ts、packages/workflow/test/loader.test.ts。
 
+coordinator 特例許可: Windows deny casing 回避の責務を core matcher に帰属させ、packages/core/src/workspace/deny-paths.ts と packages/core/test/workspace/deny-paths.test.ts の局所修正を追加。loader 側の規則複製は行わない。
+
 ## Done When
 - [x] file/dynamic 同一経路、defaults/missing/unknown/schema、file errors/boundary/deny がテスト済み。
 - [x] suite GREEN、IR 完了、論理 commit。

@@ -67,14 +67,14 @@ relations:
 
 ## Acceptance Criteria
 
-- [ ] AC1: result は WorkflowInterface 形の schemaVersion・inputs[name]={schema,required}・outputs[name]={schema} のみ。default/type/constraints は schema 内に保持し、一行 JSON envelope を返す。
-- [ ] AC2: private jobs/needs/prompt/tool parameter/resource/binding は出力に含まれず、model/Worker/tool は実行されない。
-- [ ] AC3: file と動的 definition は同じ compiler の definition validation と compile 経路を使い、parallel validator を持たない。
-- [ ] AC4: 不在 file・malformed JSON・invalid definition は error envelope と非 0 exit、部分 interface を返さない。
-- [ ] AC5: --format json/text・utility worker:null・error envelope/exit code は既存 CLI と一致する。
-- [ ] AC6: invocation defaults/unknown/missing/schema validation を run から再利用でき、compile と同じ規則で動く。
-- [ ] AC7: path は canonical --cwd 相対（workspace 内の絶対 path も可）、workspace escape/symlink policy/deny path を拒否する。
-- [ ] AC8: interface 専用受理 option は <path> と --cwd/--format/--quiet のみ。他 command 専用 option（--input - を含む）は INVALID_REQUEST。既存 global --help/--version は維持する。
+- [x] AC1: result は WorkflowInterface 形の schemaVersion・inputs[name]={schema,required}・outputs[name]={schema} のみ。default/type/constraints は schema 内に保持し、一行 JSON envelope を返す。
+- [x] AC2: private jobs/needs/prompt/tool parameter/resource/binding は出力に含まれず、model/Worker/tool は実行されない。
+- [x] AC3: file と動的 definition は同じ compiler の definition validation と compile 経路を使い、parallel validator を持たない。
+- [x] AC4: 不在 file・malformed JSON・invalid definition は error envelope と非 0 exit、部分 interface を返さない。
+- [x] AC5: --format json/text・utility worker:null・error envelope/exit code は既存 CLI と一致する。
+- [x] AC6: invocation defaults/unknown/missing/schema validation を run から再利用でき、compile と同じ規則で動く。
+- [x] AC7: path は canonical --cwd 相対（workspace 内の絶対 path も可）、workspace escape/symlink policy/deny path を拒否する。
+- [x] AC8: interface 専用受理 option は <path> と --cwd/--format/--quiet のみ。他 command 専用 option（--input - を含む）は INVALID_REQUEST。既存 global --help/--version は維持する。
 
 ## Deferred Design Concerns
 

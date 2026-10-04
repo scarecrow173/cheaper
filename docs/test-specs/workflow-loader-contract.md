@@ -37,6 +37,8 @@ relations:
 
 # Workflow loader の共通検証契約
 
+coordinator 承認済み追加保証: Windows の実在 denied file/祖先への casing alias（blocked/Blocked、policy BLOCKED、.env/.ENV）を拒否する。比較規則は core matcher が一元所有し、POSIX の大小文字依存・glob/anchor・公開 patterns 表現を維持する。
+
 ## Purpose
 file と dynamic definition の意味論の分岐を防ぐ。loader が canonical compiler を使わなくなる設計に変更する場合は保証を移管するまで廃止しない。
 
