@@ -1,4 +1,5 @@
 import { CheaperError, type ResourceClaim } from "@cheaper/core";
+import { collectExecutionMetrics, type ExecutionMetrics } from "./execution-metrics.js";
 
 export type OperationState =
   | "queued"
@@ -89,6 +90,9 @@ export class OperationManager {
   private closed = false;
   private nextId = 0;
   private disposal: Promise<void> | undefined;
+  private running = 0;
+  private maxConcurrency = 0;
+  private readonly ownerConcurrency = new Map<string, { running: number; maximum: number }>();
 
   constructor(options: OperationManagerOptions = {}) {
     this.graceMs = validateGrace(options.abortGraceMs ?? 5000);
@@ -152,6 +156,12 @@ export class OperationManager {
     assertOperationTransition(entry.record.state, "running");
     entry.record.state = "running";
     entry.record.startedAt = this.clock();
+    this.running++;
+    this.maxConcurrency = Math.max(this.maxConcurrency, this.running);
+    const owner = this.ownerConcurrency.get(entry.record.ownerId) ?? { running: 0, maximum: 0 };
+    owner.running++;
+    owner.maximum = Math.max(owner.maximum, owner.running);
+    this.ownerConcurrency.set(entry.record.ownerId, owner);
     return this.get(id);
   }
 
@@ -229,6 +239,16 @@ export class OperationManager {
       .map(({ record }) => this.get(record.id));
   }
 
+  /** D3: owner-local または invocation 全体の集合から同じ定義で算出する。 */
+  executionMetrics(ownerId?: string): ExecutionMetrics {
+    const snapshotAt = this.clock();
+    const maximum =
+      ownerId === undefined
+        ? this.maxConcurrency
+        : (this.ownerConcurrency.get(ownerId)?.maximum ?? 0);
+    return collectExecutionMetrics(this.records(ownerId), snapshotAt, maximum);
+  }
+
   async drain(ownerId?: string, abortGraceMs: number = this.graceMs): Promise<void> {
     const grace = validateGrace(abortGraceMs);
     if (ownerId === undefined) this.cancelAll();
@@ -284,6 +304,11 @@ export class OperationManager {
 
   private finish(entry: Entry, state: OperationState): void {
     assertOperationTransition(entry.record.state, state);
+    if (entry.record.state === "running") {
+      this.running--;
+      const owner = this.ownerConcurrency.get(entry.record.ownerId);
+      if (owner) owner.running--;
+    }
     entry.record.state = state;
     entry.record.finishedAt = this.clock();
     entry.record.owned = false;

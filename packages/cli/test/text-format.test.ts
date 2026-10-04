@@ -5,6 +5,16 @@ import { errorEnvelope, successEnvelope } from "../src/envelope.js";
 import { formatText } from "../src/text-format.js";
 
 const runMeta: WorkerRunMeta = {
+  execution: {
+    operations: 0,
+    byState: { queued: 0, running: 0, completed: 0, failed: 0, cancelled: 0, timed_out: 0 },
+    byTool: {},
+    maxConcurrency: 0,
+    operationMs: 0,
+    activeMs: 0,
+    overlapMs: 0,
+    queueMs: 0,
+  },
   model: {
     provider: "p",
     id: "m",

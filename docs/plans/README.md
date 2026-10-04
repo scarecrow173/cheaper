@@ -43,6 +43,7 @@ Directory: `docs/plans`
 | PLAN-034zTu37tgDGI306OPBitz | Workflow resource inference を実装する | completed | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | PLAN-034z2bk7AEzZ66Mt0uXCyJ | Integrate SEA executables into tag-triggered GitHub Release workflow | completed | [integrate-sea-executables-into-tag-triggered-github-release-workflow.md](./integrate-sea-executables-into-tag-triggered-github-release-workflow.md) |
 | PLAN-034r05iHE1FbkpcKKUUZ58 | Real-provider worker E2E via Ollama — implementation plan | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
+| PLAN-034A90VLWrJyT2IhkiTsA0 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | PLAN-034r05iHK8bA7g23Opaicg | Pi state under userConfigDir/pi — implementation plan | completed | [pi-state-under-userconfigdir-pi-implementation-plan.md](./pi-state-under-userconfigdir-pi-implementation-plan.md) |
 | PLAN-034r2qodyxvN3g3xktwPOF | provider/auth guide runtime sync — implementation plan | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | PLAN-034r05iHK8bA7g2BMsfjFu | Provider-only registration layer — implementation plan | completed | [provider-only-registration-layer-implementation-plan.md](./provider-only-registration-layer-implementation-plan.md) |

@@ -88,6 +88,143 @@ async function deps(fake: ReturnType<typeof createFakePi>, w: WorkerDefinition, 
 }
 
 describe("runWorker", () => {
+  it.each([false, true])(
+    "reports deterministic owned execution and preserves usage/savings: failure=%s",
+    async (failure) => {
+      await writeFile(path.join(root, "a.txt"), "alpha beta gamma\n".repeat(20));
+      const fake = createFakePi({
+        responses: [
+          fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }), { stopReason: "toolUse" }),
+          failure
+            ? fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }, "second"), {
+                stopReason: "toolUse",
+              })
+            : fauxAssistantMessage('{"ok":true}'),
+        ],
+      });
+      const p = policy();
+      if (failure) p.execution.maxToolCalls = 1;
+      const ticks = [10, 20, 45, 50];
+      const result = await runWorker({
+        ...(await deps(fake, worker(["read"]), p)),
+        operationClock: () => ticks.shift() ?? 50,
+      }).then(
+        (value) => value,
+        (error: WorkerRunError) => error,
+      );
+      const meta = result instanceof WorkerRunError ? result.runMeta : result.meta;
+      expect(meta?.execution).toEqual({
+        operations: 1,
+        byState: { queued: 0, running: 0, completed: 1, failed: 0, cancelled: 0, timed_out: 0 },
+        byTool: { read: 1 },
+        maxConcurrency: 1,
+        operationMs: 25,
+        activeMs: 25,
+        overlapMs: 0,
+        queueMs: 10,
+      });
+      expect(meta?.toolCalls).toBe(1);
+      expect(meta?.rejectedToolCalls).toBe(failure ? 1 : 0);
+      expect(meta?.turns).toBeGreaterThan(0);
+      expect(meta?.usage?.totalTokens).toBeGreaterThan(0);
+      expect(meta?.savings?.sourceTokens).toBeGreaterThan(0);
+      expect(meta?.savings?.returnedTokens).toBe(failure ? 0 : countTextTokens('{"ok":true}'));
+      if (failure) expect(result).toMatchObject({ code: "MAX_TOOL_CALLS_EXCEEDED" });
+    },
+  );
+
+  it("includes a zero snapshot when model resolution fails after invocation creation", async () => {
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const error = await runWorker({
+      ...(await deps(fake, worker(["read"]), policy())),
+      explicitModel: "invalid-ref",
+      operationClock: () => 0,
+    }).then(
+      () => null,
+      (value: WorkerRunError) => value,
+    );
+    expect(error).toBeInstanceOf(WorkerRunError);
+    expect(error?.code).toBe("INVALID_REQUEST");
+    expect(error?.runMeta?.execution).toEqual({
+      operations: 0,
+      byState: { queued: 0, running: 0, completed: 0, failed: 0, cancelled: 0, timed_out: 0 },
+      byTool: {},
+      maxConcurrency: 0,
+      operationMs: 0,
+      activeMs: 0,
+      overlapMs: 0,
+      queueMs: 0,
+    });
+    expect(error?.runMeta?.model).toBeUndefined();
+    expect(error?.runMeta?.usage).toBeUndefined();
+  });
+
+  it("reports only its borrowed owner while a sibling is active", async () => {
+    let now = 0;
+    let release!: () => void;
+    let started!: () => void;
+    const waiting = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const ready = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const invocation = toolRuntime.createInvocationToolRuntime({
+      root,
+      symlinkPolicy: "deny",
+      clock: () => now,
+    });
+    const sibling = invocation.createWorkerScope({
+      root,
+      symlinkPolicy: "deny",
+      ownerId: "sibling",
+      names: ["ls"],
+      maxToolCalls: 10,
+      onLimit: () => {},
+      handlers: {
+        ls: async () => {
+          started();
+          await waiting;
+          return { content: [] };
+        },
+      },
+    });
+    const pending = sibling.execute("ls", { path: "." });
+    await ready;
+    now = 10;
+    await writeFile(path.join(root, "a.txt"), "hello");
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }), { stopReason: "toolUse" }),
+        fauxAssistantMessage('{"ok":true}'),
+      ],
+    });
+    try {
+      const value = await runWorker({
+        ...(await deps(fake, worker(["read"]), policy())),
+        execution: { runtime: invocation, ownerId: "worker" },
+      });
+      expect(value.meta.execution).toMatchObject({
+        operations: 1,
+        byTool: { read: 1 },
+        maxConcurrency: 1,
+        operationMs: 0,
+        activeMs: 0,
+        queueMs: 0,
+      });
+      expect(invocation.executionMetrics()).toMatchObject({
+        operations: 2,
+        maxConcurrency: 2,
+        byState: { running: 1, completed: 1 },
+      });
+    } finally {
+      now = 20;
+      release();
+      await pending;
+      await invocation.dispose();
+    }
+  });
+
   it.each([
     ["timeout", "TIMEOUT"],
     ["signal", "ABORTED"],

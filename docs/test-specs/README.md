@@ -16,6 +16,7 @@ Directory: `docs/test-specs`
 | TSPEC-034z1P09dg86lO9uB31cUi | Embedded builtin resource resolution across distribution forms | proposed | [embedded-builtin-resource-resolution-across-distribution-forms.md](./embedded-builtin-resource-resolution-across-distribution-forms.md) |
 | TSPEC-034rzVr1S8qFdi1JqWSN9Z | model exclude and explicit selection guards | approved | [model-exclude-and-explicit-selection.md](./model-exclude-and-explicit-selection.md) |
 | TSPEC-034rzVqBmfD2pkA9f82Eoa | model tier classification pipeline | approved | [model-tier-classification-pipeline.md](./model-tier-classification-pipeline.md) |
+| TSPEC-034A9yAv68yBK2XeFKEToG | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | TSPEC-034zTjObSJGccLlnwmHwVm | Operation lifecycle settlement guarantees | approved | [operation-lifecycle-settlement.md](./operation-lifecycle-settlement.md) |
 | TSPEC-034zXB13nuorLP81dn8ro8 | Payload-free source acquisition and native verification | approved | [payload-free-source-acquisition-and-native-verification.md](./payload-free-source-acquisition-and-native-verification.md) |
 | TSPEC-034rzVrqJiXNDl2AF8eI5s | pricing metadata resolution and models command | approved | [pricing-metadata-and-models-command.md](./pricing-metadata-and-models-command.md) |

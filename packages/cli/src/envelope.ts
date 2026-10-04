@@ -21,6 +21,7 @@ export interface ErrorEnvelopeMeta {
   changes: ChangesSummary | null;
   /** 失敗 run の offload 実測（result 無し = returnedTokens 0）。 */
   savings: WorkerSavings | null;
+  execution: WorkerRunMeta["execution"] | null;
 }
 
 export interface SuccessEnvelope {
@@ -108,6 +109,7 @@ function errorMeta(durationMs: number | null, err: unknown): ErrorEnvelopeMeta {
     transientRetries: runMeta?.transientRetries ?? null,
     changes: runMeta?.changes ?? changes,
     savings: runMeta?.savings ?? null,
+    execution: runMeta?.execution ?? null,
   };
 }
 
