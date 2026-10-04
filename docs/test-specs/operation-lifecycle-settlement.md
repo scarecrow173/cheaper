@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034zTjObSJGccLlnwmHwVm"
 type: "test-spec"
-status: "draft"
+status: "approved"
 title: "Operation lifecycle settlement guarantees"
 created: "2026-10-04"
 updated: "2026-10-04"

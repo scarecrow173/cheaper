@@ -83,8 +83,15 @@ impl-record audit は 76 files / findings=0。doc-maintenance plan/apply の今�
 ## Risks
 
 bounded detach は実停止保証ではない。
+実装レビューの非ブロッキング P2: pre-admission abort の素の Error は実 reason を保持しない。bare drain/dispose の first-cause は generic AbortError。未知 owner の drain は closedOwners に追加される。既存契約との互換性を保持したまま後続で検討し、本 slice の追加 runtime 修正は不要との coordinator 判断。
 
 ## Follow-ups
 
 Workflow integration は #62、scheduler は #57、ResourceManager/lease は #61 の後続基準。現 slice では実装しない。
 canonical check deferred to coordinator merge run。
+
+## Review and graph completion
+
+2026-10-04 coordinator の `APPROVED: implementation review` を受領（質問 msg_b176f79d5902、immutable range bdacfc0..9aecfb6）。遷移行列、first-cause、detach/late settle、double-settle 防御、bounded grace、signal 三段合成、accounting、D7 ownership と scope を独立検証済み。test-spec の draft status は指摘に従い approved へ整合させた。
+follow-up は #57/#61/#62 と上記 P2 の scope 外改善候補のみで、担当 chain の未解決作業はない。graph は run-until-yield、taskBudgetCount=2/maxHops=11 を継続する。manager/wiring の commitGate は 8ce0860/9aecfb6 と clean worktree により解消した。終端の完全 GraphRoute、EffectOutcome、fingerprints は worker-56-report.md に保存する。
+終端 trace: implementation-to-followup-triage → followup-triage-terminal → exit-audit-to-complete → complete（status=terminal / blockers=[]）。requiredAudits の安定順序 impl-record → task は findings=0 / blocking=0。all audit と doc-status delegate は担当 chain + 共有 ADR の blocking=0 を再確認した（global 455 findings / 41 blockers は ownership 外）。doc-maintenance plan/apply は test-spec index の status を再生成した。全実装 task が done、plan completed、spec/design/test-spec approved、local ADR accepted、IR completed。追加修正を要する follow-up はない。
