@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034z3yKWLolrImpMY8UMhZ"
 type: "test-spec"
-status: "proposed"
+status: "superseded"
 title: "APM executable payload layout and launcher dispatch contract"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -20,7 +20,7 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["TSPEC-034zXB13nuorLP81dn8ro8"]
   related: []
   refines: []
   refined-by: []

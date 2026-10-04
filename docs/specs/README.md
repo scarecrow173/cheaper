@@ -34,6 +34,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7guAnTdpdi | Real-provider E2E for built-in workers via Ollama container | implemented | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | SPEC-034zSQV3zqlEncx2GoLKSR | One-dispatch release workflow | approved | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
 | SPEC-034zSPnVDi6fpHVc9ELgLW | Invocation-scoped OperationManager lifecycle | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
+| SPEC-034zWqZR8Dmu9TXTR2qcsg | Payload untracking migration | implemented | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |
 | SPEC-034r2qodmutbif9L0DLskN | Correct provider and auth documentation to match runtime capabilities | implemented | [provider-auth-docs-runtime-sync.md](./provider-auth-docs-runtime-sync.md) |
 | SPEC-034r05iHK8bA7gz3bFqgXr | Provider-only registration layer without Pi extensions | implemented | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
@@ -42,7 +43,7 @@ Directory: `docs/specs`
 | SPEC-034zSQRLxNXgJDxjmUBBB8 | Run-scoped artifact store | approved | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |
 | SPEC-034r05iHK8bA7go4BQtGNS | Separate the development APM project from the distributable cheaper package | implemented | [separate-dev-apm-project-from-distributable-package.md](./separate-dev-apm-project-from-distributable-package.md) |
 | SPEC-034rBhR3SNIRFZ1B6n26iH | Shell-read large-file blocking via canonical routing policy | approved | [shell-read-large-file-blocking.md](./shell-read-large-file-blocking.md) |
-| SPEC-034z14nGIf6fXRtTskkrk8 | Standalone executable distribution for cheaper CLI including APM bundles | approved | [standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md](./standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md) |
+| SPEC-034z14nGIf6fXRtTskkrk8 | Standalone executable distribution for cheaper CLI including APM bundles | superseded | [standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md](./standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md) |
 | SPEC-003hd7W00xCikuCXnwHA4C | Synchronize distributed cheaper-usage skill and parent-agent integration guide | implemented | [synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md](./synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md) |
 | SPEC-034r05iHK8bA7grnYLdwgl | Unified version and release source of truth | implemented | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | SPEC-034rzGnCaRQc5ceI95lf5i | Usage and savings telemetry aggregation | implemented | [usage-and-savings-telemetry-aggregation.md](./usage-and-savings-telemetry-aggregation.md) |

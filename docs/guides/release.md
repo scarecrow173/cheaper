@@ -35,48 +35,24 @@ mise run check                           # 全検証（version check 含む）
 `check-version.mjs` を実行する。`version.json` は生成物のため bump
 直後は不一致として検出され、bundle 再生成を促される（正常な流れ）。
 
-## Release 前の version / LFS 準備（#73-C まで併存）
+## Release 前の source / tag 準備
 
 公開には新しい `release-acquisition` workflow を **1 回 dispatch** する。
 その1回で固定 SHA の3target SEA build → native smoke → `SHA256SUMS` →
 APM archive → native APM smoke → GitHub Release 公開までを実行する。
-本節は公開前の source/tag 準備であり、現在の Git-based APM 配布と canonical
-payload check が要求する LFS round-trip は #73-C の移行完了まで残る。
-新経路の `strict_freshness:false` は同runのfresh binaryをarchiveに入れるための設定であり、
-Gitに追跡するpayloadや `check-apm-payload.mjs` の検証を廃止するものではない。
+Git source に platform binary は含めない。`check-apm-payload.mjs` は launcher と
+小さい asset の存在・regular file・pointer 拒否・JSON/version 整合を検証する。
+native version と実行は同 release run の build/smoke が検証する。
 
 1. `node scripts/set-version.mjs <X.Y.Z>` で bump する。
 2. `node scripts/bundle-cli.mjs` で `version.json` と bundled CLI を
    再生成する。
-3. bump 変更を commit して branch を push する（tag はまだ打たない）。
-4. **APM payload binary を再生成する。** GitHub Actions の
-   `build-executables` workflow を**手動 dispatch** し、`ref` input に
-   bump commit を含む branch（例: `main`）を指定する。3 target
-   （Windows x64・Linux x64・Linux arm64）の executable が artifact
-   として upload される。
-   - release の build 結果と byte 一致する binary を payload に入れる
-     唯一の正式経路。local で生成した binary は runner artifact と
-     一致しないため使わない。
-5. workflow artifact を download し、APM payload に配置する:
-
-   ```bash
-   gh run download <run-id> -D /tmp/sea-artifacts
-   mkdir /tmp/sea-flat && cp /tmp/sea-artifacts/sea-*/cheaper-* /tmp/sea-flat/
-   node scripts/build-apm-bundle.mjs --exe-dir /tmp/sea-flat
-   # POSIX 側 binary（cli/bin/linux-*/cheaper）は executable bit を
-   # 維持すること（git update-index --chmod=+x で確認・修正）
-   ```
-
-6. `mise run check` が全 pass することを確認する（lint → version →
-   doc-id → typecheck → test → bundle freshness →
-   `check-apm-payload.mjs` の expected target set / pointer /
-   host version 検証）。
-7. 宣言変更と生成物（`packages/apm/.apm/hooks/cli/`。payload
-   executable は Git LFS）を同一 commit にまとめる
-   （`release:` または `chore:` prefix）。
-8. `node packages/cli/bin/cheaper.js --version` と、bundle 内
+3. `mise run check` が全 pass することを確認する（small asset freshness と source checker を含む）。
+4. 宣言変更と小さい生成物を commit して branch を push する。
+   `cli/bin/<platform>/` は ignore 対象であり、binary を Git に追加しない。
+5. `node packages/cli/bin/cheaper.js --version` と、bundle 内
    `version.json` が新しい値を返すことを目視確認する。
-9. `git tag v<X.Y.Z>` で tag を打ち、push する。
+6. `git tag v<X.Y.Z>` で immutable tag を打ち、push する。
 
 tagのsourceには新workflowが使用するscriptsとlauncher、整合するversion.jsonが
 含まれている必要がある。公開後の既存tagを書き換えて再利用しない。
@@ -116,14 +92,10 @@ tokenは `GITHUB_TOKEN` のみ使用する。同tagのdispatchはcancelせず直
 
 ## 旧 Release 経路との関係
 
-旧 `release` workflowと手動 `build-executables`、LFS payload、freshness checkは保持する。
-旧 `release` は `strict_freshness:true` でcommitted payloadのbyte一致を要求し、raw3だけを
-公開する。**SHA256SUMSとAPM archiveを付けない旧経路はacquisition互換Releaseではない**。
-sibling executableがない#73-A launcherはmanifest未公開の旧Releaseから取得できずfail closedする。
-acquisition用の公開には新 `release-acquisition` を選ぶ。同tagで両workflowを実行しない。
-
-#73-CでGit payload/LFS/CIの移行が完了するまで両経路を併存させる。
-履歴rewriteやpayload削除はこの変更に含めない。
+旧 `release` workflow は contents: read の拒否 job として廃止する。
+公開は `release-acquisition` の 1 dispatch のみ。手動 `build-executables` は
+検証用 artifact を作るだけで公開しない。committed binary の byte 比較は行わない。
+既存 Git LFS 履歴は保持するが、binary 再追加や checksum 不在の旧公開経路へ戻さない。
 
 ## 失敗時の確認と手動復旧
 
@@ -131,7 +103,13 @@ version不一致、tag drift、hash/smoke失敗、API error、既存draft/public
 既存Releaseの上書き、`--clobber`、自動削除、upload再開は行わない。
 draft作成中や公開前に失敗すると未公開draftが残ることがある。operatorが対象runの
 errorとtag/SHA、draftのasset状態を確認し、必要な回復を明示的に手動で行ってから
-再dispatchする。公開済みReleaseへの再実行は新version/tagを準備する。
+回復する。maintainer は失敗を修正し、新しい immutable version/tag で fix-forward する。
+既存 tag を書き換えない。
+
+新経路の初回実公開はローカル検証では未実証。全 5 asset と 3 native smoke の成功を
+確認するまで consumer を新 Git ref へ切り替えない。consumer は切替前に稼働中の
+manifest/ref と sibling を含む deploy directory を退避し、取得や hook が失敗したら
+その退避を復元する。Copilot の制約は [配布 guide](distribution.md) を参照する。
 
 ## 発火前の検証範囲
 

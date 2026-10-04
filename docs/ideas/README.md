@@ -13,6 +13,7 @@ Directory: `docs/ideas`
 | IDEA-034z10aNxQyg2KNIm2Kew4 | Distribute cheaper as standalone executables including APM bundles | promoted | [distribute-cheaper-as-standalone-executables-including-apm-bundles.md](./distribute-cheaper-as-standalone-executables-including-apm-bundles.md) |
 | IDEA-034zSO5nJ7nAuF11FrikUD | One-dispatch release workflow | promoted | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
 | IDEA-034zSLUoRMHrYpLGc8wKPj | OperationManager の invocation lifecycle | promoted | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
+| IDEA-034zWkslEDhnpFKJZpyzU4 | Payload untracking migration | promoted | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | IDEA-034r05iHy2gdnpfT84JZ5h | Provider lifecycle hooks in CheaperProviderPlugin contract | parked | [provider-lifecycle-hooks-in-cheaperproviderplugin-contract.md](./provider-lifecycle-hooks-in-cheaperproviderplugin-contract.md) |
 | IDEA-034zSPC3SGPGIHidq3x7sp | Run-scoped artifact store | promoted | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |
 | IDEA-034zzQkQLoqLftac2tPws5 | Verify and leverage Pi sibling tool-call parallelism inside Workers | promoted | [verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md](./verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md) |

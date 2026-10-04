@@ -16,6 +16,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { apmAvailable, apmInstall, bundleRoot, makeConsumerLayout } from "./apm-fixture.js";
+import { buildNativeExecutable, nodeFreePath } from "./native-executable-fixture.js";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const hooks = path.join(repo, "packages/apm/.apm/hooks");
@@ -38,8 +40,11 @@ const digest = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex
 type Result = { code: number | null; stdout: string; stderr: string };
 let fixtureRoot: string;
 let binary: Buffer;
+let native: ReturnType<typeof buildNativeExecutable>;
 
 beforeAll(() => {
+  if (["win32-x64", "linux-x64", "linux-arm64"].includes(platform))
+    native = buildNativeExecutable();
   fixtureRoot = mkdtempSync(path.join(tmpdir(), "cheaper-native-fixture-"));
   if (windows) {
     const compiler = path.join(
@@ -63,8 +68,9 @@ beforeAll(() => {
       '#!/bin/sh\nif [ "$1" = "--version" ]; then cat >/dev/null; echo 1.0.0; exit 0; fi\nprintf "ARGS:\\n"\nprintf "%s\\n" "$@"\nprintf "INPUT:"\ncat\necho "fixture stderr" >&2\n[ "$1" != hook ] || exit 2\n',
     );
   }
-});
+}, 180_000);
 afterAll(() => {
+  native?.cleanup();
   if (fixtureRoot) rmSync(fixtureRoot, { recursive: true, force: true });
 });
 
@@ -82,6 +88,7 @@ for (const runner of runners) {
       let requests: string[];
       let manifest: string;
       let body: Buffer;
+      let releaseVersion: string;
       let behavior: "normal" | "interrupt" | "missing" | "redirect";
 
       beforeEach(async () => {
@@ -94,6 +101,7 @@ for (const runner of runners) {
         }
         writeFileSync(path.join(launch, "cli/version.json"), '{"version":"1.0.0"}\n');
         body = binary;
+        releaseVersion = "1.0.0";
         manifest = `${digest(binary)}  ${asset}\n`;
         behavior = "normal";
         requests = [];
@@ -103,13 +111,13 @@ for (const runner of runners) {
             res.writeHead(302, { location: "http://example.invalid/forbidden" }).end();
             return;
           }
-          if (req.url === "/v1.0.0/SHA256SUMS") {
+          if (req.url === `/v${releaseVersion}/SHA256SUMS`) {
             if (behavior === "missing") {
               res.writeHead(404).end();
               return;
             }
             res.end(manifest);
-          } else if (req.url === `/v1.0.0/${asset}`) {
+          } else if (req.url === `/v${releaseVersion}/${asset}`) {
             if (behavior === "interrupt") {
               res.writeHead(200, { "Content-Length": body.length + 100 });
               res.write(body.subarray(0, 10));
@@ -129,7 +137,7 @@ for (const runner of runners) {
           ...process.env,
           PATH: windows
             ? "C:/Program Files/Git/usr/bin;C:/Windows/System32;C:/Windows/System32/WindowsPowerShell/v1.0"
-            : "/usr/bin:/bin",
+            : nodeFreePath(root),
           CHEAPER_RELEASE_BASE_URL: base,
           CHEAPER_CACHE_DIR: cache,
           CHEAPER_CONFIG_DIR: path.join(root, "config"),
@@ -235,13 +243,21 @@ for (const runner of runners) {
       });
       it("executes an offline verified preseed without a download", async () => {
         preseed();
-        const result = await run(["--version"], "", {
-          CHEAPER_RELEASE_BASE_URL: "https://example.invalid/releases",
-        });
+        await new Promise<void>((resolve) => server?.close(() => resolve()));
+        server = undefined;
+        const result = await run();
         expect(result.code, result.stderr).toBe(0);
         expect(result.stdout.trim()).toBe("1.0.0");
         expect(requests).toEqual([]);
         clean();
+      });
+      it("diagnoses a cold offline cache with release, proxy and preseed guidance", async () => {
+        await new Promise<void>((resolve) => server?.close(() => resolve()));
+        server = undefined;
+        failed(await run(), /download.*failed/i);
+        const result = await run();
+        failed(result, /tagged Release\/SHA256SUMS/);
+        expect(result.stderr).toMatch(/proxy.*mirror.*offline preseed/i);
       });
       it("downloads only once under concurrent first-run", async () => {
         const results = await Promise.all([run(), run()]);
@@ -418,8 +434,7 @@ for (const runner of runners) {
         },
       );
       it("runs a real CLI hook via cached executable with original stdin and exit 2", async () => {
-        const actual = path.join(hooks, "cli/bin", platform, filename);
-        if (!existsSync(actual)) throw new Error(`Missing setup executable ${actual}`);
+        const actual = native.executable;
         const bytes = readFileSync(actual);
         const actualVersion = spawnSync(actual, ["--version"], {
           encoding: "utf8",
@@ -444,6 +459,41 @@ for (const runner of runners) {
         expect(result.stderr).toContain("bulk-read");
         expect(requests).toEqual([]);
       }, 35_000);
+      it.each(["windsurf", "claude", "codex", "cursor"])(
+        "installs binary-free source for %s and acquires a real Node-free hook from local HTTP",
+        async (target, t) => {
+          if (!apmAvailable()) {
+            t.skip("apm CLI unavailable");
+            return;
+          }
+          const { consumer } = makeConsumerLayout(root, target);
+          const installed = apmInstall(consumer, root, target);
+          expect(installed.status, installed.stderr).toBe(0);
+          launch = bundleRoot(consumer, target) as string;
+          expect(existsSync(path.join(launch, "cli/bin", platform))).toBe(false);
+          expect(spawnSync("node", ["--version"], { env }).error?.code).toBe("ENOENT");
+          releaseVersion = JSON.parse(readFileSync(path.join(launch, "cli/version.json"), "utf8"))
+            .version as string;
+          body = readFileSync(native.executable);
+          manifest = `${digest(body)}  ${asset}\n`;
+          writeFileSync(path.join(launch, "big.txt"), "lorem ipsum ".repeat(20_000));
+          const result = await run(
+            ["hook", "pre-read-code", "--target", "windsurf"],
+            JSON.stringify({
+              agent_action_name: "pre_read_code",
+              tool_info: { file_path: "big.txt" },
+            }),
+          );
+          expect(result.code, result.stdout + result.stderr).toBe(2);
+          expect(result.stderr).toContain("bulk-read");
+          expect(requests.sort()).toEqual(
+            [`/v${releaseVersion}/${asset}`, `/v${releaseVersion}/SHA256SUMS`].sort(),
+          );
+          expect(existsSync(path.join(cache, releaseVersion, platform, filename))).toBe(true);
+          expect(existsSync(path.join(launch, "cli/bin", platform))).toBe(false);
+        },
+        60_000,
+      );
     },
   );
 }

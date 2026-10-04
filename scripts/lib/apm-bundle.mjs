@@ -10,9 +10,9 @@
 //   cli/workers/              worker definitions + schemas
 //   cli/policy.yaml           built-in policy
 //
-// The generated tree is committed so git/local-path consumers get a
-// working CLI without a build step. Platform executables are tracked via
-// Git LFS (.gitattributes).
+// Small generated assets are committed. Git/local-path hook consumers acquire
+// a pinned executable into user cache; release archives/local builds carry
+// ignored platform executables instead of adding them to Git.
 
 import { cpSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -27,7 +27,7 @@ export function apmHooksDir(root = repoRoot()) {
 
 // Rebuilds cli/ generated assets. bin/cheaper.mjs・version.json・
 // workers/・policy.yaml のみを削除対象にし、bin/<target>/ 配下の
-// platform executable（LFS 追跡）は保持する。
+// platform executable（local build/release 用、Git ignore 対象）は保持する。
 export function buildApmCliTree(root = repoRoot()) {
   const cliPkg = path.join(root, "packages", "cli");
   const outDir = path.join(apmHooksDir(root), "cli");

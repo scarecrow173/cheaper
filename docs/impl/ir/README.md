@@ -60,6 +60,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | completed | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
+| IMPL-034A6i3cxbZXoHqDxhuyjB | Migrate native workflows and release guidance | completed | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | IMPL-034zTprBbdY0tsPiphc2wE | Operation manager state lifecycle | completed | [operation-manager-state-lifecycle.md](./operation-manager-state-lifecycle.md) |
 | IMPL-034r05iHy2gdnpDWUS1IzV | Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg) | completed | [pi-state-under-userconfigdir-pi.md](./pi-state-under-userconfigdir-pi.md) |
@@ -78,11 +79,13 @@ Directory: `docs/impl/ir`
 | IMPL-034z3CE24rUsOGqD0BfeqZ | track executables with git lfs | completed | [track-executables-with-git-lfs.md](./track-executables-with-git-lfs.md) |
 | IMPL-034r05iHy2gdnpx0u8vJaz | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | IMPL-034z1STqpGaGE7SWSnCLo3 | Unify packageVersion on builtinDir | completed | [unify-packageversion-on-builtindir.md](./unify-packageversion-on-builtindir.md) |
+| IMPL-034zXB37yW53DP9xUVf57j | Untrack payload and validate source assets | completed | [untrack-payload-and-validate-source-assets.md](./untrack-payload-and-validate-source-assets.md) |
 | IMPL-034z3CEqPwEgMOcgeJ69S5 | update cheaper-usage guidance | completed | [update-cheaper-usage-guidance.md](./update-cheaper-usage-guidance.md) |
 | IMPL-034rAty3hDG6bnv9waKpx5 | Update guides for pricing catalog | completed | [update-guides-for-pricing-catalog.md](./update-guides-for-pricing-catalog.md) |
 | IMPL-034z2rYSzkxUjQSkAXW3IP | update release guide | completed | [update-release-guide.md](./update-release-guide.md) |
 | IMPL-034r2HoPHxqYBy0c98U70r | Align usage.jsonl recording-scope docs (PLAN-034r2puWPUDxxDyfTSffZR) | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
 | IMPL-034r05iHy2gdnpCk8YlDWb | User-facing documentation information architecture (PLAN-034r05iHE1FbkpeFEXECDx) | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
+| IMPL-034A6mdUuMzX4DtyfiRMjx | Verify consumer acquisition and close migration | completed | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
 | IMPL-034z3CEPSQBJaEVBVxxzmL | verify launchers and apm payload | completed | [verify-launchers-and-apm-payload.md](./verify-launchers-and-apm-payload.md) |
 | IMPL-034z2rZiB6WUNTje88kRt1 | verify release workflow | completed | [verify-release-workflow.md](./verify-release-workflow.md) |
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |

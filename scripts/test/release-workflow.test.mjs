@@ -59,14 +59,22 @@ test("workflow publishes complete draft before public release", () => {
   assert.ok(publish.indexOf("gh release create") < publish.indexOf("gh release edit"));
 });
 
-test("new caller disables strict freshness while old caller keeps it", () => {
-  assert.match(job(workflow(), "build-executables"), /strict_freshness: false/);
-  assert.match(read("release.yml"), /strict_freshness: true/);
+test("source payload freshness is retired while native version smoke remains", () => {
+  assert.doesNotMatch(workflow(), /strict_freshness/);
   const build = read("build-executables.yml");
   assert.match(build, /expected_version:[\s\S]*required: false[\s\S]*type: string/);
   assert.match(build, /if: \$\{\{ inputs.expected_version != '' \}\}/);
   assert.match(build, /EXPECTED_VERSION:[\s\S]*inputs.expected_version/);
-  assert.match(build, /Compare committed APM payload/);
+  assert.doesNotMatch(build, /strict_freshness|cmp -s|matrix\.payload|lfs: true/);
+});
+
+test("legacy release refuses publication with read-only permissions", () => {
+  const legacy = read("release.yml");
+  assert.match(legacy, /^permissions:\n  contents: read$/m);
+  assert.match(legacy, /release-acquisition/);
+  assert.match(legacy, /exit 1/);
+  assert.doesNotMatch(legacy, /gh release|contents: write|secrets\.|uses:.*build-executables/);
+  assert.doesNotMatch(read("ci.yml"), /lfs: true/);
 });
 
 test("workflow runs focused suites before build", () => {

@@ -139,6 +139,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
+| TASK-034zXB21CtI0XLnu6QAHPe | Migrate native workflows and release guidance | done | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
 | TASK-034r05iHQeQpDqrbmtswfZ | Move .apm primitives to nested distributable package and make root apm.yml dev-only | done | [move-apm-primitives-to-distributable-package.md](./move-apm-primitives-to-distributable-package.md) |
 | TASK-034rAcF1RPJJogj2vzFDrF | New adapter scripts and hooks.json event registration | done | [new-adapter-scripts-and-hooks-json-event-registration.md](./new-adapter-scripts-and-hooks-json-event-registration.md) |
 | TASK-034r05iHQeQpDqgk8XoZ8E | Parameterize apm e2e fixture by target | done | [parameterize-apm-e2e-fixture-by-target.md](./parameterize-apm-e2e-fixture-by-target.md) |
@@ -173,6 +174,7 @@ Directory: `docs/tasks`
 | TASK-034z3zPzG5T5Q8QpwsaoTJ | Track APM executables with Git LFS and keep freshness check valid | done | [track-apm-executables-with-git-lfs-and-keep-freshness-check-valid.md](./track-apm-executables-with-git-lfs-and-keep-freshness-check-valid.md) |
 | TASK-034z1PNNPwye2uvwy1eAG8 | Unify packageVersion resolution on builtinDir | done | [unify-packageversion-resolution-on-builtindir.md](./unify-packageversion-resolution-on-builtindir.md) |
 | TASK-034r05iHQeQpDqD0biyV0P | Unify versions, wire check, and document release | done | [unify-versions-wire-check-and-document-release.md](./unify-versions-wire-check-and-document-release.md) |
+| TASK-034zXB1vK84hUCtRlEyiqG | Untrack payload and validate source assets | done | [untrack-payload-and-validate-source-assets.md](./untrack-payload-and-validate-source-assets.md) |
 | TASK-034z3zQ6V08kM7gUKnUzfL | Update cheaper-usage skill guidance for executable-based CLI | done | [update-cheaper-usage-skill-guidance-for-executable-based-cli.md](./update-cheaper-usage-skill-guidance-for-executable-based-cli.md) |
 | TASK-034r05iHQeQpDqtGttOcbh | Update consumer e2e fixtures to packages/apm and add no-self-deploy verification | done | [update-consumer-verification-and-no-self-deploy-tests.md](./update-consumer-verification-and-no-self-deploy-tests.md) |
 | TASK-034r05iHQeQpDqylmM3Elr | Update README/AGENTS for canonical contract and verify clean-state setup/check | done | [update-docs-and-verify-clean-state-setup-check.md](./update-docs-and-verify-clean-state-setup-check.md) |
@@ -188,6 +190,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqKGWioCow | Usage-log e2e assertions, docs, bundle regen, status sync, final verification | done | [usage-log-e2e-docs-and-final-verification.md](./usage-log-e2e-docs-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
+| TASK-034zXB2z3uWw5lq9IyKOqe | Verify consumer acquisition and close migration | done | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
 | TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
 | TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | done | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |
 | TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | done | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |
