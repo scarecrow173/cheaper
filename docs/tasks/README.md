@@ -138,7 +138,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqgk8XoZ8E | Parameterize apm e2e fixture by target | done | [parameterize-apm-e2e-fixture-by-target.md](./parameterize-apm-e2e-fixture-by-target.md) |
 | TASK-034r05iHQeQpDqhxabCiHf | Per-target apm install verification e2e | done | [per-target-apm-install-verification-e2e.md](./per-target-apm-install-verification-e2e.md) |
 | TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | done | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |
-| TASK-034zTWibd7OKesgJgoGxJu | Prepare one-dispatch release artifacts | todo | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
+| TASK-034zTWibd7OKesgJgoGxJu | Prepare one-dispatch release artifacts | done | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
 | TASK-034r05iHWkNF7zKMZPhFky | Provider plugin tests and resource isolation verification | done | [provider-plugin-tests-and-resource-isolation.md](./provider-plugin-tests-and-resource-isolation.md) |
 | TASK-034r05iHQeQpDpEony1i5k | Record experiment log and verify test regression | done | [record-experiment-log-and-verify-test-regression.md](./record-experiment-log-and-verify-test-regression.md) |
 | TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |

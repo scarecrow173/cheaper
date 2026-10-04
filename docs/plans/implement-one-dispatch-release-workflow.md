@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zTJptHTdovrvYW7wQ1k"
 type: "plan"
-status: "approved"
+status: "in-progress"
 title: "Implement one-dispatch release workflow"
 created: "2026-10-04"
 updated: "2026-10-04"
