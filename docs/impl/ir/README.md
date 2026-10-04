@@ -80,4 +80,5 @@ Directory: `docs/impl/ir`
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |
 | IMPL-034rC4j788MZLcUE8xHHP2 | Worker workload profile と auto tier classifier の core 実装 | completed | [worker-workload-profile-auto-tier-classifier-core.md](./worker-workload-profile-auto-tier-classifier-core.md) |
-| IMPL-034zTWHPv92Mp7Ql9gnE5d | Workflow resource inference implementation | in-progress | [workflow-resource-inference-implementation.md](./workflow-resource-inference-implementation.md) |
+| IMPL-034zUfCug3Fz5ZzcrI1yhg | Workflow resource inference compilation | in-progress | [workflow-resource-inference-compilation.md](./workflow-resource-inference-compilation.md) |
+| IMPL-034zTWHPv92Mp7Ql9gnE5d | Workflow resource inference implementation | completed | [workflow-resource-inference-implementation.md](./workflow-resource-inference-implementation.md) |

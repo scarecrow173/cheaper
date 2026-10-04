@@ -331,7 +331,9 @@ it("process-config-input-output-edge and undeclared-process-rejection", async ()
 });
 
 it("job IDs including prototype keys remain own manifests", async () => {
-  const jobs = Object.fromEntries(["__proto__", "constructor", "toString"].map(id => [id, tool("read", { path: "a" })]));
+  const jobs = Object.fromEntries(
+    ["__proto__", "constructor", "toString"].map((id) => [id, tool("read", { path: "a" })]),
+  );
   const result = await inference().infer(jobs);
   expect(Object.keys(result.manifests)).toEqual(["__proto__", "constructor", "toString"]);
   expect(Object.hasOwn(result.manifests, "__proto__")).toBe(true);

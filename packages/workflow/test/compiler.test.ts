@@ -477,3 +477,177 @@ it("compact fixture は実在 bulk-reader schema に適合する", async () => {
     ),
   ).toBe("public");
 });
+
+describe("canonical resource inference compiler integration", () => {
+  it("full-manifests-on-injected-port and cloned-annotation-results", async () => {
+    const raw = definition();
+    raw.jobs = {
+      a: { kind: "tool", tool: "grep", input: {} },
+      b: { kind: "tool", tool: "grep", input: {}, resources: {} },
+    };
+    const claim = {
+      resource: { kind: "workspace" as const, path: "/canonical/state", scope: "exact" as const },
+      mode: "exclusive" as const,
+    };
+    const result = {
+      manifests: {
+        a: { reads: [], writes: [claim], produces: [] },
+        b: { reads: [], writes: [claim], produces: [] },
+      },
+      edges: [],
+      conflicts: [
+        {
+          jobs: ["a", "b"] as [string, string],
+          claims: [claim, claim] as [typeof claim, typeof claim],
+        },
+      ],
+      diagnostics: [{ kind: "fallback" as const, job: "a", reason: "unknown-access" }],
+    };
+    let calls = 0;
+    const compiled = await fixtures({
+      resources: {
+        infer(jobs) {
+          calls++;
+          expect(Object.keys(jobs)).toEqual(["a", "b"]);
+          return result;
+        },
+      },
+    }).compiler.compile(raw);
+    expect(calls).toBe(1);
+    expect(compiled.jobs.a?.manifest).toEqual(result.manifests.a);
+    expect(compiled.jobs.b?.manifest).toEqual(result.manifests.b);
+    expect(compiled.conflicts).toEqual(result.conflicts);
+    expect(compiled.diagnostics).toEqual(result.diagnostics);
+    result.conflicts[0]!.jobs[0] = "mutated";
+    claim.resource.path = "/changed";
+    result.diagnostics[0]!.reason = "changed";
+    expect(compiled.conflicts?.[0]?.jobs).toEqual(["a", "b"]);
+    expect(compiled.conflicts?.[0]?.claims[0].resource.path).toBe("/canonical/state");
+    expect(compiled.jobs.a?.manifest?.writes[0]?.resource.path).toBe("/canonical/state");
+    expect(compiled.diagnostics?.[0]).toMatchObject({ reason: "unknown-access" });
+  });
+  it("all-omitted missing manifest and port failure remain compile failures", async () => {
+    const raw = definition();
+    raw.jobs.a = { kind: "tool", tool: "grep", input: {} };
+    await expect(
+      fixtures({ resources: { infer: () => ({ manifests: {}, edges: [] }) } }).compiler.compile(
+        raw,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    const error = new Error("inference failed");
+    await expect(
+      fixtures({
+        resources: {
+          infer() {
+            throw error;
+          },
+        },
+      }).compiler.compile(raw),
+    ).rejects.toBe(error);
+  });
+});
+
+describe("producer edges use the compiler DAG", () => {
+  const exact = (path: string) => ({ path, scope: "exact" as const });
+  async function canonical(raw: ReturnType<typeof definition>, builtins = false) {
+    const { mkdtemp, realpath, rm } = await import("node:fs/promises");
+    const path = await import("node:path");
+    const { WorkspaceResourceInference } = await import("../src/index.js");
+    const { createToolCatalog } = await import("@cheaper/tool-runtime");
+    const root = await realpath(
+      await mkdtemp(path.join(process.cwd(), ".tmp-compiler-inference-")),
+    );
+    const tools = builtins ? createToolCatalog() : fixtures().ports.tools;
+    const resources = new WorkspaceResourceInference({
+      workspaceRoot: root,
+      symlinkPolicy: "within-workspace",
+      tools,
+    });
+    try {
+      return await fixtures({ tools, resources }).compiler.compile(raw);
+    } finally {
+      expect(path.dirname(root)).toBe(await realpath(process.cwd()));
+      await rm(root, { recursive: true, force: true });
+    }
+  }
+  it("needs-from-resource-dedupe", async () => {
+    const raw = definition();
+    raw.jobs = {
+      a: {
+        kind: "tool",
+        tool: "grep",
+        input: {},
+        resources: { reads: [], writes: [], produces: [exact("out/a")] },
+      },
+      b: {
+        kind: "tool",
+        tool: "grep",
+        input: { source: { $from: "a", path: "/content" } },
+        needs: ["a", "a"],
+        resources: { reads: [exact("out/a")], writes: [] },
+      },
+    };
+    const compiled = await canonical(raw);
+    expect(compiled.edges).toEqual([{ from: "a", to: "b" }]);
+    expect(compiled.order).toEqual(["a", "b"]);
+    expect(compiled.diagnostics).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "dependency", jobs: ["a", "b"] })]),
+    );
+  });
+  it("inferred-cycle-rejection", async () => {
+    const raw = definition();
+    raw.jobs = {
+      a: {
+        kind: "tool",
+        tool: "grep",
+        input: {},
+        resources: { reads: [exact("out/b")], writes: [], produces: [exact("out/a")] },
+      },
+      b: {
+        kind: "tool",
+        tool: "grep",
+        input: {},
+        resources: { reads: [exact("out/a")], writes: [], produces: [exact("out/b")] },
+      },
+    };
+    await expect(canonical(raw)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  });
+  it("ordered-duplicate-still-rejected", async () => {
+    const raw = definition();
+    raw.jobs = {
+      a: {
+        kind: "tool",
+        tool: "grep",
+        input: {},
+        resources: { reads: [], writes: [], produces: [exact("out/a")] },
+      },
+      b: {
+        kind: "tool",
+        tool: "grep",
+        input: {},
+        needs: ["a"],
+        resources: { reads: [], writes: [], produces: [exact("out/a")] },
+      },
+    };
+    await expect(canonical(raw)).rejects.toMatchObject({
+      code: "INVALID_REQUEST",
+      details: { kind: "duplicate-producer", jobs: ["a", "b"] },
+    });
+  });
+  it("catalog known consumer read infers edge under omitted safety fallback", async () => {
+    const raw = definition();
+    raw.jobs = {
+      producer: {
+        kind: "tool",
+        tool: "write",
+        input: { path: "out/a", content: "a" },
+        resources: { produces: [exact("out/a")] },
+      },
+      consumer: { kind: "tool", tool: "read", input: { path: "out/a" } },
+    };
+    const compiled = await canonical(raw, true);
+    expect(compiled.edges).toEqual([{ from: "producer", to: "consumer" }]);
+    expect(compiled.order).toEqual(["producer", "consumer"]);
+    expect(compiled.jobs.consumer?.manifest?.reads[0]?.resource.scope).toBe("subtree");
+  });
+});

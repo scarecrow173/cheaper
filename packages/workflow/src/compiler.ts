@@ -9,7 +9,10 @@ import type {
   CompiledWorkflow,
   DependencyEdge,
   JsonValue,
+  ResourceConflict,
+  ResourceInferenceDiagnostic,
   ResourceInferenceJob,
+  ResourceInferenceResult,
   ScopeDeclaration,
   WorkflowCompilerPorts,
   WorkflowDefinition,
@@ -88,6 +91,8 @@ class Compiled implements CompiledWorkflow {
   outputs: Record<string, WorkflowOutput>;
   order: readonly string[];
   edges: readonly DependencyEdge[];
+  conflicts?: readonly ResourceConflict[];
+  diagnostics?: readonly ResourceInferenceDiagnostic[];
   #validated: ValidatedDefinition;
   #inputs: Record<string, JsonValue>;
 
@@ -96,6 +101,7 @@ class Compiled implements CompiledWorkflow {
     inputs: Record<string, JsonValue>,
     jobs: Record<string, CompiledJob>,
     dag: { order: string[]; edges: DependencyEdge[] },
+    annotations: Pick<ResourceInferenceResult, "conflicts" | "diagnostics">,
   ) {
     this.#validated = validated;
     this.#inputs = inputs;
@@ -107,6 +113,10 @@ class Compiled implements CompiledWorkflow {
     >;
     this.order = [...dag.order];
     this.edges = dag.edges.map((edge) => ({ ...edge }));
+    if (annotations.conflicts !== undefined)
+      this.conflicts = structuredClone(annotations.conflicts);
+    if (annotations.diagnostics !== undefined)
+      this.diagnostics = structuredClone(annotations.diagnostics);
   }
 
   materializeJobInput(jobId: string, results: ReadonlyMap<string, JsonValue>): JsonValue {
@@ -198,12 +208,16 @@ export class WorkflowCompiler {
         }),
     );
     let edges = validated.edges;
-    if (Object.values(jobs).some((job) => job.resources && Object.keys(job.resources).length > 0)) {
-      if (!this.ports.resources)
-        throw new CheaperError(
-          "INVALID_REQUEST",
-          "resource inference port is required for explicit resources",
-        );
+    let annotations: Pick<ResourceInferenceResult, "conflicts" | "diagnostics"> = {};
+    if (
+      !this.ports.resources &&
+      Object.values(jobs).some((job) => job.resources && Object.keys(job.resources).length > 0)
+    )
+      throw new CheaperError(
+        "INVALID_REQUEST",
+        "resource inference port is required for explicit resources",
+      );
+    if (this.ports.resources) {
       const inferenceJobs: Record<string, ResourceInferenceJob> = Object.fromEntries(
         Object.keys(jobs)
           .sort()
@@ -223,8 +237,9 @@ export class WorkflowCompiler {
         jobs[id]!.manifest = cloneJson(inferred.manifests[id]) as unknown as ResourceManifest;
       }
       edges = [...edges, ...inferred.edges];
+      annotations = inferred;
     }
     const dag = compileDag(Object.keys(jobs), edges);
-    return new Compiled(validated, snapshot, jobs, dag);
+    return new Compiled(validated, snapshot, jobs, dag, annotations);
   }
 }

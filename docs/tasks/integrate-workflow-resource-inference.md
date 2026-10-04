@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zTTjWYMNKiiVb4ZZ6LV"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Workflow compiler に resource inference を接続する"
 created: "2026-10-04"
 updated: "2026-10-04"
