@@ -52,14 +52,14 @@ Worker/Workflow 実装者が schema、安全性、結果、計測を共有でき
 
 ## Acceptance Criteria
 
-- [ ] 同一実 fixture に対し read/grep/find/count_tokens が Pi 無しで実行でき、Pi adapter と content/details、truncation/count、boundary/deny が一致する。注入 write/edit は writeScope 拒否も一致する。
-- [ ] direct path で未注入の write/edit/ls は明示拒否される。ToolCatalog.get/list は Pi 初期化なし・副作用なしに schema を返す。
-- [ ] malformed input を canonical schema で拒否し、symlink escape/huge-file cap/grep batchMaxBytes の既存 test を維持する。
-- [ ] toolCalls/rejectedToolCalls/sourceTokens が正確で、sibling admission と abort の既存 pin を維持する。
-- [ ] journal class identity、same-file write→edit ordering、partial mutation 報告を保存する。
-- [ ] @earendil-works/* を含む Pi 依存/runtime-pi/workflow を import しない dependency guard が通る。
-- [ ] runWorker が single-Worker runtime を所有し finally で abort/drain/dispose する。
-- [ ] architecture 文書が Worker Runtime / Tool Runtime / Workflow Engine の責務を区別して記述する。
+- [x] 同一実 fixture に対し read/grep/find/count_tokens が Pi 無しで実行でき、Pi adapter と content/details、truncation/count、boundary/deny が一致する。注入 write/edit は writeScope 拒否も一致する。
+- [x] direct path で未注入の write/edit/ls は明示拒否される。ToolCatalog.get/list は Pi 初期化なし・副作用なしに schema を返す。
+- [x] malformed input を canonical schema で拒否し、symlink escape/huge-file cap/grep batchMaxBytes の既存 test を維持する。
+- [x] toolCalls/rejectedToolCalls/sourceTokens が正確で、sibling admission と abort の既存 pin を維持する。
+- [x] journal class identity、same-file write→edit ordering、partial mutation 報告を保存する。
+- [x] @earendil-works/* を含む Pi 依存/runtime-pi/workflow を import しない dependency guard が通る。
+- [x] runWorker が single-Worker runtime を所有し finally で abort/drain/dispose する。
+- [x] architecture 文書が Worker Runtime / Tool Runtime / Workflow Engine の責務を区別して記述する。
 
 ## Sources and Relations
 

@@ -8,6 +8,7 @@ import {
   type RuntimePolicy,
   type WorkerDefinition,
 } from "@cheaper/core";
+import * as toolRuntime from "@cheaper/tool-runtime";
 import {
   type AssistantMessage,
   type Context,
@@ -16,7 +17,7 @@ import {
   type SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ModelCatalog } from "../src/model-runtime.js";
 import { runWorker, WorkerRunError } from "../src/run.js";
 import { createFakePi, fauxAssistantMessage, fauxToolCall } from "./fixtures/fake-stream.js";
@@ -87,6 +88,78 @@ async function deps(fake: ReturnType<typeof createFakePi>, w: WorkerDefinition, 
 }
 
 describe("runWorker", () => {
+  it("owns one invocation and disposes it in finally", async () => {
+    const create = toolRuntime.createInvocationToolRuntime;
+    let dispose: ReturnType<typeof vi.spyOn> | undefined;
+    const factory = vi
+      .spyOn(toolRuntime, "createInvocationToolRuntime")
+      .mockImplementation((options) => {
+        const invocation = create(options);
+        dispose = vi.spyOn(invocation, "dispose");
+        return invocation;
+      });
+    try {
+      const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+      await runWorker({ ...(await deps(fake, worker(["read"]), policy())), abortGraceMs: 15 });
+      expect(factory).toHaveBeenCalledTimes(1);
+      expect(factory.mock.calls[0]?.[0].abortGraceMs).toBe(15);
+      expect(dispose).toHaveBeenCalledTimes(1);
+    } finally {
+      factory.mockRestore();
+    }
+  });
+
+  it("ends borrowed child scope while retaining shared root and sibling", async () => {
+    await writeFile(path.join(root, "a.txt"), "hello\n");
+    const invocation = toolRuntime.createInvocationToolRuntime({ root, symlinkPolicy: "deny" });
+    const opts = {
+      root,
+      symlinkPolicy: "deny" as const,
+      names: ["read"] as const,
+      maxToolCalls: 10,
+      onLimit: () => {},
+    };
+    const sibling = invocation.createWorkerScope({ ...opts, ownerId: "sibling" });
+    const create = invocation.createWorkerScope.bind(invocation);
+    let child: toolRuntime.ToolRuntime | undefined;
+    const scopeSpy = vi.spyOn(invocation, "createWorkerScope").mockImplementation((options) => {
+      child = create(options);
+      return child;
+    });
+    const dispose = vi.spyOn(invocation, "dispose");
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    try {
+      await runWorker({
+        ...(await deps(fake, worker(["read"]), policy())),
+        execution: { runtime: invocation, ownerId: "worker" },
+      });
+      expect(scopeSpy).toHaveBeenCalledTimes(1);
+      expect(dispose).not.toHaveBeenCalled();
+      if (!child) throw new Error("child scope was not created");
+      await expect(child.execute("read", { path: "a.txt" })).rejects.toThrow("aborted");
+      expect((await sibling.execute("read", { path: "a.txt" })).content[0]?.text).toBe("hello\n");
+    } finally {
+      await invocation.dispose();
+    }
+  });
+
+  it("fails closed on a borrowed root mismatch before session execution", async () => {
+    const invocation = toolRuntime.createInvocationToolRuntime({
+      root: `${root}-other`,
+      symlinkPolicy: "deny",
+    });
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    try {
+      await expect(
+        runWorker({
+          ...(await deps(fake, worker(["read"]), policy())),
+          execution: { runtime: invocation, ownerId: "worker" },
+        }),
+      ).rejects.toThrow("root mismatch");
+    } finally {
+      await invocation.dispose();
+    }
+  });
   it("returns result and meta on the happy path", async () => {
     const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
     const r = await runWorker(await deps(fake, worker(["read"]), policy()));
@@ -342,6 +415,29 @@ describe("runWorker", () => {
       (e: unknown) => e,
     );
     expect((err as CheaperError).code).toBe("TIMEOUT");
+  });
+
+  it("does not start a stream after the Worker timeout fired during setup", async () => {
+    const fake = createFakePi();
+    const p = policy();
+    p.execution.timeoutMs = 20;
+    const d = await deps(fake, worker(["read"]), p);
+    const stream = vi.fn(() => createAssistantMessageEventStream());
+    const slowCatalog: ModelCatalog = {
+      getAvailable: async (providerId) => {
+        await new Promise((resolve) => setTimeout(resolve, 80));
+        return runtime.getAvailable(providerId);
+      },
+      getModel: (providerId, modelId) => runtime.getModel(providerId, modelId),
+    };
+    const err = await runWorker({
+      ...d,
+      catalog: slowCatalog,
+      streamFn: stream,
+      abortGraceMs: 30,
+    }).catch((e) => e as CheaperError);
+    expect(err.code).toBe("TIMEOUT");
+    expect(stream).not.toHaveBeenCalled();
   });
 
   it("classifies external signal abort as ABORTED", async () => {
