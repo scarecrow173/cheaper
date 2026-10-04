@@ -4,6 +4,7 @@
  * 残りは meta/結果型と model 解決 adapter、session seam の型のみ公開する。
  */
 
+export type { WorkerExecutionBinding } from "@cheaper/tool-runtime";
 export type {
   AuthEvent,
   AuthInteraction,

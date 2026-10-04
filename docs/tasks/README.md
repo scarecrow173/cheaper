@@ -73,6 +73,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
 | TASK-034rzRugER0y7cQ2tlWjPp | Extend usage.jsonl run record with savings section | done | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
+| TASK-034zQsmDSYTqJOZ8CjKrGN | Canonical handlers と Pi adapter を抽出する | done | [extract-canonical-tools.md](./extract-canonical-tools.md) |
 | TASK-034r05iHQeQpDpFFl8q6NC | Extract promptWithAbortGrace helper and apply to main run | done | [extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
 | TASK-034z1PGTvhoaHhdTUgPahz | Extract shared esbuild bundle helper from bundle-cli.mjs | done | [extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md](./extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md) |
 | TASK-034r05iHQeQpDqhWcXGfA0 | Finalize contract matrix and consumer pointer | done | [finalize-contract-matrix-and-consumer-pointer.md](./finalize-contract-matrix-and-consumer-pointer.md) |
@@ -181,5 +182,6 @@ Directory: `docs/tasks`
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
+| TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |
 | TASK-034r05iHQeQpDqac6FjqrJ | Writer writeScope declaration and e2e verification | done | [writer-write-scope-and-e2e-verification.md](./writer-write-scope-and-e2e-verification.md) |

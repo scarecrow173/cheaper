@@ -15,6 +15,7 @@ Directory: `docs/designs`
 | DESIGN-C4VbdOatUn4aVt3blVe8pk | auto tier classification by workload effectiveCost percentile | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
 | DESIGN-034r05iHrZUE6WxkSJi9GF | bulk-reader contract | approved | [bulk-reader-contract.md](./bulk-reader-contract.md) |
 | DESIGN-034r05iHy2gdnoNaWH2bos | Bulk-reader huge-file safe I/O | approved | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
+| DESIGN-034zIUgKgoIuBD5BY6jLjf | Canonical Tool Runtime と Pi adapter | approved | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | DESIGN-034r05iHrZUE6Wy5X0Hc88 | cheap-writer contract | superseded | [cheap-writer-contract.md](./cheap-writer-contract.md) |
 | DESIGN-034z1EhuztlLSb2x2XXxgD | cheaper hook subcommands replacing Node-based hook adapters | approved | [cheaper-hook-subcommands-replacing-node-based-hook-adapters.md](./cheaper-hook-subcommands-replacing-node-based-hook-adapters.md) |
 | DESIGN-034r05iHy2gdnoH3XDJcXx | cheaper CLI bundle layout inside .apm/hooks/cli | approved | [cli-bundle-layout.md](./cli-bundle-layout.md) |

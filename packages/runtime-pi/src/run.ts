@@ -15,6 +15,12 @@ import {
   type TierSource,
   type WorkerDefinition,
 } from "@cheaper/core";
+import {
+  createInvocationToolRuntime,
+  type InvocationToolRuntime,
+  type ToolRuntime,
+  type WorkerExecutionBinding,
+} from "@cheaper/tool-runtime";
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import type { ChangesSummary } from "./journal.js";
 import { MutationJournal } from "./journal.js";
@@ -23,7 +29,7 @@ import { extractOutput, lastAssistantStop } from "./output.js";
 import { promptWithAbortGrace } from "./prompt-grace.js";
 import { repairOutput } from "./repair.js";
 import { createWorkerSession, type StreamFnLike } from "./session.js";
-import { createSandboxedTools } from "./tools/registry.js";
+import { createPiToolHandlers, createSandboxedTools } from "./tools/registry.js";
 import { UsageCollector, type WorkerSavings, type WorkerUsage } from "./usage.js";
 
 export interface WorkerRunMeta {
@@ -97,6 +103,8 @@ export interface RunWorkerDeps {
   signal?: AbortSignal;
   /** abort 後に prompt()  settle を待つ猶予 ms（既定 5000）。 */
   abortGraceMs?: number;
+  /** D7: invocation を借りる場合はこの Worker の child scope だけを所有する。 */
+  execution?: WorkerExecutionBinding;
 }
 
 type AbortReason = "timeout" | "signal" | "maxTurns" | "maxToolCalls";
@@ -213,7 +221,18 @@ export async function runWorker(
   deps.signal?.addEventListener("abort", onSignalAbort, { once: true });
   if (deps.signal?.aborted) requestAbort("signal");
 
+  const ownsInvocation = deps.execution === undefined;
+  let invocation: InvocationToolRuntime | undefined;
+  let toolScope: ToolRuntime | undefined;
+
   try {
+    invocation =
+      deps.execution?.runtime ??
+      createInvocationToolRuntime({
+        root: deps.root,
+        symlinkPolicy: policy.filesystem.symlinks,
+        abortGraceMs: graceMs,
+      });
     const outputPerInput = worker.cheaper.model.workload?.outputPerInput;
     const resolved = await (async () => {
       if (deps.explicitModel === undefined) {
@@ -242,7 +261,7 @@ export async function runWorker(
       });
     })();
 
-    const sandboxed = createSandboxedTools({
+    const toolOptions = {
       root: deps.root,
       symlinkPolicy: policy.filesystem.symlinks,
       journal,
@@ -256,7 +275,18 @@ export async function runWorker(
         deps.root,
         policy.filesystem.symlinks,
       ),
+    };
+    toolScope = invocation.createWorkerScope({
+      ...toolOptions,
+      ownerId: deps.execution?.ownerId ?? "worker",
+      handlers: createPiToolHandlers(toolOptions),
+      signal: runAbort.signal,
+      abortGraceMs: graceMs,
+      ...(deps.execution?.parentLease !== undefined
+        ? { parentLease: deps.execution.parentLease }
+        : {}),
     });
+    const sandboxed = createSandboxedTools({ ...toolOptions, runtime: toolScope });
 
     const { session } = await createWorkerSession({
       cwd: deps.root,
@@ -348,6 +378,7 @@ export async function runWorker(
     };
 
     try {
+      if (abortReason !== undefined) await throwClassified(abortError(abortReason));
       const outcome = await promptWithAbortGrace(session, buildUserPrompt(deps.input), {
         signal: runAbort.signal,
         graceMs,
@@ -442,5 +473,7 @@ export async function runWorker(
   } finally {
     clearTimeout(timeout);
     deps.signal?.removeEventListener("abort", onSignalAbort);
+    if (ownsInvocation) await invocation?.dispose();
+    else await toolScope?.dispose();
   }
 }
