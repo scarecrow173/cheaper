@@ -343,6 +343,30 @@ for (const runner of runners) {
         );
         expect(requests).toEqual([]);
       });
+      it.runIf(runner.name === "pwsh")(
+        "uses Invoke-WebRequest when curl.exe is unavailable",
+        async () => {
+          const result = await run(["--version"], "", {
+            PATH: "C:/Windows/System32/WindowsPowerShell/v1.0",
+          });
+          expect(result.code, result.stderr).toBe(0);
+          expect(requests).toHaveLength(2);
+          clean();
+        },
+      );
+      it.runIf(runner.name === "pwsh")(
+        "rejects plain HTTP redirects in Invoke-WebRequest fallback",
+        async () => {
+          behavior = "redirect";
+          failed(
+            await run(["--version"], "", {
+              PATH: "C:/Windows/System32/WindowsPowerShell/v1.0",
+            }),
+            /download/i,
+          );
+          expect(requests).toHaveLength(1);
+        },
+      );
       it.runIf(runner.name === "sh")(
         "rejects unsupported acquisition but retains unsupported-host sibling compatibility",
         async () => {

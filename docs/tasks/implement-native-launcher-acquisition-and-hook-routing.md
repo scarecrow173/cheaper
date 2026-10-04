@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zQTSDQA908MNdv5Qe8v"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Implement native launcher acquisition and hook routing"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -49,6 +49,6 @@ packages/apm/.apm/hooks/cheaper、cheaper.ps1、hooks.json と新規e2eの修正
 ## Done When
 全対象runnerのfocused testsがpass。cacheはhook dir外、latest無し、通常失敗partial無し。
 ## Verification
-- [ ] mise exec -- pnpm exec vitest run packages/cli/test/e2e/launcher-acquisition.test.ts exits 0。
+- [x] mise exec -- pnpm exec vitest run packages/cli/test/e2e/launcher-acquisition.test.ts exits 0。
 ## Scope
 LFS payload/生成物/workflow/scripts/hot fileを変更しない。

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034zQTXMNDaUeqIR3aCRNf"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Document launcher distribution and verify acquisition"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -50,7 +50,8 @@ docs/guides/distribution.md、packages/apm/.apm/skills/cheaper-usage/SKILL.md �
 guideがproxy/offline pair/migration/recovery/unsupported/Copilot欠落制約を説明しcanonical checkとfocused auditがpass。
 ## Verification
 - [ ] mise exec -- pnpm exec vitest run packages/cli/test/e2e/deployed-executable.test.ts exits 0。
-- [ ] mise run check exits 0。
+- [ ] mise exec -- pnpm lint と mise exec -- pnpm typecheck と mise exec -- pnpm build exits 0。
+- canonical check deferred to coordinator merge run（2026-10-04 coordinator直接指示）。
 - [ ] mise exec -- node .agents/skills/doc-driven-dev-graph/scripts/route_graph.js --current exit-audit --focus docs/plans/implement-version-pinned-launcher-acquisition.md --signal exit-audit-pass --json がcompleteを返す。
 ## Scope
 release.mdの手順変更と公開Release検証は#73-B/C。

@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034zQHj1WyOgBNLGbDaFY8"
 type: "plan"
-status: "approved"
+status: "in-progress"
 title: "Implement version-pinned launcher acquisition"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -113,3 +113,6 @@ R1–R6 → A–F、R7 → G、R8/AC5–6 → H と対応済み。file ownership
 ## Implementation Handoff / Graph
 
 inline 実行。共有境界を持つため独立 dispatch は不要。design/plan は coordinator 承認済み例外の手動 delegate 順を使用した。plan focus が存在するので承認後は --focus docs/plans/implement-version-pinned-launcher-acquisition.md で router に戻る。implementation commitGate は authorized Conventional Commit で解決し push/PR は行わない。
+
+## 2026-10-04 coordinator verification policy update
+4 worker同時canonical checkによるhost contentionのため、canonical check deferred to coordinator merge run。workerはfocused suite GREEN、失敗CLI file単独rerun、lint/typecheck/build passとdocs/IR/commitを完了する。mise run checkの成功を主張しない。
