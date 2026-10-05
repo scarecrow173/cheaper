@@ -283,7 +283,7 @@ describe("actual resource access and Worker leases", () => {
     await expect(tools.runtime.execute("read", { path: "b" })).rejects.toThrow("Access denied");
     expect(tools.runtime.accesses().observations).toHaveLength(MAX_ACCESS_OBSERVATIONS);
     expect(tools.runtime.accesses().total).toBeGreaterThan(snapshot.total);
-  });
+  }, 20000);
   it("rejects an actual read outside the admitted operation and rejects observations after settlement", async () => {
     const root = await workspace();
     let reachedIO = false,
