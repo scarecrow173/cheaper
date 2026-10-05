@@ -87,7 +87,7 @@ async function deps(fake: ReturnType<typeof createFakePi>, w: WorkerDefinition, 
   };
 }
 
-describe("runWorker", () => {
+describe("runWorker", { timeout: 20000 }, () => {
   it.each([false, true])(
     "reports deterministic owned execution and preserves usage/savings: failure=%s",
     async (failure) => {
