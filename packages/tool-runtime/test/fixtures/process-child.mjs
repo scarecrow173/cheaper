@@ -42,6 +42,39 @@ if (mode === "inspect") {
 } else if (mode === "child") {
   console.log("ready");
   setInterval(() => {}, 1000);
+} else if (mode === "graceful" || mode === "stubborn") {
+  process.on("SIGTERM", () => {
+    if (mode === "graceful") {
+      writeFile(`${target}.terminated`, "graceful").then(() => process.exit(0));
+    }
+  });
+  await writeFile(target, String(process.pid));
+  setInterval(() => {}, 1000);
+} else if (mode === "branch") {
+  const leaf = spawn(process.execPath, [fileURLToPath(import.meta.url), "child"], {
+    env: process.env,
+    stdio: ["ignore", "pipe", "inherit"],
+    windowsHide: true,
+  });
+  await new Promise((resolve, reject) => {
+    leaf.stdout.once("data", resolve);
+    leaf.once("error", reject);
+  });
+  console.log(JSON.stringify({ child: process.pid, grandchild: leaf.pid }));
+  setInterval(() => {}, 1000);
+} else if (mode === "exit-tree" || mode === "fail-tree" || mode === "deep-tree") {
+  const branch = spawn(process.execPath, [fileURLToPath(import.meta.url), "branch"], {
+    env: process.env,
+    stdio: ["ignore", "pipe", "inherit"],
+    windowsHide: true,
+  });
+  const ids = await new Promise((resolve, reject) => {
+    branch.stdout.once("data", (chunk) => resolve(JSON.parse(chunk.toString())));
+    branch.once("error", reject);
+  });
+  await writeFile(target, JSON.stringify({ parent: process.pid, ...ids }));
+  if (mode === "deep-tree") setInterval(() => {}, 1000);
+  else process.exit(mode === "fail-tree" ? 7 : 0);
 } else if (mode === "tree") {
   const child = spawn(process.execPath, [fileURLToPath(import.meta.url), "child"], {
     env: process.env,

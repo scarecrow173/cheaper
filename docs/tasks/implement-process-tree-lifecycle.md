@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AGiFXd7uNwKAYJMW2TP"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement process tree lifecycle"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "../plans/implement-managed-process-lifecycle-hardening.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/implement-process-tree-lifecycle.md"
   depends-on:
     - "../plans/implement-managed-process-lifecycle-hardening.md"
     - "./implement-process-lifecycle-policy.md"
@@ -43,12 +44,12 @@ relations:
 
 canonical executor に spawn 起点 timeout、bounded combined capture、runtime-only heartbeat と全 terminal path の idempotent cleanup を追加する。小さい POSIX group / Windows identity-taskkill backend に platform 差異を隔離する。
 
-- [ ] task の in-progress IR を作成する。
-- [ ] 実 parent/child/grandchild、normal/nonzero/spawn failure、grace/stubborn、cap/heartbeat の回帰 test を記述する。
-- [ ] focused test の意味のある RED を確認する。
-- [ ] backend と executor-owned timers/capture/cleanup を実装する。
-- [ ] focused test の GREEN と非実行 platform の skip を記録する。
-- [ ] executor logical change を commit する。
+- [x] task の in-progress IR を作成する。
+- [x] 実 parent/child/grandchild、normal/nonzero、grace/stubborn、cap/heartbeat の回帰 test を記述する。spawn failure は R の追加回帰で検証する。
+- [x] focused test の意味のある RED を確認する。
+- [x] backend と executor-owned timers/capture/cleanup を実装する。
+- [x] focused test の GREEN と非実行 platform の skip を記録する。
+- [x] executor logical change を commit する。
 
 ## Classification
 
