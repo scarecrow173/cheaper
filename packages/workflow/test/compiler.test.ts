@@ -4,6 +4,42 @@ import { describe, expect, it } from "vitest";
 import type { JsonValue, ResourceInference, WorkflowJobState } from "../src/index.js";
 import { definition, fixtures } from "./fixtures.js";
 
+describe("compiled job output boundary", () => {
+  it("canonical schema で validate し valid JSON の snapshot を返す", async () => {
+    const { compiler } = fixtures();
+    const raw = definition();
+    raw.jobs.a = { kind: "tool", tool: "read", input: { path: "a" } };
+    const compiled = await compiler.compile(raw);
+    const value = { content: [{ type: "text", text: "result" }], details: { nested: [1] } };
+    const result = compiled.validateJobOutput("a", value);
+    value.details.nested.push(2);
+    expect(result).toEqual({
+      content: [{ type: "text", text: "result" }],
+      details: { nested: [1] },
+    });
+    expect(() => compiled.validateJobOutput("a", 42)).toThrow(
+      expect.objectContaining({ code: "INVALID_OUTPUT" }),
+    );
+    expect(() => compiled.validateJobOutput("a", undefined)).toThrow(
+      expect.objectContaining({ code: "INVALID_OUTPUT" }),
+    );
+    expect(() => compiled.validateJobOutput("missing", value)).toThrow(
+      expect.objectContaining({ code: "INVALID_REQUEST" }),
+    );
+  });
+  it("Worker の schema も同じ compiler seam を使う", async () => {
+    const { compiler, worker } = fixtures();
+    worker.outputSchema = compileSchema({ type: "integer" }, "output");
+    const raw = definition();
+    raw.jobs.a = { kind: "worker", worker: worker.name, input: { task: "read" } };
+    const compiled = await compiler.compile(raw);
+    expect(compiled.validateJobOutput("a", 1)).toBe(1);
+    expect(() => compiled.validateJobOutput("a", "1")).toThrow(
+      expect.objectContaining({ code: "INVALID_OUTPUT" }),
+    );
+  });
+});
+
 describe("public inputs/defaults", () => {
   it("root defaults と JSON 型を保ち invocation object を変更/共有しない", async () => {
     const raw = definition();

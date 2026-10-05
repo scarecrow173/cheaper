@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJcLMvVtCF2DauUO4It"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Workflow policy/helper/compiler の正本を実装する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -17,7 +17,7 @@ relations:
     generated: []
   implements:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
-  implemented-by: []
+  implemented-by: ["../impl/ir/implement-workflow-execution-contracts.md"]
   depends-on:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
   blocks: []

@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034AGr55LYOkphfEZr5Pr2"
 type: "plan"
-status: "approved"
+status: "in-progress"
 title: "Implement one-shot workflow execution and CLI integration"
 created: "2026-10-05"
 updated: "2026-10-06"

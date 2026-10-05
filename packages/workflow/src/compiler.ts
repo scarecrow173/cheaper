@@ -129,6 +129,18 @@ class Compiled implements CompiledWorkflow {
     return input;
   }
 
+  validateJobOutput(jobId: string, value: unknown): JsonValue {
+    const metadata = this.#validated.jobs.get(jobId);
+    if (!metadata) throw new CheaperError("INVALID_REQUEST", `unknown compiled job: ${jobId}`);
+    const snapshot = cloneJson(value, "INVALID_OUTPUT");
+    const validation = metadata.output.validate(snapshot);
+    if (!validation.ok)
+      throw new CheaperError("INVALID_OUTPUT", `invalid job output: ${jobId}`, {
+        details: { errors: validation.errors },
+      });
+    return snapshot;
+  }
+
   #results(states: ReadonlyMap<string, WorkflowJobState>): ReadonlyMap<string, JsonValue> {
     const results = new Map<string, JsonValue>();
     for (const id of Object.keys(this.#validated.definition.jobs)) {

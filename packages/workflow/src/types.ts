@@ -92,6 +92,7 @@ export interface CompiledWorkflow {
   order: readonly string[];
   edges: readonly DependencyEdge[];
   outputs: Record<string, WorkflowOutput>;
+  validateJobOutput(jobId: string, value: unknown): JsonValue;
   materializeJobInput(jobId: string, results: ReadonlyMap<string, JsonValue>): JsonValue;
   materializeOutput(name: string, states: ReadonlyMap<string, WorkflowJobState>): JsonValue;
   materializeOutputs(states: ReadonlyMap<string, WorkflowJobState>): Record<string, JsonValue>;
