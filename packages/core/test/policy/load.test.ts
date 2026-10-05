@@ -169,6 +169,15 @@ describe("packages/cli/policy.yaml (built-in canonical)", () => {
         projectDir: path.join(dir, "no-project"),
       });
       expect(policy).toEqual({
+        workflow: {
+          maxJobs: 1,
+          artifacts: {
+            maxArtifactBytes: 8388608,
+            maxTotalBytes: 33554432,
+            maxPreviewBytes: 2048,
+            maxReadBytes: 65536,
+          },
+        },
         process: { maxConcurrent: 1, tasks: {} },
         execution: {
           timeoutMs: 120_000,

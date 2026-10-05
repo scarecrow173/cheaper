@@ -28,9 +28,15 @@ function merge(
     const field = keys.join(".");
     if (
       restrict &&
-      ["execution.concurrency.maxOperations", "workflow.maxJobs", "process.maxConcurrent"].includes(
-        field,
-      ) &&
+      [
+        "execution.concurrency.maxOperations",
+        "workflow.maxJobs",
+        "process.maxConcurrent",
+        "workflow.artifacts.maxArtifactBytes",
+        "workflow.artifacts.maxTotalBytes",
+        "workflow.artifacts.maxPreviewBytes",
+        "workflow.artifacts.maxReadBytes",
+      ].includes(field) &&
       typeof existing === "number" &&
       typeof value === "number"
     ) {
