@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034APqdMTW2hYck2FYoKv1"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Verify workflow execution integration"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -51,7 +51,7 @@ metadata:
 
 ## Summary
 
-S6 の verification と closure を実施中。S5 は commit `c7c0e6f` で coordinator review approved、S6 review findings の P3 3点を解消し、focused suite と build/lint/typecheck を確認した。
+S5 は commit `c7c0e6f`、S6 follow-up は commit `f6a2bb6` で coordinator review approved。S6 review findings の P3 3点を解消し、focused suite と build/lint/typecheck、scoped exit-audit を確認した。
 
 ## Context
 

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJd9d4eo1B6Yt81QjdO"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Workflow 統合を検証して review/exit-audit を記録する"
 created: "2026-10-05"
 updated: "2026-10-06"

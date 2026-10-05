@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034AGr55LYOkphfEZr5Pr2"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "Implement one-shot workflow execution and CLI integration"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -139,23 +139,23 @@ DEPENDENCY_FAILED は新しい job-only diagnostic string。ERROR_TABLE/core Err
 
 ### S3: canonical artifact read/publisher
 
-- [ ] S3.1 publication/consumer/workspace read と store 互換性の contract test を書く。
-- [ ] S3.2 V3 を実行して未配線の modes と cap 拒否の失敗を確認する。
-- [ ] S3.3 ArtifactPublisher と exclusive read union を canonical runtime/store に配線する。
-- [ ] S3.4 V3 を再実行して GREEN を確認する。
-- [ ] S3.5 IR に focused evidence を記録する。
-- [ ] S3.6 artifact 論理変更を commit する。
+- [x] S3.1 publication/consumer/workspace read と store 互換性の contract test を書く。
+- [x] S3.2 V3 を実行して未配線の modes と cap 拒否の失敗を確認する。
+- [x] S3.3 ArtifactPublisher と exclusive read union を canonical runtime/store に配線する。
+- [x] S3.4 V3 を再実行して GREEN を確認する。
+- [x] S3.5 IR に focused evidence を記録する。
+- [x] S3.6 artifact 論理変更を commit する。
 
 ArtifactReader は既存、ArtifactPut を tool-runtime 正本へ移し workflow 互換 export。publisher producer.jobId は scope owner が固定。workspace publication は regular-file/deny/image/NUL/abort を維持して cap+1 の chunk read、overflow は put 前に拒否。artifact mode は reader の bounded byte slices と continuation を使い workspace resolver は呼ばず resources は explicit 空。mixed mode、ports 不在、foreign/tampered refs、zero caps、duplicate/cap mutation 前拒否を検証する。
 
 ### S4: Worker 子 permission と lease ownership
 
-- [ ] S4.1 literal writeScope narrowing、borrowed scope、child token 有/無の dispose/late-settle regression を書く。
-- [ ] S4.2 V4 を実行して既存 blanket release と permission mismatch を確認する。
-- [ ] S4.3 ResourceAccess.prepareWorkerManifest、WorkerExecutionBinding と caller-owned lease cleanup を配線する。
-- [ ] S4.4 V4 を再実行して GREEN を確認する。
-- [ ] S4.5 IR に focused evidence を記録する。
-- [ ] S4.6 Worker binding/lease 論理変更を commit する。
+- [x] S4.1 literal writeScope narrowing、borrowed scope、child token 有/無の dispose/late-settle regression を書く。
+- [x] S4.2 V4 を実行して既存 blanket release と permission mismatch を確認する。
+- [x] S4.3 ResourceAccess.prepareWorkerManifest、WorkerExecutionBinding と caller-owned lease cleanup を配線する。
+- [x] S4.4 V4 を再実行して GREEN を確認する。
+- [x] S4.5 IR に focused evidence を記録する。
+- [x] S4.6 Worker binding/lease 論理変更を commit する。
 
 parent は compiled safety、child は canonical literal writeClaims を安全 manifest の各 writes/produces bucket に contained な exact claims へ narrow。mkdir ancestor を child permission として残さず、readStrictness/parent containment を既存正本に委ねる。helper operations observeAccess を同じ scope に結線。writeScope 無し/explicit empty を保守的正本どおり扱う。
 
@@ -163,13 +163,13 @@ InvocationToolRuntime.dispose の resources.releaseJobs() 一括呼出しを除�
 
 ### S5: CLI と public envelope
 
-- [ ] S5.1 args/input、hooks composition、envelope/text/usage、built CLI E2E test を書く。
-- [ ] S5.2 V5a を実行して workflow-run の未導入動作を確認する。
-- [ ] S5.3 workflow context/run と approved hot-file dispatch/variant を実装する。
-- [ ] S5.4 V5a を再実行して GREEN を確認する。
-- [ ] S5.5 pnpm build 後に V5b を実行する。
-- [ ] S5.6 IR に focused/unit/E2E evidence を記録する。
-- [ ] S5.7 CLI 論理変更を commit する。
+- [x] S5.1 args/input、hooks composition、envelope/text/usage、built CLI E2E test を書く。
+- [x] S5.2 V5a を実行して workflow-run の未導入動作を確認する。
+- [x] S5.3 workflow context/run と approved hot-file dispatch/variant を実装する。
+- [x] S5.4 V5a を再実行して GREEN を確認する。
+- [x] S5.5 pnpm build 後に V5b を実行する。
+- [x] S5.6 IR に focused/unit/E2E evidence を記録する。
+- [x] S5.7 CLI 論理変更を commit する。
 
 full option set は --input、--cwd、--timeout、--format json|text、--quiet、--help、--version。token allowlist でその他を拒否。parsed.tokens で input omission={} と明示 '-'=stdin を区別する。file input は既存 JSON acquisition、definition は explicit path loader/deny 境界を使う。interface は共用 metadata helper に抽出して非実行のまま維持する。cli.ts の catch-path kind allowlist に workflow-run を含め、pre-engine error の --format/--quiet を失わない。
 
@@ -181,13 +181,13 @@ workflow:true/worker:null variant は failure でも result/jobs/meta を保持�
 
 ### S6: verification、implementation review、exit-audit
 
-- [ ] S6.1 V6 を実行して affected package focused suites と lint/typecheck/build を確認する。
-- [ ] S6.2 関連 CLI test files を一つずつ実行して個別 evidence を記録する。
-- [ ] S6.3 concrete commit/file/test evidence を coordinator の新 implementation review ask へ渡す。
-- [ ] S6.4 review で必要な修正を行い、影響する focused check を再実行する。
-- [ ] S6.5 scoped own chain + shared ADR exit-audit を実行する。
-- [ ] S6.6 task/plan/IR と report に actual outcomes/deferred canonical check を記録する。
-- [ ] S6.7 最終論理変更を commit する。
+- [x] S6.1 V6 を実行して affected package focused suites と lint/typecheck/build を確認する。
+- [x] S6.2 関連 CLI test files を一つずつ実行して個別 evidence を記録する。
+- [x] S6.3 concrete commit/file/test evidence を coordinator の新 implementation review ask へ渡す。
+- [x] S6.4 review で必要な修正を行い、影響する focused check を再実行する。
+- [x] S6.5 scoped own chain + shared ADR exit-audit を実行する。
+- [x] S6.6 task/plan/IR と report に actual outcomes/deferred canonical check を記録する。
+- [x] S6.7 最終論理変更を commit する。
 
 global 既存48 blocking findings は ownership 外で修正しない。indexes は doc-maintenance plan→apply、impl/ir unsupported 時は common brief の承認済み index helper 例外を記録して使う。graph signals は実 evidence 後だけに付与する。full mise run check は coordinator merge run に defer する。
 
