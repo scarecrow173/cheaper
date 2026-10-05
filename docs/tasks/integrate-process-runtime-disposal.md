@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AGiKxX1qSMznOGzJrLb"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Integrate process runtime disposal"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "../plans/implement-managed-process-lifecycle-hardening.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/integrate-process-runtime-disposal.md"
   depends-on:
     - "../plans/implement-managed-process-lifecycle-hardening.md"
     - "./implement-process-tree-lifecycle.md"

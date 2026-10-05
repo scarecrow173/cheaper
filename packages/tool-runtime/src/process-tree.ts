@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
@@ -98,14 +99,39 @@ export function createProcessTree(pid: number): ProcessTree {
         throw error;
       }
     };
+    const live = async (): Promise<boolean> => {
+      if (!send(0)) return false;
+      if (process.platform !== "linux") return true;
+      // SIGKILL 後の zombie は稼働 descendant と区別する。
+      const entries = await readdir("/proc");
+      for (const entry of entries) {
+        if (!/^\d+$/.test(entry)) continue;
+        try {
+          const stat = await readFile(`/proc/${entry}/stat`, "utf8");
+          const fields = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
+          if (Number(fields[2]) === pid && fields[0] !== "Z" && fields[0] !== "X") return true;
+        } catch (error) {
+          if (!["ENOENT", "ESRCH"].includes((error as NodeJS.ErrnoException).code ?? ""))
+            throw error;
+        }
+      }
+      return false;
+    };
     return {
       async terminate(graceMs) {
         if (!send("SIGTERM")) return;
         const deadline = performance.now() + graceMs;
-        while (send(0) && performance.now() < deadline) {
+        while ((await live()) && performance.now() < deadline) {
           await delay(Math.min(25, Math.max(1, deadline - performance.now())));
         }
-        if (send(0)) send("SIGKILL");
+        if (!(await live())) return;
+        send("SIGKILL");
+        const forceDeadline = performance.now() + HELPER_TIMEOUT_MS;
+        while (await live()) {
+          if (performance.now() >= forceDeadline)
+            throw new Error("managed process group survived force termination");
+          await delay(10);
+        }
       },
     };
   }

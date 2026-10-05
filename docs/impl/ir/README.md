@@ -61,6 +61,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zQvMyE33qrrPAVVG0da | Implement workflow binding and definition contracts | completed | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
 | IMPL-034zQvN42aaLRbRi0R2fI4 | Implement workflow compilation and public hooks | completed | [implement-workflow-compilation-and-public-hooks.md](./implement-workflow-compilation-and-public-hooks.md) |
 | IMPL-034zTuWWp7bpifS4FoAiG2 | implement-workflow-loader | completed | [implement-workflow-loader.md](./implement-workflow-loader.md) |
+| IMPL-034AH5aBMIDz91t2o5olxp | Integrate process runtime disposal | in-progress | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
 | IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | completed | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |

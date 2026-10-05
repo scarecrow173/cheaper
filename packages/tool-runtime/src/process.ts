@@ -197,14 +197,31 @@ async function execute(
   const stdout = capture(),
     stderr = capture();
   let remaining = options.process.maxOutputBytes;
-  const child = spawn(prepared.executable, task.command.slice(1), {
-    cwd: prepared.cwd,
-    env: minimalEnv(task.env),
-    shell: false,
-    windowsHide: true,
-    detached: process.platform !== "win32",
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  const child = (() => {
+    try {
+      return spawn(prepared.executable, task.command.slice(1), {
+        cwd: prepared.cwd,
+        env: minimalEnv(task.env),
+        shell: false,
+        windowsHide: true,
+        detached: process.platform !== "win32",
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+    } catch (error) {
+      throw new CheaperError("TOOL_EXECUTION_FAILURE", "managed process spawn failed", {
+        details: {
+          task: name,
+          state: "failed",
+          exitCode: null,
+          signal: null,
+          stdout: stdout.finish(),
+          stderr: stderr.finish(),
+          spawnCode: (error as NodeJS.ErrnoException).code ?? "SPAWN_ERROR",
+        },
+        cause: error,
+      });
+    }
+  })();
   const onStdout = (chunk: Buffer) => {
     remaining -= stdout.append(chunk, remaining);
   };
