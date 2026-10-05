@@ -37,6 +37,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHrZUE6WBzjS90b8 | Ollama real-provider smoke verification setup | approved | [ollama-real-provider-smoke-verification-setup.md](./ollama-real-provider-smoke-verification-setup.md) |
 | DESIGN-034r05iHy2gdnoWvkDigEM | Real-provider worker E2E via Ollama | approved | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | DESIGN-034zTjGVOLExU7QfmMVo3c | One-dispatch release workflow | approved | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
+| DESIGN-034AE2m77s53ISTYWjz28a | One-shot workflow execution and CLI composition | draft | [one-shot-workflow-execution-and-cli-composition.md](./one-shot-workflow-execution-and-cli-composition.md) |
 | DESIGN-034A8ubRdZsG57LdsNNTEw | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | DESIGN-034zSP4AJ6aRzdtIxTHW1Y | OperationManager の state と bounded drain | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | DESIGN-034zWr0ZeceJCJaL3ZRK3H | Payload untracking migration | approved | [payload-untracking-migration.md](./payload-untracking-migration.md) |

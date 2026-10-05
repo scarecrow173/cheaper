@@ -1,7 +1,7 @@
 ---
 id: "ADR-034AtVcQU6kREPV6w4aHs4"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Compose one-shot workflows with injected executors and invocation-owned resources"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -25,7 +25,7 @@ relations:
   refines: []
   refined-by: []
   derives-from: ["../discovery/one-shot-workflow-execution-boundaries.md"]
-  derived-by: []
+  derived-by: ["../designs/one-shot-workflow-execution-and-cli-composition.md"]
   verifies: []
   verified-by: []
   references: ["../specs/one-shot-workflow-engine-and-run-cli.md", "./fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md", "./keep-artifact-storage-invocation-local-and-bounded.md"]
@@ -44,7 +44,7 @@ metadata:
 
 compiler・resource inference・InvocationToolRuntime・RunArtifactStore は存在するが、compiled DAG の一度の実行と CLI composition は未実装である。親 agent が複数 invocation と中間 payload の往復を管理する必要がある。shared ADR D1-D7 を admission、lifetime、artifact consumer の実装契約へ具体化する。
 
-2026-10-05 coordinator が spec + 本 ADR intent を承認した。以下は timeout/input omission/metrics/usage の review pins を固定した本文の提案であり、acceptance は別ゲートとする。
+2026-10-05 coordinator が spec + 本 ADR intent に続いて、本 ADR 本文（ADR-034AtVcQU6kREPV6w4aHs4）を直接 verdict で承認した。review-protocol は P0/P1 なし。終了済み Dispatch の ask msg_2fa9655ca645 は再開せず、この verdict を acceptance evidence とする。設計・plan・実装 review は別ゲートとする。
 
 ## Decision Drivers
 
@@ -87,13 +87,15 @@ workflow.maxJobs を policy schema/normalization に明示追加する。正の 
 
 workflow.artifacts は optional bounded cap 設定。defaults は maxArtifactBytes=8388608、maxTotalBytes=33554432、maxPreviewBytes=2048、maxReadBytes=65536。store と同じ validation（safe integer、前三者は非負、read は正）、trusted user override、project は各 cap を min restriction。policy.yaml 二つは編集せず normalization で default を補完する。
 
+workflow.artifacts.* の min restriction keys は shared ADR D2 の閉じた restrict-key 集合（execution.concurrency.maxOperations / workflow.maxJobs / process.maxConcurrent）を拡張する。shared ADR の Consequences に従う互換的な tightening として、既存キーの意味を変えず本 ADR で追加を記録する。
+
 CLI が runtime と store を一つずつ所有し全 executor が借りる。finally で runtime dispose/drain と store dispose を行う。外側 abort 時の store clear は operation の物理 settle と独立。per-job meta.execution は runtime.executionMetrics(jobId) の owner snapshot、overall は runtime.executionMetrics() の invocation snapshot とし Worker snapshots を合算しない。Worker usage/model/changes は job meta に保持する。workflow は既存 single-model usage.jsonl writer の対象に含めない。
 
 ### Explicit artifact consumer
 
 canonical read の既存 path/offset/limit/byteInLine は維持する。明示 publication は {path, artifact: <name>}、line slice option と併用不可。sandbox/deny・画像/NUL の既存 read 制約内で source bytes を cap+1 まで bounded に読み、超過は保存前に拒否する。結果は content: [] と details.artifact: ArtifactReference。producer は owning job ID と指定 name であり input から job ID を上書きできない。
 
-consumer は {source: {kind: "artifact", reference}, offset: <byte>, maxBytes: <positive>}。canonical read は reader port のみに dispatch し workspace resolver を呼ばない。返却 text と byte continuation（offset/nextOffset/eof）は bounded。catalog input/output schema と inference が union を認識し artifact read は filesystem access を持たない。publisher/reader ports は tool-runtime に定義し workflow store が実装する。
+consumer は {source: {kind: "artifact", reference}, offset: <byte>, maxBytes: <positive>}。canonical read は reader port のみに dispatch し workspace resolver を呼ばない。返却 text と byte continuation（offset/nextOffset/eof）は bounded。catalog input/output schema と inference が union を認識し artifact read は filesystem access を持たない。publisher port のみ tool-runtime に追加し、reader は既存 ArtifactReader（artifact.ts）を再利用する。workflow store が両 port を実装する。
 
 任意 output 全体を自動 reference 置換しない。`$from` は reference JSON を運び、Worker prompt は reference/preview のみを持つ。final envelope の artifacts は unavailable metadata として projection し cleanup 後の再取得可能性を宣言しない。
 
