@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034AE2m77s53ISTYWjz28a"
 type: "design"
-status: "draft"
+status: "approved"
 title: "One-shot workflow execution and CLI composition"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -27,7 +27,7 @@ relations:
   derives-from:
     - "../specs/one-shot-workflow-engine-and-run-cli.md"
     - "../adr/compose-one-shot-workflows-with-injected-executors-and-invocation-owned-resource.md"
-  derived-by: []
+  derived-by: ["../plans/implement-one-shot-workflow-execution-and-cli-integration.md"]
   verifies: []
   verified-by: []
   references:
@@ -240,7 +240,7 @@ cli.ts の existing executeWorkflowInterface の metadata 準備を新 workflow-
 2. invocation controller と lazy runtime/store の一組を持つ。初回 admission 前に composite signal を再確認し、それぞれ一度だけ作成。ports.abort は controller と作成済み runtime を abort。
 3. tool admission は requested tool capability を policy allow と照合。Worker admission は metadata と checkCapabilities、core writeScope helper と ResourceAccess seam で binding を準備。parent admission は safety manifest。
 4. direct tool executor は ownerId=jobId、parentLease、compiled permission、budget/journal を持つ borrowed scope を一つ作る。canonical execute(tool,input) を一度呼ぶ。write/edit/ls は既存 createPiToolHandlers を public export して注入し、observeAccess/journal を同じ scope に結線。process は canonical executor/pool/task policy を使う。finally scope.dispose、取得可能な変更・tool accounting を meta に記録。
-5. Worker executor は runWorker({execution:{runtime,ownerId:jobId,parentLease,resourceManifest},signal,...}) を使う。loadModelConfig/createModelRuntime は初めて Worker が start した時の shared lazy promise とし、同時 Worker が二重初期化しない。tool-only は一度も呼ばない。CliHooks の runWorker/createModelRuntime/streamFn seam を再利用する。
+5. Worker executor は runWorker({execution:{runtime,ownerId:jobId,parentLease,resourceManifest},signal,...}) を使う。loadModelConfig/createModelRuntime は初めて Worker が start した時の shared lazy promise とし、同時 Worker が二重初期化しない。tool-only は一度も呼ばない。CliHooks の runWorker/createModelRuntime を再利用する。streamFn は RunWorkerDeps.streamFn にあり、CliHooks.runWorker wrapper を通して注入する（CliHooks 自体の field ではない）。
 6. engine outcome の public outputs/jobs/metrics と reference ledger を envelope に投影。runtime/store を finally dispose。main は一回だけ stdout write、error/進捗は stderr。
 
 ### Combined envelope と usage
@@ -269,9 +269,9 @@ jobs は ID 昇順 array。skipped は error code DEPENDENCY_FAILED（job diagno
 
 overall error precedence は outer timeout/signal（TIMEOUT/ABORTED）→ failed/skipped/cancelled jobs（TOOL_EXECUTION_FAILURE）→ output materialization のみの failure（INVALID_OUTPUT）。job と output error の元 code は bounded diagnostics で保持。meta.outputErrors は output 名の昇順配列で、成功時は空。output error の message にも同じ UTF-8 cap を適用し validator details/cause を公開しない。false は各 code の既存 exitCode（非0）、true は0。partial result は false でも残す。
 
-compile/load/input/policy failures は engine 開始前の既存 error envelope を使い、存在しない job execution/metrics を捏造しない。workflow-run kind の error も single-model usage writer に渡さない。正常 workflow envelope は usage-log.toUsageRecord の最初の workflow discriminator guard でも null にする。result に公開名 tokens があっても count record に誤分類しない。Worker job の metadata は stdout に保持するが workflow run を usage.jsonl に単一 model の run として記録しない。
+compile/load/input/policy failures は engine 開始前の既存 error envelope を使い、存在しない job execution/metrics を捏造しない。workflow-run kind の error も single-model usage writer に渡さない。正常 workflow envelope は usage-log.buildUsageRecord の最初の workflow discriminator guard でも null にする。result に公開名 tokens があっても count record に誤分類しない。Worker job の metadata は stdout に保持するが workflow run を usage.jsonl に単一 model の run として記録しない。
 
-text-format.ts は同じ projection の outputs/status/error/metrics を表示し private payload を参照しない。single-worker success/error、utility success、format/error fallback の type narrowing を維持する。
+text-format.ts の formatText は workflow variant（failure を含む）を generic errorText より先に dispatch し、同じ projection の outputs/status/error/metrics を表示する。private payload を参照せず、single-worker success/error、utility success、format/error fallback の type narrowing を維持する。DEPENDENCY_FAILED は新しい job diagnostic string であり ERROR_TABLE には追加しない。overall は TOOL_EXECUTION_FAILURE を使う。
 
 ### File map と hot-file approval request
 
@@ -333,6 +333,10 @@ issue #62 と shared ADR が定める開始後 discovery、daemon、cross-invoca
 | AC10 regression | interface 非実行、single-worker run/aliases、args/envelope/text/input、workflow usage除外（public tokens名を含む） |
 | AC11 verification | affected package focused suites、pnpm lint/typecheck/build、関連 CLI files 単独、own chain + shared ADR scoped exit-audit |
 
-- [ ] coordinator が本 detailed design と hot-file map を承認してから plan を作る。design status は現在 draft。
+- [x] 2026-10-05 coordinator の直接 verdict により detailed design + hot-file map は APPROVED（P0/P1 なし）。閉じた ask msg_7b01949ad4cf は再開しない。
 - [ ] plan で file ごとの test commands と fixtures を固定し、implementation review を別 ask で依頼する。
 - [ ] canonical check deferred to coordinator merge run。実 provider を使わない deterministic/fake executor evidence を実モデル検証と呼ばない。
+
+## Approval Evidence
+
+2026-10-05 coordinator は DESIGN-034AE2m77s53ISTYWjz28a と hot-file map を承認した。caller-owned lease の invocation dispose 後の保持、admission/slot 分離、既存 ArtifactReader と publisher の境界、policy.yaml を触らない default 補完、AC1-AC11 の coverage を確認済み。P3 指摘に従い buildUsageRecord の名称、RunWorkerDeps.streamFn の所属、workflow failure の text dispatch 順序、DEPENDENCY_FAILED の job-only 型境界を本文で訂正した。plan/test-spec/tasks と implementation の承認は別ゲートであり、本承認はそれらを代行しない。

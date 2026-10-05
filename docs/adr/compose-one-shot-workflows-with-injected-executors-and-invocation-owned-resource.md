@@ -25,7 +25,7 @@ relations:
   refines: []
   refined-by: []
   derives-from: ["../discovery/one-shot-workflow-execution-boundaries.md"]
-  derived-by: ["../designs/one-shot-workflow-execution-and-cli-composition.md"]
+  derived-by: ["../designs/one-shot-workflow-execution-and-cli-composition.md", "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"]
   verifies: []
   verified-by: []
   references: ["../specs/one-shot-workflow-engine-and-run-cli.md", "./fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md", "./keep-artifact-storage-invocation-local-and-bounded.md"]
