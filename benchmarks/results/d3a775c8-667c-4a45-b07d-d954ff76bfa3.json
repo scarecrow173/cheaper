@@ -1,0 +1,2098 @@
+{
+  "schemaVersion": 1,
+  "runId": "d3a775c8-667c-4a45-b07d-d954ff76bfa3",
+  "createdAt": "2026-10-05T22:38:10.233Z",
+  "fixtureRevision": "seeded-v1",
+  "warmupCount": 2,
+  "repetitionCount": 15,
+  "scenarioIds": [
+    "process-and-analysis"
+  ],
+  "observations": [
+    {
+      "schemaVersion": 1,
+      "runId": "96c6110e-bb18-4e91-a92d-5970157400d9",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-fuqF8v --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3216999999999999,
+      "wallTimeMs": 5574.698899999999,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2743,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5574.698899999999,
+        "cliReportedDurationMs": 2744,
+        "nodeCount": 2
+      },
+      "repetition": 1,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "4aad5e3e-c1bf-43d0-a1b1-d9e6d3bd0bd5",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-XyiRaY --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.34979999999995925,
+      "wallTimeMs": 5524.1784,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2659,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5524.1784,
+        "cliReportedDurationMs": 2660,
+        "nodeCount": 2
+      },
+      "repetition": 2,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "3ce641e2-c844-4db7-af89-258a4c457590",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-OtSRl3 --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3782000000010157,
+      "wallTimeMs": 5356.036,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2592,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5356.036,
+        "cliReportedDurationMs": 2593,
+        "nodeCount": 2
+      },
+      "repetition": 1,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "aa093001-6ee0-4e3d-9c48-8b61591c43ad",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-y2lHyo --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3908999999985099,
+      "wallTimeMs": 5538.636200000001,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2689,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5538.636200000001,
+        "cliReportedDurationMs": 2690,
+        "nodeCount": 2
+      },
+      "repetition": 2,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "7f20a686-f321-4e02-8b17-d5bd93af27bb",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-gWWN28 --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3765000000021246,
+      "wallTimeMs": 5455.7395,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2669,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5455.7395,
+        "cliReportedDurationMs": 2670,
+        "nodeCount": 2
+      },
+      "repetition": 3,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "f04af3cc-6bc0-4602-b701-ea298754b6bf",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-VkvGmK --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3110999999989872,
+      "wallTimeMs": 5576.1997999999985,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2729,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5576.1997999999985,
+        "cliReportedDurationMs": 2730,
+        "nodeCount": 2
+      },
+      "repetition": 4,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "4899c6a7-9d05-4000-835b-8fdc6e84af75",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-XUt4c4 --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.36389999999664724,
+      "wallTimeMs": 5525.324499999995,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2729,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5525.324499999995,
+        "cliReportedDurationMs": 2730,
+        "nodeCount": 2
+      },
+      "repetition": 5,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "782a3fab-7134-4324-ac09-1ab1058defe6",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-Xjsk0O --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.35530000000289874,
+      "wallTimeMs": 5495.054900000003,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2598,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5495.054900000003,
+        "cliReportedDurationMs": 2600,
+        "nodeCount": 2
+      },
+      "repetition": 6,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "eb296a23-9839-458b-8555-f0c4ad9e5bdd",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-iXlh5p --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 1.118799999996554,
+      "wallTimeMs": 5556.0553,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2716,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5556.0553,
+        "cliReportedDurationMs": 2717,
+        "nodeCount": 2
+      },
+      "repetition": 7,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "59650f1c-4f96-40a2-ad50-b6a3703153ed",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-rAiAFY --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3389999999999418,
+      "wallTimeMs": 5378.579699999995,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2587,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5378.579699999995,
+        "cliReportedDurationMs": 2589,
+        "nodeCount": 2
+      },
+      "repetition": 8,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "ba409cda-89be-4317-99db-1d4c6b3243c5",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-PmLCAN --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.38620000000082655,
+      "wallTimeMs": 5959.5250000000015,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2741,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5959.5250000000015,
+        "cliReportedDurationMs": 2744,
+        "nodeCount": 2
+      },
+      "repetition": 9,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "06b052e8-c34c-4cf0-b6d5-10eb579f02b3",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-xE1ZtQ --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3261999999958789,
+      "wallTimeMs": 5634.121899999998,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2769,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5634.121899999998,
+        "cliReportedDurationMs": 2771,
+        "nodeCount": 2
+      },
+      "repetition": 10,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "22ce04a6-c317-4002-bdd7-d35368fe42af",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-haUxIz --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.2980000000097789,
+      "wallTimeMs": 5642.565400000007,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2632,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5642.565400000007,
+        "cliReportedDurationMs": 2633,
+        "nodeCount": 2
+      },
+      "repetition": 11,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "127bb216-5bb2-42ed-b624-e2570a3b804c",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-yzosOp --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3153000000020256,
+      "wallTimeMs": 5473.857600000003,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2627,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5473.857600000003,
+        "cliReportedDurationMs": 2628,
+        "nodeCount": 2
+      },
+      "repetition": 12,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "e6146711-d558-4cdb-8943-2a619b131899",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-cj1lpc --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3600000000005821,
+      "wallTimeMs": 5411.5196,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2612,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5411.5196,
+        "cliReportedDurationMs": 2614,
+        "nodeCount": 2
+      },
+      "repetition": 13,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "227a76ce-408d-46ee-83d0-89437687b0c0",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-5fY7jM --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3368999999947846,
+      "wallTimeMs": 5563.486199999999,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2783,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5563.486199999999,
+        "cliReportedDurationMs": 2784,
+        "nodeCount": 2
+      },
+      "repetition": 14,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "8fe582f4-98a0-4f7a-bbb1-f8126d16690c",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-RAHwvm --quiet",
+      "workflowDefinitionBytes": 799,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.33100000000558794,
+      "wallTimeMs": 5463.332600000009,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 2,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 1,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 79,
+        "retainedResultBytes": 79,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": 2634,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 5463.332600000009,
+        "cliReportedDurationMs": 2637,
+        "nodeCount": 2
+      },
+      "repetition": 15,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "e6c679b2-2610-4181-b64d-54c5b77475a3",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 3028.633300000016,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2974.6308000000136,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 1,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "e887d882-a8e4-468b-ac7c-b5c6710ea36c",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2921.5071000000025,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2864.3660999999993,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 2,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "07277057-94d7-489c-9b77-6f626b21136d",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2930.385699999999,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2774.298999999999,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 1,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "e2d45580-015f-40e3-a575-128c97d2f0a3",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2959.6016999999993,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2910.053199999995,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 2,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "383a60ae-cf38-4eff-9557-b6bdbf15020f",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2933.514199999976,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2875.0784999999887,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 3,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "5dad3bcd-c810-402c-8da9-ad41494f98d6",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 3028.560999999987,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2882.9349999999977,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 4,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "03ea872a-24b7-4a53-85e7-2462fabcce3a",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2913.8429000000033,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2867.4784000000072,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 5,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "e0c249f2-c0e4-4190-bb8d-03956a67f1f9",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2886.7465000000084,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2833.159599999999,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 6,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "776d0452-504b-46e0-9ca3-39c593495f46",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2926.9504000000015,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2872.061600000001,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 7,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "beffa555-f0cc-4bdf-959c-bf7b1ae6aa64",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2866.7385000000068,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2811.2526999999973,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 8,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "3faf7de8-4d1e-4be8-920d-e0ec0ba32841",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2880.4254999999976,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2823.946299999996,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 9,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "cb2329ea-3082-41d5-a412-dba2293612aa",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2906.6131000000023,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2857.316300000006,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 10,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "3b9855b7-c6a5-4d56-bee0-1d5237e9548f",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2893.609899999996,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2842.047200000001,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 11,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "23462028-4843-4bd2-8584-e80497f52f5a",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 3224.604500000016,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 3172.9224000000104,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 12,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "8471574d-26de-4166-a444-d0c207568f6a",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2948.614200000011,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2897.8206000000064,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 13,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "f16b40d8-b377-445e-8d74-77299a74d66f",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 3025.2777999999817,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2966.00529999999,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 14,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "8d4f3ae8-2ab7-4dd7-95e1-3b5927fabd6b",
+      "scenarioId": "process-and-analysis",
+      "scenarioTitle": "Process and analysis workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2950.0009000000136,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2935,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2935,
+          "total": 5897
+        },
+        "retainedBytes": 131,
+        "materializedPromptBytes": 12360,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2895.3325999999943,
+            "promptBytes": 12360,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2935,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2935,
+              "total": 5897
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 15,
+      "warmup": false
+    }
+  ],
+  "aggregate": {
+    "schemaVersion": 1,
+    "arms": [
+      {
+        "scenarioId": "process-and-analysis",
+        "arm": "workflow",
+        "observationCount": 15,
+        "parentUsage": {
+          "status": "unavailable",
+          "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+        },
+        "medianWallTimeMs": 5525.324499999995,
+        "p95WallTimeMs": 5959.5250000000015,
+        "stableMetrics": {
+          "workerTurns": 1,
+          "toolCalls": 1,
+          "retainedBytes": 79,
+          "materializedPromptBytes": 12360,
+          "usageInput": 2935,
+          "usageOutput": 27,
+          "usageTotal": 5897
+        }
+      },
+      {
+        "scenarioId": "process-and-analysis",
+        "arm": "direct-worker-sequence",
+        "observationCount": 15,
+        "parentUsage": {
+          "status": "unavailable",
+          "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+        },
+        "medianWallTimeMs": 2930.385699999999,
+        "p95WallTimeMs": 3224.604500000016,
+        "stableMetrics": {
+          "workerTurns": 1,
+          "toolCalls": 0,
+          "retainedBytes": 131,
+          "materializedPromptBytes": 12360,
+          "usageInput": 2935,
+          "usageOutput": 27,
+          "usageTotal": 5897
+        }
+      }
+    ],
+    "comparisons": [
+      {
+        "scenarioId": "process-and-analysis",
+        "left": "workflow",
+        "right": "direct-worker-sequence",
+        "status": "measured",
+        "deltas": {
+          "workerTurns": 0,
+          "toolCalls": 1,
+          "retainedBytes": -52,
+          "materializedPromptBytes": 0,
+          "usageInput": 0,
+          "usageOutput": 0,
+          "usageTotal": 0
+        }
+      }
+    ]
+  }
+}
