@@ -26,7 +26,7 @@ relations:
   refines: []
   refined-by: []
   derives-from: ["../ideas/one-shot-workflow-engine-and-run-cli.md"]
-  derived-by: ["../specs/one-shot-workflow-engine-and-run-cli.md"]
+  derived-by: ["../specs/one-shot-workflow-engine-and-run-cli.md", "../adr/compose-one-shot-workflows-with-injected-executors-and-invocation-owned-resource.md"]
   verifies: []
   verified-by: []
   references: ["../adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md", "../adr/keep-artifact-storage-invocation-local-and-bounded.md"]
@@ -72,12 +72,12 @@ Dispatch override: briefing-flow の SUBAGENT-STOP と common brief に従い指
 
 ## Open Questions
 
-- pre-implementation blocker: coordinator が spec と ADR intent summary を承認すること。artifact mode、policy cap の既定・merge、lease/capacity 分離は ADR/design gate で確定する。
+- spec と ADR intent は 2026-10-05 coordinator verdict で承認済み。artifact mode、policy cap の既定・merge、lease/capacity 分離は ADR/design gate で確定する。
 
 ## Promotion Candidates
 
 - [x] spec-doc: one-shot behavior、public/private projection、CLI 互換、失敗と cancellation の acceptance。
-- [ ] adr-doc: injected execution/admission/lifetime と explicit artifact consumer を具体化する。
+- [x] adr-doc: injected execution/admission/lifetime と explicit artifact consumer を proposed ADR に具体化した。
 
 ## Sources and Relations
 

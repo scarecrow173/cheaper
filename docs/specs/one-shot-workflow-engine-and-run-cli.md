@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034AqzLDP7xm2lCmDoyKzg"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "One-shot workflow engine and run CLI"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -95,3 +95,7 @@ compiler・resource inference・runtime・artifact store の導入が揃い、�
 ## Sources and Relations
 
 canonical issue #62 Triage 2026-10-04 と dispatch brief が正本。shared ADR は references のみとし、他 chain と overview は変更しない。
+
+## Approval Evidence
+
+2026-10-05 coordinator の直接 verdict により spec + ADR intent は APPROVED。review-protocol は P0/P1 なし、issue AC 全件と D1 import 境界を確認済み。閉じた ask msg_3d72c1cb069d は再開せず、ADR 本文・design・plan・implementation はそれぞれ新しい承認ゲートを通す。

@@ -20,7 +20,7 @@ Directory: `docs/discovery`
 | DISC-034A8pIq50dPYXsDhld9st | managed process の認可と lifecycle を整理する | resolved | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
 | DISC-034rzGKaCRO8vRQUpNJvWd | model-pricing-catalog-and-curated-exceptions | resolved | [model-pricing-catalog-and-curated-exceptions.md](./model-pricing-catalog-and-curated-exceptions.md) |
 | DISC-034zSP8CzaOAsOOhj0ZpcW | One-dispatch release workflow | resolved | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
-| DISC-034Aqz6hU4LHgqL2xB5dJS | One-shot workflow execution boundaries | draft | [one-shot-workflow-execution-boundaries.md](./one-shot-workflow-execution-boundaries.md) |
+| DISC-034Aqz6hU4LHgqL2xB5dJS | One-shot workflow execution boundaries | active | [one-shot-workflow-execution-boundaries.md](./one-shot-workflow-execution-boundaries.md) |
 | DISC-034A8tYcU3vJfWHLa6qGQ2 | Operation execution metrics | resolved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | DISC-034zSONEtz7Sfeq2UvbW3a | OperationManager の cancel と settle の境界 | resolved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | DISC-034zWqZnTAsRi8D1paYgln | Payload untracking migration | resolved | [payload-untracking-migration.md](./payload-untracking-migration.md) |
