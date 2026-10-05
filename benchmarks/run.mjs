@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadScenarioManifest } from "./lib/scenarios.mjs";
 import { runScenarioArm } from "./lib/run-scenario.mjs";
+import { aggregateBenchmarkResult } from "./lib/aggregate.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const resultsDirectory = path.join(root, "benchmarks", "results");
@@ -51,6 +52,7 @@ const result = {
   scenarioIds: selected.map(({ id }) => id),
   observations,
 };
+result.aggregate = aggregateBenchmarkResult(result);
 await mkdir(resultsDirectory, { recursive: true });
 const output = options.output ? path.resolve(options.output) : path.join(resultsDirectory, `${result.runId}.json`);
 await writeFile(output, `${JSON.stringify(result, null, 2)}\n`, { flag: "wx" });
