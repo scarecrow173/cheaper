@@ -113,23 +113,23 @@ G0 は承認 evidence を記録する、behavior test-spec を作る、dependenc
 
 ### S1: policy/helper/compiler の正本
 
-- [ ] S1.1 workflow defaults/min layering、writeScope literal helper、validateJobOutput の契約 test を書く。
-- [ ] S1.2 V1 を実行して未導入の契約の失敗を確認する。
-- [ ] S1.3 approved defaults/schema/min keys と helper 移設、既存 schema を呼ぶ compiler seam を実装する。
-- [ ] S1.4 V1 を再実行して GREEN を確認する。
-- [ ] S1.5 IR に focused evidence を記録する。
-- [ ] S1.6 論理変更を commit する（policy と helper/compiler は独立 review 可能なら分割）。
+- [x] S1.1 workflow defaults/min layering、writeScope literal helper、validateJobOutput の契約 test を書く。
+- [x] S1.2 V1 を実行して未導入の契約の失敗を確認する。
+- [x] S1.3 approved defaults/schema/min keys と helper 移設、既存 schema を呼ぶ compiler seam を実装する。
+- [x] S1.4 V1 を再実行して GREEN を確認する。
+- [x] S1.5 IR に focused evidence を記録する。
+- [x] S1.6 論理変更を commit する（policy と helper/compiler は独立 review 可能なら分割）。
 
 defaults は maxJobs=1、artifactBytes=8388608、totalBytes=33554432、previewBytes=2048、readBytes=65536。maxJobs/read は正、他 caps は非負の safe integer。trusted builtin/user merge 後・project restriction 前に default 補完し、project は五キーを min restriction。user4/project8→4、user4/project2→2、未指定/project16→1。--timeout は既存 restrictPolicy の narrowing を使い上限超過を拒否する。
 
 ### S2: injected one-shot engine
 
-- [ ] S2.1 deferred Worker/tool/admission と fake clock を用いた engine contract test を書く。
-- [ ] S2.2 V2 を実行して scheduling/collect-all/cancel 契約の失敗を確認する。
-- [ ] S2.3 approved ports と pending/admitting/ready/running/terminal 状態を実装する。
-- [ ] S2.4 V2 を再実行して GREEN を確認する。
-- [ ] S2.5 IR に focused evidence を記録する。
-- [ ] S2.6 engine 論理変更を commit する。
+- [x] S2.1 deferred Worker/tool/admission と fake clock を用いた engine contract test を書く。
+- [x] S2.2 V2 を実行して scheduling/collect-all/cancel 契約の失敗を確認する。
+- [x] S2.3 approved ports と pending/admitting/ready/running/terminal 状態を実装する。
+- [x] S2.4 V2 を再実行して GREEN を確認する。
+- [x] S2.5 IR に focused evidence を記録する。
+- [x] S2.6 engine 論理変更を commit する。
 
 compiled edges だけを使い、全 predecessor 成功後に input materialize。admission/ready は slot を使わず maxJobs は executor 呼出し〜settle/detach。dependency failure は affected descendants のみ skip、他 branch は継続。job output は compiler seam で validate、最後の public outputs は名前ごとに validate/materialize して独立成功を残す。ID/output 名は code-unit 昇順。private payload と details/cause は公開しない。diagnostic message は2048 UTF-8 bytes 以内。
 
@@ -230,7 +230,7 @@ S*.1 は named contract tests を source/design と照合、S*.2/S*.4 は対応 
 
 ## Dependencies and Risk Register
 
-#57/#58/#59/#61/#63/#64/#65-B/#66/#69-A/#70 は dispatch baseline に merge 済みで再実装しない。fresh setup は完了済み。spec/ADR/design は承認済み、plan approval と implementation review は未承認。
+#57/#58/#59/#61/#63/#64/#65-B/#66/#69-A/#70 は dispatch baseline に merge 済みで再実装しない。fresh setup は完了済み。spec/ADR/design/plan と S1 implementation review は承認済み、S2 review は未承認。main be660a0（#60 merged）への rebase は行わず、merge.ts restrict-key union は coordinator の merge 所有とする。
 
 | Risk | Likelihood | Impact | Mitigation |
 | --- | --- | --- | --- |
@@ -263,7 +263,7 @@ trigger は既存 run/interface/read/usage の回帰、permission widening、lea
 - [x] test 作成、RED 実行、実装、GREEN、record、commit を個別 action にした。
 - [x] data-loss/breaking/external availability と rollback を記録した。
 - [x] 2026-10-06 coordinator が active Dispatch ctx_7c15503824ef の新 ask で plan を承認した（review-protocol、P0/P1 なし）。
-- [ ] approval 後に behavior test-spec と dependent task docs を作り verified-by/implemented-by を付ける。
+- [x] approval 後に behavior test-spec と dependent task docs を作り verified-by/implemented-by を付ける。
 
 ## Implementation Handoff
 
@@ -271,6 +271,6 @@ inline task execution、各 slice の contract verification、独立 reviewer �
 
 ## Review Handoff
 
-reviewer は upstream spec/local ADR/design と shared D1-D7 に対して、S1 policy restriction、S2 admission/slot と cancellation、S4 caller-owned lease lifetime/child permission、S5 CLI privacy/usage/model lazy seam を確認する。design verdict の P3 四点は本 plan と design に反映済み。test-spec を approval 前に作らないため verified-by は現在空であり、approval 後に意味を持つ link を追加する。
+reviewer は upstream spec/local ADR/design と shared D1-D7 に対して、S1 policy restriction、S2 admission/slot と cancellation、S4 caller-owned lease lifetime/child permission、S5 CLI privacy/usage/model lazy seam を確認する。design verdict の P3 四点は本 plan と design に反映済み。approval 後に test-spec/tasks を作成し、verified-by/implemented-by にリンク済み。
 
 本 plan は approved。coordinator は全11 AC、RED/GREEN、slice order、file map、source contracts を確認した。P3 の catch-path kind allowlist と engine timeout 起点は本文に反映済み。test-spec/tasks をリンクしてから implementation へ進む。canonical check deferred to coordinator merge run。

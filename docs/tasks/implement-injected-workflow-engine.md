@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJcQgIUFFRXqpy0U1oB"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Injected one-shot workflow engine を実装する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/implement-injected-workflow-engine.md"
   depends-on:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
     - "./implement-workflow-execution-contracts.md"
@@ -62,13 +63,15 @@ packages/workflow/src/engine.ts (new), index.ts; packages/workflow/test/engine.t
 
 ## Done When
 
-- [ ] dependency/fan-in/独立branch/capacity/privacy/output-validation/preabort/grace/late-settleの契約が成立する。
+- [x] dependency/fan-in/独立branch/capacity/privacy/output-validation/preabort/grace/late-settleの契約が成立する。
 - [ ] IRにRED/GREEN/変更/reviewevidenceを記録し論理commitを作る。
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/workflow exec vitest run test/engine.test.ts test/no-pi-deps.test.ts test/resource-inference.test.ts` exits 0。
+- [x] `mise exec -- pnpm --filter @cheaper/workflow exec vitest run test/engine.test.ts test/no-pi-deps.test.ts test/resource-inference.test.ts` exits 0。
 
 ## Notes
+
+2026-10-06: S2 code/focused verification は GREEN。coordinator の独立 review は未承認であり in-progress を維持する。直接指示による continuation、rebase なし。元Dispatchの consumer_fenced は再試行せず、new Dispatchでreviewを受ける。
 
 planのfilemap/commandsを正本とし、dependencies/rootconfig/policy.yaml/sharedADR/APMbundleは変更しない。nestedworkers無し、coordinatorreviewを新askで受ける。canonical check deferred to coordinator merge run。
