@@ -98,7 +98,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gFkeCQ9Xu | Implement duration parser | done | [implement-duration-parser.md](./implement-duration-parser.md) |
 | TASK-034r05iHK8bA7hf8fHPk7j | Implement final output extraction and schema validation | done | [implement-final-output-extraction-and-schema-validation.md](./implement-final-output-extraction-and-schema-validation.md) |
 | TASK-034r05iHQeQpDpo8GaLTOj | Implement human-readable text format output | done | [implement-human-readable-text-format-output.md](./implement-human-readable-text-format-output.md) |
-| TASK-034AJcQgIUFFRXqpy0U1oB | Injected one-shot workflow engine を実装する | in-progress | [implement-injected-workflow-engine.md](./implement-injected-workflow-engine.md) |
+| TASK-034AJcQgIUFFRXqpy0U1oB | Injected one-shot workflow engine を実装する | done | [implement-injected-workflow-engine.md](./implement-injected-workflow-engine.md) |
 | TASK-034r05iHK8bA7hpwOJHzxF | Implement input reading from stdin or file | done | [implement-input-reading-from-stdin-or-file.md](./implement-input-reading-from-stdin-or-file.md) |
 | TASK-034A9ymtnIQaZqcchZR6Bg | managed process executor と adapter を実装する | done | [implement-managed-process-executor.md](./implement-managed-process-executor.md) |
 | TASK-034A9ylSD9a2UjmTcNHl9R | managed process policy と resource 宣言を実装する | done | [implement-managed-process-policy.md](./implement-managed-process-policy.md) |
@@ -211,7 +211,7 @@ Directory: `docs/tasks`
 | TASK-034zTWiLbk14ZhGMpiNo7M | Wire one-dispatch release publication | done | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
 | TASK-034AaXZ7nc5LQuUvG9iFY8 | 実 I/O と Pi job lease を配線する | done | [wire-resource-manager-observation.md](./wire-resource-manager-observation.md) |
 | TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |
-| TASK-034AJcULdYBQSjyy18XSVw | Canonical artifact read/publisher を配線する | todo | [wire-workflow-artifact-tools.md](./wire-workflow-artifact-tools.md) |
+| TASK-034AJcULdYBQSjyy18XSVw | Canonical artifact read/publisher を配線する | done | [wire-workflow-artifact-tools.md](./wire-workflow-artifact-tools.md) |
 | TASK-034zTsqC9tEk1qHUgWFefU | wire-workflow-interface | done | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | TASK-034AJcZY4VW7Wfwx1AOzvh | Workflow Worker permission と lease lifetime を配線する | todo | [wire-workflow-worker-leases.md](./wire-workflow-worker-leases.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |

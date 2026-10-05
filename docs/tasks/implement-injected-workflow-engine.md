@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJcQgIUFFRXqpy0U1oB"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Injected one-shot workflow engine を実装する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -64,7 +64,7 @@ packages/workflow/src/engine.ts (new), index.ts; packages/workflow/test/engine.t
 ## Done When
 
 - [x] dependency/fan-in/独立branch/capacity/privacy/output-validation/preabort/grace/late-settleの契約が成立する。
-- [ ] IRにRED/GREEN/変更/reviewevidenceを記録し論理commitを作る。
+- [x] IRにRED/GREEN/変更/reviewevidenceを記録し論理commitを作る。
 
 ## Verification
 
@@ -72,6 +72,6 @@ packages/workflow/src/engine.ts (new), index.ts; packages/workflow/test/engine.t
 
 ## Notes
 
-2026-10-06: S2 code/focused verification は GREEN。coordinator の独立 review は未承認であり in-progress を維持する。直接指示による continuation、rebase なし。元Dispatchの consumer_fenced は再試行せず、new Dispatchでreviewを受ける。
+2026-10-06: source commit `a2d1861` について coordinator の独立 review（review-protocol）は APPROVED、P0/P1 なし。fresh Dispatch で承認を受け、S2 を done とした。rebase なし。
 
 planのfilemap/commandsを正本とし、dependencies/rootconfig/policy.yaml/sharedADR/APMbundleは変更しない。nestedworkers無し、coordinatorreviewを新askで受ける。canonical check deferred to coordinator merge run。

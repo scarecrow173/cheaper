@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034ALJN6e40bNeMK86YJ6Y"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Implement injected workflow engine"
 created: "2026-10-06"
 updated: "2026-10-06"
@@ -97,8 +97,10 @@ fresh task-graph-to-implementation route: issues []、S2/S3 runnable。直接指
 
 ## Risks
 
+source commit `a2d1861` に対する coordinator の独立 review（review-protocol）は APPROVED、P0/P1 なし。status message `msg_7f94504f94f3` は admission 非slot、maxJobs bound、fan-in、failure/abort/grace/late release、timeout、port purity、宣言 outputs の投影を確認した。fresh Dispatch で承認を受け task/IR を完了とした。
+
 cancel の logical terminal と executor actual settle の境界を tests で分ける。S2 focused success を CLI/Pi/artifact integration や実provider成功とは呼ばない。
 
 ## Follow-ups
 
-logical commit→coordinator review。元Dispatchはconsumer_fencedのため旧IDへのcheck/worker_doneは行わない。fresh DispatchによりS2 reviewを依頼し、承認前に task done/IR completed としない。canonical check deferred to coordinator merge run。
+S3 は別 IR に記録し、S4 Worker binding/lease ownership と S5 CLI integration を継続する。canonical check deferred to coordinator merge run。

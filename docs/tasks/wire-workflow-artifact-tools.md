@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJcULdYBQSjyy18XSVw"
 type: "task"
-status: "todo"
+status: "done"
 title: "Canonical artifact read/publisher を配線する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/canonical-artifact-read-publisher.md"
   depends-on:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
     - "./implement-workflow-execution-contracts.md"
@@ -62,13 +63,13 @@ packages/tool-runtime/src/artifact.ts, read.ts, catalog.ts, registry.ts, invocat
 
 ## Done When
 
-- [ ] 既存workspace read互換、publication/consumerのcaps/deny/foreignref/cleanupが成立しprivatepreviewを自動公開しない。
-- [ ] IRにRED/GREEN/変更/reviewevidenceを記録し論理commitを作る。
+- [x] 既存workspace read互換、publication/consumerのcaps/deny/foreignref/cleanupが成立しprivatepreviewを自動公開しない。
+- [x] IRにRED/GREEN/変更/reviewevidenceを記録し論理commitを作る。
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/tool-runtime exec vitest run test/artifact-read.test.ts test/runtime.test.ts test/no-pi-deps.test.ts` exits 0。
-- [ ] `mise exec -- pnpm --filter @cheaper/workflow exec vitest run test/artifacts.test.ts` exits 0。
+- [x] `mise exec -- pnpm --filter @cheaper/tool-runtime exec vitest run test/artifact-read.test.ts test/runtime.test.ts test/no-pi-deps.test.ts` exits 0。
+- [x] `mise exec -- pnpm --filter @cheaper/workflow exec vitest run test/artifacts.test.ts` exits 0。
 
 ## Notes
 

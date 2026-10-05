@@ -24,7 +24,7 @@ Directory: `docs/impl/ir`
 | IMPL-034rC4jywjUQYNL42ruw7Q | auto 分類の resolver / runtime-pi / CLI 統合 | completed | [auto-resolver-runtime-pi-cli.md](./auto-resolver-runtime-pi-cli.md) |
 | IMPL-034rC4k38aJJf0vfVaefeV | auto tier 分類ガイドの更新 | completed | [auto-tier.md](./auto-tier.md) |
 | IMPL-034A64NK6xfzCOIY0zLm75 | Bounded concurrency policy | completed | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
-| IMPL-034AMOOcav5x6lqiVb9awU | Canonical artifact read と publisher を配線する | in-progress | [canonical-artifact-read-publisher.md](./canonical-artifact-read-publisher.md) |
+| IMPL-034AMOOcav5x6lqiVb9awU | Canonical artifact read と publisher を配線する | completed | [canonical-artifact-read-publisher.md](./canonical-artifact-read-publisher.md) |
 | IMPL-034zTD17WKcBN1E1xeYf41 | Canonical operation ownership wiring | completed | [canonical-operation-ownership-wiring.md](./canonical-operation-ownership-wiring.md) |
 | IMPL-034zQtPhC1tLOPNry0QTLE | Canonical tool extraction | completed | [canonical-tool-extraction.md](./canonical-tool-extraction.md) |
 | IMPL-034r05iHy2gdnpkXDh47a6 | Code review fixes (post-merge) | completed | [code-review-fixes.md](./code-review-fixes.md) |
@@ -54,7 +54,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpgYK6Sj6D | Implement @cheaper/core (PLAN-034r05iHy2gdnpHMZZk4ZU) | completed | [implement-cheaper-core-plan-0001.md](./implement-cheaper-core-plan-0001.md) |
 | IMPL-034r05iHy2gdnpj3u9aHj7 | Implement @cheaper/runtime-pi (PLAN-034r05iHy2gdnpIrX0mTIb) | completed | [implement-cheaper-runtime-pi-plan-0002.md](./implement-cheaper-runtime-pi-plan-0002.md) |
 | IMPL-034rAiKtIOGy4Ja8gzLN0C | Implement classification pipeline and explicit resolver | completed | [implement-classification-pipeline-and-explicit-resolver.md](./implement-classification-pipeline-and-explicit-resolver.md) |
-| IMPL-034ALJN6e40bNeMK86YJ6Y | Implement injected workflow engine | in-progress | [implement-injected-workflow-engine.md](./implement-injected-workflow-engine.md) |
+| IMPL-034ALJN6e40bNeMK86YJ6Y | Implement injected workflow engine | completed | [implement-injected-workflow-engine.md](./implement-injected-workflow-engine.md) |
 | IMPL-034A9Jn7YGuSj9pYwoT7f1 | Implement managed process executor | completed | [implement-managed-process-executor.md](./implement-managed-process-executor.md) |
 | IMPL-034A9AU7e20SHvZ2sH66sP | Implement managed process policy | completed | [implement-managed-process-policy.md](./implement-managed-process-policy.md) |
 | IMPL-034zR9OQeNgEdCN2OMdt8I | Implement native launcher acquisition and hook routing | completed | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |

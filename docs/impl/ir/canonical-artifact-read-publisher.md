@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034AMOOcav5x6lqiVb9awU"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Canonical artifact read と publisher を配線する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -90,7 +90,9 @@ RED: `mise exec -- pnpm --filter @cheaper/tool-runtime test test/artifact-read.t
 
 GREEN: focused V3 tool-runtime は 30 passed、workflow artifacts は 15 passed。tool-runtime 全体は 147 passed、workflow 全体は 171 passed。`mise exec -- pnpm build` は全 package で exit 0、変更した 8 source/test files の Biome check は exit 0。
 
-追加互換検証: Pi read/registry の 50 件中 1 件が既存 abort message の変化で RED。新規 modes のみに入口 abort check を移し、50 passed を確認した。修正後の V3 tool-runtime 30 passed、tool-runtime/workflow build exit 0。IR audit の changes shape 指摘を file-object へ訂正した。coordinator review は継続中。
+追加互換検証: Pi read/registry の 50 件中 1 件が既存 abort message の変化で RED。新規 modes のみに入口 abort check を移し、50 passed を確認した。修正後の V3 tool-runtime 30 passed、tool-runtime/workflow build exit 0。IR audit の changes shape 指摘を file-object へ訂正し、findings [] を確認した。
+
+logical commit `ca2bc0f`。coordinator は durable question `msg_fe0640e49c87` の independent review（review-protocol）で APPROVED、P0/P1 なしと回答した。owner 固定、cap+1/pre-put 拒否、store atomic recheck、single-owned ArtifactPut、空 artifact resources、scope の ports override 不可、borrowed store cleanup、S3 範囲を確認した。P3 の明示 implements ArtifactPublisher は任意の nit として記録し、追加変更しない。
 
 ## Risks
 
@@ -98,4 +100,4 @@ real provider/CLI workflow composition は S3 の検証対象外。canonical `mi
 
 ## Follow-ups
 
-S3 の independent coordinator review と logical commit 後に、S4 worker binding、S5 workflow run CLI integration を plan 順で進める。
+S4 worker binding、S5 workflow run CLI integration を plan 順で進める。
