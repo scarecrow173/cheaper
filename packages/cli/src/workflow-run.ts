@@ -216,9 +216,6 @@ export async function runWorkflowCommand(
           denylist: createPathDenylist(effectivePolicy.filesystem.denyPaths),
           resourceManifest: ctx.job.manifest,
           parentLease: ctx.parentLease,
-          observeAccess: (
-            ...values: Parameters<ReturnType<typeof createToolRuntime>["observeAccess"]>
-          ) => scope.observeAccess(...values),
         };
         const handlerOptions = {
           ...options,
@@ -243,6 +240,19 @@ export async function runWorkflowCommand(
               }),
             ),
           };
+        } catch (error) {
+          throw new WorkflowExecutorError(
+            isCheaperError(error) ? error.code : "TOOL_EXECUTION_FAILURE",
+            error instanceof Error ? error.message : "tool execution failed",
+            {
+              meta: JSON.parse(
+                JSON.stringify({
+                  toolCalls: scope.budget.toolCalls,
+                  changes: await journal.finalize(),
+                }),
+              ),
+            },
+          );
         } finally {
           await scope.dispose();
         }

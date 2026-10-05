@@ -556,6 +556,7 @@ export async function runCli(
     const envelope = errorEnvelope(err, { worker: workerName, durationMs: now() - startedAt });
     let format: "json" | "text" = "json";
     let quiet = false;
+    let suppressErrorDiagnostic = false;
     try {
       const p = parseCliArgs(argv);
       if (
@@ -568,11 +569,13 @@ export async function runCli(
       ) {
         format = p.format;
         quiet = p.quiet;
+        suppressErrorDiagnostic = p.kind === "workflow-run" && quiet;
       }
     } catch {
       // args 自体が不正なら json のまま
     }
-    if (!quiet) io.stderr.write(`error ${envelope.error.code}: ${envelope.error.message}\n`);
+    if (!suppressErrorDiagnostic)
+      io.stderr.write(`error ${envelope.error.code}: ${envelope.error.message}\n`);
     io.stdout.write(format === "text" ? formatText(envelope) : envelopeJson(envelope));
     recordUsage({
       env: envelope,

@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034AOjFln9ikSd8laLlspo"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Workflow run CLI と public envelope を統合する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -10,19 +10,19 @@ relations:
   source: []
   changes:
     added:
-      - "../../../packages/cli/src/workflow-context.ts"
-      - "../../../packages/cli/src/workflow-run.ts"
-      - "../../../packages/cli/test/workflow-run.test.ts"
-      - "../../../packages/cli/test/e2e/workflow-run.test.ts"
+      - { type: file, path: packages/cli/src/workflow-context.ts }
+      - { type: file, path: packages/cli/src/workflow-run.ts }
+      - { type: file, path: packages/cli/test/workflow-run.test.ts }
+      - { type: file, path: packages/cli/test/e2e/workflow-run.test.ts }
     modified:
-      - "../../../packages/cli/src/args.ts"
-      - "../../../packages/cli/src/cli.ts"
-      - "../../../packages/cli/src/envelope.ts"
-      - "../../../packages/cli/src/text-format.ts"
-      - "../../../packages/cli/src/usage-log.ts"
-      - "../../../packages/cli/test/workflow-interface.test.ts"
-      - "../../../packages/runtime-pi/src/index.ts"
-      - "../../../packages/runtime-pi/src/run.ts"
+      - { type: file, path: packages/cli/src/args.ts }
+      - { type: file, path: packages/cli/src/cli.ts }
+      - { type: file, path: packages/cli/src/envelope.ts }
+      - { type: file, path: packages/cli/src/text-format.ts }
+      - { type: file, path: packages/cli/src/usage-log.ts }
+      - { type: file, path: packages/cli/test/workflow-interface.test.ts }
+      - { type: file, path: packages/runtime-pi/src/index.ts }
+      - { type: file, path: packages/runtime-pi/src/run.ts }
     deleted: []
     renamed: []
     moved: []
@@ -53,7 +53,7 @@ metadata:
 
 ## Summary
 
-`cheaper workflow run <path>` を injected DAG engine、canonical tool runtime、Worker runtime、invocation-local artifact store へ接続した。interface と run は共有 context で loader、policy、Worker metadata を準備する。S5 coordinator review と S6 exit audit は保留中。
+`cheaper workflow run <path>` を injected DAG engine、canonical tool runtime、Worker runtime、invocation-local artifact store へ接続した。interface と run は共有 context で loader、policy、Worker metadata を準備する。S5 coordinator review は commit `c7c0e6f` で approved。
 
 ## Context
 
@@ -96,8 +96,8 @@ metadata:
 
 ## Risks
 
-S5 code has not yet received its independent coordinator review. Provider smoke and canonical merged check remain out of scope. S6 lint/typecheck, per-file CLI reruns, scoped audits, and final task/plan closure remain.
+S5 independent coordinator review passed. Provider smoke and canonical merged check remain out of scope; canonical verification is coordinator-side. S6 verification and plan/task closure are recorded in the dependent S6 task and IR.
 
 ## Follow-ups
 
-Commit S5 and request coordinator review. After approval, perform S6 verification/audits, incorporate review findings, and close the IR/task with exact evidence.
+S5 logical commit and coordinator review are complete. S6 verification, scoped audits, and plan/task closure continue in the dependent S6 IR.

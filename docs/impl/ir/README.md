@@ -97,11 +97,12 @@ Directory: `docs/impl/ir`
 | IMPL-034z3CEPSQBJaEVBVxxzmL | verify launchers and apm payload | completed | [verify-launchers-and-apm-payload.md](./verify-launchers-and-apm-payload.md) |
 | IMPL-034z2rZiB6WUNTje88kRt1 | verify release workflow | completed | [verify-release-workflow.md](./verify-release-workflow.md) |
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
+| IMPL-034APqdMTW2hYck2FYoKv1 | Verify workflow execution integration | in-progress | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |
 | IMPL-034zUpcuJnZnznZ79UL3Q2 | Wire one-dispatch release publication | completed | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
 | IMPL-034zTIoMYLPhPUbedvunjx | wire-workflow-interface | completed | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | IMPL-034rC4j788MZLcUE8xHHP2 | Worker workload profile と auto tier classifier の core 実装 | completed | [worker-workload-profile-auto-tier-classifier-core.md](./worker-workload-profile-auto-tier-classifier-core.md) |
 | IMPL-034zUfCug3Fz5ZzcrI1yhg | Workflow resource inference compilation | completed | [workflow-resource-inference-compilation.md](./workflow-resource-inference-compilation.md) |
 | IMPL-034zTWHPv92Mp7Ql9gnE5d | Workflow resource inference implementation | completed | [workflow-resource-inference-implementation.md](./workflow-resource-inference-implementation.md) |
-| IMPL-034AOjFln9ikSd8laLlspo | Workflow run CLI と public envelope を統合する | in-progress | [workflow-run-cli-public-envelope.md](./workflow-run-cli-public-envelope.md) |
+| IMPL-034AOjFln9ikSd8laLlspo | Workflow run CLI と public envelope を統合する | completed | [workflow-run-cli-public-envelope.md](./workflow-run-cli-public-envelope.md) |
 | IMPL-034ANyyPxu6Pz67UTx3yR5 | Workflow Worker permission と lease lifetime を配線する | completed | [workflow-worker-permission-lease-lifetime.md](./workflow-worker-permission-lease-lifetime.md) |

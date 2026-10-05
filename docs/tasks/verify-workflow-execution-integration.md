@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJd9d4eo1B6Yt81QjdO"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Workflow 統合を検証して review/exit-audit を記録する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/verify-workflow-execution-integration.md"
   depends-on:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
     - "./integrate-workflow-run-cli.md"

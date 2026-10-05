@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJd4IRjNpoxGSXgU36n"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Workflow run CLI と public envelope を統合する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -65,15 +65,15 @@ packages/cli/src/workflow-context.ts, workflow-run.ts (new), args.ts, cli.ts, en
 
 ## Done When
 
-- [ ] input/defaults/stdin/path/timeout/lazymodel/partialfalse/privacy/text/usageの契約とexistingrun/interfaceが成立する。
-- [ ] IRにRED/GREEN/変更/reviewevidenceを記録し論理commitを作る。
+- [x] input/defaults/stdin/path/timeout/lazymodel/partialfalse/privacy/text/usageの契約とexistingrun/interfaceが成立する。
+- [x] IRにRED/GREEN/変更/reviewevidenceを記録し論理commitを作る。
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/cli exec vitest run test/workflow-run.test.ts test/workflow-interface.test.ts test/args.test.ts test/input.test.ts test/envelope.test.ts test/text-format.test.ts test/usage-log.test.ts test/main.test.ts` exits 0。
-- [ ] `mise exec -- pnpm build` exits 0。
-- [ ] `mise exec -- pnpm --filter @cheaper/cli exec vitest run test/e2e/workflow-run.test.ts test/e2e/workflow-interface.test.ts` exits 0。
+- [x] `mise exec -- pnpm --filter cheaper exec vitest run test/workflow-run.test.ts test/workflow-interface.test.ts test/args.test.ts test/input.test.ts test/envelope.test.ts test/text-format.test.ts test/usage-log.test.ts test/main.test.ts` exits 0。
+- [x] `mise exec -- pnpm build` exits 0。
+- [x] `mise exec -- pnpm --filter cheaper exec vitest run test/e2e/workflow-run.test.ts test/e2e/workflow-interface.test.ts` exits 0。
 
 ## Notes
 
-planのfilemap/commandsを正本とし、dependencies/rootconfig/policy.yaml/sharedADR/APMbundleは変更しない。nestedworkers無し、coordinatorreviewを新askで受ける。canonical check deferred to coordinator merge run。
+planのfilemap/commandsを正本とし、dependencies/rootconfig/policy.yaml/sharedADR/APMbundleは変更しない。nestedworkers無し。S5 coordinator review approved at commit c7c0e6f。canonical check deferred to coordinator merge run。

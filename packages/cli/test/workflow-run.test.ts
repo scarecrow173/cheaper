@@ -200,7 +200,7 @@ describe("workflow run public contract", () => {
       expect(r.stdout + r.stderr).not.toContain("PRIVATE_SENTINEL");
       if (format === "json")
         expect(JSON.parse(r.stdout).jobs).toMatchObject([
-          { id: "bad", status: "failed" },
+          { id: "bad", status: "failed", meta: { toolCalls: 1 } },
           { id: "good", status: "succeeded" },
         ]);
     }

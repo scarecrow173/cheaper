@@ -141,7 +141,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gUBy3ygQD | Implement workspace path resolution with symlink policy | done | [implement-workspace-path-resolution-with-symlink-policy.md](./implement-workspace-path-resolution-with-symlink-policy.md) |
 | TASK-034r6roOdgb1mKbE0LLAv3 | inject generous eval budget into bigTool factory | done | [inject-eval-budget-bigtool.md](./inject-eval-budget-bigtool.md) |
 | TASK-034zTTjWYMNKiiVb4ZZ6LV | Workflow compiler に resource inference を接続する | done | [integrate-workflow-resource-inference.md](./integrate-workflow-resource-inference.md) |
-| TASK-034AJd4IRjNpoxGSXgU36n | Workflow run CLI と public envelope を統合する | in-progress | [integrate-workflow-run-cli.md](./integrate-workflow-run-cli.md) |
+| TASK-034AJd4IRjNpoxGSXgU36n | Workflow run CLI と public envelope を統合する | done | [integrate-workflow-run-cli.md](./integrate-workflow-run-cli.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
@@ -203,7 +203,7 @@ Directory: `docs/tasks`
 | TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | done | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
-| TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | todo | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
+| TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | in-progress | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
 | TASK-034zTjXTqV7nvYYkf1bUH9 | Wire canonical operation ownership and abort | done | [wire-canonical-operation-ownership.md](./wire-canonical-operation-ownership.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
