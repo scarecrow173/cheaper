@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034AEwZy3GcNygp87aXrL7"
 type: "plan"
-status: "draft"
+status: "approved"
 title: "Implement managed process lifecycle hardening"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -17,7 +17,7 @@ relations:
     generated: []
   implements:
     - "../specs/managed-process-lifecycle-hardening.md"
-  implemented-by: []
+  implemented-by: ["../tasks/implement-process-lifecycle-policy.md", "../tasks/implement-process-tree-lifecycle.md", "../tasks/integrate-process-runtime-disposal.md"]
   depends-on: []
   blocks: []
   supersedes: []
@@ -31,7 +31,7 @@ relations:
     - "../adr/managed-process-bounded-lifecycle-policy.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by: ["../test-specs/managed-process-bounded-lifecycle-guarantees.md"]
   references: ["../adr/managed-process-named-task-lifecycle.md", "../adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md"]
   defers: []
   deferred-by: []
@@ -68,11 +68,11 @@ policy → executor/backend → registry drain は一つの lifecycle 契約と 
 | `packages/core/src/policy/load.ts` | trusted → defaults → project restrict の同 resolver 利用 | 必要な型整合のみ |
 | `packages/cli/policy.yaml`, `packages/apm/.apm/hooks/cli/policy.yaml` | 承認済み lifecycle defaults | bundled CLI を再生成しない |
 | `packages/tool-runtime/src/process-tree.ts`（新規） | POSIX group と bounded Windows identity/taskkill backend | helper の cap/deadline/listener 回収 |
-| `packages/tool-runtime/src/process.ts` | spawn/exit/abort timers、combined capture、idempotent cleanup と診断 | root exit から cleanup を開始し close を待つ |
+| `packages/tool-runtime/src/process.ts` | spawn/exit/abort timers、combined capture、idempotent cleanup と診断 | root exit から cleanup を開始し close を待つ。現行271–276行の cleanupError が signal.reason を覆う判定順を修正し、first-cause を先に返す |
 | `packages/tool-runtime/src/registry.ts` | scoped onTimeout、managed promises の actual-settle drain | generic tool detach を変更しない |
 | `packages/core/test/policy/process.test.ts` | defaults/layering/invalid/per-task/cap 契約 | builtin assets の defaults も確認 |
 | `packages/tool-runtime/test/process.test.ts`, `packages/tool-runtime/test/fixtures/process-child.mjs` | timeout、queue、output、実 child/grandchild、grace、heartbeat、dispose | backend の専用 focused test が必要なら同 test directory に追加 |
-| `packages/runtime-pi/test/process.test.ts` | adapter が canonical policy/result/state を共有 | canonical executor を再実装しない |
+| `packages/runtime-pi/test/process.test.ts`, `packages/runtime-pi/test/tool-runtime-contract.test.ts`, `packages/runtime-pi/test/run.test.ts`, `packages/runtime-pi/test/session.test.ts` | adapter の canonical policy/result/state と drain/settle の波及を検証 | canonical executor を再実装しない |
 | `docs/guides/managed-process.md` | defaults、platform limitation、no-polling、dispose/diagnostic 契約 | managed dispose は abortGraceMs を超え得るが bounded |
 | 自分の chain / generated indexes | tasks/test-spec/IR と evidence | maintenance plan → apply |
 
@@ -100,6 +100,10 @@ policy → executor/backend → registry drain は一つの lifecycle 契約と 
 18. chain status と index を実測 evidence に合わせて更新する。
 19. scoped exit-audit を実行する。
 20. logical commits を完了し worker report と worker_done を送る。
+
+### Commit Checkpoints
+
+P は step 5、E は step 9 の GREEN 後、R は step 13 の GREEN 後に論理変更を commit する。guide と最終検証・review・status/index は step 20 で別 commit にする。未解決の failure を GREEN と記録しない。
 
 ## Dependencies and Risks
 
@@ -141,7 +145,7 @@ critical path は P → E → R → review → audit。fixture/test preparation 
 | 1–4 | `mise exec -- pnpm exec vitest run packages/core/test/policy/process.test.ts` | 新 test が RED → GREEN、defaults/merge/invalid/cap と AC7 |
 | 6–9 | `mise exec -- pnpm exec vitest run packages/tool-runtime/test/process.test.ts` | RED → GREEN、AC2–AC6 の real tree/capture/diagnostic coverage |
 | 10–14 | `mise exec -- pnpm exec vitest run packages/tool-runtime/test/process.test.ts packages/runtime-pi/test/process.test.ts` | AC1/AC5/AC6/AC9、queue timeout 除外、first-cause、owner isolation、実 settle まで pool 保持 |
-| 15 | `mise exec -- pnpm exec vitest run packages/core/test/policy packages/tool-runtime/test packages/runtime-pi/test/process.test.ts` | affected focused suites exit 0 |
+| 15 | `mise exec -- pnpm exec vitest run packages/core/test/policy packages/tool-runtime/test packages/runtime-pi/test/process.test.ts packages/runtime-pi/test/tool-runtime-contract.test.ts packages/runtime-pi/test/run.test.ts packages/runtime-pi/test/session.test.ts` | affected focused suites exit 0、registry drain/settle の Pi adapter 波及を検証 |
 | 15 | `mise exec -- pnpm exec vitest run packages/cli/test/hook/hook-contract.test.ts` | 関連 CLI focused check exit 0 |
 | 15 | `mise exec -- pnpm lint` / `mise exec -- pnpm typecheck` / `mise exec -- pnpm build` | 各 exit 0 |
 | 16–17 | coordinator implementation review | P0/P1 未解決なし、必要な再検証を evidence に保存 |
@@ -156,7 +160,7 @@ DB migration/data transformation/依存追加はない。変更は logical commi
 
 ## Open Questions / Gaps
 
-設計上の未決事項はない。W1、asset defaults、ceiling、heartbeat restriction は承認済み。現在の blocker はこの draft plan の coordinator approval。Linux の実行 evidence は本 checkout では未取得で、report の verification scope として扱う。
+設計上の未決事項はない。W1、asset defaults、ceiling、heartbeat restriction と plan は承認済み。Linux の実行 evidence は本 checkout では未取得で、report の verification scope として扱う。
 
 ## Self-Review
 
@@ -175,3 +179,7 @@ DB migration/data transformation/依存追加はない。変更は logical commi
 - scope/default/W1 は approved design の通り。新 native dependency を導入しない。
 - review focus: timeout の spawn 起点と first-cause、root exit 後の close/descendant cleanup、capacity と owned dispose、diagnostic の非混入。
 - plan approval 後に linked test-spec/tasks/IR を作成する。spec/ADR/design の承認 evidence は msg_6cc7f6088615。
+
+## Approval
+
+coordinator direct verdict（2026-10-05、settle により closed の ask msg_6d66657cbe77 への回答）: APPROVED plan gate、P0/P1 なし。required P2 の runtime-pi focused scope 拡大と P3 の first-cause reorder / per-slice commit checkpoints を反映した。

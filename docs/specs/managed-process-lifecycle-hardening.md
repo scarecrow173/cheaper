@@ -27,7 +27,7 @@ relations:
   derives-from: ["../discovery/managed-process-lifecycle-hardening.md"]
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by: ["../test-specs/managed-process-bounded-lifecycle-guarantees.md"]
   references: ["../adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md", "../adr/managed-process-named-task-lifecycle.md"]
   defers: []
   deferred-by: []
