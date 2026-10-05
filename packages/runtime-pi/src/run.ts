@@ -238,6 +238,7 @@ export async function runWorker(
     })();
 
     const toolOptions = {
+      ownerId,
       process: policy.process,
       root: deps.root,
       symlinkPolicy: policy.filesystem.symlinks,

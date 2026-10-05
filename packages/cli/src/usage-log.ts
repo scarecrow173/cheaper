@@ -40,6 +40,7 @@ export function buildUsageRecord(
   env: CliEnvelope,
   ctx: { root: string; now?: (() => Date) | undefined },
 ): UsageLogRecord | null {
+  if ("workflow" in env && env.workflow) return null;
   const ts = (ctx.now ?? (() => new Date()))().toISOString();
   const base = {
     schemaVersion: 1 as const,
@@ -80,6 +81,7 @@ export function buildUsageRecord(
   }
 
   // error envelope: runMeta 由来の usage がある run 失敗のみ記録。
+  if ("workflow" in env || env.error === undefined) return null;
   if (env.meta.usage === null || env.meta.model === null) return null;
   return {
     ...base,

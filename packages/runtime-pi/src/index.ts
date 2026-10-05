@@ -55,5 +55,6 @@ export type {
   WorkerSessionOptions,
 } from "./session.js";
 export { createWorkerSession } from "./session.js";
+export { createPiToolHandlers } from "./tools/registry.js";
 export type { UsageSnapshot, WorkerSavings, WorkerUsage } from "./usage.js";
 export { UsageCollector } from "./usage.js";

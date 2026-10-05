@@ -56,7 +56,25 @@ export interface ErrorEnvelope {
   meta: ErrorEnvelopeMeta;
 }
 
-export type CliEnvelope = SuccessEnvelope | UtilitySuccessEnvelope | ErrorEnvelope;
+interface WorkflowEnvelopeBase {
+  schemaVersion: typeof SCHEMA_VERSION;
+  workflow: true;
+  worker: null;
+  result: Record<string, unknown>;
+  jobs: unknown[];
+  meta: Record<string, unknown> & { durationMs: number };
+}
+export type WorkflowEnvelope = WorkflowEnvelopeBase &
+  (
+    | { ok: true; error?: never }
+    | { ok: false; error: { code: string; message: string; exitCode: number; retryable: boolean } }
+  );
+
+export type CliEnvelope =
+  | SuccessEnvelope
+  | UtilitySuccessEnvelope
+  | ErrorEnvelope
+  | WorkflowEnvelope;
 
 export function successEnvelope(opts: {
   worker: string;
