@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadScenarioManifest } from "./lib/scenarios.mjs";
@@ -8,6 +9,7 @@ import { aggregateBenchmarkResult } from "./lib/aggregate.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const resultsDirectory = path.join(root, "benchmarks", "results");
+const repositoryRevision = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
 
 function argumentsFrom(argv) {
   const result = { scenario: null, repetitions: 15, warmups: 2, output: null };
@@ -47,6 +49,7 @@ const result = {
   runId: randomUUID(),
   createdAt: new Date().toISOString(),
   fixtureRevision: "seeded-v1",
+  repositoryRevision,
   warmupCount: options.warmups,
   repetitionCount: options.repetitions,
   scenarioIds: selected.map(({ id }) => id),
