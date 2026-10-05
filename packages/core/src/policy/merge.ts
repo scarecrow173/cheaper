@@ -1,3 +1,5 @@
+import { parseDuration } from "../duration.js";
+
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
@@ -28,13 +30,23 @@ function merge(
     const field = keys.join(".");
     if (
       restrict &&
-      ["execution.concurrency.maxOperations", "workflow.maxJobs", "process.maxConcurrent"].includes(
-        field,
-      ) &&
+      [
+        "execution.concurrency.maxOperations",
+        "workflow.maxJobs",
+        "process.maxConcurrent",
+        "process.maxOutputBytes",
+      ].includes(field) &&
       typeof existing === "number" &&
       typeof value === "number"
     ) {
       out[key] = Math.min(existing, value);
+    } else if (
+      restrict &&
+      ["process.timeout", "process.killGrace", "process.heartbeat.interval"].includes(field) &&
+      typeof existing === "string" &&
+      typeof value === "string"
+    ) {
+      out[key] = parseDuration(existing) <= parseDuration(value) ? existing : value;
     } else if (
       restrict &&
       field === "execution.concurrency.mutations" &&

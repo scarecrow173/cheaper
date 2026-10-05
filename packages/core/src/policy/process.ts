@@ -1,5 +1,6 @@
 import path from "node:path";
 import Ajv2020Ns from "ajv/dist/2020.js";
+import { DURATION_PATTERN, parseDuration } from "../duration.js";
 import { CheaperError } from "../errors.js";
 import type { ResourceManifestDeclaration, ScopeDeclaration } from "../resources/normalization.js";
 
@@ -13,12 +14,40 @@ export interface ProcessTask {
 export interface ProcessPolicy {
   maxConcurrent: number;
   tasks: Record<string, ProcessTask>;
+  timeout?: string;
+  maxOutputBytes?: number;
+  killGrace?: string;
+  heartbeat?: { interval?: string };
 }
+
+export interface ResolvedProcessPolicy extends ProcessPolicy {
+  timeout: string;
+  maxOutputBytes: number;
+  killGrace: string;
+  heartbeat: { interval: string };
+}
+
+export const MAX_PROCESS_OUTPUT_BYTES = 16777216;
+const MAX_TIMER_MS = 2147483647;
+const DEFAULT_LIFECYCLE = {
+  timeout: "2m",
+  maxOutputBytes: 65536,
+  killGrace: "2s",
+  heartbeat: { interval: "30s" },
+} as const;
 
 const boundedString = { type: "string", minLength: 1, maxLength: 4096 };
 const paths = { type: "array", maxItems: 256, items: boundedString };
 export const PROCESS_POLICY_PROPERTIES = {
   maxConcurrent: { type: "integer", minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  timeout: { type: "string", pattern: DURATION_PATTERN.source },
+  maxOutputBytes: { type: "integer", minimum: 1, maximum: MAX_PROCESS_OUTPUT_BYTES },
+  killGrace: { type: "string", pattern: DURATION_PATTERN.source },
+  heartbeat: {
+    type: "object",
+    additionalProperties: false,
+    properties: { interval: { type: "string", pattern: DURATION_PATTERN.source } },
+  },
   tasks: {
     type: "object",
     maxProperties: 128,
@@ -72,9 +101,15 @@ function relative(input: string): void {
 }
 
 /** typed runtime options も同じ config boundary で検証し、caller の可変値を保持しない。 */
-export function resolveProcessPolicy(input?: Partial<ProcessPolicy>): ProcessPolicy {
+export function resolveProcessPolicy(input?: Partial<ProcessPolicy>): ResolvedProcessPolicy {
   const raw = input ?? {};
   if (!validate(raw)) invalid("missing, unknown or invalid config field");
+  const timeout = boundedDuration(raw.timeout ?? DEFAULT_LIFECYCLE.timeout, "timeout");
+  const killGrace = boundedDuration(raw.killGrace ?? DEFAULT_LIFECYCLE.killGrace, "killGrace");
+  const interval = boundedDuration(
+    raw.heartbeat?.interval ?? DEFAULT_LIFECYCLE.heartbeat.interval,
+    "heartbeat.interval",
+  );
   const tasks: Record<string, ProcessTask> = {};
   for (const [name, task] of Object.entries(raw.tasks ?? {}).sort(([a], [b]) =>
     a.localeCompare(b),
@@ -104,7 +139,21 @@ export function resolveProcessPolicy(input?: Partial<ProcessPolicy>): ProcessPol
       env,
     };
   }
-  return { maxConcurrent: raw.maxConcurrent ?? 1, tasks };
+  return {
+    maxConcurrent: raw.maxConcurrent ?? 1,
+    tasks,
+    timeout,
+    maxOutputBytes: raw.maxOutputBytes ?? DEFAULT_LIFECYCLE.maxOutputBytes,
+    killGrace,
+    heartbeat: { interval },
+  };
+}
+
+function boundedDuration(value: string, field: string): string {
+  const milliseconds = parseDuration(value);
+  if (!Number.isSafeInteger(milliseconds) || milliseconds > MAX_TIMER_MS)
+    invalid(`${field} exceeds the process timer limit`);
+  return value;
 }
 
 export function resolveProcessTask(policy: ProcessPolicy, name: string): ProcessTask {

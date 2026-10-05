@@ -169,7 +169,14 @@ describe("packages/cli/policy.yaml (built-in canonical)", () => {
         projectDir: path.join(dir, "no-project"),
       });
       expect(policy).toEqual({
-        process: { maxConcurrent: 1, tasks: {} },
+        process: {
+          maxConcurrent: 1,
+          tasks: {},
+          timeout: "2m",
+          maxOutputBytes: 65536,
+          killGrace: "2s",
+          heartbeat: { interval: "30s" },
+        },
         execution: {
           timeoutMs: 120_000,
           maxTurns: 8,

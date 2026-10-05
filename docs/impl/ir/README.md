@@ -56,6 +56,7 @@ Directory: `docs/impl/ir`
 | IMPL-034A9Jn7YGuSj9pYwoT7f1 | Implement managed process executor | completed | [implement-managed-process-executor.md](./implement-managed-process-executor.md) |
 | IMPL-034A9AU7e20SHvZ2sH66sP | Implement managed process policy | completed | [implement-managed-process-policy.md](./implement-managed-process-policy.md) |
 | IMPL-034zR9OQeNgEdCN2OMdt8I | Implement native launcher acquisition and hook routing | completed | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
+| IMPL-034AGqZzIjQvvNqijsHb1N | Implement process lifecycle policy | in-progress | [implement-process-lifecycle-policy.md](./implement-process-lifecycle-policy.md) |
 | IMPL-034zQvMyE33qrrPAVVG0da | Implement workflow binding and definition contracts | completed | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
 | IMPL-034zQvN42aaLRbRi0R2fI4 | Implement workflow compilation and public hooks | completed | [implement-workflow-compilation-and-public-hooks.md](./implement-workflow-compilation-and-public-hooks.md) |
 | IMPL-034zTuWWp7bpifS4FoAiG2 | implement-workflow-loader | completed | [implement-workflow-loader.md](./implement-workflow-loader.md) |

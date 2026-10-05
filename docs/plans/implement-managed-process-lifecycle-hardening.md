@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034AEwZy3GcNygp87aXrL7"
 type: "plan"
-status: "approved"
+status: "in-progress"
 title: "Implement managed process lifecycle hardening"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -70,7 +70,7 @@ policy → executor/backend → registry drain は一つの lifecycle 契約と 
 | `packages/tool-runtime/src/process-tree.ts`（新規） | POSIX group と bounded Windows identity/taskkill backend | helper の cap/deadline/listener 回収 |
 | `packages/tool-runtime/src/process.ts` | spawn/exit/abort timers、combined capture、idempotent cleanup と診断 | root exit から cleanup を開始し close を待つ。現行271–276行の cleanupError が signal.reason を覆う判定順を修正し、first-cause を先に返す |
 | `packages/tool-runtime/src/registry.ts` | scoped onTimeout、managed promises の actual-settle drain | generic tool detach を変更しない |
-| `packages/core/test/policy/process.test.ts` | defaults/layering/invalid/per-task/cap 契約 | builtin assets の defaults も確認 |
+| `packages/core/test/policy/process.test.ts`, `packages/core/test/policy/load.test.ts` | defaults/layering/invalid/per-task/cap 契約 | builtin assets の defaults と canonical default snapshot を確認 |
 | `packages/tool-runtime/test/process.test.ts`, `packages/tool-runtime/test/fixtures/process-child.mjs` | timeout、queue、output、実 child/grandchild、grace、heartbeat、dispose | backend の専用 focused test が必要なら同 test directory に追加 |
 | `packages/runtime-pi/test/process.test.ts`, `packages/runtime-pi/test/tool-runtime-contract.test.ts`, `packages/runtime-pi/test/run.test.ts`, `packages/runtime-pi/test/session.test.ts` | adapter の canonical policy/result/state と drain/settle の波及を検証 | canonical executor を再実装しない |
 | `docs/guides/managed-process.md` | defaults、platform limitation、no-polling、dispose/diagnostic 契約 | managed dispose は abortGraceMs を超え得るが bounded |

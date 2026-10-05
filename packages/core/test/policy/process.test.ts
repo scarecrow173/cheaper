@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import * as core from "../../src/index.js";
@@ -32,6 +32,10 @@ describe("named process policy", () => {
     expect(core.normalizePolicy(core.validatePolicySchema(raw(), "complete")).process).toEqual({
       maxConcurrent: 1,
       tasks: {},
+      timeout: "2m",
+      maxOutputBytes: 65536,
+      killGrace: "2s",
+      heartbeat: { interval: "30s" },
     });
     const configured = { maxConcurrent: 3, tasks: { check: task() } };
     const resolved = core.resolveProcessPolicy(configured);
@@ -147,6 +151,67 @@ describe("named process policy", () => {
 
 describe("process policy production loading", () => {
   it.each([
+    [
+      undefined,
+      { timeout: "5m", maxOutputBytes: 1048576, killGrace: "5s", heartbeat: { interval: "1m" } },
+      { timeout: "2m", maxOutputBytes: 65536, killGrace: "2s", heartbeat: { interval: "30s" } },
+    ],
+    [
+      { timeout: "3m", maxOutputBytes: 1048576, killGrace: "5s", heartbeat: { interval: "45s" } },
+      { timeout: "5m", maxOutputBytes: 2097152, killGrace: "10s", heartbeat: { interval: "1m" } },
+      { timeout: "3m", maxOutputBytes: 1048576, killGrace: "5s", heartbeat: { interval: "45s" } },
+    ],
+    [
+      { timeout: "3m", maxOutputBytes: 1048576, killGrace: "5s", heartbeat: { interval: "45s" } },
+      { timeout: "60s", maxOutputBytes: 1024, killGrace: "100ms", heartbeat: { interval: "10s" } },
+      { timeout: "60s", maxOutputBytes: 1024, killGrace: "100ms", heartbeat: { interval: "10s" } },
+    ],
+    [
+      { timeout: "3m", maxOutputBytes: 1048576, killGrace: "5s", heartbeat: { interval: "45s" } },
+      {},
+      { timeout: "3m", maxOutputBytes: 1048576, killGrace: "5s", heartbeat: { interval: "45s" } },
+    ],
+  ])(
+    "replaces trusted lifecycle values then only restricts project values (%j, %j)",
+    async (trusted, project, expected) => {
+      const root = await temporary();
+      const userConfigDir = path.join(root, "user"),
+        projectDir = path.join(root, "project");
+      await mkdir(userConfigDir);
+      await mkdir(projectDir);
+      const builtinPolicyPath = path.join(root, "builtin.yaml");
+      await writeFile(builtinPolicyPath, JSON.stringify(raw()));
+      if (trusted)
+        await writeFile(
+          path.join(userConfigDir, "policy.yaml"),
+          JSON.stringify({ version: 1, process: trusted }),
+        );
+      await writeFile(
+        path.join(projectDir, "policy.yaml"),
+        JSON.stringify({ version: 1, process: project }),
+      );
+      const policy = await core.loadPolicy({ builtinPolicyPath, userConfigDir, projectDir });
+      expect(policy.process).toMatchObject(expected);
+    },
+  );
+
+  it("declares identical lifecycle defaults in both distribution policy assets", async () => {
+    const { parse } = await import("yaml");
+    for (const asset of ["packages/cli/policy.yaml", "packages/apm/.apm/hooks/cli/policy.yaml"]) {
+      const policy = parse(await readFile(path.join(process.cwd(), asset), "utf8"));
+      expect(policy.process).toMatchObject({
+        timeout: "2m",
+        maxOutputBytes: 65536,
+        killGrace: "2s",
+        heartbeat: { interval: "30s" },
+      });
+      expect(
+        core.normalizePolicy(core.validatePolicySchema(policy, "complete")).process,
+      ).toMatchObject(policy.process);
+    }
+  });
+
+  it.each([
     [undefined, 8, 1],
     [4, 8, 4],
     [4, 2, 2],
@@ -181,4 +246,80 @@ describe("process policy production loading", () => {
       expect(policy.process?.tasks.check?.command).toEqual(["node", "check.mjs"]);
     },
   );
+});
+
+describe("process lifecycle policy boundary", () => {
+  it("snapshots heartbeat and supports positive bounded duration/cap overrides", () => {
+    const configured = {
+      maxConcurrent: 2,
+      tasks: {},
+      timeout: "2147483647ms",
+      killGrace: "1ms",
+      heartbeat: { interval: "5s" },
+      maxOutputBytes: 16777216,
+    };
+    const resolved = core.resolveProcessPolicy(configured);
+    configured.heartbeat.interval = "1h";
+    expect(resolved).toMatchObject({
+      timeout: "2147483647ms",
+      killGrace: "1ms",
+      heartbeat: { interval: "5s" },
+      maxOutputBytes: 16777216,
+    });
+    expect(core.resolveProcessPolicy({ heartbeat: {} })).toMatchObject({
+      heartbeat: { interval: "30s" },
+    });
+    expect(
+      core.validatePolicySchema({ version: 1, process: { heartbeat: {} } }, "partial"),
+    ).toEqual({ version: 1, process: { heartbeat: {} } });
+  });
+
+  it.each(["timeout", "killGrace", "heartbeat"])(
+    "rejects invalid or overflowing %s at both raw boundaries",
+    (field) => {
+      for (const value of [
+        "0s",
+        "-1s",
+        "1.5s",
+        "1d",
+        "2147483648ms",
+        "999999999999999999999h",
+        10,
+        false,
+        null,
+      ]) {
+        const processPolicy =
+          field === "heartbeat" ? { heartbeat: { interval: value } } : { [field]: value };
+        expect(() => core.resolveProcessPolicy(processPolicy as never)).toThrow(
+          expect.objectContaining({ code: "INVALID_RUNTIME_POLICY" }),
+        );
+        expect(() =>
+          core.validatePolicySchema({ version: 1, process: processPolicy }, "partial"),
+        ).toThrow(expect.objectContaining({ code: "INVALID_RUNTIME_POLICY" }));
+      }
+    },
+  );
+
+  it.each([0, -1, 1.5, "1024", Infinity, 16777217])(
+    "rejects invalid retained byte cap %s",
+    (maxOutputBytes) => {
+      expect(() => core.resolveProcessPolicy({ maxOutputBytes } as never)).toThrow(
+        expect.objectContaining({ code: "INVALID_RUNTIME_POLICY" }),
+      );
+      expect(() =>
+        core.validatePolicySchema({ version: 1, process: { maxOutputBytes } }, "partial"),
+      ).toThrow(expect.objectContaining({ code: "INVALID_RUNTIME_POLICY" }));
+    },
+  );
+
+  it.each([
+    { timeout: "1m" },
+    { maxOutputBytes: 1024 },
+    { killGrace: "1s" },
+    { heartbeat: { interval: "1s" } },
+  ])("rejects per-task lifecycle overrides %j", (override) => {
+    expect(() =>
+      core.resolveProcessPolicy({ tasks: { check: { ...task(), ...override } } }),
+    ).toThrow(expect.objectContaining({ code: "INVALID_RUNTIME_POLICY" }));
+  });
 });

@@ -113,7 +113,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7hgqNrs11u | Implement output repair session | done | [implement-output-repair-session.md](./implement-output-repair-session.md) |
 | TASK-034r05iHK8bA7he1WXwcBs | Implement Pi session creation with maxTokens injection | done | [implement-pi-session-creation-with-maxtokens-injection.md](./implement-pi-session-creation-with-maxtokens-injection.md) |
 | TASK-034r05iHQeQpDpYxJZR1PT | Implement pre_read_code hook and e2e test | done | [implement-pre-read-code-hook.md](./implement-pre-read-code-hook.md) |
-| TASK-034AGiBmLrlXnGsS5oLlL8 | Implement process lifecycle policy | todo | [implement-process-lifecycle-policy.md](./implement-process-lifecycle-policy.md) |
+| TASK-034AGiBmLrlXnGsS5oLlL8 | Implement process lifecycle policy | done | [implement-process-lifecycle-policy.md](./implement-process-lifecycle-policy.md) |
 | TASK-034AGiFXd7uNwKAYJMW2TP | Implement process tree lifecycle | todo | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
 | TASK-034AaXUraSXQKdlQ8s1p3p | Lease と atomic admission を実装する | done | [implement-resource-manager-admission.md](./implement-resource-manager-admission.md) |
 | TASK-034r05iHK8bA7hr4HQSPhD | Implement result and error envelope output | done | [implement-result-and-error-envelope-output.md](./implement-result-and-error-envelope-output.md) |

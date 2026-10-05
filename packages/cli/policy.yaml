@@ -1,6 +1,11 @@
 version: 1
 process:
   maxConcurrent: 1
+  timeout: 2m
+  maxOutputBytes: 65536
+  killGrace: 2s
+  heartbeat:
+    interval: 30s
   tasks: {}
 
 execution:
