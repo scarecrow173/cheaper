@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { CheaperError } from "@cheaper/core";
 import type {
   ArtifactMetadata,
-  ArtifactProducer,
+  ArtifactPut,
   ArtifactReader,
   ArtifactReadRequest,
   ArtifactReadResult,
@@ -12,7 +12,10 @@ import type {
 
 export type {
   ArtifactMetadata,
+  ArtifactPorts,
   ArtifactProducer,
+  ArtifactPublisher,
+  ArtifactPut,
   ArtifactReader,
   ArtifactReadRequest,
   ArtifactReadResult,
@@ -29,11 +32,6 @@ export interface ArtifactStoreOptions {
   maxPreviewBytes: number;
   maxReadBytes: number;
   signal?: AbortSignal;
-}
-
-export interface ArtifactPut {
-  producer: ArtifactProducer;
-  data: string | Uint8Array;
 }
 
 export interface ArtifactProjectionOptions {
@@ -123,6 +121,10 @@ export class RunArtifactStore implements ArtifactReader {
 
   get stats(): { bytes: number; artifacts: number; closed: boolean } {
     return { bytes: this.#bytes, artifacts: this.#entries.size, closed: this.#closed };
+  }
+
+  get maxArtifactBytes(): number {
+    return this.#limits.maxArtifactBytes;
   }
 
   #assertOpen(): void {

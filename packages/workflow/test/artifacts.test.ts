@@ -1,4 +1,13 @@
-import type { ArtifactReader, ArtifactReference, ReadSource } from "@cheaper/tool-runtime";
+import { mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import {
+  type ArtifactPublisher,
+  type ArtifactReader,
+  type ArtifactReference,
+  createInvocationToolRuntime,
+  type ReadSource,
+} from "@cheaper/tool-runtime";
 import { describe, expect, it, vi } from "vitest";
 import * as workflow from "../src/index.js";
 
@@ -13,6 +22,71 @@ const producer = { jobId: "A1", name: "stdout" };
 const source = (reference: ArtifactReference) => ({ kind: "artifact" as const, reference });
 
 describe("run-scoped artifact contract", () => {
+  it("borrows the canonical store across scopes and retains identity/caps/cleanup checks", async () => {
+    const root = await realpath(await mkdtemp(path.join(tmpdir(), "cheaper-artifact-ports-")));
+    const store = new RunArtifactStore(limits);
+    const publisher: ArtifactPublisher = store;
+    expect(publisher.maxArtifactBytes).toBe(limits.maxArtifactBytes);
+    const runtime = createInvocationToolRuntime({
+      root,
+      symlinkPolicy: "deny",
+      artifacts: { reader: store.reader, publisher },
+    });
+    const scope = (ownerId: string) =>
+      runtime.createWorkerScope({
+        root,
+        symlinkPolicy: "deny",
+        ownerId,
+        names: ["read"],
+        maxToolCalls: 100,
+        onLimit: vi.fn(),
+      });
+    const first = scope("producer");
+    const second = scope("consumer");
+    try {
+      await writeFile(path.join(root, "a.txt"), "hello world");
+      const published = await first.execute("read", { path: "a.txt", artifact: "text" });
+      const ref = (published.details as { artifact: ArtifactReference }).artifact;
+      expect(published.content).toEqual([]);
+      expect(ref.producer).toEqual({ jobId: "producer", name: "text" });
+      const stats = store.stats;
+      await expect(
+        first.execute("read", { path: "a.txt", artifact: "text" }),
+      ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+      expect(store.stats).toEqual(stats);
+      await first.dispose();
+      expect(store.stats.closed).toBe(false);
+      const read = (reference: ArtifactReference, maxBytes = 3) =>
+        second.execute("read", { source: source(reference), offset: 0, maxBytes });
+      expect(await read(ref)).toEqual({
+        content: [{ type: "text", text: "hel" }],
+        details: { offset: 0, nextOffset: 3, eof: false },
+      });
+      await expect(read({ ...ref, preview: "tampered" })).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+      });
+      const foreign = new RunArtifactStore(limits);
+      try {
+        await expect(read(foreign.put({ producer, data: "foreign" }))).rejects.toMatchObject({
+          code: "INVALID_INPUT",
+        });
+      } finally {
+        foreign.dispose();
+      }
+      await expect(read(ref, 9)).rejects.toMatchObject({ code: "POLICY_VIOLATION" });
+      await runtime.dispose();
+      expect(store.stats.closed).toBe(false);
+      expect(projectArtifactMetadata(ref).availability).toBe("unavailable");
+      store.dispose();
+      expect(() => store.reader.read(source(ref), { offset: 0, maxBytes: 3 })).toThrowError(
+        expect.objectContaining({ code: "INVALID_REQUEST" }),
+      );
+    } finally {
+      await runtime.dispose();
+      store.dispose();
+      await rm(root, { recursive: true, force: true });
+    }
+  });
   it("retains provenance and plain JSON metadata with an opaque artifact URI", () => {
     expect(RunArtifactStore).toBeTypeOf("function");
     const store = new RunArtifactStore(limits);

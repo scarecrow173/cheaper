@@ -36,6 +36,22 @@ export interface ArtifactReader {
   read(source: ArtifactSource, request: ArtifactReadRequest): ArtifactReadResult;
 }
 
+export interface ArtifactPut {
+  producer: ArtifactProducer;
+  data: string | Uint8Array;
+}
+
+/** scope は借用する。producer.jobId は runtime owner が固定する。 */
+export interface ArtifactPublisher {
+  readonly maxArtifactBytes: number;
+  put(value: ArtifactPut): ArtifactReference;
+}
+
+export interface ArtifactPorts {
+  reader?: ArtifactReader | undefined;
+  publisher?: ArtifactPublisher | undefined;
+}
+
 export type ArtifactMetadata = Readonly<
   Omit<ArtifactReference, "preview"> & {
     preview?: string;

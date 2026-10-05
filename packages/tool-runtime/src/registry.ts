@@ -25,6 +25,7 @@ import {
   type ToolBudget,
   type ToolMeter,
 } from "./accounting.js";
+import type { ArtifactPorts } from "./artifact.js";
 import { type CanonicalToolResult, createToolCatalog, type ToolCatalog } from "./catalog.js";
 import { createCountTokensTool } from "./count-tokens.js";
 import { type CanonicalToolDefinition, validateToolInput } from "./definition.js";
@@ -40,6 +41,7 @@ import { ToolScheduler } from "./scheduler.js";
 export type ToolHandler = (input: unknown, signal: AbortSignal) => Promise<CanonicalToolResult>;
 export type InjectedToolHandlers = Partial<Record<"write" | "edit" | "ls", ToolHandler>>;
 export interface ToolRuntimeOptions extends ResourceScopeOptions {
+  artifacts?: ArtifactPorts | undefined;
   process?: Partial<ProcessPolicy> | undefined;
   root: string;
   symlinkPolicy: SymlinkPolicy;
@@ -144,7 +146,7 @@ export function createToolRuntime(
   const definitions: CanonicalToolDefinition[] = opts.names.map((name) => {
     switch (name) {
       case "read":
-        return createReadTool({ ...opts, observeAccess });
+        return createReadTool({ ...opts, observeAccess, ownerId });
       case "grep":
         return createGrepTool({ ...opts, observeAccess });
       case "find":

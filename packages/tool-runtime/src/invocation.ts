@@ -7,6 +7,7 @@ import {
   type ToolName,
 } from "@cheaper/core";
 import { ResourceAccess, type ResourceScopeOptions } from "./access.js";
+import type { ArtifactPorts } from "./artifact.js";
 import type { ExecutionMetrics } from "./execution-metrics.js";
 import { OperationManager, type OperationRecord } from "./operation.js";
 import { createToolRuntime, type ToolRuntime, type ToolRuntimeOptions } from "./registry.js";
@@ -29,6 +30,7 @@ export interface WorkerScopeOptions extends ToolRuntimeOptions {
   parentLease?: ResourceLease;
 }
 export interface InvocationToolRuntimeOptions {
+  artifacts?: ArtifactPorts | undefined;
   process?: Partial<ProcessPolicy> | undefined;
   root: string;
   symlinkPolicy: SymlinkPolicy;
@@ -113,6 +115,7 @@ export function createInvocationToolRuntime(
       const scope = createToolRuntime(
         {
           ...options,
+          artifacts: opts.artifacts,
           process: opts.process,
           signal: options.signal
             ? AbortSignal.any([controller.signal, options.signal])
