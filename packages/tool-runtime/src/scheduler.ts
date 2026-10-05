@@ -1,42 +1,43 @@
-import { CheaperError, type ConcurrencyPolicy, resolveConcurrencyPolicy } from "@cheaper/core";
+import {
+  CheaperError,
+  type ConcurrencyPolicy,
+  normalizeResourceManifest,
+  type ResourceManifestInput,
+  resolveConcurrencyPolicy,
+} from "@cheaper/core";
 import type { CreateOperationOptions, OperationManager } from "./operation.js";
+import { type LeasePreparation, type ResourceLease, ResourceManager } from "./resources.js";
 
-/** 既知 tool の access は registry が決める。process 等はこの宣言 seam を使う。 */
+/** 既知 tool は registry、process 等は explicit resources 宣言 seam を使う。 */
 export interface OperationDeclaration {
   access: "shared" | "exclusive";
   pool?: { name: string; maxConcurrent: number };
+  resources?: ResourceManifestInput;
+  resourceScoped?: boolean;
+  parentLease?: ResourceLease | (() => ResourceLease | undefined) | undefined;
+  prepare?: () => LeasePreparation | Promise<LeasePreparation>;
+  readiness?: Promise<unknown> | undefined;
 }
 interface Pool {
   cap: number;
   running: number;
 }
 
-interface Waiter {
-  id: string;
-  signal: AbortSignal;
-  access: OperationDeclaration["access"];
-  pool?: Pool | undefined;
-  admit: () => void;
-  reject: (reason: unknown) => void;
-  cleanup: () => void;
-}
-
-/** invocation 全 owner に対する FIFO admission。capacity は実際の settle まで保持する。 */
+/** claims 待機に capacity を与えず、実際の settle まで両方を保持する。 */
 export class ToolScheduler {
   private readonly policy: ConcurrencyPolicy;
-  private readonly queue: Waiter[] = [];
   private running = 0;
   private exclusive = false;
-  private pumpDeferred = false;
   private readonly pools = new Map<string, Pool>();
-
+  readonly resources: ResourceManager;
   constructor(
     private readonly manager: OperationManager,
     concurrency?: Partial<ConcurrencyPolicy>,
+    resources?: ResourceManager,
   ) {
     this.policy = resolveConcurrencyPolicy(concurrency);
+    this.resources = resources ?? new ResourceManager("/workspace", "deny");
   }
-
   async run<T>(
     options: CreateOperationOptions,
     declaration: OperationDeclaration,
@@ -58,73 +59,99 @@ export class ToolScheduler {
     const operation = this.manager.create(options);
     if (operation.signal.aborted || this.manager.get(operation.id).state !== "queued")
       throw operation.signal.reason;
-    return new Promise<T>((resolve, reject) => {
-      const waiter: Waiter = {
-        id: operation.id,
+    const snapshot =
+      declaration.resources === undefined ? undefined : structuredClone(declaration.resources);
+    const access =
+      this.policy.mutations === "per-resource" &&
+      (declaration.resourceScoped || snapshot !== undefined)
+        ? "shared"
+        : declaration.access;
+    let ready = declaration.readiness === undefined;
+    if (declaration.readiness)
+      void declaration.readiness.then(
+        () => {
+          ready = true;
+          this.resources.notify();
+        },
+        (error) => {
+          if (this.manager.get(operation.id).state === "queued")
+            this.manager.cancel(operation.id, error);
+        },
+      );
+    const prepare = (): LeasePreparation | Promise<LeasePreparation> => {
+      const value = declaration.prepare
+        ? declaration.prepare()
+        : snapshot !== undefined
+          ? normalizeResourceManifest(
+              this.resources.root,
+              snapshot,
+              this.resources.symlinkPolicy,
+            ).then((manifest) => ({
+              claims: [...manifest.reads, ...manifest.writes, ...manifest.produces],
+              readStrictness: "record" as const,
+            }))
+          : {
+              claims: [
+                {
+                  resource: {
+                    kind: "workspace" as const,
+                    path: this.resources.root,
+                    scope: "subtree" as const,
+                  },
+                  mode: declaration.access,
+                },
+              ],
+              readStrictness: "record" as const,
+            };
+      const record = (prepared: LeasePreparation) => {
+        if (this.manager.get(operation.id).state === "queued")
+          this.manager.setResourceClaims(operation.id, prepared.claims);
+        return prepared;
+      };
+      return value instanceof Promise ? value.then(record) : record(value);
+    };
+    try {
+      return await this.resources.request({
+        ownerId: options.ownerId,
+        kind: "operation",
         signal: operation.signal,
-        access: declaration.access,
-        pool,
-        reject,
-        cleanup: () => operation.signal.removeEventListener("abort", onAbort),
-        admit: () => {
-          void (async () => {
+        parentLease: declaration.parentLease,
+        access,
+        prepare,
+        canStart: () =>
+          ready &&
+          !this.exclusive &&
+          this.running < this.policy.maxOperations &&
+          (access !== "exclusive" || this.running === 0) &&
+          (pool === undefined || pool.running < pool.cap),
+        start: (lease) => {
+          this.manager.start(operation.id);
+          this.running++;
+          if (pool) pool.running++;
+          if (access === "exclusive") this.exclusive = true;
+          return (async () => {
             try {
               const result = await execute(operation.signal);
               this.manager.complete(operation.id, result);
-              resolve(result);
+              return result;
             } catch (error) {
               this.manager.fail(operation.id, error);
-              reject(error);
+              throw error;
             } finally {
               this.running--;
-              if (waiter.pool) waiter.pool.running--;
-              if (waiter.access === "exclusive") this.exclusive = false;
-              this.pump();
+              if (pool) pool.running--;
+              if (access === "exclusive") this.exclusive = false;
+              this.resources.release(lease);
+              this.resources.notify();
             }
           })();
         },
-      };
-      const onAbort = () => {
-        const index = this.queue.indexOf(waiter);
-        if (index < 0) return;
-        this.queue.splice(index, 1);
-        waiter.cleanup();
-        reject(operation.signal.reason);
-        // root/owner cancellation の同期伝播が完了してから次の admission を行う。
-        this.pumpDeferred = true;
-        queueMicrotask(() => {
-          this.pumpDeferred = false;
-          this.pump();
-        });
-      };
-      operation.signal.addEventListener("abort", onAbort, { once: true });
-      this.queue.push(waiter);
-      this.pump();
-    });
-  }
-
-  private pump(): void {
-    while (this.queue.length > 0) {
-      if (this.pumpDeferred) return;
-      const waiter = this.queue[0];
-      if (!waiter) return;
-      if (waiter.signal.aborted || this.manager.get(waiter.id).state !== "queued") {
-        this.queue.shift();
-        waiter.cleanup();
-        waiter.reject(waiter.signal.reason);
-        continue;
-      }
-      if (this.exclusive || this.running >= this.policy.maxOperations) return;
-      if (waiter.pool && waiter.pool.running >= waiter.pool.cap) return;
-      // per-resource も #61 の lease 導入までは conservatively exclusive。
-      if (waiter.access === "exclusive" && this.running > 0) return;
-      this.queue.shift();
-      waiter.cleanup();
-      this.manager.start(waiter.id);
-      this.running++;
-      if (waiter.pool) waiter.pool.running++;
-      this.exclusive = waiter.access === "exclusive";
-      waiter.admit();
+      });
+    } catch (error) {
+      // preparation の失敗は queued→cancelled。六状態の契約を拡張しない。
+      if (this.manager.get(operation.id).state === "queued")
+        this.manager.cancel(operation.id, error);
+      throw error;
     }
   }
 }

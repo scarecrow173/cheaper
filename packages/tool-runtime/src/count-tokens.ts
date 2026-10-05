@@ -9,6 +9,7 @@ import { defineCanonicalTool } from "./definition.js";
 import { POLICY_DENIED_MESSAGE, rethrowAsDenied } from "./walker.js";
 
 export interface CountTokensToolOptions {
+  observeAccess?: import("./access.js").AccessObserver | undefined;
   /** canonical 化済み workspace root。 */
   root: string;
   symlinkPolicy: SymlinkPolicy;
@@ -39,6 +40,7 @@ export function createCountTokensTool(opts: CountTokensToolOptions) {
             throw new Error(POLICY_DENIED_MESSAGE);
           }
         }
+        await opts.observeAccess?.(params.path, "shared");
         const result = await countFileTokens({
           root: opts.root,
           path: params.path,

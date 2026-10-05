@@ -20,6 +20,7 @@ const EMPTY = Buffer.alloc(0);
 export const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"]);
 
 export interface ReadToolOptions {
+  observeAccess?: import("./access.js").AccessObserver | undefined;
   /** canonical 化済み workspace root。 */
   root: string;
   symlinkPolicy: SymlinkPolicy;
@@ -457,12 +458,14 @@ export function createReadTool(opts: ReadToolOptions) {
           throw new Error(POLICY_DENIED_MESSAGE);
         }
         // stat を open 前に行い directory 等を platform 非依存の明示 error にする。
+        await opts.observeAccess?.(resolved.real, "shared");
         const st = await stat(resolved.real);
         if (!st.isFile()) throw new Error("read: not a regular file");
         // 画像は走査前に明示 error。画像経路・全文 fallback は設けない。
         if (IMAGE_EXTENSIONS.has(path.extname(resolved.real).toLowerCase())) {
           throw new Error("read does not support image files");
         }
+        await opts.observeAccess?.(resolved.real, "shared");
         const fh = await open(resolved.real, "r");
         try {
           const result = await readBounded(fh, st.size, scan);

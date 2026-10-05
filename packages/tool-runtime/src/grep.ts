@@ -364,7 +364,7 @@ export function createGrepTool(opts: GrepToolOptions) {
           if (params.glob !== undefined && !path.posix.matchesGlob(file.display, params.glob)) {
             continue;
           }
-          const sniff = await sniffTextFile(file.real);
+          const sniff = await sniffTextFile(file.real, opts.observeAccess);
           if (sniff === "binary") {
             recordSkip(skipped.binary, file.display);
             continue;
@@ -373,6 +373,7 @@ export function createGrepTool(opts: GrepToolOptions) {
             recordSkip(skipped.unreadable, file.display);
             continue;
           }
+          await opts.observeAccess?.(file.real, "shared");
           const fh: FileHandle | undefined = await open(file.real, "r").catch(() => undefined);
           if (fh === undefined) {
             recordSkip(skipped.unreadable, file.display);

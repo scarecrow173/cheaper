@@ -6,11 +6,15 @@ import type {
   ToolName,
 } from "@cheaper/core";
 import {
+  type AccessObserver,
   type CanonicalToolResult,
   createToolRuntime,
   type InjectedToolHandlers,
   isAccessDeniedError,
+  type JsonValue,
   type MutationJournal,
+  ResourceAccess,
+  type ResourceScopeOptions,
   type ToolBudget,
   type ToolMeter,
   type ToolRuntime,
@@ -25,7 +29,7 @@ import {
 import { toPiTool } from "./adapter.js";
 import { createEditOperations, createLsOperations, createWriteOperations } from "./operations.js";
 
-export interface SandboxedToolsOptions {
+export interface SandboxedToolsOptions extends ResourceScopeOptions {
   root: string;
   symlinkPolicy: SymlinkPolicy;
   journal: MutationJournal;
@@ -33,7 +37,7 @@ export interface SandboxedToolsOptions {
   maxToolCalls: number;
   onLimit: () => void;
   denylist?: PathDenylist | undefined;
-  writeScope?: ReadonlySet<string> | undefined;
+  observeAccess?: AccessObserver | undefined;
   runtime?: ToolRuntime;
   concurrency?: Partial<ConcurrencyPolicy>;
   process?: Partial<ProcessPolicy> | undefined;
@@ -59,13 +63,25 @@ function helperDefinitions(
   };
 }
 /** Pi helper の mutation queue と boundary operations を port に注入する。 */
-export function createPiToolHandlers(opts: SandboxedToolsOptions): InjectedToolHandlers {
+export function createPiToolHandlers(options: SandboxedToolsOptions): InjectedToolHandlers {
+  const opts = {
+    ...options,
+    writeScope: options.writeScope === undefined ? undefined : new Set(options.writeScope),
+    resourceManifest:
+      options.resourceManifest === undefined
+        ? undefined
+        : structuredClone(options.resourceManifest),
+  };
+  const preflight = opts.observeAccess ? undefined : new ResourceAccess(opts);
   const definitions = helperDefinitions(opts);
   let nextId = 0;
   return Object.fromEntries(
     Object.entries(definitions).map(([name, definition]) => [
       name,
       async (input: unknown, signal: AbortSignal): Promise<CanonicalToolResult> => {
+        // raw injected helper でも target を mkdir より先に共通 controller で認可する。
+        if (name === "write" || name === "edit")
+          await preflight?.operation(name, input as JsonValue);
         let denied: unknown;
         let executable = definition;
         if (name === "edit") {
@@ -104,8 +120,15 @@ export function createPiToolHandlers(opts: SandboxedToolsOptions): InjectedToolH
   );
 }
 export function createSandboxedTools(opts: SandboxedToolsOptions): SandboxedTools {
-  const runtime =
-    opts.runtime ?? createToolRuntime({ ...opts, handlers: createPiToolHandlers(opts) });
+  let runtime = opts.runtime;
+  const observed = {
+    ...opts,
+    observeAccess: (...args: Parameters<AccessObserver>) => {
+      if (!runtime) throw new Error("missing tool runtime");
+      return runtime.observeAccess(...args);
+    },
+  };
+  runtime ??= createToolRuntime({ ...opts, handlers: createPiToolHandlers(observed) });
   const helpers = helperDefinitions(opts);
   const tools: ToolDefinition[] = runtime.definitions.map((definition) => {
     const execute = (input: unknown, signal?: AbortSignal) =>

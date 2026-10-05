@@ -226,7 +226,7 @@ describe("invocation facade ownership", () => {
     ).toThrow("finite");
     await invocation.dispose();
   });
-  it("rejects duplicate owner, boundary mismatch, and unimplemented parent lease", async () => {
+  it("rejects duplicate owner, boundary mismatch, and forged parent lease", async () => {
     const invocation = createInvocationToolRuntime(options());
     invocation.createWorkerScope({ ...options(), ownerId: "a" });
     expect(() => invocation.createWorkerScope({ ...options(), ownerId: "a" })).toThrow("owner");

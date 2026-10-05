@@ -1,3 +1,4 @@
+export * from "./access.js";
 export * from "./accounting.js";
 export * from "./artifact.js";
 export * from "./catalog.js";
@@ -14,5 +15,6 @@ export * from "./operation.js";
 export * from "./process.js";
 export * from "./read.js";
 export * from "./registry.js";
+export * from "./resources.js";
 export * from "./scheduler.js";
 export * from "./walker.js";
