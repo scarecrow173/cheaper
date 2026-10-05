@@ -42,9 +42,21 @@ describe("workflow policy の正本", () => {
     expect(input).not.toHaveProperty("workflow");
   });
   it("partial workflow と artifacts の各 omission を補完する", () => {
-    for (const workflow of [{}, { maxJobs: 3 }, { artifacts: { maxPreviewBytes: 0 } }]) {
+    const cases = [
+      { workflow: {}, expected: defaults },
+      { workflow: { maxJobs: 3 }, expected: { ...defaults, maxJobs: 3 } },
+      {
+        workflow: { artifacts: { maxPreviewBytes: 0 } },
+        expected: {
+          ...defaults,
+          artifacts: { ...defaults.artifacts, maxPreviewBytes: 0 },
+        },
+      },
+    ];
+    for (const { workflow, expected } of cases) {
       const policy = core.normalizePolicy(core.validatePolicySchema(raw(workflow), "complete"));
-      expect(policy.workflow).toEqual(core.resolveWorkflowPolicy(workflow));
+      expect(policy.workflow).toEqual(expected);
+      expect(core.resolveWorkflowPolicy(workflow)).toEqual(expected);
       expect(core.validatePolicySchema({ version: 1, workflow }, "partial")).toBeTruthy();
     }
   });
