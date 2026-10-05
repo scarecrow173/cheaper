@@ -14,6 +14,7 @@ Directory: `docs/test-specs`
 | TSPEC-034zQHrk9A6Zc7rrSLGeHA | Core resource manifest normalization | draft | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | TSPEC-034rAaJtM27Ibpy78mq0kP | Cross-agent adapter contract tests | approved | [cross-agent-adapter-contract-tests.md](./cross-agent-adapter-contract-tests.md) |
 | TSPEC-034z1P09dg86lO9uB31cUi | Embedded builtin resource resolution across distribution forms | proposed | [embedded-builtin-resource-resolution-across-distribution-forms.md](./embedded-builtin-resource-resolution-across-distribution-forms.md) |
+| TSPEC-034AGg47u5fWQqP0pEJfI9 | Managed process bounded lifecycle guarantees | approved | [managed-process-bounded-lifecycle-guarantees.md](./managed-process-bounded-lifecycle-guarantees.md) |
 | TSPEC-034A9yliLanxBMr6oB85Z7 | managed process の bounded lifecycle と adapter 共有 | approved | [managed-process-lifecycle.md](./managed-process-lifecycle.md) |
 | TSPEC-034A9ykvVgiieTjkU129tm | managed process task の認可と resource ownership | approved | [managed-process-task-authorization.md](./managed-process-task-authorization.md) |
 | TSPEC-034rzVr1S8qFdi1JqWSN9Z | model exclude and explicit selection guards | approved | [model-exclude-and-explicit-selection.md](./model-exclude-and-explicit-selection.md) |

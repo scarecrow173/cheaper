@@ -139,7 +139,10 @@ export function validatePolicySchema(
       },
     });
   }
-  return raw as Record<string, unknown>;
+  const policy = raw as Record<string, unknown>;
+  // partial の省略を保持しつつ、merge 前に duration overflow 等も拒否する。
+  if (policy.process !== undefined) resolveProcessPolicy(policy.process as Partial<ProcessPolicy>);
+  return policy;
 }
 
 function normalizePolicyTools(raw: unknown): ToolName[] {

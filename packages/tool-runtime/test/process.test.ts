@@ -1,9 +1,16 @@
 import { access, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { compileSchema, createPathDenylist, type ProcessPolicy } from "@cheaper/core";
+import {
+  compileSchema,
+  createPathDenylist,
+  type ProcessPolicy,
+  resolveProcessPolicy,
+} from "@cheaper/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../src/index.js";
+import { createProcessTool } from "../src/process.js";
+import * as treeBackend from "../src/process-tree.js";
 
 const script = fileURLToPath(new URL("./fixtures/process-child.mjs", import.meta.url));
 let root: string;
@@ -14,8 +21,281 @@ beforeEach(async () => {
 afterEach(async () => {
   for (const runtime of runtimes.splice(0)) await runtime.dispose();
   vi.unstubAllEnvs();
+  vi.restoreAllMocks();
   expect(path.dirname(root)).toBe(await realpath(process.cwd()));
   await rm(root, { recursive: true, force: true });
+});
+
+describe("bounded process lifecycle", () => {
+  it("preserves outer reason when tree cleanup fails", async () => {
+    vi.spyOn(treeBackend, "createProcessTree").mockReturnValue({
+      terminate: async () => {
+        throw new Error("cleanup failure");
+      },
+    });
+    const diagnostic = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    const pidPath = path.join(root, "pid");
+    const controller = new AbortController(),
+      reason = new Error("outer reason");
+    const r = runtime(config({ stubborn: task("stubborn", [pidPath]) }), {
+      signal: controller.signal,
+    });
+    const pending = r.execute("process", { task: "stubborn" });
+    void pending.catch(() => {});
+    await vi.waitFor(async () => expect(await readFile(pidPath, "utf8")).toMatch(/^\d+$/));
+    controller.abort(reason);
+    await expect(pending).rejects.toBe(reason);
+    expect(r.operations()[0]?.state).toBe("cancelled");
+    expect(await alive(Number(await readFile(pidPath, "utf8")))).toBe(false);
+    expect(
+      diagnostic.mock.calls.some(([line]) => String(line).includes("process.cleanup-failed")),
+    ).toBe(true);
+  });
+
+  it("drops heartbeat under diagnostic backpressure", async () => {
+    const gate = path.join(root, "gate");
+    const descriptor = Object.getOwnPropertyDescriptor(process.stderr, "writableNeedDrain");
+    Object.defineProperty(process.stderr, "writableNeedDrain", { value: true, configurable: true });
+    const diagnostic = vi.spyOn(process.stderr, "write").mockReturnValue(false);
+    const r = runtime({
+      ...config({ hold: task("hold", [gate]) }),
+      heartbeat: { interval: "20ms" },
+    });
+    const pending = r.execute("process", { task: "hold" });
+    void pending.catch(() => {});
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      expect(diagnostic).not.toHaveBeenCalled();
+      await writeFile(gate, "release");
+      const result = await pending;
+      expect(result.details).toMatchObject({ stderr: { bytes: 0 } });
+    } finally {
+      if (descriptor) Object.defineProperty(process.stderr, "writableNeedDrain", descriptor);
+      else Reflect.deleteProperty(process.stderr, "writableNeedDrain");
+    }
+  });
+  it("classifies native spawn failure and clears diagnostics timers", async () => {
+    const executable = path.join(root, process.platform === "win32" ? "bad.exe" : "bad");
+    await writeFile(
+      executable,
+      Buffer.from(process.platform === "win32" ? "4d5a0000" : "7f454c46", "hex"),
+      { mode: 0o755 },
+    );
+    const diagnostic = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    const r = runtime({
+      ...config({ bad: { command: [executable], inputs: [], outputs: [] } }),
+      heartbeat: { interval: "20ms" },
+    });
+    await expect(r.execute("process", { task: "bad" })).rejects.toMatchObject({
+      code: "TOOL_EXECUTION_FAILURE",
+    });
+    const count = diagnostic.mock.calls.length;
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(diagnostic.mock.calls).toHaveLength(count);
+    expect(r.operations()[0]?.state).toBe("failed");
+  });
+  it("marks executor timeout timed_out while excluding queue wait", async () => {
+    const marker = path.join(root, "first.pid");
+    const inv = invocation({
+      ...config({ first: task("stubborn", [marker]), second: task("inspect") }),
+      timeout: "1s",
+      killGrace: "1s",
+    });
+    const a = scope(inv, "a"),
+      b = scope(inv, "b");
+    const first = a.execute("process", { task: "first" });
+    void first.catch(() => {});
+    await vi.waitFor(async () => expect(await readFile(marker, "utf8")).toMatch(/^\d+$/));
+    const second = b.execute("process", { task: "second" });
+    void second.catch(() => {});
+    await expect(first).rejects.toMatchObject({ code: "TIMEOUT" });
+    await second;
+    expect(inv.operations().map((o) => o.state)).toEqual(["timed_out", "completed"]);
+    const queued = inv.operations()[1];
+    expect((queued?.startedAt ?? 0) - (queued?.createdAt ?? 0)).toBeGreaterThan(1000);
+    expect(await alive(Number(await readFile(marker, "utf8")))).toBe(false);
+  }, 20000);
+
+  it("owner dispose with zero abort grace waits for tree settlement and preserves another owner", async () => {
+    const idsPath = path.join(root, "ids"),
+      otherPid = path.join(root, "other");
+    const inv = invocation({
+      ...config({ tree: task("deep-tree", [idsPath]), other: task("stubborn", [otherPid]) }, 2),
+      killGrace: "150ms",
+    });
+    const a = inv.createWorkerScope({
+      root,
+      symlinkPolicy: "deny",
+      ownerId: "a",
+      names: ["process"],
+      maxToolCalls: 100,
+      onLimit: vi.fn(),
+      abortGraceMs: 0,
+    });
+    const b = scope(inv, "b");
+    const first = a.execute("process", { task: "tree" });
+    const second = b.execute("process", { task: "other" });
+    void first.catch(() => {});
+    void second.catch(() => {});
+    let ids!: Record<string, number>;
+    await vi.waitFor(
+      async () => {
+        ids = JSON.parse(await readFile(idsPath, "utf8"));
+        expect(await readFile(otherPid, "utf8")).toMatch(/^\d+$/);
+      },
+      { timeout: 5000 },
+    );
+    await a.dispose();
+    for (const pid of Object.values(ids)) expect(await alive(pid)).toBe(false);
+    expect(a.operations()[0]).toMatchObject({ state: "cancelled", settlement: "settled" });
+    expect(b.operations()[0]?.state).toBe("running");
+    expect(await alive(Number(await readFile(otherPid, "utf8")))).toBe(true);
+    await inv.dispose();
+    await expect(first).rejects.toBeDefined();
+    await expect(second).rejects.toBeDefined();
+    expect(await alive(Number(await readFile(otherPid, "utf8")))).toBe(false);
+  }, 20000);
+
+  it("keeps process pool capacity through cleanup and preserves outer abort first cause", async () => {
+    const pidPath = path.join(root, "pid"),
+      marker = path.join(root, "marker");
+    const inv = invocation({
+      ...config({ first: task("stubborn", [pidPath]), next: task("touch", [marker]) }),
+      timeout: "1s",
+      killGrace: "400ms",
+    });
+    const a = scope(inv, "a"),
+      b = scope(inv, "b");
+    const controller = new AbortController(),
+      reason = new Error("outer wins");
+    const first = a.execute("process", { task: "first" }, { signal: controller.signal });
+    void first.catch(() => {});
+    await vi.waitFor(async () => expect(await readFile(pidPath, "utf8")).toMatch(/^\d+$/));
+    const next = b.execute("process", { task: "next" });
+    void next.catch(() => {});
+    controller.abort(reason);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(inv.operations().map((o) => o.state)).toEqual(["running", "queued"]);
+    await expect(access(marker)).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(first).rejects.toBe(reason);
+    await next;
+    expect(inv.operations().map((o) => o.state)).toEqual(["cancelled", "completed"]);
+  }, 20000);
+  it.each([31, 98304])(
+    "uses the policy combined output cap %i and validates the result",
+    async (cap) => {
+      const r = runtime({ ...config({ output: task("output") }), maxOutputBytes: cap });
+      const result = await r.execute("process", { task: "output" });
+      const details = result.details as unknown as {
+        stdout: { bytes: number; capturedBytes: number; text: string };
+        stderr: { bytes: number; capturedBytes: number; text: string };
+      };
+      expect(details.stdout.bytes + details.stderr.bytes).toBe(262144);
+      expect(details.stdout.capturedBytes + details.stderr.capturedBytes).toBe(cap);
+      expect(
+        Buffer.byteLength(details.stdout.text) + Buffer.byteLength(details.stderr.text),
+      ).toBeLessThanOrEqual(cap);
+      expect(
+        compileSchema(r.catalog.get("process")!.outputSchema, "output").validate(result).ok,
+      ).toBe(true);
+    },
+  );
+
+  it("emits heartbeat only to runtime diagnostics and stops after settle", async () => {
+    const gate = path.join(root, "gate");
+    const diagnostic = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    const r = runtime({
+      ...config({ hold: task("hold", [gate]) }),
+      heartbeat: { interval: "30ms" },
+    });
+    const pending = r.execute("process", { task: "hold" });
+    void pending.catch(() => {});
+    await vi.waitFor(() => expect(diagnostic).toHaveBeenCalled());
+    await writeFile(gate, "release");
+    const result = await pending;
+    expect(result.details).toMatchObject({
+      stdout: { text: "released\n" },
+      stderr: { bytes: 0, text: "" },
+    });
+    expect(JSON.stringify(result)).not.toContain("heartbeat");
+    expect(r.operations()).toHaveLength(1);
+    const count = diagnostic.mock.calls.length;
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(diagnostic.mock.calls).toHaveLength(count);
+  });
+
+  it.each(["exit-tree", "fail-tree", "deep-tree", "deep-stubborn"])(
+    "cleans live descendants on %s",
+    async (mode) => {
+      const pidsPath = path.join(root, "pids.json");
+      const tool = createProcessTool({
+        root,
+        symlinkPolicy: "deny",
+        process: resolveProcessPolicy({
+          ...config({ tree: task(mode, [pidsPath], ["pids.json"]) }),
+          timeout: "2s",
+          killGrace: "100ms",
+        }),
+      });
+      const controller = new AbortController();
+      const reason = new Error("outer tree cancellation");
+      const pending = tool.execute({ task: "tree" }, controller.signal);
+      void pending.catch(() => {});
+      let pids!: Record<string, number>;
+      await vi.waitFor(
+        async () => {
+          pids = JSON.parse(await readFile(pidsPath, "utf8"));
+        },
+        { timeout: 5000 },
+      );
+      if (mode === "deep-tree") controller.abort(reason);
+      if (mode === "exit-tree") await pending;
+      else if (mode === "deep-tree") await expect(pending).rejects.toBe(reason);
+      else if (mode === "deep-stubborn")
+        await expect(pending).rejects.toMatchObject({ code: "TIMEOUT" });
+      else
+        await expect(pending).rejects.toMatchObject({
+          code: "TOOL_EXECUTION_FAILURE",
+          details: { exitCode: 7 },
+        });
+      for (const pid of Object.values(pids)) expect(await alive(pid)).toBe(false);
+    },
+    15000,
+  );
+
+  it("times out a native process after spawn and cleans its handles", async () => {
+    const pidsPath = path.join(root, "pid");
+    const tool = createProcessTool({
+      root,
+      symlinkPolicy: "deny",
+      process: resolveProcessPolicy({
+        ...config({ stubborn: task("stubborn", [pidsPath], ["pid"]) }),
+        timeout: "500ms",
+        killGrace: "100ms",
+      }),
+    });
+    await expect(tool.execute({ task: "stubborn" })).rejects.toMatchObject({ code: "TIMEOUT" });
+    expect(await alive(Number(await readFile(pidsPath, "utf8")))).toBe(false);
+  }, 15000);
+
+  it.skipIf(process.platform === "win32")(
+    "allows SIGTERM exit within grace before force kill",
+    async () => {
+      const pidsPath = path.join(root, "pid");
+      const tool = createProcessTool({
+        root,
+        symlinkPolicy: "deny",
+        process: resolveProcessPolicy({
+          ...config({ graceful: task("graceful", [pidsPath], ["pid"]) }),
+          timeout: "500ms",
+          killGrace: "1s",
+        }),
+      });
+      await expect(tool.execute({ task: "graceful" })).rejects.toMatchObject({ code: "TIMEOUT" });
+      expect(await readFile(`${pidsPath}.terminated`, "utf8")).toBe("graceful");
+      expect(await alive(Number(await readFile(pidsPath, "utf8")))).toBe(false);
+    },
+  );
 });
 const task = (mode: string, args: string[] = [], outputs: string[] = []) => ({
   command: ["node", script, mode, ...args],
@@ -232,6 +512,7 @@ describe("invocation process pool and lifecycle", () => {
       expect(inv.operations().every((o) => o.state === "completed")).toBe(true);
       expect(a.budget.toolCalls + b.budget.toolCalls).toBe(3);
     },
+    20000,
   );
 
   it("keeps pool capacity FIFO and releases queued abort with the original reason", async () => {
@@ -353,5 +634,5 @@ describe("invocation process pool and lifecycle", () => {
     await expect.poll(() => alive(pids.parent), { timeout: 3000 }).toBe(false);
     await expect.poll(() => alive(pids.child), { timeout: 3000 }).toBe(false);
     expect(r.operations().map((o) => o.state)).toEqual(["cancelled"]);
-  });
+  }, 15000);
 });

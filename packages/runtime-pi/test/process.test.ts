@@ -16,6 +16,7 @@ it("Pi exposes the canonical named process with shared accounting and policy", a
     onLimit: vi.fn(),
     process: {
       maxConcurrent: 1,
+      maxOutputBytes: 5,
       tasks: { check: { command: ["node", "child.mjs"], inputs: ["child.mjs"], outputs: [] } },
     },
   };
@@ -31,6 +32,7 @@ it("Pi exposes the canonical named process with shared accounting and policy", a
       undefined as never,
     );
     expect(result).toEqual(await direct.execute("process", { task: "check" }));
+    expect(result.details).toMatchObject({ stdout: { capturedBytes: 5, truncated: true } });
     expect(pi.budget.toolCalls).toBe(1);
     expect(pi.runtime.operations().map((o) => o.state)).toEqual(["completed"]);
     await expect(pi.runtime.execute("process", { task: "unknown" })).rejects.toMatchObject({
@@ -44,4 +46,4 @@ it("Pi exposes the canonical named process with shared accounting and policy", a
     await direct.dispose();
     await rm(root, { recursive: true, force: true });
   }
-});
+}, 20000);

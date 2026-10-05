@@ -12,6 +12,7 @@ Directory: `docs/ideas`
 | IDEA-034zIIqQ6OptX5Bz9rXpiV | Core resource identity and conservative manifest normalization | promoted | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | IDEA-034z10aNxQyg2KNIm2Kew4 | Distribute cheaper as standalone executables including APM bundles | promoted | [distribute-cheaper-as-standalone-executables-including-apm-bundles.md](./distribute-cheaper-as-standalone-executables-including-apm-bundles.md) |
 | IDEA-034A8p4vQ9wEUp8M2aBepC | managed process を canonical tool として提供する | promoted | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
+| IDEA-034ApWJ5uBdp8s6tiUl678 | managed process lifecycle hardening | promoted | [managed-process-lifecycle-hardening.md](./managed-process-lifecycle-hardening.md) |
 | IDEA-034zSO5nJ7nAuF11FrikUD | One-dispatch release workflow | promoted | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
 | IDEA-034A8lBQcnPXKkI5BoPjqE | Operation execution metrics | promoted | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | IDEA-034zSLUoRMHrYpLGc8wKPj | OperationManager の invocation lifecycle | promoted | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |

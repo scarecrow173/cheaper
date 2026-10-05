@@ -122,6 +122,7 @@ export function createToolRuntime(
     : undefined;
   const access = new ResourceAccess({ ...opts, root: resources.root }, inherited);
   const active = new AsyncLocalStorage<ActiveResourceAccess>();
+  const managedProcesses = new Set<Promise<CanonicalToolResult>>();
   let parentLease = opts.parentLease;
   let readyPromise: Promise<ResourceLease> | undefined;
   const observeAccess = async (
@@ -152,7 +153,14 @@ export function createToolRuntime(
       case "count_tokens":
         return createCountTokensTool({ ...opts, observeAccess });
       case "process":
-        return createProcessTool(opts);
+        return createProcessTool({
+          ...opts,
+          onTimeout: (reason) => {
+            const operation = active.getStore();
+            if (operation && manager.get(operation.id).state === "running")
+              manager.cancel(operation.id, reason);
+          },
+        });
       default: {
         const metadata = catalog.get(name);
         if (!metadata) throw unknownTool(name);
@@ -240,7 +248,7 @@ export function createToolRuntime(
                 ? ("exclusive" as const)
                 : ("shared" as const),
             };
-      return accounting.run(() =>
+      const pending = accounting.run(() =>
         scheduler.run(
           { ownerId, kind: "tool", toolName: name, signal },
           {
@@ -270,12 +278,21 @@ export function createToolRuntime(
           },
         ),
       );
+      if (name === "process") {
+        managedProcesses.add(pending);
+        const settled = () => {
+          managedProcesses.delete(pending);
+        };
+        void pending.then(settled, settled);
+      }
+      return pending;
     },
     operations: () => manager.records(ownerId),
     abort,
     async drain() {
       abort();
       await manager.drain(ownerId, opts.abortGraceMs ?? 5000);
+      await Promise.allSettled([...managedProcesses]);
     },
     dispose() {
       disposed ??= (async () => {
