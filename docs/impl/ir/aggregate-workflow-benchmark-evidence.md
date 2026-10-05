@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034ATHURho1jepnqtCXbcf"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Aggregate workflow benchmark evidence"
 created: "2026-10-06"
 updated: "2026-10-06"
@@ -57,19 +57,19 @@ Seeded observations を統合し、usage accounting と bytes/timing 比較に�
 
 ## Context
 
-Workflow envelope は usage.jsonl に workflow aggregate を書かない。direct CLI records を別 arm の evidence として扱い、workflow child usage と二重計上しない。
+Workflow envelope は `usage.jsonl` に workflow aggregate を書かない。direct CLI records は別 arm の evidence として扱い、workflow child usage と二重計上しない。
 
 ## Implementation
 
-### Changes
+### Changes Made
 
 - `aggregateBenchmarkResult` が warm-up を除外し、arm ごとの observation count、median/p95、安定 dimension、比較 delta を生成する。
-- 7 scenario、17 arm、289 observations の JSON evidence artifact をまとめた。
-- guide は wall time、Worker usage、materialized prompt bytes、retained bytes、definition/interface bytes を別々に示し、親 usage unavailable を明記する。
+- 7 scenario、17 arm、289 observations の JSON evidence artifact を記録した。
+- Guide は wall time、Worker usage、materialized prompt bytes、retained bytes、definition/interface bytes を分け、親 usage が未観測であることを明記する。
 
 ### Decisions During Implementation
 
-- compact interface bytes は result payload のみ計上し、envelope `durationMs` を除いて再現性を保った。
+- Compact interface bytes は result payload のみ計上し、envelope `durationMs` を除いて再現性を保った。
 - 観測できない値や反復間で変動した値は平均値で補完せず `null` にする。
 - Interface byte reduction は parent token saving と呼ばず、byte dimension のみ報告する。
 
@@ -77,25 +77,26 @@ Workflow envelope は usage.jsonl に workflow aggregate を書かない。direc
 
 ### Adopted
 
-- Seeded campaign `e45d35b7-2fa6-416b-946a-70ca844b9c80` を採用した。2 warm-up + 15 measured の全 arm が揃う。
+- Seeded campaign `e45d35b7-2fa6-416b-946a-70ca844b9c80` を採用した。全 arm で warm-up 2 回と measured 15 回が揃う。
 
 ### Rejected
 
-- 不要な計測実験はなし。
+- 追加の計測実験は行っていない。
 
 ## Validation
 
 - `mise exec -- node --test --test-reporter=spec benchmarks/test/*.test.mjs` — 13 tests pass。
 - `mise exec -- pnpm typecheck` — pass。
 - `mise exec -- pnpm build` — pass。
-- `mise exec -- pnpm lint` — 0 exit、repository-wide 38 warnings を表示。
+- `mise exec -- pnpm lint` — 0 exit、repository-wide 38 warnings。
 - canonical `mise run check` は coordinator merge run に defer。
+- Coordinator review: commit range `6671872..7b2b3b4` approved for implementation.
 
 ## Risks
 
-- Wall time は local CLI起動を含む単一 OS/Node environment の測定であり、他 provider・OS へ一般化しない。
-- 親 token/turn usage は未観測。
+- Wall time は local CLI 起動を含む単一 OS/Node environment の測定であり、他 provider・OS へ一般化しない。
+- 親 token/turn usage は未観測であり、節約量を推定していない。
 
 ## Follow-ups
 
-- benchmark source、scheduler、prompt、model が変わったら runner を同じ反復数で再実行する。
+- Benchmark source、scheduler、prompt、model が変わったら runner を同じ反復数で再実行する。

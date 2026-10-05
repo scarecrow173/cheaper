@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034ARlQpkPs620j6TP15Rv"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Seeded workflow benchmark fixtures と runner"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -18,9 +18,7 @@ relations:
         path: "benchmarks/lib/run-scenario.mjs"
       - type: "file"
         path: "benchmarks/run.mjs"
-    modified:
-      - type: "file"
-        path: "benchmarks/scenarios/scenarios.json"
+    modified: []
     deleted: []
     renamed: []
     moved: []
@@ -39,7 +37,7 @@ relations:
   derived-by: []
   verifies: []
   verified-by:
-      - "docs/test-specs/workflow-benchmark-scenario-determinism.md"
+    - "docs/test-specs/workflow-benchmark-scenario-determinism.md"
   references:
     - "docs/adr/benchmark-harness-placement-and-accounting.md"
   defers: []
@@ -60,41 +58,46 @@ metadata:
 
 Issue #67 は tool-only 単発、fan-out/fan-in、tool/Worker chain、process output、manual sequence、dynamic/saved workflow、definition/interface の再現可能な比較を求める。親 token が測定できない場合は節約として扱わない。
 
-## 実装
+## Implementation
 
-### 変更
+### Changes Made
 
 - Seeded scenario manifest、saved workflow、fake stream、record validation、prompt/timing/critical-path 計測を追加した。
-- built CLI を `NODE_ENV=test` と `CHEAPER_TEST_FAKE_STREAM` で subprocess 実行する runner を追加した。
-- fan-out fixture を独立 read tool 2 件 + Worker fan-in 1 件にした。複数 fake Worker の concurrent model resolution は繰り返し `MODEL_TIER_UNAVAILABLE` となったため、この要件に沿う tool fan-out に変更した。
-- interface size は envelope の `result` payload に限定し、可変 `durationMs` を除いた。
-- process stdout は `/details/stdout/text` から Worker input に bind する。
+- Built CLI を `NODE_ENV=test` と `CHEAPER_TEST_FAKE_STREAM` subprocess 実行する runner を追加した。
+- Fan-out fixture を独立 read tool 2 件 + Worker fan-in 1 件にした。複数 fake Worker の concurrent model resolution は反復中に `MODEL_TIER_UNAVAILABLE` となったため、要件に沿う tool fan-out に変更した。
+- Interface size は envelope の `result` payload に限定し、可変 `durationMs` を除いた。
+- Process stdout は `/details/stdout/text` から Worker input に bind する。
 
-### 実装時の判断
+### Decisions During Implementation
 
-- direct invocation 数は親 turns の proxy にとどめた。
-- tool-only workflow は workflow envelope の job metadata から集計し、`usage.jsonl` へは加算しない。
+- Direct invocation 数は親 turns の proxy にとどめる。
+- Tool-only workflow は workflow envelope の job metadata から集計し、`usage.jsonl` へ加算しない。
 
-## 関連実験
+## Related Experiments
 
-### 採用
+### Adopted
 
-- なし。seeded harness の比較は本実装記録と集約 artifact に保存する。
+- Seeded fixtures を実装し、比較 sweep は aggregation record に保存した。
 
-### 却下
+### Rejected
 
-- concurrent fan-out fake Worker: 同一 fake provider の model resolution が反復中に空候補を返し、決定的な sweep にならなかったため、tool-job fan-out fixture に置き換えた。
+- Concurrent fan-out fake Worker は同一 fake provider の model resolution が反復中に空候補を返したため、tool-job fan-out fixture に置き換えた。
 
-## 検証と証拠
+## Validation
 
-- `mise exec -- node --test --test-reporter=spec benchmarks/test/*.test.mjs` — pass。
-- 全 7 scenario を各 arm warm-up 2 回 + measured 15 回で実行し、`benchmarks/results/e45d35b7-2fa6-416b-946a-70ca844b9c80.json` に統合した。
+- 全 7 scenario を各 arm warm-up 2 回 + measured 15 回で実行し、`benchmarks/results/e45d35b7-2fa6-416b-946a-70ca844b9c80.json` に保存した。
+- `mise exec -- node --test --test-reporter=spec benchmarks/test/*.test.mjs` — 13 tests pass。
+- `mise exec -- pnpm typecheck` — pass。
+- `mise exec -- pnpm build` — pass。
+- `mise exec -- pnpm lint` — 0 exit、repository-wide 38 warnings。
 - canonical `mise run check` は coordinator merge run に defer。
+- Coordinator review: commit range `6671872..7b2b3b4` approved for implementation.
 
-## リスク
+## Risks
 
-- 測定した CLI wall time は Windows のこの環境に限る。provider 一般の性能や親 agent の token savings を示さない。
+- Timing は local CLI 起動を含むため、他 OS/provider への一般化は未検証。
+- Parent token/turn usage は未観測。
 
-## Follow-up
+## Follow-ups
 
-- scheduler/prompt/model/CLI 変更後に `mise exec -- node benchmarks/run.mjs` を再実行する。
+- Scheduler、prompt、model、CLI に変更があれば `benchmarks/run.mjs` を同じ反復数で再実行する。
