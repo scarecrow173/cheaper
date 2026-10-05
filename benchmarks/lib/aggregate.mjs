@@ -37,7 +37,11 @@ function summarizeArm(records) {
   if (times.length !== records.length) throw new TypeError("every benchmark arm record must include finite wallTimeMs");
   const metrics = Object.fromEntries(comparableFields.map((field) => [field, stableValue(records, ({ metrics }) => metrics[field])]));
   for (const field of usageFields) metrics[`usage${field[0].toUpperCase()}${field.slice(1)}`] = stableValue(records, ({ metrics }) => metrics.usage?.[field]);
-  for (const field of sizeFields) metrics[field] = stableValue(records, (record) => record[field] ?? record.metrics[field]);
+  for (const field of sizeFields) {
+    metrics[field] = stableValue(records, (record) => record[field] ?? record.metrics[field]
+      ?? (field === "workflowDefinitionBytes" ? record.metrics.definitionReadBytes : undefined)
+      ?? (field === "parentVisibleInterfaceBytes" ? record.metrics.interfaceBytes : undefined));
+  }
   return {
     observationCount: records.length,
     parentUsage: records.every(({ parentUsage }) => parentUsage.status === "unavailable")
