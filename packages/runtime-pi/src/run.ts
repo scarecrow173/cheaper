@@ -17,6 +17,7 @@ import {
 } from "@cheaper/core";
 import {
   createInvocationToolRuntime,
+  type ExecutionMetrics,
   type InvocationToolRuntime,
   type ToolRuntime,
   type WorkerExecutionBinding,
@@ -53,6 +54,8 @@ export interface WorkerRunMeta {
   repairs: number;
   transientRetries: number;
   changes: ChangesSummary;
+  /** 共有 ADR D3: この Worker の owner 集合、scope teardown 前の snapshot。 */
+  execution: ExecutionMetrics;
   /** 親コンテキスト offload の実測（SPEC-034rzGnCaRQc5ceI95lf5i）。 */
   savings?: WorkerSavings;
 }
@@ -105,6 +108,8 @@ export interface RunWorkerDeps {
   abortGraceMs?: number;
   /** D7: invocation を借りる場合はこの Worker の child scope だけを所有する。 */
   execution?: WorkerExecutionBinding;
+  /** owned invocation の operation timestamp/snapshot 用 monotonic clock。 */
+  operationClock?: () => number;
 }
 
 type AbortReason = "timeout" | "signal" | "maxTurns" | "maxToolCalls";
@@ -228,6 +233,7 @@ export async function runWorker(
   if (deps.signal?.aborted) requestAbort("signal");
 
   const ownsInvocation = deps.execution === undefined;
+  const ownerId = deps.execution?.ownerId ?? "worker";
   let invocation: InvocationToolRuntime | undefined;
   let toolScope: ToolRuntime | undefined;
 
@@ -239,7 +245,9 @@ export async function runWorker(
         symlinkPolicy: policy.filesystem.symlinks,
         concurrency: policy.execution.concurrency,
         abortGraceMs: graceMs,
+        ...(deps.operationClock !== undefined ? { clock: deps.operationClock } : {}),
       });
+    const executionRuntime = invocation;
     const outputPerInput = worker.cheaper.model.workload?.outputPerInput;
     const resolved = await (async () => {
       if (deps.explicitModel === undefined) {
@@ -285,7 +293,7 @@ export async function runWorker(
     };
     toolScope = invocation.createWorkerScope({
       ...toolOptions,
-      ownerId: deps.execution?.ownerId ?? "worker",
+      ownerId: ownerId,
       handlers: createPiToolHandlers(toolOptions),
       signal: runAbort.signal,
       abortGraceMs: graceMs,
@@ -347,6 +355,7 @@ export async function runWorker(
         repairs,
         transientRetries: snap.transientRetries,
         changes: await journal.finalize(),
+        execution: executionRuntime.executionMetrics(ownerId),
         savings: {
           sourceTokens,
           returnedTokens,
@@ -472,6 +481,26 @@ export async function runWorker(
       unsubscribe();
       session.dispose();
     }
+  } catch (error) {
+    if (!invocation) throw error;
+    const err =
+      error instanceof CheaperError
+        ? error
+        : new CheaperError(
+            "INTERNAL_ERROR",
+            error instanceof Error ? error.message : String(error),
+            {
+              cause: error instanceof Error ? error : undefined,
+            },
+          );
+    throw new WorkerRunError(err.code, err.message, {
+      ...(err.details !== undefined ? { details: err.details } : {}),
+      ...(err.cause !== undefined ? { cause: err.cause } : {}),
+      runMeta: {
+        ...(err instanceof WorkerRunError ? err.runMeta : {}),
+        execution: invocation.executionMetrics(ownerId),
+      },
+    });
   } finally {
     clearTimeout(timeout);
     deps.signal?.removeEventListener("abort", onSignalAbort);

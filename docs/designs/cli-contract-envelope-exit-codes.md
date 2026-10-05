@@ -88,6 +88,16 @@ ADR-034r05iHlWosDpKs4eBT59 の one-shot JSON-first プロセスモデルを CLI 
     "rejectedToolCalls": 0,
     "repairs": 0,
     "transientRetries": 0,
+    "execution": {
+      "operations": 0,
+      "byState": { "queued": 0, "running": 0, "completed": 0, "failed": 0, "cancelled": 0, "timed_out": 0 },
+      "byTool": {},
+      "maxConcurrency": 0,
+      "operationMs": 0,
+      "activeMs": 0,
+      "overlapMs": 0,
+      "queueMs": 0
+    },
     "changes": {
       "files": [{ "path": "src/a.ts", "kind": "created", "linesAdded": 10, "linesDeleted": 0 }],
       "totals": { "files": 1, "linesAdded": 10, "linesDeleted": 0 }
@@ -97,6 +107,7 @@ ADR-034r05iHlWosDpKs4eBT59 の one-shot JSON-first プロセスモデルを CLI 
 ```
 
 - error envelope: `{ "schemaVersion": 1, "ok": false, "worker": "<name>|null", "error": { "code", "message", "exitCode", "retryable", "details"?, "cause"?: {"code","message"} }, "meta": <取得できた範囲。未取得は null> }`
+- `meta.execution` は共有 ADR D3 の owner-scoped snapshot。error でも取得済み snapshot を同型で返し、service 未生成なら `null`、生成済み 0 件なら上記の zero snapshot。定義は [operation execution metrics](operation-execution-metrics.md) を参照。
 - stdout は envelope 1 つ + 改行のみ。stderr は診断（model 選択行・警告）に限定し progress は出さない。`--quiet` は stderr の警告/診断を抑止（error は出す）。TTY 判定なし
 - `--format text`: 1 行目 `ok`/`error <code>`、続けて worker・model・usage・changes の表、result/error を整形 JSON
 - exit code は core の対応表（DESIGN-034r05iHrZUE6WrdtQIOmE）のみを参照

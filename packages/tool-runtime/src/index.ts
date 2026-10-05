@@ -3,6 +3,7 @@ export * from "./artifact.js";
 export * from "./catalog.js";
 export * from "./count-tokens.js";
 export * from "./definition.js";
+export * from "./execution-metrics.js";
 export * from "./find.js";
 export * from "./grep.js";
 export * from "./invocation.js";

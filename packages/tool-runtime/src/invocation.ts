@@ -1,4 +1,5 @@
 import { CheaperError, type ConcurrencyPolicy, type SymlinkPolicy } from "@cheaper/core";
+import type { ExecutionMetrics } from "./execution-metrics.js";
 import { OperationManager, type OperationRecord } from "./operation.js";
 import { createToolRuntime, type ToolRuntime, type ToolRuntimeOptions } from "./registry.js";
 import { ToolScheduler } from "./scheduler.js";
@@ -21,12 +22,15 @@ export interface InvocationToolRuntimeOptions {
   signal?: AbortSignal;
   abortGraceMs?: number;
   concurrency?: Partial<ConcurrencyPolicy> | undefined;
+  /** operation timestamp と snapshot に共通の monotonic clock。 */
+  clock?: () => number;
 }
 export interface InvocationToolRuntime {
   readonly root: string;
   readonly symlinkPolicy: SymlinkPolicy;
   createWorkerScope(options: WorkerScopeOptions): ToolRuntime;
   operations(ownerId?: string): readonly OperationRecord[];
+  executionMetrics(ownerId?: string): ExecutionMetrics;
   abort(reason?: unknown): void;
   drain(): Promise<void>;
   dispose(): Promise<void>;
@@ -46,6 +50,7 @@ export function createInvocationToolRuntime(
   const manager = new OperationManager({
     signal: controller.signal,
     abortGraceMs: opts.abortGraceMs ?? 5000,
+    ...(opts.clock !== undefined ? { clock: opts.clock } : {}),
   });
   const scheduler = new ToolScheduler(manager, opts.concurrency);
   const abort = (reason?: unknown) => controller.abort(reason);
@@ -90,6 +95,7 @@ export function createInvocationToolRuntime(
       return scope;
     },
     operations: (ownerId) => manager.records(ownerId),
+    executionMetrics: (ownerId) => manager.executionMetrics(ownerId),
     abort,
     async drain() {
       abort();
