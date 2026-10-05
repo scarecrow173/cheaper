@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJcLMvVtCF2DauUO4It"
 type: "task"
-status: "in-progress"
+status: "blocked"
 title: "Workflow policy/helper/compiler の正本を実装する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -70,5 +70,7 @@ core/src/policy/workflow.ts (new), schema.ts, load.ts, merge.ts, core/src/index.
 - [ ] `mise exec -- pnpm --filter @cheaper/workflow exec vitest run test/compiler.test.ts` exits 0。
 
 ## Notes
+
+2026-10-06: S1 source と focused checks は commit 済みだが、coordinator checkpoint review msg_33814be597e8 は計3回・各600000msの待機後も未回答。独立 review を自己代行せず blocked とする。S2以降の依存は未解決。承認後に IR/task を completed/done にして engine slice へ進む。
 
 planのfilemap/commandsを正本とし、dependencies/rootconfig/policy.yaml/sharedADR/APMbundleは変更しない。nestedworkers無し、coordinatorreviewを新askで受ける。canonical check deferred to coordinator merge run。

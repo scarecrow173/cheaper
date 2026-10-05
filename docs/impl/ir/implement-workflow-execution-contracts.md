@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034AJmHjccYgHI8SdxXrpS"
 type: "impl"
-status: "in-progress"
+status: "blocked"
 title: "Implement workflow execution contracts"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -55,7 +55,7 @@ metadata:
 
 ## Summary
 
-S1 の WorkflowPolicy と literal writeScope の core 正本、compiler の validateJobOutput seam を実装した。focused verification は GREEN。coordinator の implementation checkpoint review は未承認であり、IR/task は in-progress とする。
+S1 の WorkflowPolicy と literal writeScope の core 正本、compiler の validateJobOutput seam を実装した。focused verification は GREEN。coordinator の implementation checkpoint review は未承認であり、IR/task は blocked とする。
 
 ## Context
 
@@ -78,7 +78,7 @@ schema の workflow/artifacts は部分省略を許可し、trusted merge 後・
 
 ### Review Checkpoint
 
-source inspection で shared/local ADR の policy restriction、literal identity、compiler-owned output schema と single-worker regression を照合した。独立 coordinator implementation review を新 ask で依頼する。承認前に task/IR を done/completed にしない。
+source inspection で shared/local ADR の policy restriction、literal identity、compiler-owned output schema と single-worker regression を照合した。独立 coordinator implementation review を新 ask msg_33814be597e8 で依頼した。計3回・各600000msの待機後も未回答のため、承認前に task/IR を done/completed にしない。現 Dispatch の終了は #62/#69-B の実装完了を意味しない。
 
 ## Related Experiments
 
@@ -98,14 +98,17 @@ source inspection で shared/local ADR の policy restriction、literal identity
 - GREEN: workflow compiler1 file /48 tests pass。
 - GREEN: runtime-pi run.test.ts 1 file /42 tests pass（core helper 移設後）。
 - core build、workflow build exit 0。
+- cross-package pnpm typecheck exit 0。既存 concurrency/process policy 2 files /46 tests pass。
+- 引き継ぎ再開時の root `mise exec -- pnpm lint` / `mise exec -- pnpm build` は exit 0。lint の既存 warnings は維持した。
+- a851872 は partial defaults test の期待値を resolver 自己比較から仕様の値へ固定した test-only commit。latest policy/workflow 1 file /12 tests pass、focused biome check pass。
 - focused biome check --write が formatting/import を整えた。既存 compiler/test の non-null warning は変更しない。新 test の non-null assertion は除去した。
 - 2026-10-06 planning named audits plan/task/test-spec は own findings 0、task graph issues []、runnable は S1 のみ。
-- diff --check pass。最終 focused rerun と checkpoint commit/review を続ける。
+- diff --check pass。source commits は 91ab4dc /9c0224e、追加 test-only commit は a851872。checkpoint review は未承認。
 
 ## Risks
 
-S2 engine、S3 artifact read/publisher、S4 Worker binding/lease release、S5 CLI は未実装。これらの acceptance を S1 focused pass から推測しない。repository-wide verification、実 provider、canonical check は実施していない。
+S2 engine、S3 artifact read/publisher、S4 Worker binding/lease release、S5 CLI は未実装。これらの acceptance を S1 focused pass から推測しない。実 provider、canonical check は実施していない。root lint/build/typecheck の成功を統合完了へ拡大しない。
 
 ## Follow-ups
 
-S1 checkpoint review を coordinator へ渡す。承認後に task/IR status と graph evidence を更新し、S2へ進む。canonical check deferred to coordinator merge run。
+S1 checkpoint review を coordinator へ渡したが未回答。承認後に task/IR status と graph evidence を更新し、S2へ進む。settled Dispatch の lifecycle IDs と closed ask を再使用しない。canonical check deferred to coordinator merge run。
