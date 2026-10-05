@@ -18,8 +18,8 @@ test("aggregate excludes warmups, preserves unavailable parent usage, and comput
     scenarioIds: ["independent-fanout-worker-fanin"],
     observations: [
       { ...record("independent-fanout-worker-fanin", "workflow", 999, { workerTurns: 90, retainedBytes: 999, materializedPromptBytes: 99, toolCalls: 0, usage: { input: 999 } }), warmup: true },
-      { ...record("independent-fanout-worker-fanin", "workflow", 10, { workerTurns: 3, retainedBytes: 40, materializedPromptBytes: 50, toolCalls: 0, usage: { input: 80, output: 4, total: 84 } }), warmup: false },
-      { ...record("independent-fanout-worker-fanin", "workflow", 20, { workerTurns: 3, retainedBytes: 40, materializedPromptBytes: 50, toolCalls: 0, usage: { input: 80, output: 4, total: 84 } }), warmup: false },
+      { ...record("independent-fanout-worker-fanin", "workflow", 10, { workerTurns: 3, retainedBytes: 40, materializedPromptBytes: 50, toolCalls: 0, usage: { input: 80, output: 4, total: 84 } }), workflowDefinitionBytes: 100, warmup: false },
+      { ...record("independent-fanout-worker-fanin", "workflow", 20, { workerTurns: 3, retainedBytes: 40, materializedPromptBytes: 50, toolCalls: 0, usage: { input: 80, output: 4, total: 84 } }), workflowDefinitionBytes: 100, warmup: false },
       { ...record("independent-fanout-worker-fanin", "direct-worker-sequence", 30, { workerTurns: 3, retainedBytes: 60, materializedPromptBytes: 70, toolCalls: 0, usage: { input: 100, output: 6, total: 106 } }), warmup: false },
     ],
   });
@@ -32,6 +32,7 @@ test("aggregate excludes warmups, preserves unavailable parent usage, and comput
   const pair = result.comparisons.find(({ right }) => right === "direct-worker-sequence");
   assert.equal(pair.deltas.usageInput, -20);
   assert.equal(pair.deltas.retainedBytes, -20);
+  assert.equal(pair.deltas.wallTimeMs, -15);
 });
 
 test("aggregate leaves variable deterministic metrics unavailable instead of averaging them", () => {
@@ -42,4 +43,18 @@ test("aggregate leaves variable deterministic metrics unavailable instead of ave
     })),
   });
   assert.equal(result.arms[0].stableMetrics.usageInput, null);
+});
+
+test("definition and compact interface comparison measures parent-visible byte reduction", () => {
+  const common = { workerTurns: 0, toolCalls: 0, retainedBytes: 0, materializedPromptBytes: 0 };
+  const result = aggregateBenchmarkResult({
+    scenarioIds: ["definition-vs-compact-interface"],
+    observations: [
+      record("definition-vs-compact-interface", "full-definition", 1, { ...common, definitionReadBytes: 351, usage: null }),
+      { ...record("definition-vs-compact-interface", "compact-interface", 2, { ...common, interfaceBytes: 158, usage: null }), parentVisibleInterfaceBytes: 158 },
+    ],
+  });
+  const pair = result.comparisons[0];
+  assert.equal(pair.deltas.parentVisibleReductionBytes, 193);
+  assert.equal(pair.deltas.parentVisibleReductionRatio, 193 / 351);
 });

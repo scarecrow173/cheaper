@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { criticalPathMs, maxConcurrencyFromJsonl, promptBytesFromJsonl } from "../lib/measurements.mjs";
+import { criticalPathMs, interfacePayloadBytes, maxConcurrencyFromJsonl, promptBytesFromJsonl } from "../lib/measurements.mjs";
 
 test("critical path follows workflow dependencies and measured job durations", () => {
   const workflow = {
@@ -38,4 +38,10 @@ test("max concurrency uses observed fake-stream interval overlap", () => {
   ].map((entry) => JSON.stringify(entry)).join("\n");
   assert.equal(maxConcurrencyFromJsonl(log), 2);
   assert.throws(() => maxConcurrencyFromJsonl('{"id":"a","phase":"end","at":"2"}'), /unmatched/);
+});
+
+test("compact interface bytes exclude variable command timing metadata", () => {
+  const base = { ok: true, result: { schemaVersion: 1, inputs: {}, outputs: {} } };
+  assert.equal(interfacePayloadBytes({ ...base, meta: { durationMs: 12 } }), interfacePayloadBytes({ ...base, meta: { durationMs: 87 } }));
+  assert.throws(() => interfacePayloadBytes({ ok: false, result: {} }), /successful result/);
 });

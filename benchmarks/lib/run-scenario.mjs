@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import { Buffer } from "node:buffer";
 import path from "node:path";
 import { benchmarkEnvironment, cliEntry, countUsageRecords, prepareWorkspace, readPromptLog, repositoryRoot, runCli } from "./cli.mjs";
-import { measureWorkflowEnvelope, promptBytesFromJsonl } from "./measurements.mjs";
+import { interfacePayloadBytes, measureWorkflowEnvelope, promptBytesFromJsonl } from "./measurements.mjs";
 import { summarizeWorkerEnvelope, validateBenchmarkRecord, validateWorkflowEnvelope } from "./result-schema.mjs";
 
 const unavailableParentUsage = Object.freeze({ status: "unavailable", reason: "no parent-agent telemetry is exposed to the benchmark runner" });
@@ -74,7 +74,7 @@ async function runWorkflow(scenario, arm, workspace, envInfo) {
       cwd: workspace,
       env: envInfo.env,
     });
-    interfaceBytes = Buffer.byteLength(iface.stdout);
+    interfaceBytes = interfacePayloadBytes(iface.envelope);
     interfaceWallTimeMs = iface.wallTimeMs;
   }
   await resetPromptLog(envInfo.promptLog);
@@ -318,7 +318,7 @@ async function runCompactInterface(scenario, workspace, envInfo) {
     environment: environmentSnapshot(),
     command: `node packages/cli/dist/main.js workflow interface ${path.basename(workflowPath)}`,
     workflowDefinitionBytes: Buffer.byteLength(JSON.stringify(scenario.workflow, null, 2)) + 1,
-    parentVisibleInterfaceBytes: Buffer.byteLength(result.stdout),
+    parentVisibleInterfaceBytes: interfacePayloadBytes(result.envelope),
     discoveryMode: "public-interface-only",
     wallTimeMs: result.wallTimeMs,
     directUsageRecordCount: 0,

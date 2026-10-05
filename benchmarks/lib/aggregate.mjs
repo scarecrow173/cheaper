@@ -75,6 +75,14 @@ function comparison([scenarioId, leftName, rightName], index) {
     deltas[field] = a === null || b === null ? null : a - b;
   }
   deltas.wallTimeMs = left.medianWallTimeMs - right.medianWallTimeMs;
+  if (scenarioId === "definition-vs-compact-interface" && leftName === "full-definition") {
+    const definitionBytes = left.stableMetrics.workflowDefinitionBytes;
+    const interfaceBytes = right.stableMetrics.parentVisibleInterfaceBytes;
+    deltas.parentVisibleReductionBytes = definitionBytes === null || interfaceBytes === null ? null : definitionBytes - interfaceBytes;
+    deltas.parentVisibleReductionRatio = definitionBytes === null || interfaceBytes === null || definitionBytes === 0
+      ? null
+      : (definitionBytes - interfaceBytes) / definitionBytes;
+  }
   return { scenarioId, left: leftName, right: rightName, status: "measured", deltas };
 }
 
