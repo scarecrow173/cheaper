@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034Aq1jA258sf4IaRxgCrq"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "managed process lifecycle hardening"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -68,13 +68,14 @@ oversized full output の artifact handoff は coordinator の ADR intent verdic
 - heartbeat は runtime diagnostic channel（cheaper 自身の stderr/debug）のみ。child の captured stderr、tool result、Worker context、LLM turn に heartbeat を追加しない。
 - scope dispose・invocation abort・Worker abort で tree 終了を要求する。pool/resource capacity は実 settle まで保持する。
 - POSIX と Windows の違いを明示し universal graceful termination を主張しない。外部 session/re-parent による containment escape は対象外。
+- Windows の ancestry-based cleanup は、初回 identity snapshot 前に中間親が終了した子孫を保証できない。これは adversarial containment escape とは別の宣言済み platform limitation とする。
 - shared ADR D1 の依存方向、D2 の trusted/restrict 合成、D3 の terminal/settlement、D5 の named argv、D7 の owned/borrowed lifetime を保つ。
 
 ## Acceptance Criteria
 
 - [ ] AC1: process timeout で TIMEOUT/timed_out、外側 abort が先なら original reason/cancelled。
 - [ ] AC2: configured cap が combined output と UTF-8 text に適用され truncation diagnostics を返す。
-- [ ] AC3: timeout/abort の parent/child/grandchild が終了し stubborn tree は grace 後に force-kill。
+- [ ] AC3: timeout/abort の parent/child/grandchild が終了し stubborn tree は grace 後に force-kill。Windows は初回 identity snapshot 前に中間親が終了し ancestry を失った子孫を保証範囲から除外する。
 - [ ] AC4: grace 内に管理 tree が exit した場合 force-kill しない（Windows graceful 非対応ケースは明示）。
 - [ ] AC5: normal/nonzero/spawn failure/timeout/abort/dispose の cleanup が settle し capacity を解放する。root が先に exit した残存 descendant も対象。
 - [ ] AC6: heartbeat が観測でき result/context/turn を汚染しない。timer が terminal 後に残らない。
@@ -85,3 +86,7 @@ oversized full output の artifact handoff は coordinator の ADR intent verdic
 ## Sources
 
 GitHub issue #60 本文と Triage 2026-10-04、dispatch brief、および discovery に記した現行 source。
+
+## Approval
+
+coordinator verdict msg_6cc7f6088615（thread msg_47732c6b1e9b）: APPROVED spec+ADR+design gate。W1 は宣言済み platform limitation として承認、native Job Objects は将来 ADR に defer。

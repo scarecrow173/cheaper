@@ -1,7 +1,7 @@
 ---
 id: "ADR-034AtSJVcROd9oyMi4ksua"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "managed process bounded lifecycle policy"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -77,7 +77,7 @@ process:
 ```
 
 全 lifecycle field は `process.*` に固定し、per-task override を schema で拒否する。legacy omission は既定を補完する。
-timeout / killGrace / heartbeat.interval は正の duration、Node timer の最大値 2147483647ms 以下。maxOutputBytes は正の整数で上限 16777216 bytes を提案する（canonical output schema と capture の共有 ceiling）。
+timeout / killGrace / heartbeat.interval は正の duration、Node timer の最大値 2147483647ms 以下。maxOutputBytes は正の整数で上限 16777216 bytes（canonical output schema と capture の共有 ceiling）。
 timeout は spawn から child root exit までの期限で、scheduler queue wait は含まない。外側 run abort/timeout は queue・実行の両方に作用し、先に発生した reason を保持する。
 
 ### Layering と heartbeat.interval restriction
@@ -98,7 +98,7 @@ scope drain/dispose は managed process の cleanup promise を await し、gene
 POSIX は detached process group に SIGTERM、grace 後に残存 group へ SIGKILL。group が既に消えていれば force-kill を実行しない。
 Windows は native taskkill /PID /T（best effort）→grace→/T /F。root exit 後にも tree を回収するため、OS の PID/parent/creation-time snapshot を root PID と既知 descendant identity で辿り、消えた root では残存 child を kill target にする。
 Windows graceful は console app に対して保証せず、許可された native executable の tree containment escape（新 session / explicit re-parent 等）は対象外。
-snapshot 取得前に intermediate が消滅し ancestry が失われる Windows tree には taskkill 方式だけで厳密な保証を出せない。この platform limitation と normal-exit cleanup の範囲を **design gate の明示判断事項**とする。native Job Object を暗黙追加しない。
+初回 identity snapshot 前に中間親が終了して ancestry を失った Windows 子孫は、ancestry-based cleanup の保証範囲外とする。これは adversarial containment escape とは別の宣言済み platform limitation であり、通常 root exit 時に ancestry を追える残存 child/grandchild は回収する。native Job Objects は今回必須とせず、より強い保証は将来 ADR に defer する（coordinator verdict msg_6cc7f6088615）。
 
 ### Heartbeat と output
 
@@ -142,7 +142,7 @@ full oversized output の Artifact Store handoff は **DEFERRED**。RunArtifactS
 
 ## More Information
 
-coordinator direct verdict（2026-10-05）は ADR intent と defaults、top-level fields、artifact defer を確認した。正式 ADR acceptance / design approval は別 gate で取得する。
+coordinator direct verdict（2026-10-05）は ADR intent と defaults、top-level fields、artifact defer を確認した。正式 verdict msg_6cc7f6088615 は spec+ADR+design gate、policy.yaml ×2 defaults、16MiB ceiling、heartbeat.interval project-min と W1 limitation を承認した。
 
 ## Confirmation
 
