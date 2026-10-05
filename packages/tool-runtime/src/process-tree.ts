@@ -3,7 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-const HELPER_TIMEOUT_MS = 2000;
+const HELPER_TIMEOUT_MS = 10000;
 const HELPER_OUTPUT_BYTES = 1048576;
 const systemRoot = () => process.env.SystemRoot ?? "C:\\Windows";
 
