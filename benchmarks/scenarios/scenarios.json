@@ -286,7 +286,7 @@
               "hints": [
                 {
                   "$from": "process",
-                  "path": "/details/stdout"
+                "path": "/details/stdout/text"
                 }
               ]
             }
@@ -299,7 +299,7 @@
             },
             "value": {
               "$from": "process",
-              "path": "/details/stdout"
+            "path": "/details/stdout/text"
             }
           },
           "summary": {
@@ -365,7 +365,7 @@
               "hints": [
                 {
                   "$from": "process",
-                  "path": "/details/stdout"
+                "path": "/details/stdout/text"
                 }
               ]
             }
@@ -378,7 +378,7 @@
             },
             "value": {
               "$from": "process",
-              "path": "/details/stdout"
+            "path": "/details/stdout/text"
             }
           },
           "summary": {

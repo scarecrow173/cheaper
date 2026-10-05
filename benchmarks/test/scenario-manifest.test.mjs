@@ -24,4 +24,8 @@ test("scenario manifest defines every required benchmark arm and a runnable work
   assert.equal(fanout.workflow.jobs.summary.needs.length, 2);
   assert.equal(fanout.workflowMaxJobs, 3);
   assert.ok(scenarios.find(({ id }) => id === "process-and-analysis").processPolicy);
+  for (const id of ["process-and-analysis", "large-intermediate-process-analysis"]) {
+    const scenario = scenarios.find((item) => item.id === id);
+    assert.equal(scenario.workflow.jobs.analyze.input.hints[0].path, "/details/stdout/text");
+  }
 });
