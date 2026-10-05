@@ -1,0 +1,3137 @@
+{
+  "schemaVersion": 1,
+  "runId": "690b3096-f2a8-410d-8208-a8b3603d08ff",
+  "createdAt": "2026-10-05T23:02:49.668Z",
+  "fixtureRevision": "seeded-v1",
+  "warmupCount": 2,
+  "repetitionCount": 15,
+  "scenarioIds": [
+    "dynamic-vs-saved-workflow"
+  ],
+  "observations": [
+    {
+      "schemaVersion": 1,
+      "runId": "3374bb33-a698-4e96-a146-f8ef2a3696b5",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-CocMNJ --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3097.4296999999997,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.7173999999999978,
+      "wallTimeMs": 3181.5652,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 198,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3181.5652,
+        "cliReportedDurationMs": 198,
+        "nodeCount": 1
+      },
+      "repetition": 1,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "0df3e072-c190-4fde-988f-d7d255fdcedb",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-VKOTNU --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2822.2684,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.6635999999998603,
+      "wallTimeMs": 3169.3567000000003,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 188,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3169.3567000000003,
+        "cliReportedDurationMs": 189,
+        "nodeCount": 1
+      },
+      "repetition": 2,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "e679703a-1c4a-4d59-bb38-cc2b2750bdd8",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-UjPYTX --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2837.9336999999996,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 1.4530999999988126,
+      "wallTimeMs": 3050.292300000001,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 195,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3050.292300000001,
+        "cliReportedDurationMs": 196,
+        "nodeCount": 1
+      },
+      "repetition": 1,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "ebdf2a6e-ee18-4fd7-8257-ea63ffa78770",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-5MveRN --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2955.819299999999,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.624100000000908,
+      "wallTimeMs": 3139.560800000003,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 191,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3139.560800000003,
+        "cliReportedDurationMs": 192,
+        "nodeCount": 1
+      },
+      "repetition": 2,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "4e6eee96-71c6-44c7-9fa8-0d6a59e68eb3",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-CGWFJl --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3073.3669999999984,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.5584999999991851,
+      "wallTimeMs": 3254.5712999999996,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 189,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3254.5712999999996,
+        "cliReportedDurationMs": 190,
+        "nodeCount": 1
+      },
+      "repetition": 3,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "e1810f32-ef19-4a13-8f42-ab0c33f17b65",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-uIuNNe --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2861.4271000000044,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.6267000000007101,
+      "wallTimeMs": 3140.8171999999977,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 202,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3140.8171999999977,
+        "cliReportedDurationMs": 203,
+        "nodeCount": 1
+      },
+      "repetition": 4,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "cb316b9e-8ab3-454e-8074-1179f31efd9b",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-413ZuE --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2920.2462000000014,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 1.4071999999941909,
+      "wallTimeMs": 3089.8663000000015,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 170,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3089.8663000000015,
+        "cliReportedDurationMs": 171,
+        "nodeCount": 1
+      },
+      "repetition": 5,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "b44e1f48-b2ea-4008-a826-2aa51589c4a5",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-a0nZVJ --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2890.686800000003,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 1.4431000000040513,
+      "wallTimeMs": 3121.4351000000024,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 204,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3121.4351000000024,
+        "cliReportedDurationMs": 204,
+        "nodeCount": 1
+      },
+      "repetition": 6,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "0357e892-19fc-4cf1-9f1b-727f75533d11",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-g1VVqR --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2967.409400000004,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.48549999999522697,
+      "wallTimeMs": 3026.2001999999993,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 196,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3026.2001999999993,
+        "cliReportedDurationMs": 197,
+        "nodeCount": 1
+      },
+      "repetition": 7,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "e77700c8-48ae-46f7-bfb5-aabb3efda5a3",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-nOFfHT --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2999.377400000005,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.4798999999984517,
+      "wallTimeMs": 3073.5316999999995,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 179,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3073.5316999999995,
+        "cliReportedDurationMs": 179,
+        "nodeCount": 1
+      },
+      "repetition": 8,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "c7e2431d-c6cb-4a4c-bbf7-0967c557121f",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-hg0ATF --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2877.220300000001,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.5345999999990454,
+      "wallTimeMs": 2905.5828000000038,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 190,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 2905.5828000000038,
+        "cliReportedDurationMs": 191,
+        "nodeCount": 1
+      },
+      "repetition": 9,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "5a14ce9a-118d-4082-92af-07cb06fbb5bd",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-SqZZDm --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2874.4331999999995,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.47470000000612345,
+      "wallTimeMs": 3360.9216000000015,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 200,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3360.9216000000015,
+        "cliReportedDurationMs": 201,
+        "nodeCount": 1
+      },
+      "repetition": 10,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "6287423c-63c2-434e-98b5-70c4a6d5b394",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-ghHNyO --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3067.4937999999966,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.4584000000031665,
+      "wallTimeMs": 3254.4928000000073,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 176,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3254.4928000000073,
+        "cliReportedDurationMs": 177,
+        "nodeCount": 1
+      },
+      "repetition": 11,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "396a4c5c-5d9a-4a37-8b8d-681b2cd21e5c",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-sfkYiK --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2969.333700000003,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 1.6095000000059372,
+      "wallTimeMs": 3206.433799999999,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 185,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3206.433799999999,
+        "cliReportedDurationMs": 186,
+        "nodeCount": 1
+      },
+      "repetition": 12,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "23195caf-4095-4490-a151-3cbdbf7d56de",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-QfmdPd --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2948.674199999994,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 1.502199999988079,
+      "wallTimeMs": 3292.989100000006,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 210,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3292.989100000006,
+        "cliReportedDurationMs": 212,
+        "nodeCount": 1
+      },
+      "repetition": 13,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "7df1d82e-baf9-4190-b2ac-1c0a500c4bf4",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-0dBWYr --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3252.2543000000005,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.48789999999280553,
+      "wallTimeMs": 3297.461599999995,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 183,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3297.461599999995,
+        "cliReportedDurationMs": 185,
+        "nodeCount": 1
+      },
+      "repetition": 14,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "a5c6cc36-11d3-48c0-aa06-2d8efad20c64",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "dynamic-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-3FRpz9 --quiet",
+      "workflowDefinitionBytes": 398,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3171.1772999999957,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.6203999999997905,
+      "wallTimeMs": 3607.991700000013,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 156,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3607.991700000013,
+        "cliReportedDurationMs": 157,
+        "nodeCount": 1
+      },
+      "repetition": 15,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "ad92da8d-7cfb-4a81-8a50-63bfa955684a",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-OJ0WRD --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3188.959600000002,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3719.9588000000076,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 169,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3719.9588000000076,
+        "cliReportedDurationMs": 170,
+        "nodeCount": 1
+      },
+      "repetition": 1,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "2e8f1660-074f-49c2-946d-035f6ea9320c",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-sRdWmU --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3235.185400000002,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3830.5396000000037,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 218,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3830.5396000000037,
+        "cliReportedDurationMs": 220,
+        "nodeCount": 1
+      },
+      "repetition": 2,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "c0b98753-c4c9-4c33-b659-f2437823fad3",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-JRmMRI --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3431.3917000000074,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3433.0305999999982,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 210,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3433.0305999999982,
+        "cliReportedDurationMs": 211,
+        "nodeCount": 1
+      },
+      "repetition": 1,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "88184856-8ee7-4a19-8754-42bb618dd753",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-oXAvCw --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3559.7630999999965,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3724.0390000000043,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 203,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3724.0390000000043,
+        "cliReportedDurationMs": 205,
+        "nodeCount": 1
+      },
+      "repetition": 2,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "288de54d-fda4-4c8f-a853-8189d9879f9d",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-p29WmM --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3190.80250000002,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3819.9465999999957,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 212,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3819.9465999999957,
+        "cliReportedDurationMs": 214,
+        "nodeCount": 1
+      },
+      "repetition": 3,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "4c4cda18-7eeb-44a3-b0c0-e6adf83c2098",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-6rbe08 --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3654.6270000000077,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3848.1588000000047,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 264,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3848.1588000000047,
+        "cliReportedDurationMs": 264,
+        "nodeCount": 1
+      },
+      "repetition": 4,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "f3347d58-291c-4e77-b3a8-fc4998e374a2",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-k1YRX8 --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3354.376899999974,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3792.4605999999912,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 183,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3792.4605999999912,
+        "cliReportedDurationMs": 185,
+        "nodeCount": 1
+      },
+      "repetition": 5,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "06129f87-1cd9-4d37-b884-e0394087525d",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-qw7WM7 --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3337.1118000000133,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3918.609999999986,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 193,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3918.609999999986,
+        "cliReportedDurationMs": 195,
+        "nodeCount": 1
+      },
+      "repetition": 6,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "de33f0c0-fde9-4b6c-a32c-fbc4339660ae",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-Y0l8yt --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3370.858899999992,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3906.944300000003,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 238,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3906.944300000003,
+        "cliReportedDurationMs": 240,
+        "nodeCount": 1
+      },
+      "repetition": 7,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "127528df-7d94-49cd-9dc8-d3f9ca77de14",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-y4NmT0 --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3377.875299999985,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3898.771999999997,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 192,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3898.771999999997,
+        "cliReportedDurationMs": 192,
+        "nodeCount": 1
+      },
+      "repetition": 8,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "7c820ebf-b7fa-437a-8502-73665ba58313",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-JwN0Lq --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3582.7060000000056,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3429.635500000004,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 197,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3429.635500000004,
+        "cliReportedDurationMs": 198,
+        "nodeCount": 1
+      },
+      "repetition": 9,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "14cfe11b-b74e-48e7-9e95-228e7930605f",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-iAH5zR --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3347.5744000000122,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3512.241399999999,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 259,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3512.241399999999,
+        "cliReportedDurationMs": 261,
+        "nodeCount": 1
+      },
+      "repetition": 10,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "42336b5f-e23e-476e-beb6-39a3c388318f",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-8uRzdx --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3345.4274999999907,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3612.123200000002,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 213,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3612.123200000002,
+        "cliReportedDurationMs": 215,
+        "nodeCount": 1
+      },
+      "repetition": 11,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "90e52529-28f2-4e89-886b-a5dc86f26d58",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-b54bUs --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 3372.6675000000105,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 3152.100199999986,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 181,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 3152.100199999986,
+        "cliReportedDurationMs": 181,
+        "nodeCount": 1
+      },
+      "repetition": 12,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "d6bebf70-79c9-40f4-8aa8-b0c95cb88065",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-8znxlP --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2770.141800000012,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 2980.0342999999993,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 175,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 2980.0342999999993,
+        "cliReportedDurationMs": 175,
+        "nodeCount": 1
+      },
+      "repetition": 13,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "43494b20-4ef5-4b57-95c1-654201863e91",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-ikzbSa --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2766.7041000000027,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 2836.84169999999,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 189,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 2836.84169999999,
+        "cliReportedDurationMs": 189,
+        "nodeCount": 1
+      },
+      "repetition": 14,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "2822b66c-758a-48f5-8ddc-ec9c7e8828a6",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "saved-workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-BSeU7m --quiet",
+      "workflowDefinitionBytes": 348,
+      "parentVisibleInterfaceBytes": 82,
+      "interfaceDiscoveryWallTimeMs": 2822.728000000003,
+      "discoveryMode": "saved-definition",
+      "definitionGenerationMs": 0,
+      "wallTimeMs": 2985.581600000005,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": 178,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 0,
+        "wallTimeMs": 2985.581600000005,
+        "cliReportedDurationMs": 180,
+        "nodeCount": 1
+      },
+      "repetition": 15,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fe141b8d-d526-4511-a95f-b3873b3db0d2",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2848.167000000016,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2848.167000000016,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 1,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "a9292c64-8f0b-4f27-8e87-acdad9617bac",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2779.548600000009,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2779.548600000009,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 2,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "5554ec11-bb90-4a79-b5b9-cd1f3b33032c",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2989.657500000001,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2989.657500000001,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 1,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "b8787f25-2c26-4697-a87d-f70c9fa95cb2",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2928.364499999996,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2928.364499999996,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 2,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "f1bc4584-0853-4158-96f2-c9502b6da600",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2884.2711999999883,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2884.2711999999883,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 3,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "1694b478-ac0e-4d6d-b13d-4ec14d2f2af6",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2886.895599999989,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2886.895599999989,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 4,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "19a38cdb-0ba6-4181-9f64-afb11d8fe4f0",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2845.5962999999756,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2845.5962999999756,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 5,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "13846591-f044-4c08-81db-809eff5300f3",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2834.9728999999934,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2834.9728999999934,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 6,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "e1bd57d4-bca4-49e6-b039-b1ba49109601",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2820.365700000024,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2820.365700000024,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 7,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "e5acd8ba-4054-45ca-9b0c-1a6a979fad60",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2974.4193000000087,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2974.4193000000087,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 8,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "4181980e-adce-42a1-8a06-e0463a6e54dc",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2952.873900000006,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2952.873900000006,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 9,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "bd240e57-e648-4f29-8dfa-66af96d66c51",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2932.068900000013,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2932.068900000013,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 10,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "8cc7fbdb-583c-40b4-bbdc-b01af89ef5a7",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2857.0918999999994,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2857.0918999999994,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 11,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "5dce2304-a105-47db-94ed-ee2d3f986dd0",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2906.835699999996,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2906.835699999996,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 12,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "92122f98-cecf-4711-875a-7e45cf06dc1b",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2861.068500000023,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2861.068500000023,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 13,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "9a808aa9-b4c8-4686-88a4-1808e6347905",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2873.6624999999767,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2873.6624999999767,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 14,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "46939028-2ab2-4a0a-8af9-c685a661c618",
+      "scenarioId": "dynamic-vs-saved-workflow",
+      "scenarioTitle": "Dynamic workflow versus saved reusable workflow",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2897.2318000000087,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 0,
+        "directToolOperations": 0,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2928,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2928,
+          "total": 5883
+        },
+        "retainedBytes": 108,
+        "materializedPromptBytes": 12324,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2897.2318000000087,
+            "promptBytes": 12324,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2928,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2928,
+              "total": 5883
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 15,
+      "warmup": false
+    }
+  ],
+  "aggregate": {
+    "schemaVersion": 1,
+    "arms": [
+      {
+        "scenarioId": "dynamic-vs-saved-workflow",
+        "arm": "dynamic-workflow",
+        "observationCount": 15,
+        "parentUsage": {
+          "status": "unavailable",
+          "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+        },
+        "medianWallTimeMs": 3140.8171999999977,
+        "p95WallTimeMs": 3607.991700000013,
+        "stableMetrics": {
+          "jobCount": 1,
+          "workerJobCount": 1,
+          "toolOnlyJobCount": 0,
+          "workerTurns": 1,
+          "toolCalls": 0,
+          "retainedBytes": 36,
+          "materializedPromptBytes": 12324,
+          "maxConcurrency": 1,
+          "criticalPathMs": null,
+          "directToolOperations": null,
+          "usageInput": 2928,
+          "usageOutput": 27,
+          "usageTotal": 5883,
+          "workflowDefinitionBytes": 398,
+          "parentVisibleInterfaceBytes": 82,
+          "definitionReadBytes": null,
+          "directInvocationTurnsProxy": null
+        }
+      },
+      {
+        "scenarioId": "dynamic-vs-saved-workflow",
+        "arm": "saved-workflow",
+        "observationCount": 15,
+        "parentUsage": {
+          "status": "unavailable",
+          "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+        },
+        "medianWallTimeMs": 3612.123200000002,
+        "p95WallTimeMs": 3918.609999999986,
+        "stableMetrics": {
+          "jobCount": 1,
+          "workerJobCount": 1,
+          "toolOnlyJobCount": 0,
+          "workerTurns": 1,
+          "toolCalls": 0,
+          "retainedBytes": 36,
+          "materializedPromptBytes": 12324,
+          "maxConcurrency": 1,
+          "criticalPathMs": null,
+          "directToolOperations": null,
+          "usageInput": 2928,
+          "usageOutput": 27,
+          "usageTotal": 5883,
+          "workflowDefinitionBytes": 348,
+          "parentVisibleInterfaceBytes": 82,
+          "definitionReadBytes": null,
+          "directInvocationTurnsProxy": null
+        }
+      },
+      {
+        "scenarioId": "dynamic-vs-saved-workflow",
+        "arm": "direct-worker-sequence",
+        "observationCount": 15,
+        "parentUsage": {
+          "status": "unavailable",
+          "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+        },
+        "medianWallTimeMs": 2886.895599999989,
+        "p95WallTimeMs": 2989.657500000001,
+        "stableMetrics": {
+          "jobCount": null,
+          "workerJobCount": 1,
+          "toolOnlyJobCount": 0,
+          "workerTurns": 1,
+          "toolCalls": 0,
+          "retainedBytes": 108,
+          "materializedPromptBytes": 12324,
+          "maxConcurrency": 1,
+          "criticalPathMs": null,
+          "directToolOperations": 0,
+          "usageInput": 2928,
+          "usageOutput": 27,
+          "usageTotal": 5883,
+          "workflowDefinitionBytes": null,
+          "parentVisibleInterfaceBytes": null,
+          "definitionReadBytes": null,
+          "directInvocationTurnsProxy": 1
+        }
+      }
+    ],
+    "comparisons": [
+      {
+        "scenarioId": "dynamic-vs-saved-workflow",
+        "left": "dynamic-workflow",
+        "right": "saved-workflow",
+        "status": "measured",
+        "deltas": {
+          "jobCount": 0,
+          "workerJobCount": 0,
+          "toolOnlyJobCount": 0,
+          "workerTurns": 0,
+          "toolCalls": 0,
+          "retainedBytes": 0,
+          "materializedPromptBytes": 0,
+          "maxConcurrency": 0,
+          "criticalPathMs": null,
+          "directToolOperations": null,
+          "usageInput": 0,
+          "usageOutput": 0,
+          "usageTotal": 0,
+          "workflowDefinitionBytes": 50,
+          "parentVisibleInterfaceBytes": 0,
+          "definitionReadBytes": null,
+          "directInvocationTurnsProxy": null,
+          "wallTimeMs": -471.30600000000413
+        }
+      },
+      {
+        "scenarioId": "dynamic-vs-saved-workflow",
+        "left": "saved-workflow",
+        "right": "direct-worker-sequence",
+        "status": "measured",
+        "deltas": {
+          "jobCount": null,
+          "workerJobCount": 0,
+          "toolOnlyJobCount": 0,
+          "workerTurns": 0,
+          "toolCalls": 0,
+          "retainedBytes": -72,
+          "materializedPromptBytes": 0,
+          "maxConcurrency": 0,
+          "criticalPathMs": null,
+          "directToolOperations": null,
+          "usageInput": 0,
+          "usageOutput": 0,
+          "usageTotal": 0,
+          "workflowDefinitionBytes": null,
+          "parentVisibleInterfaceBytes": null,
+          "definitionReadBytes": null,
+          "directInvocationTurnsProxy": null,
+          "wallTimeMs": 725.2276000000129
+        }
+      }
+    ]
+  }
+}

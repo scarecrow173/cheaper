@@ -44,6 +44,7 @@ Directory: `docs/plans`
 | PLAN-034zQHj1WyOgBNLGbDaFY8 | Implement version-pinned launcher acquisition | completed | [implement-version-pinned-launcher-acquisition.md](./implement-version-pinned-launcher-acquisition.md) |
 | PLAN-034zQ9Pet2QAuh0FP3ku3u | Workflow contract compiler を実装する | completed | [implement-workflow-contract-compiler.md](./implement-workflow-contract-compiler.md) |
 | PLAN-034zTiB05IwVw2pDB34sLk | Workflow loader と公開 interface CLI を接続する | completed | [implement-workflow-file-interface.md](./implement-workflow-file-interface.md) |
+| PLAN-034AR2f7p2NSUDtUhSuLp6 | Implement workflow orchestration benchmarks | approved | [implement-workflow-orchestration-benchmarks.md](./implement-workflow-orchestration-benchmarks.md) |
 | PLAN-034zTu37tgDGI306OPBitz | Workflow resource inference を実装する | completed | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | PLAN-034z2bk7AEzZ66Mt0uXCyJ | Integrate SEA executables into tag-triggered GitHub Release workflow | completed | [integrate-sea-executables-into-tag-triggered-github-release-workflow.md](./integrate-sea-executables-into-tag-triggered-github-release-workflow.md) |
 | PLAN-034r05iHE1FbkpcKKUUZ58 | Real-provider worker E2E via Ollama — implementation plan | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |

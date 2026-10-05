@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "inputs": {},
+  "jobs": {
+    "analyze": {
+      "kind": "worker",
+      "worker": "bulk-reader",
+      "input": { "task": "Analyze the reusable saved workflow fixture" }
+    }
+  },
+  "outputs": {
+    "summary": {
+      "schema": { "type": "string" },
+      "value": { "$from": "analyze", "path": "/summary" }
+    }
+  }
+}
