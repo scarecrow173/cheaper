@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034AJmHjccYgHI8SdxXrpS"
 type: "impl"
-status: "blocked"
+status: "completed"
 title: "Implement workflow execution contracts"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -55,7 +55,7 @@ metadata:
 
 ## Summary
 
-S1 の WorkflowPolicy と literal writeScope の core 正本、compiler の validateJobOutput seam を実装した。focused verification は GREEN。coordinator の implementation checkpoint review は未承認であり、IR/task は blocked とする。
+S1 の WorkflowPolicy と literal writeScope の core 正本、compiler の validateJobOutput seam を実装した。focused verification は GREEN。2026-10-06 の coordinator verdict は APPROVED（review-protocol、P0/P1なし）であり、IR completed/task done とする。
 
 ## Context
 
@@ -77,6 +77,8 @@ schema の workflow/artifacts は部分省略を許可し、trusted merge 後・
 新 helper の WorkerDefinition import を schema.js とした初回 core build が TS2305 で失敗した。rg で定義元 validate.ts を確認して型 import を修正し、core build を再実行して exit 0 を確認した。既存 canonical load assertion は workflow defaults 追加により差分が生じたため、仕様どおり expected fields を追加した。
 
 ### Review Checkpoint
+
+2026-10-06: coordinator の直接 verdict で S1 APPROVED（review-protocol、P0/P1なし）を受けた。WorkflowPolicy defaults/schema/restrict ordering、5つの min-only workflow keys、policy.yaml 無変更と backfill、core の writeScope 正本、validateJobOutput の設計整合、clean scope と tests が確認された。main be660a0 への rebase は禁止し、#60 と merge.ts restrict-key union の merge は coordinator 所有とする。
 
 source inspection で shared/local ADR の policy restriction、literal identity、compiler-owned output schema と single-worker regression を照合した。独立 coordinator implementation review を新 ask msg_33814be597e8 で依頼した。計3回・各600000msの待機後も未回答のため、承認前に task/IR を done/completed にしない。現 Dispatch の終了は #62/#69-B の実装完了を意味しない。
 
@@ -111,4 +113,4 @@ S2 engine、S3 artifact read/publisher、S4 Worker binding/lease release、S5 CL
 
 ## Follow-ups
 
-S1 checkpoint review を coordinator へ渡したが未回答。承認後に task/IR status と graph evidence を更新し、S2へ進む。settled Dispatch の lifecycle IDs と closed ask を再使用しない。canonical check deferred to coordinator merge run。
+S1 checkpoint review は承認済み。task/IR status と graph evidence を更新し、S2へ進む。settled Dispatch の lifecycle IDs と closed ask を再使用しない。canonical check deferred to coordinator merge run。

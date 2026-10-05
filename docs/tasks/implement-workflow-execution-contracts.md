@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJcLMvVtCF2DauUO4It"
 type: "task"
-status: "blocked"
+status: "done"
 title: "Workflow policy/helper/compiler の正本を実装する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -70,6 +70,8 @@ core/src/policy/workflow.ts (new), schema.ts, load.ts, merge.ts, core/src/index.
 - [ ] `mise exec -- pnpm --filter @cheaper/workflow exec vitest run test/compiler.test.ts` exits 0。
 
 ## Notes
+
+2026-10-06: coordinator は S1 を APPROVED と判定した（review-protocol、P0/P1なし）。defaults/schema/restrict ordering、5つの min-only workflow restriction keys、backfill、core-owned writeScope、compiler output validation と tests を確認済み。main be660a0（#60）への rebase は行わず、merge.ts restrict-key union は coordinator merge 時に扱う。
 
 2026-10-06: S1 source と focused checks は commit 済みだが、coordinator checkpoint review msg_33814be597e8 は計3回・各600000msの待機後も未回答。独立 review を自己代行せず blocked とする。S2以降の依存は未解決。承認後に IR/task を completed/done にして engine slice へ進む。
 

@@ -58,7 +58,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zR9OQeNgEdCN2OMdt8I | Implement native launcher acquisition and hook routing | completed | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
 | IMPL-034zQvMyE33qrrPAVVG0da | Implement workflow binding and definition contracts | completed | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
 | IMPL-034zQvN42aaLRbRi0R2fI4 | Implement workflow compilation and public hooks | completed | [implement-workflow-compilation-and-public-hooks.md](./implement-workflow-compilation-and-public-hooks.md) |
-| IMPL-034AJmHjccYgHI8SdxXrpS | Implement workflow execution contracts | blocked | [implement-workflow-execution-contracts.md](./implement-workflow-execution-contracts.md) |
+| IMPL-034AJmHjccYgHI8SdxXrpS | Implement workflow execution contracts | completed | [implement-workflow-execution-contracts.md](./implement-workflow-execution-contracts.md) |
 | IMPL-034zTuWWp7bpifS4FoAiG2 | implement-workflow-loader | completed | [implement-workflow-loader.md](./implement-workflow-loader.md) |
 | IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | completed | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
