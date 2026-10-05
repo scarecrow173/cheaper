@@ -84,7 +84,7 @@ relations:
 
 - Windows shim 非対応: node と package の JS entrypoint を explicit argv で設定し、cmd /c に逃げない。
 - process policy の task は project でも認可できる。trusted maxConcurrent cap は既存 min merge を再利用する。未知の process access は core predicate に従い mutation 側へ縮退する。
-- #61 の lease が未実装なので output task の overlap は conservatively serialize。FIFO の先頭 process が pool 飽和で待つ間、後続の他 tool も stall する（既存 FIFO 契約を維持）。
+- #61 の lease が未実装なので output task の overlap は conservatively serialize。#61 landing 後の ordering は claim conflict ベースであり、pool 飽和で待つ先頭 process を resource conflict の無い後続 tool が追い越してよい。pool 内 process 間の提出順は維持する。
 - argv のメタ文字拒否により、正規の引数内に pipe/semicolon 等を含める task も拒否する。回避目的の shell wrapper は許可せず、必要な処理は信頼された script へ移す。
 - 宣言外 I/O/外部 race は検出不能。setsid/re-parent 孫へ kill tree は届かず、正常終了後の孫残留検査もない。project policy の task は任意 executable を事前認可できるため、project policy を信頼することが前提。.cheaper/** を denyPaths に指定しても宣言/検証対象への拒否に限られ、未宣言の process access を制限できない。これらを guide に明記する。
 

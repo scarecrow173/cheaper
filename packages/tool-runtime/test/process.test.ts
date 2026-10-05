@@ -234,7 +234,7 @@ describe("invocation process pool and lifecycle", () => {
     },
   );
 
-  it("keeps FIFO across a saturated pool and releases queued abort with the original reason", async () => {
+  it("keeps pool capacity FIFO and releases queued abort with the original reason", async () => {
     const gate = path.join(root, "release");
     const inv = invocation(config({ hold: task("hold", [gate]) }));
     const a = scope(inv, "a");
@@ -259,17 +259,41 @@ describe("invocation process pool and lifecycle", () => {
     const queued = b.execute("process", { task: "hold" }, { signal: controller.signal });
     void queued.catch(() => {});
     const list = b.execute("ls", {});
-    await vi.waitFor(() =>
-      expect(inv.operations().map((o) => o.state)).toEqual(["running", "queued", "queued"]),
-    );
-    expect(listed).toBe(0);
+    // resource conflict の無い ls は pool 飽和の process を追い越して進む（#61 ordering）。
+    await vi.waitFor(() => {
+      const states = inv.operations().map((o) => o.state);
+      expect(states.slice(0, 2)).toEqual(["running", "queued"]);
+      expect(states[2]).not.toBe("queued");
+      expect(listed).toBe(1);
+    });
     const reason = new Error("queued cancellation");
     controller.abort(reason);
     await expect(queued).rejects.toBe(reason);
     await list;
     expect(listed).toBe(1);
+    // pool slot が空いた後の process は提出順で admission される。
+    const second = b.execute("process", { task: "hold" });
+    void second.catch(() => {});
+    const third = a.execute("process", { task: "hold" });
+    void third.catch(() => {});
+    await vi.waitFor(() =>
+      expect(inv.operations().map((o) => o.state)).toEqual([
+        "running",
+        "cancelled",
+        "completed",
+        "queued",
+        "queued",
+      ]),
+    );
     await writeFile(gate, "release");
-    await first;
+    await Promise.all([first, second, third]);
+    expect(inv.operations().map((o) => o.state)).toEqual([
+      "completed",
+      "cancelled",
+      "completed",
+      "completed",
+      "completed",
+    ]);
   });
 
   it("serializes an output task against reads even with spare pool capacity", async () => {

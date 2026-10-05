@@ -55,7 +55,7 @@ Feature: shell-free process の pool、capture、cancel、Pi/Workflow 共有。
 ## Examples
 
 - Example: 多量 stdout/stderr と binary 出力が cap 内に収まる。
-- Example: pool=1/maxOperations=2 で二番目 process と後続 ls が FIFO queue、queued abort 後 ls が進む。
+- Example: pool=1/maxOperations=2 で二番目 process は queue、resource conflict の無い ls は追い越して進む（#61 ordering）。queued abort は original reason で settle する。
 - Example: running task の parent/child PID が cancel 後に終了する。
 - Example: SEA execPath + native Node PATH は native Node に解決、PATH miss/shim は拒否。
 
