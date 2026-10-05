@@ -2,6 +2,7 @@ import {
   CheaperError,
   type ConcurrencyPolicy,
   type ProcessPolicy,
+  type ResourceManifestInput,
   resolveProcessPolicy,
   type SymlinkPolicy,
   type ToolName,
@@ -24,6 +25,8 @@ export interface WorkerExecutionBinding {
   runtime: InvocationToolRuntime;
   ownerId: string;
   parentLease?: ResourceLease;
+  /** parent safety と literal writeScope の両方を満たす canonical child manifest。 */
+  resourceManifest?: ResourceManifestInput;
 }
 export interface WorkerScopeOptions extends ToolRuntimeOptions {
   ownerId: string;
@@ -152,7 +155,7 @@ export function createInvocationToolRuntime(
           await manager.dispose();
           opts.signal?.removeEventListener("abort", onExternalAbort);
           scopes.clear();
-          resources.releaseJobs();
+          // acquireJobLease の caller が所有する parent は late executor finally まで保持する。
         }
       })();
       return disposed;

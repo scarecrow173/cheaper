@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJcZY4VW7Wfwx1AOzvh"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Workflow Worker permission と lease lifetime を配線する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/workflow-worker-permission-lease-lifetime.md"
   depends-on:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
     - "./implement-workflow-execution-contracts.md"

@@ -100,6 +100,24 @@ export class ResourceAccess {
     this.preparation ??= this.prepareScope();
     return this.preparation;
   }
+  /** resourceManifest 無しで準備した literal writeClaims を safety の各 bucket に narrow。 */
+  async prepareWorkerManifest(safetyManifest?: ResourceManifestInput): Promise<ResourceManifest> {
+    const prepared = await this.prepare();
+    const safety =
+      safetyManifest === undefined
+        ? prepared.manifest
+        : await normalizeResourceManifest(
+            prepared.root,
+            safetyManifest,
+            this.options.symlinkPolicy,
+          );
+    if (prepared.writeClaims === undefined) return safety;
+    return {
+      reads: safety.reads,
+      writes: prepared.writeClaims.filter((claim) => contains(safety.writes, claim)),
+      produces: prepared.writeClaims.filter((claim) => contains(safety.produces, claim)),
+    };
+  }
   private async prepareScope(): Promise<PreparedResourceScope> {
     const opts = this.options,
       root = await canonicalizeWorkspaceRoot(opts.root);

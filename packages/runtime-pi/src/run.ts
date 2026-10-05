@@ -247,6 +247,7 @@ export async function runWorker(
       onLimit: () => requestAbort("maxToolCalls"),
       denylist: createPathDenylist(policy.filesystem.denyPaths),
       writeScope: extractWriteScope(worker, deps.input),
+      resourceManifest: deps.execution?.resourceManifest,
       observeAccess: (...args: Parameters<ToolRuntime["observeAccess"]>) => {
         if (!toolScope) throw new CheaperError("INVALID_REQUEST", "missing tool scope");
         return toolScope.observeAccess(...args);

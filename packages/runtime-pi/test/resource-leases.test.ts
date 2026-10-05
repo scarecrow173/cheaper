@@ -12,6 +12,7 @@ import {
   createToolRuntime,
   MAX_ACCESS_OBSERVATIONS,
   MutationJournal,
+  ResourceAccess,
   type ResourceScopeOptions,
 } from "@cheaper/tool-runtime";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
@@ -59,6 +60,111 @@ async function sandbox(extra: ResourceScopeOptions = {}) {
   return { root, journal, ...tools };
 }
 describe("actual resource access and Worker leases", () => {
+  it("passes the narrowed binding to a Worker and authorizes helper mkdir without sibling permission", async () => {
+    const root = await workspace();
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage(fauxToolCall("read", { path: "a" }), { stopReason: "toolUse" }),
+        fauxAssistantMessage(fauxToolCall("read", { path: "b" }), { stopReason: "toolUse" }),
+        fauxAssistantMessage(
+          fauxToolCall("write", { path: "created/sibling.txt", content: "forbidden" }),
+          { stopReason: "toolUse" },
+        ),
+        fauxAssistantMessage(
+          fauxToolCall("write", { path: "created/out.txt", content: "allowed" }),
+          { stopReason: "toolUse" },
+        ),
+        fauxAssistantMessage('{"ok":true}'),
+      ],
+    });
+    const modelRuntime = await ModelRuntime.create({ refreshOnCreate: false });
+    modelRuntime.registerNativeProvider(fake.provider);
+    await modelRuntime.refresh({ allowNetwork: false });
+    const worker: WorkerDefinition = {
+      name: "bound-worker",
+      description: "test",
+      tools: ["read", "write"],
+      cheaper: {
+        model: { tier: "low" },
+        output: { schema: { inline: {} } },
+        writeScope: "targets",
+      },
+      instructions: "Read and write.",
+      sourcePath: "test.md",
+      origin: "explicit",
+      outputSchema: compileSchema(
+        { type: "object", required: ["ok"], properties: { ok: { type: "boolean" } } },
+        "output",
+      ),
+    };
+    const policy: RuntimePolicy = {
+      execution: {
+        timeoutMs: 10000,
+        maxTurns: 10,
+        maxToolCalls: 20,
+        concurrency: { maxOperations: 2, mutations: "per-resource" },
+      },
+      tools: { allow: ["read", "write"] },
+      filesystem: { symlinks: "deny", denyPaths: [] },
+      model: { maxTier: "high", tierFallback: "none" },
+      output: { maxTokens: 1024, repairAttempts: 1 },
+      retry: { transientAttempts: 0 },
+    };
+    const invocation = createInvocationToolRuntime({
+      root,
+      symlinkPolicy: "deny",
+      abortGraceMs: 0,
+      concurrency: policy.execution.concurrency,
+    });
+    cleanup.push(() => invocation.dispose());
+    const safety: NonNullable<ResourceScopeOptions["resourceManifest"]> = {
+      reads: [{ path: "a", scope: "exact" }],
+      writes: [{ path: ".", scope: "subtree" }],
+      produces: [{ path: "created", scope: "subtree" }],
+    };
+    const parentLease = await invocation.acquireJobLease({
+      ownerId: "bound",
+      names: ["read", "write"],
+      resourceManifest: safety,
+      readStrictness: "reject",
+    });
+    try {
+      const resourceManifest = await new ResourceAccess({
+        root,
+        symlinkPolicy: "deny",
+        names: ["read", "write"],
+        writeScope: new Set(["created/out.txt"]),
+        readStrictness: "reject",
+      }).prepareWorkerManifest(safety);
+      const output = await runWorker({
+        root,
+        worker,
+        input: { targets: ["created/out.txt"] },
+        policy,
+        catalog: modelRuntime,
+        modelRuntime,
+        streamFn: fake.streamFn,
+        modelConfig: { overrides: { "cheaper-fake/fake-model": "low" }, preferences: {} },
+        execution: { runtime: invocation, ownerId: "bound", parentLease, resourceManifest },
+      });
+      expect(output.result).toEqual({ ok: true });
+      expect(await readFile(path.join(root, "created/out.txt"), "utf8")).toBe("allowed");
+      await expect(stat(path.join(root, "created/sibling.txt"))).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+      expect(output.meta.changes.files).toMatchObject([
+        { path: "created/out.txt", kind: "created" },
+      ]);
+      expect(invocation.operations("bound").map((op) => [op.toolName, op.state])).toEqual([
+        ["read", "completed"],
+        ["read", "failed"],
+        ["write", "cancelled"],
+        ["write", "completed"],
+      ]);
+    } finally {
+      invocation.releaseJobLease(parentLease);
+    }
+  });
   it("skips symlink entries resolving to privacy-denied files and continues walking", async () => {
     const root = await workspace();
     await mkdir(path.join(root, "protected"));

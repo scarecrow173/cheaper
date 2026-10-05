@@ -103,3 +103,4 @@ Directory: `docs/impl/ir`
 | IMPL-034rC4j788MZLcUE8xHHP2 | Worker workload profile と auto tier classifier の core 実装 | completed | [worker-workload-profile-auto-tier-classifier-core.md](./worker-workload-profile-auto-tier-classifier-core.md) |
 | IMPL-034zUfCug3Fz5ZzcrI1yhg | Workflow resource inference compilation | completed | [workflow-resource-inference-compilation.md](./workflow-resource-inference-compilation.md) |
 | IMPL-034zTWHPv92Mp7Ql9gnE5d | Workflow resource inference implementation | completed | [workflow-resource-inference-implementation.md](./workflow-resource-inference-implementation.md) |
+| IMPL-034ANyyPxu6Pz67UTx3yR5 | Workflow Worker permission と lease lifetime を配線する | in-progress | [workflow-worker-permission-lease-lifetime.md](./workflow-worker-permission-lease-lifetime.md) |

@@ -213,6 +213,6 @@ Directory: `docs/tasks`
 | TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |
 | TASK-034AJcULdYBQSjyy18XSVw | Canonical artifact read/publisher を配線する | done | [wire-workflow-artifact-tools.md](./wire-workflow-artifact-tools.md) |
 | TASK-034zTsqC9tEk1qHUgWFefU | wire-workflow-interface | done | [wire-workflow-interface.md](./wire-workflow-interface.md) |
-| TASK-034AJcZY4VW7Wfwx1AOzvh | Workflow Worker permission と lease lifetime を配線する | todo | [wire-workflow-worker-leases.md](./wire-workflow-worker-leases.md) |
+| TASK-034AJcZY4VW7Wfwx1AOzvh | Workflow Worker permission と lease lifetime を配線する | in-progress | [wire-workflow-worker-leases.md](./wire-workflow-worker-leases.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |
 | TASK-034r05iHQeQpDqac6FjqrJ | Writer writeScope declaration and e2e verification | done | [writer-write-scope-and-e2e-verification.md](./writer-write-scope-and-e2e-verification.md) |
