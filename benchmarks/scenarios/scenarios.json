@@ -1,0 +1,484 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "single-simple-tool-call",
+      "title": "Single simple tool call",
+      "arms": [
+        "workflow",
+        "direct-filesystem",
+        "direct-worker-tool-call"
+      ],
+      "files": {
+        "README.md": "seeded fixture: direct file read\n"
+      },
+      "workflow": {
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+          "read": {
+            "kind": "tool",
+            "tool": "read",
+            "input": {
+              "path": "README.md"
+            }
+          }
+        },
+        "outputs": {
+          "text": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "read",
+              "path": "/content/0/text"
+            }
+          }
+        }
+      },
+      "manual": {
+        "kind": "direct-filesystem",
+        "path": "README.md",
+        "toolCallPath": "README.md",
+        "tasks": [
+          "Read README.md and summarize its contents"
+        ]
+      }
+    },
+    {
+      "id": "independent-fanout-worker-fanin",
+      "title": "Independent fan-out and Worker fan-in",
+      "workflowMaxJobs": 3,
+      "arms": [
+        "workflow",
+        "direct-worker-sequence"
+      ],
+      "responseProfiles": [
+        "large",
+        "large",
+        "compact"
+      ],
+      "responseDelayMs": 30,
+      "files": {},
+      "workflow": {
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+          "left": {
+            "kind": "worker",
+            "worker": "bulk-reader",
+            "input": {
+              "task": "Analyze seeded left partition"
+            },
+            "resources": {
+              "reads": [],
+              "writes": [],
+              "produces": []
+            }
+          },
+          "right": {
+            "kind": "worker",
+            "worker": "bulk-reader",
+            "input": {
+              "task": "Analyze seeded right partition"
+            },
+            "resources": {
+              "reads": [],
+              "writes": [],
+              "produces": []
+            }
+          },
+          "summary": {
+            "kind": "worker",
+            "worker": "bulk-reader",
+            "needs": [
+              "left",
+              "right"
+            ],
+            "input": {
+              "task": "Combine the independent findings",
+              "hints": [
+                {
+                  "$from": "left",
+                  "path": "/summary"
+                },
+                {
+                  "$from": "right",
+                  "path": "/summary"
+                }
+              ]
+            },
+            "resources": {
+              "reads": [],
+              "writes": [],
+              "produces": []
+            }
+          }
+        },
+        "outputs": {
+          "leftSummary": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "left",
+              "path": "/summary"
+            }
+          },
+          "leftFindings": {
+            "schema": {
+              "type": "array"
+            },
+            "value": {
+              "$from": "left",
+              "path": "/findings"
+            }
+          },
+          "rightSummary": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "right",
+              "path": "/summary"
+            }
+          },
+          "rightFindings": {
+            "schema": {
+              "type": "array"
+            },
+            "value": {
+              "$from": "right",
+              "path": "/findings"
+            }
+          },
+          "summary": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "summary",
+              "path": "/summary"
+            }
+          }
+        }
+      },
+      "manual": {
+        "kind": "direct-worker-sequence",
+        "tasks": [
+          "Analyze seeded left partition",
+          "Analyze seeded right partition",
+          "Combine the independent findings"
+        ],
+        "responseProfiles": [
+          "large",
+          "large",
+          "compact"
+        ],
+        "forwardFullResults": true
+      }
+    },
+    {
+      "id": "tool-to-worker-chain",
+      "title": "Tool to Worker chain",
+      "arms": [
+        "workflow",
+        "direct-worker-sequence"
+      ],
+      "files": {
+        "source.txt": "seeded source material for analysis\n"
+      },
+      "workflow": {
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+          "read": {
+            "kind": "tool",
+            "tool": "read",
+            "input": {
+              "path": "source.txt"
+            }
+          },
+          "analyze": {
+            "kind": "worker",
+            "worker": "bulk-reader",
+            "input": {
+              "task": "Analyze the material read by the prior tool call",
+              "hints": [
+                {
+                  "$from": "read",
+                  "path": "/content/0/text"
+                }
+              ]
+            }
+          }
+        },
+        "outputs": {
+          "readText": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "read",
+              "path": "/content/0/text"
+            }
+          },
+          "summary": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "analyze",
+              "path": "/summary"
+            }
+          }
+        }
+      },
+      "manual": {
+        "kind": "direct-worker-sequence",
+        "readPath": "source.txt",
+        "tasks": [
+          "Analyze the material read by the prior tool call"
+        ]
+      }
+    },
+    {
+      "id": "process-and-analysis",
+      "title": "Process and analysis workflow",
+      "arms": [
+        "workflow",
+        "direct-worker-sequence"
+      ],
+      "files": {
+        "emit.mjs": "process.stdout.write('process fixture output\\n');\n"
+      },
+      "processPolicy": {
+        "maxConcurrent": 1,
+        "tasks": {
+          "emit": {
+            "command": [
+              "{node}",
+              "emit.mjs"
+            ],
+            "inputs": [
+              "emit.mjs"
+            ],
+            "outputs": []
+          }
+        }
+      },
+      "workflow": {
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+          "process": {
+            "kind": "tool",
+            "tool": "process",
+            "input": {
+              "task": "emit"
+            }
+          },
+          "analyze": {
+            "kind": "worker",
+            "worker": "bulk-reader",
+            "input": {
+              "task": "Analyze process output",
+              "hints": [
+                {
+                  "$from": "process",
+                  "path": "/details/stdout"
+                }
+              ]
+            }
+          }
+        },
+        "outputs": {
+          "processOutput": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "process",
+              "path": "/details/stdout"
+            }
+          },
+          "summary": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "analyze",
+              "path": "/summary"
+            }
+          }
+        }
+      },
+      "manual": {
+        "kind": "direct-worker-sequence",
+        "processScript": "emit.mjs",
+        "tasks": [
+          "Analyze process output"
+        ]
+      }
+    },
+    {
+      "id": "large-intermediate-process-analysis",
+      "title": "Large intermediate process output and analysis",
+      "arms": [
+        "workflow",
+        "direct-worker-sequence"
+      ],
+      "files": {
+        "emit.mjs": "process.stdout.write('L'.repeat(32768));\n"
+      },
+      "processPolicy": {
+        "maxConcurrent": 1,
+        "tasks": {
+          "emit": {
+            "command": [
+              "{node}",
+              "emit.mjs"
+            ],
+            "inputs": [
+              "emit.mjs"
+            ],
+            "outputs": []
+          }
+        }
+      },
+      "workflow": {
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+          "process": {
+            "kind": "tool",
+            "tool": "process",
+            "input": {
+              "task": "emit"
+            }
+          },
+          "analyze": {
+            "kind": "worker",
+            "worker": "bulk-reader",
+            "input": {
+              "task": "Analyze the large process output",
+              "hints": [
+                {
+                  "$from": "process",
+                  "path": "/details/stdout"
+                }
+              ]
+            }
+          }
+        },
+        "outputs": {
+          "processOutput": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "process",
+              "path": "/details/stdout"
+            }
+          },
+          "summary": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "analyze",
+              "path": "/summary"
+            }
+          }
+        }
+      },
+      "manual": {
+        "kind": "direct-worker-sequence",
+        "processScript": "emit.mjs",
+        "tasks": [
+          "Analyze the large process output"
+        ]
+      }
+    },
+    {
+      "id": "dynamic-vs-saved-workflow",
+      "title": "Dynamic workflow versus saved reusable workflow",
+      "arms": [
+        "dynamic-workflow",
+        "saved-workflow",
+        "direct-worker-sequence"
+      ],
+      "files": {},
+      "savedWorkflowFile": "saved-workflow.json",
+      "workflow": {
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+          "analyze": {
+            "kind": "worker",
+            "worker": "bulk-reader",
+            "input": {
+              "task": "Analyze the reusable saved workflow fixture"
+            }
+          }
+        },
+        "outputs": {
+          "summary": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "analyze",
+              "path": "/summary"
+            }
+          }
+        }
+      },
+      "manual": {
+        "kind": "direct-worker-sequence",
+        "tasks": [
+          "Analyze the reusable saved workflow fixture"
+        ]
+      }
+    },
+    {
+      "id": "definition-vs-compact-interface",
+      "title": "Full workflow definition versus compact interface discovery",
+      "arms": [
+        "workflow",
+        "full-definition",
+        "compact-interface"
+      ],
+      "files": {
+        "README.md": "interface discovery fixture\n"
+      },
+      "workflow": {
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+          "read": {
+            "kind": "tool",
+            "tool": "read",
+            "input": {
+              "path": "README.md"
+            }
+          }
+        },
+        "outputs": {
+          "text": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "read",
+              "path": "/content/0/text"
+            }
+          }
+        }
+      },
+      "manual": {
+        "kind": "interface-discovery"
+      }
+    }
+  ]
+}
