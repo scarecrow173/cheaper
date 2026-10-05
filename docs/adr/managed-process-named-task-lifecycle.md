@@ -23,7 +23,7 @@ relations:
   superseded-by: []
   related: []
   refines: []
-  refined-by: []
+  refined-by: ["./managed-process-bounded-lifecycle-policy.md"]
   derives-from: ["../discovery/managed-process-canonical-tool.md"]
   derived-by: []
   verifies: []

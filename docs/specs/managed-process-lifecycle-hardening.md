@@ -21,7 +21,7 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related: ["../adr/managed-process-bounded-lifecycle-policy.md"]
   refines: []
   refined-by: []
   derives-from: ["../discovery/managed-process-lifecycle-hardening.md"]

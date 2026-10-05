@@ -1,7 +1,7 @@
 ---
 id: "DISC-034Aq1bAPGiJ8GsKHAeKAL"
 type: "discovery"
-status: "active"
+status: "resolved"
 title: "managed process lifecycle hardening"
 created: "2026-10-05"
 updated: "2026-10-05"
@@ -26,7 +26,7 @@ relations:
   refines: []
   refined-by: []
   derives-from: ["../ideas/managed-process-lifecycle-hardening.md"]
-  derived-by: ["../specs/managed-process-lifecycle-hardening.md"]
+  derived-by: ["../specs/managed-process-lifecycle-hardening.md", "../adr/managed-process-bounded-lifecycle-policy.md"]
   verifies: []
   verified-by: []
   references: ["../adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md", "../adr/managed-process-named-task-lifecycle.md"]
