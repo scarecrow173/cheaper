@@ -54,38 +54,29 @@
         "direct-worker-sequence"
       ],
       "responseProfiles": [
-        "large",
-        "large",
         "compact"
       ],
-      "responseDelayMs": 30,
-      "files": {},
+      "responseDelayMs": 0,
+      "files": {
+        "left.txt": "seeded left partition\\n",
+        "right.txt": "seeded right partition\\n"
+      },
       "workflow": {
         "schemaVersion": 1,
         "inputs": {},
         "jobs": {
           "left": {
-            "kind": "worker",
-            "worker": "bulk-reader",
+            "kind": "tool",
+            "tool": "read",
             "input": {
-              "task": "Analyze seeded left partition"
-            },
-            "resources": {
-              "reads": [],
-              "writes": [],
-              "produces": []
+              "path": "left.txt"
             }
           },
           "right": {
-            "kind": "worker",
-            "worker": "bulk-reader",
+            "kind": "tool",
+            "tool": "read",
             "input": {
-              "task": "Analyze seeded right partition"
-            },
-            "resources": {
-              "reads": [],
-              "writes": [],
-              "produces": []
+              "path": "right.txt"
             }
           },
           "summary": {
@@ -96,62 +87,21 @@
               "right"
             ],
             "input": {
-              "task": "Combine the independent findings",
+              "task": "Combine the independent tool results",
               "hints": [
                 {
                   "$from": "left",
-                  "path": "/summary"
+                  "path": "/content/0/text"
                 },
                 {
                   "$from": "right",
-                  "path": "/summary"
+                  "path": "/content/0/text"
                 }
               ]
-            },
-            "resources": {
-              "reads": [],
-              "writes": [],
-              "produces": []
             }
           }
         },
         "outputs": {
-          "leftSummary": {
-            "schema": {
-              "type": "string"
-            },
-            "value": {
-              "$from": "left",
-              "path": "/summary"
-            }
-          },
-          "leftFindings": {
-            "schema": {
-              "type": "array"
-            },
-            "value": {
-              "$from": "left",
-              "path": "/findings"
-            }
-          },
-          "rightSummary": {
-            "schema": {
-              "type": "string"
-            },
-            "value": {
-              "$from": "right",
-              "path": "/summary"
-            }
-          },
-          "rightFindings": {
-            "schema": {
-              "type": "array"
-            },
-            "value": {
-              "$from": "right",
-              "path": "/findings"
-            }
-          },
           "summary": {
             "schema": {
               "type": "string"
@@ -165,17 +115,13 @@
       },
       "manual": {
         "kind": "direct-worker-sequence",
+        "readPaths": [
+          "left.txt",
+          "right.txt"
+        ],
         "tasks": [
-          "Analyze seeded left partition",
-          "Analyze seeded right partition",
-          "Combine the independent findings"
-        ],
-        "responseProfiles": [
-          "large",
-          "large",
-          "compact"
-        ],
-        "forwardFullResults": true
+          "Combine the independent tool results"
+        ]
       }
     },
     {
@@ -286,7 +232,7 @@
               "hints": [
                 {
                   "$from": "process",
-                "path": "/details/stdout/text"
+                  "path": "/details/stdout/text"
                 }
               ]
             }
@@ -299,7 +245,7 @@
             },
             "value": {
               "$from": "process",
-            "path": "/details/stdout/text"
+              "path": "/details/stdout/text"
             }
           },
           "summary": {
@@ -365,7 +311,7 @@
               "hints": [
                 {
                   "$from": "process",
-                "path": "/details/stdout/text"
+                  "path": "/details/stdout/text"
                 }
               ]
             }
@@ -378,7 +324,7 @@
             },
             "value": {
               "$from": "process",
-            "path": "/details/stdout/text"
+              "path": "/details/stdout/text"
             }
           },
           "summary": {

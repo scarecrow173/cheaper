@@ -188,8 +188,9 @@ async function runDirectWorkerSequence(scenario, workspace, envInfo) {
   let hints = [];
   let retainedBytes = 0;
   let processWallTimeMs = 0;
-  if (manual.readPath) {
-    const source = await readFile(path.join(workspace, manual.readPath));
+  const readPaths = [...(manual.readPath ? [manual.readPath] : []), ...(manual.readPaths ?? [])];
+  for (const readPath of readPaths) {
+    const source = await readFile(path.join(workspace, readPath));
     hints.push(source.toString("utf8"));
     retainedBytes += source.byteLength;
   }
@@ -250,7 +251,8 @@ async function runDirectWorkerSequence(scenario, workspace, envInfo) {
     metrics: {
       nodeCount: childRuns.length,
       workerJobCount: childRuns.length,
-      toolOnlyJobCount: manual.readPath || manual.processScript ? 1 : 0,
+      toolOnlyJobCount: readPaths.length + (manual.processScript ? 1 : 0),
+      directToolOperations: readPaths.length,
       workerTurns: childRuns.reduce((total, child) => total + child.metric.workerTurns, 0),
       toolCalls: childRuns.reduce((total, child) => total + child.metric.toolCalls, 0),
       usage,

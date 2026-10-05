@@ -22,6 +22,9 @@ test("scenario manifest defines every required benchmark arm and a runnable work
   }
   const fanout = scenarios.find(({ id }) => id === "independent-fanout-worker-fanin");
   assert.equal(fanout.workflow.jobs.summary.needs.length, 2);
+  assert.deepEqual(Object.values(fanout.workflow.jobs).filter(({ kind }) => kind === "tool").map(({ tool }) => tool), ["read", "read"]);
+  assert.equal(Object.values(fanout.workflow.jobs).filter(({ kind }) => kind === "worker").length, 1);
+  assert.deepEqual(fanout.manual.readPaths, ["left.txt", "right.txt"]);
   assert.equal(fanout.workflowMaxJobs, 3);
   assert.ok(scenarios.find(({ id }) => id === "process-and-analysis").processPolicy);
   for (const id of ["process-and-analysis", "large-intermediate-process-analysis"]) {

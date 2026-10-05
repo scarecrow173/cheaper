@@ -12,8 +12,9 @@ const COMPARISONS = Object.freeze([
   ["definition-vs-compact-interface", "full-definition", "compact-interface"],
 ]);
 
-const comparableFields = ["workerTurns", "toolCalls", "retainedBytes", "materializedPromptBytes"];
+const comparableFields = ["jobCount", "workerJobCount", "toolOnlyJobCount", "workerTurns", "toolCalls", "retainedBytes", "materializedPromptBytes", "maxConcurrency", "criticalPathMs", "directToolOperations"];
 const usageFields = ["input", "output", "total"];
+const sizeFields = ["workflowDefinitionBytes", "parentVisibleInterfaceBytes", "definitionReadBytes", "directInvocationTurnsProxy"];
 
 function percentile(values, fraction) {
   const sorted = [...values].sort((left, right) => left - right);
@@ -36,6 +37,7 @@ function summarizeArm(records) {
   if (times.length !== records.length) throw new TypeError("every benchmark arm record must include finite wallTimeMs");
   const metrics = Object.fromEntries(comparableFields.map((field) => [field, stableValue(records, ({ metrics }) => metrics[field])]));
   for (const field of usageFields) metrics[`usage${field[0].toUpperCase()}${field.slice(1)}`] = stableValue(records, ({ metrics }) => metrics.usage?.[field]);
+  for (const field of sizeFields) metrics[field] = stableValue(records, (record) => record[field] ?? record.metrics[field]);
   return {
     observationCount: records.length,
     parentUsage: records.every(({ parentUsage }) => parentUsage.status === "unavailable")
@@ -67,6 +69,12 @@ function comparison([scenarioId, leftName, rightName], index) {
     const b = right.stableMetrics[key];
     deltas[key] = a === null || b === null ? null : a - b;
   }
+  for (const field of sizeFields) {
+    const a = left.stableMetrics[field];
+    const b = right.stableMetrics[field];
+    deltas[field] = a === null || b === null ? null : a - b;
+  }
+  deltas.wallTimeMs = left.medianWallTimeMs - right.medianWallTimeMs;
   return { scenarioId, left: leftName, right: rightName, status: "measured", deltas };
 }
 
