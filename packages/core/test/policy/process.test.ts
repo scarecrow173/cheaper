@@ -1,5 +1,6 @@
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import * as core from "../../src/index.js";
 
@@ -197,8 +198,9 @@ describe("process policy production loading", () => {
 
   it("declares identical lifecycle defaults in both distribution policy assets", async () => {
     const { parse } = await import("yaml");
+    const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
     for (const asset of ["packages/cli/policy.yaml", "packages/apm/.apm/hooks/cli/policy.yaml"]) {
-      const policy = parse(await readFile(path.join(process.cwd(), asset), "utf8"));
+      const policy = parse(await readFile(path.join(repoRoot, asset), "utf8"));
       expect(policy.process).toMatchObject({
         timeout: "2m",
         maxOutputBytes: 65536,
