@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AGiKxX1qSMznOGzJrLb"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Integrate process runtime disposal"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -50,11 +50,11 @@ registry の scoped timeout cancel seam と managed invocation promise tracking 
 - [x] registry の onTimeout/drain を実装する。
 - [x] focused test の GREEN を確認し logical change を commit する（ae1f081）。
 - [x] guide に defaults/platform/no-polling/diagnostic/abortGraceMs を超え得る bounded dispose を記載する。
-- [ ] affected focused suites、lint/typecheck/build と CLI related test を実行する。
-- [ ] coordinator の implementation review と test-spec acceptance を取得する。
-- [ ] chain terminal status/index、scoped exit-audit と report を完成し commit する。
+- [x] affected focused suites、lint/typecheck/build と CLI related test を実行する。
+- [x] coordinator の implementation review と test-spec acceptance を取得する。
+- [x] chain terminal status/index、scoped exit-audit と report を完成し commit する。
 
-focused 329 passed /1 POSIX-only skip と lint/typecheck/build は pass。CLI は15 passed /1 stale bundled parity failed /1 skipped。bundle 再生成禁止のため coordinator 判断が必要。review/test-spec gate の ask は active Dispatch 不在で拒否され、task を in-progress に保持する。
+focused 329 passed /1 POSIX-only skip と lint/typecheck/build は pass。CLI は15 passed /1 stale bundled parity failed /1 skipped。coordinator verdict（question msg_b41a1970f2fd）は implementation review/test-spec acceptance APPROVED、P0/P1 なし。bundle freshness の failure は coordinator merge 時の pnpm bundle + mise run check に defer することが承認された。worker では禁止された bundle 再生成を行わず source と生成物の evidence を分ける。
 
 ## Classification
 
@@ -77,16 +77,17 @@ focused 329 passed /1 POSIX-only skip と lint/typecheck/build は pass。CLI �
 
 ## Done When
 
-- [ ] first-cause と operation state、queue timeout 除外、scope/invocation/outer abort、owner isolation と actual settle までの capacity を検証した。
-- [ ] focused packages/CLI、lint/typecheck/build が pass、review の P0/P1 未解決なし、own chain + shared ADR scoped audit blocking 0。
-- [ ] canonical check deferred to coordinator merge run と非実行 platform/既存 global findings を report に明記した。
+- [x] first-cause と operation state、queue timeout 除外、scope/invocation/outer abort、owner isolation と actual settle までの capacity を検証した。
+- [x] focused packages と lint/typecheck/build は pass、CLI bundle freshness は承認済み coordinator defer、review の P0/P1 未解決なし。
+- [x] own chain + shared ADR scoped audit blocking 0。
+- [x] canonical check deferred to coordinator merge run と非実行 platform/既存 global findings を report に明記した。
 
 ## Verification
 
-- [ ] `mise exec -- pnpm exec vitest run packages/core/test/policy packages/tool-runtime/test packages/runtime-pi/test/process.test.ts packages/runtime-pi/test/tool-runtime-contract.test.ts packages/runtime-pi/test/run.test.ts packages/runtime-pi/test/session.test.ts` exits 0。
-- [ ] `mise exec -- pnpm exec vitest run packages/cli/test/hook/hook-contract.test.ts` exits 0。
-- [ ] `mise exec -- pnpm lint` exits 0。
-- [ ] `mise exec -- pnpm typecheck` exits 0。
-- [ ] `mise exec -- pnpm build` exits 0。
-- [ ] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type all --json` の own chain + shared ADR に blocking 0。
-- [ ] `git diff --check` exits 0。
+- [x] `mise exec -- pnpm exec vitest run packages/core/test/policy packages/tool-runtime/test packages/runtime-pi/test/process.test.ts packages/runtime-pi/test/tool-runtime-contract.test.ts packages/runtime-pi/test/run.test.ts packages/runtime-pi/test/session.test.ts` exits 0。
+- [x] CLI hook-contract を単独 --testTimeout 30000 で再実行し15 passed /1 failed /1 skipped。stale bundle の1 failure は coordinator merge 時の pnpm bundle + mise run check へ defer APPROVED（msg_b41a1970f2fd）。CLI suite GREEN は主張しない。
+- [x] `mise exec -- pnpm lint` exits 0。
+- [x] `mise exec -- pnpm typecheck` exits 0。
+- [x] `mise exec -- pnpm build` exits 0。
+- [x] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type all --json` の own chain + shared ADR に blocking 0。
+- [x] `git diff --check` exits 0。

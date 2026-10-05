@@ -1,10 +1,10 @@
 ---
 id: "TSPEC-034AGg47u5fWQqP0pEJfI9"
 type: "test-spec"
-status: "proposed"
+status: "approved"
 title: "Managed process bounded lifecycle guarantees"
 created: "2026-10-05"
-updated: "2026-10-05"
+updated: "2026-10-06"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -81,3 +81,7 @@ Feature: policy-defined process が bounded output と execution deadline を持
 ## Risk
 
 - orphan、終了しない pipe、無制限 output、false terminal state、cleanup 前の capacity 解放、別 owner の誤 cancel、Worker context の heartbeat 汚染が起きる。テストは実装手順ではなくこの契約を保護する。
+
+## Approval
+
+coordinator verdict（question msg_b41a1970f2fd、2026-10-06）: APPROVED implementation review + test-spec acceptance（review-protocol、P0/P1 なし）。verification intent と全 AC coverage、platform-declared skips を受理。runtime pass/fail は IR に記録し、この status は試験意図の承認のみを示す。

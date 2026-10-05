@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034AGM8MC9yqj5X6IozzSu"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Implement process tree lifecycle"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -46,7 +46,7 @@ metadata:
 
 ## Summary
 
-E slice の executor-owned timeout/capture/heartbeat と全 terminal path の tree cleanup を実装する。実装 review までは in-progress とする。
+E slice の executor-owned timeout/capture/heartbeat と全 terminal path の tree cleanup を実装した。coordinator implementation review は APPROVED、P0/P1 なし。
 
 ## Context
 
@@ -91,4 +91,4 @@ Windows の初回 identity snapshot 前に ancestry を失った descendants は
 
 ## Follow-ups
 
-R slice で OperationManager timed_out と managed drain を統合し final focused/root checks と coordinator review を行う。
+R slice で OperationManager timed_out と managed drain を統合し final focused/root checks を完了。coordinator verdict（question msg_b41a1970f2fd）で implementation review/test-spec acceptance APPROVED、P0/P1 なし。bundle freshness の1 CLI failure は coordinator merge 時の pnpm bundle + mise run check に defer することが承認された。canonical check deferred to coordinator merge run。

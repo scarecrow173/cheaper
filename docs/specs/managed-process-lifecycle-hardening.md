@@ -1,10 +1,10 @@
 ---
 id: "SPEC-034Aq1jA258sf4IaRxgCrq"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "managed process lifecycle hardening"
 created: "2026-10-05"
-updated: "2026-10-05"
+updated: "2026-10-06"
 owners: ["scarecrow173"]
 relations:
   source: ["https://github.com/scarecrow173/cheaper/issues/60"]
@@ -73,15 +73,15 @@ oversized full output の artifact handoff は coordinator の ADR intent verdic
 
 ## Acceptance Criteria
 
-- [ ] AC1: process timeout で TIMEOUT/timed_out、外側 abort が先なら original reason/cancelled。
-- [ ] AC2: configured cap が combined output と UTF-8 text に適用され truncation diagnostics を返す。
-- [ ] AC3: timeout/abort の parent/child/grandchild が終了し stubborn tree は grace 後に force-kill。Windows は初回 identity snapshot 前に中間親が終了し ancestry を失った子孫を保証範囲から除外する。
-- [ ] AC4: grace 内に管理 tree が exit した場合 force-kill しない（Windows graceful 非対応ケースは明示）。
-- [ ] AC5: normal/nonzero/spawn failure/timeout/abort/dispose の cleanup が settle し capacity を解放する。root が先に exit した残存 descendant も対象。
-- [ ] AC6: heartbeat が観測でき result/context/turn を汚染しない。timer が terminal 後に残らない。
-- [ ] AC7: policy defaults、legacy omission、trusted overrides、project non-relaxation、invalid duration/cap を検証する。
-- [ ] AC8: Linux/Windows の実 tree tests を備え、実行しなかった platform は skip/未検証を明記する。
-- [ ] AC9: process pool の queue wait が process.timeout を超えても、admission 後の child 実行期限を消費しない。外側 run abort は queue 待ち中にも有効。
+- [x] AC1: process timeout で TIMEOUT/timed_out、外側 abort が先なら original reason/cancelled。
+- [x] AC2: configured cap が combined output と UTF-8 text に適用され truncation diagnostics を返す。
+- [x] AC3: timeout/abort の parent/child/grandchild が終了し stubborn tree は grace 後に force-kill。Windows は初回 identity snapshot 前に中間親が終了し ancestry を失った子孫を保証範囲から除外する。
+- [x] AC4: grace 内に管理 tree が exit した場合 force-kill しない（Windows graceful 非対応ケースは明示）。
+- [x] AC5: normal/nonzero/spawn failure/timeout/abort/dispose の cleanup が settle し capacity を解放する。root が先に exit した残存 descendant も対象。
+- [x] AC6: heartbeat が観測でき result/context/turn を汚染しない。timer が terminal 後に残らない。
+- [x] AC7: policy defaults、legacy omission、trusted overrides、project non-relaxation、invalid duration/cap を検証する。
+- [x] AC8: Linux/Windows の実 tree tests を備え、実行しなかった platform は skip/未検証を明記する。
+- [x] AC9: process pool の queue wait が process.timeout を超えても、admission 後の child 実行期限を消費しない。外側 run abort は queue 待ち中にも有効。
 
 ## Sources
 
@@ -90,3 +90,5 @@ GitHub issue #60 本文と Triage 2026-10-04、dispatch brief、および discov
 ## Approval
 
 coordinator verdict msg_6cc7f6088615（thread msg_47732c6b1e9b）: APPROVED spec+ADR+design gate。W1 は宣言済み platform limitation として承認、native Job Objects は将来 ADR に defer。
+
+coordinator verdict（question msg_b41a1970f2fd、2026-10-06）: APPROVED implementation review + test-spec acceptance、P0/P1 なし。全 AC coverage と platform-declared skips を確認。stale bundle freshness の CLI failure は coordinator merge 時の pnpm bundle + mise run check に defer することを承認。実行 evidence は linked IR に記録する。

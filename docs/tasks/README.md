@@ -140,7 +140,7 @@ Directory: `docs/tasks`
 | TASK-034zTTj0uuzqIXG4cbMoIO | Canonical workflow resource inference を実装する | done | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | TASK-034r05iHK8bA7gUBy3ygQD | Implement workspace path resolution with symlink policy | done | [implement-workspace-path-resolution-with-symlink-policy.md](./implement-workspace-path-resolution-with-symlink-policy.md) |
 | TASK-034r6roOdgb1mKbE0LLAv3 | inject generous eval budget into bigTool factory | done | [inject-eval-budget-bigtool.md](./inject-eval-budget-bigtool.md) |
-| TASK-034AGiKxX1qSMznOGzJrLb | Integrate process runtime disposal | in-progress | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
+| TASK-034AGiKxX1qSMznOGzJrLb | Integrate process runtime disposal | done | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
 | TASK-034zTTjWYMNKiiVb4ZZ6LV | Workflow compiler に resource inference を接続する | done | [integrate-workflow-resource-inference.md](./integrate-workflow-resource-inference.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |

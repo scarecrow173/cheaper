@@ -1,10 +1,10 @@
 ---
 id: "PLAN-034AEwZy3GcNygp87aXrL7"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "Implement managed process lifecycle hardening"
 created: "2026-10-05"
-updated: "2026-10-05"
+updated: "2026-10-06"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -183,3 +183,5 @@ DB migration/data transformation/依存追加はない。変更は logical commi
 ## Approval
 
 coordinator direct verdict（2026-10-05、settle により closed の ask msg_6d66657cbe77 への回答）: APPROVED plan gate、P0/P1 なし。required P2 の runtime-pi focused scope 拡大と P3 の first-cause reorder / per-slice commit checkpoints を反映した。
+
+coordinator verdict（question msg_b41a1970f2fd、2026-10-06）: APPROVED implementation review + test-spec acceptance、P0/P1 なし。P/E/R を実装し focused 329 passed /1 POSIX-only skip、root lint/typecheck/build を確認。CLI の stale bundle parity failure 1件は coordinator merge 時の pnpm bundle + mise run check に defer することが承認されたため worker で bundle を再生成しない。canonical check deferred to coordinator merge run。

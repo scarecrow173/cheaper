@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034AH5aBMIDz91t2o5olxp"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Integrate process runtime disposal"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -50,7 +50,7 @@ metadata:
 
 ## Summary
 
-R slice で managed process の timeout state と owner-scoped actual-settle drain を統合する。
+R slice で managed process の timeout state と owner-scoped actual-settle drain を統合した。coordinator implementation review/test-spec acceptance APPROVED、P0/P1 なし。
 
 ## Context
 
@@ -93,6 +93,7 @@ RED→GREEN と final verification を以下に追記する。
 - CLI hook-contract の初回は13 passed/3 failed/1 skipped。5秒 test timeout 2件と bundled parity failure 1件。`--testTimeout 30000` の独立 rerun は15 passed/1 failed/1 skipped（114.88s）。全 suite GREEN とはしない。
 - bundle の schema に maxOutputBytes がなく、bundled count-tokens を isolated config で直接実行すると `/process` の4 additional properties により INVALID_RUNTIME_POLICY となった。hook の fail-open が parity failure の原因。brief の bundle 再生成禁止を遵守し、coordinator に defer/例外許可を求める。
 - 最終 doc-status all:542 files /462 findings /48 blocking。自 chain findings=0、共有 ADR の既存 warning 2件は nonblocking。既存 global findings は変更しない。task index は maintenance plan→apply で同期し、index mismatch 2件を解消した。
+- 承認後の終端 status/index に対する scoped exit-audit も542 files /462 findings /48 global blocking /0 scoped blocking。自 chain findings=0、共有 ADR 既存 nonblocking warning 2件。97 IR audit は findings=[]、git diff --check は pass。
 
 ## Risks
 
@@ -100,10 +101,10 @@ Windows W1 と未実行 POSIX を明記する。canonical check は coordinator 
 
 ## Follow-ups
 
-実装 review と test-spec acceptance は coordinator の新 active Dispatch を必要とし、settled ID は再利用しない。
+coordinator verdict（question msg_b41a1970f2fd、2026-10-06）: APPROVED implementation review + test-spec acceptance（review-protocol、P0/P1 なし）。ceiling/layering/spawn timeout/first-cause/timed_out/heartbeat/capacity/all-terminal cleanup と全 AC coverage を確認した。P3 nits は non-blocking とされ、追加の必須修正はない。
 
-旧 terminal check は consumer_fenced。direct continuation status msg_370ea82a40f2 を Run に送り、新 Dispatch を依頼した。worker_done/heartbeat/ask に旧IDsを使っていない。test-spec TSPEC-034AGg47u5fWQqP0pEJfI9 は proposed、plan/task/IR の最終 closure は実装 review 待ち。
+CLI の1 failure は stale bundle freshness のみと確認され、coordinator が merge 時に pnpm bundle + mise run check を行う defer が APPROVED。worker では bundle 再生成しない。canonical check deferred to coordinator merge run。Windows W1、Job Objects と streaming artifact writer は accepted ADR の延期範囲を保持する。
 
-最終 gate の ask は active supervised Dispatch がないため拒否（mutation request ef4b88c9-f99b-4c35-b8f2-e790511e94e2）。pending question は作られていない。承認済み実装を commit し gate と CLI artifact constraint を記録したまま引き継ぐ。canonical check deferred to coordinator merge run。
+承認の履歴: active Dispatch 不在による ask 拒否（ef4b88c9-f99b-4c35-b8f2-e790511e94e2）の後、ctx_694611e9a9d7 で質問 msg_b41a1970f2fd を提出した。600000ms の初回/第1 resume が timeout し、同じ質問を第2 resume して上記 verdict を取得。status msg_006f3a8762b3 と escalation msg_c725cb4ec82b で既存質問の回答を依頼し、重複質問・旧 IDs の lifecycle 再送・自己承認は行っていない。
 
-最終 graph projection は task-graph-to-active-implementation、delegate=implementation-flow、Task DAG issues=[]、active は R のみ。run-until-yield の approval-required で停止し、implementation-verified / followup-terminal / exit-audit-pass の終端 signals はまだ送らない。IR と task/plan の最終 closure は review と bundle artifact verdict 後に行う。
+review 前の graph は task-graph-to-active-implementation / implementation-flow、R のみ active、Task DAG issues=[]、approval-required yield。承認後は spec implemented / plan completed / tasks done / IR completed / test-spec approved とし、4 generated indexes は maintenance plan→apply、IR index は共通 brief の例外による own 3 status cells の機械的更新を適用した。scoped exit-audit は blocking 0。declared graph の終端 trace は worker report に記録する。

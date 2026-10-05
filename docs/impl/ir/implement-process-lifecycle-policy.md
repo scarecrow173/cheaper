@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034AGqZzIjQvvNqijsHb1N"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Implement process lifecycle policy"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -49,7 +49,7 @@ metadata:
 
 ## Summary
 
-P slice の policy/default/validation/restrict を実装した。optional raw lifecycle fields と default-complete ResolvedProcessPolicy を追加し、trusted replace → defaults → project-min を維持する。全 issue の review/verification は後続 R に残る。
+P slice の policy/default/validation/restrict を実装した。optional raw lifecycle fields と default-complete ResolvedProcessPolicy を追加し、trusted replace → defaults → project-min を維持する。全 issue の review/verification は後続 R で完了した。
 
 ## Context
 
@@ -94,4 +94,4 @@ raw/schema/default/merge の一部だけ変更すると project restriction を 
 
 ## Follow-ups
 
-P の GREEN と commit 後に E、次に R。canonical check deferred to coordinator merge run。
+E/R は完了し、coordinator verdict（question msg_b41a1970f2fd）で implementation review/test-spec acceptance APPROVED、P0/P1 なし。bundle freshness の1 CLI failure は coordinator merge 時の pnpm bundle + mise run check に defer することが承認された。canonical check deferred to coordinator merge run。

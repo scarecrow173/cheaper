@@ -4,7 +4,7 @@ type: "task"
 status: "done"
 title: "Implement process tree lifecycle"
 created: "2026-10-05"
-updated: "2026-10-05"
+updated: "2026-10-06"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -73,11 +73,11 @@ canonical executor に spawn 起点 timeout、bounded combined capture、runtime
 
 ## Done When
 
-- [ ] configurable cap/UTF-8/truncation、timeout/abort tree、normal/nonzero root exit の子孫、spawn failure の handles/timers cleanup を検証した。
-- [ ] grace 内の exit は force-kill せず、stubborn tree は escalation 後に終了する。heartbeat は result/child stderr を汚染せず settle 後に停止する。
-- [ ] Windows の実 tree evidence と POSIX-only skip/未実行を分けて IR に記録した。
+- [x] configurable cap/UTF-8/truncation、timeout/abort tree、normal/nonzero root exit の子孫、spawn failure の handles/timers cleanup を検証した。
+- [x] grace 内の exit は force-kill せず、stubborn tree は escalation 後に終了する。heartbeat は result/child stderr を汚染せず settle 後に停止する。
+- [x] Windows の実 tree evidence と POSIX-only skip/未実行を分けて IR に記録した。
 
 ## Verification
 
-- [ ] `mise exec -- pnpm exec vitest run packages/tool-runtime/test/process.test.ts` exits 0。
-- [ ] `git diff --check` exits 0。
+- [x] `mise exec -- pnpm exec vitest run packages/tool-runtime/test/process.test.ts` exits 0。
+- [x] `git diff --check` exits 0。
