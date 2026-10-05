@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJd4IRjNpoxGSXgU36n"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Workflow run CLI と public envelope を統合する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/workflow-run-cli-public-envelope.md"
   depends-on:
     - "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"
     - "./implement-injected-workflow-engine.md"

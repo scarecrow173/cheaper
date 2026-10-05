@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034ANyyPxu6Pz67UTx3yR5"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Workflow Worker permission と lease lifetime を配線する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -89,7 +89,9 @@ V4 の最終 GREEN は tool-runtime 34 passed / runtime-pi 102 passed。全 `pnp
 
 追加 package 全体検証を二つ同時に実行した際、tool-runtime は process-tree cleanup 1 failure（152 passed）、runtime-pi は stale read fixture 2 failures と access-row timeout 1 failure（384 passed）だった。fixture は coordinator が別 commit `2e230cd` で限定修正を承認し、単独 19 passed。process test は source 変更なしの単独 13 passed、access-row case は source 変更なしの単独 1 passed / filter 対象外 9。並列実行時の transient/timing の可能性があるが原因は確定していない。
 
-`mise exec -- pnpm --filter @cheaper/tool-runtime exec vitest run --maxWorkers=1` は 153 passed、runtime-pi の同じ serialized package check は 387 passed。初回並列失敗を package 全体の無条件 GREEN と読み替えない。independent coordinator review は継続中。
+`mise exec -- pnpm --filter @cheaper/tool-runtime exec vitest run --maxWorkers=1` は 153 passed、runtime-pi の同じ serialized package check は 387 passed。初回並列失敗を package 全体の無条件 GREEN と読み替えない。
+
+source commit `5ba49c0` に対する independent coordinator review（review-protocol）は APPROVED、P0/P1 なし。literal-exact bucket narrowing、reads/unknown fallback、deny、scope/Pi helper の同一 manifest、dispose 後の caller release、parent retention、engine finally/stop の解放責任、fixture 修正範囲を確認した。P3 の既存 releaseJobs dead helper は scope 外の任意 cleanup として残す。
 
 ## Risks
 
@@ -97,4 +99,4 @@ fake provider integration を使用し、real model/provider の品質は検証�
 
 ## Follow-ups
 
-logical commit と independent coordinator review を経て、S5 workflow run CLI integration へ進む。
+S5 workflow run CLI integration へ進む。canonical check/main merge は coordinator 所有。

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034AJcZY4VW7Wfwx1AOzvh"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Workflow Worker permission と lease lifetime を配線する"
 created: "2026-10-05"
 updated: "2026-10-06"
@@ -64,13 +64,13 @@ packages/tool-runtime/src/access.ts, invocation.ts; packages/runtime-pi/src/run.
 
 ## Done When
 
-- [ ] childtoken有無/dispose前後のparentretention、literalwritepermission、single-workercleanup、childtimeoutisolationが成立する。
-- [ ] IRにRED/GREEN/変更/reviewevidenceを記録し論理commitを作る。
+- [x] childtoken有無/dispose前後のparentretention、literalwritepermission、single-workercleanup、childtimeoutisolationが成立する。
+- [x] IRにRED/GREEN/変更/reviewevidenceを記録し論理commitを作る。
 
 ## Verification
 
-- [ ] `mise exec -- pnpm --filter @cheaper/tool-runtime exec vitest run test/invocation.test.ts test/resources.test.ts` exits 0。
-- [ ] `mise exec -- pnpm --filter @cheaper/runtime-pi exec vitest run test/resource-leases.test.ts test/run.test.ts test/tools/read.test.ts test/tools/registry.test.ts` exits 0。
+- [x] `mise exec -- pnpm --filter @cheaper/tool-runtime exec vitest run test/invocation.test.ts test/resources.test.ts` exits 0。
+- [x] `mise exec -- pnpm --filter @cheaper/runtime-pi exec vitest run test/resource-leases.test.ts test/run.test.ts test/tools/read.test.ts test/tools/registry.test.ts` exits 0。
 
 ## Notes
 
