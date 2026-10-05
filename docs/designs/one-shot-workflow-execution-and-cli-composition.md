@@ -27,7 +27,7 @@ relations:
   derives-from:
     - "../specs/one-shot-workflow-engine-and-run-cli.md"
     - "../adr/compose-one-shot-workflows-with-injected-executors-and-invocation-owned-resource.md"
-  derived-by: ["../plans/implement-one-shot-workflow-execution-and-cli-integration.md"]
+  derived-by: ["../plans/implement-one-shot-workflow-execution-and-cli-integration.md", "../test-specs/workflow-execution-contract-boundaries.md", "../test-specs/workflow-one-shot-scheduling-and-cancellation.md", "../test-specs/workflow-artifact-publication-and-consumption.md", "../test-specs/workflow-worker-permissions-and-lease-lifetimes.md", "../test-specs/workflow-run-cli-public-projection.md", "../test-specs/workflow-execution-verification-boundaries.md"]
   verifies: []
   verified-by: []
   references:

@@ -1,10 +1,10 @@
 ---
 id: "PLAN-034AGr55LYOkphfEZr5Pr2"
 type: "plan"
-status: "draft"
+status: "approved"
 title: "Implement one-shot workflow execution and CLI integration"
 created: "2026-10-05"
-updated: "2026-10-05"
+updated: "2026-10-06"
 owners: ["scarecrow173"]
 relations:
   source: ["https://github.com/scarecrow173/cheaper/issues/62", "https://github.com/scarecrow173/cheaper/issues/69"]
@@ -17,7 +17,7 @@ relations:
     generated: []
   implements:
     - "../specs/one-shot-workflow-engine-and-run-cli.md"
-  implemented-by: []
+  implemented-by: ["../tasks/implement-workflow-execution-contracts.md", "../tasks/implement-injected-workflow-engine.md", "../tasks/wire-workflow-artifact-tools.md", "../tasks/wire-workflow-worker-leases.md", "../tasks/integrate-workflow-run-cli.md", "../tasks/verify-workflow-execution-integration.md"]
   depends-on: []
   blocks: []
   supersedes: []
@@ -31,7 +31,7 @@ relations:
     - "../adr/compose-one-shot-workflows-with-injected-executors-and-invocation-owned-resource.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by: ["../test-specs/workflow-execution-contract-boundaries.md", "../test-specs/workflow-one-shot-scheduling-and-cancellation.md", "../test-specs/workflow-artifact-publication-and-consumption.md", "../test-specs/workflow-worker-permissions-and-lease-lifetimes.md", "../test-specs/workflow-run-cli-public-projection.md", "../test-specs/workflow-execution-verification-boundaries.md"]
   references:
     - "../adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md"
     - "../adr/keep-artifact-storage-invocation-local-and-bounded.md"
@@ -133,7 +133,7 @@ defaults は maxJobs=1、artifactBytes=8388608、totalBytes=33554432、previewBy
 
 compiled edges だけを使い、全 predecessor 成功後に input materialize。admission/ready は slot を使わず maxJobs は executor 呼出し〜settle/detach。dependency failure は affected descendants のみ skip、他 branch は継続。job output は compiler seam で validate、最後の public outputs は名前ごとに validate/materialize して独立成功を残す。ID/output 名は code-unit 昇順。private payload と details/cause は公開しない。diagnostic message は2048 UTF-8 bytes 以内。
 
-preabort は admission/executor 0。signal/timeout は first cause と ports.abort 一回、取得済み未実行 lease と abort 後 grant は release。running は5000msの共通 grace を待ち、logical cancellation 後の late result が outcome を変えない。開始済み parent の release は actual executor finally に委ねる。全 continuations を観測し unhandled rejection と無期限 Promise.all を避ける。
+preabort は admission/executor 0。timeoutMs の timer は engine start で開始し、definition/input load と compile の時間を含めない。signal/timeout は first cause と ports.abort 一回、取得済み未実行 lease と abort 後 grant は release。running は5000msの共通 grace を待ち、logical cancellation 後の late result が outcome を変えない。開始済み parent の release は actual executor finally に委ねる。全 continuations を観測し unhandled rejection と無期限 Promise.all を避ける。
 
 DEPENDENCY_FAILED は新しい job-only diagnostic string。ERROR_TABLE/core ErrorCode は変更せず aggregate は TOOL_EXECUTION_FAILURE。overall priority は TIMEOUT/ABORTED→job aggregate→output-only INVALID_OUTPUT。job/overall execution は owner/invocation snapshot であり Worker snapshot の合算は禁止。
 
@@ -171,7 +171,7 @@ InvocationToolRuntime.dispose の resources.releaseJobs() 一括呼出しを除�
 - [ ] S5.6 IR に focused/unit/E2E evidence を記録する。
 - [ ] S5.7 CLI 論理変更を commit する。
 
-full option set は --input、--cwd、--timeout、--format json|text、--quiet、--help、--version。token allowlist でその他を拒否。parsed.tokens で input omission={} と明示 '-'=stdin を区別する。file input は既存 JSON acquisition、definition は explicit path loader/deny 境界を使う。interface は共用 metadata helper に抽出して非実行のまま維持する。
+full option set は --input、--cwd、--timeout、--format json|text、--quiet、--help、--version。token allowlist でその他を拒否。parsed.tokens で input omission={} と明示 '-'=stdin を区別する。file input は既存 JSON acquisition、definition は explicit path loader/deny 境界を使う。interface は共用 metadata helper に抽出して非実行のまま維持する。cli.ts の catch-path kind allowlist に workflow-run を含め、pre-engine error の --format/--quiet を失わない。
 
 runtime/store は初回 admission で一組だけ lazy 作成し preabort は constructor 0。modelConfig/createModelRuntime は最初の Worker start の shared promise、tool-only は初期化0。CliHooks.runWorker wrapper が RunWorkerDeps.streamFn を注入し、CliHooks 自体に streamFn field を作らない。cli.ts の既存 test-only CHEAPER_TEST_FAKE_STREAM loader を callback として composition へ渡す。new workflow-run module に private loader を複製しない。
 
@@ -262,7 +262,7 @@ trigger は既存 run/interface/read/usage の回帰、permission widening、lea
 - [x] generated template placeholders を除去し、shared ADR は references に保持した。
 - [x] test 作成、RED 実行、実装、GREEN、record、commit を個別 action にした。
 - [x] data-loss/breaking/external availability と rollback を記録した。
-- [ ] coordinator が plan を承認する。
+- [x] 2026-10-06 coordinator が active Dispatch ctx_7c15503824ef の新 ask で plan を承認した（review-protocol、P0/P1 なし）。
 - [ ] approval 後に behavior test-spec と dependent task docs を作り verified-by/implemented-by を付ける。
 
 ## Implementation Handoff
@@ -273,4 +273,4 @@ inline task execution、各 slice の contract verification、独立 reviewer �
 
 reviewer は upstream spec/local ADR/design と shared D1-D7 に対して、S1 policy restriction、S2 admission/slot と cancellation、S4 caller-owned lease lifetime/child permission、S5 CLI privacy/usage/model lazy seam を確認する。design verdict の P3 四点は本 plan と design に反映済み。test-spec を approval 前に作らないため verified-by は現在空であり、approval 後に意味を持つ link を追加する。
 
-本 plan は draft。plan approval が得られるまで実装しない。canonical check deferred to coordinator merge run。
+本 plan は approved。coordinator は全11 AC、RED/GREEN、slice order、file map、source contracts を確認した。P3 の catch-path kind allowlist と engine timeout 起点は本文に反映済み。test-spec/tasks をリンクしてから implementation へ進む。canonical check deferred to coordinator merge run。

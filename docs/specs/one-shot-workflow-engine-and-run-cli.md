@@ -27,7 +27,7 @@ relations:
   derives-from: ["../discovery/one-shot-workflow-execution-boundaries.md"]
   derived-by: ["../designs/one-shot-workflow-execution-and-cli-composition.md", "../plans/implement-one-shot-workflow-execution-and-cli-integration.md"]
   verifies: []
-  verified-by: []
+  verified-by: ["../test-specs/workflow-execution-contract-boundaries.md", "../test-specs/workflow-one-shot-scheduling-and-cancellation.md", "../test-specs/workflow-artifact-publication-and-consumption.md", "../test-specs/workflow-worker-permissions-and-lease-lifetimes.md", "../test-specs/workflow-run-cli-public-projection.md", "../test-specs/workflow-execution-verification-boundaries.md"]
   references: ["../adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md", "../adr/keep-artifact-storage-invocation-local-and-bounded.md"]
   defers: []
   deferred-by: []
