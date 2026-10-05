@@ -114,7 +114,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7he1WXwcBs | Implement Pi session creation with maxTokens injection | done | [implement-pi-session-creation-with-maxtokens-injection.md](./implement-pi-session-creation-with-maxtokens-injection.md) |
 | TASK-034r05iHQeQpDpYxJZR1PT | Implement pre_read_code hook and e2e test | done | [implement-pre-read-code-hook.md](./implement-pre-read-code-hook.md) |
 | TASK-034AGiBmLrlXnGsS5oLlL8 | Implement process lifecycle policy | done | [implement-process-lifecycle-policy.md](./implement-process-lifecycle-policy.md) |
-| TASK-034AGiFXd7uNwKAYJMW2TP | Implement process tree lifecycle | todo | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
+| TASK-034AGiFXd7uNwKAYJMW2TP | Implement process tree lifecycle | done | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
 | TASK-034AaXUraSXQKdlQ8s1p3p | Lease と atomic admission を実装する | done | [implement-resource-manager-admission.md](./implement-resource-manager-admission.md) |
 | TASK-034r05iHK8bA7hr4HQSPhD | Implement result and error envelope output | done | [implement-result-and-error-envelope-output.md](./implement-result-and-error-envelope-output.md) |
 | TASK-034r05iHK8bA7gRZ6ARuGy | Implement runtime policy CLI restriction | done | [implement-runtime-policy-cli-restriction.md](./implement-runtime-policy-cli-restriction.md) |
@@ -140,7 +140,7 @@ Directory: `docs/tasks`
 | TASK-034zTTj0uuzqIXG4cbMoIO | Canonical workflow resource inference を実装する | done | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | TASK-034r05iHK8bA7gUBy3ygQD | Implement workspace path resolution with symlink policy | done | [implement-workspace-path-resolution-with-symlink-policy.md](./implement-workspace-path-resolution-with-symlink-policy.md) |
 | TASK-034r6roOdgb1mKbE0LLAv3 | inject generous eval budget into bigTool factory | done | [inject-eval-budget-bigtool.md](./inject-eval-budget-bigtool.md) |
-| TASK-034AGiKxX1qSMznOGzJrLb | Integrate process runtime disposal | todo | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
+| TASK-034AGiKxX1qSMznOGzJrLb | Integrate process runtime disposal | in-progress | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
 | TASK-034zTTjWYMNKiiVb4ZZ6LV | Workflow compiler に resource inference を接続する | done | [integrate-workflow-resource-inference.md](./integrate-workflow-resource-inference.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |

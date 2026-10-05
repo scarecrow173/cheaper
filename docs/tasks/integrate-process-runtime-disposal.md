@@ -4,7 +4,7 @@ type: "task"
 status: "in-progress"
 title: "Integrate process runtime disposal"
 created: "2026-10-05"
-updated: "2026-10-05"
+updated: "2026-10-06"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -44,15 +44,17 @@ relations:
 
 registry の scoped timeout cancel seam と managed invocation promise tracking を実装し、owner/runtime dispose が process actual settle を待つようにする。既存 generic detach、scheduler/resource release の唯一の finally を維持し、新 pool を作らない。
 
-- [ ] task の in-progress IR を作成する。
-- [ ] TIMEOUT/timed_out、queue wait 除外、outer first-cause、owner isolation、dispose/capacity の回帰 test を記述する。
-- [ ] focused test の意味のある RED を確認する。
-- [ ] registry の onTimeout/drain を実装する。
-- [ ] focused test の GREEN を確認し logical change を commit する。
-- [ ] guide に defaults/platform/no-polling/diagnostic/abortGraceMs を超え得る bounded dispose を記載する。
+- [x] task の in-progress IR を作成する。
+- [x] TIMEOUT/timed_out、queue wait 除外、outer first-cause、owner isolation、dispose/capacity の回帰 test を記述する。
+- [x] focused test の意味のある RED を確認する。
+- [x] registry の onTimeout/drain を実装する。
+- [x] focused test の GREEN を確認し logical change を commit する（ae1f081）。
+- [x] guide に defaults/platform/no-polling/diagnostic/abortGraceMs を超え得る bounded dispose を記載する。
 - [ ] affected focused suites、lint/typecheck/build と CLI related test を実行する。
 - [ ] coordinator の implementation review と test-spec acceptance を取得する。
 - [ ] chain terminal status/index、scoped exit-audit と report を完成し commit する。
+
+focused 329 passed /1 POSIX-only skip と lint/typecheck/build は pass。CLI は15 passed /1 stale bundled parity failed /1 skipped。bundle 再生成禁止のため coordinator 判断が必要。review/test-spec gate の ask は active Dispatch 不在で拒否され、task を in-progress に保持する。
 
 ## Classification
 

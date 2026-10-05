@@ -4,7 +4,7 @@ type: "impl"
 status: "in-progress"
 title: "Implement process lifecycle policy"
 created: "2026-10-05"
-updated: "2026-10-05"
+updated: "2026-10-06"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -86,6 +86,7 @@ planning-to-task-graph → task-graph-to-implementation、Task DAG issues=[]、r
 - `mise exec -- pnpm --filter @cheaper/core build` exit 0（tsc -b）。
 - `mise exec -- pnpm exec biome check --write`（P の4変更TS file）exit 0。
 - final root lint/typecheck/build/CLI focused/implementation review は R で実行する。baseline 43 tests は issue acceptance と混同しない。
+- 最終 focused は21 files /329 passed/1 POSIX-only skipped、root lint/typecheck/build は pass。CLI の stale bundle parity と実装 review の承認は R に記録した。
 
 ## Risks
 

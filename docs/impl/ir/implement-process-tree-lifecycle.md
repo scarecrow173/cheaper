@@ -4,7 +4,7 @@ type: "impl"
 status: "in-progress"
 title: "Implement process tree lifecycle"
 created: "2026-10-05"
-updated: "2026-10-05"
+updated: "2026-10-06"
 owners: []
 relations:
   source: []
@@ -68,11 +68,11 @@ POSIX group は SIGTERM→grace→SIGKILL。Windows は2秒/1MiB bounded helper 
 
 ### Adopted
 
-<!-- Record adopted experiment logs and why they were adopted. -->
+なし。承認済み設計を実装した。
 
 ### Rejected
 
-<!-- Record rejected experiment logs and why they were rejected. -->
+なし。
 
 ## Validation
 
@@ -83,6 +83,7 @@ RED→GREEN の evidence を以下に追記する。
 - 修正後: `mise exec -- pnpm exec vitest run packages/tool-runtime/test/process.test.ts -t 'managed parent and descendant'` は1 passed /20 deselected（9.25s）、test deadline のみ15秒に拡張。
 - `mise exec -- pnpm --filter @cheaper/tool-runtime build` exit 0。
 - Biome changed files check/write exit 0。最終全 focused suite は R で検証する。
+- 最終 core/tool-runtime/Pi focused suites は21 files /329 passed/1 POSIX-only skipped（94.02s）。Windows の normal/nonzero/abort/timeout 三世代 tree と native spawn failure の coverage を R で追加し GREEN。POSIX native は未実行で、backend の5 deterministic tests は別の evidence とする。
 
 ## Risks
 
