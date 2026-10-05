@@ -168,6 +168,10 @@ running executor は composite signal を受け取り、同一の outer abort de
 
 executor adapter は自身の child scope を finally dispose し、その後に engine が parent lease を release する。canonical ResourceManager.release は child tokens が残る parent を closing として保持するため、Worker adapter が bounded grace で返っても detached operation の物理 settle 前に foreign job を入れない。cancelled slot に新 job を起動することはない。operation capacity/tokens の維持は既存 OperationManager/ToolScheduler が所有する。
 
+追加の source review（2026-10-05）で、現行 InvocationToolRuntime.dispose の finally が resources.releaseJobs() を無条件に呼ぶことを確認した。child token が無い detached executor の parent はこの経路で早期 release されるため、この実装をそのまま使わない。acquireJobLease で取得した lease は caller（workflow では engine）が releaseJobLease を呼ぶ責任を持ち、invocation dispose はそれを一括 release しない。dispose 後も既存 lease の releaseJobLease は許可し、late executor の finally が確実に release する。pending admission は invocation signal で reject、取得済み未実行 lease は engine が abort 処理で release する。
+
+自己所有 scope の ready() が内部取得した lease は既存 scope.dispose が release するため、single-worker の cleanup は維持する。invocation.ts の無条件 releaseJobs 呼出しを除去し、ResourceManager の release/child-token retention 自体は変更しない。既存 acquireJobLease の callers は resources.test.ts で明示 release していることを確認済み。新 regression は executor が lease を保持したまま invocation dispose へ進むケースを含め、child token の有無の双方で caller の release 時点まで parent を保持することを検証する。
+
 CLI finally は runtime.dispose と store.dispose を行う。drain/dispose は既存 bounded grace を使い、未 settle の executor を Promise.all で無期限 await しない。logical return と physical completion を混同せず、runtime metrics の byState/active interval は canonical snapshot を採用する。store payload の abort cleanup は即時であり、遅い publication は closed store が拒否する。
 
 ### Artifact ports と read union（D4/D5）
@@ -322,7 +326,7 @@ issue #62 と shared ADR が定める開始後 discovery、daemon、cross-invoca
 | AC3 bindings/fan-in | $from/needs/inferred edge、producer 完了前に child 未起動、deferred input/output schema rejection |
 | AC4 conflicts | explicit access の conflict lease wait と非 conflict bypass、compiled edge 不変 |
 | AC5 collect-all | producer failure→affected descendants skip、unrelated public output を false envelope に保持 |
-| AC6 cancellation | preabort/outer signal/timeout、admission grant race、grace超過/late settle、physical lease retention、child timeout isolation |
+| AC6 cancellation | preabort/outer signal/timeout、admission grant race、grace超過/late settle、invocation dispose 前後の externally owned parent retention（child token 有/無）、child timeout isolation |
 | AC7 output validation | job output INVALID_OUTPUT、個別 public output invalid、独立 valid output 保持 |
 | AC8 artifacts | publication→reference→Worker→bounded read、foreign/inconsistent reference、duplicate/caps/overflow、deny/image/NUL、cleanup unavailable/private preview omission |
 | AC9 CLI | input omission {}, explicit stdin/file/defaults、definition deny、tool-only createModelRuntime 呼出し0、one stdout、nonzero false、timeout restriction |
