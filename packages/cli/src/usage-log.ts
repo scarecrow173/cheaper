@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { WorkerSavings, WorkerUsage } from "@cheaper/runtime-pi";
-import type { CliEnvelope } from "./envelope.js";
+import type { CliEnvelope, WorkflowEnvelope } from "./envelope.js";
 
 /** usage.jsonl の 1 行レコード（ADR-0025）。 */
 export interface UsageLogRecord {
@@ -40,6 +40,7 @@ export function buildUsageRecord(
   env: CliEnvelope,
   ctx: { root: string; now?: (() => Date) | undefined },
 ): UsageLogRecord | null {
+  if (isWorkflowEnvelope(env)) return null;
   const ts = (ctx.now ?? (() => new Date()))().toISOString();
   const base = {
     schemaVersion: 1 as const,
@@ -93,6 +94,10 @@ export function buildUsageRecord(
     ...(env.meta.savings ? { savings: env.meta.savings } : {}),
     error: { code: env.error.code },
   };
+}
+
+function isWorkflowEnvelope(env: CliEnvelope): env is WorkflowEnvelope {
+  return "workflow" in env && env.workflow;
 }
 
 /** usage.jsonl へ 1 行 append（dir は必要に応じて作成）。 */

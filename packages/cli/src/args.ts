@@ -48,6 +48,17 @@ export interface WorkflowInterfaceCliArgs {
   quiet: boolean;
 }
 
+export interface WorkflowRunCliArgs {
+  kind: "workflow-run";
+  path: string;
+  /** undefined means `{}`; `-` means explicit stdin. */
+  input: string | undefined;
+  cwd: string | undefined;
+  timeout: string | undefined;
+  format: "json" | "text";
+  quiet: boolean;
+}
+
 export interface AuthCliArgs {
   kind: "auth";
   /** `auth status|login|logout` の action。 */
@@ -82,6 +93,7 @@ export type ParsedCli =
   | RunCliArgs
   | CountTokensCliArgs
   | WorkflowInterfaceCliArgs
+  | WorkflowRunCliArgs
   | AuthCliArgs
   | ModelsCliArgs
   | UsageCliArgs;
@@ -158,14 +170,30 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
 
   const workerFile = values["worker-file"];
   if (command === "workflow") {
-    if (positionals[1] !== "interface" || positionals.length !== 3 || !positionals[2]) {
-      throw invalidRequest("workflow requires interface <path>");
-    }
+    const action = positionals[1];
+    if ((action !== "interface" && action !== "run") || positionals.length !== 3 || !positionals[2])
+      throw invalidRequest("workflow requires interface|run <path>");
+    const allowed =
+      action === "run"
+        ? ["input", "cwd", "timeout", "format", "quiet"]
+        : ["cwd", "format", "quiet"];
     for (const token of parsed.tokens) {
-      if (token.kind === "option" && !["cwd", "format", "quiet"].includes(token.name)) {
-        throw invalidRequest(`--${token.name} is not valid for workflow interface`);
+      if (token.kind === "option" && !allowed.includes(token.name)) {
+        throw invalidRequest(`--${token.name} is not valid for workflow ${action}`);
       }
     }
+    if (action === "run")
+      return {
+        kind: "workflow-run",
+        path: positionals[2],
+        input: parsed.tokens.some((token) => token.kind === "option" && token.name === "input")
+          ? values.input
+          : undefined,
+        cwd: values.cwd,
+        timeout: values.timeout,
+        format,
+        quiet: values.quiet === true,
+      };
     return {
       kind: "workflow-interface",
       path: positionals[2],

@@ -32,7 +32,13 @@ Directory: `docs/test-specs`
 | TSPEC-034rBrs4K5W7pe0ixjegZk | Shell-read blocking contract tests | approved | [shell-read-blocking-contract-tests.md](./shell-read-blocking-contract-tests.md) |
 | TSPEC-034z1OZC4sSkRlvZfFfIXt | Standalone executable contract parity | proposed | [standalone-executable-contract-parity.md](./standalone-executable-contract-parity.md) |
 | TSPEC-034zQTnsUJl3pXIuYsvZIQ | Version-pinned launcher integrity and stream preservation | draft | [version-pinned-launcher-integrity-and-stream-preservation.md](./version-pinned-launcher-integrity-and-stream-preservation.md) |
+| TSPEC-034AJ8C35s1GpJJoxU3sey | Workflow における明示 bounded artifact read | proposed | [workflow-artifact-publication-and-consumption.md](./workflow-artifact-publication-and-consumption.md) |
 | TSPEC-034zQvKPjNkXAEgbZlzdcQ | Workflow compiler の契約保証 | proposed | [workflow-compiler-contract-guarantees.md](./workflow-compiler-contract-guarantees.md) |
+| TSPEC-034AJ8stqUyJWIgj6oaOzt | Workflow の policy・schema・literal scope 境界 | proposed | [workflow-execution-contract-boundaries.md](./workflow-execution-contract-boundaries.md) |
+| TSPEC-034AJ8RBszSVnXlZydfnyU | Workflow verification evidence と dependency direction | proposed | [workflow-execution-verification-boundaries.md](./workflow-execution-verification-boundaries.md) |
 | TSPEC-034zTsc3i9wPmxIsvuuyva | workflow-loader-contract | proposed | [workflow-loader-contract.md](./workflow-loader-contract.md) |
+| TSPEC-034AJ8xcmAsWo69hx3u1vW | One-shot DAG の依存・capacity・terminal 保証 | proposed | [workflow-one-shot-scheduling-and-cancellation.md](./workflow-one-shot-scheduling-and-cancellation.md) |
 | TSPEC-034zTsgOgsTzuFTcEztxzd | workflow-public-interface | proposed | [workflow-public-interface.md](./workflow-public-interface.md) |
 | TSPEC-034zTTi4YDeiIdQUZuSsAC | Workflow resource inference の ownership と safety 保証 | proposed | [workflow-resource-inference.md](./workflow-resource-inference.md) |
+| TSPEC-034AJ8MX15GFDduILAiVko | workflow run の入力・public envelope・互換性 | proposed | [workflow-run-cli-public-projection.md](./workflow-run-cli-public-projection.md) |
+| TSPEC-034AJ8HPIAVAf1tzuWKVa5 | Workflow parent safety と Worker child permission の寿命 | proposed | [workflow-worker-permissions-and-lease-lifetimes.md](./workflow-worker-permissions-and-lease-lifetimes.md) |

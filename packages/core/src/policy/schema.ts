@@ -4,6 +4,12 @@ import { CheaperError } from "../errors.js";
 import { TIERS, type Tier } from "../model/tier.js";
 import { TOOL_ALIASES, TOOL_NAMES, type ToolName } from "../tools/vocabulary.js";
 import { PROCESS_POLICY_PROPERTIES, type ProcessPolicy, resolveProcessPolicy } from "./process.js";
+import {
+  resolveWorkflowPolicy,
+  WORKFLOW_POLICY_PROPERTIES,
+  type WorkflowPolicy,
+  type WorkflowPolicyInput,
+} from "./workflow.js";
 
 export interface ConcurrencyPolicy {
   maxOperations: number;
@@ -30,6 +36,8 @@ export function resolveConcurrencyPolicy(input?: Partial<ConcurrencyPolicy>): Co
 }
 
 export interface RuntimePolicy {
+  /** legacy typed policy は省略可。normalize/load は補完する。 */
+  workflow?: WorkflowPolicy;
   /** legacy typed policy の互換。normalize/load は常に補完する。 */
   process?: ProcessPolicy;
   execution: {
@@ -92,6 +100,7 @@ export const POLICY_COMPLETE_SCHEMA = objectSchema(
   ["version", "execution", "tools", "filesystem", "model", "output", "retry"],
   {
     version: VERSION_PROPERTY,
+    workflow: objectSchema([], WORKFLOW_POLICY_PROPERTIES),
     process: objectSchema(["maxConcurrent", "tasks"], PROCESS_POLICY_PROPERTIES),
     execution: objectSchema(["timeout", "maxTurns", "maxToolCalls"], EXECUTION_PROPERTIES),
     tools: objectSchema(["allow"], TOOLS_PROPERTIES),
@@ -104,6 +113,7 @@ export const POLICY_COMPLETE_SCHEMA = objectSchema(
 
 export const POLICY_PARTIAL_SCHEMA = objectSchema(["version"], {
   version: VERSION_PROPERTY,
+  workflow: objectSchema([], WORKFLOW_POLICY_PROPERTIES),
   process: objectSchema([], PROCESS_POLICY_PROPERTIES),
   execution: objectSchema([], {
     ...EXECUTION_PROPERTIES,
@@ -183,6 +193,7 @@ export function normalizePolicy(raw: Record<string, unknown>): RuntimePolicy {
   const output = isPlainObject(raw.output) ? raw.output : {};
   const retry = isPlainObject(raw.retry) ? raw.retry : {};
   return {
+    workflow: resolveWorkflowPolicy(raw.workflow as WorkflowPolicyInput | undefined),
     process: resolveProcessPolicy(raw.process as Partial<ProcessPolicy> | undefined),
     execution: {
       timeoutMs,

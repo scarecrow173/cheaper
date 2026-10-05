@@ -11,6 +11,7 @@ import {
   resolveConcurrencyPolicy,
   validatePolicySchema,
 } from "./schema.js";
+import { resolveWorkflowPolicy, type WorkflowPolicyInput } from "./workflow.js";
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -77,6 +78,7 @@ export async function loadPolicy(opts: {
   const execution = effective.execution as Record<string, unknown>;
   effective = {
     ...effective,
+    workflow: resolveWorkflowPolicy(effective.workflow as WorkflowPolicyInput | undefined),
     process: resolveProcessPolicy(effective.process as Partial<ProcessPolicy> | undefined),
     execution: {
       ...execution,

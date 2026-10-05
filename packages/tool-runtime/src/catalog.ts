@@ -11,7 +11,7 @@ import { countTokensSchema } from "./count-tokens.js";
 import { findSchema } from "./find.js";
 import { grepSchema } from "./grep.js";
 import { processDetailsSchema, processSchema } from "./process.js";
-import { readSchema } from "./read.js";
+import { artifactReferenceSchema, readSchema } from "./read.js";
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [k: string]: JsonValue };
 export interface ToolMetadata {
@@ -132,13 +132,37 @@ function outputSchema(name: ToolName): Record<string, unknown> {
   if (name === "read" || name === "count_tokens" || name === "process") {
     const properties = result.properties as Record<string, unknown>;
     properties.details =
-      name === "read" ? readDetails : name === "process" ? processDetailsSchema : countDetails;
+      name === "read"
+        ? Type.Union([
+            readDetails,
+            Type.Object({ artifact: artifactReferenceSchema }, { additionalProperties: false }),
+            Type.Object(
+              {
+                offset: Type.Integer({ minimum: 0 }),
+                nextOffset: Type.Integer({ minimum: 0 }),
+                eof: Type.Boolean(),
+              },
+              { additionalProperties: false },
+            ),
+          ])
+        : name === "process"
+          ? processDetailsSchema
+          : countDetails;
     result.required = ["content", "details"];
   }
   return result;
 }
 
 function resources(name: ToolName, input: JsonValue): ResourceManifestDeclaration {
+  if (
+    name === "read" &&
+    input !== null &&
+    typeof input === "object" &&
+    !Array.isArray(input) &&
+    "source" in input
+  ) {
+    return { reads: [], writes: [], produces: [] };
+  }
   const subtree = name === "ls" || name === "grep" || name === "find";
   const value =
     input !== null && typeof input === "object" && !Array.isArray(input)

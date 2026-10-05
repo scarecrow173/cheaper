@@ -2,6 +2,7 @@ export * from "./artifacts.js";
 export * from "./bindings.js";
 export * from "./compiler.js";
 export * from "./dag.js";
+export * from "./engine.js";
 export * from "./interface.js";
 export * from "./loader.js";
 export * from "./resource-inference.js";

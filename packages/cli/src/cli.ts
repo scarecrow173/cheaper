@@ -5,7 +5,6 @@ import {
   CheaperError,
   canonicalizeWorkspaceRoot,
   classifyModel,
-  createPathDenylist,
   FileTooLargeError,
   isExcludedModel,
   loadModelConfig,
@@ -18,7 +17,6 @@ import {
   resolveWorkerFile,
   restrictPolicy,
   validateWorkerInput,
-  type WorkerDefinition,
   WorkspaceEscapeError,
 } from "@cheaper/core";
 import {
@@ -31,8 +29,6 @@ import {
   toModelInfo,
   type WorkerRunMeta,
 } from "@cheaper/runtime-pi";
-import { createToolCatalog } from "@cheaper/tool-runtime";
-import { loadWorkflowFile, WorkflowCompiler } from "@cheaper/workflow";
 import {
   type ModelsCliArgs,
   parseCliArgs,
@@ -54,6 +50,8 @@ import { formatText, formatUsageReport } from "./text-format.js";
 import { recordUsage } from "./usage-log.js";
 import { buildUsageReport, splitModelRef } from "./usage-report.js";
 import { packageVersion } from "./version.js";
+import { prepareWorkflowContext } from "./workflow-context.js";
+import { runWorkflowCommand } from "./workflow-run.js";
 
 export interface CliIo {
   stdin: StdinLike;
@@ -90,6 +88,7 @@ Commands:
   doc-write              Alias for: run doc-writer
   count-tokens <path>    Count canonical tokens of a workspace file
   workflow interface <path> Show the public workflow inputs and outputs
+  workflow run <path>       Run a one-shot workflow
   usage                  Aggregate usage.jsonl (worker cost / measured savings)
   models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
@@ -325,63 +324,7 @@ async function executeWorkflowInterface(
   hooks: CliHooks,
   startedAt: number,
 ): Promise<CliEnvelope> {
-  const builtinDir = hooks.builtinDir ?? defaultBuiltinDir;
-  const root = await canonicalizeWorkspaceRoot(args.cwd ?? io.cwd);
-  const dirs = resolveConfigDirs({ cwd: root, builtinDir, env: io.env });
-  const policy = await loadPolicy({
-    builtinPolicyPath: path.join(builtinDir, "policy.yaml"),
-    userConfigDir: dirs.userConfigDir,
-    projectDir: dirs.projectDir,
-  });
-  const loaded = await loadWorkflowFile(
-    {
-      root,
-      path: args.path,
-      symlinkPolicy: policy.filesystem.symlinks,
-      denylist: createPathDenylist(policy.filesystem.denyPaths),
-    },
-    async (raw) => {
-      const workers = new Map<string, WorkerDefinition>();
-      const failures = new Map<string, unknown>();
-      // metadata 準備は schema 検証ではない。失敗は canonical validator の get 時に返す。
-      const jobs =
-        raw && typeof raw === "object" ? (raw as Record<string, unknown>).jobs : undefined;
-      if (jobs && typeof jobs === "object" && !Array.isArray(jobs)) {
-        const names = new Set<string>();
-        for (const job of Object.values(jobs)) {
-          if (
-            job &&
-            typeof job === "object" &&
-            job.kind === "worker" &&
-            typeof job.worker === "string"
-          ) {
-            names.add(job.worker);
-          }
-        }
-        for (const name of [...names].sort()) {
-          try {
-            workers.set(name, await resolveWorker(name, dirs));
-          } catch (error) {
-            if (
-              !(error instanceof CheaperError) ||
-              !["WORKER_NOT_FOUND", "INVALID_WORKER_NAME"].includes(error.code)
-            ) {
-              failures.set(name, error);
-            }
-          }
-        }
-      }
-      return new WorkflowCompiler({
-        tools: createToolCatalog(),
-        workers: {
-          get(name) {
-            if (failures.has(name)) throw failures.get(name);
-            return workers.get(name);
-          },
-        },
-      });
-    },
-  );
+  const { loaded } = await prepareWorkflowContext(args, io, hooks);
   return utilitySuccessEnvelope({
     result: loaded.compiler.projectInterface(loaded.definition) as unknown as Record<
       string,
@@ -573,6 +516,12 @@ export async function runCli(
       return 0;
     }
 
+    if (parsed.kind === "workflow-run") {
+      const envelope = await runWorkflowCommand(parsed, io, hooks, startedAt, loadTestStreamFn);
+      io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
+      return envelope.ok ? 0 : (envelope.error?.exitCode ?? 70);
+    }
+
     if (parsed.kind === "auth") {
       const { envelope, exitCode } = await executeAuth(parsed, io, hooks, startedAt);
       io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
@@ -607,6 +556,7 @@ export async function runCli(
     const envelope = errorEnvelope(err, { worker: workerName, durationMs: now() - startedAt });
     let format: "json" | "text" = "json";
     let quiet = false;
+    let suppressErrorDiagnostic = false;
     try {
       const p = parseCliArgs(argv);
       if (
@@ -614,15 +564,18 @@ export async function runCli(
         p.kind === "count-tokens" ||
         p.kind === "usage" ||
         p.kind === "workflow-interface" ||
+        p.kind === "workflow-run" ||
         p.kind === "auth"
       ) {
         format = p.format;
         quiet = p.quiet;
+        suppressErrorDiagnostic = p.kind === "workflow-run" && quiet;
       }
     } catch {
       // args 自体が不正なら json のまま
     }
-    io.stderr.write(`error ${envelope.error.code}: ${envelope.error.message}\n`);
+    if (!suppressErrorDiagnostic)
+      io.stderr.write(`error ${envelope.error.code}: ${envelope.error.message}\n`);
     io.stdout.write(format === "text" ? formatText(envelope) : envelopeJson(envelope));
     recordUsage({
       env: envelope,

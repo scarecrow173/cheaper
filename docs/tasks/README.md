@@ -98,6 +98,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gFkeCQ9Xu | Implement duration parser | done | [implement-duration-parser.md](./implement-duration-parser.md) |
 | TASK-034r05iHK8bA7hf8fHPk7j | Implement final output extraction and schema validation | done | [implement-final-output-extraction-and-schema-validation.md](./implement-final-output-extraction-and-schema-validation.md) |
 | TASK-034r05iHQeQpDpo8GaLTOj | Implement human-readable text format output | done | [implement-human-readable-text-format-output.md](./implement-human-readable-text-format-output.md) |
+| TASK-034AJcQgIUFFRXqpy0U1oB | Injected one-shot workflow engine を実装する | done | [implement-injected-workflow-engine.md](./implement-injected-workflow-engine.md) |
 | TASK-034r05iHK8bA7hpwOJHzxF | Implement input reading from stdin or file | done | [implement-input-reading-from-stdin-or-file.md](./implement-input-reading-from-stdin-or-file.md) |
 | TASK-034A9ymtnIQaZqcchZR6Bg | managed process executor と adapter を実装する | done | [implement-managed-process-executor.md](./implement-managed-process-executor.md) |
 | TASK-034A9ylSD9a2UjmTcNHl9R | managed process policy と resource 宣言を実装する | done | [implement-managed-process-policy.md](./implement-managed-process-policy.md) |
@@ -136,12 +137,14 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gKN1oXRb8 | Implement worker schema reference resolution and Ajv validation | done | [implement-worker-schema-reference-resolution-and-ajv-validation.md](./implement-worker-schema-reference-resolution-and-ajv-validation.md) |
 | TASK-034zQvLk1Av5981u4ci8q4 | Implement workflow binding and definition contracts | done | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
 | TASK-034zQvM02qLs0os3ej72pP | Implement workflow compilation and public hooks | done | [implement-workflow-compilation-and-public-hooks.md](./implement-workflow-compilation-and-public-hooks.md) |
+| TASK-034AJcLMvVtCF2DauUO4It | Workflow policy/helper/compiler の正本を実装する | done | [implement-workflow-execution-contracts.md](./implement-workflow-execution-contracts.md) |
 | TASK-034zTslwNSSK73F5SbJfe6 | implement-workflow-loader | done | [implement-workflow-loader.md](./implement-workflow-loader.md) |
 | TASK-034zTTj0uuzqIXG4cbMoIO | Canonical workflow resource inference を実装する | done | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | TASK-034r05iHK8bA7gUBy3ygQD | Implement workspace path resolution with symlink policy | done | [implement-workspace-path-resolution-with-symlink-policy.md](./implement-workspace-path-resolution-with-symlink-policy.md) |
 | TASK-034r6roOdgb1mKbE0LLAv3 | inject generous eval budget into bigTool factory | done | [inject-eval-budget-bigtool.md](./inject-eval-budget-bigtool.md) |
 | TASK-034AGiKxX1qSMznOGzJrLb | Integrate process runtime disposal | done | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
 | TASK-034zTTjWYMNKiiVb4ZZ6LV | Workflow compiler に resource inference を接続する | done | [integrate-workflow-resource-inference.md](./integrate-workflow-resource-inference.md) |
+| TASK-034AJd4IRjNpoxGSXgU36n | Workflow run CLI と public envelope を統合する | done | [integrate-workflow-run-cli.md](./integrate-workflow-run-cli.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
@@ -203,6 +206,7 @@ Directory: `docs/tasks`
 | TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | done | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
+| TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | done | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
 | TASK-034zTjXTqV7nvYYkf1bUH9 | Wire canonical operation ownership and abort | done | [wire-canonical-operation-ownership.md](./wire-canonical-operation-ownership.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
@@ -210,6 +214,8 @@ Directory: `docs/tasks`
 | TASK-034zTWiLbk14ZhGMpiNo7M | Wire one-dispatch release publication | done | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
 | TASK-034AaXZ7nc5LQuUvG9iFY8 | 実 I/O と Pi job lease を配線する | done | [wire-resource-manager-observation.md](./wire-resource-manager-observation.md) |
 | TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |
+| TASK-034AJcULdYBQSjyy18XSVw | Canonical artifact read/publisher を配線する | done | [wire-workflow-artifact-tools.md](./wire-workflow-artifact-tools.md) |
 | TASK-034zTsqC9tEk1qHUgWFefU | wire-workflow-interface | done | [wire-workflow-interface.md](./wire-workflow-interface.md) |
+| TASK-034AJcZY4VW7Wfwx1AOzvh | Workflow Worker permission と lease lifetime を配線する | done | [wire-workflow-worker-leases.md](./wire-workflow-worker-leases.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |
 | TASK-034r05iHQeQpDqac6FjqrJ | Writer writeScope declaration and e2e verification | done | [writer-write-scope-and-e2e-verification.md](./writer-write-scope-and-e2e-verification.md) |

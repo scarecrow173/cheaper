@@ -204,7 +204,6 @@ describe("workflow interface args", () => {
   });
   it.each([
     ["workflow"],
-    ["workflow", "run", "file.json"],
     ["workflow", "interface"],
     ["workflow", "interface", "file.json", "extra"],
     ...[

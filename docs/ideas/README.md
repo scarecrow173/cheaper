@@ -14,6 +14,7 @@ Directory: `docs/ideas`
 | IDEA-034A8p4vQ9wEUp8M2aBepC | managed process を canonical tool として提供する | promoted | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
 | IDEA-034ApWJ5uBdp8s6tiUl678 | managed process lifecycle hardening | promoted | [managed-process-lifecycle-hardening.md](./managed-process-lifecycle-hardening.md) |
 | IDEA-034zSO5nJ7nAuF11FrikUD | One-dispatch release workflow | promoted | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
+| IDEA-034Aqy9KktpNVENeRoICf7 | One-shot workflow engine and run CLI | promoted | [one-shot-workflow-engine-and-run-cli.md](./one-shot-workflow-engine-and-run-cli.md) |
 | IDEA-034A8lBQcnPXKkI5BoPjqE | Operation execution metrics | promoted | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | IDEA-034zSLUoRMHrYpLGc8wKPj | OperationManager の invocation lifecycle | promoted | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | IDEA-034zWkslEDhnpFKJZpyzU4 | Payload untracking migration | promoted | [payload-untracking-migration.md](./payload-untracking-migration.md) |

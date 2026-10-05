@@ -63,6 +63,167 @@ async function fixture() {
   });
   return { root, invocation, scope, started, pending };
 }
+describe("workflow caller-owned parent lifetime", () => {
+  it.each([false, true])(
+    "retains the parent through invocation dispose (child token: %s)",
+    async (childToken) => {
+      const f = await fixture();
+      const parentSpy = vi.spyOn(api.ResourceManager.prototype, "parent");
+      try {
+        const parent = await f.invocation.acquireJobLease({
+          ownerId: "holder",
+          names: ["write"],
+          resourceManifest: narrow("a"),
+          readStrictness: "reject",
+        });
+        const child = f.scope("holder", {
+          parentLease: parent,
+          resourceManifest: narrow("a"),
+          readStrictness: "reject",
+        });
+        const manager = parentSpy.mock.contexts[0] as api.ResourceManager | undefined;
+        if (!manager) throw new Error("missing resource manager");
+        const prepared = manager.parent(parent, "holder");
+        const operation = childToken ? write(child, "a").catch((error) => error) : undefined;
+        if (childToken) await vi.waitFor(() => expect(f.started).toHaveLength(1));
+        await f.invocation.dispose();
+        expect(() => manager.parent(parent, "holder")).not.toThrow();
+        let started = false;
+        const contender = manager.request({
+          ownerId: "contender",
+          kind: "job",
+          prepare: () => prepared,
+          start: (lease) => {
+            started = true;
+            return lease;
+          },
+        });
+        await Promise.resolve();
+        expect(started).toBe(false);
+        f.invocation.releaseJobLease(parent);
+        if (childToken) {
+          expect(started).toBe(false);
+          f.pending[0]?.resolve();
+          await operation;
+        }
+        const contenderLease = await contender;
+        expect(started).toBe(true);
+        manager.release(contenderLease);
+      } finally {
+        parentSpy.mockRestore();
+      }
+    },
+  );
+  it("narrows mkdir safety ancestors to canonical literal exact write claims", async () => {
+    const f = await fixture();
+    const safety = {
+      reads: [{ path: "a", scope: "exact" as const }],
+      writes: [{ path: ".", scope: "subtree" as const }],
+      produces: [{ path: "a", scope: "exact" as const }],
+    };
+    const access = new api.ResourceAccess({
+      root: f.root,
+      symlinkPolicy: "within-workspace",
+      names: ["write"],
+      writeScope: new Set(["a"]),
+      readStrictness: "reject",
+    });
+    const prepared = await access.prepare();
+    const manifest = await access.prepareWorkerManifest(safety);
+    expect(manifest.writes).toEqual(prepared.writeClaims);
+    expect(manifest.produces).toEqual(prepared.writeClaims);
+    expect(manifest.reads).toEqual([
+      {
+        resource: { kind: "workspace", path: path.join(f.root, "a"), scope: "exact" },
+        mode: "shared",
+      },
+    ]);
+    const lease = await f.invocation.acquireJobLease({
+      ownerId: "narrow",
+      names: ["write"],
+      resourceManifest: safety,
+      readStrictness: "reject",
+    });
+    const child = f.scope("narrow", {
+      parentLease: lease,
+      resourceManifest: manifest,
+      writeScope: new Set(["a"]),
+      readStrictness: "reject",
+    });
+    await child.ready();
+    await expect(write(child, "b")).rejects.toThrow("outside the write scope");
+    expect(f.started).toEqual([]);
+    await child.dispose();
+    f.invocation.releaseJobLease(lease);
+  });
+  it("preserves safety without writeScope and removes permissions for explicit empty scope", async () => {
+    const f = await fixture();
+    const safety = narrow("a");
+    const base = {
+      root: f.root,
+      symlinkPolicy: "within-workspace" as const,
+      names: ["write"] as const,
+    };
+    const unrestricted = new api.ResourceAccess(base);
+    const fallback = await unrestricted.prepareWorkerManifest();
+    expect(fallback).toEqual((await unrestricted.prepare()).manifest);
+    expect(fallback.writes).toEqual([
+      { resource: { kind: "workspace", path: f.root, scope: "subtree" }, mode: "exclusive" },
+    ]);
+    expect(await unrestricted.prepareWorkerManifest(safety)).toEqual(
+      (await new api.ResourceAccess({ ...base, resourceManifest: safety }).prepare()).manifest,
+    );
+    const empty = await new api.ResourceAccess({
+      ...base,
+      writeScope: new Set(),
+    }).prepareWorkerManifest(safety);
+    expect(empty.writes).toEqual([]);
+    expect(empty.produces).toEqual([]);
+    expect(empty.reads).toHaveLength(1);
+  });
+  it("retains literal metacharacters and intersects each safety bucket separately", async () => {
+    const f = await fixture();
+    await writeFile(path.join(f.root, "literal[1].txt"), "x");
+    const access = new api.ResourceAccess({
+      root: f.root,
+      symlinkPolicy: "within-workspace",
+      names: ["write"],
+      writeScope: new Set(["literal[1].txt", "a", "b"]),
+    });
+    const manifest = await access.prepareWorkerManifest({
+      reads: [],
+      writes: [{ path: ".", scope: "subtree" }],
+      produces: [{ path: "a", scope: "exact" }],
+    });
+    expect(manifest.writes.map((claim) => claim.resource)).toContainEqual({
+      kind: "workspace",
+      path: path.join(f.root, "literal[1].txt"),
+      scope: "exact",
+    });
+    expect(manifest.produces).toHaveLength(1);
+    expect(manifest.produces[0]?.resource).toMatchObject({
+      path: path.join(f.root, "a"),
+      scope: "exact",
+    });
+    expect(manifest.reads).toEqual([]);
+  });
+  it("continues releasing leases acquired by scope.ready itself", async () => {
+    const f = await fixture();
+    const requestSpy = vi.spyOn(api.ResourceManager.prototype, "request");
+    try {
+      const child = f.scope("self", { resourceManifest: narrow("a"), readStrictness: "reject" });
+      const lease = await child.ready();
+      const manager = requestSpy.mock.contexts[0] as api.ResourceManager | undefined;
+      if (!manager) throw new Error("missing resource manager");
+      expect(() => manager.parent(lease, "self")).not.toThrow();
+      await f.invocation.dispose();
+      expect(() => manager.parent(lease, "self")).toThrow("released or closing");
+    } finally {
+      requestSpy.mockRestore();
+    }
+  });
+});
+
 const write = (s: api.ToolRuntime, p: string, signal?: AbortSignal) =>
   s.execute("write", { path: p, content: "y" }, { signal });
 const narrow = (p: string) => ({

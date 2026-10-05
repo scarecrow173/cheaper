@@ -1,8 +1,14 @@
 import { type FileHandle, open, stat } from "node:fs/promises";
 import path from "node:path";
 import { StringDecoder } from "node:string_decoder";
-import { type PathDenylist, resolveWorkspacePath, type SymlinkPolicy } from "@cheaper/core";
+import {
+  CheaperError,
+  type PathDenylist,
+  resolveWorkspacePath,
+  type SymlinkPolicy,
+} from "@cheaper/core";
 import { Type } from "typebox";
+import type { ArtifactPorts } from "./artifact.js";
 import { defineCanonicalTool } from "./definition.js";
 import {
   IO_CHUNK_BYTES,
@@ -20,6 +26,8 @@ const EMPTY = Buffer.alloc(0);
 export const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"]);
 
 export interface ReadToolOptions {
+  artifacts?: ArtifactPorts | undefined;
+  ownerId?: string;
   observeAccess?: import("./access.js").AccessObserver | undefined;
   /** canonical 化済み workspace root。 */
   root: string;
@@ -45,25 +53,98 @@ export interface ReadToolDetails {
   totalLines?: number;
 }
 
-export const readSchema = Type.Object({
-  path: Type.String({ description: "Workspace-relative file path" }),
-  offset: Type.Optional(
-    Type.Integer({ minimum: 1, description: "1-indexed start line (default 1)" }),
-  ),
-  limit: Type.Optional(
-    Type.Integer({
-      minimum: 1,
-      maximum: READ_MAX_LIMIT,
-      default: READ_DEFAULT_LIMIT,
-    }),
-  ),
-  byteInLine: Type.Optional(
-    Type.Integer({
-      minimum: 0,
-      description: "Byte offset within the `offset` line, for continuing an oversized line",
-    }),
-  ),
-});
+export const artifactReferenceSchema = Type.Object(
+  {
+    artifact: Type.String(),
+    runId: Type.String(),
+    producer: Type.Object(
+      { jobId: Type.String(), name: Type.String() },
+      { additionalProperties: false },
+    ),
+    bytes: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+    preview: Type.String(),
+    truncated: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
+
+const workspaceReadSchema = Type.Object(
+  {
+    path: Type.String({ description: "Workspace-relative file path", pattern: "^(?!artifact://)" }),
+    offset: Type.Optional(
+      Type.Integer({ minimum: 1, description: "1-indexed start line (default 1)" }),
+    ),
+    limit: Type.Optional(
+      Type.Integer({
+        minimum: 1,
+        maximum: READ_MAX_LIMIT,
+        default: READ_DEFAULT_LIMIT,
+      }),
+    ),
+    byteInLine: Type.Optional(
+      Type.Integer({
+        minimum: 0,
+        description: "Byte offset within the `offset` line, for continuing an oversized line",
+      }),
+    ),
+  },
+  { additionalProperties: false },
+);
+
+export const readSchema = Object.assign(
+  Type.Union([
+    workspaceReadSchema,
+    Type.Object(
+      {
+        path: Type.String({ pattern: "^(?!artifact://)" }),
+        artifact: Type.String({ minLength: 1 }),
+      },
+      { additionalProperties: false },
+    ),
+    Type.Object(
+      {
+        source: Type.Object(
+          { kind: Type.Literal("artifact"), reference: artifactReferenceSchema },
+          { additionalProperties: false },
+        ),
+        offset: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+        maxBytes: Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
+      },
+      { additionalProperties: false },
+    ),
+  ]),
+  { type: "object" },
+);
+
+/** stat size に依存せず cap+1 まで走査し、put 前に overflow を拒否する。 */
+async function readPublication(
+  fh: FileHandle,
+  cap: number,
+  chunkBytes: number,
+  signal: AbortSignal | undefined,
+): Promise<Buffer> {
+  if (!Number.isSafeInteger(cap) || cap < 0) {
+    throw new CheaperError("INVALID_REQUEST", "invalid artifact publication cap");
+  }
+  const chunks: Buffer[] = [];
+  let bytes = 0;
+  let sniffed = 0;
+  for (;;) {
+    signal?.throwIfAborted();
+    const buf = Buffer.alloc(Math.min(chunkBytes, cap - bytes + 1));
+    const { bytesRead } = await fh.read(buf, 0, buf.length, bytes);
+    signal?.throwIfAborted();
+    if (bytesRead === 0) return Buffer.concat(chunks, bytes);
+    const data = buf.subarray(0, bytesRead);
+    if (data.subarray(0, Math.max(0, SNIFF_BYTES - sniffed)).includes(0)) {
+      throw new Error("read: binary file (NUL byte within first 8KiB)");
+    }
+    sniffed += bytesRead;
+    bytes += bytesRead;
+    if (bytes > cap) throw new CheaperError("POLICY_VIOLATION", "artifact storage limit exceeded");
+    chunks.push(data);
+  }
+}
 
 function formatLimit(maxBytes: number): string {
   return maxBytes % 1024 === 0 ? `${maxBytes / 1024}KB` : `${maxBytes}B`;
@@ -438,16 +519,36 @@ export function createReadTool(opts: ReadToolOptions) {
     name: "read",
     label: "read",
     description:
-      "Read a UTF-8 text file from the workspace. Returns up to `limit` lines (default 2000, max 2000) and at most 50KB per call. Use `offset` (1-indexed line number) to page through large files and `byteInLine` (byte offset within the offset line) to continue inside an oversized line. Binary and image files are rejected with an explicit error; invalid bytes are replaced with U+FFFD. Positions refer to the file as read; changed files may need re-reading from an earlier offset.",
+      "Choose one exclusive mode: workspace line read {path,offset?,limit?,byteInLine?} returns up to 2000 lines and 50KB; publication {path,artifact:name} returns only a bounded artifact reference; artifact byte read {source:{kind:artifact,reference},offset,maxBytes} returns a bounded slice and nextOffset/eof. Workspace offsets are 1-indexed lines; artifact offsets are 0-indexed source bytes. Binary/image workspace files are rejected. Invalid UTF-8 bytes are replaced with U+FFFD.",
     parameters: readSchema,
     async execute(params, signal) {
-      if (params.byteInLine !== undefined && params.offset === undefined) {
+      if ("source" in params) {
+        signal?.throwIfAborted();
+        const reader = opts.artifacts?.reader;
+        if (!reader) throw new CheaperError("INVALID_REQUEST", "artifact reader is unavailable");
+        const result = reader.read(params.source, {
+          offset: params.offset,
+          maxBytes: params.maxBytes,
+        });
+        signal?.throwIfAborted();
+        return {
+          content: [{ type: "text", text: Buffer.from(result.data).toString("utf8") }],
+          details: { offset: result.offset, nextOffset: result.nextOffset, eof: result.eof },
+        };
+      }
+      const publisher = "artifact" in params ? opts.artifacts?.publisher : undefined;
+      if ("artifact" in params && !publisher) {
+        throw new CheaperError("INVALID_REQUEST", "artifact publisher is unavailable");
+      }
+      if ("artifact" in params) signal?.throwIfAborted();
+      const workspace = "artifact" in params ? undefined : params;
+      if (workspace?.byteInLine !== undefined && workspace.offset === undefined) {
         throw new Error("byteInLine requires offset");
       }
       const scan: ScanParams = {
-        offset: params.offset ?? 1,
-        limit: Math.min(params.limit ?? READ_DEFAULT_LIMIT, READ_MAX_LIMIT),
-        byteInLine: params.byteInLine,
+        offset: workspace?.offset ?? 1,
+        limit: Math.min(workspace?.limit ?? READ_DEFAULT_LIMIT, READ_MAX_LIMIT),
+        byteInLine: workspace?.byteInLine,
         maxBytes: opts.maxBytes ?? READ_MAX_BYTES,
         chunkBytes: opts.chunkBytes ?? IO_CHUNK_BYTES,
         signal,
@@ -468,6 +569,20 @@ export function createReadTool(opts: ReadToolOptions) {
         await opts.observeAccess?.(resolved.real, "shared");
         const fh = await open(resolved.real, "r");
         try {
+          if ("artifact" in params && publisher) {
+            const data = await readPublication(
+              fh,
+              publisher.maxArtifactBytes,
+              scan.chunkBytes,
+              signal,
+            );
+            signal?.throwIfAborted();
+            const artifact = publisher.put({
+              producer: { jobId: opts.ownerId ?? "tool-runtime", name: params.artifact },
+              data,
+            });
+            return { content: [], details: { artifact } };
+          }
           const result = await readBounded(fh, st.size, scan);
           return { ...result, details: { ...result.details } };
         } finally {

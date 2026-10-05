@@ -4,6 +4,7 @@ import {
   countTextTokens,
   createPathDenylist,
   type ErrorCode,
+  extractWriteScope,
   isDirectlyComparableWorker,
   type ModelConfig,
   parseModelRef,
@@ -155,38 +156,6 @@ function buildUserPrompt(input: unknown): string {
   return `Task input (JSON):\n${JSON.stringify(input, null, 2)}`;
 }
 
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
-}
-
-/**
- * `cheaper.writeScope` で宣言された input field から write 許可 path 集合を
- * raw path として抽出する。canonical identity は tool-runtime が確定する。
- * field 不在・非 array・item 不正は fail closed で INVALID_INPUT。
- */
-function extractWriteScope(worker: WorkerDefinition, input: unknown): Set<string> | undefined {
-  const field = worker.cheaper.writeScope;
-  if (field === undefined) return undefined;
-  const value = isPlainObject(input) ? input[field] : undefined;
-  const invalid = (reason: string) =>
-    new CheaperError("INVALID_INPUT", `writeScope field invalid: ${reason}`, {
-      details: { field, reason },
-    });
-  if (!Array.isArray(value)) throw invalid("missing-or-not-array");
-  const allowed = new Set<string>();
-  for (const item of value) {
-    const p =
-      typeof item === "string"
-        ? item
-        : isPlainObject(item) && typeof item.path === "string"
-          ? item.path
-          : undefined;
-    if (p === undefined) throw invalid("item-lacks-path");
-    allowed.add(p);
-  }
-  return allowed;
-}
-
 /**
  * Worker を Pi session で 1 回実行する（DESIGN-0004）。
  * 制限（timeout/maxTurns/maxToolCalls/外部 signal）は cheaper 側で記録した
@@ -269,6 +238,7 @@ export async function runWorker(
     })();
 
     const toolOptions = {
+      ownerId,
       process: policy.process,
       root: deps.root,
       symlinkPolicy: policy.filesystem.symlinks,
@@ -278,6 +248,7 @@ export async function runWorker(
       onLimit: () => requestAbort("maxToolCalls"),
       denylist: createPathDenylist(policy.filesystem.denyPaths),
       writeScope: extractWriteScope(worker, deps.input),
+      resourceManifest: deps.execution?.resourceManifest,
       observeAccess: (...args: Parameters<ToolRuntime["observeAccess"]>) => {
         if (!toolScope) throw new CheaperError("INVALID_REQUEST", "missing tool scope");
         return toolScope.observeAccess(...args);
