@@ -24,4 +24,5 @@ Directory: `docs/ideas`
 | IDEA-034zzQkQLoqLftac2tPws5 | Verify and leverage Pi sibling tool-call parallelism inside Workers | promoted | [verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md](./verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md) |
 | IDEA-034zINY5tKFy4kx4xFaveB | Acquire version-pinned release binaries from platform launchers | promoted | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | IDEA-034zSTT1wmfJi1KmZtrY98 | 明示 workflow file の公開 interface を取得する | promoted | [workflow-file-interface.md](./workflow-file-interface.md) |
+| IDEA-034AQJeDtSUKG0S2qSaDBJ | Benchmark workflow orchestration overhead | promoted | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |
 | IDEA-034zSTSs8wPfzUDNrGraOY | Workflow resource manifest と producer consumer 推論 | promoted | [workflow-resource-inference.md](./workflow-resource-inference.md) |

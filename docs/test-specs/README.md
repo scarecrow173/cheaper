@@ -33,6 +33,8 @@ Directory: `docs/test-specs`
 | TSPEC-034z1OZC4sSkRlvZfFfIXt | Standalone executable contract parity | proposed | [standalone-executable-contract-parity.md](./standalone-executable-contract-parity.md) |
 | TSPEC-034zQTnsUJl3pXIuYsvZIQ | Version-pinned launcher integrity and stream preservation | draft | [version-pinned-launcher-integrity-and-stream-preservation.md](./version-pinned-launcher-integrity-and-stream-preservation.md) |
 | TSPEC-034AJ8C35s1GpJJoxU3sey | Workflow における明示 bounded artifact read | proposed | [workflow-artifact-publication-and-consumption.md](./workflow-artifact-publication-and-consumption.md) |
+| TSPEC-034AR5JjpeSFMmwDJ2ohy3 | Workflow benchmark accounting integrity | proposed | [workflow-benchmark-accounting-integrity.md](./workflow-benchmark-accounting-integrity.md) |
+| TSPEC-034AR5IRUTHkZBxfcQJFgM | Workflow benchmark scenario determinism | proposed | [workflow-benchmark-scenario-determinism.md](./workflow-benchmark-scenario-determinism.md) |
 | TSPEC-034zQvKPjNkXAEgbZlzdcQ | Workflow compiler の契約保証 | proposed | [workflow-compiler-contract-guarantees.md](./workflow-compiler-contract-guarantees.md) |
 | TSPEC-034AJ8stqUyJWIgj6oaOzt | Workflow の policy・schema・literal scope 境界 | proposed | [workflow-execution-contract-boundaries.md](./workflow-execution-contract-boundaries.md) |
 | TSPEC-034AJ8RBszSVnXlZydfnyU | Workflow verification evidence と dependency direction | proposed | [workflow-execution-verification-boundaries.md](./workflow-execution-verification-boundaries.md) |

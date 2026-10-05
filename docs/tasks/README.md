@@ -32,6 +32,7 @@ Directory: `docs/tasks`
 | TASK-034z1POhgJ49oVv2arDj6X | Add SEA entrypoint sea-main.ts | done | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | TASK-034r05iHQeQpDqCTYluKr1 | Add version check and set scripts | done | [add-version-check-and-set-scripts.md](./add-version-check-and-set-scripts.md) |
 | TASK-TttCTIVey8FHby8zR3UDqb | Add worker workload profile and auto tier classifier | done | [add-worker-workload-profile-and-auto-tier-classifier.md](./add-worker-workload-profile-and-auto-tier-classifier.md) |
+| TASK-034AR8FLSgTI6VLWpQZrQS | Benchmark evidence 集計と workflow usage guidance | done | [aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md](./aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md) |
 | TASK-034r05iHQeQpDqx9iKaroO | Align CI with canonical setup/check entrypoints and locked install | done | [align-ci-with-canonical-entrypoints.md](./align-ci-with-canonical-entrypoints.md) |
 | TASK-034r2ruj7LGYlehohv1Xjs | Align usage-log docs with recording contract | done | [align-usage-log-docs-with-recording-contract.md](./align-usage-log-docs-with-recording-contract.md) |
 | TASK-034r05iHQeQpDpIRiZMox8 | Anchor policy timeout at runWorker start and amend DESIGN-034r05iHrZUE6WvaQsRRsM | done | [anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
@@ -44,6 +45,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqovKmKaZC | Auth URL opener seam and test isolation | done | [auth-url-opener-seam-and-test-isolation.md](./auth-url-opener-seam-and-test-isolation.md) |
 | TASK-034zXj9deJ0LTUdaiGwflX | Bounded concurrency policy を導入する | done | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
 | TASK-034r05iHQeQpDqkDLrHBxb | Bounded read tool and registry swap | done | [bounded-read-tool-and-registry-swap.md](./bounded-read-tool-and-registry-swap.md) |
+| TASK-034AR8FgMmq4ecbz4SExZy | Seeded workflow benchmark fixtures と runner | done | [build-seeded-workflow-benchmark-fixtures-and-runner.md](./build-seeded-workflow-benchmark-fixtures-and-runner.md) |
 | TASK-034r05iHQeQpDq5zFfI7r5 | bulk-read delegation benchmark and read threshold decision | done | [bulk-read-benchmark-and-threshold-decision.md](./bulk-read-benchmark-and-threshold-decision.md) |
 | TASK-034r05iHQeQpDqn5moXUKS | Bulk-reader guidance, deny/registry parity, and final verification | done | [bulk-reader-guidance-parity-and-final-verification.md](./bulk-reader-guidance-parity-and-final-verification.md) |
 | TASK-034r05iHQeQpDq14tAA3rz | CLI bundle script and hook argv resolution | done | [cli-bundle-script-and-hook-argv.md](./cli-bundle-script-and-hook-argv.md) |

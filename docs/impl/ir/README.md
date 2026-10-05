@@ -18,12 +18,14 @@ Directory: `docs/impl/ir`
 | IMPL-034zCh1C1Qy6Pc2cvIFlOP | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | completed | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
 | IMPL-034z1STQxtFa8POTFVCwbd | Add SEA entrypoint sea-main.ts | completed | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | IMPL-034rArskSHUOoayxrLW4s8 | Add usage telemetry e2e coverage docs and bundle regen | completed | [add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md](./add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md) |
+| IMPL-034ATHURho1jepnqtCXbcf | Aggregate workflow benchmark evidence | in-progress | [aggregate-workflow-benchmark-evidence.md](./aggregate-workflow-benchmark-evidence.md) |
 | IMPL-034zCh2bBRGkSHaq79bBvu | Append sibling tool-call parallelism section to execution-engine design doc | completed | [append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md](./append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md) |
 | IMPL-2OYQijUxRdsfa8Cig2DuQe | Auth text/select prompt I/O boundary routing (PLAN-zDQIdChPXY1lrGJyzZTiQc) | completed | [auth-io-boundary.md](./auth-io-boundary.md) |
 | IMPL-034r05iHy2gdnpt2vgHZ55 | Auth URL opener seam (PLAN-034r05iHE1Fbkp4xxlyMdV) | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
 | IMPL-034rC4jywjUQYNL42ruw7Q | auto 分類の resolver / runtime-pi / CLI 統合 | completed | [auto-resolver-runtime-pi-cli.md](./auto-resolver-runtime-pi-cli.md) |
 | IMPL-034rC4k38aJJf0vfVaefeV | auto tier 分類ガイドの更新 | completed | [auto-tier.md](./auto-tier.md) |
 | IMPL-034A64NK6xfzCOIY0zLm75 | Bounded concurrency policy | completed | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
+| IMPL-034ARlQpkPs620j6TP15Rv | Seeded workflow benchmark fixtures と runner | in-progress | [build-seeded-workflow-benchmark-fixtures-and-runner.md](./build-seeded-workflow-benchmark-fixtures-and-runner.md) |
 | IMPL-034AMOOcav5x6lqiVb9awU | Canonical artifact read と publisher を配線する | completed | [canonical-artifact-read-publisher.md](./canonical-artifact-read-publisher.md) |
 | IMPL-034zTD17WKcBN1E1xeYf41 | Canonical operation ownership wiring | completed | [canonical-operation-ownership-wiring.md](./canonical-operation-ownership-wiring.md) |
 | IMPL-034zQtPhC1tLOPNry0QTLE | Canonical tool extraction | completed | [canonical-tool-extraction.md](./canonical-tool-extraction.md) |
