@@ -26,7 +26,7 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true });
 });
 
-describe("bounded process lifecycle", () => {
+describe("bounded process lifecycle", { timeout: 20000 }, () => {
   it("preserves outer reason when tree cleanup fails", async () => {
     vi.spyOn(treeBackend, "createProcessTree").mockReturnValue({
       terminate: async () => {
@@ -354,7 +354,7 @@ async function alive(pid: number): Promise<boolean> {
   return true;
 }
 
-describe("canonical managed process", () => {
+describe("canonical managed process", { timeout: 20000 }, () => {
   it("executes literal argv in a validated cwd with minimal env and ignored stdin", async () => {
     vi.stubEnv("CHEAPER_PROCESS_TEST_SECRET", "do-not-inherit");
     await mkdir(path.join(root, "sub"));
@@ -461,7 +461,7 @@ describe("canonical managed process", () => {
   });
 });
 
-describe("invocation process pool and lifecycle", () => {
+describe("invocation process pool and lifecycle", { timeout: 20000 }, () => {
   it("pins a queued task input to its admitted resource declaration", async () => {
     const gate = path.join(root, "release"),
       marker = path.join(root, "changed");

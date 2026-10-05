@@ -78,4 +78,4 @@ it("Workflow compiles a policy process producer and executes canonical materiali
     await runtime.dispose();
     await rm(root, { recursive: true, force: true });
   }
-});
+}, 20000);

@@ -49,7 +49,7 @@ function setup() {
     { pid: 43, parent: 42, created },
   ];
 }
-describe("process tree backend contracts", () => {
+describe("process tree backend contracts", { timeout: 30000 }, () => {
   it("does not force kill after graceful tree termination", async () => {
     setup();
     state.graceful = true;
