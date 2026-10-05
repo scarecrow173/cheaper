@@ -1,4 +1,10 @@
-import { CheaperError, type ConcurrencyPolicy, type SymlinkPolicy } from "@cheaper/core";
+import {
+  CheaperError,
+  type ConcurrencyPolicy,
+  type ProcessPolicy,
+  resolveProcessPolicy,
+  type SymlinkPolicy,
+} from "@cheaper/core";
 import type { ExecutionMetrics } from "./execution-metrics.js";
 import { OperationManager, type OperationRecord } from "./operation.js";
 import { createToolRuntime, type ToolRuntime, type ToolRuntimeOptions } from "./registry.js";
@@ -17,6 +23,7 @@ export interface WorkerScopeOptions extends ToolRuntimeOptions {
   parentLease?: ResourceLease;
 }
 export interface InvocationToolRuntimeOptions {
+  process?: Partial<ProcessPolicy> | undefined;
   root: string;
   symlinkPolicy: SymlinkPolicy;
   signal?: AbortSignal;
@@ -39,7 +46,7 @@ export interface InvocationToolRuntime {
 export function createInvocationToolRuntime(
   options: InvocationToolRuntimeOptions,
 ): InvocationToolRuntime {
-  const opts = { ...options };
+  const opts = { ...options, process: resolveProcessPolicy(options.process) };
   if (
     opts.abortGraceMs !== undefined &&
     (!Number.isFinite(opts.abortGraceMs) || opts.abortGraceMs < 0)
@@ -68,6 +75,11 @@ export function createInvocationToolRuntime(
       if (options.root !== opts.root) throw invalidBinding("root mismatch");
       if (options.symlinkPolicy !== opts.symlinkPolicy)
         throw invalidBinding("symlink policy mismatch");
+      if (
+        options.process !== undefined &&
+        JSON.stringify(resolveProcessPolicy(options.process)) !== JSON.stringify(opts.process)
+      )
+        throw invalidBinding("process policy mismatch");
       if (owners.has(options.ownerId) || !options.ownerId)
         throw invalidBinding("duplicate or empty owner");
       if (options.parentLease !== undefined)
@@ -75,6 +87,7 @@ export function createInvocationToolRuntime(
       const scope = createToolRuntime(
         {
           ...options,
+          process: opts.process,
           signal: options.signal
             ? AbortSignal.any([controller.signal, options.signal])
             : controller.signal,

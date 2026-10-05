@@ -17,6 +17,7 @@ Directory: `docs/discovery`
 | DISC-034r05iHy2gdnpdai9KGpW | Cross-agent hook distribution and per-agent hook contract matrix | resolved | [cross-agent-hook-distribution-and-contract-matrix.md](./cross-agent-hook-distribution-and-contract-matrix.md) |
 | DISC-034rA43JiB611pUjLPA4yR | Cross-agent native routing adapter contract re-verification | resolved | [cross-agent-native-routing-adapter-contract-re-verification.md](./cross-agent-native-routing-adapter-contract-re-verification.md) |
 | DISC-034r05iHy2gdnpcXzmUKaV | Huge-file token count guard and fail-closed hook behavior | resolved | [huge-file-token-count-guard-and-fail-closed-hook-behavior.md](./huge-file-token-count-guard-and-fail-closed-hook-behavior.md) |
+| DISC-034A8pIq50dPYXsDhld9st | managed process の認可と lifecycle を整理する | resolved | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
 | DISC-034rzGKaCRO8vRQUpNJvWd | model-pricing-catalog-and-curated-exceptions | resolved | [model-pricing-catalog-and-curated-exceptions.md](./model-pricing-catalog-and-curated-exceptions.md) |
 | DISC-034zSP8CzaOAsOOhj0ZpcW | One-dispatch release workflow | resolved | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
 | DISC-034A8tYcU3vJfWHLa6qGQ2 | Operation execution metrics | resolved | [operation-execution-metrics.md](./operation-execution-metrics.md) |

@@ -4,6 +4,8 @@ import {
   compileSchema,
   isMutatingTool,
   type PathDenylist,
+  type ProcessPolicy,
+  resolveProcessPolicy,
   type SymlinkPolicy,
   type ToolName,
 } from "@cheaper/core";
@@ -20,12 +22,14 @@ import { createFindTool } from "./find.js";
 import { createGrepTool } from "./grep.js";
 import { MutationJournal } from "./journal.js";
 import { OperationManager, type OperationRecord } from "./operation.js";
+import { createProcessTool, processOperationDeclaration } from "./process.js";
 import { createReadTool } from "./read.js";
 import { ToolScheduler } from "./scheduler.js";
 
 export type ToolHandler = (input: unknown, signal: AbortSignal) => Promise<CanonicalToolResult>;
 export type InjectedToolHandlers = Partial<Record<"write" | "edit" | "ls", ToolHandler>>;
 export interface ToolRuntimeOptions {
+  process?: Partial<ProcessPolicy> | undefined;
   root: string;
   symlinkPolicy: SymlinkPolicy;
   names: readonly ToolName[];
@@ -65,14 +69,25 @@ export function createToolRuntime(
   options: ToolRuntimeOptions,
   binding?: OperationBinding,
 ): ToolRuntime {
-  const opts = { ...options, names: [...options.names], handlers: { ...options.handlers } };
+  const opts = {
+    ...options,
+    process: resolveProcessPolicy(options.process),
+    names: [...options.names],
+    handlers: { ...options.handlers },
+  };
+  if (opts.names.includes("process") && Object.keys(opts.process.tasks).length === 0) {
+    throw new CheaperError(
+      "POLICY_VIOLATION",
+      "process exposure requires nonempty authorized tasks",
+    );
+  }
   if (
     opts.abortGraceMs !== undefined &&
     (!Number.isFinite(opts.abortGraceMs) || opts.abortGraceMs < 0)
   ) {
     throw new CheaperError("INVALID_REQUEST", "abort grace must be a finite nonnegative number");
   }
-  const catalog = createToolCatalog();
+  const catalog = createToolCatalog({ process: opts.process });
   const journal = opts.journal ?? new MutationJournal();
   const accounting = createToolBudget(opts);
   const metering = createToolMeter();
@@ -94,6 +109,8 @@ export function createToolRuntime(
         return createFindTool(opts);
       case "count_tokens":
         return createCountTokensTool(opts);
+      case "process":
+        return createProcessTool(opts);
       default: {
         const metadata = catalog.get(name);
         if (!metadata) throw unknownTool(name);
@@ -140,15 +157,26 @@ export function createToolRuntime(
       )
         throw unknownTool(name);
       validateToolInput(name, entry.schema, input);
+      // process の admission と実行は同じ named task snapshot を使う。
+      const executionInput = name === "process" ? structuredClone(input) : input;
       const signal = context?.signal
         ? AbortSignal.any([controller.signal, context.signal])
         : controller.signal;
       if (signal.aborted) throw signal.reason;
+      const declaration =
+        name === "process"
+          ? processOperationDeclaration(opts.process, executionInput as { task: string })
+          : {
+              access: isMutatingTool(entry.definition.name)
+                ? ("exclusive" as const)
+                : ("shared" as const),
+            };
       return accounting.run(() =>
         scheduler.run(
           { ownerId, kind: "tool", toolName: name, signal },
-          { access: isMutatingTool(entry.definition.name) ? "exclusive" : "shared" },
-          (operationSignal) => metering.run(() => entry.definition.execute(input, operationSignal)),
+          declaration,
+          (operationSignal) =>
+            metering.run(() => entry.definition.execute(executionInput, operationSignal)),
         ),
       );
     },

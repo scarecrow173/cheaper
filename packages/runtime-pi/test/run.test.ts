@@ -225,6 +225,35 @@ describe("runWorker", () => {
     }
   });
 
+  it("propagates named process policy through the owned Pi invocation", async () => {
+    await writeFile(
+      path.join(root, "child.mjs"),
+      'import {writeFileSync} from "node:fs"; writeFileSync("process.txt", "ran");',
+    );
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage(fauxToolCall("process", { task: "check" }), { stopReason: "toolUse" }),
+        fauxAssistantMessage('{"ok":true}'),
+      ],
+    });
+    const p = policy({
+      tools: { allow: ["process"] },
+      process: {
+        maxConcurrent: 1,
+        tasks: {
+          check: {
+            command: ["node", "child.mjs"],
+            inputs: ["child.mjs"],
+            outputs: ["process.txt"],
+          },
+        },
+      },
+    });
+    const result = await runWorker(await deps(fake, worker(["process"]), p));
+    expect(result.result).toEqual({ ok: true });
+    expect(result.meta.toolCalls).toBe(1);
+    expect(await readFile(path.join(root, "process.txt"), "utf8")).toBe("ran");
+  });
   it.each([
     ["timeout", "TIMEOUT"],
     ["signal", "ABORTED"],

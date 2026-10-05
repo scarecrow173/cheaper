@@ -169,7 +169,7 @@ export async function validateWorkerDefinition(
 }
 
 /** workspace を mutate しうる tool。直接比較可否の判定に使う。 */
-const MUTATING_TOOL_NAMES: ReadonlySet<ToolName> = new Set(["write", "edit"]);
+const MUTATING_TOOL_NAMES: ReadonlySet<ToolName> = new Set(["write", "edit", "process"]);
 
 /** mutation capability の正本。resource inference と accounting で同じ集合を使う。 */
 export function isMutatingTool(name: ToolName): boolean {

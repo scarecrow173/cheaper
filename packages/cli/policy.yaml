@@ -1,4 +1,7 @@
 version: 1
+process:
+  maxConcurrent: 1
+  tasks: {}
 
 execution:
   timeout: 120s
@@ -14,6 +17,7 @@ tools:
     - write
     - edit
     - count_tokens
+    - process
 
 filesystem:
   symlinks: within-workspace

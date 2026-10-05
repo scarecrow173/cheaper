@@ -244,6 +244,7 @@ export async function runWorker(
         root: deps.root,
         symlinkPolicy: policy.filesystem.symlinks,
         concurrency: policy.execution.concurrency,
+        process: policy.process,
         abortGraceMs: graceMs,
         ...(deps.operationClock !== undefined ? { clock: deps.operationClock } : {}),
       });
@@ -277,6 +278,7 @@ export async function runWorker(
     })();
 
     const toolOptions = {
+      process: policy.process,
       root: deps.root,
       symlinkPolicy: policy.filesystem.symlinks,
       journal,

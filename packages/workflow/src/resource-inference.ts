@@ -29,6 +29,7 @@ interface Options {
   tools: ToolCatalog;
 }
 interface Source {
+  knownProcess?: boolean;
   declaration: ResourceManifestDeclaration;
   authority?: ResourceClaim[];
   unknownAuthority?: boolean;
@@ -67,9 +68,28 @@ export class WorkspaceResourceInference implements ResourceInference {
     const processJob = item.job.kind === "tool" && item.job.tool === "process";
     if (item.process && !processJob) invalid("process declaration requires a process job");
     if (processJob) {
-      const declaration = item.process;
+      const input = item.job.input;
       if (
-        !declaration ||
+        !object(input) ||
+        typeof input.task !== "string" ||
+        Object.keys(input).some((key) => key !== "task")
+      )
+        invalid("process requires a named task input");
+      const declaration = item.process;
+      if (!declaration) {
+        const resources = this.options.tools.get("process")?.resources;
+        if (!resources) invalid("process requires a policy-aware tool catalog");
+        const resolved = resources(structuredClone(input));
+        if (resolved.reads == null || resolved.writes == null || resolved.produces == null)
+          invalid("process requires known task inputs and outputs");
+        return {
+          declaration: resolved,
+          authority: (await this.normalize(resolved)).produces,
+          knownProcess: true,
+        };
+      }
+      if (
+        declaration.task !== input.task ||
         typeof declaration.task !== "string" ||
         declaration.task.length === 0 ||
         !Array.isArray(declaration.inputs) ||
@@ -88,6 +108,7 @@ export class WorkspaceResourceInference implements ResourceInference {
           produces: declaration.outputs,
         },
         authority: manifest.produces,
+        knownProcess: true,
       };
     }
     if (item.job.kind === "tool") {
@@ -144,7 +165,7 @@ export class WorkspaceResourceInference implements ResourceInference {
       const omitted = !declared || Object.keys(declared).length === 0;
       const manifest = await this.normalize(
         omitted
-          ? item.process
+          ? source.knownProcess
             ? source.declaration
             : undefined
           : { ...source.declaration, ...declared },
@@ -207,7 +228,7 @@ export class WorkspaceResourceInference implements ResourceInference {
             : [],
       );
       if (
-        (omitted && !item.process) ||
+        (omitted && !source.knownProcess) ||
         (source.declaration.reads == null && declared?.reads === undefined) ||
         (source.declaration.writes == null && declared?.writes === undefined)
       )
