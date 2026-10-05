@@ -94,6 +94,8 @@ GREEN: focused V3 tool-runtime は 30 passed、workflow artifacts は 15 passed�
 
 logical commit `ca2bc0f`。coordinator は durable question `msg_fe0640e49c87` の independent review（review-protocol）で APPROVED、P0/P1 なしと回答した。owner 固定、cap+1/pre-put 拒否、store atomic recheck、single-owned ArtifactPut、空 artifact resources、scope の ports override 不可、borrowed store cleanup、S3 範囲を確認した。P3 の明示 implements ArtifactPublisher は任意の nit として記録し、追加変更しない。
 
+S4 の追加 package 検証で Pi contract test の stale fixture を発見した。read に `{path,pattern,content,edits}` / `{path,pattern}` を汎用入力として渡し、承認済み additionalProperties:false による INVALID_INPUT と path Access denied の順序を混同していた。coordinator の限定承認で test/tool-runtime-contract.test.ts の read fixture 2 箇所だけを `{path}` に修正し、単独 19 passed を確認した。source の schema/handler は変更していない。
+
 ## Risks
 
 real provider/CLI workflow composition は S3 の検証対象外。canonical `mise run check` と main merge の結果は coordinator 所有で、ここでは成功を宣言しない。

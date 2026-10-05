@@ -74,12 +74,15 @@ describe("canonical / Pi adapter contract on the same real workspace", () => {
     "preserves boundary rejects for %s",
     async (name) => {
       const p = pair([name]);
-      const input = {
-        path: "../escape.txt",
-        pattern: ".",
-        content: "x",
-        edits: [{ oldText: "a", newText: "b" }],
-      };
+      const input =
+        name === "read"
+          ? { path: "../escape.txt" }
+          : {
+              path: "../escape.txt",
+              pattern: ".",
+              content: "x",
+              edits: [{ oldText: "a", newText: "b" }],
+            };
       const [a, b] = await Promise.all([
         p.direct.execute(name, input).catch((e) => e.message),
         p.executePi(name, input).catch((e) => e.message),
@@ -134,7 +137,8 @@ describe("canonical / Pi adapter contract on the same real workspace", () => {
     await symlink(tmpdir(), path.join(root, "escape"), "junction");
     const p = pair(["read", "grep", "find", "count_tokens"]);
     for (const name of ["read", "grep", "find", "count_tokens"]) {
-      const input = { path: "escape/a.txt", pattern: "." };
+      const input =
+        name === "read" ? { path: "escape/a.txt" } : { path: "escape/a.txt", pattern: "." };
       const a = await p.direct.execute(name, input).catch((e) => e.message);
       const b = await p.executePi(name, input).catch((e) => e.message);
       expect(a).toContain("Access denied");
