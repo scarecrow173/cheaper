@@ -6,9 +6,9 @@
 現状: Node SEA 実行ファイル `cheaper-windows-x64.exe` は **約 113MB**(Node ランタイム全体を内包)。
 
 個別調査レポート:
-- `doc/research/rig-agent-runtime/final-report.md`
-- `doc/research/molo-agent-runtime/final-report.md`
-- `doc/research/goose-sdk/final-report.md`
+- `docs/research/rig-agent-runtime/final-report.md`
+- `docs/research/molo-agent-runtime/final-report.md`
+- `docs/research/goose-sdk/final-report.md`
 
 ## 候補比較表
 
