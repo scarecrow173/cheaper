@@ -6,6 +6,23 @@ Directory: `docs/ideas`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
+| IDEA-034zWckq6QerjvcSiFzdmE | 操作並行度を canonical runtime で制限する | promoted | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
+| IDEA-034zIKQIT4QevaIv4SeLB7 | Canonical Tool Runtime 抽出 | promoted | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
+| IDEA-034zIHiBntz3Z0WJ9PdgNU | 再利用可能な Workflow contract を検証済み DAG へ compile する | promoted | [compile-workflow-contracts.md](./compile-workflow-contracts.md) |
+| IDEA-034zIIqQ6OptX5Bz9rXpiV | Core resource identity and conservative manifest normalization | promoted | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | IDEA-034z10aNxQyg2KNIm2Kew4 | Distribute cheaper as standalone executables including APM bundles | promoted | [distribute-cheaper-as-standalone-executables-including-apm-bundles.md](./distribute-cheaper-as-standalone-executables-including-apm-bundles.md) |
+| IDEA-034A8p4vQ9wEUp8M2aBepC | managed process を canonical tool として提供する | promoted | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
+| IDEA-034ApWJ5uBdp8s6tiUl678 | managed process lifecycle hardening | promoted | [managed-process-lifecycle-hardening.md](./managed-process-lifecycle-hardening.md) |
+| IDEA-034zSO5nJ7nAuF11FrikUD | One-dispatch release workflow | promoted | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
+| IDEA-034Aqy9KktpNVENeRoICf7 | One-shot workflow engine and run CLI | promoted | [one-shot-workflow-engine-and-run-cli.md](./one-shot-workflow-engine-and-run-cli.md) |
+| IDEA-034A8lBQcnPXKkI5BoPjqE | Operation execution metrics | promoted | [operation-execution-metrics.md](./operation-execution-metrics.md) |
+| IDEA-034zSLUoRMHrYpLGc8wKPj | OperationManager の invocation lifecycle | promoted | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
+| IDEA-034zWkslEDhnpFKJZpyzU4 | Payload untracking migration | promoted | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | IDEA-034r05iHy2gdnpfT84JZ5h | Provider lifecycle hooks in CheaperProviderPlugin contract | parked | [provider-lifecycle-hooks-in-cheaperproviderplugin-contract.md](./provider-lifecycle-hooks-in-cheaperproviderplugin-contract.md) |
+| IDEA-034A8hNxIG1ERfsXQ9172S | Job lifetime resource leases | promoted | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
+| IDEA-034zSPC3SGPGIHidq3x7sp | Run-scoped artifact store | promoted | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |
 | IDEA-034zzQkQLoqLftac2tPws5 | Verify and leverage Pi sibling tool-call parallelism inside Workers | promoted | [verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md](./verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md) |
+| IDEA-034zINY5tKFy4kx4xFaveB | Acquire version-pinned release binaries from platform launchers | promoted | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
+| IDEA-034zSTT1wmfJi1KmZtrY98 | 明示 workflow file の公開 interface を取得する | promoted | [workflow-file-interface.md](./workflow-file-interface.md) |
+| IDEA-034AQJeDtSUKG0S2qSaDBJ | Benchmark workflow orchestration overhead | promoted | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |
+| IDEA-034zSTSs8wPfzUDNrGraOY | Workflow resource manifest と producer consumer 推論 | promoted | [workflow-resource-inference.md](./workflow-resource-inference.md) |

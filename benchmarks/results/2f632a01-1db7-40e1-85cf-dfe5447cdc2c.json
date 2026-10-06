@@ -1,0 +1,2127 @@
+{
+  "schemaVersion": 1,
+  "runId": "2f632a01-1db7-40e1-85cf-dfe5447cdc2c",
+  "createdAt": "2026-10-05T23:04:31.925Z",
+  "fixtureRevision": "seeded-v1",
+  "warmupCount": 2,
+  "repetitionCount": 15,
+  "scenarioIds": [
+    "definition-vs-compact-interface"
+  ],
+  "observations": [
+    {
+      "schemaVersion": 1,
+      "runId": "92a11cd0-3ea3-40fb-84fb-49b32a4e7df0",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-D9iA0V --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3716000000000008,
+      "wallTimeMs": 2833.7549,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 36,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2833.7549,
+        "cliReportedDurationMs": 37,
+        "nodeCount": 1
+      },
+      "repetition": 1,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "3eb5e2e4-de97-4686-8954-2ee7ff880864",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-med5SP --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.46170000000029177,
+      "wallTimeMs": 2852.7531000000004,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 31,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2852.7531000000004,
+        "cliReportedDurationMs": 32,
+        "nodeCount": 1
+      },
+      "repetition": 2,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "c4dfbb51-39b8-4a16-8d1e-78fa827d50fd",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-iy7wJM --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.2808999999997468,
+      "wallTimeMs": 3278.879099999999,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 31,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3278.879099999999,
+        "cliReportedDurationMs": 33,
+        "nodeCount": 1
+      },
+      "repetition": 1,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "75b75114-ec53-4018-853a-43e2878a1736",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-apo0Zu --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.334499999999025,
+      "wallTimeMs": 2891.3763,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 31,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2891.3763,
+        "cliReportedDurationMs": 33,
+        "nodeCount": 1
+      },
+      "repetition": 2,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "4649288d-8fff-4fcb-a56e-e6aa20106ec5",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-vlwKBH --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.30680000000029395,
+      "wallTimeMs": 2803.3801999999996,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 30,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2803.3801999999996,
+        "cliReportedDurationMs": 32,
+        "nodeCount": 1
+      },
+      "repetition": 3,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "01bb4b44-f297-4f5e-9ba2-6f518fbbf0b4",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-oK84jy --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3085000000010041,
+      "wallTimeMs": 2703.287800000002,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 29,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2703.287800000002,
+        "cliReportedDurationMs": 30,
+        "nodeCount": 1
+      },
+      "repetition": 4,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "7cfc4dbd-5280-4ab6-97dc-c099d010e2f9",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-h5EOrr --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.34319999999934225,
+      "wallTimeMs": 2777.938299999998,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 33,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2777.938299999998,
+        "cliReportedDurationMs": 35,
+        "nodeCount": 1
+      },
+      "repetition": 5,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "bac2af96-229d-4323-9a46-57b88c951366",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-v50sdA --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.27440000000206055,
+      "wallTimeMs": 3445.8542000000016,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 44,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3445.8542000000016,
+        "cliReportedDurationMs": 46,
+        "nodeCount": 1
+      },
+      "repetition": 6,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "b83e5d02-71ce-4537-b1b8-fd01e0ccc12f",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-27aNxQ --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3614999999990687,
+      "wallTimeMs": 2715.8786,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 31,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2715.8786,
+        "cliReportedDurationMs": 32,
+        "nodeCount": 1
+      },
+      "repetition": 7,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "347c429a-186d-43a8-9b3b-109545d2991f",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-rJGXoj --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.2853999999970256,
+      "wallTimeMs": 2808.6329000000005,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 32,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2808.6329000000005,
+        "cliReportedDurationMs": 33,
+        "nodeCount": 1
+      },
+      "repetition": 8,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "94eb9d21-3bb1-4701-a5f9-74cfa17b9cb3",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-ZaRZus --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3385000000016589,
+      "wallTimeMs": 2860.5171999999984,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 45,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2860.5171999999984,
+        "cliReportedDurationMs": 46,
+        "nodeCount": 1
+      },
+      "repetition": 9,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "a289a01c-f46a-4327-9a33-3f55dbea73bb",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-MXF0pM --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.30199999999967986,
+      "wallTimeMs": 2790.7811,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 37,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2790.7811,
+        "cliReportedDurationMs": 38,
+        "nodeCount": 1
+      },
+      "repetition": 10,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "65782429-b24d-4471-983e-3bf83c75f3e0",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-Dimnyl --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.4147000000011758,
+      "wallTimeMs": 2814.3305000000037,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 31,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2814.3305000000037,
+        "cliReportedDurationMs": 32,
+        "nodeCount": 1
+      },
+      "repetition": 11,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "0fb8428e-6584-49a6-9fe0-102913062f90",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-CEn30s --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3180999999967753,
+      "wallTimeMs": 2830.3170000000027,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 31,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2830.3170000000027,
+        "cliReportedDurationMs": 33,
+        "nodeCount": 1
+      },
+      "repetition": 12,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "5346e8ae-cef4-479c-8579-83852c475f36",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-TPmUKc --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.36260000000038417,
+      "wallTimeMs": 2871.7271000000037,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 30,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2871.7271000000037,
+        "cliReportedDurationMs": 32,
+        "nodeCount": 1
+      },
+      "repetition": 13,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "8d4eb2b7-41ee-4cfa-bdb7-923dc0a44880",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-AmFXJQ --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.2963000000017928,
+      "wallTimeMs": 2747.465600000003,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 33,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2747.465600000003,
+        "cliReportedDurationMs": 35,
+        "nodeCount": 1
+      },
+      "repetition": 14,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "10020b58-71fa-44a9-bd8f-c051fb9b2c9d",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-dzxMsJ --quiet",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.4627000000036787,
+      "wallTimeMs": 2844.558800000006,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 1,
+        "workerJobCount": 0,
+        "toolOnlyJobCount": 1,
+        "workerTurns": 0,
+        "toolCalls": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cachedInput": 0,
+          "cachedOutput": 0,
+          "total": 0
+        },
+        "retainedBytes": 40,
+        "retainedResultBytes": 40,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 0,
+        "criticalPathMs": 28,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 0,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 2844.558800000006,
+        "cliReportedDurationMs": 30,
+        "nodeCount": 1
+      },
+      "repetition": 15,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "f5590c45-764d-4ef6-bda8-6b3a48385529",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.4320000000006985,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 1,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "09127def-3018-4dd7-92a6-fbd970087947",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.4412000000011176,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 2,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "4acdf695-70c0-4447-b694-7f7cfecad964",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.3231999999989057,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 1,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "b0d73915-71f5-4782-b050-dd90ace55eac",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.3438000000023749,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 2,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "84ebb1be-5c88-4a53-9363-9bb28ff45b84",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.3933000000033644,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 3,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "15298ec7-7131-4240-9cbf-a0b1853c70c6",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.42510000000038417,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 4,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "485d4ab7-e5fa-448d-a92f-eb0de897afbf",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.3407999999981257,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 5,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "8c1da84c-983a-4c7d-8ae5-df022c35ec09",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.3539999999993597,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 6,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "5b16cc77-c882-4077-85e8-c7d4effa8736",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.37849999999889405,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 7,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "9ffd0f82-8b44-4400-b4f6-d10ab91bb268",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.4165999999968335,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 8,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "cc2dc2aa-137d-494f-b892-d78b9d4d5068",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.3778000000020256,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 9,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "16e84c95-c180-49f4-b63b-bbf51a735791",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.4333000000042375,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 10,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "81c1655e-9249-4d84-9366-5294250be6b8",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.7831000000005588,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 11,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fc3793ad-0c51-4885-a3c5-6065bc0f4755",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.47589999999763677,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 12,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "59ae3998-c931-41fc-bd61-f29a0e128aee",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.3998000000065076,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 13,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "1837f42e-891a-4a82-84fc-8f84ca3e8892",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.4805000000051223,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 14,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "6491d1c7-5737-4bc0-86f7-9cca978ccac8",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "full-definition",
+      "mode": "full-definition-read",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node:fs/promises.readFile(workflow.json)",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "private-dag-read",
+      "wallTimeMs": 0.702000000004773,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "definitionReadBytes": 351
+      },
+      "repetition": 15,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "d8faf908-c9b4-425f-88ba-e8fb960fcdcb",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2782.0288999999975,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 158
+      },
+      "repetition": 1,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "2f53084f-235d-4bbb-a638-b8c8874e88f3",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2833.4689999999973,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 159
+      },
+      "repetition": 2,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "0fbe809a-bb4a-4308-b38f-53839c7c19e7",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2754.9402000000046,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 159
+      },
+      "repetition": 1,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "385e0b79-6e97-49c6-a04d-5b85ed872d64",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2699.2400999999954,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 159
+      },
+      "repetition": 2,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "03801c47-213b-45ba-816d-bd6b7560d882",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2763.193600000006,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 159
+      },
+      "repetition": 3,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "7b58a86e-fdd7-41d6-a36b-5b637c607bfd",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2775.1013999999996,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 158
+      },
+      "repetition": 4,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fecd2678-1eaf-442f-bb47-1ace452d3de4",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2744.370200000005,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 159
+      },
+      "repetition": 5,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "0e66de5d-412f-4501-b828-c92deb1dfe70",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2693.6145000000106,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 159
+      },
+      "repetition": 6,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fcb678cf-be38-47bb-8498-353a7bf0bd5c",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 3271.6124999999884,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 158
+      },
+      "repetition": 7,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "66128842-969d-4cdc-afde-a9651a93f117",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2659.965299999996,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 158
+      },
+      "repetition": 8,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "2eb10c14-0542-484c-badd-49e4fbf26e31",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2719.411599999992,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 158
+      },
+      "repetition": 9,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "bd146deb-0262-4d6c-93ac-1757aa3defd1",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2723.2982000000047,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 158
+      },
+      "repetition": 10,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "be881a98-f2b8-452b-b8f4-29552210f3a0",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2894.5120000000024,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 158
+      },
+      "repetition": 11,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "f76ccaa3-e2ad-4c93-83cf-5bcd182b2a62",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2688.115300000005,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 158
+      },
+      "repetition": 12,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "b6f7b016-92bd-4ec8-a0a4-c1d07c53e82c",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2781.690300000002,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 158
+      },
+      "repetition": 13,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "2dbaeee9-c0d4-4242-bf92-e9641358cec3",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2734.1138999999966,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 159
+      },
+      "repetition": 14,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "cafea8a1-7efd-4fff-8fd7-477c8c4dd284",
+      "scenarioId": "definition-vs-compact-interface",
+      "scenarioTitle": "Full workflow definition versus compact interface discovery",
+      "arm": "compact-interface",
+      "mode": "public-interface-discovery",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow interface workflow.json",
+      "workflowDefinitionBytes": 351,
+      "parentVisibleInterfaceBytes": 79,
+      "discoveryMode": "public-interface-only",
+      "wallTimeMs": 2775.432700000005,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "interfaceBytes": 158
+      },
+      "repetition": 15,
+      "warmup": false
+    }
+  ],
+  "aggregate": {
+    "schemaVersion": 1,
+    "arms": [
+      {
+        "scenarioId": "definition-vs-compact-interface",
+        "arm": "workflow",
+        "observationCount": 15,
+        "parentUsage": {
+          "status": "unavailable",
+          "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+        },
+        "medianWallTimeMs": 2814.3305000000037,
+        "p95WallTimeMs": 3445.8542000000016,
+        "stableMetrics": {
+          "jobCount": 1,
+          "workerJobCount": 0,
+          "toolOnlyJobCount": 1,
+          "workerTurns": 0,
+          "toolCalls": 1,
+          "retainedBytes": 40,
+          "materializedPromptBytes": 0,
+          "maxConcurrency": 1,
+          "criticalPathMs": null,
+          "directToolOperations": null,
+          "usageInput": 0,
+          "usageOutput": 0,
+          "usageTotal": 0,
+          "workflowDefinitionBytes": 351,
+          "parentVisibleInterfaceBytes": null,
+          "definitionReadBytes": null,
+          "directInvocationTurnsProxy": null
+        }
+      },
+      {
+        "scenarioId": "definition-vs-compact-interface",
+        "arm": "full-definition",
+        "observationCount": 15,
+        "parentUsage": {
+          "status": "unavailable",
+          "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+        },
+        "medianWallTimeMs": 0.3998000000065076,
+        "p95WallTimeMs": 0.7831000000005588,
+        "stableMetrics": {
+          "jobCount": null,
+          "workerJobCount": null,
+          "toolOnlyJobCount": null,
+          "workerTurns": null,
+          "toolCalls": null,
+          "retainedBytes": null,
+          "materializedPromptBytes": null,
+          "maxConcurrency": null,
+          "criticalPathMs": null,
+          "directToolOperations": null,
+          "usageInput": null,
+          "usageOutput": null,
+          "usageTotal": null,
+          "workflowDefinitionBytes": 351,
+          "parentVisibleInterfaceBytes": null,
+          "definitionReadBytes": 351,
+          "directInvocationTurnsProxy": null
+        }
+      },
+      {
+        "scenarioId": "definition-vs-compact-interface",
+        "arm": "compact-interface",
+        "observationCount": 15,
+        "parentUsage": {
+          "status": "unavailable",
+          "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+        },
+        "medianWallTimeMs": 2744.370200000005,
+        "p95WallTimeMs": 3271.6124999999884,
+        "stableMetrics": {
+          "jobCount": null,
+          "workerJobCount": null,
+          "toolOnlyJobCount": null,
+          "workerTurns": null,
+          "toolCalls": null,
+          "retainedBytes": null,
+          "materializedPromptBytes": null,
+          "maxConcurrency": null,
+          "criticalPathMs": null,
+          "directToolOperations": null,
+          "usageInput": null,
+          "usageOutput": null,
+          "usageTotal": null,
+          "workflowDefinitionBytes": 351,
+          "parentVisibleInterfaceBytes": 79,
+          "definitionReadBytes": null,
+          "directInvocationTurnsProxy": null
+        }
+      }
+    ],
+    "comparisons": [
+      {
+        "scenarioId": "definition-vs-compact-interface",
+        "left": "full-definition",
+        "right": "compact-interface",
+        "status": "measured",
+        "deltas": {
+          "jobCount": null,
+          "workerJobCount": null,
+          "toolOnlyJobCount": null,
+          "workerTurns": null,
+          "toolCalls": null,
+          "retainedBytes": null,
+          "materializedPromptBytes": null,
+          "maxConcurrency": null,
+          "criticalPathMs": null,
+          "directToolOperations": null,
+          "usageInput": null,
+          "usageOutput": null,
+          "usageTotal": null,
+          "workflowDefinitionBytes": 0,
+          "parentVisibleInterfaceBytes": null,
+          "definitionReadBytes": null,
+          "directInvocationTurnsProxy": null,
+          "wallTimeMs": -2743.9703999999983,
+          "parentVisibleReductionBytes": 272,
+          "parentVisibleReductionRatio": 0.7749287749287749
+        }
+      }
+    ]
+  }
+}

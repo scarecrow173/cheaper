@@ -1,20 +1,25 @@
-import path from "node:path";
 import {
   CheaperError,
   checkCapabilities,
   countTextTokens,
   createPathDenylist,
   type ErrorCode,
+  extractWriteScope,
   isDirectlyComparableWorker,
   type ModelConfig,
   parseModelRef,
   type RuntimePolicy,
-  resolveWorkspacePath,
-  type SymlinkPolicy,
   type Tier,
   type TierSource,
   type WorkerDefinition,
 } from "@cheaper/core";
+import {
+  createInvocationToolRuntime,
+  type ExecutionMetrics,
+  type InvocationToolRuntime,
+  type ToolRuntime,
+  type WorkerExecutionBinding,
+} from "@cheaper/tool-runtime";
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import type { ChangesSummary } from "./journal.js";
 import { MutationJournal } from "./journal.js";
@@ -23,7 +28,7 @@ import { extractOutput, lastAssistantStop } from "./output.js";
 import { promptWithAbortGrace } from "./prompt-grace.js";
 import { repairOutput } from "./repair.js";
 import { createWorkerSession, type StreamFnLike } from "./session.js";
-import { createSandboxedTools } from "./tools/registry.js";
+import { createPiToolHandlers, createSandboxedTools } from "./tools/registry.js";
 import { UsageCollector, type WorkerSavings, type WorkerUsage } from "./usage.js";
 
 export interface WorkerRunMeta {
@@ -47,6 +52,8 @@ export interface WorkerRunMeta {
   repairs: number;
   transientRetries: number;
   changes: ChangesSummary;
+  /** 共有 ADR D3: この Worker の owner 集合、scope teardown 前の snapshot。 */
+  execution: ExecutionMetrics;
   /** 親コンテキスト offload の実測（SPEC-034rzGnCaRQc5ceI95lf5i）。 */
   savings?: WorkerSavings;
 }
@@ -97,6 +104,10 @@ export interface RunWorkerDeps {
   signal?: AbortSignal;
   /** abort 後に prompt()  settle を待つ猶予 ms（既定 5000）。 */
   abortGraceMs?: number;
+  /** D7: invocation を借りる場合はこの Worker の child scope だけを所有する。 */
+  execution?: WorkerExecutionBinding;
+  /** owned invocation の operation timestamp/snapshot 用 monotonic clock。 */
+  operationClock?: () => number;
 }
 
 type AbortReason = "timeout" | "signal" | "maxTurns" | "maxToolCalls";
@@ -107,6 +118,12 @@ const ABORT_CODES: Record<AbortReason, ErrorCode> = {
   maxTurns: "MAX_TURNS_EXCEEDED",
   maxToolCalls: "MAX_TOOL_CALLS_EXCEEDED",
 };
+
+function abortError(reason: AbortReason): CheaperError {
+  return new CheaperError(ABORT_CODES[reason], `worker run aborted: ${reason}`, {
+    details: { reason },
+  });
+}
 
 export function buildSystemPrompt(worker: WorkerDefinition, toolNames: string[]): string {
   const contract = [
@@ -139,44 +156,6 @@ function buildUserPrompt(input: unknown): string {
   return `Task input (JSON):\n${JSON.stringify(input, null, 2)}`;
 }
 
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
-}
-
-/**
- * `cheaper.writeScope` で宣言された input field から write 許可 path 集合を
- * 抽出し workspace 相対 display path に正規化する（DESIGN-0015）。
- * field 不在・非 array・item 不正は fail closed で INVALID_INPUT。
- */
-async function extractWriteScope(
-  worker: WorkerDefinition,
-  input: unknown,
-  root: string,
-  symlinkPolicy: SymlinkPolicy,
-): Promise<Set<string> | undefined> {
-  const field = worker.cheaper.writeScope;
-  if (field === undefined) return undefined;
-  const value = isPlainObject(input) ? input[field] : undefined;
-  const invalid = (reason: string) =>
-    new CheaperError("INVALID_INPUT", `writeScope field invalid: ${reason}`, {
-      details: { field, reason },
-    });
-  if (!Array.isArray(value)) throw invalid("missing-or-not-array");
-  const allowed = new Set<string>();
-  for (const item of value) {
-    const p =
-      typeof item === "string"
-        ? item
-        : isPlainObject(item) && typeof item.path === "string"
-          ? item.path
-          : undefined;
-    if (p === undefined) throw invalid("item-lacks-path");
-    const resolved = await resolveWorkspacePath(root, path.join(root, p), symlinkPolicy);
-    allowed.add(resolved.display);
-  }
-  return allowed;
-}
-
 /**
  * Worker を Pi session で 1 回実行する（DESIGN-0004）。
  * 制限（timeout/maxTurns/maxToolCalls/外部 signal）は cheaper 側で記録した
@@ -203,7 +182,7 @@ export async function runWorker(
   function requestAbort(reason: AbortReason): void {
     if (abortReason !== undefined) return;
     abortReason = reason;
-    runAbort.abort();
+    runAbort.abort(abortError(reason));
   }
 
   // policy timeout は agent execution 区間（model 解決・session 構築を含む
@@ -213,7 +192,23 @@ export async function runWorker(
   deps.signal?.addEventListener("abort", onSignalAbort, { once: true });
   if (deps.signal?.aborted) requestAbort("signal");
 
+  const ownsInvocation = deps.execution === undefined;
+  const ownerId = deps.execution?.ownerId ?? "worker";
+  let invocation: InvocationToolRuntime | undefined;
+  let toolScope: ToolRuntime | undefined;
+
   try {
+    invocation =
+      deps.execution?.runtime ??
+      createInvocationToolRuntime({
+        root: deps.root,
+        symlinkPolicy: policy.filesystem.symlinks,
+        concurrency: policy.execution.concurrency,
+        process: policy.process,
+        abortGraceMs: graceMs,
+        ...(deps.operationClock !== undefined ? { clock: deps.operationClock } : {}),
+      });
+    const executionRuntime = invocation;
     const outputPerInput = worker.cheaper.model.workload?.outputPerInput;
     const resolved = await (async () => {
       if (deps.explicitModel === undefined) {
@@ -242,7 +237,9 @@ export async function runWorker(
       });
     })();
 
-    const sandboxed = createSandboxedTools({
+    const toolOptions = {
+      ownerId,
+      process: policy.process,
       root: deps.root,
       symlinkPolicy: policy.filesystem.symlinks,
       journal,
@@ -250,13 +247,25 @@ export async function runWorker(
       maxToolCalls: policy.execution.maxToolCalls,
       onLimit: () => requestAbort("maxToolCalls"),
       denylist: createPathDenylist(policy.filesystem.denyPaths),
-      writeScope: await extractWriteScope(
-        worker,
-        deps.input,
-        deps.root,
-        policy.filesystem.symlinks,
-      ),
+      writeScope: extractWriteScope(worker, deps.input),
+      resourceManifest: deps.execution?.resourceManifest,
+      observeAccess: (...args: Parameters<ToolRuntime["observeAccess"]>) => {
+        if (!toolScope) throw new CheaperError("INVALID_REQUEST", "missing tool scope");
+        return toolScope.observeAccess(...args);
+      },
+    };
+    toolScope = invocation.createWorkerScope({
+      ...toolOptions,
+      ownerId: ownerId,
+      handlers: createPiToolHandlers(toolOptions),
+      signal: runAbort.signal,
+      abortGraceMs: graceMs,
+      ...(deps.execution?.parentLease !== undefined
+        ? { parentLease: deps.execution.parentLease }
+        : {}),
     });
+    await toolScope.ready();
+    const sandboxed = createSandboxedTools({ ...toolOptions, runtime: toolScope });
 
     const { session } = await createWorkerSession({
       cwd: deps.root,
@@ -281,11 +290,6 @@ export async function runWorker(
         requestAbort("maxTurns");
       }
     });
-
-    const abortError = (reason: AbortReason) =>
-      new CheaperError(ABORT_CODES[reason], `worker run aborted: ${reason}`, {
-        details: { reason },
-      });
 
     async function buildMeta(result?: Record<string, unknown>): Promise<WorkerRunMeta> {
       const snap = collector.snapshot();
@@ -315,6 +319,7 @@ export async function runWorker(
         repairs,
         transientRetries: snap.transientRetries,
         changes: await journal.finalize(),
+        execution: executionRuntime.executionMetrics(ownerId),
         savings: {
           sourceTokens,
           returnedTokens,
@@ -348,6 +353,7 @@ export async function runWorker(
     };
 
     try {
+      if (abortReason !== undefined) await throwClassified(abortError(abortReason));
       const outcome = await promptWithAbortGrace(session, buildUserPrompt(deps.input), {
         signal: runAbort.signal,
         graceMs,
@@ -439,8 +445,30 @@ export async function runWorker(
       unsubscribe();
       session.dispose();
     }
+  } catch (error) {
+    if (!invocation) throw error;
+    const err =
+      error instanceof CheaperError
+        ? error
+        : new CheaperError(
+            "INTERNAL_ERROR",
+            error instanceof Error ? error.message : String(error),
+            {
+              cause: error instanceof Error ? error : undefined,
+            },
+          );
+    throw new WorkerRunError(err.code, err.message, {
+      ...(err.details !== undefined ? { details: err.details } : {}),
+      ...(err.cause !== undefined ? { cause: err.cause } : {}),
+      runMeta: {
+        ...(err instanceof WorkerRunError ? err.runMeta : {}),
+        execution: invocation.executionMetrics(ownerId),
+      },
+    });
   } finally {
     clearTimeout(timeout);
     deps.signal?.removeEventListener("abort", onSignalAbort);
+    if (ownsInvocation) await invocation?.dispose();
+    else await toolScope?.dispose();
   }
 }

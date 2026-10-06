@@ -1,4 +1,24 @@
-import { CheaperError, type PathDenylist, type SymlinkPolicy, type ToolName } from "@cheaper/core";
+import type {
+  ConcurrencyPolicy,
+  PathDenylist,
+  ProcessPolicy,
+  SymlinkPolicy,
+  ToolName,
+} from "@cheaper/core";
+import {
+  type AccessObserver,
+  type CanonicalToolResult,
+  createToolRuntime,
+  type InjectedToolHandlers,
+  isAccessDeniedError,
+  type JsonValue,
+  type MutationJournal,
+  ResourceAccess,
+  type ResourceScopeOptions,
+  type ToolBudget,
+  type ToolMeter,
+  type ToolRuntime,
+} from "@cheaper/tool-runtime";
 import {
   createEditToolDefinition,
   createLsToolDefinition,
@@ -6,106 +26,127 @@ import {
   defineTool,
   type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
-import type { MutationJournal } from "../journal.js";
-import { type ToolBudget, wrapToolBudget } from "./budget.js";
-import { createCountTokensTool } from "./count-tokens.js";
-import { createFindTool } from "./find.js";
-import { createGrepTool } from "./grep.js";
-import { type ToolMeter, wrapToolMeter } from "./meter.js";
+import { toPiTool } from "./adapter.js";
 import { createEditOperations, createLsOperations, createWriteOperations } from "./operations.js";
-import { createReadTool } from "./read.js";
 
-export interface SandboxedToolsOptions {
-  /** canonical 化済み workspace root。 */
+export interface SandboxedToolsOptions extends ResourceScopeOptions {
   root: string;
   symlinkPolicy: SymlinkPolicy;
   journal: MutationJournal;
-  /** effective tool 名（Worker tools ∩ policy tools.allow）。 */
   names: ToolName[];
   maxToolCalls: number;
-  /** maxToolCalls 到達時フック（run 側で session.abort() を起動）。 */
   onLimit: () => void;
-  /** privacy deny list（DESIGN-0015）。全 tool の path access に適用。 */
   denylist?: PathDenylist | undefined;
-  /** write scope（正規化済み display path 集合）。設定時 write/edit/mkdir を制限。 */
-  writeScope?: ReadonlySet<string> | undefined;
+  observeAccess?: AccessObserver | undefined;
+  runtime?: ToolRuntime;
+  concurrency?: Partial<ConcurrencyPolicy>;
+  process?: Partial<ProcessPolicy> | undefined;
 }
-
 export interface SandboxedTools {
-  /** session.customTools に渡す ToolDefinition 列。 */
   tools: ToolDefinition[];
-  /** session.tools allowlist に渡す tool 名。 */
   toolNames: string[];
   budget: ToolBudget;
-  /** tool output の token 集計（meta.savings.sourceTokens の供給元）。 */
   meter: ToolMeter;
+  runtime: ToolRuntime;
 }
-
-/**
- * ToolName → Pi ToolDefinition 生成（DESIGN-0002/0004/0019）。
- * write/edit/ls は Pi の createXxxToolDefinition に boundary 付き operations を注入し、
- * read/grep/find は自前 tool。全 tool を budget wrap する。
- */
+function helperDefinitions(
+  opts: SandboxedToolsOptions,
+): Record<"write" | "edit" | "ls", ToolDefinition> {
+  return {
+    write: defineTool(
+      createWriteToolDefinition(opts.root, { operations: createWriteOperations(opts) }),
+    ),
+    edit: defineTool(
+      createEditToolDefinition(opts.root, { operations: createEditOperations(opts) }),
+    ),
+    ls: defineTool(createLsToolDefinition(opts.root, { operations: createLsOperations(opts) })),
+  };
+}
+/** Pi helper の mutation queue と boundary operations を port に注入する。 */
+export function createPiToolHandlers(options: SandboxedToolsOptions): InjectedToolHandlers {
+  const opts = {
+    ...options,
+    writeScope: options.writeScope === undefined ? undefined : new Set(options.writeScope),
+    resourceManifest:
+      options.resourceManifest === undefined
+        ? undefined
+        : structuredClone(options.resourceManifest),
+  };
+  const preflight = opts.observeAccess ? undefined : new ResourceAccess(opts);
+  const definitions = helperDefinitions(opts);
+  let nextId = 0;
+  return Object.fromEntries(
+    Object.entries(definitions).map(([name, definition]) => [
+      name,
+      async (input: unknown, signal: AbortSignal): Promise<CanonicalToolResult> => {
+        // raw injected helper でも target を mkdir より先に共通 controller で認可する。
+        if (name === "write" || name === "edit")
+          await preflight?.operation(name, input as JsonValue);
+        let denied: unknown;
+        let executable = definition;
+        if (name === "edit") {
+          // Pi は access error を別 Error に包む。call ごとの port で元の拒否を保存し、
+          // canonical accounting が boundary 拒否を一回認識できるようにする。
+          const operations = createEditOperations(opts);
+          executable = defineTool(
+            createEditToolDefinition(opts.root, {
+              operations: {
+                ...operations,
+                async access(file) {
+                  try {
+                    await operations.access(file);
+                  } catch (e) {
+                    if (isAccessDeniedError(e)) denied = e;
+                    throw e;
+                  }
+                },
+              },
+            }),
+          );
+        }
+        try {
+          return (await executable.execute(
+            `canonical-${++nextId}`,
+            input as never,
+            signal,
+            undefined,
+            undefined as never,
+          )) as CanonicalToolResult;
+        } catch (e) {
+          throw denied ?? e;
+        }
+      },
+    ]),
+  );
+}
 export function createSandboxedTools(opts: SandboxedToolsOptions): SandboxedTools {
-  const opsOpts = {
-    root: opts.root,
-    symlinkPolicy: opts.symlinkPolicy,
-    journal: opts.journal,
-    denylist: opts.denylist,
-    writeScope: opts.writeScope,
+  let runtime = opts.runtime;
+  const observed = {
+    ...opts,
+    observeAccess: (...args: Parameters<AccessObserver>) => {
+      if (!runtime) throw new Error("missing tool runtime");
+      return runtime.observeAccess(...args);
+    },
   };
-  const walkOpts = {
-    root: opts.root,
-    symlinkPolicy: opts.symlinkPolicy,
-    denylist: opts.denylist,
-  };
-  const tools: ToolDefinition[] = opts.names.map((name): ToolDefinition => {
-    switch (name) {
-      case "read":
-        return createReadTool(opsOpts);
-      case "write":
-        return defineTool(
-          createWriteToolDefinition(opts.root, {
-            operations: createWriteOperations(opsOpts),
-          }),
-        );
-      case "edit":
-        return defineTool(
-          createEditToolDefinition(opts.root, {
-            operations: createEditOperations(opsOpts),
-          }),
-        );
-      case "ls":
-        return defineTool(
-          createLsToolDefinition(opts.root, {
-            operations: createLsOperations(opsOpts),
-          }),
-        );
-      case "grep":
-        return createGrepTool(walkOpts);
-      case "find":
-        return createFindTool(walkOpts);
-      case "count_tokens":
-        return createCountTokensTool(walkOpts);
-      default: {
-        // ToolName union 外は到達不能（capability check で既に UNKNOWN_TOOL 済み）
-        const never: never = name;
-        throw new CheaperError("UNKNOWN_TOOL", `unknown tool: ${String(never)}`, {
-          details: { tool: name },
-        });
-      }
+  runtime ??= createToolRuntime({ ...opts, handlers: createPiToolHandlers(observed) });
+  const helpers = helperDefinitions(opts);
+  const tools: ToolDefinition[] = runtime.definitions.map((definition) => {
+    const execute = (input: unknown, signal?: AbortSignal) =>
+      runtime.execute(definition.name, input, { signal });
+    if (definition.name === "write" || definition.name === "edit" || definition.name === "ls") {
+      return {
+        ...helpers[definition.name],
+        ...toPiTool(definition, execute),
+        description: helpers[definition.name].description,
+      };
     }
-  });
-  // meter は budget 内側: budget を通過した call の成功 output のみ計測する。
-  const metered = wrapToolMeter(tools);
-  const budgeted = wrapToolBudget(metered.tools, {
-    maxToolCalls: opts.maxToolCalls,
-    onLimit: opts.onLimit,
+    return toPiTool(definition, execute);
   });
   return {
-    tools: budgeted.tools,
+    tools,
     toolNames: tools.map((t) => t.name),
-    budget: budgeted.budget,
-    meter: metered.meter,
+    budget: runtime.budget,
+    meter: runtime.meter,
+    runtime,
   };
 }

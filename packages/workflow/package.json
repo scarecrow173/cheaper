@@ -1,0 +1,15 @@
+{
+  "name": "@cheaper/workflow",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@cheaper/core": "workspace:*",
+    "@cheaper/tool-runtime": "workspace:*"
+  }
+}

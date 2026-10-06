@@ -51,6 +51,18 @@ one workspace file so you can measure context cost before reading it.
   ```
 
   The launcher dispatches to `cli/bin/<platform>/cheaper[.exe]`.
+  If that sibling is absent on linux-x64, linux-arm64, or win32-x64, it
+  acquires the Release tag pinned by `cli/version.json` into a user cache
+  outside the hook directory (override: absolute `CHEAPER_CACHE_DIR`).
+  It verifies the same-tag `SHA256SUMS`, binary SHA-256, and executable
+  version on acquisition and cache hits; it never resolves `latest`.
+  Offline preseed requires both the executable and the published manifest
+  under `<cache>/<version>/<platform>/`. Missing version metadata, unsupported
+  acquisition targets, or failed verification produce stderr and nonzero exit.
+  Copilot's JSON deploy exclusion also removes version.json, so acquisition
+  there requires a future deployable version source; keep the sibling payload
+  until that migration is complete. PowerShell hook entries use cheaper.ps1
+  through a child PowerShell process and retain their existing fallback policy.
   A JS bundle also ships at `cli/bin/cheaper.mjs`
   (`node .windsurf/hooks/cheaper/cli/bin/cheaper.mjs
   <command> [options]`) as a fallback for environments where the

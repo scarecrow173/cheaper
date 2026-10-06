@@ -1,0 +1,2146 @@
+{
+  "schemaVersion": 1,
+  "runId": "3d999bb0-8055-4bd1-a8ec-a78e934fc1ea",
+  "createdAt": "2026-10-05T22:53:18.054Z",
+  "fixtureRevision": "seeded-v1",
+  "warmupCount": 2,
+  "repetitionCount": 15,
+  "scenarioIds": [
+    "independent-fanout-worker-fanin"
+  ],
+  "observations": [
+    {
+      "schemaVersion": 1,
+      "runId": "b4f7f70f-7555-4b0d-bbee-2d1612791d99",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-YOej3q --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3766000000000034,
+      "wallTimeMs": 3091.2065,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 195,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3091.2065,
+        "cliReportedDurationMs": 200,
+        "nodeCount": 3
+      },
+      "repetition": 1,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "e9f9add8-27b0-47ab-9cae-fdcf93c7c415",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-8rnskq --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.5201999999999316,
+      "wallTimeMs": 3101.1288,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 202,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3101.1288,
+        "cliReportedDurationMs": 206,
+        "nodeCount": 3
+      },
+      "repetition": 2,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "81d60627-5cf1-4dd3-b615-fc8b26803fc2",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-PJWrW1 --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.32920000000012806,
+      "wallTimeMs": 3191.661399999999,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 207,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3191.661399999999,
+        "cliReportedDurationMs": 211,
+        "nodeCount": 3
+      },
+      "repetition": 1,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "a5b41d4b-9acd-4eb7-83fe-b6b793f09397",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-SK6lQ9 --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3415999999997439,
+      "wallTimeMs": 3276.940699999999,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 211,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3276.940699999999,
+        "cliReportedDurationMs": 214,
+        "nodeCount": 3
+      },
+      "repetition": 2,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "77655927-8c27-4329-a948-2f4be2316470",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-V8eyV1 --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.28590000000076543,
+      "wallTimeMs": 3469.0951999999997,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 218,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3469.0951999999997,
+        "cliReportedDurationMs": 222,
+        "nodeCount": 3
+      },
+      "repetition": 3,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "823348f9-92b8-4031-b972-2acaea33ba3e",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-JWZn9N --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3258000000005268,
+      "wallTimeMs": 3306.3349,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 220,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3306.3349,
+        "cliReportedDurationMs": 226,
+        "nodeCount": 3
+      },
+      "repetition": 4,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "c076aa03-4b2f-453a-b403-9b71b8880888",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-qT95ls --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3232000000025437,
+      "wallTimeMs": 3253.1551,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 230,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3253.1551,
+        "cliReportedDurationMs": 236,
+        "nodeCount": 3
+      },
+      "repetition": 5,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "322db651-0adb-4187-b628-7645d19f31e3",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-VrLiDX --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.43920000000071013,
+      "wallTimeMs": 3442.9743000000017,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 217,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3442.9743000000017,
+        "cliReportedDurationMs": 220,
+        "nodeCount": 3
+      },
+      "repetition": 6,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "eb247676-eec9-4384-befd-6225e5b58c9f",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-3PbaVb --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.461699999999837,
+      "wallTimeMs": 3384.6844999999994,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 249,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3384.6844999999994,
+        "cliReportedDurationMs": 255,
+        "nodeCount": 3
+      },
+      "repetition": 7,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "c5eae514-ca17-4294-8e46-6d98394b644c",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-crXvGQ --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3780000000006112,
+      "wallTimeMs": 3288.6287999999986,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 216,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3288.6287999999986,
+        "cliReportedDurationMs": 220,
+        "nodeCount": 3
+      },
+      "repetition": 8,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "ae300b28-ed21-4fe4-bf54-5335d31eb3ec",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-YDd8M0 --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3806999999942491,
+      "wallTimeMs": 3306.9517999999953,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 217,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3306.9517999999953,
+        "cliReportedDurationMs": 221,
+        "nodeCount": 3
+      },
+      "repetition": 9,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "f056a058-37f8-4b11-9340-08eda07e88d5",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-nUMre2 --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.39059999999881256,
+      "wallTimeMs": 3378.7127000000037,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 214,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3378.7127000000037,
+        "cliReportedDurationMs": 218,
+        "nodeCount": 3
+      },
+      "repetition": 10,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "8553a2fc-5f77-4bb5-ae2d-07beb50c84eb",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-PUsmwl --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.4783999999999651,
+      "wallTimeMs": 3286.5620000000054,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 209,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3286.5620000000054,
+        "cliReportedDurationMs": 214,
+        "nodeCount": 3
+      },
+      "repetition": 11,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "5f559a02-7e7f-436f-b5ff-67af2a22712d",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-8IIVA8 --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.5178999999989173,
+      "wallTimeMs": 3244.1605999999956,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 211,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3244.1605999999956,
+        "cliReportedDurationMs": 216,
+        "nodeCount": 3
+      },
+      "repetition": 12,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "083c58d3-bf83-47c2-900f-451c41cb4b88",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-RGr59P --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.4077000000033877,
+      "wallTimeMs": 3189.5641000000032,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 213,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3189.5641000000032,
+        "cliReportedDurationMs": 218,
+        "nodeCount": 3
+      },
+      "repetition": 13,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "86b77114-5373-4a22-a176-ac1efd652532",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-uK5Rkv --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.31489999999757856,
+      "wallTimeMs": 3133.8724,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 233,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3133.8724,
+        "cliReportedDurationMs": 238,
+        "nodeCount": 3
+      },
+      "repetition": 14,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "3669098d-1870-4331-8b67-490d12134f2c",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "workflow",
+      "mode": "workflow",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js workflow run workflow.json --cwd C:\\Users\\akiyoshi\\AppData\\Local\\Temp\\cheaper-workflow-benchmark-0m1Vzb --quiet",
+      "workflowDefinitionBytes": 899,
+      "parentVisibleInterfaceBytes": null,
+      "interfaceDiscoveryWallTimeMs": null,
+      "discoveryMode": "generated-definition",
+      "definitionGenerationMs": 0.3192999999955646,
+      "wallTimeMs": 3392.3615999999965,
+      "directUsageRecordCount": 0,
+      "metrics": {
+        "jobCount": 3,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "workerTurns": 1,
+        "toolCalls": 2,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 36,
+        "retainedResultBytes": 36,
+        "artifactBytes": 0,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": 268,
+        "maxConcurrency": 1,
+        "workerStreamConcurrency": 1,
+        "toolOperationConcurrency": 1,
+        "wallTimeMs": 3392.3615999999965,
+        "cliReportedDurationMs": 274,
+        "nodeCount": 3
+      },
+      "repetition": 15,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "3c75e6e1-41be-46d7-894b-a3a26e6a42d2",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 3080.3188999999984,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 3080.3188999999984,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 1,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "da1cd7e4-a7fe-4033-9d7f-506620197611",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 3085.8367,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 3085.8367,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 2,
+      "warmup": true
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "cb118b69-2bfc-4f3f-a4ed-715f8ab75599",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2918.3384000000005,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2918.3384000000005,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 1,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "ac48cd4d-30c6-4a1c-a8f5-a697d4eac80c",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2866.1127999999953,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2866.1127999999953,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 2,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "028a1502-414a-4c1c-b67d-9f5ab213e3e6",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2860.9428000000044,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2860.9428000000044,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 3,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "ff9f6580-f227-4da1-9c43-00d8e9359d6a",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 3192.3690999999963,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 3192.3690999999963,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 4,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "561d494a-d171-4a53-8c79-9d40a1ba79ed",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2888.1468999999925,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2888.1468999999925,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 5,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "47bdaaa4-36e3-406f-a088-92a87e823dbe",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2884.5861000000004,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2884.5861000000004,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 6,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "586bd937-6a4c-4bd6-be70-6e5bc6a5402f",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2864.370299999995,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2864.370299999995,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 7,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "25da3804-f75e-4c9b-a36b-c970f988c4ab",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2908.6676000000007,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2908.6676000000007,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 8,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "649b2507-2763-4340-8864-a707d51394a3",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 3086.399099999995,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 3086.399099999995,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 9,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "426abacf-7fcd-4deb-9c1e-1f7b996ad4fd",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 3050.6704000000027,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 3050.6704000000027,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 10,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "b00188de-4be6-4230-903c-6b9a2872512c",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2904.5668000000005,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2904.5668000000005,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 11,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "fec5e343-07d4-4bc7-beba-45fe3bb3bf51",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2976.994000000006,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2976.994000000006,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 12,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "02add817-e8dd-40fc-a9a3-117f9be7e10f",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2863.5138000000006,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2863.5138000000006,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 13,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "1d8d79cf-5eca-46e1-a4f9-ccdc3fd689ea",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 2994.426999999996,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 2994.426999999996,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 14,
+      "warmup": false
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "6422226b-fc6f-4d88-8eca-ff84c49f3b53",
+      "scenarioId": "independent-fanout-worker-fanin",
+      "scenarioTitle": "Independent fan-out and Worker fan-in",
+      "arm": "direct-worker-sequence",
+      "mode": "scripted-direct-cli-sequence",
+      "parentUsage": {
+        "status": "unavailable",
+        "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+      },
+      "fixtureRevision": "seeded-v1",
+      "seed": "seeded-v1",
+      "environment": {
+        "os": "win32 10.0.26200",
+        "architecture": "x64",
+        "node": "v26.10.0",
+        "cpuCount": 16
+      },
+      "command": "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+      "workflowDefinitionBytes": null,
+      "parentVisibleInterfaceBytes": null,
+      "discoveryMode": "no-workflow-definition",
+      "wallTimeMs": 3258.6849000000075,
+      "directUsageRecordCount": 1,
+      "directInvocationTurnsProxy": 1,
+      "metrics": {
+        "nodeCount": 1,
+        "workerJobCount": 1,
+        "toolOnlyJobCount": 2,
+        "directToolOperations": 2,
+        "workerTurns": 1,
+        "toolCalls": 0,
+        "usage": {
+          "input": 2946,
+          "output": 27,
+          "cachedInput": 0,
+          "cachedOutput": 2946,
+          "total": 5919
+        },
+        "retainedBytes": 155,
+        "materializedPromptBytes": 12413,
+        "criticalPathMs": null,
+        "maxConcurrency": 1,
+        "childInvocations": [
+          {
+            "index": 0,
+            "wallTimeMs": 3258.6849000000075,
+            "promptBytes": 12413,
+            "toolCalls": 0,
+            "turns": 1,
+            "usage": {
+              "input": 2946,
+              "output": 27,
+              "cachedInput": 0,
+              "cachedOutput": 2946,
+              "total": 5919
+            }
+          }
+        ]
+      },
+      "finalResultBytes": 108,
+      "repetition": 15,
+      "warmup": false
+    }
+  ],
+  "aggregate": {
+    "schemaVersion": 1,
+    "arms": [
+      {
+        "scenarioId": "independent-fanout-worker-fanin",
+        "arm": "workflow",
+        "observationCount": 15,
+        "parentUsage": {
+          "status": "unavailable",
+          "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+        },
+        "medianWallTimeMs": 3288.6287999999986,
+        "p95WallTimeMs": 3469.0951999999997,
+        "stableMetrics": {
+          "jobCount": 3,
+          "workerJobCount": 1,
+          "toolOnlyJobCount": 2,
+          "workerTurns": 1,
+          "toolCalls": 2,
+          "retainedBytes": 36,
+          "materializedPromptBytes": 12413,
+          "maxConcurrency": 1,
+          "criticalPathMs": null,
+          "directToolOperations": null,
+          "usageInput": 2946,
+          "usageOutput": 27,
+          "usageTotal": 5919,
+          "workflowDefinitionBytes": 899,
+          "parentVisibleInterfaceBytes": null,
+          "definitionReadBytes": null,
+          "directInvocationTurnsProxy": null
+        }
+      },
+      {
+        "scenarioId": "independent-fanout-worker-fanin",
+        "arm": "direct-worker-sequence",
+        "observationCount": 15,
+        "parentUsage": {
+          "status": "unavailable",
+          "reason": "no parent-agent telemetry is exposed to the benchmark runner"
+        },
+        "medianWallTimeMs": 2908.6676000000007,
+        "p95WallTimeMs": 3258.6849000000075,
+        "stableMetrics": {
+          "jobCount": null,
+          "workerJobCount": 1,
+          "toolOnlyJobCount": 2,
+          "workerTurns": 1,
+          "toolCalls": 0,
+          "retainedBytes": 155,
+          "materializedPromptBytes": 12413,
+          "maxConcurrency": 1,
+          "criticalPathMs": null,
+          "directToolOperations": 2,
+          "usageInput": 2946,
+          "usageOutput": 27,
+          "usageTotal": 5919,
+          "workflowDefinitionBytes": null,
+          "parentVisibleInterfaceBytes": null,
+          "definitionReadBytes": null,
+          "directInvocationTurnsProxy": 1
+        }
+      }
+    ],
+    "comparisons": [
+      {
+        "scenarioId": "independent-fanout-worker-fanin",
+        "left": "workflow",
+        "right": "direct-worker-sequence",
+        "status": "measured",
+        "deltas": {
+          "jobCount": null,
+          "workerJobCount": 0,
+          "toolOnlyJobCount": 0,
+          "workerTurns": 0,
+          "toolCalls": 2,
+          "retainedBytes": -119,
+          "materializedPromptBytes": 0,
+          "maxConcurrency": 0,
+          "criticalPathMs": null,
+          "directToolOperations": null,
+          "usageInput": 0,
+          "usageOutput": 0,
+          "usageTotal": 0,
+          "workflowDefinitionBytes": null,
+          "parentVisibleInterfaceBytes": null,
+          "definitionReadBytes": null,
+          "directInvocationTurnsProxy": null,
+          "wallTimeMs": 379.9611999999979
+        }
+      }
+    ]
+  }
+}

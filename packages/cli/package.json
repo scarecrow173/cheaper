@@ -13,6 +13,8 @@
   "dependencies": {
     "@cheaper/core": "workspace:*",
     "@cheaper/runtime-pi": "workspace:*",
+    "@cheaper/tool-runtime": "workspace:*",
+    "@cheaper/workflow": "workspace:*",
     "yaml": "^2.9.1"
   }
 }

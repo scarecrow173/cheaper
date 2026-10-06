@@ -4,6 +4,16 @@ import { describe, expect, it } from "vitest";
 import { envelopeJson, errorEnvelope, successEnvelope } from "../src/envelope.js";
 
 const runMeta: WorkerRunMeta = {
+  execution: {
+    operations: 0,
+    byState: { queued: 0, running: 0, completed: 0, failed: 0, cancelled: 0, timed_out: 0 },
+    byTool: {},
+    maxConcurrency: 0,
+    operationMs: 0,
+    activeMs: 0,
+    overlapMs: 0,
+    queueMs: 0,
+  },
   model: {
     provider: "p",
     id: "m",
@@ -35,6 +45,7 @@ describe("successEnvelope", () => {
       result: { ok: true },
       meta: {
         durationMs: 12,
+        execution: runMeta.execution,
         model: runMeta.model,
         usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, totalTokens: 3, costUsd: 0 },
         turns: 1,
@@ -49,6 +60,30 @@ describe("successEnvelope", () => {
 });
 
 describe("errorEnvelope", () => {
+  it("forwards partial execution, distinguishing absent service from an empty snapshot", () => {
+    const execution = {
+      operations: 0,
+      byState: { queued: 0, running: 0, completed: 0, failed: 0, cancelled: 0, timed_out: 0 },
+      byTool: {},
+      maxConcurrency: 0,
+      operationMs: 0,
+      activeMs: 0,
+      overlapMs: 0,
+      queueMs: 0,
+    };
+    const err = new WorkerRunError("INVALID_REQUEST", "bad model", { runMeta: { execution } });
+    const env = errorEnvelope(err, { worker: "reader", durationMs: 1 });
+    expect(env.meta.execution).toEqual(execution);
+    expect(env.meta.model).toBeNull();
+    expect(env.meta.usage).toBeNull();
+    expect(
+      errorEnvelope(new CheaperError("INVALID_REQUEST", "before runtime"), {
+        worker: null,
+        durationMs: 1,
+      }).meta.execution,
+    ).toBeNull();
+  });
+
   it("serializes CheaperError with code/exitCode/retryable", () => {
     const env = errorEnvelope(new CheaperError("INVALID_REQUEST", "bad", {}), {
       worker: null,

@@ -1,3 +1,6 @@
+# Local native payloads are acquired/built, never part of the Git APM snapshot.
+/packages/apm/.apm/hooks/cli/bin/*/
+
 # Logs
 logs
 *.log

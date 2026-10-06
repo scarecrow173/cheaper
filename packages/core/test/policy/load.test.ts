@@ -169,8 +169,32 @@ describe("packages/cli/policy.yaml (built-in canonical)", () => {
         projectDir: path.join(dir, "no-project"),
       });
       expect(policy).toEqual({
-        execution: { timeoutMs: 120_000, maxTurns: 8, maxToolCalls: 64 },
-        tools: { allow: ["read", "grep", "find", "ls", "write", "edit", "count_tokens"] },
+        workflow: {
+          maxJobs: 1,
+          artifacts: {
+            maxArtifactBytes: 8388608,
+            maxTotalBytes: 33554432,
+            maxPreviewBytes: 2048,
+            maxReadBytes: 65536,
+          },
+        },
+        process: {
+          maxConcurrent: 1,
+          tasks: {},
+          timeout: "2m",
+          maxOutputBytes: 65536,
+          killGrace: "2s",
+          heartbeat: { interval: "30s" },
+        },
+        execution: {
+          timeoutMs: 120_000,
+          maxTurns: 8,
+          maxToolCalls: 64,
+          concurrency: { maxOperations: 8, mutations: "serialized" },
+        },
+        tools: {
+          allow: ["read", "grep", "find", "ls", "write", "edit", "count_tokens", "process"],
+        },
         filesystem: { symlinks: "within-workspace", denyPaths: [] },
         model: { maxTier: "medium", tierFallback: "none" },
         output: { maxTokens: 2000, repairAttempts: 1 },

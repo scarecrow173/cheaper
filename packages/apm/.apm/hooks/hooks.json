@@ -3,21 +3,21 @@
     "pre_read_code": [
       {
         "command": "./cheaper hook pre-read-code --target windsurf",
-        "powershell": "& \"./cli/bin/win32-x64/cheaper.exe\" hook pre-read-code --target windsurf; exit $LASTEXITCODE",
+        "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook pre-read-code --target windsurf; exit $LASTEXITCODE",
         "show_output": false
       }
     ],
     "pre_run_command": [
       {
         "command": "./cheaper hook pre-run-command --target windsurf",
-        "powershell": "& \"./cli/bin/win32-x64/cheaper.exe\" hook pre-run-command --target windsurf; exit $LASTEXITCODE",
+        "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook pre-run-command --target windsurf; exit $LASTEXITCODE",
         "show_output": false
       }
     ],
     "preToolUse": [
       {
         "command": "./cheaper hook pre-tool-use --target copilot || exit 0",
-        "powershell": "& \"./cli/bin/win32-x64/cheaper.exe\" hook pre-tool-use --target copilot; exit 0",
+        "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook pre-tool-use --target copilot; exit 0",
         "show_output": false,
         "matcher": "view|bash|powershell|shell"
       }
@@ -37,14 +37,14 @@
     "beforeReadFile": [
       {
         "command": "./cheaper hook before-read-file --target cursor || echo '{\"permission\":\"allow\"}'",
-        "powershell": "& \"./cli/bin/win32-x64/cheaper.exe\" hook before-read-file --target cursor; if ($LASTEXITCODE -ne 0) { '{\"permission\":\"allow\"}' }; exit 0",
+        "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook before-read-file --target cursor; if ($LASTEXITCODE -ne 0) { '{\"permission\":\"allow\"}' }; exit 0",
         "show_output": false
       }
     ],
     "beforeShellExecution": [
       {
         "command": "./cheaper hook before-shell-execution --target cursor || echo '{\"permission\":\"allow\"}'",
-        "powershell": "& \"./cli/bin/win32-x64/cheaper.exe\" hook before-shell-execution --target cursor; if ($LASTEXITCODE -ne 0) { '{\"permission\":\"allow\"}' }; exit 0",
+        "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook before-shell-execution --target cursor; if ($LASTEXITCODE -ne 0) { '{\"permission\":\"allow\"}' }; exit 0",
         "show_output": false
       }
     ]

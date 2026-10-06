@@ -8,6 +8,7 @@ import {
   type RuntimePolicy,
   type WorkerDefinition,
 } from "@cheaper/core";
+import * as toolRuntime from "@cheaper/tool-runtime";
 import {
   type AssistantMessage,
   type Context,
@@ -16,7 +17,7 @@ import {
   type SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ModelCatalog } from "../src/model-runtime.js";
 import { runWorker, WorkerRunError } from "../src/run.js";
 import { createFakePi, fauxAssistantMessage, fauxToolCall } from "./fixtures/fake-stream.js";
@@ -86,7 +87,319 @@ async function deps(fake: ReturnType<typeof createFakePi>, w: WorkerDefinition, 
   };
 }
 
-describe("runWorker", () => {
+describe("runWorker", { timeout: 20000 }, () => {
+  it.each([false, true])(
+    "reports deterministic owned execution and preserves usage/savings: failure=%s",
+    async (failure) => {
+      await writeFile(path.join(root, "a.txt"), "alpha beta gamma\n".repeat(20));
+      const fake = createFakePi({
+        responses: [
+          fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }), { stopReason: "toolUse" }),
+          failure
+            ? fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }, "second"), {
+                stopReason: "toolUse",
+              })
+            : fauxAssistantMessage('{"ok":true}'),
+        ],
+      });
+      const p = policy();
+      if (failure) p.execution.maxToolCalls = 1;
+      const ticks = [10, 20, 45, 50];
+      const result = await runWorker({
+        ...(await deps(fake, worker(["read"]), p)),
+        operationClock: () => ticks.shift() ?? 50,
+      }).then(
+        (value) => value,
+        (error: WorkerRunError) => error,
+      );
+      const meta = result instanceof WorkerRunError ? result.runMeta : result.meta;
+      expect(meta?.execution).toEqual({
+        operations: 1,
+        byState: { queued: 0, running: 0, completed: 1, failed: 0, cancelled: 0, timed_out: 0 },
+        byTool: { read: 1 },
+        maxConcurrency: 1,
+        operationMs: 25,
+        activeMs: 25,
+        overlapMs: 0,
+        queueMs: 10,
+      });
+      expect(meta?.toolCalls).toBe(1);
+      expect(meta?.rejectedToolCalls).toBe(failure ? 1 : 0);
+      expect(meta?.turns).toBeGreaterThan(0);
+      expect(meta?.usage?.totalTokens).toBeGreaterThan(0);
+      expect(meta?.savings?.sourceTokens).toBeGreaterThan(0);
+      expect(meta?.savings?.returnedTokens).toBe(failure ? 0 : countTextTokens('{"ok":true}'));
+      if (failure) expect(result).toMatchObject({ code: "MAX_TOOL_CALLS_EXCEEDED" });
+    },
+  );
+
+  it("includes a zero snapshot when model resolution fails after invocation creation", async () => {
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    const error = await runWorker({
+      ...(await deps(fake, worker(["read"]), policy())),
+      explicitModel: "invalid-ref",
+      operationClock: () => 0,
+    }).then(
+      () => null,
+      (value: WorkerRunError) => value,
+    );
+    expect(error).toBeInstanceOf(WorkerRunError);
+    expect(error?.code).toBe("INVALID_REQUEST");
+    expect(error?.runMeta?.execution).toEqual({
+      operations: 0,
+      byState: { queued: 0, running: 0, completed: 0, failed: 0, cancelled: 0, timed_out: 0 },
+      byTool: {},
+      maxConcurrency: 0,
+      operationMs: 0,
+      activeMs: 0,
+      overlapMs: 0,
+      queueMs: 0,
+    });
+    expect(error?.runMeta?.model).toBeUndefined();
+    expect(error?.runMeta?.usage).toBeUndefined();
+  });
+
+  it("reports only its borrowed owner while a sibling is active", async () => {
+    let now = 0;
+    let release!: () => void;
+    let started!: () => void;
+    const waiting = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const ready = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const invocation = toolRuntime.createInvocationToolRuntime({
+      root,
+      symlinkPolicy: "deny",
+      clock: () => now,
+    });
+    const sibling = invocation.createWorkerScope({
+      root,
+      symlinkPolicy: "deny",
+      ownerId: "sibling",
+      names: ["ls"],
+      maxToolCalls: 10,
+      onLimit: () => {},
+      handlers: {
+        ls: async () => {
+          started();
+          await waiting;
+          return { content: [] };
+        },
+      },
+    });
+    const pending = sibling.execute("ls", { path: "." });
+    await ready;
+    now = 10;
+    await writeFile(path.join(root, "a.txt"), "hello");
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }), { stopReason: "toolUse" }),
+        fauxAssistantMessage('{"ok":true}'),
+      ],
+    });
+    try {
+      const value = await runWorker({
+        ...(await deps(fake, worker(["read"]), policy())),
+        execution: { runtime: invocation, ownerId: "worker" },
+      });
+      expect(value.meta.execution).toMatchObject({
+        operations: 1,
+        byTool: { read: 1 },
+        maxConcurrency: 1,
+        operationMs: 0,
+        activeMs: 0,
+        queueMs: 0,
+      });
+      expect(invocation.executionMetrics()).toMatchObject({
+        operations: 2,
+        maxConcurrency: 2,
+        byState: { running: 1, completed: 1 },
+      });
+    } finally {
+      now = 20;
+      release();
+      await pending;
+      await invocation.dispose();
+    }
+  });
+
+  it("propagates named process policy through the owned Pi invocation", async () => {
+    await writeFile(
+      path.join(root, "child.mjs"),
+      'import {writeFileSync} from "node:fs"; writeFileSync("process.txt", "ran");',
+    );
+    const fake = createFakePi({
+      responses: [
+        fauxAssistantMessage(fauxToolCall("process", { task: "check" }), { stopReason: "toolUse" }),
+        fauxAssistantMessage('{"ok":true}'),
+      ],
+    });
+    const p = policy({
+      tools: { allow: ["process"] },
+      process: {
+        maxConcurrent: 1,
+        tasks: {
+          check: {
+            command: ["node", "child.mjs"],
+            inputs: ["child.mjs"],
+            outputs: ["process.txt"],
+          },
+        },
+      },
+    });
+    const result = await runWorker(await deps(fake, worker(["process"]), p));
+    expect(result.result).toEqual({ ok: true });
+    expect(result.meta.toolCalls).toBe(1);
+    expect(await readFile(path.join(root, "process.txt"), "utf8")).toBe("ran");
+  });
+  it.each([
+    ["timeout", "TIMEOUT"],
+    ["signal", "ABORTED"],
+    ["maxTurns", "MAX_TURNS_EXCEEDED"],
+    ["maxToolCalls", "MAX_TOOL_CALLS_EXCEEDED"],
+  ] as const)(
+    "passes the first %s reason into its actual borrowed child scope",
+    async (trigger, code) => {
+      await writeFile(path.join(root, "a.txt"), "hello\n");
+      const invocation = toolRuntime.createInvocationToolRuntime({ root, symlinkPolicy: "deny" });
+      const opts = {
+        root,
+        symlinkPolicy: "deny" as const,
+        names: ["read"] as const,
+        maxToolCalls: 10,
+        onLimit: () => {},
+      };
+      const sibling = invocation.createWorkerScope({ ...opts, ownerId: "sibling" });
+      const createScope = invocation.createWorkerScope.bind(invocation);
+      let childSignal: AbortSignal | undefined;
+      const scopeSpy = vi.spyOn(invocation, "createWorkerScope").mockImplementation((options) => {
+        childSignal = options.signal;
+        return createScope(options);
+      });
+      const external = new AbortController();
+      const p = policy();
+      const fake =
+        trigger === "timeout" || trigger === "signal"
+          ? createFakePi({
+              responses: [
+                (_ctx, options) =>
+                  new Promise<AssistantMessage>((resolve) => {
+                    options?.signal?.addEventListener(
+                      "abort",
+                      () => resolve(fauxAssistantMessage("", { stopReason: "aborted" })),
+                      { once: true },
+                    );
+                    if (trigger === "signal") external.abort();
+                  }),
+              ],
+            })
+          : createFakePi({
+              responses: [
+                fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }), {
+                  stopReason: "toolUse",
+                }),
+                fauxAssistantMessage(fauxToolCall("read", { path: "a.txt" }), {
+                  stopReason: "toolUse",
+                }),
+                fauxAssistantMessage('{"ok":true}'),
+              ],
+            });
+      if (trigger === "timeout") p.execution.timeoutMs = 30;
+      if (trigger === "maxTurns") p.execution.maxTurns = 1;
+      if (trigger === "maxToolCalls") p.execution.maxToolCalls = 1;
+      try {
+        const error = await runWorker({
+          ...(await deps(fake, worker(["read"]), p)),
+          execution: { runtime: invocation, ownerId: "worker" },
+          signal: external.signal,
+          abortGraceMs: 20,
+        }).catch((error) => error as CheaperError);
+        expect((error as CheaperError).code).toBe(code);
+        expect(childSignal?.aborted).toBe(true);
+        expect(childSignal?.reason).toMatchObject({ code, details: { reason: trigger } });
+        expect(invocation.operations("worker").every((op) => !op.owned)).toBe(true);
+        expect((await sibling.execute("read", { path: "a.txt" })).content[0]?.text).toBe("hello\n");
+      } finally {
+        scopeSpy.mockRestore();
+        await invocation.dispose();
+      }
+    },
+  );
+
+  it("owns one invocation and disposes it in finally", async () => {
+    const create = toolRuntime.createInvocationToolRuntime;
+    let dispose: ReturnType<typeof vi.spyOn> | undefined;
+    const factory = vi
+      .spyOn(toolRuntime, "createInvocationToolRuntime")
+      .mockImplementation((options) => {
+        const invocation = create(options);
+        dispose = vi.spyOn(invocation, "dispose");
+        return invocation;
+      });
+    try {
+      const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+      await runWorker({ ...(await deps(fake, worker(["read"]), policy())), abortGraceMs: 15 });
+      expect(factory).toHaveBeenCalledTimes(1);
+      expect(factory.mock.calls[0]?.[0].abortGraceMs).toBe(15);
+      expect(dispose).toHaveBeenCalledTimes(1);
+    } finally {
+      factory.mockRestore();
+    }
+  });
+
+  it("ends borrowed child scope while retaining shared root and sibling", async () => {
+    await writeFile(path.join(root, "a.txt"), "hello\n");
+    const invocation = toolRuntime.createInvocationToolRuntime({ root, symlinkPolicy: "deny" });
+    const opts = {
+      root,
+      symlinkPolicy: "deny" as const,
+      names: ["read"] as const,
+      maxToolCalls: 10,
+      onLimit: () => {},
+    };
+    const sibling = invocation.createWorkerScope({ ...opts, ownerId: "sibling" });
+    const create = invocation.createWorkerScope.bind(invocation);
+    let child: toolRuntime.ToolRuntime | undefined;
+    const scopeSpy = vi.spyOn(invocation, "createWorkerScope").mockImplementation((options) => {
+      child = create(options);
+      return child;
+    });
+    const dispose = vi.spyOn(invocation, "dispose");
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    try {
+      await runWorker({
+        ...(await deps(fake, worker(["read"]), policy())),
+        execution: { runtime: invocation, ownerId: "worker" },
+      });
+      expect(scopeSpy).toHaveBeenCalledTimes(1);
+      expect(dispose).not.toHaveBeenCalled();
+      if (!child) throw new Error("child scope was not created");
+      await expect(child.execute("read", { path: "a.txt" })).rejects.toThrow("aborted");
+      expect((await sibling.execute("read", { path: "a.txt" })).content[0]?.text).toBe("hello\n");
+    } finally {
+      await invocation.dispose();
+    }
+  });
+
+  it("fails closed on a borrowed root mismatch before session execution", async () => {
+    const invocation = toolRuntime.createInvocationToolRuntime({
+      root: `${root}-other`,
+      symlinkPolicy: "deny",
+    });
+    const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
+    try {
+      await expect(
+        runWorker({
+          ...(await deps(fake, worker(["read"]), policy())),
+          execution: { runtime: invocation, ownerId: "worker" },
+        }),
+      ).rejects.toThrow("root mismatch");
+    } finally {
+      await invocation.dispose();
+    }
+  });
   it("returns result and meta on the happy path", async () => {
     const fake = createFakePi({ responses: [fauxAssistantMessage('{"ok":true}')] });
     const r = await runWorker(await deps(fake, worker(["read"]), policy()));
@@ -342,6 +655,29 @@ describe("runWorker", () => {
       (e: unknown) => e,
     );
     expect((err as CheaperError).code).toBe("TIMEOUT");
+  });
+
+  it("does not start a stream after the Worker timeout fired during setup", async () => {
+    const fake = createFakePi();
+    const p = policy();
+    p.execution.timeoutMs = 20;
+    const d = await deps(fake, worker(["read"]), p);
+    const stream = vi.fn(() => createAssistantMessageEventStream());
+    const slowCatalog: ModelCatalog = {
+      getAvailable: async (providerId) => {
+        await new Promise((resolve) => setTimeout(resolve, 80));
+        return runtime.getAvailable(providerId);
+      },
+      getModel: (providerId, modelId) => runtime.getModel(providerId, modelId),
+    };
+    const err = await runWorker({
+      ...d,
+      catalog: slowCatalog,
+      streamFn: stream,
+      abortGraceMs: 30,
+    }).catch((e) => e as CheaperError);
+    expect(err.code).toBe("TIMEOUT");
+    expect(stream).not.toHaveBeenCalled();
   });
 
   it("classifies external signal abort as ABORTED", async () => {

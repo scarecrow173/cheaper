@@ -29,7 +29,12 @@ import {
   toModelInfo,
   type WorkerRunMeta,
 } from "@cheaper/runtime-pi";
-import { type ModelsCliArgs, parseCliArgs, type RunCliArgs } from "./args.js";
+import {
+  type ModelsCliArgs,
+  parseCliArgs,
+  type RunCliArgs,
+  type WorkflowInterfaceCliArgs,
+} from "./args.js";
 import { executeAuth } from "./auth.js";
 import { countWorkspaceFileTokens, defaultBuiltinDir } from "./count.js";
 import {
@@ -45,6 +50,8 @@ import { formatText, formatUsageReport } from "./text-format.js";
 import { recordUsage } from "./usage-log.js";
 import { buildUsageReport, splitModelRef } from "./usage-report.js";
 import { packageVersion } from "./version.js";
+import { prepareWorkflowContext } from "./workflow-context.js";
+import { runWorkflowCommand } from "./workflow-run.js";
 
 export interface CliIo {
   stdin: StdinLike;
@@ -80,6 +87,8 @@ Commands:
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
   count-tokens <path>    Count canonical tokens of a workspace file
+  workflow interface <path> Show the public workflow inputs and outputs
+  workflow run <path>       Run a one-shot workflow
   usage                  Aggregate usage.jsonl (worker cost / measured savings)
   models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
@@ -308,6 +317,23 @@ async function executeModels(
   };
 }
 
+/** 定義の metadata 検証と公開射影のみ。model/tool/Worker の実行を伴わない。 */
+async function executeWorkflowInterface(
+  args: WorkflowInterfaceCliArgs,
+  io: CliIo,
+  hooks: CliHooks,
+  startedAt: number,
+): Promise<CliEnvelope> {
+  const { loaded } = await prepareWorkflowContext(args, io, hooks);
+  return utilitySuccessEnvelope({
+    result: loaded.compiler.projectInterface(loaded.definition) as unknown as Record<
+      string,
+      unknown
+    >,
+    durationMs: (hooks.now ?? Date.now)() - startedAt,
+  });
+}
+
 /**
  * `cheaper usage --compare-model` 用に runtime catalog から対象 model の
  * 観測（cost 等）を取る（issue #45 pricing layer の runtime-catalog source）。
@@ -484,6 +510,18 @@ export async function runCli(
       return exitCode;
     }
 
+    if (parsed.kind === "workflow-interface") {
+      const envelope = await executeWorkflowInterface(parsed, io, hooks, startedAt);
+      io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
+      return 0;
+    }
+
+    if (parsed.kind === "workflow-run") {
+      const envelope = await runWorkflowCommand(parsed, io, hooks, startedAt, loadTestStreamFn);
+      io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
+      return envelope.ok ? 0 : (envelope.error?.exitCode ?? 70);
+    }
+
     if (parsed.kind === "auth") {
       const { envelope, exitCode } = await executeAuth(parsed, io, hooks, startedAt);
       io.stdout.write(parsed.format === "text" ? formatText(envelope) : envelopeJson(envelope));
@@ -518,21 +556,26 @@ export async function runCli(
     const envelope = errorEnvelope(err, { worker: workerName, durationMs: now() - startedAt });
     let format: "json" | "text" = "json";
     let quiet = false;
+    let suppressErrorDiagnostic = false;
     try {
       const p = parseCliArgs(argv);
       if (
         p.kind === "run" ||
         p.kind === "count-tokens" ||
         p.kind === "usage" ||
+        p.kind === "workflow-interface" ||
+        p.kind === "workflow-run" ||
         p.kind === "auth"
       ) {
         format = p.format;
         quiet = p.quiet;
+        suppressErrorDiagnostic = p.kind === "workflow-run" && quiet;
       }
     } catch {
       // args 自体が不正なら json のまま
     }
-    io.stderr.write(`error ${envelope.error.code}: ${envelope.error.message}\n`);
+    if (!suppressErrorDiagnostic)
+      io.stderr.write(`error ${envelope.error.code}: ${envelope.error.message}\n`);
     io.stdout.write(format === "text" ? formatText(envelope) : envelopeJson(envelope));
     recordUsage({
       env: envelope,

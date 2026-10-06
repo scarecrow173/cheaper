@@ -46,6 +46,16 @@ function makeIo(stdinText = '{"task":"x"}', env: NodeJS.ProcessEnv = {}, isTTY =
 }
 
 const meta: WorkerRunMeta = {
+  execution: {
+    operations: 0,
+    byState: { queued: 0, running: 0, completed: 0, failed: 0, cancelled: 0, timed_out: 0 },
+    byTool: {},
+    maxConcurrency: 0,
+    operationMs: 0,
+    activeMs: 0,
+    overlapMs: 0,
+    queueMs: 0,
+  },
   model: { provider: "p", id: "m", tier: "low", selection: "tier", tierSource: "auto" },
   usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, totalTokens: 3, costUsd: 0 },
   turns: 1,

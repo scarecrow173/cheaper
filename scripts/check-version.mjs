@@ -5,6 +5,8 @@
 // Checked:
 //   packages/cli/package.json                canonical version
 //   packages/core/package.json               must equal canonical
+//   packages/tool-runtime/package.json       must equal canonical
+//   packages/workflow/package.json           must equal canonical
 //   packages/runtime-pi/package.json         must equal canonical
 //   packages/apm/apm.yml                     must equal canonical (version: line)
 //   packages/apm/.apm/hooks/cli/version.json must equal canonical (generated)
@@ -32,6 +34,14 @@ const canonical = readJsonVersion("packages/cli/package.json");
 
 const declarations = [
   ["packages/core/package.json", () => readJsonVersion("packages/core/package.json")],
+  [
+    "packages/tool-runtime/package.json",
+    () => readJsonVersion("packages/tool-runtime/package.json"),
+  ],
+  [
+    "packages/workflow/package.json",
+    () => readJsonVersion("packages/workflow/package.json"),
+  ],
   [
     "packages/runtime-pi/package.json",
     () => readJsonVersion("packages/runtime-pi/package.json"),

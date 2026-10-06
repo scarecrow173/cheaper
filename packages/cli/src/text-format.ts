@@ -3,6 +3,7 @@ import type {
   ErrorEnvelope,
   SuccessEnvelope,
   UtilitySuccessEnvelope,
+  WorkflowEnvelope,
 } from "./envelope.js";
 import type { UsageReport } from "./usage-report.js";
 
@@ -149,7 +150,21 @@ export function formatUsageReport(r: UsageReport): string {
 
 /** `--format text` の人間向け出力（DESIGN-0005）。機械可読ではない。 */
 export function formatText(env: CliEnvelope): string {
-  if (!env.ok) return errorText(env);
+  if ("workflow" in env && env.workflow) return workflowText(env);
+  if (env.ok === false) return errorText(env as ErrorEnvelope);
   if (env.worker === null) return utilityText(env);
   return successText(env);
+}
+
+function workflowText(env: WorkflowEnvelope): string {
+  const lines = [
+    env.ok ? "ok workflow" : `error ${env.error?.code ?? "TOOL_EXECUTION_FAILURE"}`,
+    `duration: ${String(env.meta.durationMs)}ms`,
+    "result:",
+    pretty(env.result),
+    "jobs:",
+    pretty(env.jobs),
+  ];
+  if (env.error) lines.splice(1, 0, `message: ${env.error.message}`, `exit: ${env.error.exitCode}`);
+  return `${lines.join("\n")}\n`;
 }

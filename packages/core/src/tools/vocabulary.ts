@@ -1,6 +1,15 @@
 import { CheaperError } from "../errors.js";
 
-export const TOOL_NAMES = ["read", "grep", "find", "ls", "write", "edit", "count_tokens"] as const;
+export const TOOL_NAMES = [
+  "read",
+  "grep",
+  "find",
+  "ls",
+  "write",
+  "edit",
+  "count_tokens",
+  "process",
+] as const;
 
 export type ToolName = (typeof TOOL_NAMES)[number];
 

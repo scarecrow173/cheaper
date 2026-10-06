@@ -6,6 +6,8 @@
 // Updates:
 //   packages/cli/package.json          canonical source of truth
 //   packages/core/package.json
+//   packages/tool-runtime/package.json
+//   packages/workflow/package.json
 //   packages/runtime-pi/package.json
 //   packages/apm/apm.yml               version: line only
 //
@@ -27,6 +29,8 @@ if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
 const jsonFiles = [
   "packages/cli/package.json",
   "packages/core/package.json",
+  "packages/tool-runtime/package.json",
+  "packages/workflow/package.json",
   "packages/runtime-pi/package.json",
 ];
 for (const rel of jsonFiles) {

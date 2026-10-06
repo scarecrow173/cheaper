@@ -1,10 +1,10 @@
 ---
 id: "SPEC-034z14nGIf6fXRtTskkrk8"
 type: "spec"
-status: "proposed"
+status: "superseded"
 title: "Standalone executable distribution for cheaper CLI including APM bundles"
 created: "2026-10-02"
-updated: "2026-10-02"
+updated: "2026-10-04"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -23,12 +23,13 @@ relations:
     - "./apm-self-contained-cli-distribution.md"
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["SPEC-034zWqZR8Dmu9TXTR2qcsg"]
   related:
     - "../adr/distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"
     - "../adr/distribute-cheaper-as-node-26-sea-standalone-executables-shared-by-direct-releas.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "./version-pinned-launcher-acquisition.md"
   derives-from:
     - "../discovery/standalone-cheaper-executable-distribution-without-node-js.md"
   derived-by: []
@@ -41,6 +42,10 @@ relations:
 ---
 
 # Standalone executable distribution for cheaper CLI including APM bundles
+
+2026-10-04: issue #73-A の coordinator 承認で実装済み standalone 要件を approved に整合した。
+[version 固定 acquisition spec](version-pinned-launcher-acquisition.md) が binary 不在時の取得契約を refine する。
+既存 sibling payload の削除と配布 workflow の移行は #73-B/C の対象。
 
 ## What Should Be Built
 

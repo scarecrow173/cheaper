@@ -75,7 +75,8 @@ export function denyPatternToRegex(pattern: string): RegExp {
     .replace(/\/$/, "");
   const tail = dirItself ? "(?:/.*)?" : "";
   const prefix = anchored ? "^" : "^(?:.*/)?";
-  return new RegExp(`${prefix}${body}${tail}$`);
+  // Windows の filesystem と同じ大小文字非依存比較で casing による deny 回避を防ぐ。
+  return new RegExp(`${prefix}${body}${tail}$`, process.platform === "win32" ? "i" : "");
 }
 
 /**

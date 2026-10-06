@@ -35,52 +35,94 @@ mise run check                           # 全検証（version check 含む）
 `check-version.mjs` を実行する。`version.json` は生成物のため bump
 直後は不一致として検出され、bundle 再生成を促される（正常な流れ）。
 
-## Release 手順
+## Release 前の source / tag 準備
+
+公開には新しい `release-acquisition` workflow を **1 回 dispatch** する。
+その1回で固定 SHA の3target SEA build → native smoke → `SHA256SUMS` →
+APM archive → native APM smoke → GitHub Release 公開までを実行する。
+Git source に platform binary は含めない。`check-apm-payload.mjs` は launcher と
+小さい asset の存在・regular file・pointer 拒否・JSON/version 整合を検証する。
+native version と実行は同 release run の build/smoke が検証する。
 
 1. `node scripts/set-version.mjs <X.Y.Z>` で bump する。
 2. `node scripts/bundle-cli.mjs` で `version.json` と bundled CLI を
    再生成する。
-3. bump 変更を commit して branch を push する（tag はまだ打たない）。
-4. **APM payload binary を再生成する。** GitHub Actions の
-   `build-executables` workflow を**手動 dispatch** し、`ref` input に
-   bump commit を含む branch（例: `main`）を指定する。3 target
-   （Windows x64・Linux x64・Linux arm64）の executable が artifact
-   として upload される。
-   - release の build 結果と byte 一致する binary を payload に入れる
-     唯一の正式経路。local で生成した binary は runner artifact と
-     一致しないため使わない。
-5. workflow artifact を download し、APM payload に配置する:
-
-   ```bash
-   gh run download <run-id> -D /tmp/sea-artifacts
-   mkdir /tmp/sea-flat && cp /tmp/sea-artifacts/sea-*/cheaper-* /tmp/sea-flat/
-   node scripts/build-apm-bundle.mjs --exe-dir /tmp/sea-flat
-   # POSIX 側 binary（cli/bin/linux-*/cheaper）は executable bit を
-   # 維持すること（git update-index --chmod=+x で確認・修正）
-   ```
-
-6. `mise run check` が全 pass することを確認する（lint → version →
-   doc-id → typecheck → test → bundle freshness →
-   `check-apm-payload.mjs` の expected target set / pointer /
-   host version 検証）。
-7. 宣言変更と生成物（`packages/apm/.apm/hooks/cli/`。payload
-   executable は Git LFS）を同一 commit にまとめる
-   （`release:` または `chore:` prefix）。
-8. `node packages/cli/bin/cheaper.js --version` と、bundle 内
+3. `mise run check` が全 pass することを確認する（small asset freshness と source checker を含む）。
+4. 宣言変更と小さい生成物を commit して branch を push する。
+   `cli/bin/<platform>/` は ignore 対象であり、binary を Git に追加しない。
+5. `node packages/cli/bin/cheaper.js --version` と、bundle 内
    `version.json` が新しい値を返すことを目視確認する。
-9. `git tag v<X.Y.Z>` で tag を打ち、push する。
-10. GitHub Actions の `release` workflow を**手動 dispatch** し、
-    `tag` input に `v<X.Y.Z>` を指定する。この workflow は
-    `workflow_dispatch` のみを trigger に持ち、自動では実行されない。
-    - build job（reusable `build-executables`）が 3 target を build・
-      smoke し、**committed payload との byte 一致**を検証する。
-      payload が stale / 未更新ならここで fail する。
-    - `publish-release` job が tag-version 一致を検証し、Release
-      `v<X.Y.Z>` を作成して全 artifact を一度に upload する。
-    - macOS artifact は現時点では対象外。
-11. tag の `packages/cli/package.json` version が `v<X.Y.Z>` と一致
-    しない場合、workflow は version 検証で fail し artifact は
-    upload されない。その場合は宣言を修正してから再度 dispatch する。
+6. `git tag v<X.Y.Z>` で immutable tag を打ち、push する。
+
+tagのsourceには新workflowが使用するscriptsとlauncher、整合するversion.jsonが
+含まれている必要がある。公開後の既存tagを書き換えて再利用しない。
+
+## 1 dispatch で acquisition 互換 Release を公開
+
+1. GitHub Actions の **`release-acquisition`** workflowを手動実行し、
+   `tag` inputに準備済み `v<X.Y.Z>` を指定する。自動trigger/local publish経路はない。
+2. 同じrunで次の全jobが成功することを確認する。
+   - `resolve-release`: tagとcanonical CLI/APM/version.jsonを照合し、focused stdlib
+     suitesを実行、source SHAを固定する。
+   - `build-executables`: 既存reusableのWindows x64/Linux x64/Linux arm64
+     native build、`--version` / `models` smoke。expected_versionをbuild前に照合する。
+   - `assemble-release`: Ubuntuで同runのraw3をhashし、strict `SHA256SUMS` と
+     plain staged package snapshotを作る。Git上のpayloadは書き換えない。
+   - `smoke-bundle`: 各native runnerでarchiveを展開し、全3埋込hashとmanifest、
+     APM local install後のNode-free launcher `--version` / `models` を検証する。
+     Linux上ではWindows binaryをhash検証のみとし、実行はWindows jobが担う。
+   - `publish-release`: tagを再fetchして `FETCH_HEAD^{commit}` を固定SHAと比較。
+     GitHub APIのpaginated一覧取得が成功してからexact既存tagを拒否し、全assetを
+     draftへuploadして最後に公開する。`latest=false` としlatestを推測しない。
+3. Releaseに以下の **5 asset** が揃うことを確認する。
+
+| asset | 内容 |
+| --- | --- |
+| `cheaper-linux-x64` | Linux x64 SEA |
+| `cheaper-linux-arm64` | Linux arm64 SEA |
+| `cheaper-windows-x64.exe` | Windows x64 SEA |
+| `SHA256SUMS` | raw3のSHA-256。ASCII subset、LF、64hex + ASCII space2個 + basename、空行/重複なし、64KiB以下 |
+| `cheaper-apm-v<X.Y.Z>.tar.gz` | root `cheaper/` のAPM snapshot。同run raw3、内部 `cli/SHA256SUMS`、固定version metadata、primitivesを含む |
+
+archiveは `apm pack` の形式ではなく展開してlocal path dependencyとして使う。
+[配布guide](distribution.md#release-archive-を-local-path-で-install) を参照。
+`SHA256SUMS` はraw3を対象としarchive全体のdigestは含めない。
+macOSはこのReleaseの対象外。default権限はcontents:read、公開jobのみcontents:write、
+tokenは `GITHUB_TOKEN` のみ使用する。同tagのdispatchはcancelせず直列化する。
+
+## 旧 Release 経路との関係
+
+旧 `release` workflow は contents: read の拒否 job として廃止する。
+公開は `release-acquisition` の 1 dispatch のみ。手動 `build-executables` は
+検証用 artifact を作るだけで公開しない。committed binary の byte 比較は行わない。
+既存 Git LFS 履歴は保持するが、binary 再追加や checksum 不在の旧公開経路へ戻さない。
+
+## 失敗時の確認と手動復旧
+
+version不一致、tag drift、hash/smoke失敗、API error、既存draft/public Releaseは公開を止める。
+既存Releaseの上書き、`--clobber`、自動削除、upload再開は行わない。
+draft作成中や公開前に失敗すると未公開draftが残ることがある。operatorが対象runの
+errorとtag/SHA、draftのasset状態を確認し、必要な回復を明示的に手動で行ってから
+回復する。maintainer は失敗を修正し、新しい immutable version/tag で fix-forward する。
+既存 tag を書き換えない。
+
+新経路の初回実公開はローカル検証では未実証。全 5 asset と 3 native smoke の成功を
+確認するまで consumer を新 Git ref へ切り替えない。consumer は切替前に稼働中の
+manifest/ref と sibling を含む deploy directory を退避し、取得や hook が失敗したら
+その退避を復元する。Copilot の制約は [配布 guide](distribution.md) を参照する。
+
+## 発火前の検証範囲
+
+`mise exec -- node --test scripts/test/release-artifacts.test.mjs scripts/test/release-workflow.test.mjs`
+でstrict manifest、snapshot/source非変更、smoke失敗境界とworkflow構造を検証できる。
+`assemble-release-bundle.mjs --asset-dir <dir> --out-dir <dir> --tag v<X.Y.Z> --dry-run` は
+入力version/manifest/raw hashを検査しlayoutを出力する。Node stdlibのみを使用する。
+`smoke-release.mjs --package-dir <cheaper-dir> --manifest <SHA256SUMS> --version <X.Y.Z> --dry-run`
+は全3埋込hashとmetadataを検証し、APM install/実行を行わない。
+
+Ubuntuでのtar member mode0755、native3の実build/install/smoke、GitHub API/upload/publicationは
+CIで初めて確認できる。Windowsでのarchive fixture testはPOSIX modeを検証せずLinux専用testをskipする。
+dry-run/構造検証の成功を実Release公開成功と同一視しない。
 
 ## 注意
 

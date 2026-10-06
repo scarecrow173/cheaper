@@ -24,14 +24,31 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1FbkoSqLEHZrV | Harden repair abort grace and provider failure normalization | completed | [harden-repair-abort-grace-and-provider-failure-normalization.md](./harden-repair-abort-grace-and-provider-failure-normalization.md) |
 | PLAN-034r05iHE1Fbkp0Gokdq8Z | Huge-file byte cap guard and fail-closed hook | completed | [huge-file-byte-cap-guard-and-fail-closed-hook.md](./huge-file-byte-cap-guard-and-fail-closed-hook.md) |
 | PLAN-eDDZBS6ncoMf6TOdM7tDSW | implement auto tier classification | completed | [implement-auto-tier-classification.md](./implement-auto-tier-classification.md) |
+| PLAN-034zWZgd5LEtlTQNGC5O8x | ToolScheduler と concurrency policy を実装する | completed | [implement-bounded-tool-scheduler.md](./implement-bounded-tool-scheduler.md) |
+| PLAN-034zQ97RFO1AbY6enJw9jO | Canonical Tool Runtime を抽出して Pi adapter を接続する | completed | [implement-canonical-tool-runtime.md](./implement-canonical-tool-runtime.md) |
 | PLAN-034r05iHy2gdnpJFiMWhkY | Implement cheaper CLI, built-in workers and end-to-end verification | completed | [implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md](./implement-cheaper-cli-built-in-workers-and-end-to-end-verification.md) |
 | PLAN-034z3OwYgplUxa7Usrjwxq | Implement cheaper hook subcommands and migrate hooks.json off Node adapters | completed | [implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md](./implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md) |
 | PLAN-034r05iHy2gdnpIrX0mTIb | Implement @cheaper/runtime-pi execution engine and sandboxed tools | completed | [implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md](./implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md) |
+| PLAN-034zQqWCWWNpushz8Itm5d | Implement core resource manifest normalization | completed | [implement-core-resource-manifest-normalization.md](./implement-core-resource-manifest-normalization.md) |
+| PLAN-034A91M2XAsWK6QNypcEPX | managed process canonical tool を実装する | completed | [implement-managed-process-canonical-tool.md](./implement-managed-process-canonical-tool.md) |
+| PLAN-034AEwZy3GcNygp87aXrL7 | Implement managed process lifecycle hardening | completed | [implement-managed-process-lifecycle-hardening.md](./implement-managed-process-lifecycle-hardening.md) |
 | PLAN-034rzUgf26bzSEwLr1L6Pl | implement model pricing catalog and curated exceptions | approved | [implement-model-pricing-catalog.md](./implement-model-pricing-catalog.md) |
 | PLAN-034z1M6zCAdKb12eiCWZRm | Implement Node 26 SEA standalone executable proof of concept | completed | [implement-node-26-sea-standalone-executable-proof-of-concept.md](./implement-node-26-sea-standalone-executable-proof-of-concept.md) |
+| PLAN-034zTJptHTdovrvYW7wQ1k | Implement one-dispatch release workflow | completed | [implement-one-dispatch-release-workflow.md](./implement-one-dispatch-release-workflow.md) |
+| PLAN-034AGr55LYOkphfEZr5Pr2 | Implement one-shot workflow execution and CLI integration | completed | [implement-one-shot-workflow-execution-and-cli-integration.md](./implement-one-shot-workflow-execution-and-cli-integration.md) |
+| PLAN-034zTcqSwE6JHL46EJBnKP | OperationManager lifecycle の実装計画 | completed | [implement-operation-manager-lifecycle.md](./implement-operation-manager-lifecycle.md) |
+| PLAN-034zXjR2oE7USB76eUPCAq | Implement payload untracking migration | completed | [implement-payload-untracking-migration.md](./implement-payload-untracking-migration.md) |
 | PLAN-034zBjFcH4nDUr72Vc1XJ3 | Implement Pi sibling tool-call parallelism guidance and deterministic tests in runtime-pi | completed | [implement-pi-sibling-tool-call-parallelism.md](./implement-pi-sibling-tool-call-parallelism.md) |
+| PLAN-034AadQgwgheMAV59FAcIZ | ResourceManager job lease を実装する | completed | [implement-resource-manager-job-leases.md](./implement-resource-manager-job-leases.md) |
+| PLAN-034zThvLa4bK934vj52jaC | Implement run-scoped artifact store | completed | [implement-run-scoped-artifact-store.md](./implement-run-scoped-artifact-store.md) |
+| PLAN-034zQHj1WyOgBNLGbDaFY8 | Implement version-pinned launcher acquisition | completed | [implement-version-pinned-launcher-acquisition.md](./implement-version-pinned-launcher-acquisition.md) |
+| PLAN-034zQ9Pet2QAuh0FP3ku3u | Workflow contract compiler を実装する | completed | [implement-workflow-contract-compiler.md](./implement-workflow-contract-compiler.md) |
+| PLAN-034zTiB05IwVw2pDB34sLk | Workflow loader と公開 interface CLI を接続する | completed | [implement-workflow-file-interface.md](./implement-workflow-file-interface.md) |
+| PLAN-034AR2f7p2NSUDtUhSuLp6 | Implement workflow orchestration benchmarks | approved | [implement-workflow-orchestration-benchmarks.md](./implement-workflow-orchestration-benchmarks.md) |
+| PLAN-034zTu37tgDGI306OPBitz | Workflow resource inference を実装する | completed | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | PLAN-034z2bk7AEzZ66Mt0uXCyJ | Integrate SEA executables into tag-triggered GitHub Release workflow | completed | [integrate-sea-executables-into-tag-triggered-github-release-workflow.md](./integrate-sea-executables-into-tag-triggered-github-release-workflow.md) |
 | PLAN-034r05iHE1FbkpcKKUUZ58 | Real-provider worker E2E via Ollama — implementation plan | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
+| PLAN-034A90VLWrJyT2IhkiTsA0 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | PLAN-034r05iHK8bA7g23Opaicg | Pi state under userConfigDir/pi — implementation plan | completed | [pi-state-under-userconfigdir-pi-implementation-plan.md](./pi-state-under-userconfigdir-pi-implementation-plan.md) |
 | PLAN-034r2qodyxvN3g3xktwPOF | provider/auth guide runtime sync — implementation plan | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | PLAN-034r05iHK8bA7g2BMsfjFu | Provider-only registration layer — implementation plan | completed | [provider-only-registration-layer-implementation-plan.md](./provider-only-registration-layer-implementation-plan.md) |

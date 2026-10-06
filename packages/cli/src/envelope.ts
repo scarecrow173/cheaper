@@ -21,6 +21,7 @@ export interface ErrorEnvelopeMeta {
   changes: ChangesSummary | null;
   /** 失敗 run の offload 実測（result 無し = returnedTokens 0）。 */
   savings: WorkerSavings | null;
+  execution: WorkerRunMeta["execution"] | null;
 }
 
 export interface SuccessEnvelope {
@@ -55,7 +56,25 @@ export interface ErrorEnvelope {
   meta: ErrorEnvelopeMeta;
 }
 
-export type CliEnvelope = SuccessEnvelope | UtilitySuccessEnvelope | ErrorEnvelope;
+interface WorkflowEnvelopeBase {
+  schemaVersion: typeof SCHEMA_VERSION;
+  workflow: true;
+  worker: null;
+  result: Record<string, unknown>;
+  jobs: unknown[];
+  meta: Record<string, unknown> & { durationMs: number };
+}
+export type WorkflowEnvelope = WorkflowEnvelopeBase &
+  (
+    | { ok: true; error?: never }
+    | { ok: false; error: { code: string; message: string; exitCode: number; retryable: boolean } }
+  );
+
+export type CliEnvelope =
+  | SuccessEnvelope
+  | UtilitySuccessEnvelope
+  | ErrorEnvelope
+  | WorkflowEnvelope;
 
 export function successEnvelope(opts: {
   worker: string;
@@ -108,6 +127,7 @@ function errorMeta(durationMs: number | null, err: unknown): ErrorEnvelopeMeta {
     transientRetries: runMeta?.transientRetries ?? null,
     changes: runMeta?.changes ?? changes,
     savings: runMeta?.savings ?? null,
+    execution: runMeta?.execution ?? null,
   };
 }
 

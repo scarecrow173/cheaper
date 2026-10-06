@@ -4,6 +4,7 @@
  * 残りは meta/結果型と model 解決 adapter、session seam の型のみ公開する。
  */
 
+export type { WorkerExecutionBinding } from "@cheaper/tool-runtime";
 export type {
   AuthEvent,
   AuthInteraction,
@@ -54,5 +55,6 @@ export type {
   WorkerSessionOptions,
 } from "./session.js";
 export { createWorkerSession } from "./session.js";
+export { createPiToolHandlers } from "./tools/registry.js";
 export type { UsageSnapshot, WorkerSavings, WorkerUsage } from "./usage.js";
 export { UsageCollector } from "./usage.js";

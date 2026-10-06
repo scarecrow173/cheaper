@@ -40,6 +40,25 @@ export interface CountTokensCliArgs {
   quiet: boolean;
 }
 
+export interface WorkflowInterfaceCliArgs {
+  kind: "workflow-interface";
+  path: string;
+  cwd: string | undefined;
+  format: "json" | "text";
+  quiet: boolean;
+}
+
+export interface WorkflowRunCliArgs {
+  kind: "workflow-run";
+  path: string;
+  /** undefined means `{}`; `-` means explicit stdin. */
+  input: string | undefined;
+  cwd: string | undefined;
+  timeout: string | undefined;
+  format: "json" | "text";
+  quiet: boolean;
+}
+
 export interface AuthCliArgs {
   kind: "auth";
   /** `auth status|login|logout` の action。 */
@@ -73,6 +92,8 @@ export type ParsedCli =
   | { kind: "version" }
   | RunCliArgs
   | CountTokensCliArgs
+  | WorkflowInterfaceCliArgs
+  | WorkflowRunCliArgs
   | AuthCliArgs
   | ModelsCliArgs
   | UsageCliArgs;
@@ -95,6 +116,7 @@ function parseArgsSafe(argv: readonly string[]) {
       args: argv as string[],
       allowPositionals: true,
       strict: true,
+      tokens: true,
       options: {
         input: { type: "string", default: "-" },
         "worker-file": { type: "string" },
@@ -142,11 +164,44 @@ export function parseCliArgs(argv: readonly string[]): ParsedCli {
   const command = positionals[0];
   if (command === undefined) {
     throw invalidRequest(
-      "command required: run | bulk-read | code-write | doc-write | count-tokens | usage | models | auth",
+      "command required: run | bulk-read | code-write | doc-write | count-tokens | usage | models | auth | workflow",
     );
   }
 
   const workerFile = values["worker-file"];
+  if (command === "workflow") {
+    const action = positionals[1];
+    if ((action !== "interface" && action !== "run") || positionals.length !== 3 || !positionals[2])
+      throw invalidRequest("workflow requires interface|run <path>");
+    const allowed =
+      action === "run"
+        ? ["input", "cwd", "timeout", "format", "quiet"]
+        : ["cwd", "format", "quiet"];
+    for (const token of parsed.tokens) {
+      if (token.kind === "option" && !allowed.includes(token.name)) {
+        throw invalidRequest(`--${token.name} is not valid for workflow ${action}`);
+      }
+    }
+    if (action === "run")
+      return {
+        kind: "workflow-run",
+        path: positionals[2],
+        input: parsed.tokens.some((token) => token.kind === "option" && token.name === "input")
+          ? values.input
+          : undefined,
+        cwd: values.cwd,
+        timeout: values.timeout,
+        format,
+        quiet: values.quiet === true,
+      };
+    return {
+      kind: "workflow-interface",
+      path: positionals[2],
+      cwd: values.cwd,
+      format,
+      quiet: values.quiet === true,
+    };
+  }
   // --model/--provider/--worker は run/models と意味を共有するため usage 専用には
   // 含めない（usage では record filter、run では explicit model 指定、
   // models では auto 分類の workload profile）。
