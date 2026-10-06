@@ -1,0 +1,281 @@
+{
+  "cases": [
+    {
+      "base": {
+        "a": {
+          "x": 1,
+          "y": 2
+        },
+        "b": [
+          1,
+          2
+        ],
+        "c": "s"
+      },
+      "expected": {
+        "ok": {
+          "baseAfter": {
+            "a": {
+              "x": 1,
+              "y": 2
+            },
+            "b": [
+              1,
+              2
+            ],
+            "c": "s"
+          },
+          "merged": {
+            "a": {
+              "x": 9,
+              "y": 2
+            },
+            "b": [
+              3
+            ],
+            "c": "t",
+            "d": true
+          },
+          "overrideAfter": {
+            "a": {
+              "x": 9
+            },
+            "b": [
+              3
+            ],
+            "c": "t",
+            "d": true
+          }
+        }
+      },
+      "mode": "replace",
+      "name": "deep merge / scalar + array replace",
+      "override": {
+        "a": {
+          "x": 9
+        },
+        "b": [
+          3
+        ],
+        "c": "t",
+        "d": true
+      }
+    },
+    {
+      "base": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          }
+        },
+        "process": {
+          "maxConcurrent": 2,
+          "maxOutputBytes": 100,
+          "timeout": "2m"
+        },
+        "workflow": {
+          "artifacts": {
+            "maxReadBytes": 65536
+          },
+          "maxJobs": 4
+        }
+      },
+      "expected": {
+        "ok": {
+          "baseAfter": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              }
+            },
+            "process": {
+              "maxConcurrent": 2,
+              "maxOutputBytes": 100,
+              "timeout": "2m"
+            },
+            "workflow": {
+              "artifacts": {
+                "maxReadBytes": 65536
+              },
+              "maxJobs": 4
+            }
+          },
+          "merged": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              }
+            },
+            "process": {
+              "killGrace": "1s",
+              "maxConcurrent": 2,
+              "maxOutputBytes": 50,
+              "timeout": "2m"
+            },
+            "workflow": {
+              "artifacts": {
+                "maxReadBytes": 65536
+              },
+              "maxJobs": 1
+            }
+          },
+          "overrideAfter": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 16,
+                "mutations": "per-resource"
+              }
+            },
+            "process": {
+              "killGrace": "1s",
+              "maxConcurrent": 8,
+              "maxOutputBytes": 50,
+              "timeout": "5m"
+            },
+            "workflow": {
+              "artifacts": {
+                "maxReadBytes": 99999
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "mode": "restrict-concurrency",
+      "name": "restrict takes numeric min + duration min + serialized",
+      "override": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 16,
+            "mutations": "per-resource"
+          }
+        },
+        "process": {
+          "killGrace": "1s",
+          "maxConcurrent": 8,
+          "maxOutputBytes": 50,
+          "timeout": "5m"
+        },
+        "workflow": {
+          "artifacts": {
+            "maxReadBytes": 99999
+          },
+          "maxJobs": 1
+        }
+      }
+    },
+    {
+      "base": {
+        "execution": {
+          "concurrency": {
+            "mutations": "serialized"
+          }
+        }
+      },
+      "expected": {
+        "ok": {
+          "baseAfter": {
+            "execution": {
+              "concurrency": {
+                "mutations": "serialized"
+              }
+            }
+          },
+          "merged": {
+            "execution": {
+              "concurrency": {
+                "mutations": "serialized"
+              }
+            }
+          },
+          "overrideAfter": {
+            "execution": {
+              "concurrency": {
+                "mutations": "per-resource"
+              }
+            }
+          }
+        }
+      },
+      "mode": "restrict-concurrency",
+      "name": "restrict mutations only tightens",
+      "override": {
+        "execution": {
+          "concurrency": {
+            "mutations": "per-resource"
+          }
+        }
+      }
+    },
+    {
+      "base": {
+        "process": {
+          "timeout": "90s"
+        }
+      },
+      "expected": {
+        "ok": {
+          "baseAfter": {
+            "process": {
+              "timeout": "90s"
+            }
+          },
+          "merged": {
+            "process": {
+              "timeout": "1m"
+            }
+          },
+          "overrideAfter": {
+            "process": {
+              "timeout": "1m"
+            }
+          }
+        }
+      },
+      "mode": "restrict-concurrency",
+      "name": "restrict duration min keeps shorter",
+      "override": {
+        "process": {
+          "timeout": "1m"
+        }
+      }
+    },
+    {
+      "base": {
+        "process": {
+          "maxConcurrent": 2
+        }
+      },
+      "expected": {
+        "ok": {
+          "baseAfter": {
+            "process": {
+              "maxConcurrent": 2
+            }
+          },
+          "merged": {
+            "process": {
+              "maxConcurrent": 8
+            }
+          },
+          "overrideAfter": {
+            "process": {
+              "maxConcurrent": 8
+            }
+          }
+        }
+      },
+      "mode": "replace",
+      "name": "replace mode ignores restrict fields",
+      "override": {
+        "process": {
+          "maxConcurrent": 8
+        }
+      }
+    }
+  ],
+  "platform": "win32"
+}

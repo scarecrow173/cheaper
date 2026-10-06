@@ -140,7 +140,7 @@ molo の対応構造: 副作用 tool は `EffectRequest` を返し、harness cha
   - `costUsd` — 現行は Pi が `message.usage.cost.total` を供給。molo RunSummary に
     cost 面があるか不明。**なければ cheaper の pricing 層×token 数で算出する仕様へ
     変更**(挙動差異。provider 課金口径との乖離リスクを docs に明記)
-  - **usage-bearing failure**: `meta.usage` を持つ error を記録する契約(ADR-0025)
+  - **usage-bearing failure**: `meta.usage` を持つ error を記録する契約(ADR-034r2eId2hXJGWDjBylKVE)
     のため、error/abort 経路でも RunSummary 相当の partial usage を取得できるか
     **スパイク必須検証**
 - **structured output repair**: 2 経路を比較して決定:

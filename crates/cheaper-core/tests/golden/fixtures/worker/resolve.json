@@ -1,0 +1,373 @@
+{
+  "cases": [
+    {
+      "cwdRel": ".",
+      "dirs": {
+        "builtinDir": "builtin",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      },
+      "expected": {
+        "ok": {
+          "def": {
+            "cheaper": {
+              "model": {
+                "tier": "low"
+              },
+              "output": {
+                "schema": {
+                  "inline": {
+                    "properties": {
+                      "ok": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "ok"
+                    ],
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "description": "d",
+            "directlyComparable": true,
+            "inputSchema": null,
+            "instructions": "Do things.",
+            "name": "w",
+            "origin": "project",
+            "outputSchema": {
+              "schema": {
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "ok"
+                ],
+                "type": "object"
+              }
+            },
+            "sourcePath": "<ROOT>\\proj\\.cheaper\\workers\\w.md",
+            "tools": [
+              "read"
+            ]
+          }
+        }
+      },
+      "filePath": null,
+      "files": {
+        "builtin/workers/w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"ls\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+        "proj/.cheaper/workers/w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+        "user/workers/w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"grep\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
+      },
+      "name": "project wins over user+builtin",
+      "op": "resolveWorker",
+      "workerName": "w"
+    },
+    {
+      "cwdRel": ".",
+      "dirs": {
+        "builtinDir": "builtin",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      },
+      "expected": {
+        "ok": {
+          "def": {
+            "cheaper": {
+              "model": {
+                "tier": "low"
+              },
+              "output": {
+                "schema": {
+                  "inline": {
+                    "properties": {
+                      "ok": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "ok"
+                    ],
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "description": "d",
+            "directlyComparable": true,
+            "inputSchema": null,
+            "instructions": "Do things.",
+            "name": "w",
+            "origin": "user",
+            "outputSchema": {
+              "schema": {
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "ok"
+                ],
+                "type": "object"
+              }
+            },
+            "sourcePath": "<ROOT>\\user\\workers\\w.md",
+            "tools": [
+              "grep"
+            ]
+          }
+        }
+      },
+      "filePath": null,
+      "files": {
+        "builtin/workers/w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"ls\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+        "user/workers/w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"grep\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
+      },
+      "name": "user wins over builtin",
+      "op": "resolveWorker",
+      "workerName": "w"
+    },
+    {
+      "cwdRel": ".",
+      "dirs": {
+        "builtinDir": "builtin",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      },
+      "expected": {
+        "ok": {
+          "def": {
+            "cheaper": {
+              "model": {
+                "tier": "low"
+              },
+              "output": {
+                "schema": {
+                  "inline": {
+                    "properties": {
+                      "ok": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "ok"
+                    ],
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "description": "d",
+            "directlyComparable": true,
+            "inputSchema": null,
+            "instructions": "Do things.",
+            "name": "w",
+            "origin": "builtin",
+            "outputSchema": {
+              "schema": {
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "ok"
+                ],
+                "type": "object"
+              }
+            },
+            "sourcePath": "<ROOT>\\builtin\\workers\\w.md",
+            "tools": [
+              "read"
+            ]
+          }
+        }
+      },
+      "filePath": null,
+      "files": {
+        "builtin/workers/w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
+      },
+      "name": "builtin used",
+      "op": "resolveWorker",
+      "workerName": "w"
+    },
+    {
+      "cwdRel": ".",
+      "dirs": {
+        "builtinDir": "builtin",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      },
+      "expected": {
+        "error": {
+          "code": "WORKER_NOT_FOUND",
+          "details": {
+            "name": "ghost",
+            "searched": [
+              "<ROOT>\\proj\\.cheaper\\workers\\ghost.md",
+              "<ROOT>\\user\\workers\\ghost.md",
+              "<ROOT>\\builtin\\workers\\ghost.md"
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "filePath": null,
+      "files": {},
+      "name": "not found lists searched",
+      "op": "resolveWorker",
+      "workerName": "ghost"
+    },
+    {
+      "cwdRel": ".",
+      "dirs": {
+        "builtinDir": "builtin",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      },
+      "expected": {
+        "error": {
+          "code": "WORKER_NAME_MISMATCH",
+          "details": {
+            "name": "other",
+            "sourcePath": "<ROOT>\\proj\\.cheaper\\workers\\w.md",
+            "stem": "w"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "filePath": null,
+      "files": {
+        "proj/.cheaper/workers/w.md": "---\nname: \"other\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+        "user/workers/w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
+      },
+      "name": "invalid project worker does not fall back",
+      "op": "resolveWorker",
+      "workerName": "w"
+    },
+    {
+      "cwdRel": ".",
+      "dirs": {
+        "builtinDir": "builtin",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      },
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_NAME",
+          "details": {
+            "name": "Bad Name"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "filePath": null,
+      "files": {},
+      "name": "invalid worker name",
+      "op": "resolveWorker",
+      "workerName": "Bad Name"
+    },
+    {
+      "cwdRel": ".",
+      "dirs": {
+        "builtinDir": "builtin",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      },
+      "expected": {
+        "ok": {
+          "def": {
+            "cheaper": {
+              "model": {
+                "tier": "low"
+              },
+              "output": {
+                "schema": {
+                  "inline": {
+                    "properties": {
+                      "ok": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "ok"
+                    ],
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "description": "d",
+            "directlyComparable": true,
+            "inputSchema": null,
+            "instructions": "Do things.",
+            "name": "custom",
+            "origin": "explicit",
+            "outputSchema": {
+              "schema": {
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "ok"
+                ],
+                "type": "object"
+              }
+            },
+            "sourcePath": "<ROOT>\\docs\\custom.md",
+            "tools": [
+              "read"
+            ]
+          }
+        }
+      },
+      "filePath": "docs/custom.md",
+      "files": {
+        "docs/custom.md": "---\nname: \"custom\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
+      },
+      "name": "resolveWorkerFile explicit",
+      "op": "resolveWorkerFile",
+      "workerName": null
+    },
+    {
+      "cwdRel": ".",
+      "dirs": {
+        "builtinDir": "builtin",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      },
+      "expected": {
+        "error": {
+          "code": "WORKER_NOT_FOUND",
+          "details": {
+            "filePath": "docs/none.md",
+            "searched": [
+              "<ROOT>\\docs\\none.md"
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "filePath": "docs/none.md",
+      "files": {},
+      "name": "resolveWorkerFile missing",
+      "op": "resolveWorkerFile",
+      "workerName": null
+    }
+  ],
+  "platform": "win32"
+}

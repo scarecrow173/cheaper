@@ -1,0 +1,143 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "ok": "0"
+      },
+      "input": 0
+    },
+    {
+      "expected": {
+        "ok": "0"
+      },
+      "input": 0
+    },
+    {
+      "expected": {
+        "ok": "1"
+      },
+      "input": 1
+    },
+    {
+      "expected": {
+        "ok": "-1"
+      },
+      "input": -1
+    },
+    {
+      "expected": {
+        "ok": "1.5"
+      },
+      "input": 1.5
+    },
+    {
+      "expected": {
+        "ok": "-1.5"
+      },
+      "input": -1.5
+    },
+    {
+      "expected": {
+        "ok": "0.30000000000000004"
+      },
+      "input": 0.30000000000000004
+    },
+    {
+      "expected": {
+        "ok": "1e+21"
+      },
+      "input": 1e+21
+    },
+    {
+      "expected": {
+        "ok": "0.000001"
+      },
+      "input": 0.000001
+    },
+    {
+      "expected": {
+        "ok": "1e-7"
+      },
+      "input": 1e-7
+    },
+    {
+      "expected": {
+        "ok": "123456789"
+      },
+      "input": 123456789
+    },
+    {
+      "expected": {
+        "ok": "9007199254740991"
+      },
+      "input": 9007199254740991
+    },
+    {
+      "expected": {
+        "ok": "9007199254740992"
+      },
+      "input": 9007199254740992
+    },
+    {
+      "expected": {
+        "ok": "0.0001"
+      },
+      "input": 0.0001
+    },
+    {
+      "expected": {
+        "ok": "1234.5"
+      },
+      "input": 1234.5
+    },
+    {
+      "expected": {
+        "ok": "100000000000000000000"
+      },
+      "input": 100000000000000000000
+    },
+    {
+      "expected": {
+        "ok": "1e+22"
+      },
+      "input": 1e+22
+    },
+    {
+      "expected": {
+        "ok": "-1e+21"
+      },
+      "input": -1e+21
+    },
+    {
+      "expected": {
+        "ok": "1.23e-8"
+      },
+      "input": 1.23e-8
+    },
+    {
+      "expected": {
+        "ok": "5e-324"
+      },
+      "input": 5e-324
+    },
+    {
+      "expected": {
+        "ok": "null"
+      },
+      "input": "Infinity"
+    },
+    {
+      "expected": {
+        "ok": "null"
+      },
+      "input": "-Infinity"
+    },
+    {
+      "expected": {
+        "ok": "null"
+      },
+      "input": "NaN"
+    }
+  ],
+  "platform": "win32"
+}

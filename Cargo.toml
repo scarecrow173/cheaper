@@ -1,0 +1,45 @@
+# Repo-root virtual manifest for the Rust migration (Phase 1+).
+# `crates/poc-rig` is a standalone Phase 0 spike with its own Cargo.lock and
+# rust-toolchain.toml; it is excluded so its pinned dependency set stays
+# independent of the production workspace.
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+exclude = ["crates/poc-rig"]
+
+[workspace.package]
+edition = "2021"
+
+# Shared dependency pins. Cargo semver caveat (plan Risk #1): exact pins use
+# `=x.y.z`; `rig`-family crates use the `=0.43.x` pin policy from the parent
+# plan and are never a dependency of `cheaper-core`.
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+# `preserve_order`: ISS-19(d) — JSON object key order (insertion order) is
+# contractual for snapshot pattern search order and savings fields.
+# `raw_value`: required by the JS-compatible canonical number formatter
+# (json/number.rs) to emit raw numeric text inside serde_json output.
+serde_json = { version = "1", features = ["preserve_order", "raw_value"] }
+# YAML 1.2 frontmatter / policy.yaml / models.yaml parsing. serde_yml 0.0.13
+# is a deprecation shim over noyalib that implements YAML 1.2 strict booleans
+# (the "Norway problem" fix); serde_norway resolves y/n/on/off as bools and
+# would diverge from the eemeli `yaml` parser the TS side uses.
+serde_yml = "=0.0.13"
+# JSON Schema draft 2020-12 validation (Ajv 2020 replacement). Default
+# features (http/file $ref resolution via reqwest) are disabled: cheaper
+# schemas are self-contained and must not trigger network access.
+jsonschema = { version = "0.58", default-features = false }
+# o200k_base BPE token counting (js-tiktoken replacement).
+tiktoken-rs = "0.12"
+# Windows `\\?\` verbatim-prefix stripping after canonicalize.
+dunce = "1"
+# Deny-pattern regexes, worker name pattern, env-var name pattern, etc.
+regex = "1"
+
+[profile.release]
+lto = true
+opt-level = "s"
+strip = true
+codegen-units = 1
+# panic = "abort" is forbidden: run/command boundaries rely on catch_unwind.
+panic = "unwind"

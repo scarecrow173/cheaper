@@ -1,0 +1,720 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "ok": {
+          "ref": {
+            "file": "s.json"
+          }
+        }
+      },
+      "kind": "output",
+      "name": "parseSchemaRef file ref",
+      "op": "parseSchemaRef",
+      "raw": {
+        "file": "s.json"
+      },
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "expected": {
+        "ok": {
+          "ref": {
+            "inline": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "kind": "output",
+      "name": "parseSchemaRef inline ref",
+      "op": "parseSchemaRef",
+      "raw": {
+        "inline": {
+          "type": "object"
+        }
+      },
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "kind": "output",
+            "reason": "schema-exactly-one",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "kind": "output",
+      "name": "parseSchemaRef empty",
+      "op": "parseSchemaRef",
+      "raw": {},
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "kind": "output",
+            "reason": "schema-exactly-one",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "kind": "output",
+      "name": "parseSchemaRef both keys",
+      "op": "parseSchemaRef",
+      "raw": {
+        "file": "a.json",
+        "inline": {}
+      },
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "kind": "output",
+            "reason": "schema-not-object",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "kind": "output",
+      "name": "parseSchemaRef non-object",
+      "op": "parseSchemaRef",
+      "raw": "x",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "kind": "output",
+            "reason": "schema-not-object",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "kind": "output",
+      "name": "parseSchemaRef null",
+      "op": "parseSchemaRef",
+      "raw": null,
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "kind": "output",
+            "reason": "schema-file-not-string",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "kind": "output",
+      "name": "parseSchemaRef file non-string",
+      "op": "parseSchemaRef",
+      "raw": {
+        "file": 3
+      },
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "kind": "output",
+            "reason": "schema-inline-not-object",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "kind": "output",
+      "name": "parseSchemaRef inline non-object",
+      "op": "parseSchemaRef",
+      "raw": {
+        "inline": "x"
+      },
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "expected": {
+        "ok": {
+          "schema": {
+            "type": "string"
+          }
+        }
+      },
+      "files": {
+        "s.json": "{\"type\":\"string\"}"
+      },
+      "kind": "output",
+      "name": "loadSchema .json",
+      "op": "loadSchema",
+      "ref": {
+        "file": "s.json"
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "schema": {
+            "type": "string"
+          }
+        }
+      },
+      "files": {
+        "s.yaml": "type: string\n"
+      },
+      "kind": "output",
+      "name": "loadSchema .yaml",
+      "op": "loadSchema",
+      "ref": {
+        "file": "s.yaml"
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "schema": {
+            "type": "number"
+          }
+        }
+      },
+      "files": {
+        "s.yml": "type: number\n"
+      },
+      "kind": "output",
+      "name": "loadSchema .yml",
+      "op": "loadSchema",
+      "ref": {
+        "file": "s.yml"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "OUTPUT_SCHEMA_NOT_FOUND",
+          "details": {
+            "file": "no.json",
+            "path": "<ROOT>\\no.json"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "output",
+      "name": "loadSchema output missing",
+      "op": "loadSchema",
+      "ref": {
+        "file": "no.json"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INPUT_SCHEMA_NOT_FOUND",
+          "details": {
+            "file": "no.json",
+            "path": "<ROOT>\\no.json"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "input",
+      "name": "loadSchema input missing",
+      "op": "loadSchema",
+      "ref": {
+        "file": "no.json"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_OUTPUT_SCHEMA",
+          "details": {
+            "file": "s.txt",
+            "reason": "schema-extension"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "s.txt": "{}"
+      },
+      "kind": "output",
+      "name": "loadSchema bad extension",
+      "op": "loadSchema",
+      "ref": {
+        "file": "s.txt"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_INPUT_SCHEMA",
+          "details": {
+            "file": "bad.json",
+            "reason": "schema-parse"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "bad.json": "{not json"
+      },
+      "kind": "input",
+      "name": "loadSchema bad json",
+      "op": "loadSchema",
+      "ref": {
+        "file": "bad.json"
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "schema": {
+            "type": "object"
+          }
+        }
+      },
+      "files": {},
+      "kind": "input",
+      "name": "loadSchema inline",
+      "op": "loadSchema",
+      "ref": {
+        "inline": {
+          "type": "object"
+        }
+      }
+    },
+    {
+      "data": {
+        "a": "x"
+      },
+      "expected": {
+        "ok": {
+          "ok": true
+        }
+      },
+      "files": {},
+      "kind": "output",
+      "name": "compileSchema validate",
+      "op": "compileValidate",
+      "schema": {
+        "properties": {
+          "a": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "a"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "data": {
+        "a": 1
+      },
+      "expected": {
+        "ok": {
+          "errors": [
+            {
+              "instancePath": "/a"
+            }
+          ],
+          "ok": false
+        }
+      },
+      "files": {},
+      "kind": "output",
+      "name": "compileSchema invalid data",
+      "op": "compileValidate",
+      "schema": {
+        "properties": {
+          "a": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "a"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "data": {},
+      "expected": {
+        "ok": {
+          "errors": [
+            {
+              "instancePath": ""
+            }
+          ],
+          "ok": false
+        }
+      },
+      "files": {},
+      "kind": "output",
+      "name": "compileSchema missing required",
+      "op": "compileValidate",
+      "schema": {
+        "properties": {
+          "a": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "a"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_OUTPUT_SCHEMA",
+          "details": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "reason": "schema-draft"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "output",
+      "name": "compileSchema rejects draft-07",
+      "op": "compile",
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_INPUT_SCHEMA",
+          "details": {
+            "reason": "schema-compile"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "input",
+      "name": "compileSchema rejects invalid schema",
+      "op": "compile",
+      "schema": {
+        "type": "nonsense"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_OUTPUT_SCHEMA",
+          "details": {
+            "reason": "schema-compile"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "output",
+      "name": "compileSchema unknown keyword",
+      "op": "compile",
+      "schema": {
+        "propertiez": {},
+        "type": "object"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_INPUT_SCHEMA",
+          "details": {
+            "reason": "schema-compile"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "input",
+      "name": "compileSchema nested unknown keyword",
+      "op": "compile",
+      "schema": {
+        "properties": {
+          "a": {
+            "typoe": 1
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_OUTPUT_SCHEMA",
+          "details": {
+            "reason": "schema-compile"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "output",
+      "name": "compileSchema unknown format",
+      "op": "compile",
+      "schema": {
+        "format": "email",
+        "type": "string"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_INPUT_SCHEMA",
+          "details": {
+            "reason": "schema-compile"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "input",
+      "name": "compileSchema unknown format uuid",
+      "op": "compile",
+      "schema": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_INPUT_SCHEMA",
+          "details": {
+            "reason": "schema-compile"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "input",
+      "name": "compileSchema strict required",
+      "op": "compile",
+      "schema": {
+        "properties": {
+          "a": {}
+        },
+        "required": [
+          "b"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_OUTPUT_SCHEMA",
+          "details": {
+            "reason": "schema-compile"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "output",
+      "name": "compileSchema then without if",
+      "op": "compile",
+      "schema": {
+        "then": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "compiled": true
+        }
+      },
+      "files": {},
+      "kind": "output",
+      "name": "compileSchema nullable type ok",
+      "op": "compile",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_INPUT_SCHEMA",
+          "details": {
+            "reason": "schema-compile"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "input",
+      "name": "compileSchema union type rejects",
+      "op": "compile",
+      "schema": {
+        "type": [
+          "string",
+          "number"
+        ]
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_INPUT_SCHEMA",
+          "details": {
+            "reason": "schema-compile"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "input",
+      "name": "compileSchema 3-member union rejects",
+      "op": "compile",
+      "schema": {
+        "type": [
+          "string",
+          "number",
+          "null"
+        ]
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "compiled": true
+        }
+      },
+      "files": {},
+      "kind": "output",
+      "name": "compileSchema lazy defs unreferenced",
+      "op": "compile",
+      "schema": {
+        "$defs": {
+          "a": {
+            "bogusKeyword": 1
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_INPUT_SCHEMA",
+          "details": {
+            "reason": "schema-compile"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "input",
+      "name": "compileSchema ref reaches defs",
+      "op": "compile",
+      "schema": {
+        "$defs": {
+          "a": {
+            "bogusKeyword": 1
+          }
+        },
+        "$ref": "#/$defs/a"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_INPUT_SCHEMA",
+          "details": {
+            "reason": "schema-compile"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "kind": "input",
+      "name": "compileSchema items on object type",
+      "op": "compile",
+      "schema": {
+        "items": {
+          "type": "string"
+        },
+        "type": "object"
+      }
+    }
+  ],
+  "platform": "win32"
+}

@@ -1,0 +1,2501 @@
+{
+  "cases": [
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "omitted manifest → unknown access",
+      "omitted": true,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": {},
+      "name": "empty manifest → unknown access",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [],
+        "reads": [],
+        "writes": []
+      },
+      "name": "explicit empty buckets",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [],
+        "reads": null,
+        "writes": []
+      },
+      "name": "null bucket = unknown",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "writes": []
+      },
+      "name": "omitted bucket = unknown",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\src\\a\\future.ts",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "src/./a/../a/future.ts",
+            "scope": "exact"
+          }
+        ],
+        "writes": []
+      },
+      "name": "declaration exact",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\src\\a",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "src/a",
+            "scope": "subtree"
+          }
+        ],
+        "writes": []
+      },
+      "name": "declaration subtree",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\future",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\future",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "writes": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\future",
+                  "scope": "exact"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [
+          {
+            "path": "future",
+            "scope": "exact"
+          }
+        ],
+        "reads": [
+          {
+            "path": "future",
+            "scope": "exact"
+          }
+        ],
+        "writes": [
+          {
+            "path": "future",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "writes+produces modes",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "reject null manifest",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": [],
+      "name": "reject array manifest",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": null
+      },
+      "name": "reject produces null",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": "unknown"
+      },
+      "name": "reject reads string",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "writes": {}
+      },
+      "name": "reject writes object",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "unknown": []
+      },
+      "name": "reject unknown bucket",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "mode": "shared",
+            "path": "x",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "reject declaration with mode",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "extra": true,
+            "path": "x",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "reject declaration extra key",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "x",
+            "scope": "exact"
+          },
+          {
+            "mode": "shared",
+            "resource": {
+              "kind": "workspace",
+              "path": "/abs",
+              "scope": "exact"
+            }
+          }
+        ]
+      },
+      "name": "reject mixed reps",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "writes": [
+          {
+            "mode": "shared",
+            "resource": {
+              "kind": "workspace",
+              "path": "/abs",
+              "scope": "exact"
+            }
+          }
+        ]
+      },
+      "name": "reject wrong mode claim",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "mode": "exclusive",
+            "resource": {
+              "kind": "workspace",
+              "path": "/abs",
+              "scope": "exact"
+            }
+          }
+        ]
+      },
+      "name": "reject reads exclusive claim",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "mode": "shared",
+            "resource": {
+              "kind": "artifact",
+              "path": "x",
+              "scope": "exact"
+            }
+          }
+        ]
+      },
+      "name": "reject artifact kind",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "mode": "shared",
+            "resource": {
+              "kind": "workspace",
+              "path": "relative",
+              "scope": "exact"
+            }
+          }
+        ]
+      },
+      "name": "reject relative claim path",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "mode": "shared",
+            "resource": {
+              "extra": true,
+              "kind": "workspace",
+              "path": "/abs",
+              "scope": "exact"
+            }
+          }
+        ]
+      },
+      "name": "reject resource extra key",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "reject declaration empty path",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "x\u0000y",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "reject declaration NUL path",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "x",
+            "scope": "invalid"
+          }
+        ]
+      },
+      "name": "reject declaration bad scope",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": 123,
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "reject declaration path number",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "reject declaration missing path",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "x"
+          }
+        ]
+      },
+      "name": "reject declaration missing scope",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "C:relative",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "reject declaration drive-relative",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "/absolute",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "reject declaration absolute",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "input": "../escape",
+          "kind": "escape",
+          "reason": "outside-workspace"
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "../escape",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "escape ../escape",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "input": "..\\escape",
+          "kind": "escape",
+          "reason": "outside-workspace"
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "../escape/*.json",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "escape ../escape/*.json",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "input": "src/../../escape",
+          "kind": "escape",
+          "reason": "outside-workspace"
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "src/../../escape",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "escape src/../../escape",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "input": "<OUT>/outside",
+          "kind": "escape",
+          "reason": "outside-workspace"
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "mode": "shared",
+            "resource": {
+              "kind": "workspace",
+              "path": "<OUT>/outside",
+              "scope": "exact"
+            }
+          }
+        ]
+      },
+      "name": "canonical claim outside → escape",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\(output).json",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\(literal).json",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "writes": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\new",
+                  "scope": "subtree"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [
+          {
+            "mode": "exclusive",
+            "resource": {
+              "kind": "workspace",
+              "path": "<ROOT>/(output).json",
+              "scope": "exact"
+            }
+          }
+        ],
+        "reads": [
+          {
+            "mode": "shared",
+            "resource": {
+              "kind": "workspace",
+              "path": "<ROOT>/(literal).json",
+              "scope": "exact"
+            }
+          }
+        ],
+        "writes": [
+          {
+            "mode": "exclusive",
+            "resource": {
+              "kind": "workspace",
+              "path": "<ROOT>/new",
+              "scope": "subtree"
+            }
+          }
+        ]
+      },
+      "name": "idempotent canonical input",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\a",
+                  "scope": "subtree"
+                }
+              },
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\a\\x",
+                  "scope": "exact"
+                }
+              },
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\z",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "z",
+            "scope": "exact"
+          },
+          {
+            "path": "a/x",
+            "scope": "exact"
+          },
+          {
+            "path": "a",
+            "scope": "subtree"
+          },
+          {
+            "path": "a/./x",
+            "scope": "exact"
+          },
+          {
+            "path": "a",
+            "scope": "subtree"
+          }
+        ],
+        "writes": []
+      },
+      "name": "dedupe + sort stable",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\a-2",
+                  "scope": "exact"
+                }
+              },
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\a0",
+                  "scope": "exact"
+                }
+              },
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\a_1",
+                  "scope": "exact"
+                }
+              },
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\b",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "a_1",
+            "scope": "exact"
+          },
+          {
+            "path": "a-2",
+            "scope": "exact"
+          },
+          {
+            "path": "a0",
+            "scope": "exact"
+          },
+          {
+            "path": "b",
+            "scope": "exact"
+          }
+        ],
+        "writes": []
+      },
+      "name": "dedupe sort UTF-16 code units",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "win32",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\Future\\File",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "Future/File",
+            "scope": "exact"
+          },
+          {
+            "path": "future/file",
+            "scope": "exact"
+          }
+        ],
+        "writes": []
+      },
+      "name": "win32 case dedupe",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "posix",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\Case\\f",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "Case/f",
+            "scope": "exact"
+          },
+          {
+            "path": "case/f",
+            "scope": "exact"
+          }
+        ],
+        "writes": []
+      },
+      "name": "posix case distinct",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\dir",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\dir",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\dir",
+                  "scope": "subtree"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [
+          {
+            "path": "dir/**",
+            "scope": "subtree"
+          }
+        ],
+        "reads": [
+          {
+            "path": "dir/*.json",
+            "scope": "exact"
+          }
+        ],
+        "writes": [
+          {
+            "path": "dir/**/output",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "glob safety deny",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\dir",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [
+          {
+            "path": "dir/**",
+            "scope": "subtree"
+          }
+        ],
+        "reads": [
+          {
+            "path": "dir/*.json",
+            "scope": "exact"
+          }
+        ],
+        "writes": [
+          {
+            "path": "dir/**/output",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "glob safety within-workspace widens",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "within-workspace",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "*",
+            "scope": "exact"
+          }
+        ],
+        "writes": []
+      },
+      "name": "glob approx *",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\dir",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "dir/?",
+            "scope": "exact"
+          }
+        ],
+        "writes": []
+      },
+      "name": "glob approx dir/?",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\dir",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "dir/[abc]",
+            "scope": "exact"
+          }
+        ],
+        "writes": []
+      },
+      "name": "glob approx dir/[abc]",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\dir",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "dir/{a,b}",
+            "scope": "exact"
+          }
+        ],
+        "writes": []
+      },
+      "name": "glob approx dir/{a,b}",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\dir",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "dir/+(a|b)",
+            "scope": "exact"
+          }
+        ],
+        "writes": []
+      },
+      "name": "glob approx dir/+(a|b)",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": []
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "!dir/*.json",
+            "scope": "exact"
+          }
+        ],
+        "writes": []
+      },
+      "name": "glob approx !dir/*.json",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "win32",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\dir",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "dir\\*.json",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "win32 backslash glob",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "posix",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\d\\ir",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "d\\ir/*.json",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "posix backslash escape cut",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [
+          {
+            "path": "dir/*.json",
+            "scope": "subtree"
+          }
+        ]
+      },
+      "name": "reject producer dir/*.json",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [
+          {
+            "path": "dir/**/file",
+            "scope": "subtree"
+          }
+        ]
+      },
+      "name": "reject producer dir/**/file",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [
+          {
+            "path": "dir/{a,b}",
+            "scope": "subtree"
+          }
+        ]
+      },
+      "name": "reject producer dir/{a,b}",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [
+          {
+            "path": "!dir/**",
+            "scope": "subtree"
+          }
+        ]
+      },
+      "name": "reject producer !dir/**",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [
+          {
+            "path": "dir/**",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "producer dir glob requires subtree",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "reads": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "writes": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "produces": [
+          {
+            "path": "**",
+            "scope": "subtree"
+          }
+        ]
+      },
+      "name": "producer root glob",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "dir/*/../file",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "reject traversal glob dir/*/../file",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "dir/**/../../other",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "reject traversal glob dir/**/../../other",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": null,
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "!dir/../file",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "reject traversal glob !dir/../file",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [],
+            "writes": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\actual\\future",
+                  "scope": "exact"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "files": {
+        "actual/.keep": ""
+      },
+      "input": {
+        "reads": [],
+        "writes": [
+          {
+            "path": "alias/future",
+            "scope": "exact"
+          },
+          {
+            "path": "actual/future",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "within-workspace resolves alias",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "within-workspace",
+      "symlinks": [
+        {
+          "link": "alias",
+          "target": "actual"
+        }
+      ]
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "input": "alias/future",
+          "kind": "escape",
+          "reason": "symlink-denied"
+        }
+      },
+      "files": {
+        "actual/.keep": ""
+      },
+      "input": {
+        "writes": [
+          {
+            "path": "alias/future",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "deny rejects alias",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "deny",
+      "symlinks": [
+        {
+          "link": "alias",
+          "target": "actual"
+        }
+      ]
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "input": "outside-alias/future",
+          "kind": "escape",
+          "reason": "symlink-outside-workspace"
+        }
+      },
+      "files": {
+        "actual/.keep": ""
+      },
+      "input": {
+        "writes": [
+          {
+            "path": "outside-alias/future",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "within rejects outside alias",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "within-workspace",
+      "symlinks": [
+        {
+          "link": "outside-alias",
+          "target": "<OUT>"
+        }
+      ]
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "manifest": {
+            "produces": [],
+            "reads": [],
+            "writes": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "files": {
+        "dir/.keep": "",
+        "other/target.json": "{}"
+      },
+      "input": {
+        "reads": [],
+        "writes": [
+          {
+            "path": "dir/**/*.json",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "glob widens over alias",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "within-workspace",
+      "symlinks": [
+        {
+          "link": "dir/link",
+          "target": "other"
+        }
+      ]
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "input": "outside",
+          "kind": "escape",
+          "reason": "symlink-outside-workspace"
+        }
+      },
+      "files": {},
+      "input": {
+        "reads": [
+          {
+            "path": "outside/*.json",
+            "scope": "exact"
+          }
+        ]
+      },
+      "name": "literal ancestor checked before glob widening",
+      "omitted": false,
+      "op": "normalize",
+      "policy": "within-workspace",
+      "symlinks": [
+        {
+          "link": "outside",
+          "target": "<OUT>"
+        }
+      ]
+    },
+    {
+      "a": {
+        "path": "<ABS>/a",
+        "scope": "exact"
+      },
+      "b": {
+        "path": "<ABS>/a",
+        "scope": "exact"
+      },
+      "expected": {
+        "ok": true
+      },
+      "name": "contains a/exact ~ a/exact",
+      "op": "resourceContains"
+    },
+    {
+      "a": {
+        "path": "<ABS>/a",
+        "scope": "exact"
+      },
+      "b": {
+        "path": "<ABS>/a",
+        "scope": "subtree"
+      },
+      "expected": {
+        "ok": false
+      },
+      "name": "contains a/exact ~ a/subtree",
+      "op": "resourceContains"
+    },
+    {
+      "a": {
+        "path": "<ABS>/a",
+        "scope": "subtree"
+      },
+      "b": {
+        "path": "<ABS>/a",
+        "scope": "exact"
+      },
+      "expected": {
+        "ok": true
+      },
+      "name": "contains a/subtree ~ a/exact",
+      "op": "resourceContains"
+    },
+    {
+      "a": {
+        "path": "<ABS>/a",
+        "scope": "subtree"
+      },
+      "b": {
+        "path": "<ABS>/a",
+        "scope": "subtree"
+      },
+      "expected": {
+        "ok": true
+      },
+      "name": "contains a/subtree ~ a/subtree",
+      "op": "resourceContains"
+    },
+    {
+      "a": {
+        "path": "<ABS>/a",
+        "scope": "subtree"
+      },
+      "b": {
+        "path": "<ABS>/a/b",
+        "scope": "exact"
+      },
+      "expected": {
+        "ok": true
+      },
+      "name": "contains a/subtree ~ a/b/exact",
+      "op": "resourceContains"
+    },
+    {
+      "a": {
+        "path": "<ABS>/a",
+        "scope": "subtree"
+      },
+      "b": {
+        "path": "<ABS>/a/b",
+        "scope": "subtree"
+      },
+      "expected": {
+        "ok": true
+      },
+      "name": "contains a/subtree ~ a/b/subtree",
+      "op": "resourceContains"
+    },
+    {
+      "a": {
+        "path": "<ABS>/a",
+        "scope": "subtree"
+      },
+      "b": {
+        "path": "<ABS>/ab",
+        "scope": "exact"
+      },
+      "expected": {
+        "ok": false
+      },
+      "name": "contains a/subtree ~ ab/exact",
+      "op": "resourceContains"
+    },
+    {
+      "a": {
+        "path": "<ABS>/a/b",
+        "scope": "subtree"
+      },
+      "b": {
+        "path": "<ABS>/a",
+        "scope": "exact"
+      },
+      "expected": {
+        "ok": false
+      },
+      "name": "contains a/b/subtree ~ a/exact",
+      "op": "resourceContains"
+    },
+    {
+      "a": {
+        "path": "<ABS>/a",
+        "scope": "exact"
+      },
+      "b": {
+        "path": "<ABS>/a/b",
+        "scope": "exact"
+      },
+      "expected": {
+        "ok": false
+      },
+      "name": "contains a/exact ~ a/b/exact",
+      "op": "resourceContains"
+    },
+    {
+      "a": {
+        "mode": "shared",
+        "resource": {
+          "kind": "workspace",
+          "path": "<ABS>\\a",
+          "scope": "subtree"
+        }
+      },
+      "b": {
+        "mode": "shared",
+        "resource": {
+          "kind": "workspace",
+          "path": "<ABS>\\a\\b",
+          "scope": "exact"
+        }
+      },
+      "expected": {
+        "ok": {
+          "conflict": false,
+          "contains": true
+        }
+      },
+      "name": "mode shared→shared",
+      "op": "claimPredicates"
+    },
+    {
+      "a": {
+        "mode": "shared",
+        "resource": {
+          "kind": "workspace",
+          "path": "<ABS>\\a",
+          "scope": "subtree"
+        }
+      },
+      "b": {
+        "mode": "exclusive",
+        "resource": {
+          "kind": "workspace",
+          "path": "<ABS>\\a\\b",
+          "scope": "exact"
+        }
+      },
+      "expected": {
+        "ok": {
+          "conflict": true,
+          "contains": false
+        }
+      },
+      "name": "mode shared→exclusive",
+      "op": "claimPredicates"
+    },
+    {
+      "a": {
+        "mode": "exclusive",
+        "resource": {
+          "kind": "workspace",
+          "path": "<ABS>\\a",
+          "scope": "subtree"
+        }
+      },
+      "b": {
+        "mode": "shared",
+        "resource": {
+          "kind": "workspace",
+          "path": "<ABS>\\a\\b",
+          "scope": "exact"
+        }
+      },
+      "expected": {
+        "ok": {
+          "conflict": true,
+          "contains": true
+        }
+      },
+      "name": "mode exclusive→shared",
+      "op": "claimPredicates"
+    },
+    {
+      "a": {
+        "mode": "exclusive",
+        "resource": {
+          "kind": "workspace",
+          "path": "<ABS>\\a",
+          "scope": "subtree"
+        }
+      },
+      "b": {
+        "mode": "exclusive",
+        "resource": {
+          "kind": "workspace",
+          "path": "<ABS>\\a\\b",
+          "scope": "exact"
+        }
+      },
+      "expected": {
+        "ok": {
+          "conflict": true,
+          "contains": true
+        }
+      },
+      "name": "mode exclusive→exclusive",
+      "op": "claimPredicates"
+    },
+    {
+      "expected": {
+        "ok": {
+          "conflict": true,
+          "conflictSymmetric": true,
+          "overlap": true,
+          "overlapSymmetric": true,
+          "siblingConflict": false
+        }
+      },
+      "name": "overlap + conflict symmetric",
+      "op": "predicatesBundle"
+    },
+    {
+      "a": {
+        "path": "<ABS>/a",
+        "scope": "subtree"
+      },
+      "b": {
+        "path": "<ABS>/b",
+        "scope": "subtree"
+      },
+      "expected": {
+        "ok": {
+          "keyA": "[\"workspace\",\"<ABS>\\\\a\",\"subtree\"]",
+          "keyB": "[\"workspace\",\"<ABS>\\\\b\",\"subtree\"]"
+        }
+      },
+      "name": "resourceKey differs for different paths",
+      "op": "resourceKeys"
+    },
+    {
+      "a": {
+        "produces": [],
+        "reads": [
+          {
+            "mode": "shared",
+            "resource": {
+              "kind": "workspace",
+              "path": "<ABS>\\a\\b",
+              "scope": "exact"
+            }
+          }
+        ],
+        "writes": []
+      },
+      "b": {
+        "produces": [],
+        "reads": [],
+        "writes": [
+          {
+            "mode": "exclusive",
+            "resource": {
+              "kind": "workspace",
+              "path": "<ABS>\\a",
+              "scope": "subtree"
+            }
+          }
+        ]
+      },
+      "c": {
+        "produces": [
+          {
+            "mode": "exclusive",
+            "resource": {
+              "kind": "workspace",
+              "path": "<ABS>\\a",
+              "scope": "subtree"
+            }
+          }
+        ],
+        "reads": [],
+        "writes": []
+      },
+      "d": {
+        "produces": [],
+        "reads": [],
+        "writes": [
+          {
+            "mode": "exclusive",
+            "resource": {
+              "kind": "workspace",
+              "path": "<ABS>\\ab",
+              "scope": "subtree"
+            }
+          }
+        ]
+      },
+      "e": {
+        "produces": [],
+        "reads": [],
+        "writes": []
+      },
+      "expected": {
+        "ok": {
+          "disjoint": false,
+          "emptyVsRead": false,
+          "readVsProduceParent": true,
+          "readVsRead": false,
+          "readVsWriteParent": true
+        }
+      },
+      "name": "manifest buckets conflict",
+      "op": "manifestsConflict"
+    },
+    {
+      "a": {
+        "path": "<FSROOT>",
+        "scope": "subtree"
+      },
+      "b": {
+        "path": "<ABS>/a",
+        "scope": "exact"
+      },
+      "expected": {
+        "ok": true
+      },
+      "name": "filesystem root contains descendants",
+      "op": "resourceContains"
+    }
+  ],
+  "platform": "win32"
+}

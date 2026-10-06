@@ -196,5 +196,6 @@ apm_modules/
 
 tmp/
 
-# Rust spike crates (Phase 0 PoC)
+# Rust workspace build output (root virtual manifest) / standalone spikes
+/target
 crates/*/target/

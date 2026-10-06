@@ -1,0 +1,987 @@
+{
+  "cases": [
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": ".env",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .env vs .env @win32",
+      "op": "denyPattern",
+      "pattern": ".env"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "config/.env",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .env vs config/.env @win32",
+      "op": "denyPattern",
+      "pattern": ".env"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": ".env.local",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern .env vs .env.local @win32",
+      "op": "denyPattern",
+      "pattern": ".env"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "envfile",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern .env vs envfile @win32",
+      "op": "denyPattern",
+      "pattern": ".env"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": ".env.local",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .env.* vs .env.local @win32",
+      "op": "denyPattern",
+      "pattern": ".env.*"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "a/b/.env.production",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .env.* vs a/b/.env.production @win32",
+      "op": "denyPattern",
+      "pattern": ".env.*"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": ".env",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern .env.* vs .env @win32",
+      "op": "denyPattern",
+      "pattern": ".env.*"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "certs/server.pem",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern *.pem vs certs/server.pem @win32",
+      "op": "denyPattern",
+      "pattern": "*.pem"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "certs/pem.txt",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern *.pem vs certs/pem.txt @win32",
+      "op": "denyPattern",
+      "pattern": "*.pem"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": ".ssh",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .ssh/** vs .ssh @win32",
+      "op": "denyPattern",
+      "pattern": ".ssh/**"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": ".ssh/id_rsa",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .ssh/** vs .ssh/id_rsa @win32",
+      "op": "denyPattern",
+      "pattern": ".ssh/**"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "home/user/.ssh/config",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .ssh/** vs home/user/.ssh/config @win32",
+      "op": "denyPattern",
+      "pattern": ".ssh/**"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": ".sshd_config",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern .ssh/** vs .sshd_config @win32",
+      "op": "denyPattern",
+      "pattern": ".ssh/**"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "ssh/file",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern .ssh/** vs ssh/file @win32",
+      "op": "denyPattern",
+      "pattern": ".ssh/**"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "config/secrets.json",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern /config/secrets.json vs config/secrets.json @win32",
+      "op": "denyPattern",
+      "pattern": "/config/secrets.json"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "sub/config/secrets.json",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern /config/secrets.json vs sub/config/secrets.json @win32",
+      "op": "denyPattern",
+      "pattern": "/config/secrets.json"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "a/x/y/b.txt",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern a/**/b.txt vs a/x/y/b.txt @win32",
+      "op": "denyPattern",
+      "pattern": "a/**/b.txt"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "a/b.txt",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern a/**/b.txt vs a/b.txt @win32",
+      "op": "denyPattern",
+      "pattern": "a/**/b.txt"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "secret1.txt",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern secret?.txt vs secret1.txt @win32",
+      "op": "denyPattern",
+      "pattern": "secret?.txt"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "secret12.txt",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern secret?.txt vs secret12.txt @win32",
+      "op": "denyPattern",
+      "pattern": "secret?.txt"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": ".ENV",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .env vs .ENV @win32",
+      "op": "denyPattern",
+      "pattern": ".env"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "certs/KEY.PEM",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern *.pem vs certs/KEY.PEM @win32",
+      "op": "denyPattern",
+      "pattern": "*.pem"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": ".ENV",
+      "expected": {
+        "ok": true
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist .ENV @win32",
+      "op": "denylist"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "certs/KEY.PEM",
+      "expected": {
+        "ok": true
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist certs/KEY.PEM @win32",
+      "op": "denylist"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "blocked",
+      "expected": {
+        "ok": true
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist blocked @win32",
+      "op": "denylist"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "PRIVATE/data.json",
+      "expected": {
+        "ok": true
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist PRIVATE/data.json @win32",
+      "op": "denylist"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "Blocked",
+      "expected": {
+        "ok": true
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist Blocked @win32",
+      "op": "denylist"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "Private/data.json",
+      "expected": {
+        "ok": true
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist Private/data.json @win32",
+      "op": "denylist"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "sub/Private/data.json",
+      "expected": {
+        "ok": false
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist sub/Private/data.json @win32",
+      "op": "denylist"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "src/index.ts",
+      "expected": {
+        "ok": false
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist src/index.ts @win32",
+      "op": "denylist"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "environment.ts",
+      "expected": {
+        "ok": false
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist environment.ts @win32",
+      "op": "denylist"
+    },
+    {
+      "axis": "win32",
+      "caseInsensitive": true,
+      "display": "./.env",
+      "expected": {
+        "ok": true
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist ./.env @win32",
+      "op": "denylist"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": ".env",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .env vs .env @linux",
+      "op": "denyPattern",
+      "pattern": ".env"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "config/.env",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .env vs config/.env @linux",
+      "op": "denyPattern",
+      "pattern": ".env"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": ".env.local",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern .env vs .env.local @linux",
+      "op": "denyPattern",
+      "pattern": ".env"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "envfile",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern .env vs envfile @linux",
+      "op": "denyPattern",
+      "pattern": ".env"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": ".env.local",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .env.* vs .env.local @linux",
+      "op": "denyPattern",
+      "pattern": ".env.*"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "a/b/.env.production",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .env.* vs a/b/.env.production @linux",
+      "op": "denyPattern",
+      "pattern": ".env.*"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": ".env",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern .env.* vs .env @linux",
+      "op": "denyPattern",
+      "pattern": ".env.*"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "certs/server.pem",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern *.pem vs certs/server.pem @linux",
+      "op": "denyPattern",
+      "pattern": "*.pem"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "certs/pem.txt",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern *.pem vs certs/pem.txt @linux",
+      "op": "denyPattern",
+      "pattern": "*.pem"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": ".ssh",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .ssh/** vs .ssh @linux",
+      "op": "denyPattern",
+      "pattern": ".ssh/**"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": ".ssh/id_rsa",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .ssh/** vs .ssh/id_rsa @linux",
+      "op": "denyPattern",
+      "pattern": ".ssh/**"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "home/user/.ssh/config",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern .ssh/** vs home/user/.ssh/config @linux",
+      "op": "denyPattern",
+      "pattern": ".ssh/**"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": ".sshd_config",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern .ssh/** vs .sshd_config @linux",
+      "op": "denyPattern",
+      "pattern": ".ssh/**"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "ssh/file",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern .ssh/** vs ssh/file @linux",
+      "op": "denyPattern",
+      "pattern": ".ssh/**"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "config/secrets.json",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern /config/secrets.json vs config/secrets.json @linux",
+      "op": "denyPattern",
+      "pattern": "/config/secrets.json"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "sub/config/secrets.json",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern /config/secrets.json vs sub/config/secrets.json @linux",
+      "op": "denyPattern",
+      "pattern": "/config/secrets.json"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "a/x/y/b.txt",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern a/**/b.txt vs a/x/y/b.txt @linux",
+      "op": "denyPattern",
+      "pattern": "a/**/b.txt"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "a/b.txt",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern a/**/b.txt vs a/b.txt @linux",
+      "op": "denyPattern",
+      "pattern": "a/**/b.txt"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "secret1.txt",
+      "expected": {
+        "ok": true
+      },
+      "name": "pattern secret?.txt vs secret1.txt @linux",
+      "op": "denyPattern",
+      "pattern": "secret?.txt"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "secret12.txt",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern secret?.txt vs secret12.txt @linux",
+      "op": "denyPattern",
+      "pattern": "secret?.txt"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": ".ENV",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern .env vs .ENV @linux",
+      "op": "denyPattern",
+      "pattern": ".env"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "certs/KEY.PEM",
+      "expected": {
+        "ok": false
+      },
+      "name": "pattern *.pem vs certs/KEY.PEM @linux",
+      "op": "denyPattern",
+      "pattern": "*.pem"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": ".ENV",
+      "expected": {
+        "ok": false
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist .ENV @linux",
+      "op": "denylist"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "certs/KEY.PEM",
+      "expected": {
+        "ok": false
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist certs/KEY.PEM @linux",
+      "op": "denylist"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "blocked",
+      "expected": {
+        "ok": false
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist blocked @linux",
+      "op": "denylist"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "PRIVATE/data.json",
+      "expected": {
+        "ok": false
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist PRIVATE/data.json @linux",
+      "op": "denylist"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "Blocked",
+      "expected": {
+        "ok": true
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist Blocked @linux",
+      "op": "denylist"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "Private/data.json",
+      "expected": {
+        "ok": true
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist Private/data.json @linux",
+      "op": "denylist"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "sub/Private/data.json",
+      "expected": {
+        "ok": false
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist sub/Private/data.json @linux",
+      "op": "denylist"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "src/index.ts",
+      "expected": {
+        "ok": false
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist src/index.ts @linux",
+      "op": "denylist"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "environment.ts",
+      "expected": {
+        "ok": false
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist environment.ts @linux",
+      "op": "denylist"
+    },
+    {
+      "axis": "posix",
+      "caseInsensitive": false,
+      "display": "./.env",
+      "expected": {
+        "ok": true
+      },
+      "extra": [
+        "Blocked",
+        "/Private/**"
+      ],
+      "name": "denylist ./.env @linux",
+      "op": "denylist"
+    },
+    {
+      "expected": {
+        "ok": {
+          "patterns": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "*.p12",
+            "*.pfx",
+            "*.keystore",
+            "id_rsa",
+            "id_ed25519",
+            "id_ecdsa",
+            "id_dsa",
+            ".netrc",
+            ".npmrc",
+            ".pypirc",
+            "credentials.json",
+            "secrets.json",
+            "secrets.yaml",
+            "secrets.yml",
+            ".ssh/**",
+            ".aws/**",
+            ".gnupg/**"
+          ]
+        }
+      },
+      "name": "DEFAULT_DENY_PATHS count + patterns",
+      "op": "defaults"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": ".env",
+      "expected": {
+        "ok": true
+      },
+      "extra": [],
+      "name": "default denylist .env",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "config/.env.local",
+      "expected": {
+        "ok": true
+      },
+      "extra": [],
+      "name": "default denylist config/.env.local",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "certs/server.pem",
+      "expected": {
+        "ok": true
+      },
+      "extra": [],
+      "name": "default denylist certs/server.pem",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "keys/private.key",
+      "expected": {
+        "ok": true
+      },
+      "extra": [],
+      "name": "default denylist keys/private.key",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "id_rsa",
+      "expected": {
+        "ok": true
+      },
+      "extra": [],
+      "name": "default denylist id_rsa",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "a/b/id_ed25519",
+      "expected": {
+        "ok": true
+      },
+      "extra": [],
+      "name": "default denylist a/b/id_ed25519",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": ".netrc",
+      "expected": {
+        "ok": true
+      },
+      "extra": [],
+      "name": "default denylist .netrc",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "pkg/.npmrc",
+      "expected": {
+        "ok": true
+      },
+      "extra": [],
+      "name": "default denylist pkg/.npmrc",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "secrets.yaml",
+      "expected": {
+        "ok": true
+      },
+      "extra": [],
+      "name": "default denylist secrets.yaml",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": ".ssh/config",
+      "expected": {
+        "ok": true
+      },
+      "extra": [],
+      "name": "default denylist .ssh/config",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "app/.aws/credentials",
+      "expected": {
+        "ok": true
+      },
+      "extra": [],
+      "name": "default denylist app/.aws/credentials",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "src/index.ts",
+      "expected": {
+        "ok": false
+      },
+      "extra": [],
+      "name": "default denylist src/index.ts",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "docs/guide.md",
+      "expected": {
+        "ok": false
+      },
+      "extra": [],
+      "name": "default denylist docs/guide.md",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "environment.ts",
+      "expected": {
+        "ok": false
+      },
+      "extra": [],
+      "name": "default denylist environment.ts",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "README.md",
+      "expected": {
+        "ok": false
+      },
+      "extra": [],
+      "name": "default denylist README.md",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "src/secrets-manager.ts",
+      "expected": {
+        "ok": false
+      },
+      "extra": [],
+      "name": "default denylist src/secrets-manager.ts",
+      "op": "denylist"
+    },
+    {
+      "axis": "any",
+      "caseInsensitive": true,
+      "display": "keynote.md",
+      "expected": {
+        "ok": false
+      },
+      "extra": [],
+      "name": "default denylist keynote.md",
+      "op": "denylist"
+    }
+  ],
+  "platform": "win32"
+}

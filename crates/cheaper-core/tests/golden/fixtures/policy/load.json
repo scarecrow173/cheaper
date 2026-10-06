@@ -1,0 +1,291 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 64,
+              "maxTurns": 8,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [],
+              "symlinks": "within-workspace"
+            },
+            "model": {
+              "maxTier": "medium",
+              "tierFallback": "none"
+            },
+            "output": {
+              "maxTokens": 2000,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 1
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep",
+                "find",
+                "ls",
+                "write",
+                "edit",
+                "count_tokens",
+                "process"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "files": {
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n"
+      },
+      "name": "builtin only",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 2,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 64,
+              "maxTurns": 8,
+              "timeoutMs": 300000
+            },
+            "filesystem": {
+              "denyPaths": [],
+              "symlinks": "within-workspace"
+            },
+            "model": {
+              "maxTier": "medium",
+              "tierFallback": "none"
+            },
+            "output": {
+              "maxTokens": 2000,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "30s"
+            },
+            "retry": {
+              "transientAttempts": 1
+            },
+            "tools": {
+              "allow": [
+                "read"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "files": {
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "proj/.cheaper/policy.yaml": "version: 1\nexecution:\n  concurrency:\n    maxOperations: 2\nprocess:\n  timeout: 30s\n",
+        "user/policy.yaml": "version: 1\nmodel:\n  maxTier: medium\nexecution:\n  timeout: 5m\ntools:\n  allow: [read]\n"
+      },
+      "name": "user+project layering",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "errors": [
+              {
+                "instancePath": ""
+              }
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "user/policy.yaml": "version: 1\nbogus: 1\n"
+      },
+      "name": "invalid user policy errors",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "errors": [
+              {
+                "instancePath": ""
+              }
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "proj/.cheaper/policy.yaml": "version: 1\nbogus: 1\n"
+      },
+      "name": "invalid project policy errors",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "path": "<ROOT>\\builtin\\policy.yaml"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "user/policy.yaml": "version: 1\n"
+      },
+      "name": "missing builtin errors",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "path": "<ROOT>\\builtin\\policy.yaml",
+            "reason": "read-failed"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "builtin/policy.yaml/marker.txt": "x"
+      },
+      "name": "unreadable builtin errors (dir)",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "path": "<ROOT>\\user\\policy.yaml",
+            "reason": "yaml-parse"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "user/policy.yaml": "version: [unclosed\n"
+      },
+      "name": "malformed yaml errors",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "path": "<ROOT>\\user\\policy.yaml",
+            "reason": "not-object"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "user/policy.yaml": "- a\n- b\n"
+      },
+      "name": "non-object yaml errors",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    }
+  ],
+  "platform": "win32"
+}

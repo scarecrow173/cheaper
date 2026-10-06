@@ -1,0 +1,1087 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "name": "no restrictions",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "restrictions": {}
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeoutMs": 60000
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "name": "timeout below policy",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "restrictions": {
+        "timeoutMs": 60000
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "name": "timeout equal to policy",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "restrictions": {
+        "timeoutMs": 120000
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "POLICY_VIOLATION",
+          "details": {
+            "policy": 120000,
+            "requested": 300000
+          },
+          "exitCode": 4,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "timeout over policy",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "restrictions": {
+        "timeoutMs": 300000
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 2,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "name": "concurrency narrows",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "restrictions": {
+        "concurrency": {
+          "maxOperations": 2
+        }
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "POLICY_VIOLATION",
+          "details": {
+            "policy": {
+              "maxOperations": 8,
+              "mutations": "serialized"
+            },
+            "requested": {
+              "maxOperations": 16,
+              "mutations": "serialized"
+            }
+          },
+          "exitCode": 4,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "concurrency widens → violation",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "restrictions": {
+        "concurrency": {
+          "maxOperations": 16
+        }
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "POLICY_VIOLATION",
+          "details": {
+            "policy": {
+              "maxOperations": 8,
+              "mutations": "serialized"
+            },
+            "requested": {
+              "maxOperations": 8,
+              "mutations": "per-resource"
+            }
+          },
+          "exitCode": 4,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "serialized→per-resource → violation",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "restrictions": {
+        "concurrency": {
+          "mutations": "per-resource"
+        }
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "name": "concurrency null maxOperations → policy default",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "restrictions": {
+        "concurrency": {
+          "maxOperations": null
+        }
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "name": "concurrency null mutations → policy default",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "restrictions": {
+        "concurrency": {
+          "mutations": null
+        }
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "name": "concurrency null object → no-op",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "restrictions": {
+        "concurrency": null
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "POLICY_VIOLATION",
+          "details": {
+            "policy": {
+              "maxOperations": 4,
+              "mutations": "serialized"
+            },
+            "requested": {
+              "maxOperations": 8,
+              "mutations": "serialized"
+            }
+          },
+          "exitCode": 4,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "concurrency null maxOperations widens to default → violation",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 4,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "restrictions": {
+        "concurrency": {
+          "maxOperations": null
+        }
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "tools": [
+            "read"
+          ]
+        }
+      },
+      "files": {
+        "w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
+      },
+      "name": "allowed tools pass",
+      "op": "checkCapabilities",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "POLICY_VIOLATION",
+          "details": {
+            "missing": [
+              "write"
+            ]
+          },
+          "exitCode": 4,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\",\"write\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
+      },
+      "name": "missing tool → violation",
+      "op": "checkCapabilities",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read"
+          ]
+        },
+        "version": 1
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "POLICY_VIOLATION",
+          "details": {
+            "maxTier": "medium",
+            "requestedTier": "high"
+          },
+          "exitCode": 4,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"high\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
+      },
+      "name": "tier over max → violation",
+      "op": "checkCapabilities",
+      "policy": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "medium",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read"
+          ]
+        },
+        "version": 1
+      }
+    }
+  ],
+  "platform": "win32"
+}

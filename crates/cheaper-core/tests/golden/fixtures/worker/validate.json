@@ -1,0 +1,824 @@
+{
+  "cases": [
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "def": {
+            "cheaper": {
+              "model": {
+                "tier": "low"
+              },
+              "output": {
+                "schema": {
+                  "inline": {
+                    "properties": {
+                      "ok": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "ok"
+                    ],
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "description": "d",
+            "directlyComparable": true,
+            "inputSchema": null,
+            "instructions": "Do things.",
+            "name": "w",
+            "origin": "project",
+            "outputSchema": {
+              "schema": {
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "ok"
+                ],
+                "type": "object"
+              }
+            },
+            "sourcePath": "<ROOT>\\w.md",
+            "tools": [
+              "read"
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "valid definition",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\nextra: \"ignored\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "def": {
+            "cheaper": {
+              "model": {
+                "tier": "low"
+              },
+              "output": {
+                "schema": {
+                  "inline": {
+                    "properties": {
+                      "ok": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "ok"
+                    ],
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "description": "d",
+            "directlyComparable": true,
+            "inputSchema": null,
+            "instructions": "Do things.",
+            "name": "w",
+            "origin": "project",
+            "outputSchema": {
+              "schema": {
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "ok"
+                ],
+                "type": "object"
+              }
+            },
+            "sourcePath": "<ROOT>\\w.md",
+            "tools": [
+              "read"
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "ignores unknown top-level fields",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"Bad_Name\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_NAME",
+          "details": {
+            "name": "Bad_Name",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "invalid name",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "WORKER_NAME_MISMATCH",
+          "details": {
+            "name": "w",
+            "sourcePath": "<ROOT>\\other.md",
+            "stem": "other"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "stem mismatch",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "other.md"
+    },
+    {
+      "content": "---\nname: \"\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "name-missing",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "empty name",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "description-missing",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "empty description",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: w\ndescription: \"\\uFEFF\"\ntools: [read]\ncheaper:\n  model: {tier: low}\n  output: {schema: {inline: {type: object}}}\n---\nbody\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "description-missing",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "feff description missing",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: w\ndescription: d\ntools: [read]\ncheaper:\n  model: {tier: low}\n  output: {schema: {inline: {type: object}}}\n  writeScope: on\n---\nbody\n",
+      "expected": {
+        "ok": {
+          "def": {
+            "cheaper": {
+              "model": {
+                "tier": "low"
+              },
+              "output": {
+                "schema": {
+                  "inline": {
+                    "type": "object"
+                  }
+                }
+              },
+              "writeScope": "on"
+            },
+            "description": "d",
+            "directlyComparable": false,
+            "inputSchema": null,
+            "instructions": "body",
+            "name": "w",
+            "origin": "project",
+            "outputSchema": {
+              "schema": {
+                "type": "object"
+              }
+            },
+            "sourcePath": "<ROOT>\\w.md",
+            "tools": [
+              "read"
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "writeScope yaml-1.2 on is string",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "tools-non-empty-string-array"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "missing tools",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "cheaper-missing",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "missing cheaper",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "output-missing",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "missing output",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n  bogus: 1\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "unknown-field-cheaper-bogus",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "unknown cheaper key",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n    extra: 1\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "unknown-field-model-extra",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "unknown model key",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n    workload:\n      outputPerInput: 0.05\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "def": {
+            "cheaper": {
+              "model": {
+                "tier": "low",
+                "workload": {
+                  "outputPerInput": 0.05
+                }
+              },
+              "output": {
+                "schema": {
+                  "inline": {
+                    "properties": {
+                      "ok": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "ok"
+                    ],
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "description": "d",
+            "directlyComparable": true,
+            "inputSchema": null,
+            "instructions": "Do things.",
+            "name": "w",
+            "origin": "project",
+            "outputSchema": {
+              "schema": {
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "ok"
+                ],
+                "type": "object"
+              }
+            },
+            "sourcePath": "<ROOT>\\w.md",
+            "tools": [
+              "read"
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "workload accepted",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: w\ndescription: d\ntools: [read]\ncheaper:\n  model:\n    tier: low\n    workload:\n      outputPerInput: \"many\"\n  output:\n    schema:\n      inline:\n        type: object\n---\nbody\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "workload-outputPerInput-invalid",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "workload string",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: w\ndescription: d\ntools: [read]\ncheaper:\n  model:\n    tier: low\n    workload:\n      outputPerInput: -0.1\n  output:\n    schema:\n      inline:\n        type: object\n---\nbody\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "workload-outputPerInput-invalid",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "workload negative",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: w\ndescription: d\ntools: [read]\ncheaper:\n  model:\n    tier: low\n    workload:\n      outputPerInput: 0.1\n      extra: 1\n  output:\n    schema:\n      inline:\n        type: object\n---\nbody\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "unknown-field-workload-extra",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "workload unknown key",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"ultra\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "tier-invalid",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "invalid tier",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"medium\"\n  output:\n    schema:\n      file: \"out.schema.json\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "def": {
+            "cheaper": {
+              "model": {
+                "tier": "medium"
+              },
+              "output": {
+                "schema": {
+                  "file": "out.schema.json"
+                }
+              }
+            },
+            "description": "d",
+            "directlyComparable": true,
+            "inputSchema": null,
+            "instructions": "Do things.",
+            "name": "w",
+            "origin": "project",
+            "outputSchema": {
+              "schema": {
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "ok"
+                ],
+                "type": "object"
+              }
+            },
+            "sourcePath": "<ROOT>\\w.md",
+            "tools": [
+              "read"
+            ]
+          }
+        }
+      },
+      "files": {
+        "out.schema.json": "{\"type\":\"object\",\"required\":[\"ok\"],\"properties\":{\"ok\":{\"type\":\"boolean\"}}}"
+      },
+      "input": null,
+      "name": "file-based output schema",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  input:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"q\"]\n        properties:\n          q:\n            type: \"string\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "inputOk": true
+        }
+      },
+      "files": {},
+      "input": {
+        "q": "x"
+      },
+      "name": "input schema ok",
+      "op": "validateWorkerInput",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  input:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"q\"]\n        properties:\n          q:\n            type: \"string\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "error": {
+            "code": "INVALID_INPUT",
+            "details": {
+              "errors": [
+                {
+                  "instancePath": "/q"
+                }
+              ]
+            },
+            "exitCode": 2,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "q": 1
+      },
+      "name": "input schema violation",
+      "op": "validateWorkerInput",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "inputOk": true
+        }
+      },
+      "files": {},
+      "input": {
+        "anything": true
+      },
+      "name": "no input schema accepts anything",
+      "op": "validateWorkerInput",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n  writeScope: \"targets\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "scope": [
+            "./a",
+            "b\\c"
+          ]
+        }
+      },
+      "files": {},
+      "input": {
+        "targets": [
+          "./a",
+          {
+            "path": "b\\c"
+          },
+          "./a"
+        ]
+      },
+      "name": "writeScope strings+objects",
+      "op": "extractWriteScope",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n  writeScope: \"targets\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "scope": []
+        }
+      },
+      "files": {},
+      "input": {
+        "targets": []
+      },
+      "name": "writeScope empty",
+      "op": "extractWriteScope",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n  writeScope: \"targets\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "error": {
+            "code": "INVALID_INPUT",
+            "details": {
+              "field": "targets",
+              "reason": "missing-or-not-array"
+            },
+            "exitCode": 2,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      },
+      "files": {},
+      "input": {},
+      "name": "writeScope invalid missing",
+      "op": "extractWriteScope",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n  writeScope: \"targets\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "error": {
+            "code": "INVALID_INPUT",
+            "details": {
+              "field": "targets",
+              "reason": "missing-or-not-array"
+            },
+            "exitCode": 2,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "writeScope invalid null input",
+      "op": "extractWriteScope",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n  writeScope: \"targets\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "error": {
+            "code": "INVALID_INPUT",
+            "details": {
+              "field": "targets",
+              "reason": "missing-or-not-array"
+            },
+            "exitCode": 2,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "targets": "a"
+      },
+      "name": "writeScope invalid not array",
+      "op": "extractWriteScope",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n  writeScope: \"targets\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "error": {
+            "code": "INVALID_INPUT",
+            "details": {
+              "field": "targets",
+              "reason": "item-lacks-path"
+            },
+            "exitCode": 2,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "targets": [
+          1
+        ]
+      },
+      "name": "writeScope invalid bad item",
+      "op": "extractWriteScope",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n  writeScope: \"targets\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "error": {
+            "code": "INVALID_INPUT",
+            "details": {
+              "field": "targets",
+              "reason": "item-lacks-path"
+            },
+            "exitCode": 2,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      },
+      "files": {},
+      "input": {
+        "targets": [
+          {
+            "path": 3
+          }
+        ]
+      },
+      "name": "writeScope invalid bad path",
+      "op": "extractWriteScope",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "scope": null
+        }
+      },
+      "files": {},
+      "input": {},
+      "name": "writeScope undefined → null",
+      "op": "extractWriteScope",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "expected": {
+        "ok": {
+          "edit": true,
+          "grep": false,
+          "process": true,
+          "read": false,
+          "write": true
+        }
+      },
+      "name": "isMutatingTool",
+      "op": "isMutatingTool"
+    }
+  ],
+  "platform": "win32"
+}

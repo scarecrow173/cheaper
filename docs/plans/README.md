@@ -47,16 +47,16 @@ Directory: `docs/plans`
 | PLAN-034AR2f7p2NSUDtUhSuLp6 | Implement workflow orchestration benchmarks | approved | [implement-workflow-orchestration-benchmarks.md](./implement-workflow-orchestration-benchmarks.md) |
 | PLAN-034zTu37tgDGI306OPBitz | Workflow resource inference を実装する | completed | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | PLAN-034z2bk7AEzZ66Mt0uXCyJ | Integrate SEA executables into tag-triggered GitHub Release workflow | completed | [integrate-sea-executables-into-tag-triggered-github-release-workflow.md](./integrate-sea-executables-into-tag-triggered-github-release-workflow.md) |
-| PLAN-034Bcr7oMH85Ak8UCpCDmy | Migrate cheaper runtime to Rust + Rig | draft | [migrate-cheaper-runtime-to-rust-rig.md](./migrate-cheaper-runtime-to-rust-rig.md) |
+| PLAN-034Bcr7oMH85Ak8UCpCDmy | Migrate cheaper runtime to Rust + Rig | approved | [migrate-cheaper-runtime-to-rust-rig.md](./migrate-cheaper-runtime-to-rust-rig.md) |
 | PLAN-034r05iHE1FbkpcKKUUZ58 | Real-provider worker E2E via Ollama — implementation plan | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | PLAN-034A90VLWrJyT2IhkiTsA0 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |
-| PLAN-034BepX6xCr0AAqkJ63aOv | Phase 0 Rig PoC go-no-go gate | draft | [phase-0-rig-poc-go-no-go-gate.md](./phase-0-rig-poc-go-no-go-gate.md) |
-| PLAN-034BepXMKsB4VzqIP9XV7l | Phase 1 port cheaper-core | draft | [phase-1-port-cheaper-core.md](./phase-1-port-cheaper-core.md) |
-| PLAN-034BepYuOf4htZRfdkZTYc | Phase 2 port cheaper-tools | draft | [phase-2-port-cheaper-tools.md](./phase-2-port-cheaper-tools.md) |
-| PLAN-034BepZr0oX3bWeqVXNk91 | Phase 3 port runtime adapter providers | draft | [phase-3-port-runtime-adapter-providers.md](./phase-3-port-runtime-adapter-providers.md) |
-| PLAN-034Beq0dg6IYk2lQCGpWDG | Phase 4 port CLI and workflow | draft | [phase-4-port-cli-and-workflow.md](./phase-4-port-cli-and-workflow.md) |
-| PLAN-034Beq14bSKdODWJFTdn02 | Phase 5 switch distribution to Rust binary | draft | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
-| PLAN-034Beq1KSUNeA8ZTnJ4cM4 | Phase 6 remove TypeScript Node Pi | draft | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
+| PLAN-034BepX6xCr0AAqkJ63aOv | Phase 0 Rig PoC go-no-go gate | approved | [phase-0-rig-poc-go-no-go-gate.md](./phase-0-rig-poc-go-no-go-gate.md) |
+| PLAN-034BepXMKsB4VzqIP9XV7l | Phase 1 port cheaper-core | approved | [phase-1-port-cheaper-core.md](./phase-1-port-cheaper-core.md) |
+| PLAN-034BepYuOf4htZRfdkZTYc | Phase 2 port cheaper-tools | approved | [phase-2-port-cheaper-tools.md](./phase-2-port-cheaper-tools.md) |
+| PLAN-034BepZr0oX3bWeqVXNk91 | Phase 3 port runtime adapter providers | approved | [phase-3-port-runtime-adapter-providers.md](./phase-3-port-runtime-adapter-providers.md) |
+| PLAN-034Beq0dg6IYk2lQCGpWDG | Phase 4 port CLI and workflow | approved | [phase-4-port-cli-and-workflow.md](./phase-4-port-cli-and-workflow.md) |
+| PLAN-034Beq14bSKdODWJFTdn02 | Phase 5 switch distribution to Rust binary | approved | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
+| PLAN-034Beq1KSUNeA8ZTnJ4cM4 | Phase 6 remove TypeScript Node Pi | approved | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | PLAN-034r05iHK8bA7g23Opaicg | Pi state under userConfigDir/pi — implementation plan | completed | [pi-state-under-userconfigdir-pi-implementation-plan.md](./pi-state-under-userconfigdir-pi-implementation-plan.md) |
 | PLAN-034r2qodyxvN3g3xktwPOF | provider/auth guide runtime sync — implementation plan | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | PLAN-034r05iHK8bA7g2BMsfjFu | Provider-only registration layer — implementation plan | completed | [provider-only-registration-layer-implementation-plan.md](./provider-only-registration-layer-implementation-plan.md) |

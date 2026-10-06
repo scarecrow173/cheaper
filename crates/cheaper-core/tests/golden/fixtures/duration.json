@@ -1,0 +1,218 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "ok": {
+          "ms": 500
+        }
+      },
+      "input": "500ms",
+      "name": "parseDuration(\"500ms\")"
+    },
+    {
+      "expected": {
+        "ok": {
+          "ms": 1
+        }
+      },
+      "input": "1ms",
+      "name": "parseDuration(\"1ms\")"
+    },
+    {
+      "expected": {
+        "ok": {
+          "ms": 30000
+        }
+      },
+      "input": "30s",
+      "name": "parseDuration(\"30s\")"
+    },
+    {
+      "expected": {
+        "ok": {
+          "ms": 300000
+        }
+      },
+      "input": "5m",
+      "name": "parseDuration(\"5m\")"
+    },
+    {
+      "expected": {
+        "ok": {
+          "ms": 7200000
+        }
+      },
+      "input": "2h",
+      "name": "parseDuration(\"2h\")"
+    },
+    {
+      "expected": {
+        "ok": {
+          "ms": 9007199254740992
+        }
+      },
+      "input": "9007199254740993ms",
+      "name": "parseDuration(\"9007199254740993ms\")"
+    },
+    {
+      "expected": {
+        "ok": {
+          "ms": 9223372036854776000
+        }
+      },
+      "input": "9223372036854775807ms",
+      "name": "parseDuration(\"9223372036854775807ms\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: 0s"
+        }
+      },
+      "input": "0s",
+      "name": "parseDuration(\"0s\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: 0ms"
+        }
+      },
+      "input": "0ms",
+      "name": "parseDuration(\"0ms\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: 01s"
+        }
+      },
+      "input": "01s",
+      "name": "parseDuration(\"01s\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: 10"
+        }
+      },
+      "input": "10",
+      "name": "parseDuration(\"10\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: s"
+        }
+      },
+      "input": "s",
+      "name": "parseDuration(\"s\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: 1.5s"
+        }
+      },
+      "input": "1.5s",
+      "name": "parseDuration(\"1.5s\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: 1d"
+        }
+      },
+      "input": "1d",
+      "name": "parseDuration(\"1d\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: -5s"
+        }
+      },
+      "input": "-5s",
+      "name": "parseDuration(\"-5s\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: "
+        }
+      },
+      "input": "",
+      "name": "parseDuration(\"\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: ms"
+        }
+      },
+      "input": "ms",
+      "name": "parseDuration(\"ms\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: 10ss"
+        }
+      },
+      "input": "10ss",
+      "name": "parseDuration(\"10ss\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration:  5s"
+        }
+      },
+      "input": " 5s",
+      "name": "parseDuration(\" 5s\")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: 5s "
+        }
+      },
+      "input": "5s ",
+      "name": "parseDuration(\"5s \")"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "range",
+          "message": "invalid duration: 1.0h"
+        }
+      },
+      "input": "1.0h",
+      "name": "parseDuration(\"1.0h\")"
+    },
+    {
+      "expected": {
+        "ok": {
+          "ms": 3.6e+27
+        }
+      },
+      "input": "999999999999999999999h",
+      "name": "u64 overflow is rejected by the Rust port",
+      "rustOverflow": true
+    }
+  ],
+  "platform": "win32"
+}
