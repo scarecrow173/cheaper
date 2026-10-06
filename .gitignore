@@ -195,3 +195,6 @@ apm_modules/
 !.sdp/skill-reference-inferences.json
 
 tmp/
+
+# Rust spike crates (Phase 0 PoC)
+crates/*/target/
