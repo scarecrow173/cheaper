@@ -74,6 +74,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | IMPL-034A9TTHbXQNav6LxGvo49 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | IMPL-034zTprBbdY0tsPiphc2wE | Operation manager state lifecycle | completed | [operation-manager-state-lifecycle.md](./operation-manager-state-lifecycle.md) |
+| IMPL-034Bh4xhHhdbrsNKFkZ6iH | Phase 0: Rig PoC go/no-go spike | in-progress | [phase-0-rig-poc-go-no-go-spike.md](./phase-0-rig-poc-go-no-go-spike.md) |
 | IMPL-034r05iHy2gdnpDWUS1IzV | Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg) | completed | [pi-state-under-userconfigdir-pi.md](./pi-state-under-userconfigdir-pi.md) |
 | IMPL-034z57iY91Zc8YChIAuBty | port routing policy to cli hook module | completed | [port-routing-policy-to-cli-hook-module.md](./port-routing-policy-to-cli-hook-module.md) |
 | IMPL-034zU5o0mgVqx5ZwBdxc0L | Prepare one-dispatch release artifacts | completed | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
