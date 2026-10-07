@@ -1,0 +1,20 @@
+{
+  "name": "error_permanent",
+  "description": "error{status:400} → permanent 分類で retry 無しの即終端 PROVIDER_FAILURE",
+  "sessions": [
+    {
+      "steps": [
+        { "error": { "status": 400, "message": "bad request" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "PROVIDER_FAILURE",
+    "exitCode": 5,
+    "errorDetails": { "class": "Permanent", "retryable": false, "httpStatus": 400 },
+    "meta": {
+      "transientRetries": 0
+    }
+  }
+}

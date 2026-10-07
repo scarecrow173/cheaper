@@ -1,0 +1,12 @@
+{
+  "name": "unknown_model",
+  "description": "catalog に無い model ref → model-unavailable(MODEL_TIER_UNAVAILABLE)",
+  "explicit_model": "cheaper-fake/no-such",
+  "sessions": [],
+  "expect": {
+    "status": "error",
+    "errorCode": "MODEL_TIER_UNAVAILABLE",
+    "exitCode": 5,
+    "errorDetails": { "reason": "model-unavailable", "model": "cheaper-fake/no-such" }
+  }
+}

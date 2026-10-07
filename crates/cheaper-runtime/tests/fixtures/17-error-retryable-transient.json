@@ -1,0 +1,21 @@
+{
+  "name": "error_retryable_transient",
+  "description": "error{retryable:true}(status 無し)→ TransientTransport 分類で retry → 成功",
+  "sessions": [
+    {
+      "steps": [
+        { "error": { "retryable": true } },
+        { "usage_delta": { "input": 100, "output": 20 } },
+        { "turn": {} },
+        { "finish": { "text": "{\"ok\":true}" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "ok",
+    "result": { "ok": true },
+    "meta": {
+      "transientRetries": 1
+    }
+  }
+}

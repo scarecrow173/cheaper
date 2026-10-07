@@ -1,0 +1,22 @@
+{
+  "name": "auth_env_template",
+  "description": "api_key の \"$VAR\" template を fixture env で解決 → configured → run(keyless credential 層の env 経路)",
+  "provider": { "api_key": "$CHEAPER_FAKE_API_KEY" },
+  "env": { "CHEAPER_FAKE_API_KEY": "resolved-key" },
+  "sessions": [
+    {
+      "steps": [
+        { "usage_delta": { "input": 10, "output": 1 } },
+        { "turn": {} },
+        { "finish": { "text": "{\"ok\":true}" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "ok",
+    "result": { "ok": true },
+    "meta": {
+      "model": { "provider": "cheaper-fake", "id": "fake-model" }
+    }
+  }
+}

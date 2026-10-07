@@ -1,0 +1,21 @@
+{
+  "name": "error_5xx_retry",
+  "description": "error{status:503} → TransientServer 分類で retry → 成功",
+  "sessions": [
+    {
+      "steps": [
+        { "error": { "status": 503 } },
+        { "usage_delta": { "input": 100, "output": 20 } },
+        { "turn": {} },
+        { "finish": { "text": "{\"ok\":true}" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "ok",
+    "result": { "ok": true },
+    "meta": {
+      "transientRetries": 1
+    }
+  }
+}

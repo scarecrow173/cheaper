@@ -1,0 +1,22 @@
+{
+  "name": "error_429_exhausted",
+  "description": "error{status:429} 連続 — retry 予算(既定 transient_attempts=2)尽きで終端 PROVIDER_FAILURE",
+  "sessions": [
+    {
+      "steps": [
+        { "error": { "status": 429 } },
+        { "error": { "status": 429 } },
+        { "error": { "status": 429 } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "PROVIDER_FAILURE",
+    "exitCode": 5,
+    "errorDetails": { "class": "TransientRateLimit", "retryable": true, "httpStatus": 429 },
+    "meta": {
+      "transientRetries": 2
+    }
+  }
+}

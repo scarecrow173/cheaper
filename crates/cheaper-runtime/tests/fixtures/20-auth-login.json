@@ -1,0 +1,21 @@
+{
+  "name": "auth_login",
+  "description": "auth login(api_key)で credential store へ永続化 → stored credential 経路で run",
+  "auth_logins": { "cheaper-fake": "stored-secret-key" },
+  "sessions": [
+    {
+      "steps": [
+        { "usage_delta": { "input": 10, "output": 1 } },
+        { "turn": {} },
+        { "finish": { "text": "{\"ok\":true}" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "ok",
+    "result": { "ok": true },
+    "meta": {
+      "model": { "provider": "cheaper-fake", "id": "fake-model" }
+    }
+  }
+}

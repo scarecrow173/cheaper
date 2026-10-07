@@ -35,6 +35,11 @@ tiktoken-rs = "0.12"
 dunce = "1"
 # Deny-pattern regexes, worker name pattern, env-var name pattern, etc.
 regex = "1"
+# Rig facade for `cheaper-rig-adapter` (Phase 3 T1) and later provider crates.
+# Pin policy: `=0.43.x` (plan Risk #1); 0.43.0 is the PoC-validated line.
+rig = "=0.43.0"
+# Stream combinators for the adapter's run surface.
+futures = "0.3"
 # cheaper-tools (Phase 2). Async runtime boundary for the tool layer:
 # process spawn/capture, scheduler timers, CancellationToken via
 # tokio-util. Features stay at the plan-approved minimal set.

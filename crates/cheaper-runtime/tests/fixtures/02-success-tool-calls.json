@@ -1,0 +1,24 @@
+{
+  "name": "success_tool_calls",
+  "description": "tool_calls step が tool_runtime.execute の実経路(計上 + journal)を辿る",
+  "sessions": [
+    {
+      "steps": [
+        { "tool_calls": [ { "name": "write", "input": { "path": "a.txt", "content": "hello" } } ] },
+        { "turn": { "tool_calls": true } },
+        { "usage_delta": { "input": 200, "output": 40 } },
+        { "finish": { "text": "{\"ok\":true}" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "ok",
+    "result": { "ok": true },
+    "meta": {
+      "usage": { "input": 200, "output": 40, "totalTokens": 240 },
+      "turns": 1,
+      "toolCalls": 1,
+      "changesFilesMin": 1
+    }
+  }
+}

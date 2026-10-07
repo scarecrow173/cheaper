@@ -1,0 +1,12 @@
+{
+  "name": "unsupported_api",
+  "description": "model.api が plugin 宣言 api とも SUPPORTED_APIS とも一致しない → catalog 層が INVALID_MODEL_CONFIG(silent fallback しない)",
+  "model": { "api": "mystery-api" },
+  "sessions": [],
+  "expect": {
+    "status": "error",
+    "errorCode": "INVALID_MODEL_CONFIG",
+    "exitCode": 3,
+    "errorDetails": { "api": "mystery-api" }
+  }
+}

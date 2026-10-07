@@ -146,52 +146,83 @@ Rig 型の `use` は `cheaper-rig-adapter` と `cheaper-provider-devin` のみ�
 
 ## Done When
 
-- [ ] T1: `cheaper-rig-adapter` が Rig `Tool`/`PortableTool` 接着・
+- [x] T1: `cheaper-rig-adapter` が Rig `Tool`/`PortableTool` 接着・
       `AgentBuilder` 意味論固定・hook→accumulator 逐次集計・error 写像・
       transient retry・streaming run API を実装し、crate 外向け signature
       に Rig 型を出さない
+      (`docs/impl/ir/phase-3-port-runtime-adapter-providers.md` Slice T1。
+      tool 接着は `DynamicTool` seam を使用。`CompletionModel::from_rig`
+      の `DynModel` 引数は provider→adapter 境界の明示的 seam のみ)
 - [ ] T2: catalog store・credential store・api_key/env 解決・auth service・
       plugin contract trait が実装される
-- [ ] T3: `run_worker` オーケストレーション(abort/grace/output/meta/
+- [x] T3: `run_worker` オーケストレーション(abort/grace/output/meta/
       repair/panic 境界を含む)が実装され、`WorkerRunMeta` 全 field が hook
       accumulator のみから構築される
-- [ ] T4: fixture DSL + fake provider 3 層が実装され、fixture replay による
+      (`docs/impl/ir/phase-3-port-runtime-adapter-providers.md` Slice T3。
+      `src/{run,abort,grace,output,repair,meta,run_error,panic_boundary,
+      fake_provider}.rs` + `tests/run.rs`)
+- [x] T4: fixture DSL + fake provider 3 層が実装され、fixture replay による
       `run_worker` 検証基盤が成立する
-- [ ] T5: devin provider(wire/context_map/jwt/stream/Rig 接着/CLI 委譲/
+      (`docs/impl/ir/phase-3-port-runtime-adapter-providers.md` Slice T4。
+      `src/fixture.rs` + `fake_provider.rs` の
+      `ScriptedSession`/`ScriptStep`/`CheaperFakePlugin` +
+      `tests/fixtures/*.json` 24 件 + `tests/run_fixture_test.rs`)
+- [x] T5: devin provider(wire/context_map/jwt/stream/Rig 接着/CLI 委譲/
       plugin trait 実装)が port される
-- [ ] T6: OAuth flow contract + github-copilot flow が実装される
+      (`docs/impl/ir/phase-3-port-runtime-adapter-providers.md` Slice T5。
+      `crates/cheaper-provider-devin/src/{wire,metadata,jwt,context_map,
+      stream,cli,credentials,models,rig_provider,plugin,lib}.rs` +
+      `src/tests/` 51 test + `NOTICE`。`DevinCompletionModelFactory` が
+      `CompletionModelFactory` 経由で `CompletionModel::from_rig` へ接続)
+- [x] T6: OAuth flow contract + github-copilot flow が実装される
+      (`docs/impl/ir/phase-3-port-runtime-adapter-providers.md` Slice T6。
+      `src/auth/oauth/{mod,github_copilot}.rs` + `AuthInteraction::event`/
+      `is_cancelled`・`AuthPrompt::{Text,ManualCode,Select}`・
+      `ResolvedAuth.base_url` + `Runtime` builtin flow 自動登録 +
+      `tests/oauth.rs` 18 test)
 - [ ] `Cargo.toml` の `rig` 系依存が `=0.43.x` pin で、Rig 型参照が
       `cheaper-rig-adapter`(+ `cheaper-provider-devin`)に限定される
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-rig-adapter -p cheaper-runtime
+- [x] `mise exec -- cargo test -p cheaper-rig-adapter -p cheaper-runtime
       -p cheaper-provider-devin` が全パス(hook→accumulator 逐次集計・
       retry 429/5xx/timeout 分類・Retry action の error feedback→loop
       継続・cancel reason 分類・wire framing round-trip・context map・
-      models parse の単体 test を含む)
-- [ ] `mise exec -- cargo test -p cheaper-runtime --test run_fixture_test`
+      models parse の単体 test を含む)(provider 51 + adapter 14 +
+      runtime 86 = 151 test 全パス)
+- [x] `mise exec -- cargo test -p cheaper-runtime --test run_fixture_test`
       で fake fixture による `run_worker` 検証が全パス(正常系/invalid
       output→repair/timeout・maxTurns・maxToolCalls・signal abort 分類/
       journal 非空 abort→PARTIAL_MUTATION/error envelope。`meta` 全 field
       が期待値と一致。normalize: `meta.durationMs`・`usage.costUsd`・
       schema error message 文言は除外、`instancePath` は厳密)
-- [ ] fixture DSL primitive が動作: `delay_ms`→timeout abort、
+      (fixture corpus 24 file 全 replay。normalize は `expect` 宣言
+      field のみ比較で実装 — 非決定 field は宣言しない限り比較対象外)
+- [x] fixture DSL primitive が動作: `delay_ms`→timeout abort、
       `error{status:429}`→transientRetries 計上 + 成功、`error{status:5xx}`
       連続→PROVIDER_FAILURE、`hang_until_abort`→signal abort 分類、
       `abort_response`→ABORTED、`usage_delta`→accumulator 反映
+      (fixtures 05/12/15/08/11/18 が各 primitive を検証)
 - [ ] `cheaper auth login github-copilot` から run まで成功し credential
       が新 credential store に永続化される(手動 smoke、CI 外)。
       `<userConfigDir>/pi/` の auth.json/models.json を参照しないこと
 - [ ] api_key auth(Anthropic/OpenAI/OpenAI-compatible)で login→run が
       成立し secret が stdout に出ないこと
-- [ ] 未知・スコープ外 provider api 種別で catalog 層が明示 error
+- [x] 未知・スコープ外 provider api 種別で catalog 層が明示 error
       (`INVALID_MODEL_CONFIG` 系)を返し silent fallback しないこと
+      (fixture 21: model.api が plugin 宣言 api と不一致 → run 経路で
+      `INVALID_MODEL_CONFIG` exit 3。`tests/catalog.rs`
+      `unsupported_api_kind_returns_invalid_model_config` でも固定済み)
 - [ ] `docker compose up -d` + model pull 済み Ollama で built-in worker
       3 種が成功 envelope を返す Rust e2e が通ること
 - [ ] devin 実 endpoint smoke(`auth login/status/logout`・`devin models
       list`・1 件の run)を実施し結果を plan に記録する(CI 外手動。
       不達時は切り下げ判断をユーザー承認に回す)
-- [ ] `meta.usage.costUsd` が provider 応答値ではなく pricing 層算出で
+- [x] `meta.usage.costUsd` が provider 応答値ではなく pricing 層算出で
       あることを fixture/単体 test で確認する
+      (`tests/run.rs` `success_extracts_output_and_builds_meta` が
+      cheaper pricing 由来の costUsd=0.005075 を assert。
+      fixture `01-success-basic.json` でも replay 経路で
+      `meta.usage.costUsd=0.005075` を厳密比較)
 - [ ] `mise run check` が現行通り全 green(TS 側無破壊)

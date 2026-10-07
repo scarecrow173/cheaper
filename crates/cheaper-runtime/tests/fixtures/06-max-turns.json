@@ -1,0 +1,21 @@
+{
+  "name": "max_turns",
+  "description": "turns >= maxTurns かつ最終 turn が tool 継続 → MAX_TURNS_EXCEEDED",
+  "policy": { "max_turns": 2 },
+  "sessions": [
+    {
+      "steps": [
+        { "turn": { "tool_calls": true } },
+        { "turn": { "tool_calls": true } },
+        { "finish": { "text": "{\"ok\":true}" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "MAX_TURNS_EXCEEDED",
+    "exitCode": 6,
+    "errorDetails": { "reason": "maxTurns" },
+    "meta": { "turns": 2 }
+  }
+}

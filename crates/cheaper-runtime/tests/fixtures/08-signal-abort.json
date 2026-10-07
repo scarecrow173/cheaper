@@ -1,0 +1,24 @@
+{
+  "name": "signal_abort",
+  "description": "hang_until_abort — 外部 signal で終端 abort error → ABORTED 分類",
+  "abort": { "after_ms": 40, "message": "user abort" },
+  "sessions": [
+    {
+      "steps": [
+        { "usage_delta": { "input": 10, "output": 1 } },
+        { "turn": {} },
+        "hang_until_abort"
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "ABORTED",
+    "exitCode": 8,
+    "errorDetails": { "reason": "signal" },
+    "meta": {
+      "usage": { "input": 10 },
+      "turns": 1
+    }
+  }
+}
