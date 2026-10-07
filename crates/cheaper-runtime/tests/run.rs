@@ -322,7 +322,8 @@ async fn repair_merges_usage_and_returns_repaired_result() {
     let created = factory.created();
     assert_eq!(created.len(), 3);
     assert!(created[0].has_tool_runtime);
-    assert!(!created[0].has_output_schema);
+    // F8: main session にも worker output schema hint を渡す。
+    assert!(created[0].has_output_schema);
     // repair session は tool-less + output_schema hint 付き。
     assert!(!created[1].has_tool_runtime);
     assert!(created[1].has_output_schema);
@@ -610,4 +611,175 @@ async fn timeout_does_not_reclassify_existing_signal_reason() {
 #[allow(dead_code)]
 fn assert_error(e: &WorkerRunError) -> &dyn Error {
     e
+}
+
+// ---------------------------------------------------------------------------
+// review cycle 1 — maxTurns の tool batch 順序 / symlink policy / 内部 guard
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn max_turns_waits_for_final_tool_batch_before_aborting() {
+    use cheaper_runtime::fake_provider::{ScriptStep, ScriptedSession};
+
+    // F1: maxTurns に達した turn が tool call で終わった場合、その
+    // pending batch の実行・`ToolResult` emit を待ってから abort する。
+    // 即 abort だと Rig の `drive_tool_calls` が batch 途中で drop され、
+    // 最終 turn の tool 副作用・結果 event・usage が欠落する。
+    // `ScriptStep::ToolCalls` は Rig と同じ emit 順序を再現する —
+    // `ToolCall` event → batch 実行 → `ToolResult` event。
+    let mut p = policy();
+    p.execution.max_turns = 1;
+    let fx = fixture(p);
+    let root = fx.root.clone();
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Scripted(ScriptedSession {
+        steps: vec![
+            // turn 受理(tool 継続)— `Turn` は snapshot だけを更新し
+            // event は emit しない。続く `ToolCalls` の `ToolCall`
+            // event emit 時点で pending=1 なので abort は発火しない。
+            ScriptStep::Turn { tool_calls: true },
+            // model tool-call event → 実実行(a.txt 書込)→
+            // `ToolResult` event で pending=0 → deferred abort 発火。
+            ScriptStep::ToolCalls {
+                calls: vec![ToolCallSpec {
+                    name: "write".into(),
+                    input: json!({"path": "a.txt", "content": "x"}),
+                }],
+            },
+            ScriptStep::WaitAbort,
+        ],
+    })]);
+    let err = run_worker(&deps(&fx, &factory)).await.unwrap_err();
+    // tool が実際に走った(mutation landed)→ PARTIAL_MUTATION で wrap、
+    // cause は MAX_TURNS_EXCEEDED。
+    assert_eq!(err.code(), ErrorCode::PartialMutation);
+    let cause = err
+        .error()
+        .source()
+        .and_then(|s| s.downcast_ref::<CheaperError>())
+        .expect("cause is CheaperError");
+    assert_eq!(cause.code(), ErrorCode::MaxTurnsExceeded);
+    assert_eq!(std::fs::read_to_string(root.join("a.txt")).unwrap(), "x");
+    assert_eq!(err.run_meta().unwrap().tool_calls, Some(1));
+}
+
+#[tokio::test]
+async fn rolled_back_turn_counts_toward_max_turns() {
+    use cheaper_rig_adapter::RunEvent;
+    use cheaper_runtime::fake_provider::{ScriptStep, ScriptedSession};
+
+    // F6: invalid-tool retry で rollback された turn も完了 model
+    // call として `turns` に数える(Pi `turn_end` parity)。さもないと
+    // invalid-call ループが `maxTurns` 分類を回避する。fake では
+    // `RolledBackTurn` step が adapter hook と同じ計上点を replay
+    // する — `turns` 計上 + `last_turn_tool_calls = true`。
+    let mut p = policy();
+    p.execution.max_turns = 1;
+    let fx = fixture(p);
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Scripted(ScriptedSession {
+        steps: vec![
+            // retry の feedback を受けた次の model call が item を emit
+            // した時点で deferred check が走り MAX_TURNS_EXCEEDED。
+            ScriptStep::RolledBackTurn,
+            ScriptStep::Emit {
+                event: RunEvent::TextDelta { text: "x".into() },
+            },
+            ScriptStep::WaitAbort,
+        ],
+    })]);
+    let err = run_worker(&deps(&fx, &factory)).await.unwrap_err();
+    assert_eq!(err.code(), ErrorCode::MaxTurnsExceeded);
+    assert_eq!(err.details().unwrap()["reason"], json!("maxTurns"));
+    assert_eq!(err.run_meta().unwrap().turns, Some(1));
+}
+
+#[tokio::test]
+async fn max_turns_still_aborts_without_tool_calls_in_final_turn() {
+    // F1 の対称: 最終 turn が text 終了(last_turn_tool_calls=false)
+    // なら tool batch は存在せず、従来通り即座に分類 — ただし
+    // `stopReason === "toolUse"` 条件が必須なので text 終了で
+    // maxTurns 到達は abort しない(TS: turn_end の toolUse check)。
+    let mut p = policy();
+    p.execution.max_turns = 1;
+    let fx = fixture(p);
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Complete {
+        text: OK_OUTPUT.into(),
+        usage: usage(10, 1),
+        turns: 1,
+        last_turn_tool_calls: false,
+        transient_retries: 0,
+    }]);
+    // text 終了の turn は tool batch を持たない → run は成功する。
+    let ok = run_worker(&deps(&fx, &factory)).await.unwrap();
+    assert_eq!(ok.result["ok"], json!(true));
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn filesystem_symlinks_policy_reaches_tool_scope() {
+    use cheaper_runtime::fake_provider::{ScriptStep, ScriptedSession};
+
+    // F5: `policy.filesystem.symlinks` が worker scope の tool runtime
+    // へ届くこと — Deny では workspace 内 symlink の read が拒否され、
+    // WithinWorkspace では受理される。
+    for (symlinks, expected_rejected) in [
+        (SymlinkPolicy::Deny, 1u64),
+        (SymlinkPolicy::WithinWorkspace, 0u64),
+    ] {
+        let mut p = policy();
+        p.filesystem.symlinks = symlinks;
+        let fx = fixture(p);
+        std::fs::write(fx.root.join("real.txt"), "hello").unwrap();
+        std::os::unix::fs::symlink(fx.root.join("real.txt"), fx.root.join("link.txt")).unwrap();
+        let factory = FakeSessionFactory::new(vec![FakeResponse::Scripted(ScriptedSession {
+            steps: vec![
+                ScriptStep::ToolCalls {
+                    calls: vec![ToolCallSpec {
+                        name: "read".into(),
+                        input: json!({"path": "link.txt"}),
+                    }],
+                },
+                ScriptStep::Finish {
+                    text: OK_OUTPUT.into(),
+                },
+            ],
+        })]);
+        let ok = run_worker(&deps(&fx, &factory)).await.unwrap();
+        assert_eq!(
+            ok.meta.rejected_tool_calls, expected_rejected,
+            "symlinks={symlinks:?}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn policy_max_turns_flows_to_session_spec() {
+    // F7: `policy.execution.maxTurns` が `SessionSpec.policy_max_turns`
+    // として session factory へ届く(main + repair 双方)。内部 guard
+    // `max(1024, policy)` の算出は `RigSessionFactory` 側(単体 test は
+    // run.rs 内) — ここでは policy 値の wiring を検証する。
+    let mut p = policy();
+    p.execution.max_turns = 2048;
+    let fx = fixture(p);
+    let factory = FakeSessionFactory::new(vec![
+        // 1 本目を extract 失敗させて repair session も生成させる。
+        FakeResponse::Complete {
+            text: "bad".into(),
+            usage: usage(10, 1),
+            turns: 1,
+            last_turn_tool_calls: false,
+            transient_retries: 0,
+        },
+        FakeResponse::Complete {
+            text: OK_OUTPUT.into(),
+            usage: usage(10, 1),
+            turns: 1,
+            last_turn_tool_calls: false,
+            transient_retries: 0,
+        },
+    ]);
+    run_worker(&deps(&fx, &factory)).await.unwrap();
+    let created = factory.created();
+    assert_eq!(created.len(), 2);
+    assert_eq!(created[0].policy_max_turns, 2048);
+    assert_eq!(created[1].policy_max_turns, 2048);
 }

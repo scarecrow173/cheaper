@@ -146,6 +146,7 @@ impl RigSession {
             .add_hook(AccountingHook {
                 acc: Arc::clone(&acc),
                 details: Arc::clone(&details),
+                rolled_back_turn: std::sync::Mutex::new(None),
             });
         let mut agent = match spec.tool_runtime {
             Some(runtime) => builder
@@ -192,7 +193,12 @@ impl RigSession {
         if let Some(signal) = &signal {
             runner = runner.tool_context(ToolContext::new().with_scope(Arc::new(signal.clone())));
         }
-        crate::run_stream::run_stream(runner.stream(), signal, Arc::clone(&self.details))
+        crate::run_stream::run_stream(
+            runner.stream(),
+            signal,
+            Arc::clone(&self.details),
+            Arc::clone(&self.acc),
+        )
     }
 }
 
@@ -238,7 +244,9 @@ pub fn build_system_prompt(
     }
     contract.push(String::new());
     contract.push("Output schema:".to_string());
-    contract.push(serde_json::to_string_pretty(output_schema).unwrap_or_else(|_| "null".into()));
+    // F10: provider-visible text は `JSON.stringify(…, null, 2)` 規則
+    // (JS number formatting — `1.0` → `1`、`|x| >= 1e21` 等)に揃える。
+    contract.push(crate::js_json::stringify_pretty(output_schema));
     format!("{}\n{}\n", instructions.trim_end(), contract.join("\n"))
 }
 
@@ -246,6 +254,6 @@ pub fn build_system_prompt(
 pub fn build_user_prompt(input: &serde_json::Value) -> String {
     format!(
         "Task input (JSON):\n{}",
-        serde_json::to_string_pretty(input).unwrap_or_else(|_| "null".into())
+        crate::js_json::stringify_pretty(input)
     )
 }

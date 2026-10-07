@@ -1179,3 +1179,186 @@ message?}}`・`"hang_until_abort"`/`{"hang_until_abort":…}`・
 - test 数: 51 → 61(新規 10 件)。`cargo test -p
   cheaper-provider-devin` 61 pass / `clippy --all-targets -D
   warnings` clean / `cargo fmt --check` clean / `cargo check` OK。
+
+## Review cycle 1 fixes (runtime/adapter)
+
+レビュー findings F1–F13 に対する後追い修正。範囲は
+`crates/cheaper-runtime/`・`crates/cheaper-rig-adapter/` のみ
+(`crates/cheaper-provider-devin/` は別 agent の D1–D6 cycle で並行
+修正済み・本 cycle の対象外)。TS 正源は `packages/runtime-pi/src/`。
+
+- **F1 maxTurns abort は最終 turn の tool batch 完了を待つ** —
+  `run.rs` の `on_event` が `RunEvent::ToolCall`/`ToolResult` で
+  pending tool call 数を追跡し、`turns >= maxTurns &&
+  last_turn_tool_calls && pending == 0` の時点でのみ abort する。
+  従来は turn 受理直後に abort していたため Rig の
+  `drive_tool_calls` が batch 途中で drop され最終 turn の tool
+  副作用・結果 event が欠落していた。invalid-tool rollback は
+  対応する `ToolResult` を持たないため、pending は
+  `CompletionCall`/`ModelTurnRetried` 境界で reset する。batch が
+  stream 終端(provider error 等)と衝突して deferred abort が
+  発火しなかった場合の post-outcome fallback も追加。fake
+  provider の `ScriptStep::ToolCalls` は Rig `drive_tool_calls`
+  と同じ emit 順序(model `ToolCall` event 群 → `QueuedWork::
+  Execute` marker → `ToolResult` event 群)を再現するよう変更し、
+  run 側の pending 追跡が実 stream と同じ item 形状を観測できる
+  ようにした。test:
+  `max_turns_waits_for_final_tool_batch_before_aborting`
+  (PARTIAL_MUTATION + cause=MAX_TURNS_EXCEEDED + write 実効)、
+  `max_turns_still_aborts_without_tool_calls_in_final_turn`。
+- **F2 rolled-back turn の usage 保持** — usage 記録を
+  `AccountingHook::on_outcome` から `run_stream` の
+  `MultiTurnStreamItem::CompletionCall` item 境界へ移した。
+  invalid-tool retry で rolled back される streamed turn は
+  outcome hook・accepted-turn hook いずれも発火しないが
+  `CompletionCall` item は emit されるため、item 境界が唯一の
+  完全な記録点。run が後で error/abort で終わっても usage が残る。
+  `on_run_settled` の `reconcile_usage` は防御的 aggregate 経路と
+  して維持。test: `rolled_back_turn_usage_survives_later_run_error`
+  (invalid call 後の provider failure で turns=0 でも usage が残る)。
+- **F3 `strip_json_comments` の UTF-8 panic** —
+  `catalog/schema.rs` の trailing-comma pass で escaped char 直後の
+  byte を `bytes[i] as char` で 1 byte 扱いしていたため、escaped
+  backslash + 多 byte UTF-8(`\あ`)で continuation byte 上の slice
+  → panic/文字化けがあった。`utf8_len` で UTF-8 span 全体を copy へ
+  修正。test:
+  `escaped_backslash_before_multibyte_utf8_does_not_panic_or_corrupt`。
+- **F4 `raw_output` は fence-strip 前の原文** —
+  `extract_output` が `raw_output` に strip 済み text を返していた
+  のを TS `rawOutput: raw` 相当の assistant 原文へ修正(parse・
+  validate 対象は従来どおり strip 後)。success/failure 全 variant で
+  原文を保持。test: `failure_variants_keep_original_raw_output` +
+  fenced success の assertion 更新。
+- **F5 `policy.filesystem.symlinks` の tool runtime 配線** —
+  `run.rs` の invocation-level (`create_invocation_tool_runtime`)
+  と worker-scope (`create_worker_scope`) の双方で hardcode されて
+  いた `SymlinkPolicy::Deny` を `policy.filesystem.symlinks` へ
+  (TS `symlinkPolicy: policy.filesystem.symlinks`)。test:
+  `filesystem_symlinks_policy_reaches_tool_scope`(`#[cfg(unix)]` —
+  workspace 内 symlink read が Deny で rejected=1、
+  WithinWorkspace で accepted)。
+- **F6 invalid tool call の retry budget + accounting** —
+  `WorkerSessionSpec.invalid_tool_retries` → Rig
+  `max_invalid_tool_call_retries`(runtime default
+  `DEFAULT_INVALID_TOOL_RETRIES = 8`)。`invalid_tool_calls` meta は
+  「観測した invalid call event 数」を数える(消費 retry 数では
+  ない)。**F6a**: `RigSessionFactory` は
+  `invalid_tool_retries.max(internal_max_turns)` で floor する —
+  Rig の invalid-tool retry は model-call budget を消費するため、
+  内部 guard 未満の retry 上限では `invalid_tool_call_retries`
+  枯渇の PROVIDER_FAILURE が cheaper の `MAX_TURNS_EXCEEDED` 分類
+  より先に発火し得る。**F6b**: rolled-back turn は完了 model
+  call として `turns` に計上する(`Accumulator::
+  record_rolled_back_turn` — `on_invalid_tool_call` hook で
+  `HookContext::turn` dedup 付き)。Pi は invalid call を error
+  tool result で turn を閉じて `turn_end` で計上するため、
+  数えないと invalid-call ループが `policy.execution.maxTurns`
+  を回避できてしまう。rolled-back turn は常に tool 継続終了なので
+  `last_turn_tool_calls = true` も立て、run 側の maxTurns 判定
+  (F1)が機能するようにする。fake 側は `ScriptStep::
+  RolledBackTurn` が同じ計上点を replay する。test:
+  `invalid_tool_call_retry_budget_exhausts_and_counts_observations`
+  (budget=1 で 2 回目の観測で PROVIDER_FAILURE、observed=2、
+  turns=2)、`invalid_tool_call_recovers_and_reconciles_usage`
+  (turns = rollback 1 + 受理 1)、run 経路
+  `rolled_back_turn_counts_toward_max_turns`(rolled-back turn で
+  MAX_TURNS_EXCEEDED 分類 + meta.turns)。
+  **residual**: retry budget を使い切った unhandled call 自体の
+  usage は観測不能 — Rig の Fail 経路は stream を `finish()` せず
+  破棄するため `CompletionCall` item が emit されず、hook/settle
+  経路にも usage が載らない(engine.rs Fail arm)。retried call の
+  drain 済み usage は残る。adapter 側で補完不能なため残差として
+  記録。
+- **F7 内部 max-turns guard** — `SessionSpec.policy_max_turns` を
+  追加し `RigSessionFactory` が `max(internal_max_turns(1024),
+  policy_max_turns)` を `WorkerSessionSpec.max_turns` へ渡す。
+  policy maxTurns が内部 guard を上回ると runaway 対策が cheaper の
+  MAX_TURNS_EXCEEDED 分類より先に発火し error code/event 列が
+  ずれるのを防ぐ。main/repair 双方の SessionSpec で policy 値を
+  配線。test: `internal_max_turns_is_at_least_policy_max_turns`
+  (formula)、`policy_max_turns_flows_to_session_spec`(main+repair
+  wiring)、adapter 側
+  `internal_max_turns_guard_stops_runaway_tool_loop`。
+- **F8 `SessionSpec.output_schema` の配線** — main session にも
+  `Some(&worker.output_schema)` を渡すよう修正(従来は `None`)。
+  TS `createWorkerSession` には outputSchema option が無く prompt
+  埋め込みのみ — 本項目は provider の json_schema mode 等へ向けた
+  Rust 側の拡張 seam で、未対応 provider では無視される
+  (`CompletionModelFactory` 経路でのみ消費、Rig
+  `WorkerSessionSpec` には載らない)。既存 test
+  `repair_merges_usage_and_returns_repaired_result` の
+  `has_output_schema` assertion を main=true へ更新。
+- **F9 `total_tokens` fallback** — `UsageSnapshot::from(&Usage)` で
+  provider が total を省略した場合 `input + output` を採用(明示
+  total は従来どおり優先)。test:
+  `usage_snapshot_total_falls_back_to_input_plus_output`。
+  **decision(F9)**: 明示 total と input+output が不一致でも明示値を
+  優先する — provider の total は additive とは限らず
+  (cache/reasoning 内訳を含む provider がある)、TS と同じく
+  「provider が total を与えたら尊重」のみを規則とする。
+- **F10 JavaScript `JSON.stringify` 互換の number formatting** —
+  provider 可視 text(prompt 埋め込み schema/input、repair prompt
+  schema、meta の returned-token 計数 text)の serde_json 出力が
+  JS とずれる点を新 module `js_json.rs`(`stringify` /
+  `stringify_pretty`)で一箇所に集約:`-0`→`0`、非有限→`null`、
+  整数の `.0` 除去、指数表記境界(>=1e21 / <1e-6)、正指数の
+  明示 `+`(`1e+21`)。call site: `agent.rs` system/user prompt、
+  `repair.rs` repair schema、`meta.rs` returned tokens。test:
+  `js_json.rs` unit tests(number 境界・pretty layout・escape)、
+  adapter `js_json_prompts_use_json_stringify_number_format`。
+- **F11 `!command` stdout >64KB deadlock** — `auth/api_key.rs` の
+  `execute_command_uncached` で stdout を reader thread が逐次
+  drain するよう変更。exit 後 `read_to_string` では pipe buffer
+  超過で子が write block し `try_wait` が完了せず deadline まで
+  待って kill されるため、大きな stdout の command が常に未解決
+  扱いになっていた。exit 後も pipe 残量の drain 完了を deadline
+  内で待つ。test:
+  `command_stdout_over_pipe_buffer_does_not_deadlock`
+  (unix `seq 1 50000` ~289KB / windows `for /l` ~260KB の cfg pair)。
+- **F12 Unix での atomic credential 置換** — `auth/store.rs` の
+  `write_file` で Unix は `fs::rename` が既存 target を直接原子置換
+  するよう変更(remove→rename では crash window に
+  credentials.json が消える)。Windows の MoveFile 系は target 存在
+  で失敗するため従来どおり事前 remove(残差 — platform 制約)。
+  tmp file は同 directory(同一 filesystem 保証)+ 0o600。
+  test: `credential_store_replace_never_exposes_missing_file_on_unix`
+  (writer 64 回 replace 中に並行 reader が file 不在・壊れた JSON
+  を観測しない)、既存
+  `credential_store_atomic_replace_and_remove`。
+- **F13 plugin catalog handle 保持 + login 後 refresh** —
+  `ProviderEntry.plugin_catalog` に `Arc<dyn PluginCatalog>` を保持
+  し、`AuthService::login` が credential 保存成功後に
+  `refresh_plugin_catalog` を呼ぶ(TS の login 後
+  `refreshModels().catch(() => {})` 相当)。`CatalogStore` は
+  `dynamic_models: RwLock` + `record_error`/`refresh_plugin_models`
+  を持ち、refresh 結果は `applyExtension` と同一規則(
+  `extension_models`)で解決してから `modelOverrides` を再適用。
+  refresh/変換の失敗は login を失敗させず catalog errors へ記録。
+  空 list は bootstrap list 維持。test:
+  `login_refreshes_plugin_catalog_models`、
+  `login_succeeds_when_plugin_refresh_fails`。
+
+### Accounting decisions (cycle 1)
+
+- `invalid_tool_calls` は observed invalid-call event 数(F6)。
+- rolled-back turn は Pi `turn_end` parity で `turns` に計上する
+  (F6b — `record_rolled_back_turn`、turn index dedup)。これにより
+  invalid-call ループは `maxTurns` を回避できない。
+- completion usage の authoritative recording point は
+  `CompletionCall` stream item(F2)。`on_run_settled` の
+  `reconcile_usage` は `max` 畳込みの defensive aggregate。
+- 残差: unhandled(budget 尽き)invalid call の usage は Rig が
+  stream を drain しないため記録不能(F6b)。upstream 変更なしに
+  adapter 側では補完できない。
+- `total_tokens` は provider 明示値を優先、欠時のみ
+  `input + output` fallback(F9)。
+
+### Validation (cycle 1)
+
+`cargo test -p cheaper-rig-adapter` 23 pass(unit 4 + adapter 19)、
+`cargo test -p cheaper-runtime` 96 pass(run 18 / auth 19 /
+catalog 12 / oauth 18 / plugin 4 / fixture 3 / unit 22)、
+`cargo test -p cheaper-provider-devin` 61 pass(同 crate 未変更 —
+trait 互換のみ確認)、`cargo clippy -p cheaper-rig-adapter -p
+cheaper-runtime --all-targets -- -D warnings` clean、
+`cargo fmt --check` clean。

@@ -158,6 +158,9 @@ pub struct ProviderEntry {
     pub oauth: Option<OauthDeclaration>,
     /// plugin provider の auth/catalog/logout hook（plugin origin のみ）。
     pub plugin_auth: Option<Arc<dyn crate::plugin::PluginAuth>>,
+    /// plugin `refreshModels` seam — login 成功後に live catalog を
+    /// 更新するため runtime が保持する handle(F13)。
+    pub plugin_catalog: Option<Arc<dyn crate::plugin::PluginCatalog>>,
     /// plugin 宣言 api kind（plugin provider のみ。supported 扱い）。
     pub plugin_api: Option<String>,
     /// resolved models（`get_available`/`get_model` が返す最終形）。
@@ -166,6 +169,9 @@ pub struct ProviderEntry {
     /// `{modelOverride.headers, models[].headers, plugin model.headers}`。
     /// （`rawModelHeaders` port — catalog 側は template 未解決のまま保持）
     model_header_sources: BTreeMap<String, Map<String, Value>>,
+    /// user `modelOverrides` — plugin `refreshModels` で差し替わる
+    /// model list にも再適用するため compose 時の値を保持する。
+    model_overrides: Option<BTreeMap<String, ModelOverrideJson>>,
 }
 
 impl std::fmt::Debug for ProviderEntry {
@@ -180,6 +186,7 @@ impl std::fmt::Debug for ProviderEntry {
             .field("auth_header", &self.auth_header)
             .field("oauth", &self.oauth)
             .field("has_plugin_auth", &self.plugin_auth.is_some())
+            .field("has_plugin_catalog", &self.plugin_catalog.is_some())
             .field("plugin_api", &self.plugin_api)
             .field("models", &self.models.len())
             .finish()
@@ -488,24 +495,46 @@ fn apply_extension(
     // undefined}` — cost/contextWindow 等は definition verbatim（default 値
     // を埋めない）。headers は model 側を undefined にし rawModelHeaders
     // 経由で扱う。
-    plugin
-        .models
+    extension_models(
+        provider_id,
+        &plugin.models,
+        &plugin.api,
+        &plugin.base_url,
+        &models,
+    )
+}
+
+/// `applyExtension` の per-definition model 変換（bootstrap models と
+/// `refreshModels` 結果の両経路で共有 — F13 DRY）。`plugin_api`/
+/// `plugin_base_url` は definition 欠落時の fallback、`base_models` は
+/// `findModelDefaults` の参照先。
+fn extension_models(
+    provider_id: &str,
+    definitions: &[ModelDefinitionJson],
+    plugin_api: &str,
+    plugin_base_url: &str,
+    base_models: &[CatalogModel],
+) -> Result<Vec<CatalogModel>, String> {
+    definitions
         .iter()
         .map(|definition| {
             let defaults = find_model_defaults(
-                &models,
+                base_models,
                 &definition.id,
-                definition.api.as_deref().or(Some(plugin.api.as_str())),
+                definition.api.as_deref().or(Some(plugin_api)),
             );
-            let api = definition.api.clone().unwrap_or_else(|| plugin.api.clone());
+            let api = definition
+                .api
+                .clone()
+                .unwrap_or_else(|| plugin_api.to_string());
             let base_url = definition
                 .base_url
                 .clone()
                 .or_else(|| {
-                    if plugin.base_url.is_empty() {
+                    if plugin_base_url.is_empty() {
                         None
                     } else {
-                        Some(plugin.base_url.clone())
+                        Some(plugin_base_url.to_string())
                     }
                 })
                 .or_else(|| defaults.map(|d| d.base_url.clone()));
@@ -725,9 +754,11 @@ fn compose_provider(
         configured_headers,
         oauth: oauth_decl,
         plugin_auth: plugin.and_then(|p| p.auth.clone()),
+        plugin_catalog: plugin.and_then(|p| p.catalog.clone()),
         plugin_api: plugin.map(|p| p.api.clone()),
         models,
         model_header_sources,
+        model_overrides: config.and_then(|c| c.model_overrides.clone()),
     })
 }
 
@@ -739,8 +770,10 @@ pub struct CatalogStore {
     providers: Vec<ProviderEntry>,
     /// `ModelConfig.error` + `compositionErrors` 相当の load/compose error
     /// 文字列（TS `runtime.getError()` 相当。`models` の exit 0 contract を
-    /// 維持するため error は throw せずここに記録する）。
-    errors: Vec<String>,
+    /// 維持するため error は throw せずここに記録する）。F13 で plugin
+    /// `refreshModels` の実行時 error も追記するため interior mutability
+    /// 化（compose 後も追記可能）。
+    errors: std::sync::Mutex<Vec<String>>,
     /// plugin login 後の catalog refresh で差し替わる model list
     /// （devin `devin models list`）。
     dynamic_models: std::sync::RwLock<BTreeMap<String, Vec<CatalogModel>>>,
@@ -824,14 +857,26 @@ impl CatalogStore {
 
         Ok(CatalogStore {
             providers,
-            errors,
+            errors: std::sync::Mutex::new(errors),
             dynamic_models: std::sync::RwLock::new(BTreeMap::new()),
         })
     }
 
-    /// load/compose error（TS `runtime.getError()` 相当）。
-    pub fn errors(&self) -> &[String] {
-        &self.errors
+    /// load/compose/refresh error（TS `runtime.getError()` 相当）。
+    pub fn errors(&self) -> Vec<String> {
+        self.errors
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
+    }
+
+    /// 実行時 error の追記 — plugin `refreshModels` 失敗等、login 自体を
+    /// 失敗させず catalog error として記録する経路(F13)。
+    pub fn record_error(&self, message: String) {
+        self.errors
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push(message);
     }
 
     /// provider 一覧（登録順）。
@@ -902,6 +947,40 @@ impl CatalogStore {
         if let Ok(mut guard) = self.dynamic_models.write() {
             guard.insert(provider_id.to_string(), models);
         }
+    }
+
+    /// plugin `refreshModels` の結果（`ModelDefinitionJson` list）を
+    /// `applyExtension` と同一規則で resolved `CatalogModel` へ変換し、
+    /// user `modelOverrides` を再適用してから `replace_plugin_models` で
+    /// 反映する(F13)。空 list は bootstrap list 維持として扱う
+    /// （TS `refreshModels` は model 消失を意味しない）。
+    pub fn refresh_plugin_models(
+        &self,
+        provider_id: &str,
+        definitions: &[ModelDefinitionJson],
+    ) -> Result<(), String> {
+        let Some(entry) = self.provider(provider_id) else {
+            return Err(format!("Provider {provider_id}: not registered"));
+        };
+        if definitions.is_empty() {
+            return Ok(());
+        }
+        let mut models = extension_models(
+            provider_id,
+            definitions,
+            entry.plugin_api.as_deref().unwrap_or_default(),
+            entry.base_url.as_deref().unwrap_or_default(),
+            &self.models_of(entry),
+        )?;
+        if let Some(overrides) = &entry.model_overrides {
+            for model in &mut models {
+                if let Some(ov) = overrides.get(&model.id) {
+                    apply_model_override(model, ov);
+                }
+            }
+        }
+        self.replace_plugin_models(provider_id, models);
+        Ok(())
     }
 
     /// `getModel(providerId, modelId)` 相当。

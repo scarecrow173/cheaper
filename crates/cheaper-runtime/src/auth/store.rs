@@ -241,9 +241,10 @@ impl CredentialStore {
     }
 
     /// atomic write: 同 directory の temp file へ書き、`rename` で置換する。
-    /// Windows では target が存在すると rename が失敗するため事前に
-    /// remove する（crash window は file 破損より小さい — pi-ai の
-    /// `OAuthStorage` 相当の実運用では rename-before-write で十分）。
+    /// Unix の `rename(2)` は既存 target を原子置換するため remove しない
+    /// （F12 — remove→rename では crash window に credentials.json が
+    /// 消える）。Windows の `MoveFile` 系は target 存在で失敗するため
+    /// そちらのみ事前 remove を維持する。
     fn write_file(&self, providers: &[(String, StoredCredential)]) -> Result<(), CheaperError> {
         let dir = self
             .path
@@ -272,6 +273,9 @@ impl CredentialStore {
                 use std::os::unix::fs::PermissionsExt;
                 fs::set_permissions(&tmp, fs::Permissions::from_mode(0o600))?;
             }
+            // Unix: rename が既存 target を原子置換(F12)。
+            // Windows: target 存在で rename 失敗 → 事前 remove。
+            #[cfg(windows)]
             if self.path.exists() {
                 fs::remove_file(&self.path)?;
             }

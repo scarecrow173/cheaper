@@ -40,7 +40,6 @@ use cheaper_core::worker::schema::CompiledSchema;
 use cheaper_core::worker::validate::WorkerDefinition;
 use cheaper_core::worker::write_scope::extract_write_scope;
 use cheaper_core::workspace::deny_paths::create_path_denylist;
-use cheaper_core::workspace::paths::SymlinkPolicy;
 use cheaper_rig_adapter::{
     build_system_prompt, build_user_prompt, CompletionModel, RigSession, RunEvent, RunSnapshot,
     RunStream, WorkerSessionSpec, DEFAULT_INVALID_TOOL_RETRIES, DEFAULT_MAX_TURNS,
@@ -74,13 +73,14 @@ pub const DEFAULT_ABORT_GRACE_MS: f64 = 5000.0;
 // ---------------------------------------------------------------------------
 
 /// session 生成入力(TS `createWorkerSession` options 相当)。repair
-/// session では `tool_runtime: None`・`output_schema: Some(schema)`。
+/// session では `tool_runtime: None`。`output_schema` は main/repair
+/// 双方で worker output schema を渡す(repair では repair schema)。
 ///
 /// `output_schema` は provider 側 json_schema mode 等への hint —
 /// `CompletionModel` 生成経路(`CompletionModelFactory`)でのみ使われ、
 /// adapter の `WorkerSessionSpec` には載らない(Rig 側の配線は
 /// adapter/provider の責務、未配線でも prompt + 回数上限が contract を
-/// 担保する)。
+/// 担保する)。TS に該当 option はなく Rust 側の拡張 seam(F8)。
 pub struct SessionSpec<'a> {
     /// 解決済み catalog model。
     pub model: &'a CatalogModel,
@@ -96,6 +96,12 @@ pub struct SessionSpec<'a> {
     pub max_output_tokens: u64,
     /// `policy.retry.transientAttempts`。
     pub transient_retries: usize,
+    /// `policy.execution.maxTurns` — runtime 側の正規 turn 上限。
+    /// Rig の `max_turns` は runaway 対策の内部 guard であり、cheaper
+    /// の maxTurns abort(T3 が stream event から分類)より先に発火して
+    /// はいけないため、factory は `max(internal_max_turns, policy_max_
+    /// turns)` を内部 budget に使う(F7)。
+    pub policy_max_turns: u64,
 }
 
 /// `session.prompt`/`session.abort`/`collector.snapshot` を束ねた
@@ -155,15 +161,33 @@ impl<F: CompletionModelFactory> SessionFactory for RigSessionFactory<F> {
         spec: &SessionSpec<'_>,
     ) -> Result<Arc<dyn WorkerSession>, CheaperError> {
         let model = self.model_factory.completion_model(spec)?;
+        let internal_max_turns = self.effective_internal_max_turns(spec.policy_max_turns);
         Ok(Arc::new(RigSession::build(WorkerSessionSpec {
             model,
             system_prompt: spec.system_prompt.clone(),
             tool_runtime: spec.tool_runtime.clone(),
             max_output_tokens: spec.max_output_tokens,
-            max_turns: self.internal_max_turns,
-            invalid_tool_retries: self.invalid_tool_retries,
+            max_turns: internal_max_turns,
+            // F6: Rig の invalid-tool retry は model-call budget
+            // (`max_turns`)を消費する — retry 上限が turn guard 未満だと
+            // `invalid_tool_call_retries` 枯渇の PROVIDER_FAILURE が
+            // cheaper の `maxTurns` 分類(`MAX_TURNS_EXCEEDED` abort)より
+            // 先に発火し得る。Pi には invalid-call 固有の予算が無く
+            // turn 数のみが上限なので、内部 guard で floor する。
+            invalid_tool_retries: self.invalid_tool_retries.max(internal_max_turns),
             transient_retries: spec.transient_retries,
         })))
+    }
+}
+
+impl<F> RigSessionFactory<F> {
+    /// Rig 内部 turn guard の実効値 — `max(internal_max_turns,
+    /// policy_max_turns)`(F7)。policy maxTurns が guard を上回ると
+    /// runaway 対策が cheaper の maxTurns 分類(`MAX_TURNS_EXCEEDED`
+    /// abort)より先に発火し、error code・event 列ともに TS からずれる。
+    fn effective_internal_max_turns(&self, policy_max_turns: u64) -> usize {
+        let policy = usize::try_from(policy_max_turns).unwrap_or(usize::MAX);
+        self.internal_max_turns.max(policy)
     }
 }
 
@@ -465,7 +489,11 @@ impl<'a> RunCtx<'a> {
                     artifacts: None,
                     process: Some(serde_json::to_value(&policy.process).unwrap_or_default()),
                     root: deps.root.clone(),
-                    symlink_policy: SymlinkPolicy::Deny,
+                    // F5: `policy.filesystem.symlinks` — TS run.ts の
+                    // `symlinkPolicy: policy.filesystem.symlinks` parity。
+                    // hardcode した Deny では within-workspace 設定が
+                    // 効かない。
+                    symlink_policy: policy.filesystem.symlinks,
                     signal: None,
                     abort_grace_ms: Some(grace_ms),
                     concurrency: policy
@@ -560,7 +588,8 @@ impl<'a> RunCtx<'a> {
                     artifacts: None,
                     process: Some(serde_json::to_value(&policy.process).unwrap_or_default()),
                     root: deps.root.clone(),
-                    symlink_policy: SymlinkPolicy::Deny,
+                    // F5: invocation runtime と同じく policy 由来。
+                    symlink_policy: policy.filesystem.symlinks,
                     names: self.effective_tools.clone(),
                     max_tool_calls: policy.execution.max_tool_calls,
                     on_limit: Box::new(move || {
@@ -610,9 +639,15 @@ impl<'a> RunCtx<'a> {
                 auth: self.auth.as_ref(),
                 system_prompt,
                 tool_runtime: Some(scope),
-                output_schema: None,
+                // F8: provider 側の json_schema mode 等への hint として
+                // main session にも worker output schema を渡す(TS の
+                // `createWorkerSession` には outputSchema option が無く
+                // prompt 埋め込みのみ — 本項目は Rust 側の拡張 seam で、
+                // 未対応 provider では無視される)。
+                output_schema: Some(&worker.output_schema),
                 max_output_tokens: policy.output.max_tokens,
                 transient_retries: policy.retry.transient_attempts as usize,
+                policy_max_turns: policy.execution.max_turns,
             })
             .map_err(|e| self.fail(e))?;
         self.session = Some(Arc::clone(&session));
@@ -626,12 +661,34 @@ impl<'a> RunCtx<'a> {
         let outcome = {
             let check_session = Arc::clone(&session);
             let check_abort = Arc::clone(run_abort);
-            let mut on_event = move |_event: &RunEvent| {
+            // F1: over-limit turn が tool call で終わった場合、その pending
+            // batch の完了までは abort を遅延する。Rig の `drive_tool_calls`
+            // は batch 全体の outcome を buffer し、中途で stream を drop
+            // すると emit 済み `ToolCall` に対応する `ToolResult` が流れず
+            // tool 実行・journal・usage 記録が欠落する。emit された
+            // `ToolCall` 件数と `ToolResult` 件数の差が 0 に戻った時点で
+            // abort すれば最終 batch は完全に surface される。
+            let mut pending_tool_calls = 0u64;
+            let mut on_event = move |event: &RunEvent| {
+                match event {
+                    RunEvent::ToolCall { .. } => pending_tool_calls += 1,
+                    RunEvent::ToolResult { .. } => {
+                        pending_tool_calls = pending_tool_calls.saturating_sub(1)
+                    }
+                    // rollback された turn(invalid-tool retry)では emit
+                    // 済み `ToolCall` の result が来ない — 新しい
+                    // completion call / retry 境界で pending を reset
+                    // して滞留しないようにする。
+                    RunEvent::CompletionCall { .. } | RunEvent::ModelTurnRetried { .. } => {
+                        pending_tool_calls = 0
+                    }
+                    _ => {}
+                }
                 // TS: turn_end 毎に `snapshot.turns >= maxTurns &&
                 // lastAssistant.stopReason === "toolUse"`。hook が item
                 // 送出前に turn を計上するので per-item 読みで同等以上。
                 let snap = check_session.snapshot();
-                if snap.turns >= max_turns && snap.last_turn_tool_calls {
+                if snap.turns >= max_turns && snap.last_turn_tool_calls && pending_tool_calls == 0 {
                     check_abort.request_abort(RunAbortReason::MaxTurns);
                 }
             };
@@ -646,6 +703,20 @@ impl<'a> RunCtx<'a> {
         };
         if let Some(reason) = run_abort.reason() {
             return Err(self.classified(reason));
+        }
+        // F1 fallback — over-limit turn の tool batch が stream 終端
+        // (provider error 等)と衝突し deferred abort が発火しなかった
+        // 場合でも、最終受理 turn が tool 継続で上限到達済みなら
+        // MAX_TURNS_EXCEEDED に分類する。先勝ちの reason 記録は上で
+        // 済んでいるため、ここで request しても別 reason は上書きしない。
+        {
+            let snap = session.snapshot();
+            if snap.turns >= max_turns && snap.last_turn_tool_calls {
+                run_abort.request_abort(RunAbortReason::MaxTurns);
+                if let Some(reason) = run_abort.reason() {
+                    return Err(self.classified(reason));
+                }
+            }
         }
         let raw_output = match outcome {
             PromptOutcome::Rejected(err) => return Err(self.with_run_meta(err)),
@@ -678,6 +749,7 @@ impl<'a> RunCtx<'a> {
                         attempts: policy.output.repair_attempts,
                         max_output_tokens: policy.output.max_tokens,
                         transient_retries: policy.retry.transient_attempts as usize,
+                        policy_max_turns: policy.execution.max_turns,
                         signal: run_abort.signal(),
                         grace_ms,
                         on_attempt: &mut |attempt| repairs = attempt,
@@ -799,3 +871,20 @@ fn setup_abort_error(context: &str, reason: AbortReason) -> CheaperError {
 // `CheaperError` のみを返す)ため、TS `withRunMeta` の
 // `err instanceof WorkerRunError` 分岐に相当する経路は存在しない —
 // `RunCtx::with_run_meta` は常に新規に meta を付与する。
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// F7: 内部 guard は `max(DEFAULT_MAX_TURNS, policy maxTurns)`。
+    /// `model_factory` は session 構築時にしか使われないため `()` で
+    /// 構造体だけ作り formula だけを検証する。
+    #[test]
+    fn internal_max_turns_is_at_least_policy_max_turns() {
+        let factory = RigSessionFactory::new(());
+        assert_eq!(factory.effective_internal_max_turns(10), 1024);
+        assert_eq!(factory.effective_internal_max_turns(1024), 1024);
+        assert_eq!(factory.effective_internal_max_turns(2048), 2048);
+        assert_eq!(factory.effective_internal_max_turns(u64::MAX), usize::MAX);
+    }
+}

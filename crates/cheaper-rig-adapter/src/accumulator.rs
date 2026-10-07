@@ -1,10 +1,15 @@
-//! Run-level sequential accumulator — the **sole** usage collection source.
+//! Run-level sequential accumulator — run 集計の唯一の蓄積先。
 //!
 //! `packages/runtime-pi/src/usage.ts` の `UsageCollector` 相当を Phase 0
-//! PoC (`crates/poc-rig/src/usage.rs`) の hook 駆動集計として再実装する。
-//! `PromptResponse` は error/cancel/max-turns 経路では取得できないため、
-//! usage は hook イベントからのみ蓄積する。`costUsd` は provider 応答値を
-//! 使わず token 数だけを保持し、pricing は runtime 層が算出する(T3 meta)。
+//! PoC (`crates/poc-rig/src/usage.rs`) の集計器として再実装する。
+//! usage の記録点は hook ではなく stream 層: `run_stream` が各
+//! `CompletionCall` item(rollback された turn でも emit される — F2)で
+//! [`Accumulator::record_completion`] し、`on_run_settled` の
+//! `PromptResponse::usage` で [`Accumulator::reconcile_usage`] する。
+//! `PromptResponse` は error/cancel/max-turns 経路では取得できないため
+//! settle 値だけに頼れず、per-call 記録が必須。`costUsd` は provider
+//! 応答値を使わず token 数だけを保持し、pricing は runtime 層が算出する
+//! (T3 meta)。
 
 use std::sync::{Mutex, MutexGuard};
 
@@ -20,8 +25,11 @@ use rig::completion::Usage;
 pub struct RunSnapshot {
     /// token のみ。`costUsd` は pricing 層の責務。
     pub usage: UsageSnapshot,
-    /// 受理された model turn 数(`ModelTurnFinished` 発火数)。
-    /// invalid-tool retry で rollback された turn は含まない。
+    /// 完了した model call 数 — 受理 turn(`ModelTurnFinished`)+
+    /// invalid-tool recovery で rollback された turn(`on_invalid_tool_call`
+    /// 観測)の合計。Pi は invalid call も error tool result で turn を
+    /// 閉じ `turn_end` で計上するため、完了 model call 単位で数えるのが
+    /// `turns` の parity(F6b)。
     pub turns: u64,
     /// `budget.toolCalls` — runtime の admission gate を通った call 数
     /// (access-denied error は rejected 側と重複計上される TS parity)。
@@ -75,7 +83,14 @@ impl From<&Usage> for UsageSnapshot {
         UsageSnapshot {
             input_tokens: usage.input_tokens.unwrap_or(0),
             output_tokens: usage.output_tokens.unwrap_or(0),
-            total_tokens: usage.total_tokens.unwrap_or(0),
+            // F9: provider が totalTokens を省略した場合は
+            // `input_tokens + output_tokens` に fallback する
+            // (TS `promptUsage.total ?? input + output` parity)。
+            // 明示値がある場合はそちらを優先 — reasoning/cache 内訳を
+            // 含む provider 独自 total を捨てない。
+            total_tokens: usage.total_tokens.unwrap_or_else(|| {
+                usage.input_tokens.unwrap_or(0) + usage.output_tokens.unwrap_or(0)
+            }),
             cached_input_tokens: usage.cached_input_tokens.unwrap_or(0),
             cache_creation_input_tokens: usage.cache_creation_input_tokens.unwrap_or(0),
             reasoning_tokens: usage.reasoning_tokens.unwrap_or(0),
@@ -111,14 +126,25 @@ impl Accumulator {
         self.budget = Some(budget);
     }
 
-    /// An accepted model turn. Fires on `ModelTurnFinished`, so a turn rolled
-    /// back by an invalid-tool-call retry is not counted — matching cheaper's
-    /// accepted-turn semantics. `tool_calls` はその turn が tool 継続で
+    /// An accepted model turn. Fires on `ModelTurnFinished`.
+    /// `tool_calls` はその turn が tool 継続で
     /// 終わったか(`FinishReason::ToolCalls` または content 内の call 有無)。
     pub fn record_turn(&self, tool_calls: bool) {
         let mut s = self.lock();
         s.turns += 1;
         s.last_turn_tool_calls = tool_calls;
+    }
+
+    /// A completed model call rolled back by invalid-tool-call recovery
+    /// (F6b). Pi closes such a turn with error tool results and counts it
+    /// at `turn_end`; cheaper's `turns` must match that so invalid-call
+    /// loops cannot bypass `policy.execution.maxTurns`. A rolled-back
+    /// turn always ends in tool calls — `last_turn_tool_calls = true`
+    /// keeps the run-side maxTurns abort condition evaluable.
+    pub fn record_rolled_back_turn(&self) {
+        let mut s = self.lock();
+        s.turns += 1;
+        s.last_turn_tool_calls = true;
     }
 
     /// Usage of a billed completion call, recorded on the completion
@@ -127,12 +153,14 @@ impl Accumulator {
         self.lock().usage.add(usage);
     }
 
-    /// Reconcile recorded usage with the run's billed total at settle time.
-    /// A turn rolled back by an invalid-tool-call retry fires neither
-    /// `on_outcome` nor `on_model_turn_finished` (rig-agent engine), so its
-    /// usage is visible only through `PromptResponse::usage` on
-    /// `on_run_settled`. The billed total must cover the recorded per-call
-    /// sum; `max` keeps the accumulator correct even if both paths overlap.
+    /// Reconcile recorded usage with the run's billed total at settle
+    /// time — defensive aggregate. Per-call usage is already recorded
+    /// by `run_stream` at each `CompletionCall` item(F2); a turn rolled
+    /// back by an invalid-tool-call retry fires neither `on_outcome`
+    /// nor `on_model_turn_finished`, but its `CompletionCall` item is
+    /// still emitted. `PromptResponse::usage` on `on_run_settled`
+    /// carries the provider-reported run total — `max` keeps the
+    /// accumulator correct without double-counting overlapping calls.
     pub fn reconcile_usage(&self, billed: &UsageSnapshot) {
         let mut s = self.lock();
         let u = &mut s.usage;

@@ -436,12 +436,44 @@ impl AuthService {
                 self.store.set(provider_id, credential)?;
             }
         }
+        // F13: plugin `refreshModels` — login 成功後に live catalog を
+        // 更新する(devin `devin models list` 経路)。refresh/変換の失敗は
+        // login を失敗させず catalog errors へ記録する(TS parity —
+        // `refreshModels().catch(() => {})` で login は継続)。
+        self.refresh_plugin_catalog(catalog, entry);
         Ok(LoginResult {
             provider: provider_id.to_string(),
             authenticated: true,
             method: method.as_str(),
             subscription: self.subscription_of(entry),
         })
+    }
+
+    /// login 成功後の plugin catalog refresh。`Ok(None)` は bootstrap
+    /// list 維持、error は catalog errors への記録のみで login 結果を
+    /// 変えない。
+    fn refresh_plugin_catalog(&self, catalog: &CatalogStore, entry: &ProviderEntry) {
+        let Some(plugin_catalog) = &entry.plugin_catalog else {
+            return;
+        };
+        // credential read 失敗も login 自体の成功を変えない —
+        // `refreshModels` には `None` を渡す(TS: credential 未到達でも
+        // refresh は走る)。
+        let credential = self.store.get(&entry.id).unwrap_or_default();
+        match plugin_catalog.refresh_models(&self.ctx, credential.as_ref()) {
+            Ok(Some(definitions)) => {
+                if let Err(e) = catalog.refresh_plugin_models(&entry.id, &definitions) {
+                    catalog.record_error(format!("Provider \"{}\": {e}", entry.id));
+                }
+            }
+            Ok(None) => {}
+            Err(e) => {
+                catalog.record_error(format!(
+                    "Provider \"{}\": refreshModels failed: {e}",
+                    entry.id
+                ));
+            }
+        }
     }
 
     /// `logoutProvider` — plugin/logout hook → credential 削除。未登録

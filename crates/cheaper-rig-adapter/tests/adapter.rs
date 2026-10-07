@@ -204,8 +204,10 @@ async fn invalid_tool_call_recovers_and_reconciles_usage() {
     // recovery: invalid call を観測し retry feedback で 2 回目が受理。
     assert_eq!(snap.invalid_tool_calls, 1);
     assert_eq!(model.request_count(), 2);
-    // rolled-back turn は accepted turn に数えないが課金は残る。
-    assert_eq!(snap.turns, 1);
+    // F6b: rolled-back turn も完了 model call として数える(Pi は
+    // error tool result で turn を閉じ `turn_end` 計上する parity) —
+    // turns = rollback 1 + 受理 1。課金も残る(F2)。
+    assert_eq!(snap.turns, 2);
     assert_eq!(snap.tool_calls, 0);
     assert_eq!(snap.rejected_tool_calls, 0);
     assert_eq!(snap.usage.input_tokens, 250);
@@ -572,4 +574,171 @@ fn prompts_match_ts_shape() {
 
     let user = build_user_prompt(&json!({"path": "src"}));
     assert_eq!(user, "Task input (JSON):\n{\n  \"path\": \"src\"\n}");
+}
+
+// ---------------------------------------------------------------------------
+// review cycle 1 — usage recording 境界 / retry budget / internal guard /
+// JS JSON.stringify
+// ---------------------------------------------------------------------------
+
+#[test]
+fn usage_snapshot_total_falls_back_to_input_plus_output() {
+    // F9: provider が totalTokens を省略した場合は input + output。
+    let partial = Usage {
+        input_tokens: Some(100),
+        output_tokens: Some(20),
+        total_tokens: None,
+        ..Default::default()
+    };
+    let snap = UsageSnapshot::from(&partial);
+    assert_eq!(snap.input_tokens, 100);
+    assert_eq!(snap.output_tokens, 20);
+    assert_eq!(snap.total_tokens, 120);
+
+    // 明示 total はそのまま使う(provider が cache/reasoning を含める
+    // 独自 total を捨てない)。
+    let explicit = Usage {
+        input_tokens: Some(100),
+        output_tokens: Some(20),
+        total_tokens: Some(999),
+        ..Default::default()
+    };
+    assert_eq!(UsageSnapshot::from(&explicit).total_tokens, 999);
+}
+
+#[tokio::test]
+async fn rolled_back_turn_usage_survives_later_run_error() {
+    // F2: invalid-tool-call で roll back された turn の usage は run が
+    // 後で provider error で失敗しても保持される。`on_outcome` hook は
+    // rolled-back streamed turn に発火しないが、Rig engine は abandoned
+    // reply も `CompletionCall` item として emit する — 記録はその
+    // stream item 境界で行う。
+    let model = MockCompletionModel::from_stream_turns([
+        // turn 1: 未登録 tool call — usage 100/10 を課金して rollback。
+        vec![
+            MockStreamEvent::tool_call("call-1", "does_not_exist", json!({})),
+            MockStreamEvent::FinalResponse(Finish {
+                usage: usage(100, 10),
+                reason: Some(FinishReason::ToolCalls),
+                ..Default::default()
+            }),
+        ],
+        // turn 2: permanent provider error で run 全体が失敗。
+        vec![MockStreamEvent::Error(MockError::ProviderResponse(
+            ProviderResponseError::new(StatusCode::BAD_REQUEST, "boom"),
+        ))],
+    ]);
+    let session = session(model, 0);
+    let events = collect(session.stream_run("use a tool", None)).await;
+
+    let error = events
+        .iter()
+        .find_map(|e| e.as_ref().err())
+        .expect("run must fail");
+    assert_eq!(error.code(), ErrorCode::ProviderFailure);
+    let snap = session.snapshot();
+    // F6b: rolled-back turn は完了 model call として `turns` に入る
+    // (Pi `turn_end` parity — error tool result で turn を閉じる)。
+    assert_eq!(snap.turns, 1);
+    assert!(snap.last_turn_tool_calls);
+    assert_eq!(snap.invalid_tool_calls, 1);
+    assert_eq!(snap.usage.input_tokens, 100);
+    assert_eq!(snap.usage.output_tokens, 10);
+    assert_eq!(snap.usage.total_tokens, 110);
+}
+
+#[tokio::test]
+async fn invalid_tool_call_retry_budget_exhausts_and_counts_observations() {
+    // F6: `invalid_tool_call_retries` は retry 回数の上限。budget を使い
+    // 切ると `UnhandledInvalidToolCall::Fail` → PROVIDER_FAILURE。
+    // `invalid_tool_calls` は retry 消費数ではなく観測イベント数。
+    let invalid_turn = || {
+        vec![
+            MockStreamEvent::tool_call("c", "does_not_exist", json!({})),
+            MockStreamEvent::FinalResponse(Finish {
+                usage: usage(10, 2),
+                reason: Some(FinishReason::ToolCalls),
+                ..Default::default()
+            }),
+        ]
+    };
+    // budget=1 → 観測 1 回目で retry、2 回目で尽きて run failure。
+    let model = MockCompletionModel::from_stream_turns([invalid_turn(), invalid_turn()]);
+    let session = RigSession::build(WorkerSessionSpec {
+        model: CompletionModel::from_rig(model.clone().erase()),
+        system_prompt: "test worker".to_string(),
+        tool_runtime: None,
+        max_output_tokens: 1024,
+        max_turns: cheaper_rig_adapter::DEFAULT_MAX_TURNS,
+        invalid_tool_retries: 1,
+        transient_retries: 0,
+    });
+    let events = collect(session.stream_run("hi", None)).await;
+
+    let error = events
+        .iter()
+        .find_map(|e| e.as_ref().err())
+        .expect("run must fail");
+    assert_eq!(error.code(), ErrorCode::ProviderFailure);
+    let snap = session.snapshot();
+    assert_eq!(model.request_count(), 2);
+    assert_eq!(snap.invalid_tool_calls, 2);
+    // F6b: 両 turn とも rollback — 完了 model call として `turns` に
+    // 計上(Pi `turn_end` parity)。`on_invalid_tool_call` は Fail 判定
+    // より先に発火するため budget 枯渇 turn も数えられる。
+    assert_eq!(snap.turns, 2);
+    // 課金は drain 済みの retried call 分のみ残る(F2): budget 尽きの
+    // Fail 経路は Rig が stream を `finish()` せず破棄するため
+    // `CompletionCall` item が emit されず、terminal turn の usage は
+    // seam 上で観測不能(F6b residual — IR doc 記載)。
+    assert_eq!(snap.usage.input_tokens, 10);
+}
+
+#[tokio::test]
+async fn internal_max_turns_guard_stops_runaway_tool_loop() {
+    // F7 plumbing: `WorkerSessionSpec.max_turns` が実際に Rig runner の
+    // 内部 guard として効くこと(runtime は `max(1024, policy maxTurns)`
+    // を渡す — 値の算出は cheaper-runtime 側の責務)。
+    let dir = TempDir::new();
+    std::fs::write(dir.0.join("a.txt"), "alpha").unwrap();
+    let runtime = read_scope(&dir.root());
+
+    let model = MockCompletionModel::from_stream_turns([
+        read_call_turn(&[("c1", json!({"path": "a.txt"}))], 10, 2),
+        read_call_turn(&[("c2", json!({"path": "a.txt"}))], 10, 2),
+        read_call_turn(&[("c3", json!({"path": "a.txt"}))], 10, 2),
+    ]);
+    let session = RigSession::build(WorkerSessionSpec {
+        model: CompletionModel::from_rig(model.erase()),
+        system_prompt: "test worker".to_string(),
+        tool_runtime: Some(runtime),
+        max_output_tokens: 1024,
+        max_turns: 2,
+        invalid_tool_retries: cheaper_rig_adapter::DEFAULT_INVALID_TOOL_RETRIES,
+        transient_retries: 0,
+    });
+    let events = collect(session.stream_run("loop", None)).await;
+
+    // 内部 guard 到達は `INTERNAL_ERROR` に分類される(TS parity の正規
+    // maxTurns abort は cheaper-runtime の stream 監視が担う)。
+    let error = events
+        .iter()
+        .find_map(|e| e.as_ref().err())
+        .expect("run must fail");
+    assert_eq!(error.code(), ErrorCode::InternalError);
+    assert_eq!(session.snapshot().turns, 2);
+}
+
+#[test]
+fn js_json_prompts_use_json_stringify_number_format() {
+    // F10: provider-visible text の number は `JSON.stringify` 規則
+    // (整数は `.0` 省略 — serde_json pretty printer は `1.0` を出す)。
+    let user = build_user_prompt(&json!({"n": 1.0, "big": 1e21, "small": 1e-7}));
+    assert!(user.contains("\"n\": 1,"), "{user}");
+    assert!(user.contains("\"big\": 1e+21"), "{user}");
+    assert!(user.contains("\"small\": 1e-7"), "{user}");
+
+    let system = build_system_prompt("w", &json!({"min": 1.0}), &[]);
+    assert!(system.contains("\"min\": 1"), "{system}");
+    assert!(!system.contains("1.0"), "{system}");
 }

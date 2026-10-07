@@ -35,7 +35,7 @@ use cheaper_rig_adapter::{
 use cheaper_tools::operation::AbortSignal;
 use cheaper_tools::registry::{ToolCallContext, ToolRuntime};
 use futures::stream;
-use serde_json::{Map, Value};
+use serde_json::{json, Map, Value};
 
 use crate::catalog::schema::{ModelCostJson, ModelDefinitionJson};
 use crate::plugin::{
@@ -76,7 +76,9 @@ pub enum FakeResponse {
     /// signal を観測しない永久 pending — abort grace 経路の検証用。
     Hang,
     /// `tool_runtime.execute` を逐次実行してから `next` へ。
-    /// tool 計上・journal・`onLimit` の実経路を辿る。
+    /// tool 計上・journal・`onLimit` の実経路を辿る。stream event は
+    /// emit しない簡易形 — model/result event 列まで再現する必要が
+    /// ある検証(F1 pending batch 等)は [`ScriptStep::ToolCalls`] を使う。
     ToolCalls {
         calls: Vec<ToolCallSpec>,
         next: Box<FakeResponse>,
@@ -111,14 +113,21 @@ pub enum ScriptStep {
     /// `delay_ms` — 指定 ms 待つ。abort signal は待ちを中断して
     /// 終端 abort error になる(timeout/signal abort の再現)。
     Delay { ms: u64 },
-    /// `tool_runtime.execute` を逐次実行(計上・journal・onLimit の
-    /// 実経路)。完了した call なので次 step は新しい completion call。
+    /// model tool-call event emit → `tool_runtime.execute` 逐次実行
+    /// (計上・journal・onLimit の実経路)→ `ToolResult` event emit。
+    /// Rig `drive_tool_calls` と同じ emit 順序(F1)。完了した call な
+    /// ので次 step は新しい completion call。
     ToolCalls { calls: Vec<ToolCallSpec> },
     /// `usage_delta` — 1 completion call 分の token usage を加算する。
     UsageDelta { usage: UsageSnapshot },
     /// 受理 turn を 1 件計上(`record_turn`)。call 境界を切るので
     /// 次の `error` は新しい call の pre-item 失敗として retry 判定される。
     Turn { tool_calls: bool },
+    /// invalid-tool recovery で rollback された model call を 1 件計上
+    /// (`record_rolled_back_turn` — adapter hook と同じ計上点、F6b)。
+    /// Pi は error tool result で turn を閉じ `turn_end` 計上するため
+    /// `turns`/`last_turn_tool_calls` に載る。call 境界を切る。
+    RolledBackTurn,
     /// `error { status?, retryable?, message? }` — provider failure。
     /// retry 条件を満たせば retry bookkeeping + 次 step、尽きるか
     /// permanent なら終端 `PROVIDER_FAILURE`(details.class/retryable/
@@ -156,6 +165,9 @@ pub struct RecordedSpec {
     pub has_output_schema: bool,
     pub max_output_tokens: u64,
     pub transient_retries: usize,
+    /// `policy.execution.maxTurns` — factory が内部 guard
+    /// (`max(1024, this)`)を算出する材料として渡される値(F7)。
+    pub policy_max_turns: u64,
 }
 
 /// scripted `SessionFactory` — queue から response を取り出し session
@@ -216,6 +228,7 @@ impl SessionFactory for FakeSessionFactory {
                 has_output_schema: spec.output_schema.is_some(),
                 max_output_tokens: spec.max_output_tokens,
                 transient_retries: spec.transient_retries,
+                policy_max_turns: spec.policy_max_turns,
             });
         let response = self
             .responses
@@ -299,17 +312,33 @@ impl WorkerSession for FakeSession {
 // scripted stream — unfold state machine
 // ---------------------------------------------------------------------------
 
+/// `ToolCalls` step が貼る実行待ち item。Rig `drive_tool_calls` の emit
+/// 順序(model `ToolCall` event 群 → batch 実行 → `ToolResult` event 群)を
+/// 再現するための内部 queue — fixture DSL には露出しない(F1: run 側の
+/// pending-tool-call 追跡が ToolCall/ToolResult item 対に依存するため、
+/// step は emit → 実行 → emit を item 単位で進める必要がある)。
+enum QueuedWork {
+    /// そのまま emit する stream item。
+    Event(RunEvent),
+    /// emit 済み `ToolCall` event 群に対応する実実行。結果は
+    /// `ToolResult` event として queue 先頭へ差し戻す。
+    Execute(Vec<ToolCallSpec>),
+}
+
 enum Step {
     /// 未解釈の response。
     Pending(Box<FakeResponse>),
     /// event queue 消化中。item 間で abort 判定。
     Events(VecDeque<Result<RunEvent, CheaperError>>),
     /// scripted session の step 消化中。
+    /// - `queued`: `ToolCalls` step が積んだ未処理 item(ToolCall event /
+    ///   実行 marker / ToolResult event)。非空なら step より先に 1 件消化。
     /// - `emitted_in_call`: 現 completion call が既に item を emit したか
     ///   (emit 後の `error` は retry しない — adapter の partial-turn 規則)。
     /// - `remaining_retries`: `SessionSpec.transient_retries` 由来の retry 予算。
     Scripted {
         steps: VecDeque<ScriptStep>,
+        queued: VecDeque<QueuedWork>,
         emitted_in_call: bool,
         remaining_retries: usize,
     },
@@ -432,9 +461,11 @@ enum StepOutcome {
 impl FakeState {
     /// `Scripted` step を 1 件消化する。呼び出し側は `st.step` を `Done`
     /// に置き換えてから呼ぶ — この関数が必要に応じて `st.step` を再設定する。
+    /// `queued` は `ToolCalls` step が積む emit/実行 item の吐き先。
     async fn run_script_step(
         &mut self,
         steps: &mut VecDeque<ScriptStep>,
+        queued: &mut VecDeque<QueuedWork>,
         emitted_in_call: &mut bool,
         remaining_retries: &mut usize,
     ) -> StepOutcome {
@@ -449,6 +480,7 @@ impl FakeState {
                 *emitted_in_call = true;
                 self.step = Step::Scripted {
                     steps: std::mem::take(steps),
+                    queued: std::mem::take(queued),
                     emitted_in_call: *emitted_in_call,
                     remaining_retries: *remaining_retries,
                 };
@@ -470,21 +502,21 @@ impl FakeState {
                 StepOutcome::Continue
             }
             ScriptStep::ToolCalls { calls } => {
-                for call in &calls {
-                    if let Some(rt) = &self.tool_runtime {
-                        // 結果(成功/拒否)は問わない — 計上と journal 副作用が
-                        // 目的。onLimit は execute 内部で fire する。
-                        let _ = rt
-                            .execute(
-                                &call.name,
-                                &call.input,
-                                Some(ToolCallContext {
-                                    signal: self.signal.clone(),
-                                }),
-                            )
-                            .await;
-                    }
+                // Rig `drive_tool_calls` の emit 順序を再現する(F1):
+                // model の `ToolCall` event を全件 emit → batch 実行
+                // (`QueuedWork::Execute`)→ `ToolResult` event を emit。
+                // 即時実行せず queue へ積むのは、run 側の
+                // pending-tool-call 追跡(maxTurns の deferred abort)が
+                // `ToolCall`/`ToolResult` item 対を見るため — 実行が
+                // event 間に挟まる実 stream と同じ形状にする。
+                for (i, call) in calls.iter().enumerate() {
+                    queued.push_back(QueuedWork::Event(RunEvent::ToolCall {
+                        call_id: format!("call-{i}"),
+                        name: call.name.clone(),
+                        arguments: call.input.clone(),
+                    }));
                 }
+                queued.push_back(QueuedWork::Execute(calls));
                 // tool call を産んだ completion call は完了 — 次 step は
                 // 新しい call(`error` の pre-item retry 判定を reset)。
                 *emitted_in_call = false;
@@ -496,6 +528,11 @@ impl FakeState {
             }
             ScriptStep::Turn { tool_calls } => {
                 self.acc.record_turn(tool_calls);
+                *emitted_in_call = false;
+                StepOutcome::Continue
+            }
+            ScriptStep::RolledBackTurn => {
+                self.acc.record_rolled_back_turn();
                 *emitted_in_call = false;
                 StepOutcome::Continue
             }
@@ -564,14 +601,80 @@ fn fake_stream(
             if matches!(st.step, Step::Scripted { .. }) {
                 let Step::Scripted {
                     mut steps,
+                    mut queued,
                     mut emitted_in_call,
                     mut remaining_retries,
                 } = std::mem::replace(&mut st.step, Step::Done)
                 else {
                     unreachable!()
                 };
+                // `ToolCalls` が積んだ item を step より先に 1 件消化する
+                // (item 毎に emit — run 側の per-item abort 判定が各
+                // `ToolCall`/`ToolResult` を観測できる)。
+                if let Some(work) = queued.pop_front() {
+                    match work {
+                        QueuedWork::Event(event) => {
+                            st.step = Step::Scripted {
+                                steps,
+                                queued,
+                                emitted_in_call,
+                                remaining_retries,
+                            };
+                            return Some((Ok(event), st));
+                        }
+                        QueuedWork::Execute(calls) => {
+                            // emit 済み `ToolCall` event 群に対応する実
+                            // 実行 — rig は batch 全件の実行後に result を
+                            // surface する。計上・journal・onLimit は
+                            // `ToolRuntime::execute` の実経路を辿る。
+                            let mut results = VecDeque::with_capacity(calls.len());
+                            for (i, call) in calls.iter().enumerate() {
+                                let output = match &st.tool_runtime {
+                                    Some(rt) => match rt
+                                        .execute(
+                                            &call.name,
+                                            &call.input,
+                                            Some(ToolCallContext {
+                                                signal: st.signal.clone(),
+                                            }),
+                                        )
+                                        .await
+                                    {
+                                        Ok(result) => serde_json::to_value(&result.content)
+                                            .unwrap_or(Value::Null),
+                                        Err(err) => json!({ "error": err.to_string() }),
+                                    },
+                                    None => Value::Null,
+                                };
+                                results.push_back(QueuedWork::Event(RunEvent::ToolResult {
+                                    call_id: format!("call-{i}"),
+                                    name: call.name.clone(),
+                                    output,
+                                    details: None,
+                                }));
+                            }
+                            // 実行結果は queue 先頭へ — emit 済み ToolCall
+                            // に続く ToolResult の順序を保つ。
+                            while let Some(item) = results.pop_back() {
+                                queued.push_front(item);
+                            }
+                            st.step = Step::Scripted {
+                                steps,
+                                queued,
+                                emitted_in_call,
+                                remaining_retries,
+                            };
+                            continue;
+                        }
+                    }
+                }
                 match st
-                    .run_script_step(&mut steps, &mut emitted_in_call, &mut remaining_retries)
+                    .run_script_step(
+                        &mut steps,
+                        &mut queued,
+                        &mut emitted_in_call,
+                        &mut remaining_retries,
+                    )
                     .await
                 {
                     StepOutcome::Item(item) => return Some((item, st)),
@@ -581,6 +684,7 @@ fn fake_stream(
                         if matches!(st.step, Step::Done) {
                             st.step = Step::Scripted {
                                 steps,
+                                queued,
                                 emitted_in_call,
                                 remaining_retries,
                             };
@@ -701,6 +805,7 @@ fn fake_stream(
                         FakeResponse::Scripted(session) => {
                             st.step = Step::Scripted {
                                 steps: session.steps.into(),
+                                queued: VecDeque::new(),
                                 emitted_in_call: false,
                                 // session 毎の retry 予算(main/repair で
                                 // `SessionSpec.transient_retries` 由来)。

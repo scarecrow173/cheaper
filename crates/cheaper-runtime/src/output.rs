@@ -36,7 +36,8 @@ impl ExtractFailureReason {
 /// `extractOutput` 相当の結果。
 #[derive(Debug, Clone)]
 pub enum ExtractedOutput {
-    /// validated object + fence 除去後の raw text。
+    /// validated object + 元の assistant text(fence 除去前 — TS
+    /// `rawOutput: raw` parity)。
     Ok {
         result: Map<String, Value>,
         raw_output: String,
@@ -60,7 +61,12 @@ pub fn extract_output(raw_output: Option<&str>, schema: &CompiledSchema) -> Extr
         };
     };
 
+    // F4: `rawOutput` contract は元の assistant text そのもの
+    // (`rawOutput: raw` — fence 除去前)。parse/検証は fence 除去後の
+    // `stripped` に対して行うが、返り値の raw_output と repair prompt
+    // には original を渡す(TS extractOutput parity)。
     let stripped = strip_code_fence(raw_output);
+    let raw_output = raw_output.to_string();
     let parsed: Value = match serde_json::from_str(&stripped) {
         Ok(v) => v,
         Err(err) => {
@@ -68,7 +74,7 @@ pub fn extract_output(raw_output: Option<&str>, schema: &CompiledSchema) -> Extr
             // message)。reason/contract は同じ。
             return ExtractedOutput::Err {
                 reason: ExtractFailureReason::InvalidJson,
-                raw_output: stripped,
+                raw_output,
                 errors: vec![SchemaErrorEntry {
                     instance_path: String::new(),
                     message: err.to_string(),
@@ -79,7 +85,7 @@ pub fn extract_output(raw_output: Option<&str>, schema: &CompiledSchema) -> Extr
     if !parsed.is_object() {
         return ExtractedOutput::Err {
             reason: ExtractFailureReason::SchemaMismatch,
-            raw_output: stripped,
+            raw_output,
             errors: vec![SchemaErrorEntry {
                 instance_path: String::new(),
                 message: "output is not a JSON object".to_string(),
@@ -89,11 +95,11 @@ pub fn extract_output(raw_output: Option<&str>, schema: &CompiledSchema) -> Extr
     match schema.validate(&parsed) {
         Ok(()) => ExtractedOutput::Ok {
             result: parsed.as_object().expect("checked is_object").clone(),
-            raw_output: stripped,
+            raw_output,
         },
         Err(errors) => ExtractedOutput::Err {
             reason: ExtractFailureReason::SchemaMismatch,
-            raw_output: stripped,
+            raw_output,
             errors,
         },
     }
@@ -138,9 +144,37 @@ mod tests {
         match out {
             ExtractedOutput::Ok { result, raw_output } => {
                 assert_eq!(result["a"], json!(1));
-                assert_eq!(raw_output, "{\"a\":1}");
+                // F4: rawOutput は fence 除去前の original text
+                // (repair prompt が model の実出力を見るため)。
+                assert_eq!(raw_output, "```json\n{\"a\":1}\n```");
             }
             ExtractedOutput::Err { .. } => panic!("expected ok"),
+        }
+    }
+
+    #[test]
+    fn failure_variants_keep_original_raw_output() {
+        let schema = object_schema();
+        // fenced だが内部が invalid JSON → reason=invalid-json、
+        // raw_output は fence 付き original。
+        match extract_output(Some("```json\nnot json\n```"), &schema) {
+            ExtractedOutput::Err {
+                reason, raw_output, ..
+            } => {
+                assert_eq!(reason.as_str(), "invalid-json");
+                assert_eq!(raw_output, "```json\nnot json\n```");
+            }
+            _ => panic!(),
+        }
+        // fenced + schema mismatch も同じく original。
+        match extract_output(Some("```json\n[1,2]\n```"), &schema) {
+            ExtractedOutput::Err {
+                reason, raw_output, ..
+            } => {
+                assert_eq!(reason.as_str(), "schema-mismatch");
+                assert_eq!(raw_output, "```json\n[1,2]\n```");
+            }
+            _ => panic!(),
         }
     }
 

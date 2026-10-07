@@ -265,27 +265,47 @@ fn execute_command_uncached(command_config: &str) -> Option<String> {
         .spawn()
         .ok()?;
     // 10s timeout（`spawnSync`/`execSync` の `timeout: 10000` 相当）。
+    // F11: stdout は reader thread で逐次 drain する。exit 後に
+    // `read_to_string` すると pipe buffer(〜64KB)を超える出力で子が
+    // write block し、`try_wait` が永久に完了しない — 従来実装は
+    // deadline まで待って kill するため大きな stdout を持つ command
+    // が常に未解決扱いになっていた。
+    let mut stdout = child.stdout.take()?;
+    let (tx, rx) = std::sync::mpsc::channel::<std::io::Result<String>>();
+    let reader = std::thread::spawn(move || {
+        let mut out = String::new();
+        let result = std::io::Read::read_to_string(&mut stdout, &mut out).map(|_| out);
+        let _ = tx.send(result);
+    });
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
-    let mut status = None;
-    while status.is_none() {
+    let status = loop {
         match child.try_wait() {
-            Ok(Some(s)) => status = Some(s),
+            Ok(Some(s)) => break s,
             Ok(None) => {
                 if std::time::Instant::now() >= deadline {
                     let _ = child.kill();
                     let _ = child.wait();
+                    let _ = reader.join();
                     return None;
                 }
                 std::thread::sleep(std::time::Duration::from_millis(10));
             }
-            Err(_) => return None,
+            Err(_) => {
+                let _ = reader.join();
+                return None;
+            }
         }
-    }
-    if !status?.success() {
+    };
+    // exit 済みでも pipe 内に残る出力がある — deadline 残時間内に
+    // drain 完了を待つ。reader は stdout EOF で必ず終了する。
+    let out = match rx.recv_timeout(deadline.saturating_duration_since(std::time::Instant::now())) {
+        Ok(Ok(out)) => out,
+        _ => String::new(),
+    };
+    let _ = reader.join();
+    if !status.success() {
         return None;
     }
-    let mut out = String::new();
-    std::io::Read::read_to_string(&mut child.stdout.take()?, &mut out).ok();
     let trimmed = out.trim();
     if trimmed.is_empty() {
         None

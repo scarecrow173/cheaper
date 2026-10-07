@@ -47,6 +47,9 @@ pub struct RepairOptions<'a> {
     pub max_output_tokens: u64,
     /// `policy.retry.transientAttempts`。
     pub transient_retries: usize,
+    /// `policy.execution.maxTurns` — session factory が内部 turn guard
+    /// (`max(1024, policy maxTurns)`)を算出する材料(F7)。
+    pub policy_max_turns: u64,
     /// run 集約 abort signal(`runAbort.signal`)。abort で残り attempt を打ち切る。
     pub signal: AbortSignal,
     /// `promptWithAbortGrace` の grace ms(既定 5000)。
@@ -84,6 +87,7 @@ pub async fn repair_output(
             output_schema: Some(opts.schema),
             max_output_tokens: opts.max_output_tokens,
             transient_retries: opts.transient_retries,
+            policy_max_turns: opts.policy_max_turns,
         })?;
         let mut sink = |_event: &cheaper_rig_adapter::RunEvent| {};
         let outcome = prompt_with_abort_grace(
@@ -159,10 +163,12 @@ fn truncate_chars(s: &str, n: usize) -> String {
     s.chars().take(n).collect()
 }
 
-/// `repairSystemPrompt` — TS と同一 text。
+/// `repairSystemPrompt` — TS と同一 text。schema embed は
+/// `JSON.stringify(…, null, 2)` 規則(F10 — number 表現が Rust と
+/// 異なるため serde_json の pretty printer は使わない)。
 fn repair_system_prompt(schema: &CompiledSchema) -> String {
     let schema_json =
-        serde_json::to_string_pretty(&Value::Object(schema.schema.clone())).unwrap_or_default();
+        cheaper_rig_adapter::js_json::stringify_pretty(&Value::Object(schema.schema.clone()));
     format!(
         "You are a JSON repair worker. Return ONLY a JSON object that conforms to the\n\
          schema below. No prose, no markdown, no code fences.\n\

@@ -92,6 +92,48 @@ fn credential_store_atomic_replace_and_remove() {
     assert!(leftovers.is_empty());
 }
 
+/// F12: Unix の `rename(2)` は既存 target を原子置換するため、並行
+/// reader は file 不在 / 不完全な JSON を一切観測しない。旧実装の
+/// remove→rename は置換毎に file 不在の crash window を作っていた
+/// （この test は window を必ず捉える訳ではないが、fixed impl では
+/// 絶対に失敗しない — 回帰検出のみを目的とする）。
+#[test]
+#[cfg(unix)]
+fn credential_store_replace_never_exposes_missing_file_on_unix() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    let dir = tmp_dir();
+    let store = CredentialStore::new(dir.path());
+    store
+        .set("openai", StoredCredential::api_key("k0".into()))
+        .unwrap();
+    let path = store.path().to_path_buf();
+    let stop = Arc::new(AtomicBool::new(false));
+    let reader = {
+        let stop = Arc::clone(&stop);
+        std::thread::spawn(move || {
+            while !stop.load(Ordering::Relaxed) {
+                let raw = std::fs::read_to_string(&path)
+                    .expect("credentials.json must never be absent during replace");
+                let parsed: serde_json::Value =
+                    serde_json::from_str(&raw).expect("credentials.json is always valid JSON");
+                assert!(parsed["providers"]["openai"].is_object());
+            }
+        })
+    };
+    for i in 1..=64 {
+        store
+            .set("openai", StoredCredential::api_key(format!("k{i}")))
+            .unwrap();
+    }
+    stop.store(true, Ordering::Relaxed);
+    reader.join().unwrap();
+    assert_eq!(
+        store.get("openai").unwrap().unwrap().as_api_key(),
+        Some("k64")
+    );
+}
+
 #[test]
 fn credential_store_oauth_extra_claims() {
     let dir = tmp_dir();
@@ -244,6 +286,34 @@ fn command_config_value_executes_and_caches() {
     let ov = overlay(BTreeMap::new(), &env);
     let v = cheaper_runtime::auth::api_key::resolve_config_value("!echo secret-key", &ov);
     assert_eq!(v, Some("secret-key".to_string()));
+}
+
+/// F11: pipe buffer(〜64KB)を超える stdout を持つ `!cmd` でも drain が
+/// 先行するため子の write block → timeout 死にしない。
+#[test]
+#[cfg(unix)]
+fn command_stdout_over_pipe_buffer_does_not_deadlock() {
+    let env = MapEnv(BTreeMap::new());
+    let ov = overlay(BTreeMap::new(), &env);
+    // `seq 1 50000` は ~289KB — 64KB pipe buffer を明確に超過。
+    let v = cheaper_runtime::auth::api_key::resolve_config_value("!seq 1 50000", &ov)
+        .expect("large stdout command resolves");
+    assert!(v.len() >= 200_000, "len={}", v.len());
+    assert!(v.ends_with("50000"));
+}
+
+#[test]
+#[cfg(windows)]
+fn command_stdout_over_pipe_buffer_does_not_deadlock() {
+    let env = MapEnv(BTreeMap::new());
+    let ov = overlay(BTreeMap::new(), &env);
+    // cmd builtin の `for /l` で ~260KB の stdout を生成。
+    let v = cheaper_runtime::auth::api_key::resolve_config_value(
+        "!for /l %i in (1,1,4000) do @echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        &ov,
+    )
+    .expect("large stdout command resolves");
+    assert!(v.len() >= 200_000, "len={}", v.len());
 }
 
 // ---- auth service ----

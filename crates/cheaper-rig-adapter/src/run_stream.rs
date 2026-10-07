@@ -8,8 +8,14 @@
 //! Rig stream を drop(run 全体の cancel)したうえで reason 由来の終端
 //! `CheaperError` を 1 件 emit して stream を閉じる。
 //!
-//! usage/accounting は stream item ではなく hook→accumulator が担う —
-//! ここでは event の整形だけを行う(FinalResponse の usage を読まない)。
+//! usage 記録は `CompletionCall` item 境界で accumulator へ行う(F2)。
+//! `on_outcome` hook は invalid-tool-call recovery で roll back された
+//! streamed turn には発火しないが、Rig の engine は abandoned reply も
+//! `stream.finish()` → usage 記録 → `CompletionCall` item emit する
+//! (rig-agent `run/mod.rs` の `record_streamed_completion_call` —
+//! `rollback_pending` state でも recordable)。そのため stream item が
+//! billed usage の唯一の完全な recording point で、run が後で
+//! error/abort/max-turns で終わっても usage は残る。
 
 use std::pin::Pin;
 use std::sync::Arc;
@@ -22,7 +28,7 @@ use cheaper_tools::operation::AbortSignal;
 use rig::agent::MultiTurnStreamItem;
 use rig::streaming::{Item, StreamEvent, StreamedUserContent};
 
-use crate::accumulator::UsageSnapshot;
+use crate::accumulator::{Accumulator, UsageSnapshot};
 use crate::error::{abort_reason_to_cheaper, streaming_error_to_cheaper};
 use crate::hooks::ToolDetails;
 
@@ -125,6 +131,7 @@ struct State {
     inner: rig::agent::StreamingResult,
     signal: Option<AbortSignal>,
     details: Arc<ToolDetails>,
+    acc: Arc<Accumulator>,
     done: bool,
 }
 
@@ -135,12 +142,14 @@ pub(crate) fn run_stream(
     inner: rig::agent::StreamingResult,
     signal: Option<AbortSignal>,
     details: Arc<ToolDetails>,
+    acc: Arc<Accumulator>,
 ) -> RunStream {
     let stream = stream::unfold(
         State {
             inner,
             signal,
             details,
+            acc,
             done: false,
         },
         |mut state| async move {
@@ -175,6 +184,15 @@ pub(crate) fn run_stream(
                         return Some((Err(streaming_error_to_cheaper(error)), state));
                     }
                     Some(Ok(item)) => {
+                        // billed usage を item 境界で記録(rolled-back
+                        // turn を含む全 completion call で emit される
+                        // — hook 経路では漏れる)。run が後で error/
+                        // abort で終わってもこの usage は保持される。
+                        if let MultiTurnStreamItem::CompletionCall(call) = &item {
+                            state
+                                .acc
+                                .record_completion(&UsageSnapshot::from(&call.usage));
+                        }
                         if let Some(event) = map_item(item, &state.details) {
                             return Some((Ok(event), state));
                         }

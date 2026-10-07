@@ -77,6 +77,8 @@ impl PluginAuth for FakeAuth {
 
 struct FakeCatalog {
     refreshed: Mutex<Option<Vec<ModelDefinitionJson>>>,
+    /// refresh 失敗注入 — `Err(CheaperError)` を返す(F13 失敗経路)。
+    fail: AtomicBool,
 }
 impl PluginCatalog for FakeCatalog {
     fn refresh_models(
@@ -84,6 +86,12 @@ impl PluginCatalog for FakeCatalog {
         _ctx: &ProviderPluginContext,
         _credential: Option<&StoredCredential>,
     ) -> Result<Option<Vec<ModelDefinitionJson>>, CheaperError> {
+        if self.fail.load(Ordering::SeqCst) {
+            return Err(CheaperError::new(
+                cheaper_core::errors::ErrorCode::InternalError,
+                "refresh boom",
+            ));
+        }
         Ok(self.refreshed.lock().unwrap().clone())
     }
 }
@@ -136,6 +144,7 @@ fn plugin_provider_composes_and_supports_its_api_kind() {
         }),
         catalog: Arc::new(FakeCatalog {
             refreshed: Mutex::new(None),
+            fail: AtomicBool::new(false),
         }),
     });
     let plugins: Vec<Arc<dyn CheaperProviderPlugin>> = vec![plugin];
@@ -176,6 +185,7 @@ fn plugin_login_logout_roundtrip() {
         auth: auth.clone(),
         catalog: Arc::new(FakeCatalog {
             refreshed: Mutex::new(None),
+            fail: AtomicBool::new(false),
         }),
     });
     let plugins: Vec<Arc<dyn CheaperProviderPlugin>> = vec![plugin];
@@ -232,4 +242,137 @@ fn plugin_login_logout_roundtrip() {
             .unwrap()
             .configured
     );
+}
+
+// ---------------------------------------------------------------------------
+// F13 — login 後の plugin catalog refresh
+// ---------------------------------------------------------------------------
+
+struct NoopInteraction;
+impl AuthInteraction for NoopInteraction {
+    fn prompt(
+        &mut self,
+        _p: &cheaper_runtime::auth::AuthPrompt<'_>,
+    ) -> Result<String, CheaperError> {
+        Ok(String::new())
+    }
+}
+
+fn refreshed_model(id: &str) -> ModelDefinitionJson {
+    ModelDefinitionJson {
+        id: id.to_string(),
+        name: None,
+        api: None,
+        base_url: None,
+        reasoning: None,
+        thinking_level_map: None,
+        input: None,
+        cost: None,
+        context_window: None,
+        max_tokens: None,
+        sampling_params: None,
+        headers: None,
+        compat: None,
+    }
+}
+
+fn plugin_with_catalog(catalog: FakeCatalog) -> (Arc<FakeAuth>, Arc<dyn CheaperProviderPlugin>) {
+    let auth = Arc::new(FakeAuth {
+        logged_out: AtomicBool::new(false),
+    });
+    (
+        auth.clone(),
+        Arc::new(FakePlugin {
+            auth,
+            catalog: Arc::new(catalog),
+        }),
+    )
+}
+
+#[test]
+fn login_refreshes_plugin_catalog_models() {
+    // F13: login 成功後に `refreshModels` 結果で live model catalog が
+    // 更新される(devin `devin models list` 経路の seam)。
+    let dir = tempfile::tempdir().unwrap();
+    let (_auth, plugin) = plugin_with_catalog(FakeCatalog {
+        refreshed: Mutex::new(Some(vec![refreshed_model("fake-2")])),
+        fail: AtomicBool::new(false),
+    });
+    let plugins: Vec<Arc<dyn CheaperProviderPlugin>> = vec![plugin];
+    let runtime = Runtime::create(
+        dir.path().to_path_buf(),
+        Arc::new(MapEnv),
+        &plugins,
+        BTreeMap::new(),
+    )
+    .unwrap();
+    // login 前は bootstrap list のみ。
+    assert!(runtime
+        .catalog()
+        .get_supported_model("fake", "fake-2")
+        .unwrap()
+        .is_none());
+    let result = runtime
+        .auth()
+        .login(
+            runtime.catalog(),
+            "fake",
+            cheaper_runtime::auth::AuthType::Oauth,
+            &mut NoopInteraction,
+        )
+        .unwrap();
+    assert!(result.authenticated);
+    // refresh 結果が catalog に反映される。
+    let model = runtime
+        .catalog()
+        .get_supported_model("fake", "fake-2")
+        .unwrap()
+        .expect("refreshed model is visible");
+    assert_eq!(model.provider, "fake");
+    // 宣言 api kind は plugin api に継承される。
+    assert_eq!(model.api, "fake-api");
+    assert!(runtime.catalog().errors().is_empty());
+}
+
+#[test]
+fn login_succeeds_when_plugin_refresh_fails() {
+    // F13: refresh の失敗は login を失敗させない — TS の
+    // `refreshModels().catch(() => {})` 相当で error は catalog errors
+    // へ記録されるのみ。
+    let dir = tempfile::tempdir().unwrap();
+    let (_auth, plugin) = plugin_with_catalog(FakeCatalog {
+        refreshed: Mutex::new(None),
+        fail: AtomicBool::new(true),
+    });
+    let plugins: Vec<Arc<dyn CheaperProviderPlugin>> = vec![plugin];
+    let runtime = Runtime::create(
+        dir.path().to_path_buf(),
+        Arc::new(MapEnv),
+        &plugins,
+        BTreeMap::new(),
+    )
+    .unwrap();
+    let result = runtime
+        .auth()
+        .login(
+            runtime.catalog(),
+            "fake",
+            cheaper_runtime::auth::AuthType::Oauth,
+            &mut NoopInteraction,
+        )
+        .unwrap();
+    assert!(result.authenticated);
+    let errors = runtime.catalog().errors();
+    assert!(
+        errors
+            .iter()
+            .any(|e| e.contains("fake") && e.contains("refreshModels")),
+        "{errors:?}"
+    );
+    // bootstrap list は維持される。
+    assert!(runtime
+        .catalog()
+        .get_supported_model("fake", "fake-1")
+        .unwrap()
+        .is_some());
 }

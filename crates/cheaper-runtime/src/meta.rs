@@ -124,17 +124,21 @@ pub fn build_meta(
     let source_tokens = inputs.source_tokens;
     let returned_tokens = result
         .map(|r| {
-            count_text_tokens(&serde_json::to_string(r).unwrap_or_default())
-                .map(|n| n as u64)
-                // `countTextTokens` の throw は TS では buildMeta → outer
-                // catch で INTERNAL_ERROR になる。ここでも同じ code に畳む。
-                .map_err(|e| {
-                    CheaperError::new(
-                        ErrorCode::InternalError,
-                        format!("token counting failed: {e}"),
-                    )
-                    .with_cause(e)
-                })
+            // F10: `returnedTokens` の計量 text は TS の
+            // `JSON.stringify(result)` 規則(JS number formatting)に揃える。
+            count_text_tokens(&cheaper_rig_adapter::js_json::stringify(&Value::Object(
+                r.clone(),
+            )))
+            .map(|n| n as u64)
+            // `countTextTokens` の throw は TS では buildMeta → outer
+            // catch で INTERNAL_ERROR になる。ここでも同じ code に畳む。
+            .map_err(|e| {
+                CheaperError::new(
+                    ErrorCode::InternalError,
+                    format!("token counting failed: {e}"),
+                )
+                .with_cause(e)
+            })
         })
         .transpose()?
         .unwrap_or(0);

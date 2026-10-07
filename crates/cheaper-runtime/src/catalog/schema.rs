@@ -73,8 +73,16 @@ fn strip_json_comments(input: &str) -> String {
                     out.push('\\');
                     i += 1;
                     if i < bytes.len() {
-                        out.push(bytes[i] as char);
-                        i += 1;
+                        // escape 対象は ASCII に限らない — `"\\\u{3042}"`
+                        // のように backslash 直後が multibyte UTF-8 の
+                        // 先頭 byte のこともある。`bytes[i] as char` は
+                        // byte を Latin-1 として decode するため UTF-8 を
+                        // 破壊し、続く continuation byte で char 境界を
+                        // 外した slice が panic する(F3)。default arm と
+                        // 同じく UTF-8 length で span コピーする。
+                        let ch_len = utf8_len(bytes[i]);
+                        out.push_str(&stage1[i..i + ch_len]);
+                        i += ch_len;
                     }
                 }
                 b',' if !in_string => {
@@ -614,6 +622,18 @@ mod tests {
         let parsed: Value = serde_json::from_str(&out).unwrap();
         assert_eq!(parsed["a"], "http://example.com//x");
         assert_eq!(parsed["b"], "]}");
+    }
+
+    #[test]
+    fn escaped_backslash_before_multibyte_utf8_does_not_panic_or_corrupt() {
+        // F3 regression: `"\\あ"` のように backslash 直後が multibyte UTF-8
+        // 先頭 byte だと escape 対象を `bytes[i] as char` で decode して
+        // UTF-8 を破壊し、後続 continuation byte の slice が panic した。
+        let input = r#"{"a": "\\あ", "b": "\\€x"}"#;
+        let out = strip_json_comments(input);
+        let parsed: Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(parsed["a"], "\\あ");
+        assert_eq!(parsed["b"], "\\€x");
     }
 
     #[test]
