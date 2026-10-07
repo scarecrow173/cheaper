@@ -305,6 +305,104 @@ pub(crate) fn io_errno_display(path: &str, e: &std::io::Error) -> String {
     errno_string(e)
 }
 
+/// Node fs error(`UVException`)の observable shape を再現する wrapper。
+/// Node の fs error は `name: "Error"`・`code: "<ERRNO>"`・message
+/// `"{code}: {uv_strerror}, {syscall} '{path}'"` を持つ plain Error で、
+/// `describeError` はそのまま `{name, message, code}` を取り出す。
+/// Rust の `io::Error` は locale 依存 message を持ち path/syscall を
+/// 保持しないため、throw 境界(=Node fs call 相当の場所)で wrap する。
+#[derive(Debug)]
+pub struct NodeIoError {
+    code: String,
+    message: String,
+    source: std::io::Error,
+}
+
+impl NodeIoError {
+    /// Node `error.code`(`"ENOENT"` 等)。
+    pub fn code(&self) -> &str {
+        &self.code
+    }
+
+    /// 元の `io::Error`(OS error code 等への access 用)。
+    pub fn io_error(&self) -> &std::io::Error {
+        &self.source
+    }
+}
+
+impl fmt::Display for NodeIoError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for NodeIoError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.source)
+    }
+}
+
+/// libuv `uv_strerror(code)` の description 列。fs call から到達可能な
+/// code を網羅し、未知は code 名自体を返す(Node の `UNKNOWN` 系ではなく
+/// numeric string 化した errno_string 出力にも耐える)。
+fn uv_strerror_desc(code: &str) -> &str {
+    match code {
+        "EPERM" => "operation not permitted",
+        "ENOENT" => "no such file or directory",
+        "EINTR" => "interrupted system call",
+        "EIO" => "i/o error",
+        "EBADF" => "bad file descriptor",
+        "EAGAIN" => "resource temporarily unavailable",
+        "EACCES" => "permission denied",
+        "EBUSY" => "resource busy or locked",
+        "EEXIST" => "file already exists",
+        "EXDEV" => "cross-device link not permitted",
+        "ENODEV" => "no such device",
+        "ENOTDIR" => "not a directory",
+        "EISDIR" => "illegal operation on a directory",
+        "EINVAL" => "invalid argument",
+        "ENFILE" => "too many open files in system",
+        "EMFILE" => "too many open files",
+        "ETXTBSY" => "text file is busy",
+        "EFBIG" => "file too large",
+        "ENOSPC" => "no space left on device",
+        "ESPIPE" => "invalid seek",
+        "EROFS" => "read-only file system",
+        "EMLINK" => "too many links",
+        "EPIPE" => "broken pipe",
+        "ENAMETOOLONG" => "name too long",
+        "ENOTEMPTY" => "directory not empty",
+        "ELOOP" => "too many symbolic links",
+        "ENOMEM" => "not enough memory",
+        other => other,
+    }
+}
+
+/// fs call の失敗を Node `UVException` shape(`{code, message}`)へ wrap
+/// する。`syscall` は Node binding が報告する syscall 名(`stat`,
+/// `open`, `read`, `scandir`, `mkdir`, `rename`, `access` 等)。
+/// `io_errno_display` が Windows の dir-read `EISDIR` 特例を処理する。
+pub fn node_io_error(syscall: &str, path: &str, e: std::io::Error) -> NodeIoError {
+    node_io_error_with_code(syscall, path, &io_errno_display(path, &e), e)
+}
+
+/// `node_io_error` と同じ shape で code を呼び出し側が指定する版。
+/// errno 自動導出では表せない Node の code(例: Windows の
+/// `access(path, W_OK)` が readonly attribute で返す `EPERM` — open
+/// 由来の `ERROR_ACCESS_DENIED`→`EACCES` ではない)を再現する場合に使う。
+pub fn node_io_error_with_code(
+    syscall: &str,
+    path: &str,
+    code: &str,
+    e: std::io::Error,
+) -> NodeIoError {
+    NodeIoError {
+        message: format!("{code}: {}, {syscall} '{path}'", uv_strerror_desc(code)),
+        code: code.to_string(),
+        source: e,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

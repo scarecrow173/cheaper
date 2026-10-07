@@ -33,7 +33,10 @@ pub const DEFAULT_DENY_PATHS: &[&str] = &[
 ];
 
 /// Port of `PathDenylist`.
-#[derive(Debug)]
+/// `Clone` は boundary operations が caller の denylist と内部
+/// `ResourceAccess` 構築の双方で同一 list を必要とするため
+/// (`operations.ts` の `observer()` fallback)。
+#[derive(Debug, Clone)]
 pub struct PathDenylist {
     regexes: Vec<Regex>,
     /// Effective pattern list (built-in + policy), in order.

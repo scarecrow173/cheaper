@@ -65,8 +65,10 @@ fn escape(input: &str, reason: &str) -> WorkspaceEscapeError {
 }
 
 /// `fs.realpath` equivalent: canonicalize and strip the Windows `\\?\`
-/// verbatim prefix via `dunce` (design doc fixed rule).
-fn realpath(p: &str) -> std::io::Result<String> {
+/// verbatim prefix via `dunce` (design doc fixed rule). The tool layer's
+/// walker uses this as the canonical cycle-prevention key and symlink
+/// target resolver.
+pub fn realpath(p: &str) -> std::io::Result<String> {
     let resolved = dunce::canonicalize(p)?;
     Ok(resolved.to_string_lossy().into_owned())
 }

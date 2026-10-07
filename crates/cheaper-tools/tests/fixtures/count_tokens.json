@@ -1,0 +1,296 @@
+{
+  "cases": [
+    {
+      "expectRust": {
+        "ops": {
+          "0": {
+            "ok": {
+              "content": [
+                {
+                  "text": "{\"path\":\"a.txt\",\"tokens\":10,\"bytes\":40,\"tokenizer\":{\"name\":\"o200k_base\",\"implementation\":\"tiktoken-rs\",\"version\":\"0.12.1\"}}",
+                  "type": "text"
+                }
+              ],
+              "details": {
+                "bytes": 40,
+                "path": "a.txt",
+                "tokenizer": {
+                  "implementation": "tiktoken-rs",
+                  "name": "o200k_base",
+                  "version": "0.12.1"
+                },
+                "tokens": 10
+              }
+            }
+          }
+        },
+        "state": {
+          "meter": {
+            "sourceTokens": 40
+          }
+        }
+      },
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "{\"path\":\"a.txt\",\"tokens\":10,\"bytes\":40,\"tokenizer\":{\"name\":\"o200k_base\",\"implementation\":\"js-tiktoken\",\"version\":\"1.0.21\"}}",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "bytes": 40,
+              "path": "a.txt",
+              "tokenizer": {
+                "implementation": "js-tiktoken",
+                "name": "o200k_base",
+                "version": "1.0.21"
+              },
+              "tokens": 10
+            }
+          }
+        }
+      ],
+      "files": {
+        "a.txt": "hello world, this is a token count test\n"
+      },
+      "name": "counts a file",
+      "ops": [
+        {
+          "input": {
+            "path": "a.txt"
+          },
+          "tool": "count_tokens"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "count_tokens"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 39
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "count_tokens"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "kind": "other",
+            "message": "Access denied: path is denied by policy",
+            "name": "Error"
+          }
+        }
+      ],
+      "files": {
+        "secret.txt": "s\n"
+      },
+      "name": "denylisted path",
+      "ops": [
+        {
+          "input": {
+            "path": "secret.txt"
+          },
+          "tool": "count_tokens"
+        }
+      ],
+      "runtime": {
+        "denylist": [
+          "secret.txt"
+        ],
+        "names": [
+          "count_tokens"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 1,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": [
+          {
+            "error": {
+              "message": "Access denied: path is denied by policy",
+              "name": "Error"
+            },
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "failed",
+            "toolName": "count_tokens"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "kind": "io"
+          }
+        }
+      ],
+      "name": "nonexistent file",
+      "ops": [
+        {
+          "input": {
+            "path": "missing.txt"
+          },
+          "tool": "count_tokens"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "count_tokens"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": [
+          {
+            "error": {
+              "code": "ENOENT",
+              "message": "ENOENT: no such file or directory, stat '<ROOT>\\missing.txt'",
+              "name": "Error"
+            },
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "failed",
+            "toolName": "count_tokens"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "code": "INVALID_INPUT",
+            "details": {
+              "errors": [
+                {
+                  "instancePath": "/path"
+                }
+              ],
+              "tool": "count_tokens"
+            },
+            "exitCode": 2,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      ],
+      "name": "invalid input is uncounted",
+      "ops": [
+        {
+          "input": {
+            "path": true
+          },
+          "tool": "count_tokens"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "count_tokens"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 0
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": []
+      }
+    }
+  ],
+  "platform": "win32"
+}

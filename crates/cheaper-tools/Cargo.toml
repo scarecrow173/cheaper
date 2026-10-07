@@ -1,0 +1,21 @@
+[package]
+name = "cheaper-tools"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+description = "Port of packages/tool-runtime + runtime-pi/src/tools: canonical tools, scheduler, budget/accounting, mutation journal, artifact ports. Depends only on cheaper-core; tokio allowed."
+
+[dependencies]
+cheaper-core = { path = "../cheaper-core" }
+tokio.workspace = true
+tokio-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+regress.workspace = true
+unicode-normalization.workspace = true
+similar.workspace = true
+fastrand.workspace = true
+
+# POSIX 側 process 制御(kill(-pid)/setrlimit)は unix のみ。
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true

@@ -7,7 +7,7 @@ use serde_json::Value;
 /// JS `String(v)` for a `serde_json::Value`. `undefined` cannot be
 /// represented in `serde_json`; callers pass [`js_undefined`] for absent
 /// values instead.
-pub(crate) fn js_string(v: &Value) -> String {
+pub fn js_string(v: &Value) -> String {
     match v {
         Value::Null => "null".to_string(),
         Value::Bool(b) => b.to_string(),
@@ -30,7 +30,7 @@ pub(crate) fn js_string(v: &Value) -> String {
 }
 
 /// JS `String(undefined)`.
-pub(crate) fn js_undefined() -> &'static str {
+pub fn js_undefined() -> &'static str {
     "undefined"
 }
 
@@ -78,7 +78,7 @@ fn punct_rank(c: char) -> u32 {
 /// (secondary weights), non-ASCII digits (classed as letters), multi-char
 /// case folds (e.g. `İ`), and locale-specific reorderings compare
 /// differently than in Node.
-pub(crate) fn locale_compare(a: &str, b: &str) -> std::cmp::Ordering {
+pub fn locale_compare(a: &str, b: &str) -> std::cmp::Ordering {
     use std::cmp::Ordering;
     // Primary pass: lexicographic over `(class, lowercase)` per char;
     // a proper prefix sorts first.
@@ -137,7 +137,7 @@ pub(crate) fn locale_compare(a: &str, b: &str) -> std::cmp::Ordering {
 /// order) only when an astral-plane char is compared against a BMP char
 /// above U+E000 (astral lead surrogates 0xD800–0xDBFF sort below
 /// 0xE000–0xFFFF in code-unit order).
-pub(crate) fn code_unit_compare(a: &str, b: &str) -> std::cmp::Ordering {
+pub fn code_unit_compare(a: &str, b: &str) -> std::cmp::Ordering {
     a.encode_utf16().cmp(b.encode_utf16())
 }
 
@@ -150,7 +150,7 @@ fn is_js_trim_char(c: char) -> bool {
 }
 
 /// `str.trim` under JS `String.prototype.trim` semantics.
-pub(crate) fn js_trim(s: &str) -> &str {
+pub fn js_trim(s: &str) -> &str {
     s.trim_matches(is_js_trim_char)
 }
 
@@ -160,7 +160,7 @@ pub(crate) fn js_trim(s: &str) -> &str {
 /// index keys, strings their UTF-16 code units as `"0"`, `"1"`, …
 /// values, and numbers/booleans/null nothing. Used by the workflow
 /// artifacts merge and the restrict-concurrency merge.
-pub(crate) fn spread_into(
+pub fn spread_into(
     target: &mut serde_json::Map<String, serde_json::Value>,
     value: &serde_json::Value,
 ) {
@@ -186,11 +186,11 @@ pub(crate) fn spread_into(
 }
 
 /// JS `Number.MAX_SAFE_INTEGER`.
-pub(crate) const MAX_SAFE_INTEGER: f64 = 9_007_199_254_740_991.0;
+pub const MAX_SAFE_INTEGER: f64 = 9_007_199_254_740_991.0;
 
 /// `Number.isSafeInteger(v)` → the integer value as `f64` (`None`
 /// otherwise). Handles i64/u64 and integral f64 like JS.
-pub(crate) fn safe_integer(v: &Value) -> Option<f64> {
+pub fn safe_integer(v: &Value) -> Option<f64> {
     let n = v.as_f64()?;
     if n.fract() == 0.0 && n.abs() <= MAX_SAFE_INTEGER {
         Some(n)
@@ -200,7 +200,7 @@ pub(crate) fn safe_integer(v: &Value) -> Option<f64> {
 }
 
 /// Safe non-negative integer as `u64` (`None` for non-integer/negative).
-pub(crate) fn safe_u64(v: &Value) -> Option<u64> {
+pub fn safe_u64(v: &Value) -> Option<u64> {
     let n = safe_integer(v)?;
     if n < 0.0 {
         return None;

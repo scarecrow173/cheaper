@@ -35,6 +35,34 @@ tiktoken-rs = "0.12"
 dunce = "1"
 # Deny-pattern regexes, worker name pattern, env-var name pattern, etc.
 regex = "1"
+# cheaper-tools (Phase 2). Async runtime boundary for the tool layer:
+# process spawn/capture, scheduler timers, CancellationToken via
+# tokio-util. Features stay at the plan-approved minimal set.
+tokio = { version = "1", features = [
+    "rt",
+    "process",
+    "fs",
+    "time",
+    "sync",
+    "io-util",
+    "macros",
+] }
+tokio-util = "0.7"
+# grep eval engine: EcmaScript-syntax regular expressions (JS `RegExp`
+# dialect is part of the tool contract; plan fixed rule).
+regress = "0.12"
+# NFKC normalization for edit fuzzy matching.
+unicode-normalization = "0.1"
+# Line diff for MutationJournal / edit diff (jsdiff `diffLines`
+# replacement; differential fixtures decide whether a direct port is
+# needed).
+similar = "3"
+# Glob matcher for find/grep (`path.posix.matchesGlob` parity is verified
+# against fixtures).
+# Lightweight RNG for temp file names.
+fastrand = "2"
+# POSIX process control (kill(-pid), setrlimit) — unix-only target dep.
+libc = "0.2"
 
 [profile.release]
 lto = true

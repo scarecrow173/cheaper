@@ -390,6 +390,16 @@ fn strict_schema_check(schema: &Value) -> Result<(), ()> {
         types.contains(&t) || (t == "integer" && types.contains(&"number"))
     }
 
+    /// Keyword が要求する data type を declared type が満たすか。
+    /// AJV は `integer` を `number` の subtype として扱うため、
+    /// `type: "integer"` は `minimum` 等の `number` 要求を満たす
+    /// (`includes_type` は文脈 narrowing 方向の判定で、こちらは逆方向)。
+    fn covers_type(types: &[&'static str], req: &'static str) -> bool {
+        types
+            .iter()
+            .any(|t| *t == req || (*t == "integer" && req == "number"))
+    }
+
     /// `getSchemaTypes`: `type` (+ `nullable`) → allowed JSON types.
     /// Malformed values are rejected (AJV throws or the meta-schema
     /// fails — the same compile-rejection boundary).
@@ -541,7 +551,7 @@ fn strict_schema_check(schema: &Value) -> Result<(), ()> {
             // Keyword type requirements.
             for k in obj.keys() {
                 if let Some(req) = keyword_types(k) {
-                    if !req.iter().any(|t| includes_type(&data_types, t)) {
+                    if !req.iter().any(|t| covers_type(&data_types, t)) {
                         return Err(());
                     }
                 }

@@ -1,24 +1,32 @@
 ---
 id: "TASK-034BgKiZhENYXeNMRvxyFA"
 type: "task"
-status: "todo"
+status: "done"
 title: "Phase 2: port cheaper-tools"
 created: "2026-10-06"
-updated: "2026-10-06"
+updated: "2026-10-07"
 owners: []
 relations:
   source: []
   changes:
-    added: []
-    modified: []
+    added:
+      - "scripts/dump-tool-fixtures.mjs"
+      - "crates/cheaper-tools/"
+    modified:
+      - "crates/cheaper-core/src/errors.rs"
+      - "crates/cheaper-core/src/token/count.rs"
+      - "docs/impl/ir/phase-2-port-cheaper-tools.md"
+      - "Cargo.toml"
     deleted: []
     renamed: []
     moved: []
-    generated: []
+    generated:
+      - "crates/cheaper-tools/tests/fixtures/"
   implements:
     - "docs/plans/phase-2-port-cheaper-tools.md"
     - "docs/plans/migrate-cheaper-runtime-to-rust-rig.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/phase-2-port-cheaper-tools.md"
   depends-on:
     - "docs/plans/phase-2-port-cheaper-tools.md"
     - "docs/tasks/phase-1-port-cheaper-core.md"
@@ -128,40 +136,40 @@ plan の Task Breakdown T2-1〜T2-8 が本 task の作業単位:
 
 ## Done When
 
-- [ ] T2-1: `crates/cheaper-tools` skeleton + `limits.rs`/`line_framer.rs`/
+- [x] T2-1: `crates/cheaper-tools` skeleton + `limits.rs`/`line_framer.rs`/
       `walker.rs`/`artifact.rs` が unit test 付きで移植される
-- [ ] T2-2: `execution_metrics.rs`/`operation.rs`/`resources.rs`/
+- [x] T2-2: `execution_metrics.rs`/`operation.rs`/`resources.rs`/
       `scheduler.rs` が fake clock・deferred handler による決定的 unit test
       付きで移植される
-- [ ] T2-3: `access.rs`/`accounting.rs`/`journal.rs` が移植され、計数
+- [x] T2-3: `access.rs`/`accounting.rs`/`journal.rs` が移植され、計数
       4 分類(toolCalls/rejectedToolCalls 写像)が unit test で固定される
-- [ ] T2-4: `definition.rs`/`catalog.rs` + fs tool 6 種が移植される
-- [ ] T2-5: `grep_eval.rs` + `grep.rs` が移植され、eval subprocess の
+- [x] T2-4: `definition.rs`/`catalog.rs` + fs tool 6 種が移植される
+- [x] T2-5: `grep_eval.rs` + `grep.rs` が移植され、eval subprocess の
       timeout kill・output byte cap が unit test で固定される
-- [ ] T2-6: `process_executable.rs`(`node` 明示 error 化を含む)・
+- [x] T2-6: `process_executable.rs`(`node` 明示 error 化を含む)・
       `process_tree.rs`・`process.rs` が移植される
-- [ ] T2-7: `registry.rs`/`invocation.rs`/`lib.rs` が移植され、8 種
+- [x] T2-7: `registry.rs`/`invocation.rs`/`lib.rs` が移植され、8 種
       native 構築の execute pipeline が成立する
-- [ ] T2-8: TS fixture dump → Rust differential replay 基盤が構築され、
+- [x] T2-8: TS fixture dump → Rust differential replay 基盤が構築され、
       fixture matrix(read/grep/find/ls/write/edit/count_tokens/process/
       scheduler/journal)の差分が解消される。Windows 実機で全 test パス +
       process/grep smoke を完了する
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-tools` が全パス(TS test file の
+- [x] `mise exec -- cargo test -p cheaper-tools` が全パス(TS test file の
       意味を写した unit/integration test を含む)
-- [ ] `mise exec -- cargo clippy -p cheaper-tools --all-targets --
+- [x] `mise exec -- cargo clippy -p cheaper-tools --all-targets --
       -D warnings` と `mise exec -- cargo fmt --check` が green
-- [ ] `node scripts/dump-tool-fixtures.mjs` で TS registry の `execute`
+- [x] `node scripts/dump-tool-fixtures.mjs` で TS registry の `execute`
       結果を JSONL dump し、`mise exec -- cargo test -p cheaper-tools
       --test differential` が同 fixture を replay して
       CanonicalToolResult(content/details/error 分類)を比較して一致
       する(normalize: 時刻・tmp 名乱数・pid を除外)
-- [ ] 計数写像の fixture pin: budget 内実行到達=`toolCalls`、boundary
+- [x] 計数写像の fixture pin: budget 内実行到達=`toolCalls`、boundary
       拒否・limit 超過=`rejectedToolCalls`、runtime 未到達 invalid call=
       不計上、の 4 分類が TS dump と一致する
-- [ ] Windows 実機で `cargo test -p cheaper-tools` 全パス + process
+- [x] Windows 実機で `cargo test -p cheaper-tools` 全パス + process
       taskkill tree kill・PID reuse 非誤爆・minimal env・grep eval
       timeout kill の smoke を実施する
 - [ ] `mise run check` が現行通り全 green(TS 側無破壊)

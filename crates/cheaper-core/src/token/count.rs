@@ -7,6 +7,7 @@
 //! (`disallowedSpecial: "all"`), so `encode_ordinary` is preceded by a
 //! literal special-token scan producing [`SpecialTokenError`].
 
+use crate::errors::{node_io_error, NodeIoError};
 use crate::workspace::paths::{resolve_workspace_path, SymlinkPolicy, WorkspaceEscapeError};
 
 /// `DEFAULT_COUNT_MAX_BYTES` (16 MiB, ADR-0015). Exceeding it fails
@@ -161,7 +162,10 @@ pub enum CountTokensError {
     Escape(WorkspaceEscapeError),
     TooLarge(FileTooLargeError),
     SpecialToken(SpecialTokenError),
-    Io(std::io::Error),
+    /// Node fs `UVException` 相当(`{code, message}` を保持する —
+    /// `describeError` parity のため raw `io::Error` ではなく
+    /// [`NodeIoError`] を保持する)。
+    Io(NodeIoError),
 }
 
 impl std::fmt::Display for CountTokensError {
@@ -204,8 +208,8 @@ impl From<SpecialTokenError> for CountTokensError {
     }
 }
 
-impl From<std::io::Error> for CountTokensError {
-    fn from(e: std::io::Error) -> Self {
+impl From<NodeIoError> for CountTokensError {
+    fn from(e: NodeIoError) -> Self {
         Self::Io(e)
     }
 }
@@ -218,7 +222,10 @@ pub fn count_file_tokens(
 ) -> Result<FileTokenCount, CountTokensError> {
     let resolved = resolve_workspace_path(opts.root, opts.path, opts.symlink_policy)?;
     let max_bytes = opts.max_bytes.unwrap_or(DEFAULT_COUNT_MAX_BYTES);
-    let info = std::fs::metadata(&resolved.real)?;
+    // Node `fs.stat`/`fs.readFile` の UVException shape を再現するため
+    // `node_io_error` で wrap する(TS は raw fs error をそのまま投げる)。
+    let info =
+        std::fs::metadata(&resolved.real).map_err(|e| node_io_error("stat", &resolved.real, e))?;
     if info.len() > max_bytes {
         return Err(FileTooLargeError {
             path: resolved.display,
@@ -227,7 +234,8 @@ pub fn count_file_tokens(
         }
         .into());
     }
-    let buf = std::fs::read(&resolved.real)?;
+    let buf =
+        std::fs::read(&resolved.real).map_err(|e| node_io_error("open", &resolved.real, e))?;
     let text = String::from_utf8_lossy(&buf);
     reject_special_tokens(&text)?;
     let tokens = encoding().encode_ordinary(&text).len();

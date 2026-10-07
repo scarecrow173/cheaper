@@ -223,7 +223,7 @@ poc-results.md の toolchain 知見(rig の rust-version 1.95)。
     fixture 側 `rustDropUnknownArtifactKeys` marker で文書化済みの
     表現差として正規化する(未調査差異ではない)。
 - `docs/research/molo-agent-runtime/migration-plan.md` の stale id
-  `ADR-0025` を canonical ADR `ADR-034r2eId2hXJGWDjBylKVE`
+  (legacy 連番 ADR 参照)を canonical ADR `ADR-034r2eId2hXJGWDjBylKVE`
   (usage-jsonl-contract-canonical)に修正した。
 
 ### Decisions During Implementation (Slice 4: review fixes)

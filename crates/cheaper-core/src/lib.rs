@@ -10,7 +10,10 @@ pub mod errors;
 pub mod js;
 pub mod json;
 pub mod model;
-mod nodepath;
+/// Node `path` 字句互換層。tool 層(`cheaper-tools` の walker 等)も
+/// `path.join`/`path.relative`/`path.sep` の byte-level 意味論を必要とするため
+/// 公開する(Windows path canonicalize 規則は core 責務の設計固定ルール)。
+pub mod nodepath;
 pub mod policy;
 pub mod resources;
 pub mod token;
