@@ -30,9 +30,14 @@
 //!   外部に見える型
 //! - [`build_system_prompt`]/[`build_user_prompt`] は prompt 契約の
 //!   唯一の実装(DRY — T3 はここを呼ぶ)
+//! - [`builtin_completion_model`] — catalog `api` 種別 → Rig provider
+//!   client の builtin 組立(Phase 3 T7)。runtime 側の
+//!   `CompletionModelFactory` 実装(Phase 4 CLI composition root も
+//!   再利用)が呼ぶ。
 
 mod accumulator;
 mod agent;
+mod builtin;
 mod error;
 mod hooks;
 pub mod js_json;
@@ -45,6 +50,7 @@ pub use agent::{
     build_system_prompt, build_user_prompt, CompletionModel, RigSession, WorkerSessionSpec,
     DEFAULT_INVALID_TOOL_RETRIES, DEFAULT_MAX_TURNS,
 };
+pub use builtin::{builtin_completion_model, BuiltinAuth, BuiltinModelSpec};
 pub use error::{
     classify, classify_prompt, classify_report, prompt_error_to_cheaper, provider_error_to_cheaper,
     report_to_cheaper, streaming_error_to_cheaper, ErrorClass,

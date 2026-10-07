@@ -93,6 +93,14 @@ plan の Task Breakdown T1-T6 が本 task の作業単位:
 Rig 型の `use` は `cheaper-rig-adapter` と `cheaper-provider-devin` のみに
 限定する(設計上の隔離原則)。
 
+実装中に残 gap として追加した slice: T7 builtin provider factory
+(`cheaper-rig-adapter/src/builtin.rs` — catalog `api` 種別 → Rig provider
+client 写像) + Ollama real-provider e2e(`cheaper-runtime/tests/
+ollama_e2e.rs`)。dependency direction(runtime → adapter)上
+`CompletionModelFactory` 自体は adapter に実装できないため、adapter は
+組立関数 `builtin_completion_model` のみ提供し、runtime 側の factory 実装
+(e2e test / Phase 4 composition root)が呼ぶ形にした(IR Slice T7)。
+
 ## Classification
 
 - `normal-plan-task`
@@ -153,8 +161,12 @@ Rig 型の `use` は `cheaper-rig-adapter` と `cheaper-provider-devin` のみ�
       (`docs/impl/ir/phase-3-port-runtime-adapter-providers.md` Slice T1。
       tool 接着は `DynamicTool` seam を使用。`CompletionModel::from_rig`
       の `DynModel` 引数は provider→adapter 境界の明示的 seam のみ)
-- [ ] T2: catalog store・credential store・api_key/env 解決・auth service・
+- [x] T2: catalog store・credential store・api_key/env 解決・auth service・
       plugin contract trait が実装される
+      (`docs/impl/ir/phase-3-port-runtime-adapter-providers.md` Slice T2。
+      `src/catalog/{mod,schema,bundled}.rs`・`src/auth/{store,api_key,
+      service,mod}.rs`・`src/plugin.rs`・`src/runtime.rs` — catalog 12 /
+      auth 19 / plugin 4 test + fixture 19-22 が auth/catalog 経路を検証)
 - [x] T3: `run_worker` オーケストレーション(abort/grace/output/meta/
       repair/panic 境界を含む)が実装され、`WorkerRunMeta` 全 field が hook
       accumulator のみから構築される
@@ -180,8 +192,14 @@ Rig 型の `use` は `cheaper-rig-adapter` と `cheaper-provider-devin` のみ�
       `is_cancelled`・`AuthPrompt::{Text,ManualCode,Select}`・
       `ResolvedAuth.base_url` + `Runtime` builtin flow 自動登録 +
       `tests/oauth.rs` 18 test)
-- [ ] `Cargo.toml` の `rig` 系依存が `=0.43.x` pin で、Rig 型参照が
+- [x] `Cargo.toml` の `rig` 系依存が `=0.43.x` pin で、Rig 型参照が
       `cheaper-rig-adapter`(+ `cheaper-provider-devin`)に限定される
+      (workspace root `rig = "=0.43.0"`。`grep "rig::" crates/
+      cheaper-runtime/src/` は 0 件 — runtime の公開 signature に Rig 型
+      なし。Rig 型を持つのは `cheaper-rig-adapter`・`cheaper-provider-
+      devin`・PoC(`crates/poc-rig`、workspace 外)のみ。`builtin.rs`
+      (T7)も Rig 型を adapter 内に閉じ込め opaque `CompletionModel` のみ
+      返す)
 
 ## Verification
 
@@ -189,8 +207,9 @@ Rig 型の `use` は `cheaper-rig-adapter` と `cheaper-provider-devin` のみ�
       -p cheaper-provider-devin` が全パス(hook→accumulator 逐次集計・
       retry 429/5xx/timeout 分類・Retry action の error feedback→loop
       継続・cancel reason 分類・wire framing round-trip・context map・
-      models parse の単体 test を含む)(provider 51 + adapter 14 +
-      runtime 86 = 151 test 全パス)
+      models parse の単体 test を含む)(T7 後の実測: provider 61 +
+      adapter 26(unit 7 + integration 19)+ runtime 99(うち
+      `ollama_e2e` 3 は gate 未満で skip)= 186 test 全パス)
 - [x] `mise exec -- cargo test -p cheaper-runtime --test run_fixture_test`
       で fake fixture による `run_worker` 検証が全パス(正常系/invalid
       output→repair/timeout・maxTurns・maxToolCalls・signal abort 分類/
@@ -207,18 +226,39 @@ Rig 型の `use` は `cheaper-rig-adapter` と `cheaper-provider-devin` のみ�
 - [ ] `cheaper auth login github-copilot` から run まで成功し credential
       が新 credential store に永続化される(手動 smoke、CI 外)。
       `<userConfigDir>/pi/` の auth.json/models.json を参照しないこと
+      — **未実施(Phase 3 末延期)**: 実 GitHub credential が必要で CI/
+      agent 環境では検証不能。oauth flow 自体は `tests/oauth.rs` 18 test
+      で mock HTTP transport 経由済み。実 credential smoke は Phase 4 の
+      CLI 組立後に手動で実施する
 - [ ] api_key auth(Anthropic/OpenAI/OpenAI-compatible)で login→run が
       成立し secret が stdout に出ないこと
+      — **部分カバーのみ**: openai-compatible 経路(Ollama custom
+      provider・configured literal `apiKey`)は `ollama_e2e` で login 相当
+      (configured)→run 実到達を検証済み(T7)。Anthropic/OpenAI 実
+      credential の login→run と stdout 非漏洩は Phase 4 CLI 後の手動
+      smoke に延期(実 API key 不可のため)
 - [x] 未知・スコープ外 provider api 種別で catalog 層が明示 error
       (`INVALID_MODEL_CONFIG` 系)を返し silent fallback しないこと
       (fixture 21: model.api が plugin 宣言 api と不一致 → run 経路で
       `INVALID_MODEL_CONFIG` exit 3。`tests/catalog.rs`
       `unsupported_api_kind_returns_invalid_model_config` でも固定済み)
-- [ ] `docker compose up -d` + model pull 済み Ollama で built-in worker
+- [x] `docker compose up -d` + model pull 済み Ollama で built-in worker
       3 種が成功 envelope を返す Rust e2e が通ること
+      (`docs/impl/ir/phase-3-port-runtime-adapter-providers.md` Slice T7。
+      `crates/cheaper-rig-adapter/src/builtin.rs` の catalog api→Rig
+      client 組立 + `crates/cheaper-runtime/tests/ollama_e2e.rs`
+      (`CHEAPER_E2E_OLLAMA=1` + `/v1/models` probe で auto-skip)。
+      実測(qwen3.5:9b、3 test 並行): bulk-reader turns=5 toolCalls=2
+      usage in=13249/out=1848 repairs=1 transientRetries=2 293.8s、
+      code-writer turns=3 toolCalls=1 in=4843/out=431 repairs=1 125.3s、
+      doc-writer turns=4 toolCalls=2 in=7359/out=816 repairs=1 163.8s —
+      全件成功 envelope + `meta.usage` 非零 + provider/model id 一致)
 - [ ] devin 実 endpoint smoke(`auth login/status/logout`・`devin models
       list`・1 件の run)を実施し結果を plan に記録する(CI 外手動。
       不達時は切り下げ判断をユーザー承認に回す)
+      — **未実施・escalation pending**: 実 Devin endpoint/credential への
+      到達が本環境では不能なため、item 本文の規定どおり切り下げ判断の
+      ユーザー承認待ち
 - [x] `meta.usage.costUsd` が provider 応答値ではなく pricing 層算出で
       あることを fixture/単体 test で確認する
       (`tests/run.rs` `success_extracts_output_and_builds_meta` が
@@ -226,3 +266,7 @@ Rig 型の `use` は `cheaper-rig-adapter` と `cheaper-provider-devin` のみ�
       fixture `01-success-basic.json` でも replay 経路で
       `meta.usage.costUsd=0.005075` を厳密比較)
 - [ ] `mise run check` が現行通り全 green(TS 側無破壊)
+      — 本変更は `crates/` + `docs/` のみで TS package には未触。
+      Rust 側は `cargo test`(186 test)/`cargo clippy --all-targets
+      -D warnings`/`cargo fmt --check` 全 green(実施済み)。TS を含む
+      統合 `mise run check` の再実行は Phase 4 切替時に実施

@@ -1362,3 +1362,133 @@ catalog 12 / oauth 18 / plugin 4 / fixture 3 / unit 22)、
 trait 互換のみ確認)、`cargo clippy -p cheaper-rig-adapter -p
 cheaper-runtime --all-targets -- -D warnings` clean、
 `cargo fmt --check` clean。
+
+## Slice T7 — builtin provider factory + Ollama real-provider e2e
+
+### Changes (Slice T7)
+
+- `crates/cheaper-rig-adapter/src/builtin.rs`(新設)— catalog `api`
+  種別 → Rig provider client の組立関数 `builtin_completion_model` と
+  adapter 所有の入力型 `BuiltinAuth`/`BuiltinModelSpec`。
+  `cheaper-runtime` → `cheaper-rig-adapter` の依存方向があるため、
+  runtime 側 trait `CompletionModelFactory` は adapter 内に実装
+  できない(circular)。代わりに adapter は組立 primitive だけを提供し、
+  runtime 側の factory 実装(e2e test / Phase 4 CLI composition root)が
+  `SessionSpec` → `BuiltinModelSpec` へ写して呼ぶ。戻り値は opaque
+  `CompletionModel` のみで Rig 型は signature に出ない。
+- `crates/cheaper-rig-adapter/src/lib.rs` — `mod builtin` + re-export
+  (`builtin_completion_model`/`BuiltinAuth`/`BuiltinModelSpec`)、
+  module doc の公開面リストに追記。
+- `crates/cheaper-runtime/tests/ollama_e2e.rs`(新設)— real-provider
+  e2e gate。`CHEAPER_E2E_OLLAMA=1` かつ `GET {base}/v1/models`(3s
+  timeout、ureq)に model id があれば実行、それ以外は早期 return で
+  skip(`packages/cli/test/e2e/real-provider-ollama.test.ts` parity)。
+  env: `CHEAPER_E2E_OLLAMA_MODEL`(default `qwen3.5:9b`)、
+  `CHEAPER_E2E_OLLAMA_BASE`(default `http://localhost:11434`)。
+  test-local `BuiltinFactory`(`CompletionModelFactory` impl)が
+  `builtin_completion_model` を呼ぶ — Phase 4 composition root が
+  再利用する seam を先行して exerciser として使う。
+  - catalog: tmpdir `<userConfigDir>/models.json` に `ollama` custom
+    provider(api `openai-completions`・`baseUrl {base}/v1`・literal
+    `apiKey: "ollama"`・model `{id, reasoning:true, cost:0,
+    contextWindow:262144, maxTokens:32768, samplingParams}`)— TS e2e
+    の IMPL-0008 recipe と同形。
+  - `ModelConfig`: `ollama/<model>` を override で `low` に pin
+    (9b は built-in 分類表に match しない)+ `preferences.low` 先頭。
+  - policy: timeout 600s / maxTurns 16 / repairAttempts 4 / tools
+    allow = worker 3 種の union(read/grep/find/ls/write/edit/
+    count_tokens)。
+  - worker: repo 内 canonical 定義 `packages/cli/workers/{bulk-reader,
+    code-writer,doc-writer}.md` を `CARGO_MANIFEST_DIR` 相対で load
+    (`file:` schema ref は worker dir 相対に解決 — 実 file 経由で
+    differential parity を保持)。
+
+### api 種別 → Rig client 写像表
+
+| catalog `api`         | Rig client / wire                                            |
+|-----------------------|--------------------------------------------------------------|
+| `openai-completions`  | `OpenAIConfig::with_key(&OPENAI, key)` + `with_base_url` → `connect(transport)` → `.chat(model)` |
+| `openai-responses`    | 同上 → `.responses(model)`                                   |
+| `anthropic-messages`  | `AnthropicConfig::with_dialect(key, &ANTHROPIC)` + `with_base_url` → `connect(transport)` → `.completion(model)` |
+| その他                | `INVALID_MODEL_CONFIG`(`details.api` 付き)                   |
+
+- **Ollama は `providers::ollama` ではなく OPENAI dialect + `with_base_url`
+  を使う**: catalog の api 種別は `openai-completions`(= Chat Completions
+  wire)を宣言しており、Ollama の `/v1/chat/completions` はその方言に合致。
+  rig の `ollama` provider は native `/api/chat` 用で api kind と対応しない。
+- **`Dialect` は `OPENAI`/`ANTHROPIC` 固定**: `Dialect` field は全て
+  `&'static str` で runtime 構築不能なため、custom provider でも登録済み
+  dialect の `with_base_url`/`with_auth` で差し替える。
+  `OPENAI` dialect の `completion_route: Route::Responses` は
+  `.chat()`/`.responses()` の明示 route 選択で回避。
+  `OutputCap::OpenAiReasoningFamilies` は model 名で scoped
+  (`is_openai_reasoning_model`)されるため非 OpenAI model には legacy
+  `max_tokens` がそのまま送られる(qwen3.5 で実測済み)。
+- **api_key `None`**(ambient/keyless)→ `Auth::OptionalBearer` で空
+  `Authorization` を送らない。
+- **custom headers**: Rig config に任意 header 注入面が無いため、headers
+  非空時のみ `reqwest::Client::builder().default_headers(...)` の専用
+  transport を `connect` へ渡す(request 側 header が default に勝つ規則
+  で Bearer 等は wire 値が優先)。headers 空は shared `ReqwestClient` で
+  pool 共有。header 名/値が invalid → `INVALID_MODEL_CONFIG`。
+- **`auth.base_url` > `spec.base_url`(catalog)> dialect 既定** の順で
+  endpoint を解決(copilot `toAuth` の credential 依存 endpoint 対応)。
+
+### Residual / 未配線(Slice T7)
+
+- `model.samplingParams` / `model.compat` / model-level `headers` は
+  request 単位の `additional_params` として session 構築側(`RigSession`)
+  に seam が無いため未適用。TS e2e recipe の `reasoning_effort:"none"` +
+  `temperature:0` は models.json に書いても wire へ載らない
+  (qwen3.5:9b は載せずとも収束したが、小 model では repair 回数に影響
+  し得る)。Phase 4 で `WorkerSessionSpec` 拡張 or wire 側 default 検討。
+- anthropic `x-api-key` vs `Authorization: Bearer`(oauth token 由来)の
+  送り分けは未実装 — 現状一律 `x-api-key`。
+- `ProviderEntry.model_headers`(rawModelHeaders)は catalog 側で保持するが
+  `get_auth` → `ResolvedAuth.headers` への merge 経路が未接続
+  (provider-level configured headers のみ到達)。
+- plugin 宣言 api 種別(devin 等)は `builtin_completion_model` では
+  `INVALID_MODEL_CONFIG` — plugin 側 `CompletionModelFactory` が担う
+  (devin は `DevinCompletionModelFactory` 実装済み)。
+
+### e2e 実測(qwen3.5:9b、Ollama container、3 test 並行実行)
+
+`CHEAPER_E2E_OLLAMA=1 cargo test -p cheaper-runtime --test ollama_e2e
+-- --nocapture`:
+
+| worker       | turns | toolCalls | usage in/out/total   | repairs | transientRetries | duration |
+|--------------|-------|-----------|----------------------|---------|------------------|----------|
+| bulk-reader  | 5     | 2         | 13249 / 1848 / 15097 | 1       | 2                | 293.8s   |
+| code-writer  | 3     | 1         | 4843 / 431 / 5274    | 1       | 0                | 125.3s   |
+| doc-writer   | 4     | 2         | 7359 / 816 / 8175    | 1       | 0                | 163.8s   |
+
+全件 `run_worker` 成功: output schema-valid(`extract_output` で抽出、
+9b の出力ゆらぎで各 1 回 repair を消費 — `repair_output` の実経路も
+実 provider で動作確認)、`meta.model.provider=ollama`・`meta.model.id`
+一致・`meta.usage.input/output` 非零。code-writer/doc-writer は対象
+file を実際に workspace へ作成(`meta.changes.files` 非空)。bulk-reader
+は real transient retry(provider 側応答遅延)が 2 回観測され retry→成功
+経路も実到達。3 test を同時並行で実行したため wall time は直列より長い
+(Ollama 1 台に 9b を 3 session 並行)。
+
+### Validation (Slice T7)
+
+`cargo test -p cheaper-rig-adapter` 26 pass(unit 7 — builtin 3 含む +
+integration 19)、`cargo test -p cheaper-runtime` 99 pass(unit 22 /
+run 18 / auth 19 / catalog 12 / oauth 18 / plugin 4 / fixture 3 /
+ollama_e2e 3 — gate 未満では skip)、`cargo test -p
+cheaper-provider-devin` 61 pass、`cargo clippy -p cheaper-rig-adapter
+-p cheaper-runtime -p cheaper-provider-devin --all-targets --
+-D warnings` clean、`cargo fmt --check` clean。real-provider e2e は
+上表のとおり全 pass(gate ON)。
+
+### 手動 smoke の延期記録(Slice T7 時点)
+
+- `auth login github-copilot` → run: 実 GitHub credential が必要で本
+  環境では検証不能。oauth flow は mock transport の単体 test 済み
+  (`tests/oauth.rs` 18)。Phase 4 CLI 組立後の手動 smoke へ延期。
+- api_key auth の実 credential login→run(Anthropic/OpenAI): 実 key が
+  無いため延期。openai-compatible(Ollama configured `apiKey`)経路は
+  `ollama_e2e` が configured→run 実到達をカバー。
+- devin 実 endpoint smoke: 実 endpoint/credential 不可のため未実施。
+  task item 規定どおり切り下げ判断のユーザー承認待ち。
