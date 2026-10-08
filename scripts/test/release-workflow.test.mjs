@@ -126,7 +126,7 @@ test("legacy release refuses publication with read-only permissions", () => {
 
 test("workflow runs focused suites before build", () => {
   const resolve = job(workflow(), "resolve-release");
-  for (const file of ["release-artifacts.test.mjs", "release-workflow.test.mjs"]) assert.ok(resolve.includes(file));
+  for (const file of ["binary-size.test.mjs", "release-artifacts.test.mjs", "release-workflow.test.mjs"]) assert.ok(resolve.includes(file));
 });
 
 test("workflow refuses existing releases and fails API errors", () => {

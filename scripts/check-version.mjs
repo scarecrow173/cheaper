@@ -19,19 +19,12 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { cargoWorkspaceVersion } from "./lib/release-artifacts.mjs";
+import { apmPackageVersion, cargoWorkspaceVersion } from "./lib/release-artifacts.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 const readJsonVersion = (rel) =>
   JSON.parse(readFileSync(path.join(repoRoot, rel), "utf8")).version;
-
-const readApmVersion = (rel) => {
-  const text = readFileSync(path.join(repoRoot, rel), "utf8");
-  const m = text.match(/^version:\s*"?([^"\s]+)"?\s*$/m);
-  if (!m) throw new Error(`no version: line found in ${rel}`);
-  return m[1];
-};
 
 const canonical = readJsonVersion("packages/cli/package.json");
 
@@ -49,7 +42,10 @@ const declarations = [
     "packages/runtime-pi/package.json",
     () => readJsonVersion("packages/runtime-pi/package.json"),
   ],
-  ["packages/apm/apm.yml", () => readApmVersion("packages/apm/apm.yml")],
+  [
+    "packages/apm/apm.yml",
+    () => apmPackageVersion(path.join(repoRoot, "packages/apm/apm.yml")),
+  ],
   [
     "packages/apm/.apm/hooks/cli/version.json",
     () => readJsonVersion("packages/apm/.apm/hooks/cli/version.json"),

@@ -162,6 +162,23 @@ test("setCargoWorkspaceVersion rewrites only the section declaration", async (t)
   assert.throws(() => setCargoWorkspaceVersion(f.root, "3.0.0"), /Cargo\.toml/);
 });
 
+test("setCargoWorkspaceVersion splices at the match offset without pattern expansion", async (t) => {
+  const f = fixture(t);
+  const { setCargoWorkspaceVersion, cargoWorkspaceVersion } = await library();
+  const file = path.join(f.root, "Cargo.toml");
+  // section body と同一の文字列が前方に出現しても [workspace.package] 側だけを
+  // 書き換え、body 内の `$&` 等を replacement pattern として展開しないこと。
+  const body = 'edition = "2021"\nversion = "1.2.3"\n# literal $& tail\n';
+  writeFileSync(file, `[other.section]\n${body}\n[workspace.package]\n${body}\n[profile.release]\n`);
+  setCargoWorkspaceVersion(f.root, "2.0.0");
+  const text = readFileSync(file, "utf8");
+  assert.equal(cargoWorkspaceVersion(f.root), "2.0.0");
+  const [earlier, workspace] = text.split("[workspace.package]");
+  assert.match(earlier, /version = "1\.2\.3"/);
+  assert.match(workspace, /version = "2\.0\.0"/);
+  assert.equal((text.match(/literal \$& tail/g) ?? []).length, 2);
+});
+
 test("snapshot preserves raw bytes and manifest", async (t) => {
   const f = fixture(t);
   const { assembleBundle } = await library();

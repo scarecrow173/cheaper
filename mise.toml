@@ -9,8 +9,8 @@ UV_EXCLUDE_NEWER = "1 week"
 [tools]
 node = "26"
 pnpm = "11"
-# rig が rust-version 1.95 を要求するため stable(>=1.95)を pin 方針とする
-rust = "stable"
+# rig が rust-version 1.95 を要求するため >=1.95 の固定 version を pin する
+rust = "1.99.0"
 python = "3.12"
 uv = "0.11"
 # apm.lock.yaml は apm 0.28.0 で生成。0.30.0 は Windows で path dep 解決が

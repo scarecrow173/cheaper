@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           version="$(node --input-type=module -e 'import {verifyReleaseVersion} from "./scripts/lib/release-artifacts.mjs"; console.log(verifyReleaseVersion(process.cwd(), process.env.TAG));')"
-          node --test scripts/test/release-artifacts.test.mjs scripts/test/release-workflow.test.mjs
+          node --test scripts/test/binary-size.test.mjs scripts/test/release-artifacts.test.mjs scripts/test/release-workflow.test.mjs
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 

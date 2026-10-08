@@ -436,10 +436,13 @@ for (const runner of runners) {
       it("runs a real CLI hook via cached executable with original stdin and exit 2", async () => {
         const actual = native.executable;
         const bytes = readFileSync(actual);
-        const actualVersion = spawnSync(actual, ["--version"], {
+        const versionProbe = spawnSync(actual, ["--version"], {
           encoding: "utf8",
           env,
-        }).stdout.trim();
+          timeout: 30_000,
+        });
+        expect(versionProbe.status, versionProbe.stderr).toBe(0);
+        const actualVersion = versionProbe.stdout.trim();
         writeFileSync(
           path.join(launch, "cli/version.json"),
           JSON.stringify({ version: actualVersion }),
@@ -473,11 +476,14 @@ for (const runner of runners) {
           return;
         }
         body = readFileSync(rustBinary);
-        releaseVersion = spawnSync(rustBinary, ["--version"], {
+        const versionProbe = spawnSync(rustBinary, ["--version"], {
           encoding: "utf8",
           env,
-        }).stdout.trim();
-        expect(releaseVersion).toMatch(/^\d+\.\d+\.\d+/);
+          timeout: 30_000,
+        });
+        expect(versionProbe.status, versionProbe.stderr).toBe(0);
+        releaseVersion = versionProbe.stdout.trim();
+        expect(releaseVersion).toMatch(/^\d+\.\d+\.\d+$/);
         writeFileSync(
           path.join(launch, "cli/version.json"),
           `${JSON.stringify({ version: releaseVersion })}\n`,

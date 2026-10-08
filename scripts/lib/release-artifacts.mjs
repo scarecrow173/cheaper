@@ -37,7 +37,10 @@ const LFS_HEADER = "version https://git-lfs.github.com/spec/v1";
 // inside the [workspace.package] section, which ends at the next section
 // header or end of file.
 const WORKSPACE_PACKAGE_SECTION = /(?:^|\n)\[workspace\.package\][ \t]*\r?\n([\s\S]*?)(?=\n\[|\n?$)/;
-const WORKSPACE_VERSION_LINE = /^version\s*=\s*"([^"\r\n]+)"\s*(?:#.*)?$/m;
+// `\s` の代わりに `[ \t]` を使い、version 行の次の行（例: 続く `#` comment
+// 行）が match に巻き込まれて setCargoWorkspaceVersion の rewrite で消える
+// ことを防ぐ。`\r?` で CRLF 行末を許容する。
+const WORKSPACE_VERSION_LINE = /^version[ \t]*=[ \t]*"([^"\r\n]+)"(?:[ \t]*#[^\r\n]*)?[ \t]*\r?$/m;
 
 export function cargoWorkspaceVersion(root) {
   const section = WORKSPACE_PACKAGE_SECTION.exec(readFileSync(path.join(root, "Cargo.toml"), "utf8"))?.[1] ?? "";
@@ -49,9 +52,26 @@ export function cargoWorkspaceVersion(root) {
 export function setCargoWorkspaceVersion(root, version) {
   const file = path.join(root, "Cargo.toml");
   const text = readFileSync(file, "utf8");
-  const section = WORKSPACE_PACKAGE_SECTION.exec(text)?.[1];
+  const match = WORKSPACE_PACKAGE_SECTION.exec(text);
+  const section = match?.[1];
   if (section === undefined || !WORKSPACE_VERSION_LINE.test(section)) throw new Error("no version declaration in Cargo.toml [workspace.package]");
-  writeFileSync(file, text.replace(section, section.replace(WORKSPACE_VERSION_LINE, `version = "${version}"`)));
+  // match.index で splice する。`text.replace(section, …)` は index 0 から
+  // 同一文字列を探して前方の出現を書き換え得る上、section 内の `$&` 等が
+  // replacement pattern として展開されて壊れる。inner replace も function
+  // replacement にして version 文字列を literal に扱う。
+  const bodyStart = match.index + match[0].length - section.length;
+  const body = section.replace(WORKSPACE_VERSION_LINE, () => `version = "${version}"`);
+  writeFileSync(file, text.slice(0, bodyStart) + body + text.slice(bodyStart + section.length));
+}
+
+// apm.yml の product version は `version:` 行の一意抽出で検査する。
+// check-version.mjs もこの extractor を共有する。
+const APM_VERSION_LINE = /^version:\s*(?:"([^"\r\n]+)"|'([^'\r\n]+)'|([^\s#]+))\s*(?:#.*)?$/gm;
+
+export function apmPackageVersion(file) {
+  const declarations = [...readFileSync(file, "utf8").matchAll(APM_VERSION_LINE)];
+  if (declarations.length !== 1) throw new Error(`expected exactly one version: declaration in ${file}`);
+  return declarations[0][1] ?? declarations[0][2] ?? declarations[0][3];
 }
 
 export function verifyReleaseVersion(root, tag) {
@@ -59,8 +79,7 @@ export function verifyReleaseVersion(root, tag) {
   if (typeof version !== "string" || !SEMVER.test(version)) throw new Error("invalid canonical version");
   if (tag !== `v${version}`) throw new Error(`tag ${tag} does not match canonical version v${version}`);
   const bundled = JSON.parse(readFileSync(path.join(root, "packages/apm/.apm/hooks/cli/version.json"), "utf8")).version;
-  const declarations = [...readFileSync(path.join(root, "packages/apm/apm.yml"), "utf8").matchAll(/^version:\s*(?:"([^"\r\n]+)"|'([^'\r\n]+)'|([^\s#]+))\s*(?:#.*)?$/gm)];
-  const apmVersion = declarations.length === 1 ? declarations[0][1] ?? declarations[0][2] ?? declarations[0][3] : undefined;
+  const apmVersion = apmPackageVersion(path.join(root, "packages/apm/apm.yml"));
   if (bundled !== version || apmVersion !== version) throw new Error("APM / bundled version does not match canonical version");
   if (cargoWorkspaceVersion(root) !== version) throw new Error("Cargo.toml [workspace.package] version does not match canonical version");
   return version;

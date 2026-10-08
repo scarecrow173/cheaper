@@ -6,9 +6,10 @@ APM package の `cheaper`（POSIX sh）/ `cheaper.ps1`（Windows）は、sibling
 Node は不要。`latest` を参照せず、取得/検証失敗は stderr の診断と非0 exit で通知する。
 
 取得契約は [詳細設計](../designs/version-pinned-launcher-acquisition.md) を参照。
-配布 executable の実装は Rust binary（旧 Node SEA から切替済み。cargo
-release build による）だが、asset 名・`SHA256SUMS` 形式・`--version`
-probe・取得 contract は不変。
+配布 executable の build pipeline は旧 Node SEA から Rust binary（cargo
+release build）へ切替済みだが、Rust binary を含む Release は未公開であり、
+初回公開は `release-acquisition` の dispatch が担う。asset 名・`SHA256SUMS`
+形式・`--version` probe・取得 contract は不変。
 Git source は platform executable を含まない。launcher と小さい CLI asset を install し、
 固定 Release から取得する。Git LFS の既存履歴は保持するが、新 binary は Git に追加しない。
 `release-acquisition` の1dispatchでraw3 / `SHA256SUMS` / APM archiveを公開する
