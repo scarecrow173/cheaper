@@ -30,10 +30,10 @@ export const releaseTargets = Object.freeze([
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?(?:\+[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$/;
 const LFS_HEADER = "version https://git-lfs.github.com/spec/v1";
 
-// Phase 5: the root Cargo.toml `[workspace.package].version` is the product
-// binary's version declaration (crates/cheaper-cli inherits it). The
-// canonical source stays packages/cli/package.json; this declaration is
-// cross-checked for drift. No TOML library — the declaration is located
+// Phase 6: the root Cargo.toml `[workspace.package].version` is the
+// canonical product version declaration (crates/cheaper-cli inherits it
+// via `version.workspace = true`, and build.rs embeds it into the
+// binary's version.json). No TOML library — the declaration is located
 // inside the [workspace.package] section, which ends at the next section
 // header or end of file.
 const WORKSPACE_PACKAGE_SECTION = /(?:^|\n)\[workspace\.package\][ \t]*\r?\n([\s\S]*?)(?=\n\[|\n?$)/;
@@ -75,13 +75,12 @@ export function apmPackageVersion(file) {
 }
 
 export function verifyReleaseVersion(root, tag) {
-  const version = JSON.parse(readFileSync(path.join(root, "packages/cli/package.json"), "utf8")).version;
-  if (typeof version !== "string" || !SEMVER.test(version)) throw new Error("invalid canonical version");
+  const version = cargoWorkspaceVersion(root);
+  if (!SEMVER.test(version)) throw new Error("invalid canonical version");
   if (tag !== `v${version}`) throw new Error(`tag ${tag} does not match canonical version v${version}`);
   const bundled = JSON.parse(readFileSync(path.join(root, "packages/apm/.apm/hooks/cli/version.json"), "utf8")).version;
   const apmVersion = apmPackageVersion(path.join(root, "packages/apm/apm.yml"));
   if (bundled !== version || apmVersion !== version) throw new Error("APM / bundled version does not match canonical version");
-  if (cargoWorkspaceVersion(root) !== version) throw new Error("Cargo.toml [workspace.package] version does not match canonical version");
   return version;
 }
 

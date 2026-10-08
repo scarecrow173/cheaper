@@ -27,8 +27,8 @@ static WORKERS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../../packages/c
 /// `packages/cli/policy.yaml`。
 const POLICY_YAML: &str = include_str!("../../../packages/cli/policy.yaml");
 
-/// build.rs が `packages/cli/package.json` から生成した `version.json`
-/// (SEA bundle の配置と同じ優先順位の第 1 候補)。
+/// build.rs が `CARGO_PKG_VERSION`(workspace canonical version)から
+/// 生成した `version.json`(SEA bundle の配置と同じ優先順位の第 1 候補)。
 const VERSION_JSON: &str = include_str!(concat!(env!("OUT_DIR"), "/version.json"));
 
 /// dev checkout 用 fallback(SEA VFS にも同様に配置される)。

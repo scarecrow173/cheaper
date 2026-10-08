@@ -2,9 +2,10 @@
 import { lstatSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { cargoWorkspaceVersion } from "./lib/release-artifacts.mjs";
 
 const workers = ["bulk-reader", "code-writer", "doc-writer"];
-const assets = ["cheaper", "cheaper.ps1", "hooks.json", "cli/version.json", "cli/bin/cheaper.mjs", "cli/policy.yaml",
+const assets = ["cheaper", "cheaper.ps1", "hooks.json", "cli/version.json", "cli/policy.yaml",
   ...workers.flatMap((name) => [`cli/workers/${name}.md`, `cli/workers/schemas/${name}.input.schema.json`, `cli/workers/schemas/${name}.output.schema.json`])];
 
 export function checkApmPayload(repoRoot) {
@@ -34,7 +35,7 @@ export function checkApmPayload(repoRoot) {
     }
   }
   try {
-    const canonical = JSON.parse(readFileSync(path.join(repoRoot, "packages/cli/package.json"), "utf8")).version;
+    const canonical = cargoWorkspaceVersion(repoRoot);
     const metadata = contents.get("cli/version.json");
     const match = metadata?.match(/^\s*\{\s*"version"\s*:\s*"([^"\s]+)"\s*\}\s*$/);
     if (!match || match[1] !== canonical) errors.push(`version metadata must contain only canonical version ${canonical}`);

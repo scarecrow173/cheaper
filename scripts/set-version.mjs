@@ -1,19 +1,17 @@
 // Bumps the product version across every declaration in one command
-// (ADR-0022 / DESIGN-0024). Usage:
+// (Phase 6 — canonical source is the root Cargo.toml
+// `[workspace.package].version`). Usage:
 //
 //   node scripts/set-version.mjs <X.Y.Z>
 //
 // Updates:
-//   packages/cli/package.json          canonical source of truth
-//   packages/core/package.json
-//   packages/tool-runtime/package.json
-//   packages/workflow/package.json
-//   packages/runtime-pi/package.json
-//   packages/apm/apm.yml               version: line only
-//   Cargo.toml                         [workspace.package] version only
+//   Cargo.toml                    canonical source of truth
+//                                 ([workspace.package] version only)
+//   packages/apm/apm.yml          version: line only
 //
-// Does NOT touch root apm.yml (cheaper-dev dev project — independent).
-// Afterwards: regenerate the bundle so version.json follows, then commit.
+// Does NOT touch root apm.yml (cheaper-dev dev project — independent) or
+// packages/*/package.json (no longer version declarations). version.json
+// is generated — regenerate the bundle so it follows, then commit.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -28,20 +26,13 @@ if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
   process.exit(1);
 }
 
-const jsonFiles = [
-  "packages/cli/package.json",
-  "packages/core/package.json",
-  "packages/tool-runtime/package.json",
-  "packages/workflow/package.json",
-  "packages/runtime-pi/package.json",
-];
-for (const rel of jsonFiles) {
-  const p = path.join(repoRoot, rel);
-  const pkg = JSON.parse(readFileSync(p, "utf8"));
-  pkg.version = version;
-  writeFileSync(p, `${JSON.stringify(pkg, null, 2)}\n`);
-  console.log(`updated ${rel} -> ${version}`);
+try {
+  setCargoWorkspaceVersion(repoRoot, version);
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
 }
+console.log(`updated Cargo.toml -> ${version}`);
 
 const apmYml = path.join(repoRoot, "packages", "apm", "apm.yml");
 const apmText = readFileSync(apmYml, "utf8");
@@ -52,14 +43,6 @@ if (!/^version:[^\n]*$/m.test(apmText)) {
 const apmUpdated = apmText.replace(/^version:[^\n]*$/m, `version: "${version}"`);
 writeFileSync(apmYml, apmUpdated);
 console.log(`updated packages/apm/apm.yml -> ${version}`);
-
-try {
-  setCargoWorkspaceVersion(repoRoot, version);
-} catch (error) {
-  console.error(error.message);
-  process.exit(1);
-}
-console.log(`updated Cargo.toml -> ${version}`);
 
 const check = spawnSync(process.execPath, ["scripts/check-version.mjs"], {
   cwd: repoRoot,

@@ -73,16 +73,9 @@ async fn help_writes_help_no_envelope() {
 async fn version_writes_version_line() {
     let (code, out, _err) = run(&["--version"]).await;
     assert_eq!(code, 0);
-    // embedded version.json(= packages/cli/package.json の version)
-    let pkg: serde_json::Value = serde_json::from_str(
-        &std::fs::read_to_string(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../packages/cli/package.json"
-        ))
-        .unwrap(),
-    )
-    .unwrap();
-    assert_eq!(out, format!("{}\n", pkg["version"].as_str().unwrap()));
+    // embedded version.json(= CARGO_PKG_VERSION、すなわち workspace
+    // `[workspace.package].version` — canonical source)
+    assert_eq!(out, format!("{}\n", env!("CARGO_PKG_VERSION")));
 }
 
 #[tokio::test(flavor = "current_thread")]

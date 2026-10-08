@@ -11,8 +11,7 @@ const hookPath = "packages/apm/.apm/hooks";
 function fixture(t) {
   const dir = mkdtempSync(path.join(os.tmpdir(), "cheaper-source-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  mkdirSync(path.join(dir, "packages/cli"), { recursive: true });
-  cpSync(path.join(root, "packages/cli/package.json"), path.join(dir, "packages/cli/package.json"));
+  cpSync(path.join(root, "Cargo.toml"), path.join(dir, "Cargo.toml"));
   cpSync(path.join(root, hookPath), path.join(dir, hookPath), {
     recursive: true,
     filter: (p) => !/[\\/]bin[\\/][^\\/]+[\\/]/.test(p) &&
@@ -27,7 +26,7 @@ async function check(dir) {
 test("binary-free source assets satisfy the source contract", async (t) => {
   assert.deepEqual(await check(fixture(t)), []);
 });
-for (const asset of ["cheaper", "cheaper.ps1", "hooks.json", "cli/bin/cheaper.mjs", "cli/policy.yaml", "cli/workers/bulk-reader.md", "cli/workers/schemas/bulk-reader.input.schema.json"]) {
+for (const asset of ["cheaper", "cheaper.ps1", "hooks.json", "cli/version.json", "cli/policy.yaml", "cli/workers/bulk-reader.md", "cli/workers/schemas/bulk-reader.input.schema.json"]) {
   test(`missing required asset is rejected: ${asset}`, async (t) => {
     const dir = fixture(t);
     rmSync(path.join(dir, hookPath, asset));
@@ -36,7 +35,7 @@ for (const asset of ["cheaper", "cheaper.ps1", "hooks.json", "cli/bin/cheaper.mj
 }
 test("small assets reject pointers and directories", async (t) => {
   const dir = fixture(t);
-  const file = path.join(dir, hookPath, "cli/bin/cheaper.mjs");
+  const file = path.join(dir, hookPath, "cli/policy.yaml");
   writeFileSync(file, "version https://git-lfs.github.com/spec/v1\noid sha256:abc\nsize 100\n");
   assert.match((await check(dir)).join("\n"), /LFS pointer/);
   rmSync(file);

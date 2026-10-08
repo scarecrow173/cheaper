@@ -1,7 +1,7 @@
 [package]
 name = "cheaper-cli"
-# Product version: inherited from [workspace.package].version, which is
-# cross-checked against packages/cli/package.json (the canonical source).
+# Product version: inherited from [workspace.package].version (the
+# canonical source, cross-checked by scripts/check-version.mjs).
 version.workspace = true
 edition.workspace = true
 publish = false
@@ -30,10 +30,6 @@ tokio = { workspace = true, features = ["signal", "rt-multi-thread"] }
 include_dir = "0.7"
 # `auth login --type api_key` secret prompt (T5). Approved new dep.
 rpassword = "7"
-
-[build-dependencies]
-# `packages/cli/package.json` version → embedded `version.json`.
-serde_json.workspace = true
 
 [dev-dependencies]
 tempfile = "3"

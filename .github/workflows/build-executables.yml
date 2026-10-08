@@ -62,7 +62,7 @@ jobs:
         env:
           EXPECTED_VERSION: ${{ inputs.expected_version }}
         run: |
-          node -e 'if (require("./packages/cli/package.json").version !== process.env.EXPECTED_VERSION) throw new Error("expected release version mismatch");'
+          node --input-type=module -e 'import {cargoWorkspaceVersion} from "./scripts/lib/release-artifacts.mjs"; if (cargoWorkspaceVersion(process.cwd()) !== process.env.EXPECTED_VERSION) throw new Error("expected release version mismatch");'
 
       # rustup toolchain は mise(core:rust)が管理する。RUSTUP_TOOLCHAIN を
       # 伝えるため mise exec 経由で target を追加する。
@@ -99,9 +99,9 @@ jobs:
           set -euo pipefail
           exe="dist/bin/${{ matrix.artifact }}"
           reported="$("${exe}" --version)"
-          pkg_version="$(node -p "require('./packages/cli/package.json').version")"
+          pkg_version="$(node --input-type=module -e 'import {cargoWorkspaceVersion} from "./scripts/lib/release-artifacts.mjs"; console.log(cargoWorkspaceVersion(process.cwd()))')"
           if [ "${reported}" != "${pkg_version}" ]; then
-            echo "executable --version ${reported} does not match package version ${pkg_version}" >&2
+            echo "executable --version ${reported} does not match canonical version ${pkg_version}" >&2
             exit 1
           fi
           "${exe}" models > /dev/null

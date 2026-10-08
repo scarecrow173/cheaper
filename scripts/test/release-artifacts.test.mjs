@@ -33,13 +33,10 @@ function fixture(t) {
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const pkg = path.join(root, "packages", "apm");
   const cli = path.join(pkg, ".apm", "hooks", "cli");
-  mkdirSync(path.join(root, "packages", "cli"), { recursive: true });
-  writeFileSync(path.join(root, "packages", "cli", "package.json"), '{"version":"1.2.3"}');
   writeFileSync(path.join(root, "Cargo.toml"), '[workspace.package]\nversion = "1.2.3"\n\n[profile.release]\n');
   mkdirSync(path.join(cli, "bin", "linux-x64"), { recursive: true });
   writeFileSync(path.join(pkg, "apm.yml"), 'name: cheaper\nversion: "1.2.3"\n');
   writeFileSync(path.join(cli, "version.json"), '{"version":"1.2.3"}\n');
-  writeFileSync(path.join(cli, "bin", "cheaper.mjs"), "// committed JS\n");
   writeFileSync(path.join(cli, "bin", "linux-x64", "cheaper"), "old committed payload");
   const assets = path.join(root, "assets");
   mkdirSync(assets);
@@ -50,7 +47,8 @@ function fixture(t) {
 
 test("manifest uses ASCII and LF", async (t) => {
   const f = fixture(t);
-  const version = JSON.parse(readFileSync(path.join(ROOT, "packages/cli/package.json"))).version;
+  const { cargoWorkspaceVersion } = await library();
+  const version = cargoWorkspaceVersion(ROOT);
   const result = spawnSync(process.execPath, [
     path.join(ROOT, "scripts/generate-release-checksums.mjs"),
     "--asset-dir", f.assets, "--tag", `v${version}`,
@@ -133,8 +131,10 @@ test("release tag and declarations must agree", async (t) => {
   writeFileSync(path.join(f.pkg, "apm.yml"), 'name: cheaper\nversion: "1.2.4"\n');
   assert.throws(() => verifyReleaseVersion(f.root, "v1.2.3"), /version/);
   writeFileSync(path.join(f.pkg, "apm.yml"), 'name: cheaper\nversion: "1.2.3"\n');
+  // Cargo.toml is canonical — rewriting it moves the canonical version,
+  // so the tag mismatch is reported against the new canonical.
   writeFileSync(path.join(f.root, "Cargo.toml"), '[workspace.package]\nversion = "1.2.4"\n');
-  assert.throws(() => verifyReleaseVersion(f.root, "v1.2.3"), /Cargo\.toml/);
+  assert.throws(() => verifyReleaseVersion(f.root, "v1.2.3"), /tag .*canonical version/);
 });
 
 test("workspace version is read only from [workspace.package]", async (t) => {
@@ -255,7 +255,8 @@ test("artifact verification rejects pointer and wrong hash", async (t) => {
 
 test("verify mode rejects corrupt artifacts without rewriting manifest", async (t) => {
   const f = fixture(t);
-  const version = JSON.parse(readFileSync(path.join(ROOT, "packages/cli/package.json"))).version;
+  const { cargoWorkspaceVersion } = await library();
+  const version = cargoWorkspaceVersion(ROOT);
   writeFileSync(path.join(f.assets, NAMES[0]), "changed");
   const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/generate-release-checksums.mjs"), "--asset-dir", f.assets, "--tag", `v${version}`, "--verify"], { encoding: "utf8" });
   assert.notEqual(result.status, 0);
