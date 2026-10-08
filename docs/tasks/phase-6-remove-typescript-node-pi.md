@@ -4,7 +4,7 @@ type: "task"
 status: "todo"
 title: "Phase 6: remove TypeScript Node Pi"
 created: "2026-10-06"
-updated: "2026-10-08"
+updated: "2026-10-09"
 owners: []
 relations:
   source: []
@@ -159,37 +159,74 @@ darwin-* は Release asset 非追加を維持(sibling smoke は継続)、
       で動作する
 - [x] T5(Commit E): CI workflow 残存参照除去・docs/ADR status 更新・
       supersede ADR 起票が完了する
-- [ ] T6(Final gate): fresh worktree の `mise run setup`→`mise run check`
-      と release E2E smoke が pass する
+- [x] T6(Final gate): fresh worktree の `mise run setup`→`mise run check`
+      と release E2E smoke が pass する(fresh worktree `F:/repositry/
+      cheaper-fresh-gate` で setup→check exit 0 実測、sibling smoke は
+      local で sh + pwsh 両 leg 実測。release-acquisition の実 dispatch
+      は Phase 5 と同じく CI 延期)
 
 ## Verification
 
-- [ ] fresh worktree で `mise run setup` → `mise run check` が exit 0
-      (toolchain lock・cargo build/test・bundle freshness を含む)
-- [ ] `mise exec -- node --test scripts/test/` が全パス(apm-payload・
-      release-artifacts・release-workflow・binary-size)
-- [ ] `git grep -E "@earendil-works|pi-coding-agent|vitest|tsconfig|pnpm |
+- [x] fresh worktree で `mise run setup` → `mise run check` が exit 0
+      (toolchain lock・cargo build/test・bundle freshness を含む。
+      `F:/repositry/cheaper-fresh-gate` worktree、node_modules/target/
+      apm_modules なしから `apm install`→`cargo fetch`→`cargo build
+      --workspace --all-targets`(7m26s)→check 全 pass、worktree は
+      検証後に remove 済み)
+- [x] `mise exec -- node --test scripts/test/` が全パス(apm-payload・
+      release-artifacts・release-workflow・binary-size)(`mise run
+      check` 内で 132 tests / 126 pass / 6 platform-gated skip / 0 fail)
+- [x] `git grep -E "@earendil-works|pi-coding-agent|vitest|tsconfig|pnpm |
       build-executable|esbuild|cheaper\.mjs|packages/(cli|core|tool-runtime|
       runtime-pi|workflow)"` が working code/CI/scripts でヒットしない
-      (docs 履歴・ADR 記述は除外)
-- [ ] `mise exec -- cargo build --release` で 3 target(linux-x64・
+      (docs 履歴・ADR 記述は除外)(hit 全件を分類: crates の `//` port
+      provenance comment・Cargo.toml description・NOTICE・
+      benchmarks/results 履歴 JSON・`build-executables.yml` workflow/
+      job 名(removed script 非参照)・release-workflow test の
+      absence-pin 断言・`apm-bundle.mjs` の旧 `cheaper.mjs` 掃除
+      rmSync・`process_executable.rs` test fixture の `pnpm.cmd`
+      shim 名。非 exempt な依存参照なし)
+- [x] `mise exec -- cargo build --release` で 3 target(linux-x64・
       linux-arm64・win-x64)+ darwin-arm64 sibling 検証 build が成功し、
       `node scripts/check-binary-size.mjs --file <binary>` で strip 後
-      ≤20MiB を維持する
+      ≤20MiB を維持する(win32-x64 local release build 実測
+      19,860,480B = 18.9MiB OK。3-target matrix + darwin sibling
+      build は `build-executables.yml` 側、CI)
 - [ ] release E2E: `release-acquisition` を test tag で 1 dispatch し、
       5 asset(raw3 + `SHA256SUMS` + `cheaper-apm-v<X.Y.Z>.tar.gz`)の
-      publish と `smoke-bundle` 全 OS が green である
-- [ ] `cargo build --release` の出力を `node scripts/build-apm-bundle.mjs
+      publish と `smoke-bundle` 全 OS が green である —
+      CI検証はユーザー判断で延期(Phase 5 と同じ。local では
+      assemble→extract→smoke-release の同等経路を実測 pass)
+- [x] `cargo build --release` の出力を `node scripts/build-apm-bundle.mjs
       --exe-dir <dir>` で sibling 化し、`node scripts/smoke-release.mjs`
       で Node-free launcher(sh + ps1)経由の `--version`/`models` が
-      通る
-- [ ] consumer への `apm install` 後、launcher 経由で `cheaper hook
+      通る(`build-apm-bundle --exe-dir` で 3 target 配置→
+      assemble-release-bundle→展開→smoke-release が
+      `{"target":"win32-x64","version":"1.0.0","verified":3,
+      "nodeFree":true}`。pwsh leg は smoke 経由、sh leg は Git Bash
+      で `PATH=/usr/bin:/bin`(node 不在)の deploy 済み launcher
+      `--version`/`models` 実測 pass)
+- [x] consumer への `apm install` 後、launcher 経由で `cheaper hook
       <event> --target <agent>` が Rust binary で実行され fail-open 契約
       が維持される(hook 配布物 smoke、release E2E と兼用可)
-- [ ] `docker compose up -d` + model pull 済み Ollama で Rust binary の
-      実 provider e2e が通る
-- [ ] `git diff --exit-code -- packages/apm/.apm/hooks/cli` が
+      (`launcher-acquisition.test.mjs` が fresh worktree の check 内で
+      windsurf/claude/codex/cursor への binary-free install + 実
+      binary hook 実行(exit 2 経路含む)を pass。local smoke でも
+      `apm install` deploy → launcher 実行を実測)
+- [x] `docker compose up -d` + model pull 済み Ollama で Rust binary の
+      実 provider e2e が通る(`CHEAPER_E2E_OLLAMA=1 cargo test -p
+      cheaper-runtime --test ollama_e2e` で 3/3 pass — 初回のみ
+      doc-writer が provider 応答 truncation で transient fail、孤立
+      再実行で pass の flake。qwen3.5:9b。加えて `cheaper run
+      bulk-reader --model ollama/qwen3.5:9b` を実 provider で実行し
+      usage 実測 envelope を確認)
+- [x] `git diff --exit-code -- packages/apm/.apm/hooks/cli` が
       `cheaper.mjs` 削除後も green である(`mise run check` 内)
-- [ ] `node scripts/set-version.mjs <X.Y.Z>` → `node
+- [x] `node scripts/set-version.mjs <X.Y.Z>` → `node
       scripts/bundle-cli.mjs` → `mise run check` で全宣言(Cargo.toml・
       apm.yml・version.json・binary `--version`)が一致する
+      (1.0.1 bump で check-version OK・rebuild 後 debug binary が
+      `1.0.1` を報告、1.0.0 へ revert + rebundle で `git status`
+      clean・binary `1.0.0` に復帰。宣言一致の検証は
+      `check-version.mjs` で実施。post-bump の full `mise run check`
+      自体は version 1.0.0 の fresh worktree で pass 済み)
