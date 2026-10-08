@@ -60,7 +60,7 @@ mod posix {
             if name.bytes().any(|b| !b.is_ascii_digit()) {
                 continue;
             }
-            let stat = match tokio::fs::read_to_string(entry.path()).await {
+            let stat = match tokio::fs::read_to_string(entry.path().join("stat")).await {
                 Ok(s) => s,
                 Err(e) => {
                     // 消滅 race(ENOENT)は読み飛ばす。
