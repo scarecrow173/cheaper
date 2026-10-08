@@ -23,7 +23,7 @@ jobs:
       sha: ${{ steps.resolve.outputs.sha }}
       version: ${{ steps.resolve.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag }}
       - uses: jdx/mise-action@v4
@@ -53,14 +53,14 @@ jobs:
     needs: [resolve-release, build-executables]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve-release.outputs.sha }}
       - uses: jdx/mise-action@v4
         with:
           minimum_release_age: 7d
           install_args: "--locked"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: bin-*
           merge-multiple: true
@@ -73,7 +73,7 @@ jobs:
           set -euo pipefail
           node scripts/generate-release-checksums.mjs --asset-dir dist/bin --tag "$TAG"
           node scripts/assemble-release-bundle.mjs --asset-dir dist/bin --out-dir dist/release --tag "$TAG"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-bundle
           path: |
@@ -89,14 +89,14 @@ jobs:
         os: [windows-latest, ubuntu-latest, ubuntu-24.04-arm, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve-release.outputs.sha }}
       - uses: jdx/mise-action@v4
         with:
           minimum_release_age: 7d
           install_args: "--locked"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: release-bundle
           path: dist/release
@@ -111,7 +111,7 @@ jobs:
       # darwin-arm64 は Release asset に含めない検証 target。bundle には
       # sibling が無いため、build artifact を sibling として配置し、
       # launcher の sibling 優先経路だけを検証する(acquisition は試みない)。
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: ${{ matrix.os == 'macos-latest' }}
         with:
           name: bin-darwin-arm64
@@ -139,19 +139,19 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve-release.outputs.sha }}
       - uses: jdx/mise-action@v4
         with:
           minimum_release_age: 7d
           install_args: "--locked"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: bin-*
           merge-multiple: true
           path: dist/bin
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: release-bundle
           path: dist/release
