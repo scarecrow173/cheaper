@@ -1,23 +1,24 @@
 # Version と release 手順
 
-製品 version の **canonical source of truth は `packages/cli/package.json`**
-（ADR-034r05iHrZUE6WgAk8Cpqq）。`cheaper --version`、配布 manifest `packages/apm/apm.yml`、
-bundle 内 `version.json`、各 workspace package の `version` field はすべて
+製品 version の **canonical source of truth は root `Cargo.toml` の
+`[workspace.package].version`**（ADR-034CpwNUNIDqrR92x7VaUR。旧
+`packages/cli/package.json` canonical の ADR-034r05iHrZUE6WgAk8Cpqq は
+superseded）。`cheaper --version`（`cheaper-cli` crate が
+`version.workspace = true` で継承し、build.rs が binary へ埋め込む）、
+配布 manifest `packages/apm/apm.yml`、bundle 内 `version.json` はすべて
 この値と一致しなければならない。
 
 ## Version 宣言の一覧
 
 | ファイル | 役割 | 扱い |
 | --- | --- | --- |
-| `packages/cli/package.json` | canonical source | **ここだけが真の宣言** |
-| `packages/core/package.json` | workspace package | canonical と一致必須 |
-| `packages/tool-runtime/package.json` | workspace package | canonical と一致必須 |
-| `packages/workflow/package.json` | workspace package | canonical と一致必須 |
-| `packages/runtime-pi/package.json` | workspace package | canonical と一致必須 |
+| `Cargo.toml`（`[workspace.package].version`） | canonical source | **ここだけが真の宣言** |
 | `packages/apm/apm.yml` | 配布 APM manifest | canonical と一致必須 |
-| `packages/apm/.apm/hooks/cli/version.json` | bundled CLI の version | 生成物（`bundle-cli.mjs` が cli から派生） |
-| `Cargo.toml`（`[workspace.package].version`） | Rust binary の version 宣言 | canonical と一致必須（`cheaper-cli` crate が `version.workspace = true` で継承。canonical は Phase 5 時点でも package.json のまま） |
+| `packages/apm/.apm/hooks/cli/version.json` | bundled CLI の version | 生成物（`bundle-cli.mjs` が Cargo version から派生） |
 | `apm.yml`（root） | `cheaper-dev` dev project | **対象外** — 製品 version ではなく dev project 識別子。独立してよい |
+
+library crate（`crates/*/Cargo.toml` の各 `version`）は内部の path 依存で
+あり publish・release されないため、製品 version の宣言箇所ではない。
 
 ## 不一致の検出
 
@@ -57,8 +58,9 @@ native version と実行は同 release run の build/smoke が検証する。
 3. `mise run check` が全 pass することを確認する（small asset freshness と source checker を含む）。
 4. 宣言変更と小さい生成物を commit して branch を push する。
    `cli/bin/<platform>/` は ignore 対象であり、binary を Git に追加しない。
-5. `node packages/cli/bin/cheaper.js --version` と、bundle 内
-   `version.json` が新しい値を返すことを目視確認する。
+5. `cargo run -p cheaper-cli -- --version`（または build 済み binary の
+   `--version`）と、bundle 内 `version.json` が新しい値を返すことを
+   目視確認する。
 6. `git tag v<X.Y.Z>` で immutable tag を打ち、push する。
 
 tagのsourceには新workflowが使用するscriptsとlauncher、整合するversion.jsonが
@@ -150,8 +152,8 @@ dry-run/構造検証の成功を実Release公開成功と同一視しない。
 
 ## 注意
 
-- `version.json`・`bin/cheaper.mjs` は生成物。手編集しない。bundle
-  本体に version 定数は埋め込まれない（`version.ts` が実行時に
-  package.json → version.json fallback で読む）。
+- `version.json` は生成物。手編集しない。binary の version は
+  `cheaper-cli` の build.rs が `CARGO_PKG_VERSION`（= workspace
+  version）から埋め込むため、canonical 宣言と常に一致する。
 - 宣言を手で直接編集するのは避け、`set-version.mjs` を使う。ずれた
   状態で commit すると `mise run check`（CI）が fail する。

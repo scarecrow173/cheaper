@@ -1,10 +1,10 @@
 ---
 id: "ADR-034r05iHfSMW9SGV4dpcy2"
 type: "adr"
-status: "accepted"
+status: "superseded"
 title: "Agent Runtime として Pi SDK (@earendil-works/pi-coding-agent) を採用する"
 created: "2026-09-15"
-updated: "2026-09-17"
+updated: "2026-10-08"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -22,7 +22,8 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "migrate-the-cheaper-cli-runtime-to-rust-and-rig.md"
   related:
     - "workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
     - "model-tier-model-resolver.md"

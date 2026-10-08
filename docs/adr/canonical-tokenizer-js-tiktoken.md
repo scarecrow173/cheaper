@@ -1,10 +1,10 @@
 ---
 id: "ADR-034r05iHrZUE6W3U1rbJq4"
 type: "adr"
-status: "accepted"
+status: "superseded"
 title: "Use js-tiktoken o200k_base as the single canonical tokenizer"
 created: "2026-09-16"
-updated: "2026-09-16"
+updated: "2026-10-08"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -21,7 +21,8 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "migrate-the-cheaper-cli-runtime-to-rust-and-rig.md"
   related:
     - "../specs/canonical-token-counter.md"
   refines: []

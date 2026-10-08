@@ -1,6 +1,6 @@
 # Managed process
 
-`process` は policy で事前登録した named task を実行する canonical tool。Pi Worker と Workflow は同じ `{"kind":"tool","tool":"process","input":{"task":"test"}}` を使う。Worker では `tools` と policy の `tools.allow` に `process` が必要で、task が空なら expose されない。
+`process` は policy で事前登録した named task を実行する canonical tool。Worker と Workflow は同じ `{"kind":"tool","tool":"process","input":{"task":"test"}}` を使う。Worker では `tools` と policy の `tools.allow` に `process` が必要で、task が空なら expose されない。
 
 ```yaml
 process:
@@ -22,11 +22,11 @@ process:
 
 `command` は固定 argv 配列。呼出し input は `task` のみで、任意 command/argv の指定、shell、shell 演算子、script shim を拒否する。pipe、semicolon 等は正規の引数内でも拒否するため、複雑な処理は信頼した script に記述する。cwd は既存 workspace 相対 directory。inputs/outputs は cwd に関わらず workspace root 相対で、literal output は exact、末尾 `/**` は subtree ownership として正規化する。部分 wildcard output は ownership を確定できず拒否される。
 
-Windows の `.cmd`/`.bat`/`.ps1` shim は実行しない。pnpm 等は native `node` と JS entrypoint の argv にする。native PE/ELF/Mach-O executable のみ解決し、bare command は host PATH の絶対 directory を検索する。通常の Node 実行では native `process.execPath` を使い、SEA では host PATH の Node を解決する。見つからなければ拒否する。
+Windows の `.cmd`/`.bat`/`.ps1` shim は実行しない。pnpm 等は native executable と JS entrypoint の argv にする。native PE/ELF/Mach-O executable のみ解決し、bare command は host PATH の絶対 directory を検索する。Rust runtime には Node host executable が存在しないため、bare `node` は PATH 解決せず `POLICY_VIOLATION` の明示 error で拒否する（PATH 上に `node` が実在しても同じ）。Node 製 tool を task 化する場合は node binary の絶対 path を command に使う。見つからなければ拒否する。
 
-子 env は task.env で明示した値のみ。Windows は OS 用 SystemRoot を補完し、libuv が親から補う PATH/USERPROFILE/TEMP 等は未指定なら空値にする。親 credential、NODE_OPTIONS、Node の NODE_V8_COVERAGE 自動伝播を継承しない。PATH 等が子にも必要なら task.env に明示する。stdin は ignore。
+子 env は task.env で明示した値のみ。Windows は OS 用 SystemRoot を補完し、Windows が親から補完する必須 env（PATH/USERPROFILE/TEMP 等）は未指定なら空値にする。親 credential、NODE_OPTIONS、NODE_V8_COVERAGE 等の自動伝播は継承しない（spawn は env_clear 相当）。PATH 等が子にも必要なら task.env に明示する。stdin は ignore。
 
-Task の I/O 宣言から ResourceManifest と Workflow producer/consumer edge を導出する。Workflow compiler には同じ policy を与えた `createToolCatalog({process: policy.process})` と `WorkspaceResourceInference` を渡す。unknown task は fail closed、明示 resources の underclaim や outputs 外の producer/write overclaim を拒否する。既存 process declaration seam は input.task と一致しなければ拒否する。
+Task の I/O 宣言から ResourceManifest と Workflow producer/consumer edge を導出する。Workflow compiler には同じ policy で構築した `ToolCatalog`（process policy 込み）と `WorkspaceResourceInference` を渡す。unknown task は fail closed、明示 resources の underclaim や outputs 外の producer/write overclaim を拒否する。既存 process declaration seam は input.task と一致しなければ拒否する。
 
 Invocation 全 scope で global operation cap と `process.maxConcurrent` pool を共有する。output 無しの task は shared、output 有りは exclusive。ResourceManager の claims と pool 内の提出順で admission を行い、claim conflict がない他 tool は pool 待ちの process を追い越せる。running capacity と resource lease は tree cleanup を含む実際の settle まで保持する。
 

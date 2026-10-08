@@ -1,10 +1,10 @@
 ---
 id: "ADR-034r05iHrZUE6W5HVbwRSz"
 type: "adr"
-status: "accepted"
+status: "superseded"
 title: "Distribute the cheaper CLI as a committed esbuild bundle inside the APM hook bundle"
 created: "2026-09-16"
-updated: "2026-09-17"
+updated: "2026-10-08"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -21,7 +21,8 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "remove-the-committed-esbuild-cli-payload-and-move-the-canonical-version-to-cargo.md"
   related:
     - "../specs/apm-self-contained-cli-distribution.md"
     - "../designs/cli-bundle-layout.md"

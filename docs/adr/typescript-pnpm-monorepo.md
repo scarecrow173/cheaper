@@ -1,10 +1,10 @@
 ---
 id: "ADR-034r05iHlWosDpP8BzaVZ8"
 type: "adr"
-status: "accepted"
+status: "superseded"
 title: "TypeScript + pnpm monorepo 構成"
 created: "2026-09-15"
-updated: "2026-09-17"
+updated: "2026-10-08"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -22,7 +22,8 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "migrate-the-cheaper-cli-runtime-to-rust-and-rig.md"
   related:
     - "agent-runtime-pi-sdk-earendil-works-pi-coding-agent.md"
     - "one-shot-json-first-cli.md"

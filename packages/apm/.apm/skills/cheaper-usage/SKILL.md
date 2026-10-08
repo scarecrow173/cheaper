@@ -63,11 +63,9 @@ one workspace file so you can measure context cost before reading it.
   there requires a future deployable version source; keep the sibling payload
   until that migration is complete. PowerShell hook entries use cheaper.ps1
   through a child PowerShell process and retain their existing fallback policy.
-  A JS bundle also ships at `cli/bin/cheaper.mjs`
-  (`node .windsurf/hooks/cheaper/cli/bin/cheaper.mjs
-  <command> [options]`) as a fallback for environments where the
-  platform executable is missing (e.g. an unsupported OS); it
-  requires Node.js on `PATH`. Hook registrations invoke the
+  On platforms without an acquisition target or sibling (e.g. an
+  unsupported OS), place a locally built `cheaper` executable at the
+  sibling path — there is no JS fallback. Hook registrations invoke the
   launcher/executable path directly via `cheaper hook
   <event> --target <agent>`.
   Substitute `cheaper` for the actual hook bundle directory name if the
@@ -170,7 +168,7 @@ integer, bytes; invalid values fall back to the default).
 Worker runs resolve a model through cheaper's tier system (low/medium/high)
 and project/user `models.yaml` overrides — you do not pass a model name.
 `meta.model` reports what was actually used. Provider credentials are
-stored user-scope in `<userConfigDir>/pi/auth.json` (managed via
+stored user-scope in `<userConfigDir>/credentials.json` (managed via
 `cheaper auth login` / `auth logout` / `auth status`) — never in the
 project or `.cheaper/`. The model map is configured via
 `models.yaml`; see `docs/guides/providers.md` in the cheaper repository.

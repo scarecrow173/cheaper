@@ -4,7 +4,7 @@ type: "task"
 status: "todo"
 title: "Phase 6: remove TypeScript Node Pi"
 created: "2026-10-06"
-updated: "2026-10-06"
+updated: "2026-10-08"
 owners: []
 relations:
   source: []
@@ -157,7 +157,7 @@ darwin-* は Release asset 非追加を維持(sibling smoke は継続)、
       snapshot test へ変換されてから削除される
 - [ ] T4(Commit D): benchmarks が native binary + Rust fake seam fixture
       で動作する
-- [ ] T5(Commit E): CI workflow 残存参照除去・docs/ADR status 更新・
+- [x] T5(Commit E): CI workflow 残存参照除去・docs/ADR status 更新・
       supersede ADR 起票が完了する
 - [ ] T6(Final gate): fresh worktree の `mise run setup`→`mise run check`
       と release E2E smoke が pass する

@@ -1,10 +1,10 @@
 ---
 id: "ADR-034BbhP6hJV7DFtv7k7AGs"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Migrate the cheaper CLI runtime to Rust and Rig"
 created: "2026-10-06"
-updated: "2026-10-06"
+updated: "2026-10-08"
 owners: []
 relations:
   source:
@@ -29,12 +29,13 @@ relations:
   blocks: []
   supersedes:
     - "agent-runtime-pi-sdk-earendil-works-pi-coding-agent.md"
-  superseded-by: []
-  related:
     - "typescript-pnpm-monorepo.md"
-    - "distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"
     - "pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md"
     - "canonical-tokenizer-js-tiktoken.md"
+  superseded-by: []
+  related:
+    - "distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"
+    - "remove-the-committed-esbuild-cli-payload-and-move-the-canonical-version-to-cargo.md"
     - "devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
     - "usage-jsonl-in-user-config-dir-best-effort-append.md"
     - "version-pinned-launcher-acquisition.md"

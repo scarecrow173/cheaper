@@ -149,8 +149,7 @@ offline preseed でもこの制約は変わらない。
 
 root apm.yml は development-only で cheaper 自身の hook を deploy しない。
 dev consumer は local build の host executable（`cargo build --release -p
-cheaper-cli` の出力、または並走期間中は `scripts/build-executable.mjs` の
-SEA 出力）を対応 sibling へ配置して使う。
+cheaper-cli` の出力）を対応 sibling へ配置して使う。
 未 release の package version に Release download fallback を期待しない。
 local output は `cli/bin/*/` の ignore 対象。source checker は foreign binary の存在や
 byte 一致を要求せず、native build/smoke が executable の version・実行を検証する。
