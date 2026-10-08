@@ -190,6 +190,12 @@ fn envelope_canonical_numbers() {
     assert!(s.contains("\"n\":1"));
     assert!(s.contains("\"durationMs\":1e+21"));
 
+    // 小さな絶対値は JS の `1e-7` 形(Rust 既定の `0.0000001` ではない)。
+    let env_small = utility_success_envelope(map(&[("n", json!(1e-7))]), 9.9e-7);
+    let s_small = envelope_json(&env_small);
+    assert!(s_small.contains("\"n\":1e-7"));
+    assert!(s_small.contains("\"durationMs\":9.9e-7"));
+
     let env2 = utility_success_envelope(map(&[("n", json!(f64::NAN))]), f64::INFINITY);
     let s2 = envelope_json(&env2);
     assert!(s2.contains("\"n\":null"));

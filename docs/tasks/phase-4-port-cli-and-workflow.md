@@ -149,7 +149,7 @@ plugin 登録の composition root は cli が担う(runtime→devin は循環依
 - [x] T3: `run.rs`/`count.rs`/`models.rs` のコマンド経路が実装される
 - [x] T4: `usage_log.rs`/`pricing.rs`/`usage_report.rs` が実装され、
       usage.jsonl writer が additive-only である
-- [ ] T5: `auth.rs` の 3 action と terminal interaction が実装される
+- [x] T5: `auth.rs` の 3 action と terminal interaction が実装される
 - [x] T6: `hook/` の dispatch + 4 target + routing policy が実装され、
       panic を含む全 error 経路が fail-open に覆われる
 - [x] T7: `workflow_context.rs`/`workflow_run.rs` が T1+T3 の成果物を
@@ -158,9 +158,9 @@ plugin 登録の composition root は cli が担う(runtime→devin は循環依
       が構築される(実績: `tests/differential/` 43 cases —
       `tests/differential/README.md` に fixture inventory・比較規約・
       pinned divergence を集約)
-- [ ] T9: hook byte 一致 matrix・usage.jsonl 新旧互換 test・
+- [x] T9: hook byte 一致 matrix・usage.jsonl 新旧互換 test・
       `docs/guides/usage.md` 追記が完了する
-- [ ] `cheaper __grep-eval` 内部 mode dispatch と composition root
+- [x] `cheaper __grep-eval` 内部 mode dispatch と composition root
       (adapter session + devin plugin 登録)が `cli.rs`/`main.rs` に配線
       される
 
@@ -183,24 +183,50 @@ plugin 登録の composition root は cli が担う(runtime→devin は循環依
       通る(除外しない)。`error.details.{class,retryable,httpStatus}`・
       panic 写像・in-flight abort turn 計上・auth status metadata の
       4 系統の divergence を case pin として記録(README 参照)
-- [ ] `mise exec -- cargo test -p cheaper-cli --test envelope` で
+- [x] `mise exec -- cargo test -p cheaper-cli --test envelope` で
       `schemaVersion:1`・1 JSON + 末尾改行・optional 省略・null 意味論・
       canonical number formatter(`1.0`/`1e-7`/非有限を網羅)が検証される
-- [ ] `mise exec -- cargo test -p cheaper-cli --test hook` で 4 target ×
+- [x] `mise exec -- cargo test -p cheaper-cli --test hook` で 4 target ×
       event × allow/deny/malformed stdin の stdout/stderr/exit code が TS
       版と byte 一致し、fail-open(malformed・未知 event・内部 error・
       panic)が維持される
-- [ ] `mise exec -- cargo test -p cheaper-cli --test usage_log` で Rust
+      (byte parity は `--test differential` の hook 16 case が実 binary
+      間で担保 — stdout+stderr+exit code 全一致。fail-open の panic・
+      usage 非記録・policy 破損等は `tests/hook.rs` + differential
+      `cli-hook-*` fail-open case で網羅)
+- [x] `mise exec -- cargo test -p cheaper-cli --test usage_log` で Rust
       writer の新 record を TS `cheaper usage` が集計でき、旧 schema
       record を Rust `cheaper usage` が読める新旧双方向互換が検証される
-- [ ] `cheaper usage --compare-model` の pricing 解決順(runtime catalog
+      (literal shape test + node 経由の実 TS `readUsageRecords`/
+      `buildUsageReport`/`buildUsageRecord` cross-check —
+      node/dist 不在環境では skip)
+- [x] `cheaper usage --compare-model` の pricing 解決順(runtime catalog
       → user `pricing.json` → bundled snapshot)・stale 30 日判定・
       `directlyComparable` 母数が TS 版と一致する
+      (`tests/usage_report.rs` が TS `usage-report.test.ts` の全 case を
+      port — runtime catalog 優先・pricing.json fallback・stale/境界値・
+      comparable subset を検証。bundled snapshot の解決自体は core
+      `resolve_pricing` が担保)
 - [ ] `cheaper auth status` の `result.providers[]`/`credentials[]` 形状が
       TS 版と一致する(ISS-19a)
-- [ ] panic 注入で `INTERNAL_ERROR`(exit 70)error envelope が stdout に
+      — **部分差異あり・延期**: provider 一覧の順序/id・credential 列挙は
+      一致するが、oauth 対応 provider の `methods[]`/`subscription`
+      field が Rust 側は api_key のみ列挙で未実装(differential
+      `cli-auth-status` に pin 済み)。oauth metadata 列挙の port か
+      divergence 許容の判断が別途必要
+- [x] panic 注入で `INTERNAL_ERROR`(exit 70)error envelope が stdout に
       出て panic trace が stdout に漏れず、hook 経路では panic が
       allow/exit 0 に落ちる
-- [ ] Windows runner で contract test(envelope/hook/count-tokens/run 系)
+      (envelope 側は differential `run-panic` が Rust INTERNAL_ERROR(70)
+      envelope を pin で確認、hook 側は `tests/hook.rs`
+      `panic_in_stdin_read_falls_back_to_allow` が 4 target の
+      allow/exit 0 を確認)
+- [x] Windows runner で contract test(envelope/hook/count-tokens/run 系)
       が全パス
 - [ ] `mise run check` が exit 0(TS 側無破壊)
+      — **延期**(既存 flake): `packages/cli` の e2e
+      `launcher-acquisition.test.ts > downloads only once under
+      concurrent first-run` が並列負荷下で失敗する既存 flake(Phase 3
+      task doc でも観測済み)。対象ファイル単独再実行では 55/55 pass
+      を確認済みで、T9 の変更(crates/ + docs のみ)とは無関係。
+      lint/biome 警告(Biome max-size・noNonNullAssertion)も既存分

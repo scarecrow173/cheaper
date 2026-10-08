@@ -39,6 +39,8 @@ node/dist が無い場合は rust-only で skip する(fail しない)。
   "config": { "usageJsonl": […], "files": {…} },
   "fixture": { /* RunFixture JSON(crates/cheaper-runtime/src/fixture.rs) */ },
   "mode": "envelope" /* または "raw"(byte 完全一致 — hook/version 系) */,
+  "compareStderr": false,      // true で stderr も path scrub 後 byte 比較
+                               // (hook deny は stderr が contract の一部 — hook case で opt-in)
   "expectDivergence": "既知 divergence の pin note(差分が出た場合のみ有効)",
   "timeoutMs": 120000          // 子プロセス watchdog
 }
@@ -94,6 +96,9 @@ pi の 1 model call = 1 assistant message = 1 `turn_end`。corpus の記述規�
 唯一の canonical 実装(`docs/test-specs/rust-migration-differential-
 golden.md` と `rust-migration-test-spec.md` の「JSON 比較規約」に対応)。
 `mode: "raw"` の case(hook/version 系)は byte 完全一致 + path scrub のみ。
+`compareStderr: true` の case(hook 系)は stderr も同規約で byte 比較する
+— deny guidance・deny JSON 内の token 数(tiktoken-rs vs js-tiktoken の
+一致が前提)まで厳密に比較する T9 の hook byte-parity matrix。
 
 除外(ignore)対象 — 厳密比較対象として spec に無い nondeterminism のみ:
 
@@ -117,9 +122,10 @@ golden.md` と `rust-migration-test-spec.md` の「JSON 比較規約」に対応
   `savings`
 - `error.cause` object の `code`(PARTIAL_MUTATION wrap 等)
 
-stderr は実装依存の診断出力として比較対象外(exit code/stdout のみ)。
+stderr は既定で実装依存の診断出力として比較対象外(exit code/stdout
+のみ)。hook 系 case のみ `compareStderr` で opt-in 比較する(上記)。
 
-## fixture inventory(43 cases)
+## fixture inventory(55 cases)
 
 run 系(envelope 比較、fake-stream 経路):
 
@@ -153,9 +159,32 @@ argv 系(fixture 無し):
 - `cli-count-tokens`・`cli-count-tokens-missing`(token 数値は厳密比較)
 - `cli-usage-empty`・`cli-usage-seeded`(usage.jsonl 集計)
 - `cli-models`(catalog 列挙)、`cli-auth-status`(pinned divergence)
-- hook(raw byte 比較): `cli-hook-windsurf-allow`・
-  `cli-hook-windsurf-deny`(exit 2 + stderr 非比較)・
-  `cli-hook-cursor-allow`・`cli-hook-malformed`(fail-open)
+- hook(raw byte 比較、全 case `compareStderr` で stderr も厳密比較 —
+  `packages/cli/test/hook/hook-contract.test.ts` の target×event
+  matrix を binary レベルで再現した T9 の parity matrix):
+  - command path: `cli-hook-no-args`・`cli-hook-cursor-fallback`
+    (event 無し → schema-valid allow JSON)・`cli-hook-malformed`
+    (未知 event → silent fail-open)・`cli-hook-corrupt-policy`
+    (user policy.yaml 破損 → fail-open allow)
+  - windsurf: `cli-hook-windsurf-allow`・`cli-hook-windsurf-deny`
+    (pre-read-code → stderr guidance + exit 2)・
+    `cli-hook-windsurf-shell-deny`(pre-run-command `cat big.txt`)・
+    `cli-hook-windsurf-shell-cd-allow`(cwd 遷移後 read → fail-open)
+  - copilot: `cli-hook-copilot-deny`(`permissionDecision` deny JSON)・
+    `cli-hook-copilot-allow`(silent)・`cli-hook-copilot-foreign-allow`
+    (foreign shape → dual-schema allow)
+  - pretooluse: `cli-hook-pretooluse-deny`(`hookSpecificOutput`
+    deny JSON)・`cli-hook-pretooluse-allow`(silent)
+  - cursor: `cli-hook-cursor-allow`・`cli-hook-cursor-deny`
+    (before-read-file → permission deny JSON)・
+    `cli-hook-cursor-shell-deny`(before-shell-execution)
+
+  残りの contract cell(`--target` on non-hook command の拒否・
+  `cheaper.mjs` bundled entry・symlinked cwd・FIFO・usage.jsonl
+  非記録・panic → allow/exit 0)は binary 間差の出ない経路または
+  OS/spawn 依存で、case schema では表現できない —
+  `tests/hook.rs`・`tests/args.rs` が in-process で担保する
+  (差分が出得る全経路は上記 case で網羅済み)。
 
 ## pinned divergences(実測で確認・解消済みか監視対象)
 

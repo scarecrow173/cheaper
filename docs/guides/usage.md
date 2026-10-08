@@ -188,12 +188,28 @@ optional で、古い cheaper が書いた record には存在しない
 （`savings` 内の `directlyComparable` も同様）。count record
 には `savings` はない（offload の概念がないため）。
 
+record schema は additive-only で、新旧の record は同一
+usage.jsonl に混在しうる。旧 writer の record（上記 optional
+field なし）も新しい `cheaper usage` がそのまま集計でき、
+逆に新 writer の record も旧 `cheaper usage` が既知 field
+のみ読んで集計できる（未知 field は無視される）。ただし
+`usage.costUsd` の算出元は新旧で異なる（後述）ため、混在
+file の costUsd 合計は「同じ算出式の値の和」ではない点に
+注意。
+
 ## 実測 savings（actual / measured / estimated の区別）
 
 指標は次の 3 種に分かれる。混同しないこと。
 
 - **actual（実測）**: `meta.usage` / record の `usage`。
   worker 実行そのものが消費した token と実コスト（`costUsd`）。
+  `costUsd` は provider が報告する cost ではなく、cheaper の
+  pricing layer が run 時に解決した価格（`resolvePricing`:
+  runtime catalog → bundled snapshot）× token 数から算出する。
+  価格を解決できない model は `0` になる。旧 writer の
+  record に入っている `costUsd` は provider 報告値の合算
+  だったため、新旧 record で算出元が異なる（値がわずかに
+  ずれうる）。
 - **measured（実測 offload）**: `savings.sourceTokens` は worker
   が成功した tool call の出力テキストを canonical tokenizer
   （o200k_base）で encode した和。`savings.returnedTokens` は

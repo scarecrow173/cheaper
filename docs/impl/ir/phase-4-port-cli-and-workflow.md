@@ -761,3 +761,95 @@ golden harness。`docs/test-specs/rust-migration-differential-golden.md`
   turn_end を立てるため +1)と maxToolCalls reject の operation 状態
   計上(cancelled vs completed)— `run-max-turns`/`run-max-tool-calls`。
 - `auth status` の provider metadata(oauth method/subscription 列挙)。
+
+## T9 — 互換 test + docs(hook byte matrix・usage.jsonl 新旧互換・usage.md)
+
+### Scope
+
+T6 が `tmp/` の manual script(53/53 byte-identical)で一回限り検証した
+hook byte parity を durable test 化し、usage.jsonl の新旧双方向互換を
+`tests/usage_log.rs` に追加、`docs/guides/usage.md` に `costUsd` 口径
+変更と新旧 record 混在を追記した。T8 corpus(`cli-hook-*` 4 case)を
+重複せず拡張する形で、target×event matrix を binary-to-binary に再現。
+
+### Files
+
+- `tests/differential/harness.rs` — case schema に `compareStderr`
+  (既定 false)を追加。hook deny は stderr が contract の一部
+  (windsurf deny = guidance + exit 2)なため、opt-in で stderr も
+  path scrub 後 byte 比較する。raw/envelope mode と独立に動く。
+- `tests/differential/main.rs` — `compare_stderr` 時に両側 stderr を
+  `scrub_public` 適用して比較する分岐を追加。
+- `tests/differential/cases/` — 12 case 新規 + 既存 4 hook case に
+  `compareStderr: true` を付与(計 16 hook case、全体 55 cases):
+  - command path: `cli-hook-no-args`・`cli-hook-cursor-fallback`
+    (event 無し → `{"permission":"allow"}`)・
+    `cli-hook-corrupt-policy`(user policy.yaml 破損 → fail-open)
+  - windsurf: `cli-hook-windsurf-shell-deny`・
+    `cli-hook-windsurf-shell-cd-allow`(cwd 遷移後 read → fail-open)
+  - copilot: `cli-hook-copilot-deny`(`permissionDecision` deny)・
+    `cli-hook-copilot-allow`・`cli-hook-copilot-foreign-allow`
+    (dual-schema allow)
+  - pretooluse: `cli-hook-pretooluse-deny`(`hookSpecificOutput`)・
+    `cli-hook-pretooluse-allow`
+  - cursor: `cli-hook-cursor-deny`(before-read-file)・
+    `cli-hook-cursor-shell-deny`(before-shell-execution)
+  - 網羅性: copilot/pretooluse/cursor の normalize は event 名を
+    参照しない(TS と同じ構造)ため、deny が発生しうる全
+    target×request-kind cell + fail-open 経路を binary 比較で
+    網羅した。spawn/OS 依存の cell(symlinked cwd・FIFO・
+    `cheaper.mjs` bundled entry)と in-process でしか表現できない
+    cell(panic → allow・usage 非記録・non-hook `--target` 拒否)は
+    `tests/hook.rs`・`tests/args.rs` が既に担保 — gap 一覧と理由は
+    `tests/differential/README.md` fixture inventory に集約。
+- `tests/usage_log.rs` — 新旧双方向互換 test 3 件追加:
+  - `ts_writer_shape_records_parse_and_aggregate` — TS
+    `buildUsageRecord` 現行 shape の literal record(success run /
+    usage-bearing error / count)と旧 schema record(最小 run・
+    flag 無し savings)の混在 file を `read_usage_records` +
+    `build_usage_report` が読み集計(旧 record の `?? 0`・非
+    comparable 扱いを含む)。
+  - `rust_written_records_satisfy_ts_reader_field_contract` —
+    Rust `build_usage_record` の 3 形が TS reader(`isRecord`・
+    `filterRunRecords`・`aggregate`)が触る field を全て正しい
+    JSON 型で持つことを assert + append → read round-trip。
+  - `ts_reader_reads_rust_written_log_and_vice_versa` — node +
+    `packages/cli/dist` があれば spawn し、(a) Rust writer の
+    usage.jsonl を実 TS `readUsageRecords`/`buildUsageReport` で
+    集計して Rust report と一致を確認、(b) 実 TS
+    `buildUsageRecord` の record を Rust reader が読めることを
+    確認。node/dist 不在時は skip(differential 規約)。
+- `tests/envelope.rs` — `1e-7`/`9.9e-7` の canonical number case
+  追加(Done When の `1.0`/`1e-7`/非有限網羅要件)。
+- `docs/guides/usage.md` — `usage.costUsd` が cheaper pricing
+  layer 解決価格(runtime catalog → bundled snapshot)× token で
+  算出され provider 報告値ではないこと、新旧 record の additive-only
+  混在互換(双方向読み書き可・costUsd 算出元の差)を追記。
+- `tests/differential/README.md` — `compareStderr` schema・hook
+  inventory・未網羅 cell の理由を記録。
+
+### 検証
+
+- `mise exec -- cargo test -p cheaper-cli --test differential` —
+  55 cases、pass=47 / pinned divergence=8 / fail=0(hook 16 case
+  全て stdout+stderr+exit code byte 一致。deny reason の token 数
+  `20002` も tiktoken-rs / js-tiktoken で一致)。
+- `mise exec -- cargo test -p cheaper-cli --test usage_log` —
+  9 test 全パス(node cross-check 実施: Rust-written file → TS
+  `buildUsageReport` が Rust report と一致、TS `buildUsageRecord`
+  → Rust reader で parse+集計)。
+- `mise exec -- cargo test -p cheaper-cli --test envelope` — 8 test
+  全パス(`1e-7`/`9.9e-7` → `1e-7`/`9.9e-7` 形を確認)。
+
+### 既知の divergence / 留意点
+
+- usage costUsd の算出元差(TS = provider 報告 `usage.cost.total`
+  合算、Rust = 解決 pricing × token)は spec 既定の差分であり、
+  `meta.usage.costUsd` の differential 厳密比較は corpus の fake
+  cost 規約で両者が一致する場合のみ成立する — `docs/guides/usage.md`
+  に新旧 record の算出元差を記録済み。
+- `compareStderr` は stderr を比較対象に加える opt-in — 既存 case
+  (hook/version 系)には hook 系のみ付与。`cli-version` 等は既定
+  非比較のまま(node の警告等の混入余地を残さない)。
+- TS cross-check test は node/`dist` 不在環境では skip — CI で
+  実行されない可能性は differential harness と同じ規約。
