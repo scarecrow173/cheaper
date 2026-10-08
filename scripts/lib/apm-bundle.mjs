@@ -33,10 +33,10 @@ export function apmHooksDir(root = repoRoot()) {
 //
 // workers/・policy.yaml の複写元は cheaper-cli crate の bundled resource
 // source dir — `src/embedded.rs` の `include_dir!`/`include_str!` 対象と
-// 同一 path（現状 `packages/cli/`）であり、Rust binary に埋め込まれる
-// byte と payload の同梱物が一致することを保証する。
+// 同一 path（`crates/cheaper-cli/resources/`）であり、Rust binary に
+// 埋め込まれる byte と payload の同梱物が一致することを保証する。
 export function buildApmCliTree(root = repoRoot()) {
-  const resourceSrc = path.join(root, "packages", "cli");
+  const resourceSrc = path.join(root, "crates", "cheaper-cli", "resources");
   const outDir = path.join(apmHooksDir(root), "cli");
 
   for (const rel of [path.join("bin", "cheaper.mjs"), "version.json", "workers", "policy.yaml"]) {

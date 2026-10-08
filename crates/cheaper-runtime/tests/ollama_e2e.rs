@@ -145,7 +145,7 @@ impl ProviderEnv for MapEnv {
 /// 相対解決されるため、そのままの配置で load できる。
 fn repo_worker(name: &str) -> WorkerDefinition {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../packages/cli/workers")
+        .join("../cheaper-cli/resources/workers")
         .join(format!("{name}.md"));
     let path = path.canonicalize().expect("worker file must exist");
     let content = std::fs::read_to_string(&path).expect("read worker");

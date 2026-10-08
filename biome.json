@@ -20,8 +20,6 @@
   "files": {
     "includes": [
       "scripts/**/*.mjs",
-      "!scripts/dump-core-golden.mjs",
-      "!scripts/dump-tool-fixtures.mjs",
       "benchmarks/**/*.mjs",
       "benchmarks/**/*.json",
       "packages/**/*.json",

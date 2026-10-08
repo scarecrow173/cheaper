@@ -74,9 +74,9 @@ impl Fixture {
             out: VecSink(Vec::new()),
             err: VecSink(Vec::new()),
             hooks: CliHooks {
-                // embedded materialize を避け、repo 内の package root を
-                // 使う(workers/ + policy.yaml が同一 layout で存在)。
-                builtin_dir: Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packages/cli")),
+                // embedded materialize を避け、crate 内の bundled resource
+                // dir を使う(workers/ + policy.yaml が同一 layout で存在)。
+                builtin_dir: Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("resources")),
                 ..Default::default()
             },
         }

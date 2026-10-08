@@ -1,0 +1,37 @@
+{
+  "code": 0,
+  "timedOut": false,
+  "stdout": {
+    "schemaVersion": 1,
+    "ok": true,
+    "worker": null,
+    "result": {
+      "records": 0,
+      "ok": 0,
+      "errors": 0,
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 0,
+        "costUsd": 0
+      },
+      "turns": 0,
+      "toolCalls": 0,
+      "measured": {
+        "runs": 0,
+        "sourceTokens": 0,
+        "returnedTokens": 0,
+        "avoidedContextTokens": 0,
+        "comparable": {
+          "runs": 0,
+          "sourceTokens": 0,
+          "returnedTokens": 0,
+          "costUsd": 0
+        }
+      }
+    },
+    "meta": {}
+  }
+}

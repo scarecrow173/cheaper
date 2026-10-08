@@ -3,13 +3,15 @@
 //! 後半は usage.jsonl の新旧双方向互換(T9):
 //! - TS `buildUsageRecord` の現行 record shape を Rust `read_usage_records`
 //!   / `build_usage_report` が読める(旧 reader → 新 writer 方向の逆)。
-//! - Rust `build_usage_record` の出力が TS reader(`isRecord` +
+//! - Rust `build_usage_record` の出力が旧 reader 系(`isRecord` +
 //!   `aggregate` が触る field 群)の前提を満たす additive-only record で
 //!   あること。
-//! - node + `packages/cli/dist` があれば実 TS reader/writer との
-//!   cross-check を spawn で行う(differential harness と同じ skip 規約)。
+//!
+//! 実 TS reader/writer との spawn cross-check は TS 実装撤去(Phase 6)
+//! に伴い廃止 — record schema の互換は上記 2 test と regression
+//! snapshot(`cli-usage-*` case)が pin する。
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use cheaper_cli::usage_log::{append_usage_log, build_usage_record, USAGE_LOG_FILENAME};
 use cheaper_cli::usage_report::{build_usage_report, read_usage_records, UsageFilters};
@@ -287,185 +289,4 @@ fn rust_written_records_satisfy_ts_reader_field_contract() {
     assert_eq!(parsed[0], run);
     assert_eq!(parsed[1], err);
     assert_eq!(parsed[2], count);
-}
-
-// --- 実 TS reader/writer との cross-check(node + dist があれば) -------------
-
-/// repository root(`crates/cheaper-cli` → 2 段上)。canonicalize は
-/// しない — Windows では `\\?\` UNC 接頭辞が付き file URL 化を壊す。
-fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(2)
-        .unwrap()
-        .to_path_buf()
-}
-
-/// differential harness(`tests/differential/harness.rs::node_binary`)
-/// と同じ解決規約の最小版: `CHEAPER_DIFF_NODE` → `mise where node` →
-/// PATH の非 shim node。
-fn node_binary() -> Option<PathBuf> {
-    if let Ok(p) = std::env::var("CHEAPER_DIFF_NODE") {
-        let p = PathBuf::from(p);
-        if p.exists() {
-            return Some(p);
-        }
-    }
-    let repo = repo_root();
-    if let Ok(out) = std::process::Command::new("mise")
-        .args(["where", "node"])
-        .current_dir(&repo)
-        .output()
-    {
-        if out.status.success() {
-            let dir = PathBuf::from(String::from_utf8_lossy(&out.stdout).trim().to_string());
-            for cand in [dir.join("node.exe"), dir.join("node")] {
-                if cand.exists() {
-                    return Some(cand);
-                }
-            }
-        }
-    }
-    if let Some(path_var) = std::env::var_os("PATH") {
-        for dir in std::env::split_paths(&path_var) {
-            for cand in [dir.join("node.exe"), dir.join("node")] {
-                if cand.exists()
-                    && !dir
-                        .to_string_lossy()
-                        .replace('\\', "/")
-                        .contains("mise/shims")
-                {
-                    return Some(cand);
-                }
-            }
-        }
-    }
-    None
-}
-
-fn file_url(p: &Path) -> String {
-    format!("file:///{}", p.to_string_lossy().replace('\\', "/"))
-}
-
-/// JSON.stringify 由来の整数(PosInt)と Rust f64 系(Float)の表現差を
-/// 潰す正規化 — 全 number を f64 へ揃えてから比較する(JS number は
-/// 区別しない)。
-fn canon_numbers(v: &Value) -> Value {
-    match v {
-        Value::Number(n) => Value::from(n.as_f64().unwrap()),
-        Value::Array(a) => Value::Array(a.iter().map(canon_numbers).collect()),
-        Value::Object(o) => Value::Object(
-            o.iter()
-                .map(|(k, v)| (k.clone(), canon_numbers(v)))
-                .collect(),
-        ),
-        other => other.clone(),
-    }
-}
-
-/// Rust writer が書いた usage.jsonl を実 TS `readUsageRecords` /
-/// `buildUsageReport` が読み、逆に TS `buildUsageRecord` の record を
-/// Rust reader が読む — 双方向 cross-check。
-/// node か `packages/cli/dist` が無ければ skip(differential 規約)。
-#[test]
-fn ts_reader_reads_rust_written_log_and_vice_versa() {
-    let repo = repo_root();
-    let usage_report_js = repo.join("packages/cli/dist/usage-report.js");
-    let usage_log_js = repo.join("packages/cli/dist/usage-log.js");
-    let Some(node) = node_binary() else {
-        eprintln!("[usage_log] node unavailable — TS cross-check skipped");
-        return;
-    };
-    if !usage_report_js.exists() || !usage_log_js.exists() {
-        eprintln!("[usage_log] packages/cli/dist missing — TS cross-check skipped");
-        return;
-    }
-
-    // 1. Rust writer が record を build して JSONL へ append する。
-    let dir = tempfile::tempdir().unwrap();
-    let ucd = dir.path().join("cfg");
-    let run_env = json!({
-        "schemaVersion":1,"ok":true,"worker":"bulk-reader","result":{},
-        "meta":{"durationMs":7,"model":{"provider":"p","id":"m","tier":"low"},
-                "usage":{"input":100,"output":20,"cacheRead":0,"cacheWrite":0,"totalTokens":120,"costUsd":0.01},
-                "turns":2,"toolCalls":3,"savings":{"sourceTokens":800,"returnedTokens":50,"avoidedContextTokens":750,"directlyComparable":true}},
-    });
-    let count_env = json!({
-        "schemaVersion":1,"ok":true,"worker":null,
-        "result":{"path":"a.txt","tokens":3,"bytes":9},
-        "meta":{"durationMs":5},
-    });
-    for env in [&run_env, &count_env] {
-        let rec = build_usage_record(env, "/ws", &fixed(1_789_862_400_000.0)).unwrap();
-        append_usage_log(ucd.to_str().unwrap(), &rec).unwrap();
-    }
-
-    // 2. TS reader で同じ file を集計する + TS writer で record を 1 件
-    //    生成して JSON として返してもらう。
-    let script = dir.path().join("check.mjs");
-    std::fs::write(
-        &script,
-        format!(
-            concat!(
-                "import {{ readUsageRecords, buildUsageReport }} from {:?};\n",
-                "import {{ buildUsageRecord }} from {:?};\n",
-                "const dir = process.argv[2];\n",
-                "const report = buildUsageReport({{ userConfigDir: dir, filters: {{}}, now: () => 1789862400000 }});\n",
-                "const tsRecord = buildUsageRecord({{\n",
-                "  schemaVersion: 1, ok: true, worker: \"ts-writer\",\n",
-                "  result: {{}},\n",
-                "  meta: {{ durationMs: 11, model: {{ provider: \"p\", id: \"m\", tier: \"low\" }},\n",
-                "          usage: {{ input: 7, output: 3, cacheRead: 0, cacheWrite: 0, totalTokens: 10, costUsd: 0.001 }},\n",
-                "          turns: 1, toolCalls: 0, savings: null }},\n",
-                "}}, {{ root: \"/ts\", now: () => new Date(1789862400000) }});\n",
-                "process.stdout.write(JSON.stringify({{ n: readUsageRecords(dir).length, report, tsRecord }}) + \"\\n\");\n",
-            ),
-            file_url(&usage_report_js),
-            file_url(&usage_log_js),
-        ),
-    )
-    .unwrap();
-    let out = std::process::Command::new(node)
-        .arg(&script)
-        .arg(&ucd)
-        .output()
-        .expect("spawn node");
-    assert!(
-        out.status.success(),
-        "node failed: {}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    let ts: Value = serde_json::from_slice(&out.stdout).unwrap();
-
-    // Rust writer の file を TS reader が全行読み、aggregate 結果が
-    // Rust `build_usage_report` と一致する。
-    assert_eq!(ts["n"], 2);
-    let rust_report = Value::Object(
-        build_usage_report(&ucd, &UsageFilters::default(), None, None, &|| NOW_MS).unwrap(),
-    );
-    assert_eq!(
-        canon_numbers(&ts["report"]),
-        canon_numbers(&rust_report),
-        "TS buildUsageReport != Rust build_usage_report"
-    );
-
-    // TS writer の record を Rust reader が読める(新 writer → 旧
-    // reader 相当の方向 — additive-only schema 内)。
-    let ts_dir = tempfile::tempdir().unwrap();
-    let line = serde_json::to_string(&ts["tsRecord"]).unwrap();
-    assert!(
-        ts["tsRecord"].is_object(),
-        "TS buildUsageRecord returned null"
-    );
-    write_log_lines(ts_dir.path(), &[&line]);
-    let parsed = read_usage_records(ts_dir.path());
-    assert_eq!(parsed.len(), 1);
-    assert_eq!(parsed[0]["kind"], "run");
-    assert_eq!(parsed[0]["worker"], "ts-writer");
-    let report = build_usage_report(ts_dir.path(), &UsageFilters::default(), None, None, &|| {
-        NOW_MS
-    })
-    .unwrap();
-    assert_eq!(report["records"], json!(1.0));
-    assert_eq!(report["usage"]["input"], json!(7.0));
 }

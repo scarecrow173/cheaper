@@ -21,22 +21,23 @@ use std::sync::OnceLock;
 
 use include_dir::{include_dir, Dir, DirEntry};
 
-/// `packages/cli/workers/`(`workers/schemas/*.json` を含む)。
-static WORKERS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../../packages/cli/workers");
+/// `resources/workers/`(`workers/schemas/*.json` を含む)。
+/// bundled resource の canonical source — `scripts/lib/apm-bundle.mjs`
+/// が同じ dir から APM payload へ複写する。
+static WORKERS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/resources/workers");
 
-/// `packages/cli/policy.yaml`。
-const POLICY_YAML: &str = include_str!("../../../packages/cli/policy.yaml");
+/// `resources/policy.yaml`。
+const POLICY_YAML: &str = include_str!("../resources/policy.yaml");
 
 /// build.rs が `CARGO_PKG_VERSION`(workspace canonical version)から
-/// 生成した `version.json`(SEA bundle の配置と同じ優先順位の第 1 候補)。
+/// 生成した `version.json`。
 const VERSION_JSON: &str = include_str!(concat!(env!("OUT_DIR"), "/version.json"));
 
-/// dev checkout 用 fallback(SEA VFS にも同様に配置される)。
-const PACKAGE_JSON: &str = include_str!("../../../packages/cli/package.json");
-
-/// `packageVersion`(version.ts)相当の low-level lookup:
+/// `packageVersion` 相当の low-level lookup:
 /// `version.json` → `package.json` の順に `<dir>/<name>` を読み、
-/// `.version` が string なら採用する。
+/// `.version` が string なら採用する。`package.json` は
+/// `CliHooks.builtin_dir` override 先の外部 dir 向け fallback であり、
+/// embedded materialize は `version.json` のみを書く。
 fn version_from_dir(dir: &Path) -> Option<String> {
     for name in ["version.json", "package.json"] {
         let Ok(text) = std::fs::read_to_string(dir.join(name)) else {
@@ -52,18 +53,14 @@ fn version_from_dir(dir: &Path) -> Option<String> {
     None
 }
 
-/// 埋込 resource 上での version 解決(materialize 前でも使える
-/// in-memory 版)。`version.json` → `package.json`。
+/// 埋込 `version.json` 上での version 解決(materialize 前でも使える
+/// in-memory 版)。build.rs 生成物は常に存在するため fallback は不要。
 fn embedded_version() -> Option<String> {
-    for text in [VERSION_JSON, PACKAGE_JSON] {
-        let Ok(parsed) = serde_json::from_str::<serde_json::Value>(text) else {
-            continue;
-        };
-        if let Some(v) = parsed.get("version").and_then(serde_json::Value::as_str) {
-            return Some(v.to_string());
-        }
-    }
-    None
+    let parsed = serde_json::from_str::<serde_json::Value>(VERSION_JSON).ok()?;
+    parsed
+        .get("version")
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_string)
 }
 
 /// `packageVersion(builtinDir)` — `--version` 出力用。
@@ -112,7 +109,6 @@ fn extract_builtin(dir: &Path) -> io::Result<()> {
     extract_dir(dir, "workers/", &WORKERS_DIR)?;
     write_atomic(dir, "policy.yaml", POLICY_YAML.as_bytes())?;
     write_atomic(dir, "version.json", VERSION_JSON.as_bytes())?;
-    write_atomic(dir, "package.json", PACKAGE_JSON.as_bytes())?;
     Ok(())
 }
 

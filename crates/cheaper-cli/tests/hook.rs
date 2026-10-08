@@ -81,13 +81,9 @@ impl Fixture {
             dir.path().to_string_lossy().into_owned(),
         );
         env.insert("NODE_ENV".to_string(), "production".to_string());
-        // TS test は `builtinDir: cliRoot` — packages/cli が
-        // policy.yaml + workers/ を持つ builtin resource root。
-        let builtin_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("..")
-            .join("packages")
-            .join("cli");
+        // TS test は `builtinDir: cliRoot` — crate の bundled resource
+        // dir が policy.yaml + workers/ を持つ builtin resource root。
+        let builtin_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources");
         Fixture {
             _dir: dir,
             ws,

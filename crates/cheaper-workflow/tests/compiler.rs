@@ -908,13 +908,13 @@ async fn missing_manifest_port_throw_bad_edges_rejected() {
 }
 
 // compact fixture — bulk-reader.input.schema.json に適合する compact 経路
-// (packages/cli/workers/schemas/bulk-reader.input.schema.json は workspace
-// file を read する—Rust 側では repo root から相対で開く)。
+// (crates/cheaper-cli/resources/workers/schemas/bulk-reader.input.schema.json
+// は workspace file を read する—Rust 側では repo root から相対で開く)。
 #[tokio::test]
 async fn compact_fixture_matches_real_bulk_reader_schema() {
     let schema_path = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../packages/cli/workers/schemas/bulk-reader.input.schema.json"
+        "/../cheaper-cli/resources/workers/schemas/bulk-reader.input.schema.json"
     );
     let text = match std::fs::read_to_string(schema_path) {
         Ok(t) => t,

@@ -1,0 +1,390 @@
+{
+  "code": 0,
+  "timedOut": false,
+  "stdout": {
+    "schemaVersion": 1,
+    "ok": true,
+    "worker": null,
+    "result": {
+      "credentials": [],
+      "providers": [
+        {
+          "providerId": "amazon-bedrock",
+          "name": "Amazon Bedrock",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "ant-ling",
+          "name": "Ant Ling",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "anthropic",
+          "name": "Anthropic",
+          "methods": [
+            "api_key",
+            "oauth"
+          ],
+          "subscription": true,
+          "configured": false
+        },
+        {
+          "providerId": "azure-openai-responses",
+          "name": "Azure OpenAI",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "baseten",
+          "name": "Baseten",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "cerebras",
+          "name": "Cerebras",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "cloudflare-ai-gateway",
+          "name": "Cloudflare AI Gateway",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "cloudflare-workers-ai",
+          "name": "Cloudflare Workers AI",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "deepseek",
+          "name": "DeepSeek",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "fireworks",
+          "name": "Fireworks",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "github-copilot",
+          "name": "GitHub Copilot",
+          "methods": [
+            "api_key",
+            "oauth"
+          ],
+          "subscription": true,
+          "configured": false
+        },
+        {
+          "providerId": "google",
+          "name": "Google",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "google-vertex",
+          "name": "Google Vertex AI",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "groq",
+          "name": "Groq",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "huggingface",
+          "name": "Hugging Face",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "kimi-coding",
+          "name": "Kimi For Coding",
+          "methods": [
+            "api_key",
+            "oauth"
+          ],
+          "subscription": true,
+          "configured": false
+        },
+        {
+          "providerId": "minimax",
+          "name": "MiniMax",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "minimax-cn",
+          "name": "MiniMax CN",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "mistral",
+          "name": "Mistral",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "moonshotai",
+          "name": "Moonshot AI",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "moonshotai-cn",
+          "name": "Moonshot AI CN",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "nvidia",
+          "name": "NVIDIA",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "openai",
+          "name": "OpenAI",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "openai-codex",
+          "name": "OpenAI Codex",
+          "methods": [
+            "oauth"
+          ],
+          "subscription": true,
+          "configured": false
+        },
+        {
+          "providerId": "opencode",
+          "name": "OpenCode Zen",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "opencode-go",
+          "name": "OpenCode Go",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "openrouter",
+          "name": "OpenRouter",
+          "methods": [
+            "api_key",
+            "oauth"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "qwen-token-plan",
+          "name": "Qwen Token Plan",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "qwen-token-plan-cn",
+          "name": "Qwen Token Plan CN",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "qwen-token-plan-individual",
+          "name": "Qwen Token Plan Individual",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "radius",
+          "name": "Radius",
+          "methods": [
+            "api_key",
+            "oauth"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "together",
+          "name": "Together",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "vercel-ai-gateway",
+          "name": "Vercel AI Gateway",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "xai",
+          "name": "xAI",
+          "methods": [
+            "api_key",
+            "oauth"
+          ],
+          "subscription": true,
+          "configured": false
+        },
+        {
+          "providerId": "xiaomi",
+          "name": "Xiaomi",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "xiaomi-token-plan-ams",
+          "name": "Xiaomi Token Plan AMS",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "xiaomi-token-plan-cn",
+          "name": "Xiaomi Token Plan CN",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "xiaomi-token-plan-sgp",
+          "name": "Xiaomi Token Plan SGP",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "zai",
+          "name": "Z.AI",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "zai-coding-cn",
+          "name": "Z.AI Coding CN",
+          "methods": [
+            "api_key"
+          ],
+          "subscription": false,
+          "configured": false
+        },
+        {
+          "providerId": "devin",
+          "name": "Devin Local",
+          "methods": [
+            "oauth"
+          ],
+          "subscription": true,
+          "configured": false
+        }
+      ]
+    },
+    "meta": {}
+  }
+}

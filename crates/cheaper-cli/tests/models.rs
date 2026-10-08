@@ -72,7 +72,7 @@ impl Fixture {
             cwd,
         };
         let hooks = CliHooks {
-            builtin_dir: Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packages/cli")),
+            builtin_dir: Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("resources")),
             ..Default::default()
         };
         let code = run_cli(

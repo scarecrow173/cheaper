@@ -107,9 +107,9 @@ impl Fixture {
             cwd,
         };
         let hooks = CliHooks {
-            // embedded materialize を避け、repo 内の package root を使う
-            // (workers/ + policy.yaml が同一 layout で存在する)。
-            builtin_dir: Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packages/cli")),
+            // embedded materialize を避け、crate 内の bundled resource dir
+            // を使う(workers/ + policy.yaml が同一 layout で存在する)。
+            builtin_dir: Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("resources")),
             ..Default::default()
         };
         let code = run_cli(

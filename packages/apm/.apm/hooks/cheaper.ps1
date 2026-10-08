@@ -173,11 +173,17 @@ try {
         $lock = Join-Path $parent ".win32-x64.lock"
         $watch = [Diagnostics.Stopwatch]::StartNew()
         while (-not $ownsLock) {
+            # New-Item のディレクトリ作成は check-then-create で既存パスに対し
+            # 非原子に失敗するため、一意名を作成してから同一ボリューム rename で
+            # 排他 claim する(mkdir(2) 相当の原子性)。
+            $claim = Join-Path $parent (".win32-x64.claim." + [Guid]::NewGuid().ToString("N"))
+            try { [IO.Directory]::CreateDirectory($claim) | Out-Null }
+            catch { throw "cannot create acquisition lock in cache." }
             try {
-                New-Item -ItemType Directory -Path $lock -ErrorAction Stop | Out-Null
+                [IO.Directory]::Move($claim, $lock)
                 $ownsLock = $true
             } catch {
-                if (-not (Test-Path -LiteralPath $lock -PathType Container)) { throw "cannot create acquisition lock in cache." }
+                Remove-Item -LiteralPath $claim -Recurse -Force -ErrorAction SilentlyContinue
                 if ($watch.Elapsed.TotalSeconds -ge 120) { throw "acquisition lock timed out at $lock; verify owner has stopped, then remove its lock and staging directory." }
                 Start-Sleep -Seconds 1
             }
@@ -192,6 +198,7 @@ try {
             Get-ReleaseFile "SHA256SUMS" (Join-Path $stage "SHA256SUMS")
             Get-ReleaseFile "cheaper-windows-x64.exe" (Join-Path $stage "cheaper.exe")
             Confirm-Cache $stage
+            if (Test-Path -LiteralPath $script:key) { throw "cache key appeared during acquisition; refusing to overwrite $script:key." }
             [IO.Directory]::Move($stage, $script:key)
             $stage = $null
         }

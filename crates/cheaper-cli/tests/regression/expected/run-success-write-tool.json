@@ -1,0 +1,75 @@
+{
+  "code": 0,
+  "timedOut": false,
+  "stdout": {
+    "schemaVersion": 1,
+    "ok": true,
+    "worker": "fixture-worker",
+    "result": {
+      "ok": true
+    },
+    "meta": {
+      "savings": {
+        "sourceTokens": 5,
+        "returnedTokens": 5,
+        "avoidedContextTokens": 0,
+        "directlyComparable": false
+      },
+      "model": {
+        "provider": "cheaper-fake",
+        "id": "fake-model",
+        "tier": "medium",
+        "selection": "explicit",
+        "tierSource": "auto",
+        "effectiveCost": 3,
+        "effectiveCostPercentile": 0.5,
+        "workload": {
+          "outputPerInput": 1
+        }
+      },
+      "usage": {
+        "input": 300,
+        "output": 60,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 360,
+        "costUsd": 0.00042
+      },
+      "turns": 2,
+      "toolCalls": 1,
+      "rejectedToolCalls": 0,
+      "repairs": 0,
+      "transientRetries": 0,
+      "changes": {
+        "files": [
+          {
+            "path": "out.txt",
+            "kind": "created",
+            "linesAdded": 1,
+            "linesDeleted": 0
+          }
+        ],
+        "totals": {
+          "files": 1,
+          "linesAdded": 1,
+          "linesDeleted": 0
+        }
+      },
+      "execution": {
+        "operations": 1,
+        "byState": {
+          "queued": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0,
+          "timed_out": 0
+        },
+        "byTool": {
+          "write": 1
+        },
+        "maxConcurrency": 1
+      }
+    }
+  }
+}
