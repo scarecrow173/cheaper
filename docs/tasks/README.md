@@ -161,7 +161,7 @@ Directory: `docs/tasks`
 | TASK-034BgKiZhENYXeNMRvxyFA | Phase 2: port cheaper-tools | done | [phase-2-port-cheaper-tools.md](./phase-2-port-cheaper-tools.md) |
 | TASK-034BgKjvy0B4BNsyAhtFht | Phase 3: port runtime adapter providers | done | [phase-3-port-runtime-adapter-providers.md](./phase-3-port-runtime-adapter-providers.md) |
 | TASK-034BgKk2iQMEQ0xHA3SThv | Phase 4: port CLI and workflow | done | [phase-4-port-cli-and-workflow.md](./phase-4-port-cli-and-workflow.md) |
-| TASK-034BgKkC4U7NTKprsORKCH | Phase 5: switch distribution to Rust binary | todo | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
+| TASK-034BgKkC4U7NTKprsORKCH | Phase 5: switch distribution to Rust binary | done | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
 | TASK-034BgKlddxEi2ozLgZMFi3 | Phase 6: remove TypeScript Node Pi | todo | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | done | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |
 | TASK-034zTWibd7OKesgJgoGxJu | Prepare one-dispatch release artifacts | done | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |

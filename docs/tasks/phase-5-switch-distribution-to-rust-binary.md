@@ -1,10 +1,10 @@
 ---
 id: "TASK-034BgKkC4U7NTKprsORKCH"
 type: "task"
-status: "todo"
+status: "done"
 title: "Phase 5: switch distribution to Rust binary"
 created: "2026-10-06"
-updated: "2026-10-06"
+updated: "2026-10-08"
 owners: []
 relations:
   source: []
@@ -18,7 +18,8 @@ relations:
   implements:
     - "docs/plans/phase-5-switch-distribution-to-rust-binary.md"
     - "docs/plans/migrate-cheaper-runtime-to-rust-rig.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/phase-5-switch-distribution-to-rust-binary.md"
   depends-on:
     - "docs/plans/phase-5-switch-distribution-to-rust-binary.md"
     - "docs/tasks/phase-4-port-cli-and-workflow.md"
@@ -155,28 +156,40 @@ manifest・bundle に混入させない。TS SEA pipeline(`build-executable.mjs`
 - [ ] `mise exec -- cargo build --release --target
       x86_64-pc-windows-msvc` / `--target x86_64-unknown-linux-musl` /
       `--target aarch64-unknown-linux-musl` / `--target
-      aarch64-apple-darwin` が全 4 target で成功する — CI(win-msvc は
-      local で `target/release/cheaper.exe` 生成済みを確認)
+      aarch64-apple-darwin` が全 4 target で成功する —
+      CI検証はユーザー判断で延期(branch push 未実施・
+      workflow_dispatch 未実行。win-msvc は local で
+      `target/release/cheaper.exe` 生成済みを確認。review の IC-1
+      rustup/mise 解決・IC-2 musl C toolchain を含む)
 - [ ] 各 release binary(strip 後)が `node scripts/check-binary-size.mjs
-      --file <binary>` で ≤20MiB と判定される — CI(win-msvc は local
-      実測 18.9MiB pass、残り 3 target は matrix job の gate)
+      --file <binary>` で ≤20MiB と判定される —
+      CI検証はユーザー判断で延期(同上。win-msvc は local 実測
+      18.9MiB pass、残り 3 target は matrix job の gate)
 - [ ] 各 binary の `--version` が `packages/cli/package.json` の version
       と完全一致し、`models` が exit 0 を返す(CI build smoke) —
-      CI(win-msvc は local で `--version`=1.0.0・`models` ok:true を確認)
+      CI検証はユーザー判断で延期(同上。win-msvc は local で
+      `--version`=1.0.0・`models` ok:true を確認)
 - [ ] `mise exec -- node --test scripts/test/release-artifacts.test.mjs
       scripts/test/release-workflow.test.mjs scripts/test/binary-size.test.mjs`
       が exit 0 — local では release-artifacts の既知 bsdtar
       `F:` flake(`snapshot preserves raw bytes and manifest`、clean
-      HEAD でも fail)1件を除き全 pass。完全な exit 0 は CI
+      HEAD でも fail)1件を除き全 pass。完全な exit 0 は
+      CI検証として延期(同上)
 - [ ] `build-executables` の workflow_dispatch が全 matrix job で green
-      (CI 実証。local では構造 test のみ) — CI
+      — CI検証はユーザー判断で延期(branch push 未実施・
+      workflow_dispatch 未実行。local では
+      `release-workflow.test.mjs` の構造 pin のみ)
 - [ ] `release-acquisition` 1 dispatch で 5 asset
       (`cheaper-linux-x64`・`cheaper-linux-arm64`・
       `cheaper-windows-x64.exe`・`SHA256SUMS`・`cheaper-apm-v<X.Y.Z>.tar.gz`)
-      が Rust binary 入りで公開される — CI
+      が Rust binary 入りで公開される —
+      CI検証はユーザー判断で延期(同上。asset 名・列挙・
+      `releaseTargets` 不変の構造確認は済み)
 - [ ] `smoke-bundle` が windows-latest / ubuntu-latest /
       ubuntu-24.04-arm / macos-latest で pass する(macOS は sibling
-      経路・他 3 OS は Node-free launcher acquisition 経路) — CI
+      経路・他 3 OS は Node-free launcher acquisition 経路) —
+      CI検証はユーザー判断で延期(同上。review の IC-3 exec bit
+      保持を含む)
 - [x] `launcher-acquisition.test.ts` の Rust binary variant が stub
       Release からの download → SHA256 照合 → `--version` probe → exec を
       無改修 launcher で pass する(sh・pwsh 両 leg で
@@ -191,12 +204,13 @@ manifest・bundle に混入させない。TS SEA pipeline(`build-executable.mjs`
       (local 実測 pass。`build-apm-bundle.mjs --exe-dir` に rename 済み
       cargo binary を渡し sibling 配置・launcher sibling 実行も確認)
 - [ ] `mise run check` 全体が exit 0(check-version の Cargo.toml 照合
-      を含む) — local では lint/version/doc-ids/typecheck/bundle/
-      payload/git diff が全 pass、`pnpm test` 内の
-      `cross-agent-routing-adapters.test.ts` が負荷 flake
-      (20s timeout)で 1件 fail したが isolate 再実行で 32/32 pass。
-      完全な exit 0 は CI
+      を含む) — **延期**(既存 flake。local では lint/version/
+      doc-ids/typecheck/bundle/payload/git diff が全 pass、
+      `pnpm test` 内の `cross-agent-routing-adapters.test.ts` が
+      負荷 flake(20s timeout)で 1件 fail したが isolate 再実行で
+      32/32 pass。完全な exit 0 は CI)
 - [ ] 旧 tag の Release asset が変更されず、旧 version.json pin の
       consumer が従来通り SEA binary を取得できる(rollback 経路の確認)
-      — CI/asset 名・tag immutability の構造確認は済み、実 Release
-      の観測は公開後
+      — CI検証はユーザー判断で延期(branch push 未実施・初回 Rust
+      release 未公開。asset 名・tag immutability の構造確認は済み、
+      実 Release の観測は公開後)
