@@ -43,11 +43,11 @@ relations:
 
 ## What Should Be Built
 
-実 provider smoke（EXP-0002）で判明した「repair は例外的処理ではなく cheap model では通常経路」という事実を踏まえ、repair session に main session と同等の abort・失敗分類の不変条件を適用する。あわせて telemetry（`meta.repairs`）の整合、unit test の設定隔離、abort grace timer の後始末、timeout 契約の設計書改訂、および実 provider 運用知識の文書化を行う。
+実 provider smoke（`docs/impl/exp/ollama-real-provider-smoke-verification.jsonl`）で判明した「repair は例外的処理ではなく cheap model では通常経路」という事実を踏まえ、repair session に main session と同等の abort・失敗分類の不変条件を適用する。あわせて telemetry（`meta.repairs`）の整合、unit test の設定隔離、abort grace timer の後始末、timeout 契約の設計書改訂、および実 provider 運用知識の文書化を行う。
 
 ## Why Now
 
-EXP-0002 で repair が 2〜3 回発生する通常経路であることが実測された。レビュー指摘の検証（DISC-034r05iHy2gdnp6g5GTWKG）により、repair 経路に abort grace 未実装・provider failure 分類の非対称・`meta.repairs` 未計上という不整合があり、小モデル運用で顕在化し得ることが確定した。
+`docs/impl/exp/ollama-real-provider-smoke-verification.jsonl` で repair が 2〜3 回発生する通常経路であることが実測された。レビュー指摘の検証（DISC-034r05iHy2gdnp6g5GTWKG）により、repair 経路に abort grace 未実装・provider failure 分類の非対称・`meta.repairs` 未計上という不整合があり、小モデル運用で顕在化し得ることが確定した。
 
 ## Users and Value
 
@@ -102,6 +102,6 @@ EXP-0002 で repair が 2〜3 回発生する通常経路であることが実�
 ## Sources and Relations
 
 - DISC-034r05iHy2gdnp6g5GTWKG: レビュー指摘の実コード検証結果
-- EXP-0002: repair が通常経路であることの実測
+- `docs/impl/exp/ollama-real-provider-smoke-verification.jsonl`: repair が通常経路であることの実測
 - ADR-034r05iHrZUE6W2tpzbgKv: timeout 起点・repair 正規化の決定
 - DESIGN-034r05iHrZUE6WvaQsRRsM: abort grace・repair session の現行規定

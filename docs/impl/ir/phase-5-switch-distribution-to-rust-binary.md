@@ -40,6 +40,8 @@ metadata:
 
 # Phase 5: switch distribution to Rust binary
 
+## Summary
+
 Release 配布物の中身を Node SEA executable から Rust + Rig の release
 binary へ切り替えた。asset 名(`cheaper-linux-x64` /
 `cheaper-linux-arm64` / `cheaper-windows-x64.exe`)・`SHA256SUMS`
@@ -55,15 +57,34 @@ target triple matrix)と binary の実装のみ。`releaseTargets`
 macOS smoke)→ fa138b9(Slice 4: launcher 検証 + docs)→
 0d797c0(review fix)。
 
-## T1 — release profile・size gate・version 宣言照合(Slice 1)
+## Context
 
-### Scope
+TASK-034BgKkC4U7NTKprsORKCH
+(`docs/tasks/phase-5-switch-distribution-to-rust-binary.md`)/ plan
+`docs/plans/phase-5-switch-distribution-to-rust-binary.md`、親 plan
+`docs/plans/migrate-cheaper-runtime-to-rust-rig.md`。関連:
+`docs/specs/rust-rig-native-runtime-migration-for-cheaper-cli.md`、
+`docs/designs/rust-rig-runtime-migration-architecture.md` §配布、
+`docs/designs/version-pinned-launcher-acquisition.md`(無改修
+launcher の acquisition contract)、`docs/test-specs/
+rust-migration-distribution.md`。前提は Phase 4 で配線済みの
+`crates/cheaper-cli` binary(`cheaper`)。
+
+## Implementation
+
+実装は 5 commit(4 slice + review fix)で構成される。各 slice の
+Scope・Files・検証は以下の節。CI 実証に委譲した runner 依存の
+検証は `## Follow-ups` の `### CI-deferred verification` に集約。
+
+### T1 — release profile・size gate・version 宣言照合(Slice 1)
+
+#### Scope
 
 workspace root `Cargo.toml` の `[profile.release]` を確定し、配布
 binary の version 宣言を canonical version 照合の対象に加え、CI gate
 となる size assert script を新設した。
 
-### Files
+#### Files
 
 - `Cargo.toml` — `[profile.release]` に `lto = true`・
   `opt-level = "s"`・`strip = true`・`codegen-units = 1`・
@@ -102,7 +123,7 @@ binary の version 宣言を canonical version 照合の対象に加え、CI gat
   rust-version 1.95 要件を満たす固定 version。locked-toolchain
   contract — 当初 `stable` 指定だったものを review fix で固定化)。
 
-### 検証
+#### 検証
 
 - `mise exec -- cargo build --release --target
   x86_64-pc-windows-msvc -p cheaper-cli` — 成功。
@@ -117,15 +138,15 @@ binary の version 宣言を canonical version 照合の対象に加え、CI gat
   `models` — `--version` = 1.0.0、`models` が `ok:true` envelope を
   返すことを local で確認。
 
-## T2 — `build-executables.yml` の cargo matrix 化(Slice 2)
+### T2 — `build-executables.yml` の cargo matrix 化(Slice 2)
 
-### Scope
+#### Scope
 
 SEA build を置き換え、4 target の cargo release matrix で reusable
 workflow を構成した。trigger(`workflow_dispatch` + `workflow_call`)・
 asset 名・permissions は不変。
 
-### Files
+#### Files
 
 - `.github/workflows/build-executables.yml` — matrix `include` に
   `os`/`target`/`cargo_target`/`artifact` の 4 列を定義:
@@ -151,22 +172,22 @@ asset 名・permissions は不変。
   (`build-executables builds the cargo release matrix behind a size
   gate`)。
 
-### 検証
+#### 検証
 
 - wiring は `release-workflow.test.mjs` で pin 済み。matrix 実 build
   は runner 依存(musl-tools・rustup target・各 OS toolchain)のため
   CI 実証に委譲 — local で win-msvc のみ build+size+smoke 実測済み
   (T1)。
 
-## T3 — `release-acquisition.yml` 整合 + macOS sibling smoke(Slice 3)
+### T3 — `release-acquisition.yml` 整合 + macOS sibling smoke(Slice 3)
 
-### Scope
+#### Scope
 
 downstream job が `sea-*` artifact / `dist/sea` を参照していたのを
 `bin-*` / `dist/bin` へ揃え、`smoke-bundle` matrix に macOS の
 sibling-only leg を追加した。
 
-### Files
+#### Files
 
 - `.github/workflows/release-acquisition.yml` —
   - `resolve-release` — `verifyReleaseVersion`(Cargo.toml 照合込み)
@@ -198,20 +219,20 @@ sibling-only leg を追加した。
   asset のままであること・macOS leg が sibling を stage して
   acquisition しないことの pin を追加。
 
-### 検証
+#### 検証
 
 - 構造は test pin で確認。dispatch 実証(実 runner での sibling
   配置・deploy 後 hash 一致・launcher exec)は CI に委譲。
 
-## T4 — launcher 検証・bundle 整合・docs・最終 check(Slice 4)
+### T4 — launcher 検証・bundle 整合・docs・最終 check(Slice 4)
 
-### Scope
+#### Scope
 
 無改修 launcher が Rust binary を取得・検証・実行することを実
 binary で確認し、bundle 経路の整合と guide 更新、最終 `mise run
 check` を実施した。
 
-### Files
+#### Files
 
 - `packages/cli/test/e2e/launcher-acquisition.test.ts` — Rust binary
   variant を追加(`acquires a cargo-built Rust release binary through
@@ -232,7 +253,7 @@ check` を実施した。
   cheaper-cli` 出力(並走期間中は SEA 出力も可)を sibling 配置する
   旨を追記。
 
-### 検証
+#### 検証
 
 - Rust binary variant test: sh・pwsh 両 leg で `target/release/
   cheaper.exe` 実測 pass(stub Release download → SHA256 → probe →
@@ -248,7 +269,7 @@ check` を実施した。
   flake(20s timeout)で 1 件 fail したが isolate 再実行で 32/32
   pass(既知 flake、本 Phase の変更と無関係)。
 
-## Review fix(0d797c0)— finding と解決
+### Review fix(0d797c0)— finding と解決
 
 review で confirm された 6 finding を修正し、CI 実証が必要な 3
 item はユーザー判断で延期した。
@@ -286,7 +307,34 @@ CI 実証 item(延期 — 理由は末尾 §CI-deferred verification):
 - IC-3 artifact download → staging → deploy 経路で Linux binary の
   exec bit(0755)が保持されるか。
 
-## Verification matrix(task doc §Verification との対応)
+## Related Experiments
+
+### Adopted
+
+experiment log への正式参照は無い。採用判断(`panic = "unwind"`
+維持・temp dir 無しの dist/bin stage・macOS sibling-only smoke・
+`cargoWorkspaceVersion` の stdlib 行 regex 照合等)は各 slice の
+Files・Review fix に記録済み。
+
+### Rejected
+
+`[profile.release] panic = "abort"` — command 境界の
+`catch_unwind` → `INTERNAL_ERROR`(70)envelope と hook の
+fail-open(allow + exit 0)を破壊するため不採用(### T1 Files 参照)。
+
+## Validation
+
+local で実測可能な項目は各 slice の検証節と以下の
+`### Verification matrix` を参照。要点: win-msvc release build
+成功・実測 **18.9MiB**(≤20MiB gate)・`--version`/`models` smoke・
+無改修 launcher 経由の acquisition + hook fail-open(sh/pwsh 両
+leg 実 binary)・`pnpm bundle` + `check-apm-payload` + hooks/cli
+git diff・`mise run check` の lint/version/doc-ids/typecheck/
+bundle/diff 全 pass(`pnpm test` の既知 flake 1 件は isolate 再実行
+32/32 pass)。runner 依存の残検証は `## Follow-ups` の
+`### CI-deferred verification` に集約。
+
+### Verification matrix(task doc §Verification との対応)
 
 | item | local 結果 | 状態 |
 | --- | --- | --- |
@@ -303,7 +351,36 @@ CI 実証 item(延期 — 理由は末尾 §CI-deferred verification):
 | `mise run check` | lint/version/doc-ids/typecheck/bundle/payload/diff 全 pass、test は既知 flake 1 件(isolate 再実行で 32/32 pass) | 完全 exit 0 は CI |
 | 旧 tag Release asset 不変(rollback) | asset 名・tag immutability の構造確認済み | 実 Release 観測は公開後 |
 
-## CI-deferred verification(ユーザー判断で延期)
+## Risks
+
+release binary の実測は win-msvc のみで、musl/darwin の size・
+link・exec bit は CI で初めて判明する。`panic = "abort"` を採ら
+ない release profile は panic 捕捉経路(envelope・hook fail-open)
+に依存するため、将来 profile を変更する場合は T1 の判断記録を
+参照。詳細は以下。
+
+### 既知の留意点
+
+- TS SEA pipeline(`scripts/build-executable.mjs`)は Phase 5 では
+  撤去しない(Phase 6 の範囲)。`distribution.md` には並走期間中の
+  dev sibling 配置元として両者を記載。
+- darwin-arm64 binary は検証専用。Release asset・manifest・
+  `releaseTargets` への混入は structure test(`release targets
+  stay the three published non-darwin assets`)が拒否する。
+- 実測 18.9MiB は win-msvc。musl/darwin は未計測で 20MiB gate との
+  余裕は CI で初めて判明する(musl static は size 増の方向性がある
+  ため初回 matrix run で注視)。
+- canonical version source は `packages/cli/package.json` のまま。
+  Cargo.toml 宣言は drift 検出対象であり、version bump は
+  `set-version.mjs` が両者を同期する。
+
+## Follow-ups
+
+runner 依存の検証は全て CI へ延期(下記 `### CI-deferred
+verification`)。TS SEA pipeline(`scripts/build-executable.mjs`)の
+撤去は Phase 6 の範囲。
+
+### CI-deferred verification(ユーザー判断で延期)
 
 branch 未 push・workflow_dispatch 未実行のため、runner 依存の
 検証は全て CI へ延期。local で確認可能な項目は上表のとおり実測済み。
@@ -321,18 +398,3 @@ branch 未 push・workflow_dispatch 未実行のため、runner 依存の
 - `release-acquisition` 実 dispatch による 5 asset 公開と旧 tag
   asset 不変の実観測(rollback 経路。初回 Rust release 自体が
   対象)。
-
-## 既知の留意点
-
-- TS SEA pipeline(`scripts/build-executable.mjs`)は Phase 5 では
-  撤去しない(Phase 6 の範囲)。`distribution.md` には並走期間中の
-  dev sibling 配置元として両者を記載。
-- darwin-arm64 binary は検証専用。Release asset・manifest・
-  `releaseTargets` への混入は structure test(`release targets
-  stay the three published non-darwin assets`)が拒否する。
-- 実測 18.9MiB は win-msvc。musl/darwin は未計測で 20MiB gate との
-  余裕は CI で初めて判明する(musl static は size 増の方向性がある
-  ため初回 matrix run で注視)。
-- canonical version source は `packages/cli/package.json` のまま。
-  Cargo.toml 宣言は drift 検出対象であり、version bump は
-  `set-version.mjs` が両者を同期する。

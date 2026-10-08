@@ -47,7 +47,7 @@ metadata:
 
 ## Context and Problem Statement
 
-実 provider smoke（EXP-0002）で repair session が通常経路（2〜3 回発生）であることが判明し、続くコードレビュー（DISC-034r05iHy2gdnp6g5GTWKG）で repair 経路に main session と非対称な不変条件があることが確定した。
+実 provider smoke（`docs/impl/exp/ollama-real-provider-smoke-verification.jsonl`）で repair session が通常経路（2〜3 回発生）であることが判明し、続くコードレビュー（DISC-034r05iHy2gdnp6g5GTWKG）で repair 経路に main session と非対称な不変条件があることが確定した。
 
 - repair は `session.abort()` を呼ぶだけで `await session.prompt()` を無期限に待ち、abort grace（5 秒打ち切り）が無い
 - repair の `session.prompt()` rejection は生のまま抜けて `INTERNAL_ERROR`、`stopReason === "error"` の resolve は `INVALID_OUTPUT` になり得る（main は両方 `PROVIDER_FAILURE`）
@@ -124,5 +124,5 @@ Chosen option: "Option B", because CLI 前段（stdin 読込・worker/policy 解
 ## More Information
 
 - DISC-034r05iHy2gdnp6g5GTWKG: 指摘の実コード検証結果
-- EXP-0002: repair が通常経路であることの実測
+- `docs/impl/exp/ollama-real-provider-smoke-verification.jsonl`: repair が通常経路であることの実測
 - DESIGN-034r05iHrZUE6WvaQsRRsM:116: abort grace の現行規定（repair にも適用すべき不変条件）

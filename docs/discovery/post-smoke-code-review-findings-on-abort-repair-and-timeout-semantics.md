@@ -43,7 +43,7 @@ relations:
 
 ## Exploration Goal
 
-実 provider smoke（EXP-0002）で repair が 2〜3 回の通常経路であることが実測されたことを受け、別セッションのコードレビュー指摘 6 件 + 文書指摘 1 件を実コード・設計書と照合し、修正が必要な事実と契約上の判断点を確定する。
+実 provider smoke（`docs/impl/exp/ollama-real-provider-smoke-verification.jsonl`）で repair が 2〜3 回の通常経路であることが実測されたことを受け、別セッションのコードレビュー指摘 6 件 + 文書指摘 1 件を実コード・設計書と照合し、修正が必要な事実と契約上の判断点を確定する。
 
 ## Key Issues and Assumptions
 
@@ -95,6 +95,6 @@ repair abort grace の実装方式。
 ## Sources and Relations
 
 - ユーザーからのレビュー指摘（2026-09-16、別セッションのコードレビュー結果）
-- EXP-0002: 実 provider smoke で repair 2〜3 回・real usage を実測
+- `docs/impl/exp/ollama-real-provider-smoke-verification.jsonl`: 実 provider smoke で repair 2〜3 回・real usage を実測
 - DESIGN-034r05iHrZUE6WvaQsRRsM: abort grace・timeout 起点・repair セッションの規定
 - 実コード: `packages/runtime-pi/src/run.ts` `repair.ts`、`packages/core/src/config/dirs.ts`、`packages/cli/src/cli.ts`、`packages/cli/test/main.test.ts`、`packages/cli/test/e2e/helpers.ts`

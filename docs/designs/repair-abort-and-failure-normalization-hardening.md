@@ -41,7 +41,7 @@ relations:
 
 ## Context
 
-実 provider smoke（EXP-0002）で repair session が通常経路であることが判明し、レビュー検証（DISC-034r05iHy2gdnp6g5GTWKG）で repair 経路に main session と非対称な不変条件があることが確定した。SPEC-034r05iHK8bA7g9KcsCqKj / ADR-034r05iHrZUE6W2tpzbgKv に基づき、repair に main と同じ abort grace・provider failure 分類を適用し、telemetry・timeout 契約・test 隔離を整合させる。
+実 provider smoke（`docs/impl/exp/ollama-real-provider-smoke-verification.jsonl`）で repair session が通常経路であることが判明し、レビュー検証（DISC-034r05iHy2gdnp6g5GTWKG）で repair 経路に main session と非対称な不変条件があることが確定した。SPEC-034r05iHK8bA7g9KcsCqKj / ADR-034r05iHrZUE6W2tpzbgKv に基づき、repair に main と同じ abort grace・provider failure 分類を適用し、telemetry・timeout 契約・test 隔離を整合させる。
 
 ## Scope
 

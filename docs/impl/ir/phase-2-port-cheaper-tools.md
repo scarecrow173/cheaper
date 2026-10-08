@@ -460,3 +460,49 @@ PLAN-034BepYuOf4htZRfdkZTYc(`docs/plans/phase-2-port-cheaper-tools.md`)
 - `pnpm -C packages/tool-runtime test` — 172 passed / 1 skipped
   (pre-existing skip)/ 0 failed。
 - `pnpm -C packages/runtime-pi test` — 387 passed / 0 failed。
+
+## Risks
+
+differential fixture・実機 probe・review cycle で confirm 済みの残存
+divergence(全て IR 本体・code comment・plan に記録済みの受容残差):
+
+- regress 由来の regex 方言差(JS `new RegExp` 非 unicode vs
+  `regress::Regex`): `\u{...}` は JS Annex B では identity escape
+  `u` + `{...}`(quantifier/literal class)として解釈されるが regress
+  は u flag 無しでも Unicode escape として扱う。`i` flag の simple
+  folding も JS が折らない I↔ı(dotless i)・s↔ſ(long s)等を regress
+  icase は fold する(grep_eval.rs の dialect probe 内
+  `DIVERGENCE(known, regress)` comment に固定)。
+- UTF-16 unit 系の残差: `slice(0, n)` が surrogate pair の途中に
+  切れる入力では JS は lone surrogate を残すが Rust `String` は
+  表現不能のため手前までで切る(backoff)。fixture では boundary
+  一致の unit 数のみ検証。
+- minimatch が不正な JS regex を生成する pattern(negated class 内の
+  `\p{...}` 等)は Node が `SyntaxError` を投げるが、Rust API は例外
+  経路を持たないため `matches_glob` は bool を返す。fixture では
+  `expected: null` で skip。
+- spawn error shape: musl 環境では Node が ENOEXEC を sync throw
+  し得る(glibc は error pipe で非同期化されるが musl `execvp` は
+  ENOEXEC shell retry をしない)ため shape が逆転し得る。unix の
+  表外 errno は symbolic name が取れず `"SPAWN_ERROR"` 近似、
+  Windows `ERROR_BAD_EXE_FORMAT` は実測 `EFTYPE`(libuv table)。
+- `fs.access` 相当の Windows 近似差異: real-uid 評価・ACL 細粒度
+  (write-only file への R_OK 拒否等)は r/w open 近似のまま残る。
+- grep eval helper の heap cap(TS `resourceLimits.
+  maxOldGenerationSizeMb`、`GREP_WORKER_MAX_OLD_SPACE_MB`=64)は v1
+  **未実装**(Job Object `ProcessMemoryLimit` / `setrlimit` が候補、
+  実現可否は plan Risk #7 の open question)。v1 は byte cap +
+  timeout kill のみが契約。
+- differential pin 5 件: bare `node` task の `POLICY_VIOLATION`
+  (Rust runtime は Node host executable を持たない設計固定ルール)、
+  `count_tokens` の tokenizer identity(js-tiktoken → tiktoken-rs、
+  token 数は同一)、schema validator の union-branch `instancePath`
+  集合差(ajv → jsonschema、2 case)、grep invalid pattern の error
+  wording(V8 → regress、semantic は同一)。
+
+## Follow-ups
+
+記録済み residual を除く残作業は無い。heap cap の実現可否は plan
+Risk #7 の open question として残るが v1 契約外(上記 Risks 参照)。
+`cheaper __grep-eval` 内部 mode の production 起動配線は plan 通り
+Phase 4 の CLI wiring が担う。

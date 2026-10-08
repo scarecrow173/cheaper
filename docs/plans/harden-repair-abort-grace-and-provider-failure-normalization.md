@@ -120,5 +120,5 @@ repair session に main session と同等の abort grace・provider failure 分�
 
 ## Review Handoff
 
-- 前提: repair が通常経路（EXP-0002）。helper 抽出は不変条件の一箇所定義が目的
+- 前提: repair が通常経路（`docs/impl/exp/ollama-real-provider-smoke-verification.jsonl`）。helper 抽出は不変条件の一箇所定義が目的
 - 注意: `promptWithAbortGrace` への移行で main の abort 経路が変わるため、既存 abort テストの回帰を必ず確認

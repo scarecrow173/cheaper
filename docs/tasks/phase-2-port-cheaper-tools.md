@@ -9,19 +9,12 @@ owners: []
 relations:
   source: []
   changes:
-    added:
-      - "scripts/dump-tool-fixtures.mjs"
-      - "crates/cheaper-tools/"
-    modified:
-      - "crates/cheaper-core/src/errors.rs"
-      - "crates/cheaper-core/src/token/count.rs"
-      - "docs/impl/ir/phase-2-port-cheaper-tools.md"
-      - "Cargo.toml"
+    added: []
+    modified: []
     deleted: []
     renamed: []
     moved: []
-    generated:
-      - "crates/cheaper-tools/tests/fixtures/"
+    generated: []
   implements:
     - "docs/plans/phase-2-port-cheaper-tools.md"
     - "docs/plans/migrate-cheaper-runtime-to-rust-rig.md"

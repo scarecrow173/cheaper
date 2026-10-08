@@ -30,7 +30,7 @@ Directory: `docs/discovery`
 | DISC-034r05iHy2gdnp5sN3kF1s | Real provider smoke verification via Ollama | resolved | [real-provider-smoke-verification-via-ollama.md](./real-provider-smoke-verification-via-ollama.md) |
 | DISC-034A8jvNOxFXeSIc8tWQmE | Job lifetime lease の ownership と admission | resolved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | DISC-034zSQKiU63uXPcMSjjodn | Run-scoped artifact boundaries | resolved | [run-scoped-artifact-boundaries.md](./run-scoped-artifact-boundaries.md) |
-| DISC-034B9B0PiBkxUgLGfI70g8 | Rust + Rig native-runtime migration for cheaper CLI | draft | [rust-rig-native-runtime-migration-for-cheaper-cli.md](./rust-rig-native-runtime-migration-for-cheaper-cli.md) |
+| DISC-034B9B0PiBkxUgLGfI70g8 | Rust + Rig native-runtime migration for cheaper CLI | resolved | [rust-rig-native-runtime-migration-for-cheaper-cli.md](./rust-rig-native-runtime-migration-for-cheaper-cli.md) |
 | DISC-034rBfZ3dqNmEQGXCIwiLn | Shell-read large-file detection boundary and parser scope | resolved | [shell-read-large-file-detection-boundary.md](./shell-read-large-file-detection-boundary.md) |
 | DISC-034z139D701zQBBGzr0upE | Standalone cheaper executable distribution without Node.js | resolved | [standalone-cheaper-executable-distribution-without-node-js.md](./standalone-cheaper-executable-distribution-without-node-js.md) |
 | DISC-034rzEbmKarhQzw41fhumg | Usage and savings telemetry for delegation reduction | resolved | [usage-and-savings-telemetry-for-delegation-reduction.md](./usage-and-savings-telemetry-for-delegation-reduction.md) |

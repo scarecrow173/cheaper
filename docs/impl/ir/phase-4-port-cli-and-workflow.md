@@ -40,9 +40,41 @@ metadata:
 
 # Phase 4: port CLI and workflow
 
-## T1 — `cheaper-workflow` crate port(Sequence A 全区間)
+## Summary
 
-### Scope
+plan の Task Breakdown を実施し、`packages/workflow`(≈2.1k 行)を
+Rig 非依存 crate `crates/cheaper-workflow` へ、`packages/cli`
+(≈3.6k 行)を `crates/cheaper-cli` へ port した。envelope
+(`schemaVersion:1`)・exit code 表・hook 4 target・usage.jsonl・
+workflow engine の contract は binary-to-binary differential golden
+(`tests/differential`、最終 55 case)で TS binary と厳密比較し、
+最終 pass=52 / pinned divergence=3 / fail=0。本 IR は slice
+T1–T4・T6–T9 と review follow-up fix(F1–F7、pin 5 件解除)を
+記録する(plan の T5 auth slice は task doc 上は完了済みだが、
+本 IR には T5 の slice 節の記録が無い — `src/auth.rs`・
+`tests/auth.rs` の成果物は存在する)。
+
+## Context
+
+TASK-034BgKk2iQMEQ0xHA3SThv
+(`docs/tasks/phase-4-port-cli-and-workflow.md`)/ PLAN-034Beq0dg6IYk2lQCGpWDG
+(`docs/plans/phase-4-port-cli-and-workflow.md`)、親 plan
+`docs/plans/migrate-cheaper-runtime-to-rust-rig.md`。検証 test-spec は
+`docs/test-specs/rust-migration-envelope-parity.md`・
+`docs/test-specs/rust-migration-differential-golden.md`・
+`docs/test-specs/rust-migration-usage-log-hooks.md`。前提は Phase 1–3
+の `cheaper-core` / `cheaper-tools` / `cheaper-runtime` /
+`cheaper-rig-adapter` / `cheaper-provider-devin`。
+
+## Implementation
+
+実装は plan の slice 単位(T1–T9 + review follow-up fix)で以下に
+記録する。各 slice 節は Scope・Files・検証・既知の divergence /
+留意点で構成される。
+
+### T1 — `cheaper-workflow` crate port(Sequence A 全区間)
+
+#### Scope
 
 `packages/workflow`(~2.1k 行、12 module)を Rig 非依存の新規 lib crate
 `crates/cheaper-workflow` へ port した。error/cancellation/resource の
@@ -51,7 +83,7 @@ canonical 型(`CheaperError`・`ErrorCode`・`AbortSignal`/`AbortReason`・
 `cheaper-tools` の既存 seam をそのまま使い、engine scheduler のみ tokio
 (pump/admit/execute event loop)で実装した。
 
-### Files
+#### Files
 
 - `crates/cheaper-workflow/Cargo.toml` — 依存は `cheaper-core`・
   `cheaper-tools`・serde/serde_json・tokio・tokio-util・uuid(locked
@@ -107,7 +139,7 @@ canonical 型(`CheaperError`・`ErrorCode`・`AbortSignal`/`AbortReason`・
   no_pi_deps,process,resource_inference}.rs` — `packages/workflow/
   test/*.test.ts` の port。
 
-### 検証
+#### 検証
 
 - `cargo test -p cheaper-workflow` — 111 test 全パス(lib unit 2 +
   artifacts 14・bindings 10・compiler 29・engine 22・interface 3・
@@ -119,7 +151,7 @@ canonical 型(`CheaperError`・`ErrorCode`・`AbortSignal`/`AbortReason`・
 - no-Pi 依存 guard 2 件(Cargo.toml forbidden entries・src 内
   forbidden specifier)が crate 内に常駐。
 
-### 既知の divergence / 留意点
+#### 既知の divergence / 留意点
 
 - process integration test は bare `"node"` ではなく `where`/`which`
   で解決した絶対 path を policy command に使う — Rust process 層が
@@ -140,9 +172,9 @@ canonical 型(`CheaperError`・`ErrorCode`・`AbortSignal`/`AbortReason`・
   `project_artifact_metadata`/`with_artifact_store` を lib の公開面に
   出してある — workflow CLI glue はこれら trait object 経由で接続する。
 
-## T2 — `cheaper-cli` envelope/args/entry 基盤(Sequence B)
+### T2 — `cheaper-cli` envelope/args/entry 基盤(Sequence B)
 
-### Scope
+#### Scope
 
 `crates/cheaper-cli/` を新規 scaffold し、envelope serializer・argv
 解析・stdin input・count-tokens・builtin resource 埋込・version 解決・
@@ -150,7 +182,7 @@ fake-stream seam・panic 境界・`__grep-eval` 内部 mode dispatch を
 実装した。command 本体(run/models/usage/auth/hook/workflow)は T3–T7
 が埋める seam として `commands` 相当の module shell を張った。
 
-### Files
+#### Files
 
 - `crates/cheaper-cli/Cargo.toml` — bin crate(`cheaper`)+ lib target。
   依存: `cheaper-core`・`cheaper-tools`・`cheaper-runtime`・
@@ -214,7 +246,7 @@ fake-stream seam・panic 境界・`__grep-eval` 内部 mode dispatch を
   byte vector generator(tests/envelope.rs の期待値と対応)。
 - `tests/{envelope,args,cli,input,usage_log}.rs`。
 
-### 共有 JSON stringify の移設
+#### 共有 JSON stringify の移設
 
 `cheaper-rig-adapter/src/js_json.rs` にあった JS 互換
 `stringify`/`stringify_pretty` を
@@ -224,7 +256,7 @@ re-export shim(`pub use cheaper_core::json::stringify::*`)で既存
 call site を無変更に保つ — envelope・run meta・usage record が同一
 formatter を共有するための境界整理。
 
-### Dispatch seam(T3–T7 向け)
+#### Dispatch seam(T3–T7 向け)
 
 `run_cli(argv, io, hooks)` → `dispatch` → 各 command module:
 `async fn execute(args: &XxxCliArgs, io: &mut CliIo, hooks: &CliHooks,
@@ -236,7 +268,7 @@ worker 名・canonical root・userConfigDir を error path 記録用に
 供給する。`CliHooks` には `run_worker`/`create_model_runtime`/
 `open_url` seam を T3/T5 が追加する余地を残した。
 
-### 検証
+#### 検証
 
 - `mise exec -- cargo test -p cheaper-cli` — 53 test 全パス
   (envelope byte vector 6+・args table・input・count_max_bytes・
@@ -255,7 +287,7 @@ worker 名・canonical root・userConfigDir を error path 記録用に
 - `cargo test -p cheaper-core -p cheaper-rig-adapter` — stringify
   移設の regression なし(227 test)。
 
-### 既知の divergence / 留意点
+#### 既知の divergence / 留意点
 
 - `tokenizer.implementation`/`version` は `tiktoken-rs` 版の値を出す
   (Phase 1 で既定済み・differential normalize 除外対象)。
@@ -268,9 +300,9 @@ worker 名・canonical root・userConfigDir を error path 記録用に
 - `cargo fmt --check`(workspace 全体)は `crates/cheaper-workflow` の
   差分のみ残る(T1 担当者の作業領域)。
 
-## T3 — `run`/`models` command 経路(Sequence C 前半)
+### T3 — `run`/`models` command 経路(Sequence C 前半)
 
-### Scope
+#### Scope
 
 `crates/cheaper-cli/src/run.rs`・`src/models.rs` の INTERNAL_ERROR
 stub を `executeRun`/`executeModels`(packages/cli/src/cli.ts)の
@@ -279,7 +311,7 @@ stub を `executeRun`/`executeModels`(packages/cli/src/cli.ts)の
 `system_now` を `Date.now()` 同様の整数 ms truncate に修正
 (detail は divergence 節)。
 
-### Files
+#### Files
 
 - `src/run.rs` — `executeRun` 本体 + T7 再利用用の配線 helper。
   - 順序は TS 一致: builtinDir → `canonicalize_workspace_root` →
@@ -347,7 +379,7 @@ stub を `executeRun`/`executeModels`(packages/cli/src/cli.ts)の
 - `tests/auth.rs` — clippy `len_zero` 1 行修正(T5 所有 file だが
   `-D warnings` gate が落ちるため最小修正のみ)。
 
-### 検証
+#### 検証
 
 - `mise exec -- cargo test -p cheaper-cli` — run.rs 10 件・
   models.rs 6 件を含め、所有範囲は全パス(T5 作業中の
@@ -367,7 +399,7 @@ stub を `executeRun`/`executeModels`(packages/cli/src/cli.ts)の
     `<userConfigDir>/usage.jsonl` に `kind:"run"` record を記録。
     `--format text` 出力・`--quiet` 抑止も確認。
 
-### 既知の divergence / 留意点
+#### 既知の divergence / 留意点
 
 - `system_now` が sub-ms を出していたのを `Date.now()` の整数 ms
   に揃えた(T2 実装の修正 — 全 envelope の `durationMs` に影響、
@@ -385,7 +417,7 @@ stub を `executeRun`/`executeModels`(packages/cli/src/cli.ts)の
   Rig 型を cli に持ち込まないため `DevinCompletionModelFactory::
   default` を使う)。
 
-### T7 への引継ぎ(worker execution seam)
+#### T7 への引継ぎ(worker execution seam)
 
 `run.rs` は T7 workflow の worker job 実行に必要な部品を
 `pub(crate)` helper として切り出してある:
@@ -407,16 +439,16 @@ policy/input/`execution` binding)→ `run_worker` 呼出し → meta を
 は T7 が組む(worker/job model の違いで single-run の input/
 explicit-model 配線はそのまま流用できないため)。
 
-## T4 — usage report / pricing(`usage_report.rs`・`pricing.rs`)
+### T4 — usage report / pricing(`usage_report.rs`・`pricing.rs`)
 
-### Scope
+#### Scope
 
 `src/pricing.rs` に `packages/cli/src/pricing.ts` を、`src/usage_report.rs`
 に `packages/cli/src/usage-report.ts` + `cli.ts` の `parsed.kind ===
 "usage"` 分岐を port した。`usage_log.rs` 自体は T2 で実装済みのため、
 本 slice はその writer が出す additive-only record を読む側 + 価格解決。
 
-### Files
+#### Files
 
 - `src/pricing.rs` — `loadPricingSnapshot` 相当。`<userConfigDir>/
   pricing.json` を fail-soft に読み、core `PricingSnapshot`(`&'static
@@ -460,7 +492,7 @@ explicit-model 配線はそのまま流用できないため)。
   malformed JSONL/`kind:"count"` 受入・非加算/INVALID_REQUEST/envelope
   key 順/`--format text`/usage.jsonl 非書込)。
 
-### 検証
+#### 検証
 
 - `mise exec -- cargo test -p cheaper-cli` — 全パス(137 test、うち
   T4 新規 37)。
@@ -479,7 +511,7 @@ explicit-model 配線はそのまま流用できないため)。
   比較 — `meta.durationMs` を normalize すれば stdout/stderr/exit code
   が全 case 一致(text は byte 一致)。
 
-### 既知の divergence / 留意点
+#### 既知の divergence / 留意点
 
 - `PricingSnapshot` の `&'static str` に対する `Box::leak` bridge —
   snapshot 1 回 load あたり小さな allocation が process 寿命分残る
@@ -496,16 +528,16 @@ explicit-model 配線はそのまま流用できないため)。
   coherent な変更として採用した(dispatch 本体 `cli.rs` は共有領域の
   ため未変更)。
 
-## T6 — `cheaper hook` 経路(envelope 外 contract)
+### T6 — `cheaper hook` 経路(envelope 外 contract)
 
-### Scope
+#### Scope
 
 `src/hook/{mod,targets,routing_policy}.rs` に
 `packages/cli/src/hook/` 3 file(hook.ts・targets.ts・routing-policy.ts)
 を port した。envelope 機構と独立し、panic を含む全 error 経路が
 target 適合の allow + exit 0 へ畳まれる fail-open contract。
 
-### Files
+#### Files
 
 - `src/hook/mod.rs` — `executeHook` 相当。`KNOWN_EVENTS` の 5 event、
   `--target <v>` / `--target=<v>` のみ解釈する緩い argv 解析(未知
@@ -553,7 +585,7 @@ target 適合の allow + exit 0 へ畳まれる fail-open contract。
   threshold/parseInt・tokenizer・`extract_read_candidates` の TS
   fixture table。
 
-### 検証
+#### 検証
 
 - `mise exec -- cargo test -p cheaper-cli` — 全パス(既存 53 + 新規
   28 = 81 test。hook 関連: lib 内 unit 12 + tests/hook.rs 16)。
@@ -578,7 +610,7 @@ target 適合の allow + exit 0 へ畳まれる fail-open contract。
   → exit 0、cursor は `{"permission":"allow"}`、panic trace は
   stderr のみ、envelope 非出力)を確認。
 
-### 既知の divergence / 留意点
+#### 既知の divergence / 留意点
 
 - `evaluate` は typed request を取る(TS の runtime shape 検証は
   adapter の normalize で表現)— 外部 contract への影響なし。
@@ -591,9 +623,9 @@ target 適合の allow + exit 0 へ畳まれる fail-open contract。
 - copilot foreign-shape 検出は JS truthiness(falsy `tool_name` 等は
   dual allow を emit せず silent allow)。
 
-## T7 — workflow CLI glue(`workflow_context.rs`・`workflow_run.rs`)
+### T7 — workflow CLI glue(`workflow_context.rs`・`workflow_run.rs`)
 
-### Scope
+#### Scope
 
 `packages/cli/src/workflow-context.ts` / `workflow-run.ts` を
 `src/workflow_context.rs` / `src/workflow_run.rs` に port し、T1 の
@@ -603,7 +635,7 @@ exit code・quiet 抑止)は T2 骨組み時点で既に配線済みだったた
 変更は `CliHooks.now` の `Arc` 化と `system_now` の `pub(crate)` 化
 のみ。
 
-### Files
+#### Files
 
 - `crates/cheaper-cli/src/workflow_context.rs` —
   `prepareWorkflowContext` 相当。builtin dir → workspace root
@@ -674,7 +706,7 @@ exit code・quiet 抑止)は T2 骨組み時点で既に配線済みだったた
   消費)。artifact ledger・partial failure・timeout/quiet/error
   経路・pre-aborted signal の abort 伝播を網羅。
 
-### 検証
+#### 検証
 
 - `mise exec -- cargo test -p cheaper-cli` — 全パス(既存 + 新規 13 =
   134 test)。
@@ -687,7 +719,7 @@ exit code・quiet 抑止)は T2 骨組み時点で既に配線済みだったた
   `succeeded`、`meta.model.provider` が `cheaper-fake` になることを
   確認(tests/workflow.rs `workflow_run_two_worker_jobs_with_needs`)。
 
-### 既知の divergence / 留意点
+#### 既知の divergence / 留意点
 
 - `prepareWorkflowContext` の戻り値分割(`load_workflow` は
   `WorkflowContext` の method)は Rust の借用制約由来 — 外部 contract
@@ -711,9 +743,9 @@ exit code・quiet 抑止)は T2 骨組み時点で既に配線済みだったた
   拒否済みのため executor には到達しない(TS 同様 fixture
   `explicitModel` のみが worker job の model 選択に効く)。
 
-## T8 — binary-to-binary differential golden harness
+### T8 — binary-to-binary differential golden harness
 
-### Scope
+#### Scope
 
 `tests/differential/` — Rust binary(`cheaper`)と canonical TS entry
 (`packages/cli/bin/cheaper.js` via node)を同一 case の下に subprocess
@@ -721,7 +753,7 @@ exit code・quiet 抑止)は T2 骨組み時点で既に配線済みだったた
 golden harness。`docs/test-specs/rust-migration-differential-golden.md`
 の replay 比較 gate。
 
-### 構成
+#### 構成
 
 - `tests/differential/main.rs` — `cargo test -p cheaper-cli --test
   differential` の entry。`cases/*.json` を列挙し 1 test が全 case を
@@ -744,7 +776,7 @@ golden harness。`docs/test-specs/rust-migration-differential-golden.md`
   `tests/differential/README.md` に集約。
 - `src/fake_stream.rs` / `workflow_*.rs` — 変更無し(既存 seam で足りた)。
 
-### 検証
+#### 検証
 
 - `cargo test -p cheaper-cli --test differential` — 43 cases、
   pass=35 / divergence(pinned)=8 / fail=0(T8 時点の記録 —
@@ -752,7 +784,7 @@ golden harness。`docs/test-specs/rust-migration-differential-golden.md`
 - `cargo test -p cheaper-cli` 全パス・`cargo clippy -p cheaper-cli
   --tests -- -D warnings` clean・`cargo fmt -p cheaper-cli --check` clean。
 
-### 既知の divergence(pin 済み — README §pinned divergences)
+#### 既知の divergence(pin 済み — README §pinned divergences)
 
 - fake stream `panic` → Rust INTERNAL_ERROR(70) vs TS PROVIDER_FAILURE(5)
   — TS seam に stream 内 panic の等価物が無い(seam 限界として受容)。
@@ -767,9 +799,9 @@ PROVIDER_FAILURE の `error.details` shape(Rust を TS `{errorMessage}`
 のみに揃えた、`run-error-*` 4 case)と `auth status` の oauth
 `methods`/`subscription`(declaration ベース化、`cli-auth-status`)。
 
-## T9 — 互換 test + docs(hook byte matrix・usage.jsonl 新旧互換・usage.md)
+### T9 — 互換 test + docs(hook byte matrix・usage.jsonl 新旧互換・usage.md)
 
-### Scope
+#### Scope
 
 T6 が `tmp/` の manual script(53/53 byte-identical)で一回限り検証した
 hook byte parity を durable test 化し、usage.jsonl の新旧双方向互換を
@@ -777,7 +809,7 @@ hook byte parity を durable test 化し、usage.jsonl の新旧双方向互換�
 変更と新旧 record 混在を追記した。T8 corpus(`cli-hook-*` 4 case)を
 重複せず拡張する形で、target×event matrix を binary-to-binary に再現。
 
-### Files
+#### Files
 
 - `tests/differential/harness.rs` — case schema に `compareStderr`
   (既定 false)を追加。hook deny は stderr が contract の一部
@@ -833,7 +865,7 @@ hook byte parity を durable test 化し、usage.jsonl の新旧双方向互換�
 - `tests/differential/README.md` — `compareStderr` schema・hook
   inventory・未網羅 cell の理由を記録。
 
-### 検証
+#### 検証
 
 - `mise exec -- cargo test -p cheaper-cli --test differential` —
   55 cases、pass=47 / pinned divergence=8 / fail=0(hook 16 case
@@ -848,7 +880,7 @@ hook byte parity を durable test 化し、usage.jsonl の新旧双方向互換�
 - `mise exec -- cargo test -p cheaper-cli --test envelope` — 8 test
   全パス(`1e-7`/`9.9e-7` → `1e-7`/`9.9e-7` 形を確認)。
 
-### 既知の divergence / 留意点
+#### 既知の divergence / 留意点
 
 - usage costUsd の算出元差(TS = provider 報告 `usage.cost.total`
   合算、Rust = 解決 pricing × token)は spec 既定の差分であり、
@@ -861,9 +893,9 @@ hook byte parity を durable test 化し、usage.jsonl の新旧双方向互換�
 - TS cross-check test は node/`dist` 不在環境では skip — CI で
   実行されない可能性は differential harness と同じ規約。
 
-## Phase 4 follow-up fix(F1–F7、pin 解除)
+### Phase 4 follow-up fix(F1–F7、pin 解除)
 
-### Scope
+#### Scope
 
 confirm 済み finding 7 件を TS 挙動へ揃える修正。詳細は
 `docs/tasks/phase-4-port-cli-and-workflow.md` のチェックリスト参照。
@@ -895,7 +927,7 @@ confirm 済み finding 7 件を TS 挙動へ揃える修正。詳細は
   再確認を追加。blocking read 自体は割り込めない残差あり
   (コード内コメントに記録)。
 
-### 検証(follow-up fix 後の再測定)
+#### 検証(follow-up fix 後の再測定)
 
 - `cargo test -p cheaper-cli --test differential` — 最終 matrix:
   `cases=55 pass=52 divergence=3 fail=0 rust-only=0`
@@ -904,10 +936,78 @@ confirm 済み finding 7 件を TS 挙動へ揃える修正。詳細は
   wrap unwrap regression test、F6 で usage reader の lossy 経路を
   `tests/usage_report.rs` に追加)。
 
-### 受容 divergence(残 pin — `tests/differential/README.md`)
+#### 受容 divergence(残 pin — `tests/differential/README.md`)
 
 - `run-panic`: panic 写像差(INTERNAL_ERROR(70) vs
   PROVIDER_FAILURE(5))— TS seam に等価 input が無い。
 - `run-max-turns` / `run-max-tool-calls`: abort 後の in-flight
   call `turn_end` 計上差 — fixture DSL が abort 後 turn を消化
   できず表現不能。
+
+## Related Experiments
+
+### Adopted
+
+experiment log への正式参照は無い。設計上の採用判断(envelope の
+byte 互換 stringify を core へ集約・builtin resource の temp dir
+materialize・fake-stream fixture seam・job executor の
+`spawn_blocking` + current_thread runtime 構成等)は各 slice の
+Decisions・「既知の divergence / 留意点」に記録済み。
+
+### Rejected
+
+なし。
+
+## Validation
+
+検証の詳細は Implementation 配下の各 slice 検証節と
+`### Phase 4 follow-up fix` の再測定を参照。要点:
+
+- `cargo test -p cheaper-workflow` — 111 test 全パス。
+- `cargo test -p cheaper-cli` — 全パス(T4 時点 137 test、
+  follow-up fix で wrap unwrap regression・lossy reader を追加)。
+- binary-to-binary differential(`cargo test -p cheaper-cli --test
+  differential`)— 55 case、最終 matrix `pass=52 / divergence=3 /
+  fail=0`(`tests/differential/README.md` の現行 matrix と一致)。
+- hook byte parity — T6 の manual 53/53 byte-identical を T9 が
+  durable test 化(16 hook case が stdout+stderr+exit code byte 一致)。
+- usage.jsonl 新旧双方向互換 — Rust writer ↔ TS reader の cross-check
+  test(node/dist 不在環境では differential 規約で skip)。
+- `cargo clippy --workspace --all-targets -- -D warnings` /
+  `cargo fmt --check` — clean。
+
+## Risks
+
+- 残 pin 3 件(`tests/differential/README.md`): `run-panic` の
+  panic 写像差、`run-max-turns`/`run-max-tool-calls` の abort 後
+  `turn_end` 計上差 — いずれも fixture DSL / seam 限界由来の受容
+  divergence。
+- `PricingSnapshot`(`&'static str` field)への `Box::leak` bridge —
+  usage command 1 回の read-only 集計で bounded leak。core 型を
+  owned 化する場合は `pricing.rs` を見直す。
+- hook 計測の `spawn_blocking` が 30s timeout した場合 thread は
+  detach されて残る(verdict は resolve。TS subprocess timeout と
+  同等の外部挙動)。
+- `MEASURE_ENV_KEYS` は `count_workspace_file_tokens` が transitive
+  に読む env 5 key の snapshot — core 側が新 env key を読むように
+  なった場合は追加が必要。
+- usage `costUsd` の算出元差(TS = provider 報告値、Rust = 解決
+  pricing × token)は spec 既定の差分 — `docs/guides/usage.md` に
+  記録済み。
+- `mise run check` 全体の exit 0 は既知 flake
+  (`launcher-acquisition.test.ts` concurrent first-run)により
+  未確認 — 対象 file の単独再実行では 55/55 pass、本 Phase の変更
+  (crates/+docs)とは非因果(task doc の Done When 記録どおり延期)。
+
+## Follow-ups
+
+- `hooks.runWorker`/`createModelRuntime` seam は未実装(TS hook)—
+  fixture JSON seam が代替として機能。必要になれば追加。
+- oauth login の実行対象は github-copilot のみ — それ以外の oauth
+  provider の login は ISS-23 の deferred 範囲(task doc 記載)。
+- auth prompt(`ask`/`ask_secret`)の blocking read 自体は割り込め
+  ない残差(F7 で read 完了直後の cancel 再確認のみ追加、
+  コード内コメントに記録)。
+- `mise run check` exit 0 の再確認(既存 flake 解消・低負荷環境で)。
+- T5 auth slice の実装記録は本 IR に節が無い(上記 Summary 参照)—
+  `src/auth.rs`/`tests/auth.rs` の port 実体は存在する。

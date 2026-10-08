@@ -40,6 +40,8 @@ metadata:
 
 # Phase 6: remove TypeScript Node Pi
 
+## Summary
+
 `packages/` 配下の TypeScript 実装(cli/core/tool-runtime/runtime-pi/
 workflow)と Pi SDK 依存(`@earendil-works/pi-ai`・`pi-coding-agent`)、
 Node SEA ビルド経路、pnpm workspace 構成を撤去し、リポジトリを Rust
@@ -57,16 +59,34 @@ toolchain/workspace 撤去)→ 6e2e49d(C: packages 撤去 + resource 移設
 d68b4d5(E: docs/ADR)→ a118f12(final-gate 結果記録)→
 d4f5429(snapshot separator 正規化修正)。
 
-## T1 — Commit A: version canonical 反転 + esbuild payload 除去(36bb74a)
+## Context
 
-### Scope
+TASK-034BgKlddxEi2ozLgZMFi3
+(`docs/tasks/phase-6-remove-typescript-node-pi.md`)/ plan
+`docs/plans/phase-6-remove-typescript-node-pi.md`、親 plan
+`docs/plans/migrate-cheaper-runtime-to-rust-rig.md`。関連:
+`docs/plans/phase-5-switch-distribution-to-rust-binary.md`(直前
+phase — 配布物は既に Rust binary)、`docs/designs/
+rust-rig-runtime-migration-architecture.md` §配布、
+`docs/designs/version-pinned-launcher-acquisition.md`(launcher が
+`cheaper.mjs` を参照しない根拠)、`docs/test-specs/
+rust-migration-distribution.md`。
+
+## Implementation
+
+実装は commit A–E + final gate + review 修正の 7 commit で構成
+(上記 Summary の commit 列)。各 commit の Scope・Files は以下の節。
+
+### T1 — Commit A: version canonical 反転 + esbuild payload 除去(36bb74a)
+
+#### Scope
 
 canonical version source を `packages/cli/package.json` から
 `Cargo.toml` `[workspace.package].version` へ反転し、payload 生成
 経路から esbuild と committed `cheaper.mjs` を除去した(deferred
 decision #1・#3 の確定)。
 
-### Files
+#### Files
 
 - `Cargo.toml` / `crates/cheaper-cli/Cargo.toml` — workspace version
   が単一の canonical source。`build.rs` が `CARGO_PKG_VERSION` から
@@ -87,14 +107,14 @@ decision #1・#3 の確定)。
 - 注記: この時点では crates がまだ `include_str!`/`include_dir!` で
   `packages/cli` を参照しており、resource 移設は Commit C で実施。
 
-## T2 — Commit B: toolchain/workspace 構成撤去(b203035)
+### T2 — Commit B: toolchain/workspace 構成撤去(b203035)
 
-### Scope
+#### Scope
 
 pnpm workspace・TS toolchain 設定を撤去し、mise tasks を Rust 手順へ
 書き換えた。
 
-### Files
+#### Files
 
 - 削除: root `package.json`・`pnpm-workspace.yaml`・
   `pnpm-lock.yaml`(2566 行)・`tsconfig.json`・`tsconfig.base.json`・
@@ -111,15 +131,15 @@ pnpm workspace・TS toolchain 設定を撤去し、mise tasks を Rust 手順へ
 - `scripts/lib/release-artifacts.mjs` — tar 呼び出しを relative path
   化し、`node --test` が Windows/MSYS でも通るようにした。
 
-## T3 — Commit C: packages 撤去 + resource 移設 + regression snapshot 化(6e2e49d)
+### T3 — Commit C: packages 撤去 + resource 移設 + regression snapshot 化(6e2e49d)
 
-### Scope
+#### Scope
 
 5 つの TS package を単一 revert 可能 commit で `git rm` し、bundled
 resource を crate 配下へ移設、differential harness を Rust-only の
 regression snapshot test へ変換してから削除した。
 
-### Files
+#### Files
 
 - 削除: `packages/{cli,core,tool-runtime,runtime-pi,workflow}/` 全体
   (Pi SDK 依存を含む全 TS 実装)。
@@ -140,7 +160,7 @@ regression snapshot test へ変換してから削除した。
 - `packages/apm/.apm/hooks/cheaper.ps1` — **acquisition lock の
   defect 修正**(下記)。
 
-### cheaper.ps1 atomic-lock 修正(contract 変更ではなく defect 修理)
+#### cheaper.ps1 atomic-lock 修正(contract 変更ではなく defect 修理)
 
 長年の concurrent-download flake の root cause を修正した。
 `New-Item -ItemType Directory` による lock 取得は
@@ -156,13 +176,13 @@ launcher と同等の「cache key 出現時は上書き拒否」を実現する�
 launcher の argv・exit code・エラー message の外部 contract は
 不変であり、取得処理の内部実装のみの修正。
 
-## T4 — Commit D: benchmarks retarget(461dc04)
+### T4 — Commit D: benchmarks retarget(461dc04)
 
-### Scope
+#### Scope
 
 benchmarks が Rust binary で動作するように retarget した。
 
-### Files
+#### Files
 
 - `benchmarks/lib/cli.mjs` — spawn 先を `node packages/cli/dist`
   から `cargo build` 出力 binary へ(release 優先・debug fallback)。
@@ -173,13 +193,13 @@ benchmarks が Rust binary で動作するように retarget した。
   `stream-concurrency` の JSONL dimension は Rust 側に対応物がなく
   `null` 報告へ。README 更新 + 1 scenario 実測済み。
 
-## T5 — Commit E: docs/ADR(d68b4d5)
+### T5 — Commit E: docs/ADR(d68b4d5)
 
-### Scope
+#### Scope
 
 CI workflow 残存参照除去と docs/ADR status の整合。
 
-### Files
+#### Files
 
 - `AGENTS.md` / `CONTRIBUTING.md` / `README.md` — Rust toolchain
   contract(cargo build/test・Node は repo tooling のみ・Cargo.toml
@@ -195,7 +215,7 @@ CI workflow 残存参照除去と docs/ADR status の整合。
   (pi SDK・tokenizer・userConfigDir/pi・typescript-pnpm-monorepo)
   は migration ADR による superseded 表記へ。
 
-## T6 — Final gate(a118f12 で結果を task doc へ記録)
+### T6 — Final gate(a118f12 で結果を task doc へ記録)
 
 fresh worktree `F:/repositry/cheaper-fresh-gate`(node_modules・
 target・apm_modules 非存在)で `mise run setup` → `mise run check`
@@ -237,7 +257,7 @@ worktree は検証後に remove 済み)。
 - `git diff --exit-code -- packages/apm/.apm/hooks/cli` は
   `cheaper.mjs` 削除後も green。
 
-## Review 修正(d4f5429)— POSIX snapshot separator
+### Review 修正(d4f5429)— POSIX snapshot separator
 
 review で confirm された finding: regression snapshot
 `cli-run-worker-file.json` が Windows path separator(`\`)を固定値
@@ -247,7 +267,7 @@ path-token 置換後の残余 separator を畳む正規化を追加(token-gated
 で無関係な backslash は不変)。同 commit で `bundle-cli.mjs`・
 `apm-bundle.mjs` の stale な pnpm-bundle comment も除去。
 
-## Deferred 判断の確定
+### Deferred 判断の確定
 
 task の deferred 3 件 + Node 扱いは以下の通り確定した:
 
@@ -261,7 +281,43 @@ task の deferred 3 件 + Node 扱いは以下の通り確定した:
 - Node は repo tooling(scripts の node:test・benchmarks・mise
   管理 toolchain)として存続 — 配布物・実行経路からは完全に除去。
 
-## Verification matrix(task doc §Verification との対応)
+## Related Experiments
+
+### Adopted
+
+- version canonical source を `Cargo.toml [workspace.package].version`
+  へ反転する判断 — ADR-034CpwNUNIDqrR92x7VaUR として起票
+  (### T5)。task の deferred 判断確定として記録。
+- `cheaper.ps1` の acquisition lock は一意名 `.claim.<guid>` の
+  `CreateDirectory` + 同一ボリューム rename による atomic claim
+  方式を採用(### T3 の defect 修正)。
+- differential harness は Rust-only の regression snapshot test
+  (`tests/regression/`)への変換を採用(### T3)。
+
+### Rejected
+
+- Node の完全撤去 — scripts の node:test・benchmarks・mise 管理
+  toolchain の repo tooling に必要なため tools からは除去しない
+  (### Deferred 判断の確定)。
+- `cheaper.mjs` JS fallback の存続 — launcher が参照しないため
+  committed payload ごと廃止(version-pinned-launcher-acquisition
+  design が根拠)。
+
+## Validation
+
+final gate の実測は `### T6`(fresh worktree `mise run setup` →
+`mise run check` exit 0、撤去 contract `git grep`、Node-free
+launcher smoke、Ollama e2e、version round-trip 等)と以下の
+`### Verification matrix` を参照。要点: fresh worktree check
+exit 0(clean checkout から cargo build 7m26s)・`node --test
+scripts/test/` 132 tests / 126 pass / 6 platform-gated skip /
+0 fail・release binary 実測 18.94MiB(≤20MiB gate)・launcher
+smoke `verified:3, nodeFree:true`・Ollama `ollama_e2e` 3/3 +
+`cheaper run bulk-reader` usage envelope 実測・payload freshness
+git diff green。runner 依存の残検証は `## Follow-ups` の
+`### CI-deferred verification` に集約。
+
+### Verification matrix(task doc §Verification との対応)
 
 | item | local 結果 | 状態 |
 | --- | --- | --- |
@@ -276,21 +332,14 @@ task の deferred 3 件 + Node 扱いは以下の通り確定した:
 | payload freshness `git diff` | `cheaper.mjs` 削除後も green | 済 |
 | version round-trip(set→bundle→check→revert) | 1.0.1 bump で全宣言一致・binary 報告一致、1.0.0 revert で clean | 済 |
 
-## CI-deferred verification(ユーザー判断で延期)
+## Risks
 
-Phase 5 と同じく branch 未 push・workflow_dispatch 未実行のため、
-runner 依存の検証は CI へ延期。
+TS 実装・Pi SDK・pnpm workspace の撤去は不可逆的な大規模削除であり、
+regression snapshot(旧 differential 55 case)が TS oracle 代替の
+回帰網となる。benchmarks の一部 dimension は Rust 側に計測点がなく
+`null` 報告へ退行。詳細は以下。
 
-- `release-acquisition` の test tag 実 dispatch による 5 asset
-  (raw3 + `SHA256SUMS` + `cheaper-apm-v<X.Y.Z>.tar.gz`)publish と
-  `smoke-bundle` 全 OS green の実観測。
-- 3 target(linux-x64・linux-arm64・win-x64)の matrix release
-  build + size gate・`--version`/`models` smoke、および
-  darwin-arm64 sibling leg の runner 実証。
-- 初回 Rust release の実 publish と旧 tag asset 不変(rollback
-  経路)の実観測。
-
-## 既知の留意点
+### 既知の留意点
 
 - TS 実装・Pi SDK・pnpm workspace は完全に除去済み。以降の機能
   追加は `crates/` 配下の Rust workspace が唯一の実装面。
@@ -304,3 +353,24 @@ runner 依存の検証は CI へ延期。
 - Ollama e2e の doc-writer transient truncation flake は provider
   応答側の不安定さに起因し、本 Phase の変更とは無関係(孤立再実行
   で pass)。
+
+## Follow-ups
+
+runner 依存の release 実証は CI へ延期(下記 `### CI-deferred
+verification`)。benchmarks の `promptBytes`・`stream-concurrency`
+dimension を復活させる場合は Rust 側に対応する計測/emit の追加が
+必要。
+
+### CI-deferred verification(ユーザー判断で延期)
+
+Phase 5 と同じく branch 未 push・workflow_dispatch 未実行のため、
+runner 依存の検証は CI へ延期。
+
+- `release-acquisition` の test tag 実 dispatch による 5 asset
+  (raw3 + `SHA256SUMS` + `cheaper-apm-v<X.Y.Z>.tar.gz`)publish と
+  `smoke-bundle` 全 OS green の実観測。
+- 3 target(linux-x64・linux-arm64・win-x64)の matrix release
+  build + size gate・`--version`/`models` smoke、および
+  darwin-arm64 sibling leg の runner 実証。
+- 初回 Rust release の実 publish と旧 tag asset 不変(rollback
+  経路)の実観測。
