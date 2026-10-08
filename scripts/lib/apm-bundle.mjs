@@ -1,7 +1,8 @@
 // Shared assembly of packages/apm/.apm/hooks/cli/ — the self-contained
 // cheaper CLI tree shipped inside the APM hook bundle (issue #71).
-// Used by scripts/bundle-cli.mjs (canonical `pnpm bundle` entrypoint) and
-// scripts/build-apm-bundle.mjs (adds platform executables).
+// Used by scripts/bundle-cli.mjs (canonical entrypoint — run as
+// `node scripts/bundle-cli.mjs`) and scripts/build-apm-bundle.mjs
+// (adds platform executables).
 //
 // Layout produced:
 //   cli/bin/<target>/cheaper[.exe]  native executables (build-apm-bundle only)

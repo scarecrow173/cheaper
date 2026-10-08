@@ -164,6 +164,19 @@ fn scrub_string(s: &str, scrub: &[(String, String)]) -> String {
         let esc = raw.replace('\\', "\\\\");
         out = out.replace(esc.as_str(), token);
     }
+    // token 置換後に残る `\` は scrub root 配下の path tail の separator
+    // であり、host OS(Windows=`\`、POSIX=`/`)で表現が分岐する。token を
+    // 含む string に限り `/` へ canonicalize し、両 platform で同一
+    // snapshot に収束させる(例: `<WS>\w.md` と `<WS>/w.md`)。
+    // raw 比較の JSON-escaped `\\`(1 separator の escaped 表現)も先に
+    // `/` へ畳み、`<WS>//w.md` のような二重 separator を残さない。
+    if scrub
+        .iter()
+        .any(|(token, _)| !token.is_empty() && out.contains(token.as_str()))
+    {
+        out = out.replace("\\\\", "/");
+        out = out.replace('\\', "/");
+    }
     out
 }
 

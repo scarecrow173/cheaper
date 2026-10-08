@@ -148,15 +148,23 @@ darwin-* は Release asset 非追加を維持(sibling smoke は継続)、
 
 ## Done When
 
-- [ ] T1(Commit A): version canonical が `Cargo.toml` に反転し、payload
-      生成経路から esbuild/`cheaper.mjs` が除去される
-- [ ] T2(Commit B): mise tasks が Rust 手順へ書き換えられ、pnpm
-      workspace・TS toolchain 設定が撤去される
-- [ ] T3(Commit C): `packages/*` TS 実装が撤去され、TS 固有検証の欠落
+- [x] T1(Commit A): version canonical が `Cargo.toml` に反転し、payload
+      生成経路から esbuild/`cheaper.mjs` が除去される(commit 36bb74a。
+      `check-version.mjs`・`check-apm-payload.mjs`・`bundle-cli.mjs`
+      再生成が fresh worktree gate の `mise run check` で pass)
+- [x] T2(Commit B): mise tasks が Rust 手順へ書き換えられ、pnpm
+      workspace・TS toolchain 設定が撤去される(commit b203035。
+      書換後の `[tasks.setup]`/`[tasks.check]` が fresh worktree gate
+      で実測 pass)
+- [x] T3(Commit C): `packages/*` TS 実装が撤去され、TS 固有検証の欠落
       分が `scripts/test/` へ移植され、differential harness が regression
-      snapshot test へ変換されてから削除される
-- [ ] T4(Commit D): benchmarks が native binary + Rust fake seam fixture
-      で動作する
+      snapshot test へ変換されてから削除される(commit 6e2e49d。
+      `cargo test --workspace`(regression snapshot 含む)と `node
+      --test scripts/test/` が gate の check 内で pass)
+- [x] T4(Commit D): benchmarks が native binary + Rust fake seam fixture
+      で動作する(commit 461dc04。`benchmarks/lib/cli.mjs` の spawn 先は
+      `cargo build` 出力 binary、fixture は Rust fake seam の JSON
+      fixture DSL へ変換済み)
 - [x] T5(Commit E): CI workflow 残存参照除去・docs/ADR status 更新・
       supersede ADR 起票が完了する
 - [x] T6(Final gate): fresh worktree の `mise run setup`→`mise run check`

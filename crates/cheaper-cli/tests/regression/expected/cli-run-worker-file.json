@@ -8,7 +8,7 @@
     "error": {
       "code": "WORKER_NAME_MISMATCH",
       "details": {
-        "sourcePath": "<WS>\\w.md",
+        "sourcePath": "<WS>/w.md",
         "name": "file-worker",
         "stem": "w"
       },

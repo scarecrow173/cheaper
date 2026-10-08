@@ -1,7 +1,7 @@
 // Generates packages/apm/.apm/hooks/cli/ — the self-contained cheaper CLI
 // payload shipped inside the APM hook bundle (DESIGN-0014). Run via
-// `pnpm bundle`. Tree assembly lives in scripts/lib/apm-bundle.mjs; this
-// entrypoint only reports the result.
+// `node scripts/bundle-cli.mjs`. Tree assembly lives in
+// scripts/lib/apm-bundle.mjs; this entrypoint only reports the result.
 
 import path from "node:path";
 
