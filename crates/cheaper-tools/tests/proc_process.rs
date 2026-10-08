@@ -106,7 +106,7 @@ fn proc_fixture_child() {
             #[cfg(unix)]
             {
                 unsafe {
-                    libc::signal(libc::SIGTERM, graceful_handler as usize);
+                    libc::signal(libc::SIGTERM, graceful_handler as *const () as usize);
                 }
                 let target = args.first().unwrap().clone();
                 loop {
