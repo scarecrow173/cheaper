@@ -78,6 +78,11 @@ pub fn utility_success_envelope(result: Map<String, Value>, duration_ms: f64) ->
 /// CheaperError 相当(`CheaperError` または `WorkerRunError`)の
 /// `(内部 CheaperError, runMeta)` view。TS の `isCheaperError` 判定と
 /// `err.runMeta` 読取りを `dyn Error` downcast で再現する。
+///
+/// `SharedToolError`(workflow の `failures.get(name)` 再 throw 器 —
+/// TS は同一 error object を再 throw するため wrapper が見えない)は
+/// 剥がして内側へ再帰する。内側が `WorkerRunError` やさらに別の
+/// `SharedToolError` の場合も同じ規則で unwrap される。
 fn cheaper_view<'e>(
     e: &'e (dyn Error + 'static),
 ) -> Option<(&'e CheaperError, Option<&'e PartialRunMeta>)> {
@@ -85,6 +90,9 @@ fn cheaper_view<'e>(
         // WorkerRunError は inner CheaperError が code/message/details/
         // cause を持ち、`runMeta` を別途保持する(TS では同一 object)。
         return Some((w.error(), w.run_meta()));
+    }
+    if let Some(s) = e.downcast_ref::<crate::workflow_context::SharedToolError>() {
+        return cheaper_view(s.inner());
     }
     e.downcast_ref::<CheaperError>().map(|c| (c, None))
 }

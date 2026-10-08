@@ -11,10 +11,12 @@
 //! - `login` → `{provider, authenticated, method, subscription}`
 //! - `logout` → `{provider, loggedOut: true}` / `--all`
 //!
-//! builtin OAuth provider は `OAuthFlow` trait を登録して初めて
-//! `"oauth"` method を advertise する（T6 で flow を注入する seam。
-//! flow 未登録の oauth 宣言 provider は method 非 advertise —
-//! plan Rollback 規則）。
+//! OAuth method の advertise は declaration ベース — `auth.ts` の
+//! `provider.auth.oauth !== undefined` parity で、flow 登録の有無は
+//! `status`/`describe` 射影に関与しない。`OAuthFlow` trait の登録は
+//! `login --type oauth` の実行可否のみを制御する（T6 で flow を注入
+//! する seam。flow 未登録の oauth 宣言 provider への oauth login は
+//! `INVALID_REQUEST`）。
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -330,10 +332,15 @@ impl AuthService {
         })
     }
 
-    /// oauth method を advertise するか（plugin auth or 登録済み flow）。
+    /// oauth method を advertise するか — TS `auth.ts` L56-66 は
+    /// `provider.auth.oauth !== undefined` の declaration のみで判定
+    /// し、登録済み flow の有無は status 射影に関与しない。plugin
+    /// auth は catalog 構築時に oauth 宣言へ畳み込み済みのため
+    /// `entry.oauth` の有無が declaration 判定と一致する。
+    /// flow 登録は `login --type oauth` の実行可否のみを制御する
+    /// （宣言のみの provider の oauth login は `INVALID_REQUEST`）。
     fn oauth_advertised(&self, entry: &ProviderEntry) -> bool {
-        entry.plugin_auth.is_some()
-            || (entry.oauth.is_some() && self.oauth_flows.contains_key(&entry.id))
+        entry.oauth.is_some()
     }
 
     fn methods_of(&self, entry: &ProviderEntry) -> Vec<&'static str> {
@@ -349,8 +356,10 @@ impl AuthService {
         methods
     }
 
+    /// `provider.auth.oauth?.isSubscription === true` — declaration
+    /// 由来のみで、flow 登録に依存しない。
     fn subscription_of(&self, entry: &ProviderEntry) -> bool {
-        self.oauth_advertised(entry) && entry.oauth.map(|o| o.subscription).unwrap_or(false)
+        entry.oauth.map(|o| o.subscription).unwrap_or(false)
     }
 
     /// `listProviderAuth` — `result.providers[]`。

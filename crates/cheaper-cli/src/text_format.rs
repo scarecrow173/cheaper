@@ -161,9 +161,13 @@ fn model_row_text(m: &Value) -> String {
     {
         "unpriced".to_string()
     } else {
-        let snapshot = match get(&pricing, "snapshotVersion").and_then(Value::as_f64) {
-            Some(v) => format!("@{}", format_number(v)),
-            None => String::new(),
+        // TS `p.snapshotVersion !== undefined ? \`@${p.snapshotVersion}\` : ""`
+        // — snapshotVersion は number とは限らず、string snapshot
+        // version(例: "2025-09")もそのまま `@` 接頭で出す。
+        let snapshot = match get(&pricing, "snapshotVersion") {
+            Some(Value::String(s)) => format!("@{s}"),
+            Some(Value::Number(n)) => format!("@{}", format_number(n.as_f64().unwrap_or(0.0))),
+            _ => String::new(),
         };
         let updated = match get(&pricing, "updatedAt").and_then(Value::as_str) {
             Some(u) => format!(", {u}"),
@@ -424,4 +428,69 @@ pub fn format_text(env: &Value) -> String {
         return utility_text(env);
     }
     success_text(env)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    /// models 行の最小 envelope。`pricing` は差し替え前提の共通形。
+    fn models_env(pricing: Value) -> Value {
+        json!({
+            "ok": true,
+            "worker": null,
+            "meta": {"durationMs": 1},
+            "result": {
+                "models": [{
+                    "provider": "p",
+                    "id": "m",
+                    "excluded": false,
+                    "tier": "low",
+                    "tierSource": "default",
+                    "pricing": pricing
+                }]
+            }
+        })
+    }
+
+    /// TS `p.snapshotVersion !== undefined ? \`@${p.snapshotVersion}\` : ""`
+    /// — string snapshot version はそのまま `@` 接頭で出す。
+    #[test]
+    fn models_text_preserves_string_snapshot_version() {
+        let env = models_env(json!({
+            "input": 1, "output": 2,
+            "source": "catalog",
+            "snapshotVersion": "2025-09"
+        }));
+        let out = format_text(&env);
+        assert!(
+            out.contains("catalog@2025-09"),
+            "string snapshot version must be preserved: {out}"
+        );
+    }
+
+    /// number snapshot version も従来どおり JS number 表記で出る。
+    #[test]
+    fn models_text_preserves_number_snapshot_version() {
+        let env = models_env(json!({
+            "input": 1, "output": 2,
+            "source": "catalog",
+            "snapshotVersion": 7
+        }));
+        let out = format_text(&env);
+        assert!(
+            out.contains("catalog@7"),
+            "number snapshot version must render: {out}"
+        );
+    }
+
+    /// snapshotVersion 欠落時は suffix なし(TS `undefined` 分岐)。
+    #[test]
+    fn models_text_omits_missing_snapshot_version() {
+        let env = models_env(json!({"input": 1, "output": 2, "source": "catalog"}));
+        let out = format_text(&env);
+        assert!(out.contains("(catalog)"), "expected `(catalog)`: {out}");
+        assert!(!out.contains('@'), "unexpected @ suffix: {out}");
+    }
 }

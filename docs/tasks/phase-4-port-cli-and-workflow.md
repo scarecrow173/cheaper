@@ -177,12 +177,16 @@ plugin 登録の composition root は cli が担う(runtime→devin は循環依
       除外: `meta.durationMs`・`meta.execution` 時刻系 field・
       `usage.costUsd`・tokenizer identity・`error.message` 本文・stderr
       文言・JSON key 順・schema error message 文言/件数/code)。
-      実績: 43 cases — pass=35 / pinned divergence=8 / fail=0。
+      実績: 55 cases — pass=52 / pinned divergence=3 / fail=0
+      / rust-only=0(follow-up fix 後の再測定。T8 時点 43 cases
+      pass=35/divergence=8、T9 で hook matrix 拡張後 55 cases
+      pass=47/divergence=8)。
       `usage.costUsd` は spec 上は除外許容だが、adapter が fake model
       cost から `usage.cost.total` を算出して埋めるため厳密比較のまま
-      通る(除外しない)。`error.details.{class,retryable,httpStatus}`・
-      panic 写像・in-flight abort turn 計上・auth status metadata の
-      4 系統の divergence を case pin として記録(README 参照)
+      通る(除外しない)。pin 系統は panic 写像・in-flight abort turn
+      計上(`run-max-turns`/`run-max-tool-calls`)の 2 系統に縮小
+      — `error.details` shape・auth status metadata は follow-up fix
+      F4/F5 で binary 一致となり pin 解除済み(README 参照)
 - [x] `mise exec -- cargo test -p cheaper-cli --test envelope` で
       `schemaVersion:1`・1 JSON + 末尾改行・optional 省略・null 意味論・
       canonical number formatter(`1.0`/`1e-7`/非有限を網羅)が検証される
@@ -207,13 +211,13 @@ plugin 登録の composition root は cli が担う(runtime→devin は循環依
       port — runtime catalog 優先・pricing.json fallback・stale/境界値・
       comparable subset を検証。bundled snapshot の解決自体は core
       `resolve_pricing` が担保)
-- [ ] `cheaper auth status` の `result.providers[]`/`credentials[]` 形状が
+- [x] `cheaper auth status` の `result.providers[]`/`credentials[]` 形状が
       TS 版と一致する(ISS-19a)
-      — **部分差異あり・延期**: provider 一覧の順序/id・credential 列挙は
-      一致するが、oauth 対応 provider の `methods[]`/`subscription`
-      field が Rust 側は api_key のみ列挙で未実装(differential
-      `cli-auth-status` に pin 済み)。oauth metadata 列挙の port か
-      divergence 許容の判断が別途必要
+      — oauth 対応 provider の `methods[]`/`subscription` を provider
+      宣言(`auth.oauth`)ベースで列挙するように follow-up fix F5 で解消。
+      differential `cli-auth-status` は pin 解除済み・binary 一致を確認
+      (oauth login 実行自体は引き続き登録 flow 必須 — github-copilot
+      以外の oauth login は ISS-23 の deferred 範囲)
 - [x] panic 注入で `INTERNAL_ERROR`(exit 70)error envelope が stdout に
       出て panic trace が stdout に漏れず、hook 経路では panic が
       allow/exit 0 に落ちる

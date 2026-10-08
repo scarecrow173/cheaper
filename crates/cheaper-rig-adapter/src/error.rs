@@ -86,28 +86,20 @@ pub fn classify_prompt(error: &PromptError) -> ErrorClass {
     }
 }
 
-fn status_details(error: &ProviderError, class: ErrorClass) -> Map<String, Value> {
-    let mut details = Map::new();
-    details.insert("class".into(), Value::from(format!("{class:?}")));
-    details.insert("retryable".into(), Value::from(class.is_transient()));
-    if let Some(status) = error.provider_response_status() {
-        details.insert("httpStatus".into(), Value::from(status.as_u16()));
-    }
-    if let Some(id) = error.provider_request_id() {
-        details.insert("providerRequestId".into(), Value::from(id));
-    }
-    details
-}
-
 /// `ProviderError` → `CheaperError`。provider 起因の失敗は一律
-/// `PROVIDER_FAILURE` で、分類(transient/permanent)は `details.class` に残す。
+/// `PROVIDER_FAILURE`。details は TS `lastAssistant.stopReason ===
+/// "error"` 分岐(run.ts L382-390)と同じ `{errorMessage}` のみ —
+/// 分類(transient/permanent)は retry 判定で消費され、envelope
+/// contract には載らない。
 pub fn provider_error_to_cheaper(error: &ProviderError) -> CheaperError {
-    let class = classify(error);
     CheaperError::new(
         ErrorCode::ProviderFailure,
-        format!("provider completion failed: {error}"),
+        format!("provider error: {error}"),
     )
-    .with_details(status_details(error, class))
+    .with_details(Map::from_iter([(
+        "errorMessage".to_string(),
+        Value::from(error.to_string()),
+    )]))
 }
 
 /// `ErrorReport`(bus/hook/report 経路) → `CheaperError`。
@@ -132,20 +124,30 @@ pub fn report_to_cheaper(report: &ErrorReport) -> CheaperError {
         // memory 未構成・内部 invariant・bus 寿命問題は adapter 側の失敗。
         _ => ErrorCode::InternalError,
     };
-    let mut details = Map::new();
-    details.insert("kind".into(), Value::from(report.kind.code()));
-    let class = classify_report(report);
-    details.insert("class".into(), Value::from(format!("{class:?}")));
-    details.insert("retryable".into(), Value::from(class.is_transient()));
-    if let Some(status) = report.http_status {
-        details.insert("httpStatus".into(), Value::from(status));
-    }
-    if let Some(code) = &report.code {
-        details.insert("providerCode".into(), Value::from(code.clone()));
-    }
-    if let Some(id) = &report.request_id {
-        details.insert("providerRequestId".into(), Value::from(id.clone()));
-    }
+    let details = if code == ErrorCode::ProviderFailure {
+        // PROVIDER_FAILURE の details contract は `{errorMessage}` のみ
+        // (run.ts L382-390)— relay 経路でも同じ形を出す。
+        Map::from_iter([(
+            "errorMessage".to_string(),
+            Value::from(report.message.clone()),
+        )])
+    } else {
+        let mut details = Map::new();
+        details.insert("kind".into(), Value::from(report.kind.code()));
+        let class = classify_report(report);
+        details.insert("class".into(), Value::from(format!("{class:?}")));
+        details.insert("retryable".into(), Value::from(class.is_transient()));
+        if let Some(status) = report.http_status {
+            details.insert("httpStatus".into(), Value::from(status));
+        }
+        if let Some(code) = &report.code {
+            details.insert("providerCode".into(), Value::from(code.clone()));
+        }
+        if let Some(id) = &report.request_id {
+            details.insert("providerRequestId".into(), Value::from(id.clone()));
+        }
+        details
+    };
     CheaperError::new(code, report.message.clone()).with_details(details)
 }
 

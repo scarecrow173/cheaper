@@ -27,7 +27,6 @@ use std::io::{self, BufRead};
 use std::process::Command;
 use std::sync::Arc;
 use std::thread::JoinHandle;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use cheaper_core::config::dirs::{resolve_user_config_dir, UserConfigDirOptions};
 use cheaper_core::errors::{CheaperError, ErrorCode};
@@ -59,13 +58,6 @@ fn login_cancelled() -> CheaperError {
 /// (非 CheaperError は `INTERNAL_ERROR`(70)へ畳まれる)。
 fn aborted_error() -> CheaperError {
     CheaperError::new(ErrorCode::InternalError, "This operation was aborted")
-}
-
-fn system_now() -> f64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs_f64() * 1000.0)
-        .unwrap_or(0.0)
 }
 
 /// `openUrlBestEffort` — auth_url を browser で開く best-effort。
@@ -169,12 +161,23 @@ impl<'a> TerminalInteraction<'a> {
     /// `ask` — prompt を stderr へ出して 1 行読み、`.trim()` する。
     /// abort は INTERNAL_ERROR に畳む(TS AbortError → errorEnvelope
     /// の非 CheaperError 分岐と同じ code/exit code)。
+    ///
+    /// residual gap: `read_line` は blocking なため read 中の abort
+    /// をその場で中断できない(TS は readline AbortSignal で即 reject
+    /// する)。post-read check で入力完了直後にだけ検知し、per-prompt
+    /// `AuthPrompt.signal` は seam に無い(TS prompt option)。
     fn ask(&mut self, message: &str) -> Result<String, CheaperError> {
         if self.is_cancelled() {
             return Err(aborted_error());
         }
         self.terminal.write(message);
-        match self.terminal.read_line() {
+        let read = self.terminal.read_line();
+        // read 中に到達した abort を post-read で拾う(中断自体は
+        // できない — 上記 residual gap)。
+        if self.is_cancelled() {
+            return Err(aborted_error());
+        }
+        match read {
             Ok(line) => Ok(js_trim(&line).to_string()),
             Err(e) if e.kind() == io::ErrorKind::Interrupted => Err(aborted_error()),
             Err(e) => Err(CheaperError::new(ErrorCode::InternalError, e.to_string())),
@@ -183,6 +186,8 @@ impl<'a> TerminalInteraction<'a> {
 
     /// `askSecret` — echo-off 入力 + 後処理で stderr へ `\n`。
     /// abort/Ctrl-C は `INVALID_REQUEST "login cancelled"`。
+    /// `read_secret` も blocking のため read 中の abort は post-read
+    /// check でのみ検知する(`ask` と同じ residual gap)。
     fn ask_secret(&mut self, message: &str) -> Result<String, CheaperError> {
         if self.is_cancelled() {
             return Err(login_cancelled());
@@ -191,6 +196,9 @@ impl<'a> TerminalInteraction<'a> {
         let result = self.terminal.read_secret();
         // TS `askSecret` の cleanup(`io.stderr.write("\n")`)相当。
         self.terminal.write("\n");
+        if self.is_cancelled() {
+            return Err(login_cancelled());
+        }
         match result {
             Ok(secret) => Ok(secret),
             Err(e) if e.kind() == io::ErrorKind::Interrupted => Err(login_cancelled()),
@@ -475,7 +483,9 @@ pub async fn execute(
         tty: io.stdin.is_tty(),
         stderr: &mut *io.stderr,
     };
-    let now = || hooks.now.as_deref().map(|f| f()).unwrap_or_else(system_now);
+    // `Date.now` は整数 ms — `cli::system_now` の truncating clock
+    // を共有する(端数 ms を残すと envelope parity が崩れる)。
+    let now = || crate::cli::now(hooks);
     if args.action == AuthAction::Login {
         // TS `executeAuth`: login 中だけ SIGINT/SIGTERM を AbortSignal に
         // 中継する(`process.on` → `ac.abort()`)。

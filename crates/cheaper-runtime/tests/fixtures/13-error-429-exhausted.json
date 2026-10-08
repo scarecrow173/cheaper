@@ -14,7 +14,7 @@
     "status": "error",
     "errorCode": "PROVIDER_FAILURE",
     "exitCode": 5,
-    "errorDetails": { "class": "TransientRateLimit", "retryable": true, "httpStatus": 429 },
+    "errorDetails": { "errorMessage": "fixture provider error" },
     "meta": {
       "transientRetries": 2
     }

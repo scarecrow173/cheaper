@@ -168,7 +168,8 @@ pub enum EnvAuth {
 }
 
 /// builtin provider の OAuth 宣言（`auth.oauth` の静的 metadata）。
-/// `methods` への反映・login 実行は登録済み flow（T6 以降）が必要。
+/// `methods`/`subscription` への反映は declaration のみで決まり、
+/// login 実行のみ登録済み flow（T6 以降）を要求する。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OAuthSupport {
     /// `auth.oauth.isSubscription`。

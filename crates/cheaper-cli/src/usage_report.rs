@@ -21,7 +21,6 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirsOptions};
 use cheaper_core::duration::parse_duration;
@@ -224,12 +223,16 @@ fn is_record(v: &Value) -> bool {
 }
 
 /// `readUsageRecords` — per-line parse。file 不在・破損行は skip
-/// (read-only 集計)。
+/// (read-only 集計)。Node `readFile(path, "utf8")` は不正 byte を
+/// U+FFFD へ置き換える lossy decode — `read_to_string` だと 1 byte の
+/// 不正 UTF-8 で file 全体を失うため、生 byte → `from_utf8_lossy` で
+/// 揃え、malformed な行のみを skip する。
 pub fn read_usage_records(user_config_dir: &Path) -> Vec<Value> {
-    let Ok(raw) = std::fs::read_to_string(user_config_dir.join(USAGE_LOG_FILENAME)) else {
+    let Ok(bytes) = std::fs::read(user_config_dir.join(USAGE_LOG_FILENAME)) else {
         return Vec::new();
     };
-    raw.split('\n')
+    String::from_utf8_lossy(&bytes)
+        .split('\n')
         .filter(|line| !line.trim().is_empty())
         .filter_map(|line| serde_json::from_str::<Value>(line).ok())
         .filter(is_record)
@@ -604,13 +607,6 @@ fn invalid_request(message: String, detail_key: &str, detail_value: &str) -> Box
     Box::new(CheaperError::new(ErrorCode::InvalidRequest, message).with_details(details))
 }
 
-fn system_now() -> f64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs_f64() * 1000.0)
-        .unwrap_or(0.0)
-}
-
 /// `cli.ts` の `parsed.kind === "usage"` 分岐相当。usage command 自体は
 /// 記録対象外(dispatch 側も record_usage を呼ばない)。
 /// `--format text` は dispatch の `write_output` → `format_text` が
@@ -667,7 +663,9 @@ pub async fn execute_usage(
         provider: args.provider.clone(),
         model: args.model.clone(),
     };
-    let now_fn = || hooks.now.as_deref().map(|f| f()).unwrap_or_else(system_now);
+    // `Date.now` は整数 ms — `cli::system_now` の truncating clock
+    // を共有する(端数 ms を残すと envelope parity が崩れる)。
+    let now_fn = || crate::cli::now(hooks);
     let report = build_usage_report(
         &dirs.user_config_dir,
         &filters,

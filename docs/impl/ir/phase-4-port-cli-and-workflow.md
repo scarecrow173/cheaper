@@ -753,14 +753,18 @@ golden harness。`docs/test-specs/rust-migration-differential-golden.md`
 
 ### 既知の divergence(pin 済み — README §pinned divergences)
 
-- PROVIDER_FAILURE の `error.details` shape: TS `{errorMessage}` のみ
-  vs Rust fake `{class,retryable,httpStatus}`(4 case)。
 - fake stream `panic` → Rust INTERNAL_ERROR(70) vs TS PROVIDER_FAILURE(5)
-  — TS seam に stream 内 panic の等価物が無い。
+  — TS seam に stream 内 panic の等価物が無い(seam 限界として受容)。
 - abort 時の in-flight call `turn_end`(pi は aborted message に
   turn_end を立てるため +1)と maxToolCalls reject の operation 状態
-  計上(cancelled vs completed)— `run-max-turns`/`run-max-tool-calls`。
-- `auth status` の provider metadata(oauth method/subscription 列挙)。
+  計上(cancelled vs completed)— `run-max-turns`/`run-max-tool-calls`
+  (fixture DSL が abort 後の turn step を消化できず表現不能のため
+  受容)。
+
+解消済み(pin 解除 — 本 IR 末尾 §Phase 4 follow-up fix 参照):
+PROVIDER_FAILURE の `error.details` shape(Rust を TS `{errorMessage}`
+のみに揃えた、`run-error-*` 4 case)と `auth status` の oauth
+`methods`/`subscription`(declaration ベース化、`cli-auth-status`)。
 
 ## T9 — 互換 test + docs(hook byte matrix・usage.jsonl 新旧互換・usage.md)
 
@@ -853,3 +857,45 @@ hook byte parity を durable test 化し、usage.jsonl の新旧双方向互換�
   非比較のまま(node の警告等の混入余地を残さない)。
 - TS cross-check test は node/`dist` 不在環境では skip — CI で
   実行されない可能性は differential harness と同じ規約。
+
+## Phase 4 follow-up fix(F1–F7、pin 解除)
+
+### Scope
+
+confirm 済み finding 7 件を TS 挙動へ揃える修正。詳細は
+`docs/tasks/phase-4-port-cli-and-workflow.md` のチェックリスト参照。
+
+- F1: `SharedToolError::source()` が inner を返すようにし
+  (`inner()` accessor 追加)、`cheaper_view` が `SharedToolError` /
+  `WorkerRunError` を再帰 unwrap する。wrap された `CheaperError` が
+  `TOOL_EXECUTION_FAILURE` に潰れなくなる(`INVALID_WORKER_DEFINITION`
+  exit 3・`ensure_model` の `INVALID_MODEL_CONFIG` を保持する
+  regression test を `tests/workflow.rs` に追加)。
+- F2: `models --format text` の `snapshotVersion` が string/number
+  両方を受理(`"2025-09"` → `@2025-09`)。
+- F3: `auth.rs`/`usage_report.rs` 固有の `as_secs_f64` 時計を撤去し
+  `crate::cli::now()`(`as_millis` truncate = `Date.now()` 等価)へ
+  統一。fractional ms duration の発生経路を排除。
+- F4: PROVIDER_FAILURE の `error.details` を TS run.ts と同じ
+  `{errorMessage}` のみへ揃える(fake provider + rig adapter の
+  status_details shape を撤去)。`run-error-429-exhausted` /
+  `run-error-5xx-exhausted` / `run-error-permanent` /
+  `run-emit-then-error` の pin 解除。
+- F5: `auth status` の oauth advertise を provider 宣言
+  (`auth.oauth`)ベースへ変更(flow 登録ではなく宣言が
+  `methods`/`subscription` を決める)。login 実行自体は引き続き
+  登録 flow 必須。`cli-auth-status` の pin 解除。
+- F6: `read_usage_records` を `from_utf8_lossy` + per-line parse に
+  変更 — 破損 byte は U+FFFD 置換で行全体を捨てず、malformed JSON
+  行のみ skip(TS reader 規約)。
+- F7: auth prompt(`ask`/`ask_secret`)に read 完了直後の cancel
+  再確認を追加。blocking read 自体は割り込めない残差あり
+  (コード内コメントに記録)。
+
+### 受容 divergence(残 pin — `tests/differential/README.md`)
+
+- `run-panic`: panic 写像差(INTERNAL_ERROR(70) vs
+  PROVIDER_FAILURE(5))— TS seam に等価 input が無い。
+- `run-max-turns` / `run-max-tool-calls`: abort 後の in-flight
+  call `turn_end` 計上差 — fixture DSL が abort 後 turn を消化
+  できず表現不能。

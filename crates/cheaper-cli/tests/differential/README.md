@@ -144,7 +144,8 @@ run 系(envelope 比較、fake-stream 経路):
 - provider error: `run-error-429-retry`・`run-error-retryable-transient`
   (transient retry → 成功)、`run-error-429-exhausted`・
   `run-error-5xx-exhausted`・`run-error-permanent`・
-  `run-emit-then-error`(post-item error は retry しない)、
+  `run-emit-then-error`(post-item error は retry しない —
+  `PROVIDER_FAILURE.details` は `{errorMessage}` で一致済み)、
   `run-panic`(pinned)
 - model/auth: `run-unknown-model`、`run-auth-env-template`
 
@@ -158,7 +159,10 @@ argv 系(fixture 無し):
   同一の解決失敗 envelope を出すことを確認)
 - `cli-count-tokens`・`cli-count-tokens-missing`(token 数値は厳密比較)
 - `cli-usage-empty`・`cli-usage-seeded`(usage.jsonl 集計)
-- `cli-models`(catalog 列挙)、`cli-auth-status`(pinned divergence)
+- `cli-models`(catalog 列挙)、`cli-auth-status`(oauth 宣言 provider の
+  `methods`/`subscription` は declaration ベースで一致済み — oauth
+  login 自体は非 github-copilot provider で flow 未実装のため deferred
+  (ISS-23))
 - hook(raw byte 比較、全 case `compareStderr` で stderr も厳密比較 —
   `packages/cli/test/hook/hook-contract.test.ts` の target×event
   matrix を binary レベルで再現した T9 の parity matrix):
@@ -189,22 +193,22 @@ argv 系(fixture 無し):
 ## pinned divergences(実測で確認・解消済みか監視対象)
 
 `expectDivergence` を持つ case は normalized diff が非空のときだけ通る
-(解消された場合は "divergence resolved" として report する)。現行:
+(解消された場合は "divergence resolved" として report する)。
+現行 matrix: `cases=55 pass=52 divergence=3 fail=0 rust-only=0`
+(follow-up fix 適用後)。pin は以下の 2 系統:
 
-1. **PROVIDER_FAILURE の error.details shape**(`run-error-429-exhausted`
-   /`run-error-5xx-exhausted`/`run-error-permanent`/`run-emit-then-error`):
-   TS は `{errorMessage}` のみ、Rust fake は adapter `status_details`
-   と同形の `{class,retryable,httpStatus}`。code/exitCode/turns/
-   transientRetries は一致。
-2. **panic 写像**(`run-panic`): Rust INTERNAL_ERROR(70)+runMeta 無し vs
-   TS PROVIDER_FAILURE(5)+retryable=true+runMeta 付き。stream 内 panic の
-   TS 等価物が無い seam 限界。
-3. **in-flight aborted call の turn 計上**(`run-max-turns`/
+1. **panic 写像**(`run-panic`): Rust INTERNAL_ERROR(70)+runMeta 無し vs
+   TS PROVIDER_FAILURE(5)+retryable=true+runMeta 付き。fixture の panic
+   は Rust 側では実際の panic であり、TS 側に stream 内 panic の等価
+   input が存在しない seam 限界。
+2. **in-flight aborted call の turn 計上**(`run-max-turns`/
    `run-max-tool-calls`): pi agent loop は abort 済みでも次の streamFn
    call を発行し aborted message に `turn_end` を立てる(+1)。Rust fake
    DSL は abort 後の `turn` step を消化できず表現不能。`run-max-tool-calls`
    はさらに reject tool の operation 状態(cancelled vs completed)/
    `maxConcurrency`/`savings.sourceTokens` の計上位置が異なる。
-4. **auth status provider metadata**(`cli-auth-status`): oauth 対応
-   provider の `methods[]`/`subscription` — Rust は api_key のみ列挙。
-   provider 順序/id は一致。
+
+解消済み: `PROVIDER_FAILURE.details` shape(TS `{errorMessage}` のみに
+揃えた — `run-error-*` 4 case)と `cli-auth-status` の oauth
+`methods`/`subscription`(declaration ベース化)は binary 一致を確認して
+pin 解除済み。

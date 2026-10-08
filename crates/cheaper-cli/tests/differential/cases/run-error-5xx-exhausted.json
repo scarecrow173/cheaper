@@ -1,6 +1,5 @@
 {
   "name": "run_error_5xx_exhausted",
-  "expectDivergence": "TS PROVIDER_FAILURE.details は {errorMessage} のみ — Rust fake は {class,retryable,httpStatus}(adapter status_details と同形)。error.details shape の実装差異として pin する。",
   "fixture": {
     "name": "error_5xx_exhausted",
     "policy": { "transient_attempts": 1 },

@@ -59,6 +59,14 @@ impl SharedToolError {
     pub(crate) fn boxed(&self) -> ToolError {
         Box::new(self.clone())
     }
+
+    /// 内側の error(`failures.get(name)` の保持値)への参照。
+    /// envelope 側の `isCheaperError` 判定で wrapper を剥がすために使う
+    /// (TS は同一 error object を再 throw するため wrapper 自体が
+    /// 見えない)。
+    pub(crate) fn inner(&self) -> &(dyn Error + 'static) {
+        self.0.as_ref().as_ref()
+    }
 }
 
 impl std::fmt::Debug for SharedToolError {
@@ -75,7 +83,12 @@ impl std::fmt::Display for SharedToolError {
 
 impl Error for SharedToolError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        self.0.source()
+        // wrapper 自身ではなく内側の error を source として返す
+        // (`WorkerRunError` と同じ idiom)。`Box<dyn Error>` の
+        // `source()` にそのまま委譲すると内側 error 自身が skip され、
+        // `find_cheaper_error` の cause chain walk が `failures.get`
+        // に積まれた `CheaperError` へ到達できない。
+        Some(self.inner())
     }
 }
 

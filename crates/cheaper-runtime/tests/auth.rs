@@ -375,24 +375,42 @@ fn env_var_counts_as_configured() {
     let catalog = CatalogStore::build(None, None, &[]).unwrap();
     let info = svc.describe_provider(&catalog, "openai").unwrap();
     assert!(info.configured);
-    // anthropic は未設定。
+    // anthropic は未設定。oauth 宣言があるため methods は
+    // api_key+oauth(declaration ベース — flow 登録と無関係)。
     let anthropic = svc.describe_provider(&catalog, "anthropic").unwrap();
     assert!(!anthropic.configured);
-    assert_eq!(anthropic.methods, vec!["api_key"]);
+    assert_eq!(anthropic.methods, vec!["api_key", "oauth"]);
 }
 
+/// TS `auth.ts` L56-66 — `methods`/`subscription` は `auth.oauth`
+/// declaration のみで決まり、登録済み flow の有無に関与しない。
+/// flow 登録は `login --type oauth` の実行可否のみを制御する。
 #[test]
-fn oauth_declaration_without_flow_is_not_advertised() {
+fn oauth_declaration_is_advertised_without_flow() {
     let dir = tmp_dir();
     let svc = service(dir.path(), Arc::new(MapEnv(BTreeMap::new())));
     let catalog = CatalogStore::build(None, None, &[]).unwrap();
-    // github-copilot は oauth 宣言があるが flow 未登録 → methods は api_key のみ。
+    // github-copilot は oauth 宣言あり・flow 未登録 → methods は
+    // api_key+oauth、subscription は declaration 値(true)。
     let info = svc.describe_provider(&catalog, "github-copilot").unwrap();
-    assert_eq!(info.methods, vec!["api_key"]);
-    assert!(!info.subscription);
-    // openai-codex は oauth-only → method 空。
+    assert_eq!(info.methods, vec!["api_key", "oauth"]);
+    assert!(info.subscription);
+    // openai-codex は oauth-only → methods は oauth のみ。
     let codex = svc.describe_provider(&catalog, "openai-codex").unwrap();
-    assert!(codex.methods.is_empty());
+    assert_eq!(codex.methods, vec!["oauth"]);
+    // advertise されても oauth login の実行は flow 登録が必要 —
+    // 未登録 provider への oauth login は INVALID_REQUEST。
+    let mut interaction = ScriptedInteraction { answers: vec![] };
+    let err = svc
+        .login(
+            &catalog,
+            "github-copilot",
+            AuthType::Oauth,
+            &mut interaction,
+        )
+        .unwrap_err();
+    assert_eq!(err.code(), ErrorCode::InvalidRequest);
+    assert!(err.message().contains("does not support oauth login"));
 }
 
 #[test]

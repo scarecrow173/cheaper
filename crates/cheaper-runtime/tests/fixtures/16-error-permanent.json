@@ -12,7 +12,7 @@
     "status": "error",
     "errorCode": "PROVIDER_FAILURE",
     "exitCode": 5,
-    "errorDetails": { "class": "Permanent", "retryable": false, "httpStatus": 400 },
+    "errorDetails": { "errorMessage": "bad request" },
     "meta": {
       "transientRetries": 0
     }

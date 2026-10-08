@@ -711,16 +711,17 @@ fn runtime_registers_builtin_copilot_flow_and_advertises_oauth() {
         .auth()
         .describe_provider(runtime.catalog(), "github-copilot")
         .unwrap();
-    // flow 登録済み → oauth method + subscription が advertise される。
+    // oauth 宣言 + subscription あり → declaration ベースで advertise。
     assert!(info.methods.contains(&"oauth"));
     assert!(info.methods.contains(&"api_key"));
     assert!(info.subscription);
-    // openai-codex は flow 未実装のまま oauth-only → method 空。
+    // openai-codex は oauth-only(provider に api_key method 無し)→
+    // declaration ベースで methods=["oauth"](flow 未実装でも advertise)。
     let codex = runtime
         .auth()
         .describe_provider(runtime.catalog(), "openai-codex")
         .unwrap();
-    assert!(codex.methods.is_empty());
+    assert_eq!(codex.methods, vec!["oauth"]);
 }
 
 #[test]

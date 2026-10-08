@@ -130,8 +130,9 @@ pub enum ScriptStep {
     RolledBackTurn,
     /// `error { status?, retryable?, message? }` — provider failure。
     /// retry 条件を満たせば retry bookkeeping + 次 step、尽きるか
-    /// permanent なら終端 `PROVIDER_FAILURE`(details.class/retryable/
-    /// httpStatus は adapter `status_details` と同形)。
+    /// permanent なら終端 `PROVIDER_FAILURE`(details は run.ts
+    /// `lastAssistant.stopReason === "error"` 分岐と同じ
+    /// `{errorMessage}` のみ — 分類情報は retry 判定で消費済み)。
     ProviderError {
         status: Option<u16>,
         retryable: Option<bool>,
@@ -389,10 +390,10 @@ impl FakeState {
 }
 
 // ---------------------------------------------------------------------------
-// scripted `error` step の分類 — adapter `classify`/`status_details` の
-// parity mirror。adapter の分類関数は Rig `ProviderError`/`ErrorReport`
-// を引数に取り runtime からは呼べないため、同じ分類表を scripted
-// `{status,retryable}` から再構成する(`Debug` 名も `ErrorClass` と一致)。
+// scripted `error` step の分類 — adapter `classify` の parity mirror。
+// adapter の分類関数は Rig `ProviderError`/`ErrorReport` を引数に取り
+// runtime からは呼べないため、同じ分類表を scripted `{status,retryable}`
+// から再構成する。
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -427,24 +428,20 @@ fn classify_scripted_error(status: Option<u16>, retryable: Option<bool>) -> Scri
     }
 }
 
-/// adapter `provider_error_to_cheaper` + `status_details` と同形の
-/// 終端 `PROVIDER_FAILURE`(details.class/retryable/httpStatus)。
-fn scripted_provider_error(
-    class: ScriptedErrorClass,
-    status: Option<u16>,
-    message: &str,
-) -> CheaperError {
-    let mut details = Map::new();
-    details.insert("class".to_string(), Value::from(format!("{class:?}")));
-    details.insert("retryable".to_string(), Value::from(class.is_transient()));
-    if let Some(status) = status {
-        details.insert("httpStatus".to_string(), Value::from(status));
-    }
+/// 終端 `PROVIDER_FAILURE` — run.ts L382-390(`lastAssistant.stopReason
+/// === "error"`)と同じ contract: message は `provider error:
+/// <errorMessage>`、details は `{errorMessage}` のみ。adapter
+/// `provider_error_to_cheaper` も同形。分類情報(class/status)は
+/// retry 判定で消費済みのため details には出さない。
+fn scripted_provider_error(message: &str) -> CheaperError {
     CheaperError::new(
         ErrorCode::ProviderFailure,
-        format!("provider completion failed: {message}"),
+        format!("provider error: {message}"),
     )
-    .with_details(details)
+    .with_details(Map::from_iter([(
+        "errorMessage".to_string(),
+        Value::from(message),
+    )]))
 }
 
 /// scripted step 1 件の処理結果。
@@ -548,7 +545,7 @@ impl FakeState {
                     return StepOutcome::Continue;
                 }
                 // `st.step` は既に Done — 終端 error を emit する。
-                StepOutcome::Item(Err(scripted_provider_error(class, status, &message)))
+                StepOutcome::Item(Err(scripted_provider_error(&message)))
             }
             ScriptStep::WaitAbort => {
                 self.step = Step::WaitAbort;

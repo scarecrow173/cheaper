@@ -103,6 +103,34 @@ fn split_model_ref_semantics() {
 // aggregate / build_usage_report
 // ---------------------------------------------------------------------------
 
+/// Node `readFile(path, "utf8")` parity — 不正 UTF-8 byte を含む行が
+/// あっても lossy decode で残りの正常行を読む(`read_to_string` では
+/// file 全体が捨てられた)。不正 byte は U+FFFD に置き換わり、decode
+/// 後に parse 可能な行は record として残る。
+#[test]
+fn read_usage_records_decodes_lossy_utf8() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(serde_json::to_string(&run_record()).unwrap().as_bytes());
+    bytes.push(b'\n');
+    // string 内の不正 byte(0xFF)→ U+FFFD で decode 後も parse 可能。
+    bytes.extend_from_slice(b"{\"kind\":\"run\",\"ts\":\"\xFFoops\"}\n");
+    // JSON 自体が壊れた行は skip。
+    bytes.extend_from_slice(b"{\"kind\":\"run\",broken\n");
+    bytes.extend_from_slice(serde_json::to_string(&count_record()).unwrap().as_bytes());
+    bytes.push(b'\n');
+    std::fs::write(dir.path().join("usage.jsonl"), &bytes).unwrap();
+    let records = read_usage_records(dir.path());
+    assert_eq!(records.len(), 3, "records: {records:?}");
+    assert_eq!(records[0]["kind"], json!("run"));
+    assert_eq!(records[1]["ts"], json!("\u{FFFD}oops"));
+    assert_eq!(records[2]["kind"], json!("count"));
+    // report 経路では kind:"run" の 2 件だけが集計対象になる
+    // (`count` record は run 集計に含まれない)。
+    let r = Value::Object(report(dir.path()));
+    assert_eq!(f64_at(&r, &["records"]), 2.0);
+}
+
 #[test]
 fn aggregates_actual_usage_only_when_no_savings() {
     let dir = tempfile::tempdir().unwrap();

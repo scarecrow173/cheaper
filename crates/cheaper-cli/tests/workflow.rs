@@ -468,6 +468,86 @@ async fn workflow_run_unknown_worker_invalid_request() {
     assert_ne!(code, 0);
 }
 
+/// 存在するが不正な worker `.md` — `resolve_worker` の
+/// `INVALID_WORKER_DEFINITION`(NOT_FOUND/INVALID_NAME 以外)は
+/// `failures` に積まれ、compile の `workers.get(name)` が
+/// `SharedToolError` として再 throw する(TS は同一 error object を
+/// 再 throw)。envelope は wrapper を剥がして内側の code/details/
+/// exitCode を使う — 以前は `INTERNAL_ERROR`(70)に畳まれていた。
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_run_invalid_worker_definition_preserves_error() {
+    let mut f = Fixture::new();
+    let workers = f.cfg.path().join("workers");
+    std::fs::create_dir_all(&workers).unwrap();
+    // frontmatter は parse できるが `description` 欠落 →
+    // `invalid worker definition: description-missing`
+    // (INVALID_WORKER_DEFINITION、details に reason/sourcePath)。
+    std::fs::write(workers.join("broken.md"), "---\nname: broken\n---\nbody\n").unwrap();
+    f = f.with_workflow(json!({
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+            "a": { "kind": "worker", "worker": "broken", "input": {} }
+        },
+        "outputs": {}
+    }));
+    let (code, env, _err) = f.run(&["workflow", "run", "workflow.json"]).await;
+    assert_eq!(env["ok"], json!(false));
+    assert_eq!(
+        env["error"]["code"],
+        json!("INVALID_WORKER_DEFINITION"),
+        "envelope: {env}"
+    );
+    assert_eq!(env["error"]["exitCode"], json!(3));
+    assert_eq!(code, 3, "envelope: {env}");
+    // validator details は envelope 側でも保持される。
+    assert_eq!(
+        env["error"]["details"]["reason"],
+        json!("description-missing")
+    );
+    assert!(env["error"]["details"]["sourcePath"]
+        .as_str()
+        .unwrap()
+        .contains("broken.md"));
+}
+
+/// `ensureModel()` 失敗(`load_model_config` の
+/// `INVALID_MODEL_CONFIG` + `with_cause` 付き)は `SharedToolError` で
+/// memoize され worker job executor が再 throw する。job diagnostic は
+/// `find_cheaper_error` の cause chain walk で内側の `CheaperError`
+/// code を拾う — 以前は `SharedToolError::source()` が内側 error 自身
+/// を skip し、`TOOL_EXECUTION_FAILURE` に畳まれていた。cause 側の
+/// yaml error ではなく外側の `CheaperError` code が選ばれることを
+/// 確認する。
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_run_ensure_model_failure_preserves_code() {
+    let mut f = Fixture::new().with_workflow(json!({
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+            "a": { "kind": "worker", "worker": "bulk-reader", "input": { "task": "x" } }
+        },
+        "outputs": {}
+    }));
+    // user config の models.yaml を壊す — `load_model_config` が
+    // `INVALID_MODEL_CONFIG` + `with_cause`(yaml parse error)を返す。
+    std::fs::write(f.cfg.path().join("models.yaml"), "broken: [unclosed\n").unwrap();
+    let (code, env, _err) = f.run(&["workflow", "run", "workflow.json"]).await;
+    assert_eq!(env["ok"], json!(false), "envelope: {env}");
+    let jobs = env["jobs"].as_array().unwrap();
+    let job = jobs.iter().find(|j| j["id"] == json!("a")).unwrap();
+    assert_eq!(job["status"], json!("failed"), "job: {job}");
+    assert_eq!(
+        job["error"]["code"],
+        json!("INVALID_MODEL_CONFIG"),
+        "job: {job}"
+    );
+    // workflow 全体の error は job 失敗の集約
+    // (`TOOL_EXECUTION_FAILURE`、"workflow job failed"、exit 6)。
+    assert_eq!(env["error"]["code"], json!("TOOL_EXECUTION_FAILURE"));
+    assert_eq!(code, 6, "envelope: {env}");
+}
+
 /// TS test: "preserves format and quiet for errors before engine
 /// execution" 相当 — `--quiet` が汎用 error diagnostic を抑える
 /// (`suppressErrorDiagnostic = kind === "workflow-run" && quiet`)。
