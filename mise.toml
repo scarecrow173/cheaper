@@ -10,8 +10,10 @@ UV_EXCLUDE_NEWER = "1 week"
 node = "26"
 # aqua:biomejs/biome(npm 非経由)。biome.json の schema version に揃える
 biome = "2.5.13"
-# rig が rust-version 1.95 を要求するため >=1.95 の固定 version を pin する
-rust = "1.99.0"
+# rig が rust-version 1.95 を要求するため >=1.95 の固定 version を pin する。
+# rustup default profile は環境依存なので fmt/clippy の component を明示する
+# (fresh CI runner で `cargo fmt`/`cargo clippy` が component 欠落しないように)。
+rust = { version = "1.99.0", components = "rustfmt,clippy" }
 python = "3.12"
 uv = "0.11"
 # apm.lock.yaml は apm 0.28.0 で生成。0.30.0 は Windows で path dep 解決が
