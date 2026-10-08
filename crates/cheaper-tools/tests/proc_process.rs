@@ -573,23 +573,39 @@ async fn cleans_live_descendants_on_exit_and_failure_and_abort_and_timeout() {
         let input = json!({"task": "tree"});
         let pending = tool.execute(&input, Some(controller.signal()));
         tokio::pin!(pending);
+        // exit/fail mode の fixture は pids.json 出力後すぐ exit するため、
+        // wait_for の初回 poll 前に pending が解決しうる(高速 POSIX 環境
+        // で顕在化)。abort/timeout mode だけ早期解決を異常とする。
+        let mut early = None;
         tokio::select! {
             _ = wait_for(
                 || Path::new(&pids_path).exists(),
                 Duration::from_secs(15),
                 "pids.json",
             ) => {}
-            r = &mut pending => panic!("{mode} fixture died early: {r:?}"),
+            r = &mut pending => {
+                assert!(
+                    matches!(expected, "ok" | "fail"),
+                    "{mode} fixture died early: {r:?}"
+                );
+                early = Some(r);
+            }
         }
         let pids: Value =
             serde_json::from_str(&std::fs::read_to_string(&pids_path).unwrap()).unwrap();
-        if expected == "abort" {
-            controller.abort(AbortReason::from(CheaperError::new(
-                ErrorCode::Aborted,
-                "outer tree cancellation",
-            )));
-        }
-        match pending.await {
+        let result = match early {
+            Some(r) => r,
+            None => {
+                if expected == "abort" {
+                    controller.abort(AbortReason::from(CheaperError::new(
+                        ErrorCode::Aborted,
+                        "outer tree cancellation",
+                    )));
+                }
+                pending.await
+            }
+        };
+        match result {
             Ok(_) => assert_eq!(expected, "ok"),
             Err(err) => match expected {
                 "fail" => {
