@@ -28,6 +28,12 @@ Directory: `docs/test-specs`
 | TSPEC-034z2o64UhWCtNmYIhRT20 | Release workflow manual-dispatch and artifact contract | proposed | [release-workflow-manual-dispatch-and-artifact-contract.md](./release-workflow-manual-dispatch-and-artifact-contract.md) |
 | TSPEC-034AaXPxCwdUwH1XaYc6Jn | Resource lease の寿命とアクセス境界 | approved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | TSPEC-034zTn31vnH33RcM6g7VYS | Run-scoped artifact boundaries | proposed | [run-scoped-artifact-boundaries.md](./run-scoped-artifact-boundaries.md) |
+| TSPEC-034BgubID9xC2jMbCQ0zEG | rust-migration-auth-catalog | proposed | [rust-migration-auth-catalog.md](./rust-migration-auth-catalog.md) |
+| TSPEC-034BgtZIn0KAN8vslhM1WI | rust-migration-differential-golden | proposed | [rust-migration-differential-golden.md](./rust-migration-differential-golden.md) |
+| TSPEC-034BgunW9gS0w1MEph4zCE | rust-migration-distribution | proposed | [rust-migration-distribution.md](./rust-migration-distribution.md) |
+| TSPEC-034BgtMs1RxjQZjTTppcEZ | rust-migration-envelope-parity | proposed | [rust-migration-envelope-parity.md](./rust-migration-envelope-parity.md) |
+| TSPEC-034Bgu0BW0cG2z21FznpfR | rust-migration-run-semantics | proposed | [rust-migration-run-semantics.md](./rust-migration-run-semantics.md) |
+| TSPEC-034BguaDXc4T8pJgjVNbXv | rust-migration-usage-log-hooks | proposed | [rust-migration-usage-log-hooks.md](./rust-migration-usage-log-hooks.md) |
 | TSPEC-034zXj8LyfXfYFb1U3o2tb | 共有 operation admission と cancellation | approved | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | TSPEC-034rBrs4K5W7pe0ixjegZk | Shell-read blocking contract tests | approved | [shell-read-blocking-contract-tests.md](./shell-read-blocking-contract-tests.md) |
 | TSPEC-034z1OZC4sSkRlvZfFfIXt | Standalone executable contract parity | proposed | [standalone-executable-contract-parity.md](./standalone-executable-contract-parity.md) |

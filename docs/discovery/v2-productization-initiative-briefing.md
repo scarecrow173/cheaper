@@ -51,7 +51,7 @@ relations:
 - V1 機構（Worker Resolver・Policy・Tool Vocabulary・Model Resolver・Pi session・
   sandboxed tools・journal → `meta.changes`・structured output + repair・usage・
   CLI envelope）は全て再利用可能。再実装しない
-- Ollama（Docker）による実 provider smoke 済み（EXP-0002）
+- Ollama（Docker）による実 provider smoke 済み（`docs/impl/exp/ollama-real-provider-smoke-verification.jsonl`）
 
 ## Gap Analysis
 
@@ -128,5 +128,5 @@ relations:
 
 ## Sources and Relations
 
-- 上流: EXP-0002（実 provider smoke の完了を受けての製品化指示）
+- 上流: `docs/impl/exp/ollama-real-provider-smoke-verification.jsonl`（実 provider smoke の完了を受けての製品化指示）
 - 下流: SPEC-034r05iHK8bA7gaTnVhXWI 以降の各 Phase の spec/ADR/design/plan/task

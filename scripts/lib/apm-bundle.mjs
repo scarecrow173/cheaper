@@ -1,64 +1,60 @@
 // Shared assembly of packages/apm/.apm/hooks/cli/ — the self-contained
 // cheaper CLI tree shipped inside the APM hook bundle (issue #71).
-// Used by scripts/bundle-cli.mjs (canonical `pnpm bundle` entrypoint) and
-// scripts/build-apm-bundle.mjs (adds platform executables).
+// Used by scripts/bundle-cli.mjs (canonical entrypoint — run as
+// `node scripts/bundle-cli.mjs`) and scripts/build-apm-bundle.mjs
+// (adds platform executables).
 //
 // Layout produced:
-//   cli/bin/cheaper.mjs       esbuild ESM bundle (minified)
-//   cli/bin/<target>/cheaper[.exe]  SEA executables (build-apm-bundle only)
-//   cli/version.json          {version} derived from packages/cli
-//   cli/workers/              worker definitions + schemas
-//   cli/policy.yaml           built-in policy
+//   cli/bin/<target>/cheaper[.exe]  native executables (build-apm-bundle only)
+//   cli/version.json                {version} derived from Cargo workspace version
+//   cli/workers/                    worker definitions + schemas
+//   cli/policy.yaml                 built-in policy
 //
 // Small generated assets are committed. Git/local-path hook consumers acquire
 // a pinned executable into user cache; release archives/local builds carry
 // ignored platform executables instead of adding them to Git.
 
-import { cpSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { buildEsmBundle, repoRoot } from "./esbuild-bundle.mjs";
+import { cargoWorkspaceVersion, repoRoot as repoRootDir } from "./release-artifacts.mjs";
 
-export { repoRoot };
+export function repoRoot() {
+  return repoRootDir;
+}
 
 export function apmHooksDir(root = repoRoot()) {
   return path.join(root, "packages", "apm", ".apm", "hooks");
 }
 
-// Rebuilds cli/ generated assets. bin/cheaper.mjs・version.json・
-// workers/・policy.yaml のみを削除対象にし、bin/<target>/ 配下の
-// platform executable（local build/release 用、Git ignore 対象）は保持する。
+// Rebuilds cli/ generated assets. version.json・workers/・policy.yaml
+// のみを削除対象にし、bin/<target>/ 配下の platform executable（local
+// build/release 用、Git ignore 対象）は保持する。旧 `bin/cheaper.mjs`
+// （esbuild JS fallback、廃止済み）も再生成のたびに除去する。
+//
+// workers/・policy.yaml の複写元は cheaper-cli crate の bundled resource
+// source dir — `src/embedded.rs` の `include_dir!`/`include_str!` 対象と
+// 同一 path（`crates/cheaper-cli/resources/`）であり、Rust binary に
+// 埋め込まれる byte と payload の同梱物が一致することを保証する。
 export function buildApmCliTree(root = repoRoot()) {
-  const cliPkg = path.join(root, "packages", "cli");
+  const resourceSrc = path.join(root, "crates", "cheaper-cli", "resources");
   const outDir = path.join(apmHooksDir(root), "cli");
-  const outBin = path.join(outDir, "bin", "cheaper.mjs");
 
-  for (const rel of [
-    path.join("bin", "cheaper.mjs"),
-    "version.json",
-    "workers",
-    "policy.yaml",
-  ]) {
+  for (const rel of [path.join("bin", "cheaper.mjs"), "version.json", "workers", "policy.yaml"]) {
     rmSync(path.join(outDir, rel), { recursive: true, force: true });
   }
 
-  buildEsmBundle({
-    entry: path.join(cliPkg, "bin", "cheaper.js"),
-    outfile: outBin,
-  });
-
-  // `package.json` は APM が hook bundle descriptor として扱い deploy
-  // から外されるため、CLI は sibling の version.json を fallback で
-  // 読む（packages/cli/src/version.ts）。
-  const pkg = JSON.parse(readFileSync(path.join(cliPkg, "package.json"), "utf8"));
+  // version metadata は Cargo.toml `[workspace.package].version`（canonical
+  // source）から生成する。binary の埋込 `version.json`（build.rs が
+  // `CARGO_PKG_VERSION` から生成）と同じ宣言に由来する。
   writeFileSync(
     path.join(outDir, "version.json"),
-    `${JSON.stringify({ version: pkg.version }, null, 2)}\n`,
+    `${JSON.stringify({ version: cargoWorkspaceVersion(root) }, null, 2)}\n`,
   );
-  cpSync(path.join(cliPkg, "workers"), path.join(outDir, "workers"), {
+  cpSync(path.join(resourceSrc, "workers"), path.join(outDir, "workers"), {
     recursive: true,
   });
-  cpSync(path.join(cliPkg, "policy.yaml"), path.join(outDir, "policy.yaml"));
+  cpSync(path.join(resourceSrc, "policy.yaml"), path.join(outDir, "policy.yaml"));
 
-  return { outDir, sizeMiB: (statSync(outBin).size / 1024 / 1024).toFixed(1) };
+  return { outDir };
 }

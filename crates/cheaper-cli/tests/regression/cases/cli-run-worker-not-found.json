@@ -1,0 +1,5 @@
+{
+  "name": "cli_run_worker_not_found",
+  "argv": ["run", "no-such-worker", "--input", "-"],
+  "stdin": "{\"files\":[\"a.txt\"]}"
+}

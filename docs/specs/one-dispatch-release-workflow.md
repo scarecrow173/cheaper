@@ -34,7 +34,7 @@ relations:
   references:
     - "../adr/version-pinned-launcher-acquisition.md"
     - "../designs/version-pinned-launcher-acquisition.md"
-    - "../../packages/cli/test/e2e/launcher-acquisition.test.ts"
+    - "../../scripts/test/launcher-acquisition.test.mjs"
     - "../adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md"
   defers: []
   deferred-by: []

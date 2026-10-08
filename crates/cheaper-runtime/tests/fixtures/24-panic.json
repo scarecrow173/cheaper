@@ -1,0 +1,16 @@
+{
+  "name": "panic",
+  "description": "panic step — panic 境界が INTERNAL_ERROR(exit 70)に正規化する",
+  "sessions": [
+    {
+      "steps": [
+        { "panic": "kaboom" }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "INTERNAL_ERROR",
+    "exitCode": 70
+  }
+}

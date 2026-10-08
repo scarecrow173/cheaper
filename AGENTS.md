@@ -14,25 +14,37 @@ mise run setup   # fresh checkout を開発可能にする canonical setup contr
 mise run check   # CI と同等の canonical verification contract
 ```
 
-Git source は launcher と小さい CLI asset のみを保持し、SEA executable を含まない。
-hook は固定 version の Release/SHA256SUMS から検証済み user cache へ取得する。
-offline は同 Release の pair を preseed、dev は local SEA build を使う。
+Git source は launcher と小さい CLI asset のみを保持し、platform executable を
+含まない。hook は固定 version の Release/SHA256SUMS から検証済み user cache へ
+取得する。offline は同 Release の pair を preseed、dev は local cargo build
+（`cargo build --release -p cheaper-cli`）の出力を sibling へ配置して使う。
 `cli/bin/<platform>/` の local output は ignore し、binary を Git に追加しない。
 Git LFS の既存履歴は保持する。consumer の対象・移行手順は `docs/guides/distribution.md` を参照する。
 
 `mise run setup` は toolchain（`mise.toml` + `mise.lock` の locked version）に加え、
-`pnpm install --frozen-lockfile` → `apm install` → `pnpm build` を復元する。
-コマンド実行は `mise exec -- <command>` 経由で行い、mise.toml が管理するツールバージョンを有効化する。
+`apm install` → `cargo fetch` → `cargo build --workspace --all-targets` を復元する。
+`mise run check` は `biome check` → `cargo fmt --check` → `cargo clippy` →
+version/doc-id check → `cargo test --workspace` → `node --test`（scripts・
+benchmarks）→ bundle 再生成（`node scripts/bundle-cli.mjs`）→ payload check →
+bundle freshness の Rust pipeline。コマンド実行は `mise exec -- <command>` 経由で
+行い、mise.toml が管理するツールバージョンを有効化する。
 
-fresh worktree では `node_modules`・`dist`・`apm_modules`・APM deploy 生成物が
+fresh worktree では `target/`・`apm_modules`・APM deploy 生成物が
 存在しない前提で `mise run setup` を実行すること。worktree の作成・sibling
-worktree の探索・他 worktree の生成物（node_modules / dist / APM artifact）
+worktree の探索・他 worktree の生成物（target / APM artifact）
 の流用は Agent の責務ではなく、各 worktree は独立した checkout として扱う。
 
 root の `apm.yml` は development-only project であり、cheaper 自身の
 skill/hook は deploy されない。consumer へ配布する APM package は
 `packages/apm/`（`apm.yml` + `.apm/` primitives）に分離されており、
-bundled CLI は `pnpm bundle` で `packages/apm/.apm/hooks/cli/` へ生成する。
+bundled CLI payload（`version.json`・`workers/`・`policy.yaml`）は
+`node scripts/bundle-cli.mjs` で `packages/apm/.apm/hooks/cli/` へ生成する。
+payload の複写元は `crates/cheaper-cli/resources/`（Rust binary の embedded
+resource と同一 source）で、platform executable は payload に含めない。
+
+Node.js は repo tooling（`scripts/`・`benchmarks/`・doc-suite skills）のためだけに
+toolchain に残る。product・distribution・hook 実行経路に Node 依存はない
+（runtime は Rust workspace = `crates/`、agent runtime は Rig）。
 
 ## 検証用 Ollama コンテナ
 
@@ -45,15 +57,30 @@ bundled CLI は `pnpm bundle` で `packages/apm/.apm/hooks/cli/` へ生成する
 
 コンテナが起動していない状態で実 provider smoke を実行すると provider 到達不能で失敗する。上記の稼働確認で未起動に気づいたら起動してから再実行する。
 
-`packages/cli/test/e2e/real-provider-ollama.test.ts` はコンテナ起動 + モデル pull 済み（default `qwen3.5:9b`、`CHEAPER_E2E_OLLAMA_MODEL` で override 可）であれば `pnpm test` 内で実 provider 検証（bulk-read / code-write / doc-write → bundled CLI → Ollama）を自動実行する。未起動・モデル不在・apm 不在のときは自動 skip するため、CI では実行されない。
+`crates/cheaper-runtime/tests/ollama_e2e.rs` は `CHEAPER_E2E_OLLAMA=1` が
+設定され、かつコンテナ起動 + モデル pull 済み（default `qwen3.5:9b`、
+`CHEAPER_E2E_OLLAMA_MODEL`・`CHEAPER_E2E_OLLAMA_BASE` で override 可）であれば
+`cargo test --workspace` 内で実 provider 検証（bulk-reader / code-writer /
+doc-writer → production session 経路 → Ollama）を実行する。gate 未設定・
+未起動・モデル不在のときは早期 return で自動 skip するため、CI では実行されない。
 
 ## delegation 計測ログ
 
 `cheaper run`（worker alias 含む）と `count-tokens` の実行結果は、記録対象に限り `<userConfigDir>/usage.jsonl`（既定 `~/.config/cheaper/usage.jsonl`、`CHEAPER_CONFIG_DIR` で変更可）へ 1 行 JSONL で継続記録される（ADR-034r05iHrZUE6WljM1ZMiX）。record は `kind:"run"`（worker・model・usage・durationMs）または `kind:"count"`（path・tokens・bytes）。記録対象は run の success と `meta.model`・`meta.usage` を持つ error（usage-bearing failure）、および `tokens` を返した count-tokens の成功に限られる — worker/model 解決前の error 等 usage を持たない failure、失敗した count-tokens、auth/help/version 等の utility command は記録されない。書き込みは best-effort で、失敗しても exit code・stdout は変わらない。workspace・`.cheaper/` には書き込まない。run record には optional で `turns`・`toolCalls`・`savings`（tool output token 和 vs 返却 result token 和の実測 offload、issue #44。`directlyComparable` で estimated 母数への参加可否を明示）が載る。集計は `cheaper usage`（`--since`/`--worker`/`--provider`/`--model` filter、`--compare-model` で core `resolvePricing` 経由の estimated savings — runtime catalog → `<userConfigDir>/pricing.json` snapshot → bundled snapshot の順に価格を解決し、直接比較可能な worker の run のみ算出）が担う。詳細は `docs/guides/usage.md`。
 
-Pi `ModelRuntime` の永続 file（`auth.json` / `models.json` / `models-store.json`）は `<userConfigDir>/pi/` 配下に保存される（ADR-034r05iHrZUE6Wn59hpaOg）。`PI_CODING_AGENT_DIR` は参照せず、`.cheaper/` には credential を置かない。
+credential は `<userConfigDir>/credentials.json` の Rust 側 credential store
+（`crates/cheaper-runtime/src/auth/store.rs`、temp + rename の atomic write）へ
+永続化される。旧 Pi `ModelRuntime` の file（`auth.json` / `models.json` /
+`models-store.json`、`<userConfigDir>/pi/` 以下）は一切読まず、
+`PI_CODING_AGENT_DIR` も参照しない。`.cheaper/` には credential を置かない。
+model catalog は bundled snapshot + bundled plugin provider + user overlay
+（`<userConfigDir>/models.json`、旧 Pi `models.json` schema 互換）で構成される。
 
-Pi built-in に無い provider は `CheaperProviderPlugin` contract で明示 bundle する（ADR-034r05iHrZUE6WoaNDNjvX）。`devin` provider は Devin CLI 委譲 auth + `<userConfigDir>/providers/devin/data/` 隔離の bundled plugin（ADR-034r05iHrZUE6WqcIaH1CU）— Pi extension loader・global Devin credential は使わない。
+built-in catalog に無い provider は `CheaperProviderPlugin` contract で明示
+bundle する（ADR-034r05iHrZUE6WoaNDNjvX）。`devin` provider は Devin CLI 委譲
+auth + `<userConfigDir>/providers/devin/data/` 隔離の bundled plugin
+（ADR-034r05iHrZUE6WqcIaH1CU、`crates/cheaper-provider-devin`）— global Devin
+credential は使わない。
 
 ## 開発原則
 
@@ -74,8 +101,10 @@ SOLID・YAGNI・DRY・KISS に従い、現在の要件に必要な範囲で設�
 
 ## Version と release
 
-製品 version の canonical source は `packages/cli/package.json`。bump と
-release の手順は `docs/guides/release.md` に従う。version 宣言の不一致は
+製品 version の canonical source は root `Cargo.toml` の
+`[workspace.package].version`（`cheaper-cli` crate が `version.workspace = true`
+で継承し、build.rs が binary へ埋め込む）。bump と release の手順は
+`docs/guides/release.md` に従う。version 宣言の不一致は
 `mise run check`（`scripts/check-version.mjs`）が検出する。
 
 ## 境界

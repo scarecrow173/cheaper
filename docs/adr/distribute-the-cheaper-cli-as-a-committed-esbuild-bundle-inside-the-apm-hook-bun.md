@@ -1,10 +1,10 @@
 ---
 id: "ADR-034r05iHrZUE6W5HVbwRSz"
 type: "adr"
-status: "accepted"
+status: "superseded"
 title: "Distribute the cheaper CLI as a committed esbuild bundle inside the APM hook bundle"
 created: "2026-09-16"
-updated: "2026-09-17"
+updated: "2026-10-08"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -21,7 +21,8 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "remove-the-committed-esbuild-cli-payload-and-move-the-canonical-version-to-cargo.md"
   related:
     - "../specs/apm-self-contained-cli-distribution.md"
     - "../designs/cli-bundle-layout.md"
@@ -118,7 +119,7 @@ bundle"。
 ### Confirmation
 
 `pnpm bundle` 再生成との一致を CI（bundle freshness チェック）で検証済み。
-EXP-0005 で deploy 済み `.windsurf/hooks/cheaper/cli/bin/cheaper.mjs` 経由の
+`docs/impl/exp/apm-windsurf-consumer-e2e.jsonl` で deploy 済み `.windsurf/hooks/cheaper/cli/bin/cheaper.mjs` 経由の
 OAuth 付き `bulk-read` 実動作を確認済み。
 
 ## Implementation Plan
@@ -140,7 +141,7 @@ OAuth 付き `bulk-read` 実動作を確認済み。
       が検証される
 * [x] `node .windsurf/hooks/cheaper/cli/bin/cheaper.mjs --version` /
       `count-tokens` / `bulk-read`（OAuth 経由）が deploy 先 path で動作
-      （EXP-0005）
+      （`docs/impl/exp/apm-windsurf-consumer-e2e.jsonl`）
 * [x] hooks.json command が argv ベースで shell 展開を含まない
 * [x] `cheaper` 不在環境でも hook が fail-open せず block 判定できる
       （bundled CLI 解決経路）

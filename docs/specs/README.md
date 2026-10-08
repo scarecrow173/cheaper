@@ -46,6 +46,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gpcCJQya9 | Repository-owned setup contract for fresh checkouts/worktrees | implemented | [repo-owned-setup-contract-for-fresh-checkouts.md](./repo-owned-setup-contract-for-fresh-checkouts.md) |
 | SPEC-034A8kLznlxOOeccFx9SNM | ResourceManager job lifetime leases | implemented | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | SPEC-034zSQRLxNXgJDxjmUBBB8 | Run-scoped artifact store | approved | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |
+| SPEC-034BbgvL9s41K7NflOddZ6 | Rust + Rig native runtime migration for cheaper CLI | proposed | [rust-rig-native-runtime-migration-for-cheaper-cli.md](./rust-rig-native-runtime-migration-for-cheaper-cli.md) |
 | SPEC-034r05iHK8bA7go4BQtGNS | Separate the development APM project from the distributable cheaper package | implemented | [separate-dev-apm-project-from-distributable-package.md](./separate-dev-apm-project-from-distributable-package.md) |
 | SPEC-034rBhR3SNIRFZ1B6n26iH | Shell-read large-file blocking via canonical routing policy | approved | [shell-read-large-file-blocking.md](./shell-read-large-file-blocking.md) |
 | SPEC-034z14nGIf6fXRtTskkrk8 | Standalone executable distribution for cheaper CLI including APM bundles | superseded | [standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md](./standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md) |

@@ -1,0 +1,259 @@
+{
+  "cases": [
+    {
+      "content": "---\nname: w\ntools: [read]\n---\n\n Do things.\n",
+      "expected": {
+        "ok": {
+          "body": "Do things.",
+          "frontmatter": {
+            "name": "w",
+            "tools": [
+              "read"
+            ]
+          }
+        }
+      },
+      "name": "parses frontmatter + trimmed body",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "name: w\n---\nbody\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "frontmatter-not-found",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "no opening delimiter",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "frontmatter-not-found",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "empty content",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": " ---\nname: w\n---\nbody\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "frontmatter-not-found",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "indented delimiter",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\nname: w\nbody without close\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "frontmatter-not-closed",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "unclosed frontmatter",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\nname: [unclosed\n---\nbody\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "frontmatter-yaml-error",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "yaml parse error",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\n- a\n- b\n---\nbody\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "frontmatter-not-object",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "non-object frontmatter",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\n\n---\nbody\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "frontmatter-not-object",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "empty frontmatter",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\nname: w\n---\n   \n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "body-empty",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "empty body",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\nname: w\n---\nfirst\n---\nsecond\n",
+      "expected": {
+        "ok": {
+          "body": "first\n---\nsecond",
+          "frontmatter": {
+            "name": "w"
+          }
+        }
+      },
+      "name": "keeps --- inside body",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\nname: y\nflag: on\nother: off\n---\nbody\n",
+      "expected": {
+        "ok": {
+          "body": "body",
+          "frontmatter": {
+            "flag": "on",
+            "name": "y",
+            "other": "off"
+          }
+        }
+      },
+      "name": "yaml 1.2 scalars stay strings",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\nname: w\non: 1\n---\nbody\n",
+      "expected": {
+        "ok": {
+          "body": "body",
+          "frontmatter": {
+            "name": "w",
+            "on": 1
+          }
+        }
+      },
+      "name": "yaml 1.2 on key stays string",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\nname: w\n---﻿\nbody\n",
+      "expected": {
+        "ok": {
+          "body": "body",
+          "frontmatter": {
+            "name": "w"
+          }
+        }
+      },
+      "name": "feff padded close delimiter",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\nname: w\n---\n﻿\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "body-empty",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "feff only body",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\r",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "frontmatter-not-found",
+            "sourcePath": "workers/w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "literal CR at EOF",
+      "sourcePath": "workers/w.md"
+    },
+    {
+      "content": "---\r\nname: w\r\n---\r\nbody\r\n",
+      "expected": {
+        "ok": {
+          "body": "body",
+          "frontmatter": {
+            "name": "w"
+          }
+        }
+      },
+      "name": "crlf line endings",
+      "sourcePath": "workers/w.md"
+    }
+  ],
+  "platform": "win32"
+}

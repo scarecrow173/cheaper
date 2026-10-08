@@ -1,0 +1,1236 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "error": {
+          "code": "MODEL_TIER_UNAVAILABLE",
+          "details": {
+            "noAuthenticatedModels": true
+          },
+          "exitCode": 5,
+          "kind": "cheaper",
+          "retryable": true
+        }
+      },
+      "input": {
+        "available": [],
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "requestedTier": "low"
+      },
+      "name": "empty available → unavailable",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "POLICY_VIOLATION",
+          "details": {
+            "maxTier": "medium",
+            "requestedTier": "high"
+          },
+          "exitCode": 4,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "id": "x",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "medium",
+          "tierFallback": "none"
+        },
+        "requestedTier": "high"
+      },
+      "name": "requested > maxTier",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "model": {
+            "cost": {
+              "input": 0.5,
+              "output": 1
+            },
+            "id": "cheap",
+            "provider": "p"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 0.5,
+            "output": 1,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "tier",
+          "tier": "low",
+          "tierSource": "explicit-override"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 1,
+              "output": 9
+            },
+            "id": "expensive",
+            "provider": "p"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 4
+            },
+            "id": "mid",
+            "provider": "p"
+          },
+          {
+            "cost": {
+              "input": 0.5,
+              "output": 1
+            },
+            "id": "cheap",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "p/cheap": "low",
+            "p/expensive": "low",
+            "p/mid": "low"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "cheapest of tier wins",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "model": {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "same",
+            "provider": "a"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 1,
+            "output": 1,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "tier",
+          "tier": "low",
+          "tierSource": "explicit-override"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "id": "nocost",
+            "provider": "z"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "same",
+            "provider": "b"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "same",
+            "provider": "a"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "a/same": "low",
+            "b/same": "low",
+            "z/nocost": "low"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "unpriced sorts last, provider/id tiebreak",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "model": {
+            "cost": {
+              "input": 100,
+              "output": 100
+            },
+            "id": "exact",
+            "provider": "q"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 100,
+            "output": 100,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "tier",
+          "tier": "low",
+          "tierSource": "explicit-override"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 0,
+              "output": 0.1
+            },
+            "id": "cheap",
+            "provider": "p"
+          },
+          {
+            "cost": {
+              "input": 0,
+              "output": 0.2
+            },
+            "id": "wild",
+            "provider": "q"
+          },
+          {
+            "cost": {
+              "input": 100,
+              "output": 100
+            },
+            "id": "exact",
+            "provider": "q"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "p/cheap": "low",
+            "q/exact": "low",
+            "q/wild": "low"
+          },
+          "preferences": {
+            "low": [
+              "q/exact",
+              "p/*"
+            ]
+          }
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "preferences before cost",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "MODEL_TIER_UNAVAILABLE",
+          "details": {
+            "candidatesPerTier": {
+              "high": 1,
+              "low": 0,
+              "medium": 1
+            },
+            "requestedTier": "low"
+          },
+          "exitCode": 5,
+          "kind": "cheaper",
+          "retryable": true
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "id": "highm",
+            "provider": "p"
+          },
+          {
+            "id": "medm",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "p/highm": "high",
+            "p/medm": "medium"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "fallback none → candidatesPerTier",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "model": {
+            "id": "medm",
+            "provider": "p"
+          },
+          "selection": "tier",
+          "tier": "medium",
+          "tierSource": "explicit-override"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "id": "medm",
+            "provider": "p"
+          },
+          {
+            "id": "highm",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "p/highm": "high",
+            "p/medm": "medium"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "requestedTier": "low"
+      },
+      "name": "fallback higher climbs",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "MODEL_TIER_UNAVAILABLE",
+          "details": {
+            "candidatesPerTier": {
+              "high": 1,
+              "low": 0,
+              "medium": 0
+            },
+            "requestedTier": "low"
+          },
+          "exitCode": 5,
+          "kind": "cheaper",
+          "retryable": true
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "id": "highm",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "p/highm": "high"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "medium",
+          "tierFallback": "higher"
+        },
+        "requestedTier": "low"
+      },
+      "name": "fallback stops at maxTier",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "auto": {
+            "effectiveCost": 0.6,
+            "effectiveCostPercentile": 0.5,
+            "outputPerInput": 1
+          },
+          "model": {
+            "cost": {
+              "input": 0.1,
+              "output": 0.5
+            },
+            "id": "x",
+            "provider": "p"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 0.1,
+            "output": 0.5,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "tier",
+          "tier": "medium",
+          "tierSource": "auto"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 0.1,
+              "output": 0.5
+            },
+            "id": "x",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "medium"
+      },
+      "name": "resolved metadata",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "auto": {
+            "effectiveCost": 1,
+            "effectiveCostPercentile": 0.25,
+            "outputPerInput": 0
+          },
+          "model": {
+            "cost": {
+              "input": 1,
+              "output": 10
+            },
+            "id": "output-heavy",
+            "provider": "p"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 1,
+            "output": 10,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "tier",
+          "tier": "low",
+          "tierSource": "auto"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 10,
+              "output": 1
+            },
+            "id": "input-heavy",
+            "provider": "p"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 10
+            },
+            "id": "output-heavy",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "outputPerInput": 0,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "workload changes pick",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "auto": {
+            "effectiveCost": 20,
+            "effectiveCostPercentile": 0.25,
+            "outputPerInput": 10
+          },
+          "model": {
+            "cost": {
+              "input": 10,
+              "output": 1
+            },
+            "id": "input-heavy",
+            "provider": "p"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 10,
+            "output": 1,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "tier",
+          "tier": "low",
+          "tierSource": "auto"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 10,
+              "output": 1
+            },
+            "id": "input-heavy",
+            "provider": "p"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 10
+            },
+            "id": "output-heavy",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "outputPerInput": 10,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "workload writer pick",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "model": {
+            "cost": {
+              "input": 5,
+              "output": 1
+            },
+            "id": "kept",
+            "provider": "p"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 5,
+            "output": 1,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "tier",
+          "tier": "low",
+          "tierSource": "explicit-override"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 0.01,
+              "output": 0.01
+            },
+            "id": "excluded",
+            "provider": "p"
+          },
+          {
+            "cost": {
+              "input": 5,
+              "output": 1
+            },
+            "id": "kept",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "exclude": [
+            "p/excluded"
+          ],
+          "overrides": {
+            "p/excluded": "low",
+            "p/kept": "low"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "exclude exact",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "model": {
+            "id": "y",
+            "provider": "q"
+          },
+          "selection": "tier",
+          "tier": "low",
+          "tierSource": "explicit-override"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "id": "x",
+            "provider": "p"
+          },
+          {
+            "id": "y",
+            "provider": "q"
+          }
+        ],
+        "config": {
+          "exclude": [
+            "p/*"
+          ],
+          "overrides": {
+            "p/x": "low",
+            "q/y": "low"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "exclude wildcard",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "MODEL_TIER_UNAVAILABLE",
+          "details": {
+            "noAuthenticatedModels": true
+          },
+          "exitCode": 5,
+          "kind": "cheaper",
+          "retryable": true
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "id": "x",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "exclude": [
+            "p/*"
+          ],
+          "overrides": {},
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "all excluded",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "MODEL_TIER_UNAVAILABLE",
+          "details": {
+            "candidatesPerTier": {
+              "high": 0,
+              "low": 1,
+              "medium": 0
+            },
+            "requestedTier": "medium"
+          },
+          "exitCode": 5,
+          "kind": "cheaper",
+          "retryable": true
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "id": "lowm",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "p/lowm": "low"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "requestedTier": "medium"
+      },
+      "name": "never falls back lower",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "model": {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "m",
+            "provider": "anthropic"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 1,
+            "output": 1,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "tier",
+          "tier": "low",
+          "tierSource": "explicit-override"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "m",
+            "provider": "OpenAI"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "m",
+            "provider": "anthropic"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "OpenAI/m": "low",
+            "anthropic/m": "low"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "provider tiebreak uses localeCompare",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "model": {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "a_1",
+            "provider": "p"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 1,
+            "output": 1,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "tier",
+          "tier": "low",
+          "tierSource": "explicit-override"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "a0",
+            "provider": "p"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "a_1",
+            "provider": "p"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "a-2",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "p/a-2": "low",
+            "p/a0": "low",
+            "p/a_1": "low"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "id tiebreak punct before digit",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "model": {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "m",
+            "provider": "z_1"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 1,
+            "output": 1,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "tier",
+          "tier": "low",
+          "tierSource": "explicit-override"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "m",
+            "provider": "z0"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "m",
+            "provider": "z_1"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "z0/m": "low",
+            "z_1/m": "low"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "provider tiebreak underscore before digit",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "model": {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "m",
+            "provider": "z0"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 1,
+            "output": 1,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "tier",
+          "tier": "low",
+          "tierSource": "explicit-override"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "m",
+            "provider": "z0"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "m",
+            "provider": "za"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "z0/m": "low",
+            "za/m": "low"
+          },
+          "preferences": {}
+        },
+        "outputPerInput": null,
+        "policy": {
+          "maxTier": "high",
+          "tierFallback": "none"
+        },
+        "requestedTier": "low"
+      },
+      "name": "provider tiebreak digit before letter",
+      "op": "resolveModel"
+    },
+    {
+      "expected": {
+        "ok": {
+          "auto": {
+            "effectiveCost": 31,
+            "effectiveCostPercentile": 0.8333333333333334,
+            "outputPerInput": 1
+          },
+          "model": {
+            "cost": {
+              "input": 1,
+              "output": 30
+            },
+            "id": "x",
+            "provider": "p"
+          },
+          "pricing": {
+            "currency": "USD",
+            "input": 1,
+            "output": 30,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          },
+          "selection": "explicit",
+          "tier": "high",
+          "tierSource": "auto"
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 1,
+              "output": 30
+            },
+            "id": "x",
+            "provider": "p"
+          },
+          {
+            "cost": {
+              "input": 0.1,
+              "output": 0.1
+            },
+            "id": "cheap",
+            "provider": "q"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "mid",
+            "provider": "q"
+          }
+        ],
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "maxTier": "high",
+        "outputPerInput": null,
+        "ref": {
+          "id": "x",
+          "provider": "p"
+        }
+      },
+      "name": "explicit picks model",
+      "op": "resolveExplicitModel"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "POLICY_VIOLATION",
+          "details": {
+            "model": "openai/gpt-5",
+            "reason": "model-excluded"
+          },
+          "exitCode": 4,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "id": "gpt-5",
+            "provider": "openai"
+          }
+        ],
+        "config": {
+          "exclude": [
+            "openai/*"
+          ],
+          "overrides": {},
+          "preferences": {}
+        },
+        "maxTier": "high",
+        "outputPerInput": null,
+        "ref": {
+          "id": "gpt-5",
+          "provider": "openai"
+        }
+      },
+      "name": "explicit excluded → violation",
+      "op": "resolveExplicitModel"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "MODEL_TIER_UNAVAILABLE",
+          "details": {
+            "model": "foo/bar",
+            "reason": "model-unavailable"
+          },
+          "exitCode": 5,
+          "kind": "cheaper",
+          "retryable": true
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "id": "x",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "maxTier": "high",
+        "outputPerInput": null,
+        "ref": {
+          "id": "bar",
+          "provider": "foo"
+        }
+      },
+      "name": "explicit unavailable",
+      "op": "resolveExplicitModel"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "POLICY_VIOLATION",
+          "details": {
+            "maxTier": "medium",
+            "model": "p/x",
+            "reason": "model-exceeds-max-tier",
+            "tier": "high"
+          },
+          "exitCode": 4,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 1,
+              "output": 30
+            },
+            "id": "x",
+            "provider": "p"
+          },
+          {
+            "cost": {
+              "input": 0.1,
+              "output": 0.1
+            },
+            "id": "cheap",
+            "provider": "q"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "mid",
+            "provider": "q"
+          }
+        ],
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "maxTier": "medium",
+        "outputPerInput": null,
+        "ref": {
+          "id": "x",
+          "provider": "p"
+        }
+      },
+      "name": "explicit over maxTier",
+      "op": "resolveExplicitModel"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "POLICY_VIOLATION",
+          "details": {
+            "maxTier": "medium",
+            "model": "p/x",
+            "reason": "model-exceeds-max-tier",
+            "tier": "high"
+          },
+          "exitCode": 4,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "available": [
+          {
+            "cost": {
+              "input": 0.1,
+              "output": 0.5
+            },
+            "id": "x",
+            "provider": "p"
+          }
+        ],
+        "config": {
+          "overrides": {
+            "p/x": "high"
+          },
+          "preferences": {}
+        },
+        "maxTier": "medium",
+        "outputPerInput": null,
+        "ref": {
+          "id": "x",
+          "provider": "p"
+        }
+      },
+      "name": "override tier over maxTier",
+      "op": "resolveExplicitModel"
+    }
+  ],
+  "platform": "win32"
+}

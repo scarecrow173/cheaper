@@ -169,7 +169,6 @@ entry は POSIX では `./cheaper`、Windows（powershell key）では
 executable を user cache へ取得して実行する。Git source は binary を含まない。
 offline preseed、初回取得失敗時の診断、Copilot の JSON deploy 制約と host の
 allow fallback は [配布・取得 guide](./distribution.md) を参照する。
-JS bundle（`cli/bin/cheaper.mjs`）の手動実行には Node.js が必要。
 hook 経路の計測は `usage.jsonl` に
 記録されない（telemetry 対象は明示的な `cheaper run` /
 `count-tokens` のみ）。
@@ -203,5 +202,7 @@ Windows も executable の直接起動ではなく PowerShell launcher で確認
 - CLI contract: [usage ガイド](./usage.md)
 - provider / auth 設定: [providers ガイド](./providers.md)
 - 設計記録: `docs/designs/apm-skills-and-pre-read-hook.md`・
-  `docs/adr/distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md`・
+  `docs/adr/distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md`
+  （superseded — 後継は
+  `docs/adr/remove-the-committed-esbuild-cli-payload-and-move-the-canonical-version-to-cargo.md`）・
   `docs/discovery/cross-agent-hook-distribution-and-contract-matrix.md`

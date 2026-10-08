@@ -23,13 +23,23 @@ export async function loadScenarioManifest() {
   const missing = REQUIRED_SCENARIO_IDS.filter((id) => !ids.includes(id));
   const unexpected = ids.filter((id) => !REQUIRED_SCENARIO_IDS.includes(id));
   if (missing.length || unexpected.length) {
-    throw new TypeError(`scenario coverage mismatch; missing=${missing.join(",")}; unexpected=${unexpected.join(",")}`);
+    throw new TypeError(
+      `scenario coverage mismatch; missing=${missing.join(",")}; unexpected=${unexpected.join(",")}`,
+    );
   }
   for (const scenario of manifest.scenarios) {
-    if (typeof scenario.title !== "string" || !Array.isArray(scenario.arms) || !scenario.arms.some((arm) => arm.includes("workflow"))) {
+    if (
+      typeof scenario.title !== "string" ||
+      !Array.isArray(scenario.arms) ||
+      !scenario.arms.some((arm) => arm.includes("workflow"))
+    ) {
       throw new TypeError(`${scenario.id} must have a title and a workflow comparison arm`);
     }
-    if (scenario.workflow?.schemaVersion !== 1 || !scenario.workflow.jobs || !Object.keys(scenario.workflow.jobs).length) {
+    if (
+      scenario.workflow?.schemaVersion !== 1 ||
+      !scenario.workflow.jobs ||
+      !Object.keys(scenario.workflow.jobs).length
+    ) {
       throw new TypeError(`${scenario.id} must define a non-empty workflow`);
     }
     if (scenario.processPolicy && typeof scenario.processPolicy !== "object") {

@@ -1,0 +1,30 @@
+[package]
+name = "cheaper-runtime"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+description = "Port of packages/runtime-pi: model catalog store (G1), credential store + auth service (G2), provider plugin contract. run orchestration lands in T3. No Rig types (adapter trait boundary)."
+
+[dependencies]
+cheaper-core = { path = "../cheaper-core" }
+cheaper-tools = { path = "../cheaper-tools" }
+cheaper-rig-adapter = { path = "../cheaper-rig-adapter" }
+serde.workspace = true
+serde_json.workspace = true
+# models.json user file: TypeBox `ModelsConfigSchema` 相当の validation。
+# core と同じ jsonschema 系を使う(draft 2020-12・ref 解決 off)。
+jsonschema.workspace = true
+# T3(run orchestration: abort grace・spawn 境界)で使用。T2 surface 自体は sync。
+tokio.workspace = true
+# RunStream 駆動(`StreamExt::next`)と panic 境界(`FutureExt::catch_unwind`)。
+futures.workspace = true
+# T6 OAuth flow の HTTP transport。sync `OAuthFlow` contract に合わせ
+# blocking client を採用（ureq 2.x は Cargo.lock に既出 — rig/hf-hub の
+# transitive dep と同 version を再利用）。
+ureq = "2"
+# T6 OAuth の URL parse/正規化（enterprise domain・verification_uri の
+# `new URL` 相当 + form-urlencoded body 生成。lock 済みの url 2.x）。
+url = "2"
+
+[dev-dependencies]
+tempfile = "3"

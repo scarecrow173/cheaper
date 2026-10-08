@@ -1,0 +1,691 @@
+{
+  "cases": [
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "Successfully wrote to new.txt",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ],
+      "name": "creates a new file",
+      "ops": [
+        {
+          "input": {
+            "content": "created\n",
+            "path": "new.txt"
+          },
+          "tool": "write"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "write"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [
+            {
+              "kind": "created",
+              "linesAdded": 1,
+              "linesDeleted": 0,
+              "path": "new.txt"
+            }
+          ],
+          "totals": {
+            "files": 1,
+            "linesAdded": 1,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 5
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "Successfully wrote to a/b/c.txt",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ],
+      "name": "creates parent directories",
+      "ops": [
+        {
+          "input": {
+            "content": "nested\n",
+            "path": "a/b/c.txt"
+          },
+          "tool": "write"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "write"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [
+            {
+              "kind": "created",
+              "linesAdded": 1,
+              "linesDeleted": 0,
+              "path": "a/b/c.txt"
+            }
+          ],
+          "totals": {
+            "files": 1,
+            "linesAdded": 1,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 7
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "Successfully wrote to a.txt",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ],
+      "files": {
+        "a.txt": "old\n"
+      },
+      "name": "overwrites an existing file",
+      "ops": [
+        {
+          "input": {
+            "content": "new\n",
+            "path": "a.txt"
+          },
+          "tool": "write"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "write"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [
+            {
+              "kind": "modified",
+              "linesAdded": 1,
+              "linesDeleted": 1,
+              "path": "a.txt"
+            }
+          ],
+          "totals": {
+            "files": 1,
+            "linesAdded": 1,
+            "linesDeleted": 1
+          }
+        },
+        "meter": {
+          "sourceTokens": 5
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "kind": "other",
+            "message": "Access denied: path is outside the write scope",
+            "name": "Error"
+          }
+        },
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "Successfully wrote to allowed.txt",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ],
+      "name": "write scope denial",
+      "ops": [
+        {
+          "input": {
+            "content": "x",
+            "path": "denied.txt"
+          },
+          "tool": "write"
+        },
+        {
+          "input": {
+            "content": "y",
+            "path": "allowed.txt"
+          },
+          "tool": "write"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "write"
+        ],
+        "resourceManifest": {
+          "reads": [
+            {
+              "path": ".",
+              "scope": "subtree"
+            }
+          ],
+          "writes": [
+            {
+              "path": "allowed.txt",
+              "scope": "exact"
+            }
+          ]
+        },
+        "writeScope": [
+          "allowed.txt"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 1,
+          "toolCalls": 2
+        },
+        "journal": {
+          "files": [
+            {
+              "kind": "created",
+              "linesAdded": 1,
+              "linesDeleted": 0,
+              "path": "allowed.txt"
+            }
+          ],
+          "totals": {
+            "files": 1,
+            "linesAdded": 1,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 5
+        },
+        "operations": [
+          {
+            "cancellation": {
+              "reason": {
+                "message": "Access denied: path is outside the write scope",
+                "name": "Error"
+              },
+              "state": "cancelled"
+            },
+            "settlement": "settled",
+            "state": "cancelled",
+            "toolName": "write"
+          },
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\allowed.txt",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "kind": "other",
+            "message": "Access denied: path is denied by policy",
+            "name": "Error"
+          }
+        }
+      ],
+      "name": "denylisted path",
+      "ops": [
+        {
+          "input": {
+            "content": "SECRET=1",
+            "path": ".env"
+          },
+          "tool": "write"
+        }
+      ],
+      "runtime": {
+        "denylist": [
+          ".env"
+        ],
+        "names": [
+          "write"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 1,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": [
+          {
+            "error": {
+              "message": "Access denied: path is denied by policy",
+              "name": "Error"
+            },
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "failed",
+            "toolName": "write"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "kind": "other",
+            "message": "Access denied: path is outside the workspace",
+            "name": "Error"
+          }
+        }
+      ],
+      "name": "workspace escape denied",
+      "ops": [
+        {
+          "input": {
+            "content": "x",
+            "path": "../escape.txt"
+          },
+          "tool": "write"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "write"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 1,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": [
+          {
+            "error": {
+              "message": "Access denied: path is outside the workspace",
+              "name": "Error"
+            },
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "failed",
+            "toolName": "write"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "Successfully wrote to a.txt",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ],
+      "files": {
+        "a.txt": "same\n"
+      },
+      "name": "no-change write excluded from journal",
+      "ops": [
+        {
+          "input": {
+            "content": "same\n",
+            "path": "a.txt"
+          },
+          "tool": "write"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "write"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 5
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "Successfully wrote to a.txt",
+                "type": "text"
+              }
+            ]
+          }
+        },
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "Successfully wrote to a.txt",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ],
+      "name": "second write keeps first before",
+      "ops": [
+        {
+          "input": {
+            "content": "first\n",
+            "path": "a.txt"
+          },
+          "tool": "write"
+        },
+        {
+          "input": {
+            "content": "second\n",
+            "path": "a.txt"
+          },
+          "tool": "write"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "write"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 2
+        },
+        "journal": {
+          "files": [
+            {
+              "kind": "created",
+              "linesAdded": 1,
+              "linesDeleted": 0,
+              "path": "a.txt"
+            }
+          ],
+          "totals": {
+            "files": 1,
+            "linesAdded": 1,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 10
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          },
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "code": "INVALID_INPUT",
+            "details": {
+              "errors": [
+                {
+                  "instancePath": ""
+                }
+              ],
+              "tool": "write"
+            },
+            "exitCode": 2,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      ],
+      "name": "invalid input is uncounted",
+      "ops": [
+        {
+          "input": {
+            "path": "a.txt"
+          },
+          "tool": "write"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "write"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 0
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": []
+      }
+    }
+  ],
+  "platform": "win32"
+}

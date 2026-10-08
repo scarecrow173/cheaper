@@ -95,7 +95,7 @@ Chosen: "8192 tokens"。
 
 - `pre-read-code.js` の `DEFAULT_TOKEN_THRESHOLD = 8192` を維持（変更なし）
 - DESIGN-034r05iHy2gdnoFHbdllXV の provisional 注記を本 ADR への参照に更新
-- benchmark 結果は EXP-0003 に記録済み
+- benchmark 結果は `docs/impl/exp/bulk-read-delegation-benchmark.jsonl` に記録済み
 
 ## Verification
 

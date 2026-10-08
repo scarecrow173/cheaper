@@ -34,7 +34,7 @@ count"）で tool 結果と CLI 出力の一致を検証済み。
 ## 4. large file の threshold と実測根拠
 
 **8192 tokens**（`CHEAPER_READ_TOKEN_THRESHOLD` で上書き可）。根拠は
-DISC-034r05iHy2gdnpb598KIca / ADR-034r05iHrZUE6W4XOqUBih / EXP-0003:
+DISC-034r05iHy2gdnpb598KIca / ADR-034r05iHrZUE6W4XOqUBih / `docs/impl/exp/bulk-read-delegation-benchmark.jsonl`:
 
 - 本 repo 293 file 計測: >8k は lockfile 2 件のみ（corpus の 0.7%）
 - Ollama 実 provider で 6.3k file の bulk-read → parent 受信 ~260 tok
@@ -100,7 +100,7 @@ provider 認証は `cheaper auth login <provider>`（SPEC-034r05iHK8bA7ghSWRbNU8
 `--type api_key` の対話 key 入力は raw-mode no-echo で読み、
 credential 値は stdout/stderr/envelope のいずれにも出ない（test で保証）。
 OpenAI ChatGPT subscription（`openai-codex` OAuth）での実測: login →
-`bulk-read` が `gpt-5.5` で完走（EXP-0004。`gpt-5.4` 系・codex-spark は
+`bulk-read` が `gpt-5.5` で完走（`docs/impl/exp/openai-codex-subscription-e2e.jsonl`。`gpt-5.4` 系・codex-spark は
 ChatGPT account Codex では非対応、`gpt-5.5` / `gpt-5.6-*` / `gpt-6-astra`
 が対応確認済み）。
 
@@ -123,7 +123,7 @@ ChatGPT account Codex では非対応、`gpt-5.5` / `gpt-5.6-*` / `gpt-6-astra`
 
 ## 13. 実際に削減できた token/cost
 
-実測（EXP-0003、Ollama qwen3.5:4b）:
+実測（`docs/impl/exp/bulk-read-delegation-benchmark.jsonl`、Ollama qwen3.5:4b）:
 
 | file tokens | parent 受信 | 削減率 |
 |---|---|---|

@@ -1,0 +1,19 @@
+{
+  "name": "run_error_retryable_transient",
+  "fixture": {
+    "name": "error_retryable_transient",
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "error": { "retryable": true } },
+          { "turn": {} },
+          { "usage_delta": { "input": 100, "output": 20 } },
+          { "turn": {} },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

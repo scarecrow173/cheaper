@@ -1,0 +1,1088 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "ok": {
+          "tiers": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      },
+      "input": null,
+      "name": "tier order",
+      "op": "tiers"
+    },
+    {
+      "expected": {
+        "ok": -1
+      },
+      "input": [
+        "low",
+        "medium"
+      ],
+      "name": "compareTier",
+      "op": "compareTier"
+    },
+    {
+      "expected": {
+        "ok": 2
+      },
+      "input": [
+        "high",
+        "low"
+      ],
+      "name": "compareTier high>low",
+      "op": "compareTier"
+    },
+    {
+      "expected": {
+        "ok": 0
+      },
+      "input": [
+        "medium",
+        "medium"
+      ],
+      "name": "compareTier equal",
+      "op": "compareTier"
+    },
+    {
+      "expected": {
+        "ok": true
+      },
+      "input": "low",
+      "name": "isTier \"low\"",
+      "op": "isTier"
+    },
+    {
+      "expected": {
+        "ok": true
+      },
+      "input": "high",
+      "name": "isTier \"high\"",
+      "op": "isTier"
+    },
+    {
+      "expected": {
+        "ok": false
+      },
+      "input": "ultra",
+      "name": "isTier \"ultra\"",
+      "op": "isTier"
+    },
+    {
+      "expected": {
+        "ok": false
+      },
+      "input": 3,
+      "name": "isTier 3",
+      "op": "isTier"
+    },
+    {
+      "expected": {
+        "ok": false
+      },
+      "input": null,
+      "name": "isTier null",
+      "op": "isTier"
+    },
+    {
+      "expected": {
+        "ok": "medium"
+      },
+      "input": "low",
+      "name": "nextTier low",
+      "op": "nextTier"
+    },
+    {
+      "expected": {
+        "ok": "high"
+      },
+      "input": "medium",
+      "name": "nextTier medium",
+      "op": "nextTier"
+    },
+    {
+      "expected": {
+        "ok": null
+      },
+      "input": "high",
+      "name": "nextTier high",
+      "op": "nextTier"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "source": "explicit-override",
+            "tier": "low"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {
+            "test/claude-opus-4": "low"
+          },
+          "preferences": {}
+        },
+        "models": [
+          {
+            "id": "claude-opus-4",
+            "provider": "test"
+          }
+        ],
+        "outputPerInput": null
+      },
+      "name": "override wins",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "source": "unclassified",
+            "tier": "medium"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {
+            "a/x": "high"
+          },
+          "preferences": {}
+        },
+        "models": [
+          {
+            "id": "x",
+            "provider": "b"
+          }
+        ],
+        "outputPerInput": null
+      },
+      "name": "override keyed to provider",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "source": "curated-exception",
+            "tier": "low"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "models": [
+          {
+            "id": "qwen3",
+            "provider": "ollama"
+          }
+        ],
+        "outputPerInput": null
+      },
+      "name": "curated exception",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "source": "explicit-override",
+            "tier": "high"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {
+            "ollama/qwen3": "high"
+          },
+          "preferences": {}
+        },
+        "models": [
+          {
+            "id": "qwen3",
+            "provider": "ollama"
+          }
+        ],
+        "outputPerInput": null
+      },
+      "name": "override beats exception",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "auto": {
+              "effectiveCost": 20,
+              "effectiveCostPercentile": 0.8333333333333334,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "high"
+          },
+          {
+            "auto": {
+              "effectiveCost": 0.2,
+              "effectiveCostPercentile": 0.16666666666666666,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "low"
+          },
+          {
+            "auto": {
+              "effectiveCost": 2,
+              "effectiveCostPercentile": 0.5,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "medium"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "models": [
+          {
+            "cost": {
+              "input": 10,
+              "output": 10
+            },
+            "id": "pricey",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 0.1,
+              "output": 0.1
+            },
+            "id": "cheap",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "mid",
+            "provider": "test"
+          }
+        ],
+        "outputPerInput": null
+      },
+      "name": "three tiers",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "auto": {
+              "effectiveCost": 1,
+              "effectiveCostPercentile": 0.08333333333333333,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "low"
+          },
+          {
+            "auto": {
+              "effectiveCost": 2,
+              "effectiveCostPercentile": 0.25,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "low"
+          },
+          {
+            "auto": {
+              "effectiveCost": 3,
+              "effectiveCostPercentile": 0.4166666666666667,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "medium"
+          },
+          {
+            "auto": {
+              "effectiveCost": 4,
+              "effectiveCostPercentile": 0.5833333333333334,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "medium"
+          },
+          {
+            "auto": {
+              "effectiveCost": 5,
+              "effectiveCostPercentile": 0.75,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "high"
+          },
+          {
+            "auto": {
+              "effectiveCost": 6,
+              "effectiveCostPercentile": 0.9166666666666666,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "high"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "models": [
+          {
+            "cost": {
+              "input": 1,
+              "output": 0
+            },
+            "id": "m1",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 2,
+              "output": 0
+            },
+            "id": "m2",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 3,
+              "output": 0
+            },
+            "id": "m3",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 4,
+              "output": 0
+            },
+            "id": "m4",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 5,
+              "output": 0
+            },
+            "id": "m5",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 6,
+              "output": 0
+            },
+            "id": "m6",
+            "provider": "test"
+          }
+        ],
+        "outputPerInput": null
+      },
+      "name": "six models",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "auto": {
+              "effectiveCost": 1,
+              "effectiveCostPercentile": 0.25,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "low"
+          },
+          {
+            "auto": {
+              "effectiveCost": 2,
+              "effectiveCostPercentile": 0.75,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "high"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "models": [
+          {
+            "cost": {
+              "input": 1,
+              "output": 0
+            },
+            "id": "a",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 2,
+              "output": 0
+            },
+            "id": "b",
+            "provider": "test"
+          }
+        ],
+        "outputPerInput": null
+      },
+      "name": "two models low/high",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "auto": {
+              "effectiveCost": 10,
+              "effectiveCostPercentile": 0.5,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "medium"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "models": [
+          {
+            "cost": {
+              "input": 5,
+              "output": 5
+            },
+            "id": "a",
+            "provider": "test"
+          }
+        ],
+        "outputPerInput": null
+      },
+      "name": "single → medium",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "auto": {
+              "effectiveCost": 2,
+              "effectiveCostPercentile": 0.5,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "medium"
+          },
+          {
+            "auto": {
+              "effectiveCost": 2,
+              "effectiveCostPercentile": 0.5,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "medium"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "models": [
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "a",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "b",
+            "provider": "test"
+          }
+        ],
+        "outputPerInput": null
+      },
+      "name": "all tied → medium",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "auto": {
+              "effectiveCost": 1,
+              "effectiveCostPercentile": 0.25,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "low"
+          },
+          {
+            "auto": {
+              "effectiveCost": 1,
+              "effectiveCostPercentile": 0.25,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "low"
+          },
+          {
+            "auto": {
+              "effectiveCost": 2,
+              "effectiveCostPercentile": 0.625,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "medium"
+          },
+          {
+            "auto": {
+              "effectiveCost": 3,
+              "effectiveCostPercentile": 0.875,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "high"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "models": [
+          {
+            "cost": {
+              "input": 1,
+              "output": 0
+            },
+            "id": "a",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 0
+            },
+            "id": "b",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 2,
+              "output": 0
+            },
+            "id": "c",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 3,
+              "output": 0
+            },
+            "id": "d",
+            "provider": "test"
+          }
+        ],
+        "outputPerInput": null
+      },
+      "name": "partial tie",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "auto": {
+              "effectiveCost": 10,
+              "effectiveCostPercentile": 0.75,
+              "outputPerInput": 0
+            },
+            "source": "auto",
+            "tier": "high"
+          },
+          {
+            "auto": {
+              "effectiveCost": 1,
+              "effectiveCostPercentile": 0.25,
+              "outputPerInput": 0
+            },
+            "source": "auto",
+            "tier": "low"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "models": [
+          {
+            "cost": {
+              "input": 10,
+              "output": 1
+            },
+            "id": "input-heavy",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 10
+            },
+            "id": "output-heavy",
+            "provider": "test"
+          }
+        ],
+        "outputPerInput": 0
+      },
+      "name": "workload reader",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "auto": {
+              "effectiveCost": 20,
+              "effectiveCostPercentile": 0.25,
+              "outputPerInput": 10
+            },
+            "source": "auto",
+            "tier": "low"
+          },
+          {
+            "auto": {
+              "effectiveCost": 101,
+              "effectiveCostPercentile": 0.75,
+              "outputPerInput": 10
+            },
+            "source": "auto",
+            "tier": "high"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "models": [
+          {
+            "cost": {
+              "input": 10,
+              "output": 1
+            },
+            "id": "input-heavy",
+            "provider": "test"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 10
+            },
+            "id": "output-heavy",
+            "provider": "test"
+          }
+        ],
+        "outputPerInput": 10
+      },
+      "name": "workload writer",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": [
+          {
+            "source": "unclassified",
+            "tier": "medium"
+          },
+          {
+            "auto": {
+              "effectiveCost": 2,
+              "effectiveCostPercentile": 0.5,
+              "outputPerInput": 1
+            },
+            "source": "auto",
+            "tier": "medium"
+          }
+        ]
+      },
+      "input": {
+        "config": {
+          "overrides": {},
+          "preferences": {}
+        },
+        "models": [
+          {
+            "cost": {
+              "input": 0,
+              "output": 0
+            },
+            "id": "free",
+            "provider": "z"
+          },
+          {
+            "cost": {
+              "input": 1,
+              "output": 1
+            },
+            "id": "paid",
+            "provider": "test"
+          }
+        ],
+        "outputPerInput": null
+      },
+      "name": "zero-price excluded",
+      "op": "classify"
+    },
+    {
+      "expected": {
+        "ok": {
+          "pricing": {
+            "cacheRead": 0.5,
+            "currency": "USD",
+            "input": 5,
+            "output": 25,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          }
+        }
+      },
+      "input": {
+        "model": {
+          "cost": {
+            "cacheRead": 0.5,
+            "input": 5,
+            "output": 25
+          },
+          "id": "m",
+          "provider": "p"
+        },
+        "snapshot": {
+          "models": [
+            [
+              "snap/exact",
+              {
+                "cacheRead": 0.1,
+                "input": 1,
+                "output": 2
+              }
+            ],
+            [
+              "snap-wild/*",
+              {
+                "input": 3,
+                "output": 4
+              }
+            ]
+          ],
+          "updatedAt": "2026-09-01",
+          "version": "test-v1"
+        }
+      },
+      "name": "runtime catalog wins",
+      "op": "resolvePricing"
+    },
+    {
+      "expected": {
+        "ok": {
+          "pricing": {
+            "currency": "USD",
+            "input": 0,
+            "output": 0,
+            "source": "runtime-catalog",
+            "unit": "usd-per-1m-tokens"
+          }
+        }
+      },
+      "input": {
+        "model": {
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "id": "m",
+          "provider": "p"
+        },
+        "snapshot": null
+      },
+      "name": "zero cost is a valid observation",
+      "op": "resolvePricing"
+    },
+    {
+      "expected": {
+        "ok": {
+          "pricing": {
+            "cacheRead": 0.1,
+            "currency": "USD",
+            "input": 1,
+            "output": 2,
+            "snapshotVersion": "test-v1",
+            "source": "bundled-snapshot",
+            "unit": "usd-per-1m-tokens",
+            "updatedAt": "2026-09-01"
+          }
+        }
+      },
+      "input": {
+        "model": {
+          "id": "exact",
+          "provider": "snap"
+        },
+        "snapshot": {
+          "models": [
+            [
+              "snap/exact",
+              {
+                "cacheRead": 0.1,
+                "input": 1,
+                "output": 2
+              }
+            ],
+            [
+              "snap-wild/*",
+              {
+                "input": 3,
+                "output": 4
+              }
+            ]
+          ],
+          "updatedAt": "2026-09-01",
+          "version": "test-v1"
+        }
+      },
+      "name": "snapshot exact fills missing cost",
+      "op": "resolvePricing"
+    },
+    {
+      "expected": {
+        "ok": {
+          "pricing": {
+            "currency": "USD",
+            "input": 3,
+            "output": 4,
+            "snapshotVersion": "test-v1",
+            "source": "bundled-snapshot",
+            "unit": "usd-per-1m-tokens",
+            "updatedAt": "2026-09-01"
+          }
+        }
+      },
+      "input": {
+        "model": {
+          "id": "anything",
+          "provider": "snap-wild"
+        },
+        "snapshot": {
+          "models": [
+            [
+              "snap/exact",
+              {
+                "cacheRead": 0.1,
+                "input": 1,
+                "output": 2
+              }
+            ],
+            [
+              "snap-wild/*",
+              {
+                "input": 3,
+                "output": 4
+              }
+            ]
+          ],
+          "updatedAt": "2026-09-01",
+          "version": "test-v1"
+        }
+      },
+      "name": "snapshot wildcard",
+      "op": "resolvePricing"
+    },
+    {
+      "expected": {
+        "ok": {
+          "pricing": null
+        }
+      },
+      "input": {
+        "model": {
+          "id": "pe",
+          "provider": "no"
+        },
+        "snapshot": {
+          "models": [
+            [
+              "snap/exact",
+              {
+                "cacheRead": 0.1,
+                "input": 1,
+                "output": 2
+              }
+            ],
+            [
+              "snap-wild/*",
+              {
+                "input": 3,
+                "output": 4
+              }
+            ]
+          ],
+          "updatedAt": "2026-09-01",
+          "version": "test-v1"
+        }
+      },
+      "name": "unpriced → null",
+      "op": "resolvePricing"
+    },
+    {
+      "expected": {
+        "ok": {
+          "checkedAt": "2026-09-19",
+          "reason": "r",
+          "source": "s",
+          "tier": "high"
+        }
+      },
+      "input": {
+        "builtin": false,
+        "id": "exact",
+        "provider": "p"
+      },
+      "name": "exception p/exact",
+      "op": "findModelException"
+    },
+    {
+      "expected": {
+        "ok": {
+          "checkedAt": "2026-09-19",
+          "reason": "r",
+          "source": "s",
+          "tier": "low"
+        }
+      },
+      "input": {
+        "builtin": false,
+        "id": "other",
+        "provider": "p"
+      },
+      "name": "exception p/other",
+      "op": "findModelException"
+    },
+    {
+      "expected": {
+        "ok": null
+      },
+      "input": {
+        "builtin": false,
+        "id": "exact",
+        "provider": "q"
+      },
+      "name": "exception q/exact",
+      "op": "findModelException"
+    },
+    {
+      "expected": {
+        "ok": {
+          "checkedAt": "2026-09-19",
+          "reason": "local Ollama model; zero price は API 価格を意味しないため curated で low に固定",
+          "source": "https://github.com/scarecrow173/cheaper/issues/45",
+          "tier": "low"
+        }
+      },
+      "input": {
+        "builtin": true,
+        "id": "qwen3",
+        "provider": "ollama"
+      },
+      "name": "exception ollama/qwen3",
+      "op": "findModelException"
+    },
+    {
+      "expected": {
+        "ok": true
+      },
+      "input": [
+        "a",
+        "m",
+        "a/m"
+      ],
+      "name": "matchModelPattern a/m ~ a/m",
+      "op": "matchModelPattern"
+    },
+    {
+      "expected": {
+        "ok": true
+      },
+      "input": [
+        "a",
+        "m",
+        "a/*"
+      ],
+      "name": "matchModelPattern a/m ~ a/*",
+      "op": "matchModelPattern"
+    },
+    {
+      "expected": {
+        "ok": false
+      },
+      "input": [
+        "a",
+        "m",
+        "b/*"
+      ],
+      "name": "matchModelPattern a/m ~ b/*",
+      "op": "matchModelPattern"
+    },
+    {
+      "expected": {
+        "ok": false
+      },
+      "input": [
+        "a",
+        "m",
+        "a/n"
+      ],
+      "name": "matchModelPattern a/m ~ a/n",
+      "op": "matchModelPattern"
+    }
+  ],
+  "platform": "win32"
+}

@@ -71,7 +71,7 @@ metadata:
 
 ## Summary
 
-実 provider smoke（EXP-0002）後のコードレビュー指摘 6 件 + 文書指摘 1 件を修正した。`promptWithAbortGrace` を新設して main / repair session の abort grace を共通化し、repair の provider failure を `PROVIDER_FAILURE` に正規化、`meta.repairs` を失敗時も計上、timeout を `runWorker` 開始時点に anchor、grace timer を解放、unit test を tmp 隔離、README と provider ガイドを整備した。
+実 provider smoke（`docs/impl/exp/ollama-real-provider-smoke-verification.jsonl`）後のコードレビュー指摘 6 件 + 文書指摘 1 件を修正した。`promptWithAbortGrace` を新設して main / repair session の abort grace を共通化し、repair の provider failure を `PROVIDER_FAILURE` に正規化、`meta.repairs` を失敗時も計上、timeout を `runWorker` 開始時点に anchor、grace timer を解放、unit test を tmp 隔離、README と provider ガイドを整備した。
 
 ## Context
 

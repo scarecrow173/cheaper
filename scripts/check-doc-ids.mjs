@@ -31,8 +31,7 @@ const tracked = execFileSync("git", ["ls-files", "*.md"], {
       f.startsWith("packages/apm/.apm/"),
   );
 
-const legacyId =
-  /\b(?:SPEC|DESIGN|DISC|ADR|IMPL|PLAN|TASK|IDEA|REQ|BRF)-\d+\b/g;
+const legacyId = /\b(?:SPEC|DESIGN|DISC|ADR|IMPL|PLAN|TASK|IDEA|REQ|BRF)-\d+\b/g;
 
 let failed = false;
 for (const rel of tracked) {

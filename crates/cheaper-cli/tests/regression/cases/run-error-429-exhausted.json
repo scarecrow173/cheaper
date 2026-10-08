@@ -1,0 +1,20 @@
+{
+  "name": "run_error_429_exhausted",
+  "fixture": {
+    "name": "error_429_exhausted",
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "turn": {} },
+          { "error": { "status": 429 } },
+          { "turn": {} },
+          { "error": { "status": 429 } },
+          { "turn": {} },
+          { "error": { "status": 429 } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

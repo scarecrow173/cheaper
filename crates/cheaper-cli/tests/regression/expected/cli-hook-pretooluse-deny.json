@@ -1,0 +1,6 @@
+{
+  "code": 0,
+  "timedOut": false,
+  "stdout": "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"cheaper: blocked shell command 'cat big.txt'. cheaper: 'big.txt' has 20002 tokens (threshold 8192). Do not read it directly. Delegate this file through the cheaper-bulk-read skill. workspace-relative path: big.txt\"}}\n",
+  "stderr": ""
+}

@@ -1,0 +1,129 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "ok": {
+          "code": "TIMEOUT",
+          "exitCode": 7,
+          "message": "timed out",
+          "retryable": true
+        }
+      },
+      "name": "CheaperError carries table values"
+    },
+    {
+      "expected": {
+        "ok": [
+          true,
+          false,
+          false,
+          false
+        ]
+      },
+      "name": "isCheaperError discriminates"
+    }
+  ],
+  "platform": "win32",
+  "table": {
+    "ABORTED": {
+      "exitCode": 8,
+      "retryable": false
+    },
+    "FILE_TOO_LARGE": {
+      "exitCode": 2,
+      "retryable": false
+    },
+    "INPUT_SCHEMA_NOT_FOUND": {
+      "exitCode": 3,
+      "retryable": false
+    },
+    "INTERNAL_ERROR": {
+      "exitCode": 70,
+      "retryable": false
+    },
+    "INVALID_INPUT": {
+      "exitCode": 2,
+      "retryable": false
+    },
+    "INVALID_INPUT_SCHEMA": {
+      "exitCode": 3,
+      "retryable": false
+    },
+    "INVALID_MODEL_CONFIG": {
+      "exitCode": 3,
+      "retryable": false
+    },
+    "INVALID_OUTPUT": {
+      "exitCode": 6,
+      "retryable": false
+    },
+    "INVALID_OUTPUT_SCHEMA": {
+      "exitCode": 3,
+      "retryable": false
+    },
+    "INVALID_REQUEST": {
+      "exitCode": 2,
+      "retryable": false
+    },
+    "INVALID_RUNTIME_POLICY": {
+      "exitCode": 3,
+      "retryable": false
+    },
+    "INVALID_WORKER_DEFINITION": {
+      "exitCode": 3,
+      "retryable": false
+    },
+    "INVALID_WORKER_NAME": {
+      "exitCode": 3,
+      "retryable": false
+    },
+    "MAX_TOOL_CALLS_EXCEEDED": {
+      "exitCode": 6,
+      "retryable": false
+    },
+    "MAX_TURNS_EXCEEDED": {
+      "exitCode": 6,
+      "retryable": false
+    },
+    "MODEL_TIER_UNAVAILABLE": {
+      "exitCode": 5,
+      "retryable": true
+    },
+    "OUTPUT_SCHEMA_NOT_FOUND": {
+      "exitCode": 3,
+      "retryable": false
+    },
+    "PARTIAL_MUTATION": {
+      "exitCode": 9,
+      "retryable": false
+    },
+    "POLICY_VIOLATION": {
+      "exitCode": 4,
+      "retryable": false
+    },
+    "PROVIDER_FAILURE": {
+      "exitCode": 5,
+      "retryable": true
+    },
+    "TIMEOUT": {
+      "exitCode": 7,
+      "retryable": true
+    },
+    "TOOL_EXECUTION_FAILURE": {
+      "exitCode": 6,
+      "retryable": false
+    },
+    "UNKNOWN_TOOL": {
+      "exitCode": 3,
+      "retryable": false
+    },
+    "WORKER_NAME_MISMATCH": {
+      "exitCode": 3,
+      "retryable": false
+    },
+    "WORKER_NOT_FOUND": {
+      "exitCode": 3,
+      "retryable": false
+    }
+  }
+}

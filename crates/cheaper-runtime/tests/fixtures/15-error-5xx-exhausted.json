@@ -1,0 +1,22 @@
+{
+  "name": "error_5xx_exhausted",
+  "description": "error{status:5xx} 連続 — transient_attempts=1 で retry 尽き PROVIDER_FAILURE",
+  "policy": { "transient_attempts": 1 },
+  "sessions": [
+    {
+      "steps": [
+        { "error": { "status": 500 } },
+        { "error": { "status": 502 } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "PROVIDER_FAILURE",
+    "exitCode": 5,
+    "errorDetails": { "errorMessage": "fixture provider error" },
+    "meta": {
+      "transientRetries": 1
+    }
+  }
+}

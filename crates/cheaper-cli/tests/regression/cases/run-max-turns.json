@@ -1,0 +1,21 @@
+{
+  "name": "run_max_turns",
+  "expectDivergence": "pi agent loop は abort 済みでも次の streamFn call を発行し、aborted message に turn_end を立てるため turns=3(2 受理 + 1 aborted in-flight)。Rust fake DSL の turns は `turn` step 計上のみで、abort 後に消化される in-flight call の turn を表現できない → turns=2。code/exitCode/details は一致。",
+  "fixture": {
+    "name": "max_turns",
+    "policy": { "max_turns": 2 },
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "tool_calls": [ { "name": "read", "input": { "path": "a.txt" } } ] },
+          { "turn": { "tool_calls": true } },
+          { "tool_calls": [ { "name": "read", "input": { "path": "a.txt" } } ] },
+          { "turn": { "tool_calls": true } },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

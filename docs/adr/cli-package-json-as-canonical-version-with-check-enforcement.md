@@ -1,10 +1,10 @@
 ---
 id: "ADR-034r05iHrZUE6WgAk8Cpqq"
 type: "adr"
-status: "accepted"
+status: "superseded"
 title: "packages/cli/package.json を canonical version source とし check script で一致を強制する"
 created: "2026-09-18"
-updated: "2026-09-18"
+updated: "2026-10-08"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -23,7 +23,8 @@ relations:
     - "./canonical-setup-check-entrypoints-as-mise-toml-tasks.md"
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "remove-the-committed-esbuild-cli-payload-and-move-the-canonical-version-to-cargo.md"
   related:
     - "../designs/cli-bundle-layout.md"
   refines: []

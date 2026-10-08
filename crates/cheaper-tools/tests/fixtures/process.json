@@ -1,0 +1,1414 @@
+{
+  "cases": [
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "process hi: completed, exitCode=0\nstdout: 14 bytes, 14 captured, truncated=false\nhello process\n\nstderr: 0 bytes, 0 captured, truncated=false\n",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "exitCode": 0,
+              "signal": null,
+              "state": "completed",
+              "stderr": {
+                "bytes": 0,
+                "capturedBytes": 0,
+                "text": "",
+                "truncated": false
+              },
+              "stdout": {
+                "bytes": 14,
+                "capturedBytes": 14,
+                "text": "hello process\n",
+                "truncated": false
+              },
+              "task": "hi"
+            }
+          }
+        }
+      ],
+      "name": "successful task",
+      "ops": [
+        {
+          "input": {
+            "task": "hi"
+          },
+          "tool": "process"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 39
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "process"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "code": "TOOL_EXECUTION_FAILURE",
+            "details": {
+              "exitCode": 7,
+              "signal": null,
+              "state": "failed",
+              "stderr": {
+                "bytes": 15,
+                "capturedBytes": 15,
+                "text": "failure detail\n",
+                "truncated": false
+              },
+              "stdout": {
+                "bytes": 15,
+                "capturedBytes": 15,
+                "text": "before failure\n",
+                "truncated": false
+              },
+              "task": "fail"
+            },
+            "exitCode": 6,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      ],
+      "name": "nonzero exit",
+      "ops": [
+        {
+          "input": {
+            "task": "fail"
+          },
+          "tool": "process"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": [
+          {
+            "error": {
+              "code": "TOOL_EXECUTION_FAILURE",
+              "message": "managed process failed",
+              "name": "CheaperError"
+            },
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "failed",
+            "toolName": "process"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "process output: completed, exitCode=0\nstdout: 1001 bytes, 100 captured, truncated=true\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nstderr: 0 bytes, 0 captured, truncated=false\n",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "exitCode": 0,
+              "signal": null,
+              "state": "completed",
+              "stderr": {
+                "bytes": 0,
+                "capturedBytes": 0,
+                "text": "",
+                "truncated": false
+              },
+              "stdout": {
+                "bytes": 1001,
+                "capturedBytes": 100,
+                "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "truncated": true
+              },
+              "task": "output"
+            }
+          }
+        }
+      ],
+      "name": "output cap truncates",
+      "ops": [
+        {
+          "input": {
+            "task": "output"
+          },
+          "tool": "process"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "maxOutputBytes": 100,
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 52
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "process"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "code": "TIMEOUT",
+            "details": {
+              "task": "sleep"
+            },
+            "exitCode": 7,
+            "kind": "cheaper",
+            "retryable": true
+          }
+        }
+      ],
+      "name": "timeout kills the process",
+      "ops": [
+        {
+          "input": {
+            "task": "sleep"
+          },
+          "tool": "process"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "killGrace": "500ms",
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          },
+          "timeout": "400ms"
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": [
+          {
+            "cancellation": {
+              "reason": {
+                "code": "TIMEOUT",
+                "message": "managed process execution timed out",
+                "name": "CheaperError"
+              },
+              "state": "timed_out"
+            },
+            "error": {
+              "code": "TIMEOUT",
+              "message": "managed process execution timed out",
+              "name": "CheaperError"
+            },
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "timed_out",
+            "toolName": "process"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "code": "POLICY_VIOLATION",
+            "details": {
+              "task": "missing"
+            },
+            "exitCode": 4,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      ],
+      "name": "unknown task rejected before admission",
+      "ops": [
+        {
+          "input": {
+            "task": "missing"
+          },
+          "tool": "process"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 0
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": []
+      }
+    },
+    {
+      "expectRust": {
+        "ops": {
+          "0": {
+            "error": {
+              "code": "POLICY_VIOLATION",
+              "details": null,
+              "exitCode": 4,
+              "kind": "cheaper",
+              "retryable": false
+            }
+          }
+        },
+        "state": {
+          "meter": {
+            "sourceTokens": 0
+          },
+          "operations": [
+            {
+              "error": {
+                "code": "POLICY_VIOLATION",
+                "message": "process task \"node\" is unsupported: the Rust runtime has no Node.js host executable",
+                "name": "CheaperError"
+              },
+              "resourceClaims": [
+                {
+                  "mode": "shared",
+                  "resource": {
+                    "kind": "workspace",
+                    "path": "<ROOT>",
+                    "scope": "subtree"
+                  }
+                }
+              ],
+              "settlement": "settled",
+              "state": "failed",
+              "toolName": "process"
+            }
+          ]
+        }
+      },
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "process node: completed, exitCode=0\nstdout: 10 bytes, 10 captured, truncated=false\nbare node\n\nstderr: 0 bytes, 0 captured, truncated=false\n",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "exitCode": 0,
+              "signal": null,
+              "state": "completed",
+              "stderr": {
+                "bytes": 0,
+                "capturedBytes": 0,
+                "text": "",
+                "truncated": false
+              },
+              "stdout": {
+                "bytes": 10,
+                "capturedBytes": 10,
+                "text": "bare node\n",
+                "truncated": false
+              },
+              "task": "node"
+            }
+          }
+        }
+      ],
+      "name": "bare node task is an explicit Rust error",
+      "ops": [
+        {
+          "input": {
+            "task": "node"
+          },
+          "tool": "process"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 39
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "process"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "process inspect: completed, exitCode=0\nstdout: 85 bytes, 85 captured, truncated=false\n{\"cwdTail\":\"cprocess_json_6\",\"args\":[\"arg1\",\"arg two\"],\"explicit\n\":\"yes\",\"path\":null}\n\nstderr: 0 bytes, 0 captured, truncated=false\n",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "exitCode": 0,
+              "signal": null,
+              "state": "completed",
+              "stderr": {
+                "bytes": 0,
+                "capturedBytes": 0,
+                "text": "",
+                "truncated": false
+              },
+              "stdout": {
+                "bytes": 85,
+                "capturedBytes": 85,
+                "text": "{\"cwdTail\":\"cprocess_json_6\",\"args\":[\"arg1\",\"arg two\"],\"explicit\":\"yes\",\"path\":null}\n",
+                "truncated": false
+              },
+              "task": "inspect"
+            }
+          }
+        }
+      ],
+      "name": "minimal environment",
+      "ops": [
+        {
+          "input": {
+            "task": "inspect"
+          },
+          "tool": "process"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 64
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "process"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "process inspect: completed, exitCode=0\nstdout: 72 bytes, 72 captured, truncated=false\n{\"cwdTail\":\"sub\",\"args\":[\"arg1\",\"arg two\"],\"explicit\":null,\"path\n\":null}\n\nstderr: 0 bytes, 0 captured, truncated=false\n",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "exitCode": 0,
+              "signal": null,
+              "state": "completed",
+              "stderr": {
+                "bytes": 0,
+                "capturedBytes": 0,
+                "text": "",
+                "truncated": false
+              },
+              "stdout": {
+                "bytes": 72,
+                "capturedBytes": 72,
+                "text": "{\"cwdTail\":\"sub\",\"args\":[\"arg1\",\"arg two\"],\"explicit\":null,\"path\":null}\n",
+                "truncated": false
+              },
+              "task": "inspect"
+            }
+          }
+        }
+      ],
+      "files": {
+        "sub/.keep": ""
+      },
+      "name": "task cwd subdir",
+      "ops": [
+        {
+          "input": {
+            "task": "inspect"
+          },
+          "tool": "process"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "tasks": {
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "cwd": "sub",
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 60
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "process"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "code": "INVALID_INPUT",
+            "details": {
+              "errors": [
+                {
+                  "instancePath": "/task"
+                }
+              ],
+              "tool": "process"
+            },
+            "exitCode": 2,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      ],
+      "name": "invalid input is uncounted",
+      "ops": [
+        {
+          "input": {
+            "task": 5
+          },
+          "tool": "process"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 0
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": []
+      }
+    }
+  ],
+  "platform": "win32"
+}

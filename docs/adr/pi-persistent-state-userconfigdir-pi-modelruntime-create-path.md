@@ -1,10 +1,10 @@
 ---
 id: "ADR-034r05iHrZUE6Wn59hpaOg"
 type: "adr"
-status: "accepted"
+status: "superseded"
 title: "Pi persistent state は userConfigDir/pi 配下へ ModelRuntime.create の明示 path で集約する"
 created: "2026-09-18"
-updated: "2026-09-18"
+updated: "2026-10-08"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -22,7 +22,8 @@ relations:
     - "./absorb-provider-oauth-and-api-key-login-into-the-cheaper-cli-cheaper-auth.md"
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "migrate-the-cheaper-cli-runtime-to-rust-and-rig.md"
   related:
     - "./usage-jsonl-in-user-config-dir-best-effort-append.md"
   refines: []

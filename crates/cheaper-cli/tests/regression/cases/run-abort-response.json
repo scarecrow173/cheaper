@@ -1,0 +1,17 @@
+{
+  "name": "run_abort_response",
+  "fixture": {
+    "name": "abort_response",
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "usage_delta": { "input": 10, "output": 1 } },
+          { "turn": {} },
+          "abort_response"
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

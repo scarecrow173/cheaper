@@ -1,0 +1,1160 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeout": "2m"
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "version": 1
+          }
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "mode": "complete",
+      "name": "complete valid",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "errors": [
+              {
+                "instancePath": ""
+              }
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "version": 1
+      },
+      "mode": "complete",
+      "name": "complete missing section",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeout": "2m"
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "version": 1
+          }
+        }
+      },
+      "input": {
+        "execution": {
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "version": 1
+      },
+      "mode": "partial",
+      "name": "partial missing sections ok",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "errors": [
+              {
+                "instancePath": "/execution/concurrency"
+              }
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "mode": "complete",
+      "name": "complete requires concurrency fields",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeout": "2m"
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "version": 1
+          }
+        }
+      },
+      "input": {
+        "execution": {
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "mode": "partial",
+      "name": "partial allows concurrency omission",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "errors": [
+              {
+                "instancePath": ""
+              }
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "bogus": 1,
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "mode": "complete",
+      "name": "unknown top-level field",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "errors": [
+              {
+                "instancePath": "/execution"
+              }
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m",
+          "x": 1
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "mode": "complete",
+      "name": "unknown nested field",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "errors": [
+              {
+                "instancePath": "/version"
+              }
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 2
+      },
+      "mode": "complete",
+      "name": "wrong version",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "errors": [
+              {
+                "instancePath": ""
+              }
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        }
+      },
+      "mode": "complete",
+      "name": "missing version",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "errors": [
+              {
+                "instancePath": "/execution/timeout"
+              }
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "5x"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "mode": "complete",
+      "name": "bad duration",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "process": {
+          "maxConcurrent": 1,
+          "tasks": {
+            "t": {
+              "command": [
+                "sh"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "mode": "complete",
+      "name": "process shell task rejected pre-merge",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "name": "normalize valid policy",
+      "op": "normalizePolicy"
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 9,
+              "maxTurns": 5,
+              "timeoutMs": 30000
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "input": {
+        "execution": {
+          "maxToolCalls": 9,
+          "maxTurns": 5,
+          "timeout": "30s"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "grep"
+          ]
+        },
+        "version": 1
+      },
+      "name": "normalize fills workflow/process/concurrency",
+      "op": "normalizePolicy"
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "find",
+                "edit"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "Read",
+            "Glob",
+            "edit"
+          ]
+        },
+        "version": 1
+      },
+      "name": "normalize alias tools",
+      "op": "normalizePolicy"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "tool": "bash"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "bash"
+          ]
+        },
+        "version": 1
+      },
+      "name": "normalize unknown tool",
+      "op": "normalizePolicy"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "reason": "tools-duplicate"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "execution": {
+          "concurrency": {
+            "maxOperations": 8,
+            "mutations": "serialized"
+          },
+          "maxToolCalls": 20,
+          "maxTurns": 10,
+          "timeout": "2m"
+        },
+        "filesystem": {
+          "denyPaths": [
+            ".env"
+          ],
+          "symlinks": "deny"
+        },
+        "model": {
+          "maxTier": "high",
+          "tierFallback": "higher"
+        },
+        "output": {
+          "maxTokens": 4096,
+          "repairAttempts": 1
+        },
+        "retry": {
+          "transientAttempts": 2
+        },
+        "tools": {
+          "allow": [
+            "read",
+            "Read"
+          ]
+        },
+        "version": 1
+      },
+      "name": "normalize duplicate tools",
+      "op": "normalizePolicy"
+    },
+    {
+      "expected": {
+        "ok": {
+          "maxOperations": 8,
+          "mutations": "serialized"
+        }
+      },
+      "input": null,
+      "name": "concurrency defaults",
+      "op": "resolveConcurrencyPolicy"
+    },
+    {
+      "expected": {
+        "ok": {
+          "maxOperations": 3,
+          "mutations": "per-resource"
+        }
+      },
+      "input": {
+        "maxOperations": 3,
+        "mutations": "per-resource"
+      },
+      "name": "concurrency valid",
+      "op": "resolveConcurrencyPolicy"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "maxOperations": 0
+      },
+      "name": "concurrency zero",
+      "op": "resolveConcurrencyPolicy"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "maxOperations": 1.5
+      },
+      "name": "concurrency float",
+      "op": "resolveConcurrencyPolicy"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "mutations": "bogus"
+      },
+      "name": "concurrency bad mutations",
+      "op": "resolveConcurrencyPolicy"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "maxOperations": "x"
+      },
+      "name": "concurrency non-number",
+      "op": "resolveConcurrencyPolicy"
+    },
+    {
+      "expected": {
+        "ok": {
+          "maxOperations": 8,
+          "mutations": "serialized"
+        }
+      },
+      "input": {
+        "maxOperations": null
+      },
+      "name": "concurrency null maxOperations",
+      "op": "resolveConcurrencyPolicy"
+    },
+    {
+      "expected": {
+        "ok": {
+          "maxOperations": 8,
+          "mutations": "serialized"
+        }
+      },
+      "input": {
+        "mutations": null
+      },
+      "name": "concurrency null mutations",
+      "op": "resolveConcurrencyPolicy"
+    },
+    {
+      "expected": {
+        "ok": {
+          "maxOperations": 8,
+          "mutations": "serialized"
+        }
+      },
+      "input": {
+        "maxOperations": null,
+        "mutations": null
+      },
+      "name": "concurrency all null",
+      "op": "resolveConcurrencyPolicy"
+    }
+  ],
+  "platform": "win32"
+}

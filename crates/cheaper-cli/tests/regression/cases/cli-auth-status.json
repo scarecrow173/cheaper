@@ -1,0 +1,4 @@
+{
+  "name": "cli_auth_status",
+  "argv": ["auth", "status"]
+}

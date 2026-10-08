@@ -59,7 +59,7 @@ threshold を確定する。
 2. **実委譲測定**: Ollama `qwen3.5:4b`（実 provider、cost 0）で
    `bulk-read` を 2 件実行し、file tokens・parent が受け取る result
    tokens・worker usage・wall time を計測。
-   設定は EXP-0002 と同一（`CHEAPER_CONFIG_DIR` で smoke config を指定）。
+   設定は `docs/impl/exp/ollama-real-provider-smoke-verification.jsonl` と同一（`CHEAPER_CONFIG_DIR` で smoke config を指定）。
 
 ## 結果 1: コーパス分布（cheaper 本体、293 files / 417k tokens）
 

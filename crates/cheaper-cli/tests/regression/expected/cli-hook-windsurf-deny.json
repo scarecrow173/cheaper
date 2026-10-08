@@ -1,0 +1,6 @@
+{
+  "code": 2,
+  "timedOut": false,
+  "stdout": "",
+  "stderr": "cheaper: 'big.txt' has 20002 tokens (threshold 8192).\nDo not read it directly. Delegate this file through the cheaper-bulk-read skill.\nworkspace-relative path: big.txt\n"
+}

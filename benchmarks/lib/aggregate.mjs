@@ -12,9 +12,25 @@ const COMPARISONS = Object.freeze([
   ["definition-vs-compact-interface", "full-definition", "compact-interface"],
 ]);
 
-const comparableFields = ["jobCount", "workerJobCount", "toolOnlyJobCount", "workerTurns", "toolCalls", "retainedBytes", "materializedPromptBytes", "maxConcurrency", "criticalPathMs", "directToolOperations"];
+const comparableFields = [
+  "jobCount",
+  "workerJobCount",
+  "toolOnlyJobCount",
+  "workerTurns",
+  "toolCalls",
+  "retainedBytes",
+  "materializedPromptBytes",
+  "maxConcurrency",
+  "criticalPathMs",
+  "directToolOperations",
+];
 const usageFields = ["input", "output", "total"];
-const sizeFields = ["workflowDefinitionBytes", "parentVisibleInterfaceBytes", "definitionReadBytes", "directInvocationTurnsProxy"];
+const sizeFields = [
+  "workflowDefinitionBytes",
+  "parentVisibleInterfaceBytes",
+  "definitionReadBytes",
+  "directInvocationTurnsProxy",
+];
 
 function percentile(values, fraction) {
   const sorted = [...values].sort((left, right) => left - right);
@@ -28,25 +44,52 @@ function median(values) {
 }
 
 function stableValue(records, select) {
-  const values = records.map(select).filter((value) => typeof value === "number" && Number.isFinite(value));
-  return values.length === records.length && values.every((value) => value === values[0]) ? values[0] : null;
+  const values = records
+    .map(select)
+    .filter((value) => typeof value === "number" && Number.isFinite(value));
+  return values.length === records.length && values.every((value) => value === values[0])
+    ? values[0]
+    : null;
 }
 
 function summarizeArm(records) {
-  const times = records.map(({ wallTimeMs }) => wallTimeMs).filter((value) => Number.isFinite(value));
-  if (times.length !== records.length) throw new TypeError("every benchmark arm record must include finite wallTimeMs");
-  const metrics = Object.fromEntries(comparableFields.map((field) => [field, stableValue(records, ({ metrics }) => metrics[field])]));
-  for (const field of usageFields) metrics[`usage${field[0].toUpperCase()}${field.slice(1)}`] = stableValue(records, ({ metrics }) => metrics.usage?.[field]);
+  const times = records
+    .map(({ wallTimeMs }) => wallTimeMs)
+    .filter((value) => Number.isFinite(value));
+  if (times.length !== records.length)
+    throw new TypeError("every benchmark arm record must include finite wallTimeMs");
+  const metrics = Object.fromEntries(
+    comparableFields.map((field) => [field, stableValue(records, ({ metrics }) => metrics[field])]),
+  );
+  for (const field of usageFields)
+    metrics[`usage${field[0].toUpperCase()}${field.slice(1)}`] = stableValue(
+      records,
+      ({ metrics }) => metrics.usage?.[field],
+    );
   for (const field of sizeFields) {
-    metrics[field] = stableValue(records, (record) => record[field] ?? record.metrics[field]
-      ?? (field === "workflowDefinitionBytes" ? record.metrics.definitionReadBytes : undefined)
-      ?? (field === "parentVisibleInterfaceBytes" ? record.metrics.interfaceBytes : undefined));
+    metrics[field] = stableValue(
+      records,
+      (record) =>
+        record[field] ??
+        record.metrics[field] ??
+        (field === "workflowDefinitionBytes" ? record.metrics.definitionReadBytes : undefined) ??
+        (field === "parentVisibleInterfaceBytes" ? record.metrics.interfaceBytes : undefined),
+    );
   }
   return {
     observationCount: records.length,
     parentUsage: records.every(({ parentUsage }) => parentUsage.status === "unavailable")
       ? { status: "unavailable", reason: records[0].parentUsage.reason }
-      : { status: "observed", sources: [...new Set(records.filter(({ parentUsage }) => parentUsage.status === "observed").map(({ parentUsage }) => parentUsage.source))] },
+      : {
+          status: "observed",
+          sources: [
+            ...new Set(
+              records
+                .filter(({ parentUsage }) => parentUsage.status === "observed")
+                .map(({ parentUsage }) => parentUsage.source),
+            ),
+          ],
+        },
     medianWallTimeMs: median(times),
     p95WallTimeMs: percentile(times, 0.95),
     stableMetrics: metrics,
@@ -60,7 +103,14 @@ function pairIndex(arms) {
 function comparison([scenarioId, leftName, rightName], index) {
   const left = index.get(`${scenarioId}\0${leftName}`);
   const right = index.get(`${scenarioId}\0${rightName}`);
-  if (!left || !right) return { scenarioId, left: leftName, right: rightName, status: "incomplete", reason: "one or both comparison arms are absent" };
+  if (!left || !right)
+    return {
+      scenarioId,
+      left: leftName,
+      right: rightName,
+      status: "incomplete",
+      reason: "one or both comparison arms are absent",
+    };
   const deltas = {};
   for (const field of comparableFields) {
     const a = left.stableMetrics[field];
@@ -82,31 +132,44 @@ function comparison([scenarioId, leftName, rightName], index) {
   if (scenarioId === "definition-vs-compact-interface" && leftName === "full-definition") {
     const definitionBytes = left.stableMetrics.workflowDefinitionBytes;
     const interfaceBytes = right.stableMetrics.parentVisibleInterfaceBytes;
-    deltas.parentVisibleReductionBytes = definitionBytes === null || interfaceBytes === null ? null : definitionBytes - interfaceBytes;
-    deltas.parentVisibleReductionRatio = definitionBytes === null || interfaceBytes === null || definitionBytes === 0
-      ? null
-      : (definitionBytes - interfaceBytes) / definitionBytes;
+    deltas.parentVisibleReductionBytes =
+      definitionBytes === null || interfaceBytes === null ? null : definitionBytes - interfaceBytes;
+    deltas.parentVisibleReductionRatio =
+      definitionBytes === null || interfaceBytes === null || definitionBytes === 0
+        ? null
+        : (definitionBytes - interfaceBytes) / definitionBytes;
   }
   return { scenarioId, left: leftName, right: rightName, status: "measured", deltas };
 }
 
 /** Aggregate only measured records; workflow envelopes and usage.jsonl arms remain separate. */
 export function aggregateBenchmarkResult(result) {
-  if (!result || !Array.isArray(result.observations)) throw new TypeError("benchmark result observations are required");
+  if (!result || !Array.isArray(result.observations))
+    throw new TypeError("benchmark result observations are required");
   const groups = new Map();
   for (const record of result.observations) {
     validateBenchmarkRecord(record);
     if (record.warmup === true) continue;
     const key = `${record.scenarioId}\0${record.arm}`;
-    const group = groups.get(key) ?? { scenarioId: record.scenarioId, arm: record.arm, records: [] };
+    const group = groups.get(key) ?? {
+      scenarioId: record.scenarioId,
+      arm: record.arm,
+      records: [],
+    };
     group.records.push(record);
     groups.set(key, group);
   }
-  const arms = [...groups.values()].map(({ scenarioId, arm, records }) => ({ scenarioId, arm, ...summarizeArm(records) }));
+  const arms = [...groups.values()].map(({ scenarioId, arm, records }) => ({
+    scenarioId,
+    arm,
+    ...summarizeArm(records),
+  }));
   const index = pairIndex(arms);
   return {
     schemaVersion: 1,
     arms,
-    comparisons: COMPARISONS.filter(([scenario]) => result.scenarioIds?.includes(scenario)).map((pair) => comparison(pair, index)),
+    comparisons: COMPARISONS.filter(([scenario]) => result.scenarioIds?.includes(scenario)).map(
+      (pair) => comparison(pair, index),
+    ),
   };
 }

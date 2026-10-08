@@ -31,9 +31,10 @@ cheaper を使うと
   （document 生成）
 - **custom worker**: 自分で定義した worker を `run` で実行できる
 - **count-tokens**: workspace file の token 数を LLM なしで測定
-- **provider / model 解決**: Pi runtime 経由で任意の provider
-  （Ollama・OpenAI 系・その他 OpenAI 互換 endpoint）の model を
-  tier で解決
+- **provider / model 解決**: 内蔵の model catalog（bundled
+  snapshot + plugin provider + user overlay）経由で任意の
+  provider（Ollama・OpenAI 系・Anthropic・その他 OpenAI 互換
+  endpoint）の model を tier で解決
 - **parent-agent 連携**: skills / hooks 経由で親 agent から
   委譲できる
 
@@ -86,8 +87,8 @@ input schema・tool・write scope 等の詳細は
 
 ## Configuration
 
-- **provider / auth**: Pi の `models.json`・credential
-  （`cheaper auth` で管理）
+- **provider / auth**: `models.json`（provider・model・endpoint の
+  user overlay）・credential（`cheaper auth` で管理）
 - **tier 割当**: `models.yaml`（model → `low`/`medium`/`high`）
 - **実行 policy**: `policy.yaml`（timeout・tools・model・output）
 

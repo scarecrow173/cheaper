@@ -1,0 +1,29 @@
+{
+  "name": "max_tool_calls",
+  "description": "maxToolCalls=1 で 2 件目の read が budget reject → MAX_TOOL_CALLS_EXCEEDED(read は journal を汚さないので PARTIAL_MUTATION にならない)",
+  "policy": { "max_tool_calls": 1 },
+  "sessions": [
+    {
+      "steps": [
+        {
+          "tool_calls": [
+            { "name": "read", "input": { "path": "a.txt" } },
+            { "name": "read", "input": { "path": "b.txt" } }
+          ]
+        },
+        { "turn": { "tool_calls": true } },
+        { "finish": { "text": "{\"ok\":true}" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "MAX_TOOL_CALLS_EXCEEDED",
+    "exitCode": 6,
+    "errorDetails": { "reason": "maxToolCalls" },
+    "meta": {
+      "toolCalls": 1,
+      "rejectedToolCalls": 1
+    }
+  }
+}

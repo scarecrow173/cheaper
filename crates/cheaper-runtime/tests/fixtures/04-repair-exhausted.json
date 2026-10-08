@@ -1,0 +1,30 @@
+{
+  "name": "repair_exhausted",
+  "description": "repair_attempts=1 で repair 尽き → INVALID_OUTPUT + usage-bearing runMeta",
+  "policy": { "repair_attempts": 1 },
+  "sessions": [
+    {
+      "steps": [
+        { "usage_delta": { "input": 100, "output": 10 } },
+        { "finish": { "text": "bad" } }
+      ]
+    },
+    {
+      "steps": [
+        { "usage_delta": { "input": 50, "output": 5 } },
+        { "finish": { "text": "also bad" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "INVALID_OUTPUT",
+    "exitCode": 6,
+    "errorDetails": { "rawOutput": "also bad" },
+    "meta": {
+      "model": { "provider": "cheaper-fake", "id": "fake-model" },
+      "usage": { "input": 150, "output": 15 },
+      "repairs": 1
+    }
+  }
+}

@@ -1,0 +1,264 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "ok": {
+          "overrides": {},
+          "preferences": {}
+        }
+      },
+      "files": {
+        "proj/.cheaper": {},
+        "user": {}
+      },
+      "name": "no files → empty",
+      "opts": {
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "overrides": {
+            "openai/gpt-5-mini": "low"
+          },
+          "preferences": {
+            "low": [
+              "anthropic/claude-haiku-4-5",
+              "openai/*"
+            ]
+          }
+        }
+      },
+      "files": {
+        "user/models.yaml": "version: 1\noverrides:\n  openai/gpt-5-mini: low\npreferences:\n  low: [anthropic/claude-haiku-4-5, \"openai/*\"]\n"
+      },
+      "name": "user models.yaml",
+      "opts": {
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "overrides": {
+            "anthropic/claude-sonnet-4": "high",
+            "openai/gpt-5-mini": "low"
+          },
+          "preferences": {
+            "low": [
+              "anthropic/claude-haiku-4-5"
+            ],
+            "medium": [
+              "a/x"
+            ]
+          }
+        }
+      },
+      "files": {
+        "proj/.cheaper/models.yaml": "version: 1\noverrides:\n  anthropic/claude-sonnet-4: high\npreferences:\n  low: [anthropic/claude-haiku-4-5]\n",
+        "user/models.yaml": "version: 1\noverrides:\n  openai/gpt-5-mini: low\n  anthropic/claude-sonnet-4: medium\npreferences:\n  low: [\"openai/*\"]\n  medium: [a/x]\n"
+      },
+      "name": "merge user then project",
+      "opts": {
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "exclude": [
+            "anthropic/claude-opus-4-5",
+            "dup/x",
+            "openai/gpt-5-pro"
+          ],
+          "overrides": {},
+          "preferences": {}
+        }
+      },
+      "files": {
+        "proj/.cheaper/models.yaml": "version: 1\nexclude: [openai/gpt-5-pro, \"dup/x\"]\n",
+        "user/models.yaml": "version: 1\nexclude: [anthropic/claude-opus-4-5, \"dup/x\"]\n"
+      },
+      "name": "exclude union",
+      "opts": {
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_MODEL_CONFIG",
+          "details": {
+            "errors": [
+              {
+                "instancePath": ""
+              }
+            ],
+            "path": "<ROOT>\\user\\models.yaml"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "user/models.yaml": "overrides: {}\n"
+      },
+      "name": "missing version",
+      "opts": {
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_MODEL_CONFIG",
+          "details": {
+            "errors": [
+              {
+                "instancePath": ""
+              }
+            ],
+            "path": "<ROOT>\\proj\\.cheaper\\models.yaml"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "proj/.cheaper/models.yaml": "version: 1\nbogus: 1\n"
+      },
+      "name": "unknown top-level",
+      "opts": {
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_MODEL_CONFIG",
+          "details": {
+            "errors": [
+              {
+                "instancePath": "/overrides/p~1m"
+              }
+            ],
+            "path": "<ROOT>\\user\\models.yaml"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "user/models.yaml": "version: 1\noverrides:\n  p/m: ultra\n"
+      },
+      "name": "invalid tier",
+      "opts": {
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_MODEL_CONFIG",
+          "details": {
+            "errors": [
+              {
+                "instancePath": "/preferences"
+              }
+            ],
+            "path": "<ROOT>\\user\\models.yaml"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "user/models.yaml": "version: 1\npreferences:\n  extreme: [\"p/*\"]\n"
+      },
+      "name": "unknown preferences tier",
+      "opts": {
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_MODEL_CONFIG",
+          "details": {
+            "path": "<ROOT>\\user\\models.yaml",
+            "reason": "read-failed"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "user/models.yaml/marker.txt": "x"
+      },
+      "name": "unreadable models.yaml (dir)",
+      "opts": {
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_MODEL_CONFIG",
+          "details": {
+            "path": "<ROOT>\\user\\models.yaml",
+            "reason": "not-object"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "user/models.yaml": "- a\n- b\n"
+      },
+      "name": "non-object yaml",
+      "opts": {
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_MODEL_CONFIG",
+          "details": {
+            "path": "<ROOT>\\user\\models.yaml",
+            "reason": "yaml-parse"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "user/models.yaml": "version: [unclosed\n"
+      },
+      "name": "yaml parse error",
+      "opts": {
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    }
+  ],
+  "platform": "win32"
+}

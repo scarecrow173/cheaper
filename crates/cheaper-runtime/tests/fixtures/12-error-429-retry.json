@@ -1,0 +1,23 @@
+{
+  "name": "error_429_retry",
+  "description": "error{status:429} → transient 分類で retry(transientRetries 計上)→ 成功",
+  "sessions": [
+    {
+      "steps": [
+        { "error": { "status": 429 } },
+        { "usage_delta": { "input": 100, "output": 20 } },
+        { "turn": {} },
+        { "finish": { "text": "{\"ok\":true}" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "ok",
+    "result": { "ok": true },
+    "meta": {
+      "usage": { "input": 100, "output": 20 },
+      "turns": 1,
+      "transientRetries": 1
+    }
+  }
+}

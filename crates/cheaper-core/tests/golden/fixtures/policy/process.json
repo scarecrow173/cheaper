@@ -1,0 +1,1048 @@
+{
+  "cases": [
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "heartbeat": {
+            "interval": "30s"
+          },
+          "killGrace": "2s",
+          "maxConcurrent": 1,
+          "maxOutputBytes": 65536,
+          "tasks": {},
+          "timeout": "2m"
+        }
+      },
+      "input": null,
+      "name": "defaults",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "heartbeat": {
+            "interval": "30s"
+          },
+          "killGrace": "2s",
+          "maxConcurrent": 1,
+          "maxOutputBytes": 65536,
+          "tasks": {},
+          "timeout": "2m"
+        }
+      },
+      "input": {},
+      "name": "empty object",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "heartbeat": {
+            "interval": "10s"
+          },
+          "killGrace": "1s",
+          "maxConcurrent": 3,
+          "maxOutputBytes": 1024,
+          "tasks": {
+            "a": {
+              "command": [
+                "aa"
+              ],
+              "cwd": "sub",
+              "env": {
+                "K": "v"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "b": {
+              "command": [
+                "bb"
+              ],
+              "cwd": ".",
+              "env": {},
+              "inputs": [
+                "i"
+              ],
+              "outputs": [
+                "o"
+              ]
+            }
+          },
+          "timeout": "90s"
+        }
+      },
+      "input": {
+        "heartbeat": {
+          "interval": "10s"
+        },
+        "killGrace": "1s",
+        "maxConcurrent": 3,
+        "maxOutputBytes": 1024,
+        "tasks": {
+          "a": {
+            "command": [
+              "aa"
+            ],
+            "cwd": "sub",
+            "env": {
+              "K": "v"
+            },
+            "inputs": [],
+            "outputs": []
+          },
+          "b": {
+            "command": [
+              "bb"
+            ],
+            "inputs": [
+              "i"
+            ],
+            "outputs": [
+              "o"
+            ]
+          }
+        },
+        "timeout": "90s"
+      },
+      "name": "valid tasks sorted + filled",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "bogus": 1
+      },
+      "name": "invalid unknown field",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "timeout": "5x"
+      },
+      "name": "invalid bad timeout",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "timeout": "100000000000000000000h"
+      },
+      "name": "invalid timeout over limit",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "maxOutputBytes": 16777217
+      },
+      "name": "invalid maxOutputBytes over cap",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "bash",
+              "-c",
+              "x"
+            ],
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "invalid shell executable",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "run.sh"
+            ],
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "invalid script shim",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "echo",
+              "a|b"
+            ],
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "invalid argv shell syntax",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "echo",
+              "$(x)"
+            ],
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "invalid argv subshell",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "cc"
+            ],
+            "inputs": [
+              "/abs"
+            ],
+            "outputs": []
+          }
+        }
+      },
+      "name": "invalid absolute input",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "cc"
+            ],
+            "inputs": [
+              "a/../b"
+            ],
+            "outputs": []
+          }
+        }
+      },
+      "name": "invalid traversal input",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "cc"
+            ],
+            "cwd": "d:e",
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "invalid drive-relative cwd",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": {
+          "Bad Name": {
+            "command": [
+              "cc"
+            ],
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "invalid bad task name",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "invalid missing command",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "heartbeat": {
+            "interval": "30s"
+          },
+          "killGrace": "2s",
+          "maxConcurrent": 1,
+          "maxOutputBytes": 65536,
+          "tasks": {
+            "t": {
+              "command": [
+                "cc"
+              ],
+              "cwd": ".",
+              "env": {
+                "A": "2",
+                "C": "3",
+                "b": "1"
+              },
+              "inputs": [],
+              "outputs": []
+            }
+          },
+          "timeout": "2m"
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "cc"
+            ],
+            "env": {
+              "A": "2",
+              "C": "3",
+              "b": "1"
+            },
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "env keys sort by localeCompare",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "heartbeat": {
+            "interval": "30s"
+          },
+          "killGrace": "2s",
+          "maxConcurrent": 1,
+          "maxOutputBytes": 65536,
+          "tasks": {
+            "a-2": {
+              "command": [
+                "cc"
+              ],
+              "cwd": ".",
+              "env": {},
+              "inputs": [],
+              "outputs": []
+            },
+            "a0": {
+              "command": [
+                "cc"
+              ],
+              "cwd": ".",
+              "env": {},
+              "inputs": [],
+              "outputs": []
+            },
+            "a_1": {
+              "command": [
+                "cc"
+              ],
+              "cwd": ".",
+              "env": {},
+              "inputs": [],
+              "outputs": []
+            },
+            "b": {
+              "command": [
+                "cc"
+              ],
+              "cwd": ".",
+              "env": {},
+              "inputs": [],
+              "outputs": []
+            },
+            "z_1": {
+              "command": [
+                "cc"
+              ],
+              "cwd": ".",
+              "env": {},
+              "inputs": [],
+              "outputs": []
+            },
+            "za": {
+              "command": [
+                "cc"
+              ],
+              "cwd": ".",
+              "env": {},
+              "inputs": [],
+              "outputs": []
+            }
+          },
+          "timeout": "2m"
+        }
+      },
+      "input": {
+        "tasks": {
+          "a-2": {
+            "command": [
+              "cc"
+            ],
+            "inputs": [],
+            "outputs": []
+          },
+          "a0": {
+            "command": [
+              "cc"
+            ],
+            "inputs": [],
+            "outputs": []
+          },
+          "a_1": {
+            "command": [
+              "cc"
+            ],
+            "inputs": [],
+            "outputs": []
+          },
+          "b": {
+            "command": [
+              "cc"
+            ],
+            "inputs": [],
+            "outputs": []
+          },
+          "z_1": {
+            "command": [
+              "cc"
+            ],
+            "inputs": [],
+            "outputs": []
+          },
+          "za": {
+            "command": [
+              "cc"
+            ],
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "task names sort punct before digits/letters",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "heartbeat": {
+            "interval": "30s"
+          },
+          "killGrace": "2s",
+          "maxConcurrent": 1,
+          "maxOutputBytes": 65536,
+          "tasks": {
+            "t": {
+              "command": [
+                "cc"
+              ],
+              "cwd": ".",
+              "env": {
+                "Z1": "b",
+                "ZA": "a",
+                "Z_2": "c",
+                "_A": "d"
+              },
+              "inputs": [],
+              "outputs": []
+            }
+          },
+          "timeout": "2m"
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "cc"
+            ],
+            "env": {
+              "Z1": "b",
+              "ZA": "a",
+              "Z_2": "c",
+              "_A": "d"
+            },
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "env keys sort punct before digits",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "maxConcurrent": null
+      },
+      "name": "invalid null maxConcurrent",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": null
+      },
+      "name": "invalid null tasks",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "heartbeat": {
+          "interval": null
+        }
+      },
+      "name": "invalid null heartbeat interval",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "cc"
+            ],
+            "env": {
+              "K": null
+            },
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "invalid null task env value",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "win32",
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "cc"
+            ],
+            "env": {
+              "PATH": "b",
+              "Path": "a"
+            },
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "env case collision win32",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "posix",
+      "expected": {
+        "ok": {
+          "heartbeat": {
+            "interval": "30s"
+          },
+          "killGrace": "2s",
+          "maxConcurrent": 1,
+          "maxOutputBytes": 65536,
+          "tasks": {
+            "t": {
+              "command": [
+                "cc"
+              ],
+              "cwd": ".",
+              "env": {
+                "PATH": "b",
+                "Path": "a"
+              },
+              "inputs": [],
+              "outputs": []
+            }
+          },
+          "timeout": "2m"
+        }
+      },
+      "input": {
+        "tasks": {
+          "t": {
+            "command": [
+              "cc"
+            ],
+            "env": {
+              "PATH": "b",
+              "Path": "a"
+            },
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      },
+      "name": "env case collision posix",
+      "op": "resolveProcessPolicy"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": true
+      },
+      "input": "sh",
+      "name": "isShell sh",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": true
+      },
+      "input": "bash",
+      "name": "isShell bash",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": true
+      },
+      "input": "cmd.exe",
+      "name": "isShell cmd.exe",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": true
+      },
+      "input": "powershell",
+      "name": "isShell powershell",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": true
+      },
+      "input": "pwsh",
+      "name": "isShell pwsh",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": true
+      },
+      "input": "bin/zsh",
+      "name": "isShell bin/zsh",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": true
+      },
+      "input": "x.PS1",
+      "name": "isShell x.PS1",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": true
+      },
+      "input": "run.sh",
+      "name": "isShell run.sh",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": true
+      },
+      "input": "a.BAT",
+      "name": "isShell a.BAT",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": true
+      },
+      "input": "busybox",
+      "name": "isShell busybox",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": false
+      },
+      "input": "shell",
+      "name": "isShell shell",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": false
+      },
+      "input": "command",
+      "name": "isShell command",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": false
+      },
+      "input": "pwsh-tool",
+      "name": "isShell pwsh-tool",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": false
+      },
+      "input": "a.shx",
+      "name": "isShell a.shx",
+      "op": "isShellProcessExecutable"
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "command": [
+            "make"
+          ],
+          "cwd": ".",
+          "env": {},
+          "inputs": [
+            "src/**"
+          ],
+          "outputs": [
+            "out.txt"
+          ]
+        }
+      },
+      "input": "build",
+      "name": "resolveProcessTask hit",
+      "op": "resolveProcessTask",
+      "policy": {
+        "heartbeat": {
+          "interval": "30s"
+        },
+        "killGrace": "2s",
+        "maxConcurrent": 1,
+        "maxOutputBytes": 65536,
+        "tasks": {
+          "build": {
+            "command": [
+              "make"
+            ],
+            "cwd": ".",
+            "env": {},
+            "inputs": [
+              "src/**"
+            ],
+            "outputs": [
+              "out.txt"
+            ]
+          }
+        },
+        "timeout": "2m"
+      }
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "error": {
+          "code": "POLICY_VIOLATION",
+          "details": {
+            "task": "nope"
+          },
+          "exitCode": 4,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": "nope",
+      "name": "resolveProcessTask miss",
+      "op": "resolveProcessTask",
+      "policy": {
+        "heartbeat": {
+          "interval": "30s"
+        },
+        "killGrace": "2s",
+        "maxConcurrent": 1,
+        "maxOutputBytes": 65536,
+        "tasks": {
+          "build": {
+            "command": [
+              "make"
+            ],
+            "cwd": ".",
+            "env": {},
+            "inputs": [
+              "src/**"
+            ],
+            "outputs": [
+              "out.txt"
+            ]
+          }
+        },
+        "timeout": "2m"
+      }
+    },
+    {
+      "axis": "any",
+      "expected": {
+        "ok": {
+          "produces": [
+            {
+              "path": "out.txt",
+              "scope": "exact"
+            }
+          ],
+          "reads": [
+            {
+              "path": "src/**",
+              "scope": "subtree"
+            }
+          ],
+          "writes": [
+            {
+              "path": "out.txt",
+              "scope": "exact"
+            }
+          ]
+        }
+      },
+      "input": "build",
+      "name": "processTaskResources",
+      "op": "processTaskResources",
+      "policy": {
+        "heartbeat": {
+          "interval": "30s"
+        },
+        "killGrace": "2s",
+        "maxConcurrent": 1,
+        "maxOutputBytes": 65536,
+        "tasks": {
+          "build": {
+            "command": [
+              "make"
+            ],
+            "cwd": ".",
+            "env": {},
+            "inputs": [
+              "src/**"
+            ],
+            "outputs": [
+              "out.txt"
+            ]
+          }
+        },
+        "timeout": "2m"
+      }
+    }
+  ],
+  "platform": "win32"
+}

@@ -1,17 +1,17 @@
 # Provider 設定ガイド
 
-`cheaper` は model 解決を Pi runtime
-（`@earendil-works/pi-coding-agent`）に委譲する。provider の
-endpoint・認証は Pi の `models.json` と credential で、cheaper
-側は `models.yaml` で model → tier の割当を行う。
+`cheaper` は内蔵の model catalog で model を解決する。catalog は
+bundled snapshot（binary 埋込の provider・model 定義）+ bundled
+provider plugin + user overlay（`models.json`）で構成される。
+credential は `credentials.json` で、cheaper 側は `models.yaml` で
+model → tier の割当を行う。
 
 ## 設定ファイルの場所
 
 | ファイル | 場所 | 役割 |
 | --- | --- | --- |
-| `models.json` | `<userConfigDir>/pi/models.json` | Pi の provider・model 定義・endpoint |
-| `auth.json` | `<userConfigDir>/pi/auth.json` | OAuth credential・API key（login で永続化） |
-| `models-store.json` | `<userConfigDir>/pi/models-store.json` | Pi の model catalog cache |
+| `models.json` | `<userConfigDir>/models.json` | provider・model 定義・endpoint の user overlay（bundled catalog を上書き・追加） |
+| `credentials.json` | `<userConfigDir>/credentials.json` | OAuth credential・API key（login で永続化） |
 | `models.yaml` | `<userConfigDir>/models.yaml` → `<cwd>/.cheaper/models.yaml` | cheaper の tier 分類・preference |
 | `policy.yaml` | 同上 | execution・tools・model・output・retry の policy override |
 
@@ -21,13 +21,17 @@ endpoint・認証は Pi の `models.json` と credential で、cheaper
 読んだ層が前の層を上書きする（project が user より優先）。
 環境依存設定はリポジトリへコミットしない。
 
-Pi の永続 file は `<userConfigDir>/pi/` に集約される。
-cheaper は `PI_CODING_AGENT_DIR` を参照せず、Pi の既定 dir
-（`~/.pi/agent`）には書き込まない。credential を含むため
-project-local `.cheaper/` にも置かない — `.cheaper/` は
+credential は `<userConfigDir>/credentials.json` に集約される
+（temp file + rename の atomic write）。credential を含むため
+project-local `.cheaper/` には置かない — `.cheaper/` は
 worker・`models.yaml`・`policy.yaml` の project override
 専用。`cheaper auth`・worker 実行の双方が同じ credential
-store（`<userConfigDir>/pi/auth.json`）を参照する。
+store を参照する。
+
+旧 Pi runtime の永続 file（`<userConfigDir>/pi/` 以下の
+`auth.json`・`models.json`・`models-store.json`）は移行されず、
+一切読まれない。Rust runtime への切替後は全 provider で再 login
+が必要。
 
 ## Ollama（ローカル provider）
 
@@ -35,7 +39,7 @@ store（`<userConfigDir>/pi/auth.json`）を参照する。
 方法は環境に依存する（本リポジトリの検証用コンテナ手順は
 [CONTRIBUTING.md](../../CONTRIBUTING.md) を参照）。
 
-### Pi `models.json`
+### `models.json`（user overlay）
 
 ```json
 {
@@ -65,7 +69,7 @@ store（`<userConfigDir>/pi/auth.json`）を参照する。
 ```
 
 - `apiKey` は optional だが、apiKey も OAuth も無い provider は
-  Pi が "no authentication method configured" で拒否する。Ollama
+  "no authentication method configured" で拒否される。Ollama
   は任意のリテラル値でよい（秘密情報ではない）。
 - `samplingParams` はリクエストボディへそのまま merge される。
   thinking モデルは `reasoning_effort: "none"` で推論フェーズを
@@ -88,8 +92,8 @@ preferences:
   分類は worker の `outputPerInput`（既定 `1.0`）から
   `effectiveCost = input + output * outputPerInput` を計算し、
   利用可能な priced model 集合の percentile で下位 1/3 → low、
-  中位 1/3 → medium、上位 1/3 → high に分ける。pricing は Pi の
-  runtime catalog（models.dev 由来）が canonical で、local
+  中位 1/3 → medium、上位 1/3 → high に分ける。pricing は runtime
+  catalog（bundled snapshot は models.dev 由来）が canonical で、local
   model（`ollama/*`）は curated exception で `low` に固定されて
   いる。model ごとの effective tier と由来（`tierSource`・
   `effectiveCost`・`effectiveCostPercentile`）は `cheaper
@@ -112,15 +116,15 @@ preferences:
 
 ## OpenAI（ChatGPT サブスクリプション / `openai-codex`）
 
-Pi には `openai-codex` provider が built-in であり、ChatGPT
-サブスクリプションの OAuth 認証（Codex 系モデル）で利用できる。
-API key は不要だが、初回のみ interactive な OAuth login が必要。
+`openai-codex` は bundled catalog の built-in provider であり、
+ChatGPT サブスクリプションの OAuth 認証（Codex 系モデル）で
+利用できる。API key は不要だが、初回のみ interactive な OAuth
+login が必要。
 
 ### セットアップ
 
-`pi` の standalone install は不要。`cheaper auth` が同じ Pi
-runtime の OAuth flow を内蔵しており、credential は同じ
-`auth.json` に保存される。
+`cheaper auth` が OAuth flow を内蔵しており、credential は
+`credentials.json` に保存される。
 
 ```bash
 cheaper auth login openai-codex
@@ -174,14 +178,14 @@ echo '{"task":"summarize","paths":["<file>"]}' | cheaper bulk-read --cwd <ws>
 ```
 
 - `openai-codex` は built-in provider のため `models.json` への
-  provider 追加は不要（`auth.json` の OAuth credential のみで
-  動く）。
+  provider 追加は不要（`credentials.json` の OAuth credential
+  のみで動く）。
 - subscription 利用のため API 課金ではなく quota 消費。rate
   limit に注意。
 
 ## その他の provider
 
-Pi runtime がサポートする provider と、各 provider が
+bundled catalog がサポートする provider と、各 provider が
 受け付ける login method（`methods` の `oauth` /
 `api_key`）は `cheaper auth status` で確認するのが
 canonical。`models.json` に OpenAI 互換 endpoint を持つ
@@ -190,17 +194,16 @@ canonical。`models.json` に OpenAI 互換 endpoint を持つ
 
 ### bundled provider plugin
 
-Pi built-in に無い provider は、cheaper が明示的に bundle
-する provider plugin として `ModelRuntime` に登録される
+bundled catalog に無い provider は、cheaper が明示的に bundle
+する provider plugin として runtime に登録される
 （ADR-034r05iHrZUE6WoaNDNjvX）。plugin は provider の metadata・auth flow・
-model catalog・`streamSimple` 等の model transport を登録
+model catalog・model transport を登録
 でき、`cheaper auth status/login/logout`・model の tier
 解決から通常の provider と同様に扱える。
 
-Worker の実行環境を最小化するため、Pi の general-purpose
-extension loader は有効化しない。external provider package
-の discovery / load も行わない — 登録対象は cheaper が
-明示的に bundle する plugin のみ。
+Worker の実行環境を最小化するため、external provider package の
+discovery / load は行わない — 登録対象は cheaper が明示的に
+bundle する plugin のみ。
 
 ### Devin Local（bundled）
 
@@ -216,8 +219,8 @@ access を対象とする。
   （`XDG_DATA_HOME`、Windows では `LOCALAPPDATA` 併用）へ
   設定した状態で `devin auth login` をそのまま実行する。
   Devin CLI 自身の対話 flow が走り、生成された
-  `credentials.toml` を cheaper が読んで Pi credential
-  として永続化する。
+  `credentials.toml` を cheaper が読んで credential store
+  （`credentials.json`）へ永続化する。
 - **credential の隔離**: Devin CLI の data dir は
   `<userConfigDir>/providers/devin/data/` 配下に閉じ込め
   られる（`<data>/devin/credentials.toml`）。global の
@@ -228,13 +231,13 @@ access を対象とする。
   provider を認識させ、login 直後・refresh 時に live
   catalog で置き換える。thinking level は variant suffix
   から `thinkingLevelMap` へ写像される。
-- **logout**: `cheaper auth logout devin` で Pi 側の stored
-  credential を削除し、isolated env で `devin auth logout`
+- **logout**: `cheaper auth logout devin` で stored credential
+  を削除し、isolated env で `devin auth logout`
   を実行して cheaper-owned の `credentials.toml` も削除する
   （Devin CLI 未到達時も file 削除は best-effort で行う）。
   次回 `cheaper auth login devin` は `devin auth login` を
   再実行する。
-- Devin 固有の slash command / Pi tool / event handler は
+- Devin 固有の slash command / tool / event handler は
   持ち込まない（provider-only contract、ADR-034r05iHrZUE6WoaNDNjvX）。
 
 ## 関連

@@ -1,0 +1,238 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "ok": {
+          "tokens": 0
+        }
+      },
+      "name": "empty",
+      "op": "countText",
+      "text": ""
+    },
+    {
+      "expected": {
+        "ok": {
+          "tokens": 3
+        }
+      },
+      "name": "ascii",
+      "op": "countText",
+      "text": "hello world\n"
+    },
+    {
+      "expected": {
+        "ok": {
+          "tokens": 18
+        }
+      },
+      "name": "unicode",
+      "op": "countText",
+      "text": "日本語のテキスト。🚀 emoji と éàü 混在。\n"
+    },
+    {
+      "expected": {
+        "ok": {
+          "tokens": 128
+        }
+      },
+      "name": "long ascii",
+      "op": "countText",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "other",
+          "message": "The text contains a special token that is not allowed: <|endoftext|>",
+          "name": "Error"
+        }
+      },
+      "name": "special token rejected",
+      "op": "countText",
+      "text": "a <|endoftext|> b"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "other",
+          "message": "The text contains a special token that is not allowed: <|endofprompt|>",
+          "name": "Error"
+        }
+      },
+      "name": "endofprompt rejected",
+      "op": "countText",
+      "text": "<|endofprompt|>"
+    },
+    {
+      "expected": {
+        "ok": {
+          "bytes": 12,
+          "path": "a.txt",
+          "tokens": 3
+        }
+      },
+      "files": {
+        "a.txt": "hello world\n"
+      },
+      "input": "a.txt",
+      "maxBytes": null,
+      "name": "small file",
+      "op": "countFile",
+      "policy": "within-workspace"
+    },
+    {
+      "expected": {
+        "ok": {
+          "bytes": 0,
+          "path": "empty.txt",
+          "tokens": 0
+        }
+      },
+      "files": {
+        "empty.txt": ""
+      },
+      "input": "empty.txt",
+      "maxBytes": null,
+      "name": "empty file",
+      "op": "countFile",
+      "policy": "deny"
+    },
+    {
+      "expected": {
+        "ok": {
+          "bytes": 59,
+          "path": "uni.txt",
+          "tokens": 18
+        }
+      },
+      "files": {
+        "uni.txt": "日本語のテキスト。🚀 emoji と éàü 混在。\n"
+      },
+      "input": "uni.txt",
+      "maxBytes": null,
+      "name": "unicode file",
+      "op": "countFile",
+      "policy": "deny"
+    },
+    {
+      "expected": {
+        "ok": {
+          "bytes": 9,
+          "path": "bin.dat",
+          "tokens": 5
+        }
+      },
+      "files": {
+        "bin.dat": {
+          "base64": "iVBORwAA//4B"
+        }
+      },
+      "input": "bin.dat",
+      "maxBytes": null,
+      "name": "binary lossy",
+      "op": "countFile",
+      "policy": "deny"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "other",
+          "message": "The text contains a special token that is not allowed: <|endoftext|>",
+          "name": "Error"
+        }
+      },
+      "files": {
+        "s.txt": "x <|endoftext|> y"
+      },
+      "input": "s.txt",
+      "maxBytes": null,
+      "name": "special token file rejected",
+      "op": "countFile",
+      "policy": "deny"
+    },
+    {
+      "expected": {
+        "error": {
+          "input": "../outside.txt",
+          "kind": "escape",
+          "reason": "outside-workspace"
+        }
+      },
+      "files": {
+        "in.txt": "x"
+      },
+      "input": "../outside.txt",
+      "maxBytes": null,
+      "name": "escape rejected",
+      "op": "countFile",
+      "policy": "deny"
+    },
+    {
+      "expected": {
+        "error": {
+          "input": "/etc/passwd",
+          "kind": "escape",
+          "reason": "outside-workspace"
+        }
+      },
+      "files": {
+        "in.txt": "x"
+      },
+      "input": "/etc/passwd",
+      "maxBytes": null,
+      "name": "absolute outside rejected",
+      "op": "countFile",
+      "policy": "deny"
+    },
+    {
+      "expected": {
+        "error": {
+          "kind": "io"
+        }
+      },
+      "files": {},
+      "input": "missing.txt",
+      "maxBytes": null,
+      "name": "missing file",
+      "op": "countFile",
+      "policy": "deny"
+    },
+    {
+      "expected": {
+        "error": {
+          "bytes": 64,
+          "kind": "tooLarge",
+          "maxBytes": 16,
+          "path": "big.bin"
+        }
+      },
+      "files": {
+        "big.bin": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "input": "big.bin",
+      "maxBytes": 16,
+      "name": "over maxBytes",
+      "op": "countFile",
+      "policy": "deny"
+    },
+    {
+      "expected": {
+        "ok": {
+          "bytes": 16,
+          "path": "exact.txt",
+          "tokens": 2
+        }
+      },
+      "files": {
+        "exact.txt": "xxxxxxxxxxxxxxxx"
+      },
+      "input": "exact.txt",
+      "maxBytes": 16,
+      "name": "exactly maxBytes",
+      "op": "countFile",
+      "policy": "deny"
+    }
+  ],
+  "platform": "win32"
+}

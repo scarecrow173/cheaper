@@ -1,0 +1,36 @@
+{
+  "name": "success_basic",
+  "description": "normal run: usage_delta + 2 turns + fenced output. costUsd は pricing 層算出 (1000*1.0 + 2000*2.0 + 100*0.5 + 50*0.5)/1e6 = 0.005075",
+  "sessions": [
+    {
+      "steps": [
+        { "usage_delta": { "input": 1000, "output": 2000, "cacheRead": 100, "cacheWrite": 50 } },
+        { "turn": {} },
+        { "turn": {} },
+        { "finish": { "text": "```json\n{\"ok\":true}\n```" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "ok",
+    "result": { "ok": true },
+    "exitCode": 0,
+    "meta": {
+      "model": { "provider": "cheaper-fake", "id": "fake-model", "tier": "medium" },
+      "usage": {
+        "input": 1000,
+        "output": 2000,
+        "cacheRead": 100,
+        "cacheWrite": 50,
+        "totalTokens": 3150,
+        "costUsd": 0.005075
+      },
+      "turns": 2,
+      "toolCalls": 0,
+      "rejectedToolCalls": 0,
+      "repairs": 0,
+      "transientRetries": 0
+    },
+    "pendingResponses": 0
+  }
+}

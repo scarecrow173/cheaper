@@ -1,0 +1,19 @@
+{
+  "name": "run_auth_env_template",
+  "fixture": {
+    "name": "auth_env_template",
+    "provider": { "api_key": "$CHEAPER_FAKE_API_KEY" },
+    "env": { "CHEAPER_FAKE_API_KEY": "resolved-key" },
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "usage_delta": { "input": 10, "output": 1 } },
+          { "turn": {} },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

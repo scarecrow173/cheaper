@@ -1,0 +1,21 @@
+[package]
+name = "cheaper-rig-adapter"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+description = "Rig-facing runtime adapter (Phase 3 T1): cheaper-tools worker scope → Rig tool bridge, AgentBuilder semantics, hook-driven accumulator, error mapping, completion-call transient retry, streaming run surface. The only non-provider crate that imports Rig; Rig types never appear in outward signatures."
+
+[dependencies]
+cheaper-core = { path = "../cheaper-core" }
+cheaper-tools = { path = "../cheaper-tools" }
+rig.workspace = true
+tokio.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+# `test-utils` (MockCompletionModel/MockTurn) is a test-only feature; with
+# resolver=2 it does not leak into normal builds.
+rig = { workspace = true, features = ["test-utils"] }
+http = "1"

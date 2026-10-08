@@ -1,0 +1,20 @@
+{
+  "name": "emit_then_error",
+  "description": "emit 後の error は現 call が item を産んだ後なので retry しない(partial-turn 規則)→ PROVIDER_FAILURE",
+  "sessions": [
+    {
+      "steps": [
+        { "emit": { "text_delta": "partial" } },
+        { "error": { "status": 429 } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "PROVIDER_FAILURE",
+    "exitCode": 5,
+    "meta": {
+      "transientRetries": 0
+    }
+  }
+}

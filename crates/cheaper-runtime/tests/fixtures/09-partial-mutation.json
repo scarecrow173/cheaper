@@ -1,0 +1,25 @@
+{
+  "name": "partial_mutation",
+  "description": "write が journal に乗った後の signal abort → PARTIAL_MUTATION(cause = ABORTED)",
+  "abort": { "after_ms": 120, "message": "user abort" },
+  "sessions": [
+    {
+      "steps": [
+        { "tool_calls": [ { "name": "write", "input": { "path": "a.txt", "content": "x" } } ] },
+        { "usage_delta": { "input": 10, "output": 1 } },
+        { "turn": {} },
+        "hang_until_abort"
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "PARTIAL_MUTATION",
+    "exitCode": 9,
+    "causeCode": "ABORTED",
+    "meta": {
+      "toolCalls": 1,
+      "changesFilesMin": 1
+    }
+  }
+}

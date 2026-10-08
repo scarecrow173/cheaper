@@ -6,6 +6,10 @@ APM package の `cheaper`（POSIX sh）/ `cheaper.ps1`（Windows）は、sibling
 Node は不要。`latest` を参照せず、取得/検証失敗は stderr の診断と非0 exit で通知する。
 
 取得契約は [詳細設計](../designs/version-pinned-launcher-acquisition.md) を参照。
+配布 executable の build pipeline は旧 Node SEA から Rust binary（cargo
+release build）へ切替済みだが、Rust binary を含む Release は未公開であり、
+初回公開は `release-acquisition` の dispatch が担う。asset 名・`SHA256SUMS`
+形式・`--version` probe・取得 contract は不変。
 Git source は platform executable を含まない。launcher と小さい CLI asset を install し、
 固定 Release から取得する。Git LFS の既存履歴は保持するが、新 binary は Git に追加しない。
 `release-acquisition` の1dispatchでraw3 / `SHA256SUMS` / APM archiveを公開する
@@ -40,7 +44,8 @@ dependencies:
 consumerで `mise exec -- apm install --target windsurf` を実行する（consumer側の
 APM環境を使用）。archiveには同runのraw3、内部 `cli/SHA256SUMS`、version.json、
 primitivesを含み、Linux binariesは0755で保存する。workflowはWindows/Linux x64/Linux
-arm64でlocal install後のNode-free launcherを検証してから公開する。
+arm64でlocal install後のNode-free launcher、および macOS で sibling 経路を
+検証してから公開する。
 これは既存Git-based APM installを置換する強制移行ではなく追加の配布経路である。
 公開manifestのdigest対象はraw3でありarchive全体ではない。SHA-256は署名保証ではない。
 
@@ -54,6 +59,10 @@ arm64でlocal install後のNode-free launcherを検証してから公開する�
 
 tag は `v<cli/version.json の version>`。対応外の OS/arch は自動取得せず、
 local sibling を用意するよう診断する。Windows ARM64 を x64 と誤認して取得しない。
+macOS（darwin-arm64）は acquisition 非対象で、Release asset・manifest にも
+含めない。darwin binary は build・sibling smoke の検証用途のみであり、
+macOS の consumer は deploy 済み sibling（`cli/bin/darwin-arm64/cheaper`）を
+使う。
 existing sibling は従来の platform mapping と動作を維持する。
 Git LFS pointer が sibling にある場合も取得に切り替えず、`git lfs install` と
 package cache での `git lfs pull`、または APM の再 install を案内する。
@@ -139,7 +148,8 @@ binary-free install を有効化するには JSON deploy gap を別変更で先�
 offline preseed でもこの制約は変わらない。
 
 root apm.yml は development-only で cheaper 自身の hook を deploy しない。
-dev consumer は local SEA build の host executable を対応 sibling へ配置して使う。
+dev consumer は local build の host executable（`cargo build --release -p
+cheaper-cli` の出力）を対応 sibling へ配置して使う。
 未 release の package version に Release download fallback を期待しない。
 local output は `cli/bin/*/` の ignore 対象。source checker は foreign binary の存在や
 byte 一致を要求せず、native build/smoke が executable の version・実行を検証する。
@@ -147,7 +157,8 @@ byte 一致を要求せず、native build/smoke が executable の version・実
 ## Git-based consumer の移行と復旧
 
 1. 新経路の初回公開はローカル検証だけでは未実証。移行先の immutable tag について
-   全 5 Release asset と 3 native smoke の成功を確認するまで切り替えない。
+   全 5 Release asset と 4 smoke job（3 OS の acquisition 経路 + macOS
+   sibling 経路）の成功を確認するまで切り替えない。
 2. 稼働中の consumer manifest/ref と deploy directory 全体（sibling を含む）を退避する。
 3. Windsurf / Claude / Codex / Cursor は APM dependency をその tag/ref に更新し、
    `apm install --target <target>` を再実行する。version.json の deploy を確認する。

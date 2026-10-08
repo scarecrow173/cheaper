@@ -1,0 +1,351 @@
+{
+  "cases": [
+    {
+      "cwdRel": null,
+      "expected": {
+        "error": {
+          "input": "a\u0000b",
+          "kind": "escape",
+          "reason": "nul-character"
+        }
+      },
+      "files": {},
+      "input": "a\u0000b",
+      "name": "NUL rejected",
+      "op": "resolve",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "error": {
+          "input": "../outside.txt",
+          "kind": "escape",
+          "reason": "outside-workspace"
+        }
+      },
+      "files": {},
+      "input": "../outside.txt",
+      "name": "escape rejected",
+      "op": "resolve",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "error": {
+          "input": "sub/../../outside.txt",
+          "kind": "escape",
+          "reason": "outside-workspace"
+        }
+      },
+      "files": {},
+      "input": "sub/../../outside.txt",
+      "name": "interior escape rejected",
+      "op": "resolve",
+      "policy": "within-workspace",
+      "symlinks": null
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "ok": {
+          "path": {
+            "display": "sub/file.txt",
+            "real": "<ROOT>\\sub\\file.txt"
+          }
+        }
+      },
+      "files": {
+        "sub/file.txt": "x"
+      },
+      "input": "sub/../sub/./file.txt",
+      "name": "dot normalization",
+      "op": "resolve",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "ok": {
+          "path": {
+            "display": ".",
+            "real": "<ROOT>"
+          }
+        }
+      },
+      "files": {},
+      "input": ".",
+      "name": "dot root",
+      "op": "resolve",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "ok": {
+          "path": {
+            "display": "~/x",
+            "real": "<ROOT>\\~\\x"
+          }
+        }
+      },
+      "files": {},
+      "input": "~/x",
+      "name": "tilde literal",
+      "op": "resolve",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "ok": {
+          "path": {
+            "display": "sub/deep/new-file.txt",
+            "real": "<ROOT>\\sub\\deep\\new-file.txt"
+          }
+        }
+      },
+      "files": {
+        "sub/deep/.keep": ""
+      },
+      "input": "sub/deep/new-file.txt",
+      "name": "nonexistent tail",
+      "op": "resolve",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "ok": {
+          "path": {
+            "display": "a/b/c.txt",
+            "real": "<ROOT>\\a\\b\\c.txt"
+          }
+        }
+      },
+      "files": {},
+      "input": "a/b/c.txt",
+      "name": "fully nonexistent subtree",
+      "op": "resolve",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "ok": {
+          "path": {
+            "display": "sub/file.txt",
+            "real": "<ROOT>\\sub\\file.txt"
+          }
+        }
+      },
+      "files": {
+        "sub/file.txt": "x"
+      },
+      "input": "<ROOT>/sub/file.txt",
+      "name": "absolute inside accepted",
+      "op": "resolve",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "error": {
+          "input": "<OUT>/definitely-outside.txt",
+          "kind": "escape",
+          "reason": "outside-workspace"
+        }
+      },
+      "files": {},
+      "input": "<OUT>/definitely-outside.txt",
+      "name": "absolute outside rejected",
+      "op": "resolve",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "cwdRel": "nope",
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": {
+            "cwd": "<ROOT>\\nope"
+          },
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "canonicalize missing dir",
+      "op": "canonicalize",
+      "policy": "deny",
+      "symlinks": null
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "error": {
+          "input": "link-in/in.txt",
+          "kind": "escape",
+          "reason": "symlink-denied"
+        }
+      },
+      "files": {
+        "real/in.txt": "in"
+      },
+      "input": "link-in/in.txt",
+      "name": "deny rejects in-workspace symlink",
+      "op": "resolve",
+      "policy": "deny",
+      "symlinks": [
+        {
+          "link": "link-in",
+          "target": "real"
+        }
+      ]
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "error": {
+          "input": "link-out/out.txt",
+          "kind": "escape",
+          "reason": "symlink-outside-workspace"
+        }
+      },
+      "files": {
+        "real/in.txt": "in"
+      },
+      "input": "link-out/out.txt",
+      "name": "within rejects symlink to outside dir",
+      "op": "resolve",
+      "policy": "within-workspace",
+      "symlinks": [
+        {
+          "link": "link-out",
+          "target": "<OUT>"
+        }
+      ]
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "ok": {
+          "path": {
+            "display": "real/in.txt",
+            "real": "<ROOT>\\real\\in.txt"
+          }
+        }
+      },
+      "files": {
+        "real/in.txt": "in"
+      },
+      "input": "link-in/in.txt",
+      "name": "within allows symlink to inside dir",
+      "op": "resolve",
+      "policy": "within-workspace",
+      "symlinks": [
+        {
+          "link": "link-in",
+          "target": "real"
+        }
+      ]
+    },
+    {
+      "cwdRel": null,
+      "expected": {
+        "ok": {
+          "path": {
+            "display": "real/new-file.txt",
+            "real": "<ROOT>\\real\\new-file.txt"
+          }
+        }
+      },
+      "files": {
+        "real/in.txt": "in"
+      },
+      "input": "link-in/new-file.txt",
+      "name": "within allows nonexistent tail under inside symlink",
+      "op": "resolve",
+      "policy": "within-workspace",
+      "symlinks": [
+        {
+          "link": "link-in",
+          "target": "real"
+        }
+      ]
+    },
+    {
+      "candidate": "tmp/work",
+      "caseInsensitive": false,
+      "expected": {
+        "ok": true
+      },
+      "name": "root itself",
+      "op": "inside",
+      "root": "tmp/work"
+    },
+    {
+      "candidate": "tmp/work/a",
+      "caseInsensitive": false,
+      "expected": {
+        "ok": true
+      },
+      "name": "descendant",
+      "op": "inside",
+      "root": "tmp/work"
+    },
+    {
+      "candidate": "tmp/workx/a",
+      "caseInsensitive": false,
+      "expected": {
+        "ok": false
+      },
+      "name": "prefix-confusable sibling",
+      "op": "inside",
+      "root": "tmp/work"
+    },
+    {
+      "candidate": "tmp/other",
+      "caseInsensitive": false,
+      "expected": {
+        "ok": false
+      },
+      "name": "other sibling",
+      "op": "inside",
+      "root": "tmp/work"
+    },
+    {
+      "candidate": "tmp/Work/secret",
+      "caseInsensitive": false,
+      "expected": {
+        "ok": false
+      },
+      "name": "case differs strict",
+      "op": "inside",
+      "root": "tmp/work"
+    },
+    {
+      "candidate": "tmp/Work/secret",
+      "caseInsensitive": true,
+      "expected": {
+        "ok": true
+      },
+      "name": "case differs insensitive",
+      "op": "inside",
+      "root": "tmp/work"
+    }
+  ],
+  "platform": "win32"
+}

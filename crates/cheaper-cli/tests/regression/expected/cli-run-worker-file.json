@@ -1,0 +1,31 @@
+{
+  "code": 3,
+  "timedOut": false,
+  "stdout": {
+    "schemaVersion": 1,
+    "ok": false,
+    "worker": null,
+    "error": {
+      "code": "WORKER_NAME_MISMATCH",
+      "details": {
+        "sourcePath": "<WS>/w.md",
+        "name": "file-worker",
+        "stem": "w"
+      },
+      "exitCode": 3,
+      "retryable": false
+    },
+    "meta": {
+      "execution": null,
+      "model": null,
+      "usage": null,
+      "turns": null,
+      "toolCalls": null,
+      "rejectedToolCalls": null,
+      "repairs": null,
+      "transientRetries": null,
+      "changes": null,
+      "savings": null
+    }
+  }
+}

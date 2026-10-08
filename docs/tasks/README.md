@@ -156,6 +156,13 @@ Directory: `docs/tasks`
 | TASK-034A9yFQqZLtHt5ibjhE1h | Operation execution metrics | done | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | TASK-034r05iHQeQpDqgk8XoZ8E | Parameterize apm e2e fixture by target | done | [parameterize-apm-e2e-fixture-by-target.md](./parameterize-apm-e2e-fixture-by-target.md) |
 | TASK-034r05iHQeQpDqhxabCiHf | Per-target apm install verification e2e | done | [per-target-apm-install-verification-e2e.md](./per-target-apm-install-verification-e2e.md) |
+| TASK-034BgK4O6Xu8NEvlYtW6lJ | Phase 0: Rig PoC go/no-go gate | done | [phase-0-rig-poc-go-no-go-gate.md](./phase-0-rig-poc-go-no-go-gate.md) |
+| TASK-034BgKiqu2ZlaprN931tnY | Phase 1: port cheaper-core | done | [phase-1-port-cheaper-core.md](./phase-1-port-cheaper-core.md) |
+| TASK-034BgKiZhENYXeNMRvxyFA | Phase 2: port cheaper-tools | done | [phase-2-port-cheaper-tools.md](./phase-2-port-cheaper-tools.md) |
+| TASK-034BgKjvy0B4BNsyAhtFht | Phase 3: port runtime adapter providers | done | [phase-3-port-runtime-adapter-providers.md](./phase-3-port-runtime-adapter-providers.md) |
+| TASK-034BgKk2iQMEQ0xHA3SThv | Phase 4: port CLI and workflow | done | [phase-4-port-cli-and-workflow.md](./phase-4-port-cli-and-workflow.md) |
+| TASK-034BgKkC4U7NTKprsORKCH | Phase 5: switch distribution to Rust binary | done | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
+| TASK-034BgKlddxEi2ozLgZMFi3 | Phase 6: remove TypeScript Node Pi | done | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | done | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |
 | TASK-034zTWibd7OKesgJgoGxJu | Prepare one-dispatch release artifacts | done | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
 | TASK-034r05iHWkNF7zKMZPhFky | Provider plugin tests and resource isolation verification | done | [provider-plugin-tests-and-resource-isolation.md](./provider-plugin-tests-and-resource-isolation.md) |

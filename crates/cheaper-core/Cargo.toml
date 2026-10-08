@@ -1,0 +1,24 @@
+[package]
+name = "cheaper-core"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+description = "Pure-logic port of packages/core: worker/policy/model resolution, errors, duration, tool vocabulary, config dirs. Rig-free and tokio-free."
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+# YAML 1.2 (eemeli `yaml` replacement). serde_yml 0.0.13 is a deprecated
+# shim over `noyalib` that implements YAML 1.2 core-schema scalar
+# resolution (y/n/yes/no/on/off stay strings); serde_norway resolves them
+# as YAML 1.1 booleans, which diverges from the TS `yaml` package. All
+# serde_yml items are #[deprecated] — scoped `#[allow(deprecated)]` lives
+# in `src/yaml.rs`. Migrate to noyalib directly when dep policy allows.
+serde_yml.workspace = true
+jsonschema.workspace = true
+tiktoken-rs.workspace = true
+dunce.workspace = true
+regex.workspace = true
+
+[dev-dependencies]
+tempfile = "3"

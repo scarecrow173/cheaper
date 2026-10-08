@@ -1,0 +1,5 @@
+{
+  "name": "cli_count_tokens",
+  "argv": ["count-tokens", "note.txt"],
+  "files": { "note.txt": "The quick brown fox jumps over the lazy dog.\n" }
+}

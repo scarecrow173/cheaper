@@ -1,0 +1,16 @@
+{
+  "name": "run_hang_grace",
+  "timeoutMs": 30000,
+  "fixture": {
+    "name": "hang_grace",
+    "abort": { "after_ms": 500, "message": "user abort" },
+    "abort_grace_ms": 80,
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [ "hang" ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

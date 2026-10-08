@@ -1,0 +1,16 @@
+{
+  "name": "hang_grace",
+  "description": "hang — signal を観測しない stream は abort grace で待ち切り ABORTED",
+  "abort": { "after_ms": 30, "message": "user abort" },
+  "abort_grace_ms": 80,
+  "sessions": [
+    {
+      "steps": [ "hang" ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "ABORTED",
+    "exitCode": 8
+  }
+}

@@ -109,7 +109,7 @@ zero-dep CommonJS。処理:
 4. `cheaper count-tokens <abs path> --cwd <process.cwd()>` を
    `spawnSync` で実行。hook の cwd は Windsurf の `working_directory`
    default = **repo root**（workspace が git repo でない nested dir の
-   場合は親 repo root になる — EXP-0005 実測）。hooks.json の
+   場合は親 repo root になる — `docs/impl/exp/apm-windsurf-consumer-e2e.jsonl` 実測）。hooks.json の
    `command`/`powershell` 内の相対 path も同じ場所から解決されるため、
    consumer は自身の repo root（または独立 workspace root）として開く
    必要がある。ずれた場合 hook script が起動せず fail-open で素通りする

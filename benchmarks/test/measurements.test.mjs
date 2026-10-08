@@ -1,6 +1,10 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { criticalPathMs, interfacePayloadBytes, maxConcurrencyFromJsonl, promptBytesFromJsonl } from "../lib/measurements.mjs";
+import test from "node:test";
+import {
+  criticalPathMs,
+  interfacePayloadBytes,
+  measureWorkflowEnvelope,
+} from "../lib/measurements.mjs";
 
 test("critical path follows workflow dependencies and measured job durations", () => {
   const workflow = {
@@ -21,27 +25,35 @@ test("critical path follows workflow dependencies and measured job durations", (
 });
 
 test("critical path is unavailable if a job duration is not observed", () => {
-  assert.equal(criticalPathMs({ jobs: [{ id: "a", meta: { durationMs: null } }] }, { jobs: { a: {} } }), null);
+  assert.equal(
+    criticalPathMs({ jobs: [{ id: "a", meta: { durationMs: null } }] }, { jobs: { a: {} } }),
+    null,
+  );
 });
 
-test("prompt bytes sum actual serialized fake-stream contexts", () => {
-  assert.equal(promptBytesFromJsonl('{"bytes":10}\n{"bytes":7}\n'), 17);
-  assert.throws(() => promptBytesFromJsonl('{bad}\n'), /JSON/);
-});
-
-test("max concurrency uses observed fake-stream interval overlap", () => {
-  const log = [
-    { id: "a", phase: "start", at: "1" },
-    { id: "b", phase: "start", at: "2" },
-    { id: "a", phase: "end", at: "3" },
-    { id: "b", phase: "end", at: "4" },
-  ].map((entry) => JSON.stringify(entry)).join("\n");
-  assert.equal(maxConcurrencyFromJsonl(log), 2);
-  assert.throws(() => maxConcurrencyFromJsonl('{"id":"a","phase":"end","at":"2"}'), /unmatched/);
+// Rust fake seam は prompt serialization / per-stream timing を観測
+// できないため、この 2 dimension は null(未計測)で固定される。
+test("workflow metrics report stream-side dimensions as unmeasured null", () => {
+  const envelope = {
+    schemaVersion: 1,
+    workflow: true,
+    ok: true,
+    jobs: [{ id: "a", meta: {} }],
+    meta: { artifacts: [], execution: { maxConcurrency: 2 } },
+    result: {},
+  };
+  const metrics = measureWorkflowEnvelope(envelope, { jobs: { a: {} } });
+  assert.equal(metrics.materializedPromptBytes, null);
+  assert.equal(metrics.workerStreamConcurrency, null);
+  assert.equal(metrics.toolOperationConcurrency, 2);
+  assert.equal(metrics.maxConcurrency, 2);
 });
 
 test("compact interface bytes exclude variable command timing metadata", () => {
   const base = { ok: true, result: { schemaVersion: 1, inputs: {}, outputs: {} } };
-  assert.equal(interfacePayloadBytes({ ...base, meta: { durationMs: 12 } }), interfacePayloadBytes({ ...base, meta: { durationMs: 87 } }));
+  assert.equal(
+    interfacePayloadBytes({ ...base, meta: { durationMs: 12 } }),
+    interfacePayloadBytes({ ...base, meta: { durationMs: 87 } }),
+  );
   assert.throws(() => interfacePayloadBytes({ ok: false, result: {} }), /successful result/);
 });

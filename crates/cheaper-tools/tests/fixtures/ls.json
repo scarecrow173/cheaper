@@ -1,0 +1,602 @@
+{
+  "cases": [
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": ".hidden\na.txt\nB.txt\nsub/",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ],
+      "files": {
+        ".hidden": "",
+        "B.txt": "",
+        "a.txt": "",
+        "sub/x.txt": ""
+      },
+      "name": "lists files and directories",
+      "ops": [
+        {
+          "input": {},
+          "tool": "ls"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "ls"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 10
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "ls"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "a.txt\nb.txt\n\n[2 entries limit reached. Use limit=4 for more]",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "entryLimitReached": 2
+            }
+          }
+        }
+      ],
+      "files": {
+        "a.txt": "",
+        "b.txt": "",
+        "c.txt": "",
+        "d.txt": ""
+      },
+      "name": "limit reaches entry cap",
+      "ops": [
+        {
+          "input": {
+            "limit": 2
+          },
+          "tool": "ls"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "ls"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 19
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "ls"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "file0000.txt\nfile0001.txt\nfile0002.txt\nfile0003.txt\nfile0004.txt\nfile0005.txt\nfile0006.txt\nfile0007.txt\nfile0008.txt\nfile0009.txt\nfile0010.txt\nfile0011.txt\nfile0012.txt\nfile0013.txt\nfile0014.txt\nfile0015.txt\nfile0016.txt\nfile0017.txt\nfile0018.txt\nfile0019.txt\nfile0020.txt\nfile0021.txt\nfile0022.txt\nfile0023.txt\nfile0024.txt\nfile0025.txt\nfile0026.txt\nfile0027.txt\nfile0028.txt\nfile0029.txt\nfile0030.txt\nfile0031.txt\nfile0032.txt\nfile0033.txt\nfile0034.txt\nfile0035.txt\nfile0036.txt\nfile0037.txt\nfile0038.txt\nfile0039.txt\nfile0040.txt\nfile0041.txt\nfile0042.txt\nfile0043.txt\nfile0044.txt\nfile0045.txt\nfile0046.txt\nfile0047.txt\nfile0048.txt\nfile0049.txt\nfile0050.txt\nfile0051.txt\nfile0052.txt\nfile0053.txt\nfile0054.txt\nfile0055.txt\nfile0056.txt\nfile0057.txt\nfile0058.txt\nfile0059.txt\nfile0060.txt\nfile0061.txt\nfile0062.txt\nfile0063.txt\nfile0064.txt\nfile0065.txt\nfile0066.txt\nfile0067.txt\nfile0068.txt\nfile0069.txt\nfile0070.txt\nfile0071.txt\nfile0072.txt\nfile0073.txt\nfile0074.txt\nfile0075.txt\nfile0076.txt\nfile0077.txt\nfile0078.txt\nfile0079.txt\nfile0080.txt\nfile0081.txt\nfile0082.txt\nfile0083.txt\nfile0084.txt\nfile0085.txt\nfile0086.txt\nfile0087.txt\nfile0088.txt\nfile0089.txt\nfile0090.txt\nfile0091.txt\nfile0092.txt\nfile0093.txt\nfile0094.txt\nfile0095.txt\nfile0096.txt\nfile0097.txt\nfile0098.txt\nfile0099.txt\nfile0100.txt\nfile0101.txt\nfile0102.txt\nfile0103.txt\nfile0104.txt\nfile0105.txt\nfile0106.txt\nfile0107.txt\nfile0108.txt\nfile0109.txt\nfile0110.txt\nfile0111.txt\nfile0112.txt\nfile0113.txt\nfile0114.txt\nfile0115.txt\nfile0116.txt\nfile0117.txt\nfile0118.txt\nfile0119.txt\nfile0120.txt\nfile0121.txt\nfile0122.txt\nfile0123.txt\nfile0124.txt\nfile0125.txt\nfile0126.txt\nfile0127.txt\nfile0128.txt\nfile0129.txt\nfile0130.txt\nfile0131.txt\nfile0132.txt\nfile0133.txt\nfile0134.txt\nfile0135.txt\nfile0136.txt\nfile0137.txt\nfile0138.txt\nfile0139.txt\nfile0140.txt\nfile0141.txt\nfile0142.txt\nfile0143.txt\nfile0144.txt\nfile0145.txt\nfile0146.txt\nfile0147.txt\nfile0148.txt\nfile0149.txt\nfile0150.txt\nfile0151.txt\nfile0152.txt\nfile0153.txt\nfile0154.txt\nfile0155.txt\nfile0156.txt\nfile0157.txt\nfile0158.txt\nfile0159.txt\nfile0160.txt\nfile0161.txt\nfile0162.txt\nfile0163.txt\nfile0164.txt\nfile0165.txt\nfile0166.txt\nfile0167.txt\nfile0168.txt\nfile0169.txt\nfile0170.txt\nfile0171.txt\nfile0172.txt\nfile0173.txt\nfile0174.txt\nfile0175.txt\nfile0176.txt\nfile0177.txt\nfile0178.txt\nfile0179.txt\nfile0180.txt\nfile0181.txt\nfile0182.txt\nfile0183.txt\nfile0184.txt\nfile0185.txt\nfile0186.txt\nfile0187.txt\nfile0188.txt\nfile0189.txt\nfile0190.txt\nfile0191.txt\nfile0192.txt\nfile0193.txt\nfile0194.txt\nfile0195.txt\nfile0196.txt\nfile0197.txt\nfile0198.txt\nfile0199.txt\nfile0200.txt\nfile0201.txt\nfile0202.txt\nfile0203.txt\nfile0204.txt\nfile0205.txt\nfile0206.txt\nfile0207.txt\nfile0208.txt\nfile0209.txt\nfile0210.txt\nfile0211.txt\nfile0212.txt\nfile0213.txt\nfile0214.txt\nfile0215.txt\nfile0216.txt\nfile0217.txt\nfile0218.txt\nfile0219.txt\nfile0220.txt\nfile0221.txt\nfile0222.txt\nfile0223.txt\nfile0224.txt\nfile0225.txt\nfile0226.txt\nfile0227.txt\nfile0228.txt\nfile0229.txt\nfile0230.txt\nfile0231.txt\nfile0232.txt\nfile0233.txt\nfile0234.txt\nfile0235.txt\nfile0236.txt\nfile0237.txt\nfile0238.txt\nfile0239.txt\nfile0240.txt\nfile0241.txt\nfile0242.txt\nfile0243.txt\nfile0244.txt\nfile0245.txt\nfile0246.txt\nfile0247.txt\nfile0248.txt\nfile0249.txt\nfile0250.txt\nfile0251.txt\nfile0252.txt\nfile0253.txt\nfile0254.txt\nfile0255.txt\nfile0256.txt\nfile0257.txt\nfile0258.txt\nfile0259.txt\nfile0260.txt\nfile0261.txt\nfile0262.txt\nfile0263.txt\nfile0264.txt\nfile0265.txt\nfile0266.txt\nfile0267.txt\nfile0268.txt\nfile0269.txt\nfile0270.txt\nfile0271.txt\nfile0272.txt\nfile0273.txt\nfile0274.txt\nfile0275.txt\nfile0276.txt\nfile0277.txt\nfile0278.txt\nfile0279.txt\nfile0280.txt\nfile0281.txt\nfile0282.txt\nfile0283.txt\nfile0284.txt\nfile0285.txt\nfile0286.txt\nfile0287.txt\nfile0288.txt\nfile0289.txt\nfile0290.txt\nfile0291.txt\nfile0292.txt\nfile0293.txt\nfile0294.txt\nfile0295.txt\nfile0296.txt\nfile0297.txt\nfile0298.txt\nfile0299.txt\nfile0300.txt\nfile0301.txt\nfile0302.txt\nfile0303.txt\nfile0304.txt\nfile0305.txt\nfile0306.txt\nfile0307.txt\nfile0308.txt\nfile0309.txt\nfile0310.txt\nfile0311.txt\nfile0312.txt\nfile0313.txt\nfile0314.txt\nfile0315.txt\nfile0316.txt\nfile0317.txt\nfile0318.txt\nfile0319.txt\nfile0320.txt\nfile0321.txt\nfile0322.txt\nfile0323.txt\nfile0324.txt\nfile0325.txt\nfile0326.txt\nfile0327.txt\nfile0328.txt\nfile0329.txt\nfile0330.txt\nfile0331.txt\nfile0332.txt\nfile0333.txt\nfile0334.txt\nfile0335.txt\nfile0336.txt\nfile0337.txt\nfile0338.txt\nfile0339.txt\nfile0340.txt\nfile0341.txt\nfile0342.txt\nfile0343.txt\nfile0344.txt\nfile0345.txt\nfile0346.txt\nfile0347.txt\nfile0348.txt\nfile0349.txt\nfile0350.txt\nfile0351.txt\nfile0352.txt\nfile0353.txt\nfile0354.txt\nfile0355.txt\nfile0356.txt\nfile0357.txt\nfile0358.txt\nfile0359.txt\nfile0360.txt\nfile0361.txt\nfile0362.txt\nfile0363.txt\nfile0364.txt\nfile0365.txt\nfile0366.txt\nfile0367.txt\nfile0368.txt\nfile0369.txt\nfile0370.txt\nfile0371.txt\nfile0372.txt\nfile0373.txt\nfile0374.txt\nfile0375.txt\nfile0376.txt\nfile0377.txt\nfile0378.txt\nfile0379.txt\nfile0380.txt\nfile0381.txt\nfile0382.txt\nfile0383.txt\nfile0384.txt\nfile0385.txt\nfile0386.txt\nfile0387.txt\nfile0388.txt\nfile0389.txt\nfile0390.txt\nfile0391.txt\nfile0392.txt\nfile0393.txt\nfile0394.txt\nfile0395.txt\nfile0396.txt\nfile0397.txt\nfile0398.txt\nfile0399.txt\nfile0400.txt\nfile0401.txt\nfile0402.txt\nfile0403.txt\nfile0404.txt\nfile0405.txt\nfile0406.txt\nfile0407.txt\nfile0408.txt\nfile0409.txt\nfile0410.txt\nfile0411.txt\nfile0412.txt\nfile0413.txt\nfile0414.txt\nfile0415.txt\nfile0416.txt\nfile0417.txt\nfile0418.txt\nfile0419.txt\nfile0420.txt\nfile0421.txt\nfile0422.txt\nfile0423.txt\nfile0424.txt\nfile0425.txt\nfile0426.txt\nfile0427.txt\nfile0428.txt\nfile0429.txt\nfile0430.txt\nfile0431.txt\nfile0432.txt\nfile0433.txt\nfile0434.txt\nfile0435.txt\nfile0436.txt\nfile0437.txt\nfile0438.txt\nfile0439.txt\nfile0440.txt\nfile0441.txt\nfile0442.txt\nfile0443.txt\nfile0444.txt\nfile0445.txt\nfile0446.txt\nfile0447.txt\nfile0448.txt\nfile0449.txt\nfile0450.txt\nfile0451.txt\nfile0452.txt\nfile0453.txt\nfile0454.txt\nfile0455.txt\nfile0456.txt\nfile0457.txt\nfile0458.txt\nfile0459.txt\nfile0460.txt\nfile0461.txt\nfile0462.txt\nfile0463.txt\nfile0464.txt\nfile0465.txt\nfile0466.txt\nfile0467.txt\nfile0468.txt\nfile0469.txt\nfile0470.txt\nfile0471.txt\nfile0472.txt\nfile0473.txt\nfile0474.txt\nfile0475.txt\nfile0476.txt\nfile0477.txt\nfile0478.txt\nfile0479.txt\nfile0480.txt\nfile0481.txt\nfile0482.txt\nfile0483.txt\nfile0484.txt\nfile0485.txt\nfile0486.txt\nfile0487.txt\nfile0488.txt\nfile0489.txt\nfile0490.txt\nfile0491.txt\nfile0492.txt\nfile0493.txt\nfile0494.txt\nfile0495.txt\nfile0496.txt\nfile0497.txt\nfile0498.txt\nfile0499.txt\n\n[500 entries limit reached. Use limit=1000 for more]",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "entryLimitReached": 500
+            }
+          }
+        }
+      ],
+      "name": "byte cap notice",
+      "ops": [
+        {
+          "input": {
+            "path": "many"
+          },
+          "tool": "ls"
+        }
+      ],
+      "repeatFiles": {
+        "many": {
+          "content": "x",
+          "count": 2600,
+          "dir": "many",
+          "prefix": "file"
+        }
+      },
+      "runtime": {
+        "names": [
+          "ls"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 2514
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "ls"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": ".keep",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ],
+      "files": {
+        "empty/.keep": ""
+      },
+      "name": "empty directory",
+      "ops": [
+        {
+          "input": {
+            "path": "empty"
+          },
+          "tool": "ls"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "ls"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 1
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "ls"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "kind": "other",
+            "message": "Path not found: <ROOT>\\missing",
+            "name": "Error"
+          }
+        }
+      ],
+      "files": {},
+      "name": "missing path",
+      "ops": [
+        {
+          "input": {
+            "path": "missing"
+          },
+          "tool": "ls"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "ls"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": [
+          {
+            "error": {
+              "message": "Path not found: <ROOT>\\missing",
+              "name": "Error"
+            },
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "failed",
+            "toolName": "ls"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "kind": "other",
+            "message": "Not a directory: <ROOT>\\a.txt",
+            "name": "Error"
+          }
+        }
+      ],
+      "files": {
+        "a.txt": ""
+      },
+      "name": "not a directory",
+      "ops": [
+        {
+          "input": {
+            "path": "a.txt"
+          },
+          "tool": "ls"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "ls"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": [
+          {
+            "error": {
+              "message": "Not a directory: <ROOT>\\a.txt",
+              "name": "Error"
+            },
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "failed",
+            "toolName": "ls"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "a.txt\nok/",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ],
+      "files": {
+        "a.txt": "",
+        "ok/b.txt": "",
+        "secret.txt": ""
+      },
+      "name": "denylisted entries hidden",
+      "ops": [
+        {
+          "input": {},
+          "tool": "ls"
+        }
+      ],
+      "runtime": {
+        "denylist": [
+          "secret.txt"
+        ],
+        "names": [
+          "ls"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 5
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "ls"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "kind": "other",
+            "message": "Access denied: path is outside the workspace",
+            "name": "Error"
+          }
+        }
+      ],
+      "name": "workspace escape denied",
+      "ops": [
+        {
+          "input": {
+            "path": ".."
+          },
+          "tool": "ls"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "ls"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 1,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": [
+          {
+            "error": {
+              "message": "Access denied: path is outside the workspace",
+              "name": "Error"
+            },
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "failed",
+            "toolName": "ls"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "code": "INVALID_INPUT",
+            "details": {
+              "errors": [
+                {
+                  "instancePath": "/path"
+                }
+              ],
+              "tool": "ls"
+            },
+            "exitCode": 2,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      ],
+      "name": "invalid input is uncounted",
+      "ops": [
+        {
+          "input": {
+            "path": 3
+          },
+          "tool": "ls"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "ls"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 0
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": []
+      }
+    }
+  ],
+  "platform": "win32"
+}

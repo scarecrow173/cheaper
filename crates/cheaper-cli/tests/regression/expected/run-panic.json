@@ -1,0 +1,26 @@
+{
+  "code": 70,
+  "timedOut": false,
+  "stdout": {
+    "schemaVersion": 1,
+    "ok": false,
+    "worker": "fixture-worker",
+    "error": {
+      "code": "INTERNAL_ERROR",
+      "retryable": false,
+      "exitCode": 70
+    },
+    "meta": {
+      "execution": null,
+      "model": null,
+      "usage": null,
+      "turns": null,
+      "toolCalls": null,
+      "rejectedToolCalls": null,
+      "repairs": null,
+      "transientRetries": null,
+      "changes": null,
+      "savings": null
+    }
+  }
+}

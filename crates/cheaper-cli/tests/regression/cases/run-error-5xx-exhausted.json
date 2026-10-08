@@ -1,0 +1,19 @@
+{
+  "name": "run_error_5xx_exhausted",
+  "fixture": {
+    "name": "error_5xx_exhausted",
+    "policy": { "transient_attempts": 1 },
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "turn": {} },
+          { "error": { "status": 500 } },
+          { "turn": {} },
+          { "error": { "status": 502 } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

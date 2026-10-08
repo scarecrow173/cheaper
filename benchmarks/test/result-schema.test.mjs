@@ -1,11 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import {
   RESULT_SCHEMA_VERSION,
-  summarizeWorkflowEnvelope,
   summarizeWorkerEnvelope,
-  validateWorkflowEnvelope,
+  summarizeWorkflowEnvelope,
   validateBenchmarkRecord,
+  validateWorkflowEnvelope,
 } from "../lib/result-schema.mjs";
 
 test("workflow envelope summary takes usage and execution counters from jobs[].meta", () => {
@@ -14,7 +14,15 @@ test("workflow envelope summary takes usage and execution counters from jobs[].m
     workflow: true,
     ok: true,
     jobs: [
-      { id: "worker-a", status: "succeeded", meta: { turns: 2, toolCalls: 3, usage: { input: 8, output: 4, cacheRead: 1, cacheWrite: 0, totalTokens: 13 } } },
+      {
+        id: "worker-a",
+        status: "succeeded",
+        meta: {
+          turns: 2,
+          toolCalls: 3,
+          usage: { input: 8, output: 4, cacheRead: 1, cacheWrite: 0, totalTokens: 13 },
+        },
+      },
       { id: "tool-b", status: "succeeded", meta: { toolCalls: 1 } },
     ],
     meta: { durationMs: 21 },
@@ -36,7 +44,11 @@ test("direct run usage is measured from its Worker envelope once", () => {
     schemaVersion: 1,
     ok: true,
     worker: "bulk-reader",
-    meta: { turns: 1, toolCalls: 1, usage: { input: 12, output: 3, cacheRead: 2, cacheWrite: 0, totalTokens: 13 } },
+    meta: {
+      turns: 1,
+      toolCalls: 1,
+      usage: { input: 12, output: 3, cacheRead: 2, cacheWrite: 0, totalTokens: 13 },
+    },
   };
   assert.deepEqual(summarizeWorkerEnvelope(envelope), {
     workerTurns: 1,
@@ -47,9 +59,18 @@ test("direct run usage is measured from its Worker envelope once", () => {
 });
 
 test("workflow envelope validation fails closed for unsuccessful or non-workflow output", () => {
-  assert.throws(() => validateWorkflowEnvelope({ schemaVersion: 1, ok: true, jobs: [] }), /workflow/);
-  assert.throws(() => validateWorkflowEnvelope({ schemaVersion: 1, workflow: true, ok: false, jobs: [] }), /successful/);
-  assert.throws(() => validateWorkflowEnvelope({ schemaVersion: 1, workflow: true, ok: true, jobs: {} }), /jobs/);
+  assert.throws(
+    () => validateWorkflowEnvelope({ schemaVersion: 1, ok: true, jobs: [] }),
+    /workflow/,
+  );
+  assert.throws(
+    () => validateWorkflowEnvelope({ schemaVersion: 1, workflow: true, ok: false, jobs: [] }),
+    /successful/,
+  );
+  assert.throws(
+    () => validateWorkflowEnvelope({ schemaVersion: 1, workflow: true, ok: true, jobs: {} }),
+    /jobs/,
+  );
 });
 
 test("benchmark record requires explicit parent usage provenance and a version", () => {
@@ -61,6 +82,9 @@ test("benchmark record requires explicit parent usage provenance and a version",
     metrics: { retainedBytes: 0, materializedPromptBytes: 0 },
   };
   assert.equal(validateBenchmarkRecord(record), record);
-  assert.throws(() => validateBenchmarkRecord({ ...record, parentUsage: undefined }), /parentUsage/);
+  assert.throws(
+    () => validateBenchmarkRecord({ ...record, parentUsage: undefined }),
+    /parentUsage/,
+  );
   assert.throws(() => validateBenchmarkRecord({ ...record, schemaVersion: 2 }), /schemaVersion/);
 });

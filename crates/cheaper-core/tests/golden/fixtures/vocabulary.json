@@ -1,0 +1,258 @@
+{
+  "aliases": {
+    "Edit": "edit",
+    "Glob": "find",
+    "Grep": "grep",
+    "Read": "read",
+    "Write": "write"
+  },
+  "cases": [
+    {
+      "expected": {
+        "ok": [
+          "read",
+          "grep"
+        ]
+      },
+      "input": [
+        "read",
+        "grep"
+      ],
+      "name": "canonical passthrough"
+    },
+    {
+      "expected": {
+        "ok": [
+          "read",
+          "grep",
+          "find",
+          "write",
+          "edit"
+        ]
+      },
+      "input": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Write",
+        "Edit"
+      ],
+      "name": "aliases"
+    },
+    {
+      "expected": {
+        "ok": [
+          "read",
+          "grep",
+          "find",
+          "ls",
+          "write",
+          "edit",
+          "count_tokens",
+          "process"
+        ]
+      },
+      "input": [
+        "read",
+        "grep",
+        "find",
+        "ls",
+        "write",
+        "edit",
+        "count_tokens",
+        "process"
+      ],
+      "name": "full canonical set"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "tools-non-empty-string-array"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "name": "undefined"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "tools-non-empty-string-array"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": null,
+      "name": "null"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "tools-non-empty-string-array"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": "read",
+      "name": "string"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "tools-non-empty-string-array"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": 5,
+      "name": "number"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "tools-non-empty-string-array"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {},
+      "name": "object"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "tools-non-empty-string-array"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": [],
+      "name": "empty array"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "tools-non-empty-string-array"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": [
+        "read",
+        3
+      ],
+      "name": "non-string entry"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "UNKNOWN_TOOL",
+          "details": {
+            "known": [
+              "read",
+              "grep",
+              "find",
+              "ls",
+              "write",
+              "edit",
+              "count_tokens",
+              "process"
+            ],
+            "tool": "bash"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": [
+        "bash"
+      ],
+      "name": "unknown tool"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "UNKNOWN_TOOL",
+          "details": {
+            "known": [
+              "read",
+              "grep",
+              "find",
+              "ls",
+              "write",
+              "edit",
+              "count_tokens",
+              "process"
+            ],
+            "tool": "READ"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": [
+        "READ"
+      ],
+      "name": "case variant"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "tools-duplicate"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": [
+        "read",
+        "Read"
+      ],
+      "name": "duplicate after alias"
+    }
+  ],
+  "platform": "win32",
+  "toolNames": [
+    "read",
+    "grep",
+    "find",
+    "ls",
+    "write",
+    "edit",
+    "count_tokens",
+    "process"
+  ]
+}

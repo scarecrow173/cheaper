@@ -1,6 +1,12 @@
 import { writeFileSync } from "node:fs";
 import path from "node:path";
-import { generateManifest, parseArgs, repoRoot, verifyAssets, verifyReleaseVersion } from "./lib/release-artifacts.mjs";
+import {
+  generateManifest,
+  parseArgs,
+  repoRoot,
+  verifyAssets,
+  verifyReleaseVersion,
+} from "./lib/release-artifacts.mjs";
 
 try {
   const args = parseArgs(process.argv.slice(2), ["asset-dir", "tag"], ["verify"]);

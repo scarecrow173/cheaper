@@ -1,0 +1,97 @@
+{
+  "code": 9,
+  "timedOut": false,
+  "stdout": {
+    "schemaVersion": 1,
+    "ok": false,
+    "worker": "fixture-worker",
+    "error": {
+      "code": "PARTIAL_MUTATION",
+      "cause": {
+        "code": "ABORTED"
+      },
+      "exitCode": 9,
+      "retryable": false,
+      "details": {
+        "changes": {
+          "files": [
+            {
+              "path": "a.txt",
+              "kind": "created",
+              "linesAdded": 1,
+              "linesDeleted": 0
+            }
+          ],
+          "totals": {
+            "files": 1,
+            "linesAdded": 1,
+            "linesDeleted": 0
+          }
+        }
+      }
+    },
+    "meta": {
+      "execution": {
+        "operations": 1,
+        "byState": {
+          "queued": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "cancelled": 0,
+          "timed_out": 0
+        },
+        "byTool": {
+          "write": 1
+        },
+        "maxConcurrency": 1
+      },
+      "model": {
+        "provider": "cheaper-fake",
+        "id": "fake-model",
+        "tier": "medium",
+        "selection": "explicit",
+        "tierSource": "auto",
+        "effectiveCost": 3,
+        "effectiveCostPercentile": 0.5,
+        "workload": {
+          "outputPerInput": 1
+        }
+      },
+      "usage": {
+        "input": 10,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 11,
+        "costUsd": 0.000012
+      },
+      "turns": 2,
+      "toolCalls": 1,
+      "rejectedToolCalls": 0,
+      "repairs": 0,
+      "transientRetries": 0,
+      "changes": {
+        "files": [
+          {
+            "path": "a.txt",
+            "kind": "created",
+            "linesAdded": 1,
+            "linesDeleted": 0
+          }
+        ],
+        "totals": {
+          "files": 1,
+          "linesAdded": 1,
+          "linesDeleted": 0
+        }
+      },
+      "savings": {
+        "sourceTokens": 5,
+        "returnedTokens": 0,
+        "avoidedContextTokens": 5,
+        "directlyComparable": false
+      }
+    }
+  }
+}

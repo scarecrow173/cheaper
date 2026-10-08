@@ -1,0 +1,394 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "maxArtifactBytes": 8388608,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": null,
+      "name": "defaults"
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "maxArtifactBytes": 8388608,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": {},
+      "name": "empty"
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "maxArtifactBytes": 1024,
+            "maxPreviewBytes": 256,
+            "maxReadBytes": 512,
+            "maxTotalBytes": 4096
+          },
+          "maxJobs": 4
+        }
+      },
+      "input": {
+        "artifacts": {
+          "maxArtifactBytes": 1024,
+          "maxPreviewBytes": 256,
+          "maxReadBytes": 512,
+          "maxTotalBytes": 4096
+        },
+        "maxJobs": 4
+      },
+      "name": "explicit"
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "maxArtifactBytes": 8388608,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": {
+        "bogus": 1
+      },
+      "name": "invalid unknown field"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "maxJobs": 0
+      },
+      "name": "invalid zero maxJobs"
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "maxArtifactBytes": 16777217,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": {
+        "artifacts": {
+          "maxArtifactBytes": 16777217
+        }
+      },
+      "name": "invalid artifact over cap"
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "maxArtifactBytes": 8388608,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": {
+        "maxJobs": null
+      },
+      "name": "invalid null maxJobs"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "artifacts": {
+          "maxArtifactBytes": null
+        }
+      },
+      "name": "invalid null artifacts field"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "artifacts": {
+          "maxTotalBytes": -1
+        }
+      },
+      "name": "invalid negative artifacts field"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "artifacts": {
+          "bogus": "x"
+        }
+      },
+      "name": "invalid unknown artifact field type"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "artifacts": {
+          "aaa": "x",
+          "maxArtifactBytes": 4,
+          "zzz": -1
+        }
+      },
+      "name": "invalid artifact fields checked in order"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "artifacts": "ab"
+      },
+      "name": "invalid string artifacts spreads indices"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "maxJobs": 1.5
+      },
+      "name": "invalid maxJobs fractional"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "maxJobs": "4"
+      },
+      "name": "invalid maxJobs string"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": null,
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "artifacts": {
+          "maxReadBytes": 0
+        }
+      },
+      "name": "invalid zero maxReadBytes (min is 1)"
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "maxArtifactBytes": 8388608,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": {
+        "artifacts": true
+      },
+      "name": "artifacts true → defaults"
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "maxArtifactBytes": 8388608,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": {
+        "artifacts": null
+      },
+      "name": "artifacts null → defaults"
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "maxArtifactBytes": 8388608,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": {
+        "artifacts": 0
+      },
+      "name": "artifacts 0 → defaults"
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "maxArtifactBytes": 8388608,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": {
+        "artifacts": ""
+      },
+      "name": "artifacts \"\" → defaults"
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "bogus": 1,
+            "maxArtifactBytes": 8388608,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": {
+        "artifacts": {
+          "bogus": 1
+        }
+      },
+      "name": "invalid unknown artifact field",
+      "rustDropUnknownArtifactKeys": true
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "0": 1,
+            "1": 2,
+            "maxArtifactBytes": 8388608,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": {
+        "artifacts": [
+          1,
+          2
+        ]
+      },
+      "name": "array artifacts spread indexed keys",
+      "rustDropUnknownArtifactKeys": true
+    },
+    {
+      "expected": {
+        "ok": {
+          "artifacts": {
+            "alpha": 8,
+            "maxArtifactBytes": 4,
+            "maxPreviewBytes": 2048,
+            "maxReadBytes": 65536,
+            "maxTotalBytes": 33554432,
+            "zebra": 9
+          },
+          "maxJobs": 1
+        }
+      },
+      "input": {
+        "artifacts": {
+          "alpha": 8,
+          "maxArtifactBytes": 4,
+          "zebra": 9
+        }
+      },
+      "name": "unknown artifact fields keep insertion order",
+      "rustDropUnknownArtifactKeys": true
+    }
+  ],
+  "platform": "win32"
+}

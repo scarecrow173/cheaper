@@ -30,7 +30,7 @@ relations:
     - "../test-specs/release-publication-and-native-smoke.md"
   references:
     - "../designs/version-pinned-launcher-acquisition.md"
-    - "../../packages/cli/test/e2e/launcher-acquisition.test.ts"
+    - "../../scripts/test/launcher-acquisition.test.mjs"
   defers: []
   deferred-by: []
 ---

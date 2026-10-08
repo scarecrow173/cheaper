@@ -117,7 +117,7 @@ Chosen option: "`ModelRuntime.login()` を cheaper CLI に吸収"。
 
 SPEC-034r05iHK8bA7ghSWRbNU8 の acceptance criteria（status / device login / logout /
 未知 provider の error / bundled CLI での動作）は全て完了済み。
-EXP-0005 で bundled CLI 経由の OAuth 付き `bulk-read` 実動作を確認済み。
+`docs/impl/exp/apm-windsurf-consumer-e2e.jsonl` で bundled CLI 経由の OAuth 付き `bulk-read` 実動作を確認済み。
 
 ## Implementation Plan
 
@@ -139,7 +139,7 @@ EXP-0005 で bundled CLI 経由の OAuth 付き `bulk-read` 実動作を確認�
 * [x] `cheaper auth logout` で credential が削除される
 * [x] 未知 provider / 未対応 type で適切な error + exit code
 * [x] bundle 再生成後も `auth` コマンドが deploy 済み bundle で動く
-      （EXP-0005）
+      （`docs/impl/exp/apm-windsurf-consumer-e2e.jsonl`）
 
 ## Pros and Cons of the Options
 

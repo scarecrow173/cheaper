@@ -1,0 +1,102 @@
+{
+  "cases": [
+    {
+      "builtinDir": "/builtin",
+      "cwd": "/work/proj",
+      "env": {
+        "CHEAPER_CONFIG_DIR": "/custom",
+        "XDG_CONFIG_HOME": "/xdg"
+      },
+      "expected": {
+        "ok": {
+          "builtinDir": "/builtin",
+          "projectDir": "\\work\\proj\\.cheaper",
+          "userConfigDir": "/custom"
+        }
+      },
+      "homedir": "/home/u",
+      "name": "CHEAPER_CONFIG_DIR wins"
+    },
+    {
+      "builtinDir": "/builtin",
+      "cwd": "/work/proj",
+      "env": {
+        "XDG_CONFIG_HOME": "/xdg"
+      },
+      "expected": {
+        "ok": {
+          "builtinDir": "/builtin",
+          "projectDir": "\\work\\proj\\.cheaper",
+          "userConfigDir": "\\xdg\\cheaper"
+        }
+      },
+      "homedir": "/home/u",
+      "name": "XDG_CONFIG_HOME"
+    },
+    {
+      "builtinDir": "/builtin",
+      "cwd": "/work/proj",
+      "env": {},
+      "expected": {
+        "ok": {
+          "builtinDir": "/builtin",
+          "projectDir": "\\work\\proj\\.cheaper",
+          "userConfigDir": "\\home\\u\\.config\\cheaper"
+        }
+      },
+      "homedir": "/home/u",
+      "name": "~/.config/cheaper"
+    },
+    {
+      "builtinDir": "/builtin",
+      "cwd": "/work/proj",
+      "env": {
+        "CHEAPER_CONFIG_DIR": "",
+        "XDG_CONFIG_HOME": ""
+      },
+      "expected": {
+        "ok": {
+          "builtinDir": "/builtin",
+          "projectDir": "\\work\\proj\\.cheaper",
+          "userConfigDir": "\\home\\u\\.config\\cheaper"
+        }
+      },
+      "homedir": "/home/u",
+      "name": "empty env vars ignored"
+    },
+    {
+      "builtinDir": "/b",
+      "cwd": "/w",
+      "env": {
+        "HOME": "/h",
+        "USERPROFILE": "/up"
+      },
+      "expected": {
+        "ok": {
+          "builtinDir": "/b",
+          "projectDir": "\\w\\.cheaper",
+          "userConfigDir": "\\up\\.config\\cheaper"
+        }
+      },
+      "homedir": null,
+      "name": "USERPROFILE home"
+    },
+    {
+      "builtinDir": "/b",
+      "cwd": "/w",
+      "env": {
+        "HOME": "/h"
+      },
+      "expected": {
+        "ok": {
+          "builtinDir": "/b",
+          "projectDir": "\\w\\.cheaper",
+          "userConfigDir": "\\h\\.config\\cheaper"
+        }
+      },
+      "homedir": null,
+      "name": "HOME fallback"
+    }
+  ],
+  "platform": "win32"
+}

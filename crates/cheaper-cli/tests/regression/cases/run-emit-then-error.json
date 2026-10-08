@@ -1,0 +1,17 @@
+{
+  "name": "run_emit_then_error",
+  "fixture": {
+    "name": "emit_then_error",
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "turn": {} },
+          { "emit": { "text_delta": "partial" } },
+          { "error": { "status": 429 } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

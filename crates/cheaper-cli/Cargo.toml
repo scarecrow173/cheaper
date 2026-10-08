@@ -1,0 +1,35 @@
+[package]
+name = "cheaper-cli"
+# Product version: inherited from [workspace.package].version (the
+# canonical source, cross-checked by scripts/check-version.mjs).
+version.workspace = true
+edition.workspace = true
+publish = false
+description = "Port of packages/cli: argv parsing, command dispatch, envelope serialization (schemaVersion:1, JS `JSON.stringify` byte parity), stdin input, usage.jsonl, hook adapters, builtin resource embedding (G8), version resolution, panic boundary. Composition root: adapter session wiring + devin plugin registration live here (runtime→devin would be a dependency cycle)."
+
+[[bin]]
+name = "cheaper"
+path = "src/main.rs"
+
+[dependencies]
+cheaper-core = { path = "../cheaper-core" }
+cheaper-tools = { path = "../cheaper-tools" }
+cheaper-runtime = { path = "../cheaper-runtime" }
+# T7: workflow loader/compiler/engine(`workflow interface`/`workflow
+# run` の配線先 — `cheaper-workflow` は Rig 非依存のまま保つ)。
+cheaper-workflow = { path = "../cheaper-workflow" }
+cheaper-rig-adapter = { path = "../cheaper-rig-adapter" }
+cheaper-provider-devin = { path = "../cheaper-provider-devin" }
+serde.workspace = true
+serde_json.workspace = true
+# tokio: run_cli entry runtime + SIGINT/SIGTERM → abort relay (T3 run
+# 経路). `signal`/`rt-multi-thread` are approved feature additions.
+tokio = { workspace = true, features = ["signal", "rt-multi-thread"] }
+# G8: builtin resource embedding (workers/*.md, schemas/*.json,
+# policy.yaml, version.json).
+include_dir = "0.7"
+# `auth login --type api_key` secret prompt (T5). Approved new dep.
+rpassword = "7"
+
+[dev-dependencies]
+tempfile = "3"

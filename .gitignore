@@ -47,9 +47,6 @@ jspm_packages/
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
-# TypeScript cache
-*.tsbuildinfo
-
 # Optional npm cache directory
 .npm
 
@@ -83,7 +80,6 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 .output
 
 # Gatsby files
@@ -128,9 +124,6 @@ dist
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
-# pnpm
-.pnpm-store
-
 # yarn v3
 .pnp.*
 .yarn/*
@@ -139,12 +132,6 @@ dist
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-
-# Vite files
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
-.vite/
-
 
 # APM dependencies
 apm_modules/
@@ -195,3 +182,7 @@ apm_modules/
 !.sdp/skill-reference-inferences.json
 
 tmp/
+
+# Rust workspace build output (root virtual manifest) / standalone spikes
+/target
+crates/*/target/

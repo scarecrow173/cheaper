@@ -1,0 +1,22 @@
+{
+  "name": "timeout_delay",
+  "description": "delay_ms step が timeout abort で中断される → TIMEOUT 分類",
+  "policy": { "timeout_ms": 60 },
+  "sessions": [
+    {
+      "steps": [
+        { "delay_ms": 30000 },
+        { "finish": { "text": "{\"ok\":true}" } }
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "TIMEOUT",
+    "exitCode": 7,
+    "errorDetails": { "reason": "timeout" },
+    "meta": {
+      "model": { "provider": "cheaper-fake", "id": "fake-model" }
+    }
+  }
+}

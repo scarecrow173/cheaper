@@ -1,0 +1,16 @@
+{
+  "name": "run_error_permanent",
+  "fixture": {
+    "name": "error_permanent",
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "turn": {} },
+          { "error": { "status": 400, "message": "bad request" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

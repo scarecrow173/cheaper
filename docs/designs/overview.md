@@ -28,6 +28,7 @@ relations:
     - "apm-executable-payload-layout-and-platform-launchers.md"
     - "cheaper-hook-subcommands-replacing-node-based-hook-adapters.md"
     - "pi-sibling-tool-call-parallelism-inside-workers.md"
+    - "rust-rig-runtime-migration-architecture.md"
   refines: []
   refined-by: []
   derives-from:
@@ -109,3 +110,7 @@ relations:
 ## Worker 内並列性（issue #55）
 
 - [Pi sibling tool-call parallelism inside Workers](./pi-sibling-tool-call-parallelism-inside-workers.md)
+
+## Rust + Rig ランタイム移行（SPEC-034BbgvL9s41K7NflOddZ6 / ADR-034BbhP6hJV7DFtv7k7AGs）
+
+- [Rust + Rig runtime migration architecture](./rust-rig-runtime-migration-architecture.md) — Pi SDK + TypeScript/Node.js SEA から Rust + Rig ネイティブへの全面 rewrite。crate 分割・Rig adapter 隔離・自前ギャップ（catalog/auth/retry/devin）・differential golden 検証・配布切替を設計。既存の Pi 前提 design（上記）は移行元の仕様源として残る。

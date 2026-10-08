@@ -2,8 +2,9 @@
 
 `cheaper` の設定は 2 系統に分かれる。
 
-- **provider / auth**: Pi runtime が管理する `models.json`・
-  credential。詳細は [providers ガイド](./providers.md)。
+- **provider / auth**: model catalog（bundled snapshot + plugin +
+  user overlay の `models.json`）と credential
+  （`credentials.json`）。詳細は [providers ガイド](./providers.md)。
 - **cheaper 自身**: `models.yaml`（tier 割当）と `policy.yaml`
   （実行 policy）。本 guide で扱う。
 
@@ -63,8 +64,9 @@ preferences:
 
 tier 分類の priority は `overrides` → bundled curated exceptions →
 auto 分類 → unclassified（effective tier は `medium`）の順。
-pricing は Pi の runtime catalog（models.dev 由来）を canonical
-とし、欠損分は bundled snapshot で補完される。
+pricing は runtime catalog（bundled snapshot は models.dev
+由来）を canonical とし、欠損分は bundled pricing snapshot で
+補完される。
 
 auto 分類は利用可能な（exclude 適用後の）priced model 集合の
 **相対 ranking** で行う。worker の workload profile
@@ -140,10 +142,9 @@ output:
 | `CHEAPER_READ_TOKEN_THRESHOLD` | parent-agent hook の large-read threshold（default 8192 token）。詳細は [integration ガイド](./parent-agent-integration.md) |
 | `DEVIN_CLI` | `devin` provider が使う Devin CLI binary の path。未設定時は PATH 上の `devin` |
 
-Pi runtime の永続 file（`auth.json`・`models.json`・
-`models-store.json`）は user config dir 配下の `pi/` に
-保存される（`<userConfigDir>/pi/`）。`PI_CODING_AGENT_DIR`
-は cheaper では使用しない。`devin` provider の Devin CLI
+credential は `<userConfigDir>/credentials.json` に永続化される。
+旧 Pi runtime の file（`<userConfigDir>/pi/` 以下）は一切
+読まれない。`devin` provider の Devin CLI
 credential は `<userConfigDir>/providers/devin/data/`
 配下の child-process 専用 data dir に閉じ込められる。
 詳細は [providers ガイド](./providers.md)。

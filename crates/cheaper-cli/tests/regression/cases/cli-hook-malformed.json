@@ -1,0 +1,7 @@
+{
+  "name": "cli_hook_malformed",
+  "argv": ["hook", "bogus-event", "--target", "windsurf"],
+  "stdin": "{}",
+  "mode": "raw",
+  "compareStderr": true
+}

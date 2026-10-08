@@ -1,0 +1,18 @@
+{
+  "name": "abort_response",
+  "description": "abort_response — provider 側が cancel を応答として返す形(PromptCancelled → ABORTED 写像相当)",
+  "sessions": [
+    {
+      "steps": [
+        { "usage_delta": { "input": 10, "output": 1 } },
+        { "turn": {} },
+        "abort_response"
+      ]
+    }
+  ],
+  "expect": {
+    "status": "error",
+    "errorCode": "ABORTED",
+    "exitCode": 8
+  }
+}

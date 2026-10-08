@@ -1,0 +1,2095 @@
+{
+  "cases": [
+    {
+      "expectRust": {
+        "ops": {
+          "2": {
+            "error": {
+              "code": "INVALID_INPUT",
+              "details": {
+                "errors": [
+                  {
+                    "instancePath": ""
+                  }
+                ],
+                "tool": "read"
+              },
+              "exitCode": 2,
+              "kind": "cheaper",
+              "retryable": false
+            }
+          }
+        }
+      },
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "hello\n",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "endLine": 2,
+              "eof": true,
+              "startLine": 1,
+              "totalLines": 2,
+              "truncatedBy": null
+            }
+          }
+        },
+        {
+          "error": {
+            "kind": "other",
+            "message": "Access denied: path is outside the write scope",
+            "name": "Error"
+          }
+        },
+        {
+          "error": {
+            "code": "INVALID_INPUT",
+            "details": {
+              "errors": [
+                {
+                  "instancePath": ""
+                },
+                {
+                  "instancePath": "/path"
+                }
+              ],
+              "tool": "read"
+            },
+            "exitCode": 2,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        },
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "hello\n",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "endLine": 2,
+              "eof": true,
+              "startLine": 1,
+              "totalLines": 2,
+              "truncatedBy": null
+            }
+          }
+        },
+        {
+          "error": {
+            "kind": "other",
+            "message": "tool call rejected: maxToolCalls limit reached (3)",
+            "name": "Error"
+          }
+        }
+      ],
+      "files": {
+        "a.txt": "hello\n"
+      },
+      "name": "counting map: executed, denied, invalid, limited",
+      "ops": [
+        {
+          "input": {
+            "path": "a.txt"
+          },
+          "tool": "read"
+        },
+        {
+          "input": {
+            "content": "x",
+            "path": "denied.txt"
+          },
+          "tool": "write"
+        },
+        {
+          "input": {
+            "path": 5
+          },
+          "tool": "read"
+        },
+        {
+          "input": {
+            "path": "a.txt"
+          },
+          "tool": "read"
+        },
+        {
+          "input": {
+            "path": "a.txt"
+          },
+          "tool": "read"
+        }
+      ],
+      "runtime": {
+        "maxToolCalls": 3,
+        "names": [
+          "read",
+          "write"
+        ],
+        "resourceManifest": {
+          "reads": [
+            {
+              "path": "a.txt",
+              "scope": "exact"
+            }
+          ],
+          "writes": [
+            {
+              "path": "a.txt",
+              "scope": "exact"
+            }
+          ]
+        },
+        "writeScope": [
+          "a.txt"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": "maxToolCalls",
+          "rejectedToolCalls": 2,
+          "toolCalls": 3
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 4
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\a.txt",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "read"
+          },
+          {
+            "cancellation": {
+              "reason": {
+                "message": "Access denied: path is outside the write scope",
+                "name": "Error"
+              },
+              "state": "cancelled"
+            },
+            "settlement": "settled",
+            "state": "cancelled",
+            "toolName": "write"
+          },
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\a.txt",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "read"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "code": "UNKNOWN_TOOL",
+            "details": {
+              "tool": "nope"
+            },
+            "exitCode": 3,
+            "kind": "cheaper",
+            "retryable": false
+          }
+        }
+      ],
+      "name": "unknown tool is uncounted",
+      "ops": [
+        {
+          "input": {},
+          "tool": "nope"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "read"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 0
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": []
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "calls": [
+              {
+                "error": {
+                  "code": "TIMEOUT",
+                  "details": {
+                    "task": "hold"
+                  },
+                  "exitCode": 7,
+                  "kind": "cheaper",
+                  "retryable": true
+                }
+              },
+              {
+                "ok": {
+                  "content": [
+                    {
+                      "text": "Successfully wrote to gate.txt",
+                      "type": "text"
+                    }
+                  ]
+                }
+              }
+            ],
+            "then": []
+          }
+        }
+      ],
+      "name": "serialized mutations queue behind exclusive hold",
+      "ops": [
+        {
+          "parallel": [
+            {
+              "input": {
+                "task": "hold"
+              },
+              "tool": "process"
+            },
+            {
+              "input": {
+                "content": "go",
+                "path": "gate.txt"
+              },
+              "tool": "write"
+            }
+          ]
+        }
+      ],
+      "runtime": {
+        "concurrency": {
+          "mutations": "serialized"
+        },
+        "names": [
+          "process",
+          "write"
+        ],
+        "process": {
+          "killGrace": "500ms",
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          },
+          "timeout": "1500ms"
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 2
+        },
+        "journal": {
+          "files": [
+            {
+              "kind": "created",
+              "linesAdded": 1,
+              "linesDeleted": 0,
+              "path": "gate.txt"
+            }
+          ],
+          "totals": {
+            "files": 1,
+            "linesAdded": 1,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 5
+        },
+        "operations": [
+          {
+            "cancellation": {
+              "reason": {
+                "code": "TIMEOUT",
+                "message": "managed process execution timed out",
+                "name": "CheaperError"
+              },
+              "state": "timed_out"
+            },
+            "error": {
+              "code": "TIMEOUT",
+              "message": "managed process execution timed out",
+              "name": "CheaperError"
+            },
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "timed_out",
+            "toolName": "process"
+          },
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "calls": [
+              {
+                "ok": {
+                  "content": [
+                    {
+                      "text": "process hold: completed, exitCode=0\nstdout: 9 bytes, 9 captured, truncated=false\nreleased\n\nstderr: 0 bytes, 0 captured, truncated=false\n",
+                      "type": "text"
+                    }
+                  ],
+                  "details": {
+                    "exitCode": 0,
+                    "signal": null,
+                    "state": "completed",
+                    "stderr": {
+                      "bytes": 0,
+                      "capturedBytes": 0,
+                      "text": "",
+                      "truncated": false
+                    },
+                    "stdout": {
+                      "bytes": 9,
+                      "capturedBytes": 9,
+                      "text": "released\n",
+                      "truncated": false
+                    },
+                    "task": "hold"
+                  }
+                }
+              },
+              {
+                "ok": {
+                  "content": [
+                    {
+                      "text": "Successfully wrote to gate.txt",
+                      "type": "text"
+                    }
+                  ]
+                }
+              }
+            ],
+            "then": []
+          }
+        }
+      ],
+      "name": "per-resource mutations proceed concurrently",
+      "ops": [
+        {
+          "parallel": [
+            {
+              "input": {
+                "task": "hold"
+              },
+              "tool": "process"
+            },
+            {
+              "input": {
+                "content": "go",
+                "path": "gate.txt"
+              },
+              "tool": "write"
+            }
+          ]
+        }
+      ],
+      "runtime": {
+        "concurrency": {
+          "mutations": "per-resource"
+        },
+        "names": [
+          "process",
+          "write"
+        ],
+        "process": {
+          "killGrace": "500ms",
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          },
+          "timeout": "15s"
+        },
+        "resourceManifest": {
+          "produces": [
+            {
+              "path": ".",
+              "scope": "subtree"
+            }
+          ],
+          "reads": [
+            {
+              "path": ".",
+              "scope": "subtree"
+            }
+          ],
+          "writes": [
+            {
+              "path": ".",
+              "scope": "subtree"
+            }
+          ]
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 2
+        },
+        "journal": {
+          "files": [
+            {
+              "kind": "created",
+              "linesAdded": 1,
+              "linesDeleted": 0,
+              "path": "gate.txt"
+            }
+          ],
+          "totals": {
+            "files": 1,
+            "linesAdded": 1,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 43
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\done.txt",
+                  "scope": "exact"
+                }
+              },
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\done.txt",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "process"
+          },
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\gate.txt",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "calls": [
+              {
+                "ok": {
+                  "content": [
+                    {
+                      "text": "process holdn: completed, exitCode=0\nstdout: 9 bytes, 9 captured, truncated=false\nreleased\n\nstderr: 0 bytes, 0 captured, truncated=false\n",
+                      "type": "text"
+                    }
+                  ],
+                  "details": {
+                    "exitCode": 0,
+                    "signal": null,
+                    "state": "completed",
+                    "stderr": {
+                      "bytes": 0,
+                      "capturedBytes": 0,
+                      "text": "",
+                      "truncated": false
+                    },
+                    "stdout": {
+                      "bytes": 9,
+                      "capturedBytes": 9,
+                      "text": "released\n",
+                      "truncated": false
+                    },
+                    "task": "holdn"
+                  }
+                }
+              },
+              {
+                "ok": {
+                  "content": [
+                    {
+                      "text": "process hi: completed, exitCode=0\nstdout: 14 bytes, 14 captured, truncated=false\nhello process\n\nstderr: 0 bytes, 0 captured, truncated=false\n",
+                      "type": "text"
+                    }
+                  ],
+                  "details": {
+                    "exitCode": 0,
+                    "signal": null,
+                    "state": "completed",
+                    "stderr": {
+                      "bytes": 0,
+                      "capturedBytes": 0,
+                      "text": "",
+                      "truncated": false
+                    },
+                    "stdout": {
+                      "bytes": 14,
+                      "capturedBytes": 14,
+                      "text": "hello process\n",
+                      "truncated": false
+                    },
+                    "task": "hi"
+                  }
+                }
+              }
+            ],
+            "then": [
+              {
+                "ok": null
+              }
+            ]
+          }
+        }
+      ],
+      "name": "process pool serializes tasks",
+      "ops": [
+        {
+          "parallel": [
+            {
+              "input": {
+                "task": "holdn"
+              },
+              "tool": "process"
+            },
+            {
+              "input": {
+                "task": "hi"
+              },
+              "tool": "process"
+            }
+          ],
+          "then": [
+            {
+              "op": "touch",
+              "path": "gate.txt"
+            }
+          ]
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "maxConcurrent": 1,
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 2
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 78
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "process"
+          },
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "process"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "calls": [
+              {
+                "ok": {
+                  "content": [
+                    {
+                      "text": "process hold: completed, exitCode=0\nstdout: 9 bytes, 9 captured, truncated=false\nreleased\n\nstderr: 0 bytes, 0 captured, truncated=false\n",
+                      "type": "text"
+                    }
+                  ],
+                  "details": {
+                    "exitCode": 0,
+                    "signal": null,
+                    "state": "completed",
+                    "stderr": {
+                      "bytes": 0,
+                      "capturedBytes": 0,
+                      "text": "",
+                      "truncated": false
+                    },
+                    "stdout": {
+                      "bytes": 9,
+                      "capturedBytes": 9,
+                      "text": "released\n",
+                      "truncated": false
+                    },
+                    "task": "hold"
+                  }
+                }
+              },
+              {
+                "error": {
+                  "kind": "other",
+                  "message": "stop queued",
+                  "name": "Error"
+                }
+              }
+            ],
+            "then": [
+              {
+                "ok": null
+              }
+            ]
+          }
+        }
+      ],
+      "name": "queued operation aborted before start",
+      "ops": [
+        {
+          "parallel": [
+            {
+              "input": {
+                "task": "hold"
+              },
+              "tool": "process"
+            },
+            {
+              "abortReason": "stop queued",
+              "input": {
+                "content": "x",
+                "path": "x.txt"
+              },
+              "tool": "write"
+            }
+          ],
+          "then": [
+            {
+              "op": "touch",
+              "path": "gate.txt"
+            }
+          ]
+        }
+      ],
+      "runtime": {
+        "concurrency": {
+          "mutations": "serialized"
+        },
+        "names": [
+          "process",
+          "write"
+        ],
+        "process": {
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 2
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 38
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "process"
+          },
+          {
+            "cancellation": {
+              "reason": {
+                "message": "stop queued",
+                "name": "Error"
+              },
+              "state": "cancelled"
+            },
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "cancelled",
+            "toolName": "write"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "calls": [
+              {
+                "error": {
+                  "kind": "other",
+                  "message": "drain now",
+                  "name": "Error"
+                }
+              }
+            ],
+            "then": [
+              {
+                "ok": null
+              },
+              {
+                "ok": null
+              }
+            ]
+          }
+        }
+      ],
+      "name": "drain aborts in-flight with scope reason",
+      "ops": [
+        {
+          "parallel": [
+            {
+              "input": {
+                "task": "holdn"
+              },
+              "tool": "process"
+            }
+          ],
+          "then": [
+            {
+              "op": "abort-scope",
+              "reason": "drain now"
+            },
+            {
+              "op": "drain"
+            }
+          ]
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        },
+        "signal": true
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": [
+          {
+            "cancellation": {
+              "reason": {
+                "message": "drain now",
+                "name": "Error"
+              },
+              "state": "cancelled"
+            },
+            "error": {
+              "message": "drain now",
+              "name": "Error"
+            },
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "cancelled",
+            "toolName": "process"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "Successfully wrote to new.txt",
+                "type": "text"
+              }
+            ]
+          }
+        },
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "Successfully wrote to mod.txt",
+                "type": "text"
+              }
+            ]
+          }
+        },
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "Successfully wrote to same.txt",
+                "type": "text"
+              }
+            ]
+          }
+        },
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "Successfully replaced 1 block(s) in mod.txt.",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "diff": "-1 after\n+1 edited",
+              "firstChangedLine": 1,
+              "patch": "--- mod.txt\n+++ mod.txt\n@@ -1,1 +1,1 @@\n-after\n+edited\n"
+            }
+          }
+        }
+      ],
+      "files": {
+        "mod.txt": "before\n",
+        "same.txt": "same\n"
+      },
+      "name": "journal: created, modified, no-change excluded",
+      "ops": [
+        {
+          "input": {
+            "content": "created\n",
+            "path": "new.txt"
+          },
+          "tool": "write"
+        },
+        {
+          "input": {
+            "content": "after\n",
+            "path": "mod.txt"
+          },
+          "tool": "write"
+        },
+        {
+          "input": {
+            "content": "same\n",
+            "path": "same.txt"
+          },
+          "tool": "write"
+        },
+        {
+          "input": {
+            "edits": [
+              {
+                "newText": "edited",
+                "oldText": "after"
+              }
+            ],
+            "path": "mod.txt"
+          },
+          "tool": "edit"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "write",
+          "edit"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 4
+        },
+        "journal": {
+          "files": [
+            {
+              "kind": "modified",
+              "linesAdded": 1,
+              "linesDeleted": 1,
+              "path": "mod.txt"
+            },
+            {
+              "kind": "created",
+              "linesAdded": 1,
+              "linesDeleted": 0,
+              "path": "new.txt"
+            }
+          ],
+          "totals": {
+            "files": 2,
+            "linesAdded": 2,
+            "linesDeleted": 1
+          }
+        },
+        "meter": {
+          "sourceTokens": 26
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          },
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          },
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "write"
+          },
+          {
+            "resourceClaims": [
+              {
+                "mode": "exclusive",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "edit"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": null
+        },
+        {
+          "error": {
+            "kind": "other",
+            "message": "shut down",
+            "name": "Error"
+          }
+        }
+      ],
+      "files": {
+        "a.txt": "x\n"
+      },
+      "name": "aborted runtime rejects subsequent calls",
+      "ops": [
+        {
+          "op": "abort-runtime",
+          "reason": "shut down"
+        },
+        {
+          "input": {
+            "path": "a.txt"
+          },
+          "tool": "read"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "read"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 0
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": []
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": null
+        },
+        {
+          "error": {
+            "kind": "other",
+            "message": "This operation was aborted",
+            "name": "AbortError"
+          }
+        }
+      ],
+      "files": {
+        "a.txt": "x\n"
+      },
+      "name": "reasonless abort uses AbortError",
+      "ops": [
+        {
+          "op": "abort-runtime"
+        },
+        {
+          "input": {
+            "path": "a.txt"
+          },
+          "tool": "read"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "read"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 0
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": []
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "calls": [
+              {
+                "error": {
+                  "kind": "other",
+                  "message": "This operation was aborted",
+                  "name": "AbortError"
+                }
+              }
+            ],
+            "then": [
+              {
+                "ok": null
+              }
+            ]
+          }
+        }
+      ],
+      "name": "reasonless drain aborts in-flight with AbortError",
+      "ops": [
+        {
+          "parallel": [
+            {
+              "input": {
+                "task": "holdn"
+              },
+              "tool": "process"
+            }
+          ],
+          "then": [
+            {
+              "op": "drain"
+            }
+          ]
+        }
+      ],
+      "runtime": {
+        "names": [
+          "process"
+        ],
+        "process": {
+          "tasks": {
+            "fail": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('before failure'),console.error('failure detail'),process.exitCode=7"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hi": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('hello process')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "hold": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": [
+                "done.txt"
+              ]
+            },
+            "holdn": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){if(require('fs').existsSync(process.argv[1])){console.log('released'),process.exit(0)}},20),setTimeout(function(){process.exit(3)},20000)",
+                "<ROOT>/gate.txt"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "inspect": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log(JSON.stringify({cwdTail:process.cwd().replaceAll('\\\\','/').split('/').at(-1),args:process.argv.slice(1),explicit:process.env.ONLY_THIS??null,path:process.env.PATH?process.env.PATH:null}))",
+                "arg1",
+                "arg two"
+              ],
+              "env": {
+                "ONLY_THIS": "yes"
+              },
+              "inputs": [],
+              "outputs": []
+            },
+            "node": {
+              "command": [
+                "node",
+                "-e",
+                "console.log('bare node')"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "output": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "console.log('a'.repeat(1000))"
+              ],
+              "inputs": [],
+              "outputs": []
+            },
+            "sleep": {
+              "command": [
+                "<NODE>",
+                "-e",
+                "setInterval(function(){},500)"
+              ],
+              "inputs": [],
+              "outputs": []
+            }
+          }
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": [
+          {
+            "cancellation": {
+              "reason": {
+                "message": "This operation was aborted",
+                "name": "AbortError"
+              },
+              "state": "cancelled"
+            },
+            "error": {
+              "message": "This operation was aborted",
+              "name": "AbortError"
+            },
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>",
+                  "scope": "subtree"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "cancelled",
+            "toolName": "process"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "error": {
+            "kind": "other",
+            "message": "call stopped",
+            "name": "Error"
+          }
+        }
+      ],
+      "files": {
+        "a.txt": "x\n"
+      },
+      "name": "pre-aborted call signal",
+      "ops": [
+        {
+          "input": {
+            "path": "a.txt"
+          },
+          "preAborted": "call stopped",
+          "tool": "read"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "read"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 0
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 0
+        },
+        "operations": []
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": null
+        },
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "x\n",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "endLine": 2,
+              "eof": true,
+              "startLine": 1,
+              "totalLines": 2,
+              "truncatedBy": null
+            }
+          }
+        }
+      ],
+      "files": {
+        "a.txt": "x\n"
+      },
+      "name": "ready scopes the runtime",
+      "ops": [
+        {
+          "op": "ready"
+        },
+        {
+          "input": {
+            "path": "a.txt"
+          },
+          "tool": "read"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "read"
+        ]
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 0,
+          "toolCalls": 1
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 2
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\a.txt",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "read"
+          }
+        ]
+      }
+    },
+    {
+      "expected": [
+        {
+          "ok": {
+            "content": [
+              {
+                "text": "declared\n",
+                "type": "text"
+              }
+            ],
+            "details": {
+              "endLine": 2,
+              "eof": true,
+              "startLine": 1,
+              "totalLines": 2,
+              "truncatedBy": null
+            }
+          }
+        },
+        {
+          "error": {
+            "kind": "other",
+            "message": "Access denied: path is outside the write scope",
+            "name": "Error"
+          }
+        }
+      ],
+      "files": {
+        "a.txt": "declared\n",
+        "b.txt": "undeclared\n"
+      },
+      "name": "read strictness rejects undeclared read",
+      "ops": [
+        {
+          "input": {
+            "path": "a.txt"
+          },
+          "tool": "read"
+        },
+        {
+          "input": {
+            "path": "b.txt"
+          },
+          "tool": "read"
+        }
+      ],
+      "runtime": {
+        "names": [
+          "read"
+        ],
+        "readStrictness": "reject",
+        "resourceManifest": {
+          "reads": [
+            {
+              "path": "a.txt",
+              "scope": "exact"
+            }
+          ]
+        }
+      },
+      "state": {
+        "budget": {
+          "limitHit": null,
+          "rejectedToolCalls": 1,
+          "toolCalls": 2
+        },
+        "journal": {
+          "files": [],
+          "totals": {
+            "files": 0,
+            "linesAdded": 0,
+            "linesDeleted": 0
+          }
+        },
+        "meter": {
+          "sourceTokens": 3
+        },
+        "operations": [
+          {
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\a.txt",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "completed",
+            "toolName": "read"
+          },
+          {
+            "error": {
+              "message": "Access denied: path is outside the write scope",
+              "name": "Error"
+            },
+            "resourceClaims": [
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\b.txt",
+                  "scope": "exact"
+                }
+              }
+            ],
+            "settlement": "settled",
+            "state": "failed",
+            "toolName": "read"
+          }
+        ]
+      }
+    }
+  ],
+  "platform": "win32"
+}
