@@ -10,6 +10,8 @@
 //   packages/runtime-pi/package.json         must equal canonical
 //   packages/apm/apm.yml                     must equal canonical (version: line)
 //   packages/apm/.apm/hooks/cli/version.json must equal canonical (generated)
+//   Cargo.toml                               must equal canonical
+//                                            ([workspace.package] version)
 //
 // NOT checked: root apm.yml — it describes the cheaper-dev development
 // project, whose version is independent of the product.
@@ -17,6 +19,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { cargoWorkspaceVersion } from "./lib/release-artifacts.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -51,6 +54,7 @@ const declarations = [
     "packages/apm/.apm/hooks/cli/version.json",
     () => readJsonVersion("packages/apm/.apm/hooks/cli/version.json"),
   ],
+  ["Cargo.toml", () => cargoWorkspaceVersion(repoRoot)],
 ];
 
 let failed = false;

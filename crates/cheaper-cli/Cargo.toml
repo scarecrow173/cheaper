@@ -1,6 +1,8 @@
 [package]
 name = "cheaper-cli"
-version = "0.1.0"
+# Product version: inherited from [workspace.package].version, which is
+# cross-checked against packages/cli/package.json (the canonical source).
+version.workspace = true
 edition.workspace = true
 publish = false
 description = "Port of packages/cli: argv parsing, command dispatch, envelope serialization (schemaVersion:1, JS `JSON.stringify` byte parity), stdin input, usage.jsonl, hook adapters, builtin resource embedding (G8), version resolution, panic boundary. Composition root: adapter session wiring + devin plugin registration live here (runtime→devin would be a dependency cycle)."

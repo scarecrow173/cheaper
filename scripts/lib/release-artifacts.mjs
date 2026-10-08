@@ -30,6 +30,30 @@ export const releaseTargets = Object.freeze([
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?(?:\+[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$/;
 const LFS_HEADER = "version https://git-lfs.github.com/spec/v1";
 
+// Phase 5: the root Cargo.toml `[workspace.package].version` is the product
+// binary's version declaration (crates/cheaper-cli inherits it). The
+// canonical source stays packages/cli/package.json; this declaration is
+// cross-checked for drift. No TOML library — the declaration is located
+// inside the [workspace.package] section, which ends at the next section
+// header or end of file.
+const WORKSPACE_PACKAGE_SECTION = /(?:^|\n)\[workspace\.package\][ \t]*\r?\n([\s\S]*?)(?=\n\[|\n?$)/;
+const WORKSPACE_VERSION_LINE = /^version\s*=\s*"([^"\r\n]+)"\s*(?:#.*)?$/m;
+
+export function cargoWorkspaceVersion(root) {
+  const section = WORKSPACE_PACKAGE_SECTION.exec(readFileSync(path.join(root, "Cargo.toml"), "utf8"))?.[1] ?? "";
+  const match = WORKSPACE_VERSION_LINE.exec(section);
+  if (!match) throw new Error("no version declaration in Cargo.toml [workspace.package]");
+  return match[1];
+}
+
+export function setCargoWorkspaceVersion(root, version) {
+  const file = path.join(root, "Cargo.toml");
+  const text = readFileSync(file, "utf8");
+  const section = WORKSPACE_PACKAGE_SECTION.exec(text)?.[1];
+  if (section === undefined || !WORKSPACE_VERSION_LINE.test(section)) throw new Error("no version declaration in Cargo.toml [workspace.package]");
+  writeFileSync(file, text.replace(section, section.replace(WORKSPACE_VERSION_LINE, `version = "${version}"`)));
+}
+
 export function verifyReleaseVersion(root, tag) {
   const version = JSON.parse(readFileSync(path.join(root, "packages/cli/package.json"), "utf8")).version;
   if (typeof version !== "string" || !SEMVER.test(version)) throw new Error("invalid canonical version");
@@ -38,6 +62,7 @@ export function verifyReleaseVersion(root, tag) {
   const declarations = [...readFileSync(path.join(root, "packages/apm/apm.yml"), "utf8").matchAll(/^version:\s*(?:"([^"\r\n]+)"|'([^'\r\n]+)'|([^\s#]+))\s*(?:#.*)?$/gm)];
   const apmVersion = declarations.length === 1 ? declarations[0][1] ?? declarations[0][2] ?? declarations[0][3] : undefined;
   if (bundled !== version || apmVersion !== version) throw new Error("APM / bundled version does not match canonical version");
+  if (cargoWorkspaceVersion(root) !== version) throw new Error("Cargo.toml [workspace.package] version does not match canonical version");
   return version;
 }
 

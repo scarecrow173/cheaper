@@ -35,6 +35,7 @@ function fixture(t) {
   const cli = path.join(pkg, ".apm", "hooks", "cli");
   mkdirSync(path.join(root, "packages", "cli"), { recursive: true });
   writeFileSync(path.join(root, "packages", "cli", "package.json"), '{"version":"1.2.3"}');
+  writeFileSync(path.join(root, "Cargo.toml"), '[workspace.package]\nversion = "1.2.3"\n\n[profile.release]\n');
   mkdirSync(path.join(cli, "bin", "linux-x64"), { recursive: true });
   writeFileSync(path.join(pkg, "apm.yml"), 'name: cheaper\nversion: "1.2.3"\n');
   writeFileSync(path.join(cli, "version.json"), '{"version":"1.2.3"}\n');
@@ -125,6 +126,34 @@ test("release tag and declarations must agree", async (t) => {
   writeFileSync(path.join(f.cli, "version.json"), '{"version":"1.2.3"}');
   writeFileSync(path.join(f.pkg, "apm.yml"), 'name: cheaper\nversion: "1.2.4"\n');
   assert.throws(() => verifyReleaseVersion(f.root, "v1.2.3"), /version/);
+  writeFileSync(path.join(f.pkg, "apm.yml"), 'name: cheaper\nversion: "1.2.3"\n');
+  writeFileSync(path.join(f.root, "Cargo.toml"), '[workspace.package]\nversion = "1.2.4"\n');
+  assert.throws(() => verifyReleaseVersion(f.root, "v1.2.3"), /Cargo\.toml/);
+});
+
+test("workspace version is read only from [workspace.package]", async (t) => {
+  const f = fixture(t);
+  const { cargoWorkspaceVersion, verifyReleaseVersion } = await library();
+  assert.equal(cargoWorkspaceVersion(f.root), "1.2.3");
+  writeFileSync(path.join(f.root, "Cargo.toml"), '[workspace.dependencies]\nserde = { version = "1" }\n\n[workspace.package]\n# comment\nversion = "1.2.3" # trailing comment\nedition = "2021"\n');
+  assert.equal(verifyReleaseVersion(f.root, "v1.2.3"), "1.2.3");
+  writeFileSync(path.join(f.root, "Cargo.toml"), '[workspace.package]\nedition = "2021"\n');
+  assert.throws(() => cargoWorkspaceVersion(f.root), /Cargo\.toml/);
+  rmSync(path.join(f.root, "Cargo.toml"));
+  assert.throws(() => verifyReleaseVersion(f.root, "v1.2.3"), /ENOENT|Cargo\.toml/);
+});
+
+test("setCargoWorkspaceVersion rewrites only the section declaration", async (t) => {
+  const f = fixture(t);
+  const { setCargoWorkspaceVersion } = await library();
+  const file = path.join(f.root, "Cargo.toml");
+  writeFileSync(file, '[workspace]\nmembers = ["crates/*"]\n\n[workspace.package]\nedition = "2021"\nversion = "1.2.3"\n\n[workspace.dependencies]\nserde = { version = "1" }\n\n[profile.release]\nopt-level = "s"\n');
+  setCargoWorkspaceVersion(f.root, "2.0.0");
+  const text = readFileSync(file, "utf8");
+  assert.match(text, /\[workspace\.package\]\nedition = "2021"\nversion = "2\.0\.0"\n/);
+  assert.match(text, /serde = \{ version = "1" \}/);
+  writeFileSync(file, '[workspace.package]\nedition = "2021"\n');
+  assert.throws(() => setCargoWorkspaceVersion(f.root, "3.0.0"), /Cargo\.toml/);
 });
 
 test("snapshot preserves raw bytes and manifest", async (t) => {

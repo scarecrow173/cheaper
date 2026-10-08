@@ -10,6 +10,7 @@
 //   packages/workflow/package.json
 //   packages/runtime-pi/package.json
 //   packages/apm/apm.yml               version: line only
+//   Cargo.toml                         [workspace.package] version only
 //
 // Does NOT touch root apm.yml (cheaper-dev dev project — independent).
 // Afterwards: regenerate the bundle so version.json follows, then commit.
@@ -18,6 +19,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { setCargoWorkspaceVersion } from "./lib/release-artifacts.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const version = process.argv[2];
@@ -50,6 +52,14 @@ if (!/^version:[^\n]*$/m.test(apmText)) {
 const apmUpdated = apmText.replace(/^version:[^\n]*$/m, `version: "${version}"`);
 writeFileSync(apmYml, apmUpdated);
 console.log(`updated packages/apm/apm.yml -> ${version}`);
+
+try {
+  setCargoWorkspaceVersion(repoRoot, version);
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
+console.log(`updated Cargo.toml -> ${version}`);
 
 const check = spawnSync(process.execPath, ["scripts/check-version.mjs"], {
   cwd: repoRoot,

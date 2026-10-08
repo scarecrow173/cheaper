@@ -9,6 +9,14 @@ exclude = ["crates/poc-rig"]
 
 [workspace.package]
 edition = "2021"
+# Product binary version. The canonical source stays
+# packages/cli/package.json (Phase 5 decision); this declaration exists so
+# scripts/check-version.mjs / verifyReleaseVersion can detect drift.
+# Only cheaper-cli — the shipped `cheaper` binary — inherits it via
+# `version.workspace = true`. The library crates keep their own "0.1.0"
+# because they are internal path dependencies that are never published or
+# released independently.
+version = "1.0.0"
 
 # Shared dependency pins. Cargo semver caveat (plan Risk #1): exact pins use
 # `=x.y.z`; `rig`-family crates use the `=0.43.x` pin policy from the parent
