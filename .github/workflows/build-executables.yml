@@ -1,9 +1,11 @@
 name: build-executables
 
-# 3 target の SEA executable を build して artifact として取得する
-# reusable workflow。release-acquisition は固定 SHA と expected_version を渡す。
-# 手動 dispatch は任意 ref の native artifact を検証用に生成する。
-# binary は Release/local build に置き、Git source へ追加しない。
+# 4 target の Rust release binary を cargo matrix で build して artifact
+# として取得する reusable workflow。release-acquisition は固定 SHA と
+# expected_version を渡す。手動 dispatch は任意 ref の native artifact を
+# 検証用に生成する。binary は Release/local build に置き、Git source へ
+# 追加しない。darwin-arm64 は検証専用で、Release asset・manifest には
+# 含めない(asset 名・SHA256SUMS・launcher contract は不変)。
 on:
   workflow_dispatch:
     inputs:
@@ -29,13 +31,20 @@ jobs:
         include:
           - os: windows-latest
             target: win32-x64
+            cargo_target: x86_64-pc-windows-msvc
             artifact: cheaper-windows-x64.exe
           - os: ubuntu-latest
             target: linux-x64
+            cargo_target: x86_64-unknown-linux-musl
             artifact: cheaper-linux-x64
           - os: ubuntu-24.04-arm
             target: linux-arm64
+            cargo_target: aarch64-unknown-linux-musl
             artifact: cheaper-linux-arm64
+          - os: macos-latest
+            target: darwin-arm64
+            cargo_target: aarch64-apple-darwin
+            artifact: cheaper-darwin-arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -55,15 +64,40 @@ jobs:
         run: |
           node -e 'if (require("./packages/cli/package.json").version !== process.env.EXPECTED_VERSION) throw new Error("expected release version mismatch");'
 
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      # rustup toolchain は mise(core:rust)が管理する。RUSTUP_TOOLCHAIN を
+      # 伝えるため mise exec 経由で target を追加する。
+      - name: Add Rust target
+        run: mise exec -- rustup target add ${{ matrix.cargo_target }}
 
-      - run: node scripts/build-executable.mjs --target ${{ matrix.target }}
+      # aws-lc-sys / ring(rustls 経由の C 依存)が musl target の C toolchain
+      # を必要とするため musl-tools(musl-gcc + musl-dev)を入れる。
+      - name: Install musl C toolchain
+        if: ${{ contains(matrix.cargo_target, 'musl') }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      - name: Build release binary
+        run: mise exec -- cargo build --release --locked --target ${{ matrix.cargo_target }} -p cheaper-cli
+
+      - name: Stage release binary under dist/bin
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin="target/${{ matrix.cargo_target }}/release/cheaper"
+          [ -f "${bin}" ] || bin="${bin}.exe"
+          mkdir -p dist/bin
+          cp "${bin}" "dist/bin/${{ matrix.artifact }}"
+
+      # build 後・upload 前の gate。20MiB 超過は job を fail させる。
+      - name: Assert binary size budget
+        run: node scripts/check-binary-size.mjs --file "dist/bin/${{ matrix.artifact }}"
 
       - name: Smoke test executable
         shell: bash
         run: |
-          exe="dist/sea/${{ matrix.artifact }}"
+          set -euo pipefail
+          exe="dist/bin/${{ matrix.artifact }}"
           reported="$("${exe}" --version)"
           pkg_version="$(node -p "require('./packages/cli/package.json').version")"
           if [ "${reported}" != "${pkg_version}" ]; then
@@ -74,5 +108,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: sea-${{ matrix.target }}
-          path: dist/sea/${{ matrix.artifact }}
+          name: bin-${{ matrix.target }}
+          path: dist/bin/${{ matrix.artifact }}

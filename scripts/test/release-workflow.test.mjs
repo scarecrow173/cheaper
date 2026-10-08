@@ -21,6 +21,28 @@ test("workflow waits for three native bundle smokes", () => {
   assert.match(read("build-executables.yml"), /Smoke test executable[\s\S]*--version[\s\S]*models/);
 });
 
+test("build-executables builds the cargo release matrix behind a size gate", async () => {
+  const build = read("build-executables.yml");
+  for (const entry of [
+    /os: windows-latest\n\s+target: win32-x64\n\s+cargo_target: x86_64-pc-windows-msvc\n\s+artifact: cheaper-windows-x64\.exe/,
+    /os: ubuntu-latest\n\s+target: linux-x64\n\s+cargo_target: x86_64-unknown-linux-musl\n\s+artifact: cheaper-linux-x64/,
+    /os: ubuntu-24\.04-arm\n\s+target: linux-arm64\n\s+cargo_target: aarch64-unknown-linux-musl\n\s+artifact: cheaper-linux-arm64/,
+    /os: macos-latest\n\s+target: darwin-arm64\n\s+cargo_target: aarch64-apple-darwin\n\s+artifact: cheaper-darwin-arm64/,
+  ]) assert.match(build, entry);
+  assert.match(build, /cargo build --release --locked --target \$\{\{ matrix\.cargo_target \}\} -p cheaper-cli/);
+  assert.match(build, /contains\(matrix\.cargo_target, 'musl'\)[\s\S]*musl-tools/);
+  assert.match(build, /node scripts\/check-binary-size\.mjs --file "dist\/bin\/\$\{\{ matrix\.artifact \}\}"/);
+  assert.ok(build.indexOf("cargo build") < build.indexOf("check-binary-size.mjs"));
+  assert.ok(build.indexOf("check-binary-size.mjs") < build.indexOf("actions/upload-artifact"));
+  assert.match(build, /name: bin-\$\{\{ matrix\.target \}\}/);
+  assert.match(build, /path: dist\/bin\/\$\{\{ matrix\.artifact \}\}/);
+  assert.match(build, /Smoke test executable[\s\S]*--version[\s\S]*models/);
+  assert.doesNotMatch(build, /pnpm |build-executable\.mjs|dist\/sea|sea-\$\{\{/);
+  const { releaseTargets } = await import("../lib/release-artifacts.mjs");
+  assert.deepEqual(releaseTargets.map(({ asset }) => asset), ["cheaper-linux-x64", "cheaper-linux-arm64", "cheaper-windows-x64.exe"]);
+  assert.ok(!releaseTargets.some(({ asset }) => asset === "cheaper-darwin-arm64"), "darwin artifact must stay out of releaseTargets");
+});
+
 test("workflow pins source SHA and rechecks peeled tag", () => {
   const text = workflow();
   assert.match(job(text, "resolve-release"), /verifyReleaseVersion/);
