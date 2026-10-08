@@ -382,6 +382,21 @@ fn scrub(v: &Value, needles: &[(String, String)]) -> Value {
     })
 }
 
+/// 比較用の platform canonicalization。fixture は win32 dump 由来のため:
+/// - `\`/`/` separator と、serialized inner string 内の `\\`(escape 済み
+///   separator)を `/` に揃える
+/// - `Error code:` の errno 表記差(Windows `EPERM` ↔ POSIX `EACCES`)を
+///   canonical token に揃える — Node on POSIX も EACCES を返すため、実
+///   TS-on-Linux の値は EACCES であり、どちらの表記も同一意味として比較する
+fn compare_norm(v: &Value) -> Value {
+    walk(v, &|s| {
+        s.replace("\\\\", "/")
+            .replace('\\', "/")
+            .replace("Error code: EPERM", "Error code: <errno>")
+            .replace("Error code: EACCES", "Error code: <errno>")
+    })
+}
+
 // ---------------------------------------------------------------------------
 // error normalization — dump の `cap`/`normalizeDetails` 相当
 // ---------------------------------------------------------------------------
@@ -1119,13 +1134,14 @@ async fn run_case(file: &str, index: usize, spec: &Value, base: &TempBase) -> Ca
     // `expectRust` override — 文書化済み divergence の pin。
     let expect_rust = &spec["expectRust"];
     // fixture 側 `expected` は `<ROOT>` token 化済み — produced のみ
-    // scrub して揃える(pin も token 表記で書く)。
-    let produced = match scrub(&Value::Array(produced), &ctx.needles) {
+    // scrub して揃える(pin も token 表記で書く)。比較は両側に
+    // compare_norm(separator/errno canonicalization)を掛ける。
+    let produced = match compare_norm(&scrub(&Value::Array(produced), &ctx.needles)) {
         Value::Array(a) => a,
         _ => unreachable!(),
     };
     let mut diffs = Vec::new();
-    let expected = apply_rust_ops(&spec["expected"], expect_rust);
+    let expected = compare_norm(&apply_rust_ops(&spec["expected"], expect_rust));
     if produced != *expected.as_array().unwrap_or(&vec![]) {
         diffs.push(format!(
             "expected mismatch:\n  want {}\n  got  {}",
@@ -1134,9 +1150,9 @@ async fn run_case(file: &str, index: usize, spec: &Value, base: &TempBase) -> Ca
         ));
     }
     if let Some(want_state) = spec.get("state").filter(|s| !s.is_null()) {
-        let patched = merge_patch(want_state, &expect_rust["state"]);
+        let patched = compare_norm(&merge_patch(want_state, &expect_rust["state"]));
         match &state {
-            Some(got) if *got == patched => {}
+            Some(got) if compare_norm(got) == patched => {}
             Some(got) => diffs.push(format!(
                 "state mismatch:\n  want {}\n  got  {}",
                 serde_json::to_string_pretty(&patched).unwrap(),
