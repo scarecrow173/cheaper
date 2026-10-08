@@ -203,8 +203,8 @@ for (const runner of runners) {
         writeFileSync(path.join(key, "SHA256SUMS"), sums);
         return key;
       }
-      function clean() {
-        const parent = path.join(cache, "1.0.0");
+      function clean(version = "1.0.0") {
+        const parent = path.join(cache, version);
         expect(
           existsSync(parent) ? readdirSync(parent).filter((p) => p.startsWith(".")) : [],
         ).toEqual([]);
@@ -458,6 +458,51 @@ for (const runner of runners) {
         expect(result.code, result.stdout + result.stderr).toBe(2);
         expect(result.stderr).toContain("bulk-read");
         expect(requests).toEqual([]);
+      }, 35_000);
+      // Phase 5: 配布 binary が Rust 実装へ切り替わっても launcher の
+      // 取得・検証・exec contract が不変であることを、cargo build の実
+      // artifact で確認する。release binary が無い環境(CI の Node-only
+      // lane 等)では skip し、gate は `cargo build --release -p
+      // cheaper-cli` 済みの local / CI lane が担う。
+      it("acquires a cargo-built Rust release binary through the unmodified launcher", async (t) => {
+        const rustBinary = path.join(repo, "target", "release", filename);
+        if (!existsSync(rustBinary)) {
+          t.skip(
+            "Rust release binary not found; run `mise exec -- cargo build --release -p cheaper-cli`",
+          );
+          return;
+        }
+        body = readFileSync(rustBinary);
+        releaseVersion = spawnSync(rustBinary, ["--version"], {
+          encoding: "utf8",
+          env,
+        }).stdout.trim();
+        expect(releaseVersion).toMatch(/^\d+\.\d+\.\d+/);
+        writeFileSync(
+          path.join(launch, "cli/version.json"),
+          `${JSON.stringify({ version: releaseVersion })}\n`,
+        );
+        manifest = `${digest(body)}  ${asset}\n`;
+        const probe = await run(["--version"]);
+        expect(probe.code, probe.stderr).toBe(0);
+        expect(probe.stdout.trim()).toBe(releaseVersion);
+        expect(requests.sort()).toEqual(
+          [`/v${releaseVersion}/${asset}`, `/v${releaseVersion}/SHA256SUMS`].sort(),
+        );
+        expect(readdirSync(path.join(cache, releaseVersion, platform)).sort()).toEqual(
+          ["SHA256SUMS", filename].sort(),
+        );
+        writeFileSync(path.join(launch, "big.txt"), "lorem ipsum ".repeat(20_000));
+        const hook = await run(
+          ["hook", "pre-read-code", "--target", "windsurf"],
+          JSON.stringify({
+            agent_action_name: "pre_read_code",
+            tool_info: { file_path: "big.txt" },
+          }),
+        );
+        expect(hook.code, hook.stdout + hook.stderr).toBe(2);
+        expect(hook.stderr).toContain("bulk-read");
+        clean(releaseVersion);
       }, 35_000);
       it.each(["windsurf", "claude", "codex", "cursor"])(
         "installs binary-free source for %s and acquires a real Node-free hook from local HTTP",

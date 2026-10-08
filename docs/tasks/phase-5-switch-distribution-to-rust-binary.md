@@ -129,49 +129,74 @@ manifest・bundle に混入させない。TS SEA pipeline(`build-executable.mjs`
 
 ## Done When
 
-- [ ] T1: release profile・size gate script・version 宣言照合
+- [x] T1: release profile・size gate script・version 宣言照合
       (Cargo.toml/apm.yml/version.json/package.json の drift 検出)が
-      実装される
-- [ ] T2: `build-executables.yml` が 4 target の cargo matrix で動き、
+      実装される(1c33da3。`check-binary-size.mjs` を win-msvc binary
+      18.9MiB で実測 pass)
+- [x] T2: `build-executables.yml` が 4 target の cargo matrix で動き、
       size assert が build 後・upload 前に fail 伝播する wiring になる
-- [ ] T3: `release-acquisition.yml` が `bin-*` artifact と整合し、
+      (919ed8a。wiring は `release-workflow.test.mjs` で pin — matrix
+      実 build は CI)
+- [x] T3: `release-acquisition.yml` が `bin-*` artifact と整合し、
       `smoke-bundle` が macOS sibling 経路を含む 4 OS で検証する構成に
-      なる
+      なる(aa578b2。構造は test pin — dispatch 実証は CI)
 - [ ] T4: launcher smoke(Rust binary fixture)・bundle 整合・guide 更新・
-      `mise run check` 全 pass が完了する
-- [ ] 不変条件の確認: `releaseTargets`・manifest 規則・launcher・
-      `hooks.json` に diff が無い
+      `mise run check` 全 pass が完了する(fixture・bundle・guide は
+      実施済み。`mise run check` は lint/version/doc-ids/typecheck/
+      bundle/payload/diff 全 pass、test は cross-agent-routing の
+      既知 load flake 1件のみ fail・isolate 再実行で 32/32 pass)
+- [x] 不変条件の確認: `releaseTargets`・manifest 規則・launcher・
+      `hooks.json` に diff が無い(`git diff main...HEAD` で
+      cheaper/cheaper.ps1/hooks.json は 0 行、release-artifacts.mjs の
+      変更は Cargo version 照合の追加のみ)
 
 ## Verification
 
 - [ ] `mise exec -- cargo build --release --target
       x86_64-pc-windows-msvc` / `--target x86_64-unknown-linux-musl` /
       `--target aarch64-unknown-linux-musl` / `--target
-      aarch64-apple-darwin` が全 4 target で成功する
+      aarch64-apple-darwin` が全 4 target で成功する — CI(win-msvc は
+      local で `target/release/cheaper.exe` 生成済みを確認)
 - [ ] 各 release binary(strip 後)が `node scripts/check-binary-size.mjs
-      --file <binary>` で ≤20MiB と判定される
+      --file <binary>` で ≤20MiB と判定される — CI(win-msvc は local
+      実測 18.9MiB pass、残り 3 target は matrix job の gate)
 - [ ] 各 binary の `--version` が `packages/cli/package.json` の version
-      と完全一致し、`models` が exit 0 を返す(CI build smoke)
+      と完全一致し、`models` が exit 0 を返す(CI build smoke) —
+      CI(win-msvc は local で `--version`=1.0.0・`models` ok:true を確認)
 - [ ] `mise exec -- node --test scripts/test/release-artifacts.test.mjs
       scripts/test/release-workflow.test.mjs scripts/test/binary-size.test.mjs`
-      が exit 0
+      が exit 0 — local では release-artifacts の既知 bsdtar
+      `F:` flake(`snapshot preserves raw bytes and manifest`、clean
+      HEAD でも fail)1件を除き全 pass。完全な exit 0 は CI
 - [ ] `build-executables` の workflow_dispatch が全 matrix job で green
-      (CI 実証。local では構造 test のみ)
+      (CI 実証。local では構造 test のみ) — CI
 - [ ] `release-acquisition` 1 dispatch で 5 asset
       (`cheaper-linux-x64`・`cheaper-linux-arm64`・
       `cheaper-windows-x64.exe`・`SHA256SUMS`・`cheaper-apm-v<X.Y.Z>.tar.gz`)
-      が Rust binary 入りで公開される
+      が Rust binary 入りで公開される — CI
 - [ ] `smoke-bundle` が windows-latest / ubuntu-latest /
       ubuntu-24.04-arm / macos-latest で pass する(macOS は sibling
-      経路・他 3 OS は Node-free launcher acquisition 経路)
-- [ ] `launcher-acquisition.test.ts` の Rust binary variant が stub
+      経路・他 3 OS は Node-free launcher acquisition 経路) — CI
+- [x] `launcher-acquisition.test.ts` の Rust binary variant が stub
       Release からの download → SHA256 照合 → `--version` probe → exec を
-      無改修 launcher で pass する
-- [ ] hooks.json 経路の `cheaper hook <event> --target <agent>`
+      無改修 launcher で pass する(sh・pwsh 両 leg で
+      `target/release/cheaper.exe` 実測 pass)
+- [x] hooks.json 経路の `cheaper hook <event> --target <agent>`
       invocation が Rust binary で実行され fail-open 契約が維持される
-- [ ] `pnpm bundle` 後の `node scripts/check-apm-payload.mjs` と
+      (Rust variant が launcher 経由で `hook pre-read-code --target
+      windsurf` を実行し exit 2 + bulk-read 誘導を確認。host 別の
+      allow 変換 wrapper は binary 非依存の既存 contract)
+- [x] `pnpm bundle` 後の `node scripts/check-apm-payload.mjs` と
       `git diff --exit-code -- packages/apm/.apm/hooks/cli` が pass する
+      (local 実測 pass。`build-apm-bundle.mjs --exe-dir` に rename 済み
+      cargo binary を渡し sibling 配置・launcher sibling 実行も確認)
 - [ ] `mise run check` 全体が exit 0(check-version の Cargo.toml 照合
-      を含む)
+      を含む) — local では lint/version/doc-ids/typecheck/bundle/
+      payload/git diff が全 pass、`pnpm test` 内の
+      `cross-agent-routing-adapters.test.ts` が負荷 flake
+      (20s timeout)で 1件 fail したが isolate 再実行で 32/32 pass。
+      完全な exit 0 は CI
 - [ ] 旧 tag の Release asset が変更されず、旧 version.json pin の
       consumer が従来通り SEA binary を取得できる(rollback 経路の確認)
+      — CI/asset 名・tag immutability の構造確認は済み、実 Release
+      の観測は公開後

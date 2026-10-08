@@ -35,11 +35,13 @@ export function smokeBundle({ packageDir, manifestFile, version, dryRun = false 
   const platformTarget = `${process.platform}-${process.arch}`;
   const native = releaseTargets.find(({ target }) => target === platformTarget);
   // sibling-only target(darwin-arm64 等): Release/manifest 非対象で launcher は
-  // acquisition を拒否するため、deploy される sibling の存在だけを要求する。
-  // 検証本体(sha256 照合等)は T4 で拡張する。
+  // acquisition を拒否するため、deploy される sibling を検証する。manifest の
+  // 対象外なので package 内の hash を基準に deploy 後の同一性を照合し、
+  // 実行検証は末尾の launcher `--version`/`models` smoke が担う。
   const siblingName = process.platform === "win32" ? "cheaper.exe" : "cheaper";
   const sibling = native ? undefined : path.join(packageDir, ".apm/hooks/cli/bin", platformTarget, siblingName);
   if (sibling && !regularFile(sibling)) throw new Error(`sibling-only smoke target ${platformTarget} requires ${sibling}`);
+  const siblingHash = sibling ? hashExecutable(sibling) : undefined;
   if (dryRun) return { target: platformTarget, version, verified: 3, dryRun: true };
   const owned = mkdtempSync(path.join(tmpdir(), "cheaper-release-smoke-"));
   try {
@@ -55,7 +57,11 @@ export function smokeBundle({ packageDir, manifestFile, version, dryRun = false 
     const deployed = path.join(consumer, ".windsurf/hooks/pkg");
     // deploy後にも全target hashを照合。launcherが取得fallbackへ進む欠損も拒否する。
     verifyBundle(path.join(deployed, "cli"), manifestFile, version);
-    if (sibling && !regularFile(path.join(deployed, "cli/bin", platformTarget, siblingName))) throw new Error(`APM deploy dropped sibling-only executable for ${platformTarget}`);
+    if (sibling) {
+      const deployedSibling = path.join(deployed, "cli/bin", platformTarget, siblingName);
+      if (!regularFile(deployedSibling)) throw new Error(`APM deploy dropped sibling-only executable for ${platformTarget}`);
+      if (hashExecutable(deployedSibling) !== siblingHash) throw new Error(`sibling-only executable checksum changed by APM deploy for ${platformTarget}`);
+    }
     let executable;
     let prefix;
     if (process.platform === "win32") {
