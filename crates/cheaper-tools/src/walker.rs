@@ -206,9 +206,13 @@ enum Descend {
     Skipped,
 }
 
-/// opendir 中の 1 dir(保持は `ReadDir` iterator 1 件 = O(1) entries)。
+/// opendir 中の 1 dir(保持は 1 dir 分の entry buffer)。
+/// entry は UTF-16 code unit 順に sort 済み: raw readdir 順は FS 依存で
+/// あるのに対し、dump が記録した列挙順(NTFS 順)は sorted と一致する。
+/// 列挙順を決定的にすることで find の maxResults 切断位置や grep の
+/// skipped footer 順が platform 非依存になる。
 struct DirFrame {
-    entries: fs::ReadDir,
+    entries: std::vec::IntoIter<std::io::Result<fs::DirEntry>>,
     fs_path: String,
     logical_path: String,
     /// `ancestors` に登録した canonical path。frame 解放時に除去する
@@ -341,8 +345,21 @@ impl<'o, 'i> WalkFiles<'o, 'i> {
                 Ok(Descend::Skipped)
             }
             Ok(entries) => {
+                // readdir 順は FS 依存なので UTF-16 code unit 順へ揃える。
+                // Err entry は先頭へ寄せ、従来どおり当該 dir の列挙中断
+                // (issue 通知 + frame close)として処理する。
+                let mut entries: Vec<std::io::Result<fs::DirEntry>> = entries.collect();
+                entries.sort_by(|a, b| match (a, b) {
+                    (Err(_), Err(_)) => std::cmp::Ordering::Equal,
+                    (Err(_), _) => std::cmp::Ordering::Less,
+                    (_, Err(_)) => std::cmp::Ordering::Greater,
+                    (Ok(x), Ok(y)) => cheaper_core::js::code_unit_compare(
+                        &x.file_name().to_string_lossy(),
+                        &y.file_name().to_string_lossy(),
+                    ),
+                });
                 self.stack.push(DirFrame {
-                    entries,
+                    entries: entries.into_iter(),
                     fs_path: fs_path.to_string(),
                     logical_path: logical_path.to_string(),
                     canonical,
