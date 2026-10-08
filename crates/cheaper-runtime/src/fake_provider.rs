@@ -923,3 +923,27 @@ impl CheaperProviderPlugin for CheaperFakePlugin {
         });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `scripted_provider_error` の PROVIDER_FAILURE details contract
+    /// guard — adapter `provider_error_to_cheaper`/`report_to_cheaper` と
+    /// 同じく `{errorMessage}` のみ(run.ts L382-390 parity)。
+    #[test]
+    fn scripted_provider_error_details_is_error_message_only() {
+        let error = scripted_provider_error("boom");
+        assert_eq!(error.code(), ErrorCode::ProviderFailure);
+        let details = error
+            .details()
+            .expect("PROVIDER_FAILURE must carry details");
+        assert_eq!(
+            details.len(),
+            1,
+            "unexpected details keys: {:?}",
+            details.keys().collect::<Vec<_>>()
+        );
+        assert_eq!(details.get("errorMessage"), Some(&Value::from("boom")));
+    }
+}

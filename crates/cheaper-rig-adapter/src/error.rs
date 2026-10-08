@@ -113,7 +113,8 @@ pub fn report_to_cheaper(report: &ErrorReport) -> CheaperError {
         // provider 接線の失敗(transport・provider 応答・SDK 報告・request/
         // response 構築)は run.ts の `outcome.kind === "rejected" →
         // PROVIDER_FAILURE` parity で一律 PROVIDER_FAILURE。transient/
-        // permanent の区別は details 側(classify_report)の情報で残す。
+        // permanent の区別は retry 判定で消費され、details には残さない
+        // (details は `{errorMessage}` のみ)。
         ErrorKind::Http
         | ErrorKind::Provider
         | ErrorKind::ProviderResponse
@@ -241,4 +242,55 @@ fn error_code_from_str(code: &str) -> Option<ErrorCode> {
         "INTERNAL_ERROR" => ErrorCode::InternalError,
         _ => return None,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rig::ProviderResponseError;
+
+    /// PROVIDER_FAILURE の details contract guard: `{errorMessage}` のみ
+    /// (run.ts L382-390 parity)。分類情報(status/class/retryable/
+    /// providerCode 等)は retry 判定で消費され details には載らない —
+    /// node-gated differential harness より先にここで extra key を検出する。
+    fn assert_error_message_only(error: &CheaperError) {
+        assert_eq!(error.code(), ErrorCode::ProviderFailure);
+        let details = error
+            .details()
+            .expect("PROVIDER_FAILURE must carry details");
+        assert_eq!(
+            details.len(),
+            1,
+            "unexpected details keys: {:?}",
+            details.keys().collect::<Vec<_>>()
+        );
+        assert!(details.contains_key("errorMessage"));
+    }
+
+    #[test]
+    fn provider_failure_details_is_error_message_only() {
+        // `provider_error_to_cheaper` 経路 — status 付き provider 応答でも
+        // 分類情報は details に漏れない。
+        let provider = ProviderError::ProviderResponse(ProviderResponseError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            "boom",
+        ));
+        assert_error_message_only(&provider_error_to_cheaper(&provider));
+
+        // `report_to_cheaper` 経路 — report が status/code/request_id を
+        // 持っていても PROVIDER_FAILURE details は `{errorMessage}` のみ。
+        let report = ErrorReport {
+            kind: ErrorKind::ProviderResponse,
+            retryable: true,
+            message: "server exploded".to_string(),
+            code: Some("upstream_500".to_string()),
+            http_status: Some(500),
+            refusal: false,
+            source_chain: vec![],
+            request_id: Some("req-1".to_string()),
+            provider_response: None,
+            detail: None,
+        };
+        assert_error_message_only(&report_to_cheaper(&report));
+    }
 }

@@ -125,7 +125,8 @@ pub enum ProviderOrigin {
 }
 
 /// `radius` gateway 等、`oauth: "radius"` を宣言する provider config 由来の
-/// OAuth capability（flow は持たない → method 非 advertise）。
+/// OAuth capability。builtin `OAuthSupport` と同じく declaration の有無
+/// だけで method を advertise する（flow 登録は login 実行可否のみ制御）。
 #[derive(Debug, Clone, Copy)]
 pub struct OauthDeclaration {
     pub subscription: bool,

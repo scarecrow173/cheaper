@@ -191,8 +191,9 @@ pub struct BuiltinProviderMeta {
     pub api_key_name: Option<&'static str>,
     /// api key / ambient credential の env 解決規則。
     pub env_auth: EnvAuth,
-    /// OAuth capability 宣言。flow 未実装 provider は method を advertise
-    /// しない（plan Rollback 規則）。
+    /// OAuth capability 宣言。declaration の有無だけで `oauth` method を
+    /// advertise する（TS `auth.ts` L56-66 parity）— flow 登録は
+    /// `login --type oauth` の実行可否のみを制御する。
     pub oauth: Option<OAuthSupport>,
 }
 
