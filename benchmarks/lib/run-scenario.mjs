@@ -7,17 +7,13 @@ import path from "node:path";
 import { performance } from "node:perf_hooks";
 import {
   benchmarkEnvironment,
+  cliCommandLine,
   countUsageRecords,
   prepareWorkspace,
-  readPromptLog,
   repositoryRoot,
   runCli,
 } from "./cli.mjs";
-import {
-  interfacePayloadBytes,
-  measureWorkflowEnvelope,
-  promptBytesFromJsonl,
-} from "./measurements.mjs";
+import { interfacePayloadBytes, measureWorkflowEnvelope } from "./measurements.mjs";
 import {
   summarizeWorkerEnvelope,
   validateBenchmarkRecord,
@@ -92,11 +88,6 @@ function workflowCommand(workflowPath, workspace) {
   return ["workflow", "run", path.basename(workflowPath), "--cwd", workspace, "--quiet"];
 }
 
-async function resetPromptLog(promptLog) {
-  await mkdir(path.dirname(promptLog), { recursive: true });
-  await writeFile(promptLog, "", "utf8");
-}
-
 async function runWorkflow(scenario, arm, workspace, envInfo) {
   const { workflowPath, generationMs, definitionBytes } = await writeWorkflow(
     scenario,
@@ -111,23 +102,21 @@ async function runWorkflow(scenario, arm, workspace, envInfo) {
       {
         cwd: workspace,
         env: envInfo.env,
+        fakeStream: envInfo.fakeStream,
       },
     );
     interfaceBytes = interfacePayloadBytes(iface.envelope);
     interfaceWallTimeMs = iface.wallTimeMs;
   }
-  await resetPromptLog(envInfo.promptLog);
-  await resetPromptLog(envInfo.timingLog);
   const started = performance.now();
   const cli = await runCli(workflowCommand(workflowPath, workspace), {
     cwd: workspace,
     env: envInfo.env,
+    fakeStream: envInfo.fakeStream,
   });
   const wallTimeMs = performance.now() - started;
   const envelope = validateWorkflowEnvelope(cli.envelope);
-  const promptLog = await readPromptLog(envInfo.promptLog);
-  const timingLog = await readPromptLog(envInfo.timingLog);
-  const metrics = measureWorkflowEnvelope(envelope, scenario.workflow, promptLog, timingLog);
+  const metrics = measureWorkflowEnvelope(envelope, scenario.workflow);
   const directUsageRecords = await countUsageRecords(envInfo.configDir);
   return {
     schemaVersion: 1,
@@ -140,7 +129,7 @@ async function runWorkflow(scenario, arm, workspace, envInfo) {
     fixtureRevision: "seeded-v1",
     seed: "seeded-v1",
     environment: environmentSnapshot(),
-    command: `node packages/cli/dist/main.js ${workflowCommand(workflowPath, workspace).join(" ")}`,
+    command: cliCommandLine(workflowCommand(workflowPath, workspace)),
     workflowDefinitionBytes: definitionBytes,
     parentVisibleInterfaceBytes: interfaceBytes,
     interfaceDiscoveryWallTimeMs: interfaceWallTimeMs,
@@ -196,31 +185,28 @@ async function runDirectFilesystem(scenario, workspace) {
 }
 
 async function runDirectWorker(_scenario, workspace, envInfo, task, profile, options = {}) {
-  const env = {
-    ...envInfo.env,
-    CHEAPER_BENCH_RESPONSE_PROFILES: profile,
-    ...(options.toolCallPath ? { CHEAPER_BENCH_TOOL_CALL_PATH: options.toolCallPath } : {}),
-  };
   const input = {
     task,
     ...(options.paths?.length ? { paths: options.paths } : {}),
     ...(options.hints?.length ? { hints: options.hints } : {}),
   };
-  const promptStart = await readPromptLog(envInfo.promptLog);
   const result = await runCli(["run", "bulk-reader", "--cwd", workspace, "--quiet"], {
     cwd: workspace,
-    env,
+    env: envInfo.env,
     input: JSON.stringify(input),
+    fakeStream: {
+      ...envInfo.fakeStream,
+      responseProfiles: [profile],
+      ...(options.toolCallPath ? { toolCallPath: options.toolCallPath } : {}),
+    },
   });
   const metric = summarizeWorkerEnvelope(result.envelope);
-  const promptLog = await readPromptLog(envInfo.promptLog);
-  const before = promptBytesFromJsonl(promptStart);
-  const after = promptBytesFromJsonl(promptLog);
   return {
     envelope: result.envelope,
     metric,
     wallTimeMs: result.wallTimeMs,
-    promptBytes: Math.max(0, after - before),
+    // Rust fake seam は prompt serialization を観測できないため null。
+    promptBytes: null,
     outputBytes: Buffer.byteLength(JSON.stringify(result.envelope.result)),
   };
 }
@@ -263,7 +249,6 @@ async function runDirectWorkerSequence(scenario, workspace, envInfo) {
     childRuns.push(child);
   }
   const lastEnvelope = childRuns.at(-1)?.envelope;
-  const promptBytes = childRuns.reduce((total, child) => total + child.promptBytes, 0);
   const outputBytes = childRuns.reduce((total, child) => total + child.outputBytes, 0);
   const usage = childRuns.reduce(
     (total, child) => ({
@@ -287,7 +272,7 @@ async function runDirectWorkerSequence(scenario, workspace, envInfo) {
     fixtureRevision: "seeded-v1",
     seed: "seeded-v1",
     environment: environmentSnapshot(),
-    command: "node packages/cli/dist/main.js run bulk-reader (one invocation per manual task)",
+    command: `${cliCommandLine(["run", "bulk-reader"])} (one invocation per manual task)`,
     workflowDefinitionBytes: null,
     parentVisibleInterfaceBytes: null,
     discoveryMode: "no-workflow-definition",
@@ -303,7 +288,8 @@ async function runDirectWorkerSequence(scenario, workspace, envInfo) {
       toolCalls: childRuns.reduce((total, child) => total + child.metric.toolCalls, 0),
       usage,
       retainedBytes: retainedBytes + outputBytes,
-      materializedPromptBytes: promptBytes,
+      // Rust fake seam は prompt serialization を観測できないため null。
+      materializedPromptBytes: null,
       criticalPathMs: null,
       maxConcurrency: 1,
       childInvocations: childRuns.map((child, index) => ({
@@ -354,6 +340,7 @@ async function runCompactInterface(scenario, workspace, envInfo) {
     {
       cwd: workspace,
       env: envInfo.env,
+      fakeStream: envInfo.fakeStream,
     },
   );
   return {
@@ -367,7 +354,7 @@ async function runCompactInterface(scenario, workspace, envInfo) {
     fixtureRevision: "seeded-v1",
     seed: "seeded-v1",
     environment: environmentSnapshot(),
-    command: `node packages/cli/dist/main.js workflow interface ${path.basename(workflowPath)}`,
+    command: cliCommandLine(["workflow", "interface", path.basename(workflowPath)]),
     workflowDefinitionBytes: Buffer.byteLength(JSON.stringify(scenario.workflow, null, 2)) + 1,
     parentVisibleInterfaceBytes: interfacePayloadBytes(result.envelope),
     discoveryMode: "public-interface-only",
@@ -408,7 +395,7 @@ async function runArm(scenario, arm, workspace, envInfo) {
       fixtureRevision: "seeded-v1",
       seed: "seeded-v1",
       environment: environmentSnapshot(),
-      command: "node packages/cli/dist/main.js run bulk-reader (one read tool call)",
+      command: `${cliCommandLine(["run", "bulk-reader"])} (one read tool call)`,
       workflowDefinitionBytes: null,
       parentVisibleInterfaceBytes: null,
       discoveryMode: "no-workflow-definition",
@@ -459,7 +446,6 @@ export async function runScenarioArm(scenario, arm) {
         "utf8",
       );
     }
-    await resetPromptLog(envInfo.promptLog);
     const result = await runArm(scenario, arm, workspace, envInfo);
     return validateBenchmarkRecord(result);
   } finally {

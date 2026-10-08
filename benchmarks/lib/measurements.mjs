@@ -54,58 +54,14 @@ export function criticalPathMs(envelope, workflow) {
   return Math.max(0, ...pathMs.values());
 }
 
-export function promptBytesFromJsonl(source) {
-  if (!source) return 0;
-  let total = 0;
-  for (const [index, line] of source.split(/\r?\n/).entries()) {
-    if (!line) continue;
-    const row = JSON.parse(line);
-    if (typeof row.bytes !== "number" || !Number.isFinite(row.bytes) || row.bytes < 0) {
-      throw new TypeError(`prompt log line ${index + 1} has invalid bytes`);
-    }
-    total += row.bytes;
-  }
-  return total;
-}
+// Rust fake seam(`CHEAPER_TEST_FAKE_STREAM` の fixture JSON)には prompt
+// serialization / per-stream timing の観測 hook が無い — TS 版は module
+// seam が process 内で CHEAPER_BENCH_PROMPT_LOG / CHEAPER_BENCH_TIMING_LOG
+// を書いていた。この 2 dimension は「未計測」を意味する null で報告する
+// (0 にすると測定値と区別が付かない)。`maxConcurrency` は engine が
+// `meta.execution.maxConcurrency` で計上する tool operation 側のみ。
 
-export function maxConcurrencyFromJsonl(source) {
-  if (!source) return 0;
-  const events = [];
-  const opened = new Set();
-  for (const [index, line] of source.split(/\r?\n/).entries()) {
-    if (!line) continue;
-    const event = JSON.parse(line);
-    if (
-      typeof event.id !== "string" ||
-      !["start", "end"].includes(event.phase) ||
-      !/^\d+$/.test(event.at)
-    ) {
-      throw new TypeError(`timing log line ${index + 1} is invalid`);
-    }
-    if (event.phase === "start") {
-      if (opened.has(event.id)) throw new TypeError(`timing log duplicates start for ${event.id}`);
-      opened.add(event.id);
-    } else {
-      if (!opened.has(event.id))
-        throw new TypeError(`timing log has unmatched end for ${event.id}`);
-      opened.delete(event.id);
-    }
-    events.push({ at: BigInt(event.at), phase: event.phase });
-  }
-  if (opened.size) throw new TypeError("timing log has unfinished prompt intervals");
-  events.sort((left, right) =>
-    left.at < right.at ? -1 : left.at > right.at ? 1 : left.phase === "end" ? -1 : 1,
-  );
-  let active = 0;
-  let maximum = 0;
-  for (const event of events) {
-    active += event.phase === "start" ? 1 : -1;
-    maximum = Math.max(maximum, active);
-  }
-  return maximum;
-}
-
-export function measureWorkflowEnvelope(envelope, workflow, promptLog = "", timingLog = "") {
+export function measureWorkflowEnvelope(envelope, workflow) {
   const summary = summarizeWorkflowEnvelope(envelope);
   const artifacts = Array.isArray(envelope.meta.artifacts) ? envelope.meta.artifacts : [];
   const artifactBytes = artifacts.reduce((total, artifact) => {
@@ -120,7 +76,6 @@ export function measureWorkflowEnvelope(envelope, workflow, promptLog = "", timi
   }, 0);
   const resultBytes = Buffer.byteLength(JSON.stringify(envelope.result));
   const execution = envelope.meta.execution;
-  const workerStreamConcurrency = maxConcurrencyFromJsonl(timingLog);
   const toolOperationConcurrency =
     typeof execution?.maxConcurrency === "number" ? execution.maxConcurrency : null;
   return {
@@ -128,10 +83,10 @@ export function measureWorkflowEnvelope(envelope, workflow, promptLog = "", timi
     retainedBytes: resultBytes + artifactBytes,
     retainedResultBytes: resultBytes,
     artifactBytes,
-    materializedPromptBytes: promptBytesFromJsonl(promptLog),
+    materializedPromptBytes: null,
     criticalPathMs: criticalPathMs(envelope, workflow),
-    maxConcurrency: Math.max(workerStreamConcurrency, toolOperationConcurrency ?? 0),
-    workerStreamConcurrency,
+    maxConcurrency: toolOperationConcurrency,
+    workerStreamConcurrency: null,
     toolOperationConcurrency,
   };
 }
