@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034Dk4nQ7wXzVbNmY2hJrT"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Phase 3: port runtime adapter providers"
 created: "2026-10-08"
 updated: "2026-10-08"

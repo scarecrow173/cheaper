@@ -158,9 +158,9 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqhxabCiHf | Per-target apm install verification e2e | done | [per-target-apm-install-verification-e2e.md](./per-target-apm-install-verification-e2e.md) |
 | TASK-034BgK4O6Xu8NEvlYtW6lJ | Phase 0: Rig PoC go/no-go gate | done | [phase-0-rig-poc-go-no-go-gate.md](./phase-0-rig-poc-go-no-go-gate.md) |
 | TASK-034BgKiqu2ZlaprN931tnY | Phase 1: port cheaper-core | done | [phase-1-port-cheaper-core.md](./phase-1-port-cheaper-core.md) |
-| TASK-034BgKiZhENYXeNMRvxyFA | Phase 2: port cheaper-tools | todo | [phase-2-port-cheaper-tools.md](./phase-2-port-cheaper-tools.md) |
-| TASK-034BgKjvy0B4BNsyAhtFht | Phase 3: port runtime adapter providers | todo | [phase-3-port-runtime-adapter-providers.md](./phase-3-port-runtime-adapter-providers.md) |
-| TASK-034BgKk2iQMEQ0xHA3SThv | Phase 4: port CLI and workflow | todo | [phase-4-port-cli-and-workflow.md](./phase-4-port-cli-and-workflow.md) |
+| TASK-034BgKiZhENYXeNMRvxyFA | Phase 2: port cheaper-tools | done | [phase-2-port-cheaper-tools.md](./phase-2-port-cheaper-tools.md) |
+| TASK-034BgKjvy0B4BNsyAhtFht | Phase 3: port runtime adapter providers | done | [phase-3-port-runtime-adapter-providers.md](./phase-3-port-runtime-adapter-providers.md) |
+| TASK-034BgKk2iQMEQ0xHA3SThv | Phase 4: port CLI and workflow | done | [phase-4-port-cli-and-workflow.md](./phase-4-port-cli-and-workflow.md) |
 | TASK-034BgKkC4U7NTKprsORKCH | Phase 5: switch distribution to Rust binary | todo | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
 | TASK-034BgKlddxEi2ozLgZMFi3 | Phase 6: remove TypeScript Node Pi | todo | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | done | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |

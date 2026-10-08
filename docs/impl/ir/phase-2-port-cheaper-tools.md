@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034CLj96KIHERKMfbd1Qe3S"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Phase 2: port cheaper-tools"
 created: "2026-10-07"
 updated: "2026-10-07"

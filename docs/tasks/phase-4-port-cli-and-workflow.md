@@ -1,10 +1,10 @@
 ---
 id: "TASK-034BgKk2iQMEQ0xHA3SThv"
 type: "task"
-status: "todo"
+status: "done"
 title: "Phase 4: port CLI and workflow"
 created: "2026-10-06"
-updated: "2026-10-06"
+updated: "2026-10-08"
 owners: []
 relations:
   source: []

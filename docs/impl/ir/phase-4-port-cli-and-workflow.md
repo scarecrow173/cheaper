@@ -1,7 +1,7 @@
 ---
 id: "IMPL-ZSSIk1yMEAiQZUUzhlvEsF"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Phase 4: port CLI and workflow"
 created: "2026-10-08"
 updated: "2026-10-08"
@@ -747,7 +747,8 @@ golden harness。`docs/test-specs/rust-migration-differential-golden.md`
 ### 検証
 
 - `cargo test -p cheaper-cli --test differential` — 43 cases、
-  pass=35 / divergence(pinned)=8 / fail=0。
+  pass=35 / divergence(pinned)=8 / fail=0(T8 時点の記録 —
+  follow-up fix 後の最終 matrix は末尾 §Phase 4 follow-up fix 参照)。
 - `cargo test -p cheaper-cli` 全パス・`cargo clippy -p cheaper-cli
   --tests -- -D warnings` clean・`cargo fmt -p cheaper-cli --check` clean。
 
@@ -837,7 +838,9 @@ hook byte parity を durable test 化し、usage.jsonl の新旧双方向互換�
 - `mise exec -- cargo test -p cheaper-cli --test differential` —
   55 cases、pass=47 / pinned divergence=8 / fail=0(hook 16 case
   全て stdout+stderr+exit code byte 一致。deny reason の token 数
-  `20002` も tiktoken-rs / js-tiktoken で一致)。
+  `20002` も tiktoken-rs / js-tiktoken で一致)。T9 時点の記録 —
+  follow-up fix(F1–F7)で 5 pin が解消され、最終は pass=52 /
+  pinned divergence=3(末尾 §Phase 4 follow-up fix 参照)。
 - `mise exec -- cargo test -p cheaper-cli --test usage_log` —
   9 test 全パス(node cross-check 実施: Rust-written file → TS
   `buildUsageReport` が Rust report と一致、TS `buildUsageRecord`
@@ -891,6 +894,15 @@ confirm 済み finding 7 件を TS 挙動へ揃える修正。詳細は
 - F7: auth prompt(`ask`/`ask_secret`)に read 完了直後の cancel
   再確認を追加。blocking read 自体は割り込めない残差あり
   (コード内コメントに記録)。
+
+### 検証(follow-up fix 後の再測定)
+
+- `cargo test -p cheaper-cli --test differential` — 最終 matrix:
+  `cases=55 pass=52 divergence=3 fail=0 rust-only=0`
+  (`tests/differential/README.md` の現行 matrix と一致)。
+- `cargo test -p cheaper-cli` 全パス(F1 で `tests/workflow.rs` に
+  wrap unwrap regression test、F6 で usage reader の lossy 経路を
+  `tests/usage_report.rs` に追加)。
 
 ### 受容 divergence(残 pin — `tests/differential/README.md`)
 
