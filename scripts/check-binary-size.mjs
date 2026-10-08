@@ -29,9 +29,13 @@ try {
   if (!stat.isFile()) throw new Error(`expected a regular file: ${file}`);
   const limit = maxMb * 1024 * 1024;
   if (stat.size > limit) {
-    throw new Error(`binary exceeds size limit: ${file} is ${stat.size} bytes (limit ${limit} bytes = ${maxMb} MiB)`);
+    throw new Error(
+      `binary exceeds size limit: ${file} is ${stat.size} bytes (limit ${limit} bytes = ${maxMb} MiB)`,
+    );
   }
-  console.log(`binary size OK: ${file} is ${stat.size} bytes (limit ${limit} bytes = ${maxMb} MiB)`);
+  console.log(
+    `binary size OK: ${file} is ${stat.size} bytes (limit ${limit} bytes = ${maxMb} MiB)`,
+  );
 } catch (error) {
   console.error(error.message);
   process.exitCode = 1;

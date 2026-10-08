@@ -13,9 +13,9 @@
 // packages/*/package.json (no longer version declarations). version.json
 // is generated — regenerate the bundle so it follows, then commit.
 
+import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { setCargoWorkspaceVersion } from "./lib/release-artifacts.mjs";
 

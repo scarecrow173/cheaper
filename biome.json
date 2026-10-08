@@ -18,6 +18,16 @@
     }
   },
   "files": {
-    "includes": ["packages/**", "!**/dist", "!**/node_modules"]
+    "includes": [
+      "scripts/**/*.mjs",
+      "!scripts/dump-core-golden.mjs",
+      "!scripts/dump-tool-fixtures.mjs",
+      "benchmarks/**/*.mjs",
+      "benchmarks/**/*.json",
+      "packages/**/*.json",
+      "!**/dist",
+      "!**/node_modules",
+      "!benchmarks/results"
+    ]
   }
 }

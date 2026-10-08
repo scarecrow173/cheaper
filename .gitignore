@@ -47,9 +47,6 @@ jspm_packages/
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
-# TypeScript cache
-*.tsbuildinfo
-
 # Optional npm cache directory
 .npm
 
@@ -128,9 +125,6 @@ dist
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
-# pnpm
-.pnpm-store
-
 # yarn v3
 .pnp.*
 .yarn/*
@@ -139,12 +133,6 @@ dist
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-
-# Vite files
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
-.vite/
-
 
 # APM dependencies
 apm_modules/

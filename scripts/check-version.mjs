@@ -21,16 +21,12 @@ import { apmPackageVersion, cargoWorkspaceVersion } from "./lib/release-artifact
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
-const readJsonVersion = (rel) =>
-  JSON.parse(readFileSync(path.join(repoRoot, rel), "utf8")).version;
+const readJsonVersion = (rel) => JSON.parse(readFileSync(path.join(repoRoot, rel), "utf8")).version;
 
 const canonical = cargoWorkspaceVersion(repoRoot);
 
 const declarations = [
-  [
-    "packages/apm/apm.yml",
-    () => apmPackageVersion(path.join(repoRoot, "packages/apm/apm.yml")),
-  ],
+  ["packages/apm/apm.yml", () => apmPackageVersion(path.join(repoRoot, "packages/apm/apm.yml"))],
   [
     "packages/apm/.apm/hooks/cli/version.json",
     () => readJsonVersion("packages/apm/.apm/hooks/cli/version.json"),

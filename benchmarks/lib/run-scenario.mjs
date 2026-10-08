@@ -1,15 +1,33 @@
-import { appendFile, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir, cpus, platform, release, arch } from "node:os";
-import { performance } from "node:perf_hooks";
+import { Buffer } from "node:buffer";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { Buffer } from "node:buffer";
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { arch, cpus, platform, release, tmpdir } from "node:os";
 import path from "node:path";
-import { benchmarkEnvironment, cliEntry, countUsageRecords, prepareWorkspace, readPromptLog, repositoryRoot, runCli } from "./cli.mjs";
-import { interfacePayloadBytes, measureWorkflowEnvelope, promptBytesFromJsonl } from "./measurements.mjs";
-import { summarizeWorkerEnvelope, validateBenchmarkRecord, validateWorkflowEnvelope } from "./result-schema.mjs";
+import { performance } from "node:perf_hooks";
+import {
+  benchmarkEnvironment,
+  countUsageRecords,
+  prepareWorkspace,
+  readPromptLog,
+  repositoryRoot,
+  runCli,
+} from "./cli.mjs";
+import {
+  interfacePayloadBytes,
+  measureWorkflowEnvelope,
+  promptBytesFromJsonl,
+} from "./measurements.mjs";
+import {
+  summarizeWorkerEnvelope,
+  validateBenchmarkRecord,
+  validateWorkflowEnvelope,
+} from "./result-schema.mjs";
 
-const unavailableParentUsage = Object.freeze({ status: "unavailable", reason: "no parent-agent telemetry is exposed to the benchmark runner" });
+const unavailableParentUsage = Object.freeze({
+  status: "unavailable",
+  reason: "no parent-agent telemetry is exposed to the benchmark runner",
+});
 
 function environmentSnapshot() {
   return {
@@ -27,24 +45,38 @@ async function runNative(executable, args, { cwd, env, input } = {}) {
   let stderr = "";
   child.stdout.setEncoding("utf8");
   child.stderr.setEncoding("utf8");
-  child.stdout.on("data", (chunk) => { stdout += chunk; });
-  child.stderr.on("data", (chunk) => { stderr += chunk; });
+  child.stdout.on("data", (chunk) => {
+    stdout += chunk;
+  });
+  child.stderr.on("data", (chunk) => {
+    stderr += chunk;
+  });
   if (input !== undefined) child.stdin.end(input);
   else child.stdin.end();
   const exitCode = await new Promise((resolve, reject) => {
     child.on("error", reject);
     child.on("close", resolve);
   });
-  if (exitCode !== 0) throw new Error(`${executable} ${args.join(" ")} exited ${exitCode}: ${stderr || stdout}`);
+  if (exitCode !== 0)
+    throw new Error(`${executable} ${args.join(" ")} exited ${exitCode}: ${stderr || stdout}`);
   return { stdout, stderr, wallTimeMs: performance.now() - started };
 }
 
 async function writeWorkflow(scenario, workspace, arm) {
   const workflowPath = path.join(workspace, "workflow.json");
   if (arm === "saved-workflow") {
-    const savedPath = path.join(repositoryRoot, "benchmarks", "scenarios", scenario.savedWorkflowFile);
+    const savedPath = path.join(
+      repositoryRoot,
+      "benchmarks",
+      "scenarios",
+      scenario.savedWorkflowFile,
+    );
     await copyFile(savedPath, workflowPath);
-    return { workflowPath, generationMs: 0, definitionBytes: Buffer.byteLength(await readFile(workflowPath)) };
+    return {
+      workflowPath,
+      generationMs: 0,
+      definitionBytes: Buffer.byteLength(await readFile(workflowPath)),
+    };
   }
   const started = performance.now();
   const source = JSON.stringify(scenario.workflow, null, 2);
@@ -66,21 +98,31 @@ async function resetPromptLog(promptLog) {
 }
 
 async function runWorkflow(scenario, arm, workspace, envInfo) {
-  const { workflowPath, generationMs, definitionBytes } = await writeWorkflow(scenario, workspace, arm);
+  const { workflowPath, generationMs, definitionBytes } = await writeWorkflow(
+    scenario,
+    workspace,
+    arm,
+  );
   let interfaceBytes = null;
   let interfaceWallTimeMs = null;
   if (scenario.arms.includes("saved-workflow") || scenario.arms.includes("dynamic-workflow")) {
-    const iface = await runCli(["workflow", "interface", path.basename(workflowPath), "--cwd", workspace, "--quiet"], {
-      cwd: workspace,
-      env: envInfo.env,
-    });
+    const iface = await runCli(
+      ["workflow", "interface", path.basename(workflowPath), "--cwd", workspace, "--quiet"],
+      {
+        cwd: workspace,
+        env: envInfo.env,
+      },
+    );
     interfaceBytes = interfacePayloadBytes(iface.envelope);
     interfaceWallTimeMs = iface.wallTimeMs;
   }
   await resetPromptLog(envInfo.promptLog);
   await resetPromptLog(envInfo.timingLog);
   const started = performance.now();
-  const cli = await runCli(workflowCommand(workflowPath, workspace), { cwd: workspace, env: envInfo.env });
+  const cli = await runCli(workflowCommand(workflowPath, workspace), {
+    cwd: workspace,
+    env: envInfo.env,
+  });
   const wallTimeMs = performance.now() - started;
   const envelope = validateWorkflowEnvelope(cli.envelope);
   const promptLog = await readPromptLog(envInfo.promptLog);
@@ -153,7 +195,7 @@ async function runDirectFilesystem(scenario, workspace) {
   };
 }
 
-async function runDirectWorker(scenario, workspace, envInfo, task, profile, options = {}) {
+async function runDirectWorker(_scenario, workspace, envInfo, task, profile, options = {}) {
   const env = {
     ...envInfo.env,
     CHEAPER_BENCH_RESPONSE_PROFILES: profile,
@@ -185,7 +227,7 @@ async function runDirectWorker(scenario, workspace, envInfo, task, profile, opti
 
 async function runDirectWorkerSequence(scenario, workspace, envInfo) {
   const manual = scenario.manual;
-  let hints = [];
+  const hints = [];
   let retainedBytes = 0;
   let processWallTimeMs = 0;
   const readPaths = [...(manual.readPath ? [manual.readPath] : []), ...(manual.readPaths ?? [])];
@@ -208,9 +250,10 @@ async function runDirectWorkerSequence(scenario, workspace, envInfo) {
   const childRuns = [];
   for (let index = 0; index < manual.tasks.length; index += 1) {
     const responseProfile = manual.responseProfiles?.[index] ?? "compact";
-    const task = manual.forwardFullResults && priorResults.length
-      ? `${manual.tasks[index]}\nPrior full Worker results:\n${priorResults.join("\n")}`
-      : manual.tasks[index];
+    const task =
+      manual.forwardFullResults && priorResults.length
+        ? `${manual.tasks[index]}\nPrior full Worker results:\n${priorResults.join("\n")}`
+        : manual.tasks[index];
     const child = await runDirectWorker(scenario, workspace, envInfo, task, responseProfile, {
       hints,
       paths: manual.toolCallPath ? [manual.toolCallPath] : [],
@@ -222,13 +265,16 @@ async function runDirectWorkerSequence(scenario, workspace, envInfo) {
   const lastEnvelope = childRuns.at(-1)?.envelope;
   const promptBytes = childRuns.reduce((total, child) => total + child.promptBytes, 0);
   const outputBytes = childRuns.reduce((total, child) => total + child.outputBytes, 0);
-  const usage = childRuns.reduce((total, child) => ({
-    input: total.input + child.metric.usage.input,
-    output: total.output + child.metric.usage.output,
-    cachedInput: total.cachedInput + child.metric.usage.cachedInput,
-    cachedOutput: total.cachedOutput + child.metric.usage.cachedOutput,
-    total: total.total + child.metric.usage.total,
-  }), { input: 0, output: 0, cachedInput: 0, cachedOutput: 0, total: 0 });
+  const usage = childRuns.reduce(
+    (total, child) => ({
+      input: total.input + child.metric.usage.input,
+      output: total.output + child.metric.usage.output,
+      cachedInput: total.cachedInput + child.metric.usage.cachedInput,
+      cachedOutput: total.cachedOutput + child.metric.usage.cachedOutput,
+      total: total.total + child.metric.usage.total,
+    }),
+    { input: 0, output: 0, cachedInput: 0, cachedOutput: 0, total: 0 },
+  );
   const usageRecords = await countUsageRecords(envInfo.configDir);
   return {
     schemaVersion: 1,
@@ -269,7 +315,9 @@ async function runDirectWorkerSequence(scenario, workspace, envInfo) {
         usage: child.metric.usage,
       })),
     },
-    ...(lastEnvelope ? { finalResultBytes: Buffer.byteLength(JSON.stringify(lastEnvelope.result)) } : {}),
+    ...(lastEnvelope
+      ? { finalResultBytes: Buffer.byteLength(JSON.stringify(lastEnvelope.result)) }
+      : {}),
   };
 }
 
@@ -301,10 +349,13 @@ async function runFullDefinition(scenario, workspace, arm) {
 
 async function runCompactInterface(scenario, workspace, envInfo) {
   const { workflowPath } = await writeWorkflow(scenario, workspace, "dynamic-workflow");
-  const result = await runCli(["workflow", "interface", path.basename(workflowPath), "--cwd", workspace, "--quiet"], {
-    cwd: workspace,
-    env: envInfo.env,
-  });
+  const result = await runCli(
+    ["workflow", "interface", path.basename(workflowPath), "--cwd", workspace, "--quiet"],
+    {
+      cwd: workspace,
+      env: envInfo.env,
+    },
+  );
   return {
     schemaVersion: 1,
     runId: randomUUID(),
@@ -329,15 +380,23 @@ async function runCompactInterface(scenario, workspace, envInfo) {
 async function runArm(scenario, arm, workspace, envInfo) {
   if (arm === "workflow" || arm === "dynamic-workflow" || arm === "saved-workflow") {
     const result = await runWorkflow(scenario, arm, workspace, envInfo);
-    if (arm === "saved-workflow" && result.discoveryMode !== "saved-definition") throw new Error("saved workflow arm lost its definition mode");
+    if (arm === "saved-workflow" && result.discoveryMode !== "saved-definition")
+      throw new Error("saved workflow arm lost its definition mode");
     return result;
   }
   if (arm === "direct-filesystem") return runDirectFilesystem(scenario, workspace);
   if (arm === "direct-worker-tool-call") {
-    const child = await runDirectWorker(scenario, workspace, envInfo, scenario.manual.tasks[0], "compact", {
-      paths: [scenario.manual.toolCallPath],
-      toolCallPath: scenario.manual.toolCallPath,
-    });
+    const child = await runDirectWorker(
+      scenario,
+      workspace,
+      envInfo,
+      scenario.manual.tasks[0],
+      "compact",
+      {
+        paths: [scenario.manual.toolCallPath],
+        toolCallPath: scenario.manual.toolCallPath,
+      },
+    );
     return {
       schemaVersion: 1,
       runId: randomUUID(),
@@ -370,7 +429,8 @@ async function runArm(scenario, arm, workspace, envInfo) {
       },
     };
   }
-  if (arm === "direct-worker-sequence") return runDirectWorkerSequence(scenario, workspace, envInfo);
+  if (arm === "direct-worker-sequence")
+    return runDirectWorkerSequence(scenario, workspace, envInfo);
   if (arm === "full-definition") return runFullDefinition(scenario, workspace, arm);
   if (arm === "compact-interface") return runCompactInterface(scenario, workspace, envInfo);
   throw new TypeError(`unsupported benchmark arm: ${arm}`);
@@ -380,7 +440,8 @@ export async function runScenarioArm(scenario, arm) {
   const tempDirectory = await mkdtemp(path.join(tmpdir(), "cheaper-workflow-benchmark-"));
   const workspace = path.resolve(tempDirectory);
   const expectedPrefix = path.resolve(tmpdir(), "cheaper-workflow-benchmark-");
-  if (!workspace.startsWith(expectedPrefix)) throw new Error("temporary benchmark workspace escaped the temp directory");
+  if (!workspace.startsWith(expectedPrefix))
+    throw new Error("temporary benchmark workspace escaped the temp directory");
   try {
     await prepareWorkspace(scenario, workspace);
     const envInfo = benchmarkEnvironment(workspace, {
@@ -389,10 +450,14 @@ export async function runScenarioArm(scenario, arm) {
     });
     await mkdir(envInfo.configDir, { recursive: true });
     if (scenario.workflowMaxJobs !== undefined) {
-      await writeFile(path.join(envInfo.configDir, "policy.yaml"), JSON.stringify({
-        version: 1,
-        workflow: { maxJobs: scenario.workflowMaxJobs },
-      }), "utf8");
+      await writeFile(
+        path.join(envInfo.configDir, "policy.yaml"),
+        JSON.stringify({
+          version: 1,
+          workflow: { maxJobs: scenario.workflowMaxJobs },
+        }),
+        "utf8",
+      );
     }
     await resetPromptLog(envInfo.promptLog);
     const result = await runArm(scenario, arm, workspace, envInfo);

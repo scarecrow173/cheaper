@@ -4,11 +4,7 @@
     {
       "id": "single-simple-tool-call",
       "title": "Single simple tool call",
-      "arms": [
-        "workflow",
-        "direct-filesystem",
-        "direct-worker-tool-call"
-      ],
+      "arms": ["workflow", "direct-filesystem", "direct-worker-tool-call"],
       "files": {
         "README.md": "seeded fixture: direct file read\n"
       },
@@ -40,22 +36,15 @@
         "kind": "direct-filesystem",
         "path": "README.md",
         "toolCallPath": "README.md",
-        "tasks": [
-          "Read README.md and summarize its contents"
-        ]
+        "tasks": ["Read README.md and summarize its contents"]
       }
     },
     {
       "id": "independent-fanout-worker-fanin",
       "title": "Independent fan-out and Worker fan-in",
       "workflowMaxJobs": 3,
-      "arms": [
-        "workflow",
-        "direct-worker-sequence"
-      ],
-      "responseProfiles": [
-        "compact"
-      ],
+      "arms": ["workflow", "direct-worker-sequence"],
+      "responseProfiles": ["compact"],
       "responseDelayMs": 0,
       "files": {
         "left.txt": "seeded left partition\\n",
@@ -82,10 +71,7 @@
           "summary": {
             "kind": "worker",
             "worker": "bulk-reader",
-            "needs": [
-              "left",
-              "right"
-            ],
+            "needs": ["left", "right"],
             "input": {
               "task": "Combine the independent tool results",
               "hints": [
@@ -115,22 +101,14 @@
       },
       "manual": {
         "kind": "direct-worker-sequence",
-        "readPaths": [
-          "left.txt",
-          "right.txt"
-        ],
-        "tasks": [
-          "Combine the independent tool results"
-        ]
+        "readPaths": ["left.txt", "right.txt"],
+        "tasks": ["Combine the independent tool results"]
       }
     },
     {
       "id": "tool-to-worker-chain",
       "title": "Tool to Worker chain",
-      "arms": [
-        "workflow",
-        "direct-worker-sequence"
-      ],
+      "arms": ["workflow", "direct-worker-sequence"],
       "files": {
         "source.txt": "seeded source material for analysis\n"
       },
@@ -183,18 +161,13 @@
       "manual": {
         "kind": "direct-worker-sequence",
         "readPath": "source.txt",
-        "tasks": [
-          "Analyze the material read by the prior tool call"
-        ]
+        "tasks": ["Analyze the material read by the prior tool call"]
       }
     },
     {
       "id": "process-and-analysis",
       "title": "Process and analysis workflow",
-      "arms": [
-        "workflow",
-        "direct-worker-sequence"
-      ],
+      "arms": ["workflow", "direct-worker-sequence"],
       "files": {
         "emit.mjs": "process.stdout.write('process fixture output\\n');\n"
       },
@@ -202,13 +175,8 @@
         "maxConcurrent": 1,
         "tasks": {
           "emit": {
-            "command": [
-              "{node}",
-              "emit.mjs"
-            ],
-            "inputs": [
-              "emit.mjs"
-            ],
+            "command": ["{node}", "emit.mjs"],
+            "inputs": ["emit.mjs"],
             "outputs": []
           }
         }
@@ -262,18 +230,13 @@
       "manual": {
         "kind": "direct-worker-sequence",
         "processScript": "emit.mjs",
-        "tasks": [
-          "Analyze process output"
-        ]
+        "tasks": ["Analyze process output"]
       }
     },
     {
       "id": "large-intermediate-process-analysis",
       "title": "Large intermediate process output and analysis",
-      "arms": [
-        "workflow",
-        "direct-worker-sequence"
-      ],
+      "arms": ["workflow", "direct-worker-sequence"],
       "files": {
         "emit.mjs": "process.stdout.write('L'.repeat(32768));\n"
       },
@@ -281,13 +244,8 @@
         "maxConcurrent": 1,
         "tasks": {
           "emit": {
-            "command": [
-              "{node}",
-              "emit.mjs"
-            ],
-            "inputs": [
-              "emit.mjs"
-            ],
+            "command": ["{node}", "emit.mjs"],
+            "inputs": ["emit.mjs"],
             "outputs": []
           }
         }
@@ -341,19 +299,13 @@
       "manual": {
         "kind": "direct-worker-sequence",
         "processScript": "emit.mjs",
-        "tasks": [
-          "Analyze the large process output"
-        ]
+        "tasks": ["Analyze the large process output"]
       }
     },
     {
       "id": "dynamic-vs-saved-workflow",
       "title": "Dynamic workflow versus saved reusable workflow",
-      "arms": [
-        "dynamic-workflow",
-        "saved-workflow",
-        "direct-worker-sequence"
-      ],
+      "arms": ["dynamic-workflow", "saved-workflow", "direct-worker-sequence"],
       "files": {},
       "savedWorkflowFile": "saved-workflow.json",
       "workflow": {
@@ -382,19 +334,13 @@
       },
       "manual": {
         "kind": "direct-worker-sequence",
-        "tasks": [
-          "Analyze the reusable saved workflow fixture"
-        ]
+        "tasks": ["Analyze the reusable saved workflow fixture"]
       }
     },
     {
       "id": "definition-vs-compact-interface",
       "title": "Full workflow definition versus compact interface discovery",
-      "arms": [
-        "workflow",
-        "full-definition",
-        "compact-interface"
-      ],
+      "arms": ["workflow", "full-definition", "compact-interface"],
       "files": {
         "README.md": "interface discovery fixture\n"
       },

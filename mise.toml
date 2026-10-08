@@ -8,7 +8,8 @@ UV_EXCLUDE_NEWER = "1 week"
 
 [tools]
 node = "26"
-pnpm = "11"
+# aqua:biomejs/biome(npm 非経由)。biome.json の schema version に揃える
+biome = "2.5.13"
 # rig が rust-version 1.95 を要求するため >=1.95 の固定 version を pin する
 rust = "1.99.0"
 python = "3.12"
@@ -21,23 +22,28 @@ uv = "0.11"
 # Repository-owned setup contract: fresh checkout を開発可能にする
 # canonical entrypoint。toolchain は mise.toml + mise.lock で復元される。
 [tasks.setup]
-description = "Restore Node/APM dependencies and build outputs for a fresh checkout"
+description = "Restore APM dependencies and Rust build outputs for a fresh checkout"
 run = [
-  "pnpm install --frozen-lockfile",
   "apm install",
-  "pnpm build",
+  "cargo fetch",
+  "cargo build --workspace --all-targets",
 ]
 
 # Canonical verification contract: CI と同等の検証。
 # セットアップ済み checkout を対象とし、setup には依存しない。
+# benchmarks/test は benchmark harness 自体の node:test であり runtime
+# 依存を持たないため check に配線する(benchmark 実測 run.mjs は手動のまま)。
 [tasks.check]
-description = "Verify the checkout: lint, typecheck, test, bundle freshness"
+description = "Verify the checkout: lint, fmt, clippy, test, bundle freshness"
 run = [
-  "pnpm lint",
+  "biome check",
+  "cargo fmt --all -- --check",
+  "cargo clippy --workspace --all-targets -- -D warnings",
   "node scripts/check-version.mjs",
   "node scripts/check-doc-ids.mjs",
-  "pnpm typecheck",
-  "pnpm test",
+  "cargo test --workspace",
+  "node --test scripts/test/",
+  "node --test benchmarks/test/",
   "node scripts/bundle-cli.mjs",
   "node scripts/check-apm-payload.mjs",
   "git diff --exit-code -- packages/apm/.apm/hooks/cli",

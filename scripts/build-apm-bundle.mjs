@@ -14,7 +14,7 @@
 import { chmodSync, copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
-import { apmHooksDir, buildApmCliTree, repoRoot } from "./lib/apm-bundle.mjs";
+import { buildApmCliTree, repoRoot } from "./lib/apm-bundle.mjs";
 
 const EXE_NAME = /^cheaper-(windows|darwin|linux)-(x64|arm64)(\.exe)?$/;
 
@@ -47,10 +47,14 @@ if (opts.exeDir) {
     mkdirSync(destDir, { recursive: true });
     copyFileSync(path.join(exeDir, entry.name), dest);
     if (!match[3]) chmodSync(dest, 0o755);
-    copied.push(`${path.relative(root, dest)} (${(statSync(dest).size / 1024 / 1024).toFixed(1)} MiB)`);
+    copied.push(
+      `${path.relative(root, dest)} (${(statSync(dest).size / 1024 / 1024).toFixed(1)} MiB)`,
+    );
   }
   if (copied.length === 0) {
-    console.warn(`warning: no executables matching cheaper-<platform>-<arch>[.exe] in ${opts.exeDir}`);
+    console.warn(
+      `warning: no executables matching cheaper-<platform>-<arch>[.exe] in ${opts.exeDir}`,
+    );
   } else {
     for (const line of copied) console.log(`payload executable -> ${line}`);
   }

@@ -46,16 +46,31 @@ export function summarizeWorkflowEnvelope(envelope) {
     if (isRecord(meta.usage)) {
       summary.usage.input += finiteCount(meta.usage.input, `${job.id}.meta.usage.input`);
       summary.usage.output += finiteCount(meta.usage.output, `${job.id}.meta.usage.output`);
-      summary.usage.cachedInput += finiteCount(meta.usage.cacheRead, `${job.id}.meta.usage.cacheRead`);
-      summary.usage.cachedOutput += finiteCount(meta.usage.cacheWrite, `${job.id}.meta.usage.cacheWrite`);
-      summary.usage.total += finiteCount(meta.usage.totalTokens, `${job.id}.meta.usage.totalTokens`);
+      summary.usage.cachedInput += finiteCount(
+        meta.usage.cacheRead,
+        `${job.id}.meta.usage.cacheRead`,
+      );
+      summary.usage.cachedOutput += finiteCount(
+        meta.usage.cacheWrite,
+        `${job.id}.meta.usage.cacheWrite`,
+      );
+      summary.usage.total += finiteCount(
+        meta.usage.totalTokens,
+        `${job.id}.meta.usage.totalTokens`,
+      );
     }
   }
   return summary;
 }
 
 export function summarizeWorkerEnvelope(envelope) {
-  if (!isRecord(envelope) || envelope.schemaVersion !== 1 || envelope.ok !== true || typeof envelope.worker !== "string" || !isRecord(envelope.meta)) {
+  if (
+    !isRecord(envelope) ||
+    envelope.schemaVersion !== 1 ||
+    envelope.ok !== true ||
+    typeof envelope.worker !== "string" ||
+    !isRecord(envelope.meta)
+  ) {
     throw new TypeError("direct worker envelope must be successful and include worker metadata");
   }
   const usage = isRecord(envelope.meta.usage) ? envelope.meta.usage : {};
@@ -82,10 +97,16 @@ export function validateBenchmarkRecord(record) {
   if (typeof record.arm !== "string" || record.arm.length === 0) {
     throw new TypeError("benchmark record arm is required");
   }
-  if (!isRecord(record.parentUsage) || !["observed", "unavailable"].includes(record.parentUsage.status)) {
+  if (
+    !isRecord(record.parentUsage) ||
+    !["observed", "unavailable"].includes(record.parentUsage.status)
+  ) {
     throw new TypeError("benchmark record parentUsage must state observed or unavailable");
   }
-  if (record.parentUsage.status === "unavailable" && typeof record.parentUsage.reason !== "string") {
+  if (
+    record.parentUsage.status === "unavailable" &&
+    typeof record.parentUsage.reason !== "string"
+  ) {
     throw new TypeError("unavailable parentUsage must include a reason");
   }
   if (record.parentUsage.status === "observed" && typeof record.parentUsage.source !== "string") {

@@ -1,32 +1,46 @@
 import { spawn } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { performance } from "node:perf_hooks";
 import path from "node:path";
+import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 
 export const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
 export const cliEntry = path.join(repositoryRoot, "packages", "cli", "dist", "main.js");
-export const fakeStreamFixture = path.join(repositoryRoot, "benchmarks", "fixtures", "fake-worker-stream.mjs");
+export const fakeStreamFixture = path.join(
+  repositoryRoot,
+  "benchmarks",
+  "fixtures",
+  "fake-worker-stream.mjs",
+);
 
 export async function prepareWorkspace(scenario, directory) {
   await mkdir(directory, { recursive: true });
   for (const [relative, content] of Object.entries(scenario.files ?? {})) {
     const target = path.resolve(directory, relative);
-    if (!target.startsWith(`${directory}${path.sep}`)) throw new TypeError(`fixture path escapes workspace: ${relative}`);
+    if (!target.startsWith(`${directory}${path.sep}`))
+      throw new TypeError(`fixture path escapes workspace: ${relative}`);
     await mkdir(path.dirname(target), { recursive: true });
     await writeFile(target, content, "utf8");
   }
   const projectConfig = path.join(directory, ".cheaper");
   await mkdir(projectConfig, { recursive: true });
-  await writeFile(path.join(projectConfig, "models.yaml"), "version: 1\noverrides:\n  cheaper-fake/fake-model: low\n", "utf8");
+  await writeFile(
+    path.join(projectConfig, "models.yaml"),
+    "version: 1\noverrides:\n  cheaper-fake/fake-model: low\n",
+    "utf8",
+  );
   if (scenario.processPolicy) {
     const policy = {};
     const processPolicy = structuredClone(scenario.processPolicy);
     for (const task of Object.values(processPolicy.tasks ?? {})) {
-      task.command = task.command.map((arg) => arg === "{node}" ? process.execPath : arg);
+      task.command = task.command.map((arg) => (arg === "{node}" ? process.execPath : arg));
     }
     policy.process = processPolicy;
-    await writeFile(path.join(projectConfig, "policy.yaml"), JSON.stringify({ version: 1, ...policy }), "utf8");
+    await writeFile(
+      path.join(projectConfig, "policy.yaml"),
+      JSON.stringify({ version: 1, ...policy }),
+      "utf8",
+    );
   }
 }
 
@@ -49,7 +63,12 @@ export function benchmarkEnvironment(workspace, options = {}) {
     ...(process.env.TEMP ? { TEMP: process.env.TEMP } : {}),
     ...(process.env.TMP ? { TMP: process.env.TMP } : {}),
   };
-  return { env, configDir, promptLog: env.CHEAPER_BENCH_PROMPT_LOG, timingLog: env.CHEAPER_BENCH_TIMING_LOG };
+  return {
+    env,
+    configDir,
+    promptLog: env.CHEAPER_BENCH_PROMPT_LOG,
+    timingLog: env.CHEAPER_BENCH_TIMING_LOG,
+  };
 }
 
 export async function runCli(args, options) {
@@ -63,8 +82,12 @@ export async function runCli(args, options) {
   let stderr = "";
   child.stdout.setEncoding("utf8");
   child.stderr.setEncoding("utf8");
-  child.stdout.on("data", (chunk) => { stdout += chunk; });
-  child.stderr.on("data", (chunk) => { stderr += chunk; });
+  child.stdout.on("data", (chunk) => {
+    stdout += chunk;
+  });
+  child.stderr.on("data", (chunk) => {
+    stderr += chunk;
+  });
   if (options.input !== undefined) child.stdin.end(options.input);
   else child.stdin.end();
   const exitCode = await new Promise((resolve, reject) => {
@@ -72,7 +95,8 @@ export async function runCli(args, options) {
     child.on("close", resolve);
   });
   const wallTimeMs = performance.now() - started;
-  if (exitCode !== 0) throw new Error(`cheaper ${args.join(" ")} exited ${exitCode}: ${stderr || stdout}`);
+  if (exitCode !== 0)
+    throw new Error(`cheaper ${args.join(" ")} exited ${exitCode}: ${stderr || stdout}`);
   try {
     return { envelope: JSON.parse(stdout), stdout, stderr, exitCode, wallTimeMs };
   } catch (cause) {

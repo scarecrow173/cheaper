@@ -5,8 +5,18 @@ import { fileURLToPath } from "node:url";
 import { cargoWorkspaceVersion } from "./lib/release-artifacts.mjs";
 
 const workers = ["bulk-reader", "code-writer", "doc-writer"];
-const assets = ["cheaper", "cheaper.ps1", "hooks.json", "cli/version.json", "cli/policy.yaml",
-  ...workers.flatMap((name) => [`cli/workers/${name}.md`, `cli/workers/schemas/${name}.input.schema.json`, `cli/workers/schemas/${name}.output.schema.json`])];
+const assets = [
+  "cheaper",
+  "cheaper.ps1",
+  "hooks.json",
+  "cli/version.json",
+  "cli/policy.yaml",
+  ...workers.flatMap((name) => [
+    `cli/workers/${name}.md`,
+    `cli/workers/schemas/${name}.input.schema.json`,
+    `cli/workers/schemas/${name}.output.schema.json`,
+  ]),
+];
 
 export function checkApmPayload(repoRoot) {
   const errors = [];
@@ -27,8 +37,11 @@ export function checkApmPayload(repoRoot) {
       }
       contents.set(asset, text);
       if (asset.endsWith(".json")) {
-        try { JSON.parse(text); }
-        catch { errors.push(`invalid JSON: ${relative}`); }
+        try {
+          JSON.parse(text);
+        } catch {
+          errors.push(`invalid JSON: ${relative}`);
+        }
       }
     } catch (error) {
       errors.push(`asset missing or unreadable: ${relative} (${error.message})`);
@@ -38,7 +51,8 @@ export function checkApmPayload(repoRoot) {
     const canonical = cargoWorkspaceVersion(repoRoot);
     const metadata = contents.get("cli/version.json");
     const match = metadata?.match(/^\s*\{\s*"version"\s*:\s*"([^"\s]+)"\s*\}\s*$/);
-    if (!match || match[1] !== canonical) errors.push(`version metadata must contain only canonical version ${canonical}`);
+    if (!match || match[1] !== canonical)
+      errors.push(`version metadata must contain only canonical version ${canonical}`);
   } catch (error) {
     errors.push(`invalid canonical version JSON: ${error.message}`);
   }

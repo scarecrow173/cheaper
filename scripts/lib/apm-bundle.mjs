@@ -39,12 +39,7 @@ export function buildApmCliTree(root = repoRoot()) {
   const resourceSrc = path.join(root, "packages", "cli");
   const outDir = path.join(apmHooksDir(root), "cli");
 
-  for (const rel of [
-    path.join("bin", "cheaper.mjs"),
-    "version.json",
-    "workers",
-    "policy.yaml",
-  ]) {
+  for (const rel of [path.join("bin", "cheaper.mjs"), "version.json", "workers", "policy.yaml"]) {
     rmSync(path.join(outDir, rel), { recursive: true, force: true });
   }
 
