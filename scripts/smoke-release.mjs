@@ -1,6 +1,6 @@
 // 同run archiveをAPM consumerへdeployして、Node-free launcherをnative実行する。
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -28,11 +28,19 @@ function checked(command, args, options) {
   return result;
 }
 
+const regularFile = (file) => existsSync(file) && lstatSync(file).isFile();
+
 export function smokeBundle({ packageDir, manifestFile, version, dryRun = false }) {
   verifyBundle(path.join(packageDir, ".apm/hooks/cli"), manifestFile, version);
-  const native = releaseTargets.find(({ target }) => target === `${process.platform}-${process.arch}`);
-  if (!native) throw new Error(`unsupported native smoke target ${process.platform}-${process.arch}`);
-  if (dryRun) return { target: native.target, version, verified: 3, dryRun: true };
+  const platformTarget = `${process.platform}-${process.arch}`;
+  const native = releaseTargets.find(({ target }) => target === platformTarget);
+  // sibling-only target(darwin-arm64 等): Release/manifest 非対象で launcher は
+  // acquisition を拒否するため、deploy される sibling の存在だけを要求する。
+  // 検証本体(sha256 照合等)は T4 で拡張する。
+  const siblingName = process.platform === "win32" ? "cheaper.exe" : "cheaper";
+  const sibling = native ? undefined : path.join(packageDir, ".apm/hooks/cli/bin", platformTarget, siblingName);
+  if (sibling && !regularFile(sibling)) throw new Error(`sibling-only smoke target ${platformTarget} requires ${sibling}`);
+  if (dryRun) return { target: platformTarget, version, verified: 3, dryRun: true };
   const owned = mkdtempSync(path.join(tmpdir(), "cheaper-release-smoke-"));
   try {
     const pkg = path.join(owned, "pkg");
@@ -47,6 +55,7 @@ export function smokeBundle({ packageDir, manifestFile, version, dryRun = false 
     const deployed = path.join(consumer, ".windsurf/hooks/pkg");
     // deploy後にも全target hashを照合。launcherが取得fallbackへ進む欠損も拒否する。
     verifyBundle(path.join(deployed, "cli"), manifestFile, version);
+    if (sibling && !regularFile(path.join(deployed, "cli/bin", platformTarget, siblingName))) throw new Error(`APM deploy dropped sibling-only executable for ${platformTarget}`);
     let executable;
     let prefix;
     if (process.platform === "win32") {
@@ -69,7 +78,7 @@ export function smokeBundle({ packageDir, manifestFile, version, dryRun = false 
     for (const command of ["--version", "models"]) {
       assertSmokeResult(spawnSync(executable, [...prefix, command], { cwd: consumer, env, encoding: "utf8", timeout: 30000 }), command, version);
     }
-    return { target: native.target, version, verified: 3, nodeFree: true };
+    return { target: platformTarget, version, verified: 3, nodeFree: true };
   } finally {
     rmSync(owned, { recursive: true, force: true });
   }

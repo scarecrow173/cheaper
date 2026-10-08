@@ -105,6 +105,12 @@ test("manifest rejects duplicate basenames", async () => {
   assert.throws(() => parseManifest(Buffer.from(`${SUMS}${ABC}  extra\n${ABC}  extra\n`)), /duplicate/);
 });
 
+test("release targets stay the three published non-darwin assets", async () => {
+  const { releaseTargets } = await library();
+  assert.deepEqual(releaseTargets.map(({ asset }) => asset), NAMES);
+  assert.ok(!releaseTargets.some(({ target }) => target.startsWith("darwin")), "darwin stays a sibling-only target outside releaseTargets");
+});
+
 test("asset names match launcher resolution", async (t) => {
   const f = fixture(t);
   const { stagePackage } = await library();

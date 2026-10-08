@@ -62,17 +62,17 @@ jobs:
           install_args: "--locked"
       - uses: actions/download-artifact@v4
         with:
-          pattern: sea-*
+          pattern: bin-*
           merge-multiple: true
-          path: dist/sea
+          path: dist/bin
       - name: Generate manifest and staged APM archive
         shell: bash
         env:
           TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          node scripts/generate-release-checksums.mjs --asset-dir dist/sea --tag "$TAG"
-          node scripts/assemble-release-bundle.mjs --asset-dir dist/sea --out-dir dist/release --tag "$TAG"
+          node scripts/generate-release-checksums.mjs --asset-dir dist/bin --tag "$TAG"
+          node scripts/assemble-release-bundle.mjs --asset-dir dist/bin --out-dir dist/release --tag "$TAG"
       - uses: actions/upload-artifact@v4
         with:
           name: release-bundle
@@ -86,7 +86,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, ubuntu-24.04-arm]
+        os: [windows-latest, ubuntu-latest, ubuntu-24.04-arm, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -100,7 +100,7 @@ jobs:
         with:
           name: release-bundle
           path: dist/release
-      - name: APM install and Node-free native launcher smoke
+      - name: Extract staged APM package
         shell: bash
         env:
           VERSION: ${{ needs.resolve-release.outputs.version }}
@@ -108,6 +108,29 @@ jobs:
           set -euo pipefail
           mkdir -p dist/extracted
           tar -xzf "dist/release/cheaper-apm-v$VERSION.tar.gz" -C dist/extracted
+      # darwin-arm64 は Release asset に含めない検証 target。bundle には
+      # sibling が無いため、build artifact を sibling として配置し、
+      # launcher の sibling 優先経路だけを検証する(acquisition は試みない)。
+      - uses: actions/download-artifact@v4
+        if: ${{ matrix.os == 'macos-latest' }}
+        with:
+          name: bin-darwin-arm64
+          path: dist/bin
+      - name: Place darwin sibling executable
+        if: ${{ matrix.os == 'macos-latest' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="dist/extracted/cheaper/.apm/hooks/cli/bin/darwin-arm64"
+          mkdir -p "$dir"
+          cp dist/bin/cheaper-darwin-arm64 "$dir/cheaper"
+          chmod 0755 "$dir/cheaper"
+      - name: APM install and Node-free native launcher smoke
+        shell: bash
+        env:
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+        run: |
+          set -euo pipefail
           node scripts/smoke-release.mjs --package-dir dist/extracted/cheaper --manifest dist/release/SHA256SUMS --version "$VERSION"
 
   publish-release:
@@ -125,9 +148,9 @@ jobs:
           install_args: "--locked"
       - uses: actions/download-artifact@v4
         with:
-          pattern: sea-*
+          pattern: bin-*
           merge-multiple: true
-          path: dist/sea
+          path: dist/bin
       - uses: actions/download-artifact@v4
         with:
           name: release-bundle
@@ -144,13 +167,13 @@ jobs:
           set -euo pipefail
           git fetch --no-tags origin "refs/tags/$TAG"
           test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "$RESOLVED_SHA"
-          cp dist/release/SHA256SUMS dist/sea/SHA256SUMS
-          node scripts/generate-release-checksums.mjs --asset-dir dist/sea --tag "$TAG" --verify
+          cp dist/release/SHA256SUMS dist/bin/SHA256SUMS
+          node scripts/generate-release-checksums.mjs --asset-dir dist/bin --tag "$TAG" --verify
           # API失敗をabsenceとみなさない。既存draft/publicをexact tagで拒否する。
           gh api --paginate --slurp "repos/$GH_REPO/releases" > "$RUNNER_TEMP/releases.json"
           RELEASE_LIST="$RUNNER_TEMP/releases.json" node --input-type=module -e 'import {readFileSync} from "node:fs"; const pages = JSON.parse(readFileSync(process.env.RELEASE_LIST)); if (!Array.isArray(pages) || pages.some(p => !Array.isArray(p))) throw new Error("invalid release-list response"); if (pages.flat().some(r => r.tag_name === process.env.TAG)) throw new Error("release already exists; inspect draft/public state manually");'
           gh release create "$TAG" \
-            dist/sea/cheaper-linux-x64 dist/sea/cheaper-linux-arm64 dist/sea/cheaper-windows-x64.exe \
+            dist/bin/cheaper-linux-x64 dist/bin/cheaper-linux-arm64 dist/bin/cheaper-windows-x64.exe \
             dist/release/SHA256SUMS "dist/release/cheaper-apm-v$VERSION.tar.gz" \
             --draft --verify-tag --latest=false --generate-notes
           gh release edit "$TAG" --draft=false --latest=false

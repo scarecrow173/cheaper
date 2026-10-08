@@ -12,13 +12,35 @@ const job = (text, name) => {
   return block[0];
 };
 
-test("workflow waits for three native bundle smokes", () => {
+test("workflow waits for native bundle smokes including the darwin sibling leg", () => {
   const text = workflow();
   assert.match(job(text, "smoke-bundle"), /needs: \[resolve-release, assemble-release\]/);
-  for (const runner of ["windows-latest", "ubuntu-latest", "ubuntu-24.04-arm"]) assert.ok(job(text, "smoke-bundle").includes(runner));
+  for (const runner of ["windows-latest", "ubuntu-latest", "ubuntu-24.04-arm", "macos-latest"]) assert.ok(job(text, "smoke-bundle").includes(runner));
   assert.match(job(text, "publish-release"), /needs: \[resolve-release, build-executables, assemble-release, smoke-bundle\]/);
   assert.match(job(text, "smoke-bundle"), /node scripts\/smoke-release.mjs/);
   assert.match(read("build-executables.yml"), /Smoke test executable[\s\S]*--version[\s\S]*models/);
+});
+
+test("acquisition jobs consume bin-* artifacts from dist/bin", () => {
+  const text = workflow();
+  for (const name of ["assemble-release", "publish-release"]) {
+    const block = job(text, name);
+    assert.match(block, /pattern: bin-\*/);
+    assert.match(block, /path: dist\/bin/);
+    assert.match(block, /--asset-dir dist\/bin/);
+  }
+  assert.doesNotMatch(text, /sea-\*|dist\/sea/);
+});
+
+test("macos smoke stages the darwin sibling without acquiring it", () => {
+  const smoke = job(workflow(), "smoke-bundle");
+  assert.match(smoke, /os: \[windows-latest, ubuntu-latest, ubuntu-24\.04-arm, macos-latest\]/);
+  assert.match(smoke, /name: bin-darwin-arm64/);
+  assert.match(smoke, /if: \$\{\{ matrix\.os == 'macos-latest' \}\}/);
+  assert.match(smoke, /\.apm\/hooks\/cli\/bin\/darwin-arm64/);
+  assert.match(smoke, /chmod 0755 "\$dir\/cheaper"/);
+  // sibling 配置は extract 後・smoke 実行前であること。
+  assert.ok(smoke.indexOf("darwin-arm64") < smoke.indexOf("smoke-release.mjs"));
 });
 
 test("build-executables builds the cargo release matrix behind a size gate", async () => {
@@ -77,6 +99,9 @@ test("workflow publishes complete draft before public release", () => {
   const publish = job(workflow(), "publish-release");
   assert.match(publish, /gh release create[\s\S]*--draft[\s\S]*--verify-tag/);
   for (const name of ["cheaper-linux-x64", "cheaper-linux-arm64", "cheaper-windows-x64.exe", "SHA256SUMS", "cheaper-apm-v$VERSION.tar.gz"]) assert.ok(publish.includes(name));
+  // Release asset は raw3 + SHA256SUMS + tar.gz の 5 件。darwin binary は含めない。
+  assert.match(publish, /gh release create "\$TAG" \\\n\s+dist\/bin\/cheaper-linux-x64 dist\/bin\/cheaper-linux-arm64 dist\/bin\/cheaper-windows-x64\.exe \\\n\s+dist\/release\/SHA256SUMS "dist\/release\/cheaper-apm-v\$VERSION\.tar\.gz"/);
+  assert.doesNotMatch(publish, /darwin/);
   assert.match(publish, /gh release edit[\s\S]*--draft=false[\s\S]*--latest=false/);
   assert.ok(publish.indexOf("gh release create") < publish.indexOf("gh release edit"));
 });
@@ -123,7 +148,7 @@ test("tag passes through env and expected version skips when absent", () => {
 test("cross-OS publisher hashes binaries without executing them", () => {
   const text = workflow();
   const publish = job(text, "publish-release");
-  assert.match(publish, /cp dist\/release\/SHA256SUMS dist\/sea\/SHA256SUMS[\s\S]*generate-release-checksums.mjs[\s\S]*--verify/);
+  assert.match(publish, /cp dist\/release\/SHA256SUMS dist\/bin\/SHA256SUMS[\s\S]*generate-release-checksums.mjs[\s\S]*--verify/);
   assert.doesNotMatch(publish, /\.exe\s+--version|\.exe\s+models/);
   assert.match(job(text, "assemble-release"), /runs-on: ubuntu-latest/);
 });
