@@ -1,0 +1,7 @@
+{
+  "name": "cli_hook_no_args",
+  "argv": ["hook"],
+  "stdin": "{}",
+  "mode": "raw",
+  "compareStderr": true
+}

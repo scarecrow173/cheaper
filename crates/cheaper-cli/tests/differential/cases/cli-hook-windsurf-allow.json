@@ -1,0 +1,8 @@
+{
+  "name": "cli_hook_windsurf_allow",
+  "argv": ["hook", "pre-read-code", "--target", "windsurf"],
+  "stdin": "{\"agent_action_name\":\"pre_read_code\",\"tool_info\":{\"file_path\":\"small.txt\"}}",
+  "files": { "small.txt": "tiny\n" },
+  "mode": "raw",
+  "compareStderr": true
+}

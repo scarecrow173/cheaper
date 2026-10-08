@@ -1,0 +1,16 @@
+{
+  "name": "run_panic",
+  "expectDivergence": "Rust fake stream panic → JoinError → INTERNAL_ERROR(exit 70)・runMeta 無し(meta.* は null)。TS seam には stream 内 panic の等価物が無く、adapter は streamFn の同期 throw へ写像するため prompt reject → PROVIDER_FAILURE(exit 5)・retryable=true・runMeta 付き(meta.* が値を持つ)。error.code/exitCode/retryable/meta 構造の差異として pin する。",
+  "fixture": {
+    "name": "panic",
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "panic": "kaboom" }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

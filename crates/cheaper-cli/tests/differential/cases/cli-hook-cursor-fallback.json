@@ -1,0 +1,7 @@
+{
+  "name": "cli_hook_cursor_fallback",
+  "argv": ["hook", "--target", "cursor"],
+  "stdin": "not json",
+  "mode": "raw",
+  "compareStderr": true
+}

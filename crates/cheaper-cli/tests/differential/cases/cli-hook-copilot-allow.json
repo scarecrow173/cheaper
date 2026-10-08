@@ -1,0 +1,8 @@
+{
+  "name": "cli_hook_copilot_allow",
+  "argv": ["hook", "pre-tool-use", "--target", "copilot"],
+  "stdin": "{\"toolName\":\"view\",\"toolArgs\":{\"path\":\"small.txt\"}}",
+  "files": { "small.txt": "tiny\n" },
+  "mode": "raw",
+  "compareStderr": true
+}

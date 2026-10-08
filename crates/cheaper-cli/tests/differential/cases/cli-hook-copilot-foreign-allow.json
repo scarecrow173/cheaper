@@ -1,0 +1,7 @@
+{
+  "name": "cli_hook_copilot_foreign_allow",
+  "argv": ["hook", "pre-tool-use", "--target", "copilot"],
+  "stdin": "{\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"x.txt\"}}",
+  "mode": "raw",
+  "compareStderr": true
+}

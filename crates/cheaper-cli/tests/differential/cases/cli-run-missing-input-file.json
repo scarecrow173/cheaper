@@ -1,0 +1,7 @@
+{
+  "name": "cli_run_missing_input_file",
+  "argv": ["run", "case-worker", "--input", "missing.json"],
+  "files": {
+    ".cheaper/workers/case-worker.md": "---\nname: case-worker\ndescription: case worker\ntools: [read]\ncheaper:\n  model:\n    tier: low\n  output:\n    schema:\n      inline: {\"type\":\"object\",\"required\":[\"ok\"],\"properties\":{\"ok\":{\"type\":\"boolean\"}}}\n---\nDo the thing.\n"
+  }
+}

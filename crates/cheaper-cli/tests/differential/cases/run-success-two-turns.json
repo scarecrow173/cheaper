@@ -1,0 +1,19 @@
+{
+  "name": "run_success_two_turns",
+  "fixture": {
+    "name": "success_two_turns",
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "tool_calls": [ { "name": "read", "input": { "path": "a.txt" } } ] },
+          { "turn": { "tool_calls": true } },
+          { "usage_delta": { "input": 200, "output": 40 } },
+          { "turn": {} },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

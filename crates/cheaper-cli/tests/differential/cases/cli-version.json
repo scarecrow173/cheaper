@@ -1,0 +1,5 @@
+{
+  "name": "cli_version",
+  "argv": ["--version"],
+  "mode": "raw"
+}

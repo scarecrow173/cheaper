@@ -1,0 +1,19 @@
+{
+  "name": "run_partial_mutation",
+  "fixture": {
+    "name": "partial_mutation",
+    "abort": { "after_ms": 800, "message": "user abort" },
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "tool_calls": [ { "name": "write", "input": { "path": "a.txt", "content": "x" } } ] },
+          { "turn": { "tool_calls": true } },
+          { "usage_delta": { "input": 10, "output": 1 } },
+          { "turn": {} },
+          "hang_until_abort"
+        ]
+      }
+    ]
+  }
+}

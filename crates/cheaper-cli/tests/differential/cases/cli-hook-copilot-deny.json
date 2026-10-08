@@ -1,0 +1,8 @@
+{
+  "name": "cli_hook_copilot_deny",
+  "argv": ["hook", "pre-tool-use", "--target", "copilot"],
+  "stdin": "{\"toolName\":\"view\",\"toolArgs\":{\"path\":\"big.txt\"}}",
+  "files": { "big.txt": { "repeat": ["lorem ipsum dolor sit amet ", 4000] } },
+  "mode": "raw",
+  "compareStderr": true
+}

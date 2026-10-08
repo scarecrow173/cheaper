@@ -1,0 +1,5 @@
+{
+  "name": "cli_auth_status",
+  "expectDivergence": "provider auth metadata — TS は oauth 対応 provider で methods[] に \"oauth\" と subscription:true を返すが、Rust auth status は api_key のみ列挙する。provider 一覧の順序/id は一致 — methods/subscription field の drift として pin。",
+  "argv": ["auth", "status"]
+}

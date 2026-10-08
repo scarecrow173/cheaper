@@ -1,0 +1,8 @@
+{
+  "name": "cli_hook_cursor_shell_deny",
+  "argv": ["hook", "before-shell-execution", "--target", "cursor"],
+  "stdin": "{\"command\":\"cat big.txt\"}",
+  "files": { "big.txt": { "repeat": ["lorem ipsum dolor sit amet ", 4000] } },
+  "mode": "raw",
+  "compareStderr": true
+}

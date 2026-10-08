@@ -1,0 +1,25 @@
+{
+  "name": "run_repair_exhausted",
+  "fixture": {
+    "name": "repair_exhausted",
+    "policy": { "repair_attempts": 1 },
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "usage_delta": { "input": 100, "output": 10 } },
+          { "turn": {} },
+          { "finish": { "text": "bad" } }
+        ]
+      },
+      {
+        "steps": [
+          { "usage_delta": { "input": 50, "output": 5 } },
+          { "turn": {} },
+          { "finish": { "text": "also bad" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

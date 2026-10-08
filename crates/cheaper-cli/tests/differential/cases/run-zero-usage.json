@@ -1,0 +1,16 @@
+{
+  "name": "run_zero_usage",
+  "fixture": {
+    "name": "zero_usage",
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "turn": {} },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

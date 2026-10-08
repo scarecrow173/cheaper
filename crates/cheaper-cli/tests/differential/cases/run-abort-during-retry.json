@@ -1,0 +1,20 @@
+{
+  "name": "run_abort_during_retry",
+  "fixture": {
+    "name": "abort_during_retry",
+    "abort": { "after_ms": 600, "message": "user abort" },
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "usage_delta": { "input": 10, "output": 1 } },
+          { "error": { "status": 503 } },
+          { "turn": {} },
+          { "delay_ms": 30000 },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

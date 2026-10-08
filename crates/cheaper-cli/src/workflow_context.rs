@@ -1,0 +1,291 @@
+//! `workflow-context.ts` の compiler factory 組立 seam(T7):
+//! builtin dir → workspace root canonicalize → config dirs → policy →
+//! `loadWorkflowFile`(worker 事前解込込み compiler factory)→ tool
+//! catalog → `WorkspaceResourceInference`。
+//!
+//! TS との構造差分: TS は `prepareWorkflowContext` が
+//! `loadWorkflowFile` まで一度に済ませて `{root, dirs, policy, loaded,
+//! workers}` を返す。Rust では `WorkflowCompiler` が ports への借用を
+//! 保持する(`WorkflowCompiler<'a>`)ため、self-referential 構造を避ける
+//! 形に分割する — `prepare_workflow_context` は root/dirs/policy/tool
+//! catalog/inference を所有する [`WorkflowContext`] を組み立て、file
+//! read + worker 事前解決 + compiler 構築は [`WorkflowContext::
+//! load_workflow`] が行う(呼出し側は `LoadedWorkflow<'ctx>` を介して
+//! compiler を使う)。tool catalog は resolved process policy からの
+//! 直接構築(`ToolCatalog::from_resolved_policy`)で失敗し得ないため
+//! factory 内ではなく context 側で組み立てる。
+
+use std::collections::{HashMap, HashSet};
+use std::error::Error;
+use std::future::Future;
+use std::path::Path;
+use std::pin::Pin;
+use std::sync::{Arc, OnceLock};
+
+use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirs, ConfigDirsOptions};
+use cheaper_core::errors::ErrorCode;
+use cheaper_core::js::code_unit_compare;
+use cheaper_core::policy::load::{load_policy, LoadPolicyOptions};
+use cheaper_core::policy::schema::RuntimePolicy;
+use cheaper_core::worker::resolve::{resolve_worker, ResolveWorkerError};
+use cheaper_core::worker::validate::WorkerDefinition;
+use cheaper_core::workspace::deny_paths::create_path_denylist;
+use cheaper_core::workspace::paths::{canonicalize_workspace_root, SymlinkPolicy};
+use cheaper_tools::catalog::ToolCatalog;
+use cheaper_tools::ToolError;
+use cheaper_workflow::{
+    load_workflow_file, LoadedWorkflow, ResourceInference, ResourceInferenceJob,
+    ResourceInferenceResult, WorkerCatalog, WorkflowCompiler, WorkflowCompilerPorts,
+    WorkflowFileOptions, WorkspaceResourceInference,
+};
+use serde_json::Value;
+
+use crate::cli::{resolve_builtin_dir, BoxError, CliHooks, CliIo};
+
+/// `failures.get(name)` throw を `ToolError` で共有するための器。
+/// `Box<dyn Error>` は Clone 不可のため `Arc` で持ち、`source()` を
+/// 内側へ透過させる — engine の diagnostic(`find_cheaper_error` の
+/// cause chain walk)が内部の `CheaperError`/`WorkerReadError` に到達
+/// できる(TS は同一 error object を再 throw する)。
+#[derive(Clone)]
+pub(crate) struct SharedToolError(Arc<ToolError>);
+
+impl SharedToolError {
+    pub(crate) fn new(error: ToolError) -> Self {
+        Self(Arc::new(error))
+    }
+
+    /// `throw failures.get(name)` 相当 — 新しい box として返す。
+    pub(crate) fn boxed(&self) -> ToolError {
+        Box::new(self.clone())
+    }
+}
+
+impl std::fmt::Debug for SharedToolError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&self.0, f)
+    }
+}
+
+impl std::fmt::Display for SharedToolError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl Error for SharedToolError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        self.0.source()
+    }
+}
+
+/// TS `workers`/`failures` の組み合わせ — `WorkerCatalog` port は
+/// `failures` を throw し `workers` hit を返す。`worker(name)` は
+/// executor/lease 経路の `workers.get(name)` 相当で resolved 定義のみ
+/// を見る(`failures` は compile 時に既に `workers.get` throw として
+/// 伝播済みであり、engine の WORKER_NOT_FOUND 分岐へ到達しない)。
+pub(crate) struct WorkerIndex {
+    workers: HashMap<String, Arc<WorkerDefinition>>,
+    failures: HashMap<String, SharedToolError>,
+}
+
+impl WorkerIndex {
+    /// `workers.get(name)`(TS `workers.get` — failure は含まない)。
+    pub(crate) fn worker(&self, name: &str) -> Option<Arc<WorkerDefinition>> {
+        self.workers.get(name).cloned()
+    }
+}
+
+impl WorkerCatalog for WorkerIndex {
+    /// `workers: {get(name) { if (failures.has(name)) throw
+    /// failures.get(name); return workers.get(name); }}`。
+    fn get(&self, name: &str) -> Result<Option<&WorkerDefinition>, ToolError> {
+        if let Some(failure) = self.failures.get(name) {
+            return Err(failure.boxed());
+        }
+        Ok(self.workers.get(name).map(Arc::as_ref))
+    }
+}
+
+/// `createCompiler` 内の worker 事前解決:
+/// `jobs` object の `kind === "worker"` entry から worker 名を集め、
+/// code-unit sort 順に `resolveWorker` する。成功は `workers`、
+/// `WORKER_NOT_FOUND`/`INVALID_WORKER_NAME` 以外の失敗は `failures`
+/// に積む(TS L38-62 — `CheaperError` 以外の error(例: `Read` variant)
+/// も `failures` 行きで preserve される)。
+fn resolve_worker_index(raw: &Value, dirs: &ConfigDirs) -> WorkerIndex {
+    let mut index = WorkerIndex {
+        workers: HashMap::new(),
+        failures: HashMap::new(),
+    };
+    // `raw && typeof raw === "object"` + `jobs && typeof jobs ===
+    // "object" && !Array.isArray(jobs)` — serde の object 判定は
+    // array/scalar を含まないため `is_object` のみで同じ条件になる。
+    let Some(jobs) = raw.get("jobs").filter(|v| v.is_object()) else {
+        return index;
+    };
+    let mut names: HashSet<String> = HashSet::new();
+    for job in jobs.as_object().expect("is_object").values() {
+        // `job && typeof job === "object"` — non-object は `get` が
+        // None を返すので自然に skip される。
+        if job.get("kind").and_then(Value::as_str) == Some("worker") {
+            if let Some(name) = job.get("worker").and_then(Value::as_str) {
+                names.insert(name.to_string());
+            }
+        }
+    }
+    // `[...names].sort()` — JS 既定 sort は UTF-16 code unit 順。
+    let mut sorted: Vec<String> = names.into_iter().collect();
+    sorted.sort_by(|a, b| code_unit_compare(a, b));
+    for name in sorted {
+        match resolve_worker(&name, dirs) {
+            Ok(worker) => {
+                index.workers.insert(name, Arc::new(worker));
+            }
+            Err(ResolveWorkerError::Cheaper(e))
+                if matches!(
+                    e.code(),
+                    ErrorCode::WorkerNotFound | ErrorCode::InvalidWorkerName
+                ) =>
+            {
+                // preload で無視するのはこの 2 code のみ。
+            }
+            Err(ResolveWorkerError::Cheaper(e)) => {
+                index
+                    .failures
+                    .insert(name, SharedToolError::new(Box::new(e)));
+            }
+            Err(ResolveWorkerError::Read(e)) => {
+                index
+                    .failures
+                    .insert(name, SharedToolError::new(Box::new(e)));
+            }
+        }
+    }
+    index
+}
+
+/// `WorkspaceResourceInference` は port が `&'a dyn ToolCatalog` を
+/// 要求するため、context 側で `Arc<ToolCatalog>` を所有して使い回す
+/// wrapper(self-referential を避ける)。
+struct CliResourceInference {
+    workspace_root: String,
+    symlink_policy: SymlinkPolicy,
+    tools: Arc<ToolCatalog>,
+}
+
+impl ResourceInference for CliResourceInference {
+    fn infer<'a>(
+        &'a self,
+        jobs: &'a [(String, ResourceInferenceJob)],
+    ) -> Pin<Box<dyn Future<Output = Result<ResourceInferenceResult, ToolError>> + Send + 'a>> {
+        Box::pin(async move {
+            let inner = WorkspaceResourceInference {
+                workspace_root: self.workspace_root.clone(),
+                symlink_policy: self.symlink_policy,
+                tools: &*self.tools,
+            };
+            inner.infer(jobs).await
+        })
+    }
+}
+
+/// `prepareWorkflowContext` の戻り値相当(root/dirs/policy + compiler
+/// ports の供給源)。`loaded`/`workers` は [`WorkflowContext::
+/// load_workflow`] が設定する(compiler factory 内で index を組み立て
+/// てから ports を結線するため)。
+pub(crate) struct WorkflowContext {
+    pub root: String,
+    pub dirs: ConfigDirs,
+    pub policy: RuntimePolicy,
+    tools: Arc<ToolCatalog>,
+    inference: CliResourceInference,
+    workers: OnceLock<Arc<WorkerIndex>>,
+}
+
+impl WorkflowContext {
+    /// `loadWorkflowFile(options, createCompiler)`。`createCompiler`
+    /// は file read 後の raw definition から worker 名を走査して事前
+    /// 解決する — 検証(`validate_definition`)は loader 側に残る。
+    pub(crate) async fn load_workflow<'a>(
+        &'a self,
+        path: &str,
+    ) -> Result<LoadedWorkflow<'a>, ToolError> {
+        let deny: Vec<&str> = self
+            .policy
+            .filesystem
+            .deny_paths
+            .iter()
+            .map(String::as_str)
+            .collect();
+        let options = WorkflowFileOptions {
+            root: self.root.clone(),
+            path: path.to_string(),
+            symlink_policy: self.policy.filesystem.symlinks,
+            denylist: create_path_denylist(&deny),
+        };
+        load_workflow_file(&options, |raw| {
+            let index = Arc::new(resolve_worker_index(raw, &self.dirs));
+            // `load_workflow` は command 1 回につき 1 回しか呼ばれない
+            // (TS も prepareWorkflowContext 内で 1 回 load)。二重呼出し
+            // では既存 index をそのまま使う。
+            let _ = self.workers.set(index);
+            async move {
+                Ok(WorkflowCompiler::new(WorkflowCompilerPorts {
+                    tools: &*self.tools,
+                    workers: self.workers.get().expect("set above").as_ref() as &dyn WorkerCatalog,
+                    resources: Some(&self.inference),
+                }))
+            }
+        })
+        .await
+    }
+
+    /// `load_workflow` が組み立てた worker index(executor/lease 経路
+    /// の `workers.get` 相当)。
+    pub(crate) fn worker_index(&self) -> Option<Arc<WorkerIndex>> {
+        self.workers.get().cloned()
+    }
+}
+
+/// `prepareWorkflowContext`(TS L17-80)の前半 — builtin dir 解決 →
+/// workspace root canonicalize → config dirs → policy → tool catalog →
+/// resource inference。`loadWorkflowFile` 相当は [`WorkflowContext::
+/// load_workflow`]。
+pub(crate) fn prepare_workflow_context(
+    cwd: Option<&str>,
+    io: &CliIo<'_>,
+    hooks: &CliHooks,
+) -> Result<WorkflowContext, BoxError> {
+    let builtin_dir = resolve_builtin_dir(hooks)?;
+    let root = canonicalize_workspace_root(cwd.unwrap_or(&io.cwd))?;
+    let dirs = resolve_config_dirs(&ConfigDirsOptions {
+        cwd: Path::new(&root),
+        builtin_dir: &builtin_dir,
+        env: Some(io.env),
+        homedir: None,
+    });
+    let builtin_policy_path = builtin_dir.join("policy.yaml");
+    let policy = load_policy(&LoadPolicyOptions {
+        builtin_policy_path: &builtin_policy_path.to_string_lossy(),
+        user_config_dir: &dirs.user_config_dir.to_string_lossy(),
+        project_dir: &dirs.project_dir.to_string_lossy(),
+    })?;
+    // `createToolCatalog({process: policy.process})` — resolved policy
+    // からの直接構築(serialize→再 resolve の二重経路を避ける —
+    // `ToolCatalog::from_resolved_policy` は同一経路)。
+    let tools = Arc::new(ToolCatalog::from_resolved_policy(policy.process.clone()));
+    let inference = CliResourceInference {
+        workspace_root: root.clone(),
+        symlink_policy: policy.filesystem.symlinks,
+        tools: Arc::clone(&tools),
+    };
+    Ok(WorkflowContext {
+        root,
+        dirs,
+        policy,
+        tools,
+        inference,
+        workers: OnceLock::new(),
+    })
+}

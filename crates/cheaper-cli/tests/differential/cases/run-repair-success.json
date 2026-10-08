@@ -1,0 +1,31 @@
+{
+  "name": "run_repair_success",
+  "fixture": {
+    "name": "repair_success",
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "usage_delta": { "input": 100, "output": 10 } },
+          { "turn": {} },
+          { "finish": { "text": "not json at all" } }
+        ]
+      },
+      {
+        "steps": [
+          { "usage_delta": { "input": 50, "output": 5 } },
+          { "turn": {} },
+          { "finish": { "text": "still bad" } }
+        ]
+      },
+      {
+        "steps": [
+          { "usage_delta": { "input": 60, "output": 6 } },
+          { "turn": {} },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

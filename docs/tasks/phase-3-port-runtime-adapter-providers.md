@@ -1,7 +1,7 @@
 ---
 id: "TASK-034BgKjvy0B4BNsyAhtFht"
 type: "task"
-status: "todo"
+status: "done"
 title: "Phase 3: port runtime adapter providers"
 created: "2026-10-06"
 updated: "2026-10-06"
@@ -265,8 +265,13 @@ ollama_e2e.rs`)。dependency direction(runtime → adapter)上
       cheaper pricing 由来の costUsd=0.005075 を assert。
       fixture `01-success-basic.json` でも replay 経路で
       `meta.usage.costUsd=0.005075` を厳密比較)
-- [ ] `mise run check` が現行通り全 green(TS 側無破壊)
+- [x] `mise run check` が現行通り全 green(TS 側無破壊)
       — 本変更は `crates/` + `docs/` のみで TS package には未触。
       Rust 側は `cargo test`(186 test)/`cargo clippy --all-targets
       -D warnings`/`cargo fmt --check` 全 green(実施済み)。TS を含む
+      `mise run check` 実施済み: lint/typecheck/version/doc-id/bundle
+      全パス。`packages/cli` e2e で既存 flake 2 件
+      (launcher-acquisition 並行ダウンロード・hook-contract copilot
+      20s timeout)を観測したが両者とも単体再実行で pass —
+      負荷起因の TS 側既存 flake、Rust 変更とは無関係
       統合 `mise run check` の再実行は Phase 4 切替時に実施

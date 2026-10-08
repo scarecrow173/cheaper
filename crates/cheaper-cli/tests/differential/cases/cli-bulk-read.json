@@ -1,0 +1,5 @@
+{
+  "name": "cli_bulk_read",
+  "argv": ["bulk-read", "--input", "-"],
+  "stdin": "{\"files\":[\"a.txt\"]}"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "cli_hook_corrupt_policy",
+  "argv": ["hook", "pre-read-code", "--target", "windsurf"],
+  "stdin": "{\"agent_action_name\":\"pre_read_code\",\"tool_info\":{\"file_path\":\"big.txt\"}}",
+  "files": { "big.txt": { "repeat": ["lorem ipsum dolor sit amet ", 4000] } },
+  "config": { "files": { "policy.yaml": "::: not yaml :::[" } },
+  "mode": "raw",
+  "compareStderr": true
+}

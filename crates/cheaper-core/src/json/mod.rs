@@ -2,3 +2,4 @@
 //! TS relies on `JSON.stringify` semantics).
 
 pub mod number;
+pub mod stringify;

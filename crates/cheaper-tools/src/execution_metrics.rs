@@ -47,13 +47,27 @@ pub struct ExecutionMetrics {
     pub by_tool: BTreeMap<String, u64>,
     #[serde(rename = "maxConcurrency")]
     pub max_concurrency: u64,
-    #[serde(rename = "operationMs")]
+    // ms field は JS number — `JSON.stringify` 互換の canonical format
+    // (整数なら小数点なし)で出す。
+    #[serde(
+        rename = "operationMs",
+        serialize_with = "cheaper_core::json::number::serialize"
+    )]
     pub operation_ms: f64,
-    #[serde(rename = "activeMs")]
+    #[serde(
+        rename = "activeMs",
+        serialize_with = "cheaper_core::json::number::serialize"
+    )]
     pub active_ms: f64,
-    #[serde(rename = "overlapMs")]
+    #[serde(
+        rename = "overlapMs",
+        serialize_with = "cheaper_core::json::number::serialize"
+    )]
     pub overlap_ms: f64,
-    #[serde(rename = "queueMs")]
+    #[serde(
+        rename = "queueMs",
+        serialize_with = "cheaper_core::json::number::serialize"
+    )]
     pub queue_ms: f64,
 }
 

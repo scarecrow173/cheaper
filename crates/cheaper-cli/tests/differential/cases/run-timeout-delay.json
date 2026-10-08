@@ -1,0 +1,18 @@
+{
+  "name": "run_timeout_delay",
+  "fixture": {
+    "name": "timeout_delay",
+    "policy": { "timeout_ms": 150 },
+    "input": { "files": ["a.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          { "turn": {} },
+          { "delay_ms": 30000 },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

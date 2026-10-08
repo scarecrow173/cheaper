@@ -1,0 +1,4 @@
+{
+  "name": "cli_count_tokens_missing",
+  "argv": ["count-tokens", "missing.txt"]
+}

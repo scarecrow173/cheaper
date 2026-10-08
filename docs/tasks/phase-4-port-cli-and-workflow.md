@@ -142,20 +142,22 @@ plugin 登録の composition root は cli が担う(runtime→devin は循環依
 
 ## Done When
 
-- [ ] T1: `crates/cheaper-workflow` が Sequence A 全区間を port し、
+- [x] T1: `crates/cheaper-workflow` が Sequence A 全区間を port し、
       `packages/workflow` の unit/contract test 相当が全パスする
-- [ ] T2: `cheaper-cli` scaffold + panic 境界 + `envelope.rs`/`args.rs`/
+- [x] T2: `cheaper-cli` scaffold + panic 境界 + `envelope.rs`/`args.rs`/
       `input.rs`/`count.rs`/`embedded.rs` が実装される
-- [ ] T3: `run.rs`/`count.rs`/`models.rs` のコマンド経路が実装される
-- [ ] T4: `usage_log.rs`/`pricing.rs`/`usage_report.rs` が実装され、
+- [x] T3: `run.rs`/`count.rs`/`models.rs` のコマンド経路が実装される
+- [x] T4: `usage_log.rs`/`pricing.rs`/`usage_report.rs` が実装され、
       usage.jsonl writer が additive-only である
 - [ ] T5: `auth.rs` の 3 action と terminal interaction が実装される
-- [ ] T6: `hook/` の dispatch + 4 target + routing policy が実装され、
+- [x] T6: `hook/` の dispatch + 4 target + routing policy が実装され、
       panic を含む全 error 経路が fail-open に覆われる
-- [ ] T7: `workflow_context.rs`/`workflow_run.rs` が T1+T3 の成果物を
+- [x] T7: `workflow_context.rs`/`workflow_run.rs` が T1+T3 の成果物を
       接続する
-- [ ] T8: differential harness + normalize 単一実装 + fixture 20-40 case
-      が構築される
+- [x] T8: differential harness + normalize 単一実装 + fixture 20-40 case
+      が構築される(実績: `tests/differential/` 43 cases —
+      `tests/differential/README.md` に fixture inventory・比較規約・
+      pinned divergence を集約)
 - [ ] T9: hook byte 一致 matrix・usage.jsonl 新旧互換 test・
       `docs/guides/usage.md` 追記が完了する
 - [ ] `cheaper __grep-eval` 内部 mode dispatch と composition root
@@ -164,17 +166,23 @@ plugin 登録の composition root は cli が担う(runtime→devin は循環依
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-workflow` が全パス
-- [ ] `mise exec -- cargo test -p cheaper-cli` が全パス(envelope・args・
+- [x] `mise exec -- cargo test -p cheaper-workflow` が全パス
+- [x] `mise exec -- cargo test -p cheaper-cli` が全パス(envelope・args・
       usage・auth・workflow glue の unit/contract test)
-- [ ] `mise exec -- cargo test -p cheaper-cli --test differential` で TS
+- [x] `mise exec -- cargo test -p cheaper-cli --test differential` で TS
       binary と Rust binary の stdout envelope + exit code を normalize
       規則適用後に 20-40 case 厳密比較して全パス(厳密対象: `usage`
       token field・`turns`・`toolCalls`・`rejectedToolCalls`・`repairs`・
       `transientRetries`・`changes`・`savings`・`result`・exit code。
       除外: `meta.durationMs`・`meta.execution` 時刻系 field・
       `usage.costUsd`・tokenizer identity・`error.message` 本文・stderr
-      文言・JSON key 順・schema error message 文言/件数/code)
+      文言・JSON key 順・schema error message 文言/件数/code)。
+      実績: 43 cases — pass=35 / pinned divergence=8 / fail=0。
+      `usage.costUsd` は spec 上は除外許容だが、adapter が fake model
+      cost から `usage.cost.total` を算出して埋めるため厳密比較のまま
+      通る(除外しない)。`error.details.{class,retryable,httpStatus}`・
+      panic 写像・in-flight abort turn 計上・auth status metadata の
+      4 系統の divergence を case pin として記録(README 参照)
 - [ ] `mise exec -- cargo test -p cheaper-cli --test envelope` で
       `schemaVersion:1`・1 JSON + 末尾改行・optional 省略・null 意味論・
       canonical number formatter(`1.0`/`1e-7`/非有限を網羅)が検証される

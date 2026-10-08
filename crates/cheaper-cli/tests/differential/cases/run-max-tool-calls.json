@@ -1,0 +1,24 @@
+{
+  "name": "run_max_tool_calls",
+  "expectDivergence": "maxToolCalls abort 後の in-flight call turn_end(turns 0v2)に加え、reject された tool の operation 状態が TS=cancelled/Rust=completed(executed 分)・maxConcurrency・savings.sourceTokens の計上位置が異なる。code/exitCode/toolCalls/rejectedToolCalls は一致 — execution accounting の差異として pin。",
+  "fixture": {
+    "name": "max_tool_calls",
+    "policy": { "max_tool_calls": 1 },
+    "input": { "files": ["a.txt", "b.txt"] },
+    "sessions": [
+      {
+        "steps": [
+          {
+            "tool_calls": [
+              { "name": "read", "input": { "path": "a.txt" } },
+              { "name": "read", "input": { "path": "b.txt" } }
+            ]
+          },
+          { "turn": { "tool_calls": true } },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n", "b.txt": "beta\n" }
+}

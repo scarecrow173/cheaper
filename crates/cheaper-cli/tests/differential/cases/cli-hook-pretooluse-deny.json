@@ -1,0 +1,8 @@
+{
+  "name": "cli_hook_pretooluse_deny",
+  "argv": ["hook", "pre-tool-use", "--target", "pretooluse"],
+  "stdin": "{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"cat big.txt\"}}",
+  "files": { "big.txt": { "repeat": ["lorem ipsum dolor sit amet ", 4000] } },
+  "mode": "raw",
+  "compareStderr": true
+}

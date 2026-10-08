@@ -1,0 +1,8 @@
+{
+  "name": "cli_hook_windsurf_deny",
+  "argv": ["hook", "pre-read-code", "--target", "windsurf"],
+  "stdin": "{\"agent_action_name\":\"pre_read_code\",\"tool_info\":{\"file_path\":\"big.txt\"}}",
+  "files": { "big.txt": { "repeat": ["lorem ipsum dolor sit amet ", 4000] } },
+  "mode": "raw",
+  "compareStderr": true
+}

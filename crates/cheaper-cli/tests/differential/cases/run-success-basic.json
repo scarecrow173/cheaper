@@ -1,0 +1,18 @@
+{
+  "name": "run_success_basic",
+  "fixture": {
+    "name": "success_basic",
+    "input": { "files": ["a.txt"] },
+    "files_note": "workspace files は case.files で seed する",
+    "sessions": [
+      {
+        "steps": [
+          { "usage_delta": { "input": 1000, "output": 2000, "cacheRead": 100, "cacheWrite": 50 } },
+          { "turn": {} },
+          { "finish": { "text": "```json\n{\"ok\":true}\n```" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "cli_hook_cursor_allow",
+  "argv": ["hook", "pre-read-code", "--target", "cursor"],
+  "stdin": "{\"file_path\":\"small.txt\"}",
+  "files": { "small.txt": "tiny\n" },
+  "mode": "raw",
+  "compareStderr": true
+}

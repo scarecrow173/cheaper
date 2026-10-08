@@ -1,0 +1,10 @@
+{
+  "name": "run_unknown_model",
+  "fixture": {
+    "name": "unknown_model",
+    "explicit_model": "cheaper-fake/no-such",
+    "input": { "files": ["a.txt"] },
+    "sessions": []
+  },
+  "files": { "a.txt": "alpha\n" }
+}

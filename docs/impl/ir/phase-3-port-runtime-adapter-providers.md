@@ -1392,7 +1392,7 @@ cheaper-runtime --all-targets -- -D warnings` clean、
     provider(api `openai-completions`・`baseUrl {base}/v1`・literal
     `apiKey: "ollama"`・model `{id, reasoning:true, cost:0,
     contextWindow:262144, maxTokens:32768, samplingParams}`)— TS e2e
-    の IMPL-0008 recipe と同形。
+    の IMPL-034r05iHy2gdnpoDlOXUs6 recipe と同形。
   - `ModelConfig`: `ollama/<model>` を override で `low` に pin
     (9b は built-in 分類表に match しない)+ `preferences.low` 先頭。
   - policy: timeout 600s / maxTurns 16 / repairAttempts 4 / tools

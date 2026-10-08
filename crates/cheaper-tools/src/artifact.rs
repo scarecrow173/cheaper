@@ -151,9 +151,10 @@ pub struct ArtifactMetadata {
     pub producer: ArtifactProducer,
     pub bytes: u64,
     pub truncated: bool,
-    /// `Omit<…,"preview"> & {preview?}` の key 順を TS と揃えるため
-    /// truncated の後に置く。
+    pub availability: ArtifactAvailability,
+    /// `project()` の runtime key 順(`{…, availability, preview?}`)に
+    /// 揃えるため struct では末尾に置く(type 宣言順ではなく
+    /// object literal の挿入順が wire shape)。
     #[serde(skip_serializing_if = "Option::is_none")]
     pub preview: Option<String>,
-    pub availability: ArtifactAvailability,
 }

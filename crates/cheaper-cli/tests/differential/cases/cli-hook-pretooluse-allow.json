@@ -1,0 +1,8 @@
+{
+  "name": "cli_hook_pretooluse_allow",
+  "argv": ["hook", "pre-tool-use", "--target", "pretooluse"],
+  "stdin": "{\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"small.txt\"}}",
+  "files": { "small.txt": "tiny\n" },
+  "mode": "raw",
+  "compareStderr": true
+}
