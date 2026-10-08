@@ -348,7 +348,9 @@ pub fn js_num(x: f64) -> Value {
 /// affected — those characters differ from the `\` byte used as a
 /// separator.
 pub fn sep_norm(v: &Value) -> Value {
-    walk(v, &|s| s.replace('\\', "/"))
+    // A `\\` pair is a serialized string's escaped separator (recorded
+    // win32 dump) — collapse it before the single-separator pass.
+    walk(v, &|s| s.replace("\\\\", "/").replace('\\', "/"))
 }
 
 /// Compare a produced `Result<Value, Value>` (error already in `cap`
