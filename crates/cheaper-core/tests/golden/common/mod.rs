@@ -212,6 +212,13 @@ fn replace_tokens(s: &str, needles: &[(String, String)], forward: bool) -> Strin
         if forward {
             // recorded value → real path
             out = out.replace(token.as_str(), path);
+        } else if path == "/" {
+            // POSIX fsroot is the bare separator; only bind it at the
+            // start of the value so interior separators of other paths
+            // are not rewritten to `<FSROOT>`.
+            if let Some(rest) = out.strip_prefix('/') {
+                out = format!("{token}{rest}");
+            }
         } else {
             // real path → token (both separator spellings, plus the
             // JSON-escaped form inside serialized strings like
