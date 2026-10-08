@@ -8,13 +8,13 @@ updated: "2026-09-17"
 owners: ["scarecrow173"]
 relations:
   source:
-    - "../../packages/runtime-pi/src/tools/operations.ts"
-    - "../../packages/runtime-pi/src/tools/registry.ts"
-    - "../../packages/runtime-pi/src/tools/walker.ts"
-    - "../../packages/runtime-pi/src/tools/grep.ts"
-    - "../../packages/runtime-pi/src/tools/find.ts"
-    - "../../packages/runtime-pi/src/tools/count-tokens.ts"
-    - "../../packages/cli/src/hook/routing-policy.ts"
+    - "../../crates/cheaper-tools/src/tools/boundary.rs"
+    - "../../crates/cheaper-tools/src/registry.rs"
+    - "../../crates/cheaper-tools/src/walker.rs"
+    - "../../crates/cheaper-tools/src/tools/grep.rs"
+    - "../../crates/cheaper-tools/src/tools/find.rs"
+    - "../../crates/cheaper-tools/src/tools/count_tokens.rs"
+    - "../../crates/cheaper-cli/src/hook/routing_policy.rs"
   changes:
     added: []
     modified: []

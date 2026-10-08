@@ -28,7 +28,7 @@ relations:
   references:
     - "./fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md"
     - "../designs/version-pinned-launcher-acquisition.md"
-    - "../../packages/cli/test/e2e/launcher-acquisition.test.ts"
+    - "../../scripts/test/launcher-acquisition.test.mjs"
   defers: []
   deferred-by: []
 metadata:
