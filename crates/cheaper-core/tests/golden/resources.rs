@@ -53,7 +53,16 @@ fn mode(v: &Value) -> ClaimMode {
 
 fn resource(p: &Pred, v: &Value) -> Resource {
     let v = unscrub(v, &p.needles[..2]);
-    Resource::workspace(native_path(v["path"].as_str().unwrap()), scope(&v["scope"]))
+    // Predicate fixtures were dumped on Windows, so recorded paths carry
+    // `\` separators; on POSIX they must translate to `/` (predicate ops
+    // only — `normalize` op inputs keep `\` as literal POSIX filename
+    // data and bypass this helper).
+    let path = if cfg!(windows) {
+        native_path(v["path"].as_str().unwrap())
+    } else {
+        v["path"].as_str().unwrap().replace('\\', "/")
+    };
+    Resource::workspace(path, scope(&v["scope"]))
 }
 
 fn claim(p: &Pred, v: &Value) -> ResourceClaim {
