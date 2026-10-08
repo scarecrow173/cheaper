@@ -1,7 +1,7 @@
 ---
 id: "TASK-034BgKlddxEi2ozLgZMFi3"
 type: "task"
-status: "todo"
+status: "done"
 title: "Phase 6: remove TypeScript Node Pi"
 created: "2026-10-06"
 updated: "2026-10-09"
@@ -18,7 +18,8 @@ relations:
   implements:
     - "docs/plans/phase-6-remove-typescript-node-pi.md"
     - "docs/plans/migrate-cheaper-runtime-to-rust-rig.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/phase-6-remove-typescript-node-pi.md"
   depends-on:
     - "docs/plans/phase-6-remove-typescript-node-pi.md"
     - "docs/tasks/phase-5-switch-distribution-to-rust-binary.md"
