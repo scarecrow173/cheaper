@@ -213,11 +213,12 @@ fn replace_tokens(s: &str, needles: &[(String, String)], forward: bool) -> Strin
             // recorded value → real path
             out = out.replace(token.as_str(), path);
         } else if path == "/" {
-            // POSIX fsroot is the bare separator; only bind it at the
-            // start of the value so interior separators of other paths
-            // are not rewritten to `<FSROOT>`.
-            if let Some(rest) = out.strip_prefix('/') {
-                out = format!("{token}{rest}");
+            // POSIX fsroot is the bare separator; rewriting `/`-prefixed
+            // strings would corrupt non-path values like JSON Schema
+            // `instancePath` (`/q`). Only a value that IS the root binds
+            // — fixtures use `<FSROOT>` for whole-path values only.
+            if out == "/" {
+                out = token.to_string();
             }
         } else {
             // real path → token (both separator spellings, plus the

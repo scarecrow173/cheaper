@@ -1234,6 +1234,14 @@
                   "path": "<ROOT>\\Case\\f",
                   "scope": "exact"
                 }
+              },
+              {
+                "mode": "shared",
+                "resource": {
+                  "kind": "workspace",
+                  "path": "<ROOT>\\case\\f",
+                  "scope": "exact"
+                }
               }
             ],
             "writes": []
