@@ -1,7 +1,7 @@
 ---
 id: "TASK-034COkOggSVxC84DkUUem5"
 type: "task"
-status: "todo"
+status: "done"
 title: "Persist plugin catalog snapshot and merge user models on plugin providers"
 created: "2026-10-09"
 updated: "2026-10-09"
