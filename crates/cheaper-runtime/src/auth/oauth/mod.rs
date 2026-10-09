@@ -24,8 +24,10 @@ use serde_json::Value;
 use super::service::OAuthFlow;
 
 pub mod github_copilot;
+pub mod openai_codex;
 
 pub use github_copilot::GitHubCopilotFlow;
+pub use openai_codex::OpenAiCodexFlow;
 
 // ---------------------------------------------------------------------------
 // AuthEvent — `interaction.notify(event)` の port（TS `AuthEvent` union）
@@ -590,13 +592,18 @@ fn parse_http_date_ms(value: &str) -> Option<f64> {
 /// 使い、caller の `oauth_flows` entry は同名 id を override する
 /// （test で mock flow/HTTP を差し込む経路）。
 ///
-/// ISS-23: github-copilot が必須 1 件。openai-codex/anthropic 等の残りは
-/// Deferred scope 決定時に同形の独立 sub-task として追加する。
+/// ISS-23: github-copilot が必須 1 件。openai-codex は Codex
+/// subscription provider 対応で追加。anthropic 等の残りは Deferred
+/// scope 決定時に同形の独立 sub-task として追加する。
 pub fn builtin_oauth_flows() -> BTreeMap<String, Arc<dyn OAuthFlow>> {
     let mut flows: BTreeMap<String, Arc<dyn OAuthFlow>> = BTreeMap::new();
     flows.insert(
         "github-copilot".to_string(),
         Arc::new(GitHubCopilotFlow::new()),
+    );
+    flows.insert(
+        "openai-codex".to_string(),
+        Arc::new(OpenAiCodexFlow::new()),
     );
     flows
 }
