@@ -106,7 +106,12 @@ pub fn is_inside_workspace_root(root: &str, candidate: &str, case_insensitive: b
     } else {
         (root.to_string(), candidate.to_string())
     };
-    c == r || c.starts_with(&format!("{r}{}", nodepath::SEP))
+    let prefix = if r.ends_with(nodepath::SEP) {
+        r.clone()
+    } else {
+        format!("{r}{}", nodepath::SEP)
+    };
+    c == r || c.starts_with(&prefix)
 }
 
 fn lstat_is_symlink(p: &str) -> Option<bool> {
@@ -242,6 +247,50 @@ mod tests {
         let cased = nodepath::join(&["tmp", "Work", "secret"]);
         assert!(!is_inside_workspace_root(&root, &cased, false));
         assert!(is_inside_workspace_root(&root, &cased, true));
+    }
+
+    #[test]
+    fn is_inside_workspace_root_volume_root() {
+        // issue #77: root が SEP で終わる場合（volume root）に prefix の
+        // 二重化で配下を outside と誤判定しないこと。`nodepath::SEP` は
+        // build 時確定なので host 形状のみ検証する。
+        #[cfg(windows)]
+        {
+            assert!(is_inside_workspace_root("C:\\", "C:\\resource-probe", true));
+            // trailing-sep root は volume root 以外でも同じ contract。
+            assert!(is_inside_workspace_root("C:\\work\\", "C:\\work\\a", true));
+        }
+        #[cfg(not(windows))]
+        {
+            assert!(is_inside_workspace_root("/", "/a", false));
+            assert!(is_inside_workspace_root("/work/", "/work/a", false));
+        }
+        // 別 drive は platform 不問で拒否（fail-closed 維持）。
+        assert!(!is_inside_workspace_root("C:\\", "D:\\x", true));
+    }
+
+    #[test]
+    fn resolve_workspace_path_at_volume_root() {
+        // root 直下の一意な nonexistent tail で構成し、実 FS の symlink
+        // （macOS の /tmp → /private/tmp 等）や drive 実在に依存しない。
+        let uniq = format!("cheaper-volroot-probe-{}", std::process::id());
+        #[cfg(windows)]
+        {
+            let input = format!("{uniq}\\a.txt");
+            let resolved = resolve_workspace_path("C:\\", &input, SymlinkPolicy::Deny).unwrap();
+            assert_eq!(resolved.real, format!("C:\\{uniq}\\a.txt"));
+            assert_eq!(resolved.display, format!("{uniq}/a.txt"));
+        }
+        #[cfg(not(windows))]
+        {
+            // canonicalize が trailing-sep root を実際に生成する seam も
+            // pin する。
+            let root = canonicalize_workspace_root("/").unwrap();
+            let input = format!("{uniq}/a.txt");
+            let resolved = resolve_workspace_path(&root, &input, SymlinkPolicy::Deny).unwrap();
+            assert_eq!(resolved.real, format!("/{uniq}/a.txt"));
+            assert_eq!(resolved.display, format!("{uniq}/a.txt"));
+        }
     }
 
     fn workspace() -> (tempfile::TempDir, String) {
