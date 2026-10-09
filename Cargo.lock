@@ -896,13 +896,16 @@ dependencies = [
 name = "cheaper-runtime"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "cheaper-core",
  "cheaper-rig-adapter",
  "cheaper-tools",
  "futures",
+ "getrandom 0.3.4",
  "jsonschema",
  "serde",
  "serde_json",
+ "sha2",
  "tempfile",
  "tokio",
  "ureq",

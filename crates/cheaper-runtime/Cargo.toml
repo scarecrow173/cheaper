@@ -25,6 +25,14 @@ ureq = "2"
 # T6 OAuth の URL parse/正規化（enterprise domain・verification_uri の
 # `new URL` 相当 + form-urlencoded body 生成。lock 済みの url 2.x）。
 url = "2"
+# OpenAI Codex OAuth: PKCE S256 challenge。
+sha2 = "0.10"
+# OpenAI Codex OAuth: verifier/state の CSPRNG（0.2/0.4 と API が異なる
+# ため 0.3 系を pin — `getrandom::fill`）。
+getrandom = "0.3"
+# OpenAI Codex OAuth: PKCE verifier/challenge の base64url encode
+# （cheaper-provider-devin が crate-level で使用済みの 0.22 系）。
+base64 = "0.22"
 
 [dev-dependencies]
 tempfile = "3"
