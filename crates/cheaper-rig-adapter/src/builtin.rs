@@ -193,7 +193,7 @@ pub fn builtin_completion_model(
                 // (Pi `resolveCodexUrl` 相当 — catalog の
                 // `https://chatgpt.com/backend-api` は
                 // `.../backend-api/codex` になる)。
-                config = config.with_base_url(&normalize_codex_base_url(url));
+                config = config.with_base_url(normalize_codex_base_url(url));
             }
             // `chatgpt-account-id` は request 側 header(config の
             // `with_account_id`)で送る。transport default header に残すと
