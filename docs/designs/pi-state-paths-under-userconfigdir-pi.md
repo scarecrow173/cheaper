@@ -28,6 +28,7 @@ relations:
   superseded-by: []
   related:
     - "./auth-command.md"
+    - "./plugin-catalog-snapshot-persistence-and-user-models-merge.md"
   refines: []
   refined-by: []
   derives-from:

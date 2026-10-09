@@ -32,6 +32,7 @@ relations:
   derived-by:
     - "../specs/plugin-catalog-persistence-and-user-models.md"
     - "../adr/persist-plugin-catalog-snapshot-and-merge-user-models-on-plugin-providers.md"
+    - "../designs/plugin-catalog-snapshot-persistence-and-user-models-merge.md"
   verifies: []
   verified-by: []
   references: []
