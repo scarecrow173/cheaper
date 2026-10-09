@@ -4,7 +4,7 @@ type: "task"
 status: "todo"
 title: "Implement OpenAI Codex subscription provider"
 created: "2026-10-09"
-updated: "2026-10-09"
+updated: "2026-10-10"
 owners: []
 relations:
   source: []
@@ -109,7 +109,7 @@ plan の Implementation Sequence Phase A-I が本 task の作業単位。順序�
   `slow_down` SlowDown・その他 Failed;`wait_before_first_poll: false`、
   deadline `LOGIN_TIMEOUT`、`code_verifier` は `&mut Option<String>`
   capture)→ `redirect_uri=DEVICE_REDIRECT` で exchange。
-- **T6 — catalog 同期**(plan step 26-29、T2 に依存 — manifest sha256
+- **T6 — catalog 同期**(done — plan step 26-29、T2 に依存 — manifest sha256
   assertion が `sha2` を使用。T1/T3-T5 とは並行可):
   pi-ai 1.1.0 `providers/data/openai-codex.json` 取得(canonical は
   unpkg。local `Temp\pi-latest` extraction は machine 固有 cache で
@@ -217,7 +217,7 @@ plan の Implementation Sequence Phase A-I が本 task の作業単位。順序�
 - [ ] `auth login openai-codex` の browser PKCE / device-code / bind
       失敗 ManualCode fallback が mock HTTP + scripted interaction で
       検証済み(TSPEC-034CYp5Xbp8sJ8ZV199qV3 の Rules/Examples を満たす)
-- [ ] bundled `openai-codex.json` が 9 model で
+- [x] bundled `openai-codex.json` が 9 model で
       `.manifest.json` sha256 と整合する
 - [ ] credential・token・account id が stdout・log・commit に出ない
       (spec Req 8)
@@ -231,7 +231,7 @@ plan の Implementation Sequence Phase A-I が本 task の作業単位。順序�
 - [ ] `mise run check` exits 0
 - [ ] `grep -n "openai-codex" crates/cheaper-runtime/src/auth/oauth/mod.rs`
       が `builtin_oauth_flows` 登録行を返す
-- [ ] `bundled.rs` `#[cfg(test)]` の unit test が `.manifest.json`
+- [x] `bundled.rs` `#[cfg(test)]` の unit test が `.manifest.json`
       `files["openai-codex.json"]` sha256 と埋め込み bytes の一致、
       および `bundled_models("openai-codex")` の 9-model set
       (`gpt-6-luna` 含有・`gpt-5.4`/`gpt-5.4-mini` 非含有)を検証して
