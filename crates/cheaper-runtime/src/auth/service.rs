@@ -28,7 +28,10 @@ use serde_json::{Map, Value};
 use super::api_key::{check_api_key_auth, resolve_api_key_auth, ProviderEnv, ResolvedAuth};
 use super::oauth::AuthEvent;
 use super::store::{AuthType, CredentialStore, StoredCredential};
-use crate::catalog::{CatalogStore, ProviderEntry};
+use crate::catalog::persisted::{
+    write_plugin_catalog, PluginCatalogFile, PLUGIN_CATALOG_FILE_VERSION,
+};
+use crate::catalog::{CatalogStore, ModelDefinitionJson, ProviderEntry};
 use crate::plugin::{PluginAuth, ProviderPluginContext};
 
 /// login 対話 seam（pi-ai `AuthInteraction` の必要部分）。
@@ -471,8 +474,20 @@ impl AuthService {
         let credential = self.store.get(&entry.id).unwrap_or_default();
         match plugin_catalog.refresh_models(&self.ctx, credential.as_ref()) {
             Ok(Some(definitions)) => {
-                if let Err(e) = catalog.refresh_plugin_models(&entry.id, &definitions) {
-                    catalog.record_error(format!("Provider \"{}\": {e}", entry.id));
+                match catalog.refresh_plugin_models(&entry.id, &definitions) {
+                    // in-memory 反映に成功した defs のみ persist する —
+                    // `extension_models` 変換に失敗する defs を snapshot 化
+                    // すると次回 boot の compose が同じ defs で再び失敗して
+                    // provider ごと drop し、`require_provider` が
+                    // `unknown provider` を返すため login 経由の refresh
+                    // による自己修復が不可能になる。
+                    Ok(()) => self.persist_plugin_catalog(
+                        catalog,
+                        entry,
+                        credential.is_some(),
+                        &definitions,
+                    ),
+                    Err(e) => catalog.record_error(format!("Provider \"{}\": {e}", entry.id)),
                 }
             }
             Ok(None) => {}
@@ -482,6 +497,60 @@ impl AuthService {
                     entry.id
                 ));
             }
+        }
+    }
+
+    /// `refreshModels` 成功 defs の catalog snapshot 永続化
+    /// （`<userConfigDir>/providers/<id>/catalog.json`、temp+rename
+    /// atomic write）。guard — いずれかで write skip:
+    ///
+    /// - (a) `has_credential` — credential 無しで取得した defs は
+    ///   persist しない（取得条件の不明な catalog を後続 process へ
+    ///   配らない）。
+    /// - (b) definitions 非空 — 空 list は `load_plugin_catalog` の
+    ///   検証で必ず失敗する自己矛盾的 file になるため skip +
+    ///   `record_error`（観測性のため）。
+    /// - (c) `definitions != entry.plugin_bootstrap_defs` — bootstrap
+    ///   等価 defs は snapshot 化しない。credential 有りでも
+    ///   `refresh_models` が bootstrap fallback list を返す経路が
+    ///   あり、それを snapshot 化すると正常な catalog を破壊し得る
+    ///   （residual staleness は受容済み — `fetchedAt` で診断可能）。
+    ///
+    /// write 失敗は `record_error` のみ — login/refresh を失敗させない
+    /// （F13 契約）。`pub(crate)` は guard を login 経路なしに inline
+    /// test するため。
+    pub(crate) fn persist_plugin_catalog(
+        &self,
+        catalog: &CatalogStore,
+        entry: &ProviderEntry,
+        has_credential: bool,
+        definitions: &[ModelDefinitionJson],
+    ) {
+        if !has_credential {
+            return;
+        }
+        if definitions.is_empty() {
+            catalog.record_error(format!(
+                "Provider \"{}\": refreshModels returned an empty model list; catalog snapshot was not persisted",
+                entry.id
+            ));
+            return;
+        }
+        if definitions == entry.plugin_bootstrap_defs.as_slice() {
+            return;
+        }
+        let fetched_at = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis() as i64)
+            .unwrap_or(0);
+        let file = PluginCatalogFile {
+            version: PLUGIN_CATALOG_FILE_VERSION,
+            provider: entry.id.clone(),
+            fetched_at,
+            models: definitions.to_vec(),
+        };
+        if let Err(e) = write_plugin_catalog(&self.ctx.catalog_path(&entry.id), &file) {
+            catalog.record_error(format!("Provider \"{}\": {e}", entry.id));
         }
     }
 
@@ -661,5 +730,162 @@ impl ProviderEnv for OverlayOrProcess<'_> {
     }
     fn home_dir(&self) -> Option<std::path::PathBuf> {
         self.base.home_dir()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use super::*;
+    use crate::catalog::persisted::load_plugin_catalog;
+    use crate::plugin::PluginProviderRegistration;
+
+    /// env accessor stub — persist 経路は env を読まない。
+    struct NullEnv;
+    impl ProviderEnv for NullEnv {
+        fn env(&self, _name: &str) -> Option<String> {
+            None
+        }
+        fn file_exists(&self, _path: &str) -> bool {
+            false
+        }
+        fn home_dir(&self) -> Option<std::path::PathBuf> {
+            None
+        }
+    }
+
+    fn model_def(id: &str) -> ModelDefinitionJson {
+        serde_json::from_str(&format!(r#"{{"id": "{id}", "name": "Model {id}"}}"#)).unwrap()
+    }
+
+    /// `ProviderEntry` は private field（`model_header_sources` 等）を
+    /// 持ち literal 構築できないため、fake `PluginProviderRegistration`
+    /// （`tests/plugin.rs` の `FakePlugin::register` と同形）を渡した
+    /// `CatalogStore::build` で catalog を組み立て `provider(id)` で
+    /// entry を取得する。`catalog` seam は persist の対象外のため
+    /// `catalog: None` で足りる。
+    fn fixture(dir: &std::path::Path) -> (AuthService, CatalogStore) {
+        let ctx = ProviderPluginContext {
+            user_config_dir: dir.to_path_buf(),
+            env: Arc::new(NullEnv),
+        };
+        let registration = PluginProviderRegistration {
+            id: "fake".to_string(),
+            name: "Fake Provider".to_string(),
+            api: "fake-api".to_string(),
+            base_url: "http://fake.local".to_string(),
+            api_key: None,
+            auth_header: None,
+            headers: None,
+            models: vec![model_def("fake-1")],
+            auth: None,
+            subscription: false,
+            catalog: None,
+        };
+        let catalog = CatalogStore::build(None, None, &[registration], &BTreeMap::new()).unwrap();
+        let service = AuthService::new(
+            ctx,
+            CredentialStore::new(dir),
+            BTreeMap::new(),
+            BTreeMap::new(),
+        );
+        (service, catalog)
+    }
+
+    /// guard skip が「既存 file を上書きしない」ことの検証用 sentinel。
+    /// bootstrap・refresh defs とは異なる model を持つ有効な envelope。
+    fn sentinel_file() -> PluginCatalogFile {
+        PluginCatalogFile {
+            version: PLUGIN_CATALOG_FILE_VERSION,
+            provider: "fake".to_string(),
+            fetched_at: 1,
+            models: vec![model_def("sentinel")],
+        }
+    }
+
+    #[test]
+    fn persist_skips_without_credential() {
+        // guard (a): credential 無し → 新規 file を作らず、既存 file も
+        // 上書きしない（error も記録しない silent skip）。
+        let dir = tempfile::tempdir().unwrap();
+        let (service, catalog) = fixture(dir.path());
+        let entry = catalog.provider("fake").unwrap();
+        let path = service.context().catalog_path("fake");
+
+        service.persist_plugin_catalog(&catalog, entry, false, &[model_def("fake-2")]);
+        assert!(!path.exists());
+        assert!(catalog.errors().is_empty());
+
+        write_plugin_catalog(&path, &sentinel_file()).unwrap();
+        service.persist_plugin_catalog(&catalog, entry, false, &[model_def("fake-2")]);
+        assert_eq!(
+            load_plugin_catalog(&path, "fake").unwrap().unwrap(),
+            sentinel_file()
+        );
+    }
+
+    #[test]
+    fn persist_skips_empty_definitions() {
+        // guard (b): 空 definitions → write skip + `record_error`
+        // （空 file は `load_plugin_catalog` の検証で必ず失敗する
+        // 自己矛盾のため書かない。既存 file も温存する）。
+        let dir = tempfile::tempdir().unwrap();
+        let (service, catalog) = fixture(dir.path());
+        let entry = catalog.provider("fake").unwrap();
+        let path = service.context().catalog_path("fake");
+
+        write_plugin_catalog(&path, &sentinel_file()).unwrap();
+        let before = catalog.errors().len();
+        service.persist_plugin_catalog(&catalog, entry, true, &[]);
+        assert_eq!(
+            load_plugin_catalog(&path, "fake").unwrap().unwrap(),
+            sentinel_file()
+        );
+        let errors = catalog.errors();
+        assert_eq!(errors.len(), before + 1, "{errors:?}");
+        assert!(errors.last().unwrap().contains("\"fake\""), "{errors:?}");
+    }
+
+    #[test]
+    fn persist_skips_bootstrap_equal_definitions() {
+        // guard (c): bootstrap 等価 defs（`refresh_models` が fallback
+        // list を返す経路）は snapshot 化しない — 新規 file を作らず
+        // 既存 file も温存する。
+        let dir = tempfile::tempdir().unwrap();
+        let (service, catalog) = fixture(dir.path());
+        let entry = catalog.provider("fake").unwrap();
+        let path = service.context().catalog_path("fake");
+
+        service.persist_plugin_catalog(&catalog, entry, true, &[model_def("fake-1")]);
+        assert!(!path.exists());
+        assert!(catalog.errors().is_empty());
+
+        write_plugin_catalog(&path, &sentinel_file()).unwrap();
+        service.persist_plugin_catalog(&catalog, entry, true, &[model_def("fake-1")]);
+        assert_eq!(
+            load_plugin_catalog(&path, "fake").unwrap().unwrap(),
+            sentinel_file()
+        );
+    }
+
+    #[test]
+    fn persist_writes_valid_envelope() {
+        // happy path: guard 全通過 → `catalog_path` へ version 1
+        // envelope が書かれ `load_plugin_catalog` で読み戻せる。
+        let dir = tempfile::tempdir().unwrap();
+        let (service, catalog) = fixture(dir.path());
+        let entry = catalog.provider("fake").unwrap();
+        let defs = vec![model_def("fake-2"), model_def("fake-3")];
+
+        service.persist_plugin_catalog(&catalog, entry, true, &defs);
+
+        let path = service.context().catalog_path("fake");
+        let file = load_plugin_catalog(&path, "fake").unwrap().unwrap();
+        assert_eq!(file.version, PLUGIN_CATALOG_FILE_VERSION);
+        assert_eq!(file.provider, "fake");
+        assert!(file.fetched_at > 0);
+        assert_eq!(file.models, defs);
+        assert!(catalog.errors().is_empty());
     }
 }

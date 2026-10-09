@@ -186,9 +186,6 @@ pub struct ProviderEntry {
     /// persist guard (c) の比較基準（snapshot 注入の影響を受けない）。
     /// `auth/service.rs` の `persist_plugin_catalog` が読むため
     /// `pub(crate)`。plugin provider 以外は空。
-    // reader は persist 配線（T3 の `persist_plugin_catalog`）で追加
-    // されるため、それまでは dead_code を許容する。
-    #[allow(dead_code)]
     pub(crate) plugin_bootstrap_defs: Vec<ModelDefinitionJson>,
 }
 

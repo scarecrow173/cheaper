@@ -21,7 +21,9 @@ use cheaper_core::errors::CheaperError;
 use crate::auth::service::{AuthService, OAuthFlow};
 use crate::auth::store::CredentialStore;
 use crate::auth::{ProviderEnv, ResolvedAuth};
-use crate::catalog::{load_models_json, CatalogModel, CatalogStore};
+use crate::catalog::{
+    load_models_json, persisted, CatalogModel, CatalogStore, ModelDefinitionJson,
+};
 use crate::plugin::{CheaperProviderPlugin, PluginAuth, ProviderPluginContext, ProviderRegistry};
 
 /// Runtime（catalog + auth）。`get_available` 等は auth 判定を内部で
@@ -60,10 +62,36 @@ impl Runtime {
             Ok(file) => (file, None),
             Err(e) => (None, Some(e)),
         };
-        // TODO(T3): `<userConfigDir>/providers/<id>/catalog.json` の
-        // snapshot load loop をここへ追加し、load 済み defs を渡す。
-        let catalog =
-            CatalogStore::build(user_models, user_error, &registrations, &BTreeMap::new())?;
+        // plugin `refreshModels` の persist snapshot
+        // （`<userConfigDir>/providers/<id>/catalog.json`）を load して
+        // catalog 構築へ注入する。`catalog` seam（refreshModels）を持た
+        // ない plugin は snapshot を生成し得ない — 残存 file があっても
+        // 適用しない（plugin が seam を drop した後の stale snapshot が
+        // provider を shadow するのを防ぐ）。検証失敗・file 不在は
+        // `registration.models`（bootstrap）へ fallback する。
+        let mut persisted: BTreeMap<String, Vec<ModelDefinitionJson>> = BTreeMap::new();
+        let mut snapshot_errors: Vec<String> = Vec::new();
+        for reg in &registrations {
+            if reg.catalog.is_none() {
+                continue;
+            }
+            match persisted::load_plugin_catalog(&context.catalog_path(&reg.id), &reg.id) {
+                Ok(Some(file)) => {
+                    persisted.insert(reg.id.clone(), file.models);
+                }
+                Ok(None) => {}
+                Err(e) => {
+                    snapshot_errors.push(format!("Provider \"{}\": {e}", reg.id));
+                }
+            }
+        }
+        let catalog = CatalogStore::build(user_models, user_error, &registrations, &persisted)?;
+        // snapshot read error は build 後に記録する — errors vec は
+        // store 内の Mutex のため post-build で追記できる（build 引数を
+        // 増やして内部 error vec に混ぜるより既存 channel を使う）。
+        for e in snapshot_errors {
+            catalog.record_error(e);
+        }
         let store = CredentialStore::new(&user_config_dir);
         let mut flows = crate::auth::oauth::builtin_oauth_flows();
         flows.extend(oauth_flows);
