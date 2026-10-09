@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034DaJCOheEsDZAq8GWBXw"
 type: "impl"
-status: "final"
+status: "completed"
 title: "Devin provider Windows credential snapshot sync"
 created: "2026-10-09"
 updated: "2026-10-09"
