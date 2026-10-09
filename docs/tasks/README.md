@@ -112,7 +112,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7h3EuEqFny | Implement mutation journal | done | [implement-mutation-journal.md](./implement-mutation-journal.md) |
 | TASK-034zQTSDQA908MNdv5Qe8v | Implement native launcher acquisition and hook routing | done | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
 | TASK-034r05iHQeQpDqHVQkd8t7 | Implement real-provider worker e2e and verify against live Ollama | done | [implement-ollama-real-provider-e2e.md](./implement-ollama-real-provider-e2e.md) |
-| TASK-034CYsDxlTD7NNAPMkB4mb | Implement OpenAI Codex subscription provider | todo | [implement-openai-codex-subscription-provider.md](./implement-openai-codex-subscription-provider.md) |
+| TASK-034CYsDxlTD7NNAPMkB4mb | Implement OpenAI Codex subscription provider | done | [implement-openai-codex-subscription-provider.md](./implement-openai-codex-subscription-provider.md) |
 | TASK-034zTjT0KVd4s2TRC4Ux1B | Implement operation manager state lifecycle | done | [implement-operation-manager-state.md](./implement-operation-manager-state.md) |
 | TASK-034r05iHK8bA7hgqNrs11u | Implement output repair session | done | [implement-output-repair-session.md](./implement-output-repair-session.md) |
 | TASK-034r05iHK8bA7he1WXwcBs | Implement Pi session creation with maxTokens injection | done | [implement-pi-session-creation-with-maxtokens-injection.md](./implement-pi-session-creation-with-maxtokens-injection.md) |
