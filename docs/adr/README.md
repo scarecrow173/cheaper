@@ -39,6 +39,7 @@ Directory: `docs/adr`
 | ADR-034r05iHrZUE6W2tpzbgKv | Normalize repair abort grace, provider failure classification, and agent-execution timeout anchor | accepted | [normalize-repair-abort-grace-provider-failure-classification-and-agent-execution.md](./normalize-repair-abort-grace-provider-failure-classification-and-agent-execution.md) |
 | ADR-034zThoekpLqCcHhYO4MPe | One-dispatch release workflow | accepted | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
 | ADR-034r05iHlWosDpKs4eBT59 | one-shot JSON-first CLI プロセスモデル | accepted | [one-shot-json-first-cli.md](./one-shot-json-first-cli.md) |
+| ADR-034CWHw0NjYQjdE5o4kErV | OpenAI Codex subscription provider wire, OAuth, and catalog | proposed | [openai-codex-subscription-provider-wire-oauth-and-catalog.md](./openai-codex-subscription-provider-wire-oauth-and-catalog.md) |
 | ADR-034A8u7fBRIGJ7eRFYvg38 | Operation execution metrics | accepted | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | ADR-034zT6bqTxOvK1nP0ELSyR | OperationManager の cancel 要求と実 settle を分離する | accepted | [operation-manager-settlement.md](./operation-manager-settlement.md) |
 | ADR-034zWr0viJFoTiUALvhE6N | Payload untracking migration | accepted | [payload-untracking-migration.md](./payload-untracking-migration.md) |
