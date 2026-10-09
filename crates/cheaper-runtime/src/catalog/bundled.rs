@@ -720,6 +720,56 @@ mod tests {
         assert!(models.iter().all(|m| m.api == "anthropic-messages"));
     }
 
+    /// pi-ai 1.1.0 `providers/data/openai-codex.json` との同期を検証する
+    /// (`type == "chat"` のみ残し `type` field と `chat:` key prefix を
+    /// 除去した snapshot)。stale model の混入と manifest hash との乖離を
+    /// 防ぐ。
+    #[test]
+    fn bundled_openai_codex_models_match_pi_ai_1_1_0() {
+        let models = bundled_models("openai-codex").unwrap();
+        let ids: Vec<&str> = models.iter().map(|m| m.id.as_str()).collect();
+        assert_eq!(
+            ids,
+            [
+                "gpt-5.3-codex-spark",
+                "gpt-5.5",
+                "gpt-5.6-luna",
+                "gpt-5.6-sol",
+                "gpt-5.6-terra",
+                "gpt-6-astra",
+                "gpt-6-luna",
+                "gpt-6-sol",
+                "gpt-6.1-sol",
+            ]
+        );
+        assert!(ids.contains(&"gpt-6-luna"));
+        assert!(!ids.contains(&"gpt-5.4"));
+        assert!(!ids.contains(&"gpt-5.4-mini"));
+        assert!(models.iter().all(|m| m.provider == "openai-codex"));
+        assert!(models.iter().all(|m| m.api == "openai-codex-responses"));
+    }
+
+    /// `.manifest.json` の `files["openai-codex.json"]` が埋め込み file
+    /// bytes の sha256 と一致することを検証する(catalog 同期時の manifest
+    /// 更新漏れ防止)。
+    #[test]
+    fn manifest_openai_codex_sha256_matches_embedded_bytes() {
+        use sha2::{Digest, Sha256};
+
+        let manifest: serde_json::Value = serde_json::from_str(MANIFEST_JSON).unwrap();
+        let recorded = manifest["files"]["openai-codex.json"]
+            .as_str()
+            .expect("manifest must record openai-codex.json");
+        let embedded = bundled_provider_json("openai-codex").unwrap();
+        let digest = Sha256::digest(embedded.as_bytes());
+        use std::fmt::Write;
+        let mut actual = String::new();
+        for b in digest {
+            write!(actual, "{b:02x}").unwrap();
+        }
+        assert_eq!(recorded, actual);
+    }
+
     #[test]
     fn merge_headers_case_insensitive_override_wins() {
         let mut base = serde_json::Map::new();

@@ -47,8 +47,8 @@ pub use auth::{
     builtin_oauth_flows, AuthEvent, AuthInfoLink, AuthInteraction, AuthPrompt, AuthSelectOption,
     AuthService, AuthStatus, AuthType, CredentialData, CredentialStatus, CredentialStore,
     DevicePoll, FlowSleeper, GitHubCopilotFlow, HttpClient, HttpMethod, HttpRequest, HttpResponse,
-    LoginResult, LogoutResult, OAuthFlow, ProviderAuthInfo, ProviderEnv, ResolvedAuth,
-    StoredCredential, ThreadSleeper, UreqHttpClient,
+    LoginResult, LogoutResult, OAuthFlow, OpenAiCodexFlow, ProviderAuthInfo, ProviderEnv,
+    ResolvedAuth, StoredCredential, ThreadSleeper, UreqHttpClient,
 };
 pub use catalog::{
     bundled_models, load_models_json, CatalogModel, CatalogStore, Model, ModelsJsonFile,

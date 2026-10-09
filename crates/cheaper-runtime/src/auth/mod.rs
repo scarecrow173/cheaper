@@ -23,8 +23,8 @@ pub use api_key::{
 };
 pub use oauth::{
     builtin_oauth_flows, AuthEvent, AuthInfoLink, DeviceFlowPollOptions, DevicePoll, FlowSleeper,
-    GitHubCopilotFlow, HttpClient, HttpMethod, HttpRequest, HttpResponse, RetryPolicy,
-    ThreadSleeper, UreqHttpClient,
+    GitHubCopilotFlow, HttpClient, HttpMethod, HttpRequest, HttpResponse, OpenAiCodexFlow,
+    RetryPolicy, ThreadSleeper, UreqHttpClient,
 };
 pub use service::{
     AuthInteraction, AuthPrompt, AuthSelectOption, AuthService, AuthStatus, CredentialStatus,

@@ -19,10 +19,11 @@ Directory: `docs/test-specs`
 | TSPEC-034A9ykvVgiieTjkU129tm | managed process task の認可と resource ownership | approved | [managed-process-task-authorization.md](./managed-process-task-authorization.md) |
 | TSPEC-034rzVr1S8qFdi1JqWSN9Z | model exclude and explicit selection guards | approved | [model-exclude-and-explicit-selection.md](./model-exclude-and-explicit-selection.md) |
 | TSPEC-034rzVqBmfD2pkA9f82Eoa | model tier classification pipeline | approved | [model-tier-classification-pipeline.md](./model-tier-classification-pipeline.md) |
+| TSPEC-034CYp5Xbp8sJ8ZV199qV3 | OpenAI Codex subscription provider guarantees | draft | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
 | TSPEC-034A9yAv68yBK2XeFKEToG | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | TSPEC-034zTjObSJGccLlnwmHwVm | Operation lifecycle settlement guarantees | approved | [operation-lifecycle-settlement.md](./operation-lifecycle-settlement.md) |
 | TSPEC-034zXB13nuorLP81dn8ro8 | Payload-free source acquisition and native verification | approved | [payload-free-source-acquisition-and-native-verification.md](./payload-free-source-acquisition-and-native-verification.md) |
-| TSPEC-034COkGnjlrMwzT5pEaMzV | plugin catalog persistence and user model merge guarantees | draft | [plugin-catalog-persistence-and-user-model-merge.md](./plugin-catalog-persistence-and-user-model-merge.md) |
+| TSPEC-034COkGnjlrMwzT5pEaMzV | plugin catalog persistence and user model merge guarantees | approved | [plugin-catalog-persistence-and-user-model-merge.md](./plugin-catalog-persistence-and-user-model-merge.md) |
 | TSPEC-034rzVrqJiXNDl2AF8eI5s | pricing metadata resolution and models command | approved | [pricing-metadata-and-models-command.md](./pricing-metadata-and-models-command.md) |
 | TSPEC-034zTWh6x6esCzZmjDdiT0 | Release manifest and snapshot integrity | proposed | [release-manifest-and-snapshot-integrity.md](./release-manifest-and-snapshot-integrity.md) |
 | TSPEC-034zTWhBVg6DzifF8qlhAc | Release publication and native smoke | proposed | [release-publication-and-native-smoke.md](./release-publication-and-native-smoke.md) |
