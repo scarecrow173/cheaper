@@ -19,7 +19,9 @@ relations:
     moved: []
     generated: []
   implements: []
-  implemented-by: []
+  implemented-by:
+    - "../designs/plugin-catalog-snapshot-persistence-and-user-models-merge.md"
+    - "../plans/persist-plugin-catalog-snapshot-and-merge-user-models.md"
   depends-on:
     - "../adr/migrate-the-cheaper-cli-runtime-to-rust-and-rig.md"
   blocks: []
@@ -34,9 +36,12 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/plugin-catalog-refresh-persistence-and-user-models.md"
-  derived-by: []
+  derived-by:
+    - "../designs/plugin-catalog-snapshot-persistence-and-user-models-merge.md"
+    - "../plans/persist-plugin-catalog-snapshot-and-merge-user-models.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/plugin-catalog-persistence-and-user-model-merge.md"
   references:
     - "../impl/ir/phase-3-port-runtime-adapter-providers.md"
   defers: []

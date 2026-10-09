@@ -50,6 +50,7 @@ Directory: `docs/plans`
 | PLAN-034Bcr7oMH85Ak8UCpCDmy | Migrate cheaper runtime to Rust + Rig | approved | [migrate-cheaper-runtime-to-rust-rig.md](./migrate-cheaper-runtime-to-rust-rig.md) |
 | PLAN-034r05iHE1FbkpcKKUUZ58 | Real-provider worker E2E via Ollama — implementation plan | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | PLAN-034A90VLWrJyT2IhkiTsA0 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |
+| PLAN-034COkvLdOXz9j7HzLFGEK | Persist plugin catalog snapshot and merge user models on plugin providers | draft | [persist-plugin-catalog-snapshot-and-merge-user-models.md](./persist-plugin-catalog-snapshot-and-merge-user-models.md) |
 | PLAN-034BepX6xCr0AAqkJ63aOv | Phase 0 Rig PoC go-no-go gate | approved | [phase-0-rig-poc-go-no-go-gate.md](./phase-0-rig-poc-go-no-go-gate.md) |
 | PLAN-034BepXMKsB4VzqIP9XV7l | Phase 1 port cheaper-core | approved | [phase-1-port-cheaper-core.md](./phase-1-port-cheaper-core.md) |
 | PLAN-034BepYuOf4htZRfdkZTYc | Phase 2 port cheaper-tools | approved | [phase-2-port-cheaper-tools.md](./phase-2-port-cheaper-tools.md) |

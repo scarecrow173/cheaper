@@ -18,7 +18,8 @@ relations:
   implements:
     - "../specs/plugin-catalog-persistence-and-user-models.md"
     - "../adr/persist-plugin-catalog-snapshot-and-merge-user-models-on-plugin-providers.md"
-  implemented-by: []
+  implemented-by:
+    - "../plans/persist-plugin-catalog-snapshot-and-merge-user-models.md"
   depends-on:
     - "./provider-only-registration-layer.md"
     - "./devin-local-provider-plugin.md"
@@ -34,7 +35,9 @@ relations:
     - "../specs/plugin-catalog-persistence-and-user-models.md"
     - "../adr/persist-plugin-catalog-snapshot-and-merge-user-models-on-plugin-providers.md"
     - "../discovery/plugin-catalog-refresh-persistence-and-user-models.md"
-  derived-by: []
+  derived-by:
+    - "../plans/persist-plugin-catalog-snapshot-and-merge-user-models.md"
+    - "../test-specs/plugin-catalog-persistence-and-user-model-merge.md"
   verifies: []
   verified-by: []
   references:
