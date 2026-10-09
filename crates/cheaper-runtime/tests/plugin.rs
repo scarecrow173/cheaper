@@ -593,6 +593,82 @@ fn unconvertible_refresh_defs_are_not_persisted() {
 }
 
 #[test]
+fn refresh_does_not_borrow_base_url_from_merged_user_defs() {
+    // `refresh_plugin_models` の `extension_models` defaults pool は
+    // compose 時の pre-extension base(plugin-only provider では空)と
+    // 同一でなければならない。現在の resolved list(merge 済み user def
+    // `u1` を含む)を渡すと `r1` が `u1` の baseUrl を継承して変換できて
+    // しまい、その defs が persist されると次回 boot compose が同じ
+    // defs で失敗し provider ごと drop される(persist gate が防ぐべき
+    // 自己矛盾 snapshot)。
+    let dir = tempfile::tempdir().unwrap();
+    write_models_json(
+        &dir,
+        r#"{"providers":{"fake":{"models":[{"id":"u1","baseUrl":"http://user.local"}]}}}"#,
+    );
+    let (_auth, plugin) = plugin_with(
+        FakeCatalog {
+            refreshed: Mutex::new(Some(vec![refreshed_model("r1")])),
+            fail: AtomicBool::new(false),
+        },
+        "",     // plugin base_url 空
+        vec![], // bootstrap models 空 → compose 時 extension base も空
+    );
+    let plugins: Vec<Arc<dyn CheaperProviderPlugin>> = vec![plugin];
+    let runtime = new_runtime(&dir, &plugins);
+
+    // compose: `u1` は user 指定 baseUrl で merge される — refresh が
+    // 借りてはいけない defaults 候補が entry.models に居座る状態を作る。
+    assert_eq!(
+        runtime.catalog().get_model("fake", "u1").unwrap().base_url,
+        "http://user.local"
+    );
+
+    // login → refresh: `r1` は baseUrl 解決不能で refresh 全体が skip
+    // され error 記録 — persist は呼ばれず catalog.json は書かれない。
+    login_oauth(&runtime);
+    assert!(runtime.catalog().get_model("fake", "r1").is_none());
+    // compose 済みの `u1` は維持される。
+    assert!(runtime.catalog().get_model("fake", "u1").is_some());
+    let errors = runtime.catalog().errors();
+    assert!(errors.iter().any(|e| e.contains("baseUrl")), "{errors:?}");
+    assert!(
+        !catalog_path(&dir).exists(),
+        "defs that only converted via merged-user-def defaults must not be persisted"
+    );
+}
+
+#[test]
+fn persisted_def_headers_reach_model_headers_at_boot() {
+    // persisted snapshot 由来の `headers` は compose 時の
+    // `collect_model_header_sources`(plugin_defs = persisted defs)経由で
+    // `model_headers` に届く — refresh 経路だけでなく boot compose でも
+    // header source が構築されることの直接検証。
+    let dir = tempfile::tempdir().unwrap();
+    let path = catalog_path(&dir);
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(
+        &path,
+        r#"{"version":1,"provider":"fake","fetchedAt":1,"models":[{"id":"persisted-1","headers":{"X-Persisted":"yes"}}]}"#,
+    )
+    .unwrap();
+    let (_auth, plugin) = plugin_with_catalog(no_refresh_catalog());
+    let plugins: Vec<Arc<dyn CheaperProviderPlugin>> = vec![plugin];
+    let runtime = new_runtime(&dir, &plugins);
+
+    let model = runtime
+        .catalog()
+        .get_model("fake", "persisted-1")
+        .expect("persisted model must be injected at boot");
+    assert_eq!(model.api, "fake-api");
+    let headers = runtime
+        .catalog()
+        .model_headers("fake", "persisted-1")
+        .expect("persisted def headers must be registered at compose");
+    assert_eq!(headers["X-Persisted"], serde_json::json!("yes"));
+}
+
+#[test]
 fn logout_retains_catalog_snapshot_and_later_runtime_still_injects() {
     // logout は catalog.json を削除しない(stale snapshot は次回 login
     // refresh で自己修復 — spec freshness AC)。logout 後の新規
@@ -960,6 +1036,56 @@ fn refresh_rebuilds_model_header_sources() {
         .model_headers("fake", "fake-2")
         .expect("refreshed model headers must be registered");
     assert_eq!(headers["X-Test"], serde_json::json!("yes"));
+}
+
+#[test]
+fn collision_skipped_user_def_headers_do_not_leak_on_compose_or_refresh() {
+    // id 衝突で skip された user def の `headers` は残存 plugin model の
+    // `model_headers` に混入しない — skip は def の rejection であり、
+    // headers だけが漏れるのは不完全な reject。compose と refresh の
+    // 両経路で検証する。
+    let dir = tempfile::tempdir().unwrap();
+    write_models_json(
+        &dir,
+        r#"{"providers":{"fake":{"models":[{"id":"fake-1","headers":{"X-User":"rejected"}}]}}}"#,
+    );
+    let mut bootstrap = refreshed_model("fake-1");
+    bootstrap.headers = Some(serde_json::Map::from_iter([(
+        "X-Plugin".to_string(),
+        serde_json::Value::from("bootstrap"),
+    )]));
+    let (_auth, plugin) = plugin_with(no_refresh_catalog(), "http://fake.local", vec![bootstrap]);
+    let plugins: Vec<Arc<dyn CheaperProviderPlugin>> = vec![plugin];
+    let runtime = new_runtime(&dir, &plugins);
+
+    // compose: user def は衝突 skip + error 記録され、その headers は
+    // 残存 plugin model に混入しない。
+    let errors = runtime.catalog().errors();
+    assert!(errors.iter().any(|e| e.contains("conflict")), "{errors:?}");
+    let headers = runtime
+        .catalog()
+        .model_headers("fake", "fake-1")
+        .expect("plugin def headers must be registered");
+    assert_eq!(headers["X-Plugin"], serde_json::json!("bootstrap"));
+    assert!(!headers.contains_key("X-User"), "{headers:?}");
+
+    // refresh: 同じ衝突が再評価されても skip 済み user def の headers
+    // は残存 plugin model に混入しない。
+    let mut refreshed = refreshed_model("fake-1");
+    refreshed.headers = Some(serde_json::Map::from_iter([(
+        "X-Plugin".to_string(),
+        serde_json::Value::from("refreshed"),
+    )]));
+    runtime
+        .catalog()
+        .refresh_plugin_models("fake", &[refreshed])
+        .unwrap();
+    let headers = runtime
+        .catalog()
+        .model_headers("fake", "fake-1")
+        .expect("refreshed def headers must be registered");
+    assert_eq!(headers["X-Plugin"], serde_json::json!("refreshed"));
+    assert!(!headers.contains_key("X-User"), "{headers:?}");
 }
 
 #[test]
