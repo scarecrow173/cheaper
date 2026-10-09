@@ -73,4 +73,5 @@ Directory: `docs/plans`
 | PLAN-034rzPZHq5JFQ3CVZCVLJo | Usage savings telemetry — implementation plan | completed | [usage-savings-telemetry-implementation-plan.md](./usage-savings-telemetry-implementation-plan.md) |
 | PLAN-034r05iHE1FbkpeFEXECDx | User-facing documentation IA — implementation plan | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | PLAN-034r05iHy2gdnpLvJw9CNY | Verify cheaper real-provider path with Ollama on Docker | completed | [verify-cheaper-real-provider-path-with-ollama-on-docker.md](./verify-cheaper-real-provider-path-with-ollama-on-docker.md) |
+| PLAN-034D8SPOCUdlPoQHojlMCb | Volume-root workspace boundary predicate fix | draft | [volume-root-workspace-boundary-predicate-fix.md](./volume-root-workspace-boundary-predicate-fix.md) |
 | PLAN-034r05iHE1FbkoYP7AZgHF | Write-scope enforcement and privacy deny list | completed | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |
