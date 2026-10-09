@@ -1,7 +1,7 @@
 ---
 id: "TASK-034CYsDxlTD7NNAPMkB4mb"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement OpenAI Codex subscription provider"
 created: "2026-10-09"
 updated: "2026-10-10"
@@ -51,14 +51,14 @@ provider(ChatGPT subscription backend)を 3 層で実用化する:
 plan の Implementation Sequence Phase A-I が本 task の作業単位。順序と
 依存関係は以下のとおり(各項目は semantic commit の単位):
 
-- **T1 — adapter normalize**(plan step 1-5、依存なし):
+- **T1 — adapter normalize**(done — `8671788`、依存なし):
   `builtin.rs` に `normalize_codex_base_url`(末尾 `/` 除去 →
   `/responses` strip → `/codex` append)を実装し codex arm の
   `with_base_url` へ配線。normalize 写像 test(catalog baseUrl・
   既に `/codex`・`/codex/responses`・custom relay)を追加。
   作業 tree の未 commit 変更(codex arm・`SUPPORTED_APIS` entry・
   account-id helpers・既存 test)をこの commit 境界に含める。
-- **T2 — dep 追加 gate**(plan step 6-7、依存なし):
+- **T2 — dep 追加 gate**(done — `d764f61`、依存なし):
   `cheaper-runtime` への `sha2`・`getrandom = "0.3"`・`base64` 追加
   について **user confirmation を取得してから** `Cargo.toml` を
   編集する(AGENTS.md「Ask first: 依存の追加」、ADR で事前宣言
@@ -67,7 +67,7 @@ plan の Implementation Sequence Phase A-I が本 task の作業単位。順序�
   ため。`mise exec -- cargo check -p cheaper-runtime` で compile
   確認。
 - **T3 — oauth scaffolding + credential/token plumbing**
-  (plan step 8-14、T2 に依存): `auth/oauth/openai_codex.rs` 新設 —
+  (done — `252dc77`、plan step 8-14、T2 に依存): `auth/oauth/openai_codex.rs` 新設 —
   `OpenAiCodexFlow` 構造体(`http`/`sleeper`/listener factory seam、
   既定 `127.0.0.1:1455`)・design 定数群・`generate_pkce`/`state` 生成・
   `parse_authorization_input`(edge-case table 順序)・
@@ -81,7 +81,7 @@ plan の Implementation Sequence Phase A-I が本 task の作業単位。順序�
   (`GitHubCopilotFlow` parity、各 1 行)。T3 時点の `login` は
   deliberate stub として `ProviderFailure("not yet implemented")`
   を返し、T4/T5 で実装して置き換える。
-- **T4 — browser login path**(plan step 15-20、T3 に依存):
+- **T4 — browser login path**(done — `252dc77`、plan step 15-20、T3 に依存):
   `AuthPrompt::Select`(browser 既定/device_code、未知 id は error)→
   authorize URL(`code_challenge`/S256/`state`/
   `id_token_add_organizations`/`codex_cli_simplified_flow`/
@@ -97,7 +97,7 @@ plan の Implementation Sequence Phase A-I が本 task の作業単位。順序�
   bind 失敗は `AuthEvent::Info` +
   `AuthPrompt::ManualCode`(`parse_authorization_input`、state 不一致は
   abort)→ `POST /oauth/token` form exchange。
-- **T5 — device-code login path**(plan step 21-25、T3 に依存):
+- **T5 — device-code login path**(done — `252dc77`、plan step 21-25、T3 に依存):
   `POST /api/accounts/deviceauth/usercode` JSON `{client_id}`(404 →
   "not enabled" message、`{device_auth_id, user_code, interval}` 全必須、
   interval は number または numeric string)→ `AuthEvent::DeviceCode`
@@ -123,7 +123,7 @@ plan の Implementation Sequence Phase A-I が本 task の作業単位。順序�
   bytes と一致)→ `mise exec -- cargo test -p cheaper-runtime
   --test catalog` と `mise exec -- cargo test -p cheaper-runtime`
   が緑。
-- **T7 — oauth flow unit tests**(plan step 30-38、T4+T5 に依存):
+- **T7 — oauth flow unit tests**(done — `252dc77`、plan step 30-38、T4+T5 に依存):
   scripted `AuthInteraction` + mock `HttpClient`(`/oauth/token` 応答を
   channel/barrier で block 可)+ fake `FlowSleeper` + pre-bound
   listener(`127.0.0.1:0`)で browser happy path(実 `TcpStream`
@@ -135,15 +135,17 @@ plan の Implementation Sequence Phase A-I が本 task の作業単位。順序�
   deadline timeout(実時間を待たない seam)/device Pending→Complete/
   `parse_authorization_input` table/`credentials_from_token`/
   `refresh` invalid_grant/`to_auth` header を緑にする。
-- **T8 — 全体検証 + 実 credential smoke**(plan step 39-41、T1・T6・
-  T7 に依存): `mise exec -- cargo test -p cheaper-rig-adapter`・
+- **T8 — 全体検証 + 実 credential smoke**(done — `mise run check`
+  全緑 + `openai-codex/gpt-6-luna` bulk-reader `ok:true`、plan step
+  39-41、T1・T6・T7 に依存): `mise exec -- cargo test -p cheaper-rig-adapter`・
   `mise exec -- cargo test -p cheaper-runtime`・`mise run check`
   全緑。実 credential
   smoke(credential 入手可能な環境のみ): `auth login openai-codex` →
   `models --provider openai-codex` が `gpt-6-luna` 含む `gpt-6-*` を
   列挙 → `run bulk-reader --model openai-codex/gpt-6-luna` が
   `ok:true`。skip 時は理由を impl record に記録。
-- **T9 — impl record + audit**(plan step 42-43、T8 に依存):
+- **T9 — impl record + audit**(done — impl record
+  `IMPL-034D0FJrA2AtPRSNfjfe2v`、plan step 42-43、T8 に依存):
   `new_impl_record.js --task <本 doc>` で impl record を作成し実施
   内容・smoke 結果を記録。`doc_status.js audit --type plan/task/
   test-spec` の findings を解消する。

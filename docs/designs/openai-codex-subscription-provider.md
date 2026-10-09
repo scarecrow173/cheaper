@@ -30,6 +30,7 @@ relations:
   refined-by: []
   derives-from:
     - "docs/adr/openai-codex-subscription-provider-wire-oauth-and-catalog.md"
+    - "docs/discovery/openai-codex-subscription-provider.md"
   derived-by: []
   verifies: []
   verified-by: []
