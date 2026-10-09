@@ -13,6 +13,7 @@
 //! base fallback・custom/plugin は provider 自体を drop する。
 
 pub mod bundled;
+pub mod persisted;
 pub mod schema;
 
 use std::collections::BTreeMap;
