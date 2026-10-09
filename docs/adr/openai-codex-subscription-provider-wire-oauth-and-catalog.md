@@ -28,7 +28,8 @@ relations:
   refines: []
   refined-by: []
   derives-from: []
-  derived-by: []
+  derived-by:
+    - "../designs/openai-codex-subscription-provider.md"
   verifies: []
   verified-by: []
   references: []
