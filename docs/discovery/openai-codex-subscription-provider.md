@@ -24,12 +24,14 @@ relations:
   superseded-by: []
   related:
     - "docs/tasks/phase-3-port-runtime-adapter-providers.md"
+    - "../designs/openai-codex-subscription-provider.md"
   refines: []
   refined-by: []
   derives-from: []
   derived-by:
     - "../specs/openai-codex-subscription-provider.md"
     - "../adr/openai-codex-subscription-provider-wire-oauth-and-catalog.md"
+    - "../designs/openai-codex-subscription-provider.md"
   verifies: []
   verified-by: []
   references: []
