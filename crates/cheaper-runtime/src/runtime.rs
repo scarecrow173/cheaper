@@ -60,7 +60,10 @@ impl Runtime {
             Ok(file) => (file, None),
             Err(e) => (None, Some(e)),
         };
-        let catalog = CatalogStore::build(user_models, user_error, &registrations)?;
+        // TODO(T3): `<userConfigDir>/providers/<id>/catalog.json` の
+        // snapshot load loop をここへ追加し、load 済み defs を渡す。
+        let catalog =
+            CatalogStore::build(user_models, user_error, &registrations, &BTreeMap::new())?;
         let store = CredentialStore::new(&user_config_dir);
         let mut flows = crate::auth::oauth::builtin_oauth_flows();
         flows.extend(oauth_flows);
