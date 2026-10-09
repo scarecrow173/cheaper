@@ -42,6 +42,7 @@ Directory: `docs/adr`
 | ADR-034A8u7fBRIGJ7eRFYvg38 | Operation execution metrics | accepted | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | ADR-034zT6bqTxOvK1nP0ELSyR | OperationManager の cancel 要求と実 settle を分離する | accepted | [operation-manager-settlement.md](./operation-manager-settlement.md) |
 | ADR-034zWr0viJFoTiUALvhE6N | Payload untracking migration | accepted | [payload-untracking-migration.md](./payload-untracking-migration.md) |
+| ADR-034CKnwOWyYssJ1VZR9spo | plugin live catalog は providers/<id>/catalog.json に永続化し user models[] は plugin provider で additive merge にする | proposed | [persist-plugin-catalog-snapshot-and-merge-user-models-on-plugin-providers.md](./persist-plugin-catalog-snapshot-and-merge-user-models-on-plugin-providers.md) |
 | ADR-034r05iHrZUE6Wn59hpaOg | Pi persistent state は userConfigDir/pi 配下へ ModelRuntime.create の明示 path で集約する | superseded | [pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md](./pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md) |
 | ADR-034zA5nZuUdGLDMTGh2V6z | Pi sibling tool-call parallelism via runtime output-contract guidance | accepted | [pi-sibling-tool-call-parallelism-via-runtime-output-contract-guidance.md](./pi-sibling-tool-call-parallelism-via-runtime-output-contract-guidance.md) |
 | ADR-P0zbksjMxOkaP5fE5ZkVfX | Price-based percentile auto tier classification | accepted | [price-based-percentile-auto-tier-classification.md](./price-based-percentile-auto-tier-classification.md) |

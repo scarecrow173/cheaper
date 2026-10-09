@@ -38,7 +38,7 @@ use cheaper_tools::operation::{AbortController, AbortReason, AbortSignal};
 use serde_json::{Map, Value};
 
 use crate::args::{AuthAction, AuthCliArgs, AuthTypeArg};
-use crate::cli::{BoxError, CliHooks, CliIo, CliWrite, CommandOut};
+use crate::cli::{emit_catalog_warnings, BoxError, CliHooks, CliIo, CliWrite, CommandOut};
 use crate::envelope::utility_success_envelope;
 
 fn invalid_request(message: String, details: Option<Map<String, Value>>) -> CheaperError {
@@ -533,6 +533,19 @@ pub async fn execute_with(
 ) -> Result<CommandOut, BoxError> {
     let catalog = runtime.catalog();
     let auth = runtime.auth();
+    // spec Req 4 — compose/snapshot error を action dispatch 前に emit
+    // する。action match 内は全分岐 `?` 伝播するため match 後の emit は
+    // error 経路で走らず、dropped plugin provider への
+    // `auth status <id>`/`auth login <id>` は `require_provider` の
+    // `unknown provider` で記録済み compose error が見えないまま終了
+    // する — ここで emit しておくと `warning:` 行 + envelope error が
+    // 併存する。sink は `AuthTerminal::write`(stderr 境界)。
+    let errs = catalog.errors();
+    emit_catalog_warnings(&errs, &mut |s: &str| terminal.write(s), args.quiet);
+    // login 中に `refresh_plugin_catalog` が記録する error 用の emit
+    // 済み件数 cursor(post-login 差分 emit で `errs[emitted..]` のみ
+    // 出す)。
+    let emitted = errs.len();
     let result = match args.action {
         AuthAction::Status => {
             // TS: `args.provider` があれば単一 describe、無ければ全件 list。
@@ -594,6 +607,19 @@ pub async fn execute_with(
             );
             auth.login(catalog, provider, method, &mut interaction)
                 .map_err(BoxError::from)?;
+            // spec Req 4 — login `Ok` 時点で refresh/persist error は
+            // 記録済み(`refresh_plugin_catalog` は `Ok` 返却前に走る)
+            // ので、early emit 済み分を cursor で除いた差分を emit する。
+            // login が Err なら refresh は走っていないため emit 不要。
+            // 同一 merge 衝突 message が compose/refresh で 2 回記録
+            // される場合 warning 行も 2 行出得る(accepted stderr
+            // noise — dedup しない)。
+            let errs = catalog.errors();
+            emit_catalog_warnings(
+                &errs[emitted.min(errs.len())..],
+                &mut |s: &str| terminal.write(s),
+                args.quiet,
+            );
             // TS `loginProvider` は login 後に `describeProviderAuth` を再
             // 評価し、`authenticated`/`subscription` をその結果から取る。
             let info = auth

@@ -253,12 +253,33 @@ ollama_e2e.rs`)。dependency direction(runtime → adapter)上
       code-writer turns=3 toolCalls=1 in=4843/out=431 repairs=1 125.3s、
       doc-writer turns=4 toolCalls=2 in=7359/out=816 repairs=1 163.8s —
       全件成功 envelope + `meta.usage` 非零 + provider/model id 一致)
-- [ ] devin 実 endpoint smoke(`auth login/status/logout`・`devin models
+- [x] devin 実 endpoint smoke(`auth login/status/logout`・`devin models
       list`・1 件の run)を実施し結果を plan に記録する(CI 外手動。
       不達時は切り下げ判断をユーザー承認に回す)
-      — **未実施・escalation pending**: 実 Devin endpoint/credential への
-      到達が本環境では不能なため、item 本文の規定どおり切り下げ判断の
-      ユーザー承認待ち
+      — **実施済み(一部切り下げ・ユーザー承認済み)**: merge 後の
+      `main`(`target/debug/cheaper.exe`)+ devin CLI 3000.11.3 で実 endpoint
+      検証。`auth login`(credentials.toml 存在 + `devin auth status`
+      logged-in の reuse path)→ `authenticated: true`、`auth status` →
+      `configured: true`、catalog refresh(`devin models list` 委譲)→
+      実 model 4 件(claude-opus-5/claude-fable-5/gpt-5.6-sol/swe-1-7)、
+      `run bulk-reader --model devin/swe-1-7` → `ok:true`、4 turns・
+      4 tool calls(ls×1/read×3)、usage 13148 tokens・repairs=1、
+      `usage.jsonl` に run record 記録。envelope は `schemaVersion:1` で
+      credential 非漏洩(値は一切 stdout 非出力)。
+      **切り下げ: logout の CLI 委譲** — devin CLI 3000.x は Windows で
+      `%APPDATA%\devin\credentials.toml` を OS API 経由で解決し、
+      plugin の isolated env(`XDG_DATA_HOME`+`LOCALAPPDATA`)が機能
+      しない(実測: `APPDATA` 上書きでも global を読み、`USERPROFILE`
+      上書きは config dir 解決失敗)。`cheaper auth logout devin` が
+      `devin auth logout` を呼ぶと global session まで logout されるため、
+      ユーザー承認のうえ cheaper 側のみ cleanup(isolated
+      credentials.toml 削除 + credentials.json から devin entry 除去 →
+      `configured: false` 復帰確認、global session 温存)で代替。
+      **残課題: Windows での devin child env 隔離が実質無効** —
+      `devin_child_env` の Windows 分岐は `LOCALAPPDATA` のみ上書きするが、
+      devin CLI は Roaming fixed path を使うため credential は global を
+      参照する。Linux/macOS(XDG_DATA_HOME 有効)では design どおり。
+      対応は別 issue として切り出す(follow-up)
 - [x] `meta.usage.costUsd` が provider 応答値ではなく pricing 層算出で
       あることを fixture/単体 test で確認する
       (`tests/run.rs` `success_extracts_output_and_builds_meta` が

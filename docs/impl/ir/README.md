@@ -82,6 +82,7 @@ Directory: `docs/impl/ir`
 | IMPL-tCVQX1QfT8lGHPsrMuqvEZ | Phase 5: switch distribution to Rust binary | completed | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
 | IMPL-TXm8SCjDLk10XvQdp1sPnY | Phase 6: remove TypeScript Node Pi | completed | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | IMPL-034r05iHy2gdnpDWUS1IzV | Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg) | completed | [pi-state-under-userconfigdir-pi.md](./pi-state-under-userconfigdir-pi.md) |
+| IMPL-034CSeJIDJx6Es0oHOERBj | Plugin catalog snapshot persistence and user-models merge | completed | [plugin-catalog-snapshot-persistence-and-user-models-merge.md](./plugin-catalog-snapshot-persistence-and-user-models-merge.md) |
 | IMPL-034z57iY91Zc8YChIAuBty | port routing policy to cli hook module | completed | [port-routing-policy-to-cli-hook-module.md](./port-routing-policy-to-cli-hook-module.md) |
 | IMPL-034zU5o0mgVqx5ZwBdxc0L | Prepare one-dispatch release artifacts | completed | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
 | IMPL-034r2qodykm6M1ReYSbIkc | provider/auth guide runtime sync (PLAN-034r2qodyxvN3g3xktwPOF) | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |

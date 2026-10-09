@@ -1,5 +1,7 @@
 //! catalog store の merge/get_available/get_model/invalid-api contract test。
 
+use std::collections::BTreeMap;
+
 use cheaper_core::errors::ErrorCode;
 use cheaper_runtime::catalog::bundled::{bundled_models, BUILTIN_PROVIDERS};
 use cheaper_runtime::catalog::schema::parse_models_json_str;
@@ -10,7 +12,7 @@ fn build(user_json: Option<&str>) -> CatalogStore {
         Some(json) => (Some(parse_models_json_str(json).unwrap()), None),
         None => (None, None),
     };
-    CatalogStore::build(file, err, &[]).unwrap()
+    CatalogStore::build(file, err, &[], &BTreeMap::new()).unwrap()
 }
 
 #[test]
@@ -189,7 +191,7 @@ fn invalid_models_json_reports_error_and_falls_back_to_bundled() {
         Ok(f) => (f, None),
         Err(e) => (None, Some(e)),
     };
-    let store = CatalogStore::build(file, err, &[]).unwrap();
+    let store = CatalogStore::build(file, err, &[], &BTreeMap::new()).unwrap();
     // bundled のみ。user error 無し（file 不在は合法）。
     assert!(store.errors().is_empty());
     assert!(

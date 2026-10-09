@@ -114,3 +114,7 @@ relations:
 ## Rust + Rig ランタイム移行（SPEC-034BbgvL9s41K7NflOddZ6 / ADR-034BbhP6hJV7DFtv7k7AGs）
 
 - [Rust + Rig runtime migration architecture](./rust-rig-runtime-migration-architecture.md) — Pi SDK + TypeScript/Node.js SEA から Rust + Rig ネイティブへの全面 rewrite。crate 分割・Rig adapter 隔離・自前ギャップ（catalog/auth/retry/devin）・differential golden 検証・配布切替を設計。既存の Pi 前提 design（上記）は移行元の仕様源として残る。
+
+## Plugin catalog 永続化と user models merge（issue #81・#82）
+
+- [Plugin catalog snapshot persistence and user models merge](./plugin-catalog-snapshot-persistence-and-user-models-merge.md) — plugin live catalog を `<userConfigDir>/providers/<id>/catalog.json` へ永続化し、plugin provider の user `models[]` を additive merge + catalog error stderr surfacing する修正設計。

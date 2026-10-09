@@ -335,7 +335,7 @@ fn api_key_login_persists_credential_and_status_reflects() {
     let dir = tmp_dir();
     let env: Arc<dyn ProviderEnv> = Arc::new(MapEnv(BTreeMap::new()));
     let svc = service(dir.path(), env);
-    let catalog = CatalogStore::build(None, None, &[]).unwrap();
+    let catalog = CatalogStore::build(None, None, &[], &BTreeMap::new()).unwrap();
     let mut interaction = ScriptedInteraction {
         answers: vec!["sk-secret".to_string()],
     };
@@ -372,7 +372,7 @@ fn env_var_counts_as_configured() {
         "sk-env".to_string(),
     )])));
     let svc = service(dir.path(), env);
-    let catalog = CatalogStore::build(None, None, &[]).unwrap();
+    let catalog = CatalogStore::build(None, None, &[], &BTreeMap::new()).unwrap();
     let info = svc.describe_provider(&catalog, "openai").unwrap();
     assert!(info.configured);
     // anthropic は未設定。oauth 宣言があるため methods は
@@ -389,7 +389,7 @@ fn env_var_counts_as_configured() {
 fn oauth_declaration_is_advertised_without_flow() {
     let dir = tmp_dir();
     let svc = service(dir.path(), Arc::new(MapEnv(BTreeMap::new())));
-    let catalog = CatalogStore::build(None, None, &[]).unwrap();
+    let catalog = CatalogStore::build(None, None, &[], &BTreeMap::new()).unwrap();
     // github-copilot は oauth 宣言あり・flow 未登録 → methods は
     // api_key+oauth、subscription は declaration 値(true)。
     let info = svc.describe_provider(&catalog, "github-copilot").unwrap();
@@ -417,7 +417,7 @@ fn oauth_declaration_is_advertised_without_flow() {
 fn login_rejects_unsupported_method() {
     let dir = tmp_dir();
     let svc = service(dir.path(), Arc::new(MapEnv(BTreeMap::new())));
-    let catalog = CatalogStore::build(None, None, &[]).unwrap();
+    let catalog = CatalogStore::build(None, None, &[], &BTreeMap::new()).unwrap();
     let mut interaction = ScriptedInteraction { answers: vec![] };
     let err = svc
         .login(&catalog, "openai", AuthType::Oauth, &mut interaction)
@@ -441,7 +441,7 @@ fn login_rejects_unsupported_method() {
 fn logout_removes_credential_and_is_idempotent() {
     let dir = tmp_dir();
     let svc = service(dir.path(), Arc::new(MapEnv(BTreeMap::new())));
-    let catalog = CatalogStore::build(None, None, &[]).unwrap();
+    let catalog = CatalogStore::build(None, None, &[], &BTreeMap::new()).unwrap();
     svc.credentials()
         .set("openai", StoredCredential::api_key("k".into()))
         .unwrap();
@@ -457,7 +457,7 @@ fn logout_removes_credential_and_is_idempotent() {
 fn logout_all_clears_credentials() {
     let dir = tmp_dir();
     let svc = service(dir.path(), Arc::new(MapEnv(BTreeMap::new())));
-    let catalog = CatalogStore::build(None, None, &[]).unwrap();
+    let catalog = CatalogStore::build(None, None, &[], &BTreeMap::new()).unwrap();
     svc.credentials()
         .set("openai", StoredCredential::api_key("k".into()))
         .unwrap();
@@ -477,7 +477,7 @@ fn get_auth_resolves_stored_credential_then_env() {
         "sk-env".to_string(),
     )])));
     let svc = service(dir.path(), env);
-    let catalog = CatalogStore::build(None, None, &[]).unwrap();
+    let catalog = CatalogStore::build(None, None, &[], &BTreeMap::new()).unwrap();
     let entry = catalog.provider("openai").unwrap();
     // env fallback。
     let auth = svc.get_auth(entry, &BTreeMap::new()).unwrap().unwrap();
@@ -505,7 +505,7 @@ fn get_auth_resolves_configured_api_key_template() {
         }}}"#,
     )
     .unwrap();
-    let catalog = CatalogStore::build(Some(file), None, &[]).unwrap();
+    let catalog = CatalogStore::build(Some(file), None, &[], &BTreeMap::new()).unwrap();
     let entry = catalog.provider("custom").unwrap();
     let auth = svc.get_auth(entry, &BTreeMap::new()).unwrap().unwrap();
     assert_eq!(auth.api_key.as_deref(), Some("resolved"));
@@ -522,7 +522,7 @@ fn get_auth_missing_env_is_explicit_error() {
         }}}"#,
     )
     .unwrap();
-    let catalog = CatalogStore::build(Some(file), None, &[]).unwrap();
+    let catalog = CatalogStore::build(Some(file), None, &[], &BTreeMap::new()).unwrap();
     let entry = catalog.provider("custom").unwrap();
     // configured(apiKey template) → check は configured=true でも
     // resolve は明示 error（silent fallback ではない）。
@@ -552,7 +552,7 @@ fn oauth_credential_without_flow_does_not_fall_back_to_env() {
             }),
         )
         .unwrap();
-    let catalog = CatalogStore::build(None, None, &[]).unwrap();
+    let catalog = CatalogStore::build(None, None, &[], &BTreeMap::new()).unwrap();
     let entry = catalog.provider("github-copilot").unwrap();
     // oauth handler 未登録 → env fallback しない（None）。
     assert!(svc.get_auth(entry, &BTreeMap::new()).unwrap().is_none());

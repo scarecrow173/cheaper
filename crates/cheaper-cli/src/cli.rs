@@ -99,6 +99,25 @@ pub(crate) fn resolve_builtin_dir(hooks: &CliHooks) -> Result<PathBuf, BoxError>
     }
 }
 
+/// catalog composition/persistence error の user-facing surface
+/// (spec Req 4)。各 error を `warning: <msg>\n` 行として sink へ流す
+/// (`usage-log:`/`model:` と同じ stderr diagnostic 系)。`--quiet` で
+/// 抑制。envelope `result` shape・exit code は不変。
+///
+/// sink は `warning: <msg>\n` の行を受け取る closure —
+/// `auth.rs::execute_with` は `CliWrite` を持たず
+/// `terminal: &mut dyn AuthTerminal` しか受け取らないため、
+/// `io.stderr.write_str` / `AuthTerminal::write` の双方を同一 helper
+/// で流せるよう `&mut dyn FnMut(&str)` とする。
+pub(crate) fn emit_catalog_warnings(errors: &[String], sink: &mut dyn FnMut(&str), quiet: bool) {
+    if quiet {
+        return;
+    }
+    for msg in errors {
+        sink(&format!("warning: {msg}\n"));
+    }
+}
+
 /// `resolvedUserConfigDir` — executeRun 途中 throw 時の recordUsage
 /// 用 fallback(resolveConfigDirs は純粋関数で userConfigDir は env
 /// のみに依存)。

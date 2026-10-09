@@ -45,6 +45,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHrZUE6WvaQsRRsM | Pi 実行エンジン: session・制限・abort・retry・出力抽出・repair・usage | approved | [pi-execution-engine.md](./pi-execution-engine.md) |
 | DESIGN-034zAKcWuB8SuFkOePsubg | Pi sibling tool-call parallelism inside Workers | approved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DESIGN-034r05iHy2gdnoZAxhwPFa | Pi state paths under userConfigDir/pi | approved | [pi-state-paths-under-userconfigdir-pi.md](./pi-state-paths-under-userconfigdir-pi.md) |
+| DESIGN-034CM9o41G2FjaP5cV125c | Plugin catalog snapshot persistence and user models merge | draft | [plugin-catalog-snapshot-persistence-and-user-models-merge.md](./plugin-catalog-snapshot-persistence-and-user-models-merge.md) |
 | DESIGN-034r2qodyo7KRfBsGRJQty | provider/auth guide runtime sync design | approved | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | DESIGN-034r05iHy2gdnp0zOYnFNU | Provider-only registration layer | approved | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
 | DESIGN-034r05iHy2gdnoCKJhKNGD | Repair abort and failure normalization hardening | approved | [repair-abort-and-failure-normalization-hardening.md](./repair-abort-and-failure-normalization-hardening.md) |
@@ -52,7 +53,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHrZUE6Wzyjd1NS8 | リポジトリ構成とツールチェーン | approved | [repository-structure-toolchain.md](./repository-structure-toolchain.md) |
 | DESIGN-034A8FyPKpnV3KM2HypFGu | ResourceManager job lease と atomic operation admission 設計 | approved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | DESIGN-034zSR05NE5hXXhkTRLMgW | Run-scoped artifact store | approved | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |
-| DESIGN-034Bbq1qY8WFBdL26tUdBw | Rust + Rig runtime migration architecture | draft | [rust-rig-runtime-migration-architecture.md](./rust-rig-runtime-migration-architecture.md) |
+| DESIGN-034Bbq1qY8WFBdL26tUdBw | Rust + Rig runtime migration architecture | approved | [rust-rig-runtime-migration-architecture.md](./rust-rig-runtime-migration-architecture.md) |
 | DESIGN-034z1EfqYaEBfyNvqZyFSD | SEA executable build pipeline and embedded resource resolution | approved | [sea-executable-build-pipeline-and-embedded-resource-resolution.md](./sea-executable-build-pipeline-and-embedded-resource-resolution.md) |
 | DESIGN-034rBoPPFNHXR5eSfv0hsO | Shell read-candidate extraction and shared large-read verdict | approved | [shell-read-candidate-extraction.md](./shell-read-candidate-extraction.md) |
 | DESIGN-0005kq1c3Wo7rdnwZR8Sp3 | Synchronize distributed cheaper-usage skill and parent-agent integration guide | approved | [synchronize-distributed-skill-and-parent-agent-guide.md](./synchronize-distributed-skill-and-parent-agent-guide.md) |

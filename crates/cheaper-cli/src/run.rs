@@ -53,7 +53,9 @@ use cheaper_tools::operation::{AbortController, AbortListenerId, AbortReason, Ab
 use serde_json::{json, Map, Value};
 
 use crate::args::RunCliArgs;
-use crate::cli::{now, resolve_builtin_dir, BoxError, CliHooks, CliIo, CommandOut, RunCtx};
+use crate::cli::{
+    emit_catalog_warnings, now, resolve_builtin_dir, BoxError, CliHooks, CliIo, CommandOut, RunCtx,
+};
 use crate::envelope::success_envelope;
 use crate::fake_stream::load_test_stream;
 use crate::input::read_task_input;
@@ -402,6 +404,13 @@ pub async fn execute(
     })?;
 
     let runtime = create_runtime(&dirs.user_config_dir, fixture.as_ref())?;
+    // spec Req 4 — catalog error を `run_worker` より先に `warning:`
+    // 行として stderr へ出す(後続の `?` で warning が欠落しない)。
+    emit_catalog_warnings(
+        &runtime.catalog().errors(),
+        &mut |s: &str| io.stderr.write_str(s),
+        args.quiet,
+    );
     let session_factory = session_factory(fixture.as_ref());
 
     // `--model` は常に優先。fake-stream 有効かつ未指定なら fixture の

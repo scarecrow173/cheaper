@@ -13,6 +13,7 @@
 //! base fallback・custom/plugin は provider 自体を drop する。
 
 pub mod bundled;
+pub mod persisted;
 pub mod schema;
 
 use std::collections::BTreeMap;
@@ -173,6 +174,28 @@ pub struct ProviderEntry {
     /// user `modelOverrides` — plugin `refreshModels` で差し替わる
     /// model list にも再適用するため compose 時の値を保持する。
     model_overrides: Option<BTreeMap<String, ModelOverrideJson>>,
+    /// plugin provider の raw user `models[]` defs（refresh 時に同一 merge
+    /// を再実行するため resolved 形ではなく definition のまま保持。
+    /// `model_overrides` と同じ構造）。plugin provider 以外は空。
+    plugin_user_defs: Vec<ModelDefinitionJson>,
+    /// compose 時に `apply_extension` が受け取った pre-extension base list
+    /// （post-overlay builtin base — plugin-only provider では空）。
+    /// `refresh_plugin_models` が `extension_models` を compose と同一の
+    /// defaults pool で再実行するために保持する — 現在の resolved list
+    /// （merge 済み user def・前回 refresh model を含む）を渡すと compose
+    /// 不可能な経路で `baseUrl` が継承され、その def が snapshot 化されると
+    /// 次回 boot の compose が同じ defs で失敗し provider ごと drop する。
+    /// plugin provider 以外は空。
+    extension_base_models: Vec<CatalogModel>,
+    /// merge fallback chain の config 層（`config.api`）。
+    config_api: Option<String>,
+    /// merge fallback chain の config 層（`config.baseUrl`）。
+    config_base_url: Option<String>,
+    /// `register()` が emit した `registration.models` の不変 copy —
+    /// persist guard (c) の比較基準（snapshot 注入の影響を受けない）。
+    /// `auth/service.rs` の `persist_plugin_catalog` が読むため
+    /// `pub(crate)`。plugin provider 以外は空。
+    pub(crate) plugin_bootstrap_defs: Vec<ModelDefinitionJson>,
 }
 
 impl std::fmt::Debug for ProviderEntry {
@@ -190,6 +213,7 @@ impl std::fmt::Debug for ProviderEntry {
             .field("has_plugin_catalog", &self.plugin_catalog.is_some())
             .field("plugin_api", &self.plugin_api)
             .field("models", &self.models.len())
+            .field("extension_base_models", &self.extension_base_models.len())
             .finish()
     }
 }
@@ -405,12 +429,11 @@ fn model_from_json(
     })
 }
 
-/// `applyModelsJson` — builtin/plugin base models + user config overlay。
-fn apply_models_json(
-    provider_id: &str,
-    base_models: &[CatalogModel],
-    config: &ProviderConfigJson,
-) -> Result<Vec<CatalogModel>, String> {
+/// `applyModelsJson` の provider-level 検証 — custom/plugin 両経路で
+/// 同一 semantics（`oauth` ⇒ `baseUrl` 必須・実効 no-op config の拒否）。
+/// plugin provider でも緩めない（error 文字列を経路間で複製しないための
+/// 共有 helper）。
+fn validate_provider_config(provider_id: &str, config: &ProviderConfigJson) -> Result<(), String> {
     if config.oauth.is_some() && config.base_url.is_none() {
         return Err(format!(
             "Provider {provider_id}: \"baseUrl\" is required when \"oauth\" is set."
@@ -435,7 +458,18 @@ fn apply_models_json(
             "Provider {provider_id}: must specify \"baseUrl\", \"headers\", \"compat\", \"modelOverrides\", or \"models\"."
         ));
     }
-    let mut models: Vec<CatalogModel> = base_models
+    Ok(())
+}
+
+/// `applyModelsJson` の base-model overlay — base models への
+/// `baseUrl`/`compat` merge（`{"oauth":"radius"}` の quirk 含む —
+/// radius 宣言 provider は base model の baseUrl を config で上書き
+/// しない）。plugin provider でも同一規則で走らせる共有 helper。
+fn apply_provider_overlay(
+    base_models: &[CatalogModel],
+    config: &ProviderConfigJson,
+) -> Vec<CatalogModel> {
+    base_models
         .iter()
         .map(|m| CatalogModel {
             base_url: if config.oauth.as_deref() == Some("radius") {
@@ -449,7 +483,21 @@ fn apply_models_json(
             compat: merge_compat(&m.compat, &config.compat),
             ..m.clone()
         })
-        .collect();
+        .collect()
+}
+
+/// `applyModelsJson` — builtin/plugin base models + user config overlay。
+/// provider-level 検証と base overlay は `validate_provider_config` /
+/// `apply_provider_overlay` へ集約（plugin provider 経路が検証+overlay
+/// のみを再利用する）。per-def `config.models` 解決は custom 経路では
+/// 従来どおり `?` 伝播で fatal（provider drop）。
+fn apply_models_json(
+    provider_id: &str,
+    base_models: &[CatalogModel],
+    config: &ProviderConfigJson,
+) -> Result<Vec<CatalogModel>, String> {
+    validate_provider_config(provider_id, config)?;
+    let mut models = apply_provider_overlay(base_models, config);
     for definition in config.models.as_deref().unwrap_or(&[]) {
         let existing = models.iter().position(|m| m.id == definition.id);
         let defaults = find_model_defaults(
@@ -473,13 +521,19 @@ fn apply_models_json(
 }
 
 /// `applyExtension` — plugin provider の models/baseUrl を適用する。
-/// `extension.models` がある場合は model list を丸ごと replace する。
+/// extension defs は `persisted`（`catalog.json` snapshot）があればそちらを、
+/// 無ければ `plugin.models`（bootstrap）を使う。effective defs がある
+/// 場合は model list を丸ごと replace する — `plugin.models` が空でも
+/// persisted defs があれば `extension_models` が走り、effective defs が
+/// 空のときのみ従来の baseUrl-override 分岐を踏む。
 fn apply_extension(
     provider_id: &str,
     models: Vec<CatalogModel>,
     plugin: &PluginProviderRegistration,
+    persisted: Option<&[ModelDefinitionJson]>,
 ) -> Result<Vec<CatalogModel>, String> {
-    if plugin.models.is_empty() {
+    let effective = persisted.unwrap_or(&plugin.models);
+    if effective.is_empty() {
         // extension models 無し → baseUrl override のみ。
         if plugin.base_url.is_empty() {
             return Ok(models);
@@ -498,7 +552,7 @@ fn apply_extension(
     // 経由で扱う。
     extension_models(
         provider_id,
-        &plugin.models,
+        effective,
         &plugin.api,
         &plugin.base_url,
         &models,
@@ -583,6 +637,118 @@ fn extension_models(
         .collect()
 }
 
+/// plugin provider の user `models[]` additive merge — compose と
+/// refresh で共有する唯一の merge 実装（DRY）。post-extension list の
+/// id と衝突しない def のみ `model_from_json` で解決して末尾へ追加
+/// する（plugin 定義順 → user 追加順の file 順）。衝突・解決不能は
+/// その def のみ skip + `errors` へ記録し、provider・plugin models は
+/// 残す。`plugin.models` の空否に依らず全 plugin provider で走る。
+///
+/// `fallback_api`/`fallback_base_url` は caller が合成した
+/// `config → plugin` の provider-level fallback。非空 filter はこの
+/// helper 内部の単一 site に閉じ込める — `model_from_json` は
+/// `Some("")` を verbatim 受け入れるため、call site 側で個別に filter
+/// すると compose/refresh で規則が drift する。
+///
+/// 戻り値は model 化に成功した defs（衝突・解決不能で skip された def
+/// は含まない）。`collect_model_header_sources` の user_def headers
+/// source として caller がそのまま渡す — skip された def の `headers`
+/// が残存 model へ混入しないようにするための唯一の判定基準。
+fn merge_user_model_defs<'a>(
+    provider_id: &str,
+    models: &mut Vec<CatalogModel>,
+    user_defs: &'a [ModelDefinitionJson],
+    fallback_api: Option<&str>,
+    fallback_base_url: Option<&str>,
+    errors: &mut Vec<String>,
+) -> Vec<&'a ModelDefinitionJson> {
+    let fallback_api = fallback_api.filter(|s| !s.is_empty());
+    let fallback_base_url = fallback_base_url.filter(|s| !s.is_empty());
+    let mut merged = Vec::new();
+    for definition in user_defs {
+        // 衝突判定は merge 時点の post-extension list 全 id が対象
+        // （plugin def だけでなく builtin base・追加済み user def も含む）。
+        // list 側が authoritative で user def は shadow しない。
+        if models.iter().any(|m| m.id == definition.id) {
+            errors.push(format!(
+                "model {}: user model definition conflicts with an existing model; keeping the existing definition.",
+                definition.id
+            ));
+            continue;
+        }
+        let defaults = find_model_defaults(
+            models,
+            &definition.id,
+            definition.api.as_deref().or(fallback_api),
+        );
+        match model_from_json(
+            provider_id,
+            definition,
+            fallback_api,
+            fallback_base_url,
+            defaults,
+        ) {
+            Ok(model) => {
+                models.push(model);
+                merged.push(definition);
+            }
+            Err(msg) => errors.push(msg),
+        }
+    }
+    merged
+}
+
+/// `rawModelHeaders` 相当の per-model source merge（template 未解決）。
+/// precedence（後勝ち）: modelOverrides.headers < models[].headers
+/// < plugin def headers。compose・refresh の両経路で共有する。
+/// `user_defs` は実際に model 化された defs のみ渡す（plugin 経路は
+/// `merge_user_model_defs` の戻り値、custom/builtin 経路は def error が
+/// fatal のため `config.models` 全件）— id 衝突・解決不能で skip された
+/// def の `headers` が同名の残存 model へ混入しないようにするため。
+/// `plugin_defs` は effective defs（persisted ?? `plugin.models`、
+/// refresh 時は refreshed definitions）を渡す。
+fn collect_model_header_sources(
+    models: &[CatalogModel],
+    overrides: Option<&BTreeMap<String, ModelOverrideJson>>,
+    user_defs: &[&ModelDefinitionJson],
+    plugin_defs: &[ModelDefinitionJson],
+) -> BTreeMap<String, Map<String, Value>> {
+    let mut model_header_sources: BTreeMap<String, Map<String, Value>> = BTreeMap::new();
+    for model in models {
+        let mut merged = Map::new();
+        if let Some(h) = overrides
+            .and_then(|o| o.get(&model.id))
+            .and_then(|o| o.headers.as_ref())
+        {
+            for (k, v) in h {
+                merged.insert(k.clone(), v.clone());
+            }
+        }
+        if let Some(h) = user_defs
+            .iter()
+            .find(|d| d.id == model.id)
+            .and_then(|d| d.headers.as_ref())
+        {
+            for (k, v) in h {
+                merged.insert(k.clone(), v.clone());
+            }
+        }
+        if let Some(h) = plugin_defs
+            .iter()
+            .find(|d| d.id == model.id)
+            .and_then(|d| d.headers.as_ref())
+        {
+            for (k, v) in h {
+                merged.insert(k.clone(), v.clone());
+            }
+        }
+        if !merged.is_empty() {
+            model_header_sources.insert(model.id.clone(), merged);
+        }
+    }
+    model_header_sources
+}
+
 /// provider 単位の compose（`recomposeProvider` + `composeModelProvider`）。
 /// `base_meta`/`base_models` は builtin descriptor + bundled models、
 /// `config` は user models.json entry、`plugin` は plugin registration。
@@ -594,16 +760,73 @@ fn compose_provider(
     base_models: &[CatalogModel],
     config: Option<&ProviderConfigJson>,
     plugin: Option<&PluginProviderRegistration>,
+    persisted: Option<&[ModelDefinitionJson]>,
+    errors: &mut Vec<String>,
 ) -> Result<ProviderEntry, String> {
-    // models 層: applyModelsJson → applyExtension → modelOverrides。
-    let mut models = match config {
-        Some(c) => apply_models_json(provider_id, base_models, c)?,
-        None => base_models.to_vec(),
+    // models 層:
+    //   custom/builtin: applyModelsJson（検証 + overlay + per-def resolve、
+    //     def error は fatal）→ modelOverrides。
+    //   plugin: 検証 + overlay（custom と同一 semantics）→ applyExtension
+    //     （persisted ?? plugin.models）→ merge_user_model_defs（user
+    //     models[] の additive merge — def error は per-def skip + errors
+    //     記録で provider は残す）→ modelOverrides。
+    // `extension_base_models` は `apply_extension` が受け取った
+    // pre-extension list（post-overlay builtin base、plugin-only では空）
+    // — `refresh_plugin_models` が同一 defaults pool で `extension_models`
+    // を再実行できるよう entry へ保持する。
+    // `effective_user_defs` は `collect_model_header_sources` の user_def
+    // headers source — model 化に成功した defs のみ（custom/builtin は
+    // def error が fatal のため `config.models` 全件、plugin は merge
+    // 成功 defs のみ。衝突 skip された def の headers は残存 model に
+    // 混入させない）。
+    let mut extension_base_models: Vec<CatalogModel> = Vec::new();
+    let (mut models, effective_user_defs) = match plugin {
+        Some(p) => {
+            let mut models = match config {
+                Some(c) => {
+                    // provider-level 検証（oauth ⇒ baseUrl・「must
+                    // specify …」）は custom と同一 semantics のまま
+                    // 維持する（緩めない・fatal class を増やさない）。
+                    // per-def `config.models` 解決は merge stage へ defer。
+                    validate_provider_config(provider_id, c)?;
+                    apply_provider_overlay(base_models, c)
+                }
+                None => base_models.to_vec(),
+            };
+            extension_base_models = models.clone();
+            models = apply_extension(provider_id, models, p, persisted)?;
+            let merged = merge_user_model_defs(
+                provider_id,
+                &mut models,
+                config.and_then(|c| c.models.as_deref()).unwrap_or(&[]),
+                config
+                    .and_then(|c| c.api.as_deref())
+                    .or(Some(p.api.as_str())),
+                config
+                    .and_then(|c| c.base_url.as_deref())
+                    .or(Some(p.base_url.as_str())),
+                errors,
+            );
+            (models, merged)
+        }
+        None => {
+            // custom/builtin: `apply_models_json` は def 解決失敗を fatal
+            // (`?`)にするため全 def が model 化される — header source の
+            // 参照先は `config.models` 全件でよい。
+            let models = match config {
+                Some(c) => apply_models_json(provider_id, base_models, c)?,
+                None => base_models.to_vec(),
+            };
+            let user_defs = config
+                .and_then(|c| c.models.as_deref())
+                .unwrap_or(&[])
+                .iter()
+                .collect();
+            (models, user_defs)
+        }
     };
-    if let Some(p) = plugin {
-        models = apply_extension(provider_id, models, p)?;
-    }
-    // modelOverrides は最終層（custom-model upsert・extension replace の後）。
+    // modelOverrides は最終層（custom-model upsert・extension replace・
+    // user def merge の後）。
     if let Some(overrides) = config.and_then(|c| c.model_overrides.as_ref()) {
         for model in &mut models {
             if let Some(ov) = overrides.get(&model.id) {
@@ -613,45 +836,16 @@ fn compose_provider(
     }
 
     // `rawModelHeaders` 相当の per-model source merge（template 未解決）。
-    let mut model_header_sources: BTreeMap<String, Map<String, Value>> = BTreeMap::new();
-    {
-        let overrides = config.and_then(|c| c.model_overrides.as_ref());
-        let defs = config.and_then(|c| c.models.as_deref());
-        for model in &models {
-            let mut merged = Map::new();
-            if let Some(h) = overrides
-                .and_then(|o| o.get(&model.id))
-                .and_then(|o| o.headers.as_ref())
-            {
-                for (k, v) in h {
-                    merged.insert(k.clone(), v.clone());
-                }
-            }
-            if let Some(h) = defs
-                .and_then(|ds| ds.iter().find(|d| d.id == model.id))
-                .and_then(|d| d.headers.as_ref())
-            {
-                for (k, v) in h {
-                    merged.insert(k.clone(), v.clone());
-                }
-            }
-            if let Some(p) = plugin {
-                if let Some(h) = p
-                    .models
-                    .iter()
-                    .find(|d| d.id == model.id)
-                    .and_then(|d| d.headers.as_ref())
-                {
-                    for (k, v) in h {
-                        merged.insert(k.clone(), v.clone());
-                    }
-                }
-            }
-            if !merged.is_empty() {
-                model_header_sources.insert(model.id.clone(), merged);
-            }
-        }
-    }
+    // plugin_defs は effective defs（persisted ?? plugin.models）を渡す —
+    // persisted snapshot 由来の `headers` も request へ届く。
+    let model_header_sources = collect_model_header_sources(
+        &models,
+        config.and_then(|c| c.model_overrides.as_ref()),
+        &effective_user_defs,
+        plugin
+            .map(|p| persisted.unwrap_or(p.models.as_slice()))
+            .unwrap_or(&[]),
+    );
 
     // auth 層（`composeApiKeyAuth`/`composeOAuthAuth` の method 有無判定）。
     // `rawKey = configuredApiKey(config, extension)` = plugin.apiKey ?? config.apiKey。
@@ -760,7 +954,26 @@ fn compose_provider(
         models,
         model_header_sources,
         model_overrides: config.and_then(|c| c.model_overrides.clone()),
+        plugin_user_defs: if plugin.is_some() {
+            config.and_then(|c| c.models.clone()).unwrap_or_default()
+        } else {
+            Vec::new()
+        },
+        extension_base_models,
+        config_api: config.and_then(|c| c.api.clone()),
+        config_base_url: config.and_then(|c| c.base_url.clone()),
+        plugin_bootstrap_defs: plugin.map(|p| p.models.clone()).unwrap_or_default(),
     })
+}
+
+/// plugin login 後の catalog refresh で差し替わる model list と
+/// `rawModelHeaders` source（refresh 時に同じ precedence で再構築した
+/// もの — refreshed defs の `headers` が request へ届くよう models と
+/// 一緒に差し替える）。
+#[derive(Debug)]
+struct RefreshedCatalog {
+    models: Vec<CatalogModel>,
+    model_header_sources: BTreeMap<String, Map<String, Value>>,
 }
 
 /// Model catalog store。bundled + plugin + user models.json を compose した
@@ -777,16 +990,21 @@ pub struct CatalogStore {
     errors: std::sync::Mutex<Vec<String>>,
     /// plugin login 後の catalog refresh で差し替わる model list
     /// （devin `devin models list`）。
-    dynamic_models: std::sync::RwLock<BTreeMap<String, Vec<CatalogModel>>>,
+    dynamic_models: std::sync::RwLock<BTreeMap<String, RefreshedCatalog>>,
 }
 
 impl CatalogStore {
     /// catalog を構築する。`user_models` は `load_models_json` の結果
     /// （parse/schema error は `user_error` で記録）。
+    /// `persisted_plugin_models` は provider id → `<userConfigDir>/
+    /// providers/<id>/catalog.json` から load 済みの defs（envelope 検証
+    /// 済み・`registration.models` は差し替えず別 source として渡す —
+    /// persist guard (c) の比較基準を注入前 bootstrap に固定するため）。
     pub fn build(
         user_models: Option<ModelsJsonFile>,
         user_error: Option<String>,
         plugin_registrations: &[PluginProviderRegistration],
+        persisted_plugin_models: &BTreeMap<String, Vec<ModelDefinitionJson>>,
     ) -> Result<CatalogStore, CheaperError> {
         let mut errors = Vec::new();
         if let Some(e) = user_error {
@@ -831,13 +1049,25 @@ impl CatalogStore {
                     Err(e) => errors.push(format!("Provider \"{id}\": {e}")),
                 }
             }
-            match compose_provider(
+            // merge error は bare message で `compose_errors` に積まれ、
+            // compose 結果の成否に関わらず `Provider "<id>": ` prefix で
+            // errors へ集約する（fatal Err の prefix 規則と同じ）。
+            let mut compose_errors: Vec<String> = Vec::new();
+            let composed = compose_provider(
                 id,
                 meta,
                 &base_models,
                 config_map.get(id.as_str()).copied(),
                 plugin_map.get(id.as_str()).copied(),
-            ) {
+                persisted_plugin_models.get(id).map(Vec::as_slice),
+                &mut compose_errors,
+            );
+            errors.extend(
+                compose_errors
+                    .drain(..)
+                    .map(|msg| format!("Provider \"{id}\": {msg}")),
+            );
+            match composed {
                 Ok(entry) => providers.push(entry),
                 Err(msg) => {
                     // `compositionErrors` — builtin は untouched fallback、
@@ -845,12 +1075,27 @@ impl CatalogStore {
                     errors.push(format!("Provider \"{id}\": {msg}"));
                     if let Some(meta) = meta {
                         // base fallback（overlay 無しの untouched builtin）。
-                        match compose_provider(id, Some(meta), &base_models, None, None) {
+                        // `plugin: None` のため merge は走らないが
+                        // signature を揃え `errors` は同一 vec を共有する。
+                        match compose_provider(
+                            id,
+                            Some(meta),
+                            &base_models,
+                            None,
+                            None,
+                            None,
+                            &mut compose_errors,
+                        ) {
                             Ok(entry) => providers.push(entry),
                             Err(fatal) => {
                                 errors.push(format!("Provider \"{id}\": {fatal}"));
                             }
                         }
+                        errors.extend(
+                            compose_errors
+                                .drain(..)
+                                .map(|msg| format!("Provider \"{id}\": {msg}")),
+                        );
                     }
                 }
             }
@@ -935,26 +1180,47 @@ impl CatalogStore {
     /// があればそれを優先する）。
     fn models_of(&self, entry: &ProviderEntry) -> Vec<CatalogModel> {
         if let Ok(guard) = self.dynamic_models.read() {
-            if let Some(models) = guard.get(&entry.id) {
-                return models.clone();
+            if let Some(refreshed) = guard.get(&entry.id) {
+                return refreshed.models.clone();
             }
         }
         entry.models.clone()
     }
 
+    /// model の request headers merge source — plugin refresh 済みの
+    /// source を優先し、refresh 未実行なら compose 時の
+    /// `entry.model_header_sources` へ fallback する。
+    /// （`ProviderEntry::model_headers` は compose-time source の
+    /// accessor。request header 解決は store accessor を経由させる）
+    pub fn model_headers(&self, provider_id: &str, model_id: &str) -> Option<Map<String, Value>> {
+        if let Ok(guard) = self.dynamic_models.read() {
+            if let Some(refreshed) = guard.get(provider_id) {
+                return refreshed.model_header_sources.get(model_id).cloned();
+            }
+        }
+        self.provider(provider_id)
+            .and_then(|entry| entry.model_headers(model_id))
+    }
+
     /// plugin login 後の catalog refresh（devin `devin models list`）。
-    /// `modelOverrides` は差し替え後の model にも適用する。
-    pub fn replace_plugin_models(&self, provider_id: &str, models: Vec<CatalogModel>) {
+    /// `modelOverrides` は差し替え後の model にも適用する。model list と
+    /// header source は `RefreshedCatalog` として一緒に差し替える。
+    fn replace_plugin_models(&self, provider_id: &str, refreshed: RefreshedCatalog) {
         if let Ok(mut guard) = self.dynamic_models.write() {
-            guard.insert(provider_id.to_string(), models);
+            guard.insert(provider_id.to_string(), refreshed);
         }
     }
 
     /// plugin `refreshModels` の結果（`ModelDefinitionJson` list）を
     /// `applyExtension` と同一規則で resolved `CatalogModel` へ変換し、
-    /// user `modelOverrides` を再適用してから `replace_plugin_models` で
-    /// 反映する(F13)。空 list は bootstrap list 維持として扱う
-    /// （TS `refreshModels` は model 消失を意味しない）。
+    /// compose と同一の `merge_user_model_defs` で user `models[]` を
+    /// re-merge・`model_overrides` を再適用・header source を再構築して
+    /// `replace_plugin_models` で反映する(F13)。空 list は現在の model
+    /// list 維持として扱う（persisted snapshot や前回 refresh の結果を
+    /// 巻き戻さない — TS `refreshModels` は model 消失を意味しない）。
+    /// merge の衝突判定は refresh ごとに再評価される —
+    /// plugin catalog から消えた id の user def は effective になり、
+    /// 復活した id では list 側が優先 + error 記録される。
     pub fn refresh_plugin_models(
         &self,
         provider_id: &str,
@@ -966,13 +1232,39 @@ impl CatalogStore {
         if definitions.is_empty() {
             return Ok(());
         }
+        // defaults pool は compose 時に `apply_extension` が受け取った
+        // pre-extension base list（plugin-only provider では空）を使う —
+        // 現在の resolved list を渡すと merge 済み user def・前回 refresh
+        // model の `baseUrl` が継承され、compose 時は失敗するはずの def
+        // が変換できて snapshot 化される（次回 boot compose が失敗し
+        // provider ごと drop → login 修復不能）のを防ぐため。
         let mut models = extension_models(
             provider_id,
             definitions,
             entry.plugin_api.as_deref().unwrap_or_default(),
             entry.base_url.as_deref().unwrap_or_default(),
-            &self.models_of(entry),
+            &entry.extension_base_models,
         )?;
+        // compose と同一 helper・同一 fallback chain で user `models[]`
+        // merge を再実行。非空 filter は helper 内部の単一 site のため
+        // ここでは `as_deref()` のみで filter しない。戻り値の merged
+        // defs は header source の参照先（skip された def の headers は
+        // 残存 model に混入させない）。
+        let mut merge_errors = Vec::new();
+        let merged_user_defs = merge_user_model_defs(
+            provider_id,
+            &mut models,
+            &entry.plugin_user_defs,
+            entry.config_api.as_deref().or(entry.plugin_api.as_deref()),
+            entry
+                .config_base_url
+                .as_deref()
+                .or(entry.base_url.as_deref()),
+            &mut merge_errors,
+        );
+        for msg in merge_errors {
+            self.record_error(format!("Provider \"{provider_id}\": {msg}"));
+        }
         if let Some(overrides) = &entry.model_overrides {
             for model in &mut models {
                 if let Some(ov) = overrides.get(&model.id) {
@@ -980,7 +1272,19 @@ impl CatalogStore {
                 }
             }
         }
-        self.replace_plugin_models(provider_id, models);
+        let model_header_sources = collect_model_header_sources(
+            &models,
+            entry.model_overrides.as_ref(),
+            &merged_user_defs,
+            definitions,
+        );
+        self.replace_plugin_models(
+            provider_id,
+            RefreshedCatalog {
+                models,
+                model_header_sources,
+            },
+        );
         Ok(())
     }
 

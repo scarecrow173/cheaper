@@ -12,7 +12,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 /// `stripBom` — leading `\u{FEFF}` を除去する。
@@ -342,7 +342,7 @@ fn format_validation_path(error: &jsonschema::ValidationError<'_>) -> String {
 
 // ---- typed model (Pi models.json schema compatible) ----
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ModelInput {
     Text,
@@ -350,7 +350,12 @@ pub enum ModelInput {
 }
 
 /// `thinkingLevelMap`: 7 level → string | null。
-#[derive(Debug, Clone, Default, PartialEq, Deserialize)]
+///
+/// round-trip 注意: level は `Option<Option<String>>` で明示 null
+/// （`Some(None)`）と key 不在（`None`）を区別するが、serialize→load で
+/// `Some(None)` は `None` へ縮退する（accepted limitation — 消費側は
+/// 等価扱い）。
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ThinkingLevelMap {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub off: Option<Option<String>>,
@@ -392,7 +397,7 @@ impl ThinkingLevelMap {
 }
 
 /// cost tier (`ModelCostTierSchema`)。
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModelCostTierJson {
     pub input_tokens_above: f64,
@@ -403,14 +408,14 @@ pub struct ModelCostTierJson {
 }
 
 /// `models[].cost` — 4 rates 必須。
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModelCostJson {
     pub input: f64,
     pub output: f64,
     pub cache_read: f64,
     pub cache_write: f64,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tiers: Option<Vec<ModelCostTierJson>>,
 }
 
@@ -431,33 +436,35 @@ pub struct ModelCostOverrideJson {
 }
 
 /// `providers.*.models[]` (`ModelDefinitionSchema`)。
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+/// plugin catalog snapshot(`catalog/persisted.rs`)へ verbatim 保存する
+/// ため Serialize も持つ — schema 変更は envelope `version` bump を要す。
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModelDefinitionJson {
     pub id: String,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub base_url: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reasoning: Option<bool>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking_level_map: Option<ThinkingLevelMap>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub input: Option<Vec<ModelInput>>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cost: Option<ModelCostJson>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context_window: Option<f64>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_tokens: Option<f64>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sampling_params: Option<Map<String, Value>>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<Map<String, Value>>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compat: Option<Value>,
 }
 

@@ -156,6 +156,7 @@ Directory: `docs/tasks`
 | TASK-034A9yFQqZLtHt5ibjhE1h | Operation execution metrics | done | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | TASK-034r05iHQeQpDqgk8XoZ8E | Parameterize apm e2e fixture by target | done | [parameterize-apm-e2e-fixture-by-target.md](./parameterize-apm-e2e-fixture-by-target.md) |
 | TASK-034r05iHQeQpDqhxabCiHf | Per-target apm install verification e2e | done | [per-target-apm-install-verification-e2e.md](./per-target-apm-install-verification-e2e.md) |
+| TASK-034COkOggSVxC84DkUUem5 | Persist plugin catalog snapshot and merge user models on plugin providers | todo | [persist-plugin-catalog-and-merge-user-models.md](./persist-plugin-catalog-and-merge-user-models.md) |
 | TASK-034BgK4O6Xu8NEvlYtW6lJ | Phase 0: Rig PoC go/no-go gate | done | [phase-0-rig-poc-go-no-go-gate.md](./phase-0-rig-poc-go-no-go-gate.md) |
 | TASK-034BgKiqu2ZlaprN931tnY | Phase 1: port cheaper-core | done | [phase-1-port-cheaper-core.md](./phase-1-port-cheaper-core.md) |
 | TASK-034BgKiZhENYXeNMRvxyFA | Phase 2: port cheaper-tools | done | [phase-2-port-cheaper-tools.md](./phase-2-port-cheaper-tools.md) |

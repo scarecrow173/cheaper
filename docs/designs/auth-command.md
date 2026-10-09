@@ -26,6 +26,7 @@ relations:
   superseded-by: []
   related:
     - "../designs/cli-bundle-layout.md"
+    - "./plugin-catalog-snapshot-persistence-and-user-models-merge.md"
   refines: []
   refined-by: []
   derives-from:

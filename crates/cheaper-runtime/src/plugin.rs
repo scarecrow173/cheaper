@@ -48,6 +48,13 @@ impl ProviderPluginContext {
     pub fn plugin_dir(&self, plugin_id: &str) -> PathBuf {
         self.user_config_dir.join("providers").join(plugin_id)
     }
+
+    /// plugin catalog snapshot — `<userConfigDir>/providers/<id>/catalog.json`。
+    /// runtime 所有（plugin の `plugin_dir` 直下に置くが plugin 自身は
+    /// 読み書きしない。`data/` dir の sibling）。
+    pub fn catalog_path(&self, plugin_id: &str) -> PathBuf {
+        self.plugin_dir(plugin_id).join("catalog.json")
+    }
 }
 
 /// extension の `oauth` 相当（plugin credential/login/logout hook）。

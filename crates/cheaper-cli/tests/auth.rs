@@ -11,9 +11,14 @@ use cheaper_cli::auth::{execute, execute_with, AuthTerminal, TerminalInteraction
 use cheaper_cli::cli::{run_cli, CliHooks, CliIo, CliStdin, CliWrite};
 use cheaper_provider_devin::DevinProviderPlugin;
 use cheaper_runtime::auth::{
-    AuthEvent, AuthInfoLink, AuthInteraction, AuthPrompt, AuthSelectOption, ProviderEnv,
+    AuthEvent, AuthInfoLink, AuthInteraction, AuthPrompt, AuthSelectOption, AuthSource,
+    ProviderEnv, ResolvedAuth,
 };
-use cheaper_runtime::{CheaperProviderPlugin, CredentialStore, Runtime, StoredCredential};
+use cheaper_runtime::catalog::ModelDefinitionJson;
+use cheaper_runtime::{
+    CheaperProviderPlugin, CredentialData, CredentialStore, PluginAuth, PluginCatalog,
+    PluginProviderRegistration, ProviderPluginContext, ProviderRegistry, Runtime, StoredCredential,
+};
 use cheaper_tools::operation::{AbortController, AbortReason, AbortSignal};
 use serde_json::Value;
 
@@ -698,5 +703,297 @@ fn event_rendering_matches_ts() {
     assert_eq!(
         opened.lock().unwrap().as_slice(),
         &["https://auth.example/login?a=1".to_string()]
+    );
+}
+
+// ---------------------------------------------------------------------------
+// catalog error の stderr surfacing(spec Req 4 — `auth` 系は action
+// dispatch 前の early emit + login Ok 後の差分 emit)
+// ---------------------------------------------------------------------------
+
+/// `providers/devin/catalog.json` に malformed snapshot を配置する —
+/// `Runtime::create` の snapshot load error が catalog errors に記録
+/// され `warning:` 行として stderr に出る fixture。
+fn write_malformed_devin_catalog(dir: &std::path::Path) {
+    let provider_dir = dir.join("providers").join("devin");
+    std::fs::create_dir_all(&provider_dir).unwrap();
+    std::fs::write(provider_dir.join("catalog.json"), "{ not json").unwrap();
+}
+
+/// refresh error 注入用の最小 fake plugin — `auth login fake` は
+/// prompt 無しで oauth credential を返し、`refreshModels` は Err を
+/// 返す(post-login 差分 emit の検証用。`run_cli` 非 TTY 経路は対話
+/// prompt 拒否で refresh 到達前に失敗するため `execute_with` +
+/// `ScriptedTerminal` で検証する)。
+struct FailingCatalogPlugin;
+
+impl CheaperProviderPlugin for FailingCatalogPlugin {
+    fn id(&self) -> &str {
+        "fake"
+    }
+    fn register(&self, registry: &mut ProviderRegistry, _ctx: &ProviderPluginContext) {
+        registry.register_provider(PluginProviderRegistration {
+            id: "fake".to_string(),
+            name: "Fake Provider".to_string(),
+            api: "fake-api".to_string(),
+            base_url: "http://fake.local".to_string(),
+            api_key: None,
+            auth_header: None,
+            headers: None,
+            models: vec![
+                serde_json::from_str::<ModelDefinitionJson>(r#"{"id":"fake-1"}"#).unwrap(),
+            ],
+            auth: Some(Arc::new(FakePluginAuth)),
+            subscription: true,
+            catalog: Some(Arc::new(FailingPluginCatalog)),
+        });
+    }
+}
+
+struct FakePluginAuth;
+impl PluginAuth for FakePluginAuth {
+    fn login(
+        &self,
+        _ctx: &ProviderPluginContext,
+        _interaction: &mut dyn AuthInteraction,
+    ) -> Result<StoredCredential, cheaper_core::errors::CheaperError> {
+        Ok(StoredCredential::oauth(CredentialData::Oauth {
+            access: "fake-token".into(),
+            refresh: String::new(),
+            expires: i64::MAX,
+            account_id: None,
+            subscription: None,
+            available_model_ids: None,
+            extra: serde_json::Map::new(),
+        }))
+    }
+    fn to_auth(
+        &self,
+        _ctx: &ProviderPluginContext,
+        _credential: &StoredCredential,
+    ) -> Result<ResolvedAuth, cheaper_core::errors::CheaperError> {
+        Ok(ResolvedAuth {
+            api_key: Some("fake-token".into()),
+            headers: BTreeMap::new(),
+            base_url: None,
+            source: AuthSource::OAuth,
+        })
+    }
+}
+
+struct FailingPluginCatalog;
+impl PluginCatalog for FailingPluginCatalog {
+    fn refresh_models(
+        &self,
+        _ctx: &ProviderPluginContext,
+        _credential: Option<&StoredCredential>,
+    ) -> Result<Option<Vec<ModelDefinitionJson>>, cheaper_core::errors::CheaperError> {
+        Err(cheaper_core::errors::CheaperError::new(
+            cheaper_core::errors::ErrorCode::InternalError,
+            "refresh boom",
+        ))
+    }
+}
+
+fn fake_plugin_runtime(dir: &std::path::Path) -> Runtime {
+    let plugins: Vec<Arc<dyn CheaperProviderPlugin>> = vec![Arc::new(FailingCatalogPlugin)];
+    Runtime::create(
+        dir.to_path_buf(),
+        Arc::new(MapEnv(BTreeMap::new())),
+        &plugins,
+        BTreeMap::new(),
+    )
+    .unwrap()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn status_emits_catalog_warnings_for_malformed_plugin_catalog() {
+    // spec Req 4 — snapshot load error は action dispatch 前の early
+    // emit で stderr の `warning:` 行になる。envelope/exit code 不変。
+    let dir = tmp();
+    write_malformed_devin_catalog(dir.path());
+    let (code, out, err) = run_cli_auth(&["auth", "status"], dir.path(), false).await;
+    assert_eq!(code, 0, "stderr: {err}");
+    let v: Value = serde_json::from_str(out.trim_end()).unwrap();
+    assert_eq!(v["ok"], true);
+    assert_eq!(v["schemaVersion"], serde_json::json!(1));
+    assert!(v["result"]["providers"].is_array());
+    assert!(
+        err.contains("warning: Provider \"devin\":"),
+        "stderr: {err}"
+    );
+    assert!(err.contains("plugin catalog"), "stderr: {err}");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn status_quiet_suppresses_catalog_warnings() {
+    let dir = tmp();
+    write_malformed_devin_catalog(dir.path());
+    let (code, out, err) = run_cli_auth(&["auth", "status", "--quiet"], dir.path(), false).await;
+    assert_eq!(code, 0, "stderr: {err}");
+    let v: Value = serde_json::from_str(out.trim_end()).unwrap();
+    assert_eq!(v["ok"], true);
+    assert!(!err.contains("warning:"), "stderr: {err}");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn status_dropped_provider_emits_warning_and_unknown_provider() {
+    // compose 時に drop された plugin provider への `auth status <id>`
+    // — early emit が action dispatch 前に走るため `warning:` 行と
+    // `unknown provider` の envelope error が併存する。
+    let dir = tmp();
+    // `{"oauth":"radius"}`(baseUrl 無し)→ oauth⇒baseUrl 検証 Err で
+    // devin provider が drop される。
+    std::fs::write(
+        dir.path().join("models.json"),
+        r#"{"providers":{"devin":{"oauth":"radius"}}}"#,
+    )
+    .unwrap();
+    let (code, out, err) = run_cli_auth(&["auth", "status", "devin"], dir.path(), false).await;
+    assert_eq!(code, 2, "stderr: {err}");
+    let v: Value = serde_json::from_str(out.trim_end()).unwrap();
+    assert_eq!(v["ok"], false);
+    assert_eq!(v["error"]["code"], "INVALID_REQUEST");
+    assert_eq!(v["error"]["message"], "unknown provider: devin");
+    // compose error は warning 行として action 失敗の前に emit 済み。
+    assert!(
+        err.contains("warning: Provider \"devin\":"),
+        "stderr: {err}"
+    );
+    assert!(err.contains("baseUrl"), "stderr: {err}");
+    assert!(
+        err.contains("error INVALID_REQUEST: unknown provider: devin"),
+        "stderr: {err}"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn status_execute_with_emits_compose_warnings_via_terminal() {
+    // `execute_with` の early emit は `AuthTerminal::write`(stderr 境界)
+    // 経由で出る — scripted terminal の capture seam で直接 assert する
+    // (sink seam の検証)。
+    let dir = tmp();
+    write_malformed_devin_catalog(dir.path());
+    let runtime = test_runtime(dir.path(), BTreeMap::new());
+    let mut terminal = ScriptedTerminal {
+        tty: false,
+        lines: Default::default(),
+        secrets: Default::default(),
+        out: String::new(),
+    };
+    let signal = AbortSignal::detached();
+    let args = auth_args(AuthAction::Status, None);
+    let out = execute_with(
+        &args,
+        &runtime,
+        &mut terminal,
+        &signal,
+        &no_open,
+        &|| 1_234.0,
+        1_000.0,
+    )
+    .await
+    .unwrap();
+    ok_out(out);
+    assert!(
+        terminal.out.contains("warning: Provider \"devin\":"),
+        "stderr: {:?}",
+        terminal.out
+    );
+    assert!(
+        terminal.out.contains("plugin catalog"),
+        "stderr: {:?}",
+        terminal.out
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn login_emits_post_login_catalog_warnings() {
+    // spec Req 4 — login 中に `refresh_plugin_catalog` が記録した error
+    // は login `Ok` 後の差分 emit で同一 run の stderr へ出る。
+    let dir = tmp();
+    let runtime = fake_plugin_runtime(dir.path());
+    let mut terminal = ScriptedTerminal {
+        tty: true,
+        lines: Default::default(),
+        secrets: Default::default(),
+        out: String::new(),
+    };
+    let signal = AbortSignal::detached();
+    let args = auth_args(AuthAction::Login, Some("fake"));
+    let out = execute_with(
+        &args,
+        &runtime,
+        &mut terminal,
+        &signal,
+        &no_open,
+        &|| 1_234.0,
+        1_000.0,
+    )
+    .await
+    .unwrap();
+    let env = ok_out(out);
+    // envelope `result` shape は不変。
+    assert_eq!(env["schemaVersion"], serde_json::json!(1));
+    assert_eq!(
+        env["result"],
+        serde_json::json!({
+            "provider": "fake",
+            "authenticated": true,
+            "method": "oauth",
+            "subscription": true,
+        })
+    );
+    // refresh error が post-login 差分 emit で warning 行として出る。
+    // compose 時点では error 無し — emit は差分のみ(重複 emit 無し)。
+    assert!(
+        terminal.out.contains("warning: Provider \"fake\":"),
+        "stderr: {:?}",
+        terminal.out
+    );
+    assert!(
+        terminal.out.contains("refreshModels failed"),
+        "stderr: {:?}",
+        terminal.out
+    );
+    assert_eq!(
+        terminal.out.matches("warning:").count(),
+        1,
+        "stderr: {:?}",
+        terminal.out
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn login_quiet_suppresses_post_login_warnings() {
+    let dir = tmp();
+    let runtime = fake_plugin_runtime(dir.path());
+    let mut terminal = ScriptedTerminal {
+        tty: true,
+        lines: Default::default(),
+        secrets: Default::default(),
+        out: String::new(),
+    };
+    let signal = AbortSignal::detached();
+    let args = AuthCliArgs {
+        quiet: true,
+        ..auth_args(AuthAction::Login, Some("fake"))
+    };
+    let out = execute_with(
+        &args,
+        &runtime,
+        &mut terminal,
+        &signal,
+        &no_open,
+        &|| 1_234.0,
+        1_000.0,
+    )
+    .await
+    .unwrap();
+    ok_out(out);
+    assert!(
+        !terminal.out.contains("warning:"),
+        "stderr: {:?}",
+        terminal.out
     );
 }
