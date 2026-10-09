@@ -26,6 +26,7 @@ relations:
   superseded-by: []
   related:
     - "./absorb-provider-oauth-and-api-key-login-into-the-cheaper-cli-cheaper-auth.md"
+    - "./windows-credential-isolation-fallback-via-copy-based-snapshot.md"
   refines: []
   refined-by: []
   derives-from:

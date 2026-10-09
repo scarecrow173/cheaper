@@ -61,6 +61,7 @@ Directory: `docs/adr`
 | ADR-034r05iHrZUE6WljM1ZMiX | delegation 計測は userConfigDir の usage.jsonl への best-effort append とする | accepted | [usage-jsonl-in-user-config-dir-best-effort-append.md](./usage-jsonl-in-user-config-dir-best-effort-append.md) |
 | ADR-034r05iHlWosDpQ6Z1LgJo | 実 provider smoke 検証に Ollama on Docker を使う | accepted | [use-ollama-on-docker-as-real-provider-for-smoke-verification.md](./use-ollama-on-docker-as-real-provider-for-smoke-verification.md) |
 | ADR-034zIOoBXZtluQdBMlJQge | Version pinned launcher acquisition | accepted | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
+| ADR-034D9BG9UKuUaVNeCIKfNo | Windows credential isolation fallback via copy-based snapshot | accepted | [windows-credential-isolation-fallback-via-copy-based-snapshot.md](./windows-credential-isolation-fallback-via-copy-based-snapshot.md) |
 | ADR-034r05iHlWosDpJ3DpG3XW | Worker Definition / Runtime Policy / Runtime Invariants の三層 capability モデル | accepted | [worker-definition-runtime-policy-runtime-invariants-capability.md](./worker-definition-runtime-policy-runtime-invariants-capability.md) |
 | ADR-034r05iHlWosDpIq9VUsl7 | Worker を YAML frontmatter + Markdown の宣言的定義にする | accepted | [worker-yaml-frontmatter-markdown.md](./worker-yaml-frontmatter-markdown.md) |
 | ADR-034zTpAnvDWILMV1LH66Wd | Workflow の既知 resource と safety fallback を分離する | accepted | [workflow-resource-inference-sources.md](./workflow-resource-inference-sources.md) |

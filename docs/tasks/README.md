@@ -78,12 +78,13 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
+| TASK-034Dak56U8haKyVTWPnBKv | Extend PluginAuth::logout with AuthInteraction | todo | [extend-pluginauth-logout-with-authinteraction.md](./extend-pluginauth-logout-with-authinteraction.md) |
 | TASK-034rzRugER0y7cQ2tlWjPp | Extend usage.jsonl run record with savings section | done | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | TASK-034zQsmDSYTqJOZ8CjKrGN | Canonical handlers と Pi adapter を抽出する | done | [extract-canonical-tools.md](./extract-canonical-tools.md) |
 | TASK-034r05iHQeQpDpFFl8q6NC | Extract promptWithAbortGrace helper and apply to main run | done | [extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
 | TASK-034z1PGTvhoaHhdTUgPahz | Extract shared esbuild bundle helper from bundle-cli.mjs | done | [extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md](./extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md) |
 | TASK-034r05iHQeQpDqhWcXGfA0 | Finalize contract matrix and consumer pointer | done | [finalize-contract-matrix-and-consumer-pointer.md](./finalize-contract-matrix-and-consumer-pointer.md) |
-| TASK-034D9bpfd4n0vQJjgXtBzj | Fix volume-root workspace boundary predicate | todo | [fix-volume-root-workspace-boundary-predicate.md](./fix-volume-root-workspace-boundary-predicate.md) |
+| TASK-034D9bpfd4n0vQJjgXtBzj | Fix volume-root workspace boundary predicate | done | [fix-volume-root-workspace-boundary-predicate.md](./fix-volume-root-workspace-boundary-predicate.md) |
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
 | TASK-034r05iHQeQpDqeuofmk64 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [hook-fast-path-and-fail-closed-file-too-large-block.md](./hook-fast-path-and-fail-closed-file-too-large-block.md) |
 | TASK-034r05iHK8bA7h4BqSHmqd | Implement boundary-checked tool operations with atomic writes | done | [implement-boundary-checked-tool-operations-with-atomic-writes.md](./implement-boundary-checked-tool-operations-with-atomic-writes.md) |
@@ -98,6 +99,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gHSXhJFHL | Implement config directory resolution | done | [implement-config-directory-resolution.md](./implement-config-directory-resolution.md) |
 | TASK-034r05iHK8bA7gEdDgIUDn | Implement core error model and exit code table | done | [implement-core-error-model-and-exit-code-table.md](./implement-core-error-model-and-exit-code-table.md) |
 | TASK-034r05iHQeQpDpQjb4veqT | Implement core Token Counter with js-tiktoken | done | [implement-core-token-counter.md](./implement-core-token-counter.md) |
+| TASK-034Dak5Arnf42bv3QpLooy | Implement Devin provider Windows credential snapshot contract | todo | [implement-devin-provider-windows-credential-snapshot-contract.md](./implement-devin-provider-windows-credential-snapshot-contract.md) |
 | TASK-034r05iHK8bA7gFkeCQ9Xu | Implement duration parser | done | [implement-duration-parser.md](./implement-duration-parser.md) |
 | TASK-034r05iHK8bA7hf8fHPk7j | Implement final output extraction and schema validation | done | [implement-final-output-extraction-and-schema-validation.md](./implement-final-output-extraction-and-schema-validation.md) |
 | TASK-034r05iHQeQpDpo8GaLTOj | Implement human-readable text format output | done | [implement-human-readable-text-format-output.md](./implement-human-readable-text-format-output.md) |

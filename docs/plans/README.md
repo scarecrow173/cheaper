@@ -19,6 +19,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1Fbkpd5tkg6Gs | Delegation usage measurement log — implementation plan | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
 | PLAN-034r05iHE1Fbkp5YZSKJM2 | Development APM project / distributable package separation | completed | [dev-apm-and-distributable-package-separation.md](./dev-apm-and-distributable-package-separation.md) |
 | PLAN-034r05iHK8bA7g45xvDT4a | Devin Local provider plugin — implementation plan | completed | [devin-local-provider-plugin-implementation-plan.md](./devin-local-provider-plugin-implementation-plan.md) |
+| PLAN-034Da73SnpZLHkn4oVZu00 | Devin provider Windows credential snapshot sync | draft | [devin-provider-windows-credential-snapshot-sync.md](./devin-provider-windows-credential-snapshot-sync.md) |
 | PLAN-034r05iHE1Fbkp8emdVve6 | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | PLAN-034r6qeRCCYRZy0etnrPfy | inject explicit eval budget into large-fixture grep tests | completed | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | PLAN-034r05iHE1FbkoSqLEHZrV | Harden repair abort grace and provider failure normalization | completed | [harden-repair-abort-grace-and-provider-failure-normalization.md](./harden-repair-abort-grace-and-provider-failure-normalization.md) |
@@ -73,5 +74,5 @@ Directory: `docs/plans`
 | PLAN-034rzPZHq5JFQ3CVZCVLJo | Usage savings telemetry — implementation plan | completed | [usage-savings-telemetry-implementation-plan.md](./usage-savings-telemetry-implementation-plan.md) |
 | PLAN-034r05iHE1FbkpeFEXECDx | User-facing documentation IA — implementation plan | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | PLAN-034r05iHy2gdnpLvJw9CNY | Verify cheaper real-provider path with Ollama on Docker | completed | [verify-cheaper-real-provider-path-with-ollama-on-docker.md](./verify-cheaper-real-provider-path-with-ollama-on-docker.md) |
-| PLAN-034D8SPOCUdlPoQHojlMCb | Volume-root workspace boundary predicate fix | draft | [volume-root-workspace-boundary-predicate-fix.md](./volume-root-workspace-boundary-predicate-fix.md) |
+| PLAN-034D8SPOCUdlPoQHojlMCb | Volume-root workspace boundary predicate fix | approved | [volume-root-workspace-boundary-predicate-fix.md](./volume-root-workspace-boundary-predicate-fix.md) |
 | PLAN-034r05iHE1FbkoYP7AZgHF | Write-scope enforcement and privacy deny list | completed | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |
