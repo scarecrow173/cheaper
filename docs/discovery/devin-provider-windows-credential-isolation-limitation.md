@@ -7,7 +7,8 @@ created: "2026-10-09"
 updated: "2026-10-09"
 owners: []
 relations:
-  source: []
+  source:
+    - "https://github.com/scarecrow173/cheaper/issues/80"
   changes:
     added: []
     modified: []
