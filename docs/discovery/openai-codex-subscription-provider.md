@@ -32,6 +32,7 @@ relations:
     - "../specs/openai-codex-subscription-provider.md"
     - "../adr/openai-codex-subscription-provider-wire-oauth-and-catalog.md"
     - "../designs/openai-codex-subscription-provider.md"
+    - "../plans/implement-openai-codex-subscription-provider.md"
   verifies: []
   verified-by: []
   references: []

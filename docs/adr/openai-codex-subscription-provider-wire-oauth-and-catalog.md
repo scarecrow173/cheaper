@@ -30,6 +30,7 @@ relations:
   derives-from: []
   derived-by:
     - "../designs/openai-codex-subscription-provider.md"
+    - "../plans/implement-openai-codex-subscription-provider.md"
   verifies: []
   verified-by: []
   references: []
