@@ -86,6 +86,15 @@ impl Fixture {
         std::fs::read_to_string(self.cfg.path().join("usage.jsonl")).ok()
     }
 
+    /// `providers/devin/catalog.json` に malformed snapshot を配置する
+    /// — `Runtime::create` の snapshot load error が catalog errors に
+    /// 記録され `warning:` 行として stderr に出る fixture。
+    fn write_malformed_devin_catalog(&self) {
+        let provider_dir = self.cfg.path().join("providers").join("devin");
+        std::fs::create_dir_all(&provider_dir).unwrap();
+        std::fs::write(provider_dir.join("catalog.json"), "{ not json").unwrap();
+    }
+
     fn ws_path(&self) -> PathBuf {
         self.ws.path().to_path_buf()
     }
@@ -325,4 +334,46 @@ async fn run_fake_stream_disabled_without_node_env_test() {
     assert_eq!(env["ok"], json!(false));
     assert_eq!(env["error"]["code"], json!("WORKER_NOT_FOUND"));
     assert_ne!(code, 0);
+}
+
+// ---------------------------------------------------------------------------
+// catalog error の stderr surfacing(spec Req 4)
+// ---------------------------------------------------------------------------
+
+#[tokio::test(flavor = "current_thread")]
+async fn run_emits_catalog_warnings_for_malformed_plugin_catalog() {
+    // spec Req 4 — `run` も catalog error を `warning:` 行として stderr
+    // へ出す(emit は `run_worker` より先)。envelope・exit code 不変。
+    let mut f = Fixture::new()
+        .with_fake_stream(FIXTURE_BASIC)
+        .with_input(r#"{"files":["a.txt"]}"#);
+    f.write_malformed_devin_catalog();
+    let (code, env, err) = f.run(&["run", "fixture-worker"]).await;
+    assert_eq!(code, 0, "stderr: {err}");
+    assert_eq!(env["ok"], json!(true));
+    assert_eq!(env["result"], json!({"ok": true}));
+    assert!(
+        err.contains("warning: Provider \"devin\":"),
+        "stderr: {err}"
+    );
+    assert!(err.contains("plugin catalog"), "stderr: {err}");
+    // 既存の stderr model line は変わらない。
+    assert!(
+        err.contains("model: cheaper-fake/fake-model"),
+        "stderr: {err}"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn run_quiet_suppresses_catalog_warnings() {
+    let mut f = Fixture::new()
+        .with_fake_stream(FIXTURE_BASIC)
+        .with_input(r#"{"files":["a.txt"]}"#);
+    f.write_malformed_devin_catalog();
+    let (code, env, err) = f.run(&["run", "fixture-worker", "--quiet"]).await;
+    assert_eq!(code, 0, "stderr: {err}");
+    assert_eq!(env["ok"], json!(true));
+    // warning・model line ともに抑制される。
+    assert!(!err.contains("warning:"), "stderr: {err}");
+    assert_eq!(err, "");
 }

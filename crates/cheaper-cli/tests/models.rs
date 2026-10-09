@@ -55,6 +55,15 @@ impl Fixture {
         }
     }
 
+    /// `providers/devin/catalog.json` に malformed snapshot を配置する
+    /// — `Runtime::create` の snapshot load error が catalog errors に
+    /// 記録され `warning:` 行として stderr に出る fixture。
+    fn write_malformed_devin_catalog(&self) {
+        let provider_dir = self._cfg.path().join("providers").join("devin");
+        std::fs::create_dir_all(&provider_dir).unwrap();
+        std::fs::write(provider_dir.join("catalog.json"), "{ not json").unwrap();
+    }
+
     async fn run(&mut self, argv: &[&str]) -> (i32, Value, String) {
         let env_map = &self.env_map;
         let env_lookup = move |name: &str| {
@@ -173,4 +182,37 @@ async fn models_worker_not_found_errors() {
     assert_eq!(env["ok"], json!(false));
     assert_eq!(env["error"]["code"], json!("WORKER_NOT_FOUND"));
     assert_ne!(code, 0);
+}
+
+// ---------------------------------------------------------------------------
+// catalog error の stderr surfacing(spec Req 4)
+// ---------------------------------------------------------------------------
+
+#[tokio::test(flavor = "current_thread")]
+async fn models_emits_catalog_warnings_for_malformed_plugin_catalog() {
+    // spec Req 4 — snapshot load error は `warning:` 行として stderr へ
+    // 出る(emit は fallible `get_available` より先)。envelope
+    // `result` shape・`schemaVersion`・exit code は不変。
+    let mut f = Fixture::new();
+    f.write_malformed_devin_catalog();
+    let (code, env, err) = f.run(&["models"]).await;
+    assert_eq!(code, 0, "stderr: {err}");
+    assert_eq!(env["schemaVersion"], json!(1));
+    assert_eq!(env["ok"], json!(true));
+    assert!(env["result"]["models"].is_array());
+    assert!(
+        err.contains("warning: Provider \"devin\":"),
+        "stderr: {err}"
+    );
+    assert!(err.contains("plugin catalog"), "stderr: {err}");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn models_quiet_suppresses_catalog_warnings() {
+    let mut f = Fixture::new();
+    f.write_malformed_devin_catalog();
+    let (code, env, err) = f.run(&["models", "--quiet"]).await;
+    assert_eq!(code, 0, "stderr: {err}");
+    assert_eq!(env["ok"], json!(true));
+    assert!(!err.contains("warning:"), "stderr: {err}");
 }
