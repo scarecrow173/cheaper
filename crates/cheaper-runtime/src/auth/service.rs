@@ -560,10 +560,11 @@ impl AuthService {
         &self,
         catalog: &CatalogStore,
         provider_id: &str,
+        interaction: &mut dyn AuthInteraction,
     ) -> Result<LogoutResult, CheaperError> {
         self.require_provider(catalog, provider_id)?;
         if let Some(hook) = self.logout_hook_for(catalog, provider_id) {
-            hook.logout(&self.ctx)?;
+            hook.logout(&self.ctx, interaction)?;
         }
         self.store.remove(provider_id)?;
         Ok(LogoutResult {
@@ -573,18 +574,22 @@ impl AuthService {
     }
 
     /// `auth logout --all` — 全 credential 削除 + 全 logout hook 起動。
-    pub fn logout_all(&self, catalog: &CatalogStore) -> Result<Vec<LogoutResult>, CheaperError> {
+    pub fn logout_all(
+        &self,
+        catalog: &CatalogStore,
+        interaction: &mut dyn AuthInteraction,
+    ) -> Result<Vec<LogoutResult>, CheaperError> {
         let mut results = Vec::new();
         for entry in catalog.providers() {
             if let Some(hook) = self.logout_hook_for(catalog, &entry.id) {
-                hook.logout(&self.ctx)?;
+                hook.logout(&self.ctx, interaction)?;
             }
         }
         // hook だけ登録されている（provider 未登録の）fake 用。
         for id in self.logout_hooks.keys() {
             if catalog.provider(id).is_none() {
                 if let Some(hook) = self.logout_hooks.get(id) {
-                    hook.logout(&self.ctx)?;
+                    hook.logout(&self.ctx, interaction)?;
                 }
             }
         }

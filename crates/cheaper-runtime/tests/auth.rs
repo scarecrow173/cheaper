@@ -445,11 +445,23 @@ fn logout_removes_credential_and_is_idempotent() {
     svc.credentials()
         .set("openai", StoredCredential::api_key("k".into()))
         .unwrap();
-    let result = svc.logout(&catalog, "openai").unwrap();
+    let result = svc
+        .logout(
+            &catalog,
+            "openai",
+            &mut ScriptedInteraction { answers: vec![] },
+        )
+        .unwrap();
     assert!(result.logged_out);
     assert!(svc.credentials().get("openai").unwrap().is_none());
     // 未登録 credential でも冪等。
-    let result = svc.logout(&catalog, "openai").unwrap();
+    let result = svc
+        .logout(
+            &catalog,
+            "openai",
+            &mut ScriptedInteraction { answers: vec![] },
+        )
+        .unwrap();
     assert!(result.logged_out);
 }
 
@@ -464,7 +476,9 @@ fn logout_all_clears_credentials() {
     svc.credentials()
         .set("anthropic", StoredCredential::api_key("k".into()))
         .unwrap();
-    let results = svc.logout_all(&catalog).unwrap();
+    let results = svc
+        .logout_all(&catalog, &mut ScriptedInteraction { answers: vec![] })
+        .unwrap();
     assert_eq!(results.len(), 2);
     assert!(svc.credentials().all().unwrap().is_empty());
 }

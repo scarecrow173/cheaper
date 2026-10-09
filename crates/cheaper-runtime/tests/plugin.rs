@@ -69,7 +69,11 @@ impl PluginAuth for FakeAuth {
             )),
         }
     }
-    fn logout(&self, _ctx: &ProviderPluginContext) -> Result<(), CheaperError> {
+    fn logout(
+        &self,
+        _ctx: &ProviderPluginContext,
+        _interaction: &mut dyn AuthInteraction,
+    ) -> Result<(), CheaperError> {
         self.logged_out.store(true, Ordering::SeqCst);
         Ok(())
     }
@@ -249,7 +253,10 @@ fn plugin_login_logout_roundtrip() {
         .unwrap();
     assert_eq!(resolved.api_key.as_deref(), Some("fake-token"));
     // logout → plugin hook 起動 + credential 削除。
-    runtime.auth().logout(runtime.catalog(), "fake").unwrap();
+    runtime
+        .auth()
+        .logout(runtime.catalog(), "fake", &mut NoopInteraction)
+        .unwrap();
     assert!(auth.logged_out.load(Ordering::SeqCst));
     assert!(
         !runtime
@@ -684,7 +691,10 @@ fn logout_retains_catalog_snapshot_and_later_runtime_still_injects() {
     let path = catalog_path(&dir);
     assert!(path.exists());
 
-    runtime.auth().logout(runtime.catalog(), "fake").unwrap();
+    runtime
+        .auth()
+        .logout(runtime.catalog(), "fake", &mut NoopInteraction)
+        .unwrap();
     // file は残り、別 process 相当の runtime も persisted model を見る。
     assert!(path.exists());
     let runtime2 = new_runtime(&dir, &plugins);
