@@ -746,9 +746,7 @@ mod tests {
         assert!(!ids.contains(&"gpt-5.4"));
         assert!(!ids.contains(&"gpt-5.4-mini"));
         assert!(models.iter().all(|m| m.provider == "openai-codex"));
-        assert!(models
-            .iter()
-            .all(|m| m.api == "openai-codex-responses"));
+        assert!(models.iter().all(|m| m.api == "openai-codex-responses"));
     }
 
     /// `.manifest.json` の `files["openai-codex.json"]` が埋め込み file

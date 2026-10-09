@@ -601,9 +601,6 @@ pub fn builtin_oauth_flows() -> BTreeMap<String, Arc<dyn OAuthFlow>> {
         "github-copilot".to_string(),
         Arc::new(GitHubCopilotFlow::new()),
     );
-    flows.insert(
-        "openai-codex".to_string(),
-        Arc::new(OpenAiCodexFlow::new()),
-    );
+    flows.insert("openai-codex".to_string(), Arc::new(OpenAiCodexFlow::new()));
     flows
 }

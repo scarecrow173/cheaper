@@ -201,8 +201,8 @@ pub fn builtin_completion_model(
             // access token JWT の claim から拾う(Pi `extractAccountId`
             // 相当)。
             let mut headers = auth.headers.clone();
-            let account_id = take_account_id_header(&mut headers)
-                .or_else(|| extract_account_id(&api_key));
+            let account_id =
+                take_account_id_header(&mut headers).or_else(|| extract_account_id(&api_key));
             if let Some(id) = account_id {
                 config = config.with_account_id(id);
             }
@@ -252,9 +252,7 @@ fn take_account_id_header(headers: &mut BTreeMap<String, String>) -> Option<Stri
         .keys()
         .find(|k| k.eq_ignore_ascii_case("chatgpt-account-id"))
         .cloned()?;
-    headers
-        .remove(&key)
-        .filter(|v| !v.is_empty())
+    headers.remove(&key).filter(|v| !v.is_empty())
 }
 
 /// access token JWT の `https://api.openai.com/auth.chatgpt_account_id`
@@ -361,7 +359,8 @@ mod tests {
     fn codex_model_builds_with_jwt_derived_account_id() {
         // `{"https://api.openai.com/auth":{"chatgpt_account_id":"acc-1"}}`
         // を payload に持つ署名無しの形だけの JWT。
-        let payload = b64url(b"{\"https://api.openai.com/auth\":{\"chatgpt_account_id\":\"acc-1\"}}");
+        let payload =
+            b64url(b"{\"https://api.openai.com/auth\":{\"chatgpt_account_id\":\"acc-1\"}}");
         let token = format!("header.{payload}.sig");
         assert_eq!(extract_account_id(&token).as_deref(), Some("acc-1"));
         let err = builtin_completion_model(&spec(
@@ -454,8 +453,7 @@ mod tests {
 
     /// test 用の base64url encode(padding 無し)。
     fn b64url(bytes: &[u8]) -> String {
-        const T: &[u8; 64] =
-            b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
         let mut out = String::new();
         for chunk in bytes.chunks(3) {
             let n = chunk.len();

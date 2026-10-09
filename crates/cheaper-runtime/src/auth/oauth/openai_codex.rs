@@ -44,8 +44,7 @@ const CLIENT_ID: &str = "app_EMoamEEZ73f0CkXaXp7hrann";
 const AUTHORIZE_URL: &str = "https://auth.openai.com/oauth/authorize";
 const TOKEN_URL: &str = "https://auth.openai.com/oauth/token";
 const REDIRECT_URI: &str = "http://localhost:1455/auth/callback";
-const DEVICE_USERCODE_URL: &str =
-    "https://auth.openai.com/api/accounts/deviceauth/usercode";
+const DEVICE_USERCODE_URL: &str = "https://auth.openai.com/api/accounts/deviceauth/usercode";
 const DEVICE_TOKEN_URL: &str = "https://auth.openai.com/api/accounts/deviceauth/token";
 const DEVICE_VERIFY_URI: &str = "https://auth.openai.com/codex/device";
 const DEVICE_REDIRECT_URI: &str = "https://auth.openai.com/deviceauth/callback";
@@ -167,9 +166,7 @@ fn parse_authorization_input(input: &str) -> Result<ParsedAuthorizationInput, Ch
     if value.contains("code=") {
         let mut code = None;
         let mut state = None;
-        for (k, v) in
-            url::form_urlencoded::parse(value.trim_start_matches('?').as_bytes())
-        {
+        for (k, v) in url::form_urlencoded::parse(value.trim_start_matches('?').as_bytes()) {
             match k.as_ref() {
                 "code" => code = Some(v.into_owned()),
                 "state" => state = Some(v.into_owned()),
@@ -224,10 +221,9 @@ fn evaluate_callback_request(
             CallbackOutcome::NotCallback,
         );
     }
-    let params: BTreeMap<String, String> =
-        url::form_urlencoded::parse(query.as_bytes())
-            .map(|(k, v)| (k.into_owned(), v.into_owned()))
-            .collect();
+    let params: BTreeMap<String, String> = url::form_urlencoded::parse(query.as_bytes())
+        .map(|(k, v)| (k.into_owned(), v.into_owned()))
+        .collect();
     // state は routing guard — 欠落・不一致は fail させず継続する
     // (stray hit/別 session の遅延 redirect で login が死なない)。
     if params.get("state").map(String::as_str) != Some(expected_state) {
@@ -324,8 +320,7 @@ fn handle_callback_connection(
     };
     let request = String::from_utf8_lossy(&buf[..n]);
     let request_line = request.lines().next().unwrap_or_default();
-    let (status, html, outcome) =
-        evaluate_callback_request(request_line, expected_state, settled);
+    let (status, html, outcome) = evaluate_callback_request(request_line, expected_state, settled);
     respond_callback(stream, status, html);
     outcome
 }
@@ -355,17 +350,13 @@ fn wait_for_callback(
             ));
         }
         match listener.accept() {
-            Ok((stream, _)) => {
-                match handle_callback_connection(stream, expected_state, false) {
-                    CallbackOutcome::Code(code) => return Ok(code),
-                    CallbackOutcome::Error(message) => {
-                        return Err(provider_failure(format!(
-                            "OAuth sign-in failed: {message}"
-                        )))
-                    }
-                    _ => {}
+            Ok((stream, _)) => match handle_callback_connection(stream, expected_state, false) {
+                CallbackOutcome::Code(code) => return Ok(code),
+                CallbackOutcome::Error(message) => {
+                    return Err(provider_failure(format!("OAuth sign-in failed: {message}")))
                 }
-            }
+                _ => {}
+            },
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
             Err(_) => {}
         }
@@ -486,9 +477,7 @@ fn credentials_from_token(
         .map(|secs| epoch_ms_now() + (secs * 1000.0) as i64)
         .or_else(|| jwt_expiry_ms(&token.access))
         .ok_or_else(|| {
-            provider_failure(format!(
-                "Token response missing expiry during {context}"
-            ))
+            provider_failure(format!("Token response missing expiry during {context}"))
         })?;
     Ok(StoredCredential::oauth(CredentialData::Oauth {
         access: token.access.clone(),
@@ -668,14 +657,12 @@ impl OpenAiCodexFlow {
                     }
                     // 非 2xx — body の `error` は string または
                     // `{code: string}` object の両形。
-                    let raw: Value =
-                        serde_json::from_slice(&response.body).unwrap_or(Value::Null);
+                    let raw: Value = serde_json::from_slice(&response.body).unwrap_or(Value::Null);
                     let error_code = match raw.get("error") {
                         Some(Value::String(s)) => Some(s.clone()),
-                        Some(Value::Object(o)) => o
-                            .get("code")
-                            .and_then(|v| v.as_str())
-                            .map(String::from),
+                        Some(Value::Object(o)) => {
+                            o.get("code").and_then(|v| v.as_str()).map(String::from)
+                        }
                         _ => None,
                     };
                     match error_code.as_deref() {
@@ -695,8 +682,8 @@ impl OpenAiCodexFlow {
             };
             poll_device_code_flow(&mut options, self.sleeper.as_ref(), cancelled)?
         };
-        let code_verifier = code_verifier
-            .ok_or_else(|| provider_failure("Invalid device token response"))?;
+        let code_verifier =
+            code_verifier.ok_or_else(|| provider_failure("Invalid device token response"))?;
         Ok((authorization_code, code_verifier))
     }
 
@@ -713,8 +700,7 @@ impl OpenAiCodexFlow {
             interval_seconds: Some(device.interval_seconds as u64),
             expires_in_seconds: Some(self.login_timeout.as_secs()),
         })?;
-        let (code, verifier) =
-            self.poll_device_token(&device, &|| interaction.is_cancelled())?;
+        let (code, verifier) = self.poll_device_token(&device, &|| interaction.is_cancelled())?;
         let token =
             exchange_authorization_code(self.http.as_ref(), &code, &verifier, DEVICE_REDIRECT_URI)?;
         credentials_from_token(&token, "device code login")
@@ -746,12 +732,8 @@ impl OpenAiCodexFlow {
                 )?;
                 // settle 後も listener は exchange 完了まで保持し、
                 // backlog 接続へ 409 を返す(post-exchange drain)。
-                let token = exchange_authorization_code(
-                    self.http.as_ref(),
-                    &code,
-                    &verifier,
-                    REDIRECT_URI,
-                );
+                let token =
+                    exchange_authorization_code(self.http.as_ref(), &code, &verifier, REDIRECT_URI);
                 drain_callback_backlog(&listener, &state);
                 drop(listener);
                 return credentials_from_token(&token?, "browser login");
@@ -812,9 +794,7 @@ impl OAuthFlow for OpenAiCodexFlow {
         match method.as_str() {
             "browser" => self.login_browser(interaction),
             "device_code" => self.login_device_code(interaction),
-            _ => Err(provider_failure(format!(
-                "Unknown login method: {method}"
-            ))),
+            _ => Err(provider_failure(format!("Unknown login method: {method}"))),
         }
     }
 
@@ -939,8 +919,9 @@ mod tests {
             match self.steps.lock().unwrap().pop_front() {
                 Some(MockStep::Respond(r)) => Ok(r),
                 Some(MockStep::Blocked(rx, r)) => {
-                    rx.recv()
-                        .map_err(|_| CheaperError::new(ErrorCode::InternalError, "barrier dropped"))?;
+                    rx.recv().map_err(|_| {
+                        CheaperError::new(ErrorCode::InternalError, "barrier dropped")
+                    })?;
                     Ok(r)
                 }
                 None => Err(CheaperError::new(
@@ -984,9 +965,7 @@ mod tests {
     impl ScriptedInteraction {
         fn answering(answers: &[&str]) -> Self {
             Self {
-                answers: Mutex::new(
-                    answers.iter().map(|a| Ok((*a).to_string())).collect(),
-                ),
+                answers: Mutex::new(answers.iter().map(|a| Ok((*a).to_string())).collect()),
                 events: Arc::new(Mutex::new(Vec::new())),
                 cancelled: AtomicBool::new(false),
             }
@@ -1131,9 +1110,7 @@ mod tests {
                 .unwrap();
         assert_eq!(parsed.code, "C");
         assert_eq!(parsed.state.as_deref(), Some("S"));
-        assert!(
-            parse_authorization_input("http://localhost:1455/auth/callback?state=S").is_err()
-        );
+        assert!(parse_authorization_input("http://localhost:1455/auth/callback?state=S").is_err());
         // `a#b` → {a,b};`a#b#c` も {a,b}(split("#",2) parity)。
         let parsed = parse_authorization_input("a#b").unwrap();
         assert_eq!(parsed.code, "a");
@@ -1231,8 +1208,11 @@ mod tests {
             evaluate_callback_request("GET /auth/callback?code=C&state=WRONG HTTP/1.1", "S", false);
         assert_eq!(status, 400);
         assert!(matches!(outcome, CallbackOutcome::StateMismatch));
-        let (status, _, outcome) =
-            evaluate_callback_request("GET /auth/callback?error=access_denied HTTP/1.1", "S", false);
+        let (status, _, outcome) = evaluate_callback_request(
+            "GET /auth/callback?error=access_denied HTTP/1.1",
+            "S",
+            false,
+        );
         assert_eq!(status, 400);
         assert!(matches!(outcome, CallbackOutcome::StateMismatch));
         // settle 済み → 409(state は一致が必要)
@@ -1297,7 +1277,9 @@ mod tests {
         let credential = result.expect("login");
         match credential.data {
             CredentialData::Oauth {
-                refresh, account_id, ..
+                refresh,
+                account_id,
+                ..
             } => {
                 assert_eq!(refresh, "refresh-1");
                 assert_eq!(account_id.as_deref(), Some("acct-1"));
@@ -1324,10 +1306,7 @@ mod tests {
             params.get("response_type").map(String::as_str),
             Some("code")
         );
-        assert_eq!(
-            params.get("client_id").map(String::as_str),
-            Some(CLIENT_ID)
-        );
+        assert_eq!(params.get("client_id").map(String::as_str), Some(CLIENT_ID));
         assert_eq!(
             params.get("redirect_uri").map(String::as_str),
             Some(REDIRECT_URI)
@@ -1340,16 +1319,17 @@ mod tests {
         );
         assert!(params.contains_key("state"));
         assert_eq!(
-            params
-                .get("id_token_add_organizations")
-                .map(String::as_str),
+            params.get("id_token_add_organizations").map(String::as_str),
             Some("true")
         );
         assert_eq!(
             params.get("codex_cli_simplified_flow").map(String::as_str),
             Some("true")
         );
-        assert_eq!(params.get("originator").map(String::as_str), Some("cheaper"));
+        assert_eq!(
+            params.get("originator").map(String::as_str),
+            Some("cheaper")
+        );
         // exchange request は form で code/verifier/redirect_uri を含む。
         let requests = http_for_assert.requests();
         assert_eq!(requests.len(), 1);
@@ -1379,13 +1359,9 @@ mod tests {
             // 非 callback path → 404 で継続。
             assert!(drive_callback(addr, "/favicon.ico").contains("404"));
             // state 不一致 → 400 で継続。
-            assert!(
-                drive_callback(addr, "/auth/callback?code=X&state=WRONG").contains("400")
-            );
+            assert!(drive_callback(addr, "/auth/callback?code=X&state=WRONG").contains("400"));
             // code 欠落 → 400 で継続。
-            assert!(
-                drive_callback(addr, &format!("/auth/callback?state={state}")).contains("400")
-            );
+            assert!(drive_callback(addr, &format!("/auth/callback?state={state}")).contains("400"));
             // valid → settle。
             assert!(
                 drive_callback(addr, &format!("/auth/callback?code=OK&state={state}"))
@@ -1419,11 +1395,7 @@ mod tests {
             .contains("400"));
             handle.join().unwrap().unwrap_err()
         });
-        assert!(
-            err.message().contains("access_denied"),
-            "{}",
-            err.message()
-        );
+        assert!(err.message().contains("access_denied"), "{}", err.message());
     }
 
     #[test]
@@ -1446,8 +1418,7 @@ mod tests {
     fn browser_login_bind_failure_falls_back_to_manual_code() {
         let http = MockHttp::new(vec![MockStep::Respond(json_response(200, token_json()))]);
         let http_for_assert = http.clone();
-        let flow =
-            OpenAiCodexFlow::with_client(http, recording_sleeper(), failing_factory());
+        let flow = OpenAiCodexFlow::with_client(http, recording_sleeper(), failing_factory());
         // bare code — state 照合は skip。
         let mut interaction = ScriptedInteraction::answering(&["browser", "MANUAL_CODE"]);
         let credential = flow
@@ -1466,10 +1437,8 @@ mod tests {
     #[test]
     fn browser_login_manual_state_mismatch_aborts() {
         let http = MockHttp::new(vec![]);
-        let flow =
-            OpenAiCodexFlow::with_client(http, recording_sleeper(), failing_factory());
-        let mut interaction =
-            ScriptedInteraction::answering(&["browser", "some-code#wrong-state"]);
+        let flow = OpenAiCodexFlow::with_client(http, recording_sleeper(), failing_factory());
+        let mut interaction = ScriptedInteraction::answering(&["browser", "some-code#wrong-state"]);
         let err = flow.login(&mut interaction, &flow_ctx()).unwrap_err();
         assert!(err.message().contains("State mismatch"));
     }
@@ -1587,12 +1556,10 @@ mod tests {
         assert_eq!(requests.len(), 4);
         // usercode は JSON body。
         assert_eq!(requests[0].url, DEVICE_USERCODE_URL);
-        let body: Value =
-            serde_json::from_slice(&requests[0].body.clone().unwrap()).unwrap();
+        let body: Value = serde_json::from_slice(&requests[0].body.clone().unwrap()).unwrap();
         assert_eq!(body["client_id"], CLIENT_ID);
         // poll は device_auth_id/user_code を送る。
-        let body: Value =
-            serde_json::from_slice(&requests[1].body.clone().unwrap()).unwrap();
+        let body: Value = serde_json::from_slice(&requests[1].body.clone().unwrap()).unwrap();
         assert_eq!(body["device_auth_id"], "d-1");
         assert_eq!(body["user_code"], "USER-CODE");
         // exchange は DEVICE_REDIRECT_URI + device code_verifier。
@@ -1687,7 +1654,9 @@ mod tests {
             .expect("refresh");
         match credential.data {
             CredentialData::Oauth {
-                refresh, account_id, ..
+                refresh,
+                account_id,
+                ..
             } => {
                 assert_eq!(refresh, "refresh-2");
                 assert_eq!(account_id.as_deref(), Some("acct-2"));
