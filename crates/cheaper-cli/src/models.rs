@@ -24,7 +24,9 @@ use cheaper_runtime::catalog::CatalogModel;
 use serde_json::{json, Map, Value};
 
 use crate::args::ModelsCliArgs;
-use crate::cli::{now, resolve_builtin_dir, BoxError, CliHooks, CliIo, CommandOut};
+use crate::cli::{
+    emit_catalog_warnings, now, resolve_builtin_dir, BoxError, CliHooks, CliIo, CommandOut,
+};
 use crate::envelope::utility_success_envelope;
 
 /// `toModelInfo` 相当 — catalog model を分類/価格層の入力 shape へ。
@@ -76,6 +78,13 @@ pub async fn execute(
     };
 
     let runtime = crate::run::create_runtime(&dirs.user_config_dir, None)?;
+    // spec Req 4 — catalog error を fallible consumer(`get_available`
+    // の `?`)より先に `warning:` 行として stderr へ出す。
+    emit_catalog_warnings(
+        &runtime.catalog().errors(),
+        &mut |s: &str| io.stderr.write_str(s),
+        args.quiet,
+    );
     let available = runtime.get_available(None)?;
 
     let infos: Vec<ModelInfo> = available.iter().map(to_model_info).collect();
