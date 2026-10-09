@@ -43,6 +43,7 @@ pub const SUPPORTED_APIS: &[&str] = &[
     "anthropic-messages",
     "openai-completions",
     "openai-responses",
+    "openai-codex-responses",
 ];
 
 /// cost tier（`ModelCostTier` resolved 形）。
