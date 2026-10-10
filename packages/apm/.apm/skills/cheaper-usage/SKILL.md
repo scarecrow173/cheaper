@@ -41,14 +41,40 @@ one workspace file so you can measure context cost before reading it.
 ## Locating the CLI
 
 - If `cheaper` is on `PATH`, use it directly.
-- In a Windsurf workspace where cheaper was installed via APM, the
-  hook bundle ships a platform launcher plus standalone executables
-  (no Node.js required):
+- In a workspace where cheaper was installed via APM, the hook bundle
+  ships a platform launcher (no Node.js required); a native executable
+  is either already beside it as a sibling or acquired on first run.
+
+  APM deploys hook bundles to `<hooks_root>/<dep-name>/`, where
+  `<dep-name>` is the name the dependency was installed under —
+  the basename for `path:` dependencies, or the last path segment
+  of a virtual package reference. For the canonical install
+  (`scarecrow173/cheaper/packages/apm`) that name is `apm`:
 
   ```bash
-  .windsurf/hooks/cheaper/cheaper <command> [options]          # POSIX
-  pwsh .windsurf/hooks/cheaper/cheaper.ps1 <command> [options] # Windows
+  .windsurf/hooks/apm/cheaper <command> [options]               # POSIX
+  powershell .windsurf/hooks/apm/cheaper.ps1 <command> [options] # Windows
   ```
+
+  Other targets use the same shape under their own root, e.g. copilot:
+  `.github/hooks/scripts/apm/cheaper`. Per-target hook roots:
+
+  | Target | Hook bundle root |
+  |---|---|
+  | Windsurf | `.windsurf/hooks/<dep-name>/` |
+  | Claude Code | `.claude/hooks/<dep-name>/` |
+  | OpenAI Codex | `.codex/hooks/<dep-name>/` |
+  | Cursor | `.cursor/hooks/<dep-name>/` |
+  | GitHub Copilot | `.github/hooks/scripts/<dep-name>/` |
+
+  If you don't know the deployed bundle directory, either read the
+  generated hook config — its `command` entries carry the real path
+  (`.windsurf/hooks.json`, `.claude/settings.json`,
+  `.codex/hooks.json`, `.cursor/hooks.json`, or
+  `.github/hooks/<dep-name>-hooks.json` depending on target, plus
+  `apm-hooks.json` duplicates on some targets; Claude commands may
+  contain a `${CLAUDE_PROJECT_DIR}` placeholder) — or look under
+  the hook root for `cheaper`/`cheaper.ps1`.
 
   The launcher dispatches to `cli/bin/<platform>/cheaper[.exe]`.
   If that sibling is absent on linux-x64, linux-arm64, or win32-x64, it
@@ -68,9 +94,7 @@ one workspace file so you can measure context cost before reading it.
   sibling path — there is no JS fallback. Hook registrations invoke the
   launcher/executable path directly via `cheaper hook
   <event> --target <agent>`.
-  Substitute `cheaper` for the actual hook bundle directory name if the
-  package was installed under a different name. Everywhere below,
-  `cheaper <args>` means either form.
+  Everywhere below, `cheaper <args>` means either form.
 - The large-read hook is functional on these targets (all routed
   through `cheaper hook <event> --target <agent>`; Node.js is not
   required):
