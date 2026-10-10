@@ -46,6 +46,7 @@ Directory: `docs/specs`
 | SPEC-034zWqZR8Dmu9TXTR2qcsg | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |
 | SPEC-034CKp34AcjKtAYjnfjXU4 | Plugin catalog persistence and user model additions | proposed | [plugin-catalog-persistence-and-user-models.md](./plugin-catalog-persistence-and-user-models.md) |
+| SPEC-034DyDAOW1my2ihNQIVNfN | Post-migration structural cleanup scope | draft | [post-migration-structural-cleanup-scope.md](./post-migration-structural-cleanup-scope.md) |
 | SPEC-034r2qodmutbif9L0DLskN | Correct provider and auth documentation to match runtime capabilities | implemented | [provider-auth-docs-runtime-sync.md](./provider-auth-docs-runtime-sync.md) |
 | SPEC-034r05iHK8bA7gz3bFqgXr | Provider-only registration layer without Pi extensions | implemented | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
 | SPEC-034r05iHK8bA7g9KcsCqKj | Repair and abort hardening, telemetry consistency, and test hermeticity | implemented | [repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |

@@ -20,6 +20,7 @@ Directory: `docs/designs`
 | DESIGN-034Dmk2RqH0fMzF3gLrR0T | cargo source install distribution and thin PATH launchers | approved | [cargo-source-install-distribution-and-thin-path-launchers.md](./cargo-source-install-distribution-and-thin-path-launchers.md) |
 | DESIGN-034r05iHrZUE6Wy5X0Hc88 | cheap-writer contract | superseded | [cheap-writer-contract.md](./cheap-writer-contract.md) |
 | DESIGN-034z1EhuztlLSb2x2XXxgD | cheaper hook subcommands replacing Node-based hook adapters | approved | [cheaper-hook-subcommands-replacing-node-based-hook-adapters.md](./cheaper-hook-subcommands-replacing-node-based-hook-adapters.md) |
+| DESIGN-034DkkcOv0Sos8KzcEP3oB | cheaper-usage SKILL.md hook path section rewrite | approved | [cheaper-usage-skill-hook-path-section-rewrite.md](./cheaper-usage-skill-hook-path-section-rewrite.md) |
 | DESIGN-034r05iHy2gdnoH3XDJcXx | cheaper CLI bundle layout inside .apm/hooks/cli | superseded | [cli-bundle-layout.md](./cli-bundle-layout.md) |
 | DESIGN-034r05iHrZUE6WvDuYjZB4 | CLI contract・result/error envelope・exit code | approved | [cli-contract-envelope-exit-codes.md](./cli-contract-envelope-exit-codes.md) |
 | DESIGN-034r05iHy2gdnoUHGunDtE | Copilot pre-read hook adapter | approved | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
@@ -49,6 +50,7 @@ Directory: `docs/designs`
 | DESIGN-034zAKcWuB8SuFkOePsubg | Pi sibling tool-call parallelism inside Workers | approved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DESIGN-034r05iHy2gdnoZAxhwPFa | Pi state paths under userConfigDir/pi | approved | [pi-state-paths-under-userconfigdir-pi.md](./pi-state-paths-under-userconfigdir-pi.md) |
 | DESIGN-034CM9o41G2FjaP5cV125c | Plugin catalog snapshot persistence and user models merge | approved | [plugin-catalog-snapshot-persistence-and-user-models-merge.md](./plugin-catalog-snapshot-persistence-and-user-models-merge.md) |
+| DESIGN-034DyR22wfkjn91McXS5jv | Post-migration structural cleanup reorganization | draft | [post-migration-structural-cleanup-reorganization.md](./post-migration-structural-cleanup-reorganization.md) |
 | DESIGN-034r2qodyo7KRfBsGRJQty | provider/auth guide runtime sync design | approved | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | DESIGN-034r05iHy2gdnp0zOYnFNU | Provider-only registration layer | approved | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
 | DESIGN-034r05iHy2gdnoCKJhKNGD | Repair abort and failure normalization hardening | approved | [repair-abort-and-failure-normalization-hardening.md](./repair-abort-and-failure-normalization-hardening.md) |

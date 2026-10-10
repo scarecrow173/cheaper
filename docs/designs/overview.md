@@ -30,6 +30,7 @@ relations:
     - "pi-sibling-tool-call-parallelism-inside-workers.md"
     - "rust-rig-runtime-migration-architecture.md"
     - "cargo-source-install-distribution-and-thin-path-launchers.md"
+    - "post-migration-structural-cleanup-reorganization.md"
   refines: []
   refined-by: []
   derives-from:
@@ -123,3 +124,7 @@ relations:
 ## Plugin catalog 永続化と user models merge（issue #81・#82）
 
 - [Plugin catalog snapshot persistence and user models merge](./plugin-catalog-snapshot-persistence-and-user-models-merge.md) — plugin live catalog を `<userConfigDir>/providers/<id>/catalog.json` へ永続化し、plugin provider の user `models[]` を additive merge + catalog error stderr surfacing する修正設計。
+
+## Post-migration 構造整理（SPEC-034DyDAOW1my2ihNQIVNfN）
+
+- [Post-migration structural cleanup reorganization](./post-migration-structural-cleanup-reorganization.md) — Rust 移行後の behavior-preserving な構造整理。`cheaper-tools`/`cheaper-runtime` の module 再配置、`js16` core 集約、`js_json` shim 削除、`poc-rig` 撤去、`cheaper-provider-devin` → `cheaper-provider`(`devin` module)rename、`dev-seam` cargo feature による dev/test seam gate の target layout を定義。
