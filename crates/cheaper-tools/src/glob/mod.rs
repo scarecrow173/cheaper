@@ -30,7 +30,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use crate::glob_tables;
+mod tables;
 
 /// `path.posix.matchesGlob` の nocase(`process.platform === 'win32' ||
 /// 'darwin'`)。`nocaseMagicOnly` が true 扱いなので、全 literal
@@ -118,17 +118,17 @@ enum Named {
 
 fn named_table(n: Named) -> &'static [(u32, u32)] {
     match n {
-        Named::Alnum => glob_tables::ALNUM,
-        Named::Alpha => glob_tables::ALPHA,
-        Named::Blank => glob_tables::BLANK,
-        Named::Cntrl => glob_tables::CNTRL,
-        Named::Digit => glob_tables::DIGIT,
-        Named::Lower => glob_tables::LOWER,
-        Named::Print => glob_tables::PRINT,
-        Named::Punct => glob_tables::PUNCT,
-        Named::Space => glob_tables::SPACE,
-        Named::Upper => glob_tables::UPPER,
-        Named::Word => glob_tables::WORD,
+        Named::Alnum => tables::ALNUM,
+        Named::Alpha => tables::ALPHA,
+        Named::Blank => tables::BLANK,
+        Named::Cntrl => tables::CNTRL,
+        Named::Digit => tables::DIGIT,
+        Named::Lower => tables::LOWER,
+        Named::Print => tables::PRINT,
+        Named::Punct => tables::PUNCT,
+        Named::Space => tables::SPACE,
+        Named::Upper => tables::UPPER,
+        Named::Word => tables::WORD,
     }
 }
 
@@ -151,7 +151,7 @@ fn in_named(n: Named, cp: u32) -> bool {
 
 /// `\p{Z}` | `\p{C}`(`[:graph:]` の negated class が参照する集合)。
 fn in_z_or_c(cp: u32) -> bool {
-    in_ranges(glob_tables::GRAPH_NEG, cp)
+    in_ranges(tables::GRAPH_NEG, cp)
 }
 
 fn is_starstar(p: &[u16]) -> bool {

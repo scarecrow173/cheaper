@@ -13,6 +13,9 @@
 //! - `process_operation_declaration` は `crate::scheduler` の
 //!   `OperationDeclaration`/`OperationPool` を返す。
 
+pub mod executable;
+pub mod tree;
+
 use std::collections::HashSet;
 use std::io::Write;
 use std::process::Stdio;
@@ -41,11 +44,11 @@ use tokio::task::JoinHandle;
 use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 
+use self::executable::{resolve_process_executable, ProcessExecutableOptions};
+use self::tree::{create_process_tree, ProcessTree};
 use crate::catalog::{CanonicalToolResult, ToolContent};
 use crate::operation::{AbortController, AbortReason, AbortSignal};
 use crate::scheduler::{OperationDeclaration, OperationPool};
-use crate::tools::process_executable::{resolve_process_executable, ProcessExecutableOptions};
-use crate::tools::process_tree::{create_process_tree, ProcessTree};
 use crate::ToolError;
 
 // ---------------------------------------------------------------------------
