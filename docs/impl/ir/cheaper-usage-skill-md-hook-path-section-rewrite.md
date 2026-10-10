@@ -11,8 +11,7 @@ relations:
     - "https://github.com/scarecrow173/cheaper/issues/87"
   changes:
     added: []
-    modified:
-      - "packages/apm/.apm/skills/cheaper-usage/SKILL.md"
+    modified: []
     deleted: []
     renamed: []
     moved: []
@@ -26,10 +25,13 @@ relations:
   superseded-by: []
   related:
     - "docs/plans/cheaper-usage-skill-hook-path-rewrite.md"
+    - "docs/designs/cheaper-usage-skill-hook-path-section-rewrite.md"
     - "docs/specs/cheaper-usage-skill-hook-path-examples.md"
+    - "docs/adr/document-apm-dep-name-deploy-rule-in-cheaper-usage-skill.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "docs/plans/cheaper-usage-skill-hook-path-rewrite.md"
   derived-by: []
   verifies:
     - "docs/specs/cheaper-usage-skill-hook-path-examples.md"
