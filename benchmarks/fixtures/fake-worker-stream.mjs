@@ -5,7 +5,7 @@
 // は declarative な RunFixture JSON の path を取るため、本 module は
 // benchmark harness 側で fixture JSON を生成し、生成 file の path を
 // `CHEAPER_TEST_FAKE_STREAM` へ載せる。DSL schema は
-// `crates/cheaper-runtime/src/fixture.rs`・`tests/fixtures/*.json` 参照。
+// `crates/cheaper-runtime/src/dev/fixture.rs`・`tests/fixtures/*.json` 参照。
 //
 // 旧 env パラメータとの対応(全て env ではなく generator 引数へ移行):
 // - `CHEAPER_BENCH_RESPONSE_PROFILES` → `sessions[]` を profile 1 件

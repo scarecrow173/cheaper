@@ -44,7 +44,7 @@ CHEAPER_REGRESSION_CAPTURE=1 cargo test -p cheaper-cli --features dev-seam --tes
   "stdin": "…" /* または JSON 値 */,
   "files": { "a.txt": "…" /* または {"repeat": [unit, n]} */ },
   "config": { "usageJsonl": […], "files": {…} },
-  "fixture": { /* RunFixture JSON(crates/cheaper-runtime/src/fixture.rs) */ },
+  "fixture": { /* RunFixture JSON(crates/cheaper-runtime/src/dev/fixture.rs) */ },
   "mode": "envelope" /* または "raw"(byte 完全一致 — hook/version/help 系) */,
   "compareStderr": false,      // true で stderr も path scrub 後に比較
                              // (hook deny は stderr が contract — hook case で opt-in)
