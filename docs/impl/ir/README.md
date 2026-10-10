@@ -42,7 +42,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpusDjHBDw | Separate development APM project from distributable package (PLAN-034r05iHE1Fbkp5YZSKJM2) | completed | [dev-apm-and-distributable-package-separation.md](./dev-apm-and-distributable-package-separation.md) |
 | IMPL-034r05iHy2gdnpG0UOqdhK | Devin Local provider plugin (PLAN-034r05iHK8bA7g45xvDT4a) | completed | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
 | IMPL-034DaJCOheEsDZAq8GWBXw | Devin provider Windows credential snapshot sync | completed | [devin-provider-windows-credential-snapshot-sync.md](./devin-provider-windows-credential-snapshot-sync.md) |
-| IMPL-034DlQMMNbwZ8DSoKZkGNF | devin usage accounting contract pin tests and guide notes | draft | [devin-usage-accounting-contract-pin-tests-and-guide-notes.md](./devin-usage-accounting-contract-pin-tests-and-guide-notes.md) |
+| IMPL-034DlQMMNbwZ8DSoKZkGNF | devin usage accounting contract pin tests and guide notes | completed | [devin-usage-accounting-contract-pin-tests-and-guide-notes.md](./devin-usage-accounting-contract-pin-tests-and-guide-notes.md) |
 | IMPL-03kR39KNEJ13KN9NwesVWy | distributed skill and parent-agent guide sync (PLAN-000004taRcf5XDevo8jYJz) | completed | [distributed-skill-and-parent-agent-guide-sync.md](./distributed-skill-and-parent-agent-guide-sync.md) |
 | IMPL-034z57kKSICF9N4av5oZ0f | docs for executable hook invocation | completed | [docs-for-executable-hook-invocation.md](./docs-for-executable-hook-invocation.md) |
 | IMPL-034zUCrFChJvE5zTGpzwnI | Document and verify one-dispatch release migration | completed | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
