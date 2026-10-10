@@ -1,7 +1,7 @@
 ---
 id: "TASK-034DzYnno038qspspOYHv2"
 type: "task"
-status: "todo"
+status: "done"
 title: "T2: js16 core 集約 (F4)"
 created: "2026-10-10"
 updated: "2026-10-10"

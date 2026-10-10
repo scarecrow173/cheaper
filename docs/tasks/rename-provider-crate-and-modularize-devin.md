@@ -1,7 +1,7 @@
 ---
 id: "TASK-034DzYC8wR9HwNbdMoF8NP"
 type: "task"
-status: "todo"
+status: "done"
 title: "T7: provider crate rename + devin module 化 (F8)"
 created: "2026-10-10"
 updated: "2026-10-10"

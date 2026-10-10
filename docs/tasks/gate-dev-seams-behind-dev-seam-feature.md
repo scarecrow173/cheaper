@@ -1,7 +1,7 @@
 ---
 id: "TASK-034DzYI5SJnPTX6KZeAvYU"
 type: "task"
-status: "todo"
+status: "done"
 title: "T8: dev-seam feature gate (F2)"
 created: "2026-10-10"
 updated: "2026-10-10"

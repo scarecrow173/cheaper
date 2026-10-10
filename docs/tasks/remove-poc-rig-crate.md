@@ -1,7 +1,7 @@
 ---
 id: "TASK-034DzYfbw07gFHdsAguwHp"
 type: "task"
-status: "todo"
+status: "done"
 title: "T4: poc-rig 削除 (F5)"
 created: "2026-10-10"
 updated: "2026-10-10"

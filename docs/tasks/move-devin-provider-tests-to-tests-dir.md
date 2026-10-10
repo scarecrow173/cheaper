@@ -1,7 +1,7 @@
 ---
 id: "TASK-034DzYjQDNWcel1Oqxnlia"
 type: "task"
-status: "todo"
+status: "done"
 title: "T3: provider test 移動 (F7)"
 created: "2026-10-10"
 updated: "2026-10-10"

@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034DzTH1ljq4pSfIHyGwVs"
 type: "test-spec"
-status: "draft"
+status: "approved"
 title: "dev-seam feature の build-mode contract"
 created: "2026-10-10"
 updated: "2026-10-10"

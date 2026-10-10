@@ -1,7 +1,7 @@
 ---
 id: "TASK-034DzYxGyUC8loD0ruTCQN"
 type: "task"
-status: "todo"
+status: "done"
 title: "T6: cheaper-runtime 内部再配置 (F6)"
 created: "2026-10-10"
 updated: "2026-10-10"

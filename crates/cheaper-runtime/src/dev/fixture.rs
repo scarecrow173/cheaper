@@ -70,12 +70,12 @@ use serde::de::IgnoredAny;
 use serde::Deserialize;
 use serde_json::{Map, Value};
 
+use super::fake_provider::{
+    CheaperFakePlugin, FakeResponse, FakeSessionFactory, ScriptStep, ScriptedSession, ToolCallSpec,
+};
 use crate::auth::api_key::ProviderEnv;
 use crate::auth::service::{AuthInteraction, AuthPrompt};
 use crate::catalog::schema::{ModelCostJson, ModelDefinitionJson};
-use crate::fake_provider::{
-    CheaperFakePlugin, FakeResponse, FakeSessionFactory, ScriptStep, ScriptedSession, ToolCallSpec,
-};
 
 // ---------------------------------------------------------------------------
 // fixture file root

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034DzYbfe9r0G8Nd58FQjy"
 type: "task"
-status: "todo"
+status: "done"
 title: "T1: js_json shim 削除 (F3)"
 created: "2026-10-10"
 updated: "2026-10-10"

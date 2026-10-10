@@ -1,7 +1,7 @@
 ---
 id: "TASK-034DzYs0gJRVZ5JJfKAIAn"
 type: "task"
-status: "todo"
+status: "done"
 title: "T5: cheaper-tools 内部再配置 (F1)"
 created: "2026-10-10"
 updated: "2026-10-10"

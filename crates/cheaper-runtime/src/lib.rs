@@ -82,8 +82,8 @@ pub use dev::fake_provider::{
 };
 #[cfg(feature = "dev-seam")]
 pub use dev::fixture::{
-    default_policy as fixture_default_policy, ExpectedStatus, FixtureExpect, FixtureMetaExpect,
-    FixtureStep, RunFixture, ScriptedAuthInteraction,
+    default_policy, ExpectedStatus, FixtureExpect, FixtureMetaExpect, FixtureStep, RunFixture,
+    ScriptedAuthInteraction,
 };
 pub use run::abort::{RunAbort, RunAbortReason};
 pub use run::error::{PartialRunMeta, WorkerRunError};

@@ -28,7 +28,11 @@ Git LFS の既存履歴は保持する。consumer の前提・install 手順は
 version/doc-id check → `cargo test --workspace` → `node --test`（scripts・
 benchmarks）→ committed lockfile check（`node scripts/check-lockfile.mjs`）→
 slim payload check（`node scripts/check-apm-payload.mjs`）の Rust pipeline。
-コマンド実行は `mise exec -- <command>` 経由で
+setup/check 内の build・clippy・test 系 cargo コマンドは
+`--features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` を付けて実行する
+（dev/test seam は `dev-seam` cargo feature でのみ compile 対象であり、
+feature 無しでは seam 依存 test target が検証から抜け落ちる —
+ADR-034DyGyITd0YaATg8fkld7）。コマンド実行は `mise exec -- <command>` 経由で
 行い、mise.toml が管理するツールバージョンを有効化する。
 
 fresh worktree では `target/`・`apm_modules`・APM deploy 生成物が
