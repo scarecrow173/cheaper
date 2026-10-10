@@ -78,7 +78,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
-| TASK-034Dak56U8haKyVTWPnBKv | Extend PluginAuth::logout with AuthInteraction | todo | [extend-pluginauth-logout-with-authinteraction.md](./extend-pluginauth-logout-with-authinteraction.md) |
+| TASK-034Dak56U8haKyVTWPnBKv | Extend PluginAuth::logout with AuthInteraction | done | [extend-pluginauth-logout-with-authinteraction.md](./extend-pluginauth-logout-with-authinteraction.md) |
 | TASK-034rzRugER0y7cQ2tlWjPp | Extend usage.jsonl run record with savings section | done | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | TASK-034zQsmDSYTqJOZ8CjKrGN | Canonical handlers と Pi adapter を抽出する | done | [extract-canonical-tools.md](./extract-canonical-tools.md) |
 | TASK-034r05iHQeQpDpFFl8q6NC | Extract promptWithAbortGrace helper and apply to main run | done | [extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
@@ -99,7 +99,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gHSXhJFHL | Implement config directory resolution | done | [implement-config-directory-resolution.md](./implement-config-directory-resolution.md) |
 | TASK-034r05iHK8bA7gEdDgIUDn | Implement core error model and exit code table | done | [implement-core-error-model-and-exit-code-table.md](./implement-core-error-model-and-exit-code-table.md) |
 | TASK-034r05iHQeQpDpQjb4veqT | Implement core Token Counter with js-tiktoken | done | [implement-core-token-counter.md](./implement-core-token-counter.md) |
-| TASK-034Dak5Arnf42bv3QpLooy | Implement Devin provider Windows credential snapshot contract | todo | [implement-devin-provider-windows-credential-snapshot-contract.md](./implement-devin-provider-windows-credential-snapshot-contract.md) |
+| TASK-034Dak5Arnf42bv3QpLooy | Implement Devin provider Windows credential snapshot contract | done | [implement-devin-provider-windows-credential-snapshot-contract.md](./implement-devin-provider-windows-credential-snapshot-contract.md) |
 | TASK-034r05iHK8bA7gFkeCQ9Xu | Implement duration parser | done | [implement-duration-parser.md](./implement-duration-parser.md) |
 | TASK-034r05iHK8bA7hf8fHPk7j | Implement final output extraction and schema validation | done | [implement-final-output-extraction-and-schema-validation.md](./implement-final-output-extraction-and-schema-validation.md) |
 | TASK-034r05iHQeQpDpo8GaLTOj | Implement human-readable text format output | done | [implement-human-readable-text-format-output.md](./implement-human-readable-text-format-output.md) |
@@ -175,6 +175,7 @@ Directory: `docs/tasks`
 | TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |
 | TASK-034r05iHQeQpDqsCIiTDOz | Repoint bundle pipeline and CI freshness check to packages/apm | done | [repoint-bundle-pipeline-and-ci-freshness.md](./repoint-bundle-pipeline-and-ci-freshness.md) |
 | TASK-034r05iHQeQpDqOOFD90gZ | Restructure README, create docs index, and run final verification | done | [restructure-readme-docs-index-and-final-verification.md](./restructure-readme-docs-index-and-final-verification.md) |
+| TASK-034DkRYMmhq7VdzfD1NcT8 | Rewrite cheaper-usage SKILL.md hook path section | done | [rewrite-cheaper-usage-skill-hook-path-section.md](./rewrite-cheaper-usage-skill-hook-path-section.md) |
 | TASK-034r05iHQeQpDpDygNnvfq | Run bulk-read and cheap-write smoke against Ollama | done | [run-bulk-read-and-cheap-write-smoke-against-ollama.md](./run-bulk-read-and-cheap-write-smoke-against-ollama.md) |
 | TASK-034zBJcexygQMw7L8WTUYL | Run canonical verification and close out issue #55 implementation | done | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
 | TASK-034r05iHQeQpDpyBKGfmKB | Run document status audit | done | [run-document-status-audit.md](./run-document-status-audit.md) |

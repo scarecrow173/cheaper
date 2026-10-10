@@ -13,13 +13,14 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1Fbkp4xxlyMdV | Injectable auth URL opener seam for hermetic tests | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
 | PLAN-034r05iHE1Fbkp3qMZZB17 | Bulk-reader huge-file safe I/O | completed | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | PLAN-034r05iHE1FbkoVrzp9sac | Implement canonical Token Counter, count_tokens tool, and count-tokens CLI | completed | [canonical-token-counter.md](./canonical-token-counter.md) |
+| PLAN-034DkvfCVX1pOlAvC2zGX2 | cheaper-usage SKILL.md hook path section rewrite | approved | [cheaper-usage-skill-hook-path-rewrite.md](./cheaper-usage-skill-hook-path-rewrite.md) |
 | PLAN-034r05iHE1FbkpaEpZrthK | Copilot pre-read hook adapter — implementation plan | completed | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | PLAN-034r05iHE1Fbkp2TZ2Z666 | Cross-agent distribution verification | completed | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
 | PLAN-034rAaIojIXLbCI0pJGpYg | Cross-agent native routing adapters implementation | approved | [cross-agent-native-routing-adapters-implementation.md](./cross-agent-native-routing-adapters-implementation.md) |
 | PLAN-034r05iHE1Fbkpd5tkg6Gs | Delegation usage measurement log — implementation plan | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
 | PLAN-034r05iHE1Fbkp5YZSKJM2 | Development APM project / distributable package separation | completed | [dev-apm-and-distributable-package-separation.md](./dev-apm-and-distributable-package-separation.md) |
 | PLAN-034r05iHK8bA7g45xvDT4a | Devin Local provider plugin — implementation plan | completed | [devin-local-provider-plugin-implementation-plan.md](./devin-local-provider-plugin-implementation-plan.md) |
-| PLAN-034Da73SnpZLHkn4oVZu00 | Devin provider Windows credential snapshot sync | draft | [devin-provider-windows-credential-snapshot-sync.md](./devin-provider-windows-credential-snapshot-sync.md) |
+| PLAN-034Da73SnpZLHkn4oVZu00 | Devin provider Windows credential snapshot sync | approved | [devin-provider-windows-credential-snapshot-sync.md](./devin-provider-windows-credential-snapshot-sync.md) |
 | PLAN-034r05iHE1Fbkp8emdVve6 | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | PLAN-034r6qeRCCYRZy0etnrPfy | inject explicit eval budget into large-fixture grep tests | completed | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | PLAN-034r05iHE1FbkoSqLEHZrV | Harden repair abort grace and provider failure normalization | completed | [harden-repair-abort-grace-and-provider-failure-normalization.md](./harden-repair-abort-grace-and-provider-failure-normalization.md) |
