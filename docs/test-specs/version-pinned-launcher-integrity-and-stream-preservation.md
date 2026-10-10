@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034zQTnsUJl3pXIuYsvZIQ"
 type: "test-spec"
-status: "draft"
+status: "superseded"
 title: "Version-pinned launcher integrity and stream preservation"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -20,7 +20,7 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["TSPEC-034DmUtUjWCThCnJulok0c"]
   related: []
   refines: []
   refined-by: []

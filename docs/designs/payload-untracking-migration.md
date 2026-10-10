@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034zWr0ZeceJCJaL3ZRK3H"
 type: "design"
-status: "approved"
+status: "superseded"
 title: "Payload untracking migration"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -20,7 +20,7 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["docs/designs/cargo-source-install-distribution-and-thin-path-launchers.md"]
   related: []
   refines: []
   refined-by: []

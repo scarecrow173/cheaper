@@ -1,7 +1,7 @@
 ---
 id: "ADR-034CpwNUNIDqrR92x7VaUR"
 type: "adr"
-status: "accepted"
+status: "superseded"
 title: "Remove the committed esbuild CLI payload and move the canonical version to Cargo.toml"
 created: "2026-10-08"
 updated: "2026-10-08"
@@ -27,7 +27,7 @@ relations:
   supersedes:
     - "distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"
     - "cli-package-json-as-canonical-version-with-check-enforcement.md"
-  superseded-by: []
+  superseded-by: ["docs/adr/distribute-cli-via-cargo-source-install-and-thin-path-launchers.md"]
   related:
     - "version-pinned-launcher-acquisition.md"
     - "payload-untracking-migration.md"

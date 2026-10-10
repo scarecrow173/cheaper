@@ -72,6 +72,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDq49V3Gwah | Delegation loop e2e (pre_read_code block to bundled bulk-read) | done | [delegation-loop-e2e.md](./delegation-loop-e2e.md) |
 | TASK-034r05iHWkNF7zPe6DL42d | Devin provider docs, status sync, bundle, and final verification | done | [devin-docs-status-sync-bundle-and-final-verification.md](./devin-docs-status-sync-bundle-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNWvK4AnL | Devin provider plugin registration and tests | done | [devin-provider-plugin-registration-and-tests.md](./devin-provider-plugin-registration-and-tests.md) |
+| TASK-034DmVRCxSEu4CdutLtxfM | docs and cheaper-usage skill rewrite for cargo source install | done | [docs-and-cheaper-usage-skill-rewrite-for-cargo-source-install.md](./docs-and-cheaper-usage-skill-rewrite-for-cargo-source-install.md) |
 | TASK-034r05iHWkNF7zLmXY8W9D | Update docs, regenerate bundle, and run final verification | done | [docs-status-sync-bundle-and-final-verification.md](./docs-status-sync-bundle-and-final-verification.md) |
 | TASK-034zTWjm1NjME6ZzgLXNF7 | Document and verify one-dispatch release migration | done | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
 | TASK-034DlFJnTT9v0YcqV9Uine | Document devin usage semantics in providers and usage guides | done | [document-devin-usage-semantics-in-providers-and-usage-guides.md](./document-devin-usage-semantics-in-providers-and-usage-guides.md) |
@@ -193,10 +194,12 @@ Directory: `docs/tasks`
 | TASK-034rBt3LLoIUcFHjk4gRlI | Shell-read blocking contract tests | done | [shell-read-contract-tests.md](./shell-read-contract-tests.md) |
 | TASK-034rBt4e20Wrlc3FH3NQWd | Shell-read docs and final verification | done | [shell-read-docs-and-final-verification.md](./shell-read-docs-and-final-verification.md) |
 | TASK-034r05iHQeQpDqJ0Qc4762 | Verify skip path, document e2e in AGENTS.md, sync statuses, final verification | done | [skip-path-docs-and-final-verification.md](./skip-path-docs-and-final-verification.md) |
+| TASK-034DmVR8wrCmjvk2D3gXFq | slim payload acquisition machinery removal and check rewiring | done | [slim-payload-acquisition-machinery-removal-and-check-rewiring.md](./slim-payload-acquisition-machinery-removal-and-check-rewiring.md) |
 | TASK-034r05iHQeQpDpB3QaYlPY | Start Ollama container and pull qwen3.5 quantized model | done | [start-ollama-container-and-pull-qwen3-5-quantized-model.md](./start-ollama-container-and-pull-qwen3-5-quantized-model.md) |
 | TASK-034r05iHQeQpDqlvQrRhaE | Streaming grep with batch protocol and bounded footer | done | [streaming-grep-batch-protocol-and-bounded-footer.md](./streaming-grep-batch-protocol-and-bounded-footer.md) |
 | TASK-06WDQr0NHYErusR6Cmye43 | Sync cheaper-usage SKILL.md with current CLI and hook surface | done | [sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md](./sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md) |
 | TASK-034r2qodyq0oWVUNGquMgr | Sync providers.md guide with runtime auth surface | done | [sync-providers-guide-with-runtime-auth-surface.md](./sync-providers-guide-with-runtime-auth-surface.md) |
+| TASK-034DmVQG3C2W8kElIVtwPN | thin launchers rename rewrite and hooks.json references | done | [thin-launchers-rename-rewrite-and-hooks-json-references.md](./thin-launchers-rename-rewrite-and-hooks-json-references.md) |
 | TASK-034r05iHQeQpDpUao5Hjj3 | Token counter CLI/tool parity tests and full verification | done | [token-counter-parity-and-verification.md](./token-counter-parity-and-verification.md) |
 | TASK-034z3zPzG5T5Q8QpwsaoTJ | Track APM executables with Git LFS and keep freshness check valid | done | [track-apm-executables-with-git-lfs-and-keep-freshness-check-valid.md](./track-apm-executables-with-git-lfs-and-keep-freshness-check-valid.md) |
 | TASK-034z1PNNPwye2uvwy1eAG8 | Unify packageVersion resolution on builtinDir | done | [unify-packageversion-resolution-on-builtindir.md](./unify-packageversion-resolution-on-builtindir.md) |
@@ -214,6 +217,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqvqdt4mXS | Update README/AGENTS for dev/distribution split and run final verification | done | [update-readme-agents-and-final-verification.md](./update-readme-agents-and-final-verification.md) |
 | TASK-034r05iHQeQpDpMem6J7OE | Update README and add provider setup guide | done | [update-readme-and-add-provider-setup-guide.md](./update-readme-and-add-provider-setup-guide.md) |
 | TASK-034z2pbpAynIVRedenPgXa | Update release guide for manual SEA release workflow | done | [update-release-guide-for-manual-sea-release-workflow.md](./update-release-guide-for-manual-sea-release-workflow.md) |
+| TASK-034DmVS8k50GMCHNnui6Wb | upstream doc reconciliation and final verification | done | [upstream-doc-reconciliation-and-final-verification.md](./upstream-doc-reconciliation-and-final-verification.md) |
 | TASK-034r05iHQeQpDqKGWioCow | Usage-log e2e assertions, docs, bundle regen, status sync, final verification | done | [usage-log-e2e-docs-and-final-verification.md](./usage-log-e2e-docs-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |

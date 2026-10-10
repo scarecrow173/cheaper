@@ -4,12 +4,13 @@ type: "design"
 status: "approved"
 title: "cheaper hook subcommands replacing Node-based hook adapters"
 created: "2026-10-02"
-updated: "2026-10-02"
+updated: "2026-10-10"
 owners: ["scarecrow173"]
 relations:
   source:
     - "../specs/standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md"
     - "../adr/distribute-cheaper-as-node-26-sea-standalone-executables-shared-by-direct-releas.md"
+    - "../adr/distribute-cli-via-cargo-source-install-and-thin-path-launchers.md"
   changes:
     added: []
     modified: []
@@ -48,6 +49,16 @@ relations:
 ---
 
 # cheaper hook subcommands replacing Node-based hook adapters
+
+> **Superseded clauses (issue #85 / ADR-034Dmb3kNAO4Ub6FxuQCtC)**:
+> `cheaper hook <event> --target <agent>` subcommand の core 決定は
+> 存続するが、以下の配布配线条項は撤去済み — POSIX `command` の
+> `./cheaper`（現行は `sh ./cheaper.sh`）、`powershell` key による
+> `cli/bin/win32-x64/cheaper.exe` 直接起動（現行は `./cheaper.ps1`
+> 経由の PATH 解決）、sibling executable・LFS pointer 検出・未同梱
+> platform の launcher 失敗に関する記述。現行 launcher は PATH 上の
+> cargo install 済み CLI を解決する thin wrapper で、`cli/` payload・
+> sibling binary は存在しない。
 
 ## Context
 

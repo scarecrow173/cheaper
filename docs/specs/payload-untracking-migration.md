@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034zWqZR8Dmu9TXTR2qcsg"
 type: "spec"
-status: "implemented"
+status: "superseded"
 title: "Payload untracking migration"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -20,7 +20,7 @@ relations:
   depends-on: []
   blocks: []
   supersedes: ["SPEC-034z14nGIf6fXRtTskkrk8"]
-  superseded-by: []
+  superseded-by: ["SPEC-034Dmb2S8y3tdJI8WdKhG0"]
   related: []
   refines: []
   refined-by: []

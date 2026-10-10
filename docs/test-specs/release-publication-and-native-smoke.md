@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034zTWhBVg6DzifF8qlhAc"
 type: "test-spec"
-status: "proposed"
+status: "superseded"
 title: "Release publication and native smoke"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -13,7 +13,7 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["TSPEC-034DmUtUjWCThCnJulok0c"]
   related: []
   refines: []
   refined-by: []

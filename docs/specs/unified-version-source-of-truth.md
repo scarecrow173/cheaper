@@ -4,11 +4,12 @@ type: "spec"
 status: "implemented"
 title: "Unified version and release source of truth"
 created: "2026-09-18"
-updated: "2026-09-18"
+updated: "2026-10-10"
 owners: ["scarecrow173"]
 relations:
   source:
     - "https://github.com/scarecrow173/cheaper/issues/11"
+    - "https://github.com/scarecrow173/cheaper/issues/85"
   changes:
     added: []
     modified: []
@@ -44,6 +45,13 @@ metadata:
 ---
 
 # Unified version and release source of truth
+
+> **Superseded clauses (issue #85 / ADR-034Dmb3kNAO4Ub6FxuQCtC)**:
+> `cli/version.json` の bundled version 宣言・bundle 再生成に関する条項
+> は撤去済み。canonical source（`Cargo.toml` `[workspace.package]`）・
+> `apm.yml` 一致・`--version` 埋込・不一致検出 check の core 契約は
+> 存続する。bundle `version.json` を参照する条項（Requirements 2・
+> Acceptance Criteria・Sources）は歴史的記録として残す。
 
 ## What Should Be Built
 

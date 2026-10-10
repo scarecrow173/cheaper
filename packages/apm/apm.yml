@@ -1,4 +1,4 @@
 name: cheaper
 version: "1.0.0"
-description: Parent-agent delegation primitives for cheaper (skills, pre_read_code hook, bundled CLI)
+description: Parent-agent delegation primitives for cheaper (skills, pre_read_code hook, thin PATH launchers)
 author: scarecrow173

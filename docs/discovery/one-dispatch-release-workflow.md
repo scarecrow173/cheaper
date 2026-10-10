@@ -36,7 +36,6 @@ relations:
   verified-by: []
   references:
     - "../designs/version-pinned-launcher-acquisition.md"
-    - "../../scripts/test/launcher-acquisition.test.mjs"
   defers: []
   deferred-by: []
 ---

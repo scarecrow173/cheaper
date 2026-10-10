@@ -132,19 +132,3 @@ export function nodeFreePath(root) {
   }
   return directory;
 }
-
-// launcher 経由で取得する実 binary — SEA fixture builder は Phase 6 で撤去
-// 済みのため、cargo build 出力(target/release 優先、debug fallback)を使う。
-// どちらも無ければ null(binary-dependent test は skip)。
-export function cargoBinary() {
-  for (const profile of ["release", "debug"]) {
-    const p = path.join(
-      repoRoot,
-      "target",
-      profile,
-      process.platform === "win32" ? "cheaper.exe" : "cheaper",
-    );
-    if (existsSync(p)) return p;
-  }
-  return null;
-}

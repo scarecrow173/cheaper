@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034z2o64UhWCtNmYIhRT20"
 type: "test-spec"
-status: "proposed"
+status: "superseded"
 title: "Release workflow manual-dispatch and artifact contract"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -20,7 +20,7 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["TSPEC-034DmUtUjWCThCnJulok0c"]
   related: []
   refines: []
   refined-by: []

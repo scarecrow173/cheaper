@@ -9,7 +9,7 @@ fresh clone / fresh worktree では repository-owned contract として
 
 ```bash
 mise run setup   # toolchain + 依存 + build outputs を復元
-mise run check   # CI と同等の検証（lint / fmt / clippy / test / bundle freshness）
+mise run check   # CI と同等の検証（lint / fmt / clippy / test / lockfile・payload check）
 ```
 
 `mise run setup` は `apm install` → `cargo fetch` →
@@ -23,12 +23,11 @@ fresh checkout で `mise` の trust を求められた場合は `mise trust`
 → `node scripts/check-version.mjs`（version 宣言の一致）→
 `node scripts/check-doc-ids.mjs` → `cargo test --workspace` →
 `node --test scripts/test/` → `node --test benchmarks/test/` →
-`node scripts/bundle-cli.mjs`（bundle 再生成）→
-`node scripts/check-apm-payload.mjs` →
-`git diff --exit-code -- packages/apm/.apm/hooks/cli`
-（bundle freshness）。bundled CLI payload の複写元
-（`crates/cheaper-cli/resources/`）を変更した場合は bundle 再生成と
-そのコミットが必要。version は root `Cargo.toml` の
+`node scripts/check-lockfile.mjs`（committed Cargo.lock の整合 +
+drift 検査）→ `node scripts/check-apm-payload.mjs`（slim APM
+payload 契約）。consumer は `cargo install --git … --locked` で
+install するため、lockfile を再生成する変更は commit 済み
+`Cargo.lock` に反映してからマージする。version は root `Cargo.toml` の
 `[workspace.package].version` が canonical で、bump は
 `node scripts/set-version.mjs <version>` で行う
 （[release ガイド](docs/guides/release.md)）。
@@ -40,7 +39,7 @@ cargo test --workspace              # 全 crate の unit + integration test
 cargo fmt --all -- --check          # rustfmt
 cargo clippy --workspace --all-targets -- -D warnings
 biome check                         # repo 内 JS/JSON の lint
-node --test scripts/test/           # release/bundle script の test
+node --test scripts/test/           # repo tooling（check/launcher/payload）の test
 node --test benchmarks/test/        # benchmark harness の test
 ```
 
@@ -90,8 +89,8 @@ install する。
 - `crates/poc-rig` — Phase 0 の standalone spike（workspace から exclude。
   独自の Cargo.lock・rust-toolchain を持つ）
 - `packages/apm` — distributable APM package（consumer へ deploy
-  される skills/hooks/bundled CLI payload）
-- `scripts/` — release・bundle・check の Node 製 repo tooling
+  される skills/hooks/thin launcher。CLI 本体は cargo install）
+- `scripts/` — version・lockfile・payload 等 check の Node 製 repo tooling
 - `benchmarks/` — benchmark harness（Node 製 repo tooling）
 - `apm.yml`（root） — development-only の APM project。root の
   `apm install` は cheaper 自身の skill/hook を deploy しない

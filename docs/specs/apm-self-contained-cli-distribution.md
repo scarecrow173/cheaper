@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034r05iHK8bA7gffRgD3Fp"
 type: "spec"
-status: "implemented"
+status: "superseded"
 title: "Self-contained cheaper CLI distribution inside the APM hook bundle"
 created: "2026-09-16"
 updated: "2026-09-17"
@@ -22,7 +22,7 @@ relations:
     - "./apm-delegation-skills-and-read-hook.md"
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["SPEC-034Dmb2S8y3tdJI8WdKhG0"]
   related: []
   refines: []
   refined-by: []

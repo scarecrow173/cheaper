@@ -4,7 +4,7 @@ type: "design"
 status: "draft"
 title: "System Design Overview"
 created: "2026-09-15"
-updated: "2026-09-15"
+updated: "2026-10-10"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -29,6 +29,7 @@ relations:
     - "cheaper-hook-subcommands-replacing-node-based-hook-adapters.md"
     - "pi-sibling-tool-call-parallelism-inside-workers.md"
     - "rust-rig-runtime-migration-architecture.md"
+    - "cargo-source-install-distribution-and-thin-path-launchers.md"
   refines: []
   refined-by: []
   derives-from:
@@ -104,8 +105,12 @@ relations:
 ## Standalone Executable Distribution（issue #71）
 
 - [SEA executable build pipeline と embedded resource 解決](./sea-executable-build-pipeline-and-embedded-resource-resolution.md)
-- [APM executable payload layout と platform launcher](./apm-executable-payload-layout-and-platform-launchers.md)
-- [cheaper hook subcommand 化による hook の脱 Node](./cheaper-hook-subcommands-replacing-node-based-hook-adapters.md)
+- [APM executable payload layout と platform launcher](./apm-executable-payload-layout-and-platform-launchers.md)（superseded — issue #85）
+- [cheaper hook subcommand 化による hook の脱 Node](./cheaper-hook-subcommands-replacing-node-based-hook-adapters.md)（hook subcommand 契約は存続、配布配线条項は issue #85 で superseded）
+
+## Cargo source install 配布（issue #85 / ADR-034Dmb3kNAO4Ub6FxuQCtC）
+
+- [Cargo source install distribution and thin PATH launchers](./cargo-source-install-distribution-and-thin-path-launchers.md) — CLI を `cargo install --git … --locked` で consumer へ配布し、APM package は thin launcher（`cheaper.sh` / `cheaper.ps1`）+ skills + hooks.json のみに縮小。旧 `cli/` payload・sibling binary・Release 取得機構は全撤去。
 
 ## Worker 内並列性（issue #55）
 

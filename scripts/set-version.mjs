@@ -10,8 +10,9 @@
 //   packages/apm/apm.yml          version: line only
 //
 // Does NOT touch root apm.yml (cheaper-dev dev project — independent) or
-// packages/*/package.json (no longer version declarations). version.json
-// is generated — regenerate the bundle so it follows, then commit.
+// packages/*/package.json (no longer version declarations). The binary
+// embeds the version at compile time via build.rs — no generated
+// metadata file needs regeneration (issue #85).
 
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -48,14 +49,5 @@ const check = spawnSync(process.execPath, ["scripts/check-version.mjs"], {
   cwd: repoRoot,
   stdio: "inherit",
 });
-if (check.status !== 0) {
-  console.error(
-    "\nversion.json is generated — run node scripts/bundle-cli.mjs to regenerate it, " +
-      "then commit all version changes together.",
-  );
-  process.exit(check.status ?? 1);
-}
-console.log(
-  `\nDone. Now run node scripts/bundle-cli.mjs to regenerate version.json, ` +
-    `then commit the declarations and generated bundle together.`,
-);
+if (check.status !== 0) process.exit(check.status ?? 1);
+console.log("\nDone. Commit the updated version declarations together.");
