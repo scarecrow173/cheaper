@@ -40,6 +40,7 @@ Directory: `docs/test-specs`
 | TSPEC-034rBrs4K5W7pe0ixjegZk | Shell-read blocking contract tests | approved | [shell-read-blocking-contract-tests.md](./shell-read-blocking-contract-tests.md) |
 | TSPEC-034z1OZC4sSkRlvZfFfIXt | Standalone executable contract parity | proposed | [standalone-executable-contract-parity.md](./standalone-executable-contract-parity.md) |
 | TSPEC-034zQTnsUJl3pXIuYsvZIQ | Version-pinned launcher integrity and stream preservation | draft | [version-pinned-launcher-integrity-and-stream-preservation.md](./version-pinned-launcher-integrity-and-stream-preservation.md) |
+| TSPEC-034D9bHOWe5zvPoIeMncr9 | Volume-root workspace boundary predicate behavior | draft | [volume-root-workspace-boundary-predicate-behavior.md](./volume-root-workspace-boundary-predicate-behavior.md) |
 | TSPEC-034AJ8C35s1GpJJoxU3sey | Workflow における明示 bounded artifact read | proposed | [workflow-artifact-publication-and-consumption.md](./workflow-artifact-publication-and-consumption.md) |
 | TSPEC-034AR5JjpeSFMmwDJ2ohy3 | Workflow benchmark accounting integrity | proposed | [workflow-benchmark-accounting-integrity.md](./workflow-benchmark-accounting-integrity.md) |
 | TSPEC-034AR5IRUTHkZBxfcQJFgM | Workflow benchmark scenario determinism | proposed | [workflow-benchmark-scenario-determinism.md](./workflow-benchmark-scenario-determinism.md) |

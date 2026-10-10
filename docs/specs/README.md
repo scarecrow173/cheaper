@@ -59,6 +59,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gw94zcNpw | User-facing documentation information architecture | implemented | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | SPEC-034zA513QKarQrr5SQtgp7 | Verify and leverage Pi sibling tool-call parallelism inside Workers | approved | [verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md](./verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md) |
 | SPEC-034zIO2lm7gJPz6Gy4JIQP | Version-pinned launcher acquisition | approved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
+| SPEC-034D85I40UBKtNgeam655z | Volume-root workspace boundary acceptance | draft | [volume-root-workspace-boundary-acceptance.md](./volume-root-workspace-boundary-acceptance.md) |
 | SPEC-034zIKj7DJcwZFr3FvjLrP | Workflow JSON v1 を検証済み DAG へ compile する | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
 | SPEC-034zSVZlWjFAMpwmhsLTkx | 明示 workflow loader と公開 interface command の契約 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | SPEC-034AQOi1TPvVMDkNrhfTM5 | Benchmark workflow orchestration overhead | approved | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |
