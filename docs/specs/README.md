@@ -18,6 +18,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gdbCbWupr | Canonical Token Counter, count_tokens tool, and count-tokens CLI | implemented | [canonical-token-counter.md](./canonical-token-counter.md) |
 | SPEC-034zILh8aauVSReoD33mtV | Canonical Tool Runtime 抽出 | approved | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | SPEC-034r05iHK8bA7g7YRKGyQr | cheap-writer built-in Worker | superseded | [cheap-writer-built-in-worker.md](./cheap-writer-built-in-worker.md) |
+| SPEC-034DjvgZNwy9e9aLXb2alN | cheaper-usage skill hook path examples match APM deploy naming | draft | [cheaper-usage-skill-hook-path-examples.md](./cheaper-usage-skill-hook-path-examples.md) |
 | SPEC-034r05iHK8bA7g59V25ltC | cheaper V1 Worker Runtime と CLI | implemented | [cheaper-v1-worker-runtime-cli.md](./cheaper-v1-worker-runtime-cli.md) |
 | SPEC-034r05iHK8bA7gaTnVhXWI | code-writer and doc-writer built-in Workers | implemented | [code-writer-and-doc-writer-built-in-workers.md](./code-writer-and-doc-writer-built-in-workers.md) |
 | SPEC-034r05iHK8bA7gsvijtkou | Copilot per-target pre-read hook adapter | implemented | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
