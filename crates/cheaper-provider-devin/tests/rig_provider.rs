@@ -6,8 +6,8 @@ use rig::http_client::{self, StatusCode};
 use rig::message::{Message, Text, UserContent};
 use rig::wire::{Mode, Secret, Wire};
 
-use crate::rig_provider::*;
-use crate::wire::iter_fields;
+use cheaper_provider_devin::rig_provider::*;
+use cheaper_provider_devin::wire::iter_fields;
 
 /// `ProviderEnv` overlay — scoped env の注入 seam を試す最小実装。
 struct MapEnv(BTreeMap<String, String>);
@@ -86,7 +86,7 @@ fn encode_uses_off_thinking_level_uid() {
     // TS: session が `thinkingLevel: "off"` に pin し、
     // `resolveModelUid(model.id, map, "off")` が走る。
     // `gpt-5.6-sol` は off → `gpt-5-6-sol-none` を持つ fallback model。
-    let model = crate::models::fallback_models()
+    let model = cheaper_provider_devin::models::fallback_models()
         .into_iter()
         .find(|m| m.id == "gpt-5.6-sol")
         .unwrap();

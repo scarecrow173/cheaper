@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use crate::cli::{CliRunOptions, DevinCli, DevinCliResult, DevinCliRunner};
-use crate::models::*;
+use cheaper_provider_devin::cli::{CliRunOptions, DevinCli, DevinCliResult, DevinCliRunner};
+use cheaper_provider_devin::models::*;
 
 /// argv/env を記録する fake runner。
 struct FakeRunner {

@@ -1,4 +1,4 @@
-use crate::wire::*;
+use cheaper_provider_devin::wire::*;
 
 #[test]
 fn varint_roundtrip() {

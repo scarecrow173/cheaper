@@ -70,7 +70,7 @@ fn now_secs() -> i64 {
 
 /// JWT payload の `exp`（base64url JSON）を読む。失敗時は `now + 600`。
 /// TS と同じく base64 pad を補ってから decode する。
-pub(crate) fn jwt_expires_at(jwt: &str, now_secs: i64) -> i64 {
+pub fn jwt_expires_at(jwt: &str, now_secs: i64) -> i64 {
     let fallback = now_secs + FALLBACK_EXPIRES_SECS;
     let payload = match jwt.split('.').nth(1) {
         Some(p) => p,

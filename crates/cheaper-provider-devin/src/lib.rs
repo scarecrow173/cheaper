@@ -34,9 +34,6 @@ pub mod rig_provider;
 pub mod stream;
 pub mod wire;
 
-#[cfg(test)]
-mod tests;
-
 pub use cli::{
     devin_child_env, CliError, CliRunOptions, DevinCli, DevinCliNotFoundError, DevinCliResult,
     DevinCliRunner, ProcessCliRunner, DEFAULT_TIMEOUT,

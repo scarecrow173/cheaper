@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use rig::http_client::DynHttpClient;
 
-use crate::jwt::*;
+use cheaper_provider_devin::jwt::*;
 
 /// JWT cache と mint override は process-global — test を直列化する。
 static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
@@ -93,12 +93,18 @@ fn float_exp_claim_is_accepted() {
     let payload =
         base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(format!(r#"{{"exp":{exp}}}"#));
     let jwt = format!("eyJhbGciOiJub25lIn0.{payload}.sig");
-    assert_eq!(crate::jwt::jwt_expires_at(&jwt, now_secs()), exp as i64);
+    assert_eq!(
+        cheaper_provider_devin::jwt::jwt_expires_at(&jwt, now_secs()),
+        exp as i64
+    );
     // 非数値 exp は fallback（now + 600）。
     let now = now_secs();
     let payload = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(r#"{"exp":"soon"}"#);
     let jwt = format!("eyJhbGciOiJub25lIn0.{payload}.sig");
-    assert_eq!(crate::jwt::jwt_expires_at(&jwt, now), now + 600);
+    assert_eq!(
+        cheaper_provider_devin::jwt::jwt_expires_at(&jwt, now),
+        now + 600
+    );
 }
 
 #[tokio::test]

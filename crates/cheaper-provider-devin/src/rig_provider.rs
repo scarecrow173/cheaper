@@ -362,7 +362,7 @@ fn deframe_error(e: DeframeError<rig::http_client::Error>) -> ProviderError {
 /// TS `GetChatMessage HTTP {resp.status}: {body.slice(0, 300)}` — 非 2xx
 /// 応答の message。`status` は数値のみ（TS `resp.status`）。body の
 /// 切り詰めは char 単位（jwt.rs の 240 文字切り詰めと同じ近似）。
-pub(crate) fn chat_status_message(status: StatusCode, body: &str) -> String {
+pub fn chat_status_message(status: StatusCode, body: &str) -> String {
     let truncated: String = body.chars().take(300).collect();
     format!("GetChatMessage HTTP {}: {truncated}", status.as_u16())
 }
@@ -371,7 +371,7 @@ pub(crate) fn chat_status_message(status: StatusCode, body: &str) -> String {
 /// （`InvalidStatusCodeWithDetails`）は TS message 形式へ写し、status /
 /// headers は `ProviderResponseError` に保持する（adapter の transient
 /// 分類 — 429/5xx retry — が status を参照するため）。
-pub(crate) fn chat_send_error(error: http_client::Error) -> ProviderError {
+pub fn chat_send_error(error: http_client::Error) -> ProviderError {
     match error {
         http_client::Error::InvalidStatusCodeWithDetails {
             status,
@@ -457,7 +457,7 @@ impl Transport<DevinWire> for DevinTransport {
 /// → `auth.baseUrl`（credentials.toml の `api_server_url`）→ protocol
 /// 既定 host。trailing slash は TS `.replace(/\/$/,"")` 同様 1 個だけ
 /// 除去する（`trim_end_matches('/')` は全ての slash を削る）。
-pub(crate) fn resolve_host(env: &dyn ProviderEnv, auth: Option<&ResolvedAuth>) -> String {
+pub fn resolve_host(env: &dyn ProviderEnv, auth: Option<&ResolvedAuth>) -> String {
     let host = env
         .env(HOST_ENV)
         .or_else(|| auth.and_then(|auth| auth.base_url.clone()))

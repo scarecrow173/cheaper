@@ -4,7 +4,7 @@ use rig::message::{
     ToolFunction, ToolName, ToolResult, ToolResultContent, UserContent,
 };
 
-use crate::context_map::*;
+use cheaper_provider_devin::context_map::*;
 
 fn request(chat_history: Vec<Message>) -> CompletionRequest {
     CompletionRequest {
