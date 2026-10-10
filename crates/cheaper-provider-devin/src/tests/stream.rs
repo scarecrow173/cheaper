@@ -202,18 +202,19 @@ fn decode_chat_frame_maps_finish_reasons() {
     }
 }
 
+// {2: {5:"<metric name>", 4:{2: float32le}}} usage metric record。
+fn metric(name: &str, value: f32) -> Vec<u8> {
+    let mut dim = Vec::new();
+    // field 2 wire 5 fixed32。
+    dim.extend_from_slice(&encode_tag(2, 5));
+    dim.extend_from_slice(&value.to_le_bytes());
+    let mut m = encode_string(5, name);
+    m.extend_from_slice(&encode_message(4, &dim));
+    m
+}
+
 #[test]
 fn decode_chat_frame_reads_usage_metrics() {
-    // {28: {2: {5:"input_tokens", 4:{2: float32le}}}}
-    fn metric(name: &str, value: f32) -> Vec<u8> {
-        let mut dim = Vec::new();
-        // field 2 wire 5 fixed32。
-        dim.extend_from_slice(&encode_tag(2, 5));
-        dim.extend_from_slice(&value.to_le_bytes());
-        let mut m = encode_string(5, name);
-        m.extend_from_slice(&encode_message(4, &dim));
-        m
-    }
     let mut usage_msg = encode_message(2, &metric("input_tokens", 12.0));
     usage_msg.extend_from_slice(&encode_message(2, &metric("output_tokens", 34.0)));
     usage_msg.extend_from_slice(&encode_message(2, &metric("cached_input_tokens", 5.0)));
@@ -229,6 +230,45 @@ fn decode_chat_frame_reads_usage_metrics() {
             cache_creation_input_tokens: None,
         })]
     );
+}
+
+#[test]
+fn decode_chat_frame_maps_devin_cache_hit_usage_shape() {
+    // Issue #86 の形状: cache hit 時は Devin が input_tokens に
+    // uncached 分のみ、cache-hit 分を cached_input_tokens に載せる。
+    // `total_tokens` metric は無視され input+output で再計算される
+    // 契約を pin する。
+    let mut usage_msg = encode_message(2, &metric("input_tokens", 1.0));
+    usage_msg.extend_from_slice(&encode_message(2, &metric("output_tokens", 211.0)));
+    usage_msg.extend_from_slice(&encode_message(2, &metric("cached_input_tokens", 3196.0)));
+    usage_msg.extend_from_slice(&encode_message(
+        2,
+        &metric("cache_creation_input_tokens", 7.0),
+    ));
+    usage_msg.extend_from_slice(&encode_message(2, &metric("total_tokens", 9999.0)));
+    let proto = encode_message(28, &usage_msg);
+    let events = decode_chat_frame(&proto).unwrap();
+    assert_eq!(
+        events,
+        vec![ChatEvent::Usage(ChatUsage {
+            prompt_tokens: Some(1),
+            completion_tokens: Some(211),
+            total_tokens: Some(212),
+            cached_input_tokens: Some(3196),
+            cache_creation_input_tokens: Some(7),
+        })]
+    );
+}
+
+#[test]
+fn decode_chat_frame_drops_cache_only_usage_frame() {
+    // 現行挙動の pin: prompt/completion を持たない usage frame は
+    // cache metric のみでも破棄される（spec の deferred concern;
+    // 変更ではなく記録）。
+    let usage_msg = encode_message(2, &metric("cached_input_tokens", 3196.0));
+    let proto = encode_message(28, &usage_msg);
+    let events = decode_chat_frame(&proto).unwrap();
+    assert_eq!(events, vec![]);
 }
 
 #[test]

@@ -236,6 +236,14 @@ access を対象とする。
   あり、global toml は同一 account かの判定にのみ使う
   （key が一致すれば login を skip する）。`devin auth
   login` 自体は global session に作用する点に注意。
+- **usage 計上**: Devin は prompt cache を Anthropic 方式で
+  報告する。cache hit 時、`meta.usage.input` には uncached 分
+  のみが入り、cache-hit 分は `cacheRead` に別計上される
+  （例: `{input: 1, cacheRead: 3196}`）。prompt 全体の token
+  量は `input + cacheRead` で読むこと。`totalTokens` は
+  `input + output` で `cacheRead` を含まない契約。
+  `costUsd` は `cost_summary` を持たない devin model では
+  all-zero の価格として解決され `0` になる（issue #86）。
 - **model catalog**: `devin models list --format json` の
   live catalog が優先。認証前は最小の bootstrap list で
   provider を認識させ、login 直後・refresh 時に live

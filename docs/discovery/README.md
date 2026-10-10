@@ -17,6 +17,7 @@ Directory: `docs/discovery`
 | DISC-034zIOnoIjhMd2vKGOtgXd | Core resource manifest identity investigation | resolved | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | DISC-034r05iHy2gdnpdai9KGpW | Cross-agent hook distribution and per-agent hook contract matrix | resolved | [cross-agent-hook-distribution-and-contract-matrix.md](./cross-agent-hook-distribution-and-contract-matrix.md) |
 | DISC-034rA43JiB611pUjLPA4yR | Cross-agent native routing adapter contract re-verification | resolved | [cross-agent-native-routing-adapter-contract-re-verification.md](./cross-agent-native-routing-adapter-contract-re-verification.md) |
+| DISC-034Dlp0gvInn5w4EsnfZB0 | devin provider usage accounting reports uncached input only | draft | [devin-provider-usage-accounting-reports-uncached-input-only.md](./devin-provider-usage-accounting-reports-uncached-input-only.md) |
 | DISC-034D9AL1up7opdx1NuFeir | Devin provider Windows credential isolation limitation | draft | [devin-provider-windows-credential-isolation-limitation.md](./devin-provider-windows-credential-isolation-limitation.md) |
 | DISC-034r05iHy2gdnpcXzmUKaV | Huge-file token count guard and fail-closed hook behavior | resolved | [huge-file-token-count-guard-and-fail-closed-hook-behavior.md](./huge-file-token-count-guard-and-fail-closed-hook-behavior.md) |
 | DISC-034A8pIq50dPYXsDhld9st | managed process の認可と lifecycle を整理する | resolved | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |

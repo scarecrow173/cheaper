@@ -64,6 +64,11 @@ Commands:
   filesystem 変更の要約。`savings` は親コンテキスト offload の実測
   （`sourceTokens` / `returnedTokens` / `avoidedContextTokens`、
   後述の「実測 savings」）。
+  - `usage` は provider 報告値の passthrough。prompt cache を
+    報告する provider（devin 等）では `input` は uncached 分
+    のみで、cache-hit 分は `cacheRead` に入る — prompt 全体量は
+    `input + cacheRead` で読む。`totalTokens` は `input +
+    output` で `cacheRead` を含まない（issue #86）。
 - stderr には diagnostics（`model: provider/id (tier X)` や error
   要約）が出る。`--quiet` で抑制できる。
 - exit code は error.code に対応する（0=成功、2=入力不備、
