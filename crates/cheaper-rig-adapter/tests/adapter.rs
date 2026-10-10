@@ -730,7 +730,7 @@ async fn internal_max_turns_guard_stops_runaway_tool_loop() {
 }
 
 #[test]
-fn js_json_prompts_use_json_stringify_number_format() {
+fn prompts_use_json_stringify_number_format() {
     // F10: provider-visible text の number は `JSON.stringify` 規則
     // (整数は `.0` 省略 — serde_json pretty printer は `1.0` を出す)。
     let user = build_user_prompt(&json!({"n": 1.0, "big": 1e21, "small": 1e-7}));

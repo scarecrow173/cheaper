@@ -10,6 +10,7 @@
 //! し、provider 申告値は使わない。
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::json::stringify::stringify;
 use cheaper_core::model::classify::TierSource;
 use cheaper_core::model::pricing::ModelPricing;
 use cheaper_core::model::resolve::{ModelSelection, ResolvedModel};
@@ -126,19 +127,17 @@ pub fn build_meta(
         .map(|r| {
             // F10: `returnedTokens` の計量 text は TS の
             // `JSON.stringify(result)` 規則(JS number formatting)に揃える。
-            count_text_tokens(&cheaper_rig_adapter::js_json::stringify(&Value::Object(
-                r.clone(),
-            )))
-            .map(|n| n as u64)
-            // `countTextTokens` の throw は TS では buildMeta → outer
-            // catch で INTERNAL_ERROR になる。ここでも同じ code に畳む。
-            .map_err(|e| {
-                CheaperError::new(
-                    ErrorCode::InternalError,
-                    format!("token counting failed: {e}"),
-                )
-                .with_cause(e)
-            })
+            count_text_tokens(&stringify(&Value::Object(r.clone())))
+                .map(|n| n as u64)
+                // `countTextTokens` の throw は TS では buildMeta → outer
+                // catch で INTERNAL_ERROR になる。ここでも同じ code に畳む。
+                .map_err(|e| {
+                    CheaperError::new(
+                        ErrorCode::InternalError,
+                        format!("token counting failed: {e}"),
+                    )
+                    .with_cause(e)
+                })
         })
         .transpose()?
         .unwrap_or(0);

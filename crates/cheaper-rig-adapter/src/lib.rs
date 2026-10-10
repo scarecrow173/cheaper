@@ -40,7 +40,6 @@ mod agent;
 mod builtin;
 mod error;
 mod hooks;
-pub mod js_json;
 mod retry;
 mod run_stream;
 mod tools;

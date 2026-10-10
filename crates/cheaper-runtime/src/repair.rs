@@ -15,6 +15,7 @@
 //!   回数上限のみが contract を担保する)。
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::json::stringify::stringify_pretty;
 use cheaper_core::worker::schema::{CompiledSchema, SchemaErrorEntry};
 use cheaper_rig_adapter::RunSnapshot;
 use cheaper_tools::operation::AbortSignal;
@@ -167,8 +168,7 @@ fn truncate_chars(s: &str, n: usize) -> String {
 /// `JSON.stringify(…, null, 2)` 規則(F10 — number 表現が Rust と
 /// 異なるため serde_json の pretty printer は使わない)。
 fn repair_system_prompt(schema: &CompiledSchema) -> String {
-    let schema_json =
-        cheaper_rig_adapter::js_json::stringify_pretty(&Value::Object(schema.schema.clone()));
+    let schema_json = stringify_pretty(&Value::Object(schema.schema.clone()));
     format!(
         "You are a JSON repair worker. Return ONLY a JSON object that conforms to the\n\
          schema below. No prose, no markdown, no code fences.\n\
