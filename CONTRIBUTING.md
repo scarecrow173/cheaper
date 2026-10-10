@@ -86,8 +86,6 @@ install する。
   この crate と provider crate に限定）
 - `crates/cheaper-provider-devin` — `devin` bundled provider plugin
 - `crates/cheaper-workflow` — workflow schema・compiler・DAG engine
-- `crates/poc-rig` — Phase 0 の standalone spike（workspace から exclude。
-  独自の Cargo.lock・rust-toolchain を持つ）
 - `packages/apm` — distributable APM package（consumer へ deploy
   される skills/hooks/thin launcher。CLI 本体は cargo install）
 - `scripts/` — version・lockfile・payload 等 check の Node 製 repo tooling

@@ -180,6 +180,5 @@ apm_modules/
 
 tmp/
 
-# Rust workspace build output (root virtual manifest) / standalone spikes
+# Rust workspace build output (root virtual manifest)
 /target
-crates/*/target/
