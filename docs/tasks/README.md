@@ -51,7 +51,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDq14tAA3rz | CLI bundle script and hook argv resolution | done | [cli-bundle-script-and-hook-argv.md](./cli-bundle-script-and-hook-argv.md) |
 | TASK-034r05iHQeQpDqdc3mJN2b | CLI count-tokens env override and FILE_TOO_LARGE envelope | done | [cli-count-tokens-env-override-and-file-too-large-envelope.md](./cli-count-tokens-env-override-and-file-too-large-envelope.md) |
 | TASK-034r05iHQeQpDpByADDPCn | Configure Pi models.json and cheaper models.yaml for Ollama provider | done | [configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md](./configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md) |
-| TASK-034DzYnno038qspspOYHv2 | T2: js16 core 集約 (F4) | todo | [consolidate-js16-into-cheaper-core.md](./consolidate-js16-into-cheaper-core.md) |
+| TASK-034DzYnno038qspspOYHv2 | T2: js16 core 集約 (F4) | done | [consolidate-js16-into-cheaper-core.md](./consolidate-js16-into-cheaper-core.md) |
 | TASK-034r05iHQeQpDq2z00rDnn | Consumer install smoke e2e and skill updates | done | [consumer-install-smoke.md](./consumer-install-smoke.md) |
 | TASK-034rAcG63A1KaVZH5VyAWA | Contract matrix and parent-agent guide updates | done | [contract-matrix-and-parent-agent-guide-updates.md](./contract-matrix-and-parent-agent-guide-updates.md) |
 | TASK-034r05iHQeQpDqFsYcuUHl | Copilot adapter script, hooks.json registration, and stdin-injection tests | done | [copilot-adapter-script-and-hook-tests.md](./copilot-adapter-script-and-hook-tests.md) |
@@ -88,7 +88,7 @@ Directory: `docs/tasks`
 | TASK-034z1PGTvhoaHhdTUgPahz | Extract shared esbuild bundle helper from bundle-cli.mjs | done | [extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md](./extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md) |
 | TASK-034r05iHQeQpDqhWcXGfA0 | Finalize contract matrix and consumer pointer | done | [finalize-contract-matrix-and-consumer-pointer.md](./finalize-contract-matrix-and-consumer-pointer.md) |
 | TASK-034D9bpfd4n0vQJjgXtBzj | Fix volume-root workspace boundary predicate | done | [fix-volume-root-workspace-boundary-predicate.md](./fix-volume-root-workspace-boundary-predicate.md) |
-| TASK-034DzYI5SJnPTX6KZeAvYU | T8: dev-seam feature gate (F2) | todo | [gate-dev-seams-behind-dev-seam-feature.md](./gate-dev-seams-behind-dev-seam-feature.md) |
+| TASK-034DzYI5SJnPTX6KZeAvYU | T8: dev-seam feature gate (F2) | done | [gate-dev-seams-behind-dev-seam-feature.md](./gate-dev-seams-behind-dev-seam-feature.md) |
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
 | TASK-034r05iHQeQpDqeuofmk64 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [hook-fast-path-and-fail-closed-file-too-large-block.md](./hook-fast-path-and-fail-closed-file-too-large-block.md) |
 | TASK-034r05iHK8bA7h4BqSHmqd | Implement boundary-checked tool operations with atomic writes | done | [implement-boundary-checked-tool-operations-with-atomic-writes.md](./implement-boundary-checked-tool-operations-with-atomic-writes.md) |
@@ -160,7 +160,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
 | TASK-034zXB21CtI0XLnu6QAHPe | Migrate native workflows and release guidance | done | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
 | TASK-034r05iHQeQpDqrbmtswfZ | Move .apm primitives to nested distributable package and make root apm.yml dev-only | done | [move-apm-primitives-to-distributable-package.md](./move-apm-primitives-to-distributable-package.md) |
-| TASK-034DzYjQDNWcel1Oqxnlia | T3: provider test 移動 (F7) | todo | [move-devin-provider-tests-to-tests-dir.md](./move-devin-provider-tests-to-tests-dir.md) |
+| TASK-034DzYjQDNWcel1Oqxnlia | T3: provider test 移動 (F7) | done | [move-devin-provider-tests-to-tests-dir.md](./move-devin-provider-tests-to-tests-dir.md) |
 | TASK-034rAcF1RPJJogj2vzFDrF | New adapter scripts and hooks.json event registration | done | [new-adapter-scripts-and-hooks-json-event-registration.md](./new-adapter-scripts-and-hooks-json-event-registration.md) |
 | TASK-034A9yFQqZLtHt5ibjhE1h | Operation execution metrics | done | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | TASK-034r05iHQeQpDqgk8XoZ8E | Parameterize apm e2e fixture by target | done | [parameterize-apm-e2e-fixture-by-target.md](./parameterize-apm-e2e-fixture-by-target.md) |
@@ -178,12 +178,12 @@ Directory: `docs/tasks`
 | TASK-034zTWibd7OKesgJgoGxJu | Prepare one-dispatch release artifacts | done | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
 | TASK-034r05iHWkNF7zKMZPhFky | Provider plugin tests and resource isolation verification | done | [provider-plugin-tests-and-resource-isolation.md](./provider-plugin-tests-and-resource-isolation.md) |
 | TASK-034r05iHQeQpDpEony1i5k | Record experiment log and verify test regression | done | [record-experiment-log-and-verify-test-regression.md](./record-experiment-log-and-verify-test-regression.md) |
-| TASK-034DzYbfe9r0G8Nd58FQjy | T1: js_json shim 削除 (F3) | todo | [remove-js-json-shim.md](./remove-js-json-shim.md) |
+| TASK-034DzYbfe9r0G8Nd58FQjy | T1: js_json shim 削除 (F3) | done | [remove-js-json-shim.md](./remove-js-json-shim.md) |
 | TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |
-| TASK-034DzYfbw07gFHdsAguwHp | T4: poc-rig 削除 (F5) | todo | [remove-poc-rig-crate.md](./remove-poc-rig-crate.md) |
-| TASK-034DzYC8wR9HwNbdMoF8NP | T7: provider crate rename + devin module 化 (F8) | todo | [rename-provider-crate-and-modularize-devin.md](./rename-provider-crate-and-modularize-devin.md) |
-| TASK-034DzYxGyUC8loD0ruTCQN | T6: cheaper-runtime 内部再配置 (F6) | todo | [reorganize-cheaper-runtime-run-module.md](./reorganize-cheaper-runtime-run-module.md) |
-| TASK-034DzYs0gJRVZ5JJfKAIAn | T5: cheaper-tools 内部再配置 (F1) | todo | [reorganize-cheaper-tools-modules.md](./reorganize-cheaper-tools-modules.md) |
+| TASK-034DzYfbw07gFHdsAguwHp | T4: poc-rig 削除 (F5) | done | [remove-poc-rig-crate.md](./remove-poc-rig-crate.md) |
+| TASK-034DzYC8wR9HwNbdMoF8NP | T7: provider crate rename + devin module 化 (F8) | done | [rename-provider-crate-and-modularize-devin.md](./rename-provider-crate-and-modularize-devin.md) |
+| TASK-034DzYxGyUC8loD0ruTCQN | T6: cheaper-runtime 内部再配置 (F6) | done | [reorganize-cheaper-runtime-run-module.md](./reorganize-cheaper-runtime-run-module.md) |
+| TASK-034DzYs0gJRVZ5JJfKAIAn | T5: cheaper-tools 内部再配置 (F1) | done | [reorganize-cheaper-tools-modules.md](./reorganize-cheaper-tools-modules.md) |
 | TASK-034r05iHQeQpDqsCIiTDOz | Repoint bundle pipeline and CI freshness check to packages/apm | done | [repoint-bundle-pipeline-and-ci-freshness.md](./repoint-bundle-pipeline-and-ci-freshness.md) |
 | TASK-034r05iHQeQpDqOOFD90gZ | Restructure README, create docs index, and run final verification | done | [restructure-readme-docs-index-and-final-verification.md](./restructure-readme-docs-index-and-final-verification.md) |
 | TASK-034DkRYMmhq7VdzfD1NcT8 | Rewrite cheaper-usage SKILL.md hook path section | done | [rewrite-cheaper-usage-skill-hook-path-section.md](./rewrite-cheaper-usage-skill-hook-path-section.md) |

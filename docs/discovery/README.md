@@ -32,7 +32,7 @@ Directory: `docs/discovery`
 | DISC-034zWqZnTAsRi8D1paYgln | Payload untracking migration | resolved | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | DISC-034zzZxx7gzas0a5Anlkwi | Pi sibling tool-call parallelism inside Workers | resolved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DISC-o3GbG6FWEBRFcbNBaslikh | Plugin catalog refresh persistence and user model additions | draft | [plugin-catalog-refresh-persistence-and-user-models.md](./plugin-catalog-refresh-persistence-and-user-models.md) |
-| DISC-034DxZdeAdWoFG3UuTyh5c | Post-migration structural inventory and cleanup policy | draft | [post-migration-structural-inventory-and-cleanup-policy.md](./post-migration-structural-inventory-and-cleanup-policy.md) |
+| DISC-034DxZdeAdWoFG3UuTyh5c | Post-migration structural inventory and cleanup policy | resolved | [post-migration-structural-inventory-and-cleanup-policy.md](./post-migration-structural-inventory-and-cleanup-policy.md) |
 | DISC-034r05iHy2gdnp6g5GTWKG | Post-smoke code review findings on abort, repair, and timeout semantics | resolved | [post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md](./post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md) |
 | DISC-034r05iHy2gdnp5sN3kF1s | Real provider smoke verification via Ollama | resolved | [real-provider-smoke-verification-via-ollama.md](./real-provider-smoke-verification-via-ollama.md) |
 | DISC-034A8jvNOxFXeSIc8tWQmE | Job lifetime lease の ownership と admission | resolved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |

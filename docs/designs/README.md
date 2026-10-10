@@ -50,7 +50,7 @@ Directory: `docs/designs`
 | DESIGN-034zAKcWuB8SuFkOePsubg | Pi sibling tool-call parallelism inside Workers | approved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DESIGN-034r05iHy2gdnoZAxhwPFa | Pi state paths under userConfigDir/pi | approved | [pi-state-paths-under-userconfigdir-pi.md](./pi-state-paths-under-userconfigdir-pi.md) |
 | DESIGN-034CM9o41G2FjaP5cV125c | Plugin catalog snapshot persistence and user models merge | approved | [plugin-catalog-snapshot-persistence-and-user-models-merge.md](./plugin-catalog-snapshot-persistence-and-user-models-merge.md) |
-| DESIGN-034DyR22wfkjn91McXS5jv | Post-migration structural cleanup reorganization | draft | [post-migration-structural-cleanup-reorganization.md](./post-migration-structural-cleanup-reorganization.md) |
+| DESIGN-034DyR22wfkjn91McXS5jv | Post-migration structural cleanup reorganization | approved | [post-migration-structural-cleanup-reorganization.md](./post-migration-structural-cleanup-reorganization.md) |
 | DESIGN-034r2qodyo7KRfBsGRJQty | provider/auth guide runtime sync design | approved | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | DESIGN-034r05iHy2gdnp0zOYnFNU | Provider-only registration layer | approved | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
 | DESIGN-034r05iHy2gdnoCKJhKNGD | Repair abort and failure normalization hardening | approved | [repair-abort-and-failure-normalization-hardening.md](./repair-abort-and-failure-normalization-hardening.md) |
