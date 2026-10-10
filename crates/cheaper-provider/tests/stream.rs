@@ -1,11 +1,11 @@
 use bytes::Bytes;
 use futures::StreamExt;
 
-use cheaper_provider_devin::context_map::{
+use cheaper_provider::devin::context_map::{
     ChatContent, ChatHistoryItem, ChatRole, ContentPart, ToolDef,
 };
-use cheaper_provider_devin::stream::*;
-use cheaper_provider_devin::wire::*;
+use cheaper_provider::devin::stream::*;
+use cheaper_provider::devin::wire::*;
 
 fn user(text: &str) -> ChatHistoryItem {
     ChatHistoryItem {
@@ -58,7 +58,7 @@ fn request_encodes_assistant_tool_calls_and_tool_results() {
             role: ChatRole::Assistant,
             content: ChatContent::Text("calling".to_string()),
             tool_call_id: None,
-            tool_calls: Some(vec![cheaper_provider_devin::context_map::ChatToolCall {
+            tool_calls: Some(vec![cheaper_provider::devin::context_map::ChatToolCall {
                 id: "call_1".to_string(),
                 name: "read".to_string(),
                 arguments: "{\"path\":\"a\"}".to_string(),

@@ -19,7 +19,7 @@ cheaper-runtime = { path = "../cheaper-runtime" }
 # run` の配線先 — `cheaper-workflow` は Rig 非依存のまま保つ)。
 cheaper-workflow = { path = "../cheaper-workflow" }
 cheaper-rig-adapter = { path = "../cheaper-rig-adapter" }
-cheaper-provider-devin = { path = "../cheaper-provider-devin" }
+cheaper-provider = { path = "../cheaper-provider" }
 serde.workspace = true
 serde_json.workspace = true
 # tokio: run_cli entry runtime + SIGINT/SIGTERM → abort relay (T3 run

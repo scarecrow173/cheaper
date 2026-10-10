@@ -17,7 +17,7 @@ use cheaper_runtime::catalog::schema::{
     ModelCostJson, ModelDefinitionJson, ModelInput, ThinkingLevelMap,
 };
 
-use crate::cli::DevinCli;
+use crate::devin::cli::DevinCli;
 
 /// `devin models list` の timeout（TS 20_000ms）。
 const MODELS_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);

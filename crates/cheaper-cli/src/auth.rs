@@ -31,7 +31,7 @@ use std::thread::JoinHandle;
 use cheaper_core::config::dirs::{resolve_user_config_dir, UserConfigDirOptions};
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::js::js_trim;
-use cheaper_provider_devin::DevinProviderPlugin;
+use cheaper_provider::devin::DevinProviderPlugin;
 use cheaper_runtime::auth::{AuthEvent, AuthInteraction, AuthPrompt, AuthType, ProcessEnv};
 use cheaper_runtime::{CheaperProviderPlugin, CredentialStatus, Runtime};
 use cheaper_tools::operation::{AbortController, AbortReason, AbortSignal};

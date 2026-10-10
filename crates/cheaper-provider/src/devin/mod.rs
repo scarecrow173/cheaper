@@ -1,4 +1,4 @@
-//! `cheaper-provider-devin` — Devin Local provider plugin の Rust port
+//! `devin` — Devin Local provider plugin の Rust port
 //! （`packages/runtime-pi/src/providers/devin/`）。
 //!
 //! Vendored upstream: [`pi-devin`](https://github.com/kashyab12/pi-devin)

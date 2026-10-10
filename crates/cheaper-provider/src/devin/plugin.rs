@@ -30,12 +30,12 @@ use cheaper_runtime::plugin::{
 };
 use serde_json::{Map, Value};
 
-use crate::cli::{DevinCli, DevinCliRunner};
-use crate::credentials::{
+use crate::devin::cli::{DevinCli, DevinCliRunner};
+use crate::devin::credentials::{
     devin_data_dir, login_with_devin_cli, logout_devin_session, read_devin_credentials,
 };
-use crate::models::{fallback_models, load_cli_catalog, models_from_catalog};
-use crate::rig_provider::{API_KIND, DEFAULT_HOST};
+use crate::devin::models::{fallback_models, load_cli_catalog, models_from_catalog};
+use crate::devin::rig_provider::{API_KIND, DEFAULT_HOST};
 
 /// provider id（`CheaperProviderPlugin.id` + registration id）。
 pub const PROVIDER_ID: &str = "devin";
@@ -89,7 +89,7 @@ struct DevinPluginAuth {
     windows: bool,
 }
 
-fn cli_error(e: crate::cli::CliError) -> CheaperError {
+fn cli_error(e: crate::devin::cli::CliError) -> CheaperError {
     CheaperError::new(ErrorCode::ProviderFailure, e.to_string()).with_cause(e)
 }
 

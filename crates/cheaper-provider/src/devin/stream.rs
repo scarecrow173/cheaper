@@ -17,9 +17,9 @@ use std::sync::Mutex;
 use bytes::Bytes;
 use futures::Stream;
 
-use crate::context_map::{ChatContent, ChatHistoryItem, ChatRole, ContentPart, ToolDef};
-use crate::metadata::{build_metadata, MetadataInput};
-use crate::wire::{
+use crate::devin::context_map::{ChatContent, ChatHistoryItem, ChatRole, ContentPart, ToolDef};
+use crate::devin::metadata::{build_metadata, MetadataInput};
+use crate::devin::wire::{
     encode_fixed64_field, encode_message, encode_string, encode_varint_field, gunzip, iter_fields,
     DecodeError,
 };
@@ -162,7 +162,7 @@ fn encode_chat_message_prompt(
     content: &[ContentPart],
     source: u64,
     tool_call_id: Option<&str>,
-    tool_calls: Option<&[crate::context_map::ChatToolCall]>,
+    tool_calls: Option<&[crate::devin::context_map::ChatToolCall]>,
 ) -> Vec<u8> {
     let text = content
         .iter()

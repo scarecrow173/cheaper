@@ -13,7 +13,7 @@ use std::sync::LazyLock;
 use cheaper_runtime::auth::AuthInteraction;
 use regex::Regex;
 
-use crate::cli::{CliError, DevinCli};
+use crate::devin::cli::{CliError, DevinCli};
 
 /// `auth status` / `auth logout` の timeout（TS 15_000ms）。
 const AUTH_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);

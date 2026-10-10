@@ -42,7 +42,7 @@ pub const DEFAULT_INVALID_TOOL_RETRIES: usize = 8;
 const RETRY_MODEL_LABEL: &str = "cheaper-retried";
 
 /// Provider 供給の completion model ハンドル。中身は `DynModel` だが
-/// adapter 外には opaque — provider crate(`cheaper-provider-devin` 等)だけが
+/// adapter 外には opaque — provider crate(`cheaper-provider` 等)だけが
 /// [`from_rig`](Self::from_rig) で包む。
 pub struct CompletionModel {
     inner: DynModel<Completion>,

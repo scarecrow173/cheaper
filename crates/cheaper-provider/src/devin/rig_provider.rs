@@ -31,9 +31,9 @@ use rig::wire::{
 };
 use rig::ProviderResponseError;
 
-use crate::context_map::map_request_to_chat;
-use crate::jwt::{self, JwtError};
-use crate::stream::{
+use crate::devin::context_map::map_request_to_chat;
+use crate::devin::jwt::{self, JwtError};
+use crate::devin::stream::{
     build_get_chat_message_request_parts, decode_chat_frame, deframe_connect, session_ids,
     ChatEvent, ChatFinishReason, ChatRequestArgs, ChatUsage, DeframeError, DevinFrame,
     CHAT_ENDPOINT,
@@ -113,7 +113,7 @@ impl Wire for DevinWire {
         // worker session は常に off）。Rig request には per-request
         // reasoning level が無いため TS の固定値 `"off"` をそのまま
         // 再現する。spec に reasoning field が増えたらここへ流す。
-        let model_uid = crate::models::resolve_model_uid(
+        let model_uid = crate::devin::models::resolve_model_uid(
             &self.model_id,
             self.thinking_level_map.as_ref(),
             Some("off"),
@@ -409,10 +409,10 @@ impl Transport<DevinWire> for DevinTransport {
             // `encodeMessage(1, metadata_body + encodeString(21, jwt)) + tail`
             // — TS `buildGetChatMessageRequest` と byte 同一。
             let mut metadata_body = payload.metadata_body;
-            metadata_body.extend_from_slice(&crate::wire::encode_string(21, &jwt));
-            let mut body = crate::wire::encode_message(1, &metadata_body);
+            metadata_body.extend_from_slice(&crate::devin::wire::encode_string(21, &jwt));
+            let mut body = crate::devin::wire::encode_message(1, &metadata_body);
             body.extend_from_slice(&payload.tail);
-            let framed = crate::wire::frame_connect_stream(&body, true);
+            let framed = crate::devin::wire::frame_connect_stream(&body, true);
 
             let request = Request::post(format!("{}{}", payload.host, CHAT_ENDPOINT))
                 .header("content-type", "application/connect+proto")

@@ -16,8 +16,8 @@ use bytes::Bytes;
 use rig::http_client::{self, DynHttpClient, HttpClientExt, Request, StatusCode};
 use tokio::sync::Mutex;
 
-use crate::metadata::{build_metadata, MetadataInput};
-use crate::wire::{encode_message, iter_fields, FieldValue};
+use crate::devin::metadata::{build_metadata, MetadataInput};
+use crate::devin::wire::{encode_message, iter_fields, FieldValue};
 
 /// JWT mint timeout（TS `AbortSignal.timeout(30_000)`）。
 const MINT_TIMEOUT: Duration = Duration::from_secs(30);

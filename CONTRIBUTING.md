@@ -84,7 +84,7 @@ install する。
   auth service・provider plugin contract・run orchestration
 - `crates/cheaper-rig-adapter` — Rig SDK の隔離 adapter（Rig 型の参照は
   この crate と provider crate に限定）
-- `crates/cheaper-provider-devin` — `devin` bundled provider plugin
+- `crates/cheaper-provider` — bundled provider plugin（`devin` module）
 - `crates/cheaper-workflow` — workflow schema・compiler・DAG engine
 - `packages/apm` — distributable APM package（consumer へ deploy
   される skills/hooks/thin launcher。CLI 本体は cargo install）

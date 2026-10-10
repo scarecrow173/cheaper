@@ -31,7 +31,7 @@ sha2 = "0.10"
 # ため 0.3 系を pin — `getrandom::fill`）。
 getrandom = "0.3"
 # OpenAI Codex OAuth: PKCE verifier/challenge の base64url encode
-# （cheaper-provider-devin が crate-level で使用済みの 0.22 系）。
+# （cheaper-provider が crate-level で使用済みの 0.22 系）。
 base64 = "0.22"
 
 [dev-dependencies]

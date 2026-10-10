@@ -5,8 +5,8 @@ use std::sync::{Arc, Mutex};
 use cheaper_core::errors::CheaperError;
 use cheaper_runtime::auth::{AuthInteraction, AuthPrompt};
 
-use cheaper_provider_devin::cli::*;
-use cheaper_provider_devin::credentials::*;
+use cheaper_provider::devin::cli::*;
+use cheaper_provider::devin::credentials::*;
 
 /// notify を記録する `AuthInteraction` stub — Windows contract の
 /// 告知・非告知を検証する。

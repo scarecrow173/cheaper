@@ -9,7 +9,9 @@
 
 use std::sync::OnceLock;
 
-use crate::wire::{encode_message, encode_string, encode_timestamp_body, encode_varint_field};
+use crate::devin::wire::{
+    encode_message, encode_string, encode_timestamp_body, encode_varint_field,
+};
 
 const FALLBACK_WINDSURF_VERSION: &str = "3.6.27";
 /// macOS Devin Desktop が同梱する product.json（`windsurfVersion` 参照元）。

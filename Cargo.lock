@@ -828,7 +828,7 @@ name = "cheaper-cli"
 version = "1.0.0"
 dependencies = [
  "cheaper-core",
- "cheaper-provider-devin",
+ "cheaper-provider",
  "cheaper-rig-adapter",
  "cheaper-runtime",
  "cheaper-tools",
@@ -856,7 +856,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cheaper-provider-devin"
+name = "cheaper-provider"
 version = "0.1.0"
 dependencies = [
  "async-stream",

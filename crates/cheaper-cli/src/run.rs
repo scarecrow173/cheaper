@@ -37,7 +37,7 @@ use cheaper_core::policy::restrict::{restrict_policy, PolicyRestrictions};
 use cheaper_core::worker::resolve::{resolve_worker, resolve_worker_file, ResolveWorkerError};
 use cheaper_core::worker::validate::{validate_worker_input, WorkerDefinition};
 use cheaper_core::workspace::paths::canonicalize_workspace_root;
-use cheaper_provider_devin::{DevinCompletionModelFactory, DevinProviderPlugin, API_KIND};
+use cheaper_provider::devin::{DevinCompletionModelFactory, DevinProviderPlugin, API_KIND};
 use cheaper_rig_adapter::{
     builtin_completion_model, BuiltinAuth, BuiltinModelSpec, CompletionModel,
 };

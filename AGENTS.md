@@ -80,7 +80,7 @@ model catalog は bundled snapshot + bundled plugin provider + user overlay
 built-in catalog に無い provider は `CheaperProviderPlugin` contract で明示
 bundle する（ADR-034r05iHrZUE6WoaNDNjvX）。`devin` provider は Devin CLI 委譲
 auth + `<userConfigDir>/providers/devin/data/` 隔離の bundled plugin
-（ADR-034r05iHrZUE6WqcIaH1CU、`crates/cheaper-provider-devin`）— global Devin
+（ADR-034r05iHrZUE6WqcIaH1CU、`crates/cheaper-provider` の `devin` module）— global Devin
 credential は使わない。
 
 ## 開発原則

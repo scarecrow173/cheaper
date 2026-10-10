@@ -4,9 +4,9 @@ use cheaper_runtime::auth::{CredentialData, ProcessEnv, StoredCredential};
 use cheaper_runtime::plugin::{ProviderPluginContext, ProviderRegistry};
 use cheaper_runtime::CheaperProviderPlugin;
 
-use cheaper_provider_devin::cli::{CliRunOptions, DevinCliResult, DevinCliRunner};
-use cheaper_provider_devin::plugin::{DevinProviderPlugin, PROVIDER_ID};
-use cheaper_provider_devin::rig_provider::{API_KIND, DEFAULT_HOST};
+use cheaper_provider::devin::cli::{CliRunOptions, DevinCliResult, DevinCliRunner};
+use cheaper_provider::devin::plugin::{DevinProviderPlugin, PROVIDER_ID};
+use cheaper_provider::devin::rig_provider::{API_KIND, DEFAULT_HOST};
 
 fn ctx(dir: &std::path::Path) -> ProviderPluginContext {
     ProviderPluginContext {
@@ -40,8 +40,8 @@ fn registers_devin_provider_shape() {
 #[test]
 fn to_auth_reads_isolated_credentials_toml() {
     let dir = tempfile::tempdir().unwrap();
-    let data_dir = cheaper_provider_devin::credentials::devin_data_dir(dir.path());
-    let cred_path = cheaper_provider_devin::credentials::devin_credentials_path(&data_dir);
+    let data_dir = cheaper_provider::devin::credentials::devin_data_dir(dir.path());
+    let cred_path = cheaper_provider::devin::credentials::devin_credentials_path(&data_dir);
     std::fs::create_dir_all(cred_path.parent().unwrap()).unwrap();
     std::fs::write(
         &cred_path,
@@ -157,8 +157,8 @@ fn windows_logout_via_plugin_removes_snapshot_without_cli() {
     // logout が `devin auth logout` を spawn せず cheaper snapshot
     // のみ削除することを plugin 経路で検証する。
     let dir = tempfile::tempdir().unwrap();
-    let data_dir = cheaper_provider_devin::credentials::devin_data_dir(dir.path());
-    let cred_path = cheaper_provider_devin::credentials::devin_credentials_path(&data_dir);
+    let data_dir = cheaper_provider::devin::credentials::devin_data_dir(dir.path());
+    let cred_path = cheaper_provider::devin::credentials::devin_credentials_path(&data_dir);
     std::fs::create_dir_all(cred_path.parent().unwrap()).unwrap();
     std::fs::write(&cred_path, "api_key = \"k\"\n").unwrap();
     let runner = Arc::new(RecordingRunner {
@@ -185,5 +185,5 @@ fn catalog_refresh_uses_fallback_without_credential() {
     let catalog = registrations[0].catalog.clone().unwrap();
     let ctx = ctx(dir.path());
     let models = catalog.refresh_models(&ctx, None).unwrap().unwrap();
-    assert_eq!(models, cheaper_provider_devin::models::fallback_models());
+    assert_eq!(models, cheaper_provider::devin::models::fallback_models());
 }

@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use cheaper_cli::args::{AuthAction, AuthCliArgs, AuthTypeArg, CliFormat};
 use cheaper_cli::auth::{execute, execute_with, AuthTerminal, TerminalInteraction};
 use cheaper_cli::cli::{run_cli, CliHooks, CliIo, CliStdin, CliWrite};
-use cheaper_provider_devin::DevinProviderPlugin;
+use cheaper_provider::devin::DevinProviderPlugin;
 use cheaper_runtime::auth::{
     AuthEvent, AuthInfoLink, AuthInteraction, AuthPrompt, AuthSelectOption, AuthSource,
     ProviderEnv, ResolvedAuth,

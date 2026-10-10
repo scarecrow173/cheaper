@@ -1,4 +1,4 @@
-use cheaper_provider_devin::wire::*;
+use cheaper_provider::devin::wire::*;
 
 #[test]
 fn varint_roundtrip() {
