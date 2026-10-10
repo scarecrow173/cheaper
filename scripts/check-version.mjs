@@ -5,32 +5,25 @@
 // so CI fails automatically on divergence.
 //
 // Checked:
-//   Cargo.toml                               canonical version
-//                                            ([workspace.package] version)
-//   packages/apm/apm.yml                     must equal canonical (version: line)
-//   packages/apm/.apm/hooks/cli/version.json must equal canonical (generated)
+//   Cargo.toml              canonical version
+//                           ([workspace.package] version)
+//   packages/apm/apm.yml    must equal canonical (version: line)
 //
 // NOT checked: root apm.yml — it describes the cheaper-dev development
-// project, whose version is independent of the product. `packages/cli` is
-// no longer a version declaration site (removed in Phase 6 Commit C).
+// project, whose version is independent of the product. The generated
+// `cli/version.json` declaration site was removed in issue #85 (slim
+// APM payload — the binary embeds the version via build.rs).
 
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { apmPackageVersion, cargoWorkspaceVersion } from "./lib/release-artifacts.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
-const readJsonVersion = (rel) => JSON.parse(readFileSync(path.join(repoRoot, rel), "utf8")).version;
-
 const canonical = cargoWorkspaceVersion(repoRoot);
 
 const declarations = [
   ["packages/apm/apm.yml", () => apmPackageVersion(path.join(repoRoot, "packages/apm/apm.yml"))],
-  [
-    "packages/apm/.apm/hooks/cli/version.json",
-    () => readJsonVersion("packages/apm/.apm/hooks/cli/version.json"),
-  ],
 ];
 
 let failed = false;

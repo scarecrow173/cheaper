@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034r05iHy2gdnoH3XDJcXx"
 type: "design"
-status: "approved"
+status: "superseded"
 title: "cheaper CLI bundle layout inside .apm/hooks/cli"
 created: "2026-09-16"
 updated: "2026-09-16"
@@ -23,7 +23,7 @@ relations:
     - "./apm-skills-and-pre-read-hook.md"
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["docs/designs/cargo-source-install-distribution-and-thin-path-launchers.md"]
   related:
     - "../discovery/apm-self-contained-cli-distribution.md"
   refines: []

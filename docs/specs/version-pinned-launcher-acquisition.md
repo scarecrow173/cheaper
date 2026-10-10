@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034zIO2lm7gJPz6Gy4JIQP"
 type: "spec"
-status: "approved"
+status: "superseded"
 title: "Version-pinned launcher acquisition"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -21,7 +21,7 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["SPEC-034Dmb2S8y3tdJI8WdKhG0"]
   related:
     - "../adr/version-pinned-launcher-acquisition.md"
   refines:

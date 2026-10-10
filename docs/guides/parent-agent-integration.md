@@ -42,13 +42,26 @@ cheaper は parent agent へ以下を配布する（APM package 経由）:
   （Windsurf: exit 2、Copilot: `permissionDecision: "deny"` +
   exit 0 — SPEC-034r05iHK8bA7gjwZTji8t /
   DESIGN-034r05iHy2gdnoLt52txFG の意図的仕様）。
-- **bundled CLI**: self-contained の `cheaper` CLI（skills/hooks
-  が内部から直接呼べる）
+- **thin launcher**（`cheaper.sh` / `cheaper.ps1`）: PATH 上に
+  install 済みの `cheaper` CLI を解決して起動する薄い wrapper。
+  CLI 本体は consumer が `cargo install` で用意する（後述）。
 
 ## install
 
-consumer（親 agent 環境）は `cheaper` の distributable APM package
-を依存として install する:
+consumer（親 agent 環境）は 2 段階で install する:
+
+1. **CLI 本体**: Cargo source install で PATH 上へ配置する
+   （ADR-034Dmb3kNAO4Ub6FxuQCtC — Release download / bundled binary は
+   廃止。前提: Rust ≥1.95・git・C toolchain・cargo bin の PATH 設定。
+   詳細は [配布 guide](./distribution.md)）。
+
+   ```bash
+   cargo install --git https://github.com/scarecrow173/cheaper.git --locked cheaper-cli
+   cheaper --version   # preflight
+   ```
+
+2. **skills / hooks**: `cheaper` の distributable APM package を依存
+   として install する:
 
 ```yaml
 # consumer の apm.yml
@@ -91,11 +104,9 @@ hook の動作は target の hook event 体系に依存する。
   `{"permissionDecision":"deny"}` で block する
   （ADR-034r05iHrZUE6WizQ4LgPa）。`view` の file-read に加え、
   shell tool（`bash` / `powershell` / `shell`）内の large-read
-  も同一 policy で block される。既知の制限として、現行の APM
-  は copilot target へ `.json` asset を deploy しないため、
-  file-schema worker（bulk-read / code-write / doc-write）は
-  upstream 修正待ちの間利用できない（`count-tokens` と hook
-  adapter は動作する）。
+  も同一 policy で block される。worker 定義・schema・policy は
+  binary に embedded されているため、copilot target の `.json`
+  deploy 除外は worker の利用に影響しない（issue #85）。
 - **Codex**: `PreToolUse`（`Read|Bash|PowerShell` matcher、
   Claude と同一の nested group 登録）経由で
   `cheaper hook pre-tool-use --target pretooluse` が動作し、
@@ -163,12 +174,12 @@ infrastructure failure は fail-open（素通し）で、`FILE_TOO_LARGE`
 （計測 byte cap 超過）は fail-closed で block される。
 
 hook 呼び出し自体は Node.js を必要としない。`hooks.json` の
-entry は POSIX では `./cheaper`、Windows（powershell key）では
-`./cheaper.ps1` の launcher を経由する。launcher は sibling executable を
-優先し、不在なら `cli/version.json` の固定 Release から SHA256SUMS で検証した
-executable を user cache へ取得して実行する。Git source は binary を含まない。
-offline preseed、初回取得失敗時の診断、Copilot の JSON deploy 制約と host の
-allow fallback は [配布・取得 guide](./distribution.md) を参照する。
+entry は POSIX では `sh ./cheaper.sh`、Windows（powershell key）では
+`./cheaper.ps1` の thin launcher を経由する。launcher は PATH 上に
+install 済みの `cheaper` CLI を解決して起動するだけで、download・
+cache・version pinning を行わない。CLI 不在時は install command と
+PATH 設定の案内を stderr に出して非 0 で終了する。launcher 契約の
+詳細は [配布 guide](./distribution.md) を参照する。
 hook 経路の計測は `usage.jsonl` に
 記録されない（telemetry 対象は明示的な `cheaper run` /
 `count-tokens` のみ）。
@@ -176,23 +187,26 @@ hook 経路の計測は `usage.jsonl` に
 ## 連携の確認
 
 ```bash
-# POSIX: deploy 済み launcher から sibling / verified cache の CLI を確認
-<deployed-hook>/cheaper --version
-<deployed-hook>/cheaper count-tokens src/huge.ts
+# PATH 上の CLI（cargo install 済み）を直接確認
+cheaper --version
+cheaper count-tokens src/huge.ts
+
+# POSIX: deploy 済み launcher 経由でも同じ CLI が解決される
+sh <deployed-hook>/cheaper.sh --version
 
 # skills/hooks が install されたかは target の config を確認
 # （例: .windsurf/hooks/ 等、target 固有の deploy path）
 ```
 
-Windows も executable の直接起動ではなく PowerShell launcher で確認する。
+Windows も PowerShell launcher で確認する。
 
 ```powershell
 & '<deployed-hook>/cheaper.ps1' --version
-& '<deployed-hook>/cheaper.ps1' count-tokens 'src/huge.ts'
 ```
 
-初回取得には対応する固定 Release と network が必要。offline 環境の準備は
-[配布・取得 guide](./distribution.md#offline-preseed) を参照する。
+CLI が PATH 上に無い場合は launcher が install command と PATH 設定の
+案内を stderr に出す。前提・PATH 設定の詳細は
+[配布 guide](./distribution.md) を参照する。
 
 実際の e2e 検証手順は [CONTRIBUTING.md](../../CONTRIBUTING.md) の
 「実 provider 検証」を参照。
@@ -202,7 +216,7 @@ Windows も executable の直接起動ではなく PowerShell launcher で確認
 - CLI contract: [usage ガイド](./usage.md)
 - provider / auth 設定: [providers ガイド](./providers.md)
 - 設計記録: `docs/designs/apm-skills-and-pre-read-hook.md`・
-  `docs/adr/distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md`
-  （superseded — 後継は
-  `docs/adr/remove-the-committed-esbuild-cli-payload-and-move-the-canonical-version-to-cargo.md`）・
+  `docs/adr/distribute-cli-via-cargo-source-install-and-thin-path-launchers.md`
+  （現行の配布 ADR — 旧 bundled CLI / Release 取得 ADR は
+  superseded）・
   `docs/discovery/cross-agent-hook-distribution-and-contract-matrix.md`

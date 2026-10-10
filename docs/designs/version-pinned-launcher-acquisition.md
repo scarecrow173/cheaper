@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034zQkHD65kAeG9xVGSoFX"
 type: "design"
-status: "approved"
+status: "superseded"
 title: "Version-pinned launcher acquisition"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -13,7 +13,8 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "docs/adr/distribute-cli-via-cargo-source-install-and-thin-path-launchers.md"
   related: []
   refines: []
   refined-by: []

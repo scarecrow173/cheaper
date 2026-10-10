@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034z1P09dg86lO9uB31cUi"
 type: "test-spec"
-status: "proposed"
+status: "superseded"
 title: "Embedded builtin resource resolution across distribution forms"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -20,7 +20,7 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["TSPEC-034DmUtUjWCThCnJulok0c"]
   related: []
   refines: []
   refined-by: []

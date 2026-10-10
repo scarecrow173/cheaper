@@ -14,19 +14,21 @@ mise run setup   # fresh checkout を開発可能にする canonical setup contr
 mise run check   # CI と同等の canonical verification contract
 ```
 
-Git source は launcher と小さい CLI asset のみを保持し、platform executable を
-含まない。hook は固定 version の Release/SHA256SUMS から検証済み user cache へ
-取得する。offline は同 Release の pair を preseed、dev は local cargo build
-（`cargo build --release -p cheaper-cli`）の出力を sibling へ配置して使う。
-`cli/bin/<platform>/` の local output は ignore し、binary を Git に追加しない。
-Git LFS の既存履歴は保持する。consumer の対象・移行手順は `docs/guides/distribution.md` を参照する。
+Git source は thin launcher（`cheaper.sh` / `cheaper.ps1`）と skills /
+hooks.json のみを保持し、platform executable を一切含まない。CLI 本体は
+consumer が `cargo install --git https://github.com/scarecrow173/cheaper.git
+--locked cheaper-cli` で PATH 上へ install し、launcher はそれを解決して
+起動するだけ（download / cache / Release 取得の機構は無い）。
+Git LFS の既存履歴は保持する。consumer の前提・install 手順は
+`docs/guides/distribution.md` を参照する。
 
 `mise run setup` は toolchain（`mise.toml` + `mise.lock` の locked version）に加え、
 `apm install` → `cargo fetch` → `cargo build --workspace --all-targets` を復元する。
 `mise run check` は `biome check` → `cargo fmt --check` → `cargo clippy` →
 version/doc-id check → `cargo test --workspace` → `node --test`（scripts・
-benchmarks）→ bundle 再生成（`node scripts/bundle-cli.mjs`）→ payload check →
-bundle freshness の Rust pipeline。コマンド実行は `mise exec -- <command>` 経由で
+benchmarks）→ committed lockfile check（`node scripts/check-lockfile.mjs`）→
+slim payload check（`node scripts/check-apm-payload.mjs`）の Rust pipeline。
+コマンド実行は `mise exec -- <command>` 経由で
 行い、mise.toml が管理するツールバージョンを有効化する。
 
 fresh worktree では `target/`・`apm_modules`・APM deploy 生成物が
@@ -37,10 +39,9 @@ worktree の探索・他 worktree の生成物（target / APM artifact）
 root の `apm.yml` は development-only project であり、cheaper 自身の
 skill/hook は deploy されない。consumer へ配布する APM package は
 `packages/apm/`（`apm.yml` + `.apm/` primitives）に分離されており、
-bundled CLI payload（`version.json`・`workers/`・`policy.yaml`）は
-`node scripts/bundle-cli.mjs` で `packages/apm/.apm/hooks/cli/` へ生成する。
-payload の複写元は `crates/cheaper-cli/resources/`（Rust binary の embedded
-resource と同一 source）で、platform executable は payload に含めない。
+skills・`hooks.json`・thin launcher のみを含む。worker 定義・
+schema・policy は `crates/cheaper-cli/resources/` から Rust binary
+へ embedded されるため、`cli/` payload は配布しない（issue #85）。
 
 Node.js は repo tooling（`scripts/`・`benchmarks/`・doc-suite skills）のためだけに
 toolchain に残る。product・distribution・hook 実行経路に Node 依存はない

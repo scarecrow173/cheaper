@@ -22,8 +22,8 @@ use std::sync::OnceLock;
 use include_dir::{include_dir, Dir, DirEntry};
 
 /// `resources/workers/`(`workers/schemas/*.json` を含む)。
-/// bundled resource の canonical source — `scripts/lib/apm-bundle.mjs`
-/// が同じ dir から APM payload へ複写する。
+/// binary への embedded が唯一の配布経路(issue #85 — APM package の
+/// `cli/` payload は撤去済み)。
 static WORKERS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/resources/workers");
 
 /// `resources/policy.yaml`。

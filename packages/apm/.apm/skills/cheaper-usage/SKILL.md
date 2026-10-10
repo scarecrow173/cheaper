@@ -40,24 +40,35 @@ one workspace file so you can measure context cost before reading it.
 
 ## Locating the CLI
 
-- If `cheaper` is on `PATH`, use it directly.
-- In a workspace where cheaper was installed via APM, the hook bundle
-  ships a platform launcher (no Node.js required); a native executable
-  is either already beside it as a sibling or acquired on first run.
+- Preflight: run `cheaper --version`. If it prints a version, invoke
+  `cheaper` directly — the hook launchers resolve the same PATH.
+- If `cheaper` is not on `PATH`, install it from source (Cargo source
+  install — there is no Release download, cache, or bundled binary):
 
-  APM deploys hook bundles to `<hooks_root>/<dep-name>/`, where
+  ```bash
+  cargo install --git https://github.com/scarecrow173/cheaper.git --locked cheaper-cli
+  # update: add --force to the same command
+  ```
+
+  Prerequisites: Rust toolchain ≥ 1.95 (the `rig` dependency requires
+  it), `git`, and an OS C toolchain (MSVC build tools on Windows).
+  Ensure Cargo's bin directory is on the IDE/agent `PATH`
+  (`~/.cargo/bin` on POSIX, `%USERPROFILE%\.cargo\bin` on Windows) and
+  restart the IDE/agent so it inherits the updated PATH. Verify with
+  `cheaper --version`, then `cheaper models` as a smoke check.
+- In a workspace where cheaper was installed via APM, the deployed
+  hook bundle lives under `<hooks_root>/<dep-name>/`, where
   `<dep-name>` is the name the dependency was installed under —
   the basename for `path:` dependencies, or the last path segment
   of a virtual package reference. For the canonical install
   (`scarecrow173/cheaper/packages/apm`) that name is `apm`:
 
   ```bash
-  .windsurf/hooks/apm/cheaper <command> [options]               # POSIX
-  powershell .windsurf/hooks/apm/cheaper.ps1 <command> [options] # Windows
+  .windsurf/hooks/apm/cheaper.sh <command> [options]               # POSIX (via sh)
+  powershell .windsurf/hooks/apm/cheaper.ps1 <command> [options]  # Windows
   ```
 
-  Other targets use the same shape under their own root, e.g. copilot:
-  `.github/hooks/scripts/apm/cheaper`. Per-target hook roots:
+  Per-target hook bundle roots:
 
   | Target | Hook bundle root |
   |---|---|
@@ -67,34 +78,23 @@ one workspace file so you can measure context cost before reading it.
   | Cursor | `.cursor/hooks/<dep-name>/` |
   | GitHub Copilot | `.github/hooks/scripts/<dep-name>/` |
 
-  If you don't know the deployed bundle directory, either read the
+  If you don't know the deployed bundle directory, read the
   generated hook config — its `command` entries carry the real path
   (`.windsurf/hooks.json`, `.claude/settings.json`,
   `.codex/hooks.json`, `.cursor/hooks.json`, or
   `.github/hooks/<dep-name>-hooks.json` depending on target, plus
   `apm-hooks.json` duplicates on some targets; Claude commands may
-  contain a `${CLAUDE_PROJECT_DIR}` placeholder) — or look under
-  the hook root for `cheaper`/`cheaper.ps1`.
+  contain a `${CLAUDE_PROJECT_DIR}` placeholder).
 
-  The launcher dispatches to `cli/bin/<platform>/cheaper[.exe]`.
-  If that sibling is absent on linux-x64, linux-arm64, or win32-x64, it
-  acquires the Release tag pinned by `cli/version.json` into a user cache
-  outside the hook directory (override: absolute `CHEAPER_CACHE_DIR`).
-  It verifies the same-tag `SHA256SUMS`, binary SHA-256, and executable
-  version on acquisition and cache hits; it never resolves `latest`.
-  Offline preseed requires both the executable and the published manifest
-  under `<cache>/<version>/<platform>/`. Missing version metadata, unsupported
-  acquisition targets, or failed verification produce stderr and nonzero exit.
-  Copilot's JSON deploy exclusion also removes version.json, so acquisition
-  there requires a future deployable version source; keep the sibling payload
-  until that migration is complete. PowerShell hook entries use cheaper.ps1
-  through a child PowerShell process and retain their existing fallback policy.
-  On platforms without an acquisition target or sibling (e.g. an
-  unsupported OS), place a locally built `cheaper` executable at the
-  sibling path — there is no JS fallback. Hook registrations invoke the
-  launcher/executable path directly via `cheaper hook
-  <event> --target <agent>`.
-  Everywhere below, `cheaper <args>` means either form.
+  The bundle contains only thin launchers — `cheaper.sh` (POSIX)
+  and `cheaper.ps1` (Windows) — which resolve `cheaper` from `PATH`
+  and forward argv, stdin, stdout, and the exit code verbatim. They
+  never download, cache, or install anything; when the CLI is
+  missing they print the install command and PATH guidance to
+  stderr and exit nonzero. Hook registrations invoke
+  `cheaper hook <event> --target <agent>` through these launchers
+  (POSIX entries run `sh ./cheaper.sh`, so a missing executable bit
+  does not break the hook).
 - The large-read hook is functional on these targets (all routed
   through `cheaper hook <event> --target <agent>`; Node.js is not
   required):
@@ -104,10 +104,7 @@ one workspace file so you can measure context cost before reading it.
     shell commands.
   - **GitHub Copilot** — `preToolUse`; oversized `view` and shell-tool
     calls are denied via `{"permissionDecision":"deny"}` on stdout
-    with exit 0. Note the known gap: APM does not deploy `.json`
-    assets to the copilot target, so file-schema workers (`bulk-read`
-    / `code-write` / `doc-write`) cannot run there until the
-    upstream fix lands — `count-tokens` and the hook still work.
+    with exit 0.
   - **Claude Code** — `PreToolUse` (`Read`/`Bash`/`PowerShell`
     matcher); denies return `hookSpecificOutput.permissionDecision:
     "deny"` on stdout with exit 0.

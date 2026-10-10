@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034zTjGVOLExU7QfmMVo3c"
 type: "design"
-status: "approved"
+status: "superseded"
 title: "One-dispatch release workflow"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -13,7 +13,7 @@ relations:
   depends-on: ["./version-pinned-launcher-acquisition.md"]
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["docs/designs/cargo-source-install-distribution-and-thin-path-launchers.md"]
   related: []
   refines: []
   refined-by: []

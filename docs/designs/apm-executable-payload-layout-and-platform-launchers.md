@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034z1EgnQwax4VamK2xmdT"
 type: "design"
-status: "approved"
+status: "superseded"
 title: "APM executable payload layout and platform launchers"
 created: "2026-10-02"
 updated: "2026-10-02"
@@ -24,7 +24,7 @@ relations:
     - "./sea-executable-build-pipeline-and-embedded-resource-resolution.md"
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["docs/designs/cargo-source-install-distribution-and-thin-path-launchers.md"]
   related:
     - "./dev-apm-project-and-distributable-package-layout.md"
     - "./cli-bundle-layout.md"

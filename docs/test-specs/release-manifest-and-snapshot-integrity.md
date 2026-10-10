@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034zTWh6x6esCzZmjDdiT0"
 type: "test-spec"
-status: "proposed"
+status: "superseded"
 title: "Release manifest and snapshot integrity"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -13,7 +13,7 @@ relations:
   depends-on: []
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["TSPEC-034DmUtUjWCThCnJulok0c"]
   related: []
   refines: []
   refined-by: []

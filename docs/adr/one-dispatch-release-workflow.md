@@ -1,7 +1,7 @@
 ---
 id: "ADR-034zThoekpLqCcHhYO4MPe"
 type: "adr"
-status: "accepted"
+status: "superseded"
 title: "One-dispatch release workflow"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -13,7 +13,8 @@ relations:
   depends-on: ["./version-pinned-launcher-acquisition.md"]
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "docs/adr/distribute-cli-via-cargo-source-install-and-thin-path-launchers.md"
   related:
     - "../specs/one-dispatch-release-workflow.md"
     - "./distribute-cheaper-as-node-26-sea-standalone-executables-shared-by-direct-releas.md"
@@ -28,7 +29,6 @@ relations:
   references:
     - "./fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md"
     - "../designs/version-pinned-launcher-acquisition.md"
-    - "../../scripts/test/launcher-acquisition.test.mjs"
   defers: []
   deferred-by: []
 metadata:

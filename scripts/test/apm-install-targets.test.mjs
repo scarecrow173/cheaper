@@ -2,14 +2,15 @@
 // apm-install-targets.test.ts の node:test port(Phase 6 Commit C)。
 //
 // hook 対象 target の table-driven 検証。deploy layout・generated config
-// の完全性・event 登録 shape を `apm install` 実実行で確認する。実行経路
-// (launcher → acquired executable → hook 判定)は
-// scripts/test/launcher-acquisition.test.mjs と smoke-release.mjs が担う —
-// bundled `cli/bin/cheaper.mjs`(esbuild JS payload)は Phase 6 Commit A で
-// 撤去済みのため、本 file では binary-free source layout を assert する。
+// の完全性・event 登録 shape を `apm install` 実実行で確認する。
+// issue #85 で配布 model は cargo source install + thin PATH launcher に
+// 移行 — deployed bundle は cheaper.sh / cheaper.ps1 / hooks.json /
+// skills のみで cli/ payload を含まない。launcher の実行経路
+// (PATH 上 CLI の passthrough)は scripts/test/launcher-passthrough.test.mjs
+// が担う。
 
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
@@ -53,36 +54,26 @@ for (const target of HOOK_TARGETS) {
       const install = apmInstall(consumer, root, target);
       assert.strictEqual(install.status, 0, install.stderr);
 
-      // bundle layout(copilot 差分は後述)。cli/bin/cheaper.mjs
-      // (esbuild payload)は廃止 — executable は launcher が取得する。
+      // bundle layout — slim payload(issue #85): thin launcher + hooks.json
+      // のみ。cli/ payload(version.json / workers / policy / bin)は
+      // cargo binary の embedded resource に統合されたため配布しない。
       const bundle = bundleRoot(consumer, target);
       assert.notStrictEqual(bundle, null);
-      for (const rel of [
-        "cheaper",
-        "cheaper.ps1",
-        path.join("cli", "workers"),
-        path.join("cli", "policy.yaml"),
-      ]) {
+      for (const rel of ["cheaper.sh", "cheaper.ps1"]) {
         assert.ok(existsSync(path.join(bundle, rel)), `${target}: ${rel}`);
       }
-      for (const p of ["win32-x64", "linux-x64", "linux-arm64"]) {
-        assert.strictEqual(existsSync(path.join(bundle, "cli", "bin", p)), false);
-      }
-      if (target === "copilot") {
-        // DESIGN-0018 §3 との差分を記録: APM 0.28.0 は copilot の
-        // scripts deploy から *.json を除外するため cli/version.json
-        // (と workers/schemas/*.json)は deploy されない。worker の
-        // .md 本体は残る。
-        assert.strictEqual(existsSync(path.join(bundle, "cli", "version.json")), false);
-        assert.ok(existsSync(path.join(bundle, "cli", "workers", "bulk-reader.md")));
-        for (const rel of [
-          path.join("cli", "workers", "schemas", "bulk-reader.input.schema.json"),
-          path.join("cli", "workers", "schemas", "bulk-reader.output.schema.json"),
-        ]) {
-          assert.strictEqual(existsSync(path.join(bundle, rel)), false, `${target}: ${rel}`);
-        }
-      } else {
-        assert.ok(existsSync(path.join(bundle, "cli", "version.json")));
+      assert.strictEqual(
+        existsSync(path.join(bundle, "cli")),
+        false,
+        `${target}: cli/ payload must not be deployed`,
+      );
+      // POSIX platform では deploy 済み cheaper.sh の exec bit を観測する
+      // (Windows の mode は POSIX bit を持たないため conditional)。
+      // hooks.json は `sh ./cheaper.sh` で起動するため bit 喪失でも
+      // hook は動くが、直接実行できることは payload 契約として残す。
+      if (process.platform !== "win32") {
+        const mode = statSync(path.join(bundle, "cheaper.sh")).mode;
+        assert.ok(mode & 0o111, `${target}: deployed cheaper.sh must be executable`);
       }
 
       // generated config: 存在 + JSON parse 可能

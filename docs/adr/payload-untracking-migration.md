@@ -1,7 +1,7 @@
 ---
 id: "ADR-034zWr0viJFoTiUALvhE6N"
 type: "adr"
-status: "accepted"
+status: "superseded"
 title: "Payload untracking migration"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -20,7 +20,8 @@ relations:
   depends-on: []
   blocks: []
   supersedes: ["ADR-034z1xMK43jRs3D79Urhpc"]
-  superseded-by: []
+  superseded-by:
+    - "docs/adr/distribute-cli-via-cargo-source-install-and-thin-path-launchers.md"
   related: []
   refines: []
   refined-by: []

@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034zXB13nuorLP81dn8ro8"
 type: "test-spec"
-status: "approved"
+status: "superseded"
 title: "Payload-free source acquisition and native verification"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -20,7 +20,7 @@ relations:
   depends-on: []
   blocks: []
   supersedes: ["TSPEC-034z3yKWLolrImpMY8UMhZ"]
-  superseded-by: []
+  superseded-by: ["TSPEC-034DmUtUjWCThCnJulok0c"]
   related: []
   refines: []
   refined-by: []

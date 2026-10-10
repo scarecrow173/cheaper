@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034zSQV3zqlEncx2GoLKSR"
 type: "spec"
-status: "approved"
+status: "superseded"
 title: "One-dispatch release workflow"
 created: "2026-10-04"
 updated: "2026-10-04"
@@ -21,7 +21,7 @@ relations:
     - "./version-pinned-launcher-acquisition.md"
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by: ["SPEC-034Dmb2S8y3tdJI8WdKhG0"]
   related: ["../adr/one-dispatch-release-workflow.md"]
   refines: []
   refined-by: []
@@ -34,7 +34,6 @@ relations:
   references:
     - "../adr/version-pinned-launcher-acquisition.md"
     - "../designs/version-pinned-launcher-acquisition.md"
-    - "../../scripts/test/launcher-acquisition.test.mjs"
     - "../adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md"
   defers: []
   deferred-by: []
