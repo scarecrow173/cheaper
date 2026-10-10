@@ -12,10 +12,12 @@ const binaryFileName = process.platform === "win32" ? "cheaper.exe" : "cheaper";
 let resolvedBinary;
 
 // cargo build 出力の native binary を解決する。`target/release` を優先
-// し、無ければ `target/debug` へ fallback する。build 手順:
-//   mise exec -- cargo build --release -p cheaper-cli
-//   (または `cargo build --workspace` / debug profile なら
-//    `cargo build -p cheaper-cli`)
+// し、無ければ `target/debug` へ fallback する。fake-stream seam
+// (`CHEAPER_TEST_FAKE_STREAM`)は `dev-seam` cargo feature で gate
+// されているため、benchmark 用 binary は feature 有効で build する:
+//   mise exec -- cargo build --release -p cheaper-cli --features dev-seam
+//   (または `cargo build --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
+//    / debug profile なら `cargo build -p cheaper-cli --features dev-seam`)
 export function cliBinaryPath() {
   if (resolvedBinary) return resolvedBinary;
   for (const profile of ["release", "debug"]) {
@@ -27,7 +29,8 @@ export function cliBinaryPath() {
   }
   throw new Error(
     "cheaper binary not found; build it first: " +
-      "cargo build --release -p cheaper-cli (or cargo build -p cheaper-cli)",
+      "cargo build --release -p cheaper-cli --features dev-seam " +
+      "(or cargo build -p cheaper-cli --features dev-seam)",
   );
 }
 

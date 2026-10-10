@@ -5,8 +5,9 @@
 //! - interface 射影(`{schemaVersion, inputs, outputs}` → utility envelope)
 //! - literal output / `$from` / `$input` binding
 //! - tool job の artifact ledger → `meta.artifacts`(preview なし)
-//! - worker job は `CHEAPER_TEST_FAKE_STREAM` fixture で deterministic に
-//!   実行(実 provider 不要)
+//! - worker job の `CHEAPER_TEST_FAKE_STREAM` fixture 経路は
+//!   `workflow_dev_seam.rs` へ分離(`dev-seam` cargo feature 前提、
+//!   `required-features` で gate)
 //! - partial failure の jobs 投影と exit code
 //! - timeout parsing / policy restriction
 //! - quiet が汎用 error diagnostic を抑える
@@ -80,18 +81,6 @@ impl Fixture {
                 ..Default::default()
             },
         }
-    }
-
-    fn with_fake_stream(mut self, fixture_json: &str) -> Self {
-        let path = self.ws.path().join("fixture.json");
-        std::fs::write(&path, fixture_json).unwrap();
-        self.env_map
-            .insert("NODE_ENV".to_string(), "test".to_string());
-        self.env_map.insert(
-            "CHEAPER_TEST_FAKE_STREAM".to_string(),
-            path.to_string_lossy().into_owned(),
-        );
-        self
     }
 
     fn with_input(mut self, input_json: &str) -> Self {
@@ -340,67 +329,6 @@ async fn workflow_run_partial_failure_tool_jobs() {
     // workflow error は `error` field に出る。
     assert!(env["error"]["code"].is_string());
     assert!(env["error"]["exitCode"].is_number());
-}
-
-// ---------------------------------------------------------------------------
-// worker job — fake-stream fixture
-// ---------------------------------------------------------------------------
-
-/// bulk-reader の output schema に適合する 2 session fixture
-/// (`{"summary",findings[],relevantFiles[],suggestedReads[],
-/// openQuestions[]}` 必須)。
-const FIXTURE_TWO_WORKERS: &str = r#"{
-  "name": "cli-t7-two-workers",
-  "sessions": [
-    {"steps": [
-      {"turn": {}},
-      {"finish": {"text": "{\"summary\":\"first\",\"findings\":[],\"relevantFiles\":[],\"suggestedReads\":[],\"openQuestions\":[]}"}}
-    ]},
-    {"steps": [
-      {"turn": {}},
-      {"finish": {"text": "{\"summary\":\"second\",\"findings\":[],\"relevantFiles\":[],\"suggestedReads\":[],\"openQuestions\":[]}"}}
-    ]}
-  ]
-}"#;
-
-/// TS test: "shares one lazy model runtime across Worker jobs" 相当。
-/// `needs` edge 付きの 2 worker job が fixture session を順に消費する。
-#[tokio::test(flavor = "current_thread")]
-async fn workflow_run_two_worker_jobs_with_needs() {
-    let mut f = Fixture::new().with_fake_stream(FIXTURE_TWO_WORKERS).with_workflow(json!({
-        "schemaVersion": 1,
-        "inputs": {},
-        "jobs": {
-            "a": { "kind": "worker", "worker": "bulk-reader", "input": { "task": "first" } },
-            "b": {
-                "kind": "worker",
-                "worker": "bulk-reader",
-                "input": { "task": "second" },
-                "needs": ["a"]
-            }
-        },
-        "outputs": {
-            "answer": { "schema": { "type": "string" }, "value": { "$from": "a", "path": "/summary" } },
-            "next": { "schema": { "type": "string" }, "value": { "$from": "b", "path": "/summary" } }
-        }
-    }));
-    let (code, env, err) = f.run(&["workflow", "run", "workflow.json"]).await;
-    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
-    assert_eq!(env["ok"], json!(true));
-    // session は job 順に消費される(a → session 0、b → session 1)。
-    assert_eq!(env["result"], json!({"answer": "first", "next": "second"}));
-    let jobs = env["jobs"].as_array().unwrap();
-    assert_eq!(jobs.len(), 2);
-    for id in ["a", "b"] {
-        let job = jobs.iter().find(|j| j["id"] == json!(id)).unwrap();
-        assert_eq!(job["status"], json!("succeeded"));
-        // `selectWorkerMeta` — model/usage/turns 等が載る。
-        // `execution`/`durationMs` は engine が job meta に merge する
-        // (TS `{...executorMeta, durationMs, execution}`)。
-        assert_eq!(job["meta"]["model"]["provider"], json!("cheaper-fake"));
-        assert!(job["meta"]["durationMs"].is_number());
-        assert!(job["meta"]["execution"]["operations"].is_number());
-    }
 }
 
 // ---------------------------------------------------------------------------

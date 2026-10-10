@@ -24,8 +24,11 @@
 //! composition root 経路で `run_worker` を呼べる。
 
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(feature = "dev-seam")]
+use std::path::PathBuf;
 use std::sync::Arc;
+#[cfg(feature = "dev-seam")]
 use std::time::Duration;
 
 use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirs, ConfigDirsOptions};
@@ -41,7 +44,10 @@ use cheaper_provider::devin::{DevinCompletionModelFactory, DevinProviderPlugin, 
 use cheaper_rig_adapter::{
     builtin_completion_model, BuiltinAuth, BuiltinModelSpec, CompletionModel,
 };
-use cheaper_runtime::auth::{AuthType, OAuthFlow, ProcessEnv, ProviderEnv};
+#[cfg(feature = "dev-seam")]
+use cheaper_runtime::auth::AuthType;
+use cheaper_runtime::auth::{OAuthFlow, ProcessEnv, ProviderEnv};
+#[cfg(feature = "dev-seam")]
 use cheaper_runtime::fixture::{RunFixture, ScriptedAuthInteraction};
 use cheaper_runtime::plugin::CheaperProviderPlugin;
 use cheaper_runtime::run::{
@@ -57,6 +63,7 @@ use crate::cli::{
     emit_catalog_warnings, now, resolve_builtin_dir, BoxError, CliHooks, CliIo, CommandOut, RunCtx,
 };
 use crate::envelope::success_envelope;
+#[cfg(feature = "dev-seam")]
 use crate::fake_stream::load_test_stream;
 use crate::input::read_task_input;
 
@@ -71,10 +78,12 @@ use crate::input::read_task_input;
 /// trait object には載せられない — production の `io.env` は
 /// `process.env` そのものなので `ProcessEnv` base で等価。fixture が
 /// 宣言する env(`$VAR` template 解決用)は overlay で供給する。
+#[cfg(feature = "dev-seam")]
 struct ScopedProviderEnv {
     overlay: BTreeMap<String, String>,
 }
 
+#[cfg(feature = "dev-seam")]
 impl ProviderEnv for ScopedProviderEnv {
     fn env(&self, name: &str) -> Option<String> {
         self.overlay
@@ -97,20 +106,28 @@ impl ProviderEnv for ScopedProviderEnv {
 
 /// `createModelRuntime({env})` 相当の CLI composition root:
 /// `DevinProviderPlugin` を常時 bundle(Pi extension loader は使わない
-/// 既存方針)。fake-stream fixture 有効時は `env` overlay・
-/// `cheaper-fake` plugin・`auth_logins`(→ `AuthService::login(api_key)`
-/// credential 永続化)まで適用する — replay harness と同じ経路。
+/// 既存方針)。fake-stream fixture 有効時(`dev-seam` feature)は
+/// `env` overlay・`cheaper-fake` plugin・`auth_logins`(→
+/// `AuthService::login(api_key)` credential 永続化)まで適用する —
+/// replay harness と同じ経路。
 ///
 /// T7 workflow の `ensureModel` でも再利用する前提の pub(crate) seam。
 pub(crate) fn create_runtime(
     user_config_dir: &Path,
-    fixture: Option<&RunFixture>,
+    #[cfg(feature = "dev-seam")] fixture: Option<&RunFixture>,
 ) -> Result<Runtime, CheaperError> {
+    #[cfg(feature = "dev-seam")]
     let env: Arc<dyn ProviderEnv> = Arc::new(ScopedProviderEnv {
         overlay: fixture.map(|f| f.env.clone()).unwrap_or_default(),
     });
+    #[cfg(not(feature = "dev-seam"))]
+    let env: Arc<dyn ProviderEnv> = Arc::new(ProcessEnv);
+    #[cfg(feature = "dev-seam")]
     let mut plugins: Vec<Arc<dyn CheaperProviderPlugin>> =
         vec![Arc::new(DevinProviderPlugin::new())];
+    #[cfg(not(feature = "dev-seam"))]
+    let plugins: Vec<Arc<dyn CheaperProviderPlugin>> = vec![Arc::new(DevinProviderPlugin::new())];
+    #[cfg(feature = "dev-seam")]
     if let Some(f) = fixture {
         plugins.push(Arc::new(f.plugin()));
     }
@@ -120,6 +137,7 @@ pub(crate) fn create_runtime(
         &plugins,
         BTreeMap::<String, Arc<dyn OAuthFlow>>::new(),
     )?;
+    #[cfg(feature = "dev-seam")]
     if let Some(f) = fixture {
         for (provider_id, secret) in &f.auth_logins {
             let mut interaction = ScriptedAuthInteraction::new(secret.clone());
@@ -181,6 +199,7 @@ pub(crate) fn production_session_factory() -> Box<dyn SessionFactory> {
 
 /// fake-stream fixture 有効時は scripted `FakeSessionFactory`、それ
 /// 以外は [`production_session_factory`]。
+#[cfg(feature = "dev-seam")]
 fn session_factory(fixture: Option<&RunFixture>) -> Box<dyn SessionFactory> {
     match fixture {
         Some(f) => Box::new(f.session_factory()),
@@ -212,11 +231,14 @@ pub(crate) fn box_resolve_error(e: ResolveWorkerError) -> BoxError {
 pub(crate) fn resolve_named_worker(
     name: &str,
     dirs: &ConfigDirs,
-    root: &str,
-    fixture: Option<&RunFixture>,
+    // `root` は fixture `worker` 節 fallback(`source_path` 組立)でのみ
+    // 使うため fixture param と同じく seam-gate する。
+    #[cfg(feature = "dev-seam")] root: &str,
+    #[cfg(feature = "dev-seam")] fixture: Option<&RunFixture>,
 ) -> Result<WorkerDefinition, BoxError> {
     match resolve_worker(name, dirs) {
         Ok(w) => Ok(w),
+        #[cfg(feature = "dev-seam")]
         Err(ResolveWorkerError::Cheaper(e))
             if fixture.is_some() && e.code() == ErrorCode::WorkerNotFound =>
         {
@@ -234,7 +256,7 @@ fn resolve_run_worker(
     args: &RunCliArgs,
     dirs: &ConfigDirs,
     root: &str,
-    fixture: Option<&RunFixture>,
+    #[cfg(feature = "dev-seam")] fixture: Option<&RunFixture>,
 ) -> Result<WorkerDefinition, BoxError> {
     if let Some(file) = &args.worker_file {
         // 明示 path は fallback なし(TS と同じくそのまま伝播)。
@@ -242,7 +264,14 @@ fn resolve_run_worker(
     }
     // `args.rs` が worker_name XOR worker_file を保証する。
     let name = args.worker_name.as_deref().unwrap_or_default();
-    resolve_named_worker(name, dirs, root, fixture)
+    resolve_named_worker(
+        name,
+        dirs,
+        #[cfg(feature = "dev-seam")]
+        root,
+        #[cfg(feature = "dev-seam")]
+        fixture,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -294,6 +323,9 @@ impl SignalRelay {
     }
 
     /// 中継先 controller(fixture `abort` の遅延発火に使う)。
+    /// seam-only — `dev-seam` feature でのみ sole caller(fixture abort
+    /// task)が存在する。
+    #[cfg(feature = "dev-seam")]
     fn controller(&self) -> AbortController {
         self.controller.clone()
     }
@@ -356,9 +388,18 @@ pub async fn execute(
     // 使うため resolution 前に load する(TS は modelConfig 後に load
     // する — fixture load 失敗と worker not-found が両立する場合のみ
     // error 優先順位が違う、test-only seam 内の許容差分)。
+    // `dev-seam` feature off(default build)では seam 自体が compile
+    // 対象外 — env が残っていても fixture は読まれない。
+    #[cfg(feature = "dev-seam")]
     let fixture = load_test_stream(io.env)?;
 
-    let worker = resolve_run_worker(args, &dirs, &root, fixture.as_ref())?;
+    let worker = resolve_run_worker(
+        args,
+        &dirs,
+        &root,
+        #[cfg(feature = "dev-seam")]
+        fixture.as_ref(),
+    )?;
     ctx.worker_name = Some(worker.name.clone());
 
     let input_map = read_task_input(&args.input, io.stdin)?;
@@ -368,17 +409,22 @@ pub async fn execute(
     let builtin_policy_path = builtin_dir.join("policy.yaml");
     let ucd = dirs.user_config_dir.to_string_lossy();
     let pdir = dirs.project_dir.to_string_lossy();
-    let mut policy = load_policy(&LoadPolicyOptions {
+    let policy = load_policy(&LoadPolicyOptions {
         builtin_policy_path: &builtin_policy_path.to_string_lossy(),
         user_config_dir: &ucd,
         project_dir: &pdir,
     })?;
-    if let Some(f) = &fixture {
-        // fixture `policy` 節は宣言 field のみ loaded policy へ適用
-        // (`apply_to`)— corpus fixture の maxTurns/timeout 等を実
-        // policy layer の上へ重ねる。
-        f.policy.apply_to(&mut policy);
-    }
+    #[cfg(feature = "dev-seam")]
+    let policy = {
+        let mut policy = policy;
+        if let Some(f) = &fixture {
+            // fixture `policy` 節は宣言 field のみ loaded policy へ適用
+            // (`apply_to`)— corpus fixture の maxTurns/timeout 等を実
+            // policy layer の上へ重ねる。
+            f.policy.apply_to(&mut policy);
+        }
+        policy
+    };
 
     let timeout_ms = match &args.timeout {
         Some(t) => Some(parse_duration(t).map_err(|_| {
@@ -403,7 +449,11 @@ pub async fn execute(
         project_dir: &pdir,
     })?;
 
-    let runtime = create_runtime(&dirs.user_config_dir, fixture.as_ref())?;
+    let runtime = create_runtime(
+        &dirs.user_config_dir,
+        #[cfg(feature = "dev-seam")]
+        fixture.as_ref(),
+    )?;
     // spec Req 4 — catalog error を `run_worker` より先に `warning:`
     // 行として stderr へ出す(後続の `?` で warning が欠落しない)。
     emit_catalog_warnings(
@@ -411,14 +461,20 @@ pub async fn execute(
         &mut |s: &str| io.stderr.write_str(s),
         args.quiet,
     );
+    #[cfg(feature = "dev-seam")]
     let session_factory = session_factory(fixture.as_ref());
+    #[cfg(not(feature = "dev-seam"))]
+    let session_factory = production_session_factory();
 
     // `--model` は常に優先。fake-stream 有効かつ未指定なら fixture の
     // `cheaper-fake/<model>` explicit ref を使う(TS の
     // `explicitModel: args.model ?? fixture.explicitModel()` 相当)。
     let explicit_model: Option<String> = match &args.model {
         Some(m) => Some(m.clone()),
+        #[cfg(feature = "dev-seam")]
         None => fixture.as_ref().map(|f| f.explicit_model()),
+        #[cfg(not(feature = "dev-seam"))]
+        None => None,
     };
 
     // timeout タイマーは runtime 側の policy.execution.timeoutMs が
@@ -429,6 +485,7 @@ pub async fn execute(
 
     // fixture `abort` 節 — replay harness と同じく `after_ms` 経過後に
     // `AbortReason::new("fixture", message, None)` を発火する。
+    #[cfg(feature = "dev-seam")]
     let fixture_abort_task = fixture.as_ref().and_then(|f| f.abort.as_ref()).map(|a| {
         let ac = relay.controller();
         let after_ms = a.after_ms;
@@ -442,6 +499,13 @@ pub async fn execute(
         })
     });
 
+    // harness default(80ms)に揃える — production(feature off または
+    // fixture 無し)は `None`(DEFAULT_ABORT_GRACE_MS = 5000)。
+    #[cfg(feature = "dev-seam")]
+    let abort_grace_ms = fixture.as_ref().map(|f| f.abort_grace_ms.unwrap_or(80.0));
+    #[cfg(not(feature = "dev-seam"))]
+    let abort_grace_ms: Option<f64> = None;
+
     let deps = RunWorkerDeps {
         worker: &worker,
         input: &input,
@@ -452,9 +516,7 @@ pub async fn execute(
         session_factory: session_factory.as_ref(),
         explicit_model: explicit_model.as_deref(),
         signal: Some(&signal),
-        // harness default(80ms)に揃える — production は `None`
-        // (DEFAULT_ABORT_GRACE_MS = 5000)。
-        abort_grace_ms: fixture.as_ref().map(|f| f.abort_grace_ms.unwrap_or(80.0)),
+        abort_grace_ms,
         execution: None,
         operation_clock: None,
     };
@@ -462,6 +524,7 @@ pub async fn execute(
     let outcome = run_worker(&deps).await;
     // TS `finally` — listener/task 解放を envelope 組立より先に行う。
     drop(relay);
+    #[cfg(feature = "dev-seam")]
     if let Some(t) = &fixture_abort_task {
         t.abort();
     }

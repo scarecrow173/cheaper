@@ -69,15 +69,26 @@ pub async fn execute(
     // `--worker <name>` — workload profile の outputPerInput を取る
     // (fixture fallback はしない — models は fake-stream 非対象)。
     let output_per_input = match &args.worker {
-        Some(name) => crate::run::resolve_named_worker(name, &dirs, &root, None)?
-            .cheaper
-            .model
-            .workload
-            .map(|w| w.output_per_input),
+        Some(name) => crate::run::resolve_named_worker(
+            name,
+            &dirs,
+            #[cfg(feature = "dev-seam")]
+            &root,
+            #[cfg(feature = "dev-seam")]
+            None,
+        )?
+        .cheaper
+        .model
+        .workload
+        .map(|w| w.output_per_input),
         None => None,
     };
 
-    let runtime = crate::run::create_runtime(&dirs.user_config_dir, None)?;
+    let runtime = crate::run::create_runtime(
+        &dirs.user_config_dir,
+        #[cfg(feature = "dev-seam")]
+        None,
+    )?;
     // spec Req 4 — catalog error を fallible consumer(`get_available`
     // の `?`)より先に `warning:` 行として stderr へ出す。
     emit_catalog_warnings(

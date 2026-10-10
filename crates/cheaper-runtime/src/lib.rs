@@ -26,19 +26,29 @@
 //!   - `meta` — `WorkerRunMeta` 構築（accumulator 正源・cheaper pricing）。
 //!   - `error` — `WorkerRunError`（code + runMeta）。
 //!   - `panic_boundary` — panic/`JoinError` → `INTERNAL_ERROR`。
-//! - `fake_provider` — T3 最小 scripted provider seam。
+//! - `dev` — dev/test seam(`fake_provider` scripted provider +
+//!   `fixture` DSL)。`dev-seam` cargo feature でのみ compile 対象
+//!   (ADR-034DyGyITd0YaATg8fkld7)。
 
 pub mod auth;
 pub mod catalog;
 pub mod plugin;
 pub mod runtime;
 
+// dev/test seam — default build(consumer install)からは除外され、
+// `dev-seam` feature 有効時のみ compile される。
+#[cfg(feature = "dev-seam")]
+pub mod dev;
+
 // T3（run orchestration）。run pipeline は `run/` 配下の submodule に
 // 再配置済み。旧 flat module path（`cheaper_runtime::{abort,grace,meta,
 // output,panic_boundary,repair,run_error}`）は下の alias re-export で維持する。
-pub mod fake_provider;
-pub mod fixture;
 pub mod run;
+
+// module path 互換: `cheaper_runtime::{fixture,fake_provider}::*` の
+// 現行 path を `pub use` で維持する(consumer 書き換え最小化)。
+#[cfg(feature = "dev-seam")]
+pub use dev::{fake_provider, fixture};
 
 pub use run::abort;
 pub use run::error as run_error;
@@ -65,11 +75,13 @@ pub use plugin::{
 };
 pub use runtime::Runtime;
 
-pub use fake_provider::{
+#[cfg(feature = "dev-seam")]
+pub use dev::fake_provider::{
     CheaperFakePlugin, FakeResponse, FakeSessionFactory, RecordedSpec, ScriptStep, ScriptedSession,
     ToolCallSpec,
 };
-pub use fixture::{
+#[cfg(feature = "dev-seam")]
+pub use dev::fixture::{
     default_policy as fixture_default_policy, ExpectedStatus, FixtureExpect, FixtureMetaExpect,
     FixtureStep, RunFixture, ScriptedAuthInteraction,
 };

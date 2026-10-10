@@ -9,7 +9,8 @@
 //! - `embedded.rs` — builtin resource 埋込 + version 解決
 //!   (`count.ts`/`version.ts`/`sea-main.ts`)
 //! - `fake_stream.rs` — `CHEAPER_TEST_FAKE_STREAM` seam
-//!   (`cli.ts::loadTestStreamFn`)
+//!   (`cli.ts::loadTestStreamFn`)。`dev-seam` cargo feature でのみ
+//!   compile 対象(ADR-034DyGyITd0YaATg8fkld7)
 //! - `usage_log.rs` — `usage.jsonl` record(`usage-log.ts`)
 //! - `usage_report.rs` / `pricing.rs` — `cheaper usage` 集計
 //!   (`usage-report.ts`/`pricing.ts`, T4)
@@ -27,6 +28,7 @@ pub mod cli;
 pub mod count;
 pub mod embedded;
 pub mod envelope;
+#[cfg(feature = "dev-seam")]
 pub mod fake_stream;
 pub mod hook;
 pub mod input;

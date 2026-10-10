@@ -18,6 +18,7 @@
 //!   `put` 成功ごとに `ArtifactReference` を畳み込む。envelope には
 //!   `project_artifact_metadata({include_preview: false})` で投影。
 
+#[cfg(feature = "dev-seam")]
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::pin::Pin;
@@ -57,6 +58,7 @@ use serde_json::{Map, Value};
 use crate::args::{WorkflowInterfaceCliArgs, WorkflowRunCliArgs};
 use crate::cli::{now, system_now, BoxError, CliHooks, CliIo, CommandOut};
 use crate::envelope::{utility_success_envelope, workflow_envelope};
+#[cfg(feature = "dev-seam")]
 use crate::fake_stream::load_test_stream;
 use crate::input::read_task_input;
 use crate::run::{create_runtime, production_session_factory};
@@ -120,6 +122,9 @@ struct Shared {
     workers: Arc<crate::workflow_context::WorkerIndex>,
     /// `NODE_ENV`/`CHEAPER_TEST_FAKE_STREAM` の snapshot — `io.env`
     /// closure は `'static` でないため executor future へ運べない。
+    /// `dev-seam` feature の fake_stream seam 専用(feature off では
+    /// 読み手が存在しないため field 自体を gate する)。
+    #[cfg(feature = "dev-seam")]
     env: BTreeMap<String, String>,
     controller: AbortController,
     invocation: Mutex<Option<InvocationToolRuntime>>,
@@ -163,20 +168,37 @@ fn build_model_bundle(shared: &Shared) -> Result<ModelBundle, ToolError> {
     // `loadStream(io.env, runtime)` 相当 — env snapshot 経由の
     // `load_test_stream`。fixture 有効時のみ `NODE_ENV==="test"` +
     // `CHEAPER_TEST_FAKE_STREAM` が効く(`fake_stream.rs`)。
+    // `dev-seam` feature off では seam 自体が compile 対象外。
+    #[cfg(feature = "dev-seam")]
     let fixture = load_test_stream(&|name: &str| shared.env.get(name).cloned())
         .map_err(|e| Box::new(e) as ToolError)?;
-    let runtime = create_runtime(Path::new(&shared.user_config_dir), fixture.as_ref())
-        .map_err(|e| Box::new(e) as ToolError)?;
+    let runtime = create_runtime(
+        Path::new(&shared.user_config_dir),
+        #[cfg(feature = "dev-seam")]
+        fixture.as_ref(),
+    )
+    .map_err(|e| Box::new(e) as ToolError)?;
+    #[cfg(feature = "dev-seam")]
     let session_factory: Box<dyn SessionFactory> = match &fixture {
         Some(f) => Box::new(f.session_factory()),
         None => production_session_factory(),
     };
+    #[cfg(not(feature = "dev-seam"))]
+    let session_factory: Box<dyn SessionFactory> = production_session_factory();
+    #[cfg(feature = "dev-seam")]
+    let explicit_model = fixture.as_ref().map(|f| f.explicit_model());
+    #[cfg(not(feature = "dev-seam"))]
+    let explicit_model: Option<String> = None;
+    #[cfg(feature = "dev-seam")]
+    let abort_grace_ms = fixture.as_ref().map(|f| f.abort_grace_ms.unwrap_or(80.0));
+    #[cfg(not(feature = "dev-seam"))]
+    let abort_grace_ms: Option<f64> = None;
     Ok(ModelBundle {
         runtime,
         model_config,
         session_factory,
-        explicit_model: fixture.as_ref().map(|f| f.explicit_model()),
-        abort_grace_ms: fixture.as_ref().map(|f| f.abort_grace_ms.unwrap_or(80.0)),
+        explicit_model,
+        abort_grace_ms,
     })
 }
 
@@ -732,6 +754,7 @@ pub async fn execute_run(
 
     let controller = AbortController::new();
     let relay = WorkflowSignalRelay::install(hooks, &controller);
+    #[cfg(feature = "dev-seam")]
     let env = ["NODE_ENV", "CHEAPER_TEST_FAKE_STREAM"]
         .into_iter()
         .filter_map(|name| (io.env)(name).map(|v| (name.to_string(), v)))
@@ -744,6 +767,7 @@ pub async fn execute_run(
         workers: ctx
             .worker_index()
             .expect("load_workflow が worker index を設定済み"),
+        #[cfg(feature = "dev-seam")]
         env,
         controller: controller.clone(),
         invocation: Mutex::new(None),
