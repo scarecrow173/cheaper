@@ -1,7 +1,7 @@
 ---
 id: "ADR-034Dkj1V1OguoUSXpwCE3e"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Document APM dep-name deploy rule in cheaper-usage skill"
 created: "2026-10-10"
 updated: "2026-10-10"
