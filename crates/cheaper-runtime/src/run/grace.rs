@@ -14,7 +14,7 @@ use cheaper_tools::operation::AbortSignal;
 use futures::StreamExt;
 use tokio::time::sleep;
 
-use crate::run::WorkerSession;
+use super::WorkerSession;
 
 /// `promptWithAbortGrace` の outcome。
 #[derive(Debug)]

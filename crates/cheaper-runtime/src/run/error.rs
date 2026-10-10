@@ -14,7 +14,7 @@ use cheaper_tools::journal::ChangesSummary;
 use serde::Serialize;
 use serde_json::{Map, Value};
 
-use crate::meta::{ModelMeta, WorkerRunMeta, WorkerSavings, WorkerUsage};
+use super::meta::{ModelMeta, WorkerRunMeta, WorkerSavings, WorkerUsage};
 
 /// `Partial<WorkerRunMeta> & {durationMs?}` — error path の部分 meta。
 /// full meta が構築できない段階(model 未解決等)では `execution` のみ

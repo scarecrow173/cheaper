@@ -21,6 +21,14 @@
 //! `cheaper-rig-adapter` の opaque `CompletionModel`/`RigSession` のみで、
 //! runtime の public API から rig crate 型は露出しない。
 
+pub mod abort;
+pub mod error;
+pub mod grace;
+pub mod meta;
+pub mod output;
+pub mod panic_boundary;
+pub mod repair;
+
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -54,15 +62,15 @@ use cheaper_tools::registry::{ToolRuntime, ToolRuntimeOptions};
 use cheaper_tools::resources::ResourceLease;
 use serde_json::{Map, Value};
 
-use crate::abort::{RunAbort, RunAbortReason};
+use self::abort::{RunAbort, RunAbortReason};
+use self::error::{PartialRunMeta, WorkerRunError};
+use self::grace::{prompt_with_abort_grace, PromptOutcome};
+use self::meta::{build_meta, merge_snapshots, MetaInputs, WorkerRunMeta};
+use self::output::{extract_output, ExtractedOutput};
+use self::panic_boundary::catch_run_panic;
+use self::repair::{repair_output, RepairOptions};
 use crate::auth::ResolvedAuth;
 use crate::catalog::CatalogModel;
-use crate::grace::{prompt_with_abort_grace, PromptOutcome};
-use crate::meta::{build_meta, merge_snapshots, MetaInputs, WorkerRunMeta};
-use crate::output::{extract_output, ExtractedOutput};
-use crate::panic_boundary::catch_run_panic;
-use crate::repair::{repair_output, RepairOptions};
-use crate::run_error::{PartialRunMeta, WorkerRunError};
 use crate::runtime::Runtime;
 
 /// `promptWithAbortGrace` の既定 grace(TS `abortGraceMs` default)。
