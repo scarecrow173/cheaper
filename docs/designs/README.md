@@ -59,12 +59,13 @@ Directory: `docs/designs`
 | DESIGN-034rBoPPFNHXR5eSfv0hsO | Shell read-candidate extraction and shared large-read verdict | approved | [shell-read-candidate-extraction.md](./shell-read-candidate-extraction.md) |
 | DESIGN-0005kq1c3Wo7rdnwZR8Sp3 | Synchronize distributed cheaper-usage skill and parent-agent integration guide | approved | [synchronize-distributed-skill-and-parent-agent-guide.md](./synchronize-distributed-skill-and-parent-agent-guide.md) |
 | DESIGN-034r05iHy2gdnoEfk3jERu | Token counter contract (core module, count_tokens tool, count-tokens CLI) | approved | [token-counter-contract.md](./token-counter-contract.md) |
-| DESIGN-034D8wP2Y8qWiuviJbQINn | Trailing-separator guard for workspace boundary predicate | draft | [trailing-separator-guard-for-workspace-boundary-predicate.md](./trailing-separator-guard-for-workspace-boundary-predicate.md) |
+| DESIGN-034D8wP2Y8qWiuviJbQINn | Trailing-separator guard for workspace boundary predicate | approved | [trailing-separator-guard-for-workspace-boundary-predicate.md](./trailing-separator-guard-for-workspace-boundary-predicate.md) |
 | DESIGN-034r05iHy2gdnoT4LG4KTu | Unified version source of truth | approved | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | DESIGN-034r2lHf6FAFVelj9LrhZh | Align usage.jsonl recording-scope docs with implemented contract | approved | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
 | DESIGN-034rzNZ2BZGTPuOwHmyqh4 | Usage savings telemetry | approved | [usage-savings-telemetry.md](./usage-savings-telemetry.md) |
 | DESIGN-034r05iHy2gdnoY3GBf8iz | User-facing documentation information architecture | approved | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | DESIGN-034zQkHD65kAeG9xVGSoFX | Version-pinned launcher acquisition | approved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
+| DESIGN-034D9Xs2f06fbVcxdT08le | Windows credential snapshot sync for Devin provider | draft | [windows-credential-snapshot-sync-for-devin-provider.md](./windows-credential-snapshot-sync-for-devin-provider.md) |
 | DESIGN-034r05iHrZUE6WrdtQIOmE | コアドメインモデル: Worker Definition・Resolver・Runtime Policy・tool vocabulary・error model | approved | [worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md](./worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md) |
 | DESIGN-034zJ38fX1W3g0Zrceda1E | WorkflowCompiler の validation と materialization 境界 | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
 | DESIGN-034zT2MINVpakJb3AhS0m5 | Workflow file loader と interface CLI の接続設計 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |

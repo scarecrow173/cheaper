@@ -814,7 +814,11 @@ fn service_login_runs_flow_and_persists_then_logout_removes() {
     // logout → credential 削除、冪等。
     let out = runtime
         .auth()
-        .logout(runtime.catalog(), "github-copilot")
+        .logout(
+            runtime.catalog(),
+            "github-copilot",
+            &mut ScriptedInteraction::answering(&[]),
+        )
         .unwrap();
     assert!(out.logged_out);
     assert!(CredentialStore::new(dir.path())

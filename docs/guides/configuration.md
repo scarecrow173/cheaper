@@ -146,8 +146,13 @@ credential は `<userConfigDir>/credentials.json` に永続化される。
 旧 Pi runtime の file（`<userConfigDir>/pi/` 以下）は一切
 読まれない。`devin` provider の Devin CLI
 credential は `<userConfigDir>/providers/devin/data/`
-配下の child-process 専用 data dir に閉じ込められる。
-詳細は [providers ガイド](./providers.md)。
+配下の child-process 専用 data dir に閉じ込められる。ただし
+Windows では Devin CLI 3000.x が env による credential path
+変更を無視して global `%APPDATA%\devin\credentials.toml` に
+書くため、cheaper は login 後に global credential の
+snapshot を同 dir へ保持する方式を取る（global session
+自体は共有される。詳細は
+[providers ガイド](./providers.md)）。
 
 ## 関連
 

@@ -226,6 +226,16 @@ access を対象とする。
   られる（`<data>/devin/credentials.toml`）。global の
   `~/.local/share/devin` や Devin Desktop の credential は
   暗黙利用しない。`process.env` は変更されない。
+- **Windows での credential snapshot**: Devin CLI 3000.x は
+  Windows で env による credential path 変更を無視し、常に
+  global の `%APPDATA%\devin\credentials.toml` を使う。この
+  ため Windows の `cheaper auth login devin` は `devin auth
+  login` 実行後に global の `credentials.toml` を cheaper
+  data dir へ atomic copy（snapshot）する。cheaper が使う
+  credential の供給源は変わらず cheaper-owned snapshot で
+  あり、global toml は同一 account かの判定にのみ使う
+  （key が一致すれば login を skip する）。`devin auth
+  login` 自体は global session に作用する点に注意。
 - **model catalog**: `devin models list --format json` の
   live catalog が優先。認証前は最小の bootstrap list で
   provider を認識させ、login 直後・refresh 時に live
@@ -237,6 +247,12 @@ access を対象とする。
   （Devin CLI 未到達時も file 削除は best-effort で行う）。
   次回 `cheaper auth login devin` は `devin auth login` を
   再実行する。
+  - **Windows では挙動が異なる**: `devin auth logout` は
+    global session を消すため cheaper は spawn しない。
+    cheaper-owned snapshot と stored credential のみ削除し、
+    global Devin session は login 済みのまま残る。完全に
+    sign out するには `devin auth logout` を手動実行する
+    こと（logout 時にもその旨を通知する）。
 - Devin 固有の slash command / tool / event handler は
   持ち込まない（provider-only contract、ADR-034r05iHrZUE6WoaNDNjvX）。
 

@@ -141,6 +141,41 @@ fn register_survives_non_utf8_process_env() {
     assert_eq!(registry.into_registrations().len(), 1);
 }
 
+struct NoopInteraction;
+impl cheaper_runtime::auth::AuthInteraction for NoopInteraction {
+    fn prompt(
+        &mut self,
+        _p: &cheaper_runtime::auth::AuthPrompt<'_>,
+    ) -> Result<String, cheaper_core::errors::CheaperError> {
+        Ok(String::new())
+    }
+}
+
+#[test]
+fn windows_logout_via_plugin_removes_snapshot_without_cli() {
+    // `with_runner` + `with_windows` の合成 — Windows contract で
+    // logout が `devin auth logout` を spawn せず cheaper snapshot
+    // のみ削除することを plugin 経路で検証する。
+    let dir = tempfile::tempdir().unwrap();
+    let data_dir = crate::credentials::devin_data_dir(dir.path());
+    let cred_path = crate::credentials::devin_credentials_path(&data_dir);
+    std::fs::create_dir_all(cred_path.parent().unwrap()).unwrap();
+    std::fs::write(&cred_path, "api_key = \"k\"\n").unwrap();
+    let runner = Arc::new(RecordingRunner {
+        calls: std::sync::Mutex::new(Vec::new()),
+    });
+    let mut registry = ProviderRegistry::default();
+    DevinProviderPlugin::with_runner(runner.clone())
+        .with_windows(true)
+        .register(&mut registry, &ctx(dir.path()));
+    let registrations = registry.into_registrations();
+    let auth = registrations[0].auth.clone().unwrap();
+    let ctx = ctx(dir.path());
+    auth.logout(&ctx, &mut NoopInteraction).unwrap();
+    assert!(!cred_path.exists());
+    assert!(runner.calls.lock().unwrap().is_empty());
+}
+
 #[test]
 fn catalog_refresh_uses_fallback_without_credential() {
     let dir = tempfile::tempdir().unwrap();

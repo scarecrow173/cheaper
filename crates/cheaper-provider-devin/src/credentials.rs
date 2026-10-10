@@ -3,11 +3,14 @@
 //! `src/credentials.ts` を、global `~/.local/share/devin` ではなく
 //! cheaper data dir のみ読む形に改変したものの Rust 版 —
 //! ADR-0029 相当。global credential・Devin Desktop credential は
-//! 暗黙利用しない）。
+//! 暗黙利用しない。Windows contract（ADR-034D9BG9UKuUaVNeCIKfNo）
+//! では global toml を login 時の明示的な snapshot source としてのみ
+//! 参照する — API key の供給源は常に cheaper-owned toml。
 
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 
+use cheaper_runtime::auth::AuthInteraction;
 use regex::Regex;
 
 use crate::cli::{CliError, DevinCli};
@@ -25,7 +28,9 @@ pub struct DevinCredentials {
     pub webapp_host: String,
     /// 既定 `https://api.devin.ai`。
     pub api_url: String,
-    /// 読み取り元 path（`<dataDir>/devin/credentials.toml`）。
+    /// 読み取り元 path。cheaper toml は
+    /// `<dataDir>/devin/credentials.toml`、global parse（Windows
+    /// contract の freshness 判定用）は解決済みの global path。
     pub path: PathBuf,
 }
 
@@ -57,15 +62,18 @@ fn parse_toml_strings(text: &str) -> std::collections::BTreeMap<String, String> 
     out
 }
 
-/// `readDevinCredentials` — cheaper data dir 内の credentials.toml
-/// だけを読む。global path（`~/.local/share/devin` 等）は参照しない。
-pub fn read_devin_credentials(data_dir: &Path) -> Option<DevinCredentials> {
-    let cred_path = devin_credentials_path(data_dir);
+/// 任意 path の credentials.toml を parse する共通実装 —
+/// cheaper toml と global toml の双方に使う（global 側は
+/// Windows contract の freshness 判定専用）。
+pub fn read_credentials_at(cred_path: &Path) -> Option<DevinCredentials> {
     if !cred_path.is_file() {
         return None;
     }
-    let text = std::fs::read_to_string(&cred_path).ok()?;
-    let entries = parse_toml_strings(&text);
+    let text = std::fs::read_to_string(cred_path).ok()?;
+    // UTF-8 BOM は `^\s*` にマッチしないため先に剥がす（Windows で
+    // 手編集された global toml が parse 不能になるのを防ぐ）。
+    let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
+    let entries = parse_toml_strings(text);
     let get = |key: &str| entries.get(key).cloned();
     let api_key = get("windsurf_api_key").or_else(|| get("api_key"))?;
     Some(DevinCredentials {
@@ -78,8 +86,14 @@ pub fn read_devin_credentials(data_dir: &Path) -> Option<DevinCredentials> {
         },
         webapp_host: get("devin_webapp_host").unwrap_or_else(|| "app.devin.ai".to_string()),
         api_url: get("devin_api_url").unwrap_or_else(|| "https://api.devin.ai".to_string()),
-        path: cred_path,
+        path: cred_path.to_path_buf(),
     })
+}
+
+/// `readDevinCredentials` — cheaper data dir 内の credentials.toml
+/// だけを読む。global path（`~/.local/share/devin` 等）は参照しない。
+pub fn read_devin_credentials(data_dir: &Path) -> Option<DevinCredentials> {
+    read_credentials_at(&devin_credentials_path(data_dir))
 }
 
 /// `devinAuthStatus` の結果。
@@ -133,19 +147,95 @@ pub fn devin_auth_status(cli: &DevinCli, data_dir: &Path) -> DevinAuthStatus {
     }
 }
 
+/// Windows contract — Devin CLI 3000.x が実際に使う global
+/// credential path を `devin auth status` 出力の `File:` 行から解決
+/// する。exit code 非 `0`（logged-out）でも出力に `File:` 行があれば
+/// 採用し、複数一致は最後を取る。値が空・`credentials.toml` 以外を
+/// 指す `File:` 行は credential path ではないため採用しない。
+/// parse 不能・CLI 未到達時は `APPDATA/devin/credentials.toml` に
+/// fallback、それも無ければ `None`。
+pub fn resolve_global_credentials_path(cli: &DevinCli, appdata: Option<&str>) -> Option<PathBuf> {
+    static FILE_LINE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"(?m)^\s*File:\s*(.+?)\s*$").expect("file line regex"));
+    if let Ok(result) = cli.run(&["auth", "status"], Some(AUTH_TIMEOUT), false) {
+        let text = format!("{}\n{}", result.stdout, result.stderr);
+        if let Some(path) = FILE_LINE
+            .captures_iter(&text)
+            .filter_map(|caps| {
+                let path = PathBuf::from(caps[1].trim());
+                // 空値・credentials.toml 以外を指す File: 行は別用途
+                // の出力とみなし fallback 側へ回す（bogus な File: 値が
+                // fallback を抑止・別 file を snapshot するのを防ぐ）。
+                (path.file_name() == Some(std::ffi::OsStr::new("credentials.toml"))).then_some(path)
+            })
+            .last()
+        {
+            return Some(path);
+        }
+    }
+    appdata
+        .filter(|dir| !dir.trim().is_empty())
+        .map(|dir| Path::new(dir).join("devin").join("credentials.toml"))
+}
+
+/// global toml → cheaper toml の atomic copy（`catalog/persisted.rs`
+/// convention: 同 dir の一意 temp へ copy → `fs::rename` 置換。
+/// `fs::rename` は Windows でも `MOVEFILE_REPLACE_EXISTING` で既存
+/// target を置換するため remove-first workaround は踏襲しない）。
+fn copy_credentials_atomic(src: &Path, dest: &Path) -> std::io::Result<()> {
+    let parent = dest.parent().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "destination has no parent",
+        )
+    })?;
+    std::fs::create_dir_all(parent)?;
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let tmp = parent.join(format!(
+        ".credentials.toml.tmp-{}-{nanos}",
+        std::process::id()
+    ));
+    let result = std::fs::copy(src, &tmp).and_then(|_| std::fs::rename(&tmp, dest));
+    if result.is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    result.map(|_| ())
+}
+
 /// `loginWithDevinCli` — `devin auth status` が logged-in なら既存
 /// credential を再利用し、そうでなければ `devin auth login` を
 /// inherit stdio + isolated env で実行してから credentials.toml を
 /// 再読する。
-pub fn login_with_devin_cli(cli: &DevinCli, data_dir: &Path) -> Result<DevinCredentials, CliError> {
-    // credentials.toml が存在し、`devin auth status` が logged-in と
-    // 答える場合のみ既存 credential を再利用する（stale なら login）。
+///
+/// Windows contract（`windows` flag）: Devin CLI 3000.x は env
+/// redirect を無視して global `%APPDATA%\devin\credentials.toml` に
+/// 書くため、global toml との `api_key` 一致でのみ reuse し、
+/// `devin auth login` exit `0` 後に global toml を cheaper data dir
+/// へ atomic copy（snapshot）する。global session への副作用は
+/// `devin auth login` 自体のみ。
+pub fn login_with_devin_cli(
+    cli: &DevinCli,
+    data_dir: &Path,
+    windows: bool,
+    appdata: Option<&str>,
+    interaction: &mut dyn AuthInteraction,
+) -> Result<DevinCredentials, CliError> {
+    if windows {
+        return login_windows_snapshot(cli, data_dir, appdata, interaction);
+    }
+    // 非 Windows — 現行 contract 不変。credentials.toml が存在し、
+    // `devin auth status` が logged-in と答える場合のみ既存
+    // credential を再利用する（stale なら login）。
     if let Some(existing) = read_devin_credentials(data_dir) {
         if devin_auth_status(cli, data_dir).logged_in {
             return Ok(existing);
         }
     }
 
+    let _ = interaction.notify("Launching `devin auth login` (Devin CLI, isolated data dir).");
     let result = cli.run(&["auth", "login"], None, true)?;
     match read_devin_credentials(data_dir) {
         Some(creds) => Ok(creds),
@@ -164,10 +254,101 @@ pub fn login_with_devin_cli(cli: &DevinCli, data_dir: &Path) -> Result<DevinCred
     }
 }
 
-/// `logoutDevinSession` — `devin auth logout`（best-effort）+ cheaper
-/// owned credentials.toml の削除（best-effort）。CLI 未到達・削除失敗
-/// でも error にしない（runtime 側の credential 削除は別途行われる）。
-pub fn logout_devin_session(cli: &DevinCli, data_dir: &Path) {
-    let _ = cli.run(&["auth", "logout"], Some(AUTH_TIMEOUT), false);
+/// Windows login contract — global toml を freshness 判定に使い、
+/// login 成功後に cheaper data dir へ snapshot する。
+fn login_windows_snapshot(
+    cli: &DevinCli,
+    data_dir: &Path,
+    appdata: Option<&str>,
+    interaction: &mut dyn AuthInteraction,
+) -> Result<DevinCredentials, CliError> {
+    let cheaper = read_devin_credentials(data_dir);
+    // `auth status` の spawn は `File:` parse のこの 1 回のみ
+    // （reuse 判定に `devin_auth_status` は使わない — global
+    // session ではなく file 上の key 一致で判定する）。
+    let global_path = resolve_global_credentials_path(cli, appdata);
+    let global = global_path.as_deref().and_then(read_credentials_at);
+    match (&cheaper, &global) {
+        (Some(c), Some(g)) if c.api_key == g.api_key => return Ok(c.clone()),
+        // global も parse できる場合のみ「別 account」が確定するため
+        // ここでだけ告知する（global 不在・parse 不可では出さない）。
+        (Some(_), Some(_)) => {
+            let _ = interaction.notify(
+                "Devin: cheaper credential is for a different account than the global \
+                 Devin session. `devin auth login` will update the global session or \
+                 adopt the existing one.",
+            );
+        }
+        _ => {}
+    }
+    let _ = interaction.notify(
+        "Launching `devin auth login` (Devin CLI; on Windows credentials are written \
+         to the global Devin dir and snapshotted into cheaper).",
+    );
+    let result = cli.run(&["auth", "login"], None, true)?;
+    if result.code != 0 {
+        return Err(CliError::Io(std::io::Error::other(format!(
+            "`devin auth login` exited {}",
+            result.code
+        ))));
+    }
+    // login 前に解決済みの path を再利用（`auth status` の 2 度目の
+    // spawn はしない — 別 path へ fallback し直して誤検知するのを防ぐ）。
+    let global_path = global_path.ok_or_else(|| {
+        CliError::Io(std::io::Error::other(
+            "`devin auth login` exited 0 but the global Devin credentials path could \
+             not be resolved (`devin auth status` reported no File: line and APPDATA \
+             is unset).",
+        ))
+    })?;
+    if !global_path.is_file() {
+        return Err(CliError::Io(std::io::Error::other(format!(
+            "`devin auth login` exited 0 but no credentials file appeared at {}.",
+            global_path.display()
+        ))));
+    }
+    let dest = devin_credentials_path(data_dir);
+    copy_credentials_atomic(&global_path, &dest).map_err(|e| {
+        CliError::Io(std::io::Error::new(
+            e.kind(),
+            format!(
+                "failed to snapshot {} -> {}: {e}",
+                global_path.display(),
+                dest.display()
+            ),
+        ))
+    })?;
+    read_credentials_at(&dest).ok_or_else(|| {
+        CliError::Io(std::io::Error::other(format!(
+            "copied credentials at {} failed to parse (api_key missing)",
+            dest.display()
+        )))
+    })
+}
+
+/// `logoutDevinSession` — cheaper owned credentials.toml の削除
+/// （best-effort）。CLI 未到達・削除失敗でも error にしない
+/// （runtime 側の credential 削除は別途行われる）。
+///
+/// 非 Windows: `devin auth logout`（best-effort）を spawn してから
+/// toml を削除する。
+/// Windows contract: Devin CLI 3000.x は global credential を使うため
+/// `devin auth logout` は spawn せず（global session を破壊しない）、
+/// cheaper snapshot のみ削除して global session 継続を notify する。
+pub fn logout_devin_session(
+    cli: &DevinCli,
+    data_dir: &Path,
+    windows: bool,
+    interaction: &mut dyn AuthInteraction,
+) {
+    if !windows {
+        let _ = cli.run(&["auth", "logout"], Some(AUTH_TIMEOUT), false);
+        let _ = std::fs::remove_file(devin_credentials_path(data_dir));
+        return;
+    }
     let _ = std::fs::remove_file(devin_credentials_path(data_dir));
+    let _ = interaction.notify(
+        "Removed only the cheaper Devin credential snapshot. The global Devin session \
+         remains logged in; run `devin auth logout` yourself to sign out completely.",
+    );
 }

@@ -47,7 +47,8 @@ pub use context_map::{
 };
 pub use credentials::{
     devin_auth_status, devin_credentials_path, devin_data_dir, login_with_devin_cli,
-    logout_devin_session, read_devin_credentials, DevinAuthStatus, DevinCredentials,
+    logout_devin_session, read_credentials_at, read_devin_credentials,
+    resolve_global_credentials_path, DevinAuthStatus, DevinCredentials,
 };
 pub use jwt::{clear_cached_user_jwt, get_cached_user_jwt, mint_user_jwt, JwtError, MintedUserJwt};
 pub use metadata::{build_metadata, client_version, MetadataInput, CLIENT_IDE};

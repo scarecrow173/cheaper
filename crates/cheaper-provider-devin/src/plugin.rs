@@ -83,6 +83,10 @@ fn resolve_auth_material(
 struct DevinPluginAuth {
     cli: Arc<DevinCli>,
     data_dir: PathBuf,
+    /// Windows credential contract（global toml snapshot + logout 非
+    /// 破壊）を有効にする platform seam。test から注入可能にして
+    /// `cfg!(windows)` を credentials 層へ散らさない。
+    windows: bool,
 }
 
 fn cli_error(e: crate::cli::CliError) -> CheaperError {
@@ -92,11 +96,19 @@ fn cli_error(e: crate::cli::CliError) -> CheaperError {
 impl PluginAuth for DevinPluginAuth {
     fn login(
         &self,
-        _ctx: &ProviderPluginContext,
+        ctx: &ProviderPluginContext,
         interaction: &mut dyn AuthInteraction,
     ) -> Result<StoredCredential, CheaperError> {
-        let _ = interaction.notify("Launching `devin auth login` (Devin CLI, isolated data dir).");
-        let creds = login_with_devin_cli(&self.cli, &self.data_dir).map_err(cli_error)?;
+        // login 起動の notify は spawn site（credentials.rs）へ移動済み
+        // — reuse 経路では発火しない。
+        let creds = login_with_devin_cli(
+            &self.cli,
+            &self.data_dir,
+            self.windows,
+            ctx.env.env("APPDATA").as_deref(),
+            interaction,
+        )
+        .map_err(cli_error)?;
         Ok(to_stored_credential(
             creds.api_key,
             Some(creds.path.to_string_lossy().into_owned()),
@@ -150,10 +162,15 @@ impl PluginAuth for DevinPluginAuth {
         }
     }
 
-    /// `auth logout devin` の外部 state 片付け — `devin auth logout`
-    /// （best-effort）+ cheaper-owned credentials.toml 削除。
-    fn logout(&self, _ctx: &ProviderPluginContext) -> Result<(), CheaperError> {
-        logout_devin_session(&self.cli, &self.data_dir);
+    /// `auth logout devin` の外部 state 片付け — 非 Windows は
+    /// `devin auth logout`（best-effort）、Windows contract は global
+    /// session を残して cheaper snapshot のみ削除 + notify。
+    fn logout(
+        &self,
+        _ctx: &ProviderPluginContext,
+        interaction: &mut dyn AuthInteraction,
+    ) -> Result<(), CheaperError> {
+        logout_devin_session(&self.cli, &self.data_dir, self.windows, interaction);
         Ok(())
     }
 }
@@ -178,20 +195,31 @@ impl PluginCatalog for DevinPluginCatalog {
     }
 }
 
-/// `createDevinProviderPlugin` — `runner` は test seam。
+/// `createDevinProviderPlugin` — `runner`・`windows` は test seam。
 pub struct DevinProviderPlugin {
     runner: Option<Arc<dyn DevinCliRunner>>,
+    windows: bool,
 }
 
 impl DevinProviderPlugin {
     pub fn new() -> Self {
-        Self { runner: None }
+        Self {
+            runner: None,
+            windows: cfg!(windows),
+        }
     }
     /// test が注入する child-process runner seam。
     pub fn with_runner(runner: Arc<dyn DevinCliRunner>) -> Self {
         Self {
             runner: Some(runner),
+            windows: cfg!(windows),
         }
+    }
+    /// test が注入する platform seam（Windows credential contract）。
+    /// `with_runner(r).with_windows(true)` のように chain できる。
+    pub fn with_windows(mut self, windows: bool) -> Self {
+        self.windows = windows;
+        self
     }
 }
 
@@ -239,6 +267,7 @@ impl CheaperProviderPlugin for DevinProviderPlugin {
             auth: Some(Arc::new(DevinPluginAuth {
                 cli: Arc::clone(&cli),
                 data_dir: data_dir.clone(),
+                windows: self.windows,
             })),
             // Devin CLI の account/subscription-backed session を使うため
             // auth metadata 上も subscription provider として扱う。

@@ -40,6 +40,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpARFuxZVi | Delegation usage measurement log (PLAN-034r05iHE1Fbkpd5tkg6Gs) | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
 | IMPL-034r05iHy2gdnpusDjHBDw | Separate development APM project from distributable package (PLAN-034r05iHE1Fbkp5YZSKJM2) | completed | [dev-apm-and-distributable-package-separation.md](./dev-apm-and-distributable-package-separation.md) |
 | IMPL-034r05iHy2gdnpG0UOqdhK | Devin Local provider plugin (PLAN-034r05iHK8bA7g45xvDT4a) | completed | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
+| IMPL-034DaJCOheEsDZAq8GWBXw | Devin provider Windows credential snapshot sync | draft | [devin-provider-windows-credential-snapshot-sync.md](./devin-provider-windows-credential-snapshot-sync.md) |
 | IMPL-03kR39KNEJ13KN9NwesVWy | distributed skill and parent-agent guide sync (PLAN-000004taRcf5XDevo8jYJz) | completed | [distributed-skill-and-parent-agent-guide-sync.md](./distributed-skill-and-parent-agent-guide-sync.md) |
 | IMPL-034z57kKSICF9N4av5oZ0f | docs for executable hook invocation | completed | [docs-for-executable-hook-invocation.md](./docs-for-executable-hook-invocation.md) |
 | IMPL-034zUCrFChJvE5zTGpzwnI | Document and verify one-dispatch release migration | completed | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
@@ -112,7 +113,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z2rZiB6WUNTje88kRt1 | verify release workflow | completed | [verify-release-workflow.md](./verify-release-workflow.md) |
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
 | IMPL-034APqdMTW2hYck2FYoKv1 | Verify workflow execution integration | completed | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
-| IMPL-034D9oWccQJEPfXsMNRpH5 | Volume-root workspace boundary predicate の trailing separator guard | draft | [volume-root-workspace-boundary-predicate-trailing-separator-guard.md](./volume-root-workspace-boundary-predicate-trailing-separator-guard.md) |
+| IMPL-034D9oWccQJEPfXsMNRpH5 | Volume-root workspace boundary predicate の trailing separator guard | completed | [volume-root-workspace-boundary-predicate-trailing-separator-guard.md](./volume-root-workspace-boundary-predicate-trailing-separator-guard.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |
 | IMPL-034zUpcuJnZnznZ79UL3Q2 | Wire one-dispatch release publication | completed | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
 | IMPL-034zTIoMYLPhPUbedvunjx | wire-workflow-interface | completed | [wire-workflow-interface.md](./wire-workflow-interface.md) |

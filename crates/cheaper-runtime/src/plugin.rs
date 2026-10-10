@@ -101,8 +101,13 @@ pub trait PluginAuth: Send + Sync {
     }
 
     /// `auth logout` 時の外部 state 片付け（devin `devin logout`）。
+    /// `interaction` は「外部 session は残る」等の告知に使う。
     /// default は no-op。
-    fn logout(&self, _ctx: &ProviderPluginContext) -> Result<(), CheaperError> {
+    fn logout(
+        &self,
+        _ctx: &ProviderPluginContext,
+        _interaction: &mut dyn AuthInteraction,
+    ) -> Result<(), CheaperError> {
         Ok(())
     }
 }

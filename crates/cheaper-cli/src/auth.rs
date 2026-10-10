@@ -586,7 +586,14 @@ pub async fn execute_with(
         }
         AuthAction::Logout => {
             let provider = require_provider_arg(args, "logout").map_err(BoxError::from)?;
-            let out = auth.logout(catalog, provider).map_err(BoxError::from)?;
+            // logout hook も「外部 session は残る」等の notify を発火
+            // しうるため login と同じ interaction seam を渡す（prompt
+            // は logout 経路では発生しない）。
+            let mut interaction =
+                TerminalInteraction::new(terminal, None, Some(signal.clone()), open_url);
+            let out = auth
+                .logout(catalog, provider, &mut interaction)
+                .map_err(BoxError::from)?;
             // `{provider, loggedOut: true}`。
             let mut result = Map::new();
             result.insert("provider".to_string(), Value::from(out.provider));
