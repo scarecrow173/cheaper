@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034EdS8ly2SqcS7cJ8hvfJ"
 type: "spec"
-status: "draft"
+status: "proposed"
 title: "Restore recorded abort code classification at setup boundaries"
 created: "2026-10-11"
 updated: "2026-10-11"
@@ -113,7 +113,12 @@ contract であり、stream 経路と setup 経路の分類非対称は同じ ab
 - `reason.error_object()` が `CheaperError` へ downcast できる経路は
   挙動不変(code + message + details の rebuild をそのまま返す)。
 - `error_object` が無く `code()` が既知の `ErrorCode` 文字列の場合、
-  その code を復元した `CheaperError` を構成する。
+  その code を復元した `CheaperError` を構成する。復元は
+  `reason.code()` の文字列のみを key とし、`name() == "CheaperError"`
+  のような payload name 照合は要求しない(adapter の
+  `abort_reason_to_cheaper` と同じ規則)。現時点で ErrorCode 語彙の
+  code を生成するのは describeError と `abort_payload` のみであり、
+  この規則は安全である。
 - `code()` が無い、または既知の `ErrorCode` 文字列でない場合は、
   現行の `INTERNAL_ERROR` fallback(`"{context} failed: {message}"`)を
   維持する。
@@ -122,7 +127,12 @@ contract であり、stream 経路と setup 経路の分類非対称は同じ ab
   describeError code(Node errno `"ENOENT"` 等)も運ぶため、逆引きは
   未知文字列で `None` を返す寛容な parse であること。
 - 依存方向 `cli → {workflow, provider} → runtime → {rig-adapter, tools}
-  → core` を壊さない。
+  → core` を壊さない。実際の edge は
+  `cheaper-workflow → {core, tools}`(runtime の sibling であり、
+  cli が runtime executor を注入する)、
+  `cheaper-provider → {runtime, rig-adapter, core}`、
+  `cheaper-runtime → {core, tools, rig-adapter}` であり、
+  workflow は runtime に依存しない。
 - `cheaper-core` は Rig/Tokio 依存を持ち込まないままとする。
 - 新規 dependency は追加しない。
 
@@ -136,6 +146,11 @@ contract であり、stream 経路と setup 経路の分類非対称は同じ ab
   test run で deterministic に pass する。
 - [ ] `error_object` を持つ `AbortReason` の分類挙動が不変であることを
   示す test がある。
+- [ ] `ErrorCode` 語彙外の code 文字列(Node errno `"ENOENT"` 等)を
+  運ぶ `AbortReason`、または error object が存在するが
+  `CheaperError` ではない `AbortReason` が、依然として
+  `INTERNAL_ERROR` と `"{context} failed: {message}"` の形を維持して
+  返されることを pin する test がある。
 - [ ] code→`ErrorCode` 写像が 1 箇所のみに存在し、adapter 側の
   private table が除去されている。
 - [ ] envelope schema・exit code・`ERROR_TABLE` が不変。

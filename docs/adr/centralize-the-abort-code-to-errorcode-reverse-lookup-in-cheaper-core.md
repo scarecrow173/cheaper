@@ -1,7 +1,7 @@
 ---
 id: "ADR-034EdSlppBqVgIegIeGXgH"
 type: "adr"
-status: "draft"
+status: "proposed"
 title: "Centralize the abort code to ErrorCode reverse lookup in cheaper-core"
 created: "2026-10-11"
 updated: "2026-10-11"
@@ -68,7 +68,12 @@ setup 経路から到達不能なことによる分類非対称である。
 実装へ集約する必要がある。配置先は、依存方向
 `cli → {workflow, provider} → runtime → {rig-adapter, tools} → core`
 上で両 consumer から到達可能な leaf crate — cheaper-core または
-cheaper-tools に限られる。
+cheaper-tools に限られる。なお実際の edge は
+`cheaper-workflow → {core, tools}`(runtime の sibling であり、
+cli が runtime executor を注入する)、
+`cheaper-provider → {runtime, rig-adapter, core}`、
+`cheaper-runtime → {core, tools, rig-adapter}` であり、
+workflow は runtime に依存しない。
 
 ## Decision Drivers
 
@@ -100,6 +105,8 @@ cheaper-tools に限られる。
 * C: runtime に adapter の table を複製する(写像を2箇所に持つ)
 * D: runtime が adapter の `abort_reason_to_cheaper` を直接再利用する
   (runtime→adapter の依存方向自体は合法)
+* E: adapter の既存 `error_code_from_str` table を export し、runtime
+  から呼び出す(runtime→adapter の依存は合法)
 
 ## Decision Outcome
 
@@ -221,6 +228,16 @@ deterministic pass・写像の単一化確認)。
   message 形・`error_object` downcast を持たない点が setup boundary の
   契約(`"{context} failed:"`・`INTERNAL_ERROR` residual・downcast
   優先)と一致しない。共有すべきは関数ではなく写像 table。却下。
+
+### E: adapter の `error_code_from_str` table を export し runtime から呼ぶ
+
+* Good, because runtime→adapter の依存方向は既に合法であり、table を
+  1箇所に保ったまま最小の変更面で共有できる。
+* Bad, because code 文字列の語彙は downstream の `ErrorCode`
+  (cheaper-core)が所有する。authoritative table を語彙より上流の
+  adapter に置いたままでは、Option C と同じ downstream 語彙の
+  duplication drift 構造が場所を変えて残るだけであり、`ErrorCode`
+  変種追加時に adapter 側 table の更新忘れが再発しうる。却下。
 
 ## More Information
 
