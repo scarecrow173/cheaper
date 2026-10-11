@@ -26,6 +26,7 @@ use cheaper_core::workspace::deny_paths::PathDenylist;
 use cheaper_core::workspace::paths::SymlinkPolicy;
 use serde_json::Value;
 use tokio::sync::{Notify, OnceCell};
+use tracing::Instrument;
 
 use crate::access::{
     AccessObserver, AccessSnapshot, ActiveResourceAccess, ResourceAccess, ResourceScopeOptions,
@@ -370,6 +371,19 @@ fn unknown_tool(name: &str) -> ToolError {
             Value::String(name.to_string()),
         )])),
     )
+}
+
+/// `error.code` field 用の分類値 — source chain の `CheaperError` code を
+/// 優先し、裸の `AbortReason` はその code/name に潰す。message/payload は
+/// field に載せない(metadata-only 規約)。
+fn tool_error_code(error: &ToolError) -> &str {
+    if let Some(e) = crate::tools::process::find_cheaper_error(error.as_ref()) {
+        return e.code().as_str();
+    }
+    if let Some(reason) = error.downcast_ref::<AbortReason>() {
+        return reason.code().unwrap_or_else(|| reason.name());
+    }
+    "ERROR"
 }
 
 /// `observeAccess`(TS line 130-143)。`manager.get` は missing で
@@ -721,7 +735,45 @@ impl ToolRuntime {
     }
 
     /// `execute(name, input, context?)`(TS pipeline line 227-291)。
+    ///
+    /// `cheaper.tool` span + field `tool.name` は全 tool call の単一の正
+    /// instrumentation 点(design §instrumentation 配置)。span 名を tool 毎に
+    /// 動的化しないのは `span!` の `'static` 制約との兼ね合い — tool 名は
+    /// field で機械検索可能とし、個別 tool file には emit を散らさない。
+    /// field は metadata-only(`error.code` のような分類値のみ)。
     pub async fn execute(
+        &self,
+        name: &str,
+        input: &Value,
+        context: Option<ToolCallContext>,
+    ) -> Result<CanonicalToolResult, ToolError> {
+        let span = tracing::info_span!("cheaper.tool", tool.name = name);
+        async move {
+            let result = self.execute_inner(name, input, context).await;
+            match &result {
+                Ok(_) => {
+                    tracing::debug!(
+                        target: "cheaper.tool.result",
+                        message = format_args!("tool result"),
+                        result.ok = true
+                    );
+                }
+                Err(error) => {
+                    tracing::debug!(
+                        target: "cheaper.tool.result",
+                        message = format_args!("tool result"),
+                        result.ok = false,
+                        error.code = tool_error_code(error)
+                    );
+                }
+            }
+            result
+        }
+        .instrument(span)
+        .await
+    }
+
+    async fn execute_inner(
         &self,
         name: &str,
         input: &Value,

@@ -135,6 +135,83 @@ struct State {
     done: bool,
 }
 
+/// RunEvent kind 毎の boundary event(design §instrumentation 配置 —
+/// metadata-only: `TextDelta` 本文等は `*.len` のみ、arguments/output/
+/// prompt は field に載せない)。
+fn emit_run_event(event: &RunEvent) {
+    match event {
+        RunEvent::TextDelta { text } => {
+            tracing::trace!(
+                target: "cheaper.adapter.run",
+                message = format_args!("text delta"),
+                text.len = text.len()
+            );
+        }
+        RunEvent::ReasoningDelta { text } => {
+            tracing::trace!(
+                target: "cheaper.adapter.run",
+                message = format_args!("reasoning delta"),
+                text.len = text.len()
+            );
+        }
+        RunEvent::ToolArgumentsDelta { delta } => {
+            tracing::trace!(
+                target: "cheaper.adapter.run",
+                message = format_args!("tool arguments delta"),
+                text.len = delta.len()
+            );
+        }
+        RunEvent::ToolCall { call_id, name, .. } => {
+            tracing::debug!(
+                target: "cheaper.adapter.run",
+                message = format_args!("tool call"),
+                call.id = %call_id,
+                tool.name = %name
+            );
+        }
+        RunEvent::ToolCommitted { call_id, name, .. } => {
+            tracing::debug!(
+                target: "cheaper.adapter.run",
+                message = format_args!("tool committed"),
+                call.id = %call_id,
+                tool.name = %name
+            );
+        }
+        RunEvent::ToolResult { call_id, name, .. } => {
+            tracing::debug!(
+                target: "cheaper.adapter.run",
+                message = format_args!("tool result"),
+                call.id = %call_id,
+                tool.name = %name
+            );
+        }
+        RunEvent::CompletionCall { index, usage } => {
+            tracing::debug!(
+                target: "cheaper.adapter.run",
+                message = format_args!("completion call"),
+                call.index = index,
+                usage.input_tokens = usage.input_tokens,
+                usage.output_tokens = usage.output_tokens,
+                usage.total_tokens = usage.total_tokens
+            );
+        }
+        RunEvent::ModelTurnRetried { turn } => {
+            tracing::debug!(
+                target: "cheaper.adapter.run",
+                message = format_args!("model turn retried"),
+                turn = turn
+            );
+        }
+        RunEvent::Finished { output } => {
+            tracing::debug!(
+                target: "cheaper.adapter.run",
+                message = format_args!("finished"),
+                text.len = output.len()
+            );
+        }
+    }
+}
+
 /// Rig streaming run を `RunEvent` 列へ正規化する。
 /// `signal` が既に abort 済みでも、走り始めてからの abort と同じ経路で
 /// 終端 error を emit する(preempt しない)。
@@ -169,6 +246,11 @@ pub(crate) fn run_stream(
                                         &cheaper_tools::operation::AbortReason::aborted(),
                                     ),
                                 };
+                                tracing::debug!(
+                                    target: "cheaper.adapter.run",
+                                    message = format_args!("run stream aborted"),
+                                    error.code = error.code().as_str()
+                                );
                                 return Some((Err(error), state));
                             }
                             item = state.inner.next() => item,
@@ -181,7 +263,13 @@ pub(crate) fn run_stream(
                     None => return None,
                     Some(Err(error)) => {
                         state.done = true;
-                        return Some((Err(streaming_error_to_cheaper(error)), state));
+                        let error = streaming_error_to_cheaper(error);
+                        tracing::debug!(
+                            target: "cheaper.adapter.run",
+                            message = format_args!("run stream error"),
+                            error.code = error.code().as_str()
+                        );
+                        return Some((Err(error), state));
                     }
                     Some(Ok(item)) => {
                         // billed usage を item 境界で記録(rolled-back
@@ -194,6 +282,7 @@ pub(crate) fn run_stream(
                                 .record_completion(&UsageSnapshot::from(&call.usage));
                         }
                         if let Some(event) = map_item(item, &state.details) {
+                            emit_run_event(&event);
                             return Some((Ok(event), state));
                         }
                         // map 対象外の内部 item は skip して次を poll。

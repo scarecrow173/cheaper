@@ -544,6 +544,9 @@ where
             match chunk {
                 Ok(bytes) => buf.extend_from_slice(&bytes),
                 Err(e) => {
+                    // stream 境界の `cheaper.provider.devin` event(design
+                    // §instrumentation 配置) — chunk 本文は載せない。
+                    tracing::debug!(target: "cheaper.provider.devin", "stream error");
                     yield Err(DeframeError::Chunk(e));
                     return;
                 }
@@ -559,6 +562,7 @@ where
                     match gunzip(&raw) {
                         Ok(p) => p,
                         Err(e) => {
+                            tracing::debug!(target: "cheaper.provider.devin", "stream error");
                             yield Err(DeframeError::Decode(e));
                             return;
                         }
@@ -567,6 +571,7 @@ where
                     raw
                 };
                 if flags & 0x02 != 0 {
+                    tracing::debug!(target: "cheaper.provider.devin", "stream end");
                     yield Ok(DevinFrame::EndOfStream { error: trailer_error(&payload) });
                     continue;
                 }

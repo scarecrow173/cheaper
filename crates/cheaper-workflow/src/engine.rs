@@ -29,6 +29,7 @@ use serde::{Serialize, Serializer};
 use serde_json::{Map, Value};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
+use tracing::Instrument;
 
 use crate::json::clone_json;
 use crate::types::{CompiledJob, CompiledWorkflow, JobKind, WorkflowJobState};
@@ -472,7 +473,19 @@ enum Event {
 ///
 /// throw は options 検証(`INVALID_REQUEST`)のみ — job/execution の失敗は
 /// outcome に載る(TS 契約)。
+///
+/// `cheaper.workflow` span + field `run.id` が engine の job 実行境界の
+/// instrumentation 点(design §instrumentation 配置)。`run.id` は options が
+/// 持たないため run 毎に採番する(node event との相関用 metadata)。
 pub async fn run_workflow(
+    options: WorkflowRunOptions<'_>,
+) -> Result<WorkflowOutcome, CheaperError> {
+    let run_id = uuid::Uuid::new_v4().to_string();
+    let span = tracing::info_span!("cheaper.workflow", run.id = %run_id);
+    run_workflow_inner(options).instrument(span).await
+}
+
+async fn run_workflow_inner(
     options: WorkflowRunOptions<'_>,
 ) -> Result<WorkflowOutcome, CheaperError> {
     let WorkflowRunOptions {
@@ -654,6 +667,14 @@ pub async fn run_workflow(
         fn execute(&mut self, index: usize) {
             self.jobs[index].phase = JobStatus::Running;
             *self.running += 1;
+            // job 実行境界の node event(design §instrumentation 配置) —
+            // `cheaper.workflow` span 内で id/name の分類値のみ記録する。
+            tracing::debug!(
+                target: "cheaper.workflow.node",
+                message = format_args!("workflow node start"),
+                job.id = %self.jobs[index].id,
+                job.name = %self.jobs[index].job.name
+            );
             let lease = self.jobs[index].lease.expect("ready implies lease");
             let executor = match self.jobs[index].job.kind {
                 JobKind::Worker => Arc::clone(&self.ports.worker),

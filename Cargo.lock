@@ -828,6 +828,7 @@ name = "cheaper-cli"
 version = "1.0.0"
 dependencies = [
  "cheaper-core",
+ "cheaper-observability",
  "cheaper-provider",
  "cheaper-rig-adapter",
  "cheaper-runtime",
@@ -839,6 +840,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -885,6 +887,7 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tokio",
+ "tracing",
  "uuid",
 ]
 
@@ -900,6 +903,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -935,6 +939,7 @@ dependencies = [
  "similar",
  "tokio",
  "tokio-util",
+ "tracing",
  "unicode-normalization",
 ]
 
@@ -949,6 +954,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-util",
+ "tracing",
  "uuid",
 ]
 

@@ -14,6 +14,7 @@ serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
 futures.workspace = true
+tracing.workspace = true
 # gzip for Connect frame bodies (TS `zlib.gzipSync`/`gunzipSync`)。
 flate2 = "1"
 # `randomUUID()`(session/cascade/prompt/trigger ids)。
