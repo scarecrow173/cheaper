@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034EdS8ly2SqcS7cJ8hvfJ"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "Restore recorded abort code classification at setup boundaries"
 created: "2026-10-11"
 updated: "2026-10-11"

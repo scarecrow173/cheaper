@@ -1,7 +1,7 @@
 ---
 id: "ADR-034EdSlppBqVgIegIeGXgH"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Centralize the abort code to ErrorCode reverse lookup in cheaper-core"
 created: "2026-10-11"
 updated: "2026-10-11"
