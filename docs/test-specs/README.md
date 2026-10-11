@@ -6,6 +6,7 @@ Directory: `docs/test-specs`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
+| TSPEC-034EeitmhHjX9tjAWLQ7gk | Setup-boundary abort classification contract | approved | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
 | TSPEC-034z3yKWLolrImpMY8UMhZ | APM executable payload layout and launcher dispatch contract | superseded | [apm-executable-payload-layout-and-launcher-dispatch-contract.md](./apm-executable-payload-layout-and-launcher-dispatch-contract.md) |
 | TSPEC-CcB52hP0U8aHcOIhg0D0ge | auto tier classification by effectiveCost percentile | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
 | TSPEC-034zXj8km4o9pyOGLhz1oM | Concurrency policy の信頼境界 | approved | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |

@@ -28,6 +28,7 @@ Directory: `docs/plans`
 | PLAN-034r6qeRCCYRZy0etnrPfy | inject explicit eval budget into large-fixture grep tests | completed | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | PLAN-034r05iHE1FbkoSqLEHZrV | Harden repair abort grace and provider failure normalization | completed | [harden-repair-abort-grace-and-provider-failure-normalization.md](./harden-repair-abort-grace-and-provider-failure-normalization.md) |
 | PLAN-034r05iHE1Fbkp0Gokdq8Z | Huge-file byte cap guard and fail-closed hook | completed | [huge-file-byte-cap-guard-and-fail-closed-hook.md](./huge-file-byte-cap-guard-and-fail-closed-hook.md) |
+| PLAN-034Eek9Q2fFlfb2FzIBUtz | Implement abort classification at setup boundary | approved | [implement-abort-classification-at-setup-boundary.md](./implement-abort-classification-at-setup-boundary.md) |
 | PLAN-eDDZBS6ncoMf6TOdM7tDSW | implement auto tier classification | completed | [implement-auto-tier-classification.md](./implement-auto-tier-classification.md) |
 | PLAN-034zWZgd5LEtlTQNGC5O8x | ToolScheduler と concurrency policy を実装する | completed | [implement-bounded-tool-scheduler.md](./implement-bounded-tool-scheduler.md) |
 | PLAN-034zQ97RFO1AbY6enJw9jO | Canonical Tool Runtime を抽出して Pi adapter を接続する | completed | [implement-canonical-tool-runtime.md](./implement-canonical-tool-runtime.md) |

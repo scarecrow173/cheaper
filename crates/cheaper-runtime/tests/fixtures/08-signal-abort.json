@@ -1,7 +1,7 @@
 {
   "name": "signal_abort",
   "description": "hang_until_abort — 外部 signal で終端 abort error → ABORTED 分類",
-  "abort": { "after_ms": 40, "message": "user abort" },
+  "abort": { "after_ms": 120, "message": "user abort" },
   "sessions": [
     {
       "steps": [

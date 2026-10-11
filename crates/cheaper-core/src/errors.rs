@@ -111,6 +111,19 @@ impl ErrorCode {
         }
     }
 
+    /// `as_str` の逆引き。ErrorCode 語彙外の文字列(Node errno
+    /// `"ENOENT"` 等、`AbortReason.code()` が運ぶ describeError
+    /// code)は `None` を返す寛容な parse。
+    // inherent `from_str` は `clippy::should_implement_trait` に抵触するが、
+    // ADR が `and_then(ErrorCode::from_str)` 合成のため名前を確定したので局所 allow。
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(s: &str) -> Option<Self> {
+        ERROR_TABLE
+            .iter()
+            .map(|(code, _)| *code)
+            .find(|code| code.as_str() == s)
+    }
+
     fn table_entry(self) -> ErrorTableEntry {
         ERROR_TABLE
             .iter()
@@ -465,6 +478,31 @@ mod tests {
             assert_eq!(v.as_str().unwrap(), code.as_str());
             let back: ErrorCode = serde_json::from_value(v).unwrap();
             assert_eq!(back, *code);
+        }
+    }
+
+    #[test]
+    fn from_str_round_trips_every_code_in_the_table() {
+        for (code, _) in ERROR_TABLE {
+            assert_eq!(ErrorCode::from_str(code.as_str()), Some(*code), "{code}");
+        }
+    }
+
+    #[test]
+    fn from_str_returns_none_for_out_of_vocabulary_strings() {
+        // Node errno 形・語彙 code の小文字化(case-sensitive 完全一致の
+        // pin)・空文字列・空白のみ・語彙 code 前後の空白(no trimming)
+        // は全て語彙外として `None`。
+        for s in [
+            "ENOENT",
+            "ECONNRESET",
+            "aborted",
+            "",
+            " ",
+            " TIMEOUT",
+            "TIMEOUT ",
+        ] {
+            assert_eq!(ErrorCode::from_str(s), None, "{s:?}");
         }
     }
 
