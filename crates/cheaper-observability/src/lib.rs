@@ -16,7 +16,9 @@ mod sink;
 
 use std::path::PathBuf;
 
-pub use config::{resolve, LogFormat, LogLevel, ResolvedConfig};
+// The public surface is deliberately `Activation` (input), `init`
+// (install), and `ObservabilityGuard` (flush guard) — interpretation
+// internals (`config`) and sink details stay crate-private.
 pub use init::init;
 
 /// Activation input — the caller (cli) passes raw flag/env values;

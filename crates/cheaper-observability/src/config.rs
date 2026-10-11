@@ -6,7 +6,7 @@ use crate::Activation;
 
 /// Minimal log level set accepted by `CHEAPER_LOG` / `--log`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum LogLevel {
+pub(crate) enum LogLevel {
     /// Logging disabled — no subscriber is installed and every emit
     /// site stays on tracing's no-subscriber fast path.
     Off,
@@ -50,7 +50,7 @@ impl LogLevel {
 /// Output format accepted by `CHEAPER_LOG_FORMAT` / `--log-format`,
 /// shared by both sinks (per-sink formats are out of scope — YAGNI).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum LogFormat {
+pub(crate) enum LogFormat {
     /// `fmt::format::Format<Full>` human-readable single-line output.
     Text,
     /// `fmt::format::Format<Json>` single-line JSON.
@@ -73,16 +73,16 @@ impl LogFormat {
 }
 
 /// Fully interpreted activation — the non-installing view used by
-/// [`init`](crate::init) and available for paths that need the resolved
+/// [`init`](crate::init) for paths that need the resolved
 /// configuration without side effects.
-pub struct ResolvedConfig {
+pub(crate) struct ResolvedConfig {
     /// Effective level. `Off` means logging is disabled.
-    pub level: LogLevel,
+    pub(crate) level: LogLevel,
     /// Effective format, shared by the file and stderr sinks.
-    pub format: LogFormat,
+    pub(crate) format: LogFormat,
     /// Interpretation warnings (message bodies — the caller adds the
     /// `warning:` prefix when rendering to a diagnostics channel).
-    pub warnings: Vec<String>,
+    pub(crate) warnings: Vec<String>,
 }
 
 /// Interpret `activation` with **flag > env > default** precedence.
@@ -95,7 +95,7 @@ pub struct ResolvedConfig {
 ///   lower-precedence value is not retried).
 /// - no format value → `Text` (no warning); the winning format value
 ///   is invalid → warning + `Text`.
-pub fn resolve(activation: &Activation) -> ResolvedConfig {
+pub(crate) fn resolve(activation: &Activation) -> ResolvedConfig {
     let mut warnings = Vec::new();
 
     let level_source = activation

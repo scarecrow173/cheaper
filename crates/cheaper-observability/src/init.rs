@@ -1,5 +1,5 @@
 //! Subscriber install: `Registry` + file/stderr `fmt::Layer`s +
-//! level filter + `set_global_default`.
+//! target-scoped level filter + `set_global_default`.
 //!
 //! Fail-open contract (design): `init` never panics and never fails
 //! the caller — every problem is folded into the returned `warnings`
@@ -80,7 +80,7 @@ pub fn init(activation: &Activation) -> (Option<ObservabilityGuard>, Vec<String>
     }
 
     let subscriber = Registry::default()
-        .with(EnvFilter::new(resolved.level.as_directive()))
+        .with(scoped_filter(resolved.level))
         .with(file_layer)
         .with(stderr_layer);
 
@@ -93,6 +93,10 @@ pub fn init(activation: &Activation) -> (Option<ObservabilityGuard>, Vec<String>
         Ok(()) => {
             // Best-effort `log` -> `tracing` bridge: a logger that is
             // already installed is not a reason to give up the sinks.
+            // Forwarded `log` records keep their emitter's target
+            // (reqwest, ureq, …), so the `cheaper`-scoped filter above
+            // keeps them disabled — the bridge is harmless for
+            // third-party payload leakage.
             if let Err(err) = tracing_log::LogTracer::init() {
                 warnings.push(format!(
                     "log-crate bridge unavailable ({err}) — `log` records are not forwarded to the sinks"
@@ -113,6 +117,26 @@ pub fn init(activation: &Activation) -> (Option<ObservabilityGuard>, Vec<String>
             (None, warnings)
         }
     }
+}
+
+/// Build the target-scoped `EnvFilter` for the resolved level.
+///
+/// All cheaper emit sites use either module-path targets
+/// (`cheaper_cli::*`, `cheaper_runtime::*`, …) or explicit dot targets
+/// (`cheaper.cli.*`, `cheaper.tool.*`, …) — the common string prefix
+/// is `cheaper`. `EnvFilter` matches directive targets by string
+/// prefix, so the single `cheaper=<level>` directive covers every
+/// cheaper emit site while third-party targets (reqwest, ureq, hyper,
+/// h2, rig-core, `log`-crate records bridged by `LogTracer`, …) match
+/// no directive at all. This filter has no default directive —
+/// `EnvFilter::default()` is built from zero directives — so unmatched
+/// targets are disabled on BOTH sinks and the metadata-only contract
+/// holds in practice.
+///
+/// `EnvFilter::new` is lossy (never panics); `as_directive` emits a
+/// lowercase level word, so `cheaper=<level>` always parses.
+fn scoped_filter(level: LogLevel) -> EnvFilter {
+    EnvFilter::new(format!("cheaper={}", level.as_directive()))
 }
 
 /// Build one `fmt::Layer` for `writer` in the resolved format. Text
@@ -152,6 +176,10 @@ where
 mod tests {
     use super::*;
     use std::path::PathBuf;
+    use tracing::callsite::{Callsite, Identifier};
+    use tracing::field::FieldSet;
+    use tracing::metadata::Kind;
+    use tracing::{Level, Metadata};
 
     fn activation(log_root: PathBuf, level: Option<&str>) -> Activation {
         Activation {
@@ -197,5 +225,76 @@ mod tests {
 
         // Dropping the guard flushes the non_blocking file writer.
         drop(first_guard);
+    }
+
+    /// Minimal `Callsite` for building `Metadata` outside a macro
+    /// callsite — the filter test only needs per-callsite `Interest`.
+    struct TestCallsite;
+    impl Callsite for TestCallsite {
+        fn set_interest(&self, _: tracing::subscriber::Interest) {}
+        fn metadata(&self) -> &Metadata<'_> {
+            unreachable!("register_callsite only reads the passed metadata")
+        }
+    }
+    static TEST_CALLSITE: TestCallsite = TestCallsite;
+
+    /// The scoped filter must admit cheaper-owned targets and reject
+    /// every third-party target — that is what keeps reqwest/hyper/
+    /// rig-core payloads (and `log`-bridged records) out of the sinks.
+    /// `register_callsite` exercises the static-directive path that
+    /// real emit sites hit, without needing a `Context`.
+    #[test]
+    fn scoped_filter_admits_only_cheaper_targets() {
+        let filter = scoped_filter(LogLevel::Debug);
+        let interest = |target: &'static str, level: Level| {
+            let meta: &'static Metadata<'static> = Box::leak(Box::new(Metadata::new(
+                "test-event",
+                target,
+                level,
+                None,
+                None,
+                None,
+                FieldSet::new(&[], Identifier(&TEST_CALLSITE)),
+                Kind::EVENT,
+            )));
+            Layer::<Registry>::register_callsite(&filter, meta)
+        };
+
+        // Module-path targets (`cheaper_*::*`) and explicit dot
+        // targets (`cheaper.*`) share the `cheaper` prefix.
+        assert!(interest("cheaper_runtime::run", Level::DEBUG).is_always());
+        assert!(interest("cheaper.cli.run", Level::INFO).is_always());
+        assert!(interest("cheaper_observability::init", Level::WARN).is_always());
+
+        // The level gate still applies within cheaper targets.
+        assert!(interest("cheaper_runtime::run", Level::ERROR).is_always());
+        let trace_filter = scoped_filter(LogLevel::Error);
+        let trace_meta: &'static Metadata<'static> = Box::leak(Box::new(Metadata::new(
+            "test-event",
+            "cheaper_runtime::run",
+            Level::DEBUG,
+            None,
+            None,
+            None,
+            FieldSet::new(&[], Identifier(&TEST_CALLSITE)),
+            Kind::EVENT,
+        )));
+        assert!(Layer::<Registry>::register_callsite(&trace_filter, trace_meta).is_never());
+
+        // Third-party targets match no directive and the filter has
+        // no default directive — disabled at ANY level.
+        for target in [
+            "reqwest::connect",
+            "ureq",
+            "hyper",
+            "h2",
+            "rig_core::agent",
+            "log",
+        ] {
+            assert!(
+                interest(target, Level::ERROR).is_never(),
+                "third-party target {target:?} must be disabled"
+            );
+        }
     }
 }
