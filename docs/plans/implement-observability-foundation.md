@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034DVGKbl3V2g7msSfpXv0"
 type: "plan"
-status: "draft"
+status: "approved"
 title: "Implement observability foundation"
 created: "2026-10-11"
 updated: "2026-10-11"
