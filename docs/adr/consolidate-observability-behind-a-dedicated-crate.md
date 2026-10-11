@@ -79,6 +79,11 @@ infrastructure の所有境界を決める必要がある(DISCO の D8)。
 
 ## Considered Options
 
+option label は discovery(D8)から振り直している — discovery T-B
+(`cheaper-core` module 案)は棄却済みで本 ADR の options には含めず
+(More Information 参照)、本 ADR の T-B = discovery T-C、T-C は ADR
+で追加した facade 案。
+
 * T-A: 各 crate が `tracing` を直接依存 + init・sink 構築は
   `cheaper-cli` が行う(専用 crate なし)
 * T-B: 新規 `cheaper-observability` crate が subscriber init・sink

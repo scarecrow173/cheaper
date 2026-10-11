@@ -61,8 +61,10 @@ D7・D9)。
   `io.stderr` が error line(`error {code}: {message}`)、run 成功時の
   `model: <prov>/<id> (tier <t>)` line、`usage-log:` line、auth
   prompt、`warning:` line を運び、`--quiet` で suppression される
-  (cli.rs:199・213・331・439 等)。tracing stderr sink はこの
-  channel と共存する必要がある。
+  (error line は cli.rs:186-188 の `suppress` gate、model line は
+  cli.rs:330-332、warning line は cli.rs:112-115、`usage-log:`
+  line は `quiet` 引数経由で usage_log.rs:196-197)。tracing
+  stderr sink はこの channel と共存する必要がある。
 - **secret は run 経路を流れる**: auth credential(api_key/oauth)と
   user prompt(system_prompt/prompt)、tool payload が
   instrumentation 対象経路を通る。
@@ -122,10 +124,10 @@ Chosen options:
 stderr 共存ルール: tracing stderr sink は既存 `io.stderr`
 diagnostics と行単位で interleave する。diagnostics 行の形式・内容・
 `--quiet` semantics は不変。`--quiet` は diagnostics を抑制するが、
-flag/env var による明示的な log 有効化は抑制しない(提案ルール —
-最終確定は実装 design 時)。hook 経路で stderr log が hook contract
+flag/env var による明示的な log 有効化は抑制しない(確定済み
+ルール — test で固定)。hook 経路で stderr log が hook contract
 に干渉する場合は hook 経路の stderr sink を無効化する fallback を
-用意する。
+用意する(実装時検証の open item)。
 
 ### Consequences
 
@@ -164,7 +166,7 @@ secrets 非記録 test・`--quiet` と log 有効化の組合せ挙動・
     `cheaper-observability` 側に集約し、cli は flag 値を渡すだけ。
   - `--quiet` は diagnostics(`io.stderr` 経由の error/model/
     usage-log/warning line)のみ抑制し、明示的 log 有効化は抑制
-    しない(提案ルール — design 時に確定・test 化)。
+    しない(確定済みルール — test 化する)。
 * Patterns to avoid:
   - stdout への log 出力 — envelope contract 違反。
   - diagnostics 行の形式変更や `--quiet` semantics の拡大解釈 —
@@ -175,8 +177,10 @@ secrets 非記録 test・`--quiet` と log 有効化の組合せ挙動・
     直前 run の証拠を失う。
 * Dependencies or configuration:
   - env var: `CHEAPER_LOG`(level)、`CHEAPER_LOG_FORMAT`(text|json)。
-  - CLI flag: 名称は実装 design で確定(`--log`/`--log-level`/
-    `--log-format` 系)。flag > env var の優先順位。
+  - CLI flag: `--log <level>`・`--log-format <text|json>`(env var
+    名 `CHEAPER_LOG`/`CHEAPER_LOG_FORMAT` に揃え、既存 kebab-case
+    flag の `--worker-file`/`--compare-model` 系に倣う)。flag >
+    env var の優先順位。
   - `tracing-appender` 系 rolling file(daily/per-startup + 世代数)。
     既定値は実装 design で確定。
 
@@ -189,7 +193,7 @@ secrets 非記録 test・`--quiet` と log 有効化の組合せ挙動・
   format が parse 可能。
 * [ ] flag が env var を override する(level・format 双方)。
 * [ ] `--quiet` 下で diagnostics が抑制され、明示的 log 有効化は
-  出力される(design で確定したルールを test 化)。
+  出力される(確定済みルールを test 化)。
 * [ ] credential・prompt・tool payload 本体が file/stderr の log に
   出現しない regression test がある。
 * [ ] `.cheaper/logs/` が `.gitignore` の `logs` pattern で cover
@@ -220,12 +224,40 @@ secrets 非記録 test・`--quiet` と log 有効化の組合せ挙動・
 * Bad, because consumer が project 外の集約場所を欲する用途
   (userConfigDir 的集約)は別途考慮が必要になる可能性がある。
 
+### R-B: rolling(daily/per-startup)+ 世代数管理
+
+* Good, because サイズ・世代上限が予測可能で、tracing-appender 型の
+  実績ある機構に寄せられる。
+* Bad, because rolling 間隔・保持世代数・file 命名の既定値を別途
+  決める必要がある。
+
+### R-A: 単一 file 無制限追記 / R-C: 起動ごと truncate
+
+* Good, because どちらも実装が単純。
+* Bad, because R-A は肥大して disk 消費が予測不能、R-C は直前 run
+  の証拠を失い調査用途に耐えない。
+
 ### A-C: env var + CLI flag(flag 優先)
 
 * Good, because hook/子プロセス経路(env var)と per-invocation の
   明示(flag)の両方を cover し優先順位が明確。
 * Bad, because env var 名・flag 名・優先ルールの文書化と、
   `--quiet` との関係整理が必要。
+
+### A-A: env var のみ / A-B: CLI flag のみ
+
+* Good, because 経路が 1 系統で単純(A-A は hook・子プロセス経路
+  へ伝播、A-B は呼び出しごとの明示性)。
+* Bad, because A-A は 1 回限りの有効化が冗長で shell 環境に依存
+  し、A-B は hook 経由等 flag を通せない経路で有効化不能。
+
+### F-C: human-readable text + structured JSON 両対応・切替
+
+* Good, because 実行中の ad-hoc 調査(text)と CI・機械処理(JSON)
+  の両用途を 1 基盤で cover する。
+* Bad, because formatter の分岐と field 規約の二重検証が必要。
+  F-A 単独では CI・機械処理での parse が不安定、F-B 単独では
+  人間の ad-hoc 調査で読みにくい。
 
 ### SEC-B: metadata-only 既定 + 別 opt-in
 

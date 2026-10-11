@@ -61,8 +61,8 @@ DISC-034DUx01YRjOAf4gTaftO7 で確定した決定軸 D1–D9 に従い、
   (hard invariant)。
 - format: human-readable text + structured JSON、切替可能。
 - activation: env var(`CHEAPER_LOG` = level、`CHEAPER_LOG_FORMAT`)+
-  CLI flag の併用、flag が env var を override。既定 OFF で
-  ~zero overhead。
+  CLI flag(`--log <level>`・`--log-format <text|json>`)の併用、
+  flag が env var を override。既定 OFF で ~zero overhead。
 - profiling は tracing span による stage timing — run pipeline の
   stage 分解を span tree から得る(CPU sampling ではない)。
 - safety: 既定は metadata-only(len/hash/id)。credential・prompt・
@@ -101,7 +101,7 @@ stage 分解の証拠を持たない。instrumentation は全 crate に波及す
   行単位の出力。
 - format 切替: human-readable text / structured JSON。
 - activation: `CHEAPER_LOG`(level)+ `CHEAPER_LOG_FORMAT` env var +
-  CLI flag(flag 優先)。既定 OFF。
+  CLI flag `--log`/`--log-format`(flag 優先)。既定 OFF。
 - span による stage timing(run pipeline 分解)のための span 配置・
   field 規約(stage 名・id・len/hash の canonical naming と JSON
   field schema)。
@@ -131,17 +131,20 @@ stage 分解の証拠を持たない。instrumentation は全 crate に波及す
   error line(`cli.rs` の `error {code}: {message}` 書き出し)、
   run 成功時の `model: <prov>/<id> (tier <t>)` line、`usage-log:`
   line、auth prompt、`emit_catalog_warnings` の `warning:` line、
-  `--quiet` による suppression(cli.rs:199・213・331・439 等)。
-  tracing stderr sink はこの channel と行単位で interleave する設計
+  `--quiet` による suppression(error line は cli.rs:186-188 の
+  `suppress` gate、model line は cli.rs:330-332、warning line は
+  cli.rs:112-115、`usage-log:` line は `quiet` 引数経由で
+  usage_log.rs:196-197 が抑制)。tracing stderr sink はこの
+  channel と行単位で interleave する設計
   制約であり、以下を満たす:
   - diagnostics 行の形式・内容・`--quiet` semantics は不変
     (hook contract・consumer 契約の維持)。
   - `--quiet` は diagnostics を抑制するが、flag/env var による
-    **明示的な log 有効化は抑制しない**(提案ルール — 最終確定は
-    実装 design 時の item とする)。
+    **明示的な log 有効化は抑制しない**(確定済みルール — test で
+    固定する)。
   - hook 経路で stderr log が親 agent との stdin/stdout protocol に
     干渉する場合、hook 経路では stderr sink を無効化する fallback
-    を用意する(実装時検証)。
+    を用意する(実装時検証の open item)。
 - **依存方向は一方向**: `cli → {workflow, provider} → runtime →
   {rig-adapter, tools} → core` を壊さない。observability は全 crate
   から見て下流(`everything → cheaper-observability →
@@ -168,16 +171,26 @@ stage 分解の証拠を持たない。instrumentation は全 crate に波及す
 - [ ] log 無効(既定)で `cheaper-cli` regression suite(55 cases)が
   無変更で pass し、envelope byte-parity・exit code・hook 挙動が
   維持される。
-- [ ] `CHEAPER_LOG`/`CHEAPER_LOG_FORMAT` または CLI flag で有効化
-  した run が、file(`<cwd>/.cheaper/logs/`)と stderr の両 sink に
-  run pipeline の stage timing を含む event を出力し、JSON format
-  が機械 parse 可能である。
+- [ ] `CHEAPER_LOG`/`CHEAPER_LOG_FORMAT` または
+  `--log`/`--log-format` で有効化した run が、
+  file(`<cwd>/.cheaper/logs/`)と stderr の両 sink に run pipeline
+  の stage timing を含む event を出力し、JSON format が機械
+  parse 可能である。
+- [ ] CLI flag(`--log`/`--log-format`)が env var
+  (`CHEAPER_LOG`/`CHEAPER_LOG_FORMAT`)を level・format の双方で
+  override することを示す test がある。
+- [ ] human-readable text format が両 sink で実際に出力されることを
+  示す test がある(JSON parse 可能性だけでなく text 経路も検証)。
+- [ ] run pipeline 以外の計測点 — hook 経路・tool internals・
+  auth/catalog I/O boundary — が、log 有効時にそれぞれ観測可能な
+  event を出力する。
 - [ ] credential・prompt・tool payload 本体が log(file/stderr 双方)
   に出現しないことを示す regression test がある。
 - [ ] log 無効時 overhead の計測方法が定義され、計測結果が許容範囲
   として記録される。
-- [ ] `--quiet` + log 有効化の組合せで diagnostics は抑制され log は
-  出力される(または design で確定した最終ルールが test で固定される)。
+- [ ] `--quiet` + log 有効化の組合せで diagnostics は抑制され、
+  flag/env var による明示的な log は出力される(確定済みルールを
+  test で固定)。
 - [ ] `.cheaper/logs/` が `.gitignore` の `logs` pattern で cover
   されることを確認済み。
 - [ ] hook 経路で stderr sink が hook contract に干渉しないことを
