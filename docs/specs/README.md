@@ -6,7 +6,7 @@ Directory: `docs/specs`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
-| SPEC-034EdS8ly2SqcS7cJ8hvfJ | Restore recorded abort code classification at setup boundaries | approved | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
+| SPEC-034EdS8ly2SqcS7cJ8hvfJ | Restore recorded abort code classification at setup boundaries | implemented | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
 | SPEC-034r05iHK8bA7gexEML9oZ | APM delegation skills and pre-read delegation hook | implemented | [apm-delegation-skills-and-read-hook.md](./apm-delegation-skills-and-read-hook.md) |
 | SPEC-034r05iHK8bA7gffRgD3Fp | Self-contained cheaper CLI distribution inside the APM hook bundle | superseded | [apm-self-contained-cli-distribution.md](./apm-self-contained-cli-distribution.md) |
 | SPEC-WdXXEoaAmbOafvuIpM6FFT | Keep interactive auth prompts inside the injected CLI I/O boundary | implemented | [auth-io-boundary.md](./auth-io-boundary.md) |

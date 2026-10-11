@@ -1,10 +1,10 @@
 ---
 id: "SPEC-034EdS8ly2SqcS7cJ8hvfJ"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "Restore recorded abort code classification at setup boundaries"
 created: "2026-10-11"
-updated: "2026-10-11"
+updated: "2026-10-12"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -138,23 +138,23 @@ contract であり、stream 経路と setup 経路の分類非対称は同じ ab
 
 ## Acceptance Criteria
 
-- [ ] `RunAbortReason` 全種(`Timeout`/`Signal`/`MaxTurns`/`MaxToolCalls`)
+- [x] `RunAbortReason` 全種(`Timeout`/`Signal`/`MaxTurns`/`MaxToolCalls`)
   について、setup boundary で abort が着弾した場合に
   `TIMEOUT`/`ABORTED`/`MAX_TURNS_EXCEEDED`/`MAX_TOOL_CALLS_EXCEEDED`
   が復元される unit test がある。
-- [ ] `hang_grace` fixture が dev-seam 付き feature-unified workspace
+- [x] `hang_grace` fixture が dev-seam 付き feature-unified workspace
   test run で deterministic に pass する。
-- [ ] `error_object` を持つ `AbortReason` の分類挙動が不変であることを
+- [x] `error_object` を持つ `AbortReason` の分類挙動が不変であることを
   示す test がある。
-- [ ] `ErrorCode` 語彙外の code 文字列(Node errno `"ENOENT"` 等)を
+- [x] `ErrorCode` 語彙外の code 文字列(Node errno `"ENOENT"` 等)を
   運ぶ `AbortReason`、または error object が存在するが
   `CheaperError` ではない `AbortReason` が、依然として
   `INTERNAL_ERROR` と `"{context} failed: {message}"` の形を維持して
   返されることを pin する test がある。
-- [ ] code→`ErrorCode` 写像が 1 箇所のみに存在し、adapter 側の
+- [x] code→`ErrorCode` 写像が 1 箇所のみに存在し、adapter 側の
   private table が除去されている。
-- [ ] envelope schema・exit code・`ERROR_TABLE` が不変。
-- [ ] `mise run check` が全工程 green。
+- [x] envelope schema・exit code・`ERROR_TABLE` が不変。
+- [x] `mise run check` が全工程 green。
 
 ## Deferred Design Concerns
 

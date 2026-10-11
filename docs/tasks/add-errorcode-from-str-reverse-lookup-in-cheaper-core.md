@@ -1,10 +1,10 @@
 ---
 id: "TASK-034EekRVLtDbzc0slwVFX0"
 type: "task"
-status: "todo"
+status: "done"
 title: "T1: cheaper-core ErrorCode::from_str reverse lookup"
 created: "2026-10-11"
-updated: "2026-10-11"
+updated: "2026-10-12"
 owners: []
 relations:
   source: []
@@ -96,14 +96,14 @@ ErrorCode::from_str)` のため名前を確定しているので、改名では�
 
 ## Done When
 
-- [ ] `ErrorCode::from_str` が `Option<Self>` を返す inherent
+- [x] `ErrorCode::from_str` が `Option<Self>` を返す inherent
       method として `as_str` 隣に存在し、`std::str::FromStr`
       impl・第二の match table が存在しない。`#[allow(clippy::
       should_implement_trait)]` で inherent `from_str` の lint 抵触が
       局所 allow されている(`-D warnings` の `cargo clippy` が通る)
-- [ ] `ERROR_TABLE` 全変種の round-trip test・語彙外/小文字/
+- [x] `ERROR_TABLE` 全変種の round-trip test・語彙外/小文字/
       空文字列 → `None` の test が追加され pass する
-- [ ] `cheaper-core` に新規 dependency がなく Rig/Tokio を
+- [x] `cheaper-core` に新規 dependency がなく Rig/Tokio を
       引き込んでいない(変更は純粋関数のみ)
 
 ## Out of Scope
@@ -113,7 +113,7 @@ ErrorCode::from_str)` のため名前を確定しているので、改名では�
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core` exits 0
-- [ ] `mise exec -- cargo build -p cheaper-core` exits 0
-- [ ] `grep -n "impl FromStr for ErrorCode\|impl std::str::FromStr"
+- [x] `mise exec -- cargo test -p cheaper-core` exits 0
+- [x] `mise exec -- cargo build -p cheaper-core` exits 0
+- [x] `grep -n "impl FromStr for ErrorCode\|impl std::str::FromStr"
       crates/cheaper-core/src/errors.rs` が 0 件(trait 非採用の確認)

@@ -18,7 +18,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpOWHdF7Wo | Add doc-writer built-in Worker | done | [add-doc-writer-worker.md](./add-doc-writer-worker.md) |
 | TASK-034rzRv1K2fmi2Igbdu5HG | Add e2e coverage, docs, bundle regen and final verification | done | [add-e2e-coverage-docs-bundle-regen-and-final-verification.md](./add-e2e-coverage-docs-bundle-regen-and-final-verification.md) |
 | TASK-034r05iHQeQpDpsYVkvsPX | Add e2e tests for non-execution CLI paths | done | [add-e2e-tests-for-non-execution-cli-paths.md](./add-e2e-tests-for-non-execution-cli-paths.md) |
-| TASK-034EekRVLtDbzc0slwVFX0 | T1: cheaper-core ErrorCode::from_str reverse lookup | todo | [add-errorcode-from-str-reverse-lookup-in-cheaper-core.md](./add-errorcode-from-str-reverse-lookup-in-cheaper-core.md) |
+| TASK-034EekRVLtDbzc0slwVFX0 | T1: cheaper-core ErrorCode::from_str reverse lookup | done | [add-errorcode-from-str-reverse-lookup-in-cheaper-core.md](./add-errorcode-from-str-reverse-lookup-in-cheaper-core.md) |
 | TASK-034r05iHQeQpDpu1iPmr1q | Add fake stream hook and e2e execution tests | done | [add-fake-stream-hook-and-e2e-execution-tests.md](./add-fake-stream-hook-and-e2e-execution-tests.md) |
 | TASK-034z52KS4mSEHAIf28JHuj | add hook contract tests and port existing adapter e2e | done | [add-hook-contract-tests-and-port-existing-adapter-e2e.md](./add-hook-contract-tests-and-port-existing-adapter-e2e.md) |
 | TASK-034zQTNEJMgP0EgzXJbGtM | Add launcher acquisition contract tests | done | [add-launcher-acquisition-contract-tests.md](./add-launcher-acquisition-contract-tests.md) |
@@ -191,7 +191,7 @@ Directory: `docs/tasks`
 | TASK-034DzYxGyUC8loD0ruTCQN | T6: cheaper-runtime 内部再配置 (F6) | done | [reorganize-cheaper-runtime-run-module.md](./reorganize-cheaper-runtime-run-module.md) |
 | TASK-034DzYs0gJRVZ5JJfKAIAn | T5: cheaper-tools 内部再配置 (F1) | done | [reorganize-cheaper-tools-modules.md](./reorganize-cheaper-tools-modules.md) |
 | TASK-034r05iHQeQpDqsCIiTDOz | Repoint bundle pipeline and CI freshness check to packages/apm | done | [repoint-bundle-pipeline-and-ci-freshness.md](./repoint-bundle-pipeline-and-ci-freshness.md) |
-| TASK-034EekSpuRWpAF5iF3T316 | T2: setup boundary abort code restore and shared reverse lookup | todo | [restore-setup-boundary-abort-classification.md](./restore-setup-boundary-abort-classification.md) |
+| TASK-034EekSpuRWpAF5iF3T316 | T2: setup boundary abort code restore and shared reverse lookup | done | [restore-setup-boundary-abort-classification.md](./restore-setup-boundary-abort-classification.md) |
 | TASK-034r05iHQeQpDqOOFD90gZ | Restructure README, create docs index, and run final verification | done | [restructure-readme-docs-index-and-final-verification.md](./restructure-readme-docs-index-and-final-verification.md) |
 | TASK-034DkRYMmhq7VdzfD1NcT8 | Rewrite cheaper-usage SKILL.md hook path section | done | [rewrite-cheaper-usage-skill-hook-path-section.md](./rewrite-cheaper-usage-skill-hook-path-section.md) |
 | TASK-034r05iHQeQpDpDygNnvfq | Run bulk-read and cheap-write smoke against Ollama | done | [run-bulk-read-and-cheap-write-smoke-against-ollama.md](./run-bulk-read-and-cheap-write-smoke-against-ollama.md) |

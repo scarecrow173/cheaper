@@ -1,10 +1,10 @@
 ---
 id: "TASK-034EekSpuRWpAF5iF3T316"
 type: "task"
-status: "todo"
+status: "done"
 title: "T2: setup boundary abort code restore and shared reverse lookup"
 created: "2026-10-11"
-updated: "2026-10-11"
+updated: "2026-10-12"
 owners: []
 relations:
   source: []
@@ -113,19 +113,19 @@ API へ切替。分類を pin する unit test と `hang_grace` determinism
 
 ## Done When
 
-- [ ] `RunAbortReason` 全種について `abort_payload` 経路が
+- [x] `RunAbortReason` 全種について `abort_payload` 経路が
       `setup_abort_error` で正しい `ErrorCode` に復元される unit
       test が pass
-- [ ] `error_object` 保持 `AbortReason` の分類挙動が不変である pin
+- [x] `error_object` 保持 `AbortReason` の分類挙動が不変である pin
       test が pass
-- [ ] 語彙外 code・code 無し・`error_object` 保持だが非
+- [x] 語彙外 code・code 無し・`error_object` 保持だが非
       `CheaperError`(例: `AbortReason::from_error(NodeIoError)`)
       の `AbortReason` が `INTERNAL_ERROR` + `"{context} failed:
       {message}"` を維持する pin test が pass
-- [ ] adapter の private `error_code_from_str` が除去され
+- [x] adapter の private `error_code_from_str` が除去され
       `ErrorCode::from_str` を使っている
-- [ ] envelope schema・exit code・`ERROR_TABLE` が無変更
-- [ ] `hang_grace` fixture が dev-seam 付き workspace test run で
+- [x] envelope schema・exit code・`ERROR_TABLE` が無変更
+- [x] `hang_grace` fixture が dev-seam 付き workspace test run で
       deterministic に pass(連続 3 回)
 
 ## Out of Scope
@@ -138,13 +138,27 @@ API へ切替。分類を pin する unit test と `hang_grace` determinism
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-runtime` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-rig-adapter` exits 0
-- [ ] `git grep -n "error_code_from_str" -- crates/` が 0 件
-- [ ] `git grep -n "and_then(ErrorCode::from_str)" --
+- [x] `mise exec -- cargo test -p cheaper-runtime` exits 0
+- [x] `mise exec -- cargo test -p cheaper-rig-adapter` exits 0
+- [x] `git grep -n "error_code_from_str" -- crates/` が 0 件
+- [x] `git grep -n "and_then(ErrorCode::from_str)" --
       crates/cheaper-runtime crates/cheaper-rig-adapter` が 2 件
       (両 consumer が共有 API を使用)
-- [ ] `mise exec -- cargo test --workspace --features
+- [x] `mise exec -- cargo test --workspace --features
       cheaper-runtime/dev-seam,cheaper-cli/dev-seam` を連続 3 回
       実行し全て exits 0(`hang_grace` の deterministic pass)
-- [ ] `mise run check` exits 0
+- [x] `mise run check` exits 0
+
+## Closing Note
+
+- `crates/cheaper-runtime/tests/fixtures/08-signal-abort.json` の
+  `abort.after_ms` 40 → 120 引き上げ(`fb145df`)を本 task の作業に
+  含めた。Affected Files 外だが review で in-scope-adjacent と判断
+  された — fixture 09(`partial-mutation`、`after_ms: 120`)や CLI
+  regression case(`run-signal-abort` 800ms・`run-hang-grace`
+  500ms)と同じ race class(setup 区間への abort 着弾)であり、
+  setup 着弾した abort には design 確定どおり details が付かない
+  ため、code fix だけでは post-setup 着弾を前提に書かれた
+  `errorDetails`/streamed meta の assert を満たせない。bump 後
+  dev-seam 付き workspace run 3/3 で deterministic pass。詳細は
+  `tmp/task-reports/abort-T2.md` の Scope note を参照。
