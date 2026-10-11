@@ -8,7 +8,7 @@
 //! # Rig isolation
 //!
 //! Rig 型を import するのはこの crate と provider crate(例:
-//! `cheaper-provider-devin`)のみ。公開 API の signature に Rig 型は出ない
+//! `cheaper-provider`)のみ。公開 API の signature に Rig 型は出ない
 //! — 唯一の例外は [`CompletionModel::from_rig`] で、これは provider→adapter
 //! 境界の provider 側入口として明示的に存在する。
 //!
@@ -40,7 +40,6 @@ mod agent;
 mod builtin;
 mod error;
 mod hooks;
-pub mod js_json;
 mod retry;
 mod run_stream;
 mod tools;

@@ -1,0 +1,36 @@
+[package]
+name = "cheaper-provider"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+description = "Port of packages/runtime-pi devin provider (Phase 3 T5): protobuf-lite wire + Connect framing, GetChatMessage stream transport on a Rig custom Wire/Decoder/Transport, Devin CLI delegated auth with isolated data dir, `devin models list` catalog. Rig types stay inside this crate."
+
+[dependencies]
+cheaper-core = { path = "../cheaper-core" }
+cheaper-runtime = { path = "../cheaper-runtime" }
+cheaper-rig-adapter = { path = "../cheaper-rig-adapter" }
+rig.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+futures.workspace = true
+# gzip for Connect frame bodies (TS `zlib.gzipSync`/`gunzipSync`)。
+flate2 = "1"
+# `randomUUID()`(session/cascade/prompt/trigger ids)。
+uuid = { version = "1", features = ["v4"] }
+# JWT payload `exp` decode（base64url）。
+base64 = "0.22"
+# Connect deframing stream combinator。
+async-stream = "0.3"
+# `http::Request`/`Bytes` for rig_http `HttpClientExt` calls。
+http = "1"
+bytes = "1"
+# credentials.toml の `key = "value"` 行 parse・`devin auth status` の
+# `/logged in/i` 判定（TS 正規表現の port）。
+regex.workspace = true
+# Error enums (CliError/JwtError)。
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { workspace = true, features = ["rt-multi-thread"] }

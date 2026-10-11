@@ -7,9 +7,8 @@
 //! JSON text が contract となる経路(provider へ渡す prompt embed・
 //! token 計量の元 text・CLI envelope / usage.jsonl)は全てこの module
 //! を通す。number 部は [`crate::json::number::format_number`] が正源で
-//! object/array layout のみここで実装する(元々 `cheaper_rig_adapter::
-//! js_json` にあったものを、CLI envelope 層も使うため core へ移設し
-//! adapter 側は re-export shim とした)。
+//! object/array layout のみここで実装する(元々 `cheaper-rig-adapter`
+//! にあったものを、CLI envelope 層も使うため core へ移設した)。
 //!
 //! - indent は `JSON.stringify(v, null, 2)` 相当の 2 space
 //! - key 順は insertion order(serde_json `preserve_order` 前提) —

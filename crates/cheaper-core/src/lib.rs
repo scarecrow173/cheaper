@@ -8,6 +8,7 @@ pub mod config;
 pub mod duration;
 pub mod errors;
 pub mod js;
+pub mod js16;
 pub mod json;
 pub mod model;
 /// Node `path` 字句互換層。tool 層(`cheaper-tools` の walker 等)も

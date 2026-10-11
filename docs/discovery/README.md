@@ -13,6 +13,7 @@ Directory: `docs/discovery`
 | DISC-034r05iHy2gdnpeCjN4yfM | bulk-reader の巨大ファイル安全 I/O | resolved | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | DISC-034zIL9lJBa7f3clZmUHin | Canonical Tool Runtime 抽出 | resolved | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | DISC-034DlM8Pf1tWBtLqX1VWFc | cargo source install replaces release binary acquisition for APM consumers | resolved | [cargo-source-install-replaces-release-binary-acquisition-for-apm-consumers.md](./cargo-source-install-replaces-release-binary-acquisition-for-apm-consumers.md) |
+| DISC-034DjtZ2lFPzDHL1MgR6qu | cheaper-usage skill hook path examples diverge from APM deploy path | draft | [cheaper-usage-skill-hook-path-examples.md](./cheaper-usage-skill-hook-path-examples.md) |
 | DISC-034r05iHy2gdnp377SlYbj | cheaper V1 実装引継ぎの整理と Pi SDK 現状確認 | resolved | [cheaper-v1-pi-sdk.md](./cheaper-v1-pi-sdk.md) |
 | DISC-034zIOnoIjhMd2vKGOtgXd | Core resource manifest identity investigation | resolved | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | DISC-034r05iHy2gdnpdai9KGpW | Cross-agent hook distribution and per-agent hook contract matrix | resolved | [cross-agent-hook-distribution-and-contract-matrix.md](./cross-agent-hook-distribution-and-contract-matrix.md) |
@@ -31,6 +32,7 @@ Directory: `docs/discovery`
 | DISC-034zWqZnTAsRi8D1paYgln | Payload untracking migration | resolved | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | DISC-034zzZxx7gzas0a5Anlkwi | Pi sibling tool-call parallelism inside Workers | resolved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DISC-o3GbG6FWEBRFcbNBaslikh | Plugin catalog refresh persistence and user model additions | draft | [plugin-catalog-refresh-persistence-and-user-models.md](./plugin-catalog-refresh-persistence-and-user-models.md) |
+| DISC-034DxZdeAdWoFG3UuTyh5c | Post-migration structural inventory and cleanup policy | resolved | [post-migration-structural-inventory-and-cleanup-policy.md](./post-migration-structural-inventory-and-cleanup-policy.md) |
 | DISC-034r05iHy2gdnp6g5GTWKG | Post-smoke code review findings on abort, repair, and timeout semantics | resolved | [post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md](./post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md) |
 | DISC-034r05iHy2gdnp5sN3kF1s | Real provider smoke verification via Ollama | resolved | [real-provider-smoke-verification-via-ollama.md](./real-provider-smoke-verification-via-ollama.md) |
 | DISC-034A8jvNOxFXeSIc8tWQmE | Job lifetime lease の ownership と admission | resolved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |

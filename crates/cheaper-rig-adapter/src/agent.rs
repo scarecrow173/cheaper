@@ -19,6 +19,7 @@ use std::sync::Arc;
 use rig::tool::ToolContext;
 use rig::{operation::Completion, AgentBuilder, DynModel};
 
+use cheaper_core::json::stringify::stringify_pretty;
 use cheaper_tools::operation::AbortSignal;
 use cheaper_tools::registry::ToolRuntime;
 
@@ -41,7 +42,7 @@ pub const DEFAULT_INVALID_TOOL_RETRIES: usize = 8;
 const RETRY_MODEL_LABEL: &str = "cheaper-retried";
 
 /// Provider 供給の completion model ハンドル。中身は `DynModel` だが
-/// adapter 外には opaque — provider crate(`cheaper-provider-devin` 等)だけが
+/// adapter 外には opaque — provider crate(`cheaper-provider` 等)だけが
 /// [`from_rig`](Self::from_rig) で包む。
 pub struct CompletionModel {
     inner: DynModel<Completion>,
@@ -246,14 +247,11 @@ pub fn build_system_prompt(
     contract.push("Output schema:".to_string());
     // F10: provider-visible text は `JSON.stringify(…, null, 2)` 規則
     // (JS number formatting — `1.0` → `1`、`|x| >= 1e21` 等)に揃える。
-    contract.push(crate::js_json::stringify_pretty(output_schema));
+    contract.push(stringify_pretty(output_schema));
     format!("{}\n{}\n", instructions.trim_end(), contract.join("\n"))
 }
 
 /// `buildUserPrompt` — run.ts の user prompt 組立(`Task input (JSON):`)。
 pub fn build_user_prompt(input: &serde_json::Value) -> String {
-    format!(
-        "Task input (JSON):\n{}",
-        crate::js_json::stringify_pretty(input)
-    )
+    format!("Task input (JSON):\n{}", stringify_pretty(input))
 }

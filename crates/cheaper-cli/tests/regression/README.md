@@ -10,14 +10,17 @@ node)を oracle に両実装の観測一致を検証していた。Phase 6 で T
 撤去されたため、最終 differential green 状態の Rust 側 normalized 出力を
 snapshot として固定し、以後の Rust 実装の回帰を検出する。
 
+fixture DSL(`RunFixture`)を使うため `dev-seam` cargo feature が必須
+(`required-features` で gate されており、feature 無しでは skip される):
+
 ```bash
-cargo test -p cheaper-cli --test regression
+cargo test -p cheaper-cli --features dev-seam --test regression
 ```
 
 snapshot の再 capture(意図的な挙動変更時のみ — diff を必ず review する):
 
 ```bash
-CHEAPER_REGRESSION_CAPTURE=1 cargo test -p cheaper-cli --test regression
+CHEAPER_REGRESSION_CAPTURE=1 cargo test -p cheaper-cli --features dev-seam --test regression
 ```
 
 ## 構成
@@ -41,7 +44,7 @@ CHEAPER_REGRESSION_CAPTURE=1 cargo test -p cheaper-cli --test regression
   "stdin": "…" /* または JSON 値 */,
   "files": { "a.txt": "…" /* または {"repeat": [unit, n]} */ },
   "config": { "usageJsonl": […], "files": {…} },
-  "fixture": { /* RunFixture JSON(crates/cheaper-runtime/src/fixture.rs) */ },
+  "fixture": { /* RunFixture JSON(crates/cheaper-runtime/src/dev/fixture.rs) */ },
   "mode": "envelope" /* または "raw"(byte 完全一致 — hook/version/help 系) */,
   "compareStderr": false,      // true で stderr も path scrub 後に比較
                              // (hook deny は stderr が contract — hook case で opt-in)

@@ -1,17 +1,17 @@
 # Workflow orchestration benchmark
 
-この harness は seeded fixture と fake Worker stream を使い、実 provider を呼ばずに workflow arm と scripted direct arm を比較する。CLI は cargo build 済みの native binary を subprocess として起動し、`NODE_ENV=test` と `CHEAPER_TEST_FAKE_STREAM` を設定する。
+この harness は seeded fixture と fake Worker stream を使い、実 provider を呼ばずに workflow arm と scripted direct arm を比較する。CLI は cargo build 済みの native binary を subprocess として起動し、`NODE_ENV=test` と `CHEAPER_TEST_FAKE_STREAM` を設定する。fake-stream seam は `dev-seam` cargo feature で gate されているため(ADR-034DyGyITd0YaATg8fkld7)、benchmark 対象 binary は feature 有効で build する必要がある。
 
 実測済みの 7 scenario / 17 arm / warm-up 2 回 + 測定 15 回の集約 artifact は [結果 JSON](./results/e45d35b7-2fa6-416b-946a-70ca844b9c80.json)(TS CLI 時代の記録 — binary 表記等が現行と異なる)。対応する解釈は [Workflow の使い分け](../docs/guides/workflow-usage.md) を参照。
 
 ## 前提
 
-spawn 対象は `target/release/cheaper`(win32 は `cheaper.exe`)で、無ければ `target/debug/cheaper` へ fallback する。
+spawn 対象は `target/release/cheaper`(win32 は `cheaper.exe`)で、無ければ `target/debug/cheaper` へ fallback する。`dev-seam` feature を有効化して build すること(無いと fake-stream seam が compile 対象外で fixture が読まれない)。
 
 ```powershell
-mise exec -- cargo build --release -p cheaper-cli
-# 時間優先なら debug profile: mise exec -- cargo build -p cheaper-cli
-# あるいは workspace 全体: mise exec -- cargo build --workspace
+mise exec -- cargo build --release -p cheaper-cli --features dev-seam
+# 時間優先なら debug profile: mise exec -- cargo build -p cheaper-cli --features dev-seam
+# あるいは workspace 全体: mise exec -- cargo build --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam
 ```
 
 ## 実行
@@ -30,7 +30,7 @@ mise exec -- node benchmarks/run.mjs --scenario single-simple-tool-call --warmup
 
 ## fake stream seam(Rust 版)
 
-`CHEAPER_TEST_FAKE_STREAM` は Rust 側 seam(`crates/cheaper-cli/src/fake_stream.rs`)の RunFixture JSON path を指す。`benchmarks/fixtures/fake-worker-stream.mjs` は CLI process 内で import される module ではなく、harness 側で fixture JSON(`sessions[].steps` — `turn`/`tool_calls`/`delay_ms`/`usage_delta`/`finish` 等の DSL、`crates/cheaper-runtime/tests/fixtures/*.json` 参照)を spawn ごとに生成する generator になった。
+`CHEAPER_TEST_FAKE_STREAM` は Rust 側 seam(`crates/cheaper-cli/src/fake_stream.rs`、`dev-seam` cargo feature で gate)の RunFixture JSON path を指す。`benchmarks/fixtures/fake-worker-stream.mjs` は CLI process 内で import される module ではなく、harness 側で fixture JSON(`sessions[].steps` — `turn`/`tool_calls`/`delay_ms`/`usage_delta`/`finish` 等の DSL、`crates/cheaper-runtime/tests/fixtures/*.json` 参照)を spawn ごとに生成する generator になった。
 
 旧 module seam が env(`CHEAPER_BENCH_*`)で受けていたパラメータの対応:
 

@@ -19,7 +19,7 @@ cheaper-runtime = { path = "../cheaper-runtime" }
 # run` の配線先 — `cheaper-workflow` は Rig 非依存のまま保つ)。
 cheaper-workflow = { path = "../cheaper-workflow" }
 cheaper-rig-adapter = { path = "../cheaper-rig-adapter" }
-cheaper-provider-devin = { path = "../cheaper-provider-devin" }
+cheaper-provider = { path = "../cheaper-provider" }
 serde.workspace = true
 serde_json.workspace = true
 # tokio: run_cli entry runtime + SIGINT/SIGTERM → abort relay (T3 run
@@ -33,3 +33,26 @@ rpassword = "7"
 
 [dev-dependencies]
 tempfile = "3"
+
+# dev/test seam(`fake_stream` module + run/workflow_run の fixture
+# plumbing)の compile-time gate。default off — consumer install は
+# seam を含まない binary を得る(ADR-034DyGyITd0YaATg8fkld7)。
+# runtime 側同名 feature へ forward する。
+[features]
+dev-seam = ["cheaper-runtime/dev-seam"]
+
+# seam 依存 target は required-features で gate する。丸ごと seam 依存の
+# `tests/regression/`(55 case)に加え、混在だった `tests/run.rs` /
+# `tests/workflow.rs` の seam case を分離した専用 target。
+[[test]]
+name = "regression"
+path = "tests/regression/main.rs"
+required-features = ["dev-seam"]
+
+[[test]]
+name = "run_dev_seam"
+required-features = ["dev-seam"]
+
+[[test]]
+name = "workflow_dev_seam"
+required-features = ["dev-seam"]

@@ -28,7 +28,7 @@ use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::model::classify::ModelInfo;
 use cheaper_core::model::model_ref::{parse_model_ref, ModelRef};
 use cheaper_core::model::pricing::{resolve_pricing, ModelCost, ModelPricing, PricingSource};
-use cheaper_provider_devin::DevinProviderPlugin;
+use cheaper_provider::devin::DevinProviderPlugin;
 use cheaper_runtime::auth::ProcessEnv;
 use cheaper_runtime::{CheaperProviderPlugin, ProviderEnv, Runtime};
 use serde_json::{Map, Value};

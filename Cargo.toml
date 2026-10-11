@@ -1,11 +1,7 @@
 # Repo-root virtual manifest for the Rust migration (Phase 1+).
-# `crates/poc-rig` is a standalone Phase 0 spike with its own Cargo.lock and
-# rust-toolchain.toml; it is excluded so its pinned dependency set stays
-# independent of the production workspace.
 [workspace]
 resolver = "2"
 members = ["crates/*"]
-exclude = ["crates/poc-rig"]
 
 [workspace.package]
 edition = "2021"

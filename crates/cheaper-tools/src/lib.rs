@@ -23,7 +23,6 @@ pub mod catalog;
 pub mod definition;
 pub mod execution_metrics;
 pub mod glob;
-mod glob_tables;
 pub mod invocation;
 pub mod journal;
 pub mod js16;

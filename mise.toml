@@ -23,12 +23,16 @@ uv = "0.11"
 
 # Repository-owned setup contract: fresh checkout を開発可能にする
 # canonical entrypoint。toolchain は mise.toml + mise.lock で復元される。
+# build/test/clippy 系の cargo コマンドは `dev-seam` feature を有効化する
+# (seam 依存 test target は required-features で gate されており、
+# feature 無しでは build/lint/test の検証から抜け落ちる —
+# ADR-034DyGyITd0YaATg8fkld7)。
 [tasks.setup]
 description = "Restore APM dependencies and Rust build outputs for a fresh checkout"
 run = [
   "apm install",
   "cargo fetch",
-  "cargo build --workspace --all-targets",
+  "cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam",
 ]
 
 # Canonical verification contract: CI と同等の検証。
@@ -40,10 +44,10 @@ description = "Verify the checkout: lint, fmt, clippy, test, lockfile and slim p
 run = [
   "biome check",
   "cargo fmt --all -- --check",
-  "cargo clippy --workspace --all-targets -- -D warnings",
+  "cargo clippy --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings",
   "node scripts/check-version.mjs",
   "node scripts/check-doc-ids.mjs",
-  "cargo test --workspace",
+  "cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam",
   "node --test scripts/test/",
   "node --test benchmarks/test/",
   "node scripts/check-lockfile.mjs",
