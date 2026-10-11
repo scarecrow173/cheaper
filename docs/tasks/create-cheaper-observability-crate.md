@@ -95,7 +95,10 @@ cheaper-observability → tracing-subscriber の一方向)。
   `max_log_files` の削除対象判定は prefix 一致を要求するため必須・
   `max_log_files(7)`・build 先 `<log_root>/.cheaper/logs`)+
   `non_blocking` 化、stderr writer(`std::io::stderr`、
-  `with_ansi(false)`)。dir 作成/書込み失敗は stderr-only で継続 +
+  `with_ansi(false)`)。`stderr_enabled=false` の場合は stderr
+  layer を一切 install しない(出力を捨てるだけの layer を残さ
+  ない — hook 経路の stderr 不混入 contract はこの構造的省略に
+  依存する)。dir 作成/書込み失敗は stderr-only で継続 +
   warnings(fail-open)
 - `crates/cheaper-observability/src/init.rs` — `Registry` +
   file/stderr 2 つの `fmt::Layer`(format が `Format<Full>`/
@@ -131,6 +134,10 @@ cheaper-observability → tracing-subscriber の一方向)。
 - [ ] fail-open contract(invalid 値→warnings・file sink 失敗→
       stderr-only・repeat-init→first subscriber wins・OFF→dir
       未作成 + `(None, _)`)が実装・test されている
+- [ ] repeat-init unit test が `init` を呼ぶ唯一の test であること
+      (design の test 戦略 — 他の test は `resolve` 等の
+      non-installing 経路のみを使い、process 全域の global
+      subscriber による test 順序依存の失敗を防ぐ)
 - [ ] `cheaper-observability` から workspace 内 crate への依存が 0
       である
 

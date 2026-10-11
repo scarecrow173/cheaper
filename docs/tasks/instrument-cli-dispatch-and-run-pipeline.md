@@ -108,7 +108,9 @@ metadata-only 規約: payload 本体・file path は field に載せない。
 ## Done When
 
 - [ ] `cheaper.cli.dispatch`・`cheaper.cli.command`・`cheaper.run`
-      + 7 stage 子 span が配置表通りの命名で配置されている
+      + 8 stage 子 span(`tool_runtime`・`model_resolve`・
+      `tool_scope`・`session`・`prompt`・`extract`・`repair`・
+      `meta`)が配置表通りの命名で配置されている
 - [ ] 全 span が `info_span!` + `Instrument`(async 区間)で配置
       され、per-site の `Instant`/`elapsed_ms` 記録が存在しない
       (timing は `FmtSpan::CLOSE` の close event に委譲)

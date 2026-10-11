@@ -103,6 +103,11 @@ spawn)。
     init `warning:` 行が出ない + file に `cheaper.hook` event が
     ある(invalid `CHEAPER_LOG` 値注入で init 警告が stderr に
     漏れないことも確認)
+  - auth/catalog I/O boundary の観測可能性(spec AC5):
+    `CHEAPER_LOG=debug` 有効化 subprocess で `cheaper models`
+    (catalog)と `cheaper auth status`(auth)を spawn し、file に
+    それぞれ `cheaper.catalog`・`cheaper.auth` event 行が出ること
+    を assert
   - envelope byte-parity・exit code: log OFF(既定)で既存
     `tests/envelope.rs`・`tests/regression/` が無変更 pass
     であることがそのまま証拠。追加の assert は不要
@@ -113,7 +118,10 @@ spawn)。
   から secret 文字列・prompt 本文・tool payload を grep して
   0 件を assert + run pipeline stage timing(`cheaper.run`
   span tree の close event `time.busy`・stage span 名)が file
-  に出ること
+  に出ること + tool internals の観測可能性(spec AC5): fixture を
+  tool call 実行を含む run になるよう configure し、file に
+  `cheaper.tool` span・`cheaper.tool.process` event 行が出ること
+  を assert
 - `crates/cheaper-cli/Cargo.toml` —
   `[[test]] name = "observability_dev_seam" required-features =
   ["dev-seam"]` を追加(non-seam `observability.rs` は ungated)
@@ -140,17 +148,29 @@ spawn)。
 
 - [ ] `tests/observability.rs` が design test 戦略表の non-seam
       検証(`.cheaper/logs` 生成・JSON parse・text format・
-      flag>env・`--quiet`・repeat-init・hook stderr contract)を
-      subprocess isolation で実装している
+      flag>env・`--quiet`・repeat-init・hook stderr contract・
+      auth/catalog 観測可能性)を subprocess isolation で実装して
+      いる
 - [ ] `tests/observability_dev_seam.rs` が `required-features =
-      ["dev-seam"]` で secrets 非記録 scan + stage timing を
-      実装している
+      ["dev-seam"]` で secrets 非記録 scan + stage timing +
+      tool internals の観測可能性を実装している
+- [ ] spec AC5 の run pipeline 以外の計測点が test で固定されて
+      いる — hook に加え、tool internals(dev-seam: fake-stream
+      fixture + tool call で `cheaper.tool`/`cheaper.tool.process`
+      event 行)と auth/catalog I/O(non-seam subprocess で
+      `cheaper auth status` → `cheaper.auth`・`cheaper models` →
+      `cheaper.catalog` event 行)が log 有効時に file へ出ることを
+      assert
 - [ ] file sink を assert する test が全て
       `CARGO_BIN_EXE_cheaper` + `env_clear` spawn 経由で、
       in-process `run_cli` 呼出しは repeat-init contract のみ
 - [ ] `benchmarkEnvironment` が `CHEAPER_LOG*` を forward し、
       per-arm env/flag 注入の受け口が run-scenario/scenarios
       にある
+- [ ] `max_log_files` の m+1 semantics を実測確認 —
+      `cheaper.log` prefix の世代 file が実際に rotate/retain
+      されることを確認し、結果を Verification に記録(plan
+      risk 4 の引継ぎ)
 - [ ] `mise run check` exits 0
 
 ## Out of Scope
@@ -180,6 +200,12 @@ spawn)。
       `.cheaper/logs/cheaper.log.*` と stderr の両方に
       `cheaper.run` stage span の close event(`time.busy`)が
       出て JSON が parse 可能であることを確認
+- [ ] spec AC5 計測点: `cheaper models`・`cheaper auth status` の
+      subprocess で file に `cheaper.catalog`・`cheaper.auth`
+      event 行が、dev-seam fake stream + tool call で
+      `cheaper.tool`/`cheaper.tool.process` event 行が出ること
+- [ ] `max_log_files` retention 実測結果(保持世代数・rotation
+      挙動)を記録済み
 - [ ] off-state overhead 3 点計測が `benchmarks/results/` に
       記録され、(a)→(b) delta がノイズ範囲内
 - [ ] `mise run check` exits 0

@@ -103,6 +103,9 @@ cli は flag/env 値を生のまま `Activation` に載せるだけ。
   - `resolve_log_root(argv, io)`: `--cwd` が command 意味を持つ
     経路(run・run alias・workflow・models・count-tokens)でのみ
     argv の `--cwd`(`--cwd value`/`--cwd=value`)を lenient scan。
+    この scan は `global_log_flags`/`global_flag_present` と同一の
+    `--` terminator 規約を共有する(design の単一 lenient-scan
+    規約 — `--` 以降の positional `--cwd` を誤検出しない)。
     `usage`・`auth` 等では `io.cwd`。解決は
     `canonicalize_workspace_root` 規約(run 経路の workspace root
     解決と同一)、失敗時 `io.cwd` fallback(fail-open)
@@ -118,6 +121,13 @@ cli は flag/env 値を生のまま `Activation` に載せるだけ。
     `execute_hook` 早期 return
   - 非 hook 経路: `global_flag_present(argv, "quiet")` で判定し、
     `!quiet` の時だけ `io.stderr` へ `warning: {w}` 行を流す
+  - HELP literal(cli.rs:405-442)の `Options:` 節に
+    `--log <level>`・`--log-format <text|json>` の行を追加 —
+    user-facing の global flag(全 command で受理)であり help
+    記載が必須
+- `crates/cheaper-cli/tests/regression/expected/cli-help-command.json`
+  — help 系 regression golden を refresh(HELP 更新に伴う差分を
+  再生成)
 - `crates/cheaper-cli/tests/args.rs` — `--log`/`--log-format` の
   strict parse 受理(run・workflow・global option としての他
   command)+ `global_log_flags`/`global_flag_present` の lenient
@@ -137,8 +147,14 @@ cli は flag/env 値を生のまま `Activation` に載せるだけ。
       `io.stderr` に出ない(subscriber へ `tracing::warn!` で畳む)
 - [ ] 非 hook 経路で `--quiet` 時は init 警告が抑制され、非 quiet
       時は `warning:` 行が `io.stderr` に出る
-- [ ] `global_log_flags`・`global_flag_present` が `--` terminator・
-      last-wins を解釈し、`--` 以降の positional を誤検出しない
+- [ ] `global_log_flags`・`global_flag_present`・`resolve_log_root`
+      の `--cwd` lenient scan が同一の `--` terminator 規約を共有
+      し、`--` 以降の positional を誤検出しない(`global_log_flags`
+      は last-wins — `tests/args.rs` の追加 test で規約を固定)
+- [ ] HELP literal の `Options:` 節に `--log`・`--log-format` が
+      追加され、help 系 regression golden
+      (`tests/regression/expected/cli-help-command.json`)が
+      refresh されている
 
 ## Out of Scope
 

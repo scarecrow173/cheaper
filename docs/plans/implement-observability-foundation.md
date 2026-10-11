@@ -282,7 +282,7 @@ atomic な変更 + その verification」で、上記 T1-T6 に対応する。
 
 - [ ] 各 task 後: `mise exec -- cargo build -p <対象 crate>` +
       `cargo test -p <対象 crate>`
-- [ ] T1 後: `mise exec -- cargo tree -p cheaper-cli` に
+- [ ] T2 後: `mise exec -- cargo tree -p cheaper-cli` に
       `cheaper-observability` が現れ、`cheaper-observability` から
       run/business crate への依存が無い
 - [ ] T5 後: `mise exec -- cargo tree -p cheaper-core` に
