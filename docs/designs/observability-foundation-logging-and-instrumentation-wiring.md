@@ -54,15 +54,16 @@ spec の Deferred Design Concerns に挙げられた open item:
 - rolling の既定値(rotation・世代数・file 命名)
 - span/field の canonical naming と JSON field schema
 - stderr sink の `CliIo` diagnostics との共存機構、hook 経路の扱い
-  (ADR-2 の「実装時検証の open item」を本 design で確定)
+  (ADR-034DUFA70cQdAyG7Lbuuay の「実装時検証の open item」を
+  本 design で確定)
 - log 無効時 overhead の計測方法
 
 backend は `tracing` + `tracing-subscriber` + `tracing-appender`
 (discovery H3)。`tracing` 0.1.44 / `tracing-subscriber` 0.3.23 は既に
 Cargo.lock に transitive dep として存在し、`tracing-appender` のみ
 新規追加(0.2 系、`RollingFileAppender::builder().max_log_files(n)`
-が必要なため 0.2.1 以降 — Cargo.lock 更新は committed lockfile check
-の対象)。
+が必要なため **0.2.3 以降** — Cargo.lock 更新は committed lockfile
+check の対象)。
 
 ## Scope
 
@@ -125,18 +126,33 @@ pub struct Activation {
 pub struct ObservabilityGuard { /* WorkerGuard 保持 */ }
 
 /// activation 解釈 + sink 構築 + subscriber install。
-/// - 解決結果が OFF → `Ok(None)`(subscriber は install しない)。
+/// - 解決結果が OFF → `(None, warnings)`(subscriber は install
+///   しない)。
 /// - file sink 構築失敗 → stderr-only で継続 + `warnings` へ理由を積む
 ///   (fail-open — logging 設定で command を失敗させない)。
 /// - level/format の値が不正 → `warnings` へ積み、level は OFF・
 ///   format は `text` 扱い(fail-open)。
+/// - **repeat-init**: `tracing::subscriber::set_global_default` は
+///   process 当たり一度しか成功しない。install 済みでの再呼出し
+///   (`SetGlobalDefaultError`)は **first subscriber wins** —
+///   `(None, warnings + "subscriber already installed")` を返して
+///   継続し、既存 subscriber は最初の activation 設定のまま残る
+///   (fail-open — 後から init を呼んだ経路を error にしない)。
+///   初回が OFF 解決(install 無し)なら後続呼出しは install 可能。
+///   同一 test binary が `run_cli` を複数回呼ぶ経路がこの
+///   contract に依存するため、error 化しないことを明文化する。
 pub fn init(activation: &Activation) -> (Option<ObservabilityGuard>, Vec<String>);
 ```
 
 `init` の戻り値 `Vec<String>` は init 時警告
 (`warning: invalid CHEAPER_LOG value ...` 等の message 本体)。
 cli が `io.stderr` へ `warning:` 行として流す(`--quiet` 時は抑制 —
-init 警告は diagnostics の一種とみなす)。
+init 警告は diagnostics の一種とみなす)。**hook 経路では
+`io.stderr` へは流さない** — hook stderr は target native
+contract の一部(windsurf deny guidance 等)のため、init 警告は
+install 済み subscriber へ `tracing::warn!` で畳んで file sink
+にのみ出す(subscriber 未 install/None 時は drop — fail-open)。
+非 hook 経路の `io.stderr` 出力は変わらない。
 
 内部構成:
 
@@ -152,6 +168,12 @@ init 警告は diagnostics の一種とみなす)。
 - `init.rs` — `Registry` + 2 つの `fmt::Layer`(file layer:
   non_blocking appender、stderr layer: `std::io::stderr`
   MakeWriter)+ level filter + `set_global_default`。
+  format が `Format<Full>`(text)と `Format<Json>`(json)で
+  `fmt::Layer` の型が分岐するため、format 選択は各 sink の
+  layer 構築時に `Layer::boxed()` で
+  `Box<dyn Layer<Registry> + Send + Sync>` へ揃える(または
+  text/json enum dispatch) — 型分岐後に共通の登録経路へ載せる
+  ために必要な実装上の注意。
 
 依存: `tracing`、`tracing-subscriber`(features:
 `fmt`・`json`・`env-filter` 相当の filter 配線に必要な feature)、
@@ -183,8 +205,8 @@ init 警告は diagnostics の一種とみなす)。
 CliIo は trait object 共有を前提としていないため、tracing を
 io boundary 通しにすると boundary 自体の再設計が必要になる。
 両 channel は同一 fd への行単位 write として interleave する
-(ADR-2 の確定ルール)。1 event = 1 行(text も JSON も single-line)
-を fmt layer の既定で満たす。
+(ADR-034DUFA70cQdAyG7Lbuuay の確定ルール)。1 event = 1 行
+(text も JSON も single-line)を fmt layer の既定で満たす。
 
 ANSI は stderr layer で `with_ansi(false)` — diagnostics 行が常に
 plain text である規約に揃え、hook/pipe 経路での制御文字混入を
@@ -203,12 +225,20 @@ YAGNI)。
 (lenient pre-scan ではない — strict parse の対象にする):
 
 - `STRING_OPTIONS` に `"log"`・`"log-format"` を追加し、
-  `Values` に `log: Option<String>`・`log_format: Option<String>`
-  を追加。env var 名 `CHEAPER_LOG`/`CHEAPER_LOG_FORMAT` と揃えた
-  kebab-case flag(ADR-2)。
-- 全 command の `allowed` オプション表に `"log"`・`"log-format"`
-  を追加(global option 化 — `format`/`quiet` と同じく per-command
-  allowed list に入れる既存規約に従う)。`ParsedCli` 各 variant の
+  `Values::set_string` に受理 arm を追加(値そのものは `Values`
+  field に保持しない — 消費は後述の `global_log_flags` が担い、
+  parse 済み値と activation 値の二重表現を避ける)。env var 名
+  `CHEAPER_LOG`/`CHEAPER_LOG_FORMAT` と揃えた kebab-case
+  flag(ADR-034DUFA70cQdAyG7Lbuuay)。
+- per-command の受入れ: option を command 単位で制限する機構は
+  2 系統ある — `workflow` は literal allowed-token 表
+  (args.rs:501-517 の `allowed: &[&str]` + token loop)で弾き、
+  他 command は per-field の `values.X.is_some()` rejection
+  guard で弾く。対応は **`workflow` 両 action の `allowed` に
+  `"log"`・`"log-format"` を追加するのみ** — 他 command には新規
+  rejection guard を置かない(`values.log`/`log_format` 相当を
+  検査しない field unchecked = globally accepted で global
+  option 化が自然に成立する)。`ParsedCli` 各 variant の
   args struct には載せない — log 設定は command 引数ではなく
   process 全体の activation であり、args struct 増設は表現の分散に
   なる。代わりに `parse_cli_args` とは別の軽量 accessor
@@ -216,6 +246,13 @@ YAGNI)。
   args.rs に用意し、`run_cli` が init 前に呼ぶ(strict parse が後で
   検証するため、accessor は `--name value`/`--name=value`・`--`
   terminator・last-wins のみを解釈する lenient scan でよい)。
+  同じ lenient scan 規約を共有する bool 版
+  `global_flag_present(argv, "quiet") -> bool` も用意し、
+  `run_cli` の init 警告抑制判定に使う — `argv.iter().any(==
+  "--quiet")` の素朴 scan は `--` terminator 以降の positional
+  `--quiet` を誤検出するため。bool option は `--quiet` 単独形のみ
+  を受理(`--quiet=…` は strict parse が "does not take an
+  argument" で弾くため lenient scan は値を解釈しない)。
 
 ### init 呼出し点と guard 寿命
 
@@ -234,13 +271,23 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
         stderr_enabled: !is_hook,
     };
     let (_log_guard, warnings) = cheaper_observability::init(&activation);
+    if is_hook {
+        // hook stderr は target native contract の一部(windsurf
+        // deny guidance)のため init 警告を `io.stderr` に流さない。
+        // install 済み subscriber へ `warn!` で畳んで file sink のみ
+        // に出す(未 install/None 時は no-op — fail-open)。
+        for w in &warnings {
+            tracing::warn!("{w}");
+        }
+        return crate::hook::execute_hook(&argv[1..], io, hooks).await;
+    }
+    // `--` terminator で打ち切る lenient scan(bool option 版) —
+    // `argv.any(== "--quiet")` は `--` 以降の positional を誤検出する。
+    let quiet = crate::args::global_flag_present(argv, "quiet");
     for w in &warnings {
-        if !argv.iter().any(|a| a == "--quiet") {
+        if !quiet {
             io.stderr.write_str(&format!("warning: {w}\n"));
         }
-    }
-    if is_hook {
-        return crate::hook::execute_hook(&argv[1..], io, hooks).await;
     }
     // ...既存 dispatch
 }
@@ -249,11 +296,16 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
 - env 値は `io.env` closure 経由で読む(`std::env::var` ではない) —
   test が `EnvLookup` で注入でき、hook 経路・fixture overlay の env
   と同一経路になる。
-- `resolve_log_root`: argv の `--cwd`(`--cwd value`/`--cwd=value`)
-  を lenient scan し、あればそれ、無ければ `io.cwd` を
-  `canonicalize_workspace_root` で解決(run 経路の workspace root
-  解決と同一規約 — `.cheaper/workers` 等と同じ anchor)。canonicalize
-  失敗時は `io.cwd` に fallback(fail-open)。
+- `resolve_log_root`: **`--cwd` が command 意味を持つ経路
+  (`run`・run alias・`workflow`・`models`・`count-tokens`)でのみ**
+  argv の `--cwd`(`--cwd value`/`--cwd=value`)を lenient scan
+  して使う。`usage`・`auth` 等 `--cwd` を command 側が無視する
+  経路では `--cwd` を読まず `io.cwd` を使う — command の
+  workspace と log 出力先が乖離するのを防ぐため(`--cwd` は
+  parse されるが args struct に載らない command では dead flag)。
+  解決は `canonicalize_workspace_root`(run 経路の workspace
+  root 解決と同一規約 — `.cheaper/workers` 等と同じ anchor)。
+  canonicalize 失敗時は `io.cwd` に fallback(fail-open)。
 - `_log_guard` は `run_cli` のローカルに束縛し、dispatch・record
   usage 完了後の `run_cli` return 時に drop → non_blocking writer
   が flush される。tokio runtime(`main.rs::run_process` の
@@ -263,7 +315,7 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
   spawned task を跨ぐ span 継承のため)。
 - `hook` 経路は `stderr_enabled: false` → file sink のみ。
 
-#### hook 経路の stderr 判断(ADR-2 open item の確定)
+#### hook 経路の stderr 判断(ADR-034DUFA70cQdAyG7Lbuuay open item の確定)
 
 hook 経路では stderr channel は「親 agent が無視してよい診断口」
 ではなく target native contract の一部: windsurf は deny 時の
@@ -274,9 +326,14 @@ stderr を emit しないが、親 agent が stderr を user 向け log 面へ
 残したくない。hook invocation は短命で file sink で十分追跡できる
 ため、**hook 経路は stderr sink を構造的に無効化し file sink のみ
 有効**とする(env var activation は伝播する — flag を通せない
-経路を env が cover する ADR-2 の狙い通り)。これで「stderr が
+経路を env が cover する ADR-034DUFA70cQdAyG7Lbuuay の狙い通り)。
+これで「stderr が
 hook contract に干渉するか」の open item は「干渉経路を作らない」
-で確定的に解消する。
+で確定的に解消する。同じ理由で **init 時警告(`warnings`)も hook
+経路では `io.stderr` に出さない** — invalid `CHEAPER_LOG` 値等の
+診断は install 済み subscriber へ `tracing::warn!` で畳み file
+sink にのみ残す(subscriber 未 install 時は drop — fail-open
+優先で hook 応答を汚さない)。
 
 `__grep-eval` helper(`main.rs` の argv 先頭一致分岐)は `run_cli`
 に到達しないため subscriber は install されない — tool 側 emit は
@@ -287,8 +344,10 @@ no-op のまま(内部 subprocess、parent が spawn を記録する)。
 ### activation 解決順
 
 1. `run_cli` 先頭で `global_log_flags(argv)` が `--log`/
-   `--log-format` を lenient scan、`resolve_log_root` が `--cwd`
-   を解決、`io.env` から `CHEAPER_LOG`/`CHEAPER_LOG_FORMAT` を取得。
+   `--log-format` を lenient scan、`resolve_log_root` が
+   `--cwd` 対象 command(run/run alias/workflow/models/
+   count-tokens)で `--cwd` を、それ以外では `io.cwd` を解決、
+   `io.env` から `CHEAPER_LOG`/`CHEAPER_LOG_FORMAT` を取得。
 2. `cheaper_observability::init` が flag > env > default で level/
    format を解決 → OFF なら `None` を返して終了(subscriber 無し、
    以降の emit は `tracing` の no-subscriber fast path で ~zero
@@ -337,7 +396,11 @@ timing が出る)。
   credential)は field に載せない。載せてよいのは `*.len`(byte
   数: `input.len`/`output.len`/`raw_output.len`)、`*.count`/
   `turns`/`tool_calls`、`*.id`、`name`/`code`/`tier` のような
-  分類値。hash は本フェーズでは不要(len+id で相関可能、YAGNI)。
+  分類値。**file path は field に載せない** — `<userConfigDir>`
+  等を経由して OS username を含み得る識別情報であり、分類値の
+  allowlist に合致しない。file を指す必要がある場合は basename
+  の `*.name`(例: `file.name = "credentials.json"`)に留める。
+  hash は本フェーズでは不要(len+id で相関可能、YAGNI)。
 - event 名: span 内の point event は `cheaper.<subsystem>.event`
   を `event!` の target ではなく span field で表現せず、通常の
   `debug!`/`info!`/`warn!` event + message で構造化する(JSON
@@ -353,7 +416,7 @@ timing が出る)。
 | cheaper-cli | `src/models.rs`・`src/auth.rs`・`src/usage_report.rs`・`src/cli.rs` CountTokens arm | `cheaper.cli.command` field `command` | 各 command module の `execute` 系 entry |
 | cheaper-cli | `src/hook/mod.rs` + `src/hook/targets.rs` | `cheaper.hook` span(field `event`,`target`)＋完了 `debug!` event(`verdict`,`stdout.len`/`stderr.len`) | `execute_hook_inner`→`handle_hook` 境界。`emit` の stderr 書出し自体は instrument しない |
 | cheaper-runtime | `src/run/mod.rs`(`RunCtx::run`) | `cheaper.run`(field `worker.name`)＋stage 子 span: `cheaper.run.tool_runtime`(invocation 生成)、`cheaper.run.model_resolve`(available→resolve→`resolve_model_auth`)、`cheaper.run.tool_scope`、`cheaper.run.session`、`cheaper.run.prompt`(`prompt_with_abort_grace`)、`cheaper.run.extract`/`cheaper.run.repair`、`cheaper.run.meta` | stage span は `info_span!` + `Instrument` で async 区間を包む。`on_event` の `RunEvent::ToolCall`/`ToolResult`/`CompletionCall` で `trace!`/`debug!` event(`call.id`,`tool.name`,usage counts — token 数は metadata)|
-| cheaper-runtime | `src/auth/store.rs` | `cheaper.auth.store` event(load/save、`provider`,`path` — path は metadata) | credential 値は一切出さない |
+| cheaper-runtime | `src/auth/store.rs` | `cheaper.auth.store` event(load/save、`provider`,`file.name`) | credential 値は一切出さない。`file.name` は basename のみ(`credentials.json`)— full `path` は OS username を含み得るため allowlist 外とし、識別不要な分類値で代替する |
 | cheaper-runtime | `src/auth/service.rs` | `cheaper.auth` span(`provider`,`auth.type`) | login/logout/status の op 単位 |
 | cheaper-runtime | `src/catalog/mod.rs` | `cheaper.catalog` event(merge/persist、`provider.count`,`error.count`) | bundled/persisted/user overlay の境界 |
 | cheaper-tools | `src/registry.rs`(`ToolRuntime::execute`) | `cheaper.tool` span(field `tool.name`)＋結果 `debug!` event(`result.ok`/`error.code`) | 全 tool call の単一の正 instrumentation 点 — 個別 tool file に散らさない |
@@ -366,7 +429,8 @@ timing が出る)。
 
 `cheaper-tools`・`cheaper-core` 等 leaf crate は `tracing` のみを
 `[dependencies]` に追加し、`cheaper-observability` には依存しない
-(emit は subscriber の有無を意識しない — ADR-1 の pattern)。
+(emit は subscriber の有無を意識しない —
+ADR-034DUFzrXJxOwfl1qveXWR の pattern)。
 `cheaper-observability` に依存するのは `cheaper-cli` のみ。
 
 ### workspace layout / Cargo.toml 変更
@@ -385,7 +449,13 @@ timing が出る)。
 - `cheaper-observability` の `Config` 型を cli の flag parse が
   使う案は不採用 — flag parse は string のまま `Activation` に
   載せ、値の解釈(LogLevel/LogFormat への写像)は observability が
-  行う(activation surface の単一所有 — ADR-1/-2)。
+  行う(activation surface の単一所有 — ADR-034DUFzrXJxOwfl1qveXWR/
+  ADR-034DUFA70cQdAyG7Lbuuay)。
+- `benchmarks/lib/cli.mjs`(`benchmarkEnvironment` env
+  passthrough)+ `benchmarks/lib/run-scenario.mjs` +
+  `benchmarks/scenarios/scenarios.json`(per-arm env / flag 注入
+  arm)— off-state overhead の (c) `CHEAPER_LOG=debug` arm 計測に
+  必要な required work(後述「off-state overhead」参照)。
 
 ### off-state overhead(確定)
 
@@ -404,26 +474,50 @@ timing が出る)。
   計測結果は `benchmarks/results/` の JSON(再現可能な observation
   列)として残す。scenario は tool 実行を含む
   `single-simple-tool-call` 等、run pipeline を通るものを選ぶ。
+- **(c) arm の計測には harness 拡張が必要(required work)**:
+  `benchmarks/lib/cli.mjs::benchmarkEnvironment` は curated env
+  dict(PATH/HOME/NODE_ENV/CHEAPER_CONFIG_DIR/CHEAPER_TEST_FAKE_STREAM
+  等のみ)を組み立て、`CHEAPER_LOG*` を forward しない。また
+  `benchmarks/run.mjs`/`scenarios.json` の arm 機構には spawn へ
+  env・CLI flag を注入する経路がない。対応:
+  `benchmarkEnvironment` に `CHEAPER_LOG*` の env passthrough
+  allowlist(または scenario/arm 指定の env override)を追加し、
+  `benchmarks/lib/run-scenario.mjs`/`scenarios/scenarios.json` に
+  per-arm env 指定(または `--log debug` flag 注入 arm)の
+  受け口を追加する。拡張なしでは (c) は計測不可。
 
 ### test 戦略
 
+**file sink を assert する test は全て subprocess isolation** —
+`set_global_default` は process 当たり一度しか成功しないため、
+同一 test binary が `run_cli` を複数回呼ぶと 2 回目以降は
+repeat-init contract(first subscriber wins + warning)に乗り、
+test 毎の独立した subscriber 構成を取れない。`tests/regression`
+の前例(`main.rs` の `CARGO_BIN_EXE_cheaper` 解決 +
+`harness.rs::spawn_collect` の `env_clear` spawn)に倣い、
+`cheaper` binary を tempdir cwd + 注入 env で spawn する方式を
+file assertion の正とする。in-process の `run_cli` test は
+repeat-init の warning/exit code と OFF 経路の確認に限定する。
+
 | 検証 | 場所 | 方式 |
 | --- | --- | --- |
-| activation 解釈(flag>env、invalid→fail-open、OFF 判定) | `cheaper-observability` unit test(`src/config.rs` 内) | `resolve` 直接呼出し |
-| `.cheaper/logs/` 生成・file sink 出力 | `cheaper-cli/tests/observability.rs`(新規、non-seam) | mock `CliIo`(`io.cwd` = tempdir、`io.env` で CHEAPER_LOG 注入)で `run_cli` を呼び `<cwd>/.cheaper/logs/cheaper.log.*` の存在と内容を確認 |
-| JSON format parse 可能性・text format 出力 | 同上 | `CHEAPER_LOG_FORMAT=json` で file 行を `serde_json` parse、text 指定で JSON 以外の行形式を確認 |
-| flag>env override(level・format) | 同上 + observability unit | `CHEAPER_LOG=warn` + `--log debug` で debug event が出る、等 |
-| `--quiet` + log 有効化 | 同上 | diagnostics(error/model/warning line)が出ず、log event が file に出る |
-| secrets 非記録(credential・prompt・tool payload) | `cheaper-cli/tests/observability_dev_seam.rs`(新規、`required-features = ["dev-seam"]`) | fixture run(scripted fake session + `auth_logins` credential)を `CHEAPER_LOG=debug` で実行し、`.cheaper/logs/*` と stderr から secret 文字列・prompt 本文を grep して 0 件を assert |
-| run pipeline stage timing event | 同上(seam 経路) | `cheaper.run` span tree の close event(`time.busy`)と stage span 名が file に出ること |
-| hook 経路: stderr sink 無効・file sink 有効 | `tests/hook.rs` 拡張 または observability test | hook invocation で stderr に tracing 行が出ない + file に `cheaper.hook` event がある |
+| activation 解釈(flag>env、invalid→fail-open、OFF 判定) | `cheaper-observability` unit test(`src/config.rs` 内) | `resolve` 直接呼出し(subscriber install を伴わないため in-process でよい) |
+| repeat-init contract(2 回目が `(None, warning)`・first subscriber wins) | `cheaper-observability` unit test + `cheaper-cli/tests/observability.rs`(non-seam) | observability 側: 1 test 内で `init` を 2 回呼び 2 回目の戻り値を確認。cli 側: 同一 test 内で `run_cli` を 2 回呼び、2 回目の `warning:` 行と正常 exit code を assert(file 内容は assert しない — subscriber は 1 回目の設定のまま) |
+| `.cheaper/logs/` 生成・file sink 出力 | `cheaper-cli/tests/observability.rs`(新規、non-seam) | **subprocess**: `CARGO_BIN_EXE_cheaper` を `env_clear` + `CHEAPER_LOG=debug`・`CHEAPER_CONFIG_DIR`=tempdir で spawn(`tests/regression/harness.rs::spawn_collect` 相当)し、`<ws>/.cheaper/logs/cheaper.log.*` の存在と内容を確認 |
+| JSON format parse 可能性・text format 出力 | 同上(subprocess) | `CHEAPER_LOG_FORMAT=json` spawn で file 行を `serde_json` parse、text 指定で JSON 以外の行形式を確認 |
+| flag>env override(level・format) | 同上(subprocess)+ observability unit | `CHEAPER_LOG=warn` env + `--log debug` argv で spawn し debug event が file に出る、等 |
+| `--quiet` + log 有効化 | 同上(subprocess) | `--quiet` argv + `CHEAPER_LOG` env で spawn — stderr に diagnostics(error/model/warning line)が出ず、log event が file に出る |
+| secrets 非記録(credential・prompt・tool payload) | `cheaper-cli/tests/observability_dev_seam.rs`(新規、`required-features = ["dev-seam"]`) | **subprocess**: `CHEAPER_TEST_FAKE_STREAM` fixture で dev-seam binary を `CHEAPER_LOG=debug` で spawn し、`.cheaper/logs/*` と stderr から secret 文字列・prompt 本文を grep して 0 件を assert |
+| run pipeline stage timing event | 同上(subprocess、seam 経路) | `cheaper.run` span tree の close event(`time.busy`)と stage span 名が file に出ること |
+| hook 経路: stderr sink 無効・file sink 有効・init 警告不混入 | `tests/hook.rs` 拡張 または observability test(subprocess) | hook invocation を spawn し、stderr に tracing 行と init `warning:` 行が出ない + file に `cheaper.hook` event がある(invalid `CHEAPER_LOG` 値注入で init 警告が stderr に漏れないことも確認) |
 | envelope byte-parity・exit code・regression 55 | 既存 `tests/envelope.rs`・`tests/regression/` | log OFF(既定)で無変更 pass がそのまま証拠 |
 | `.cheaper/logs/` の `.gitignore` cover | 静的確認(本 design で確認済み) | root `.gitignore` の bare `logs` pattern が `.cheaper/logs/` を cover — 追従不要 |
 
 ### mise/CI 配線
 
 **追加の gate は作らない** — observability は production infra で
-あり常時 compile 対象(spec の In Scope・ADR-1)。`dev-seam`
+あり常時 compile 対象(spec の In Scope・
+ADR-034DUFzrXJxOwfl1qveXWR)。`dev-seam`
 feature は test seam の gate 前例として activation 機構の参照に
 留まり、observability 自体を feature-gate しない(consumer install
 binary でも `--log` が効く必要がある)。`mise run check` の task 列・
@@ -451,7 +545,7 @@ test/clippy で自動包含)。`tracing-appender` 追加による Cargo.lock
 
 | risk | 影響 | 緩和 |
 | --- | --- | --- |
-| `--log`/`--log-format` を全 command の `allowed` 表に追加し忘れると strict parse が Unknown option を返す | flag が使えない command が生じる | 全 command allowed list への追加を diff で網羅確認;`global_log_flags` の lenient scan と strict parse の解釈ずれ(`--` 以降の `--log` は strict でも positional 扱いで flag にならないが lenient scan も `--` で打ち切る規約に揃える)を test で固定 |
+| `--log`/`--log-format` を `STRING_OPTIONS` または `workflow` の `allowed` 表に追加し忘れると strict parse が Unknown option / "not valid for workflow" を返す | flag が使えない経路が生じる | `STRING_OPTIONS` + `workflow` 両 action の `allowed` への追加を diff で網羅確認(他 command は field rejection guard 非対象で自動受理 — guard 追加不要);`global_log_flags`/`global_flag_present` の lenient scan と strict parse の解釈ずれ(`--` 以降は両者とも flag として扱わない)を test で固定 |
 | 非 `run` command(help/version/auth login 対話等)でも `.cheaper/logs/` が作られる | 空 dir 汚染 | OFF 時は dir 作成しない(subscriber 自体を作らない)。有効時も file sink 構築は初回 event 書込みではなく init 時 — 空 file が残る程度は許容(rolling prefix file は初 write で生成される実装上の挙動、test で確認) |
 | stderr に tracing 行が混ざると diagnostics 消費者を混乱させる | consumer の stderr 解析 | `--quiet` が log を抑制しない確定ルールと引換えに、明示的有効化のみでしか出ないこと・`.cheaper/logs` が恒久的な正で stderr は補助と文書化 |
 | `FmtSpan::CLOSE` の close event が span 大量発生経路(tool call 反復)で file を肥大化させる | log 量 | level 既定は flag/env 指定必須で、close event は span 数比例。daily+7 世代で肥大の上限は見通せる。必要なら後続で `FmtSpan` を subsystem 別に絞る余地 |
@@ -489,9 +583,16 @@ test/clippy で自動包含)。`tracing-appender` 追加による Cargo.lock
 - [ ] secrets(credential/prompt/tool payload)が file/stderr に出ない
       regression test が存在
 - [ ] `--quiet` + `--log` で diagnostics 抑制・log 出力の test が存在
-- [ ] hook 経路で stderr に tracing 行が出ず file に `cheaper.hook`
-      event が出る test が存在
+- [ ] repeat-init(2 回目 `init` が `(None, warning)`・first
+      subscriber wins)の test が存在
+- [ ] file sink assertion は subprocess(`CARGO_BIN_EXE_cheaper`
+      spawn)分離で実装されている
+- [ ] hook 経路で stderr に tracing 行・init `warning:` 行が出ず
+      file に `cheaper.hook` event が出る test が存在
 - [ ] log 無効時 overhead の benchmark 計測(3 点比較)が実施・記録済み
+      ((c) arm 用に `benchmarks/lib/cli.mjs::benchmarkEnvironment`
+      の `CHEAPER_LOG*` env passthrough + per-arm 注入受け口が
+      実装済み)
 - [ ] `.cheaper/logs/` が `.gitignore` の `logs` pattern で cover
       されること(本 design で確認済み — bare `logs` pattern)
 
@@ -515,4 +616,7 @@ test/clippy で自動包含)。`tracing-appender` 追加による Cargo.lock
   `crates/cheaper-rig-adapter/src/run_stream.rs`(`RunEvent`)、
   `crates/cheaper-core/src/config/dirs.rs`(`<cwd>/.cheaper`
   project_dir 解決)、`.gitignore`、
-  `benchmarks/{run.mjs,scenarios/scenarios.json}`。
+  `benchmarks/{run.mjs,lib/{cli,run-scenario}.mjs,scenarios/scenarios.json}`、
+  `crates/cheaper-cli/tests/regression/{main.rs,harness.rs}`
+  (subprocess spawn 前例 — `CARGO_BIN_EXE_cheaper` +
+  `spawn_collect` `env_clear`)。
