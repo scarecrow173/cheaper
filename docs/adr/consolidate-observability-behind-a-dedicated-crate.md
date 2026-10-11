@@ -1,7 +1,7 @@
 ---
 id: "ADR-034DUFzrXJxOwfl1qveXWR"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Consolidate observability behind a dedicated crate"
 created: "2026-10-11"
 updated: "2026-10-11"

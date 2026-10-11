@@ -24,7 +24,7 @@ Directory: `docs/discovery`
 | DISC-034A8pIq50dPYXsDhld9st | managed process の認可と lifecycle を整理する | resolved | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
 | DISC-034Aq1bAPGiJ8GsKHAeKAL | managed process lifecycle hardening | resolved | [managed-process-lifecycle-hardening.md](./managed-process-lifecycle-hardening.md) |
 | DISC-034rzGKaCRO8vRQUpNJvWd | model-pricing-catalog-and-curated-exceptions | resolved | [model-pricing-catalog-and-curated-exceptions.md](./model-pricing-catalog-and-curated-exceptions.md) |
-| DISC-034DUx01YRjOAf4gTaftO7 | Observability foundation for logging and profiling | draft | [observability-foundation-logging-and-profiling.md](./observability-foundation-logging-and-profiling.md) |
+| DISC-034DUx01YRjOAf4gTaftO7 | Observability foundation for logging and profiling | resolved | [observability-foundation-logging-and-profiling.md](./observability-foundation-logging-and-profiling.md) |
 | DISC-034zSP8CzaOAsOOhj0ZpcW | One-dispatch release workflow | resolved | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
 | DISC-034Aqz6hU4LHgqL2xB5dJS | One-shot workflow execution boundaries | active | [one-shot-workflow-execution-boundaries.md](./one-shot-workflow-execution-boundaries.md) |
 | DISC-034CWF93eq8KVgv2S9sQPd | OpenAI Codex subscription provider support | draft | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |

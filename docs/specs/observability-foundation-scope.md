@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034DUFyMl47o924O1KW8Ya"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "Observability foundation scope"
 created: "2026-10-11"
 updated: "2026-10-11"

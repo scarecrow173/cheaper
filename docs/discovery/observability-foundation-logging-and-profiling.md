@@ -1,7 +1,7 @@
 ---
 id: "DISC-034DUx01YRjOAf4gTaftO7"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "Observability foundation for logging and profiling"
 created: "2026-10-11"
 updated: "2026-10-11"

@@ -1,7 +1,7 @@
 ---
 id: "ADR-034DUFA70cQdAyG7Lbuuay"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Logging output and activation contract"
 created: "2026-10-11"
 updated: "2026-10-11"
