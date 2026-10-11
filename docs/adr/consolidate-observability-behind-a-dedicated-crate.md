@@ -30,7 +30,8 @@ relations:
   refined-by: []
   derives-from:
     - "../specs/observability-foundation-scope.md"
-  derived-by: []
+  derived-by:
+    - "../designs/observability-foundation-logging-and-instrumentation-wiring.md"
   verifies: []
   verified-by: []
   references: []

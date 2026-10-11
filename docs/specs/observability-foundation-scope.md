@@ -33,6 +33,7 @@ relations:
     - "../discovery/observability-foundation-logging-and-profiling.md"
   derived-by:
     - "../adr/consolidate-observability-behind-a-dedicated-crate.md"
+    - "../designs/observability-foundation-logging-and-instrumentation-wiring.md"
   verifies: []
   verified-by: []
   references: []

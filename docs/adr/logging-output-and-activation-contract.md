@@ -26,6 +26,7 @@ relations:
     - "../specs/observability-foundation-scope.md"
     - "./consolidate-observability-behind-a-dedicated-crate.md"
     - "../designs/cli-contract-envelope-exit-codes.md"
+    - "../designs/observability-foundation-logging-and-instrumentation-wiring.md"
     - "./auth-terminal-prompt-io-boundary.md"
   refines: []
   refined-by: []
