@@ -58,5 +58,9 @@ name = "run_dev_seam"
 required-features = ["dev-seam"]
 
 [[test]]
+name = "observability_dev_seam"
+required-features = ["dev-seam"]
+
+[[test]]
 name = "workflow_dev_seam"
 required-features = ["dev-seam"]

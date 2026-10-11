@@ -4,7 +4,23 @@
     {
       "id": "single-simple-tool-call",
       "title": "Single simple tool call",
-      "arms": ["workflow", "direct-filesystem", "direct-worker-tool-call"],
+      "arms": [
+        "workflow",
+        "direct-filesystem",
+        "direct-worker-tool-call",
+        "run-logging-off",
+        "run-logging-file",
+        "run-logging-debug"
+      ],
+      "armBase": {
+        "run-logging-off": "direct-worker-tool-call",
+        "run-logging-file": "direct-worker-tool-call",
+        "run-logging-debug": "direct-worker-tool-call"
+      },
+      "armEnv": {
+        "run-logging-file": { "CHEAPER_LOG": "info" },
+        "run-logging-debug": { "CHEAPER_LOG": "debug" }
+      },
       "files": {
         "README.md": "seeded fixture: direct file read\n"
       },
