@@ -934,6 +934,10 @@ impl std::error::Error for DynErrorCause {
 }
 
 /// scope `ready()`/`sandboxed()` の `AbortReason` throw → setup error。
+/// 優先順序は `error_object()` downcast → `code()` 復元 →
+/// `INTERNAL_ERROR` fallback(issue #94 — `abort_payload` が運ぶ
+/// describeError code を setup boundary でも復元する)。message は
+/// fallback と同じ `"{context} failed: {message}"` 形を維持する。
 fn setup_abort_error(context: &str, reason: AbortReason) -> CheaperError {
     if let Some(obj) = reason.error_object() {
         if let Some(e) = obj.downcast_ref::<CheaperError>() {
@@ -943,6 +947,12 @@ fn setup_abort_error(context: &str, reason: AbortReason) -> CheaperError {
             }
             return rebuilt;
         }
+    }
+    // `abort_payload` 由来の code(TIMEOUT/ABORTED/...)を復元。語彙外
+    // code(Node errno 等)・code 無しは `from_str` が `None` で残り
+    // fallback へ流れる(adapter `abort_reason_to_cheaper` と同じ規則)。
+    if let Some(code) = reason.code().and_then(ErrorCode::from_str) {
+        return CheaperError::new(code, format!("{context} failed: {}", reason.message()));
     }
     CheaperError::new(
         ErrorCode::InternalError,
@@ -968,5 +978,88 @@ mod tests {
         assert_eq!(factory.effective_internal_max_turns(1024), 1024);
         assert_eq!(factory.effective_internal_max_turns(2048), 2048);
         assert_eq!(factory.effective_internal_max_turns(u64::MAX), usize::MAX);
+    }
+
+    /// setup boundary(`scope.ready()` reject)の分類 pin(issue #94):
+    /// `RunAbortReason` 全種について実際の `abort_payload` 形 reason
+    /// (`RunAbort::request_abort` → `signal().reason()`)が `code()`
+    /// 復元で正しい `ErrorCode` へ写る。message は fallback と同じ
+    /// `"{context} failed: {reason.message()}"` 形。
+    #[test]
+    fn setup_abort_error_restores_abort_payload_codes() {
+        for (run_reason, expected) in [
+            (RunAbortReason::Timeout, ErrorCode::Timeout),
+            (RunAbortReason::Signal, ErrorCode::Aborted),
+            (RunAbortReason::MaxTurns, ErrorCode::MaxTurnsExceeded),
+            (
+                RunAbortReason::MaxToolCalls,
+                ErrorCode::MaxToolCallsExceeded,
+            ),
+        ] {
+            let abort = RunAbort::new();
+            abort.request_abort(run_reason);
+            let payload = abort.signal().reason().expect("signal must be aborted");
+            let err = setup_abort_error("tool scope ready", payload);
+            assert_eq!(err.code(), expected, "reason {run_reason:?}");
+            assert_eq!(
+                err.message(),
+                format!(
+                    "tool scope ready failed: worker run aborted: {}",
+                    run_reason.as_str()
+                ),
+                "reason {run_reason:?}"
+            );
+            // `abort_payload` には details が無く復元しない。
+            assert!(err.details().is_none(), "reason {run_reason:?}");
+        }
+    }
+
+    /// `error_object` 保持 reason は `code()` 復元より downcast rebuild
+    /// が優先 — `CheaperError` の code/message/details をそのまま
+    /// 返す(既存経路不変の pin)。
+    #[test]
+    fn setup_abort_error_prefers_error_object_rebuild() {
+        let original = CheaperError::new(ErrorCode::PolicyViolation, "write denied").with_details(
+            Map::from_iter([("path".to_string(), Value::from("/restricted"))]),
+        );
+        let reason = AbortReason::from_error(Box::new(original));
+        let err = setup_abort_error("tool scope ready", reason);
+        assert_eq!(err.code(), ErrorCode::PolicyViolation);
+        assert_eq!(err.message(), "write denied");
+        assert_eq!(err.details().unwrap()["path"], Value::from("/restricted"));
+    }
+
+    /// `INTERNAL_ERROR` residual pin — 語彙外 code・code 無し・
+    /// `error_object` が非 `CheaperError` の reason は現行挙動
+    /// (`INTERNAL_ERROR` + `"{context} failed: {message}"`)を維持。
+    #[test]
+    fn setup_abort_error_internal_error_residuals() {
+        // describeError 語彙外の code(Node errno 等)— restore は None。
+        let reason = AbortReason::new("Error", "io failed", Some("ENOENT".to_string()));
+        let err = setup_abort_error("tool scope ready", reason);
+        assert_eq!(err.code(), ErrorCode::InternalError);
+        assert_eq!(err.message(), "tool scope ready failed: io failed");
+
+        // code 無し payload(`new Error(...)` / 文字列 reason 相当)。
+        let err = setup_abort_error("tool scope ready", AbortReason::msg("plain"));
+        assert_eq!(err.code(), ErrorCode::InternalError);
+        assert_eq!(err.message(), "tool scope ready failed: plain");
+
+        // `error_object` は存在するが `CheaperError` ではない residual —
+        // `from_error` が `code() == Some("ENOENT")`(Node errno)を
+        // 返すため「非 ErrorCode code」と「error object 非
+        // CheaperError」の両 AC をこの 1 ケースで cover する。
+        let node_err = cheaper_core::errors::node_io_error_with_code(
+            "open",
+            "/x",
+            "ENOENT",
+            std::io::Error::new(std::io::ErrorKind::NotFound, "missing"),
+        );
+        let reason = AbortReason::from_error(Box::new(node_err));
+        assert_eq!(reason.code(), Some("ENOENT"));
+        let expected = format!("tool scope ready failed: {}", reason.message());
+        let err = setup_abort_error("tool scope ready", reason);
+        assert_eq!(err.code(), ErrorCode::InternalError);
+        assert_eq!(err.message(), expected);
     }
 }
