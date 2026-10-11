@@ -84,13 +84,27 @@ pub fn init(activation: &Activation) -> (Option<ObservabilityGuard>, Vec<String>
         .with(file_layer)
         .with(stderr_layer);
 
-    match subscriber.try_init() {
-        Ok(()) => (
-            Some(ObservabilityGuard {
-                _file_writer_guard: file_writer_guard,
-            }),
-            warnings,
-        ),
+    // `set_global_default` succeeds at most once per process.
+    // `fmt::try_init()` bundles this with `LogTracer::init()` — install
+    // explicitly instead so a `log`-bridge failure cannot strand the
+    // subscriber while this function reports failure and drops the
+    // non-blocking writer's flush guard.
+    match tracing::subscriber::set_global_default(subscriber) {
+        Ok(()) => {
+            // Best-effort `log` -> `tracing` bridge: a logger that is
+            // already installed is not a reason to give up the sinks.
+            if let Err(err) = tracing_log::LogTracer::init() {
+                warnings.push(format!(
+                    "log-crate bridge unavailable ({err}) — `log` records are not forwarded to the sinks"
+                ));
+            }
+            (
+                Some(ObservabilityGuard {
+                    _file_writer_guard: file_writer_guard,
+                }),
+                warnings,
+            )
+        }
         Err(_) => {
             warnings.push(
                 "subscriber already installed — keeping the first activation's configuration"
