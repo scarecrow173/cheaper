@@ -15,6 +15,7 @@ regress.workspace = true
 unicode-normalization.workspace = true
 similar.workspace = true
 fastrand.workspace = true
+tracing.workspace = true
 
 # POSIX 側 process 制御(kill(-pid)/setrlimit)は unix のみ。
 [target.'cfg(unix)'.dependencies]

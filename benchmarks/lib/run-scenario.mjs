@@ -365,14 +365,18 @@ async function runCompactInterface(scenario, workspace, envInfo) {
 }
 
 async function runArm(scenario, arm, workspace, envInfo) {
-  if (arm === "workflow" || arm === "dynamic-workflow" || arm === "saved-workflow") {
+  // scenario `armBase` は arm 名の実装への写像 — 同じ計測実装を env
+  // 違いで複数 arm として回す場合(例: logging off/on/debug)に使う。
+  // record の `arm` field には宣言された arm 名が残る。
+  const implArm = scenario.armBase?.[arm] ?? arm;
+  if (implArm === "workflow" || implArm === "dynamic-workflow" || implArm === "saved-workflow") {
     const result = await runWorkflow(scenario, arm, workspace, envInfo);
     if (arm === "saved-workflow" && result.discoveryMode !== "saved-definition")
       throw new Error("saved workflow arm lost its definition mode");
     return result;
   }
-  if (arm === "direct-filesystem") return runDirectFilesystem(scenario, workspace);
-  if (arm === "direct-worker-tool-call") {
+  if (implArm === "direct-filesystem") return runDirectFilesystem(scenario, workspace);
+  if (implArm === "direct-worker-tool-call") {
     const child = await runDirectWorker(
       scenario,
       workspace,
@@ -416,10 +420,10 @@ async function runArm(scenario, arm, workspace, envInfo) {
       },
     };
   }
-  if (arm === "direct-worker-sequence")
+  if (implArm === "direct-worker-sequence")
     return runDirectWorkerSequence(scenario, workspace, envInfo);
-  if (arm === "full-definition") return runFullDefinition(scenario, workspace, arm);
-  if (arm === "compact-interface") return runCompactInterface(scenario, workspace, envInfo);
+  if (implArm === "full-definition") return runFullDefinition(scenario, workspace, arm);
+  if (implArm === "compact-interface") return runCompactInterface(scenario, workspace, envInfo);
   throw new TypeError(`unsupported benchmark arm: ${arm}`);
 }
 
@@ -434,6 +438,9 @@ export async function runScenarioArm(scenario, arm) {
     const envInfo = benchmarkEnvironment(workspace, {
       responseProfiles: scenario.responseProfiles,
       responseDelayMs: scenario.responseDelayMs,
+      // per-arm env 注入受け口(scenario `armEnv`)— off-state overhead
+      // 計測の `CHEAPER_LOG=*` arm 等(DESIGN-034DV9ypzmxdAobGSJ6Cm6)。
+      env: scenario.armEnv?.[arm],
     });
     await mkdir(envInfo.configDir, { recursive: true });
     if (scenario.workflowMaxJobs !== undefined) {

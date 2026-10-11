@@ -71,6 +71,18 @@ similar = "3"
 fastrand = "2"
 # POSIX process control (kill(-pid), setrlimit) — unix-only target dep.
 libc = "0.2"
+# Observability foundation (ADR-034DUFzrXJxOwfl1qveXWR): leaf crates emit
+# via `tracing` only — subscriber/sink wiring is owned by
+# `cheaper-observability`. `env-filter` backs the CHEAPER_LOG level
+# wiring; `json` enables the JSON fmt layer.
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+# `log` -> `tracing` record bridge, initialised best-effort by
+# cheaper-observability after `set_global_default` succeeds.
+tracing-log = "0.2"
+# Rolling file appender. 0.2.3+ is required for
+# `RollingFileAppender::builder().max_log_files(n)` (retention).
+tracing-appender = "0.2.3"
 
 [profile.release]
 lto = true

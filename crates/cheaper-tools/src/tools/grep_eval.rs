@@ -362,7 +362,27 @@ impl GrepEvalWorker {
             const CREATE_NO_WINDOW: u32 = 0x0800_0000;
             cmd.creation_flags(CREATE_NO_WINDOW);
         }
-        let mut child = cmd.spawn().map_err(EvalError::Io)?;
+        // 内部 subprocess 境界の metadata-only event(design
+        // §instrumentation 配置) — 親側が spawn を記録する。
+        let mut child = match cmd.spawn() {
+            Ok(child) => {
+                tracing::debug!(
+                    target: "cheaper.tool.process",
+                    task = HELPER_ARGV,
+                    "process spawn"
+                );
+                child
+            }
+            Err(e) => {
+                tracing::debug!(
+                    target: "cheaper.tool.process",
+                    task = HELPER_ARGV,
+                    error.code = ?e.kind(),
+                    "process spawn failed"
+                );
+                return Err(EvalError::Io(e));
+            }
+        };
         let stdin = child.stdin.take().expect("piped stdin");
         let stdout = child.stdout.take().expect("piped stdout");
         if let Some(stderr) = child.stderr.take() {
@@ -522,7 +542,13 @@ impl GrepEvalWorker {
         self.mark_dead();
         if let Some(mut child) = self.child.take() {
             let _ = child.kill();
-            let _ = child.wait();
+            let status = child.wait().ok();
+            tracing::debug!(
+                target: "cheaper.tool.process",
+                task = HELPER_ARGV,
+                exit.code = status.and_then(|s| s.code()),
+                "process exit"
+            );
         }
     }
 }

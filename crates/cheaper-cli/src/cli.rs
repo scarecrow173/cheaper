@@ -23,8 +23,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirsOptions, EnvLookup};
 use cheaper_core::errors::{CheaperError, ErrorCode, NodeIoError};
 use cheaper_core::token::count::FileTooLargeError;
-use cheaper_core::workspace::paths::WorkspaceEscapeError;
+use cheaper_core::workspace::paths::{canonicalize_workspace_root, WorkspaceEscapeError};
 use serde_json::Value;
+use tracing::Instrument;
 
 use crate::args::{parse_cli_args, CliFormat, ParsedCli};
 use crate::count::count_workspace_file_tokens;
@@ -157,17 +158,66 @@ pub struct CommandOut {
 
 /// `runCli`(DESIGN-0005)。戻り値は process exit code。
 pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i32 {
-    let started_at = now(hooks);
+    // Observability init — hook 早期分岐・parse_cli_args より前
+    // (DESIGN-034DV9ypzmxdAobGSJ6Cm6)。activation の解釈は
+    // observability crate の責務;ここでは flag/env 値を生のまま
+    // `Activation` に載せる。
+    let is_hook = argv.first().map(String::as_str) == Some("hook");
+    let (flag_level, flag_format) = crate::args::global_log_flags(argv);
+    let activation = cheaper_observability::Activation {
+        flag_level,
+        flag_format,
+        // `io.env` closure 経由 — test が EnvLookup で注入できる
+        // 同一経路(std::env::var 直読みはしない)。
+        env_level: (io.env)("CHEAPER_LOG"),
+        env_format: (io.env)("CHEAPER_LOG_FORMAT"),
+        log_root: resolve_log_root(argv, io),
+        // hook 経路は stderr sink を構造的に無効化 — hook stderr は
+        // target native contract の一部(windsurf deny guidance 等)。
+        stderr_enabled: !is_hook,
+    };
+    // `_log_guard` は run_cli ローカルに束縛 — dispatch・recordUsage
+    // 完了後の return 時に drop → non_blocking writer が flush される。
+    // tokio runtime は run_cli より外側・長命なので guard drop は
+    // runtime 生存中に完了する。
+    let (_log_guard, warnings) = cheaper_observability::init(&activation);
     // `hook` は envelope / recordUsage / 汎用 catch の対象外:
     // target 別ネイティブ contract + fail-open(DESIGN-034z1EhuztlLSb2x2XXxgD)。
-    if argv.first().map(String::as_str) == Some("hook") {
+    if is_hook {
+        // init 警告を io.stderr には流さず install 済み subscriber へ
+        // 畳んで file sink のみに出す(未 install/None 時は no-op —
+        // fail-open で hook 応答を汚さない)。
+        for w in &warnings {
+            tracing::warn!("{w}");
+        }
         return crate::hook::execute_hook(&argv[1..], io, hooks).await;
     }
+    // init 警告は diagnostics の一種 — `--quiet` で抑制(log の有効化
+    // 自体は抑制しない)。`--` terminator 共有の lenient scan で
+    // positional `--quiet` の誤検出を避ける。
+    let quiet = crate::args::global_flag_present(argv, "quiet");
+    for w in &warnings {
+        if !quiet {
+            io.stderr.write_str(&format!("warning: {w}\n"));
+        }
+    }
+
+    let started_at = now(hooks);
 
     // dispatch が mutably borrow する state — error path の
     // recordUsage / worker 名補完で参照する。
     let mut ctx = RunCtx::default();
-    match dispatch(argv, io, hooks, started_at, &mut ctx).await {
+    // `cheaper.cli.dispatch` — dispatch 全体の span(design
+    // §instrumentation 配置)。`command` field は strict parse 後に
+    // `dispatch` 側から record する(parse error 経路では Empty のまま)。
+    // stage timing は `FmtSpan::CLOSE` の close event に委譲するため
+    // per-site の計時記録は持たない。
+    let dispatch_span =
+        tracing::info_span!("cheaper.cli.dispatch", command = tracing::field::Empty,);
+    match dispatch(argv, io, hooks, started_at, &mut ctx)
+        .instrument(dispatch_span)
+        .await
+    {
         Ok(code) => code,
         Err(err) => {
             let env = error_envelope(
@@ -175,6 +225,14 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
                 ctx.worker_name.as_deref(),
                 Some(now(hooks) - started_at),
             );
+            // 汎用 catch の warn event — field は分類値 `error.code`
+            // のみ(metadata-only: message/payload は載せない)。
+            let code = env
+                .get("error")
+                .and_then(|e| e.get("code"))
+                .and_then(Value::as_str)
+                .unwrap_or("INTERNAL_ERROR");
+            tracing::warn!(error.code = code, "command dispatch failed");
             let (mut format, mut quiet, mut suppress) = (CliFormat::Json, false, false);
             if let Ok(p) = parse_cli_args(argv) {
                 if let Some(f) = p.format() {
@@ -186,11 +244,6 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
                 suppress = matches!(p, ParsedCli::WorkflowRun(ref a) if a.quiet);
             }
             if !suppress {
-                let code = env
-                    .get("error")
-                    .and_then(|e| e.get("code"))
-                    .and_then(Value::as_str)
-                    .unwrap_or("INTERNAL_ERROR");
                 let message = env
                     .get("error")
                     .and_then(|e| e.get("message"))
@@ -219,6 +272,33 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
     }
 }
 
+/// `.cheaper/logs` の anchor(workspace root)解決。
+///
+/// `--cwd` が command 意味を持つ経路(run・run alias・workflow・
+/// models・count-tokens)でのみ argv の `--cwd`(`--cwd value` /
+/// `--cwd=value`)を lenient scan する — scan 規約は
+/// `args::global_log_flags` と同一の `--` terminator 共有。
+/// `--cwd` を command 側が無視する `usage`・`auth`・`hook` 等では
+/// `io.cwd` を使い、command の workspace と log 出力先の乖離を防ぐ。
+///
+/// 解決は `canonicalize_workspace_root` 規約(run 経路の workspace
+/// root 解決と同一)。canonicalize 失敗時は `io.cwd` に fallback
+/// (fail-open — logging anchor で command を失敗させない;dir 自体が
+/// 書けない場合の stderr-only 降格は init 側が warning 化する)。
+fn resolve_log_root(argv: &[String], io: &CliIo<'_>) -> PathBuf {
+    let cwd_flag_relevant = match argv.first().map(String::as_str) {
+        Some("run" | "workflow" | "models" | "count-tokens") => true,
+        Some(cmd) => crate::args::alias_worker(cmd).is_some(),
+        None => false,
+    };
+    let candidate = if cwd_flag_relevant {
+        crate::args::global_string_flag(argv, "cwd").unwrap_or_else(|| io.cwd.clone())
+    } else {
+        io.cwd.clone()
+    };
+    PathBuf::from(canonicalize_workspace_root(&candidate).unwrap_or_else(|_| io.cwd.clone()))
+}
+
 /// dispatch 内で run 経路が埋める context(error path の記録用)。
 #[derive(Default)]
 pub struct RunCtx {
@@ -237,6 +317,9 @@ async fn dispatch(
     ctx: &mut RunCtx,
 ) -> Result<i32, BoxError> {
     let parsed = parse_cli_args(argv)?;
+    // `cheaper.cli.dispatch` span の `command` field — strict parse 済みの
+    // canonical 分類名を載せる(alias `bulk-read` 等は `run` に畳まれる)。
+    tracing::Span::current().record("command", command_name(&parsed));
     match parsed {
         ParsedCli::Help => {
             io.stdout.write_str(HELP);
@@ -249,6 +332,11 @@ async fn dispatch(
             Ok(0)
         }
         ParsedCli::CountTokens(args) => {
+            // `cheaper.cli.command` span — 本 arm は `.await` を含まない
+            // sync 区間のため entered guard で包む(async 区間は
+            // `Instrument` — design §instrumentation 配置)。
+            let _command_span =
+                tracing::info_span!("cheaper.cli.command", command = "count-tokens",).entered();
             // LLM/model/worker 解決を伴わない測定専用経路(DESIGN-0012)。
             // effective policy から filesystem.symlinks のみ使う。
             let builtin = resolve_builtin_dir(hooks)?;
@@ -356,6 +444,23 @@ async fn dispatch(
     }
 }
 
+/// `cheaper.cli.dispatch` span の `command` field 用 canonical 分類名。
+/// run alias(`bulk-read` 等)は parse 済み `ParsedCli::Run` として
+/// `"run"` に畳まれる。per-command span の `command` field と同名集合。
+fn command_name(parsed: &ParsedCli) -> &'static str {
+    match parsed {
+        ParsedCli::Help => "help",
+        ParsedCli::Version => "version",
+        ParsedCli::Run(_) => "run",
+        ParsedCli::CountTokens(_) => "count-tokens",
+        ParsedCli::WorkflowInterface(_) => "workflow-interface",
+        ParsedCli::WorkflowRun(_) => "workflow-run",
+        ParsedCli::Auth(_) => "auth",
+        ParsedCli::Models(_) => "models",
+        ParsedCli::Usage(_) => "usage",
+    }
+}
+
 /// `parsed.format === "text" ? formatText : envelopeJson` の書出し。
 fn write_output(io: &mut CliIo<'_>, env: &Value, format: CliFormat) {
     let s = match format {
@@ -435,6 +540,9 @@ Options:
   --since <duration>     usage: only records within the period (e.g. 24h)
   --worker <name>        usage: filter by worker name
   --compare-model <p/id> usage: estimate savings vs this model
+  --log <level>          Enable logs to .cheaper/logs + stderr
+                         (off|error|warn|info|debug|trace; env CHEAPER_LOG)
+  --log-format <fmt>     Log format: text|json (env CHEAPER_LOG_FORMAT)
   --format <json|text>   Output format (default: json)
   --quiet                Suppress stderr diagnostics
   --help                 Show this help

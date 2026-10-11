@@ -33,8 +33,20 @@ impl CliStdin for PipeStdin {
     }
 }
 
+/// ambient env fallback — `CHEAPER_LOG*` は絶対に継承しない
+/// (in-process test binary で global subscriber を install すると
+/// 後続 test が "subscriber already installed" になり stray
+/// .cheaper/logs を残す)。
+fn ambient_env(name: &str) -> Option<String> {
+    if name.starts_with("CHEAPER_LOG") {
+        return None;
+    }
+    std::env::var(name).ok()
+}
+
 /// test 用組立一式(tests/run.rs と同一パターン)。`env` map は `io.env`
-/// 経由で lookup され、未設定名は process env へ fallback する。
+/// 経由で lookup され、未設定名は process env へ fallback する
+/// (`CHEAPER_LOG*` 除く)。
 struct Fixture {
     ws: tempfile::TempDir,
     cfg: tempfile::TempDir,
@@ -102,12 +114,7 @@ impl Fixture {
 
     async fn run(&mut self, argv: &[&str]) -> (i32, Value, String) {
         let env_map = &self.env_map;
-        let env_lookup = move |name: &str| {
-            env_map
-                .get(name)
-                .cloned()
-                .or_else(|| std::env::var(name).ok())
-        };
+        let env_lookup = move |name: &str| env_map.get(name).cloned().or_else(|| ambient_env(name));
         let cwd = self.ws.path().to_string_lossy().into_owned();
         let mut io = CliIo {
             stdin: &mut self.stdin,

@@ -162,6 +162,15 @@ pub enum CliError {
     Io(#[from] std::io::Error),
 }
 
+/// `error.code` field 用の分類値（metadata-only — message/payload は
+/// field に載せない）。
+fn cli_error_code(e: &CliError) -> &'static str {
+    match e {
+        CliError::NotFound(_) => "NOT_FOUND",
+        CliError::Io(_) => "IO_ERROR",
+    }
+}
+
 /// `devinChildEnv` — isolated child env を組み立てる。`XDG_DATA_HOME`
 /// に data dir、Windows は `LOCALAPPDATA` 併用。入力・process env は
 /// 変更しない。
@@ -207,6 +216,10 @@ impl DevinCli {
     }
 
     /// `cli.run(args)` — argv 分離 + isolated env。
+    ///
+    /// `cheaper.provider.devin` event(`devin models list` 起動・終了を
+    /// 含む CLI 実行境界 — design §instrumentation 配置)。`command` は
+    /// subcommand 先頭語のみの分類値で、argv 全文・出力・env は載せない。
     pub fn run(
         &self,
         args: &[&str],
@@ -219,11 +232,14 @@ impl DevinCli {
             timeout: timeout.or(Some(DEFAULT_TIMEOUT)),
             inherit_stdio,
         };
+        let command = args.first().map(String::as_str).unwrap_or("");
+        tracing::debug!(target: "cheaper.provider.devin", command = command, "devin cli start");
         // TS `isNotFound`: `error.code === "ENOENT" || error.code === 127`。
         // spawn 段の ENOENT は runner の `io::ErrorKind::NotFound`、
         // shell wrapper 等が返す exit 127 は完了 result の `code` に
         // 乗る — どちらも `DevinCliNotFoundError` へ写像する。
-        self.runner
+        let result = self
+            .runner
             .run(&self.bin, &args, &opts)
             .map_err(|e| {
                 if e.kind() == std::io::ErrorKind::NotFound {
@@ -238,7 +254,26 @@ impl DevinCli {
                 } else {
                     Ok(result)
                 }
-            })
+            });
+        match &result {
+            Ok(r) => {
+                tracing::debug!(
+                    target: "cheaper.provider.devin",
+                    command = command,
+                    exit.code = r.code,
+                    "devin cli end"
+                );
+            }
+            Err(e) => {
+                tracing::debug!(
+                    target: "cheaper.provider.devin",
+                    command = command,
+                    error.code = cli_error_code(e),
+                    "devin cli end"
+                );
+            }
+        }
+        result
     }
 
     /// `cli.version()` — trimmed stdout、取得不能時 `None`。

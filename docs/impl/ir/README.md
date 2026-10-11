@@ -76,6 +76,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | IMPL-034A6i3cxbZXoHqDxhuyjB | Migrate native workflows and release guidance | completed | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
+| IMPL-034EcqaOLmLoT2kL3ztbwk | Observability foundation | completed | [observability-foundation.md](./observability-foundation.md) |
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | IMPL-034A9TTHbXQNav6LxGvo49 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | IMPL-034zTprBbdY0tsPiphc2wE | Operation manager state lifecycle | completed | [operation-manager-state-lifecycle.md](./operation-manager-state-lifecycle.md) |
@@ -89,6 +90,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpDWUS1IzV | Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg) | completed | [pi-state-under-userconfigdir-pi.md](./pi-state-under-userconfigdir-pi.md) |
 | IMPL-034CSeJIDJx6Es0oHOERBj | Plugin catalog snapshot persistence and user-models merge | completed | [plugin-catalog-snapshot-persistence-and-user-models-merge.md](./plugin-catalog-snapshot-persistence-and-user-models-merge.md) |
 | IMPL-034z57iY91Zc8YChIAuBty | port routing policy to cli hook module | completed | [port-routing-policy-to-cli-hook-module.md](./port-routing-policy-to-cli-hook-module.md) |
+| IMPL-034DE3wewvurwfdPB2HrG6 | Rust 移行後の構造整理 | completed | [post-migration-structural-cleanup.md](./post-migration-structural-cleanup.md) |
 | IMPL-034zU5o0mgVqx5ZwBdxc0L | Prepare one-dispatch release artifacts | completed | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
 | IMPL-034r2qodykm6M1ReYSbIkc | provider/auth guide runtime sync (PLAN-034r2qodyxvN3g3xktwPOF) | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | IMPL-034r05iHy2gdnpELwCtyPv | Provider-only registration layer (PLAN-034r05iHK8bA7g2BMsfjFu) | completed | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
@@ -99,7 +101,6 @@ Directory: `docs/impl/ir`
 | IMPL-034Aca4oJotR844AUJf6QR | Resource manager observation の実装記録 | completed | [resource-manager-observation.md](./resource-manager-observation.md) |
 | IMPL-034zCh2EsO3oqQBXBAlfuM | Run canonical verification and close out issue 55 implementation | completed | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
-| IMPL-034DE3wewvurwfdPB2HrG6 | Rust 移行後の構造整理 | completed | [post-migration-structural-cleanup.md](./post-migration-structural-cleanup.md) |
 | IMPL-034A6gXDwnMxGVaPiuSCxb | Shared tool scheduler | completed | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
 | IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |

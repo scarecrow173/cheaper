@@ -57,6 +57,7 @@ use cheaper_runtime::run::{
 use cheaper_runtime::Runtime;
 use cheaper_tools::operation::{AbortController, AbortListenerId, AbortReason, AbortSignal};
 use serde_json::{json, Map, Value};
+use tracing::Instrument;
 
 use crate::args::RunCliArgs;
 use crate::cli::{
@@ -365,7 +366,26 @@ async fn wait_os_signal() {
 // executeRun 本体
 // ---------------------------------------------------------------------------
 
+/// `execute` の entry — `cheaper.cli.command` span(design
+/// §instrumentation 配置)。`worker.name` field は worker 解決後に
+/// `record` で載せる(`--worker-file` 経路では args に name が無い)。
 pub async fn execute(
+    args: &RunCliArgs,
+    io: &mut CliIo<'_>,
+    hooks: &CliHooks,
+    started_at: f64,
+    ctx: &mut RunCtx,
+) -> Result<CommandOut, BoxError> {
+    execute_inner(args, io, hooks, started_at, ctx)
+        .instrument(tracing::info_span!(
+            "cheaper.cli.command",
+            command = "run",
+            worker.name = tracing::field::Empty,
+        ))
+        .await
+}
+
+async fn execute_inner(
     args: &RunCliArgs,
     io: &mut CliIo<'_>,
     hooks: &CliHooks,
@@ -401,6 +421,8 @@ pub async fn execute(
         fixture.as_ref(),
     )?;
     ctx.worker_name = Some(worker.name.clone());
+    // `cheaper.cli.command` span の `worker.name` field(分類値のみ)。
+    tracing::Span::current().record("worker.name", worker.name.as_str());
 
     let input_map = read_task_input(&args.input, io.stdin)?;
     let input = Value::Object(input_map);

@@ -17,6 +17,7 @@ pub mod routing_policy;
 pub mod targets;
 
 use serde_json::Value;
+use tracing::Instrument;
 
 use self::targets::{fallback_allow, handle_hook, HookDeps, HookResponse, HookTarget};
 use crate::cli::{CliHooks, CliIo};
@@ -147,7 +148,19 @@ async fn execute_hook_inner(
         builtin_dir: hooks.builtin_dir.as_ref(),
         cwd: &io.cwd,
     };
-    let response = handle_hook(target, &event, &input, &deps).await;
+    // `cheaper.hook` span(design §instrumentation 配置)— field は
+    // `event`/`target` の分類値のみ。完了 `debug!` event(`verdict`・
+    // `stdout.len`/`stderr.len`)は `handle_hook` 内で emit し、
+    // `emit` の stderr 書出し自体は instrument しない(hook stderr は
+    // target native contract の一部)。
+    let span = tracing::info_span!(
+        "cheaper.hook",
+        event = event.as_str(),
+        target = target.as_str(),
+    );
+    let response = handle_hook(target, &event, &input, &deps)
+        .instrument(span)
+        .await;
     emit(io, response)
 }
 

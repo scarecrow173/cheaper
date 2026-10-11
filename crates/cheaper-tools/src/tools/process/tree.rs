@@ -155,7 +155,27 @@ mod win {
             .env("SYSTEMROOT", system_root())
             .env("PATH", "")
             .creation_flags(CREATE_NO_WINDOW);
-        let mut child = command.spawn()?;
+        // subprocess 境界の metadata-only event(design §instrumentation
+        // 配置) — full path は載せず basename の `task` 分類値のみ。
+        let task = std::path::Path::new(executable)
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let mut child = match command.spawn() {
+            Ok(child) => {
+                tracing::debug!(target: "cheaper.tool.process", task = %task, "process spawn");
+                child
+            }
+            Err(e) => {
+                tracing::debug!(
+                    target: "cheaper.tool.process",
+                    task = %task,
+                    error.code = ?e.kind(),
+                    "process spawn failed"
+                );
+                return Err(e.into());
+            }
+        };
         let mut stdout = child.stdout.take().expect("stdout piped");
         let mut chunks: Vec<u8> = Vec::new();
         // `stop` 相当: 初発 error のみ保持し kill する。
@@ -205,6 +225,12 @@ mod win {
                 }
             }
         }
+        tracing::debug!(
+            target: "cheaper.tool.process",
+            task = %task,
+            exit.code = code,
+            "process exit"
+        );
         if let Some(error) = stop {
             return Err(error);
         }

@@ -639,18 +639,24 @@ impl CliStdin for PipeStdin {
     }
 }
 
+/// ambient env fallback — `CHEAPER_LOG*` は絶対に継承しない
+/// (in-process test binary で global subscriber を install すると
+/// 後続 test が "subscriber already installed" になり stray
+/// .cheaper/logs を残す)。
+fn ambient_env(name: &str) -> Option<String> {
+    if name.starts_with("CHEAPER_LOG") {
+        return None;
+    }
+    std::env::var(name).ok()
+}
+
 /// `CHEAPER_CONFIG_DIR` を tempdir に向け、他は process env に fallthrough。
 async fn run_usage(config_dir: &Path, argv: &[&str]) -> (i32, String, String) {
     let injected: HashMap<String, String> = HashMap::from_iter([(
         "CHEAPER_CONFIG_DIR".to_string(),
         config_dir.to_string_lossy().into_owned(),
     )]);
-    let env_lookup = |name: &str| {
-        injected
-            .get(name)
-            .cloned()
-            .or_else(|| std::env::var(name).ok())
-    };
+    let env_lookup = |name: &str| injected.get(name).cloned().or_else(|| ambient_env(name));
     let mut stdin = PipeStdin;
     let out = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
     let err = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));

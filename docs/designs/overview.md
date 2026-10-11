@@ -31,6 +31,7 @@ relations:
     - "rust-rig-runtime-migration-architecture.md"
     - "cargo-source-install-distribution-and-thin-path-launchers.md"
     - "post-migration-structural-cleanup-reorganization.md"
+    - "observability-foundation-logging-and-instrumentation-wiring.md"
   refines: []
   refined-by: []
   derives-from:
@@ -128,3 +129,7 @@ relations:
 ## Post-migration 構造整理（SPEC-034DyDAOW1my2ihNQIVNfN）
 
 - [Post-migration structural cleanup reorganization](./post-migration-structural-cleanup-reorganization.md) — Rust 移行後の behavior-preserving な構造整理。`cheaper-tools`/`cheaper-runtime` の module 再配置、`js16` core 集約、`js_json` shim 削除、`poc-rig` 撤去、`cheaper-provider-devin` → `cheaper-provider`(`devin` module)rename、`dev-seam` cargo feature による dev/test seam gate の target layout を定義。
+
+## Observability foundation（SPEC-034DUFyMl47o924O1KW8Ya）
+
+- [Observability foundation logging and instrumentation wiring](./observability-foundation-logging-and-instrumentation-wiring.md) — `cheaper-observability` crate（activation 解釈・file+stderr dual sink・format 選択）の公開面、`--log`/`--log-format` activation 配線、hook 経路の stderr sink 抑制、daily rolling + 世代 retention、全 crate の `cheaper.*` span/field 規約と instrumentation 配置、log 無効時 overhead 計測方法を定義。

@@ -34,6 +34,17 @@ impl HookTarget {
             _ => None,
         }
     }
+
+    /// `--target` 値の canonical 表現(`cheaper.hook` span の `target`
+    /// field 用 — `parse` が受理する値の逆写像)。
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            HookTarget::Windsurf => "windsurf",
+            HookTarget::Copilot => "copilot",
+            HookTarget::Pretooluse => "pretooluse",
+            HookTarget::Cursor => "cursor",
+        }
+    }
 }
 
 /// `HookResponse` — stdout/stderr text は optional(無ければ書かない)。
@@ -377,6 +388,16 @@ fn cursor_render(verdict: Verdict) -> HookResponse {
     }
 }
 
+/// verdict の分類値(`cheaper.hook` 完了 event の `verdict` field 用)。
+/// normalize 失敗・foreign payload 等の即時 allow 経路は verdict を
+/// 通っていないが応答 semantics 上は allow なので `"allow"` を返す。
+fn verdict_name(verdict: &Verdict) -> &'static str {
+    match verdict {
+        Verdict::Allow => "allow",
+        Verdict::Deny { .. } => "deny",
+    }
+}
+
 /// target 別の normalize → evaluate → render。
 /// normalize/render のどの段でも失敗した場合は呼び出し側の catch-all
 /// が fallback へ倒す。
@@ -386,33 +407,51 @@ pub async fn handle_hook(
     input: &Value,
     deps: &HookDeps<'_>,
 ) -> HookResponse {
-    match target {
+    let (verdict, response) = match target {
         HookTarget::Windsurf => match windsurf_normalize(event, input, deps.cwd) {
-            None => silent_allow(),
-            Some(request) => windsurf_render(evaluate(&request, &deps.eval_opts()).await),
+            None => ("allow", silent_allow()),
+            Some(request) => {
+                let verdict = evaluate(&request, &deps.eval_opts()).await;
+                (verdict_name(&verdict), windsurf_render(verdict))
+            }
         },
         HookTarget::Copilot => match copilot_handle(input, deps.cwd) {
-            CopilotOutcome::None => silent_allow(),
-            CopilotOutcome::Respond(r) => r,
+            CopilotOutcome::None => ("allow", silent_allow()),
+            CopilotOutcome::Respond(r) => ("allow", r),
             CopilotOutcome::Request(request) => {
-                copilot_render(evaluate(&request, &deps.eval_opts()).await)
+                let verdict = evaluate(&request, &deps.eval_opts()).await;
+                (verdict_name(&verdict), copilot_render(verdict))
             }
         },
         HookTarget::Pretooluse => match pretooluse_normalize(input, deps.cwd) {
-            None => silent_allow(),
-            Some(request) => pretooluse_render(evaluate(&request, &deps.eval_opts()).await),
+            None => ("allow", silent_allow()),
+            Some(request) => {
+                let verdict = evaluate(&request, &deps.eval_opts()).await;
+                (verdict_name(&verdict), pretooluse_render(verdict))
+            }
         },
         HookTarget::Cursor => match cursor_normalize(input, deps.cwd) {
-            None => cursor_respond("allow", None),
+            None => ("allow", cursor_respond("allow", None)),
             Some(request) => {
                 // Rust の `evaluate` は error を外部へ伝播しない
                 // (計測失敗は内部で allow)が、TS の try/catch allow
                 // 経路と同じく verdict に関わらず schema-valid JSON を
                 // 返すことは変えない。
-                cursor_render(evaluate(&request, &deps.eval_opts()).await)
+                let verdict = evaluate(&request, &deps.eval_opts()).await;
+                (verdict_name(&verdict), cursor_render(verdict))
             }
         },
-    }
+    };
+    // `cheaper.hook` 完了 event(design §instrumentation 配置)—
+    // `verdict` 分類値 + 出力 byte 長のみ(deny reason・payload 本文は
+    // metadata-only 規約で載せない)。
+    tracing::debug!(
+        verdict = verdict,
+        stdout.len = response.stdout.as_deref().map_or(0, str::len),
+        stderr.len = response.stderr.as_deref().map_or(0, str::len),
+        "hook response"
+    );
+    response
 }
 
 /// 最深部 catch-all が使う target 適合の allow 応答。

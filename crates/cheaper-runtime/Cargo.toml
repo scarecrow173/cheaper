@@ -18,6 +18,9 @@ jsonschema.workspace = true
 tokio.workspace = true
 # RunStream 駆動(`StreamExt::next`)と panic 境界(`FutureExt::catch_unwind`)。
 futures.workspace = true
+# Observability foundation(T3): run pipeline stage span/emit。
+# subscriber/sink 配線は cheaper-observability(cli 経由)のみが持つ。
+tracing.workspace = true
 # T6 OAuth flow の HTTP transport。sync `OAuthFlow` contract に合わせ
 # blocking client を採用（ureq 2.x は Cargo.lock に既出 — rig/hf-hub の
 # transitive dep と同 version を再利用）。

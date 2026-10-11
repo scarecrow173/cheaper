@@ -45,6 +45,22 @@ export async function loadScenarioManifest() {
     if (scenario.processPolicy && typeof scenario.processPolicy !== "object") {
       throw new TypeError(`${scenario.id} processPolicy must be an object`);
     }
+    // per-arm 注入受け口 — `armEnv`(env override)と `armBase`(実装 arm
+    // への写像)の key は宣言済み arm、value は既知の実装 arm/文字列 map。
+    for (const name of Object.keys(scenario.armEnv ?? {})) {
+      if (!scenario.arms.includes(name))
+        throw new TypeError(`${scenario.id} armEnv key ${name} is not a declared arm`);
+      for (const [key, value] of Object.entries(scenario.armEnv[name])) {
+        if (typeof value !== "string")
+          throw new TypeError(`${scenario.id} armEnv.${name}.${key} must be a string`);
+      }
+    }
+    for (const [name, base] of Object.entries(scenario.armBase ?? {})) {
+      if (!scenario.arms.includes(name))
+        throw new TypeError(`${scenario.id} armBase key ${name} is not a declared arm`);
+      if (!scenario.arms.includes(base) || scenario.armBase?.[base] !== undefined)
+        throw new TypeError(`${scenario.id} armBase.${name} must map to a concrete arm`);
+    }
   }
   return manifest.scenarios;
 }

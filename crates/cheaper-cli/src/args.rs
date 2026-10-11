@@ -34,7 +34,7 @@ fn is_valid_worker_name(name: &str) -> bool {
 }
 
 /// `ALIAS_WORKERS`: `bulk-read` → `bulk-reader` 等の run alias 表。
-fn alias_worker(command: &str) -> Option<&'static str> {
+pub(crate) fn alias_worker(command: &str) -> Option<&'static str> {
     match command {
         "bulk-read" => Some("bulk-reader"),
         "code-write" => Some("code-writer"),
@@ -247,6 +247,11 @@ const STRING_OPTIONS: &[&str] = &[
     "worker",
     "compare-model",
     "format",
+    // observability activation(T2)の global option。値は `Values`
+    // field に保持せず、消費は `global_log_flags` が argv scan で
+    // 担う(parse 済み値と activation 値の二重表現を避ける)。
+    "log",
+    "log-format",
 ];
 
 /// boolean option(`type: "boolean"`)。
@@ -314,6 +319,9 @@ impl Values {
             "worker" => self.worker = Some(value),
             "compare-model" => self.compare_model = Some(value),
             "format" => self.format = value,
+            // 受理のみで値は捨てる — activation 入力は
+            // `global_log_flags` が argv から直接 scan する。
+            "log" | "log-format" => {}
             _ => unreachable!("set_string called with non-string option"),
         }
     }
@@ -499,9 +507,17 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
             ));
         }
         let allowed: &[&str] = if action == Some("run") {
-            &["input", "cwd", "timeout", "format", "quiet"]
+            &[
+                "input",
+                "cwd",
+                "timeout",
+                "format",
+                "quiet",
+                "log",
+                "log-format",
+            ]
         } else {
-            &["cwd", "format", "quiet"]
+            &["cwd", "format", "quiet", "log", "log-format"]
         };
         for token in &option_tokens {
             if !allowed.contains(&token.name.as_str()) {
@@ -902,4 +918,71 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         format,
         quiet,
     }))
+}
+
+// ---------------------------------------------------------------------------
+// lenient global-option scan(init 前の activation 入力用)
+// ---------------------------------------------------------------------------
+//
+// `run_cli` が `parse_cli_args` より前に呼ぶ軽量 accessor 群。全て同一の
+// scan 規約を共有する:
+// - 先頭の `--` terminator で打ち切り(以降の positional は flag と
+//   して扱わない)
+// - string option は `--name value` / `--name=value` の両形を受理し、
+//   `--name` の次 arg は option-like でも無条件に値として消費する
+// - 同一 option の重複は last-wins
+//
+// 値の検証・missing/ambiguous 判定は後続の strict parse が担うため、
+// ここでは best-effort の取得のみ行い error は返さない。
+
+/// string option 用の lenient scan 実体。`global_log_flags`・
+/// `global_string_flag`・`resolve_log_root` の `--cwd` 解決が共有する
+/// 単一の scan 規約。
+fn scan_string_flag(argv: &[String], name: &str) -> Option<String> {
+    let mut value = None;
+    let mut iter = argv.iter().map(String::as_str).take_while(|a| *a != "--");
+    while let Some(arg) = iter.next() {
+        let Some(body) = arg.strip_prefix("--") else {
+            continue;
+        };
+        let matched = match body.split_once('=') {
+            Some((n, v)) if n == name => Some(v.to_string()),
+            Some(_) => continue,
+            None if body == name => iter.next().map(str::to_string),
+            None => continue,
+        };
+        if let Some(v) = matched {
+            value = Some(v);
+        }
+    }
+    value
+}
+
+/// `--log`/`--log-format` の lenient scan → `(level, format)`。
+/// `run_cli` が observability init 前に呼び、値は生のまま
+/// `Activation` に載せる(解釈は observability crate の責務)。
+pub fn global_log_flags(argv: &[String]) -> (Option<String>, Option<String>) {
+    (
+        scan_string_flag(argv, "log"),
+        scan_string_flag(argv, "log-format"),
+    )
+}
+
+/// 任意の string option 用 lenient scan — `resolve_log_root` の
+/// `--cwd` 解決など、strict parse 前に値が必要な global 用途向け。
+/// scan 規約は `global_log_flags` と同一。
+pub fn global_string_flag(argv: &[String], name: &str) -> Option<String> {
+    scan_string_flag(argv, name)
+}
+
+/// bool option 版の lenient scan — `--<name>` 単独形のみ受理
+/// (`--name=…` は strict parse が "does not take an argument" で
+/// 弾くため値解釈は不要)。`argv.iter().any(== "--quiet")` の素朴
+/// scan は `--` 以降の positional を誤検出するため、同じ `--`
+/// terminator 規約で打ち切る。
+pub fn global_flag_present(argv: &[String], name: &str) -> bool {
+    let flag = format!("--{name}");
+    argv.iter()
+        .take_while(|a| a.as_str() != "--")
+        .any(|a| a == &flag)
 }

@@ -27,6 +27,13 @@ impl CliStdin for PipeStdin {
 fn env_lookup(name: &str) -> Option<String> {
     // test isolation: CHEAPER_CONFIG_DIR 等を孤立 dir へ向けるのは
     // caller の責務 — ここでは process env をそのまま使う。
+    // ただし CHEAPER_LOG* は ambient 継承させない:in-process で
+    // global subscriber を install すると後続 test が
+    // "subscriber already installed" になり stray .cheaper/logs を
+    // temp workspace に残す(observability 注入は env_map 経由で行う)。
+    if name.starts_with("CHEAPER_LOG") {
+        return None;
+    }
     std::env::var(name).ok()
 }
 

@@ -442,6 +442,14 @@ impl Transport<DevinWire> for DevinTransport {
                 )));
             }
             let headers = response.headers().clone();
+            // stream connect の `cheaper.provider.devin` event(design
+            // §instrumentation 配置) — host/status 以外の connect 情報や
+            // credential は載せない。
+            tracing::debug!(
+                target: "cheaper.provider.devin",
+                message = format_args!("stream connect"),
+                status.code = status.as_u16()
+            );
             // `Opened` は `Result<_, ProviderError>` item を要求するため
             // Err 型は rig 所有のまま（lint 局所抑制）。
             #[allow(clippy::result_large_err)]

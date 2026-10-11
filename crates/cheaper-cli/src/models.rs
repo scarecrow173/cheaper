@@ -22,6 +22,7 @@ use cheaper_core::model::resolve::is_excluded_model;
 use cheaper_core::workspace::paths::canonicalize_workspace_root;
 use cheaper_runtime::catalog::CatalogModel;
 use serde_json::{json, Map, Value};
+use tracing::Instrument;
 
 use crate::args::ModelsCliArgs;
 use crate::cli::{
@@ -44,7 +45,23 @@ fn to_model_info(m: &CatalogModel) -> ModelInfo {
     }
 }
 
+/// `execute` の entry — `cheaper.cli.command` span(design
+/// §instrumentation 配置)。
 pub async fn execute(
+    args: &ModelsCliArgs,
+    io: &mut CliIo<'_>,
+    hooks: &CliHooks,
+    started_at: f64,
+) -> Result<CommandOut, BoxError> {
+    execute_inner(args, io, hooks, started_at)
+        .instrument(tracing::info_span!(
+            "cheaper.cli.command",
+            command = "models",
+        ))
+        .await
+}
+
+async fn execute_inner(
     args: &ModelsCliArgs,
     io: &mut CliIo<'_>,
     hooks: &CliHooks,

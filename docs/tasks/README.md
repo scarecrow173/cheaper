@@ -63,6 +63,7 @@ Directory: `docs/tasks`
 | TASK-034zQHAqgNJHPLssPVaFPR | Core resource manifest verification | done | [core-resource-manifest-verification.md](./core-resource-manifest-verification.md) |
 | TASK-002DRbiVRuFJ5XWHvsWW6i | Correct fail-open/fail-closed contract in parent-agent guide and verify consistency | done | [correct-fail-open-fail-closed-contract-in-parent-agent-guide.md](./correct-fail-open-fail-closed-contract-in-parent-agent-guide.md) |
 | TASK-034r05iHQeQpDpIa7OmcYd | Count consumed repair attempts in meta.repairs on failure | done | [count-consumed-repair-attempts-in-meta-repairs-on-failure.md](./count-consumed-repair-attempts-in-meta-repairs-on-failure.md) |
+| TASK-034DVH0SzTXtnpmsbbiKuu | T1: cheaper-observability crate 新設 | done | [create-cheaper-observability-crate.md](./create-cheaper-observability-crate.md) |
 | TASK-034r05iHQeQpDpVUAMbEeR | Create cheaper-usage skill | done | [create-cheaper-usage-skill.md](./create-cheaper-usage-skill.md) |
 | TASK-034r05iHK8bA7gD3wnFQ3l | Create empty @cheaper/core package skeleton | done | [create-empty-cheaper-core-package-skeleton.md](./create-empty-cheaper-core-package-skeleton.md) |
 | TASK-034z2paWfkTKout3vzftc8 | Create manual-dispatch release workflow with 3-platform SEA matrix | done | [create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md](./create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md) |
@@ -152,6 +153,9 @@ Directory: `docs/tasks`
 | TASK-034zTTj0uuzqIXG4cbMoIO | Canonical workflow resource inference を実装する | done | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | TASK-034r05iHK8bA7gUBy3ygQD | Implement workspace path resolution with symlink policy | done | [implement-workspace-path-resolution-with-symlink-policy.md](./implement-workspace-path-resolution-with-symlink-policy.md) |
 | TASK-034r6roOdgb1mKbE0LLAv3 | inject generous eval budget into bigTool factory | done | [inject-eval-budget-bigtool.md](./inject-eval-budget-bigtool.md) |
+| TASK-034DVHc8VqMfpOOrjqF65s | T3: instrumentation wave 1 — cli dispatch + run pipeline | done | [instrument-cli-dispatch-and-run-pipeline.md](./instrument-cli-dispatch-and-run-pipeline.md) |
+| TASK-034DVHnoYPCyYkFMFU2pZw | T5: instrumentation wave 3 — hook/auth/catalog/core | done | [instrument-hook-auth-catalog-and-core.md](./instrument-hook-auth-catalog-and-core.md) |
+| TASK-034DVHfUoazX4qqAdssXAr | T4: instrumentation wave 2 — tools/workflow/provider/adapter | done | [instrument-tools-workflow-provider-and-adapter.md](./instrument-tools-workflow-provider-and-adapter.md) |
 | TASK-034AGiKxX1qSMznOGzJrLb | Integrate process runtime disposal | done | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
 | TASK-034zTTjWYMNKiiVb4ZZ6LV | Workflow compiler に resource inference を接続する | done | [integrate-workflow-resource-inference.md](./integrate-workflow-resource-inference.md) |
 | TASK-034AJd4IRjNpoxGSXgU36n | Workflow run CLI と public envelope を統合する | done | [integrate-workflow-run-cli.md](./integrate-workflow-run-cli.md) |
@@ -162,6 +166,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqrbmtswfZ | Move .apm primitives to nested distributable package and make root apm.yml dev-only | done | [move-apm-primitives-to-distributable-package.md](./move-apm-primitives-to-distributable-package.md) |
 | TASK-034DzYjQDNWcel1Oqxnlia | T3: provider test 移動 (F7) | done | [move-devin-provider-tests-to-tests-dir.md](./move-devin-provider-tests-to-tests-dir.md) |
 | TASK-034rAcF1RPJJogj2vzFDrF | New adapter scripts and hooks.json event registration | done | [new-adapter-scripts-and-hooks-json-event-registration.md](./new-adapter-scripts-and-hooks-json-event-registration.md) |
+| TASK-034DVHrszM9fxMAyaOCqFt | T6: observability contract test + verification | done | [observability-contract-tests-and-verification.md](./observability-contract-tests-and-verification.md) |
 | TASK-034A9yFQqZLtHt5ibjhE1h | Operation execution metrics | done | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | TASK-034r05iHQeQpDqgk8XoZ8E | Parameterize apm e2e fixture by target | done | [parameterize-apm-e2e-fixture-by-target.md](./parameterize-apm-e2e-fixture-by-target.md) |
 | TASK-034r05iHQeQpDqhxabCiHf | Per-target apm install verification e2e | done | [per-target-apm-install-verification-e2e.md](./per-target-apm-install-verification-e2e.md) |
@@ -238,6 +243,7 @@ Directory: `docs/tasks`
 | TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | done | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
 | TASK-034zTjXTqV7nvYYkf1bUH9 | Wire canonical operation ownership and abort | done | [wire-canonical-operation-ownership.md](./wire-canonical-operation-ownership.md) |
+| TASK-034DVH7HJKxbc1zEF7638b | T2: cli --log/--log-format flag 配線と init 呼出し | done | [wire-cli-log-flags-and-observability-init.md](./wire-cli-log-flags-and-observability-init.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
 | TASK-034zTWiLbk14ZhGMpiNo7M | Wire one-dispatch release publication | done | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |

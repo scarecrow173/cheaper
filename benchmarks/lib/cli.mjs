@@ -89,6 +89,16 @@ export function benchmarkEnvironment(workspace, options = {}) {
     ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
     ...(process.env.TEMP ? { TEMP: process.env.TEMP } : {}),
     ...(process.env.TMP ? { TMP: process.env.TMP } : {}),
+    // observability activation の env passthrough allowlist —
+    // `CHEAPER_LOG=debug node benchmarks/run.mjs …` のような ambient 注入で
+    // log 有効時の overhead arm を計測できるようにする。
+    // (DESIGN-034DV9ypzmxdAobGSJ6Cm6 §off-state overhead)
+    ...(process.env.CHEAPER_LOG ? { CHEAPER_LOG: process.env.CHEAPER_LOG } : {}),
+    ...(process.env.CHEAPER_LOG_FORMAT
+      ? { CHEAPER_LOG_FORMAT: process.env.CHEAPER_LOG_FORMAT }
+      : {}),
+    // scenario/arm 指定の env override — ambient passthrough より優先。
+    ...(options.env ?? {}),
   };
   return {
     env,

@@ -866,8 +866,17 @@ async fn execute(
     let env = minimal_env(&task.env);
     let mut command = build_command(&prepared, &task, env);
     let mut child = match command.spawn() {
-        Ok(child) => child,
+        Ok(child) => {
+            tracing::debug!(target: "cheaper.tool.process", task = %name, "process spawn");
+            child
+        }
         Err(error) => {
+            tracing::debug!(
+                target: "cheaper.tool.process",
+                task = %name,
+                error.code = spawn_code(&error),
+                "process spawn failed"
+            );
             let stdout = StreamCapture::default().finish();
             let stderr = StreamCapture::default().finish();
             let mut details = Map::new();
@@ -1056,6 +1065,12 @@ async fn drive(
         )
     };
     let (exit_code, signal) = status_parts(&status);
+    tracing::debug!(
+        target: "cheaper.tool.process",
+        task = %name,
+        exit.code = exit_code,
+        "process exit"
+    );
     let state = if exit_code == Some(0) {
         "completed"
     } else {

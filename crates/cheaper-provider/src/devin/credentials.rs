@@ -65,7 +65,20 @@ fn parse_toml_strings(text: &str) -> std::collections::BTreeMap<String, String> 
 /// 任意 path の credentials.toml を parse する共通実装 —
 /// cheaper toml と global toml の双方に使う（global 側は
 /// Windows contract の freshness 判定専用）。
+///
+/// credential load ok/miss の `cheaper.provider.devin` event
+/// （design §instrumentation 配置）— credential 値は一切載せない。
 pub fn read_credentials_at(cred_path: &Path) -> Option<DevinCredentials> {
+    let creds = read_credentials_impl(cred_path);
+    if creds.is_some() {
+        tracing::debug!(target: "cheaper.provider.devin", "credential load ok");
+    } else {
+        tracing::debug!(target: "cheaper.provider.devin", "credential load miss");
+    }
+    creds
+}
+
+fn read_credentials_impl(cred_path: &Path) -> Option<DevinCredentials> {
     if !cred_path.is_file() {
         return None;
     }

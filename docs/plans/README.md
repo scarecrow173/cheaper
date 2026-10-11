@@ -39,6 +39,7 @@ Directory: `docs/plans`
 | PLAN-034AEwZy3GcNygp87aXrL7 | Implement managed process lifecycle hardening | completed | [implement-managed-process-lifecycle-hardening.md](./implement-managed-process-lifecycle-hardening.md) |
 | PLAN-034rzUgf26bzSEwLr1L6Pl | implement model pricing catalog and curated exceptions | approved | [implement-model-pricing-catalog.md](./implement-model-pricing-catalog.md) |
 | PLAN-034z1M6zCAdKb12eiCWZRm | Implement Node 26 SEA standalone executable proof of concept | completed | [implement-node-26-sea-standalone-executable-proof-of-concept.md](./implement-node-26-sea-standalone-executable-proof-of-concept.md) |
+| PLAN-034DVGKbl3V2g7msSfpXv0 | Implement observability foundation | approved | [implement-observability-foundation.md](./implement-observability-foundation.md) |
 | PLAN-034zTJptHTdovrvYW7wQ1k | Implement one-dispatch release workflow | completed | [implement-one-dispatch-release-workflow.md](./implement-one-dispatch-release-workflow.md) |
 | PLAN-034AGr55LYOkphfEZr5Pr2 | Implement one-shot workflow execution and CLI integration | completed | [implement-one-shot-workflow-execution-and-cli-integration.md](./implement-one-shot-workflow-execution-and-cli-integration.md) |
 | PLAN-034CYiZ4kkOoa3oKL7PnLj | Implement OpenAI Codex subscription provider | approved | [implement-openai-codex-subscription-provider.md](./implement-openai-codex-subscription-provider.md) |

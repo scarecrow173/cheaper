@@ -54,6 +54,7 @@ use cheaper_workflow::{
 };
 use serde::Serialize;
 use serde_json::{Map, Value};
+use tracing::Instrument;
 
 use crate::args::{WorkflowInterfaceCliArgs, WorkflowRunCliArgs};
 use crate::cli::{now, system_now, BoxError, CliHooks, CliIo, CommandOut};
@@ -696,7 +697,22 @@ async fn wait_os_signal() {
 
 /// `executeWorkflowInterface` — metadata 検証と公開 interface 射影のみ
 /// (worker/tool/model/runtime は実行しない)。
+/// `cheaper.cli.command` span(design §instrumentation 配置)。
 pub async fn execute_interface(
+    args: &WorkflowInterfaceCliArgs,
+    io: &mut CliIo<'_>,
+    hooks: &CliHooks,
+    started_at: f64,
+) -> Result<CommandOut, BoxError> {
+    execute_interface_inner(args, io, hooks, started_at)
+        .instrument(tracing::info_span!(
+            "cheaper.cli.command",
+            command = "workflow-interface",
+        ))
+        .await
+}
+
+async fn execute_interface_inner(
     args: &WorkflowInterfaceCliArgs,
     io: &mut CliIo<'_>,
     hooks: &CliHooks,
@@ -717,7 +733,22 @@ pub async fn execute_interface(
 }
 
 /// `runWorkflowCommand`。
+/// `cheaper.cli.command` span(design §instrumentation 配置)。
 pub async fn execute_run(
+    args: &WorkflowRunCliArgs,
+    io: &mut CliIo<'_>,
+    hooks: &CliHooks,
+    _started_at: f64,
+) -> Result<CommandOut, BoxError> {
+    execute_run_inner(args, io, hooks, _started_at)
+        .instrument(tracing::info_span!(
+            "cheaper.cli.command",
+            command = "workflow-run",
+        ))
+        .await
+}
+
+async fn execute_run_inner(
     args: &WorkflowRunCliArgs,
     io: &mut CliIo<'_>,
     hooks: &CliHooks,

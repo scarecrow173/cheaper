@@ -32,6 +32,7 @@ use cheaper_provider::devin::DevinProviderPlugin;
 use cheaper_runtime::auth::ProcessEnv;
 use cheaper_runtime::{CheaperProviderPlugin, ProviderEnv, Runtime};
 use serde_json::{Map, Value};
+use tracing::Instrument;
 
 use crate::args::UsageCliArgs;
 use crate::cli::{BoxError, CliHooks, CliIo, CommandOut};
@@ -611,7 +612,23 @@ fn invalid_request(message: String, detail_key: &str, detail_value: &str) -> Box
 /// 記録対象外(dispatch 側も record_usage を呼ばない)。
 /// `--format text` は dispatch の `write_output` → `format_text` が
 /// `text_format::format_usage_report` へ分岐して出す。
+/// `cheaper.cli.command` span(design §instrumentation 配置)。
 pub async fn execute_usage(
+    args: &UsageCliArgs,
+    io: &mut CliIo<'_>,
+    hooks: &CliHooks,
+    builtin_dir: &Path,
+    started_at: f64,
+) -> Result<CommandOut, BoxError> {
+    execute_usage_inner(args, io, hooks, builtin_dir, started_at)
+        .instrument(tracing::info_span!(
+            "cheaper.cli.command",
+            command = "usage",
+        ))
+        .await
+}
+
+async fn execute_usage_inner(
     args: &UsageCliArgs,
     io: &mut CliIo<'_>,
     hooks: &CliHooks,

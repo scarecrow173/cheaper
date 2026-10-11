@@ -112,7 +112,19 @@ impl RigSession {
     /// `createWorkerSession` 相当: model+tools+system prompt から agent を
     /// 構築し、accounting hook・transient retry handler・tool scope を
     /// 配線する。
+    ///
+    /// session build は `cheaper.adapter.session` span(design
+    /// §instrumentation 配置) — model/auth 値は field に載せない。
     pub fn build(spec: WorkerSessionSpec) -> Self {
+        let _session_span = tracing::info_span!(
+            "cheaper.adapter.session",
+            tool.count = spec
+                .tool_runtime
+                .as_ref()
+                .map(|runtime| runtime.definitions().len())
+                .unwrap_or(0),
+        )
+        .entered();
         let mut acc_inner = Accumulator::default();
         // tool 計数は cheaper-tools の `ToolBudget` が admission 時点で
         // 計上するもの(TS `sandboxed.budget` parity) — snapshot で live
