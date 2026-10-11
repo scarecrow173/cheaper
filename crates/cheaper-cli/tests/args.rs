@@ -1,6 +1,9 @@
 //! `args.rs` の parse table test — `args.ts` の分類・文言規則に対応。
 
-use cheaper_cli::args::{parse_cli_args, AuthAction, AuthTypeArg, CliFormat, ParsedCli};
+use cheaper_cli::args::{
+    global_flag_present, global_log_flags, parse_cli_args, AuthAction, AuthTypeArg, CliFormat,
+    ParsedCli,
+};
 use cheaper_core::errors::ErrorCode;
 
 fn args(v: &[&str]) -> Vec<String> {
@@ -385,4 +388,88 @@ fn parse_args_semantics() {
         panic!()
     };
     assert_eq!(a.input, "b.json");
+}
+
+// --- global observability flags(T2) ------------------------------------------
+//
+// `--log`/`--log-format` は strict parse で受理される global option —
+// 値は `Values`/`ParsedCli` の field には載らず、消費は
+// `global_log_flags` の lenient scan が担う。
+
+#[test]
+fn log_flags_accepted_globally() {
+    // run
+    assert!(parse_cli_args(&args(&[
+        "run",
+        "w",
+        "--log",
+        "debug",
+        "--log-format",
+        "json",
+    ]))
+    .is_ok());
+    // run alias
+    assert!(parse_cli_args(&args(&["bulk-read", "--log", "info"])).is_ok());
+    // workflow 両 action — literal allowed-token 表で受理
+    assert!(parse_cli_args(&args(&["workflow", "interface", "wf.json", "--log=debug",])).is_ok());
+    assert!(parse_cli_args(&args(&[
+        "workflow",
+        "run",
+        "wf.json",
+        "--log",
+        "trace",
+        "--log-format=text",
+    ]))
+    .is_ok());
+    // 他 command — field unchecked = globally accepted
+    assert!(parse_cli_args(&args(&["models", "--log", "warn"])).is_ok());
+    assert!(parse_cli_args(&args(&["count-tokens", "f", "--log=debug"])).is_ok());
+    assert!(parse_cli_args(&args(&["usage", "--log-format", "json"])).is_ok());
+    assert!(parse_cli_args(&args(&["auth", "status", "--log", "off"])).is_ok());
+}
+
+#[test]
+fn log_flags_are_string_options() {
+    // string option 扱い — 値なしは missing、option-like 値は ambiguous
+    let e = err(&["run", "w", "--log"]);
+    assert!(e.message().contains("argument missing"));
+    let e = err(&["run", "w", "--log", "--quiet"]);
+    assert!(e.message().contains("argument is ambiguous"));
+}
+
+#[test]
+fn global_log_flags_scan() {
+    let argv = args(&["models", "--log", "debug", "--log-format=json"]);
+    assert_eq!(
+        global_log_flags(&argv),
+        (Some("debug".to_string()), Some("json".to_string()))
+    );
+
+    // last-wins
+    let argv = args(&["--log", "info", "--log", "trace"]);
+    assert_eq!(global_log_flags(&argv), (Some("trace".to_string()), None));
+
+    // `--` terminator 以降の positional `--log` は拾わない
+    let argv = args(&["run", "w", "--", "--log", "debug"]);
+    assert_eq!(global_log_flags(&argv), (None, None));
+
+    // 未指定
+    assert_eq!(global_log_flags(&args(&["models"])), (None, None));
+}
+
+#[test]
+fn global_flag_present_scan() {
+    assert!(global_flag_present(&args(&["models", "--quiet"]), "quiet"));
+    assert!(!global_flag_present(&args(&["models"]), "quiet"));
+    // `--` 以降の positional `--quiet` は誤検出しない
+    assert!(!global_flag_present(
+        &args(&["run", "w", "--", "--quiet"]),
+        "quiet"
+    ));
+    // `--quiet=x` は bool option の受理形ではない(strict parse が
+    // "does not take an argument" で弾く) — scan も拾わない
+    assert!(!global_flag_present(
+        &args(&["models", "--quiet=true"]),
+        "quiet"
+    ));
 }

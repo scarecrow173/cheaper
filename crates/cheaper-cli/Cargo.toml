@@ -20,8 +20,12 @@ cheaper-runtime = { path = "../cheaper-runtime" }
 cheaper-workflow = { path = "../cheaper-workflow" }
 cheaper-rig-adapter = { path = "../cheaper-rig-adapter" }
 cheaper-provider = { path = "../cheaper-provider" }
+# Observability foundation(T2): activation の sink 構築・subscriber
+# install の単一所有境界。cli だけが依存する。
+cheaper-observability = { path = "../cheaper-observability" }
 serde.workspace = true
 serde_json.workspace = true
+tracing.workspace = true
 # tokio: run_cli entry runtime + SIGINT/SIGTERM → abort relay (T3 run
 # 経路). `signal`/`rt-multi-thread` are approved feature additions.
 tokio = { workspace = true, features = ["signal", "rt-multi-thread"] }
