@@ -25,6 +25,7 @@ use cheaper_core::errors::{CheaperError, ErrorCode, NodeIoError};
 use cheaper_core::token::count::FileTooLargeError;
 use cheaper_core::workspace::paths::{canonicalize_workspace_root, WorkspaceEscapeError};
 use serde_json::Value;
+use tracing::Instrument;
 
 use crate::args::{parse_cli_args, CliFormat, ParsedCli};
 use crate::count::count_workspace_file_tokens;
@@ -206,7 +207,17 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
     // dispatch が mutably borrow する state — error path の
     // recordUsage / worker 名補完で参照する。
     let mut ctx = RunCtx::default();
-    match dispatch(argv, io, hooks, started_at, &mut ctx).await {
+    // `cheaper.cli.dispatch` — dispatch 全体の span(design
+    // §instrumentation 配置)。`command` field は strict parse 後に
+    // `dispatch` 側から record する(parse error 経路では Empty のまま)。
+    // stage timing は `FmtSpan::CLOSE` の close event に委譲するため
+    // per-site の計時記録は持たない。
+    let dispatch_span =
+        tracing::info_span!("cheaper.cli.dispatch", command = tracing::field::Empty,);
+    match dispatch(argv, io, hooks, started_at, &mut ctx)
+        .instrument(dispatch_span)
+        .await
+    {
         Ok(code) => code,
         Err(err) => {
             let env = error_envelope(
@@ -214,6 +225,14 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
                 ctx.worker_name.as_deref(),
                 Some(now(hooks) - started_at),
             );
+            // 汎用 catch の warn event — field は分類値 `error.code`
+            // のみ(metadata-only: message/payload は載せない)。
+            let code = env
+                .get("error")
+                .and_then(|e| e.get("code"))
+                .and_then(Value::as_str)
+                .unwrap_or("INTERNAL_ERROR");
+            tracing::warn!(error.code = code, "command dispatch failed");
             let (mut format, mut quiet, mut suppress) = (CliFormat::Json, false, false);
             if let Ok(p) = parse_cli_args(argv) {
                 if let Some(f) = p.format() {
@@ -225,11 +244,6 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
                 suppress = matches!(p, ParsedCli::WorkflowRun(ref a) if a.quiet);
             }
             if !suppress {
-                let code = env
-                    .get("error")
-                    .and_then(|e| e.get("code"))
-                    .and_then(Value::as_str)
-                    .unwrap_or("INTERNAL_ERROR");
                 let message = env
                     .get("error")
                     .and_then(|e| e.get("message"))
@@ -303,6 +317,9 @@ async fn dispatch(
     ctx: &mut RunCtx,
 ) -> Result<i32, BoxError> {
     let parsed = parse_cli_args(argv)?;
+    // `cheaper.cli.dispatch` span の `command` field — strict parse 済みの
+    // canonical 分類名を載せる(alias `bulk-read` 等は `run` に畳まれる)。
+    tracing::Span::current().record("command", command_name(&parsed));
     match parsed {
         ParsedCli::Help => {
             io.stdout.write_str(HELP);
@@ -315,6 +332,11 @@ async fn dispatch(
             Ok(0)
         }
         ParsedCli::CountTokens(args) => {
+            // `cheaper.cli.command` span — 本 arm は `.await` を含まない
+            // sync 区間のため entered guard で包む(async 区間は
+            // `Instrument` — design §instrumentation 配置)。
+            let _command_span =
+                tracing::info_span!("cheaper.cli.command", command = "count-tokens",).entered();
             // LLM/model/worker 解決を伴わない測定専用経路(DESIGN-0012)。
             // effective policy から filesystem.symlinks のみ使う。
             let builtin = resolve_builtin_dir(hooks)?;
@@ -419,6 +441,23 @@ async fn dispatch(
             );
             Ok(out.exit_code)
         }
+    }
+}
+
+/// `cheaper.cli.dispatch` span の `command` field 用 canonical 分類名。
+/// run alias(`bulk-read` 等)は parse 済み `ParsedCli::Run` として
+/// `"run"` に畳まれる。per-command span の `command` field と同名集合。
+fn command_name(parsed: &ParsedCli) -> &'static str {
+    match parsed {
+        ParsedCli::Help => "help",
+        ParsedCli::Version => "version",
+        ParsedCli::Run(_) => "run",
+        ParsedCli::CountTokens(_) => "count-tokens",
+        ParsedCli::WorkflowInterface(_) => "workflow-interface",
+        ParsedCli::WorkflowRun(_) => "workflow-run",
+        ParsedCli::Auth(_) => "auth",
+        ParsedCli::Models(_) => "models",
+        ParsedCli::Usage(_) => "usage",
     }
 }
 

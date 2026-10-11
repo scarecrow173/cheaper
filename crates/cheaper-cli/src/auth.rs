@@ -36,6 +36,7 @@ use cheaper_runtime::auth::{AuthEvent, AuthInteraction, AuthPrompt, AuthType, Pr
 use cheaper_runtime::{CheaperProviderPlugin, CredentialStatus, Runtime};
 use cheaper_tools::operation::{AbortController, AbortReason, AbortSignal};
 use serde_json::{Map, Value};
+use tracing::Instrument;
 
 use crate::args::{AuthAction, AuthCliArgs, AuthTypeArg};
 use crate::cli::{emit_catalog_warnings, BoxError, CliHooks, CliIo, CliWrite, CommandOut};
@@ -472,7 +473,19 @@ fn require_provider_arg<'a>(args: &'a AuthCliArgs, action: &str) -> Result<&'a s
 
 /// `executeAuth` 本体 — `CliHooks.now`/`signal` と process TTY を使う
 /// production 経路。
+/// `cheaper.cli.command` span(design §instrumentation 配置)。
 pub async fn execute(
+    args: &AuthCliArgs,
+    io: &mut CliIo<'_>,
+    hooks: &CliHooks,
+    started_at: f64,
+) -> Result<CommandOut, BoxError> {
+    execute_inner(args, io, hooks, started_at)
+        .instrument(tracing::info_span!("cheaper.cli.command", command = "auth",))
+        .await
+}
+
+async fn execute_inner(
     args: &AuthCliArgs,
     io: &mut CliIo<'_>,
     hooks: &CliHooks,

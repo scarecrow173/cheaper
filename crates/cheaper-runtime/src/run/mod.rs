@@ -61,6 +61,7 @@ use cheaper_tools::operation::{AbortReason, AbortSignal, Clock};
 use cheaper_tools::registry::{ToolRuntime, ToolRuntimeOptions};
 use cheaper_tools::resources::ResourceLease;
 use serde_json::{Map, Value};
+use tracing::Instrument;
 
 use self::abort::{RunAbort, RunAbortReason};
 use self::error::{PartialRunMeta, WorkerRunError};
@@ -312,7 +313,16 @@ async fn run_worker_inner(deps: &RunWorkerDeps<'_>) -> Result<RunWorkerOk, Worke
     }
 
     let mut ctx = RunCtx::new(deps, effective_tools);
-    let outcome = ctx.run(&run_abort, grace_ms).await;
+    // `cheaper.run` — run pipeline 全体の span(design §instrumentation
+    // 配置)。stage timing は `FmtSpan::CLOSE` の close event に委譲し、
+    // site 毎の計時記録は持たない。
+    let outcome = ctx
+        .run(&run_abort, grace_ms)
+        .instrument(tracing::info_span!(
+            "cheaper.run",
+            worker.name = worker.name.as_str(),
+        ))
+        .await;
 
     // TS `finally` 相当: timeout clear・listener 解除・dispose。
     timeout_task.abort();
@@ -484,180 +494,212 @@ impl<'a> RunCtx<'a> {
         let policy = deps.policy;
 
         // --- invocation tool runtime(borrowed or owned) ------------------
-        let (parent_lease, resource_manifest) = match &deps.execution {
-            Some(binding) => {
-                self.owns_invocation = false;
-                self.owner_id = binding.owner_id.clone();
-                self.invocation = Some(binding.runtime.clone());
-                (binding.parent_lease, binding.resource_manifest.clone())
-            }
-            None => {
-                self.owns_invocation = true;
-                let invocation = create_invocation_tool_runtime(InvocationToolRuntimeOptions {
-                    artifacts: None,
-                    process: Some(serde_json::to_value(&policy.process).unwrap_or_default()),
-                    root: deps.root.clone(),
-                    // F5: `policy.filesystem.symlinks` — TS run.ts の
-                    // `symlinkPolicy: policy.filesystem.symlinks` parity。
-                    // hardcode した Deny では within-workspace 設定が
-                    // 効かない。
-                    symlink_policy: policy.filesystem.symlinks,
-                    signal: None,
-                    abort_grace_ms: Some(grace_ms),
-                    concurrency: policy
-                        .execution
-                        .concurrency
-                        .map(|c| serde_json::to_value(c).unwrap_or_default()),
-                    clock: deps.operation_clock.clone(),
-                })
-                .map_err(|e| self.fail(tool_boundary_error("invocation tool runtime", e)))?;
-                self.invocation = Some(invocation);
-                (None, None)
+        // `cheaper.run.tool_runtime` stage span — sync 区間のため entered
+        // guard(async 区間は `Instrument` で包む — design §instrumentation
+        // 配置)。
+        let (parent_lease, resource_manifest) = {
+            let _stage = tracing::info_span!("cheaper.run.tool_runtime").entered();
+            match &deps.execution {
+                Some(binding) => {
+                    self.owns_invocation = false;
+                    self.owner_id = binding.owner_id.clone();
+                    self.invocation = Some(binding.runtime.clone());
+                    (binding.parent_lease, binding.resource_manifest.clone())
+                }
+                None => {
+                    self.owns_invocation = true;
+                    let invocation = create_invocation_tool_runtime(InvocationToolRuntimeOptions {
+                        artifacts: None,
+                        process: Some(serde_json::to_value(&policy.process).unwrap_or_default()),
+                        root: deps.root.clone(),
+                        // F5: `policy.filesystem.symlinks` — TS run.ts の
+                        // `symlinkPolicy: policy.filesystem.symlinks` parity。
+                        // hardcode した Deny では within-workspace 設定が
+                        // 効かない。
+                        symlink_policy: policy.filesystem.symlinks,
+                        signal: None,
+                        abort_grace_ms: Some(grace_ms),
+                        concurrency: policy
+                            .execution
+                            .concurrency
+                            .map(|c| serde_json::to_value(c).unwrap_or_default()),
+                        clock: deps.operation_clock.clone(),
+                    })
+                    .map_err(|e| self.fail(tool_boundary_error("invocation tool runtime", e)))?;
+                    self.invocation = Some(invocation);
+                    (None, None)
+                }
             }
         };
         let invocation = self.invocation.as_ref().expect("set above").clone();
         // --- ここから runMeta:{execution} が付く error path -------------
 
         // --- model 解決(catalog → ModelInfo → resolve*) -----------------
-        let available = deps.runtime.get_available(None).map_err(|e| self.fail(e))?;
-        let available: Vec<ModelInfo> = available.iter().map(to_model_info).collect();
-        let output_per_input = worker.cheaper.model.workload.map(|w| w.output_per_input);
-        let resolved = match deps.explicit_model {
-            None => resolve_model(&ResolveModelOptions {
-                available: &available,
-                requested_tier: worker.cheaper.model.tier,
-                policy: model_policy_slice(policy),
-                config: deps.model_config,
-                output_per_input,
-            })
-            .map_err(|e| self.fail(e))?,
-            Some(explicit) => match parse_model_ref(explicit) {
-                None => {
-                    return Err(self.fail(
-                        CheaperError::new(
-                            ErrorCode::InvalidRequest,
-                            format!(
-                                "invalid --model reference: {explicit} \
-                                 (expected <provider>/<id>)"
-                            ),
-                        )
-                        .with_details(Map::from_iter([
-                            ("reason".to_string(), Value::from("invalid-model-ref")),
-                            ("model".to_string(), Value::from(explicit)),
-                        ])),
-                    ));
-                }
-                Some(model_ref) => resolve_explicit_model(&ResolveExplicitModelOptions {
+        // `cheaper.run.model_resolve` stage span(sync 区間 — entered
+        // guard)。resolved model の `model.provider`/`model.id`/
+        // `model.tier` は分類値 field として record する(payload 不可)。
+        {
+            let stage = tracing::info_span!(
+                "cheaper.run.model_resolve",
+                model.provider = tracing::field::Empty,
+                model.id = tracing::field::Empty,
+                model.tier = tracing::field::Empty,
+            );
+            let _stage_guard = stage.enter();
+            let available = deps.runtime.get_available(None).map_err(|e| self.fail(e))?;
+            let available: Vec<ModelInfo> = available.iter().map(to_model_info).collect();
+            let output_per_input = worker.cheaper.model.workload.map(|w| w.output_per_input);
+            let resolved = match deps.explicit_model {
+                None => resolve_model(&ResolveModelOptions {
                     available: &available,
-                    model_ref: &model_ref,
-                    policy_max_tier: policy.model.max_tier,
+                    requested_tier: worker.cheaper.model.tier,
+                    policy: model_policy_slice(policy),
                     config: deps.model_config,
                     output_per_input,
                 })
                 .map_err(|e| self.fail(e))?,
-            },
-        };
-        // `toResolvedPiModel` — resolved entry を catalog で引き直し auth
-        // も解決。消失は INTERNAL_ERROR。
-        let (catalog_model, auth) = deps
-            .runtime
-            .resolve_model_auth(&resolved.model.provider, &resolved.model.id)
-            .map_err(|e| self.fail(e))?
-            .ok_or_else(|| {
-                CheaperError::new(
-                    ErrorCode::InternalError,
-                    "resolved model disappeared between catalog listing and resolution",
-                )
-                .with_details(Map::from_iter([
-                    (
-                        "provider".to_string(),
-                        Value::from(resolved.model.provider.clone()),
-                    ),
-                    ("id".to_string(), Value::from(resolved.model.id.clone())),
-                ]))
-            })
-            .map_err(|e: CheaperError| self.fail(e))?;
-        self.resolved = Some(resolved);
-        self.catalog_model = Some(catalog_model);
-        self.auth = auth;
+                Some(explicit) => match parse_model_ref(explicit) {
+                    None => {
+                        return Err(self.fail(
+                            CheaperError::new(
+                                ErrorCode::InvalidRequest,
+                                format!(
+                                    "invalid --model reference: {explicit} \
+                                 (expected <provider>/<id>)"
+                                ),
+                            )
+                            .with_details(Map::from_iter([
+                                ("reason".to_string(), Value::from("invalid-model-ref")),
+                                ("model".to_string(), Value::from(explicit)),
+                            ])),
+                        ));
+                    }
+                    Some(model_ref) => resolve_explicit_model(&ResolveExplicitModelOptions {
+                        available: &available,
+                        model_ref: &model_ref,
+                        policy_max_tier: policy.model.max_tier,
+                        config: deps.model_config,
+                        output_per_input,
+                    })
+                    .map_err(|e| self.fail(e))?,
+                },
+            };
+            // `toResolvedPiModel` — resolved entry を catalog で引き直し
+            // auth も解決。消失は INTERNAL_ERROR。
+            let (catalog_model, auth) = deps
+                .runtime
+                .resolve_model_auth(&resolved.model.provider, &resolved.model.id)
+                .map_err(|e| self.fail(e))?
+                .ok_or_else(|| {
+                    CheaperError::new(
+                        ErrorCode::InternalError,
+                        "resolved model disappeared between catalog listing and resolution",
+                    )
+                    .with_details(Map::from_iter([
+                        (
+                            "provider".to_string(),
+                            Value::from(resolved.model.provider.clone()),
+                        ),
+                        ("id".to_string(), Value::from(resolved.model.id.clone())),
+                    ]))
+                })
+                .map_err(|e: CheaperError| self.fail(e))?;
+            stage.record("model.provider", resolved.model.provider.as_str());
+            stage.record("model.id", resolved.model.id.as_str());
+            stage.record("model.tier", resolved.tier.as_str());
+            self.resolved = Some(resolved);
+            self.catalog_model = Some(catalog_model);
+            self.auth = auth;
+        }
 
         // --- worker scope ------------------------------------------------
-        let write_scope = extract_write_scope(worker, deps.input)
-            .map_err(|e| self.fail(e))?
-            .map(|scope| scope.into_iter().collect::<Vec<String>>());
-        let limit_abort = Arc::clone(run_abort);
-        let scope = invocation
-            .create_worker_scope(WorkerScopeOptions {
-                owner_id: self.owner_id.clone(),
-                runtime: ToolRuntimeOptions {
-                    resource_manifest,
-                    write_scope,
-                    read_strictness: None,
-                    artifacts: None,
-                    process: Some(serde_json::to_value(&policy.process).unwrap_or_default()),
-                    root: deps.root.clone(),
-                    // F5: invocation runtime と同じく policy 由来。
-                    symlink_policy: policy.filesystem.symlinks,
-                    names: self.effective_tools.clone(),
-                    max_tool_calls: policy.execution.max_tool_calls,
-                    on_limit: Box::new(move || {
-                        limit_abort.request_abort(RunAbortReason::MaxToolCalls);
-                    }),
-                    journal: Some(Arc::clone(&self.journal)),
-                    denylist: Some(create_path_denylist(
-                        &policy
-                            .filesystem
-                            .deny_paths
-                            .iter()
-                            .map(String::as_str)
-                            .collect::<Vec<_>>(),
-                    )),
-                    parent_lease,
-                    signal: Some(run_abort.signal()),
-                    abort_grace_ms: Some(grace_ms),
-                    concurrency: policy
-                        .execution
-                        .concurrency
-                        .map(|c| serde_json::to_value(c).unwrap_or_default()),
-                    eval_spawn: None,
-                },
-            })
-            .map_err(|e| self.fail(tool_boundary_error("worker tool scope", e)))?;
+        // `cheaper.run.tool_scope` stage span — scope 生成の sync 区間は
+        // `enter` で、`ready()` の async 区間は同じ span を `Instrument`
+        // で継続する(単一 span が stage 全体の close timing を持つ)。
+        let tool_scope_stage = tracing::info_span!("cheaper.run.tool_scope");
+        let scope = {
+            let _stage_guard = tool_scope_stage.enter();
+            let write_scope = extract_write_scope(worker, deps.input)
+                .map_err(|e| self.fail(e))?
+                .map(|scope| scope.into_iter().collect::<Vec<String>>());
+            let limit_abort = Arc::clone(run_abort);
+            invocation
+                .create_worker_scope(WorkerScopeOptions {
+                    owner_id: self.owner_id.clone(),
+                    runtime: ToolRuntimeOptions {
+                        resource_manifest,
+                        write_scope,
+                        read_strictness: None,
+                        artifacts: None,
+                        process: Some(serde_json::to_value(&policy.process).unwrap_or_default()),
+                        root: deps.root.clone(),
+                        // F5: invocation runtime と同じく policy 由来。
+                        symlink_policy: policy.filesystem.symlinks,
+                        names: self.effective_tools.clone(),
+                        max_tool_calls: policy.execution.max_tool_calls,
+                        on_limit: Box::new(move || {
+                            limit_abort.request_abort(RunAbortReason::MaxToolCalls);
+                        }),
+                        journal: Some(Arc::clone(&self.journal)),
+                        denylist: Some(create_path_denylist(
+                            &policy
+                                .filesystem
+                                .deny_paths
+                                .iter()
+                                .map(String::as_str)
+                                .collect::<Vec<_>>(),
+                        )),
+                        parent_lease,
+                        signal: Some(run_abort.signal()),
+                        abort_grace_ms: Some(grace_ms),
+                        concurrency: policy
+                            .execution
+                            .concurrency
+                            .map(|c| serde_json::to_value(c).unwrap_or_default()),
+                        eval_spawn: None,
+                    },
+                })
+                .map_err(|e| self.fail(tool_boundary_error("worker tool scope", e)))?
+        };
         scope
             .ready()
+            .instrument(tool_scope_stage)
             .await
             .map_err(|reason| self.fail(setup_abort_error("tool scope ready", reason)))?;
         self.tool_scope = Some(scope.clone());
 
         // --- main session ------------------------------------------------
-        let tool_names: Vec<String> = self
-            .effective_tools
-            .iter()
-            .map(|t| t.as_str().to_string())
-            .collect();
-        let system_prompt = build_system_prompt(
-            &worker.instructions,
-            &Value::Object(worker.output_schema.schema.clone()),
-            &tool_names,
-        );
-        let session = deps
-            .session_factory
-            .create_session(&SessionSpec {
-                model: self.catalog_model.as_ref().expect("resolved above"),
-                auth: self.auth.as_ref(),
-                system_prompt,
-                tool_runtime: Some(scope),
-                // F8: provider 側の json_schema mode 等への hint として
-                // main session にも worker output schema を渡す(TS の
-                // `createWorkerSession` には outputSchema option が無く
-                // prompt 埋め込みのみ — 本項目は Rust 側の拡張 seam で、
-                // 未対応 provider では無視される)。
-                output_schema: Some(&worker.output_schema),
-                max_output_tokens: policy.output.max_tokens,
-                transient_retries: policy.retry.transient_attempts as usize,
-                policy_max_turns: policy.execution.max_turns,
-            })
-            .map_err(|e| self.fail(e))?;
+        // `cheaper.run.session` stage span(sync 区間 — entered guard)。
+        let session = {
+            let _stage = tracing::info_span!("cheaper.run.session").entered();
+            let tool_names: Vec<String> = self
+                .effective_tools
+                .iter()
+                .map(|t| t.as_str().to_string())
+                .collect();
+            let system_prompt = build_system_prompt(
+                &worker.instructions,
+                &Value::Object(worker.output_schema.schema.clone()),
+                &tool_names,
+            );
+            deps.session_factory
+                .create_session(&SessionSpec {
+                    model: self.catalog_model.as_ref().expect("resolved above"),
+                    auth: self.auth.as_ref(),
+                    system_prompt,
+                    tool_runtime: Some(scope),
+                    // F8: provider 側の json_schema mode 等への hint として
+                    // main session にも worker output schema を渡す(TS の
+                    // `createWorkerSession` には outputSchema option が無く
+                    // prompt 埋め込みのみ — 本項目は Rust 側の拡張 seam で、
+                    // 未対応 provider では無視される)。
+                    output_schema: Some(&worker.output_schema),
+                    max_output_tokens: policy.output.max_tokens,
+                    transient_retries: policy.retry.transient_attempts as usize,
+                    policy_max_turns: policy.execution.max_turns,
+                })
+                .map_err(|e| self.fail(e))?
+        };
         self.session = Some(Arc::clone(&session));
 
         // --- prompt(abort grace 付き) ------------------------------------
@@ -679,17 +721,33 @@ impl<'a> RunCtx<'a> {
             let mut pending_tool_calls = 0u64;
             let mut on_event = move |event: &RunEvent| {
                 match event {
-                    RunEvent::ToolCall { .. } => pending_tool_calls += 1,
-                    RunEvent::ToolResult { .. } => {
-                        pending_tool_calls = pending_tool_calls.saturating_sub(1)
+                    // RunEvent boundary event(design §instrumentation
+                    // 配置)— field は `call.id`/`tool.name`/usage counts
+                    // の metadata のみ(arguments/output 本文・prompt は
+                    // 載せない)。
+                    RunEvent::ToolCall { call_id, name, .. } => {
+                        pending_tool_calls += 1;
+                        tracing::debug!(call.id = %call_id, tool.name = %name, "tool call");
+                    }
+                    RunEvent::ToolResult { call_id, name, .. } => {
+                        pending_tool_calls = pending_tool_calls.saturating_sub(1);
+                        tracing::debug!(call.id = %call_id, tool.name = %name, "tool result");
                     }
                     // rollback された turn(invalid-tool retry)では emit
                     // 済み `ToolCall` の result が来ない — 新しい
                     // completion call / retry 境界で pending を reset
                     // して滞留しないようにする。
-                    RunEvent::CompletionCall { .. } | RunEvent::ModelTurnRetried { .. } => {
-                        pending_tool_calls = 0
+                    RunEvent::CompletionCall { index, usage } => {
+                        pending_tool_calls = 0;
+                        tracing::debug!(
+                            call.index = index,
+                            usage.input_tokens = usage.input_tokens,
+                            usage.output_tokens = usage.output_tokens,
+                            usage.total_tokens = usage.total_tokens,
+                            "completion call"
+                        );
                     }
+                    RunEvent::ModelTurnRetried { .. } => pending_tool_calls = 0,
                     _ => {}
                 }
                 // TS: turn_end 毎に `snapshot.turns >= maxTurns &&
@@ -700,6 +758,9 @@ impl<'a> RunCtx<'a> {
                     check_abort.request_abort(RunAbortReason::MaxTurns);
                 }
             };
+            // `cheaper.run.prompt` stage span — stream 駆動 + maxTurns
+            // 監視を含む `prompt_with_abort_grace` の async 区間を包む
+            // (on_event の boundary event はこの span context 下で emit)。
             prompt_with_abort_grace(
                 &session,
                 user_prompt,
@@ -707,6 +768,7 @@ impl<'a> RunCtx<'a> {
                 grace_ms,
                 &mut on_event,
             )
+            .instrument(tracing::info_span!("cheaper.run.prompt"))
             .await
         };
         if let Some(reason) = run_abort.reason() {
@@ -736,7 +798,12 @@ impl<'a> RunCtx<'a> {
         };
 
         // --- extract → repair ---------------------------------------------
-        let result = match extract_output(raw_output.as_deref(), &worker.output_schema) {
+        // `cheaper.run.extract` stage span(sync 区間 — entered guard)。
+        let extracted = {
+            let _stage = tracing::info_span!("cheaper.run.extract").entered();
+            extract_output(raw_output.as_deref(), &worker.output_schema)
+        };
+        let result = match extracted {
             ExtractedOutput::Ok { result, .. } => result,
             ExtractedOutput::Err {
                 raw_output, errors, ..
@@ -762,7 +829,11 @@ impl<'a> RunCtx<'a> {
                         grace_ms,
                         on_attempt: &mut |attempt| repairs = attempt,
                     };
-                    repair_output(&mut opts, &mut self.repair_snap).await
+                    // `cheaper.run.repair` stage span(async 区間 —
+                    // `Instrument` で包む)。
+                    repair_output(&mut opts, &mut self.repair_snap)
+                        .instrument(tracing::info_span!("cheaper.run.repair"))
+                        .await
                 };
                 self.repairs = repairs;
                 match repair_result {
@@ -782,6 +853,9 @@ impl<'a> RunCtx<'a> {
         if let Some(reason) = run_abort.reason() {
             return Err(self.classified(reason));
         }
+        // `cheaper.run.meta` stage span(`build_meta` 畳み込み — sync
+        // 区間のため entered guard)。
+        let _stage = tracing::info_span!("cheaper.run.meta").entered();
         self.finish(result)
     }
 
