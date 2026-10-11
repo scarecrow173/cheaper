@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034DV9ypzmxdAobGSJ6Cm6"
 type: "design"
-status: "draft"
+status: "approved"
 title: "Observability foundation logging and instrumentation wiring"
 created: "2026-10-11"
 updated: "2026-10-11"
