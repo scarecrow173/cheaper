@@ -7,6 +7,7 @@ Directory: `docs/designs`
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
 | DESIGN-OVERVIEW | System Design Overview | draft | [overview.md](./overview.md) |
+| DESIGN-034EehnT1xOPAee9dK22Kx | Setup-boundary abort classification via core ErrorCode reverse lookup | draft | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
 | DESIGN-034z1EgnQwax4VamK2xmdT | APM executable payload layout and platform launchers | superseded | [apm-executable-payload-layout-and-platform-launchers.md](./apm-executable-payload-layout-and-platform-launchers.md) |
 | DESIGN-034r05iHy2gdnoFHbdllXV | APM skills and pre_read_code delegation hook | approved | [apm-skills-and-pre-read-hook.md](./apm-skills-and-pre-read-hook.md) |
 | DESIGN-034r05iHy2gdnoJ5j3v9Nk | cheaper auth command design (provider OAuth absorbed by the CLI) | approved | [auth-command.md](./auth-command.md) |
