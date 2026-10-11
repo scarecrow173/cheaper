@@ -49,6 +49,14 @@ Option<Self>` を `as_str` 隣に追加する。語彙の単一 source として
 第二の match table を作らない。`std::str::FromStr` trait ではなく
 inherent method(戻り値 `Option` — design の確定形状)。
 
+注意: inherent `from_str` は `clippy::should_implement_trait` に
+抵触し(`mise run check` の clippy は `-D warnings` 付き)、
+`#[allow(clippy::should_implement_trait)]` が無いと lint error に
+なる。ADR が call site 合成 `reason.code().and_then(
+ErrorCode::from_str)` のため名前を確定しているので、改名ではなく
+局所 allow + 1 行の根拠 comment で対処する(design の疑似コード
+どおり)。
+
 ## Classification
 
 - `normal-plan-task`
@@ -73,8 +81,10 @@ inherent method(戻り値 `Option` — design の確定形状)。
 
 - `crates/cheaper-core/src/errors.rs`:
   - `impl ErrorCode` に `pub fn from_str(s: &str) -> Option<Self>`
-    を `as_str` の直後に追加。実装は
-    `ERROR_TABLE.iter().map(|(code, _)| *code).find(|code|
+    を `as_str` の直後に追加。`clippy::should_implement_trait` が
+    `-D warnings` で error となるため `#[allow(clippy::should_implement_trait)]`
+    と 1 行の根拠 comment(ADR 確定の名前を維持するため)を付ける。
+    実装は `ERROR_TABLE.iter().map(|(code, _)| *code).find(|code|
     code.as_str() == s)` のみ — 語彙外文字列は `None`
   - `#[cfg(test)] mod tests` に unit test を追加:
     - `ERROR_TABLE` 全変種で `ErrorCode::from_str(code.as_str())
@@ -88,7 +98,9 @@ inherent method(戻り値 `Option` — design の確定形状)。
 
 - [ ] `ErrorCode::from_str` が `Option<Self>` を返す inherent
       method として `as_str` 隣に存在し、`std::str::FromStr`
-      impl・第二の match table が存在しない
+      impl・第二の match table が存在しない。`#[allow(clippy::
+      should_implement_trait)]` で inherent `from_str` の lint 抵触が
+      局所 allow されている(`-D warnings` の `cargo clippy` が通る)
 - [ ] `ERROR_TABLE` 全変種の round-trip test・語彙外/小文字/
       空文字列 → `None` の test が追加され pass する
 - [ ] `cheaper-core` に新規 dependency がなく Rig/Tokio を

@@ -92,7 +92,9 @@ deterministic な pass。
   (既存経路の挙動不変)。
 - Rule: residual fallback — `code()` が無い、または語彙外の
   `AbortReason` は `INTERNAL_ERROR` + `"{context} failed:
-  {message}"` の形を維持する。
+  {message}"` の形を維持する。`error_object` は存在するが
+  `CheaperError` ではない `AbortReason`(downcast miss)も同じ
+  residual として pin する。
 - Rule: single mapping site — adapter の private table
   `error_code_from_str` は除去され、`abort_reason_to_cheaper` は
   `reason.code().and_then(ErrorCode::from_str)` で同じ core API を
@@ -125,9 +127,17 @@ deterministic な pass。
   details 保持)を包んだ reason は `code()` 復元分岐に到達せず、
   downcast rebuild(既存挙動)が返る。
 - Example: `AbortReason::new("Error", "io failed",
-  Some("ENOENT"))`(語彙外 code)や `AbortReason::msg("x")`(code
-  無し)は `INTERNAL_ERROR` + `"tool scope ready failed: ..."` を
-  維持する。
+  Some("ENOENT".to_string()))`(語彙外 code)や
+  `AbortReason::msg("x")`(code 無し)は `INTERNAL_ERROR` +
+  `"tool scope ready failed: ..."` を維持する。
+- Example: `AbortReason::from_error` で
+  `cheaper_core::errors::node_io_error_with_code`(例:
+  `"ENOENT"`)を包んだ reason(`error_object` あり・非
+  `CheaperError`)は downcast miss となり、`code()` 復元でも
+  `"ENOENT"` が語彙外のため `None` → `INTERNAL_ERROR` +
+  `"tool scope ready failed: ..."` を維持する。この 1 ケースで
+  「非 ErrorCode code()」と「error object 非 CheaperError」の
+  AC 両方を cover できる。
 - Example: `crates/cheaper-rig-adapter` で `error_code_from_str`
   を grep して 0 件 — private table が除去されている。
 - Example: `cargo test --workspace --features

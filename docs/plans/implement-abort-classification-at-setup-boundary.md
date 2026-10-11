@@ -143,8 +143,10 @@ T1 は独立に検証可能(`cargo test -p cheaper-core`)。T2 は T1 の API
       (setup_abort_error 分類 pin test を含む)
 - [ ] `mise exec -- cargo test -p cheaper-rig-adapter` exits 0
 - [ ] `git grep -n "error_code_from_str" -- crates/` が 0 件
-- [ ] `git grep -n "from_str" -- crates/cheaper-runtime crates/cheaper-rig-adapter`
-      で両 consumer が `ErrorCode::from_str` を使うことを確認
+- [ ] `git grep -n "and_then(ErrorCode::from_str)" --
+      crates/cheaper-runtime crates/cheaper-rig-adapter` がちょうど
+      2 件(runtime `setup_abort_error` + adapter
+      `abort_reason_to_cheaper` の両 consumer が共有 API を使用)
 - [ ] `mise exec -- cargo test --workspace --features
       cheaper-runtime/dev-seam,cheaper-cli/dev-seam` を連続 3 回
       実行し `hang_grace`(fixtures_replay_all)が毎回 deterministic

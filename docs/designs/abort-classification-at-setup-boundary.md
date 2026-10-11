@@ -87,6 +87,9 @@ impl ErrorCode {
     /// `as_str` の逆引き。ErrorCode 語彙外の文字列(Node errno
     /// `"ENOENT"` 等、`AbortReason.code()` が運ぶ describeError
     /// code)は `None` を返す寛容な parse。
+    // inherent `from_str` は `clippy::should_implement_trait` に抵触するが、
+    // ADR が `and_then(ErrorCode::from_str)` 合成のため名前を確定したので局所 allow。
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         ERROR_TABLE
             .iter()
@@ -104,6 +107,12 @@ impl ErrorCode {
   `FromStr` trait は `Result<Self, Self::Err>` を要求するため
   `Err` 型の設計論点(意味を持たない unit error)を持ち込む。
   YAGNI — trait 適合が必要な consumer は現れていない。
+  ただし inherent `from_str` は `clippy::should_implement_trait`
+  に抵触し(`mise run check` の `cargo clippy` は `-D warnings`
+  付き)、そのままでは lint error となる。ADR が call site 合成
+  `reason.code().and_then(ErrorCode::from_str)` のために名前を
+  確定しているため、`#[allow(clippy::should_implement_trait)]`
+  を付けて lint を局所的に許容する。
 - **語彙の単一 source**: 実装は `ERROR_TABLE` の entry 列挙 +
   `as_str()` 照合のみで、第二の match table を作らない。
   `ErrorCode` 変種追加時は `as_str` + `ERROR_TABLE` の更新で
@@ -150,6 +159,12 @@ fn setup_abort_error(context: &str, reason: AbortReason) -> CheaperError {
 - `details` は付けない — `reason` の describeError 形には details
   が無く、復元できるのは code のみ。`abort_payload` 由来の reason
   文字列("timeout"/"signal"/...)は message に残る。
+- `code()` 復元分岐の到達範囲は spec の文言より意図的に広い:
+  `error_object` は存在するが `CheaperError` ではない `AbortReason`
+  (downcast miss)も本分岐を通る。ただしその場合 `code()` は
+  describeError 語彙外(Node errno 等)で `from_str` は `None` を
+  返すため、到達可能な挙動差は無い(spec 自身の分析どおり) —
+  adapter 経路と同じ規則を共有する parity でもある。
 
 ### adapter(cheaper-rig-adapter、`error.rs`)
 

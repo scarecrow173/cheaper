@@ -90,8 +90,18 @@ API へ切替。分類を pin する unit test と `hang_grace` determinism
       `CheaperError`(code + details 保持)が downcast rebuild で
       そのまま返る(`code()` 復元より優先)
     - 語彙外 code(`AbortReason::new("Error", "io failed",
-      Some("ENOENT"))`)・code 無し(`AbortReason::msg`)が
+      Some("ENOENT".to_string()))`)・code 無し(`AbortReason::msg`)が
       `INTERNAL_ERROR` + `"{context} failed: {message}"` を維持
+    - `error_object` は存在するが `CheaperError` ではない residual
+      — `AbortReason::from_error` で
+      `cheaper_core::errors::node_io_error_with_code("open", "/x",
+      "ENOENT", io::Error::new(...))` 等の `NodeIoError` を包んだ
+      reason が downcast miss → `code()` 復元でも `None`
+      (`"ENOENT"` は語彙外)となり `INTERNAL_ERROR` +
+      `"{context} failed: {message}"` を維持。`from_error` は
+      `code() == Some("ENOENT")` も返すため、この 1 ケースで
+      「非 ErrorCode code」と「error object 非 CheaperError」の
+      AC 両方を cover できる
 - `crates/cheaper-rig-adapter/src/error.rs`:
   - `abort_reason_to_cheaper`(L204-212)の
     `reason.code().and_then(error_code_from_str)` を
@@ -108,8 +118,10 @@ API へ切替。分類を pin する unit test と `hang_grace` determinism
       test が pass
 - [ ] `error_object` 保持 `AbortReason` の分類挙動が不変である pin
       test が pass
-- [ ] 語彙外 code・code 無しの `AbortReason` が `INTERNAL_ERROR` +
-      `"{context} failed: {message}"` を維持する pin test が pass
+- [ ] 語彙外 code・code 無し・`error_object` 保持だが非
+      `CheaperError`(例: `AbortReason::from_error(NodeIoError)`)
+      の `AbortReason` が `INTERNAL_ERROR` + `"{context} failed:
+      {message}"` を維持する pin test が pass
 - [ ] adapter の private `error_code_from_str` が除去され
       `ErrorCode::from_str` を使っている
 - [ ] envelope schema・exit code・`ERROR_TABLE` が無変更
