@@ -1,10 +1,10 @@
 ---
 id: "TASK-034DVH0SzTXtnpmsbbiKuu"
 type: "task"
-status: "todo"
+status: "done"
 title: "T1: cheaper-observability crate 新設"
 created: "2026-10-11"
-updated: "2026-10-11"
+updated: "2026-10-12"
 owners: []
 relations:
   source: []
@@ -122,23 +122,23 @@ cheaper-observability → tracing-subscriber の一方向)。
 
 ## Done When
 
-- [ ] `crates/cheaper-observability` が `Activation`・
+- [x] `crates/cheaper-observability` が `Activation`・
       `ObservabilityGuard`・`init` の公開面を持ち、workspace
       members glob で build 対象に含まれる
-- [ ] file sink が `Rotation::DAILY`・`filename_prefix("cheaper.log")`・
+- [x] file sink が `Rotation::DAILY`・`filename_prefix("cheaper.log")`・
       `max_log_files(7)`・`<log_root>/.cheaper/logs` で構築され、
       stderr sink は `with_ansi(false)`、両 layer に
       `with_span_events(FmtSpan::CLOSE)` が設定されている
-- [ ] format 選択が file/stderr 両 sink 共通で、`Layer::boxed()`
+- [x] format 選択が file/stderr 両 sink 共通で、`Layer::boxed()`
       経由で型分岐が統一されている
-- [ ] fail-open contract(invalid 値→warnings・file sink 失敗→
+- [x] fail-open contract(invalid 値→warnings・file sink 失敗→
       stderr-only・repeat-init→first subscriber wins・OFF→dir
       未作成 + `(None, _)`)が実装・test されている
-- [ ] repeat-init unit test が `init` を呼ぶ唯一の test であること
+- [x] repeat-init unit test が `init` を呼ぶ唯一の test であること
       (design の test 戦略 — 他の test は `resolve` 等の
       non-installing 経路のみを使い、process 全域の global
       subscriber による test 順序依存の失敗を防ぐ)
-- [ ] `cheaper-observability` から workspace 内 crate への依存が 0
+- [x] `cheaper-observability` から workspace 内 crate への依存が 0
       である
 
 ## Out of Scope
@@ -151,16 +151,16 @@ cheaper-observability → tracing-subscriber の一方向)。
 
 ## Verification
 
-- [ ] `mise exec -- cargo build -p cheaper-observability` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-observability` exits 0
+- [x] `mise exec -- cargo build -p cheaper-observability` exits 0
+- [x] `mise exec -- cargo test -p cheaper-observability` exits 0
       (activation 解釈・repeat-init の unit test 含む)
-- [ ] `mise exec -- cargo tree -p cheaper-observability` が
+- [x] `mise exec -- cargo tree -p cheaper-observability` が
       workspace 内 crate への依存を持たないこと(tracing/
       tracing-subscriber/tracing-appender + std のみ)
-- [ ] `mise exec -- cargo fmt --check` と `mise exec -- cargo clippy
+- [x] `mise exec -- cargo fmt --check` と `mise exec -- cargo clippy
       -p cheaper-observability --all-targets -- -D warnings` exits 0
-- [ ] `mise exec -- node scripts/check-lockfile.mjs` exits 0
+- [x] `mise exec -- node scripts/check-lockfile.mjs` exits 0
       (committed lockfile が `tracing-appender` 追加を反映)
-- [ ] `tracing-appender` が 0.2.3 以降で resolve されること
+- [x] `tracing-appender` が 0.2.3 以降で resolve されること
       (`cargo tree -p cheaper-observability | grep tracing-appender`
-      で version 確認)
+      で version 確認 — v0.2.5 で resolve)

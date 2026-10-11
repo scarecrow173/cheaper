@@ -1,10 +1,10 @@
 ---
 id: "TSPEC-034DWcP8v4SUuuui8hvhnT"
 type: "test-spec"
-status: "draft"
+status: "approved"
 title: "Observability foundation contract"
 created: "2026-10-11"
-updated: "2026-10-11"
+updated: "2026-10-12"
 owners: []
 relations:
   source: []

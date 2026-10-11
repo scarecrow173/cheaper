@@ -1,10 +1,10 @@
 ---
 id: "TASK-034DVHfUoazX4qqAdssXAr"
 type: "task"
-status: "todo"
+status: "done"
 title: "T4: instrumentation wave 2 — tools/workflow/provider/adapter"
 created: "2026-10-11"
-updated: "2026-10-11"
+updated: "2026-10-12"
 owners: []
 relations:
   source: []
@@ -104,17 +104,17 @@ devin provider・rig-adapter へ `tracing` span/event を配置する。
 
 ## Done When
 
-- [ ] `ToolRuntime::execute` が `cheaper.tool` span +
+- [x] `ToolRuntime::execute` が `cheaper.tool` span +
       `tool.name` field の単一 instrumentation 点になり、個別
       tool file に tracing emit が散らばっていない
-- [ ] `cheaper.tool.process`・`cheaper.workflow`・
+- [x] `cheaper.tool.process`・`cheaper.workflow`・
       `cheaper.provider.devin`・`cheaper.adapter.session` +
       `run_stream` の RunEvent event が配置表通りの命名で配置
       されている
-- [ ] credential・JWT・token・model/auth 値・`TextDelta` 本文・
+- [x] credential・JWT・token・model/auth 値・`TextDelta` 本文・
       file path が一切 field 値に含まれない(metadata-only:
       `*.len`・`*.count`・id・分類値のみ)
-- [ ] 4 crate(tools・workflow・provider・rig-adapter)の
+- [x] 4 crate(tools・workflow・provider・rig-adapter)の
       `Cargo.toml` に `tracing.workspace` が追加され、いずれも
       `cheaper-observability` に依存していない
 
@@ -129,14 +129,14 @@ devin provider・rig-adapter へ `tracing` span/event を配置する。
 
 ## Verification
 
-- [ ] `mise exec -- cargo build -p cheaper-tools -p cheaper-workflow
+- [x] `mise exec -- cargo build -p cheaper-tools -p cheaper-workflow
       -p cheaper-provider -p cheaper-rig-adapter` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-tools -p cheaper-workflow
+- [x] `mise exec -- cargo test -p cheaper-tools -p cheaper-workflow
       -p cheaper-provider -p cheaper-rig-adapter` exits 0
-- [ ] `git grep -n 'tracing' -- crates/cheaper-tools/src/tools/
+- [x] `git grep -n 'tracing' -- crates/cheaper-tools/src/tools/
       | grep -v 'tools/process\|grep_eval'` で個別 tool file への
       emit 分散がないことを確認
-- [ ] `git grep -n 'cheaper\.' -- crates/cheaper-tools/src
+- [x] `git grep -n 'cheaper\.' -- crates/cheaper-tools/src
       crates/cheaper-workflow/src crates/cheaper-provider/src
       crates/cheaper-rig-adapter/src` で span 命名が canonical
       規約に一致することを確認

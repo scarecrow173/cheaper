@@ -1,10 +1,10 @@
 ---
 id: "TASK-034DVHc8VqMfpOOrjqF65s"
 type: "task"
-status: "todo"
+status: "done"
 title: "T3: instrumentation wave 1 — cli dispatch + run pipeline"
 created: "2026-10-11"
-updated: "2026-10-11"
+updated: "2026-10-12"
 owners: []
 relations:
   source: []
@@ -107,17 +107,17 @@ metadata-only 規約: payload 本体・file path は field に載せない。
 
 ## Done When
 
-- [ ] `cheaper.cli.dispatch`・`cheaper.cli.command`・`cheaper.run`
+- [x] `cheaper.cli.dispatch`・`cheaper.cli.command`・`cheaper.run`
       + 8 stage 子 span(`tool_runtime`・`model_resolve`・
       `tool_scope`・`session`・`prompt`・`extract`・`repair`・
       `meta`)が配置表通りの命名で配置されている
-- [ ] 全 span が `info_span!` + `Instrument`(async 区間)で配置
+- [x] 全 span が `info_span!` + `Instrument`(async 区間)で配置
       され、per-site の `Instant`/`elapsed_ms` 記録が存在しない
       (timing は `FmtSpan::CLOSE` の close event に委譲)
-- [ ] RunEvent 系 event が `call.id`・`tool.name`・usage counts の
+- [x] RunEvent 系 event が `call.id`・`tool.name`・usage counts の
       metadata のみを emit し、prompt・tool input/output 本体・
       file path を field に含まない
-- [ ] `cheaper-runtime/Cargo.toml` に `tracing.workspace` が追加
+- [x] `cheaper-runtime/Cargo.toml` に `tracing.workspace` が追加
       され、runtime 外の leaf crate(T4/T5 対象)には本 task で
       dep を追加していない
 
@@ -135,14 +135,14 @@ metadata-only 規約: payload 本体・file path は field に載せない。
 
 ## Verification
 
-- [ ] `mise exec -- cargo build -p cheaper-cli -p cheaper-runtime`
+- [x] `mise exec -- cargo build -p cheaper-cli -p cheaper-runtime`
       exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli -p cheaper-runtime`
+- [x] `mise exec -- cargo test -p cheaper-cli -p cheaper-runtime`
       exits 0(log OFF の既定経路で無変更 pass)
-- [ ] `git grep -n 'info_span!\|tracing::' --
+- [x] `git grep -n 'info_span!\|tracing::' --
       crates/cheaper-cli/src/{cli,run,workflow_run,models,auth,usage_report}.rs
       crates/cheaper-runtime/src/run/mod.rs` で span 命名が
       `cheaper.` prefix 規約に一致することを確認
-- [ ] `git grep -n 'elapsed_ms\|Instant' --
+- [x] `git grep -n 'elapsed_ms\|Instant' --
       crates/cheaper-runtime/src/run/mod.rs` が timing 二重実装を
       導入していないことを確認(既存の非計測用途を除く)

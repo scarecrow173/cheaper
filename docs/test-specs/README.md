@@ -21,7 +21,7 @@ Directory: `docs/test-specs`
 | TSPEC-034A9ykvVgiieTjkU129tm | managed process task の認可と resource ownership | approved | [managed-process-task-authorization.md](./managed-process-task-authorization.md) |
 | TSPEC-034rzVr1S8qFdi1JqWSN9Z | model exclude and explicit selection guards | approved | [model-exclude-and-explicit-selection.md](./model-exclude-and-explicit-selection.md) |
 | TSPEC-034rzVqBmfD2pkA9f82Eoa | model tier classification pipeline | approved | [model-tier-classification-pipeline.md](./model-tier-classification-pipeline.md) |
-| TSPEC-034DWcP8v4SUuuui8hvhnT | Observability foundation contract | draft | [observability-foundation-contract.md](./observability-foundation-contract.md) |
+| TSPEC-034DWcP8v4SUuuui8hvhnT | Observability foundation contract | approved | [observability-foundation-contract.md](./observability-foundation-contract.md) |
 | TSPEC-034CYp5Xbp8sJ8ZV199qV3 | OpenAI Codex subscription provider guarantees | draft | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
 | TSPEC-034A9yAv68yBK2XeFKEToG | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | TSPEC-034zTjObSJGccLlnwmHwVm | Operation lifecycle settlement guarantees | approved | [operation-lifecycle-settlement.md](./operation-lifecycle-settlement.md) |

@@ -1,10 +1,10 @@
 ---
 id: "TASK-034DVHnoYPCyYkFMFU2pZw"
 type: "task"
-status: "todo"
+status: "done"
 title: "T5: instrumentation wave 3 — hook/auth/catalog/core"
 created: "2026-10-11"
-updated: "2026-10-11"
+updated: "2026-10-12"
 owners: []
 relations:
   source: []
@@ -103,15 +103,15 @@ metadata-only 規約が最も効く wave で、`file.name`(basename のみ)
 
 ## Done When
 
-- [ ] `cheaper.hook` span(`event`・`target`)+ 完了 event
+- [x] `cheaper.hook` span(`event`・`target`)+ 完了 event
       (`verdict`・len 系)が hook 境界に配置され、stderr emit 経路
       自体は instrument されていない
-- [ ] `cheaper.auth.store`・`cheaper.auth`・`cheaper.catalog` の
+- [x] `cheaper.auth.store`・`cheaper.auth`・`cheaper.catalog` の
       event/span が配置表通りで、credential 値・full file path を
       field に含まない(`file.name` は basename のみ)
-- [ ] `cheaper-core` の 4 file に `debug!`/`trace!` event が配置
+- [x] `cheaper-core` の 4 file に `debug!`/`trace!` event が配置
       され、同期純ロジック・rig-free/tokio-free が維持されている
-- [ ] `cheaper-runtime/Cargo.toml`・cli hook file 以外に本 task が
+- [x] `cheaper-runtime/Cargo.toml`・cli hook file 以外に本 task が
       触る file が T3/T2 と重ならない(runtime Cargo.toml は T3
       管轄のまま無変更)
 
@@ -125,13 +125,13 @@ metadata-only 規約が最も効く wave で、`file.name`(basename のみ)
 
 ## Verification
 
-- [ ] `mise exec -- cargo build -p cheaper-cli -p cheaper-runtime
+- [x] `mise exec -- cargo build -p cheaper-cli -p cheaper-runtime
       -p cheaper-core` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli -p cheaper-runtime
+- [x] `mise exec -- cargo test -p cheaper-cli -p cheaper-runtime
       -p cheaper-core` exits 0(log OFF の既定経路で無変更 pass)
-- [ ] `mise exec -- cargo tree -p cheaper-core` に `tokio`/`rig`/
+- [x] `mise exec -- cargo tree -p cheaper-core` に `tokio`/`rig`/
       `cheaper-observability` が現れない(core 不変条件)
-- [ ] `git grep -n 'path\b' --
+- [x] `git grep -n 'path\b' --
       crates/cheaper-runtime/src/auth/{store,service}.rs
       crates/cheaper-runtime/src/catalog/mod.rs
       crates/cheaper-core/src/{worker/resolve,policy/load,model/config,model/resolve}.rs`

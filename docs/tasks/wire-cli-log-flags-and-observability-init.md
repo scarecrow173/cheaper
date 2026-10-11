@@ -1,10 +1,10 @@
 ---
 id: "TASK-034DVH7HJKxbc1zEF7638b"
 type: "task"
-status: "todo"
+status: "done"
 title: "T2: cli --log/--log-format flag 配線と init 呼出し"
 created: "2026-10-11"
-updated: "2026-10-11"
+updated: "2026-10-12"
 owners: []
 relations:
   source: []
@@ -135,26 +135,28 @@ cli は flag/env 値を生のまま `Activation` に載せるだけ。
 
 ## Done When
 
-- [ ] `--log <level>`・`--log-format <text|json>` が strict parse で
+- [x] `--log <level>`・`--log-format <text|json>` が strict parse で
       受理され、workflow 両 action を含む全 command で Unknown
       option / "not valid for workflow" を返さない
-- [ ] `run_cli` 先頭で design 疑似コード通りの init 呼出しが配線
+- [x] `run_cli` 先頭で design 疑似コード通りの init 呼出しが配線
       され、`_log_guard` が run_cli 終了まで生きる
-- [ ] `resolve_log_root` が `--cwd` 対象 5 経路(run/run alias/
+- [x] `resolve_log_root` が `--cwd` 対象 5 経路(run/run alias/
       workflow/models/count-tokens)でのみ argv `--cwd` を使い、
       それ以外は `io.cwd` を使う
-- [ ] hook 経路で `stderr_enabled: false` が渡され、init 警告が
+- [x] hook 経路で `stderr_enabled: false` が渡され、init 警告が
       `io.stderr` に出ない(subscriber へ `tracing::warn!` で畳む)
-- [ ] 非 hook 経路で `--quiet` 時は init 警告が抑制され、非 quiet
+- [x] 非 hook 経路で `--quiet` 時は init 警告が抑制され、非 quiet
       時は `warning:` 行が `io.stderr` に出る
-- [ ] `global_log_flags`・`global_flag_present`・`resolve_log_root`
+- [x] `global_log_flags`・`global_flag_present`・`resolve_log_root`
       の `--cwd` lenient scan が同一の `--` terminator 規約を共有
       し、`--` 以降の positional を誤検出しない(`global_log_flags`
       は last-wins — `tests/args.rs` の追加 test で規約を固定)
-- [ ] HELP literal の `Options:` 節に `--log`・`--log-format` が
+- [x] HELP literal の `Options:` 節に `--log`・`--log-format` が
       追加され、help 系 regression golden
       (`tests/regression/expected/cli-help-command.json`)が
-      refresh されている
+      refresh されている(実測の結果、当該 golden は HELP literal
+      を render しないため refresh 不要と判定 — tmp/task-reports/
+      obs-T2.md に記録)
 
 ## Out of Scope
 
@@ -169,14 +171,14 @@ cli は flag/env 値を生のまま `Activation` に載せるだけ。
 
 ## Verification
 
-- [ ] `mise exec -- cargo build -p cheaper-cli` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli` exits 0(既存 suite
+- [x] `mise exec -- cargo build -p cheaper-cli` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli` exits 0(既存 suite
       無変更 pass + args test 追加分)
-- [ ] `mise exec -- cargo tree -p cheaper-cli` に
+- [x] `mise exec -- cargo tree -p cheaper-cli` に
       `cheaper-observability` が現れる
-- [ ] log 未指定の既定経路で regression suite・envelope test が
+- [x] log 未指定の既定経路で regression suite・envelope test が
       無変更 pass(subscriber 未 install・`.cheaper/logs` 未作成を
       確認)
-- [ ] `git grep -n '"log"' -- crates/cheaper-cli/src/args.rs` で
+- [x] `git grep -n '"log"' -- crates/cheaper-cli/src/args.rs` で
       `STRING_OPTIONS` と workflow 両 action の `allowed` への
       追加を確認(追加漏れの diff 網羅確認)
