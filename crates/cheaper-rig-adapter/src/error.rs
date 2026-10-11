@@ -202,46 +202,13 @@ pub fn streaming_error_to_cheaper(error: StreamingError) -> CheaperError {
 /// MAX_TURNS_EXCEEDED/MAX_TOOL_CALLS_EXCEEDED)をそのまま引き継ぎ、
 /// code を持たない汎用 reason は `ABORTED` へ。
 pub fn abort_reason_to_cheaper(reason: &cheaper_tools::operation::AbortReason) -> CheaperError {
-    if let Some(code) = reason.code().and_then(error_code_from_str) {
+    if let Some(code) = reason.code().and_then(ErrorCode::from_str) {
         return CheaperError::new(code, reason.message());
     }
     CheaperError::new(
         ErrorCode::Aborted,
         format!("worker run aborted: {}", reason.message()),
     )
-}
-
-/// `AbortReason.code()` が保持する `describeError` 済み code 文字列の逆引き。
-/// `cheaper-core` に `FromStr` は無いので adapter 側で閉じて持つ。
-fn error_code_from_str(code: &str) -> Option<ErrorCode> {
-    Some(match code {
-        "INVALID_REQUEST" => ErrorCode::InvalidRequest,
-        "INVALID_INPUT" => ErrorCode::InvalidInput,
-        "FILE_TOO_LARGE" => ErrorCode::FileTooLarge,
-        "WORKER_NOT_FOUND" => ErrorCode::WorkerNotFound,
-        "INVALID_WORKER_DEFINITION" => ErrorCode::InvalidWorkerDefinition,
-        "INVALID_WORKER_NAME" => ErrorCode::InvalidWorkerName,
-        "WORKER_NAME_MISMATCH" => ErrorCode::WorkerNameMismatch,
-        "UNKNOWN_TOOL" => ErrorCode::UnknownTool,
-        "INVALID_RUNTIME_POLICY" => ErrorCode::InvalidRuntimePolicy,
-        "OUTPUT_SCHEMA_NOT_FOUND" => ErrorCode::OutputSchemaNotFound,
-        "INVALID_OUTPUT_SCHEMA" => ErrorCode::InvalidOutputSchema,
-        "INPUT_SCHEMA_NOT_FOUND" => ErrorCode::InputSchemaNotFound,
-        "INVALID_INPUT_SCHEMA" => ErrorCode::InvalidInputSchema,
-        "INVALID_MODEL_CONFIG" => ErrorCode::InvalidModelConfig,
-        "POLICY_VIOLATION" => ErrorCode::PolicyViolation,
-        "MODEL_TIER_UNAVAILABLE" => ErrorCode::ModelTierUnavailable,
-        "PROVIDER_FAILURE" => ErrorCode::ProviderFailure,
-        "TOOL_EXECUTION_FAILURE" => ErrorCode::ToolExecutionFailure,
-        "INVALID_OUTPUT" => ErrorCode::InvalidOutput,
-        "MAX_TURNS_EXCEEDED" => ErrorCode::MaxTurnsExceeded,
-        "MAX_TOOL_CALLS_EXCEEDED" => ErrorCode::MaxToolCallsExceeded,
-        "TIMEOUT" => ErrorCode::Timeout,
-        "ABORTED" => ErrorCode::Aborted,
-        "PARTIAL_MUTATION" => ErrorCode::PartialMutation,
-        "INTERNAL_ERROR" => ErrorCode::InternalError,
-        _ => return None,
-    })
 }
 
 #[cfg(test)]
