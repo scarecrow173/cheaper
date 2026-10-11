@@ -36,6 +36,7 @@ Directory: `docs/specs`
 | SPEC-034A8q6kmxcBsNF8zS9Cwn | policy-defined managed process を canonical tool として提供する | implemented | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
 | SPEC-034Aq1jA258sf4IaRxgCrq | managed process lifecycle hardening | implemented | [managed-process-lifecycle-hardening.md](./managed-process-lifecycle-hardening.md) |
 | SPEC-034rzI0xebTv8HszaX6Tvw | Model pricing catalog and curated exceptions | approved | [model-pricing-catalog.md](./model-pricing-catalog.md) |
+| SPEC-034DUFyMl47o924O1KW8Ya | Observability foundation scope | proposed | [observability-foundation-scope.md](./observability-foundation-scope.md) |
 | SPEC-034r05iHK8bA7g9pm5z8s2 | Ollama real-provider smoke verification | implemented | [ollama-real-provider-smoke-verification.md](./ollama-real-provider-smoke-verification.md) |
 | SPEC-034r05iHK8bA7guAnTdpdi | Real-provider E2E for built-in workers via Ollama container | implemented | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | SPEC-034zSQV3zqlEncx2GoLKSR | One-dispatch release workflow | superseded | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |

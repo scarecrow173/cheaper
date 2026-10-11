@@ -38,7 +38,8 @@ relations:
   refines: []
   refined-by: []
   derives-from: []
-  derived-by: []
+  derived-by:
+    - "../specs/observability-foundation-scope.md"
   verifies: []
   verified-by: []
   references: []
