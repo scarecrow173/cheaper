@@ -1,0 +1,14 @@
+[package]
+name = "cheaper-observability"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+description = "Single ownership boundary for the observability foundation (ADR-034DUFzrXJxOwfl1qveXWR): activation interpretation (CHEAPER_LOG/CHEAPER_LOG_FORMAT + --log/--log-format flags), dual sink construction (daily rolling file + stderr), format selection, level filter wiring, subscriber install, and the flush guard. No workspace-internal dependencies."
+
+[dependencies]
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
