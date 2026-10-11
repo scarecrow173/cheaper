@@ -161,6 +161,17 @@ const PROMPT_MARKER: &str = "OBS-PROMPTBODY-5a4b3c2d1e0f";
 const FILE_BODY_MARKER: &str = "OBS-FILEBODY-1f2e3d4c5b6a";
 const INPUT_MARKER: &str = "OBS-INPUTBODY-6c5d4e3f2a1b";
 
+/// run input — fixture `input` 節と stdin 双方で同じ値を使い回す。
+/// INPUT_MARKER を task 本文へ埋め込み、stdin 経由で prompt 構築
+/// pipeline を実際に通過させる(regression harness の
+/// `serde_json::to_string(&f.input)` 注入と同じ契約)。
+fn run_input() -> Value {
+    serde_json::json!({
+        "files": ["a.txt"],
+        "task": format!("read a.txt {INPUT_MARKER}")
+    })
+}
+
 /// tool call(read + policy-defined process task)を含む deterministic
 /// fixture run。`auth_logins` で credential store への永続化経路
 /// (`cheaper.auth`/`cheaper.auth.store` event)も通す。
@@ -173,7 +184,7 @@ fn fixture_json() -> String {
             "prompt": format!("Summarize files. {PROMPT_MARKER}")
         },
         "auth_logins": { "cheaper-fake": SECRET_MARKER },
-        "input": { "files": ["a.txt"], "task": format!("read a.txt {INPUT_MARKER}") },
+        "input": run_input(),
         "sessions": [
             { "steps": [
                 { "tool_calls": [
@@ -249,8 +260,8 @@ fn spawn_logged_run() -> Run {
         .iter()
         .map(|s| s.to_string())
         .collect();
-    let stdin = br#"{"files":["a.txt"],"task":"read a.txt"}"#;
-    let out = spawn_collect(&argv, &ws, &env, stdin, Duration::from_secs(120));
+    let stdin = serde_json::to_vec(&run_input()).unwrap();
+    let out = spawn_collect(&argv, &ws, &env, &stdin, Duration::from_secs(120));
     Run {
         _tmp: tmp,
         ws,
