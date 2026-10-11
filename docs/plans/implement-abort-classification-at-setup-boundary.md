@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034Eek9Q2fFlfb2FzIBUtz"
 type: "plan"
-status: "draft"
+status: "approved"
 title: "Implement abort classification at setup boundary"
 created: "2026-10-11"
 updated: "2026-10-11"

@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034EeitmhHjX9tjAWLQ7gk"
 type: "test-spec"
-status: "draft"
+status: "approved"
 title: "Setup-boundary abort classification contract"
 created: "2026-10-11"
 updated: "2026-10-11"

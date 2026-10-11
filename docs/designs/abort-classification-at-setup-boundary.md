@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034EehnT1xOPAee9dK22Kx"
 type: "design"
-status: "draft"
+status: "approved"
 title: "Setup-boundary abort classification via core ErrorCode reverse lookup"
 created: "2026-10-11"
 updated: "2026-10-11"
