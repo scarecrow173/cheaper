@@ -301,51 +301,148 @@ impl CredentialStore {
         CheaperError::new(ErrorCode::InternalError, format!("{message}: {e}")).with_details(details)
     }
 
+    /// `cheaper.auth.store` event の `file.name` field — basename のみ
+    /// （full path は `<userConfigDir>` 経由で OS username を含み得る
+    /// ため metadata-only 規約の allowlist 外）。
+    fn file_name(&self) -> String {
+        self.path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    }
+
+    /// `cheaper.auth.store` event(design §instrumentation 配置)—
+    /// load/save op 失敗時の warn emit。credential 値・error message
+    /// （full path を含み得る）は載せず `error.code` のみ。
+    fn warn_op(&self, op: &'static str, provider: Option<&str>, e: &CheaperError) {
+        match provider {
+            Some(provider) => tracing::warn!(
+                target: "cheaper.auth.store",
+                op = op,
+                provider = provider,
+                file.name = self.file_name().as_str(),
+                error.code = e.code().as_str(),
+                "credential store operation failed"
+            ),
+            None => tracing::warn!(
+                target: "cheaper.auth.store",
+                op = op,
+                file.name = self.file_name().as_str(),
+                error.code = e.code().as_str(),
+                "credential store operation failed"
+            ),
+        }
+    }
+
     pub fn get(&self, provider_id: &str) -> Result<Option<StoredCredential>, CheaperError> {
-        Ok(self
-            .read_file()?
-            .into_iter()
-            .find(|(id, _)| id == provider_id)
-            .map(|(_, credential)| credential))
+        let result = self.read_file().map(|providers| {
+            providers
+                .into_iter()
+                .find(|(id, _)| id == provider_id)
+                .map(|(_, credential)| credential)
+        });
+        match &result {
+            Ok(credential) => tracing::debug!(
+                target: "cheaper.auth.store",
+                op = "load",
+                provider = provider_id,
+                file.name = self.file_name().as_str(),
+                hit = credential.is_some(),
+                "credential store load"
+            ),
+            Err(e) => self.warn_op("load", Some(provider_id), e),
+        }
+        result
     }
 
     pub fn set(&self, provider_id: &str, credential: StoredCredential) -> Result<(), CheaperError> {
-        let mut providers = self.read_file()?;
-        match providers.iter_mut().find(|(id, _)| id == provider_id) {
-            Some(slot) => slot.1 = credential,
-            None => providers.push((provider_id.to_string(), credential)),
+        let result = (|| {
+            let mut providers = self.read_file()?;
+            match providers.iter_mut().find(|(id, _)| id == provider_id) {
+                Some(slot) => slot.1 = credential,
+                None => providers.push((provider_id.to_string(), credential)),
+            }
+            self.write_file(&providers)
+        })();
+        match &result {
+            Ok(()) => tracing::debug!(
+                target: "cheaper.auth.store",
+                op = "save",
+                provider = provider_id,
+                file.name = self.file_name().as_str(),
+                "credential store save"
+            ),
+            Err(e) => self.warn_op("save", Some(provider_id), e),
         }
-        self.write_file(&providers)
+        result
     }
 
     /// `auth logout` / `auth logout --all` — credential のみを削除し、
     /// models.json・settings 等の非 credential file は触れない。
     /// plugin logout hook の呼び出しは auth service 層の責務。
     pub fn remove(&self, provider_id: &str) -> Result<bool, CheaperError> {
-        let mut providers = self.read_file()?;
-        let before = providers.len();
-        providers.retain(|(id, _)| id != provider_id);
-        let removed = providers.len() != before;
-        if removed || self.path.exists() {
-            self.write_file(&providers)?;
+        let result = (|| {
+            let mut providers = self.read_file()?;
+            let before = providers.len();
+            providers.retain(|(id, _)| id != provider_id);
+            let removed = providers.len() != before;
+            if removed || self.path.exists() {
+                self.write_file(&providers)?;
+            }
+            Ok(removed)
+        })();
+        match &result {
+            Ok(removed) => tracing::debug!(
+                target: "cheaper.auth.store",
+                op = "save",
+                provider = provider_id,
+                file.name = self.file_name().as_str(),
+                removed = *removed,
+                "credential store save"
+            ),
+            Err(e) => self.warn_op("save", Some(provider_id), e),
         }
-        Ok(removed)
+        result
     }
 
     /// `auth logout --all` — file 全体を空にする（plugin hook 呼び出しは
     /// service 層）。
     pub fn clear(&self) -> Result<Vec<String>, CheaperError> {
-        let providers = self.read_file()?;
-        let ids: Vec<String> = providers.iter().map(|(id, _)| id.clone()).collect();
-        if !ids.is_empty() {
-            self.write_file(&[])?;
+        let result = (|| {
+            let providers = self.read_file()?;
+            let ids: Vec<String> = providers.iter().map(|(id, _)| id.clone()).collect();
+            if !ids.is_empty() {
+                self.write_file(&[])?;
+            }
+            Ok(ids)
+        })();
+        match &result {
+            Ok(ids) => tracing::debug!(
+                target: "cheaper.auth.store",
+                op = "save",
+                file.name = self.file_name().as_str(),
+                provider.count = ids.len(),
+                "credential store save"
+            ),
+            Err(e) => self.warn_op("save", None, e),
         }
-        Ok(ids)
+        result
     }
 
     /// status 用の全 credential（file 内の宣言順。secret 自体を含むので
     /// caller は status payload へ secret を展開しないこと）。
     pub fn all(&self) -> Result<Vec<(String, StoredCredential)>, CheaperError> {
-        self.read_file()
+        let result = self.read_file();
+        match &result {
+            Ok(providers) => tracing::debug!(
+                target: "cheaper.auth.store",
+                op = "load",
+                file.name = self.file_name().as_str(),
+                provider.count = providers.len(),
+                "credential store load"
+            ),
+            Err(e) => self.warn_op("load", None, e),
+        }
+        result
     }
 }

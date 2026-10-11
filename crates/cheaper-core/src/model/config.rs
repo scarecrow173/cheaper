@@ -143,6 +143,12 @@ fn read_models_config(file_path: &str) -> Result<Option<Map<String, Value>>, Che
         }
     };
     let text = String::from_utf8_lossy(&bytes);
+    // `cheaper-core` event(design §instrumentation 配置)— `file.name`
+    // は basename のみ(full path は載せない)。
+    tracing::trace!(
+        file.name = crate::nodepath::basename(file_path, None).as_str(),
+        "models config read"
+    );
     let parsed: Value = crate::yaml::parse_yaml(&text).map_err(|e| {
         let mut details = Map::new();
         details.insert("path".to_string(), json!(file_path));
@@ -180,13 +186,20 @@ pub struct LoadModelConfigOptions<'a> {
 pub fn load_model_config(opts: &LoadModelConfigOptions<'_>) -> Result<ModelConfig, CheaperError> {
     let mut merged = Map::new();
     let mut excluded: Vec<String> = Vec::new();
-    for file_path in [
-        crate::nodepath::join(&[opts.user_config_dir, "models.yaml"]),
-        crate::nodepath::join(&[opts.project_dir, "models.yaml"]),
+    for (layer, file_path) in [
+        (
+            "user",
+            crate::nodepath::join(&[opts.user_config_dir, "models.yaml"]),
+        ),
+        (
+            "project",
+            crate::nodepath::join(&[opts.project_dir, "models.yaml"]),
+        ),
     ] {
         let Some(raw) = read_models_config(&file_path)? else {
             continue;
         };
+        tracing::debug!(config.layer = layer, "models config layer merged");
         let mut rest = raw.clone();
         if let Some(exclude) = rest.remove("exclude").and_then(|v| v.as_array().cloned()) {
             for pattern in exclude {
@@ -225,7 +238,7 @@ pub fn load_model_config(opts: &LoadModelConfigOptions<'_>) -> Result<ModelConfi
         medium: pref_for(Tier::Medium),
         high: pref_for(Tier::High),
     };
-    Ok(ModelConfig {
+    let config = ModelConfig {
         overrides,
         preferences,
         exclude: if excluded.is_empty() {
@@ -233,7 +246,14 @@ pub fn load_model_config(opts: &LoadModelConfigOptions<'_>) -> Result<ModelConfi
         } else {
             Some(excluded)
         },
-    })
+    };
+    // resolved config の集計値のみ(pattern・key 一覧は載せない)。
+    tracing::debug!(
+        override.count = config.overrides.len(),
+        exclude.count = config.exclude.as_ref().map_or(0, Vec::len),
+        "models config resolved"
+    );
+    Ok(config)
 }
 
 #[cfg(test)]

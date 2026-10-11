@@ -19,6 +19,9 @@ jsonschema.workspace = true
 tiktoken-rs.workspace = true
 dunce.workspace = true
 regex.workspace = true
+# emit のみ — subscriber/sink 配線は cheaper-cli → cheaper-observability
+# の一方向。`tracing` は runtime-agnostic で rig/tokio 不変条件を壊さない。
+tracing.workspace = true
 
 [dev-dependencies]
 tempfile = "3"

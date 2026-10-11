@@ -323,6 +323,10 @@ impl AuthService {
         catalog: &CatalogStore,
         provider_id: &str,
     ) -> Result<ProviderAuthInfo, CheaperError> {
+        // `cheaper.auth` span(design §instrumentation 配置)— op 単位の
+        // auth 境界。field は分類値のみ(credential 値は載せない)。
+        let _op =
+            tracing::info_span!("cheaper.auth", op = "status", provider = provider_id,).entered();
         let entry = self.require_provider(catalog, provider_id)?;
         let credential = self.store.get(provider_id)?;
         let configured = self.check_provider_auth(entry, credential.as_ref())?;
@@ -367,6 +371,7 @@ impl AuthService {
 
     /// `listProviderAuth` — `result.providers[]`。
     pub fn status(&self, catalog: &CatalogStore) -> Result<AuthStatus, CheaperError> {
+        let _op = tracing::info_span!("cheaper.auth", op = "status").entered();
         let creds = self.store.all()?;
         let mut providers = Vec::with_capacity(catalog.providers().len());
         for entry in catalog.providers() {
@@ -403,6 +408,13 @@ impl AuthService {
         method: AuthType,
         interaction: &mut dyn AuthInteraction,
     ) -> Result<LoginResult, CheaperError> {
+        let _op = tracing::info_span!(
+            "cheaper.auth",
+            op = "login",
+            provider = provider_id,
+            auth.type = method.as_str(),
+        )
+        .entered();
         let entry = self.require_provider(catalog, provider_id)?;
         match method {
             AuthType::ApiKey => {
@@ -549,8 +561,27 @@ impl AuthService {
             fetched_at,
             models: definitions.to_vec(),
         };
+        // `cheaper.catalog` event(design §instrumentation 配置)—
+        // persist 境界。error message は full path を含み得るため載せず
+        // `provider`・`file.name`(basename)・`model.count` のみ。
         if let Err(e) = write_plugin_catalog(&self.ctx.catalog_path(&entry.id), &file) {
+            tracing::warn!(
+                target: "cheaper.catalog",
+                op = "persist",
+                provider = entry.id.as_str(),
+                file.name = "catalog.json",
+                "plugin catalog persist failed"
+            );
             catalog.record_error(format!("Provider \"{}\": {e}", entry.id));
+        } else {
+            tracing::debug!(
+                target: "cheaper.catalog",
+                op = "persist",
+                provider = entry.id.as_str(),
+                model.count = file.models.len(),
+                file.name = "catalog.json",
+                "plugin catalog persisted"
+            );
         }
     }
 
@@ -562,6 +593,8 @@ impl AuthService {
         provider_id: &str,
         interaction: &mut dyn AuthInteraction,
     ) -> Result<LogoutResult, CheaperError> {
+        let _op =
+            tracing::info_span!("cheaper.auth", op = "logout", provider = provider_id).entered();
         self.require_provider(catalog, provider_id)?;
         if let Some(hook) = self.logout_hook_for(catalog, provider_id) {
             hook.logout(&self.ctx, interaction)?;
@@ -579,6 +612,7 @@ impl AuthService {
         catalog: &CatalogStore,
         interaction: &mut dyn AuthInteraction,
     ) -> Result<Vec<LogoutResult>, CheaperError> {
+        let _op = tracing::info_span!("cheaper.auth", op = "logout").entered();
         let mut results = Vec::new();
         for entry in catalog.providers() {
             if let Some(hook) = self.logout_hook_for(catalog, &entry.id) {
@@ -623,7 +657,24 @@ impl AuthService {
         entry: &ProviderEntry,
         overrides_env: &BTreeMap<String, String>,
     ) -> Result<Option<ResolvedAuth>, CheaperError> {
+        // `cheaper.auth` span — request auth 解決(run 経路の auth
+        // boundary)。`auth.type` は stored credential 判明後に record
+        // する(credential 値そのものは載せない)。
+        let span = tracing::info_span!(
+            "cheaper.auth",
+            op = "resolve",
+            provider = entry.id.as_str(),
+            auth.type = tracing::field::Empty,
+        );
+        let _op = span.enter();
         let credential = self.store.get(&entry.id)?;
+        span.record(
+            "auth.type",
+            credential
+                .as_ref()
+                .map(|c| c.auth_type().as_str())
+                .unwrap_or("none"),
+        );
         match credential {
             Some(cred) if cred.auth_type() == AuthType::Oauth => {
                 if let Some(plugin) = &entry.plugin_auth {

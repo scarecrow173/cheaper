@@ -195,14 +195,25 @@ pub fn resolve_model(opts: &ResolveModelOptions<'_>) -> Result<ResolvedModel, Ch
                 .iter()
                 .find(|e| &e.model == model)
                 .expect("ordered model from entries");
-            return Ok(ResolvedModel {
+            let resolved = ResolvedModel {
                 model: model.clone(),
                 tier: t,
                 tier_source: entry.classification.source,
                 pricing: entry.pricing.clone(),
                 auto: entry.classification.auto.clone(),
                 selection: ModelSelection::Tier,
-            });
+            };
+            // `cheaper-core` event(design §instrumentation 配置)—
+            // resolved model の分類値のみ(cost 値・config 内容は載せない)。
+            tracing::debug!(
+                model.provider = resolved.model.provider.as_str(),
+                model.id = resolved.model.id.as_str(),
+                model.tier = resolved.tier.as_str(),
+                tier.source = resolved.tier_source.as_str(),
+                selection = resolved.selection.as_str(),
+                "model resolved"
+            );
+            return Ok(resolved);
         }
         if opts.policy.tier_fallback != crate::policy::schema::TierFallback::Higher {
             break;
@@ -315,14 +326,23 @@ pub fn resolve_explicit_model(
         )
         .with_details(details));
     }
-    Ok(ResolvedModel {
+    let resolved = ResolvedModel {
         model: model.clone(),
         tier: classification.tier,
         tier_source: classification.source,
         pricing,
         auto: classification.auto,
         selection: ModelSelection::Explicit,
-    })
+    };
+    tracing::debug!(
+        model.provider = resolved.model.provider.as_str(),
+        model.id = resolved.model.id.as_str(),
+        model.tier = resolved.tier.as_str(),
+        tier.source = resolved.tier_source.as_str(),
+        selection = resolved.selection.as_str(),
+        "model resolved"
+    );
+    Ok(resolved)
 }
 
 #[cfg(test)]

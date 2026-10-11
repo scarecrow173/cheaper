@@ -855,6 +855,7 @@ dependencies = [
  "serde_yml",
  "tempfile",
  "tiktoken-rs",
+ "tracing",
 ]
 
 [[package]]

@@ -151,9 +151,22 @@ pub fn resolve_worker(
         let p = nodepath::join(&[&dir, "workers", &format!("{name}.md")]);
         searched.push(p.clone());
         if exists(&p) {
-            return load_worker(&p, origin);
+            let def = load_worker(&p, origin)?;
+            // `cheaper-core` event(design §instrumentation 配置)—
+            // resolved name/origin の分類値のみ(file path は載せない)。
+            tracing::debug!(
+                worker.name = def.name.as_str(),
+                worker.origin = origin.as_str(),
+                "worker resolved"
+            );
+            return Ok(def);
         }
     }
+    tracing::debug!(
+        worker.name = name,
+        error.code = ErrorCode::WorkerNotFound.as_str(),
+        "worker not found"
+    );
     let mut details = Map::new();
     details.insert("name".to_string(), json!(name));
     details.insert("searched".to_string(), json!(searched));
@@ -173,6 +186,11 @@ pub fn resolve_worker_file(
 ) -> Result<WorkerDefinition, ResolveWorkerError> {
     let resolved = nodepath::resolve(cwd, file_path);
     if !exists(&resolved) {
+        tracing::debug!(
+            file.name = nodepath::basename(file_path, None).as_str(),
+            error.code = ErrorCode::WorkerNotFound.as_str(),
+            "worker file not found"
+        );
         let mut details = Map::new();
         details.insert("filePath".to_string(), json!(file_path));
         details.insert("searched".to_string(), json!([resolved]));
@@ -183,7 +201,13 @@ pub fn resolve_worker_file(
         .with_details(details)
         .into());
     }
-    load_worker(&resolved, WorkerOrigin::Explicit)
+    let def = load_worker(&resolved, WorkerOrigin::Explicit)?;
+    tracing::debug!(
+        worker.name = def.name.as_str(),
+        worker.origin = WorkerOrigin::Explicit.as_str(),
+        "worker resolved"
+    );
+    Ok(def)
 }
 
 #[cfg(test)]

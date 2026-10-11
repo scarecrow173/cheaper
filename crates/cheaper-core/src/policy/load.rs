@@ -59,6 +59,12 @@ fn read_policy_file(
     };
     // Node readFile("utf8") is lossy.
     let text = String::from_utf8_lossy(&bytes);
+    // `cheaper-core` event(design §instrumentation 配置)— layer file
+    // の read 境界。`file.name` は basename のみ(full path は載せない)。
+    tracing::trace!(
+        file.name = crate::nodepath::basename(file_path, None).as_str(),
+        "policy file read"
+    );
     let parsed: Value = crate::yaml::parse_yaml(&text).map_err(|e| {
         let mut details = Map::new();
         details.insert("path".to_string(), json!(file_path));
@@ -103,6 +109,7 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
 
     let user_path = nodepath_join(opts.user_config_dir, "policy.yaml");
     if let Some(user) = read_policy_file(&user_path, false)? {
+        tracing::debug!(policy.layer = "user", "policy layer merged");
         effective = merge_policy_layers(
             &effective,
             &validate_policy_schema(&Value::Object(user), PolicySchemaMode::Partial)?,
@@ -144,6 +151,7 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
 
     let project_path = nodepath_join(opts.project_dir, "policy.yaml");
     if let Some(project) = read_policy_file(&project_path, false)? {
+        tracing::debug!(policy.layer = "project", "policy layer merged");
         effective = merge_policy_layers(
             &effective,
             &validate_policy_schema(&Value::Object(project), PolicySchemaMode::Partial)?,
@@ -158,7 +166,9 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
     }
 
     let completed = validate_policy_schema(&Value::Object(effective), PolicySchemaMode::Complete)?;
-    normalize_policy(&completed)
+    let policy = normalize_policy(&completed)?;
+    tracing::debug!("policy resolved");
+    Ok(policy)
 }
 
 /// `path.join(dir, "policy.yaml")` through `nodepath` so the byte shape

@@ -1102,6 +1102,18 @@ impl CatalogStore {
             }
         }
 
+        // `cheaper.catalog` event(design §instrumentation 配置)—
+        // bundled + persisted + user overlay の compose 集計。field は
+        // metadata-only の `provider.count`/`error.count`(provider id
+        // 一覧・error 本文は載せない)。
+        tracing::debug!(
+            target: "cheaper.catalog",
+            op = "merge",
+            provider.count = providers.len(),
+            error.count = errors.len(),
+            "catalog composed"
+        );
+
         Ok(CatalogStore {
             providers,
             errors: std::sync::Mutex::new(errors),
@@ -1263,6 +1275,7 @@ impl CatalogStore {
                 .or(entry.base_url.as_deref()),
             &mut merge_errors,
         );
+        let merge_error_count = merge_errors.len();
         for msg in merge_errors {
             self.record_error(format!("Provider \"{provider_id}\": {msg}"));
         }
@@ -1279,12 +1292,24 @@ impl CatalogStore {
             &merged_user_defs,
             definitions,
         );
+        let model_count = models.len();
         self.replace_plugin_models(
             provider_id,
             RefreshedCatalog {
                 models,
                 model_header_sources,
             },
+        );
+        // `cheaper.catalog` event — plugin refresh defs の re-merge
+        // 境界(compose と同一 helper 群)。`model.count` は反映後の
+        // resolved model 数、`error.count` は merge 由来の記録数。
+        tracing::debug!(
+            target: "cheaper.catalog",
+            op = "merge",
+            provider = provider_id,
+            model.count = model_count,
+            error.count = merge_error_count,
+            "plugin catalog merged"
         );
         Ok(())
     }
