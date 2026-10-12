@@ -51,6 +51,10 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqn5moXUKS | Bulk-reader guidance, deny/registry parity, and final verification | done | [bulk-reader-guidance-parity-and-final-verification.md](./bulk-reader-guidance-parity-and-final-verification.md) |
 | TASK-034r05iHQeQpDq14tAA3rz | CLI bundle script and hook argv resolution | done | [cli-bundle-script-and-hook-argv.md](./cli-bundle-script-and-hook-argv.md) |
 | TASK-034r05iHQeQpDqdc3mJN2b | CLI count-tokens env override and FILE_TOO_LARGE envelope | done | [cli-count-tokens-env-override-and-file-too-large-envelope.md](./cli-count-tokens-env-override-and-file-too-large-envelope.md) |
+| TASK-034EOHDmemAJi6IbUQel4x | T1: command core policy・schema 分割と compile-forced propagation | todo | [command-core-policy-and-propagation.md](./command-core-policy-and-propagation.md) |
+| TASK-034EOHYMMH4FnfoVhmfPeP | T6: command tool の user-facing docs と index 更新 | todo | [command-docs.md](./command-docs.md) |
+| TASK-034EOHY1ZKj6PcEy0zVz2P | T5: command tool の unit・integration test と golden 整備 | todo | [command-tests.md](./command-tests.md) |
+| TASK-034EOHORutYi73P8DaumoH | T3: command tool 実装と catalog/registry/invocation 配線 | todo | [command-tool-and-registry.md](./command-tool-and-registry.md) |
 | TASK-034r05iHQeQpDpByADDPCn | Configure Pi models.json and cheaper models.yaml for Ollama provider | done | [configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md](./configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md) |
 | TASK-034DzYnno038qspspOYHv2 | T2: js16 core 集約 (F4) | done | [consolidate-js16-into-cheaper-core.md](./consolidate-js16-into-cheaper-core.md) |
 | TASK-034r05iHQeQpDq2z00rDnn | Consumer install smoke e2e and skill updates | done | [consumer-install-smoke.md](./consumer-install-smoke.md) |
@@ -195,6 +199,7 @@ Directory: `docs/tasks`
 | TASK-034DlFISpHRPrXyhhlFXfa | Pin devin cache-hit usage mapping in stream tests | done | [pin-devin-cache-hit-usage-mapping-in-stream-tests.md](./pin-devin-cache-hit-usage-mapping-in-stream-tests.md) |
 | TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | done | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |
 | TASK-034zTWibd7OKesgJgoGxJu | Prepare one-dispatch release artifacts | done | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
+| TASK-034EOHIeC6KauJaRop87sk | T2: shared managed-process 機構の tools/proc 抽出 | todo | [proc-extraction.md](./proc-extraction.md) |
 | TASK-034r05iHWkNF7zKMZPhFky | Provider plugin tests and resource isolation verification | done | [provider-plugin-tests-and-resource-isolation.md](./provider-plugin-tests-and-resource-isolation.md) |
 | TASK-034r05iHQeQpDpEony1i5k | Record experiment log and verify test regression | done | [record-experiment-log-and-verify-test-regression.md](./record-experiment-log-and-verify-test-regression.md) |
 | TASK-034DzYbfe9r0G8Nd58FQjy | T1: js_json shim 削除 (F3) | done | [remove-js-json-shim.md](./remove-js-json-shim.md) |
@@ -211,6 +216,7 @@ Directory: `docs/tasks`
 | TASK-034zBJcexygQMw7L8WTUYL | Run canonical verification and close out issue #55 implementation | done | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
 | TASK-034r05iHQeQpDpyBKGfmKB | Run document status audit | done | [run-document-status-audit.md](./run-document-status-audit.md) |
 | TASK-034r05iHQeQpDpwgKKyE0K | Run full build test and lint verification | done | [run-full-build-test-and-lint-verification.md](./run-full-build-test-and-lint-verification.md) |
+| TASK-034EOHPDg1Gg2LSKLw8WRT | T4: runtime/CLI plumbing と builtin policy 配線 | todo | [runtime-cli-plumbing.md](./runtime-cli-plumbing.md) |
 | TASK-034r05iHQeQpDq84iLFgT3 | Runtime-pi scope and deny enforcement in sandboxed tools | done | [runtime-scope-and-deny-enforcement.md](./runtime-scope-and-deny-enforcement.md) |
 | TASK-034r05iHK8bA7hmVmOU1eX | Scaffold cheaper CLI package with bin entry | done | [scaffold-cheaper-cli-package-with-bin-entry.md](./scaffold-cheaper-cli-package-with-bin-entry.md) |
 | TASK-034r05iHK8bA7gC9ZdvYF9 | Scaffold pnpm monorepo root configuration | done | [scaffold-pnpm-monorepo-root-configuration.md](./scaffold-pnpm-monorepo-root-configuration.md) |
