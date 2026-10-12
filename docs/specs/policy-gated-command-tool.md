@@ -21,7 +21,7 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: ["./managed-process-canonical-tool.md", "./managed-process-lifecycle-hardening.md"]
+  related: ["./managed-process-canonical-tool.md", "./managed-process-lifecycle-hardening.md", "../adr/command-grant-trust-boundary-and-managed-process-reuse.md"]
   refines: []
   refined-by: []
   derives-from: ["../discovery/policy-gated-command-tool.md"]
@@ -110,5 +110,5 @@ canonical tool vocabulary に新 tool `command` を追加する。`command` は 
 
 - source: GitHub issue #101（`command` tool の要求と acceptance criteria の正本）。
 - derives-from: `../discovery/policy-gated-command-tool.md`（DISC-034EM8dPyCYPdx7fqHlaBU）。touch point 調査、reusable machinery、信頼境界 Option A/B/C を内包する。
-- related: `./managed-process-canonical-tool.md`（`process` tool の contract 正本）、`./managed-process-lifecycle-hardening.md`（再利用する lifecycle 保証）。
+- related: `./managed-process-canonical-tool.md`（`process` tool の contract 正本）、`./managed-process-lifecycle-hardening.md`（再利用する lifecycle 保証）、`../adr/command-grant-trust-boundary-and-managed-process-reuse.md`（grant 信頼境界と managed-process 再利用の decision）。
 - references: `../guides/managed-process.md`（managed process の認可・limit 文書）、`../adr/command-grant-trust-boundary-and-managed-process-reuse.md`（grant 信頼境界と managed-process 再利用の確定済み decision）。

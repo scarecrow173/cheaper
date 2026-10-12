@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034EO1kmKwJ8MAHSHWyCws"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "policy-gated command tool を実装する"
 created: "2026-10-12"
 updated: "2026-10-13"

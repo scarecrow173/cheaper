@@ -21,7 +21,7 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: ["../specs/managed-process-lifecycle-hardening.md"]
+  related: ["../specs/managed-process-lifecycle-hardening.md", "./command-grant-trust-boundary-and-managed-process-reuse.md"]
   refines: ["./managed-process-named-task-lifecycle.md"]
   refined-by: []
   derives-from: ["../discovery/managed-process-lifecycle-hardening.md"]
