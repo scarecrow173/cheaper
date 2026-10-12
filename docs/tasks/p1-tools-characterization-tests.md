@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQoBRwn5Bqlb09xwx1"
 type: "task"
-status: "todo"
+status: "done"
 title: "T07: cheaper-tools characterization tests"
 created: "2026-10-12"
 updated: "2026-10-12"
