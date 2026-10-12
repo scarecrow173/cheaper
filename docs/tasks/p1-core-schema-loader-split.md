@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQLedhfXM1TMwrV4jG"
 type: "task"
-status: "todo"
+status: "done"
 title: "T13: cheaper-core worker schema and loader splits"
 created: "2026-10-12"
 updated: "2026-10-12"
