@@ -246,6 +246,9 @@ async fn execute(
         label: name.to_string(),
         display: format!("process {name}"),
         event_prefix: "process",
+        // `durationMs` は command 専用の spec-mandated field —
+        // process details schema は不変(AC1)。
+        report_duration_ms: false,
     };
     crate::tools::proc::run(
         &prepared,

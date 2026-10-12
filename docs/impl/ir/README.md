@@ -34,6 +34,7 @@ Directory: `docs/impl/ir`
 | IMPL-034Dl4CmoLtZTP6cs7v1Q8 | cheaper-usage SKILL.md hook path section rewrite | completed | [cheaper-usage-skill-md-hook-path-section-rewrite.md](./cheaper-usage-skill-md-hook-path-section-rewrite.md) |
 | IMPL-034r05iHy2gdnpkXDh47a6 | Code review fixes (post-merge) | completed | [code-review-fixes.md](./code-review-fixes.md) |
 | IMPL-034EOYv2cBtPBDWY0EMSiv | command core policy vocabulary and propagation | completed | [command-core-policy-vocabulary-and-propagation.md](./command-core-policy-vocabulary-and-propagation.md) |
+| IMPL-034EQ1gcdKphCuBrbPf3c0 | command tool implementation and catalog registry invocation wiring | completed | [command-tool-implementation-and-catalog-registry-invocation-wiring.md](./command-tool-implementation-and-catalog-registry-invocation-wiring.md) |
 | IMPL-034r05iHy2gdnpoDlOXUs6 | Configure Pi models.json and cheaper models.yaml for Ollama | completed | [configure-pi-and-cheaper-model-config-for-ollama.md](./configure-pi-and-cheaper-model-config-for-ollama.md) |
 | IMPL-034r05iHy2gdnpyISCbZJu | Copilot pre-read hook adapter (PLAN-034r05iHE1FbkpaEpZrthK) | completed | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | IMPL-034zQU77PE0beEruVCSGYz | Core resource manifest implementation | completed | [core-resource-manifest-implementation.md](./core-resource-manifest-implementation.md) |
@@ -103,7 +104,7 @@ Directory: `docs/impl/ir`
 | IMPL-034Aca4oJotR844AUJf6QR | Resource manager observation の実装記録 | completed | [resource-manager-observation.md](./resource-manager-observation.md) |
 | IMPL-034zCh2EsO3oqQBXBAlfuM | Run canonical verification and close out issue 55 implementation | completed | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
-| IMPL-034EPz49PYz6zXgEeh5Fly | shared managed-process machinery extraction into tools proc | in-progress | [shared-managed-process-machinery-extraction-into-tools-proc.md](./shared-managed-process-machinery-extraction-into-tools-proc.md) |
+| IMPL-034EPz49PYz6zXgEeh5Fly | shared managed-process machinery extraction into tools proc | completed | [shared-managed-process-machinery-extraction-into-tools-proc.md](./shared-managed-process-machinery-extraction-into-tools-proc.md) |
 | IMPL-034A6gXDwnMxGVaPiuSCxb | Shared tool scheduler | completed | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
 | IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |

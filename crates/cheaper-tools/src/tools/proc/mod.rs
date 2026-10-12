@@ -146,6 +146,11 @@ pub struct ProcIdentity {
     pub display: String,
     /// diagnostics event 名の prefix(`"process"` → `"process.heartbeat"`)。
     pub event_prefix: &'static str,
+    /// details に `durationMs`(開始からの経過 ms)を載せるか。
+    /// `command` details schema が `durationMs` を required とする
+    /// spec-mandated 差分(design §(e))のため `command` のみ true —
+    /// `process` は false で従来 details を不変に保つ(AC1)。
+    pub report_duration_ms: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -261,6 +266,10 @@ pub async fn run(
     outer: AbortSignal,
     on_timeout: Option<&OnTimeout>,
 ) -> Result<CanonicalToolResult, ToolError> {
+    // `durationMs` の測定起点 — spawn 失敗 details にも載せるため
+    // spawn 前に取る(`identity.report_duration_ms` が true の場合のみ
+    // 挿入される)。
+    let started = Instant::now();
     // `AbortSignal.any([outerSignal, timeoutController.signal])` 相当。
     let timeout_controller = AbortController::new();
     let inner = timeout_controller.signal();
@@ -299,6 +308,12 @@ pub async fn run(
             details.insert("stdout".to_string(), stdout.to_json());
             details.insert("stderr".to_string(), stderr.to_json());
             details.insert("spawnCode".to_string(), json!(spawn_code(&error)));
+            if identity.report_duration_ms {
+                details.insert(
+                    "durationMs".to_string(),
+                    json!(started.elapsed().as_millis() as u64),
+                );
+            }
             // Node の非同期 `error` event + `close` 経路相当:
             // `"managed process failed" + details.spawnCode`(cause なし)。
             if spawn_failure_is_async(&error) {

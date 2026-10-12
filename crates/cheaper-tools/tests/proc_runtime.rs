@@ -117,9 +117,10 @@ fn code(err: &ToolError) -> Option<ErrorCode> {
 // tests
 // ---------------------------------------------------------------------------
 
-/// "exposes eight schemas without a workspace or handlers"。
+/// "exposes nine schemas without a workspace or handlers" — T3 で
+/// `command` が catalog `NAMES` 入りしたため 8→9。
 #[test]
-fn exposes_eight_schemas() {
+fn exposes_nine_schemas() {
     let catalog = cheaper_tools::catalog::create_tool_catalog(None).unwrap();
     let names: Vec<&str> = catalog.list().iter().map(|t| t.name.as_str()).collect();
     assert_eq!(
@@ -133,6 +134,7 @@ fn exposes_eight_schemas() {
             "find",
             "count_tokens",
             "process",
+            "command",
         ]
     );
     assert!(catalog.get("missing").is_none());

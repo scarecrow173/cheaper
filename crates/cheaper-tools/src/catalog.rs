@@ -129,6 +129,7 @@ const NAMES: &[ToolName] = &[
     ToolName::Find,
     ToolName::CountTokens,
     ToolName::Process,
+    ToolName::Command,
 ];
 
 // ---------------------------------------------------------------------------
@@ -634,7 +635,8 @@ mod tests {
                 "grep",
                 "find",
                 "count_tokens",
-                "process"
+                "process",
+                "command"
             ]
         );
     }

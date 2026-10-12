@@ -116,6 +116,15 @@ fn native(candidate: &str) -> Option<String> {
     }
 }
 
+/// pin 済み executable の spawn 前再検証用 `native()` wrapper
+/// (design §(b) — `command` grant の pin path 差替え fail-closed)。
+/// `native()` の candidate 検証(realpath → shell/shim → is_file →
+/// win32 ext → X_OK → native magic)を再適用し、resolved canonical
+/// path を返す。不成立なら `None`(fail closed)。
+pub(crate) fn native_executable(candidate: &str) -> Option<String> {
+    native(candidate)
+}
+
 /// `resolveProcessExecutable`。bare `node` は Rust 版で host Node が
 /// 存在しないため PATH 解決せず明示 `POLICY_VIOLATION` error(固定ルール)。
 /// PATH 上に実在する `node.exe` があっても解決しない。

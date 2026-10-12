@@ -1,10 +1,10 @@
 ---
 id: "TASK-034EOHORutYi73P8DaumoH"
 type: "task"
-status: "todo"
+status: "done"
 title: "T3: command tool 実装と catalog/registry/invocation 配線"
 created: "2026-10-12"
-updated: "2026-10-12"
+updated: "2026-10-13"
 owners: []
 relations:
   source: []
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-policy-gated-command-tool.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/command-tool-implementation-and-catalog-registry-invocation-wiring.md"
   depends-on:
     - "docs/plans/implement-policy-gated-command-tool.md"
     - "docs/tasks/command-core-policy-and-propagation.md"
@@ -109,17 +110,17 @@ declared-shape parity check を実装する。
 
 ## Done When
 
-- [ ] `command` が catalog `NAMES` / registered set に登場し、grant 経由で
+- [x] `command` が catalog `NAMES` / registered set に登場し、grant 経由で
   実行可能（deny-stub が完全に置換済み）
-- [ ] grants 空で `names` に `Command` を含む runtime が `POLICY_VIOLATION` で
+- [x] grants 空で `names` に `Command` を含む runtime が `POLICY_VIOLATION` で
   fail-closed、`names` に含まない runtime は dormant で構築できる
-- [ ] writeScope × command が fail-closed reject される
-- [ ] `{name,args}` 以外の input key が `INVALID_INPUT` で reject される
-- [ ] declared-shape parity check が `process` と同型で動作する
+- [x] writeScope × command が fail-closed reject される
+- [x] `{name,args}` 以外の input key が `INVALID_INPUT` で reject される
+- [x] declared-shape parity check が `process` と同型で動作する
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-tools` exits 0（全 test target を
+- [x] `mise exec -- cargo test -p cheaper-tools` exits 0（全 test target を
   compile+run — `tests/proc_invocation.rs` 等の integration target 込み）
-- [ ] `mise exec -- cargo test -p cheaper-tools --test proc_invocation` exits 0
+- [x] `mise exec -- cargo test -p cheaper-tools --test proc_invocation` exits 0
   （gate/parity focused）

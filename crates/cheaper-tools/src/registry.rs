@@ -11,11 +11,12 @@
 //! (scheduler→execute callback は同一 task の await chain のため
 //! task_local で束縛できる)。
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::policy::command::{resolve_command_policy, ResolvedCommandPolicy};
 use cheaper_core::policy::process::{resolve_process_policy, ResolvedProcessPolicy};
 use cheaper_core::resources::predicates::claim_contains;
 use cheaper_core::resources::types::{ClaimMode, ResourceScope};
@@ -52,7 +53,9 @@ use crate::tools::boundary::{
     create_edit_operations, create_ls_operations, create_write_operations,
     BoundaryOperationsOptions,
 };
-use crate::tools::command::command_tool_definition;
+use crate::tools::command::{
+    command_operation_declaration, command_tool_definition, pin_command_grants, CommandToolOptions,
+};
 use crate::tools::count_tokens::{count_tokens_tool_definition, CountTokensToolOptions};
 use crate::tools::edit::edit_tool_definition;
 use crate::tools::find::find_tool_definition;
@@ -93,7 +96,9 @@ pub struct ToolRuntimeOptions {
     /// `Partial<ProcessPolicy>` の raw JSON(`resolve_process_policy` 入力)。
     pub process: Option<Value>,
     /// `Partial<CommandPolicy>` の raw JSON(`resolve_command_policy` 入力)。
-    /// T1 は field のみ — grant gate/pin/`ToolCtx` 配線は T3。
+    /// `names` に `Command` を含む runtime は nonempty-grants gate +
+    /// writeScope 拒否 + per-scope pin が registration 境界で効く
+    /// (design §(b)/(c)/(g))。
     pub command: Option<Value>,
     pub root: String,
     pub symlink_policy: SymlinkPolicy,
@@ -205,6 +210,11 @@ struct ToolCtx {
     /// write/edit/ls の `BoundaryOperationsOptions.scope`。
     scope: ResourceScopeOptions,
     process: ResolvedProcessPolicy,
+    /// declared-shape の resolved command policy(design §(g))。
+    command: ResolvedCommandPolicy,
+    /// grant name → pin 済み canonical executable path(per-scope pin、
+    /// `names` に `Command` を含む場合のみ構築。それ以外は空)。
+    command_pins: BTreeMap<String, String>,
     eval_spawn: EvalSpawn,
     on_timeout: Option<OnTimeout>,
     observe_access: Arc<AccessObserver<'static>>,
@@ -289,6 +299,17 @@ impl ToolCtx {
                 .write_scope
                 .clone()
                 .map(|scope| scope.into_iter().collect()),
+        }
+    }
+
+    fn command(&self) -> CommandToolOptions {
+        CommandToolOptions {
+            root: self.root.clone(),
+            symlink_policy: self.symlink_policy,
+            command: self.command.clone(),
+            pins: self.command_pins.clone(),
+            on_timeout: self.on_timeout.clone(),
+            denylist: self.denylist.clone(),
         }
     }
 }
@@ -586,11 +607,11 @@ fn registered_definition(
             return Ok(process_tool_definition(ctx.process()));
         }
         ToolName::Command => {
-            // T1 deny-stub — `command` は registered set に入れないため
-            // 到達不能だが、closed enum の compile 充足 + fail-closed の
-            // `POLICY_VIOLATION "command unavailable"` definition を返す
-            // (実 grant 解決/pin/execute glue は T3)。
-            return Ok(command_tool_definition());
+            // `command` の definition も `'static` — そのまま登録する。
+            // ここに到達するのは `names` に `Command` を含む場合のみで、
+            // nonempty-grants gate + pin は `create_tool_runtime` が
+            // 既に通過済み。
+            return Ok(command_tool_definition(ctx.command()));
         }
     };
     Ok(CanonicalToolDefinition {
@@ -827,6 +848,17 @@ impl ToolRuntime {
                 process_operation_declaration(&inner.tool_ctx.process, task)
                     .map_err(|e| Box::new(e) as ToolError)?
             }
+            ToolName::Command => {
+                // `{name}` 入力の grant を declaration 段階で解決 —
+                // 未知 grant は schedule 前に `POLICY_VIOLATION` で
+                // fail-closed(design §(f)/(g))。
+                let grant = submitted_input
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                command_operation_declaration(&inner.tool_ctx.command, grant)
+                    .map_err(|e| Box::new(e) as ToolError)?
+            }
             name => OperationDeclaration::new(if is_mutating_tool(name) {
                 ClaimMode::Exclusive
             } else {
@@ -853,10 +885,13 @@ impl ToolRuntime {
         }
         let inner2 = Arc::clone(&self.inner);
         let name_owned = name.to_string();
-        let is_process = entry.definition.name == ToolName::Process;
+        // `is_process` の managed-subprocess 一般化(design §(g)) —
+        // `command` の spawn 済み子 process も `managed.track()` が
+        // 数え、`drain()`/`wait_idle` が settle を待つ。
+        let is_managed = matches!(entry.definition.name, ToolName::Process | ToolName::Command);
         // `pending = accounting.run(() => scheduler.run(...))`。
         let pending = async move {
-            let _managed = if is_process {
+            let _managed = if is_managed {
                 Some(inner2.managed.track())
             } else {
                 None
@@ -1034,6 +1069,30 @@ pub fn create_tool_runtime(
             "process exposure requires nonempty authorized tasks",
         )));
     }
+    // `opts.command = resolveCommandPolicy(options.command)`。
+    let command =
+        resolve_command_policy(options.command.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
+    if options.names.contains(&ToolName::Command) {
+        // `command` の実効的な権限境界: trusted layer の grant が
+        // 空なら exposure を fail-closed(process gate と同型、
+        // design §(g))。`Command` を含まない runtime は grant が
+        // ambient PATH で解決不能でも dormant として許容する。
+        if command.grants.is_empty() {
+            return Err(Box::new(CheaperError::new(
+                ErrorCode::PolicyViolation,
+                "command exposure requires nonempty authorized grants",
+            )));
+        }
+        // writeScope × command は fail-closed reject(design §(c)) —
+        // 子 process の副作用を resource 層が観測不能のため、
+        // vacuous な coverage を許さない。
+        if options.write_scope.is_some() {
+            return Err(Box::new(CheaperError::new(
+                ErrorCode::PolicyViolation,
+                "command is incompatible with worker writeScope",
+            )));
+        }
+    }
     let abort_grace_ms = options.abort_grace_ms.unwrap_or(5000.0);
     if !(abort_grace_ms.is_finite() && abort_grace_ms >= 0.0) {
         return Err(Box::new(CheaperError::new(
@@ -1070,6 +1129,22 @@ pub fn create_tool_runtime(
             .map_err(|e| Box::new(e) as ToolError)?;
             (manager, "tool-runtime".to_string(), resources, scheduler)
         }
+    };
+    // per-scope executable pin(design §(b)/(g)) — `names` に
+    // `Command` を含む場合のみ、その時点の ambient PATH で grant
+    // executable を canonical path へ pin する。pin 不能・deny 該当・
+    // workspace-resident の grant は runtime 構築自体を
+    // `POLICY_VIOLATION` で fail させる。`Command` を expose しない
+    // runtime は pin を試行せず dormant とする。
+    let command_pins = if options.names.contains(&ToolName::Command) {
+        pin_command_grants(
+            &command,
+            &resources.root,
+            options.symlink_policy,
+            options.denylist.as_ref(),
+        )?
+    } else {
+        BTreeMap::new()
     };
     // `catalog`(TS `createToolCatalog({process: opts.process})` — resolved
     // policy を直接所有させる)。
@@ -1160,6 +1235,8 @@ pub fn create_tool_runtime(
         owner_id: owner_id.clone(),
         scope,
         process: process.clone(),
+        command,
+        command_pins,
         eval_spawn,
         on_timeout: Some(on_timeout),
         observe_access: observe,

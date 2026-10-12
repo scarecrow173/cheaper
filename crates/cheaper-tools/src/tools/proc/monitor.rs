@@ -232,6 +232,12 @@ pub(super) async fn drive(
                     for (key, value) in &identity.details {
                         details.insert(key.clone(), value.clone());
                     }
+                    if identity.report_duration_ms {
+                        details.insert(
+                            "durationMs".to_string(),
+                            json!(diagnostics.started.elapsed().as_millis() as u64),
+                        );
+                    }
                     let reason = CheaperError::new(
                         ErrorCode::Timeout,
                         "managed process execution timed out",
@@ -290,6 +296,12 @@ pub(super) async fn drive(
         "signal".to_string(),
         signal.map_or(Value::Null, |s| json!(s)),
     );
+    if identity.report_duration_ms {
+        details.insert(
+            "durationMs".to_string(),
+            json!(diagnostics.started.elapsed().as_millis() as u64),
+        );
+    }
     details.insert("stdout".to_string(), stdout.to_json());
     details.insert("stderr".to_string(), stderr.to_json());
     let details = Value::Object(details);
