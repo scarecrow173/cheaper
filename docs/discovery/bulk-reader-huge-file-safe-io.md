@@ -11,7 +11,7 @@ relations:
     - "../../crates/cheaper-tools/src/tools/boundary.rs"
     - "../../crates/cheaper-tools/src/registry.rs"
     - "../../crates/cheaper-tools/src/walker.rs"
-    - "../../crates/cheaper-tools/src/tools/grep.rs"
+    - "../../crates/cheaper-tools/src/tools/grep/mod.rs"
     - "../../crates/cheaper-tools/src/tools/find.rs"
     - "../../crates/cheaper-tools/src/tools/count_tokens.rs"
     - "../../crates/cheaper-cli/src/hook/routing_policy.rs"
