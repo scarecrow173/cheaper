@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQIHsWPnLsqwvFQiFS"
 type: "task"
-status: "todo"
+status: "done"
 title: "T08: cheaper-runtime catalog module split"
 created: "2026-10-12"
 updated: "2026-10-12"
