@@ -15,16 +15,23 @@ Commands:
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
   count-tokens <path>    Count canonical tokens of a workspace file
+  workflow interface <path> Show the public workflow inputs and outputs
+  workflow run <path>       Run a one-shot workflow
   usage                  Aggregate usage.jsonl (worker cost / measured savings)
   models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
+  hook <event>           Agent hook entry (internal; --target <agent>)
 ```
 
 `bulk-read` / `code-write` / `doc-write` は `run bulk-reader` 等の
 エイリアス。built-in 以外の worker も `run <worker>` で呼べる
-（[workers ガイド](./workers.md)参照）。
+（[workers ガイド](./workers.md)参照）。`workflow` は tool call
+と worker 実行を宣言的な DAG へ束ねて 1 回で実行する系で、
+使い分けの指針は [workflow ガイド](./workflow-usage.md) を参照。
+`hook` は parent agent の hook event から呼ばれる内部 entry で、
+直接利用は想定しない（[parent-agent 連携ガイド](./parent-agent-integration.md)）。
 
 ## 共通 option
 
@@ -40,6 +47,8 @@ Commands:
 | `--worker <name>` | `models` の auto tier 分類をその worker の workload profile で計算する |
 | `--format <json\|text>` | stdout の形式（既定: `json`） |
 | `--quiet` | stderr の diagnostics を抑制する |
+| `--log <level>` | `.cheaper/logs` + stderr への logging を有効化（`off`/`error`/`warn`/`info`/`debug`/`trace`、env `CHEAPER_LOG`） |
+| `--log-format <text\|json>` | ログ出力形式（env `CHEAPER_LOG_FORMAT`） |
 | `--help` / `--version` | help / version 表示 |
 
 `--method`・`--type` は `auth login` 専用（下記参照）。

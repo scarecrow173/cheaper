@@ -31,6 +31,9 @@ cheaper を使うと
   （document 生成）
 - **custom worker**: 自分で定義した worker を `run` で実行できる
 - **count-tokens**: workspace file の token 数を LLM なしで測定
+- **workflow**: tool call と worker 実行を宣言的な DAG へ束ねて
+  1 回で実行する（`cheaper workflow run`。公開 interface は
+  `cheaper workflow interface` で確認）
 - **provider / model 解決**: 内蔵の model catalog（bundled
   snapshot + plugin provider + user overlay）経由で任意の
   provider（Ollama・OpenAI 系・Anthropic・その他 OpenAI 互換
@@ -90,7 +93,8 @@ input schema・tool・write scope 等の詳細は
 - **provider / auth**: `models.json`（provider・model・endpoint の
   user overlay）・credential（`cheaper auth` で管理）
 - **tier 割当**: `models.yaml`（model → `low`/`medium`/`high`）
-- **実行 policy**: `policy.yaml`（timeout・tools・model・output）
+- **実行 policy**: `policy.yaml`（execution・tools・filesystem・
+  model・output・retry・process）
 
 user config は `~/.config/cheaper`（`CHEAPER_CONFIG_DIR` で変更
 可）、project 単位の override は `<cwd>/.cheaper/`。詳細は
@@ -124,6 +128,10 @@ upstream の hook event 未提供のため shell-read のみ有効
   worker・schema・policy
 - [parent-agent 連携](docs/guides/parent-agent-integration.md) —
   skills・hooks・target 別挙動
+- [workflow の使い分け](docs/guides/workflow-usage.md) —
+  direct 呼び出しとの選択基準
+- [managed process](docs/guides/managed-process.md) — `process`
+  tool の named task policy
 - [Contributing](CONTRIBUTING.md) — リポジトリ開発の setup・
   test・構造
 - [docs index](docs/README.md) — 設計・実装・検証記録の索引

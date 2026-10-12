@@ -95,6 +95,8 @@ install する。
   この crate と provider crate に限定）
 - `crates/cheaper-provider` — bundled provider plugin（`devin` module）
 - `crates/cheaper-workflow` — workflow schema・compiler・DAG engine
+- `crates/cheaper-observability` — tracing subscriber・sink wiring・
+  log activation（`--log` / `CHEAPER_LOG`）の observability 基盤
 - `packages/apm` — distributable APM package（consumer へ deploy
   される skills/hooks/thin launcher。CLI 本体は cargo install）
 - `scripts/` — version・lockfile・payload 等 check の Node 製 repo tooling

@@ -19,6 +19,10 @@ cheaper <command> [options]
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
   count-tokens <path>    Count canonical tokens of a workspace file
+  workflow interface <path> Show the public workflow inputs and outputs
+  workflow run <path>       Run a one-shot workflow
+  usage                  Aggregate usage.jsonl (worker cost / measured savings)
+  models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
@@ -30,6 +34,7 @@ cheaper <command> [options]
 | `--worker-file <path>` | Run an explicit worker file (`run` only) |
 | `--cwd <path>` | Workspace root (default: current directory) |
 | `--timeout <duration>` | Narrow policy timeout (e.g. `30s`, `5m`) |
+| `--model <provider>/<id>` | `run`: explicit model, bypassing tier resolution |
 | `--method <id>` | Auto-answer auth login select prompts (e.g. `device`) |
 | `--type <oauth\|api_key>` | Auth method for `auth login` (default: `oauth`) |
 | `--format <json\|text>` | Output format (default: `json`) |
