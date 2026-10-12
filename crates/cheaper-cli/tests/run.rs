@@ -14,9 +14,6 @@ use common::Fixture;
 
 use serde_json::json;
 
-/// test 用組立一式。`env` map は `io.env` 経由で lookup され、
-/// 未設定名は process env へ fallback する(`CHEAPER_LOG*` 除く)。
-
 /// 最小 success fixture(01-success-basic 相当 — fenced `{"ok":true}`)。
 /// `CHEAPER_TEST_FAKE_STREAM` を env map へ直接流す用(feature off では
 /// fixture は絶対に読まれない — seam-invariance 確認用)。

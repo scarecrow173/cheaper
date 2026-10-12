@@ -498,8 +498,7 @@ async fn run_workflow_inner(
         now,
     } = options;
     let abort_grace_ms = abort_grace_ms.unwrap_or(5000.0);
-    let is_safe_integer =
-        |v: f64| v.is_finite() && v.fract() == 0.0 && v.abs() <= MAX_SAFE_INTEGER;
+    let is_safe_integer = |v: f64| v.is_finite() && v.fract() == 0.0 && v.abs() <= MAX_SAFE_INTEGER;
     if !is_safe_integer(max_jobs)
         || max_jobs <= 0.0
         || !timeout_ms.is_finite()

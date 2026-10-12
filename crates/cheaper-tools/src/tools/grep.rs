@@ -32,7 +32,6 @@ use serde_json::Value;
 
 use crate::access::AccessObserver;
 use crate::catalog::{self, CanonicalToolResult};
-use cheaper_core::js16::{slice_utf16, utf16_len};
 use crate::limits::{
     GREP_BATCH_MAX_BYTES, GREP_BATCH_MAX_LINES, GREP_EVAL_PER_FILE_MS, GREP_EVAL_TOTAL_MS,
     GREP_MAX_LINE_BYTES, GREP_OUTPUT_LINE_MAX_CHARS, GREP_OUTPUT_MAX_BYTES, GREP_PATTERN_MAX_CHARS,
@@ -43,6 +42,7 @@ use crate::line_framer::{create_line_framer, LineFramerOptions};
 use crate::operation::AbortSignal;
 use crate::walker::{rethrow_as_denied, sniff_text_file, walk_files, SniffResult, WalkOptions};
 use crate::ToolError;
+use cheaper_core::js16::{slice_utf16, utf16_len};
 
 use super::grep_eval::{
     AbortCheck, EvalError, EvalOptions, GrepEvalWorker, ABORTED_MESSAGE, EVAL_REPLY_MAX_BYTES,

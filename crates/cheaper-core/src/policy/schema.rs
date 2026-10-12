@@ -165,7 +165,6 @@ pub struct RetryPolicy {
     pub transient_attempts: u64,
 }
 
-
 fn object_schema(required: &[&str], properties: Value) -> Value {
     json!({
         "type": "object",

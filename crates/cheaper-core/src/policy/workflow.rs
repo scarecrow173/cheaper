@@ -31,7 +31,6 @@ const DEFAULT_ARTIFACTS: WorkflowArtifactPolicy = WorkflowArtifactPolicy {
     max_read_bytes: 65_536,
 };
 
-
 fn cap(minimum: i64) -> Value {
     json!({
         "type": "integer",

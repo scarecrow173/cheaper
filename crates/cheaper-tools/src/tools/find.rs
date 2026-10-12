@@ -14,10 +14,10 @@ use serde_json::Value;
 use crate::catalog::{self, CanonicalToolResult, ToolContent};
 use crate::definition::{define_canonical_tool, CanonicalToolDefinition};
 use crate::glob::matches_glob;
-use cheaper_core::js16::slice_utf16;
 use crate::operation::AbortSignal;
 use crate::walker::{rethrow_as_denied, walk_files, WalkOptions};
 use crate::ToolError;
+use cheaper_core::js16::slice_utf16;
 
 const DEFAULT_MAX_RESULTS: u64 = 200;
 const MAX_MAX_RESULTS: u64 = 1000;
