@@ -102,6 +102,15 @@ process:
     interval: 30s        # stderr diagnostic の最大観測間隔
   tasks: {}              # 事前登録する named task
 
+command:
+  maxConcurrent: 1       # 同時実行 command 数（`process` pool と独立）
+  timeout: 2m            # grant 実行の既定上限（queue・admission 待ちは含まない）
+  maxOutputBytes: 65536  # stdout/stderr 合計の保持上限（設定上限 16 MiB）
+  killGrace: 2s          # SIGTERM → SIGKILL までの猶予
+  heartbeat:
+    interval: 30s        # stderr diagnostic の最大観測間隔
+  grants: {}             # 実行を許可する grant（trusted layer のみ authoring 可）
+
 execution:
   timeout: 120s          # run 全体の上限（model 解決・session 構築を含む）
   maxTurns: 8            # agent loop の最大 turn 数
@@ -117,6 +126,7 @@ tools:
     - edit
     - count_tokens
     - process
+    - command
 
 filesystem:
   symlinks: within-workspace   # deny | within-workspace
@@ -137,6 +147,21 @@ retry:
 `process` tool（policy 事前登録の named task を実行する
 canonical tool）の task 定義・実行制御の詳細は
 [managed process ガイド](./managed-process.md) を参照。
+
+`command` section の field は `process` と同じ lifecycle 既定値
+（`maxConcurrent`・`timeout`・`killGrace`・`heartbeat.interval`・
+`maxOutputBytes`）に `grants`（実行を許可する executable の
+宣言 map）を加えた構成。grant の shape は
+`{executable, argv?, cwd?, env?, timeout?, killGrace?,
+maxOutputBytes?}` で、`executable` は bare name（ambient PATH
+解決）または absolute path、`argv` は positional pattern
+（literal は exact match、`prefix*` は prefix match、最終要素の
+bare `*` は zero-or-more の残余 token を受ける rest marker）。
+`command.grants` は builtin と user-scope の `policy.yaml` でのみ
+authoring でき、project `.cheaper/policy.yaml` に `command` key を
+含めると policy load が `InvalidRuntimePolicy` で失敗する
+（narrowing も不可）。grant・信頼境界・sandbox 限界の詳細は
+[command ガイド](./command.md) を参照。
 
 部分 override では `version` と必要な項目だけ書く。
 
@@ -177,3 +202,5 @@ snapshot を同 dir へ保持する方式を取る（global session
   [workers ガイド](./workers.md)
 - `process` tool の named task・実行制御:
   [managed process ガイド](./managed-process.md)
+- `command` tool の grant・信頼境界・sandbox 限界:
+  [command ガイド](./command.md)

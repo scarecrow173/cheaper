@@ -1,23 +1,35 @@
 ---
 id: "TASK-034EOHYMMH4FnfoVhmfPeP"
 type: "task"
-status: "todo"
+status: "done"
 title: "T6: command tool の user-facing docs と index 更新"
 created: "2026-10-12"
-updated: "2026-10-12"
+updated: "2026-10-13"
 owners: []
 relations:
   source: []
   changes:
-    added: []
-    modified: []
+    added:
+      - {"type":"doc","path":"docs/guides/command.md"}
+      - {"type":"doc","path":"docs/impl/ir/command-tool-user-docs.md"}
+    modified:
+      - {"type":"doc","path":"README.md"}
+      - {"type":"doc","path":"docs/README.md"}
+      - {"type":"doc","path":"docs/adr/README.md"}
+      - {"type":"doc","path":"docs/guides/configuration.md"}
+      - {"type":"doc","path":"docs/guides/workers.md"}
+      - {"type":"doc","path":"docs/impl/ir/README.md"}
+      - {"type":"doc","path":"docs/tasks/README.md"}
+      - {"type":"doc","path":"docs/tasks/command-docs.md"}
+      - {"type":"doc","path":"docs/test-specs/README.md"}
     deleted: []
     renamed: []
     moved: []
     generated: []
   implements:
     - "docs/plans/implement-policy-gated-command-tool.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/command-tool-user-docs.md"
   depends-on:
     - "docs/plans/implement-policy-gated-command-tool.md"
     - "docs/tasks/runtime-cli-plumbing.md"
@@ -94,15 +106,15 @@ relations:
 
 ## Done When
 
-- [ ] trust / sandbox 限界・ambient PATH provenance・capability 限界・
+- [x] trust / sandbox 限界・ambient PATH provenance・capability 限界・
   `process.tasks` divergence・三重ゲートが docs に記載されている
-- [ ] `configuration.md` の verbatim embed が builtin `policy.yaml` と同期
-- [ ] `command.md` 新規作成時は `docs/README.md` と root `README.md` の
+- [x] `configuration.md` の verbatim embed が builtin `policy.yaml` と同期
+- [x] `command.md` 新規作成時は `docs/README.md` と root `README.md` の
   index/link が更新されている
 
 ## Verification
 
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --type all` exits 0
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `grep -n "command:" docs/guides/configuration.md` returns matches
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --type all` exits 0
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `grep -n "command:" docs/guides/configuration.md` returns matches
   （builtin `policy.yaml` との差分がないこと）

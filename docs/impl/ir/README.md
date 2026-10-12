@@ -37,6 +37,7 @@ Directory: `docs/impl/ir`
 | IMPL-034EvP2s9FEfHuZw09PT5J | command runtime cli plumbing and builtin policy wiring | completed | [command-runtime-cli-plumbing-and-builtin-policy-wiring.md](./command-runtime-cli-plumbing-and-builtin-policy-wiring.md) |
 | IMPL-034EQ1gcdKphCuBrbPf3c0 | command tool implementation and catalog registry invocation wiring | completed | [command-tool-implementation-and-catalog-registry-invocation-wiring.md](./command-tool-implementation-and-catalog-registry-invocation-wiring.md) |
 | IMPL-0BrKmzUw8KyfSdgUn1UtPX | command tool test coverage | completed | [command-tool-test-coverage.md](./command-tool-test-coverage.md) |
+| IMPL-VyGgdpBDL0vD8jXbMIVXSy | command tool user docs | completed | [command-tool-user-docs.md](./command-tool-user-docs.md) |
 | IMPL-034r05iHy2gdnpoDlOXUs6 | Configure Pi models.json and cheaper models.yaml for Ollama | completed | [configure-pi-and-cheaper-model-config-for-ollama.md](./configure-pi-and-cheaper-model-config-for-ollama.md) |
 | IMPL-034r05iHy2gdnpyISCbZJu | Copilot pre-read hook adapter (PLAN-034r05iHE1FbkpaEpZrthK) | completed | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | IMPL-034zQU77PE0beEruVCSGYz | Core resource manifest implementation | completed | [core-resource-manifest-implementation.md](./core-resource-manifest-implementation.md) |

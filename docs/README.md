@@ -22,6 +22,8 @@
   （cargo source install）・thin launcher・APM package 配布
 - [managed-process.md](guides/managed-process.md) — policy 事前
   登録 task を実行する `process` canonical tool
+- [command.md](guides/command.md) — trusted grant が許可する
+  executable を動的 argv で実行する `command` canonical tool
 - [workflow-usage.md](guides/workflow-usage.md) — workflow と
   direct 呼び出しの使い分け指針（benchmark 実測に基づく）
 - [release.md](guides/release.md) — version canonical source・
