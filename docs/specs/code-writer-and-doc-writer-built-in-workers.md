@@ -26,6 +26,7 @@ relations:
   superseded-by: []
   related:
     - "bulk-reader-built-in-worker.md"
+    - "tool-operator-built-in-worker.md"
     - "../adr/model-tier-model-resolver.md"
     - "../adr/wrapper-measured-deterministic-metadata.md"
     - "../adr/workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
