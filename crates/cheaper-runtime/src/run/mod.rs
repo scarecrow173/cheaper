@@ -279,6 +279,9 @@ impl<'a> RunCtx<'a> {
                     let invocation = create_invocation_tool_runtime(InvocationToolRuntimeOptions {
                         artifacts: None,
                         process: Some(serde_json::to_value(&policy.process).unwrap_or_default()),
+                        // `policy.command` — resolved policy の機械的
+                        // serialize(`process` と同型。T1 は passthrough)。
+                        command: Some(serde_json::to_value(&policy.command).unwrap_or_default()),
                         root: deps.root.clone(),
                         // F5: `policy.filesystem.symlinks` — TS run.ts の
                         // `symlinkPolicy: policy.filesystem.symlinks` parity。
@@ -427,6 +430,7 @@ impl<'a> RunCtx<'a> {
                         read_strictness: None,
                         artifacts: None,
                         process: Some(serde_json::to_value(&policy.process).unwrap_or_default()),
+                        command: Some(serde_json::to_value(&policy.command).unwrap_or_default()),
                         root: deps.root.clone(),
                         // F5: invocation runtime と同じく policy 由来。
                         symlink_policy: policy.filesystem.symlinks,

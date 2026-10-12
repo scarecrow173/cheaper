@@ -14,6 +14,7 @@ fn policy_schema_cases() {
             "validatePolicySchema" => {
                 let mode = match case["mode"].as_str() {
                     Some("partial") => PolicySchemaMode::Partial,
+                    Some("project-partial") => PolicySchemaMode::ProjectPartial,
                     _ => PolicySchemaMode::Complete,
                 };
                 match validate_policy_schema(&case["input"], mode) {

@@ -5,6 +5,7 @@
 //! helper の構築は不要。`get`/`list` は呼び出しごとに新しい metadata を
 //! 返す(TS `list()` が毎回 `structuredClone` するのと同じ分離)。
 
+use cheaper_core::policy::command::command_grant_resources;
 use cheaper_core::policy::process::{
     process_task_resources, resolve_process_policy, ResolvedProcessPolicy,
 };
@@ -14,6 +15,7 @@ use cheaper_core::tools::vocabulary::ToolName;
 use serde::Serialize;
 use serde_json::{json, Value};
 
+use crate::tools::command::{command_details_schema, command_schema};
 use crate::tools::process::{process_details_schema, process_schema};
 use crate::ToolError;
 
@@ -66,6 +68,11 @@ impl ToolCatalog {
                     .unwrap_or_default();
                 process_task_resources(&policy, task).map_err(|e| Box::new(e) as ToolError)
             }),
+            // `command` は input 非依存の保守的宣言(root subtree
+            // reads+writes、`produces` なし — design §(f))。generic
+            // `resources()` の path 規約に載せると未知 bucket に落ちて
+            // 宣言が弱まるため、専用 arm で固定 manifest を返す。
+            ToolName::Command => Box::new(|_input| Ok(command_grant_resources())),
             _ => Box::new(move |input| Ok(resources(name, input))),
         };
         ToolMetadata {
@@ -353,6 +360,7 @@ fn input_schema(name: ToolName) -> Value {
         ToolName::Find => find_schema(),
         ToolName::CountTokens => count_tokens_schema(),
         ToolName::Process => process_schema(),
+        ToolName::Command => command_schema(),
     }
 }
 
@@ -447,12 +455,12 @@ fn count_details_schema() -> Value {
     })
 }
 
-/// `outputSchema(name)`: `read`/`count_tokens`/`process` は details を
-/// 専用 schema に差し替え required に `"details"` を追加する。
+/// `outputSchema(name)`: `read`/`count_tokens`/`process`/`command` は
+/// details を専用 schema に差し替え required に `"details"` を追加する。
 fn output_schema(name: ToolName) -> Value {
     let mut result = result_schema();
     match name {
-        ToolName::Read | ToolName::CountTokens | ToolName::Process => {
+        ToolName::Read | ToolName::CountTokens | ToolName::Process | ToolName::Command => {
             let details = match name {
                 ToolName::Read => json!({
                     "anyOf": [
@@ -478,6 +486,7 @@ fn output_schema(name: ToolName) -> Value {
                     ],
                 }),
                 ToolName::Process => process_details_schema(),
+                ToolName::Command => command_details_schema(),
                 _ => count_details_schema(),
             };
             let properties = result["properties"]

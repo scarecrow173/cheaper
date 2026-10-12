@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EOHDmemAJi6IbUQel4x"
 type: "task"
-status: "todo"
+status: "done"
 title: "T1: command core policy・schema 分割と compile-forced propagation"
 created: "2026-10-12"
 updated: "2026-10-12"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-policy-gated-command-tool.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/command-core-policy-vocabulary-and-propagation.md"
   depends-on:
     - "docs/plans/implement-policy-gated-command-tool.md"
   blocks: []
@@ -140,16 +141,16 @@ compile-forced propagation の全 mechanical 変更を本 task が所有し、
 
 ## Done When
 
-- [ ] `cargo build --workspace --all-targets`（dev-seam feature 付き）が green —
+- [x] `cargo build --workspace --all-targets`（dev-seam feature 付き）が green —
   compile-forced propagation 完遂の証明
-- [ ] grant authoring key を含む project `policy.yaml` が load 時
+- [x] grant authoring key を含む project `policy.yaml` が load 時
   `InvalidRuntimePolicy` で拒否され、同内容の user policy は受理される
-- [ ] golden（vocabulary 8→9・policy load/restrict/schema・worker_validate）が
+- [x] golden（vocabulary 8→9・policy load/restrict/schema・worker_validate）が
   再生成され `cargo test -p cheaper-core` が pass
-- [ ] `command` は catalog `NAMES` / registered set に入っておらず dormant
+- [x] `command` は catalog `NAMES` / registered set に入っておらず dormant
   （deny-stub arm は到達不能の compile 充足のみ）
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core` exits 0
-- [ ] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-core` exits 0
+- [x] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0

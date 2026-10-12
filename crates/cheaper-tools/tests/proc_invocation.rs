@@ -93,6 +93,7 @@ fn invocation_options(root: String, process: Option<Value>) -> InvocationToolRun
     InvocationToolRuntimeOptions {
         artifacts: None,
         process,
+        command: None,
         root,
         symlink_policy: SymlinkPolicy::Deny,
         signal: None,
@@ -109,6 +110,7 @@ fn scope_options(root: &str, names: Vec<ToolName>) -> ToolRuntimeOptions {
         read_strictness: None,
         artifacts: None,
         process: None,
+        command: None,
         root: root.to_string(),
         symlink_policy: SymlinkPolicy::Deny,
         names,

@@ -267,8 +267,14 @@ pub fn validate_worker_definition(
 }
 
 /// `MUTATING_TOOL_NAMES`: tools that may mutate the workspace.
+/// `command` は child process の副作用が未知のため mutating 扱い —
+/// `savings.directlyComparable` が `command` 使用 worker で false になる
+/// 効果もここに集約される(design §(h))。
 pub fn is_mutating_tool(name: ToolName) -> bool {
-    matches!(name, ToolName::Write | ToolName::Edit | ToolName::Process)
+    matches!(
+        name,
+        ToolName::Write | ToolName::Edit | ToolName::Process | ToolName::Command
+    )
 }
 
 /// `isDirectlyComparableWorker` (SPEC-034rzGnCaRQc5ceI95lf5i req 2):

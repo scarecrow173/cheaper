@@ -52,6 +52,7 @@ use crate::tools::boundary::{
     create_edit_operations, create_ls_operations, create_write_operations,
     BoundaryOperationsOptions,
 };
+use crate::tools::command::command_tool_definition;
 use crate::tools::count_tokens::{count_tokens_tool_definition, CountTokensToolOptions};
 use crate::tools::edit::edit_tool_definition;
 use crate::tools::find::find_tool_definition;
@@ -91,6 +92,9 @@ pub struct ToolRuntimeOptions {
     pub artifacts: Option<ArtifactPorts>,
     /// `Partial<ProcessPolicy>` の raw JSON(`resolve_process_policy` 入力)。
     pub process: Option<Value>,
+    /// `Partial<CommandPolicy>` の raw JSON(`resolve_command_policy` 入力)。
+    /// T1 は field のみ — grant gate/pin/`ToolCtx` 配線は T3。
+    pub command: Option<Value>,
     pub root: String,
     pub symlink_policy: SymlinkPolicy,
     pub names: Vec<ToolName>,
@@ -580,6 +584,13 @@ fn registered_definition(
         ToolName::Process => {
             // `process` の definition は `'static` — そのまま登録する。
             return Ok(process_tool_definition(ctx.process()));
+        }
+        ToolName::Command => {
+            // T1 deny-stub — `command` は registered set に入れないため
+            // 到達不能だが、closed enum の compile 充足 + fail-closed の
+            // `POLICY_VIOLATION "command unavailable"` definition を返す
+            // (実 grant 解決/pin/execute glue は T3)。
+            return Ok(command_tool_definition());
         }
     };
     Ok(CanonicalToolDefinition {

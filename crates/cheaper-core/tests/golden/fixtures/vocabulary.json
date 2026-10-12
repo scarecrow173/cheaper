@@ -49,7 +49,8 @@
           "write",
           "edit",
           "count_tokens",
-          "process"
+          "process",
+          "command"
         ]
       },
       "input": [
@@ -60,7 +61,8 @@
         "write",
         "edit",
         "count_tokens",
-        "process"
+        "process",
+        "command"
       ],
       "name": "full canonical set"
     },
@@ -184,7 +186,8 @@
               "write",
               "edit",
               "count_tokens",
-              "process"
+              "process",
+              "command"
             ],
             "tool": "bash"
           },
@@ -211,7 +214,8 @@
               "write",
               "edit",
               "count_tokens",
-              "process"
+              "process",
+              "command"
             ],
             "tool": "READ"
           },
@@ -253,6 +257,7 @@
     "write",
     "edit",
     "count_tokens",
-    "process"
+    "process",
+    "command"
   ]
 }

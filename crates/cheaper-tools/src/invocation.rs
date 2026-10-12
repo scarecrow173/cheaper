@@ -61,6 +61,9 @@ pub struct InvocationToolRuntimeOptions {
     pub artifacts: Option<ArtifactPorts>,
     /// `Partial<ProcessPolicy>` の raw JSON(`resolve_process_policy` 入力)。
     pub process: Option<Value>,
+    /// `Partial<CommandPolicy>` の raw JSON(`resolve_command_policy` 入力)。
+    /// T1 は passthrough のみ — invocation resolved policy への再注入は T4。
+    pub command: Option<Value>,
     pub root: String,
     pub symlink_policy: SymlinkPolicy,
     pub signal: Option<AbortSignal>,
@@ -241,6 +244,9 @@ impl InvocationToolRuntime {
                 serde_json::to_value(&inner.process)
                     .expect("ResolvedProcessPolicy は必ず serialize 可能"),
             ),
+            // T1 は caller 指定の raw をそのまま通す — `inner.process` の
+            // ような invocation resolved policy への再注入は T4 で確定。
+            command: options.runtime.command,
             root: options.runtime.root,
             symlink_policy: options.runtime.symlink_policy,
             names: options.runtime.names,

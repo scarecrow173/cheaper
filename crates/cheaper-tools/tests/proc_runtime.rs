@@ -92,6 +92,7 @@ fn options(
         read_strictness: None,
         artifacts: None,
         process: None,
+        command: None,
         root,
         symlink_policy: SymlinkPolicy::Deny,
         names,

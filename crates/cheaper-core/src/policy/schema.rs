@@ -7,6 +7,9 @@ use crate::duration::{parse_duration, DURATION_PATTERN};
 use crate::errors::{CheaperError, ErrorCode};
 use crate::js;
 use crate::model::tier::{Tier, TIERS};
+use crate::policy::command::{
+    command_policy_properties, resolve_command_policy, ResolvedCommandPolicy,
+};
 use crate::policy::process::{
     process_policy_properties, resolve_process_policy, ResolvedProcessPolicy,
 };
@@ -94,6 +97,9 @@ pub fn resolve_concurrency_policy(
 pub struct RuntimePolicy {
     pub workflow: WorkflowPolicy,
     pub process: ResolvedProcessPolicy,
+    /// `command` grants(trusted layer のみ authoring 可能。project
+    /// partial schema は section 全体を除外する)。
+    pub command: ResolvedCommandPolicy,
     pub execution: ExecutionPolicy,
     pub tools: ToolsPolicy,
     pub filesystem: FilesystemPolicy,
@@ -241,6 +247,7 @@ pub fn policy_complete_schema() -> Value {
             "version": VERSION_PROPERTY(),
             "workflow": object_schema(&[], workflow_policy_properties()),
             "process": object_schema(&["maxConcurrent", "tasks"], process_policy_properties()),
+            "command": object_schema(&["maxConcurrent", "grants"], command_policy_properties()),
             "execution": object_schema(&["timeout", "maxTurns", "maxToolCalls"], execution_properties(true)),
             "tools": object_schema(&["allow"], tools_properties()),
             "filesystem": object_schema(&["symlinks"], filesystem_properties()),
@@ -251,8 +258,32 @@ pub fn policy_complete_schema() -> Value {
     )
 }
 
-/// `POLICY_PARTIAL_SCHEMA` verbatim.
+/// `POLICY_PARTIAL_SCHEMA` verbatim(trusted user layer 用 — `command`
+/// section の grant authoring を許す)。
 pub fn policy_partial_schema() -> Value {
+    object_schema(
+        &["version"],
+        json!({
+            "version": VERSION_PROPERTY(),
+            "workflow": object_schema(&[], workflow_policy_properties()),
+            "process": object_schema(&[], process_policy_properties()),
+            "command": object_schema(&[], command_policy_properties()),
+            "execution": object_schema(&[], execution_properties(false)),
+            "tools": object_schema(&[], tools_properties()),
+            "filesystem": object_schema(&[], filesystem_properties()),
+            "model": object_schema(&[], model_properties()),
+            "output": object_schema(&[], output_properties()),
+            "retry": object_schema(&[], retry_properties()),
+        }),
+    )
+}
+
+/// project layer 用 partial schema(Option A の信頼境界 — `command`
+/// section 全体を property から除外し、`additionalProperties: false`
+/// が `command` key を含む project policy を load 時に拒否する。
+/// grant authoring key を個別列挙しないのは、将来 grant field が増えても
+/// section 丸ごと除外なら自動的に project から閉じるため(fail-closed)。
+pub fn policy_project_partial_schema() -> Value {
     object_schema(
         &["version"],
         json!({
@@ -269,11 +300,13 @@ pub fn policy_partial_schema() -> Value {
     )
 }
 
-/// `PolicySchemaMode`.
+/// `PolicySchemaMode`。`Partial` は trusted user layer 用に温存し、
+/// `ProjectPartial` は `command` 除外の project layer 用。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PolicySchemaMode {
     Complete,
     Partial,
+    ProjectPartial,
 }
 
 impl PolicySchemaMode {
@@ -281,34 +314,45 @@ impl PolicySchemaMode {
         match self {
             Self::Complete => "complete",
             Self::Partial => "partial",
+            Self::ProjectPartial => "project-partial",
         }
     }
 }
 
-fn policy_validators() -> &'static (jsonschema::Validator, jsonschema::Validator) {
-    static V: std::sync::OnceLock<(jsonschema::Validator, jsonschema::Validator)> =
-        std::sync::OnceLock::new();
+fn policy_validators() -> &'static (
+    jsonschema::Validator,
+    jsonschema::Validator,
+    jsonschema::Validator,
+) {
+    static V: std::sync::OnceLock<(
+        jsonschema::Validator,
+        jsonschema::Validator,
+        jsonschema::Validator,
+    )> = std::sync::OnceLock::new();
     V.get_or_init(|| {
         (
             jsonschema::draft202012::new(&policy_complete_schema())
                 .expect("complete policy schema compiles"),
             jsonschema::draft202012::new(&policy_partial_schema())
                 .expect("partial policy schema compiles"),
+            jsonschema::draft202012::new(&policy_project_partial_schema())
+                .expect("project partial policy schema compiles"),
         )
     })
 }
 
 /// `validatePolicySchema`: schema validation, then the legacy
-/// `process` section check via `resolveProcessPolicy` (its own
-/// boundary validation is preserved).
+/// `process`/`command` section check via `resolveProcessPolicy`/
+/// `resolveCommandPolicy` (their own boundary validation is preserved).
 pub fn validate_policy_schema(
     raw: &Value,
     mode: PolicySchemaMode,
 ) -> Result<Map<String, Value>, CheaperError> {
-    let (complete, partial) = policy_validators();
+    let (complete, partial, project_partial) = policy_validators();
     let validator = match mode {
         PolicySchemaMode::Complete => complete,
         PolicySchemaMode::Partial => partial,
+        PolicySchemaMode::ProjectPartial => project_partial,
     };
     if !validator.is_valid(raw) {
         let mut details = Map::new();
@@ -327,6 +371,9 @@ pub fn validate_policy_schema(
     // etc. before merge.
     if let Some(process) = policy.get("process") {
         resolve_process_policy(Some(process))?;
+    }
+    if let Some(command) = policy.get("command") {
+        resolve_command_policy(Some(command))?;
     }
     Ok(policy)
 }
@@ -457,6 +504,7 @@ pub fn normalize_policy(raw: &Map<String, Value>) -> Result<RuntimePolicy, Cheap
     Ok(RuntimePolicy {
         workflow: resolve_workflow_policy(raw.get("workflow"))?,
         process: resolve_process_policy(raw.get("process"))?,
+        command: resolve_command_policy(raw.get("command"))?,
         execution: ExecutionPolicy {
             timeout_ms,
             max_turns: get_u64(execution, "maxTurns"),

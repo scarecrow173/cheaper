@@ -236,6 +236,16 @@ fn fixture() -> E2eFixture {
                 interval: "30s".into(),
             },
         },
+        command: cheaper_core::policy::command::ResolvedCommandPolicy {
+            max_concurrent: 4,
+            grants: std::collections::BTreeMap::new(),
+            timeout: "10m".into(),
+            max_output_bytes: 4096,
+            kill_grace: "2s".into(),
+            heartbeat: cheaper_core::policy::process::ProcessHeartbeat {
+                interval: "30s".into(),
+            },
+        },
         execution: ExecutionPolicy {
             timeout_ms: 600_000,
             max_turns: 16,

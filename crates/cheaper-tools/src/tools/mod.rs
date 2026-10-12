@@ -2,6 +2,7 @@
 //! File Map; contents land in T2-4/T2-5/T2-6.
 
 pub mod boundary;
+pub mod command;
 pub mod count_tokens;
 pub mod edit;
 pub mod find;

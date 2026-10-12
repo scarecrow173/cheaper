@@ -317,6 +317,7 @@ fn read_scope(root: &str) -> cheaper_tools::registry::ToolRuntime {
             read_strictness: None,
             artifacts: None,
             process: None,
+            command: None,
             root: root.to_string(),
             symlink_policy: SymlinkPolicy::Deny,
             names: vec![ToolName::Read],

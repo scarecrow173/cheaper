@@ -28,6 +28,7 @@ fn validate_cases() {
                 "write": is_mutating_tool(ToolName::Write),
                 "edit": is_mutating_tool(ToolName::Edit),
                 "process": is_mutating_tool(ToolName::Process),
+                "command": is_mutating_tool(ToolName::Command),
                 "grep": is_mutating_tool(ToolName::Grep),
             });
             check(&name, &case["expected"], Ok(got));

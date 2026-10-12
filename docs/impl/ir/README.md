@@ -33,6 +33,7 @@ Directory: `docs/impl/ir`
 | IMPL-03426dknEI5DskvoOZUHs | Cargo source install distribution and thin PATH launchers | completed | [cargo-source-install-distribution-and-thin-path-launchers.md](./cargo-source-install-distribution-and-thin-path-launchers.md) |
 | IMPL-034Dl4CmoLtZTP6cs7v1Q8 | cheaper-usage SKILL.md hook path section rewrite | completed | [cheaper-usage-skill-md-hook-path-section-rewrite.md](./cheaper-usage-skill-md-hook-path-section-rewrite.md) |
 | IMPL-034r05iHy2gdnpkXDh47a6 | Code review fixes (post-merge) | completed | [code-review-fixes.md](./code-review-fixes.md) |
+| IMPL-034EOYv2cBtPBDWY0EMSiv | command core policy vocabulary and propagation | completed | [command-core-policy-vocabulary-and-propagation.md](./command-core-policy-vocabulary-and-propagation.md) |
 | IMPL-034r05iHy2gdnpoDlOXUs6 | Configure Pi models.json and cheaper models.yaml for Ollama | completed | [configure-pi-and-cheaper-model-config-for-ollama.md](./configure-pi-and-cheaper-model-config-for-ollama.md) |
 | IMPL-034r05iHy2gdnpyISCbZJu | Copilot pre-read hook adapter (PLAN-034r05iHE1FbkpaEpZrthK) | completed | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | IMPL-034zQU77PE0beEruVCSGYz | Core resource manifest implementation | completed | [core-resource-manifest-implementation.md](./core-resource-manifest-implementation.md) |

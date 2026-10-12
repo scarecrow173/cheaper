@@ -130,6 +130,16 @@ mod tests {
                     interval: "30s".to_string(),
                 },
             },
+            command: crate::policy::command::ResolvedCommandPolicy {
+                max_concurrent: 1,
+                grants: std::collections::BTreeMap::new(),
+                timeout: "2m".to_string(),
+                max_output_bytes: 65536,
+                kill_grace: "2s".to_string(),
+                heartbeat: crate::policy::process::ProcessHeartbeat {
+                    interval: "30s".to_string(),
+                },
+            },
             execution: ExecutionPolicy {
                 timeout_ms: 300_000,
                 max_turns: 10,

@@ -7,8 +7,8 @@ use serde_json::{json, Map, Value};
 
 use crate::errors::{CheaperError, ErrorCode};
 
-/// `TOOL_NAMES`: the 8 canonical tool names, in declaration order.
-pub const TOOL_NAMES: [&str; 8] = [
+/// `TOOL_NAMES`: the 9 canonical tool names, in declaration order.
+pub const TOOL_NAMES: [&str; 9] = [
     "read",
     "grep",
     "find",
@@ -17,6 +17,7 @@ pub const TOOL_NAMES: [&str; 8] = [
     "edit",
     "count_tokens",
     "process",
+    "command",
 ];
 
 /// Canonical tool name. Serialized as the lowercase string form
@@ -32,6 +33,7 @@ pub enum ToolName {
     Edit,
     CountTokens,
     Process,
+    Command,
 }
 
 impl ToolName {
@@ -45,6 +47,7 @@ impl ToolName {
             Self::Edit => "edit",
             Self::CountTokens => "count_tokens",
             Self::Process => "process",
+            Self::Command => "command",
         }
     }
 
@@ -59,6 +62,7 @@ impl ToolName {
             "edit" => Self::Edit,
             "count_tokens" => Self::CountTokens,
             "process" => Self::Process,
+            "command" => Self::Command,
             _ => return None,
         })
     }

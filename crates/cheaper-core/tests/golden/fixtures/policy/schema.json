@@ -582,6 +582,137 @@
     },
     {
       "expected": {
+        "ok": {
+          "policy": {
+            "command": {
+              "grants": {
+                "git-log": {
+                  "argv": [
+                    "log",
+                    "*"
+                  ],
+                  "executable": "git"
+                }
+              }
+            },
+            "version": 1
+          }
+        }
+      },
+      "input": {
+        "command": {
+          "grants": {
+            "git-log": {
+              "argv": [
+                "log",
+                "*"
+              ],
+              "executable": "git"
+            }
+          }
+        },
+        "version": 1
+      },
+      "mode": "partial",
+      "name": "partial accepts command grants",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "errors": [
+              {
+                "instancePath": ""
+              }
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "command": {
+          "grants": {
+            "git-log": {
+              "executable": "git"
+            }
+          }
+        },
+        "version": 1
+      },
+      "mode": "project-partial",
+      "name": "project-partial rejects command section",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "process": {
+              "maxConcurrent": 2,
+              "tasks": {}
+            },
+            "tools": {
+              "allow": [
+                "read"
+              ]
+            },
+            "version": 1
+          }
+        }
+      },
+      "input": {
+        "process": {
+          "maxConcurrent": 2,
+          "tasks": {}
+        },
+        "tools": {
+          "allow": [
+            "read"
+          ]
+        },
+        "version": 1
+      },
+      "mode": "project-partial",
+      "name": "project-partial accepts non-command sections",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "errors": [
+              {
+                "instancePath": ""
+              }
+            ]
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "input": {
+        "command": {
+          "maxConcurrent": 0,
+          "grants": {
+            "g": {
+              "executable": "git"
+            }
+          }
+        },
+        "version": 1
+      },
+      "mode": "project-partial",
+      "name": "project-partial rejects command authoring fields",
+      "op": "validatePolicySchema"
+    },
+    {
+      "expected": {
         "error": {
           "code": "INVALID_RUNTIME_POLICY",
           "details": null,
@@ -695,6 +826,16 @@
                 "maxTotalBytes": 33554432
               },
               "maxJobs": 1
+            },
+            "command": {
+              "grants": {},
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
             }
           }
         }
@@ -791,6 +932,16 @@
                 "maxTotalBytes": 33554432
               },
               "maxJobs": 1
+            },
+            "command": {
+              "grants": {},
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
             }
           }
         }
@@ -884,6 +1035,16 @@
                 "maxTotalBytes": 33554432
               },
               "maxJobs": 1
+            },
+            "command": {
+              "grants": {},
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
             }
           }
         }
