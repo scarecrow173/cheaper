@@ -123,23 +123,23 @@ edge で順序づける。Phase 2 候補・crate トポロジ変更は対象外�
 
 ## Task Breakdown
 
-- TASK-01: core helper 集約（NAME_PATTERN・schema_error_entries・
+- [T01](../tasks/p0-core-shared-helpers.md): core helper 集約（NAME_PATTERN・schema_error_entries・
   absent-file・MAX_SAFE_INTEGER）
-- TASK-02: tools js16 shim 削除 + glob_probe 削除 + fixture 明文化
-- TASK-03: cli error/signal helper 集約 + `Runtime::create` 単一入口 +
+- [T02](../tasks/p0-tools-dead-assets.md): tools js16 shim 削除 + glob_probe 削除 + fixture 明文化
+- [T03](../tasks/p0-cli-shared-helpers.md): cli error/signal helper 集約 + `Runtime::create` 単一入口 +
   workflow_run timeout details 修正 + count.rs BoxError
-- TASK-04: cli tests common 集約（VecSink/PipeStdin/ambient_env/Fixture）
-- TASK-05: runtime 共通 ctor・dev alias 解消・provider CliError→CheaperError・
+- [T04](../tasks/p0-cli-tests-common.md): cli tests common 集約（VecSink/PipeStdin/ambient_env/Fixture）
+- [T05](../tasks/p0-runtime-provider-adapter-helpers.md): runtime 共通 ctor・dev alias 解消・provider CliError→CheaperError・
   adapter pub 整理
-- TASK-06: 横断 workspace deps・`.gitignore`・benchmarks 明文化
-- TASK-07: tools characterization test 追加（先行必須）
-- TASK-08: runtime catalog/mod.rs 分割
-- TASK-09: runtime run/mod.rs 分割 + RunCtx stage 化 + openai_codex test 分離
+- [T06](../tasks/p0-workspace-deps-hygiene.md): 横断 workspace deps・`.gitignore`・benchmarks 明文化
+- [T07](../tasks/p1-tools-characterization-tests.md): tools characterization test 追加（先行必須）
+- [T08](../tasks/p1-runtime-catalog-split.md): runtime catalog/mod.rs 分割
+- [T09](../tasks/p1-runtime-run-split.md): runtime run/mod.rs 分割 + RunCtx stage 化 + openai_codex test 分離
   + ProviderEntry refresh + compose_provider auth + atomic write
-- TASK-10: cli compose.rs 分離 + workspace preamble + fake_stream 集約
-- TASK-11: tools process/grep/read 分割
-- TASK-12: workflow RunState 化 + stop! fn 化 + schema compile 共有
-- TASK-13: core worker/schema 分割 + read_*_file 共通骨格
+- [T10](../tasks/p1-cli-compose-separation.md): cli compose.rs 分離 + workspace preamble + fake_stream 集約
+- [T11](../tasks/p1-tools-module-splits.md): tools process/grep/read 分割
+- [T12](../tasks/p1-workflow-runstate.md): workflow RunState 化 + stop! fn 化 + schema compile 共有
+- [T13](../tasks/p1-core-schema-loader-split.md): core worker/schema 分割 + read_*_file 共通骨格
 
 ## Verification
 
@@ -154,7 +154,7 @@ edge で順序づける。Phase 2 候補・crate トポロジ変更は対象外�
 - `uuid` の version requirement 統一方針は実装時に確定（spec 記載の選択肢
   どちらかを採用して commit message / task doc に記録）。
 - dev-seam plumbing 集約の境界形状（fake_stream.rs に寄せる範囲）は
-  TASK-10 実施時に確定。
+  [T10](../tasks/p1-cli-compose-separation.md) 実施時に確定。
 
 ## Self-Review
 
@@ -165,8 +165,8 @@ edge で順序づける。Phase 2 候補・crate トポロジ変更は対象外�
 ## Implementation Handoff
 
 - Recommended mode: delegated（task 単位で subagent 化可能な crate 境界）
-- Independent work streams: TASK-01〜06（Phase 0）と TASK-07 は互いに
-  独立並列可能。TASK-08〜13 は TASK-07（tools 系）および対象 crate の
+- Independent work streams: [T01](../tasks/p0-core-shared-helpers.md)〜06（Phase 0）と [T07](../tasks/p1-tools-characterization-tests.md) は互いに
+  独立並列可能。[T08](../tasks/p1-runtime-catalog-split.md)〜13 は [T07](../tasks/p1-tools-characterization-tests.md)（tools 系）および対象 crate の
   Phase 0 完了に依存。
 - User approval required before dispatch: yes（plan-doc 承認）
 - If approved: discover available implementation and delegation capabilities in the current environment, then execute task-by-task with review checkpoints.
