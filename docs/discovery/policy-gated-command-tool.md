@@ -31,6 +31,7 @@ relations:
   derived-by:
     - "../specs/policy-gated-command-tool.md"
     - "../adr/command-grant-trust-boundary-and-managed-process-reuse.md"
+    - "../designs/policy-gated-command-tool.md"
   verifies: []
   verified-by: []
   references:
