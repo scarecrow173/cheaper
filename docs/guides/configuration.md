@@ -93,6 +93,15 @@ override で、既定値に merge される。
 ```yaml
 version: 1
 
+process:
+  maxConcurrent: 1       # 同時実行 task 数
+  timeout: 2m            # task の実行上限（queue・admission 待ちは含まない）
+  maxOutputBytes: 65536  # stdout/stderr 合計の保持上限（設定上限 16 MiB）
+  killGrace: 2s          # SIGTERM → SIGKILL までの猶予
+  heartbeat:
+    interval: 30s        # stderr diagnostic の最大観測間隔
+  tasks: {}              # 事前登録する named task
+
 execution:
   timeout: 120s          # run 全体の上限（model 解決・session 構築を含む）
   maxTurns: 8            # agent loop の最大 turn 数
@@ -107,6 +116,7 @@ tools:
     - write
     - edit
     - count_tokens
+    - process
 
 filesystem:
   symlinks: within-workspace   # deny | within-workspace
@@ -124,6 +134,10 @@ retry:
   transientAttempts: 1   # transient failure の retry 回数
 ```
 
+`process` tool（policy 事前登録の named task を実行する
+canonical tool）の task 定義・実行制御の詳細は
+[managed process ガイド](./managed-process.md) を参照。
+
 部分 override では `version` と必要な項目だけ書く。
 
 ```yaml
@@ -140,6 +154,8 @@ output:
 | `CHEAPER_CONFIG_DIR` | user config dir を任意の場所に変更する。test 隔離・検証用設定の分離に使う |
 | `CHEAPER_COUNT_MAX_BYTES` | `count-tokens` の byte cap（default 16 MiB）。正の整数のみ有効 |
 | `CHEAPER_READ_TOKEN_THRESHOLD` | parent-agent hook の large-read threshold（default 8192 token）。詳細は [integration ガイド](./parent-agent-integration.md) |
+| `CHEAPER_LOG` | logging の有効化レベル（`off`/`error`/`warn`/`info`/`debug`/`trace`）。`.cheaper/logs` + stderr へ出力。CLI option `--log` と同じ |
+| `CHEAPER_LOG_FORMAT` | ログ出力形式（`text`/`json`）。CLI option `--log-format` と同じ |
 | `DEVIN_CLI` | `devin` provider が使う Devin CLI binary の path。未設定時は PATH 上の `devin` |
 
 credential は `<userConfigDir>/credentials.json` に永続化される。
@@ -159,3 +175,5 @@ snapshot を同 dir へ保持する方式を取る（global session
 - provider・auth の設定: [providers ガイド](./providers.md)
 - worker との関係（`tools.allow`・`model.maxTier`・`writeScope`）:
   [workers ガイド](./workers.md)
+- `process` tool の named task・実行制御:
+  [managed process ガイド](./managed-process.md)

@@ -18,6 +18,14 @@
 - [parent-agent-integration.md](guides/parent-agent-integration.md) —
   parent agent との役割分担・skills/hooks・install・target 別
   挙動・連携確認
+- [distribution.md](guides/distribution.md) — CLI の install
+  （cargo source install）・thin launcher・APM package 配布
+- [managed-process.md](guides/managed-process.md) — policy 事前
+  登録 task を実行する `process` canonical tool
+- [workflow-usage.md](guides/workflow-usage.md) — workflow と
+  direct 呼び出しの使い分け指針（benchmark 実測に基づく）
+- [release.md](guides/release.md) — version canonical source・
+  bump・tag 公開の手順（maintainer 向け）
 
 ## Contributor / development
 
@@ -42,6 +50,7 @@ canonical document として管理する。
 | impl | [impl/](impl/) | 実装記録（ir）と実験・検証記録（exp） |
 | test-spec | [test-specs/](test-specs/) | 何を検証すべきかの正準仕様 |
 | handoff | [handoff/](handoff/) | フェーズ間・version 間の引き継ぎ記録 |
+| research | [research/](research/) | 外部 SDK・runtime 候補等の技術調査ノート |
 | guide | [guides/](guides/) | 上記の user-facing guide |
 
 一般的な利用には guide だけで足りる。設計判断・実装履歴・
