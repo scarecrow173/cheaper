@@ -1,10 +1,10 @@
 ---
 id: "TASK-034EOHIeC6KauJaRop87sk"
 type: "task"
-status: "todo"
+status: "done"
 title: "T2: shared managed-process 機構の tools/proc 抽出"
 created: "2026-10-12"
-updated: "2026-10-12"
+updated: "2026-10-13"
 owners: []
 relations:
   source: []
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-policy-gated-command-tool.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/shared-managed-process-machinery-extraction-into-tools-proc.md"
   depends-on:
     - "docs/plans/implement-policy-gated-command-tool.md"
   blocks: []
@@ -105,14 +106,14 @@ shared prepare・executable 解決の移設先に依存するため、T3 着手�
 
 ## Done When
 
-- [ ] `tools/proc/` に shared lifecycle 機構が集約され、`tools::process` の
+- [x] `tools/proc/` に shared lifecycle 機構が集約され、`tools::process` の
   公開 path が `pub use` で維持されている
-- [ ] 既存 process test（unit + `proc_process.rs` + golden）が無変更で pass
-- [ ] test 件数が減っていない（relocate/widen のみ、暗黙削除なし）
-- [ ] `resolve_process_executable` の error label が引数化され、process 経路の
+- [x] 既存 process test（unit + `proc_process.rs` + golden）が無変更で pass
+- [x] test 件数が減っていない（relocate/widen のみ、暗黙削除なし）
+- [x] `resolve_process_executable` の error label が引数化され、process 経路の
   message が変わっていない
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-tools` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-tools --test proc_process` exits 0
+- [x] `mise exec -- cargo test -p cheaper-tools` exits 0
+- [x] `mise exec -- cargo test -p cheaper-tools --test proc_process` exits 0

@@ -103,6 +103,7 @@ Directory: `docs/impl/ir`
 | IMPL-034Aca4oJotR844AUJf6QR | Resource manager observation の実装記録 | completed | [resource-manager-observation.md](./resource-manager-observation.md) |
 | IMPL-034zCh2EsO3oqQBXBAlfuM | Run canonical verification and close out issue 55 implementation | completed | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
+| IMPL-034EPz49PYz6zXgEeh5Fly | shared managed-process machinery extraction into tools proc | in-progress | [shared-managed-process-machinery-extraction-into-tools-proc.md](./shared-managed-process-machinery-extraction-into-tools-proc.md) |
 | IMPL-034A6gXDwnMxGVaPiuSCxb | Shared tool scheduler | completed | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
 | IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |

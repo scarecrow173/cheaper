@@ -45,7 +45,7 @@ pub(super) async fn finish_cleanup(
         }
     }
     if cleanup_error.is_some() {
-        diagnostics.emit("process.cleanup-failed");
+        diagnostics.emit(&format!("{}.cleanup-failed", diagnostics.event_prefix));
         let _ = child.start_kill();
     }
     cleanup_error

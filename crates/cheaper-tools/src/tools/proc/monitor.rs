@@ -7,7 +7,6 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use cheaper_core::duration::parse_duration;
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use serde_json::{json, Map, Value};
 use tokio::io::AsyncReadExt;
@@ -17,7 +16,9 @@ use tokio::time::sleep;
 use super::cleanup;
 use super::spawn::{display, status_parts};
 use super::tree::{create_process_tree, ProcessTree};
-use super::{aborted_err, combined_reason, wait_aborted, BoxedCause, ProcessToolOptions};
+use super::{
+    aborted_err, combined_reason, wait_aborted, BoxedCause, OnTimeout, ProcIdentity, ProcLimits,
+};
 use crate::catalog::{CanonicalToolResult, ToolContent};
 use crate::operation::{AbortController, AbortReason, AbortSignal};
 use crate::ToolError;
@@ -142,7 +143,10 @@ pub(super) const PHASE_RUNNING: u8 = 0;
 pub(super) const PHASE_CLEANUP: u8 = 1;
 
 pub(super) struct Diagnostics {
-    pub(super) task: String,
+    /// emit 行の `task` field 値(`ProcIdentity::label` — task/grant 名)。
+    pub(super) label: String,
+    /// event 名 prefix(`ProcIdentity::event_prefix` — `"process"` 等)。
+    pub(super) event_prefix: &'static str,
     pub(super) pid: Option<u32>,
     pub(super) started: Instant,
     pub(super) phase: Arc<AtomicU8>,
@@ -161,7 +165,7 @@ impl Diagnostics {
         };
         let line = json!({
             "event": event,
-            "task": self.task,
+            "task": self.label,
             "pid": self.pid,
             // TS `Math.round(performance.now() - startedAt)` 相当 —
             // `as_millis()` の切り捨てではなく最近接丸めに揃える。
@@ -193,8 +197,8 @@ impl Diagnostics {
 /// ものは `"SPAWN_ERROR"` で近似する(残留差分)。
 #[allow(clippy::too_many_arguments)]
 pub(super) async fn drive(
-    options: &ProcessToolOptions,
-    name: &str,
+    limits: &ProcLimits,
+    identity: &ProcIdentity,
     outer: &AbortSignal,
     inner: &AbortSignal,
     timeout_controller: &AbortController,
@@ -204,11 +208,12 @@ pub(super) async fn drive(
     phase: Arc<AtomicU8>,
     stdout_task: JoinHandle<()>,
     stderr_task: JoinHandle<()>,
+    on_timeout: Option<&OnTimeout>,
 ) -> Result<CanonicalToolResult, ToolError> {
-    // `parseDuration` の RangeError はそのまま伝播する(policy resolve で
+    // duration は呼出し側で `parse_duration` 済み(policy resolve で
     // 検証済みのため到達しない想定)。
-    let timeout_ms = parse_duration(&options.process.timeout)?;
-    let kill_grace_ms = parse_duration(&options.process.kill_grace)?;
+    let timeout_ms = limits.timeout_ms;
+    let kill_grace_ms = limits.kill_grace_ms;
     let mut tree: Option<ProcessTree> = child.id().map(create_process_tree);
     let mut cleanup_handle: Option<JoinHandle<Result<(), ToolError>>> = None;
     let mut timeout_sleep = Box::pin(sleep(std::time::Duration::from_millis(timeout_ms)));
@@ -224,13 +229,15 @@ pub(super) async fn drive(
                     && phase.load(Ordering::Relaxed) == PHASE_RUNNING
                 {
                     let mut details = Map::new();
-                    details.insert("task".to_string(), json!(name));
+                    for (key, value) in &identity.details {
+                        details.insert(key.clone(), value.clone());
+                    }
                     let reason = CheaperError::new(
                         ErrorCode::Timeout,
                         "managed process execution timed out",
                     )
                     .with_details(details);
-                    if let Some(on_timeout) = &options.on_timeout {
+                    if let Some(on_timeout) = on_timeout {
                         on_timeout(&reason);
                     }
                     timeout_controller.abort(AbortReason::from(reason));
@@ -261,7 +268,7 @@ pub(super) async fn drive(
     let (exit_code, signal) = status_parts(&status);
     tracing::debug!(
         target: "cheaper.tool.process",
-        task = %name,
+        task = %identity.label,
         exit.code = exit_code,
         "process exit"
     );
@@ -271,7 +278,9 @@ pub(super) async fn drive(
         "failed"
     };
     let mut details = Map::new();
-    details.insert("task".to_string(), json!(name));
+    for (key, value) in &identity.details {
+        details.insert(key.clone(), value.clone());
+    }
     details.insert("state".to_string(), json!(state));
     details.insert(
         "exitCode".to_string(),
@@ -306,7 +315,8 @@ pub(super) async fn drive(
     }
     // 表示だけを折り返す。raw stdout/stderr は details に保持する。
     let text = format!(
-        "process {name}: completed, exitCode=0\nstdout: {}\nstderr: {}",
+        "{}: completed, exitCode=0\nstdout: {}\nstderr: {}",
+        identity.display,
         display(&stdout),
         display(&stderr),
     );
