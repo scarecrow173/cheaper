@@ -38,6 +38,14 @@ tiktoken-rs = "0.12"
 dunce = "1"
 # Deny-pattern regexes, worker name pattern, env-var name pattern, etc.
 regex = "1"
+# `randomUUID()`(runId / artifact id / job id 等)。lockfile は 1.27.0 で
+# 固定済み — provider の `1` と workflow の `=1.27.0` を統一し、厳格側の
+# exact pin を workspace canonical とする(解決結果は不変)。
+uuid = { version = "=1.27.0", features = ["v4"] }
+# JWT payload `exp` decode / OpenAI Codex PKCE の base64url。
+base64 = "0.22"
+# dev/test 用 tempdir。
+tempfile = "3"
 # Rig facade for `cheaper-rig-adapter` (Phase 3 T1) and later provider crates.
 # Pin policy: `=0.43.x` (plan Risk #1); 0.43.0 is the PoC-validated line.
 rig = "=0.43.0"

@@ -18,9 +18,9 @@ tracing.workspace = true
 # gzip for Connect frame bodies (TS `zlib.gzipSync`/`gunzipSync`)。
 flate2 = "1"
 # `randomUUID()`(session/cascade/prompt/trigger ids)。
-uuid = { version = "1", features = ["v4"] }
+uuid.workspace = true
 # JWT payload `exp` decode（base64url）。
-base64 = "0.22"
+base64.workspace = true
 # Connect deframing stream combinator。
 async-stream = "0.3"
 # `http::Request`/`Bytes` for rig_http `HttpClientExt` calls。
@@ -33,5 +33,5 @@ regex.workspace = true
 thiserror = "2"
 
 [dev-dependencies]
-tempfile = "3"
+tempfile.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread"] }

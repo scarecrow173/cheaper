@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQo3a5Fsfj8WJj7D0Q"
 type: "task"
-status: "todo"
+status: "done"
 title: "T06: workspace deps and repo hygiene"
 created: "2026-10-12"
 updated: "2026-10-12"
