@@ -169,19 +169,19 @@ Directory: `docs/tasks`
 | TASK-034rAcF1RPJJogj2vzFDrF | New adapter scripts and hooks.json event registration | done | [new-adapter-scripts-and-hooks-json-event-registration.md](./new-adapter-scripts-and-hooks-json-event-registration.md) |
 | TASK-034DVHrszM9fxMAyaOCqFt | T6: observability contract test + verification | done | [observability-contract-tests-and-verification.md](./observability-contract-tests-and-verification.md) |
 | TASK-034A9yFQqZLtHt5ibjhE1h | Operation execution metrics | done | [operation-execution-metrics.md](./operation-execution-metrics.md) |
-| TASK-034EDQ2U9suHgZ8yJxDtPt | T03: cheaper-cli error/signal helpers and runtime entry | todo | [p0-cli-shared-helpers.md](./p0-cli-shared-helpers.md) |
-| TASK-034EDQ3rigtcVChwaRKAWD | T04: cheaper-cli tests common module | todo | [p0-cli-tests-common.md](./p0-cli-tests-common.md) |
-| TASK-034EDQ1S6FcEJLJQze19Ey | T01: cheaper-core shared helpers consolidation | todo | [p0-core-shared-helpers.md](./p0-core-shared-helpers.md) |
-| TASK-034EDQnyEmsl4J7YHNNQFw | T05: runtime ctor consolidation, dev alias, provider error conversion, adapter visibility | todo | [p0-runtime-provider-adapter-helpers.md](./p0-runtime-provider-adapter-helpers.md) |
-| TASK-034EDQ2nAKA8yGvk57aniQ | T02: cheaper-tools js16 shim and glob_probe removal | todo | [p0-tools-dead-assets.md](./p0-tools-dead-assets.md) |
-| TASK-034EDQo3a5Fsfj8WJj7D0Q | T06: workspace deps and repo hygiene | todo | [p0-workspace-deps-hygiene.md](./p0-workspace-deps-hygiene.md) |
-| TASK-034EDQJGStTXkFTSXPBshK | T10: cheaper-cli compose module separation | todo | [p1-cli-compose-separation.md](./p1-cli-compose-separation.md) |
-| TASK-034EDQLedhfXM1TMwrV4jG | T13: cheaper-core worker schema and loader splits | todo | [p1-core-schema-loader-split.md](./p1-core-schema-loader-split.md) |
-| TASK-034EDQIHsWPnLsqwvFQiFS | T08: cheaper-runtime catalog module split | todo | [p1-runtime-catalog-split.md](./p1-runtime-catalog-split.md) |
-| TASK-034EDQJaU8cr8MkalDStBT | T09: cheaper-runtime run module split and auth/provider extraction | todo | [p1-runtime-run-split.md](./p1-runtime-run-split.md) |
-| TASK-034EDQoBRwn5Bqlb09xwx1 | T07: cheaper-tools characterization tests | todo | [p1-tools-characterization-tests.md](./p1-tools-characterization-tests.md) |
-| TASK-034EDQKcQM3ZUANOmMgg6p | T11: cheaper-tools process/grep/read splits | todo | [p1-tools-module-splits.md](./p1-tools-module-splits.md) |
-| TASK-034EDQKID9bMzTe59QT2BD | T12: cheaper-workflow RunState and schema compile sharing | todo | [p1-workflow-runstate.md](./p1-workflow-runstate.md) |
+| TASK-034EDQ2U9suHgZ8yJxDtPt | T03: cheaper-cli error/signal helpers and runtime entry | done | [p0-cli-shared-helpers.md](./p0-cli-shared-helpers.md) |
+| TASK-034EDQ3rigtcVChwaRKAWD | T04: cheaper-cli tests common module | done | [p0-cli-tests-common.md](./p0-cli-tests-common.md) |
+| TASK-034EDQ1S6FcEJLJQze19Ey | T01: cheaper-core shared helpers consolidation | done | [p0-core-shared-helpers.md](./p0-core-shared-helpers.md) |
+| TASK-034EDQnyEmsl4J7YHNNQFw | T05: runtime ctor consolidation, dev alias, provider error conversion, adapter visibility | done | [p0-runtime-provider-adapter-helpers.md](./p0-runtime-provider-adapter-helpers.md) |
+| TASK-034EDQ2nAKA8yGvk57aniQ | T02: cheaper-tools js16 shim and glob_probe removal | done | [p0-tools-dead-assets.md](./p0-tools-dead-assets.md) |
+| TASK-034EDQo3a5Fsfj8WJj7D0Q | T06: workspace deps and repo hygiene | done | [p0-workspace-deps-hygiene.md](./p0-workspace-deps-hygiene.md) |
+| TASK-034EDQJGStTXkFTSXPBshK | T10: cheaper-cli compose module separation | done | [p1-cli-compose-separation.md](./p1-cli-compose-separation.md) |
+| TASK-034EDQLedhfXM1TMwrV4jG | T13: cheaper-core worker schema and loader splits | done | [p1-core-schema-loader-split.md](./p1-core-schema-loader-split.md) |
+| TASK-034EDQIHsWPnLsqwvFQiFS | T08: cheaper-runtime catalog module split | done | [p1-runtime-catalog-split.md](./p1-runtime-catalog-split.md) |
+| TASK-034EDQJaU8cr8MkalDStBT | T09: cheaper-runtime run module split and auth/provider extraction | done | [p1-runtime-run-split.md](./p1-runtime-run-split.md) |
+| TASK-034EDQoBRwn5Bqlb09xwx1 | T07: cheaper-tools characterization tests | done | [p1-tools-characterization-tests.md](./p1-tools-characterization-tests.md) |
+| TASK-034EDQKcQM3ZUANOmMgg6p | T11: cheaper-tools process/grep/read splits | done | [p1-tools-module-splits.md](./p1-tools-module-splits.md) |
+| TASK-034EDQKID9bMzTe59QT2BD | T12: cheaper-workflow RunState and schema compile sharing | done | [p1-workflow-runstate.md](./p1-workflow-runstate.md) |
 | TASK-034r05iHQeQpDqgk8XoZ8E | Parameterize apm e2e fixture by target | done | [parameterize-apm-e2e-fixture-by-target.md](./parameterize-apm-e2e-fixture-by-target.md) |
 | TASK-034r05iHQeQpDqhxabCiHf | Per-target apm install verification e2e | done | [per-target-apm-install-verification-e2e.md](./per-target-apm-install-verification-e2e.md) |
 | TASK-034COkOggSVxC84DkUUem5 | Persist plugin catalog snapshot and merge user models on plugin providers | done | [persist-plugin-catalog-and-merge-user-models.md](./persist-plugin-catalog-and-merge-user-models.md) |
