@@ -18,11 +18,10 @@
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::{Arc, OnceLock};
 
-use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirs, ConfigDirsOptions};
+use cheaper_core::config::dirs::ConfigDirs;
 use cheaper_core::errors::ErrorCode;
 use cheaper_core::js::code_unit_compare;
 use cheaper_core::policy::load::{load_policy, LoadPolicyOptions};
@@ -30,7 +29,7 @@ use cheaper_core::policy::schema::RuntimePolicy;
 use cheaper_core::worker::resolve::{resolve_worker, ResolveWorkerError};
 use cheaper_core::worker::validate::WorkerDefinition;
 use cheaper_core::workspace::deny_paths::create_path_denylist;
-use cheaper_core::workspace::paths::{canonicalize_workspace_root, SymlinkPolicy};
+use cheaper_core::workspace::paths::SymlinkPolicy;
 use cheaper_tools::catalog::ToolCatalog;
 use cheaper_tools::ToolError;
 use cheaper_workflow::{
@@ -40,7 +39,7 @@ use cheaper_workflow::{
 };
 use serde_json::Value;
 
-use crate::cli::{resolve_builtin_dir, BoxError, CliHooks, CliIo};
+use crate::cli::{BoxError, CliHooks, CliIo};
 
 /// `failures.get(name)` throw を `ToolError` で共有するための器。
 /// `Box<dyn Error>` は Clone 不可のため `Arc` で持ち、`source()` を
@@ -270,14 +269,10 @@ pub(crate) fn prepare_workflow_context(
     io: &CliIo<'_>,
     hooks: &CliHooks,
 ) -> Result<WorkflowContext, BoxError> {
-    let builtin_dir = resolve_builtin_dir(hooks)?;
-    let root = canonicalize_workspace_root(cwd.unwrap_or(&io.cwd))?;
-    let dirs = resolve_config_dirs(&ConfigDirsOptions {
-        cwd: Path::new(&root),
-        builtin_dir: &builtin_dir,
-        env: Some(io.env),
-        homedir: None,
-    });
+    let layout = crate::compose::resolve_workspace_layout(cwd, io, hooks)?;
+    let builtin_dir = layout.builtin_dir;
+    let root = layout.root;
+    let dirs = layout.dirs;
     let builtin_policy_path = builtin_dir.join("policy.yaml");
     let policy = load_policy(&LoadPolicyOptions {
         builtin_policy_path: &builtin_policy_path.to_string_lossy(),

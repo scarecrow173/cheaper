@@ -10,24 +10,18 @@
 //! worker run を伴わないため utility envelope を使い、usage record
 //! も書かない。
 
-use std::path::Path;
-
-use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirsOptions};
 use cheaper_core::model::classify::{
     build_auto_tier_context, classify_model, ClassifyOptions, ModelInfo,
 };
 use cheaper_core::model::config::{load_model_config, LoadModelConfigOptions};
 use cheaper_core::model::pricing::{resolve_pricing, ModelCost};
 use cheaper_core::model::resolve::is_excluded_model;
-use cheaper_core::workspace::paths::canonicalize_workspace_root;
 use cheaper_runtime::catalog::CatalogModel;
 use serde_json::{json, Map, Value};
 use tracing::Instrument;
 
 use crate::args::ModelsCliArgs;
-use crate::cli::{
-    emit_catalog_warnings, now, resolve_builtin_dir, BoxError, CliHooks, CliIo, CommandOut,
-};
+use crate::cli::{emit_catalog_warnings, now, BoxError, CliHooks, CliIo, CommandOut};
 use crate::envelope::utility_success_envelope;
 
 /// `toModelInfo` 相当 — catalog model を分類/価格層の入力 shape へ。
@@ -67,14 +61,8 @@ async fn execute_inner(
     hooks: &CliHooks,
     started_at: f64,
 ) -> Result<CommandOut, BoxError> {
-    let builtin_dir = resolve_builtin_dir(hooks)?;
-    let root = canonicalize_workspace_root(args.cwd.as_deref().unwrap_or(&io.cwd))?;
-    let dirs = resolve_config_dirs(&ConfigDirsOptions {
-        cwd: Path::new(&root),
-        builtin_dir: &builtin_dir,
-        env: Some(io.env),
-        homedir: None,
-    });
+    let layout = crate::compose::resolve_workspace_layout(args.cwd.as_deref(), io, hooks)?;
+    let dirs = layout.dirs;
     let ucd = dirs.user_config_dir.to_string_lossy();
     let pdir = dirs.project_dir.to_string_lossy();
 
@@ -86,11 +74,11 @@ async fn execute_inner(
     // `--worker <name>` — workload profile の outputPerInput を取る
     // (fixture fallback はしない — models は fake-stream 非対象)。
     let output_per_input = match &args.worker {
-        Some(name) => crate::run::resolve_named_worker(
+        Some(name) => crate::compose::resolve_named_worker(
             name,
             &dirs,
             #[cfg(feature = "dev-seam")]
-            &root,
+            &layout.root,
             #[cfg(feature = "dev-seam")]
             None,
         )?
@@ -101,7 +89,7 @@ async fn execute_inner(
         None => None,
     };
 
-    let runtime = crate::run::create_runtime(
+    let runtime = crate::compose::create_runtime(
         &dirs.user_config_dir,
         #[cfg(feature = "dev-seam")]
         None,

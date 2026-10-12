@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQJGStTXkFTSXPBshK"
 type: "task"
-status: "todo"
+status: "done"
 title: "T10: cheaper-cli compose module separation"
 created: "2026-10-12"
 updated: "2026-10-12"

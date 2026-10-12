@@ -574,11 +574,10 @@ fn lookup_catalog_model(mref: &ModelRef, user_config_dir: &Path) -> Option<Model
         // 永続 catalog + builtin static model のみを見る offline 版が
         // `Runtime::create`。bundled plugin(devin)も登録する
         // (`bundledProviderPlugins` 相当)。
-        let plugins = crate::compose::bundled_provider_plugins();
         let runtime = crate::compose::create_runtime(
-            user_config_dir.to_path_buf(),
-            crate::compose::process_env(),
-            &plugins,
+            user_config_dir,
+            #[cfg(feature = "dev-seam")]
+            None,
         )
         .ok()?;
         runtime

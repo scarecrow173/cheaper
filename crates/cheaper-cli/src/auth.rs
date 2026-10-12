@@ -425,9 +425,9 @@ fn create_runtime(io: &CliIo<'_>) -> Result<Runtime, CheaperError> {
         homedir: None,
     });
     crate::compose::create_runtime(
-        user_config_dir,
-        crate::compose::process_env(),
-        &crate::compose::bundled_provider_plugins(),
+        &user_config_dir,
+        #[cfg(feature = "dev-seam")]
+        None,
     )
 }
 

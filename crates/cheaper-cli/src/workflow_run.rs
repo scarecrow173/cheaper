@@ -58,11 +58,13 @@ use tracing::Instrument;
 
 use crate::args::{WorkflowInterfaceCliArgs, WorkflowRunCliArgs};
 use crate::cli::{now, system_now, BoxError, CliHooks, CliIo, CommandOut};
+use crate::compose::create_runtime;
+#[cfg(not(feature = "dev-seam"))]
+use crate::compose::production_session_factory;
 use crate::envelope::{utility_success_envelope, workflow_envelope};
 #[cfg(feature = "dev-seam")]
 use crate::fake_stream::load_test_stream;
 use crate::input::read_task_input;
-use crate::run::{create_runtime, production_session_factory};
 use crate::workflow_context::{prepare_workflow_context, SharedToolError};
 
 type BoxFuture<'a, T> = Pin<Box<dyn std::future::Future<Output = T> + Send + 'a>>;
@@ -180,10 +182,8 @@ fn build_model_bundle(shared: &Shared) -> Result<ModelBundle, ToolError> {
     )
     .map_err(|e| Box::new(e) as ToolError)?;
     #[cfg(feature = "dev-seam")]
-    let session_factory: Box<dyn SessionFactory> = match &fixture {
-        Some(f) => Box::new(f.session_factory()),
-        None => production_session_factory(),
-    };
+    let session_factory: Box<dyn SessionFactory> =
+        crate::compose::session_factory(fixture.as_ref());
     #[cfg(not(feature = "dev-seam"))]
     let session_factory: Box<dyn SessionFactory> = production_session_factory();
     #[cfg(feature = "dev-seam")]
