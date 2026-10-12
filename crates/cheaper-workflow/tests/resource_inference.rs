@@ -482,6 +482,107 @@ async fn known_access_underclaim_rejected_and_fallback_paths() {
     assert!(result.edges.is_empty());
 }
 
+/// `command` の catalog manifest(design §(f))— generic tool 分岐から
+/// `command_grant_resources()`(保守的 root subtree reads+writes、
+/// `produces` 非宣言)が適用される。`resources` omitted 時の generic
+/// fallback も同一形に収束し、明示 declared が known access を
+/// underclaim すると `declared {bucket} underclaims known access`
+/// (`INVALID_REQUEST`)で fail-closed する。
+#[tokio::test]
+async fn catalog_command_conservative_manifest_and_underclaim() {
+    let ws = workspace();
+    let catalog = cheaper_tools::catalog::create_tool_catalog(None).expect("catalog");
+    let result = inference(&ws.root, &catalog)
+        .infer(&[(
+            "a".to_string(),
+            tool_job(
+                "command",
+                json!({ "name": "build", "args": ["--release"] }),
+                Some(WorkflowResources {
+                    produces: Some(Vec::new()),
+                    ..Default::default()
+                }),
+            ),
+        )])
+        .await
+        .expect("command manifest");
+    let m = manifest(&result, "a");
+    assert_eq!(
+        m.reads,
+        vec![claim(
+            &ws.root,
+            ".",
+            ClaimMode::Shared,
+            ResourceScope::Subtree
+        )]
+    );
+    assert_eq!(
+        m.writes,
+        vec![claim(
+            &ws.root,
+            ".",
+            ClaimMode::Exclusive,
+            ResourceScope::Subtree
+        )]
+    );
+    // `produces` は宣言しない(duplicate-producer 検出との衝突回避)。
+    assert!(m.produces.is_empty());
+
+    // `resources` omitted — non-process tool は generic fallback に落ちる
+    // が、command の保守的 manifest と同一形へ収束する。
+    let omitted = inference(&ws.root, &catalog)
+        .infer(&[(
+            "a".to_string(),
+            tool_job("command", json!({ "name": "build", "args": [] }), None),
+        )])
+        .await
+        .expect("omitted fallback");
+    assert_eq!(manifest(&omitted, "a").reads, m.reads);
+    assert_eq!(manifest(&omitted, "a").writes, m.writes);
+    let diagnostics = omitted.diagnostics.expect("diagnostics");
+    assert!(has_fallback(&diagnostics, "a", "resources-omitted"));
+
+    // 明示 declared の underclaim — known access(root subtree)を含まない
+    // declared は bucket 毎に `INVALID_REQUEST` で reject される。
+    for (resources, bucket) in [
+        (
+            WorkflowResources {
+                reads: Some(Vec::new()),
+                ..Default::default()
+            },
+            "reads",
+        ),
+        (
+            WorkflowResources {
+                writes: Some(vec![exact("out/only")]),
+                ..Default::default()
+            },
+            "writes",
+        ),
+    ] {
+        let err = inference(&ws.root, &catalog)
+            .infer(&[(
+                "a".to_string(),
+                tool_job(
+                    "command",
+                    json!({ "name": "build", "args": [] }),
+                    Some(resources),
+                ),
+            )])
+            .await
+            .expect_err("command underclaim");
+        assert_eq!(common::err_code(&err), Some(ErrorCode::InvalidRequest));
+        let message = err
+            .downcast_ref::<CheaperError>()
+            .map(|e| e.message().to_string())
+            .unwrap_or_else(|| err.to_string());
+        assert!(
+            message.contains(&format!("declared {bucket} underclaims known access")),
+            "{message}"
+        );
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Worker authoritative scope
 // ---------------------------------------------------------------------------

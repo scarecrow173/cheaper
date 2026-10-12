@@ -477,3 +477,167 @@ async fn workflow_interface_text_format() {
     assert_eq!(code, 0, "stderr: {err}");
     assert!(out.contains("ok"), "stdout: {out}");
 }
+
+// ---------------------------------------------------------------------------
+// `kind: tool` + `command` — policy-gated grant execution(T5)
+// ---------------------------------------------------------------------------
+
+/// `command` grant が spawn する fixture child — `workflow run` の tool
+/// job がこの test binary 自身を再実行する。`CHEAPER_PROC_CHILD_MODE`
+/// 未設定(通常の `cargo test`)なら no-op。`probe` mode は
+/// `CHEAPER_PROC_CHILD_ARG` へ marker file を書く — command の spawn
+/// env は minimal env(grant.env のみ)のため、marker 到達は実 spawn +
+/// grant env 伝播の両方を証明する。
+#[test]
+fn workflow_command_fixture_child() {
+    let Ok(mode) = std::env::var("CHEAPER_PROC_CHILD_MODE") else {
+        return;
+    };
+    match mode.as_str() {
+        "probe" => {
+            std::fs::write(std::env::var("CHEAPER_PROC_CHILD_ARG").unwrap(), "ran").unwrap();
+        }
+        other => panic!("unknown fixture mode: {other}"),
+    }
+}
+
+/// `command` 用の trusted user layer `policy.yaml` — grant executable
+/// はこの test binary 自身(workspace 外のため workspace-resident 拒否
+/// に掛からず、ambient PATH 非依存で pin できる)。`argv` は literal
+/// pin、`env` で fixture mode + marker path を渡す。
+fn command_user_policy(marker: &str) -> String {
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    format!(
+        "version: 1\ncommand:\n  grants:\n    self:\n      executable: '{exe}'\n      argv: ['workflow_command_fixture_child', '--exact', '--nocapture']\n      env:\n        CHEAPER_PROC_CHILD_MODE: probe\n        CHEAPER_PROC_CHILD_ARG: '{marker}'\n"
+    )
+}
+
+/// `kind: tool` + `command` の end-to-end — trusted user layer の
+/// grant が `tools.allow` admission → `create_worker_scope` の
+/// re-injected command policy(pin + nonempty grants gate)→
+/// `scope.execute` の実 subprocess まで貫通する。marker file は実
+/// spawn の証跡、managed details は `$from` binding 経由で出力へ出る。
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_run_command_grant_end_to_end() {
+    let mut f = Fixture::new();
+    let marker = f
+        .ws_path()
+        .join("cmd-marker")
+        .to_string_lossy()
+        .into_owned();
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        command_user_policy(&marker),
+    )
+    .unwrap();
+    f = f.with_workflow(json!({
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+            "cmd": {
+                "kind": "tool",
+                "tool": "command",
+                "input": {
+                    "name": "self",
+                    "args": ["workflow_command_fixture_child", "--exact", "--nocapture"]
+                }
+            }
+        },
+        "outputs": {
+            "state": { "schema": { "type": "string" }, "value": { "$from": "cmd", "path": "/details/state" } },
+            "exit": { "schema": { "type": "number" }, "value": { "$from": "cmd", "path": "/details/exitCode" } }
+        }
+    }));
+    let (code, env, err) = f.run(&["workflow", "run", "workflow.json"]).await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["result"], json!({"state": "completed", "exit": 0}));
+    // 実 subprocess spawn の証跡 — grant env(minimal env)経由で子が
+    // workspace 内に marker を書いた。
+    assert_eq!(std::fs::read_to_string(&marker).unwrap(), "ran");
+    let jobs = env["jobs"].as_array().unwrap();
+    let job = jobs.iter().find(|j| j["id"] == json!("cmd")).unwrap();
+    assert_eq!(job["status"], json!("succeeded"));
+    assert_eq!(job["meta"]["toolCalls"], json!(1));
+    // command は journal しない — `meta.changes` に子の副作用(実際に
+    // 書かれた marker)が audited change として載らない。
+    assert_eq!(job["meta"]["changes"]["files"], json!([]));
+}
+
+/// grants 無し(builtin default)の `command` job は `create_worker_scope`
+/// の nonempty grants gate で fail-closed — job diagnostic は
+/// `POLICY_VIOLATION`、envelope は `TOOL_EXECUTION_FAILURE`(exit 6)。
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_run_command_denied_without_grants() {
+    let mut f = Fixture::new().with_workflow(json!({
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+            "cmd": {
+                "kind": "tool",
+                "tool": "command",
+                "input": { "name": "self", "args": [] }
+            }
+        },
+        "outputs": {}
+    }));
+    let (code, env, _err) = f.run(&["workflow", "run", "workflow.json"]).await;
+    assert_eq!(env["ok"], json!(false), "envelope: {env}");
+    let jobs = env["jobs"].as_array().unwrap();
+    let job = jobs.iter().find(|j| j["id"] == json!("cmd")).unwrap();
+    assert_eq!(job["status"], json!("failed"), "job: {job}");
+    assert_eq!(
+        job["error"]["code"],
+        json!("POLICY_VIOLATION"),
+        "job: {job}"
+    );
+    assert!(job["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("nonempty authorized grants"));
+    assert_eq!(env["error"]["code"], json!("TOOL_EXECUTION_FAILURE"));
+    assert_eq!(code, 6, "envelope: {env}");
+}
+
+/// `tools.allow` から `command` が外れた policy では admission が
+/// `POLICY_VIOLATION "tool not allowed: command"` で弾く — scope 生成・
+/// subprocess の手前で止まる。
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_run_command_tool_not_allowed() {
+    let mut f = Fixture::new();
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        "version: 1\ntools:\n  allow: [read]\n",
+    )
+    .unwrap();
+    f = f.with_workflow(json!({
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+            "cmd": {
+                "kind": "tool",
+                "tool": "command",
+                "input": { "name": "self", "args": [] }
+            }
+        },
+        "outputs": {}
+    }));
+    let (code, env, _err) = f.run(&["workflow", "run", "workflow.json"]).await;
+    assert_eq!(env["ok"], json!(false), "envelope: {env}");
+    let jobs = env["jobs"].as_array().unwrap();
+    let job = jobs.iter().find(|j| j["id"] == json!("cmd")).unwrap();
+    assert_eq!(job["status"], json!("failed"), "job: {job}");
+    assert_eq!(
+        job["error"]["code"],
+        json!("POLICY_VIOLATION"),
+        "job: {job}"
+    );
+    assert!(job["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("tool not allowed: command"));
+    assert_eq!(env["error"]["code"], json!("TOOL_EXECUTION_FAILURE"));
+    assert_eq!(code, 6, "envelope: {env}");
+}

@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034EOCRqkrPUFcQLHVN5I3"
 type: "test-spec"
-status: "proposed"
+status: "approved"
 title: "policy-gated command tool の信頼境界保証"
 created: "2026-10-12"
 updated: "2026-10-13"
