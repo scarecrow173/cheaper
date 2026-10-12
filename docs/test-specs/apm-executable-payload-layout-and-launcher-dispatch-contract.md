@@ -28,7 +28,7 @@ relations:
     - "docs/designs/apm-executable-payload-layout-and-platform-launchers.md"
   derived-by: []
   verifies:
-    - "docs/plans/assemble-apm-executable-payload-with-platform-launchers.md"
+    - "docs/designs/apm-executable-payload-layout-and-platform-launchers.md"
   verified-by: []
   references: []
   defers: []

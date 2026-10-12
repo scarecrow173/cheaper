@@ -30,7 +30,8 @@ relations:
     - "../adr/inject-url-opener-seam-for-auth-interaction.md"
     - "../designs/auth-command.md"
     - "../designs/auth-url-opener-seam.md"
-  refines: []
+  refines:
+    - "../adr/absorb-provider-oauth-and-api-key-login-into-the-cheaper-cli-cheaper-auth.md"
   refined-by: []
   derives-from: []
   derived-by:

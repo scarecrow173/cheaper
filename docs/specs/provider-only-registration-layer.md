@@ -28,8 +28,12 @@ relations:
     - "../designs/model-resolver.md"
   refines: []
   refined-by: []
-  derives-from: []
-  derived-by: []
+  derives-from:
+    - "../discovery/v2-productization-initiative-briefing.md"
+  derived-by:
+    - "./devin-local-bundled-provider.md"
+    - "../designs/provider-only-registration-layer.md"
+    - "../adr/provider-only-registration-via-explicit-bundled-plugin-contract.md"
   verifies: []
   verified-by: []
   references: []

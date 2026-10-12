@@ -29,7 +29,8 @@ relations:
   related:
     - "../designs/cli-bundle-layout.md"
     - "../designs/dev-apm-project-and-distributable-package-layout.md"
-  refines: []
+  refines:
+    - "../adr/remove-the-committed-esbuild-cli-payload-and-move-the-canonical-version-to-cargo.md"
   refined-by: []
   derives-from: []
   derived-by:

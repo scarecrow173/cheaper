@@ -29,7 +29,8 @@ relations:
     - "../adr/use-ollama-on-docker-as-real-provider-for-smoke-verification.md"
     - "../impl/ir/run-real-provider-smoke-test-with-ollama.md"
     - "../designs/cross-agent-distribution-verification.md"
-  refines: []
+  refines:
+    - "../adr/use-ollama-on-docker-as-real-provider-for-smoke-verification.md"
   refined-by: []
   derives-from: []
   derived-by: []

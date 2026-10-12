@@ -33,10 +33,10 @@ relations:
     - "../adr/keep-verbatim-pre-read-code-as-noop-on-non-windsurf-targets.md"
     - "../designs/copilot-pre-read-hook-adapter.md"
     - "../designs/huge-file-byte-cap-guard-and-fail-closed-hook.md"
-    - "../discovery/cross-agent-hook-distribution-and-contract-matrix.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "../discovery/cross-agent-hook-distribution-and-contract-matrix.md"
   derived-by: []
   verifies: []
   verified-by: []

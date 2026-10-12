@@ -36,7 +36,8 @@ relations:
     - "../adr/distribute-cheaper-as-node-26-sea-standalone-executables-shared-by-direct-releas.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/release-workflow-manual-dispatch-and-artifact-contract.md"
   references:
     - "https://nodejs.org/api/single-executable-applications.html"
   defers: []

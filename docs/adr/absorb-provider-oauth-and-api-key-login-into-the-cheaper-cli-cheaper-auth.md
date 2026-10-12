@@ -29,7 +29,10 @@ relations:
     - "../plans/auth-command.md"
     - "./one-shot-json-first-cli.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "../specs/auth-io-boundary.md"
+    - "../specs/auth-tests-do-not-launch-os-browser.md"
+    - "../specs/pi-state-under-cheaper-config-dir.md"
   derives-from:
     - "../discovery/v2-productization-initiative-briefing.md"
   derived-by:

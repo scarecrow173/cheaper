@@ -34,6 +34,7 @@ relations:
     - "../discovery/bulk-reader-huge-file-safe-io.md"
   derived-by:
     - "../adr/bulk-reader-huge-file-safe-io.md"
+    - "./grep-batch-max-bytes-line-payload-invariant.md"
   verifies: []
   verified-by: []
   references: []

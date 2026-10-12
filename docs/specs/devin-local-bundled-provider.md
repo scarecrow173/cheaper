@@ -28,7 +28,8 @@ relations:
     - "./auth-login-command.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "./provider-only-registration-layer.md"
   derived-by: []
   verifies: []
   verified-by: []

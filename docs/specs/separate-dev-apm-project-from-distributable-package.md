@@ -29,12 +29,13 @@ relations:
     - "../adr/distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"
     - "../designs/cli-bundle-layout.md"
     - "../designs/cross-agent-distribution-verification.md"
-    - "../discovery/apm-self-contained-cli-distribution.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "../discovery/apm-self-contained-cli-distribution.md"
   derived-by:
     - "../adr/separate-dev-apm-project-via-nested-distributable-package.md"
+    - "./user-facing-docs-information-architecture.md"
   verifies: []
   verified-by: []
   references: []

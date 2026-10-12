@@ -25,7 +25,8 @@ relations:
   related:
     - "./auth-login-command.md"
     - "./delegation-usage-measurement-log.md"
-  refines: []
+  refines:
+    - "../adr/absorb-provider-oauth-and-api-key-login-into-the-cheaper-cli-cheaper-auth.md"
   refined-by: []
   derives-from: []
   derived-by: []

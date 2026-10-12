@@ -32,6 +32,8 @@ relations:
     - "./windsurf-cascade-hooks-and-apm-hook-deployment.md"
   derived-by:
     - "../specs/apm-self-contained-cli-distribution.md"
+    - "../specs/repo-owned-setup-contract-for-fresh-checkouts.md"
+    - "../specs/separate-dev-apm-project-from-distributable-package.md"
   verifies: []
   verified-by: []
   references: []

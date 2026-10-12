@@ -34,6 +34,7 @@ relations:
     - "../adr/keep-verbatim-pre-read-code-as-noop-on-non-windsurf-targets.md"
     - "../specs/copilot-pre-read-hook-adapter.md"
     - "../adr/copilot-adapter-separate-script-never-nonzero-exit.md"
+    - "../specs/synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md"
   verifies:
     - "../designs/apm-skills-and-pre-read-hook.md"
   verified-by: []

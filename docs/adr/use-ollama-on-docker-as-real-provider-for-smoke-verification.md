@@ -28,7 +28,8 @@ relations:
   related:
     - "../specs/ollama-real-provider-smoke-verification.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "../specs/ollama-real-provider-worker-e2e.md"
   derives-from:
     - "../discovery/real-provider-smoke-verification-via-ollama.md"
   derived-by: []

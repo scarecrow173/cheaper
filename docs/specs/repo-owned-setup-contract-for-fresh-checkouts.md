@@ -28,7 +28,8 @@ relations:
     - "../adr/separate-dev-apm-project-via-nested-distributable-package.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "../discovery/apm-self-contained-cli-distribution.md"
   derived-by: []
   verifies: []
   verified-by: []

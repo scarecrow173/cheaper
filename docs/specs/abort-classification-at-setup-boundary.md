@@ -27,7 +27,8 @@ relations:
     - "../adr/normalize-repair-abort-grace-provider-failure-classification-and-agent-execution.md"
     - "./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md"
     - "../designs/cli-contract-envelope-exit-codes.md"
-  refines: []
+  refines:
+    - "../adr/normalize-repair-abort-grace-provider-failure-classification-and-agent-execution.md"
   refined-by: []
   derives-from: []
   derived-by: []

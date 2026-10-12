@@ -27,7 +27,8 @@ relations:
     - "../designs/pi-execution-engine.md"
     - "../impl/exp/ollama-real-provider-smoke-verification.jsonl"
   refines: []
-  refined-by: []
+  refined-by:
+    - "../specs/abort-classification-at-setup-boundary.md"
   derives-from:
     - "../discovery/post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md"
   derived-by: []

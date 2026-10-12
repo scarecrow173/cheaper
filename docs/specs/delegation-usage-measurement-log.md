@@ -31,7 +31,8 @@ relations:
   refines: []
   refined-by:
     - "./usage-log-recording-scope-docs.md"
-  derives-from: []
+  derives-from:
+    - "../discovery/v2-productization-initiative-briefing.md"
   derived-by: []
   verifies: []
   verified-by: []
