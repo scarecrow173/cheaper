@@ -48,6 +48,7 @@ Directory: `docs/specs`
 | SPEC-034zWqZR8Dmu9TXTR2qcsg | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |
 | SPEC-034CKp34AcjKtAYjnfjXU4 | Plugin catalog persistence and user model additions | proposed | [plugin-catalog-persistence-and-user-models.md](./plugin-catalog-persistence-and-user-models.md) |
+| SPEC-034EMbEGBOWM4CAM6YSWm6 | policy-gated dynamic command を canonical tool として提供する | approved | [policy-gated-command-tool.md](./policy-gated-command-tool.md) |
 | SPEC-034EDjYmUWLJ96Zqy7XOEw | Post-feature structural refactoring scope | approved | [post-feature-structural-refactoring-scope.md](./post-feature-structural-refactoring-scope.md) |
 | SPEC-034DyDAOW1my2ihNQIVNfN | Post-migration structural cleanup scope | approved | [post-migration-structural-cleanup-scope.md](./post-migration-structural-cleanup-scope.md) |
 | SPEC-034r2qodmutbif9L0DLskN | Correct provider and auth documentation to match runtime capabilities | implemented | [provider-auth-docs-runtime-sync.md](./provider-auth-docs-runtime-sync.md) |
