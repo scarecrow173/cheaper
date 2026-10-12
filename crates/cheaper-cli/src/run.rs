@@ -23,6 +23,7 @@
 //! [`resolve_run_worker`]・[`SignalRelay`] を再利用し、同一の
 //! composition root 経路で `run_worker` を呼べる。
 
+#[cfg(feature = "dev-seam")]
 use std::collections::BTreeMap;
 use std::path::Path;
 #[cfg(feature = "dev-seam")]
@@ -33,30 +34,34 @@ use std::time::Duration;
 
 use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirs, ConfigDirsOptions};
 use cheaper_core::duration::parse_duration;
-use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::errors::CheaperError;
+#[cfg(feature = "dev-seam")]
+use cheaper_core::errors::ErrorCode;
 use cheaper_core::model::config::{load_model_config, LoadModelConfigOptions};
 use cheaper_core::policy::load::{load_policy, LoadPolicyOptions};
 use cheaper_core::policy::restrict::{restrict_policy, PolicyRestrictions};
 use cheaper_core::worker::resolve::{resolve_worker, resolve_worker_file, ResolveWorkerError};
 use cheaper_core::worker::validate::{validate_worker_input, WorkerDefinition};
 use cheaper_core::workspace::paths::canonicalize_workspace_root;
-use cheaper_provider::devin::{DevinCompletionModelFactory, DevinProviderPlugin, API_KIND};
+use cheaper_provider::devin::{DevinCompletionModelFactory, API_KIND};
 use cheaper_rig_adapter::{
     builtin_completion_model, BuiltinAuth, BuiltinModelSpec, CompletionModel,
 };
 #[cfg(feature = "dev-seam")]
 use cheaper_runtime::auth::AuthType;
-use cheaper_runtime::auth::{OAuthFlow, ProcessEnv, ProviderEnv};
+#[cfg(feature = "dev-seam")]
+use cheaper_runtime::auth::ProcessEnv;
+use cheaper_runtime::auth::ProviderEnv;
 #[cfg(feature = "dev-seam")]
 use cheaper_runtime::fixture::{RunFixture, ScriptedAuthInteraction};
-use cheaper_runtime::plugin::CheaperProviderPlugin;
 use cheaper_runtime::run::{
     run_worker, CompletionModelFactory, RigSessionFactory, RunWorkerDeps, SessionFactory,
     SessionSpec,
 };
 use cheaper_runtime::Runtime;
-use cheaper_tools::operation::{AbortController, AbortListenerId, AbortReason, AbortSignal};
-use serde_json::{json, Map, Value};
+#[cfg(feature = "dev-seam")]
+use cheaper_tools::operation::AbortReason;
+use serde_json::Value;
 use tracing::Instrument;
 
 use crate::args::RunCliArgs;
@@ -67,6 +72,7 @@ use crate::envelope::success_envelope;
 #[cfg(feature = "dev-seam")]
 use crate::fake_stream::load_test_stream;
 use crate::input::read_task_input;
+use crate::signal::SignalRelay;
 
 // ---------------------------------------------------------------------------
 // provider env(fixture overlay + process env)
@@ -122,22 +128,16 @@ pub(crate) fn create_runtime(
         overlay: fixture.map(|f| f.env.clone()).unwrap_or_default(),
     });
     #[cfg(not(feature = "dev-seam"))]
-    let env: Arc<dyn ProviderEnv> = Arc::new(ProcessEnv);
+    let env: Arc<dyn ProviderEnv> = crate::compose::process_env();
     #[cfg(feature = "dev-seam")]
-    let mut plugins: Vec<Arc<dyn CheaperProviderPlugin>> =
-        vec![Arc::new(DevinProviderPlugin::new())];
+    let mut plugins = crate::compose::bundled_provider_plugins();
     #[cfg(not(feature = "dev-seam"))]
-    let plugins: Vec<Arc<dyn CheaperProviderPlugin>> = vec![Arc::new(DevinProviderPlugin::new())];
+    let plugins = crate::compose::bundled_provider_plugins();
     #[cfg(feature = "dev-seam")]
     if let Some(f) = fixture {
         plugins.push(Arc::new(f.plugin()));
     }
-    let runtime = Runtime::create(
-        user_config_dir.to_path_buf(),
-        env,
-        &plugins,
-        BTreeMap::<String, Arc<dyn OAuthFlow>>::new(),
-    )?;
+    let runtime = crate::compose::create_runtime(user_config_dir.to_path_buf(), env, &plugins)?;
     #[cfg(feature = "dev-seam")]
     if let Some(f) = fixture {
         for (provider_id, secret) in &f.auth_logins {
@@ -276,93 +276,6 @@ fn resolve_run_worker(
 }
 
 // ---------------------------------------------------------------------------
-// signal 中継
-// ---------------------------------------------------------------------------
-
-/// `process.on("SIGINT"/"SIGTERM", onAbort)` + `hooks.signal` listener
-/// を `AbortController` へ中継する scope。first reason は
-/// `AbortSignal` の OnceLock が守る。
-/// Drop で OS signal task を abort し `hooks.signal` listener を外す
-/// (TS `finally` の `process.off`/`removeEventListener` 相当)。
-pub(crate) struct SignalRelay {
-    controller: AbortController,
-    os_task: tokio::task::JoinHandle<()>,
-    external: Option<(AbortSignal, AbortListenerId)>,
-}
-
-impl SignalRelay {
-    pub(crate) fn install(hooks: &CliHooks) -> Self {
-        let controller = AbortController::new();
-        let external = hooks.signal.as_ref().map(|sig| {
-            let ac = controller.clone();
-            // TS は `ac.abort()` で reason を捨てる(既定 AbortError) —
-            // `AbortReason::aborted()` で同じ分類(signal → ABORTED)に
-            // 揃える。
-            let id = sig.on_abort(move |_| ac.abort(AbortReason::aborted()));
-            // 登録後の aborted 確認 — abort 済み signal の listener は
-            // 発火しない(TS `if (hooks.signal?.aborted) ac.abort()`)。
-            if sig.is_aborted() {
-                controller.abort(AbortReason::aborted());
-            }
-            (sig.clone(), id)
-        });
-        let ac = controller.clone();
-        let os_task = tokio::spawn(async move {
-            wait_os_signal().await;
-            ac.abort(AbortReason::aborted());
-        });
-        Self {
-            controller,
-            os_task,
-            external,
-        }
-    }
-
-    /// 集約 abort 側(`deps.signal` / fixture `abort` 発火先)の signal。
-    pub(crate) fn signal(&self) -> AbortSignal {
-        self.controller.signal()
-    }
-
-    /// 中継先 controller(fixture `abort` の遅延発火に使う)。
-    /// seam-only — `dev-seam` feature でのみ sole caller(fixture abort
-    /// task)が存在する。
-    #[cfg(feature = "dev-seam")]
-    fn controller(&self) -> AbortController {
-        self.controller.clone()
-    }
-}
-
-impl Drop for SignalRelay {
-    fn drop(&mut self) {
-        self.os_task.abort();
-        if let Some((sig, id)) = self.external.take() {
-            sig.remove_listener(id);
-        }
-    }
-}
-
-#[cfg(unix)]
-async fn wait_os_signal() {
-    match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
-        Ok(mut term) => {
-            tokio::select! {
-                _ = tokio::signal::ctrl_c() => {}
-                _ = term.recv() => {}
-            }
-        }
-        // SIGTERM listener 構築失敗時は SIGINT のみ中継する。
-        Err(_) => {
-            let _ = tokio::signal::ctrl_c().await;
-        }
-    }
-}
-
-#[cfg(not(unix))]
-async fn wait_os_signal() {
-    let _ = tokio::signal::ctrl_c().await;
-}
-
-// ---------------------------------------------------------------------------
 // executeRun 本体
 // ---------------------------------------------------------------------------
 
@@ -449,13 +362,7 @@ async fn execute_inner(
     };
 
     let timeout_ms = match &args.timeout {
-        Some(t) => Some(parse_duration(t).map_err(|_| {
-            CheaperError::new(
-                ErrorCode::InvalidRequest,
-                format!("invalid --timeout duration: {t}"),
-            )
-            .with_details(Map::from_iter([("timeout".to_string(), json!(t))]))
-        })?),
+        Some(t) => Some(parse_duration(t).map_err(|_| crate::errors::invalid_timeout(t))?),
         None => None,
     };
     let effective_policy = restrict_policy(

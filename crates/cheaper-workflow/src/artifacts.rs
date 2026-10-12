@@ -40,9 +40,8 @@ pub struct ArtifactProjectionOptions {
     pub include_preview: Option<bool>,
 }
 
-/// `Number.isSafeInteger(cap)` — u64 では整数は常に整数なので
-/// 2^53-1 上限だけが有効な制約。
-
+// `Number.isSafeInteger(cap)` — u64 では整数は常に整数なので
+// 2^53-1 上限だけが有効な制約。
 struct Entry {
     reference: ArtifactReference,
     data: Vec<u8>,

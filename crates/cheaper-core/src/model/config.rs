@@ -96,7 +96,7 @@ fn validate_models_config(
     if validator.is_valid(raw) {
         return Ok(raw.as_object().expect("schema enforces object").clone());
     }
-    let errors: Vec<SchemaErrorEntry> = schema_error_entries(&validator, raw);
+    let errors: Vec<SchemaErrorEntry> = schema_error_entries(validator, raw);
     let mut details = Map::new();
     details.insert("path".to_string(), json!(file_path));
     details.insert(
