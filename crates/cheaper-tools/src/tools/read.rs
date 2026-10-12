@@ -13,6 +13,7 @@ use std::io;
 use std::sync::Arc;
 
 use cheaper_core::errors::{node_io_error, CheaperError, ErrorCode};
+use cheaper_core::js::MAX_SAFE_INTEGER_U64;
 use cheaper_core::nodepath;
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::deny_paths::PathDenylist;
@@ -223,7 +224,7 @@ fn read_publication(
     signal: Option<&AbortSignal>,
 ) -> Result<Vec<u8>, ToolError> {
     // `Number.isSafeInteger(cap) && cap >= 0`。
-    if cap > 9_007_199_254_740_991 {
+    if cap > MAX_SAFE_INTEGER_U64 {
         return Err(Box::new(CheaperError::new(
             ErrorCode::InvalidRequest,
             "invalid artifact publication cap",

@@ -24,12 +24,7 @@ fn read_policy_file(
     let bytes = match std::fs::read(file_path) {
         Ok(b) => b,
         Err(e) => {
-            let absent = e.kind() == std::io::ErrorKind::NotFound
-                || e.kind() == std::io::ErrorKind::NotADirectory
-                // Windows maps "path through a file" to ERROR_DIRECTORY
-                // (267) rather than a `NotADirectory` kind.
-                || e.raw_os_error() == Some(267);
-            if absent {
+            if crate::errors::is_absent_file_error(&e) {
                 if !required {
                     return Ok(None);
                 }

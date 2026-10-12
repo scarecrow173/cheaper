@@ -9,6 +9,7 @@ use std::future::Future;
 use std::sync::{Arc, Mutex, Weak};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::js::MAX_SAFE_INTEGER_U64 as MAX_SAFE_INTEGER;
 use cheaper_tools::artifact::{
     ArtifactAvailability, ArtifactMetadata, ArtifactPut, ArtifactReadRequest, ArtifactReadResult,
     ArtifactReader, ArtifactReference, ArtifactSource,
@@ -41,7 +42,6 @@ pub struct ArtifactProjectionOptions {
 
 /// `Number.isSafeInteger(cap)` — u64 では整数は常に整数なので
 /// 2^53-1 上限だけが有効な制約。
-const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 
 struct Entry {
     reference: ArtifactReference,

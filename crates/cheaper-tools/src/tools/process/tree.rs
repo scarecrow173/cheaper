@@ -281,8 +281,8 @@ mod win {
             let parent = p["parent"].as_i64().ok_or_else(invalid)?;
             let created = p["created"].as_str().ok_or_else(invalid)?;
             // `Number.isSafeInteger` parity(|v| <= 2^53-1)。
-            if pid.unsigned_abs() > 9_007_199_254_740_991
-                || parent.unsigned_abs() > 9_007_199_254_740_991
+            if pid.unsigned_abs() > cheaper_core::js::MAX_SAFE_INTEGER_U64
+                || parent.unsigned_abs() > cheaper_core::js::MAX_SAFE_INTEGER_U64
             {
                 return Err(invalid());
             }

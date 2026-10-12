@@ -9,7 +9,7 @@
 
 use std::sync::Arc;
 
-use cheaper_core::js::locale_compare;
+use cheaper_core::js::{locale_compare, MAX_SAFE_INTEGER};
 use cheaper_core::nodepath;
 use cheaper_core::tools::vocabulary::ToolName;
 use serde_json::{json, Value};
@@ -25,7 +25,6 @@ const DEFAULT_LIMIT: f64 = 500.0;
 /// `DEFAULT_MAX_BYTES`(truncate.js)= 50KB。
 const DEFAULT_MAX_BYTES: usize = 50 * 1024;
 /// `Number.MAX_SAFE_INTEGER`。
-const MAX_SAFE_INTEGER: f64 = 9_007_199_254_740_991.0;
 const ABORTED_MESSAGE: &str = "Operation aborted";
 
 /// `createLsTool` の返り値。

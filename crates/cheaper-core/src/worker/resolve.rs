@@ -6,14 +6,9 @@ use crate::config::dirs::ConfigDirs;
 use crate::errors::{CheaperError, ErrorCode};
 use crate::nodepath;
 use crate::worker::parse::parse_worker_file;
-use crate::worker::validate::{validate_worker_definition, WorkerDefinition, WorkerOrigin};
-
-const NAME_PATTERN: &str = "^[a-z0-9][a-z0-9-]*$";
-
-fn name_re() -> &'static regex::Regex {
-    static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    RE.get_or_init(|| regex::Regex::new(NAME_PATTERN).unwrap())
-}
+use crate::worker::validate::{
+    name_re, validate_worker_definition, WorkerDefinition, WorkerOrigin,
+};
 
 /// `fs.access`-style existence check: any error is "does not exist".
 fn exists(p: &str) -> bool {

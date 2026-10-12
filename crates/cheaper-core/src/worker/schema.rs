@@ -154,6 +154,21 @@ pub struct SchemaErrorEntry {
     pub message: String,
 }
 
+/// ajv `validate.errors` 相当の error entry 配列を構築する共有 helper。
+/// `instance_path` は JSON Pointer（ajv の `instancePath` と同形式）。
+pub(crate) fn schema_error_entries(
+    validator: &jsonschema::Validator,
+    data: &Value,
+) -> Vec<SchemaErrorEntry> {
+    validator
+        .iter_errors(data)
+        .map(|err| SchemaErrorEntry {
+            instance_path: err.instance_path().to_string(),
+            message: err.to_string(),
+        })
+        .collect()
+}
+
 /// Port of `CompiledSchema`.
 pub struct CompiledSchema {
     pub schema: Map<String, Value>,
@@ -174,15 +189,7 @@ impl CompiledSchema {
         if self.validator.is_valid(data) {
             return Ok(());
         }
-        let errors = self
-            .validator
-            .iter_errors(data)
-            .map(|err| SchemaErrorEntry {
-                // JSON Pointer; ajv's instancePath is the same format.
-                instance_path: err.instance_path().to_string(),
-                message: err.to_string(),
-            })
-            .collect();
+        let errors = schema_error_entries(&self.validator, data);
         Err(errors)
     }
 }

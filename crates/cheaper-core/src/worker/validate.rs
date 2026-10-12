@@ -81,7 +81,8 @@ pub struct WorkerDefinition {
 
 const NAME_PATTERN: &str = "^[a-z0-9][a-z0-9-]*$";
 
-fn name_re() -> &'static regex::Regex {
+/// worker name の正規表現（resolve/validate で共有する一権威定義）。
+pub(crate) fn name_re() -> &'static regex::Regex {
     static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     RE.get_or_init(|| regex::Regex::new(NAME_PATTERN).unwrap())
 }

@@ -10,7 +10,7 @@ use serde_json::{json, Map, Value};
 use crate::errors::{CheaperError, ErrorCode};
 use crate::model::tier::{parse_tier, Tier, TIERS};
 use crate::policy::merge::{merge_policy_layers, MergeMode};
-use crate::worker::schema::SchemaErrorEntry;
+use crate::worker::schema::{schema_error_entries, SchemaErrorEntry};
 
 /// `ModelConfig`.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -96,13 +96,7 @@ fn validate_models_config(
     if validator.is_valid(raw) {
         return Ok(raw.as_object().expect("schema enforces object").clone());
     }
-    let errors: Vec<SchemaErrorEntry> = validator
-        .iter_errors(raw)
-        .map(|e| SchemaErrorEntry {
-            instance_path: e.instance_path().to_string(),
-            message: e.to_string(),
-        })
-        .collect();
+    let errors: Vec<SchemaErrorEntry> = schema_error_entries(&validator, raw);
     let mut details = Map::new();
     details.insert("path".to_string(), json!(file_path));
     details.insert(
@@ -121,10 +115,7 @@ fn read_models_config(file_path: &str) -> Result<Option<Map<String, Value>>, Che
     let bytes = match std::fs::read(file_path) {
         Ok(b) => b,
         Err(e) => {
-            let absent = e.kind() == std::io::ErrorKind::NotFound
-                || e.kind() == std::io::ErrorKind::NotADirectory
-                || e.raw_os_error() == Some(267);
-            if absent {
+            if crate::errors::is_absent_file_error(&e) {
                 return Ok(None);
             }
             let mut details = Map::new();

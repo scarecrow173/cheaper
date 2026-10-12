@@ -14,7 +14,7 @@ use crate::policy::workflow::{
     resolve_workflow_policy, workflow_policy_properties, WorkflowPolicy,
 };
 use crate::tools::vocabulary::ToolName;
-use crate::worker::schema::SchemaErrorEntry;
+use crate::worker::schema::schema_error_entries;
 
 /// `ConcurrencyPolicy`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -165,7 +165,6 @@ pub struct RetryPolicy {
     pub transient_attempts: u64,
 }
 
-const MAX_SAFE_INTEGER_U64: u64 = 9_007_199_254_740_991;
 
 fn object_schema(required: &[&str], properties: Value) -> Value {
     json!({
@@ -178,7 +177,7 @@ fn object_schema(required: &[&str], properties: Value) -> Value {
 
 fn concurrency_properties() -> Value {
     json!({
-        "maxOperations": {"type": "integer", "minimum": 1, "maximum": MAX_SAFE_INTEGER_U64},
+        "maxOperations": {"type": "integer", "minimum": 1, "maximum": js::MAX_SAFE_INTEGER_U64},
         "mutations": {"type": "string", "enum": ["serialized", "per-resource"]},
     })
 }
@@ -298,16 +297,6 @@ fn policy_validators() -> &'static (jsonschema::Validator, jsonschema::Validator
                 .expect("partial policy schema compiles"),
         )
     })
-}
-
-fn schema_error_entries(validator: &jsonschema::Validator, raw: &Value) -> Vec<SchemaErrorEntry> {
-    validator
-        .iter_errors(raw)
-        .map(|e| SchemaErrorEntry {
-            instance_path: e.instance_path().to_string(),
-            message: e.to_string(),
-        })
-        .collect()
 }
 
 /// `validatePolicySchema`: schema validation, then the legacy

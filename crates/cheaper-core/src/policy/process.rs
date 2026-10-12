@@ -5,6 +5,7 @@ use serde_json::{json, Map, Value};
 
 use crate::duration::{parse_duration, DURATION_PATTERN};
 use crate::errors::{CheaperError, ErrorCode};
+use crate::js::MAX_SAFE_INTEGER_U64;
 use crate::nodepath;
 use crate::resources::normalization::{ResourceManifestDeclaration, ScopeDeclaration};
 use crate::resources::types::ResourceScope;
@@ -43,7 +44,6 @@ pub struct ResolvedProcessPolicy {
 
 /// `MAX_PROCESS_OUTPUT_BYTES` (16 MiB).
 pub const MAX_PROCESS_OUTPUT_BYTES: u64 = 16_777_216;
-const MAX_SAFE_INTEGER_U64: u64 = 9_007_199_254_740_991;
 /// `MAX_TIMER_MS` (signed 32-bit timer limit).
 pub const MAX_TIMER_MS: u64 = 2_147_483_647;
 

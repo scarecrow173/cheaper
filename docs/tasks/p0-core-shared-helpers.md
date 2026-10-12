@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQ1S6FcEJLJQze19Ey"
 type: "task"
-status: "todo"
+status: "done"
 title: "T01: cheaper-core shared helpers consolidation"
 created: "2026-10-12"
 updated: "2026-10-12"
