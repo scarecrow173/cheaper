@@ -53,7 +53,7 @@ use cheaper_runtime::auth::AuthType;
 use cheaper_runtime::auth::ProcessEnv;
 use cheaper_runtime::auth::ProviderEnv;
 #[cfg(feature = "dev-seam")]
-use cheaper_runtime::fixture::{RunFixture, ScriptedAuthInteraction};
+use cheaper_runtime::dev::fixture::{RunFixture, ScriptedAuthInteraction};
 use cheaper_runtime::run::{
     run_worker, CompletionModelFactory, RigSessionFactory, RunWorkerDeps, SessionFactory,
     SessionSpec,

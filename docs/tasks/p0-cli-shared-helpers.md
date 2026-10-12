@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQ2U9suHgZ8yJxDtPt"
 type: "task"
-status: "todo"
+status: "done"
 title: "T03: cheaper-cli error/signal helpers and runtime entry"
 created: "2026-10-12"
 updated: "2026-10-12"

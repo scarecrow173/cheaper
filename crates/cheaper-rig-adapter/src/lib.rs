@@ -50,13 +50,5 @@ pub use agent::{
     DEFAULT_INVALID_TOOL_RETRIES, DEFAULT_MAX_TURNS,
 };
 pub use builtin::{builtin_completion_model, BuiltinAuth, BuiltinModelSpec};
-pub use error::{
-    classify, classify_prompt, classify_report, prompt_error_to_cheaper, provider_error_to_cheaper,
-    report_to_cheaper, streaming_error_to_cheaper, ErrorClass,
-};
-pub use retry::RetryPolicy;
+pub use error::{abort_reason_to_cheaper, classify, ErrorClass};
 pub use run_stream::{RunEvent, RunStream};
-
-// `abort_reason_to_cheaper` は内部利用のみだが cancel 分類を一箇所に集約
-// するため export(run_stream 経由で T3 が間接的に使う)。
-pub use error::abort_reason_to_cheaper;

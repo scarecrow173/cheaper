@@ -37,7 +37,7 @@ use cheaper_core::workspace::paths::SymlinkPolicy;
 use cheaper_rig_adapter::UsageSnapshot;
 use cheaper_runtime::auth::api_key::ProviderEnv;
 use cheaper_runtime::catalog::schema::{ModelCostJson, ModelDefinitionJson};
-use cheaper_runtime::fake_provider::{FakeResponse, FakeSessionFactory, ToolCallSpec};
+use cheaper_runtime::dev::fake_provider::{FakeResponse, FakeSessionFactory, ToolCallSpec};
 use cheaper_runtime::plugin::{
     CheaperProviderPlugin, PluginProviderRegistration, ProviderPluginContext, ProviderRegistry,
 };
@@ -609,7 +609,7 @@ async fn timeout_does_not_reclassify_existing_signal_reason() {
 
 #[tokio::test]
 async fn max_turns_waits_for_final_tool_batch_before_aborting() {
-    use cheaper_runtime::fake_provider::{ScriptStep, ScriptedSession};
+    use cheaper_runtime::dev::fake_provider::{ScriptStep, ScriptedSession};
 
     // F1: maxTurns に達した turn が tool call で終わった場合、その
     // pending batch の実行・`ToolResult` emit を待ってから abort する。
@@ -655,7 +655,7 @@ async fn max_turns_waits_for_final_tool_batch_before_aborting() {
 #[tokio::test]
 async fn rolled_back_turn_counts_toward_max_turns() {
     use cheaper_rig_adapter::RunEvent;
-    use cheaper_runtime::fake_provider::{ScriptStep, ScriptedSession};
+    use cheaper_runtime::dev::fake_provider::{ScriptStep, ScriptedSession};
 
     // F6: invalid-tool retry で rollback された turn も完了 model
     // call として `turns` に数える(Pi `turn_end` parity)。さもないと
@@ -706,7 +706,7 @@ async fn max_turns_still_aborts_without_tool_calls_in_final_turn() {
 #[cfg(unix)]
 #[tokio::test]
 async fn filesystem_symlinks_policy_reaches_tool_scope() {
-    use cheaper_runtime::fake_provider::{ScriptStep, ScriptedSession};
+    use cheaper_runtime::dev::fake_provider::{ScriptStep, ScriptedSession};
 
     // F5: `policy.filesystem.symlinks` が worker scope の tool runtime
     // へ届くこと — Deny では workspace 内 symlink の read が拒否され、

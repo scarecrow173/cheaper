@@ -11,6 +11,8 @@
 //! - `executable not found` は `DevinCliNotFoundError` へ写像
 
 use std::collections::BTreeMap;
+
+use cheaper_core::errors::{CheaperError, ErrorCode};
 use std::io::Read;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -160,6 +162,12 @@ pub enum CliError {
     /// spawn/IO 失敗（timeout 含む）。
     #[error("devin CLI error: {0}")]
     Io(#[from] std::io::Error),
+}
+
+/// `CliError` → `CheaperError` の単一変換点 — devin plugin の全経路
+/// で `PROVIDER_FAILURE` + cause 付き error に統一する。
+pub(crate) fn cli_error(e: CliError) -> CheaperError {
+    CheaperError::new(ErrorCode::ProviderFailure, e.to_string()).with_cause(e)
 }
 
 /// `error.code` field 用の分類値（metadata-only — message/payload は

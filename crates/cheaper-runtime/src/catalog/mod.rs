@@ -346,6 +346,62 @@ fn find_model_defaults<'a>(
         .or_else(|| models.first())
 }
 
+/// `ModelDefinitionJson` → `CatalogModel` の field mapping 共有部。
+/// `api`/`base_url` は caller 側の経路固有規則で解決済みの値を
+/// 受け取る:
+/// - `model_from_json` — config/provider-level fallback → defaults で
+///   解決し、`context_window`/`max_tokens <= 0` を reject する。
+/// - `extension_models` — plugin-level fallback で解決し、
+///   cw/mt の非正値は検証せず definition verbatim で通す。
+///
+/// `context_window`/`max_tokens`/`reasoning`/`input`/`cost` の
+/// 未指定時 default 埋め(128_000/16_384/false/[Text]/default)は
+/// 両経路で共通の現行挙動。
+fn catalog_model_from_definition(
+    provider_id: &str,
+    definition: &ModelDefinitionJson,
+    api: String,
+    base_url: String,
+) -> CatalogModel {
+    CatalogModel {
+        id: definition.id.clone(),
+        name: definition
+            .name
+            .clone()
+            .unwrap_or_else(|| definition.id.clone()),
+        api,
+        provider: provider_id.to_string(),
+        base_url,
+        reasoning: definition.reasoning.unwrap_or(false),
+        thinking_level_map: definition.thinking_level_map.clone(),
+        input: definition
+            .input
+            .clone()
+            .unwrap_or_else(|| vec![ModelInput::Text]),
+        cost: definition
+            .cost
+            .as_ref()
+            .map(|c| CatalogModelCost {
+                input: c.input,
+                output: c.output,
+                cache_read: c.cache_read,
+                cache_write: c.cache_write,
+                tiers: c
+                    .tiers
+                    .as_ref()
+                    .map(|ts| ts.iter().map(cost_tier_from_json).collect()),
+            })
+            .unwrap_or_default(),
+        context_window: definition.context_window.unwrap_or(128_000.0),
+        max_tokens: definition.max_tokens.unwrap_or(16_384.0),
+        sampling_params: definition.sampling_params.clone(),
+        // `headers` は常に `None` — request 時に `rawModelHeaders`
+        // 経由で別 merge される。
+        headers: None,
+        compat: definition.compat.clone(),
+    }
+}
+
 /// `modelFromJson` — `models[]` definition → resolved `CatalogModel`。
 fn model_from_json(
     provider_id: &str,
@@ -391,43 +447,12 @@ fn model_from_json(
             ));
         }
     }
-    Ok(CatalogModel {
-        id: definition.id.clone(),
-        name: definition
-            .name
-            .clone()
-            .unwrap_or_else(|| definition.id.clone()),
+    Ok(catalog_model_from_definition(
+        provider_id,
+        definition,
         api,
-        provider: provider_id.to_string(),
         base_url,
-        reasoning: definition.reasoning.unwrap_or(false),
-        thinking_level_map: definition.thinking_level_map.clone(),
-        input: definition
-            .input
-            .clone()
-            .unwrap_or_else(|| vec![ModelInput::Text]),
-        cost: definition
-            .cost
-            .as_ref()
-            .map(|c| CatalogModelCost {
-                input: c.input,
-                output: c.output,
-                cache_read: c.cache_read,
-                cache_write: c.cache_write,
-                tiers: c
-                    .tiers
-                    .as_ref()
-                    .map(|ts| ts.iter().map(cost_tier_from_json).collect()),
-            })
-            .unwrap_or_default(),
-        context_window: definition.context_window.unwrap_or(128_000.0),
-        max_tokens: definition.max_tokens.unwrap_or(16_384.0),
-        sampling_params: definition.sampling_params.clone(),
-        // `modelFromJson` は `headers: undefined` を置く（headers は
-        // `rawModelHeaders` 経由で request 時に別 merge される）。
-        headers: None,
-        compat: definition.compat.clone(),
-    })
+    ))
 }
 
 /// `applyModelsJson` の provider-level 検証 — custom/plugin 両経路で
@@ -547,10 +572,12 @@ fn apply_extension(
             })
             .collect());
     }
-    // TS applyExtension: `{...definition, api, provider, baseUrl, headers:
-    // undefined}` — cost/contextWindow 等は definition verbatim（default 値
-    // を埋めない）。headers は model 側を undefined にし rawModelHeaders
-    // 経由で扱う。
+    // TS applyExtension 相当: `{...definition, api, provider, baseUrl}` +
+    // 未指定 field の default 埋め(catalog_model_from_definition)。
+    // TS は cost/contextWindow を verbatim で残すが現行実装は default
+    // を埋める — 挙動差の是非は Deferred(spec §Deferred)、ここでは
+    // 現行挙動を保持する。headers は model 側を None にし
+    // rawModelHeaders 経由で扱う。
     extension_models(
         provider_id,
         effective,
@@ -599,41 +626,12 @@ fn extension_models(
                     "Provider {provider_id}: \"baseUrl\" is required when defining custom models."
                 ));
             };
-            Ok(CatalogModel {
-                id: definition.id.clone(),
-                name: definition
-                    .name
-                    .clone()
-                    .unwrap_or_else(|| definition.id.clone()),
+            Ok(catalog_model_from_definition(
+                provider_id,
+                definition,
                 api,
-                provider: provider_id.to_string(),
                 base_url,
-                reasoning: definition.reasoning.unwrap_or(false),
-                thinking_level_map: definition.thinking_level_map.clone(),
-                input: definition
-                    .input
-                    .clone()
-                    .unwrap_or_else(|| vec![ModelInput::Text]),
-                cost: definition
-                    .cost
-                    .as_ref()
-                    .map(|c| CatalogModelCost {
-                        input: c.input,
-                        output: c.output,
-                        cache_read: c.cache_read,
-                        cache_write: c.cache_write,
-                        tiers: c
-                            .tiers
-                            .as_ref()
-                            .map(|ts| ts.iter().map(cost_tier_from_json).collect()),
-                    })
-                    .unwrap_or_default(),
-                context_window: definition.context_window.unwrap_or(128_000.0),
-                max_tokens: definition.max_tokens.unwrap_or(16_384.0),
-                sampling_params: definition.sampling_params.clone(),
-                headers: None,
-                compat: definition.compat.clone(),
-            })
+            ))
         })
         .collect()
 }

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQnyEmsl4J7YHNNQFw"
 type: "task"
-status: "todo"
+status: "done"
 title: "T05: runtime ctor consolidation, dev alias, provider error conversion, adapter visibility"
 created: "2026-10-12"
 updated: "2026-10-12"

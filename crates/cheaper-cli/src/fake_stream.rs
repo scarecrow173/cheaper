@@ -3,7 +3,7 @@
 //! TS 版は module を動的 import して `default export` を streamFn に
 //! 変換するが、Rust 版は **fixture JSON path** 形式を取る:
 //! `CHEAPER_TEST_FAKE_STREAM` が指す JSON file を
-//! [`cheaper_runtime::fixture::RunFixture`] として load し、
+//! [`cheaper_runtime::dev::fixture::RunFixture`] として load し、
 //! fake provider / scripted session を組み立てる素材として run 経路
 //! (T3)へ渡す。
 //!
@@ -16,7 +16,7 @@
 
 use cheaper_core::config::dirs::EnvLookup;
 use cheaper_core::errors::{CheaperError, ErrorCode};
-use cheaper_runtime::fixture::RunFixture;
+use cheaper_runtime::dev::fixture::RunFixture;
 use serde_json::{json, Map};
 use std::path::Path;
 

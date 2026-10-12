@@ -45,11 +45,6 @@ pub mod dev;
 // output,panic_boundary,repair,run_error}`）は下の alias re-export で維持する。
 pub mod run;
 
-// module path 互換: `cheaper_runtime::{fixture,fake_provider}::*` の
-// 現行 path を `pub use` で維持する(consumer 書き換え最小化)。
-#[cfg(feature = "dev-seam")]
-pub use dev::{fake_provider, fixture};
-
 pub use run::abort;
 pub use run::error as run_error;
 pub use run::grace;
@@ -75,16 +70,6 @@ pub use plugin::{
 };
 pub use runtime::Runtime;
 
-#[cfg(feature = "dev-seam")]
-pub use dev::fake_provider::{
-    CheaperFakePlugin, FakeResponse, FakeSessionFactory, RecordedSpec, ScriptStep, ScriptedSession,
-    ToolCallSpec,
-};
-#[cfg(feature = "dev-seam")]
-pub use dev::fixture::{
-    default_policy, ExpectedStatus, FixtureExpect, FixtureMetaExpect, FixtureStep, RunFixture,
-    ScriptedAuthInteraction,
-};
 pub use run::abort::{RunAbort, RunAbortReason};
 pub use run::error::{PartialRunMeta, WorkerRunError};
 pub use run::grace::{prompt_with_abort_grace, PromptOutcome};
