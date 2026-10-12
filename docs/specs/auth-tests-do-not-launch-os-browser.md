@@ -28,7 +28,8 @@ relations:
     - "../adr/absorb-provider-oauth-and-api-key-login-into-the-cheaper-cli-cheaper-auth.md"
     - "../designs/auth-command.md"
     - "./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md"
-  refines: []
+  refines:
+    - "../adr/absorb-provider-oauth-and-api-key-login-into-the-cheaper-cli-cheaper-auth.md"
   refined-by: []
   derives-from: []
   derived-by:

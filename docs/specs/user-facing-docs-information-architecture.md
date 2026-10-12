@@ -29,7 +29,8 @@ relations:
     - "./delegation-usage-measurement-log.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "./separate-dev-apm-project-from-distributable-package.md"
   derived-by: []
   verifies: []
   verified-by: []

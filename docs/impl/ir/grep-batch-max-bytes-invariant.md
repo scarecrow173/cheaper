@@ -35,7 +35,8 @@ relations:
   refines: []
   refined-by: []
   derives-from: []
-  derived-by: []
+  derived-by:
+    - "../../specs/grep-eval-budget-test-stability.md"
   verifies:
     - "docs/specs/grep-batch-max-bytes-line-payload-invariant.md"
   verified-by: []

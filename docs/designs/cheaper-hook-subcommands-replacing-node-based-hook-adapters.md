@@ -42,7 +42,8 @@ relations:
     - "../adr/distribute-cheaper-as-node-26-sea-standalone-executables-shared-by-direct-releas.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/cheaper-hook-subcommands-and-hooks-json-executable-contract.md"
   references: []
   defers: []
   deferred-by: []

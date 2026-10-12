@@ -29,7 +29,8 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/v2-productization-initiative-briefing.md"
-  derived-by: []
+  derived-by:
+    - "./provider-auth-docs-runtime-sync.md"
   verifies: []
   verified-by: []
   references: []

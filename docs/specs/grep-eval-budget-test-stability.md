@@ -29,7 +29,8 @@ relations:
     - "../impl/ir/grep-batch-max-bytes-invariant.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "../impl/ir/grep-batch-max-bytes-invariant.md"
   derived-by: []
   verifies: []
   verified-by: []

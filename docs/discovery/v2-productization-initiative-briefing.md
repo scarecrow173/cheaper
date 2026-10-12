@@ -28,7 +28,17 @@ relations:
   refined-by: []
   derives-from:
     - "../impl/exp/ollama-real-provider-smoke-verification.jsonl"
-  derived-by: []
+  derived-by:
+    - "../specs/delegation-usage-measurement-log.md"
+    - "../specs/provider-only-registration-layer.md"
+    - "../specs/auth-login-command.md"
+    - "../specs/canonical-token-counter.md"
+    - "../specs/code-writer-and-doc-writer-built-in-workers.md"
+    - "../specs/write-scope-and-privacy-deny.md"
+    - "../adr/absorb-provider-oauth-and-api-key-login-into-the-cheaper-cli-cheaper-auth.md"
+    - "../adr/canonical-tokenizer-js-tiktoken.md"
+    - "./bulk-read-delegation-benchmark.md"
+    - "./windsurf-cascade-hooks-and-apm-hook-deployment.md"
   verifies: []
   verified-by: []
   references: []

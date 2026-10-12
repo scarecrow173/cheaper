@@ -35,7 +35,8 @@ relations:
     - "typescript-pnpm-monorepo.md"
     - "migrate-the-cheaper-cli-runtime-to-rust-and-rig.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "../specs/unified-version-source-of-truth.md"
   derives-from:
     - "../plans/phase-6-remove-typescript-node-pi.md"
   derived-by: []

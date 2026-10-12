@@ -32,7 +32,8 @@ relations:
     - "../adr/provider-auth-guide-auth-status-canonical-surface-auth-type.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "./auth-login-command.md"
   derived-by: []
   verifies: []
   verified-by: []

@@ -41,7 +41,8 @@ relations:
     - "docs/designs/observability-foundation-logging-and-instrumentation-wiring.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/observability-foundation-contract.md"
   references: []
   defers: []
   deferred-by: []

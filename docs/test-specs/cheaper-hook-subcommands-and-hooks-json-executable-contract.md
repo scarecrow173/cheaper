@@ -28,13 +28,7 @@ relations:
     - "docs/designs/cheaper-hook-subcommands-replacing-node-based-hook-adapters.md"
   derived-by: []
   verifies:
-    - "docs/plans/implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md"
-    - "docs/tasks/port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md"
-    - "docs/tasks/add-cheaper-hook-command-with-target-adapters.md"
-    - "docs/tasks/add-hook-contract-tests-and-port-existing-adapter-e2e.md"
-    - "docs/tasks/verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md"
-    - "docs/tasks/update-docs-for-executable-based-hook-invocation.md"
-    - "docs/tasks/remove-legacy-js-hook-adapters-and-run-final-verification.md"
+    - "docs/designs/cheaper-hook-subcommands-replacing-node-based-hook-adapters.md"
   verified-by: []
   references: []
   defers: []

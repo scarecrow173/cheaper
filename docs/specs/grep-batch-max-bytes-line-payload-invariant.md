@@ -29,7 +29,8 @@ relations:
     - "../designs/bulk-reader-huge-file-safe-io.md"
   refines: []
   refined-by: []
-  derives-from: []
+  derives-from:
+    - "./bulk-reader-huge-file-safe-io.md"
   derived-by:
     - "../adr/grep-batch-max-bytes-invariant-reject-at-construction.md"
   verifies: []
