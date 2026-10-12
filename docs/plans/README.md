@@ -23,6 +23,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHK8bA7g45xvDT4a | Devin Local provider plugin — implementation plan | completed | [devin-local-provider-plugin-implementation-plan.md](./devin-local-provider-plugin-implementation-plan.md) |
 | PLAN-034Da73SnpZLHkn4oVZu00 | Devin provider Windows credential snapshot sync | approved | [devin-provider-windows-credential-snapshot-sync.md](./devin-provider-windows-credential-snapshot-sync.md) |
 | PLAN-034DlEwsubKsxcWfA08Kb4 | devin usage accounting contract test and docs | approved | [devin-usage-accounting-contract-test-and-docs.md](./devin-usage-accounting-contract-test-and-docs.md) |
+| PLAN-034EDNoLUwAoBOtSAMRMNY | Execute post-feature structural refactoring | approved | [execute-post-feature-structural-refactoring.md](./execute-post-feature-structural-refactoring.md) |
 | PLAN-034Dz3LX6Jz18cbOR0KtFd | Execute post-migration structural cleanup | approved | [execute-post-migration-structural-cleanup.md](./execute-post-migration-structural-cleanup.md) |
 | PLAN-034r05iHE1Fbkp8emdVve6 | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | PLAN-034r6qeRCCYRZy0etnrPfy | inject explicit eval budget into large-fixture grep tests | completed | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
