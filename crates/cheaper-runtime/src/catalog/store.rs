@@ -305,7 +305,7 @@ impl CatalogStore {
             definitions,
             entry.plugin_api.as_deref().unwrap_or_default(),
             entry.base_url.as_deref().unwrap_or_default(),
-            &entry.extension_base_models,
+            &entry.refresh.extension_base_models,
         )?;
         // compose と同一 helper・同一 fallback chain で user `models[]`
         // merge を再実行。非空 filter は helper 内部の単一 site のため
@@ -316,9 +316,14 @@ impl CatalogStore {
         let merged_user_defs = merge_user_model_defs(
             provider_id,
             &mut models,
-            &entry.plugin_user_defs,
-            entry.config_api.as_deref().or(entry.plugin_api.as_deref()),
+            &entry.refresh.plugin_user_defs,
             entry
+                .refresh
+                .config_api
+                .as_deref()
+                .or(entry.plugin_api.as_deref()),
+            entry
+                .refresh
                 .config_base_url
                 .as_deref()
                 .or(entry.base_url.as_deref()),
@@ -328,7 +333,7 @@ impl CatalogStore {
         for msg in merge_errors {
             self.record_error(format!("Provider \"{provider_id}\": {msg}"));
         }
-        if let Some(overrides) = &entry.model_overrides {
+        if let Some(overrides) = &entry.refresh.model_overrides {
             for model in &mut models {
                 if let Some(ov) = overrides.get(&model.id) {
                     apply_model_override(model, ov);
@@ -337,7 +342,7 @@ impl CatalogStore {
         }
         let model_header_sources = collect_model_header_sources(
             &models,
-            entry.model_overrides.as_ref(),
+            entry.refresh.model_overrides.as_ref(),
             &merged_user_defs,
             definitions,
         );

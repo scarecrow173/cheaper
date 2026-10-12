@@ -147,31 +147,41 @@ pub struct ProviderEntry {
     /// `{modelOverride.headers, models[].headers, plugin model.headers}`。
     /// （`rawModelHeaders` port — catalog 側は template 未解決のまま保持）
     pub(crate) model_header_sources: BTreeMap<String, Map<String, Value>>,
-    /// user `modelOverrides` — plugin `refreshModels` で差し替わる
-    /// model list にも再適用するため compose 時の値を保持する。
-    pub(crate) model_overrides: Option<BTreeMap<String, ModelOverrideJson>>,
-    /// plugin provider の raw user `models[]` defs（refresh 時に同一 merge
-    /// を再実行するため resolved 形ではなく definition のまま保持。
-    /// `model_overrides` と同じ構造）。plugin provider 以外は空。
-    pub(crate) plugin_user_defs: Vec<ModelDefinitionJson>,
-    /// compose 時に `apply_extension` が受け取った pre-extension base list
-    /// （post-overlay builtin base — plugin-only provider では空）。
-    /// `refresh_plugin_models` が `extension_models` を compose と同一の
-    /// defaults pool で再実行するために保持する — 現在の resolved list
-    /// （merge 済み user def・前回 refresh model を含む）を渡すと compose
-    /// 不可能な経路で `baseUrl` が継承され、その def が snapshot 化されると
-    /// 次回 boot の compose が同じ defs で失敗し provider ごと drop する。
+    /// plugin `refreshModels` で model list が差し替わった際に同一
+    /// merge 規則を再実行するための compose 時 state。
     /// plugin provider 以外は空。
-    pub(crate) extension_base_models: Vec<CatalogModel>,
-    /// merge fallback chain の config 層（`config.api`）。
-    pub(crate) config_api: Option<String>,
-    /// merge fallback chain の config 層（`config.baseUrl`）。
-    pub(crate) config_base_url: Option<String>,
+    pub(crate) refresh: RefreshState,
     /// `register()` が emit した `registration.models` の不変 copy —
     /// persist guard (c) の比較基準（snapshot 注入の影響を受けない）。
     /// `auth/service.rs` の `persist_plugin_catalog` が読むため
     /// `pub(crate)`。plugin provider 以外は空。
     pub(crate) plugin_bootstrap_defs: Vec<ModelDefinitionJson>,
+}
+
+/// `ProviderEntry.refresh` — plugin login 後の `refresh_plugin_models`
+/// が `extension_models`/overlay/overrides を compose と同一規則で
+/// 再実行するために保持する compose 時の入力 state。
+#[derive(Debug, Clone, Default)]
+pub(crate) struct RefreshState {
+    /// user `modelOverrides` — refresh で差し替わる model list にも
+    /// 再適用するため compose 時の値を保持する。
+    pub model_overrides: Option<BTreeMap<String, ModelOverrideJson>>,
+    /// plugin provider の raw user `models[]` defs（refresh 時に同一 merge
+    /// を再実行するため resolved 形ではなく definition のまま保持。
+    /// `model_overrides` と同じ構造）。
+    pub plugin_user_defs: Vec<ModelDefinitionJson>,
+    /// compose 時に `apply_extension` が受け取った pre-extension base list
+    /// （post-overlay builtin base）。`refresh_plugin_models` が
+    /// `extension_models` を compose と同一の defaults pool で再実行する
+    /// ために保持する — 現在の resolved list（merge 済み user def・
+    /// 前回 refresh model を含む）を渡すと compose 不可能な経路で
+    /// `baseUrl` が継承され、その def が snapshot 化されると次回 boot
+    /// の compose が同じ defs で失敗し provider ごと drop する。
+    pub extension_base_models: Vec<CatalogModel>,
+    /// merge fallback chain の config 層（`config.api`）。
+    pub config_api: Option<String>,
+    /// merge fallback chain の config 層（`config.baseUrl`）。
+    pub config_base_url: Option<String>,
 }
 
 impl std::fmt::Debug for ProviderEntry {
@@ -189,7 +199,10 @@ impl std::fmt::Debug for ProviderEntry {
             .field("has_plugin_catalog", &self.plugin_catalog.is_some())
             .field("plugin_api", &self.plugin_api)
             .field("models", &self.models.len())
-            .field("extension_base_models", &self.extension_base_models.len())
+            .field(
+                "extension_base_models",
+                &self.refresh.extension_base_models.len(),
+            )
             .finish()
     }
 }

@@ -258,37 +258,18 @@ impl CredentialStore {
             providers: providers.to_vec(),
         };
         let body = serde_json::to_string_pretty(&file).expect("credentials serialize");
-        let tmp = dir.join(format!(
-            ".credentials.json.tmp-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_nanos())
-                .unwrap_or(0)
-        ));
-        let write_result = (|| -> Result<(), io::Error> {
-            fs::write(&tmp, body)?;
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::PermissionsExt;
-                fs::set_permissions(&tmp, fs::Permissions::from_mode(0o600))?;
-            }
-            // Unix: rename が既存 target を原子置換(F12)。
-            // Windows: target 存在で rename 失敗 → 事前 remove。
-            #[cfg(windows)]
-            if self.path.exists() {
-                fs::remove_file(&self.path)?;
-            }
-            fs::rename(&tmp, &self.path)?;
-            Ok(())
-        })();
-        match write_result {
-            Ok(()) => Ok(()),
-            Err(e) => {
-                let _ = fs::remove_file(&tmp);
-                Err(self.io_error("credentials.json の保存に失敗しました", e))
-            }
-        }
+        // Windows: target 存在で rename 失敗するため事前 remove を維持
+        // （persisted catalog 経路とは option で差分を吸収）。
+        crate::fs_util::atomic_write(
+            &self.path,
+            &body,
+            &crate::fs_util::AtomicWriteOptions {
+                windows_remove_first: true,
+                #[cfg(unix)]
+                unix_mode: Some(0o600),
+            },
+        )
+        .map_err(|e| self.io_error("credentials.json の保存に失敗しました", e))
     }
 
     fn io_error(&self, message: &str, e: io::Error) -> CheaperError {

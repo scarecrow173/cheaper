@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQJaU8cr8MkalDStBT"
 type: "task"
-status: "todo"
+status: "done"
 title: "T09: cheaper-runtime run module split and auth/provider extraction"
 created: "2026-10-12"
 updated: "2026-10-12"

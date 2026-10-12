@@ -104,33 +104,21 @@ pub fn write_plugin_catalog(path: &Path, file: &PluginCatalogFile) -> Result<(),
     })?;
     let body = serde_json::to_string_pretty(file)
         .map_err(|e| format!("Failed to serialize plugin catalog: {e}"))?;
-    let file_name = path
-        .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
-        .unwrap_or_else(|| "catalog.json".to_string());
-    let tmp = dir.join(format!(
-        ".{file_name}.tmp-{}-{}",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or(0)
-    ));
-    let result = (|| -> std::io::Result<()> {
-        std::fs::write(&tmp, body)?;
-        std::fs::rename(&tmp, path)?;
-        Ok(())
-    })();
-    match result {
-        Ok(()) => Ok(()),
-        Err(e) => {
-            let _ = std::fs::remove_file(&tmp);
-            Err(format!(
-                "Failed to write plugin catalog: {e}\n\nFile: {}",
-                path.display()
-            ))
-        }
-    }
+    crate::fs_util::atomic_write(
+        path,
+        &body,
+        &crate::fs_util::AtomicWriteOptions {
+            windows_remove_first: false,
+            #[cfg(unix)]
+            unix_mode: None,
+        },
+    )
+    .map_err(|e| {
+        format!(
+            "Failed to write plugin catalog: {e}\n\nFile: {}",
+            path.display()
+        )
+    })
 }
 
 #[cfg(test)]

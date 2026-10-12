@@ -9,7 +9,7 @@ use super::schema::{
 };
 use super::types::{
     CatalogCostTier, CatalogModel, CatalogModelCost, OauthDeclaration, ProviderEntry,
-    ProviderOrigin,
+    ProviderOrigin, RefreshState,
 };
 use crate::plugin::PluginProviderRegistration;
 use cheaper_core::errors::{CheaperError, ErrorCode};
@@ -637,7 +637,96 @@ pub(crate) fn compose_provider(
             .unwrap_or(&[]),
     );
 
-    // auth 層（`composeApiKeyAuth`/`composeOAuthAuth` の method 有無判定）。
+    let auth = resolve_auth(provider_id, base_meta, config, plugin)?;
+
+    let name = plugin
+        .map(|p| p.name.clone())
+        .or_else(|| config.and_then(|c| c.name.clone()))
+        .or_else(|| base_meta.map(|m| m.name.to_string()))
+        .unwrap_or_else(|| provider_id.to_string());
+    let base_url = plugin
+        .map(|p| p.base_url.clone())
+        .or_else(|| config.and_then(|c| c.base_url.clone()))
+        .or_else(|| base_meta.and_then(|m| m.base_url.map(str::to_string)))
+        .or_else(|| models.first().map(|m| m.base_url.clone()));
+    // `configuredHeaders(config, extension)`: config.headers + plugin headers。
+    let configured_headers = {
+        let mut merged = Map::new();
+        if let Some(h) = config.and_then(|c| c.headers.as_ref()) {
+            for (k, v) in h {
+                merged.insert(k.clone(), v.clone());
+            }
+        }
+        if let Some(h) = plugin.and_then(|p| p.headers.as_ref()) {
+            for (k, v) in h {
+                merged.insert(k.clone(), v.clone());
+            }
+        }
+        if merged.is_empty() {
+            None
+        } else {
+            Some(merged)
+        }
+    };
+
+    Ok(ProviderEntry {
+        id: provider_id.to_string(),
+        name,
+        base_url,
+        origin: if plugin.is_some() {
+            ProviderOrigin::Plugin
+        } else if base_meta.is_some() {
+            ProviderOrigin::Builtin
+        } else {
+            ProviderOrigin::UserConfig
+        },
+        api_key_name: auth.api_key_name,
+        env_auth: auth.env_auth,
+        configured_api_key: auth.configured_api_key,
+        auth_header: auth.auth_header,
+        configured_headers,
+        oauth: auth.oauth,
+        plugin_auth: plugin.and_then(|p| p.auth.clone()),
+        plugin_catalog: plugin.and_then(|p| p.catalog.clone()),
+        plugin_api: plugin.map(|p| p.api.clone()),
+        models,
+        model_header_sources,
+        refresh: RefreshState {
+            model_overrides: config.and_then(|c| c.model_overrides.clone()),
+            plugin_user_defs: if plugin.is_some() {
+                config.and_then(|c| c.models.clone()).unwrap_or_default()
+            } else {
+                Vec::new()
+            },
+            extension_base_models,
+            config_api: config.and_then(|c| c.api.clone()),
+            config_base_url: config.and_then(|c| c.base_url.clone()),
+        },
+        plugin_bootstrap_defs: plugin.map(|p| p.models.clone()).unwrap_or_default(),
+    })
+}
+
+/// `resolve_auth` の結果 — `ProviderEntry` の auth 関連 field。
+pub(crate) struct ComposedAuth {
+    /// `rawKey = configuredApiKey(config, extension)`
+    /// = plugin.apiKey ?? config.apiKey。
+    configured_api_key: Option<String>,
+    api_key_name: Option<String>,
+    oauth: Option<OauthDeclaration>,
+    env_auth: EnvAuth,
+    auth_header: bool,
+}
+
+/// `compose_provider` の auth 層 — `composeApiKeyAuth`/`composeOAuthAuth`
+/// の method 有無判定。auth 関連 field（`configured_api_key`/
+/// `api_key_name`/`oauth`/`env_auth`/`auth_header`）をまとめて解決し、
+/// auth method が 1 つも無い provider は compose error にする。
+pub(crate) fn resolve_auth(
+    provider_id: &str,
+    base_meta: Option<&BuiltinProviderMeta>,
+    config: Option<&ProviderConfigJson>,
+    plugin: Option<&PluginProviderRegistration>,
+) -> Result<ComposedAuth, String> {
     // `rawKey = configuredApiKey(config, extension)` = plugin.apiKey ?? config.apiKey。
     let raw_key = plugin
         .and_then(|p| p.api_key.clone())
@@ -683,75 +772,18 @@ pub(crate) fn compose_provider(
             "Provider {provider_id}: no authentication method configured."
         ));
     }
-
-    let name = plugin
-        .map(|p| p.name.clone())
-        .or_else(|| config.and_then(|c| c.name.clone()))
-        .or_else(|| base_meta.map(|m| m.name.to_string()))
-        .unwrap_or_else(|| provider_id.to_string());
-    let base_url = plugin
-        .map(|p| p.base_url.clone())
-        .or_else(|| config.and_then(|c| c.base_url.clone()))
-        .or_else(|| base_meta.and_then(|m| m.base_url.map(str::to_string)))
-        .or_else(|| models.first().map(|m| m.base_url.clone()));
-    // `configuredHeaders(config, extension)`: config.headers + plugin headers。
-    let configured_headers = {
-        let mut merged = Map::new();
-        if let Some(h) = config.and_then(|c| c.headers.as_ref()) {
-            for (k, v) in h {
-                merged.insert(k.clone(), v.clone());
-            }
-        }
-        if let Some(h) = plugin.and_then(|p| p.headers.as_ref()) {
-            for (k, v) in h {
-                merged.insert(k.clone(), v.clone());
-            }
-        }
-        if merged.is_empty() {
-            None
-        } else {
-            Some(merged)
-        }
-    };
-
-    Ok(ProviderEntry {
-        id: provider_id.to_string(),
-        name,
-        base_url,
-        origin: if plugin.is_some() {
-            ProviderOrigin::Plugin
-        } else if base_meta.is_some() {
-            ProviderOrigin::Builtin
-        } else {
-            ProviderOrigin::UserConfig
-        },
+    Ok(ComposedAuth {
+        configured_api_key: raw_key,
         api_key_name,
+        oauth: oauth_decl,
         env_auth: if radius_gateway {
             EnvAuth::Vars(&["RADIUS_API_KEY"])
         } else {
             base_meta.map(|m| m.env_auth).unwrap_or(EnvAuth::None)
         },
-        configured_api_key: raw_key,
         auth_header: plugin
             .and_then(|p| p.auth_header)
             .or_else(|| config.and_then(|c| c.auth_header))
             .unwrap_or(false),
-        configured_headers,
-        oauth: oauth_decl,
-        plugin_auth: plugin.and_then(|p| p.auth.clone()),
-        plugin_catalog: plugin.and_then(|p| p.catalog.clone()),
-        plugin_api: plugin.map(|p| p.api.clone()),
-        models,
-        model_header_sources,
-        model_overrides: config.and_then(|c| c.model_overrides.clone()),
-        plugin_user_defs: if plugin.is_some() {
-            config.and_then(|c| c.models.clone()).unwrap_or_default()
-        } else {
-            Vec::new()
-        },
-        extension_base_models,
-        config_api: config.and_then(|c| c.api.clone()),
-        config_base_url: config.and_then(|c| c.base_url.clone()),
-        plugin_bootstrap_defs: plugin.map(|p| p.models.clone()).unwrap_or_default(),
     })
 }
