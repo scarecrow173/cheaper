@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQKID9bMzTe59QT2BD"
 type: "task"
-status: "todo"
+status: "done"
 title: "T12: cheaper-workflow RunState and schema compile sharing"
 created: "2026-10-12"
 updated: "2026-10-12"

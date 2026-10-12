@@ -162,10 +162,12 @@ fn compile_definition_schema(
     })
 }
 
-/// `workerSnapshot` — validated WorkerDefinition port の schema を
-/// snapshot から再 compile する。
-fn worker_snapshot(worker: &WorkerDefinition) -> Result<Arc<WorkerDefinition>, CheaperError> {
-    Ok(Arc::new(WorkerDefinition {
+/// `workerSnapshot` — validated WorkerDefinition の snapshot。
+/// compiled schema は `Arc` で共有する(`CompiledSchema` は immutable
+/// で、呼び出し側 metadata の mutation を遮断できるため再 compile
+/// は不要)。
+fn worker_snapshot(worker: &WorkerDefinition) -> Arc<WorkerDefinition> {
+    Arc::new(WorkerDefinition {
         name: worker.name.clone(),
         description: worker.description.clone(),
         tools: worker.tools.clone(),
@@ -173,16 +175,9 @@ fn worker_snapshot(worker: &WorkerDefinition) -> Result<Arc<WorkerDefinition>, C
         instructions: worker.instructions.clone(),
         source_path: worker.source_path.clone(),
         origin: worker.origin,
-        input_schema: worker
-            .input_schema
-            .as_ref()
-            .map(|s| compile_definition_schema(&Value::Object(s.schema.clone()), SchemaKind::Input))
-            .transpose()?,
-        output_schema: compile_definition_schema(
-            &Value::Object(worker.output_schema.schema.clone()),
-            SchemaKind::Output,
-        )?,
-    }))
+        input_schema: worker.input_schema.clone(),
+        output_schema: Arc::clone(&worker.output_schema),
+    })
 }
 
 /// `validateDefinition`。port 呼出し(`workers.get` / `tools.get`)の
@@ -238,14 +233,14 @@ pub fn validate_definition(
                 jobs.push((
                     id.clone(),
                     JobValidation {
-                        input: Some(compile_definition_schema(
+                        input: Some(Arc::new(compile_definition_schema(
                             &clone_json(&tool.input_schema, ErrorCode::InvalidRequest)?,
                             SchemaKind::Input,
-                        )?),
-                        output: compile_definition_schema(
+                        )?)),
+                        output: Arc::new(compile_definition_schema(
                             &clone_json(&tool.output_schema, ErrorCode::InvalidRequest)?,
                             SchemaKind::Output,
-                        )?,
+                        )?),
                         worker: None,
                     },
                 ));
@@ -265,26 +260,12 @@ pub fn validate_definition(
                         )));
                     }
                 }
-                let worker = worker_snapshot(metadata)?;
-                let input = worker
-                    .input_schema
-                    .as_ref()
-                    .map(|s| {
-                        compile_definition_schema(
-                            &Value::Object(s.schema.clone()),
-                            SchemaKind::Input,
-                        )
-                    })
-                    .transpose()?;
-                let output = compile_definition_schema(
-                    &Value::Object(worker.output_schema.schema.clone()),
-                    SchemaKind::Output,
-                )?;
+                let worker = worker_snapshot(metadata);
                 jobs.push((
                     id.clone(),
                     JobValidation {
-                        input,
-                        output,
+                        input: worker.input_schema.clone(),
+                        output: Arc::clone(&worker.output_schema),
                         worker: Some(worker),
                     },
                 ));

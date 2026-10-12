@@ -1,5 +1,7 @@
 //! Port of `packages/core/src/worker/validate.ts`.
 
+use std::sync::Arc;
+
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 
@@ -75,8 +77,10 @@ pub struct WorkerDefinition {
     pub instructions: String,
     pub source_path: String,
     pub origin: WorkerOrigin,
-    pub input_schema: Option<CompiledSchema>,
-    pub output_schema: CompiledSchema,
+    /// compiled input schema。`CompiledSchema` は immutable なので
+    /// `Arc` で workflow 側の validation snapshot と共有できる。
+    pub input_schema: Option<Arc<CompiledSchema>>,
+    pub output_schema: Arc<CompiledSchema>,
 }
 
 const NAME_PATTERN: &str = "^[a-z0-9][a-z0-9-]*$";
@@ -221,15 +225,15 @@ pub fn validate_worker_definition(
     }
 
     let base_dir = nodepath::dirname(source_path);
-    let output_schema = compile_schema(
+    let output_schema = Arc::new(compile_schema(
         load_schema(&output_ref, &base_dir, SchemaKind::Output)?,
         SchemaKind::Output,
-    )?;
+    )?);
     let input_schema = match &input_ref {
-        Some(r) => Some(compile_schema(
+        Some(r) => Some(Arc::new(compile_schema(
             load_schema(r, &base_dir, SchemaKind::Input)?,
             SchemaKind::Input,
-        )?),
+        )?)),
         None => None,
     };
 

@@ -161,8 +161,9 @@ fn mutating_worker() -> cheaper_core::worker::validate::WorkerDefinition {
     let mut worker = fixture_worker();
     worker.tools = vec![ToolName::Read, ToolName::Write];
     worker.cheaper.write_scope = Some("targets".to_string());
-    worker.input_schema =
-        Some(compile_schema(Map::new(), SchemaKind::Input).expect("input schema compiles"));
+    worker.input_schema = Some(Arc::new(
+        compile_schema(Map::new(), SchemaKind::Input).expect("input schema compiles"),
+    ));
     worker
 }
 

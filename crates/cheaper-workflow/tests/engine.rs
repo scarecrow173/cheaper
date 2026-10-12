@@ -376,11 +376,13 @@ async fn admission_wait_consumes_no_slot_and_keeps_semantic_edges() {
 #[tokio::test]
 async fn output_only_schema_failure_keeps_independent_output() {
     let mut fixtures = FixtureSet::new();
-    fixtures.worker_mut().output_schema = cheaper_core::worker::schema::compile_schema(
-        Map::new(),
-        cheaper_core::worker::schema::SchemaKind::Output,
-    )
-    .unwrap();
+    fixtures.worker_mut().output_schema = Arc::new(
+        cheaper_core::worker::schema::compile_schema(
+            Map::new(),
+            cheaper_core::worker::schema::SchemaKind::Output,
+        )
+        .unwrap(),
+    );
     let mut raw = definition();
     raw["jobs"]["a"] = json!({
         "kind": "worker", "worker": "bulk-reader", "input": { "task": "x" }
