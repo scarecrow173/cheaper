@@ -263,10 +263,15 @@ impl InvocationToolRuntime {
                 serde_json::to_value(&inner.process)
                     .expect("ResolvedProcessPolicy は必ず serialize 可能"),
             ),
-            // T3 は caller 指定の raw をそのまま通す(parity check は
-            // 上で実施済み) — `inner.process` のような invocation
-            // resolved policy への再注入は T4 で確定。
-            command: options.runtime.command,
+            // `inner.process` と同型の再注入 — scope は常に
+            // invocation-resolved の declared-shape grants を受け取る。
+            // caller 指定の raw は上の parity check で `inner.command`
+            // との一致を検証済み、`None` もそのままでは scope へ漏れない
+            // (design §(g))。
+            command: Some(
+                serde_json::to_value(&inner.command)
+                    .expect("ResolvedCommandPolicy は必ず serialize 可能"),
+            ),
             root: options.runtime.root,
             symlink_policy: options.runtime.symlink_policy,
             names: options.runtime.names,

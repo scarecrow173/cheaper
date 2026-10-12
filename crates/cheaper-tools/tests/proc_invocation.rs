@@ -571,3 +571,104 @@ async fn scope_dispose_removes_self_from_invocation() {
     assert!(!result.content.is_empty());
     invocation.dispose().await;
 }
+
+// ---------------------------------------------------------------------------
+// command scope — `inner.command` 再注入・parity・nonempty-grants gate(T4)
+// ---------------------------------------------------------------------------
+
+/// `command` grant — executable はこの test binary 自身(absolute native
+/// executable で PATH 解決に依存せず、temp workspace 外のため
+/// workspace-resident 拒否にも掛からない)。argv は literal pin —
+/// `MODE_ENV` 未設定のため fixture test は即 return で exit 0。
+fn self_grant() -> Value {
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    json!({
+        "executable": exe,
+        "argv": ["invocation_fixture_child", "--exact", "--nocapture"],
+    })
+}
+
+/// T4: `create_worker_scope` は `options.runtime.command` を passthrough
+/// せず `inner.command`(invocation-resolved grants)を scope options へ
+/// 再注入する。caller が `command: None` を渡す形状(workflow
+/// `kind: tool` job の `ToolJobExecutor` と同じ)でも scope は invocation
+/// の resolved grants で構築され、`command` が expose・実行可能になる
+/// — passthrough のままなら empty grants gate で `POLICY_VIOLATION` に
+/// なるため、再注入を直接固定する test。
+#[tokio::test]
+async fn worker_scope_receives_invocation_resolved_command_grants() {
+    let dir = TempDir::new();
+    let mut opts = invocation_options(dir.root(), None);
+    opts.command = Some(json!({"maxConcurrent": 1, "grants": {"self": self_grant()}}));
+    let invocation = create_invocation_tool_runtime(opts).unwrap();
+    // `command: None` — workflow tool job と同じ scope options 形状。
+    let scope = invocation
+        .create_worker_scope(worker(
+            "cmd",
+            scope_options(&dir.root(), vec![ToolName::Command]),
+        ))
+        .unwrap();
+    assert!(scope
+        .definitions()
+        .iter()
+        .any(|d| d.name == ToolName::Command));
+    let result = scope
+        .execute(
+            "command",
+            &json!({
+                "name": "self",
+                "args": ["invocation_fixture_child", "--exact", "--nocapture"],
+            }),
+            None,
+        )
+        .await
+        .unwrap();
+    let details = result.details.as_ref().expect("command result details");
+    assert_eq!(details["grant"], json!("self"));
+    assert_eq!(details["state"], json!("completed"));
+    assert_eq!(details["exitCode"], json!(0));
+    invocation.dispose().await;
+}
+
+/// T4: grants 空(= trusted layer が grant を宣言していない)では
+/// `Command` を含む scope 生成が `POLICY_VIOLATION` で fail-closed する
+/// — worker 経路・workflow `kind: tool` 経路共通の registration gate。
+#[tokio::test]
+async fn command_scope_fails_closed_without_grants() {
+    let dir = TempDir::new();
+    let invocation = create_invocation_tool_runtime(invocation_options(dir.root(), None)).unwrap();
+    let err = invocation
+        .create_worker_scope(worker(
+            "cmd",
+            scope_options(&dir.root(), vec![ToolName::Command]),
+        ))
+        .unwrap_err();
+    let err = err
+        .downcast_ref::<CheaperError>()
+        .expect("nonempty-grants gate は CheaperError");
+    assert_eq!(err.code(), ErrorCode::PolicyViolation);
+    assert!(err.message().contains("nonempty authorized grants"));
+    invocation.dispose().await;
+}
+
+/// T4: scope が渡す `command` raw は `inner.command` との declared-shape
+/// parity check を通る必要がある — 異なる grant set の密輸は
+/// `command policy mismatch` で reject される。
+#[tokio::test]
+async fn worker_scope_rejects_command_policy_mismatch() {
+    let dir = TempDir::new();
+    let mut opts = invocation_options(dir.root(), None);
+    opts.command = Some(json!({"maxConcurrent": 1, "grants": {"self": self_grant()}}));
+    let invocation = create_invocation_tool_runtime(opts).unwrap();
+    // inner.command(1 grant)と declared-shape が異なる raw → mismatch。
+    let mut opts = scope_options(&dir.root(), vec![ToolName::Command]);
+    opts.command = Some(json!({"maxConcurrent": 1, "grants": {}}));
+    let err = invocation
+        .create_worker_scope(worker("cmd", opts))
+        .unwrap_err();
+    assert!(err_message(&err).contains("command policy mismatch"));
+    invocation.dispose().await;
+}

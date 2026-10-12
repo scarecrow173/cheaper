@@ -8,6 +8,15 @@ process:
     interval: 30s
   tasks: {}
 
+command:
+  maxConcurrent: 1
+  timeout: 2m
+  maxOutputBytes: 65536
+  killGrace: 2s
+  heartbeat:
+    interval: 30s
+  grants: {}
+
 execution:
   timeout: 120s
   maxTurns: 8
@@ -23,6 +32,7 @@ tools:
     - edit
     - count_tokens
     - process
+    - command
 
 filesystem:
   symlinks: within-workspace

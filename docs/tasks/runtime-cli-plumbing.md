@@ -1,10 +1,10 @@
 ---
 id: "TASK-034EOHPDg1Gg2LSKLw8WRT"
 type: "task"
-status: "todo"
+status: "done"
 title: "T4: runtime/CLI plumbing と builtin policy 配線"
 created: "2026-10-12"
-updated: "2026-10-12"
+updated: "2026-10-13"
 owners: []
 relations:
   source: []
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-policy-gated-command-tool.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/command-runtime-cli-plumbing-and-builtin-policy-wiring.md"
   depends-on:
     - "docs/plans/implement-policy-gated-command-tool.md"
     - "docs/tasks/command-core-policy-and-propagation.md"
@@ -104,13 +105,13 @@ Worker / Workflow `kind: tool` の両経路を実動作させる。T1 で機械�
 
 ## Done When
 
-- [ ] `create_worker_scope` が `inner.command`（invocation-resolved grants）を
+- [x] `create_worker_scope` が `inner.command`（invocation-resolved grants）を
   scope options へ再注入し、passthrough ではなくなっている
-- [ ] builtin `policy.yaml` が `command` section + `tools.allow` の `command`
+- [x] builtin `policy.yaml` が `command` section + `tools.allow` の `command`
   を含み、complete schema validation を通過する
-- [ ] Worker 経路と Workflow `kind: tool` 経路の両方で `command` tool が
+- [x] Worker 経路と Workflow `kind: tool` 経路の両方で `command` tool が
   同一 canonical 実装へ到達する
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-runtime -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-runtime -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
