@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQKcQM3ZUANOmMgg6p"
 type: "task"
-status: "todo"
+status: "done"
 title: "T11: cheaper-tools process/grep/read splits"
 created: "2026-10-12"
 updated: "2026-10-12"
