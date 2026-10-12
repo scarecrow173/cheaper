@@ -2,40 +2,10 @@
 
 use std::process::Command;
 
-use cheaper_cli::cli::{run_cli, CliHooks, CliIo, CliStdin, CliWrite};
+mod common;
+use common::{ambient_env, PipeStdin, VecSink};
 
-struct VecSink(Vec<u8>);
-impl CliWrite for VecSink {
-    fn write_str(&mut self, s: &str) {
-        self.0.extend_from_slice(s.as_bytes());
-    }
-}
-
-struct PipeStdin {
-    data: Vec<u8>,
-    tty: bool,
-}
-impl CliStdin for PipeStdin {
-    fn is_tty(&self) -> bool {
-        self.tty
-    }
-    fn read_all(&mut self) -> std::io::Result<Vec<u8>> {
-        Ok(std::mem::take(&mut self.data))
-    }
-}
-
-fn env_lookup(name: &str) -> Option<String> {
-    // test isolation: CHEAPER_CONFIG_DIR 等を孤立 dir へ向けるのは
-    // caller の責務 — ここでは process env をそのまま使う。
-    // ただし CHEAPER_LOG* は ambient 継承させない:in-process で
-    // global subscriber を install すると後続 test が
-    // "subscriber already installed" になり stray .cheaper/logs を
-    // temp workspace に残す(observability 注入は env_map 経由で行う)。
-    if name.starts_with("CHEAPER_LOG") {
-        return None;
-    }
-    std::env::var(name).ok()
-}
+use cheaper_cli::cli::{run_cli, CliHooks, CliIo};
 
 async fn run(argv: &[&str]) -> (i32, String, String) {
     let mut stdin = PipeStdin {
@@ -48,7 +18,7 @@ async fn run(argv: &[&str]) -> (i32, String, String) {
         stdin: &mut stdin,
         stdout: &mut out,
         stderr: &mut err,
-        env: &env_lookup,
+        env: &ambient_env,
         cwd: std::env::current_dir()
             .unwrap()
             .to_string_lossy()

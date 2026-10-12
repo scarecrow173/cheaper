@@ -9,116 +9,13 @@
 //! `CHEAPER_CONFIG_DIR` を temp dir へ向けて credential store /
 //! usage.jsonl を分離する。
 
-use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+mod common;
+use common::Fixture;
 
-use cheaper_cli::cli::{run_cli, CliHooks, CliIo, CliStdin, CliWrite};
-use serde_json::{json, Value};
-
-struct VecSink(Vec<u8>);
-impl CliWrite for VecSink {
-    fn write_str(&mut self, s: &str) {
-        self.0.extend_from_slice(s.as_bytes());
-    }
-}
-
-struct PipeStdin {
-    data: Vec<u8>,
-    tty: bool,
-}
-impl CliStdin for PipeStdin {
-    fn is_tty(&self) -> bool {
-        self.tty
-    }
-    fn read_all(&mut self) -> std::io::Result<Vec<u8>> {
-        Ok(std::mem::take(&mut self.data))
-    }
-}
-
-/// ambient env fallback — `CHEAPER_LOG*` は絶対に継承しない
-/// (in-process test binary で global subscriber を install すると
-/// 後続 test が "subscriber already installed" になり stray
-/// .cheaper/logs を残す)。
-fn ambient_env(name: &str) -> Option<String> {
-    if name.starts_with("CHEAPER_LOG") {
-        return None;
-    }
-    std::env::var(name).ok()
-}
+use serde_json::json;
 
 /// test 用組立一式。`env` map は `io.env` 経由で lookup され、
 /// 未設定名は process env へ fallback する(`CHEAPER_LOG*` 除く)。
-struct Fixture {
-    ws: tempfile::TempDir,
-    /// `CHEAPER_CONFIG_DIR` 先の temp dir。`env_map` からのみ参照
-    /// されるため field 自体は read されない(drop まで生存必須)。
-    _cfg: tempfile::TempDir,
-    env_map: BTreeMap<String, String>,
-    stdin: PipeStdin,
-    out: VecSink,
-    err: VecSink,
-}
-
-impl Fixture {
-    fn new() -> Self {
-        let ws = tempfile::tempdir().unwrap();
-        let cfg = tempfile::tempdir().unwrap();
-        let mut env_map = BTreeMap::new();
-        env_map.insert(
-            "CHEAPER_CONFIG_DIR".to_string(),
-            cfg.path().to_string_lossy().into_owned(),
-        );
-        Self {
-            ws,
-            _cfg: cfg,
-            env_map,
-            stdin: PipeStdin {
-                data: Vec::new(),
-                tty: false,
-            },
-            out: VecSink(Vec::new()),
-            err: VecSink(Vec::new()),
-        }
-    }
-
-    fn with_input(mut self, input_json: &str) -> Self {
-        self.stdin.data = input_json.as_bytes().to_vec();
-        self
-    }
-
-    fn ws_path(&self) -> PathBuf {
-        self.ws.path().to_path_buf()
-    }
-
-    async fn run(&mut self, argv: &[&str]) -> (i32, Value, String) {
-        let env_map = &self.env_map;
-        let env_lookup = move |name: &str| env_map.get(name).cloned().or_else(|| ambient_env(name));
-        let cwd = self.ws.path().to_string_lossy().into_owned();
-        let mut io = CliIo {
-            stdin: &mut self.stdin,
-            stdout: &mut self.out,
-            stderr: &mut self.err,
-            env: &env_lookup,
-            cwd,
-        };
-        let hooks = CliHooks {
-            // embedded materialize を避け、crate 内の bundled resource dir
-            // を使う(workers/ + policy.yaml が同一 layout で存在する)。
-            builtin_dir: Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("resources")),
-            ..Default::default()
-        };
-        let code = run_cli(
-            &argv.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
-            &mut io,
-            &hooks,
-        )
-        .await;
-        drop(io);
-        let out_str = String::from_utf8_lossy(&self.out.0).into_owned();
-        let err_str = String::from_utf8_lossy(&self.err.0).into_owned();
-        (code, serde_json::from_str(&out_str).unwrap(), err_str)
-    }
-}
 
 /// 最小 success fixture(01-success-basic 相当 — fenced `{"ok":true}`)。
 /// `CHEAPER_TEST_FAKE_STREAM` を env map へ直接流す用(feature off では

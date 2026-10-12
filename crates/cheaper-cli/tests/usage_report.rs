@@ -4,7 +4,10 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use cheaper_cli::cli::{run_cli, CliHooks, CliIo, CliStdin, CliWrite};
+mod common;
+use common::{ambient_env, PipeStdin, SharedVecSink};
+
+use cheaper_cli::cli::{run_cli, CliHooks, CliIo};
 use cheaper_cli::usage_report::{
     build_usage_report, read_usage_records, UsageFilters, PRICING_STALE_MS,
 };
@@ -622,34 +625,6 @@ fn unknown_kind_lines_are_skipped() {
 // dispatch 経路(run_cli)
 // ---------------------------------------------------------------------------
 
-struct VecSink(std::rc::Rc<std::cell::RefCell<Vec<u8>>>);
-impl CliWrite for VecSink {
-    fn write_str(&mut self, s: &str) {
-        self.0.borrow_mut().extend_from_slice(s.as_bytes());
-    }
-}
-
-struct PipeStdin;
-impl CliStdin for PipeStdin {
-    fn is_tty(&self) -> bool {
-        true
-    }
-    fn read_all(&mut self) -> std::io::Result<Vec<u8>> {
-        Ok(Vec::new())
-    }
-}
-
-/// ambient env fallback — `CHEAPER_LOG*` は絶対に継承しない
-/// (in-process test binary で global subscriber を install すると
-/// 後続 test が "subscriber already installed" になり stray
-/// .cheaper/logs を残す)。
-fn ambient_env(name: &str) -> Option<String> {
-    if name.starts_with("CHEAPER_LOG") {
-        return None;
-    }
-    std::env::var(name).ok()
-}
-
 /// `CHEAPER_CONFIG_DIR` を tempdir に向け、他は process env に fallthrough。
 async fn run_usage(config_dir: &Path, argv: &[&str]) -> (i32, String, String) {
     let injected: HashMap<String, String> = HashMap::from_iter([(
@@ -657,13 +632,13 @@ async fn run_usage(config_dir: &Path, argv: &[&str]) -> (i32, String, String) {
         config_dir.to_string_lossy().into_owned(),
     )]);
     let env_lookup = |name: &str| injected.get(name).cloned().or_else(|| ambient_env(name));
-    let mut stdin = PipeStdin;
+    let mut stdin = PipeStdin::empty(true);
     let out = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
     let err = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
     let mut io = CliIo {
         stdin: &mut stdin,
-        stdout: &mut VecSink(out.clone()),
-        stderr: &mut VecSink(err.clone()),
+        stdout: &mut SharedVecSink(out.clone()),
+        stderr: &mut SharedVecSink(err.clone()),
         env: &env_lookup,
         cwd: std::env::current_dir()
             .unwrap()

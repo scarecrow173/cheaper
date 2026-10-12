@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQ3rigtcVChwaRKAWD"
 type: "task"
-status: "todo"
+status: "done"
 title: "T04: cheaper-cli tests common module"
 created: "2026-10-12"
 updated: "2026-10-12"
