@@ -362,7 +362,7 @@ fn count_occurrences(content: &str, old_text: &str) -> usize {
     let fuzzy_content = normalize_for_fuzzy_match(content);
     let fuzzy_old_text = normalize_for_fuzzy_match(old_text);
     if fuzzy_old_text.is_empty() {
-        return crate::js16::utf16_len(&fuzzy_content).saturating_sub(1);
+        return cheaper_core::js16::utf16_len(&fuzzy_content).saturating_sub(1);
     }
     fuzzy_content.matches(&fuzzy_old_text).count()
 }

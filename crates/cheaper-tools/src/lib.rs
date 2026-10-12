@@ -25,7 +25,6 @@ pub mod execution_metrics;
 pub mod glob;
 pub mod invocation;
 pub mod journal;
-pub mod js16;
 pub mod limits;
 pub mod line_framer;
 pub mod operation;

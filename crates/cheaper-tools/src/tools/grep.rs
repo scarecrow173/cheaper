@@ -32,7 +32,7 @@ use serde_json::Value;
 
 use crate::access::AccessObserver;
 use crate::catalog::{self, CanonicalToolResult};
-use crate::js16::{slice_utf16, utf16_len};
+use cheaper_core::js16::{slice_utf16, utf16_len};
 use crate::limits::{
     GREP_BATCH_MAX_BYTES, GREP_BATCH_MAX_LINES, GREP_EVAL_PER_FILE_MS, GREP_EVAL_TOTAL_MS,
     GREP_MAX_LINE_BYTES, GREP_OUTPUT_LINE_MAX_CHARS, GREP_OUTPUT_MAX_BYTES, GREP_PATTERN_MAX_CHARS,

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EDQ2nAKA8yGvk57aniQ"
 type: "task"
-status: "todo"
+status: "done"
 title: "T02: cheaper-tools js16 shim and glob_probe removal"
 created: "2026-10-12"
 updated: "2026-10-12"
