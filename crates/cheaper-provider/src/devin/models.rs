@@ -444,7 +444,7 @@ pub fn load_cli_catalog(cli: &DevinCli) -> Result<DevinCatalog, CheaperError> {
             Some(MODELS_TIMEOUT),
             false,
         )
-        .map_err(|e| CheaperError::new(ErrorCode::ProviderFailure, e.to_string()).with_cause(e))?;
+        .map_err(crate::devin::cli::cli_error)?;
     if result.code != 0 {
         let stderr = result.stderr.trim();
         return Err(CheaperError::new(

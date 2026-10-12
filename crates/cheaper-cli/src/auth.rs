@@ -22,18 +22,15 @@
 //!   code/exit code に畳むため `INTERNAL_ERROR` を返す。`askSecret` の
 //!   abort/Ctrl-C は TS と同じく `INVALID_REQUEST "login cancelled"`。
 
-use std::collections::BTreeMap;
 use std::io::{self, BufRead};
 use std::process::Command;
-use std::sync::Arc;
 use std::thread::JoinHandle;
 
 use cheaper_core::config::dirs::{resolve_user_config_dir, UserConfigDirOptions};
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::js::js_trim;
-use cheaper_provider::devin::DevinProviderPlugin;
-use cheaper_runtime::auth::{AuthEvent, AuthInteraction, AuthPrompt, AuthType, ProcessEnv};
-use cheaper_runtime::{CheaperProviderPlugin, CredentialStatus, Runtime};
+use cheaper_runtime::auth::{AuthEvent, AuthInteraction, AuthPrompt, AuthType};
+use cheaper_runtime::{CredentialStatus, Runtime};
 use cheaper_tools::operation::{AbortController, AbortReason, AbortSignal};
 use serde_json::{Map, Value};
 use tracing::Instrument;
@@ -41,18 +38,11 @@ use tracing::Instrument;
 use crate::args::{AuthAction, AuthCliArgs, AuthTypeArg};
 use crate::cli::{emit_catalog_warnings, BoxError, CliHooks, CliIo, CliWrite, CommandOut};
 use crate::envelope::utility_success_envelope;
-
-fn invalid_request(message: String, details: Option<Map<String, Value>>) -> CheaperError {
-    let e = CheaperError::new(ErrorCode::InvalidRequest, message);
-    match details {
-        Some(d) => e.with_details(d),
-        None => e,
-    }
-}
+use crate::errors::invalid_request;
 
 /// `askSecret` の abort/Ctrl-C reject 値(TS `invalidRequest("login cancelled")`)。
 fn login_cancelled() -> CheaperError {
-    invalid_request("login cancelled".to_string(), None)
+    invalid_request("login cancelled", None)
 }
 
 /// `ask`(readline)の abort — TS の `AbortError` propagate 相当
@@ -419,47 +409,25 @@ impl Drop for SignalRelay {
 }
 
 async fn wait_for_signal(controller: AbortController, done: AbortSignal) {
-    let ctrl_c = tokio::signal::ctrl_c();
-    tokio::pin!(ctrl_c);
-    #[cfg(unix)]
-    let mut sigterm =
-        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()).ok();
-    #[cfg(unix)]
-    {
-        tokio::select! {
-            _ = &mut ctrl_c => controller.abort(AbortReason::aborted()),
-            _ = async {
-                match &mut sigterm {
-                    Some(s) => { s.recv().await; }
-                    None => std::future::pending::<()>().await,
-                }
-            } => controller.abort(AbortReason::aborted()),
-            _ = done.cancelled() => {}
-        }
-    }
-    #[cfg(not(unix))]
-    {
-        tokio::select! {
-            _ = &mut ctrl_c => controller.abort(AbortReason::aborted()),
-            _ = done.cancelled() => {}
-        }
+    tokio::select! {
+        _ = crate::signal::wait_os_signal() => controller.abort(AbortReason::aborted()),
+        _ = done.cancelled() => {}
     }
 }
 
 /// `createModelRuntime({env: io.env})` 相当 — `<userConfigDir>` 解決 +
 /// bundled plugin(`bundledProviderPlugins()` = devin)登録 + builtin
-/// oauth flow seed(`Runtime::create` 内部)。
+/// oauth flow seed(`Runtime::create` 内部)。配線は
+/// `crate::compose` に集約済み。
 fn create_runtime(io: &CliIo<'_>) -> Result<Runtime, CheaperError> {
     let user_config_dir = resolve_user_config_dir(UserConfigDirOptions {
         env: Some(io.env),
         homedir: None,
     });
-    let plugins: Vec<Arc<dyn CheaperProviderPlugin>> = vec![Arc::new(DevinProviderPlugin::new())];
-    Runtime::create(
-        user_config_dir,
-        Arc::new(ProcessEnv),
-        &plugins,
-        BTreeMap::new(),
+    crate::compose::create_runtime(
+        &user_config_dir,
+        #[cfg(feature = "dev-seam")]
+        None,
     )
 }
 

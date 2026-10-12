@@ -10,7 +10,6 @@
 //! `NodeIoError`/`CheaperError`)をそのまま box して返す
 //! (`downcast_ref` で TS の `instanceof` 分岐を再現するため)。
 
-use std::error::Error;
 use std::path::Path;
 
 use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirsOptions, EnvLookup};
@@ -19,9 +18,7 @@ use cheaper_core::policy::load::{load_policy, LoadPolicyOptions};
 use cheaper_core::token::count::{count_file_tokens, CountFileTokensOptions, FileTokenCount};
 use cheaper_core::workspace::paths::canonicalize_workspace_root;
 
-/// `Box<dyn Error>` — run/CLI 経路の共通 error 畳み込み型
-/// (`cli.rs::BoxError` と同型)。
-pub type BoxError = Box<dyn Error + Send + Sync + 'static>;
+pub use crate::cli::BoxError;
 
 /// `CHEAPER_COUNT_MAX_BYTES` の解釈(DESIGN-0017)。
 /// 正の整数のみ有効: trim 後が 10 進数字列のみで構成され、

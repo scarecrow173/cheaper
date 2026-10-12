@@ -11,33 +11,16 @@ use std::collections::HashMap;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use cheaper_cli::cli::{run_cli, CliHooks, CliIo, CliStdin, CliWrite};
+mod common;
+use common::{PipeStdin, VecSink};
+
+use cheaper_cli::cli::{run_cli, CliHooks, CliIo, CliStdin};
 use cheaper_cli::hook::targets::HookTarget;
 
 /// `"lorem ipsum dolor sit amet ".repeat(4000)` — hook-contract.test.ts
 /// と同一の 8192 token 超 fixture(27 bytes × 4000 = 108000 bytes)。
 fn big_text() -> String {
     "lorem ipsum dolor sit amet ".repeat(4000)
-}
-
-struct VecSink(Vec<u8>);
-impl CliWrite for VecSink {
-    fn write_str(&mut self, s: &str) {
-        self.0.extend_from_slice(s.as_bytes());
-    }
-}
-
-struct PipeStdin {
-    data: Vec<u8>,
-    tty: bool,
-}
-impl CliStdin for PipeStdin {
-    fn is_tty(&self) -> bool {
-        self.tty
-    }
-    fn read_all(&mut self) -> io::Result<Vec<u8>> {
-        Ok(std::mem::take(&mut self.data))
-    }
 }
 
 /// stdin read が panic する stub(panic → allow/exit 0 の注入用)。

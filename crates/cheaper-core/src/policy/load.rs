@@ -5,6 +5,7 @@
 
 use serde_json::{json, Map, Value};
 
+use crate::config::layer::{read_yaml_layer, LayerKind};
 use crate::errors::{CheaperError, ErrorCode};
 use crate::policy::merge::{merge_policy_layers, MergeMode};
 use crate::policy::process::resolve_process_policy;
@@ -16,79 +17,25 @@ use crate::policy::workflow::resolve_workflow_policy;
 
 /// `readPolicyFile`: only `ENOENT`/`ENOTDIR` skip (absent file); other
 /// read failures (EACCES, EISDIR, broken symlink) are errors, not silent
-/// skips.
+/// skips。
+const POLICY_LAYER: LayerKind = LayerKind {
+    code: ErrorCode::InvalidRuntimePolicy,
+    file_label: "policy file",
+    yaml_label: "policy yaml",
+    object_label: "policy",
+    event: "policy file read",
+};
+
 fn read_policy_file(
     file_path: &str,
     required: bool,
 ) -> Result<Option<Map<String, Value>>, CheaperError> {
-    let bytes = match std::fs::read(file_path) {
-        Ok(b) => b,
-        Err(e) => {
-            let absent = e.kind() == std::io::ErrorKind::NotFound
-                || e.kind() == std::io::ErrorKind::NotADirectory
-                // Windows maps "path through a file" to ERROR_DIRECTORY
-                // (267) rather than a `NotADirectory` kind.
-                || e.raw_os_error() == Some(267);
-            if absent {
-                if !required {
-                    return Ok(None);
-                }
-                let mut details = Map::new();
-                details.insert("path".to_string(), json!(file_path));
-                return Err(CheaperError::new(
-                    ErrorCode::InvalidRuntimePolicy,
-                    format!("policy file not found: {file_path}"),
-                )
-                .with_details(details)
-                .with_cause(e));
-            }
-            let mut details = Map::new();
-            details.insert("path".to_string(), json!(file_path));
-            details.insert("reason".to_string(), json!("read-failed"));
-            details.insert(
-                "errno".to_string(),
-                json!(crate::errors::io_errno_display(file_path, &e)),
-            );
-            return Err(CheaperError::new(
-                ErrorCode::InvalidRuntimePolicy,
-                format!("policy file read failed: {file_path}"),
-            )
-            .with_details(details)
-            .with_cause(e));
-        }
-    };
-    // Node readFile("utf8") is lossy.
-    let text = String::from_utf8_lossy(&bytes);
-    // `cheaper-core` event(design §instrumentation 配置)— layer file
-    // の read 境界。`file.name` は basename のみ(full path は載せない)。
-    tracing::trace!(
-        file.name = crate::nodepath::basename(file_path, None).as_str(),
-        "policy file read"
-    );
-    let parsed: Value = crate::yaml::parse_yaml(&text).map_err(|e| {
-        let mut details = Map::new();
-        details.insert("path".to_string(), json!(file_path));
-        details.insert("reason".to_string(), json!("yaml-parse"));
-        CheaperError::new(
-            ErrorCode::InvalidRuntimePolicy,
-            format!("policy yaml parse failed: {file_path}"),
-        )
-        .with_details(details)
-        .with_cause(e)
-    })?;
-    match parsed {
-        Value::Object(m) => Ok(Some(m)),
-        _ => {
-            let mut details = Map::new();
-            details.insert("path".to_string(), json!(file_path));
-            details.insert("reason".to_string(), json!("not-object"));
-            Err(CheaperError::new(
-                ErrorCode::InvalidRuntimePolicy,
-                format!("policy is not an object: {file_path}"),
-            )
-            .with_details(details))
-        }
-    }
+    read_yaml_layer(file_path, &POLICY_LAYER, required).map(|opt| {
+        opt.map(|v| match v {
+            Value::Object(m) => m,
+            _ => unreachable!("read_yaml_layer returns objects only"),
+        })
+    })
 }
 
 /// `loadPolicy` options (`builtinPolicyPath`, `userConfigDir`,

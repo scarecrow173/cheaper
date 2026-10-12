@@ -3,107 +3,10 @@
 //! `run_cli` 経路で検証する。実 credential 不要(catalog の configured
 //! 判定が空でも envelope 契約は同じ)。
 
-use std::collections::BTreeMap;
-use std::path::Path;
+mod common;
+use common::Fixture;
 
-use cheaper_cli::cli::{run_cli, CliHooks, CliIo, CliStdin, CliWrite};
 use serde_json::{json, Value};
-
-struct VecSink(Vec<u8>);
-impl CliWrite for VecSink {
-    fn write_str(&mut self, s: &str) {
-        self.0.extend_from_slice(s.as_bytes());
-    }
-}
-
-struct PipeStdin;
-impl CliStdin for PipeStdin {
-    fn is_tty(&self) -> bool {
-        true
-    }
-    fn read_all(&mut self) -> std::io::Result<Vec<u8>> {
-        Ok(Vec::new())
-    }
-}
-
-/// ambient env fallback — `CHEAPER_LOG*` は絶対に継承しない
-/// (in-process test binary で global subscriber を install すると
-/// 後続 test が "subscriber already installed" になり stray
-/// .cheaper/logs を残す)。
-fn ambient_env(name: &str) -> Option<String> {
-    if name.starts_with("CHEAPER_LOG") {
-        return None;
-    }
-    std::env::var(name).ok()
-}
-
-struct Fixture {
-    ws: tempfile::TempDir,
-    /// `CHEAPER_CONFIG_DIR` 先の keep-alive(field 保持で temp dir 生存)。
-    _cfg: tempfile::TempDir,
-    env_map: BTreeMap<String, String>,
-    stdin: PipeStdin,
-    out: VecSink,
-    err: VecSink,
-}
-
-impl Fixture {
-    fn new() -> Self {
-        let ws = tempfile::tempdir().unwrap();
-        let cfg = tempfile::tempdir().unwrap();
-        let mut env_map = BTreeMap::new();
-        env_map.insert(
-            "CHEAPER_CONFIG_DIR".to_string(),
-            cfg.path().to_string_lossy().into_owned(),
-        );
-        Self {
-            ws,
-            _cfg: cfg,
-            env_map,
-            stdin: PipeStdin,
-            out: VecSink(Vec::new()),
-            err: VecSink(Vec::new()),
-        }
-    }
-
-    /// `providers/devin/catalog.json` に malformed snapshot を配置する
-    /// — `Runtime::create` の snapshot load error が catalog errors に
-    /// 記録され `warning:` 行として stderr に出る fixture。
-    fn write_malformed_devin_catalog(&self) {
-        let provider_dir = self._cfg.path().join("providers").join("devin");
-        std::fs::create_dir_all(&provider_dir).unwrap();
-        std::fs::write(provider_dir.join("catalog.json"), "{ not json").unwrap();
-    }
-
-    async fn run(&mut self, argv: &[&str]) -> (i32, Value, String) {
-        let env_map = &self.env_map;
-        let env_lookup = move |name: &str| env_map.get(name).cloned().or_else(|| ambient_env(name));
-        let cwd = self.ws.path().to_string_lossy().into_owned();
-        let mut io = CliIo {
-            stdin: &mut self.stdin,
-            stdout: &mut self.out,
-            stderr: &mut self.err,
-            env: &env_lookup,
-            cwd,
-        };
-        let hooks = CliHooks {
-            builtin_dir: Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("resources")),
-            ..Default::default()
-        };
-        let code = run_cli(
-            &argv.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
-            &mut io,
-            &hooks,
-        )
-        .await;
-        drop(io);
-        (
-            code,
-            serde_json::from_str(&String::from_utf8_lossy(&self.out.0)).unwrap(),
-            String::from_utf8_lossy(&self.err.0).into_owned(),
-        )
-    }
-}
 
 #[tokio::test(flavor = "current_thread")]
 async fn models_utility_envelope_shape() {

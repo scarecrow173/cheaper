@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
-use cheaper_runtime::fixture::RunFixture;
+use cheaper_runtime::dev::fixture::RunFixture;
 use serde::Deserialize;
 use serde_json::{json, Value};
 

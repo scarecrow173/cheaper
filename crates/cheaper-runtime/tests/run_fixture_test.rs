@@ -24,8 +24,8 @@ use std::time::Duration;
 
 use cheaper_core::errors::CheaperError;
 use cheaper_core::model::config::ModelConfig;
-use cheaper_runtime::fake_provider::CheaperFakePlugin;
-use cheaper_runtime::fixture::{
+use cheaper_runtime::dev::fake_provider::CheaperFakePlugin;
+use cheaper_runtime::dev::fixture::{
     ExpectedStatus, FixtureMetaExpect, RunFixture, ScriptedAuthInteraction,
 };
 use cheaper_runtime::plugin::CheaperProviderPlugin;

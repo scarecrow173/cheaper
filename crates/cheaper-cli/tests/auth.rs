@@ -6,9 +6,12 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+mod common;
+use common::{PipeStdin, VecSink};
+
 use cheaper_cli::args::{AuthAction, AuthCliArgs, AuthTypeArg, CliFormat};
 use cheaper_cli::auth::{execute, execute_with, AuthTerminal, TerminalInteraction};
-use cheaper_cli::cli::{run_cli, CliHooks, CliIo, CliStdin, CliWrite};
+use cheaper_cli::cli::{run_cli, CliHooks, CliIo};
 use cheaper_provider::devin::DevinProviderPlugin;
 use cheaper_runtime::auth::{
     AuthEvent, AuthInfoLink, AuthInteraction, AuthPrompt, AuthSelectOption, AuthSource,
@@ -25,25 +28,6 @@ use serde_json::Value;
 // ---------------------------------------------------------------------------
 // fakes
 // ---------------------------------------------------------------------------
-
-struct VecSink(Vec<u8>);
-impl CliWrite for VecSink {
-    fn write_str(&mut self, s: &str) {
-        self.0.extend_from_slice(s.as_bytes());
-    }
-}
-
-struct PipeStdin {
-    tty: bool,
-}
-impl CliStdin for PipeStdin {
-    fn is_tty(&self) -> bool {
-        self.tty
-    }
-    fn read_all(&mut self) -> std::io::Result<Vec<u8>> {
-        Ok(Vec::new())
-    }
-}
 
 /// injected env — `resolve_user_config_dir` には CHEAPER_CONFIG_DIR を
 /// 渡し、process env 由来の外乱を避ける。
@@ -151,7 +135,7 @@ async fn run_execute(
         config_dir.to_string_lossy().into_owned(),
     )]));
     let env_lookup = |name: &str| env_map.lookup(name);
-    let mut stdin = PipeStdin { tty };
+    let mut stdin = PipeStdin::empty(tty);
     let mut out = VecSink(Vec::new());
     let mut err = VecSink(Vec::new());
     let mut io = CliIo {
@@ -176,7 +160,7 @@ async fn run_cli_auth(
         config_dir.to_string_lossy().into_owned(),
     )]));
     let env_lookup = |name: &str| env_map.lookup(name);
-    let mut stdin = PipeStdin { tty };
+    let mut stdin = PipeStdin::empty(tty);
     let mut out = VecSink(Vec::new());
     let mut err = VecSink(Vec::new());
     let mut io = CliIo {

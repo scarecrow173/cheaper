@@ -25,9 +25,11 @@
 pub mod args;
 pub mod auth;
 pub mod cli;
+pub mod compose;
 pub mod count;
 pub mod embedded;
 pub mod envelope;
+pub mod errors;
 #[cfg(feature = "dev-seam")]
 pub mod fake_stream;
 pub mod hook;
@@ -35,6 +37,7 @@ pub mod input;
 pub mod models;
 pub mod pricing;
 pub mod run;
+pub mod signal;
 pub mod text_format;
 pub mod usage_log;
 pub mod usage_report;

@@ -79,11 +79,13 @@ async fn canonical_schema_validates_and_returns_snapshot() {
 #[tokio::test]
 async fn worker_schema_uses_same_compiler_seam() {
     let mut fixtures = FixtureSet::new();
-    fixtures.worker_mut().output_schema = compile_schema(
-        json!({ "type": "integer" }).as_object().unwrap().clone(),
-        SchemaKind::Output,
-    )
-    .unwrap();
+    fixtures.worker_mut().output_schema = Arc::new(
+        compile_schema(
+            json!({ "type": "integer" }).as_object().unwrap().clone(),
+            SchemaKind::Output,
+        )
+        .unwrap(),
+    );
     let mut raw = definition();
     let worker_name = fixtures.worker().name.clone();
     raw["jobs"]["a"] =
@@ -533,8 +535,9 @@ async fn mutation_of_definition_invocation_catalog_keeps_snapshot() {
     // TS: caller.x/raw.jobs.a.input/compiled.inputs.x/compiled.jobs.a.input/
     // worker.inputSchema 全てを mutate しても snapshot が不変。
     raw["jobs"]["a"]["input"] = json!({ "task": 9 });
-    fixtures.worker_mut().input_schema =
-        Some(compile_schema(Map::new(), SchemaKind::Input).unwrap());
+    fixtures.worker_mut().input_schema = Some(Arc::new(
+        compile_schema(Map::new(), SchemaKind::Input).unwrap(),
+    ));
     assert_eq!(
         compiled
             .materialize_job_input("a", &HashMap::new())
@@ -924,8 +927,9 @@ async fn compact_fixture_matches_real_bulk_reader_schema() {
     };
     let schema: Value = serde_json::from_str(&text).unwrap();
     let mut fixtures = FixtureSet::new();
-    fixtures.worker_mut().input_schema =
-        Some(compile_schema(schema.as_object().unwrap().clone(), SchemaKind::Input).unwrap());
+    fixtures.worker_mut().input_schema = Some(Arc::new(
+        compile_schema(schema.as_object().unwrap().clone(), SchemaKind::Input).unwrap(),
+    ));
     let mut raw = definition();
     raw["inputs"]["path"] = json!({ "type": "string", "default": "src/index.ts" });
     raw["jobs"] = json!({

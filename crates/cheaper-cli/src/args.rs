@@ -19,6 +19,8 @@ use cheaper_core::model::model_ref::parse_model_ref;
 use cheaper_core::model::tier::{Tier, TIERS};
 use serde_json::{json, Map};
 
+use crate::errors::invalid_request;
+
 /// `NAME_PATTERN` = `/^[a-z0-9][a-z0-9-]*$/`(JS `\w` 非依存の ASCII
 /// 限定 — byte 走査で正確に再現)。
 fn is_valid_worker_name(name: &str) -> bool {
@@ -198,17 +200,6 @@ impl ParsedCli {
             Self::Auth(a) => Some(a.quiet),
             Self::Help | Self::Version | Self::Models(_) => None,
         }
-    }
-}
-
-fn invalid_request(
-    message: impl Into<String>,
-    details: Option<Map<String, serde_json::Value>>,
-) -> CheaperError {
-    let e = CheaperError::new(ErrorCode::InvalidRequest, message.into());
-    match details {
-        Some(d) => e.with_details(d),
-        None => e,
     }
 }
 

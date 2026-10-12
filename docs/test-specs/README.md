@@ -28,6 +28,7 @@ Directory: `docs/test-specs`
 | TSPEC-034zTjObSJGccLlnwmHwVm | Operation lifecycle settlement guarantees | approved | [operation-lifecycle-settlement.md](./operation-lifecycle-settlement.md) |
 | TSPEC-034zXB13nuorLP81dn8ro8 | Payload-free source acquisition and native verification | superseded | [payload-free-source-acquisition-and-native-verification.md](./payload-free-source-acquisition-and-native-verification.md) |
 | TSPEC-034COkGnjlrMwzT5pEaMzV | plugin catalog persistence and user model merge guarantees | approved | [plugin-catalog-persistence-and-user-model-merge.md](./plugin-catalog-persistence-and-user-model-merge.md) |
+| TSPEC-034EDnJWaK5A4nMhDKBedT | Post-feature structural refactoring behavior parity | approved | [post-feature-structural-refactoring-parity.md](./post-feature-structural-refactoring-parity.md) |
 | TSPEC-034rzVrqJiXNDl2AF8eI5s | pricing metadata resolution and models command | approved | [pricing-metadata-and-models-command.md](./pricing-metadata-and-models-command.md) |
 | TSPEC-034zTWh6x6esCzZmjDdiT0 | Release manifest and snapshot integrity | superseded | [release-manifest-and-snapshot-integrity.md](./release-manifest-and-snapshot-integrity.md) |
 | TSPEC-034zTWhBVg6DzifF8qlhAc | Release publication and native smoke | superseded | [release-publication-and-native-smoke.md](./release-publication-and-native-smoke.md) |

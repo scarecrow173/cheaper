@@ -304,6 +304,16 @@ pub(crate) fn errno_string(e: &std::io::Error) -> String {
     })
 }
 
+/// Whether `e` means "the file does not exist" for config-file readers:
+/// `ENOENT`/`ENOTDIR`, plus Windows `ERROR_DIRECTORY` (267) which Rust
+/// maps to `NotADirectory` only for some path shapes — walking a path
+/// *through a file* surfaces 267 instead.
+pub(crate) fn is_absent_file_error(e: &std::io::Error) -> bool {
+    e.kind() == std::io::ErrorKind::NotFound
+        || e.kind() == std::io::ErrorKind::NotADirectory
+        || e.raw_os_error() == Some(267)
+}
+
 /// Node code name for a read/open failure on `path`. On Windows,
 /// `read` on a directory surfaces `ERROR_ACCESS_DENIED` where libuv
 /// reports `EISDIR` for Node's `fs.readFile` — check the path kind and

@@ -320,10 +320,10 @@ pub trait ResourceInference: Send + Sync {
 
 /// `JobValidation`(schema 検証済み job metadata)。
 pub struct JobValidation {
-    pub input: Option<CompiledSchema>,
-    pub output: CompiledSchema,
-    /// `workerSnapshot` — validation port の schema を再 compile した
-    /// snapshot(呼び出し側 metadata の後続 mutation を遮断)。
+    pub input: Option<Arc<CompiledSchema>>,
+    pub output: Arc<CompiledSchema>,
+    /// `workerSnapshot` — validation port の schema を `Arc` 共有した
+    /// snapshot(`CompiledSchema` は immutable で mutation を遮断できる)。
     pub worker: Option<Arc<WorkerDefinition>>,
 }
 

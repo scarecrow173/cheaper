@@ -18,9 +18,7 @@
 //!   (option 検証 → config dir 解決 → best-effort catalog 観測 →
 //!   report → utility envelope)。
 
-use std::collections::BTreeMap;
 use std::path::Path;
-use std::sync::Arc;
 
 use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirsOptions};
 use cheaper_core::duration::parse_duration;
@@ -28,9 +26,6 @@ use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::model::classify::ModelInfo;
 use cheaper_core::model::model_ref::{parse_model_ref, ModelRef};
 use cheaper_core::model::pricing::{resolve_pricing, ModelCost, ModelPricing, PricingSource};
-use cheaper_provider::devin::DevinProviderPlugin;
-use cheaper_runtime::auth::ProcessEnv;
-use cheaper_runtime::{CheaperProviderPlugin, ProviderEnv, Runtime};
 use serde_json::{Map, Value};
 use tracing::Instrument;
 
@@ -579,14 +574,10 @@ fn lookup_catalog_model(mref: &ModelRef, user_config_dir: &Path) -> Option<Model
         // 永続 catalog + builtin static model のみを見る offline 版が
         // `Runtime::create`。bundled plugin(devin)も登録する
         // (`bundledProviderPlugins` 相当)。
-        let env: Arc<dyn ProviderEnv> = Arc::new(ProcessEnv);
-        let plugins: Vec<Arc<dyn CheaperProviderPlugin>> =
-            vec![Arc::new(DevinProviderPlugin::new())];
-        let runtime = Runtime::create(
-            user_config_dir.to_path_buf(),
-            env,
-            &plugins,
-            BTreeMap::new(),
+        let runtime = crate::compose::create_runtime(
+            user_config_dir,
+            #[cfg(feature = "dev-seam")]
+            None,
         )
         .ok()?;
         runtime
@@ -605,7 +596,7 @@ fn lookup_catalog_model(mref: &ModelRef, user_config_dir: &Path) -> Option<Model
 
 fn invalid_request(message: String, detail_key: &str, detail_value: &str) -> BoxError {
     let details = Map::from_iter([(detail_key.to_string(), Value::from(detail_value))]);
-    Box::new(CheaperError::new(ErrorCode::InvalidRequest, message).with_details(details))
+    Box::new(crate::errors::invalid_request(message, Some(details)))
 }
 
 /// `cli.ts` の `parsed.kind === "usage"` 分岐相当。usage command 自体は

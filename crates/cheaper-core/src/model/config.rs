@@ -7,10 +7,11 @@
 
 use serde_json::{json, Map, Value};
 
+use crate::config::layer::{read_yaml_layer, LayerKind};
 use crate::errors::{CheaperError, ErrorCode};
 use crate::model::tier::{parse_tier, Tier, TIERS};
 use crate::policy::merge::{merge_policy_layers, MergeMode};
-use crate::worker::schema::SchemaErrorEntry;
+use crate::worker::schema::{schema_error_entries, SchemaErrorEntry};
 
 /// `ModelConfig`.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -96,13 +97,7 @@ fn validate_models_config(
     if validator.is_valid(raw) {
         return Ok(raw.as_object().expect("schema enforces object").clone());
     }
-    let errors: Vec<SchemaErrorEntry> = validator
-        .iter_errors(raw)
-        .map(|e| SchemaErrorEntry {
-            instance_path: e.instance_path().to_string(),
-            message: e.to_string(),
-        })
-        .collect();
+    let errors: Vec<SchemaErrorEntry> = schema_error_entries(validator, raw);
     let mut details = Map::new();
     details.insert("path".to_string(), json!(file_path));
     details.insert(
@@ -117,62 +112,19 @@ fn validate_models_config(
 }
 
 /// `readModelsConfig`: only `ENOENT`/`ENOTDIR` skip.
+const MODELS_LAYER: LayerKind = LayerKind {
+    code: ErrorCode::InvalidModelConfig,
+    file_label: "models config",
+    yaml_label: "models yaml",
+    object_label: "models config",
+    event: "models config read",
+};
+
 fn read_models_config(file_path: &str) -> Result<Option<Map<String, Value>>, CheaperError> {
-    let bytes = match std::fs::read(file_path) {
-        Ok(b) => b,
-        Err(e) => {
-            let absent = e.kind() == std::io::ErrorKind::NotFound
-                || e.kind() == std::io::ErrorKind::NotADirectory
-                || e.raw_os_error() == Some(267);
-            if absent {
-                return Ok(None);
-            }
-            let mut details = Map::new();
-            details.insert("path".to_string(), json!(file_path));
-            details.insert("reason".to_string(), json!("read-failed"));
-            details.insert(
-                "errno".to_string(),
-                json!(crate::errors::io_errno_display(file_path, &e)),
-            );
-            return Err(CheaperError::new(
-                ErrorCode::InvalidModelConfig,
-                format!("models config read failed: {file_path}"),
-            )
-            .with_details(details)
-            .with_cause(e));
-        }
+    let Some(parsed) = read_yaml_layer(file_path, &MODELS_LAYER, false)? else {
+        return Ok(None);
     };
-    let text = String::from_utf8_lossy(&bytes);
-    // `cheaper-core` event(design §instrumentation 配置)— `file.name`
-    // は basename のみ(full path は載せない)。
-    tracing::trace!(
-        file.name = crate::nodepath::basename(file_path, None).as_str(),
-        "models config read"
-    );
-    let parsed: Value = crate::yaml::parse_yaml(&text).map_err(|e| {
-        let mut details = Map::new();
-        details.insert("path".to_string(), json!(file_path));
-        details.insert("reason".to_string(), json!("yaml-parse"));
-        CheaperError::new(
-            ErrorCode::InvalidModelConfig,
-            format!("models yaml parse failed: {file_path}"),
-        )
-        .with_details(details)
-        .with_cause(e)
-    })?;
-    match parsed {
-        Value::Object(_) => validate_models_config(&parsed, file_path).map(Some),
-        _ => {
-            let mut details = Map::new();
-            details.insert("path".to_string(), json!(file_path));
-            details.insert("reason".to_string(), json!("not-object"));
-            Err(CheaperError::new(
-                ErrorCode::InvalidModelConfig,
-                format!("models config is not an object: {file_path}"),
-            )
-            .with_details(details))
-        }
-    }
+    validate_models_config(&parsed, file_path).map(Some)
 }
 
 /// `loadModelConfig` options.

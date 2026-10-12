@@ -41,7 +41,7 @@ use cheaper_tools::invocation::{
     JobLeaseOptions, WorkerScopeOptions,
 };
 use cheaper_tools::journal::MutationJournal;
-use cheaper_tools::operation::{AbortController, AbortListenerId, AbortReason, AbortSignal};
+use cheaper_tools::operation::{AbortController, AbortReason};
 use cheaper_tools::registry::{ToolCallContext, ToolRuntimeOptions};
 use cheaper_tools::resources::ResourceLease;
 use cheaper_tools::tools::process::find_cheaper_error;
@@ -58,11 +58,13 @@ use tracing::Instrument;
 
 use crate::args::{WorkflowInterfaceCliArgs, WorkflowRunCliArgs};
 use crate::cli::{now, system_now, BoxError, CliHooks, CliIo, CommandOut};
+use crate::compose::create_runtime;
+#[cfg(not(feature = "dev-seam"))]
+use crate::compose::production_session_factory;
 use crate::envelope::{utility_success_envelope, workflow_envelope};
 #[cfg(feature = "dev-seam")]
 use crate::fake_stream::load_test_stream;
 use crate::input::read_task_input;
-use crate::run::{create_runtime, production_session_factory};
 use crate::workflow_context::{prepare_workflow_context, SharedToolError};
 
 type BoxFuture<'a, T> = Pin<Box<dyn std::future::Future<Output = T> + Send + 'a>>;
@@ -180,10 +182,8 @@ fn build_model_bundle(shared: &Shared) -> Result<ModelBundle, ToolError> {
     )
     .map_err(|e| Box::new(e) as ToolError)?;
     #[cfg(feature = "dev-seam")]
-    let session_factory: Box<dyn SessionFactory> = match &fixture {
-        Some(f) => Box::new(f.session_factory()),
-        None => production_session_factory(),
-    };
+    let session_factory: Box<dyn SessionFactory> =
+        crate::compose::session_factory(fixture.as_ref());
     #[cfg(not(feature = "dev-seam"))]
     let session_factory: Box<dyn SessionFactory> = production_session_factory();
     #[cfg(feature = "dev-seam")]
@@ -624,74 +624,6 @@ fn build_ports(shared: &Arc<Shared>) -> WorkflowEnginePorts {
 }
 
 // ---------------------------------------------------------------------------
-// signal 中継(hooks.signal + SIGINT/SIGTERM → AbortController)
-// ---------------------------------------------------------------------------
-
-/// `hooks.signal` + `process.on("SIGINT"/"SIGTERM")` を workflow 集約
-/// controller へ中継する guard。`run.rs::SignalRelay` と同じ構造だが
-/// external abort の reason を forward する(TS
-/// `abortController.abort(external?.reason)` — `run` 側は reason を
-/// 捨てて既定 AbortError に揃える差分がある)。
-struct WorkflowSignalRelay {
-    os_task: tokio::task::JoinHandle<()>,
-    external: Option<(AbortSignal, AbortListenerId)>,
-}
-
-impl WorkflowSignalRelay {
-    fn install(hooks: &CliHooks, controller: &AbortController) -> Self {
-        let external = hooks.signal.as_ref().map(|signal| {
-            let ac = controller.clone();
-            // `onSignal` — external reason をそのまま abort() へ渡す。
-            let id = signal.on_abort(move |reason: &AbortReason| {
-                ac.abort(reason.clone());
-            });
-            // `if (external?.aborted) onSignal()` — 登録済みでも
-            // abort 済み signal は発火しないため即時反映する。
-            if signal.is_aborted() {
-                controller.abort(signal.reason().unwrap_or_else(AbortReason::aborted));
-            }
-            (signal.clone(), id)
-        });
-        let ac = controller.clone();
-        let os_task = tokio::spawn(async move {
-            wait_os_signal().await;
-            ac.abort(AbortReason::aborted());
-        });
-        Self { os_task, external }
-    }
-}
-
-impl Drop for WorkflowSignalRelay {
-    fn drop(&mut self) {
-        self.os_task.abort();
-        if let Some((signal, id)) = self.external.take() {
-            signal.remove_listener(id);
-        }
-    }
-}
-
-#[cfg(unix)]
-async fn wait_os_signal() {
-    match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
-        Ok(mut term) => {
-            tokio::select! {
-                _ = tokio::signal::ctrl_c() => {}
-                _ = term.recv() => {}
-            }
-        }
-        // SIGTERM listener 構築失敗時は SIGINT のみ中継する。
-        Err(_) => {
-            let _ = tokio::signal::ctrl_c().await;
-        }
-    }
-}
-
-#[cfg(not(unix))]
-async fn wait_os_signal() {
-    let _ = tokio::signal::ctrl_c().await;
-}
-
-// ---------------------------------------------------------------------------
 // `executeWorkflowInterface` / `runWorkflowCommand`
 // ---------------------------------------------------------------------------
 
@@ -760,12 +692,7 @@ async fn execute_run_inner(
         Some(input) => read_task_input(input, io.stdin)?,
     };
     let timeout_ms = match &args.timeout {
-        Some(t) => Some(parse_duration(t).map_err(|_| {
-            CheaperError::new(
-                ErrorCode::InvalidRequest,
-                format!("invalid --timeout duration: {t}"),
-            )
-        })?),
+        Some(t) => Some(parse_duration(t).map_err(|_| crate::errors::invalid_timeout(t))?),
         None => None,
     };
     let effective_policy = restrict_policy(
@@ -784,7 +711,7 @@ async fn execute_run_inner(
         .await?;
 
     let controller = AbortController::new();
-    let relay = WorkflowSignalRelay::install(hooks, &controller);
+    let relay = crate::signal::SignalRelay::install_forwarding(&controller, hooks);
     #[cfg(feature = "dev-seam")]
     let env = ["NODE_ENV", "CHEAPER_TEST_FAKE_STREAM"]
         .into_iter()

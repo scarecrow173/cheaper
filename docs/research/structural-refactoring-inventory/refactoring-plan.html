@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cheaper リファクタリング計画 — 現状設計と改善後設計</title>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+</script>
+<style>
+  :root {
+    --bg: #f5f7fa; --card: #ffffff; --ink: #1f2937; --muted: #6b7280;
+    --accent: #2563eb; --new: #16a34a; --chg: #ea580c; --bug: #dc2626;
+    --line: #e5e7eb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+         background: var(--bg); color: var(--ink); line-height: 1.65; }
+  header { background: #111827; color: #f9fafb; padding: 32px 48px; }
+  header h1 { margin: 0 0 8px; font-size: 26px; }
+  header p { margin: 0; color: #9ca3af; font-size: 14px; }
+  main { max-width: 1280px; margin: 0 auto; padding: 24px 32px 80px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+            padding: 24px 28px; margin: 24px 0; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+  h2 { font-size: 20px; border-left: 5px solid var(--accent); padding-left: 12px; margin-top: 0; }
+  h3 { font-size: 16px; margin: 24px 0 8px; color: #374151; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+  .cy { width: 100%; height: 640px; border: 1px solid var(--line); border-radius: 8px; background: #fbfdff; }
+  .cy.tall { height: 780px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 12px 0; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; font-weight: 600; white-space: nowrap; }
+  tr:nth-child(even) td { background: #fafbfc; }
+  code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px;
+         font-family: Consolas, "Courier New", monospace; }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+  .p0 { background: #dcfce7; color: #166534; }
+  .p1 { background: #dbeafe; color: #1e40af; }
+  .p2 { background: #f3f4f6; color: #4b5563; }
+  .bug { background: #fee2e2; color: #991b1b; }
+  .note { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; font-size: 13px; }
+  .crate-card { border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; margin: 10px 0; }
+  .crate-card h4 { margin: 0 0 6px; font-size: 15px; }
+  .crate-card .loc { color: var(--muted); font-size: 12px; font-weight: 400; }
+  .ok { color: #16a34a; font-weight: 600; }
+  .warn { color: #b45309; font-weight: 600; }
+  ul.tight { margin: 6px 0; padding-left: 22px; }
+  ul.tight li { margin: 3px 0; font-size: 13px; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; margin: 8px 0 0; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+  details { margin: 8px 0; }
+  summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+  .mermaid { background: #fff; padding: 8px; overflow-x: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>cheaper — リファクタリング計画</h1>
+  <p>基本機能揃い後の全体構造調査（2026-10-12） / 7 並列サブエージェントによる全 8 crate 調査 / Rust workspace 約 95.5k 行</p>
+</header>
+<main>
+
+<section>
+  <h2>0. 調査サマリ</h2>
+  <p>8 crate・全 41〜70 ファイルの構造・責務・重複を精査。<strong>crate トポロジ（依存 DAG）は健全で再編不要</strong>と結論。課題は「crate 内の巨大ファイル」「移植由来の小規模重複」「責務の同居」に集中している。合計 <strong>約 49 件</strong>のリファクタリング候補を 3 フェーズに整理した。調査中に envelope contract に関わる<b>実質的な不整合 3 件</b>も発見（§6）。</p>
+  <table>
+    <tr><th>crate</th><th>行数(src+tests)</th><th>責務</th><th>構造評価</th></tr>
+    <tr><td><code>cheaper-cli</code></td><td>15.5k</td><td>command dispatch・envelope・hook adapter・usage.jsonl・composition root</td><td class="warn">composition root が run.rs に同居・小重複多数</td></tr>
+    <tr><td><code>cheaper-core</code></td><td>12.4k</td><td>worker/config/policy/model 解決/token count（pure logic）</td><td class="warn">小重複多数・schema.rs 1,007 行</td></tr>
+    <tr><td><code>cheaper-tools</code></td><td><b>31.1k（最大）</b></td><td>canonical tool・scheduler・resource manager・operation・journal</td><td class="warn">巨大関数複数・境界 adapter の分散</td></tr>
+    <tr><td><code>cheaper-runtime</code></td><td>17.2k</td><td>catalog・auth・run orchestration・dev seam</td><td class="warn">catalog 1,372 行・model 構築重複</td></tr>
+    <tr><td><code>cheaper-workflow</code></td><td>10.4k</td><td>workflow schema・compiler・DAG engine</td><td class="warn">engine の Pump 再構築 hack・二重 compile</td></tr>
+    <tr><td><code>cheaper-provider</code></td><td>5.5k</td><td>devin bundled provider plugin</td><td class="ok">概ね健全（小重複のみ）</td></tr>
+    <tr><td><code>cheaper-rig-adapter</code></td><td>2.8k</td><td>Rig SDK 隔離 adapter</td><td class="ok">健全（Rig 型の漏れなし）</td></tr>
+    <tr><td><code>cheaper-observability</code></td><td>0.7k</td><td>tracing subscriber/sink・log activation</td><td class="ok">健全（最小公開面）</td></tr>
+  </table>
+  <div class="note"><b>全体方針:</b> TS port 由来の byte parity / envelope contract / code-unit sort / abort 意味論は契約であり、観測可能挙動を変えない内部整理に限定する。differential fixture・regression 55 case・envelope parity test が変更の防壁。</div>
+</section>
+
+<section>
+  <h2>1. 現状 ↔ 改善後 — crate 構造の比較</h2>
+  <p class="muted">crate トポロジ（依存 DAG）は不変。変更は <b>crate 内 module 再編 + 共通 helper 集約</b>のみ。左右とも<b>同一座標系</b>で配置しており、パン/ズームは連動します（ドラッグで移動・スクロールでズーム）。子ノード = 500 行超の主要モジュール。</p>
+  <div class="legend">
+    <span><span class="sw" style="background:#1e3a8a"></span>crate（不変）</span>
+    <span><span class="sw" style="background:#93c5fd"></span>500–999 行のモジュール</span>
+    <span><span class="sw" style="background:#f59e0b"></span>1,000 行超のモジュール</span>
+    <span><span class="sw" style="background:#7c3aed"></span>生成物 / 外部境界</span>
+    <span><span class="sw" style="background:#16a34a"></span>改善後: 新規 module / helper</span>
+    <span><span class="sw" style="background:#ea580c"></span>改善後: 分割・移動対象</span>
+    <span><span class="sw" style="background:#9ca3af"></span>改善後: 不変</span>
+  </div>
+  <div class="grid2">
+    <div>
+      <h3 style="margin-top:8px">現状（before）</h3>
+      <div id="cyCurrent" class="cy tall"></div>
+    </div>
+    <div>
+      <h3 style="margin-top:8px">改善後（after）</h3>
+      <div id="cyTarget" class="cy tall"></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>2. 現状設計 — 実行パイプライン（cheaper run）</h2>
+  <div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant P as Parent Agent
+    participant CLI as cli.rs (dispatch)
+    participant A as args.rs
+    participant R as run.rs (composition root 兼 command)
+    participant C as cheaper-core
+    participant T as cheaper-tools
+    participant RT as cheaper-runtime
+    participant AD as rig-adapter
+    participant M as low-cost model
+    P->>CLI: cheaper run &lt;stdin JSON&gt;
+    CLI->>A: parse_cli_args
+    CLI->>R: ParsedCli::Run
+    R->>R: create_runtime (devin plugin 登録) ← 3 箇所に重複
+    R->>C: canonicalize / config dirs / policy load ← preamble 5 箇所重複
+    R->>C: resolve worker + models.yaml → tier 解決
+    R->>T: worker scope + tool runtime 構築
+    R->>AD: RigSession::build → stream_run
+    AD->>M: prompt / tool loop
+    M-->>AD: RunEvent (text/tool_call/usage)
+    AD-->>R: RunSnapshot + meta
+    R->>C: output schema validate (+repair)
+    R-->>CLI: envelope + model_line
+    CLI->>CLI: record_usage → usage.jsonl
+    CLI-->>P: stdout envelope 1 行
+  </div>
+</section>
+
+<section>
+  <h2>3. 現状設計 — tool runtime 内部構造（cheaper-tools）</h2>
+  <p class="muted">3 者分離は健全。lock 順序 <code>resources &gt; scheduler</code>、lock 下で user callback を呼ばない deferred drain は設計不変条件。</p>
+  <div class="mermaid">
+classDiagram
+    class ToolRuntime {
+      registry.rs
+      +execute()
+      +create_scope()
+    }
+    class ToolScheduler {
+      scheduler.rs
+      admission policy
+      run(decl)
+    }
+    class ResourceManager {
+      resources.rs
+      FIFO lease
+      request()
+      drain_pending
+    }
+    class OperationManager {
+      operation.rs
+      state machine
+      cancel settle
+    }
+    class ResourceAccess {
+      access.rs
+      prepare_scope
+      manifest observe
+    }
+    class MutationJournal {
+      journal.rs
+      capture_before
+      finalize
+    }
+    class CanonicalTools {
+      tools dir
+      read grep find ls
+      write edit count process
+    }
+    ToolRuntime --> ToolScheduler
+    ToolRuntime --> ResourceManager
+    ToolRuntime --> OperationManager
+    ToolRuntime --> MutationJournal
+    CanonicalTools ..> ResourceAccess : resolve deny observe が 6箇所以上に分散
+    ToolScheduler ..> ResourceManager : request lease
+    ToolScheduler ..> OperationManager : state settle
+  </div>
+</section>
+
+<section>
+  <h2>4. crate 別の所見</h2>
+
+  <div class="crate-card">
+    <h4>cheaper-cli <span class="loc">15.5k 行 — 構造は健全、小重複が集中</span></h4>
+    <ul class="tight">
+      <li><span class="ok">OK</span> 1000 行超なし・dispatch/envelope/io seam の分離は明確</li>
+      <li><span class="warn">課題</span> <code>invalid_request</code> 4 重複・<code>wait_os_signal</code>/SignalRelay 3 系統・<code>Runtime::create</code>+devin 登録 3 重複・workspace preamble 5 重複</li>
+      <li><span class="warn">課題</span> run.rs が「command 本体」と「composition root」の 2 責務（models.rs/workflow_run.rs が参照）</li>
+      <li><span class="bug">contract 差分</span> <code>workflow run --timeout</code> の error が details 欠落（run と不整合）</li>
+      <li><span class="warn">課題</span> tests/ 10 ファイルに VecSink/PipeStdin/Fixture が複写・envelope.rs→workflow_context の層違反</li>
+    </ul>
+  </div>
+
+  <div class="crate-card">
+    <h4>cheaper-core <span class="loc">12.4k 行 — 同一知識の小重複 15 件</span></h4>
+    <ul class="tight">
+      <li><span class="ok">OK</span> 「pure logic（sync・std::fs 可）」の制約は守られている・Rig/tokio 参照ゼロ</li>
+      <li><span class="warn">課題</span> NAME_PATTERN・schema_error_entries・absent-file 判定・MAX_SAFE_INTEGER（2 表現 4 箇所）等の定数/helper 重複</li>
+      <li><span class="warn">課題</span> worker/schema.rs 1,007 行（AJV strict 再実装 ~500 行が同居）・nodepath.rs:202 の隠れ env 依存（<code>=X:</code> drive env）</li>
+      <li><span class="warn">低</span> js/js16/json/nodepath/NodeIoError の「JS 互換層」を compat 名前空間へ集約する整理余地（別 crate 化は YAGNI）</li>
+    </ul>
+  </div>
+
+  <div class="crate-card">
+    <h4>cheaper-tools <span class="loc">31.1k 行（最大）— 責務分離は健全、巨大関数が集中</span></h4>
+    <ul class="tight">
+      <li><span class="ok">OK</span> scheduler/resources/operation の 3 者分離・deferred callback（lock 下で user cb を呼ばない）・lock 順序が明文化</li>
+      <li><span class="warn">課題</span> 「resolve → escape 変換 → denylist → observe」パターンが 6〜8 箇所に分散（単一 adapter 化の最有力候補。ただし characterization test が先行必須）</li>
+      <li><span class="warn">課題</span> 巨大関数: execute_grep ~328 行・process execute+drive ~281 行・scheduler run ~289 行・read_bounded ~465 行</li>
+      <li><span class="ok">対象外</span> glob/mod.rs 2,413 行 + tables.rs 5,318 行生成物 — minimatch parity の正当な複雑さ。line_framer も焦点化済み</li>
+    </ul>
+  </div>
+
+  <div class="crate-card">
+    <h4>cheaper-runtime <span class="loc">17.2k 行 — catalog が最大の整理対象</span></h4>
+    <ul class="tight">
+      <li><span class="ok">OK</span> run orchestration の stage 分割・oauth 共通部・dev seam の feature gate は適切・rig 型参照ゼロ</li>
+      <li><span class="warn">課題</span> catalog/mod.rs 1,372 行に型+merge helper 9 本+compose+store が同居・<code>model_from_json</code> vs <code>extension_models</code> が ~40 行 verbatim 重複</li>
+      <li><span class="bug">drift</span> extension_models のコメント「default を埋めない」と実装（128k/16k を埋める）の齟齬 — TS parity 意図の確認要</li>
+      <li><span class="warn">課題</span> ProviderEntry 22 field・openai_codex.rs 1,726 行（うち test ~850 行）・atomic write 2 実装</li>
+    </ul>
+  </div>
+
+  <div class="crate-card">
+    <h4>cheaper-workflow <span class="loc">10.4k 行 — engine 内部の構造的課題</span></h4>
+    <ul class="tight">
+      <li><span class="ok">OK</span> port 注入（compiler/engine ports）・3 層分離（definition/validated/compiled）・no_pi_deps 強制</li>
+      <li><span class="warn">課題</span> engine.rs 1,121 行: borrow checker 回避の <code>Pump</code> 再構築 ×3 + <code>stop!</code> macro → RunState struct 化が最大の可読性改善</li>
+      <li><span class="warn">課題</span> validate_definition が run 経路で 2 回・同一 schema の二重 compile・worker job の dead compile</li>
+      <li><span class="warn">課題</span> workflow 側 ToolCatalog/ToolMetadata が tools 側と同名別型（drift の温床）・WorkflowSignalRelay が run.rs と重複</li>
+      <li><span class="warn">課題</span> WorkerJobExecutor が <code>!Send</code> future のため per-job spawn_blocking + current_thread runtime を生成</li>
+    </ul>
+  </div>
+
+  <div class="crate-card">
+    <h4>provider / rig-adapter / observability <span class="loc">— 概ね健全</span></h4>
+    <ul class="tight">
+      <li><span class="ok">OK</span> rig-adapter: Rig 型の露出は <code>CompletionModel::from_rig</code> 1 seam のみ・error 変換 1 箇所</li>
+      <li><span class="ok">OK</span> observability: 公開面 3 要素・workspace 依存ゼロの設計契約を維持</li>
+      <li><span class="warn">小</span> provider: CliError→CheaperError 2 箇所・process-global cache（SESSIONS/JWT CACHE）の instance 化余地・mod.rs の広い re-export</li>
+    </ul>
+  </div>
+
+  <div class="crate-card">
+    <h4>横断 <span class="loc">— 既知負債 F1–F8 はほぼ解消済み</span></h4>
+    <ul class="tight">
+      <li><span class="ok">OK</span> 依存 DAG 一方向・循環なし / dev-seam gating 完備 / TODO・FIXME 0 件 / post-migration cleanup F1–F8 は実施済み</li>
+      <li><span class="warn">残存</span> <code>js16</code> thin shim・<code>dev::{fixture,fake_provider}</code> 互換 alias・uuid/base64/tempfile の dep 重複・.gitignore Node boilerplate・「T3/Phase N」等の phase-task コメント drift</li>
+      <li><span class="warn">残存</span> glob_probe.rs（参照先の .cjs が消滅）・differential fixture の生成 script 消滅（frozen corpus 化）</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>5. 改善後 — 責務配置の変化（重点 3 点）</h2>
+
+  <h3>5.1 cheaper-cli: composition root の分離</h3>
+  <div class="mermaid">
+flowchart LR
+    subgraph NOW["現状"]
+      R1["run.rs<br/>command + create_runtime<br/>+ session factory + SignalRelay<br/>+ resolve_named_worker"]
+      M1["models.rs"] -->|crate::run::| R1
+      W1["workflow_run.rs"] -->|crate::run::| R1
+    end
+    subgraph NEXT["改善後"]
+      CMP["compose.rs<br/>create_runtime / plugin 登録<br/>session factory / SignalRelay<br/>resolve_named_worker / preamble"]
+      R2["run.rs<br/>command 本体のみ"] --> CMP
+      M2["models.rs"] --> CMP
+      W2["workflow_run.rs"] --> CMP
+      A2["auth.rs"] --> CMP
+      U2["usage_report.rs"] --> CMP
+    end
+    NOW -.-> NEXT
+  </div>
+
+  <h3>5.2 cheaper-tools: 境界 adapter の単一化（P2・characterization test 先行）</h3>
+  <div class="mermaid">
+flowchart TB
+    subgraph NOW["現状: 6〜8 箇所に分散"]
+      direction LR
+      T1["read.rs"] --> S1["resolve→escape→deny→observe"]
+      T2["count_tokens"] --> S2["同パターン"]
+      T3["process"] --> S3["同パターン"]
+      T4["boundary.rs"] --> S4["同パターン"]
+      T5["walker.rs"] --> S5["同パターン"]
+      T6["access.rs"] --> S6["同パターン"]
+    end
+    subgraph NEXT["改善後"]
+      direction LR
+      B["boundary adapter<br/>resolve_workspace_path<br/>+ escape→denied 変換<br/>+ denylist + observe<br/>（1 権威実装）"]
+      N1["read/count_tokens/<br/>process/boundary/<br/>walker/access"] --> B
+    end
+    NOW -.-> NEXT
+  </div>
+
+  <h3>5.3 cheaper-workflow: engine の RunState 化</h3>
+  <div class="mermaid">
+flowchart LR
+    subgraph NOW["現状: borrow 回避の workaround"]
+      E1["run_workflow_inner"] --> P1["Pump 再構築 #1"]
+      E1 --> P2["Pump 再構築 #2"]
+      ST["stop! macro<br/>(869, 957, 996 で state を都度キャプチャ)"]
+      E1 --> ST
+    end
+    subgraph NEXT["改善後"]
+      RS["struct RunState<br/>children/remaining/status/<br/>outer_error/timers を所有"]
+      E2["run_workflow_inner"] --> RS
+      RS --> M1["pump() / admit() / execute()"]
+      RS --> M2["fn stop()（macro 廃止）"]
+      RS --> M3["on_admission / on_executed"]
+    end
+    NOW -.-> NEXT
+  </div>
+</section>
+
+<section>
+  <h2>6. リファクタリング計画 — 3 フェーズ</h2>
+
+  <h3>Phase 0 — hygiene（低リスク・高頻度重複の解消）</h3>
+  <table>
+    <tr><th>#</th><th>crate</th><th>内容</th><th>規模</th><th>効果</th></tr>
+    <tr><td>1</td><td>cli</td><td><code>--timeout</code> error helper 共通化（workflow_run の details 欠落を解消）<span class="badge bug">contract 差分</span></td><td>0.5h</td><td>envelope 不整合の解消</td></tr>
+    <tr><td>2</td><td>cli</td><td><code>invalid_request</code> を共通 helper へ（4 箇所 + usage_report の signature 亜種を吸収）</td><td>0.5h</td><td>DRY</td></tr>
+    <tr><td>3</td><td>cli</td><td><code>wait_os_signal</code> + SignalRelay を signal.rs 等へ集約（run/workflow 共有。auth thread 型は別維持）</td><td>2–3h</td><td>3 実装→1–2</td></tr>
+    <tr><td>4</td><td>cli</td><td><code>Runtime::create</code>+devin plugin 登録の 3 重複 → 単一入口へ</td><td>1–2h</td><td>plugin 知識の 1 箇所化</td></tr>
+    <tr><td>5</td><td>cli tests</td><td><code>tests/common/mod.rs</code> に VecSink/PipeStdin/ambient_env/Fixture 集約（10 ファイル）</td><td>0.5d</td><td>~300 行削減</td></tr>
+    <tr><td>6</td><td>cli</td><td><code>count.rs</code> の BoxError 二重定義を <code>cli::BoxError</code> へ</td><td>10min</td><td>表現 drift 解消</td></tr>
+    <tr><td>7</td><td>core</td><td><code>NAME_PATTERN</code>/<code>name_re()</code> を 1 箇所へ（resolve/validate 重複）</td><td>0.5h</td><td>定数重複解消</td></tr>
+    <tr><td>8</td><td>core</td><td><code>schema_error_entries</code> を共用 helper 化（3 箇所の verbatim 重複）</td><td>1h</td><td>validator 出力の単一責務</td></tr>
+    <tr><td>9</td><td>core</td><td>absent-file 判定（NotFound∥NotADirectory∥errno 267）を helper 化</td><td>1h</td><td>Windows 特例の知識集約</td></tr>
+    <tr><td>10</td><td>core</td><td><code>MAX_SAFE_INTEGER</code> を js.rs 正源へ（f64/u64 の 4 定数を導出形に）</td><td>0.5h</td><td>表現統一</td></tr>
+    <tr><td>11</td><td>runtime</td><td><code>catalog/mod.rs</code> 分割 → <code>catalog/{types,compose,store}.rs</code>（1,372 行）</td><td>0.5d</td><td>最大ファイルの責務分離</td></tr>
+    <tr><td>12</td><td>runtime</td><td><code>model_from_json</code> vs <code>extension_models</code> の共通 ctor 化 + コメント/実装 drift 確認 <span class="badge bug">要確認</span></td><td>0.5d</td><td>片肺更新事故の防止</td></tr>
+    <tr><td>13</td><td>provider</td><td><code>CliError→CheaperError</code> を <code>From</code>/helper へ集約（plugin.rs/models.rs 重複）</td><td>0.5h</td><td>DRY</td></tr>
+    <tr><td>14</td><td>adapter</td><td>error.rs の外部未使用 pub fn を <code>pub(crate)</code> 化・RetryPolicy export 確認</td><td>1h</td><td>公開面の縮小</td></tr>
+    <tr><td>15</td><td>tools</td><td><code>src/js16.rs</code> shim 削除（caller を core 直接参照へ）</td><td>0.5h</td><td>shim ゼロ化</td></tr>
+    <tr><td>16</td><td>tools</td><td><code>src/bin/glob_probe.rs</code> 削除 + differential fixture を「frozen snapshot corpus」として明確化</td><td>0.5d</td><td>dead tooling 除去</td></tr>
+    <tr><td>17</td><td>runtime</td><td><code>dev::{fixture,fake_provider}</code> 互換 alias を canonical path へ統一</td><td>0.5d</td><td>path 一本化</td></tr>
+    <tr><td>18</td><td>横断</td><td>workspace.dependencies へ <code>uuid</code>/<code>base64</code>/<code>tempfile</code> 集約（pin 方針統一）<span class="badge p2">Ask-first: dep 変更</span></td><td>0.5d</td><td>drift 防止</td></tr>
+    <tr><td>19</td><td>横断</td><td>.gitignore Node boilerplate 整理 + <code>benchmarks/results/</code> 保持方針の明文化</td><td>0.5d</td><td>repo hygiene</td></tr>
+  </table>
+
+  <h3>Phase 1 — structural（crate 内再編）</h3>
+  <table>
+    <tr><th>#</th><th>crate</th><th>内容</th><th>規模</th><th>備考</th></tr>
+    <tr><td>20</td><td>tools</td><td><b>characterization test 追加</b>: access observe/operation・process lifecycle・grep stop reason・lease 親子 counter を pin</td><td>中</td><td>#36 等の先行条件・最優先で実施</td></tr>
+    <tr><td>21</td><td>cli</td><td>composition root を <code>compose.rs</code> へ分離（create_runtime/factory/SignalRelay/resolve_named_worker）</td><td>0.5d</td><td>§6.1</td></tr>
+    <tr><td>22</td><td>cli</td><td>workspace preamble（canonicalize→dirs→policy）を helper 化（5 箇所）</td><td>2h</td><td>usage_report の canonicalize 省略差分は要 review</td></tr>
+    <tr><td>23</td><td>cli</td><td>dev-seam plumbing（fixture→factory/explicit_model/abort_grace）を fake_stream 境界へ集約</td><td>0.5d</td><td>#[cfg] 散在を削減</td></tr>
+    <tr><td>24</td><td>runtime</td><td><code>run/mod.rs</code> 分割 → <code>run/{session,boundary}.rs</code> + <code>RunCtx::run</code> の stage method 分割</td><td>1d</td><td>1,065 行・370 行関数</td></tr>
+    <tr><td>25</td><td>runtime</td><td><code>openai_codex.rs</code> in-file test ~850 行を tests/ へ分離</td><td>0.25d</td><td>github_copilot との対称化</td></tr>
+    <tr><td>26</td><td>runtime</td><td><code>ProviderEntry</code>（22 field）の refresh state を sub-struct へ + <code>compose_provider</code> auth 層抽出</td><td>0.5d</td><td>god struct 解消</td></tr>
+    <tr><td>27</td><td>runtime</td><td>atomic write helper 共通化（store.rs vs persisted.rs の windows 差分を option 化）</td><td>0.25d</td><td>temp+rename 規則の一括管理</td></tr>
+    <tr><td>28</td><td>tools</td><td><code>process/mod.rs</code> 分割（prepare/spawn/monitor/cleanup）</td><td>中</td><td>1,526 行</td></tr>
+    <tr><td>29</td><td>tools</td><td><code>grep.rs</code> orchestration 分割（execute_grep から scan loop/footer 分離）</td><td>中</td><td>328 行関数</td></tr>
+    <tr><td>30</td><td>tools</td><td><code>read.rs</code> 3 mode 分離（artifact read/publication/workspace read_bounded）</td><td>小〜中</td><td>read_bounded 465 行</td></tr>
+    <tr><td>31</td><td>workflow</td><td><code>engine.rs</code> Pump 再構築廃止 → RunState struct + <code>stop!</code> を fn 化</td><td>0.5–1d</td><td>§6.3・envelope parity test で防衛</td></tr>
+    <tr><td>32</td><td>workflow</td><td>二重 validate/compile 解消（dead JobValidation.input 除去・<code>Arc&lt;CompiledSchema&gt;</code> 共有・<code>compile_validated</code> variant）</td><td>0.5d</td><td>compile コスト半減</td></tr>
+    <tr><td>33</td><td>workflow</td><td>workflow 側 <code>ToolCatalog</code>/<code>ToolMetadata</code> を tools 側型に統一 or 改名</td><td>0.5d</td><td>同名別型の drift 防止</td></tr>
+    <tr><td>34</td><td>core</td><td><code>worker/schema.rs</code> 分割（AJV strict 再実装 ~500 行を strict.rs へ）</td><td>1–2h</td><td>機械的移動・API 不変</td></tr>
+    <tr><td>35</td><td>core</td><td><code>read_yaml_config</code> 共通骨格抽出（policy/model の 60 行構造重複）</td><td>2–3h</td><td>error reason 文字列 parity 注意</td></tr>
+  </table>
+
+  <h3>Phase 2 — deep / deferred（設計判断・影響大）</h3>
+  <table>
+    <tr><th>#</th><th>crate</th><th>内容</th><th>規模</th><th>備考</th></tr>
+    <tr><td>36</td><td>tools</td><td><b>boundary/policy adapter 単一化</b>（resolve+deny+observe の 1 権威実装）</td><td>中〜大</td><td>#20 の characterization test が先行</td></tr>
+    <tr><td>37</td><td>cli</td><td><code>args.rs</code> per-command option 許可を宣言的 table 化</td><td>1d</td><td>error message byte parity が contract・risk 高</td></tr>
+    <tr><td>38</td><td>cli</td><td>envelope.rs→workflow_context の層違反解消（SharedToolError を中立位置へ or chain walk 透過）</td><td>2h+設計</td><td>find_cheaper_error との相互作用確認</td></tr>
+    <tr><td>39</td><td>runtime/cli</td><td><code>run_worker</code> の <code>!Send</code> 解消 → WorkerJobExecutor の per-job runtime 生成を除去</td><td>1–2d</td><td>FnMut callback の見直し要</td></tr>
+    <tr><td>40</td><td>横断</td><td><code>Pin&lt;Box&lt;dyn Future&gt;&gt;</code> closure（15+ 箇所）→ <code>impl Future</code>/async fn in trait</td><td>2–3d</td><td>公開 signature 変更を含む</td></tr>
+    <tr><td>41</td><td>provider</td><td>process-global cache（SESSIONS/JWT CACHE）を factory/transport インスタンス state へ</td><td>3–4h</td><td>testability 改善</td></tr>
+    <tr><td>42</td><td>core</td><td><code>nodepath.rs:202</code> の drive env 参照を注入 seam 化 or 明文化</td><td>0.5–1h</td><td>隠れ副作用の除去/文書化</td></tr>
+    <tr><td>43</td><td>cli</td><td><code>hook/routing_policy.rs</code> の tokenizer/policy 分割（909 行）</td><td>2h</td><td>test module も分割</td></tr>
+    <tr><td>44</td><td>workflow</td><td><code>Vec&lt;(String,_)&gt;</code> 線形探索 → HashMap index（CompiledWorkflow/artifacts）</td><td>2h</td><td>大きい DAG で O(n²)→O(n)</td></tr>
+    <tr><td>45</td><td>cli</td><td><code>MEASURE_ENV_KEYS</code> の手動列挙を core 側の宣言へ（env 追加時の silently 欠落を防止）</td><td>1h</td><td>brittle 構造の解消</td></tr>
+    <tr><td>46</td><td>横断</td><td><code>serde_yml</code> → <code>noyalib</code> 直接移行（既知負債・dep policy 確認要）</td><td>0.5–1d</td><td>Ask-first: dep 変更</td></tr>
+    <tr><td>47</td><td>tools</td><td><code>gen-glob-tables.cjs</code> の Rust port（crates/ 内唯一の Node 依存）</td><td>1d</td><td>または Node 依存の方針明文化</td></tr>
+    <tr><td>48</td><td>横断</td><td>「T2/T3/Phase N」phase-task コメント → 現責務記述へ rewrite + <code>no_pi_deps.rs</code> rename</td><td>1d</td><td>表現 drift・新人可読性</td></tr>
+    <tr><td>49</td><td>横断</td><td><code>ToolError = Box&lt;dyn Error&gt;</code> → 型付き enum</td><td>3–5d</td><td>contract 近い・deferred 推奨</td></tr>
+  </table>
+
+  <h3>実施順序の推奨</h3>
+  <ol>
+    <li><b>Phase 0</b> を #1–#19 でまとめて 1〜2 PR（docs 系・小規模 DRY は contract 非接触で安全）</li>
+    <li><b>#20 characterization test</b> を tools 構造変更の前に単独 PR</li>
+    <li><b>Phase 1</b> を crate 単位で分割した複数 PR（cli 系 → runtime 系 → tools 系 → workflow 系 の順が regression 防壁の厚い順）</li>
+    <li><b>Phase 2</b> は個別に判断。特に #36・#37・#39・#49 は設計 review を別途</li>
+  </ol>
+</section>
+
+<section>
+  <h2>7. 調査で発見した実質的な不整合（修正候補）</h2>
+  <p class="muted">リファクタリングではなく contract/behavior に関わる可能性のある発見。対応可否を個別に判断要。</p>
+  <table>
+    <tr><th>箇所</th><th>内容</th><th>影響</th></tr>
+    <tr><td><code>cli/workflow_run.rs:762</code> vs <code>run.rs:451</code></td><td>同一 message「invalid --timeout duration」なのに workflow_run 側は <code>details</code> を emit しない</td><td>envelope contract の command 間差分</td></tr>
+    <tr><td><code>runtime/catalog/mod.rs:550-553</code> vs 631-632</td><td>コメント「default を埋めない」と実装の <code>unwrap_or(128_000)</code>/<code>unwrap_or(16_384)</code> が矛盾</td><td>extension model の catalog 値が意図とずれる可能性。TS parity 確認要</td></tr>
+    <tr><td><code>cli/usage_report.rs:666</code></td><td>workspace preamble で canonicalize を省略（他 4 箇所は canonicalize 済み）</td><td>--cwd 与件で log root/policy 解決がずれる可能性・意図確認要</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>8. 非目標（触らないもの）</h2>
+  <ul class="tight">
+    <li><b>crate トポロジ</b>: 8 crate 構成・依存方向は契約どおり健全。統合・分割ともに実施しない</li>
+    <li><b><code>glob/mod.rs</code>・<code>line_framer.rs</code></b>: minimatch/UTF-16 parity の正当な複雑さ。profiling 証拠が出るまで対象外</li>
+    <li><b>resources.rs の deferred callback 設計・lock 順序</b>: deadlock/poison 防止の設計不変条件</li>
+    <li><b>cheaper-observability の leaf 位置・cheaper-provider/rig-adapter の分離</b>: ADR で決定済みの構造契約</li>
+    <li><b>f64 全面使用・<code>Box&lt;dyn Error&gt;</code> downcast・JS 互換 helper</b>: TS parity の契約表現（#49 の enum 化のみ将来判断）</li>
+    <li><b>usage.jsonl/envelope/error code/sort 順等の wire contract</b>: 全変更は観測可能挙動を変えない範囲に限定</li>
+  </ul>
+</section>
+
+</main>
+
+<script>
+// 固定座標 (preset) レイアウト: crate = compound 親、子 = 主要モジュール (グリッド配置)
+const DX = 168, DY = 128; // 子ノードのグリッド間隔
+
+function crate(id, label, loc) {
+  return { data: { id, label: label + '\n' + loc }, classes: 'crate' };
+}
+function chips(parentId, arr, x, y, cols) {
+  return arr.map((c, i) => ({
+    data: { id: parentId + '-c' + i, parent: parentId, label: c[0] },
+    classes: 'mod ' + (c[1] || ''),
+    position: { x: x + (i % cols) * DX, y: y + Math.floor(i / cols) * DY }
+  }));
+}
+function bare(id, label, x, y) {
+  return { data: { id, label }, classes: 'crate bare', position: { x, y } };
+}
+function edge(source, target) {
+  return { data: { id: source + '-' + target, source, target }, classes: 'dep' };
+}
+
+const current = [
+  crate('cli', 'cheaper-cli', '15.5k'),
+  ...chips('cli', [
+    ['args.rs\n988'], ['hook/routing_policy\n909'], ['workflow_run.rs\n883'],
+    ['usage_report.rs\n699'], ['auth.rs\n663'], ['run.rs\n564\n(composition root)', 'big'],
+    ['cli.rs\n550'],
+  ], 130, 110, 4),
+  crate('provider', 'cheaper-provider', '5.5k'),
+  ...chips('provider', [['devin/*\n10 modules\n(max 582)']], 940, 110, 1),
+  crate('runtime', 'cheaper-runtime', '17.2k'),
+  ...chips('runtime', [
+    ['oauth/openai_codex.rs\n1726', 'big'], ['catalog/*\n3055\n(mod.rs 1372)', 'big'],
+    ['run/*\n2433\n(mod.rs 1065)', 'big'], ['auth/*\n(service 947 等)'],
+    ['dev/*\n1864\n(dev-seam)'],
+  ], 130, 470, 3),
+  crate('workflow', 'cheaper-workflow', '10.4k'),
+  ...chips('workflow', [
+    ['engine.rs\n1121', 'big'], ['resource_inference\n625'],
+    ['artifacts.rs\n552'], ['types.rs\n518'],
+  ], 800, 470, 2),
+  crate('tools', 'cheaper-tools', '31.1k'),
+  ...chips('tools', [
+    ['glob/*\n2413+5318\n(生成物含)', 'gen'], ['grep.rs\n1815', 'big'], ['operation.rs\n1767', 'big'],
+    ['process/*\n2527', 'big'], ['resources.rs\n1438', 'big'], ['edit.rs\n1256', 'big'],
+    ['read.rs\n1236', 'big'], ['registry.rs\n1194', 'big'], ['scheduler.rs\n1113', 'big'],
+    ['access.rs\n1057', 'big'],
+  ], 130, 860, 5),
+  crate('adapter', 'rig-adapter', '2.8k'),
+  ...chips('adapter', [
+    ['builtin.rs\n474'], ['run_stream.rs\n295'], ['error.rs\n263'],
+  ], 1080, 860, 3),
+  crate('core', 'cheaper-core', '12.4k'),
+  ...chips('core', [
+    ['worker/*\n(schema.rs 1007)', 'big'], ['policy/*\n2336', 'big'],
+    ['model/*\n1850', 'big'], ['resources/*\n814'],
+    ['js/json/nodepath\n/errors ~2100'],
+  ], 130, 1230, 3),
+  bare('obs', 'observability\n0.7k', 950, 1270),
+  edge('cli', 'core'), edge('cli', 'tools'), edge('cli', 'runtime'),
+  edge('cli', 'adapter'), edge('cli', 'provider'), edge('cli', 'workflow'),
+  edge('cli', 'obs'),
+  edge('provider', 'core'), edge('provider', 'runtime'), edge('provider', 'adapter'),
+  edge('runtime', 'core'), edge('runtime', 'tools'), edge('runtime', 'adapter'),
+  edge('workflow', 'core'), edge('workflow', 'tools'),
+  edge('tools', 'core'),
+  edge('adapter', 'core'), edge('adapter', 'tools'),
+];
+
+const target = [
+  crate('cli2', 'cheaper-cli', '15.5k'),
+  ...chips('cli2', [
+    ['compose.rs\n(composition root)', 'new'], ['errors/signal\n共通 helper', 'new'],
+    ['run.rs\n(command のみ)', 'chg'], ['workflow_run.rs', 'chg'],
+    ['args.rs\n(#37 table化はP2)', 'chg'], ['その他\n(不変)', 'same'],
+  ], 130, 110, 4),
+  crate('provider2', 'cheaper-provider', '5.5k'),
+  ...chips('provider2', [['devin/*\n(CliError From\n集約)', 'same']], 940, 110, 1),
+  crate('runtime2', 'cheaper-runtime', '17.2k'),
+  ...chips('runtime2', [
+    ['catalog/\n{types,compose,\nstore}.rs', 'chg'], ['run/\n{mod,session,\nboundary}.rs', 'chg'],
+    ['atomic write\n共有 helper', 'new'], ['auth/*\n(不変)', 'same'],
+  ], 130, 470, 4),
+  crate('workflow2', 'cheaper-workflow', '10.4k'),
+  ...chips('workflow2', [
+    ['engine.rs\n→ RunState', 'chg'], ['schema.rs\n(二重compile解消)', 'chg'], ['その他\n(不変)', 'same'],
+  ], 800, 470, 2),
+  crate('tools2', 'cheaper-tools', '31.1k'),
+  ...chips('tools2', [
+    ['boundary adapter\n(resolve+deny\n+observe 統一)', 'new'], ['characterization\ntests', 'new'],
+    ['process/*\n{prepare,spawn,\nmonitor,cleanup}', 'chg'], ['grep.rs\n(scan/footer\n分離)', 'chg'],
+    ['scheduler/resources\n/operation\n(不変)', 'same'], ['glob/*\n(対象外)', 'gen'],
+  ], 130, 860, 3),
+  crate('adapter2', 'rig-adapter', '2.8k'),
+  ...chips('adapter2', [['error.rs\npub 縮小\n(ほぼ不変)', 'same']], 1080, 860, 1),
+  crate('core2', 'cheaper-core', '12.4k'),
+  ...chips('core2', [
+    ['共有 helper 集約\n(NAME_PATTERN/\nschema_errors/\nabsent-file/\nMAX_SAFE_INT)', 'new'],
+    ['worker/*\nschema/\n{mod,strict}.rs', 'chg'], ['policy/*\n(不変)', 'same'], ['model/*\n(不変)', 'same'],
+  ], 130, 1230, 4),
+  bare('obs2', 'observability\n0.7k\n(不変)', 950, 1270),
+  edge('cli2', 'core2'), edge('cli2', 'tools2'), edge('cli2', 'runtime2'),
+  edge('cli2', 'adapter2'), edge('cli2', 'provider2'), edge('cli2', 'workflow2'),
+  edge('cli2', 'obs2'),
+  edge('provider2', 'core2'), edge('provider2', 'runtime2'), edge('provider2', 'adapter2'),
+  edge('runtime2', 'core2'), edge('runtime2', 'tools2'), edge('runtime2', 'adapter2'),
+  edge('workflow2', 'core2'), edge('workflow2', 'tools2'),
+  edge('tools2', 'core2'),
+  edge('adapter2', 'core2'), edge('adapter2', 'tools2'),
+];
+
+const style = [
+  { selector: 'node.crate', style: {
+      'background-color': '#1e3a8a', 'label': 'data(label)', 'color': '#172554',
+      'text-valign': 'top', 'text-halign': 'center', 'font-size': 13, 'font-weight': 'bold',
+      'padding': '14px', 'text-wrap': 'wrap', 'text-margin-y': -10,
+      'border-width': 2, 'border-color': '#172554', 'shape': 'round-rectangle'
+  }},
+  { selector: 'node.crate.bare', style: {
+      'width': 170, 'height': 70, 'text-valign': 'center', 'text-margin-y': 0,
+      'color': '#fff'
+  }},
+  { selector: 'node.mod', style: {
+      'background-color': '#93c5fd', 'label': 'data(label)', 'font-size': 10.5,
+      'text-wrap': 'wrap', 'text-valign': 'center', 'color': '#1e293b',
+      'width': 136, 'height': 100, 'shape': 'round-rectangle',
+      'border-width': 1, 'border-color': '#64748b'
+  }},
+  { selector: 'node.big', style: { 'background-color': '#f59e0b' } },
+  { selector: 'node.gen', style: { 'background-color': '#7c3aed', 'color': '#fff' } },
+  { selector: 'node.new', style: { 'background-color': '#16a34a', 'color': '#fff' } },
+  { selector: 'node.same', style: { 'background-color': '#9ca3af', 'color': '#fff' } },
+  { selector: 'node.chg', style: { 'background-color': '#ea580c', 'color': '#fff' } },
+  { selector: 'edge.dep', style: {
+      'width': 2, 'line-color': '#64748b', 'target-arrow-color': '#64748b',
+      'target-arrow-shape': 'triangle', 'curve-style': 'bezier', 'arrow-scale': 1.2,
+      'opacity': 0.75
+  }}
+];
+
+const cyCur = cytoscape({
+  container: document.getElementById('cyCurrent'),
+  elements: current, style,
+  layout: { name: 'preset', fit: true, padding: 30 },
+  wheelSensitivity: 0.3
+});
+const cyTgt = cytoscape({
+  container: document.getElementById('cyTarget'),
+  elements: target, style,
+  layout: { name: 'preset', fit: true, padding: 30 },
+  wheelSensitivity: 0.3
+});
+// パン/ズームを同期（同一座標系なのでそのままコピー）
+let syncing = false;
+function syncView(src, dst) {
+  src.on('pan zoom', () => {
+    if (syncing) return;
+    syncing = true;
+    dst.zoom(src.zoom());
+    dst.pan(src.pan());
+    syncing = false;
+  });
+}
+syncView(cyCur, cyTgt);
+syncView(cyTgt, cyCur);
+</script>
+</body>
+</html>

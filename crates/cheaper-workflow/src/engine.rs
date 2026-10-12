@@ -18,7 +18,7 @@ use std::sync::Arc;
 use tokio::time::Instant;
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
-use cheaper_core::js::code_unit_compare;
+use cheaper_core::js::{code_unit_compare, MAX_SAFE_INTEGER};
 use cheaper_core::json::number as js_number;
 use cheaper_tools::execution_metrics::ExecutionMetrics;
 use cheaper_tools::operation::{AbortController, AbortReason, AbortSignal};
@@ -469,6 +469,365 @@ enum Event {
     },
 }
 
+/// `diagnostic(outerError)` — `CheaperError` 入力直結用。
+fn diagnostic_of(error: &CheaperError) -> WorkflowDiagnostic {
+    let source = error.message();
+    let mut message = String::new();
+    let mut bytes = 0usize;
+    for point in source.chars() {
+        let size = point.len_utf8();
+        if bytes + size > 2048 {
+            break;
+        }
+        message.push(point);
+        bytes += size;
+    }
+    WorkflowDiagnostic {
+        code: error.code().as_str().to_string(),
+        message,
+    }
+}
+
+/// `runWorkflow` の event-loop 状態 — children/remaining/status/
+/// outer_error/timers を所有し、pump/admit/execute/on_* /stop を method
+/// として提供する(TS の closure 捕捉 state に相当)。
+struct RunState<'x> {
+    workflow: &'x CompiledWorkflow,
+    ports: &'x WorkflowEnginePorts,
+    jobs: Vec<JobExecution>,
+    results: HashMap<String, Value>,
+    running: usize,
+    terminal: usize,
+    outer_error: Option<CheaperError>,
+    now: &'x Arc<dyn Fn() -> f64 + Send + Sync>,
+    finished: bool,
+    tx: mpsc::UnboundedSender<Event>,
+    controller: AbortController,
+    max_jobs: f64,
+    abort_grace_ms: f64,
+    timeout_cancel: CancellationToken,
+    grace_cancel: CancellationToken,
+}
+
+impl<'x> RunState<'x> {
+    fn finish_job(
+        &mut self,
+        index: usize,
+        status: JobStatus,
+        error: Option<WorkflowDiagnostic>,
+        meta: Map<String, Value>,
+    ) {
+        if self.jobs[index].outcome.is_some() {
+            return;
+        }
+        if self.jobs[index].phase == JobStatus::Running {
+            self.running -= 1;
+        }
+        self.jobs[index].phase = status;
+        let prepared_at = self.jobs[index].prepared_at;
+        let execution = (self.ports.execution_metrics)(Some(self.jobs[index].id.as_str()));
+        self.jobs[index].outcome = Some(WorkflowJobOutcome {
+            id: self.jobs[index].id.clone(),
+            kind: self.jobs[index].job.kind,
+            status,
+            meta: JobOutcomeMeta {
+                extra: meta,
+                duration_ms: prepared_at.map(|at| ((self.now)() - at).max(0.0)),
+                execution,
+            },
+            error,
+        });
+        self.terminal += 1;
+        let children = std::mem::take(&mut self.jobs[index].children);
+        for child in &children {
+            self.jobs[*child].remaining -= 1;
+            if status != JobStatus::Succeeded {
+                self.jobs[*child].dependency_failed = true;
+            }
+        }
+        // `jobs` の children は静的结构 — clone を戻す。
+        self.jobs[index].children = children;
+        if self.terminal == self.jobs.len() {
+            self.finished = true;
+        }
+        // `schedule()` — Rust 側は event 処理後に loop が必ず
+        // `pump()` を呼ぶため flag は持たない。
+    }
+
+    fn admit(&mut self, index: usize) {
+        match self
+            .workflow
+            .materialize_job_input(&self.jobs[index].id.clone(), &self.results)
+        {
+            Ok(input) => {
+                self.jobs[index].prepared_at = Some((self.now)());
+                self.jobs[index].input = Some(input.clone());
+                self.jobs[index].phase = JobStatus::Admitting;
+                let request = JobLeaseRequest {
+                    job_id: self.jobs[index].id.clone(),
+                    job: self.jobs[index].job.clone(),
+                    input,
+                    signal: self.controller.signal(),
+                };
+                let acquire = Arc::clone(&self.ports.acquire_job_lease);
+                let release = Arc::clone(&self.ports.release_job_lease);
+                let tx = self.tx.clone();
+                tokio::spawn(async move {
+                    let result = acquire(request).await;
+                    if let Err(e) = tx.send(Event::Admission { index, result }) {
+                        // loop 終了後の late grant — TS `admission.then`
+                        // の `outerError` 経路相当。
+                        if let Event::Admission {
+                            result: Ok(lease), ..
+                        } = e.0
+                        {
+                            release(lease);
+                        }
+                    }
+                });
+            }
+            Err(error) => {
+                let error: ToolError = Box::new(error);
+                self.finish_job(
+                    index,
+                    JobStatus::Failed,
+                    Some(diagnostic_of_error(error, ErrorCode::ToolExecutionFailure)),
+                    Map::new(),
+                );
+            }
+        }
+    }
+
+    fn execute(&mut self, index: usize) {
+        self.jobs[index].phase = JobStatus::Running;
+        self.running += 1;
+        // job 実行境界の node event(design §instrumentation 配置) —
+        // `cheaper.workflow` span 内で id/name の分類値のみ記録する。
+        tracing::debug!(
+            target: "cheaper.workflow.node",
+            message = format_args!("workflow node start"),
+            job.id = %self.jobs[index].id,
+            job.name = %self.jobs[index].job.name
+        );
+        let lease = self.jobs[index].lease.expect("ready implies lease");
+        let executor = match self.jobs[index].job.kind {
+            JobKind::Worker => Arc::clone(&self.ports.worker),
+            JobKind::Tool => Arc::clone(&self.ports.tool),
+        };
+        let context = WorkflowExecutionContext {
+            job_id: self.jobs[index].id.clone(),
+            job: self.jobs[index].job.clone(),
+            input: self.jobs[index].input.clone().unwrap_or(Value::Null),
+            signal: self.controller.signal(),
+            parent_lease: lease,
+        };
+        let release = Arc::clone(&self.ports.release_job_lease);
+        let tx = self.tx.clone();
+        tokio::spawn(async move {
+            let result = executor.execute(context).await;
+            if tx.send(Event::Executed { index, result }).is_err() {
+                // loop 終了後の settle — `finally` が必ず走るのと同じく
+                // lease は必ず release する。
+                release(lease);
+            }
+        });
+    }
+
+    /// `pump()` — `pumping` guard は loop 側で不要(再入しない)。
+    /// `outer_error` 設定済みなら早期 return。
+    fn pump(&mut self) {
+        if self.outer_error.is_some() {
+            return;
+        }
+        // 同期 validation 失敗からの skip も一つの event で伝播する。
+        loop {
+            let mut progressed = false;
+            for index in 0..self.jobs.len() {
+                if self.jobs[index].phase != JobStatus::Pending || self.jobs[index].remaining != 0 {
+                    continue;
+                }
+                if self.jobs[index].dependency_failed {
+                    self.finish_job(
+                        index,
+                        JobStatus::Skipped,
+                        Some(WorkflowDiagnostic {
+                            code: "DEPENDENCY_FAILED".to_string(),
+                            message: "required dependency failed".to_string(),
+                        }),
+                        Map::new(),
+                    );
+                } else {
+                    self.admit(index);
+                }
+                progressed = true;
+            }
+            if !progressed {
+                break;
+            }
+        }
+        for index in 0..self.jobs.len() {
+            if self.running as f64 >= self.max_jobs {
+                break;
+            }
+            if self.jobs[index].phase == JobStatus::Ready {
+                self.execute(index);
+            }
+        }
+        if self.jobs.is_empty() {
+            self.finished = true;
+        }
+    }
+
+    /// admission settle(`admission.then` の ok/err callback)。
+    fn on_admission(&mut self, index: usize, result: Result<ResourceLease, ToolError>) {
+        match result {
+            Ok(lease) => {
+                if self.outer_error.is_some() {
+                    (self.ports.release_job_lease)(lease);
+                    return;
+                }
+                self.jobs[index].lease = Some(lease);
+                self.jobs[index].phase = JobStatus::Ready;
+            }
+            Err(error) => {
+                self.finish_job(
+                    index,
+                    JobStatus::Failed,
+                    Some(diagnostic(&error, ErrorCode::ToolExecutionFailure)),
+                    Map::new(),
+                );
+            }
+        }
+    }
+
+    /// executor settle — try/catch/finally の engine 側。
+    fn on_executed(&mut self, index: usize, result: Result<WorkflowExecutorResult, ToolError>) {
+        match result {
+            Ok(value) => {
+                if self.jobs[index].outcome.is_none() {
+                    if let Some(outer) = self.outer_error.as_ref() {
+                        self.finish_job(
+                            index,
+                            JobStatus::Cancelled,
+                            Some(diagnostic_of(outer)),
+                            Map::new(),
+                        );
+                    } else {
+                        match self
+                            .workflow
+                            .validate_job_output(&self.jobs[index].id, &value.result)
+                        {
+                            Ok(output) => {
+                                let meta = value.meta.unwrap_or_default();
+                                self.results.insert(self.jobs[index].id.clone(), output);
+                                self.finish_job(index, JobStatus::Succeeded, None, meta);
+                            }
+                            Err(error) => {
+                                let error: ToolError = Box::new(error);
+                                self.finish_job(
+                                    index,
+                                    JobStatus::Failed,
+                                    Some(diagnostic(&error, ErrorCode::ToolExecutionFailure)),
+                                    Map::new(),
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            Err(error) => {
+                let meta = error
+                    .downcast_ref::<WorkflowExecutorError>()
+                    .map(|w| w.meta().clone())
+                    .unwrap_or_default();
+                let diag = match &self.outer_error {
+                    Some(outer) => diagnostic_of(outer),
+                    None => diagnostic(&error, ErrorCode::ToolExecutionFailure),
+                };
+                self.finish_job(
+                    index,
+                    if self.outer_error.is_some() {
+                        JobStatus::Cancelled
+                    } else {
+                        JobStatus::Failed
+                    },
+                    Some(diag),
+                    meta,
+                );
+            }
+        }
+        // `finally { releaseJobLease(lease); schedule() }`。
+        if let Some(lease) = self.jobs[index].lease.take() {
+            (self.ports.release_job_lease)(lease);
+        }
+    }
+
+    /// `detach()` — grace deadline 到達時に running job を打ち切る。
+    fn on_grace(&mut self) {
+        for index in 0..self.jobs.len() {
+            if self.jobs[index].phase == JobStatus::Running {
+                let diag = self.outer_error.as_ref().map(diagnostic_of);
+                self.finish_job(index, JobStatus::Cancelled, diag, Map::new());
+            }
+        }
+    }
+
+    /// `stop(reason)` — `at` は abort の発生時刻。grace deadline の
+    /// 起点(TS では `stop()` が abort listener 内で同期実行されるため
+    /// abort 瞬間起点)。
+    fn stop(&mut self, reason: AbortReason, at: Instant) {
+        if self.outer_error.is_some() {
+            return;
+        }
+        let is_timeout = reason.code() == Some("TIMEOUT");
+        self.outer_error = Some(if is_timeout {
+            CheaperError::new(ErrorCode::Timeout, "workflow timed out")
+        } else {
+            CheaperError::new(ErrorCode::Aborted, "workflow aborted")
+        });
+        self.controller.abort(reason.clone());
+        (self.ports.abort)(&reason);
+        for index in 0..self.jobs.len() {
+            if self.jobs[index].outcome.is_some() || self.jobs[index].phase == JobStatus::Running {
+                continue;
+            }
+            if let Some(lease) = self.jobs[index].lease.take() {
+                (self.ports.release_job_lease)(lease);
+            }
+            self.finish_job(
+                index,
+                JobStatus::Cancelled,
+                self.outer_error.as_ref().map(diagnostic_of),
+                Map::new(),
+            );
+        }
+        if self.running > 0 {
+            if self.abort_grace_ms == 0.0 {
+                for index in 0..self.jobs.len() {
+                    if self.jobs[index].phase == JobStatus::Running {
+                        self.finish_job(
+                            index,
+                            JobStatus::Cancelled,
+                            self.outer_error.as_ref().map(diagnostic_of),
+                            Map::new(),
+                        );
+                    }
+                }
+            } else {
+                let tx2 = self.tx.clone();
+                let cancel = self.grace_cancel.clone();
+                let abort_grace_ms = self.abort_grace_ms;
+                spawn_deadline(abort_grace_ms, at, cancel, move || {
+                    let _ = tx2.send(Event::Grace);
+                });
+            }
+        }
+        if self.terminal == self.jobs.len() {
+            self.finished = true;
+        }
+    }
+}
+
 /// `runWorkflow`。
 ///
 /// throw は options 検証(`INVALID_REQUEST`)のみ — job/execution の失敗は
@@ -498,8 +857,7 @@ async fn run_workflow_inner(
         now,
     } = options;
     let abort_grace_ms = abort_grace_ms.unwrap_or(5000.0);
-    let is_safe_integer =
-        |v: f64| v.is_finite() && v.fract() == 0.0 && v.abs() <= 9_007_199_254_740_991.0;
+    let is_safe_integer = |v: f64| v.is_finite() && v.fract() == 0.0 && v.abs() <= MAX_SAFE_INTEGER;
     if !is_safe_integer(max_jobs)
         || max_jobs <= 0.0
         || !timeout_ms.is_finite()
@@ -549,386 +907,29 @@ async fn run_workflow_inner(
         jobs[parent].children.push(child);
         jobs[child].remaining += 1;
     }
-    let mut results: HashMap<String, Value> = HashMap::new();
-    let mut running = 0usize;
-    let mut terminal = 0usize;
-    let mut outer_error: Option<CheaperError> = None;
-    let mut finished = false;
     let (tx, mut rx) = mpsc::unbounded_channel::<Event>();
-    let timeout_cancel = CancellationToken::new();
-    let grace_cancel = CancellationToken::new();
-
-    // ---- inner helpers(closure ではなく state 参照で定義するため、
-    // 処理は loop 内の関数呼出しに落とす) ----
-    struct Pump<'x> {
-        workflow: &'x CompiledWorkflow,
-        ports: &'x WorkflowEnginePorts,
-        jobs: &'x mut Vec<JobExecution>,
-        results: &'x mut HashMap<String, Value>,
-        running: &'x mut usize,
-        terminal: &'x mut usize,
-        outer_error: &'x Option<CheaperError>,
-        now: &'x Arc<dyn Fn() -> f64 + Send + Sync>,
-        finished: &'x mut bool,
-        tx: &'x mpsc::UnboundedSender<Event>,
-        controller: &'x AbortController,
-        max_jobs: f64,
-    }
-
-    impl Pump<'_> {
-        fn finish_job(
-            &mut self,
-            index: usize,
-            status: JobStatus,
-            error: Option<WorkflowDiagnostic>,
-            meta: Map<String, Value>,
-        ) {
-            if self.jobs[index].outcome.is_some() {
-                return;
-            }
-            if self.jobs[index].phase == JobStatus::Running {
-                *self.running -= 1;
-            }
-            self.jobs[index].phase = status;
-            let prepared_at = self.jobs[index].prepared_at;
-            let execution = (self.ports.execution_metrics)(Some(self.jobs[index].id.as_str()));
-            self.jobs[index].outcome = Some(WorkflowJobOutcome {
-                id: self.jobs[index].id.clone(),
-                kind: self.jobs[index].job.kind,
-                status,
-                meta: JobOutcomeMeta {
-                    extra: meta,
-                    duration_ms: prepared_at.map(|at| ((self.now)() - at).max(0.0)),
-                    execution,
-                },
-                error,
-            });
-            *self.terminal += 1;
-            let children = std::mem::take(&mut self.jobs[index].children);
-            for child in &children {
-                self.jobs[*child].remaining -= 1;
-                if status != JobStatus::Succeeded {
-                    self.jobs[*child].dependency_failed = true;
-                }
-            }
-            // `jobs` の children は静的结构 — clone を戻す。
-            self.jobs[index].children = children;
-            if *self.terminal == self.jobs.len() {
-                *self.finished = true;
-            }
-            // `schedule()` — Rust 側は event 処理後に loop が必ず
-            // `pump()` を呼ぶため flag は持たない。
-        }
-
-        fn admit(&mut self, index: usize) {
-            match self
-                .workflow
-                .materialize_job_input(&self.jobs[index].id.clone(), self.results)
-            {
-                Ok(input) => {
-                    self.jobs[index].prepared_at = Some((self.now)());
-                    self.jobs[index].input = Some(input.clone());
-                    self.jobs[index].phase = JobStatus::Admitting;
-                    let request = JobLeaseRequest {
-                        job_id: self.jobs[index].id.clone(),
-                        job: self.jobs[index].job.clone(),
-                        input,
-                        signal: self.controller.signal(),
-                    };
-                    let acquire = Arc::clone(&self.ports.acquire_job_lease);
-                    let release = Arc::clone(&self.ports.release_job_lease);
-                    let tx = self.tx.clone();
-                    tokio::spawn(async move {
-                        let result = acquire(request).await;
-                        if let Err(e) = tx.send(Event::Admission { index, result }) {
-                            // loop 終了後の late grant — TS `admission.then`
-                            // の `outerError` 経路相当。
-                            if let Event::Admission {
-                                result: Ok(lease), ..
-                            } = e.0
-                            {
-                                release(lease);
-                            }
-                        }
-                    });
-                }
-                Err(error) => {
-                    let error: ToolError = Box::new(error);
-                    self.finish_job(
-                        index,
-                        JobStatus::Failed,
-                        Some(diagnostic_of_error(error, ErrorCode::ToolExecutionFailure)),
-                        Map::new(),
-                    );
-                }
-            }
-        }
-
-        fn execute(&mut self, index: usize) {
-            self.jobs[index].phase = JobStatus::Running;
-            *self.running += 1;
-            // job 実行境界の node event(design §instrumentation 配置) —
-            // `cheaper.workflow` span 内で id/name の分類値のみ記録する。
-            tracing::debug!(
-                target: "cheaper.workflow.node",
-                message = format_args!("workflow node start"),
-                job.id = %self.jobs[index].id,
-                job.name = %self.jobs[index].job.name
-            );
-            let lease = self.jobs[index].lease.expect("ready implies lease");
-            let executor = match self.jobs[index].job.kind {
-                JobKind::Worker => Arc::clone(&self.ports.worker),
-                JobKind::Tool => Arc::clone(&self.ports.tool),
-            };
-            let context = WorkflowExecutionContext {
-                job_id: self.jobs[index].id.clone(),
-                job: self.jobs[index].job.clone(),
-                input: self.jobs[index].input.clone().unwrap_or(Value::Null),
-                signal: self.controller.signal(),
-                parent_lease: lease,
-            };
-            let release = Arc::clone(&self.ports.release_job_lease);
-            let tx = self.tx.clone();
-            tokio::spawn(async move {
-                let result = executor.execute(context).await;
-                if tx.send(Event::Executed { index, result }).is_err() {
-                    // loop 終了後の settle — `finally` が必ず走るのと同じく
-                    // lease は必ず release する。
-                    release(lease);
-                }
-            });
-        }
-
-        /// `pump()` — `pumping` guard は loop 側で不要(再入しない)。
-        /// `outer_error` 設定済みなら早期 return。
-        fn pump(&mut self) {
-            if self.outer_error.is_some() {
-                return;
-            }
-            // 同期 validation 失敗からの skip も一つの event で伝播する。
-            loop {
-                let mut progressed = false;
-                for index in 0..self.jobs.len() {
-                    if self.jobs[index].phase != JobStatus::Pending
-                        || self.jobs[index].remaining != 0
-                    {
-                        continue;
-                    }
-                    if self.jobs[index].dependency_failed {
-                        self.finish_job(
-                            index,
-                            JobStatus::Skipped,
-                            Some(WorkflowDiagnostic {
-                                code: "DEPENDENCY_FAILED".to_string(),
-                                message: "required dependency failed".to_string(),
-                            }),
-                            Map::new(),
-                        );
-                    } else {
-                        self.admit(index);
-                    }
-                    progressed = true;
-                }
-                if !progressed {
-                    break;
-                }
-            }
-            for index in 0..self.jobs.len() {
-                if *self.running as f64 >= self.max_jobs {
-                    break;
-                }
-                if self.jobs[index].phase == JobStatus::Ready {
-                    self.execute(index);
-                }
-            }
-            if self.jobs.is_empty() {
-                *self.finished = true;
-            }
-        }
-
-        /// admission settle(`admission.then` の ok/err callback)。
-        fn on_admission(&mut self, index: usize, result: Result<ResourceLease, ToolError>) {
-            match result {
-                Ok(lease) => {
-                    if self.outer_error.is_some() {
-                        (self.ports.release_job_lease)(lease);
-                        return;
-                    }
-                    self.jobs[index].lease = Some(lease);
-                    self.jobs[index].phase = JobStatus::Ready;
-                }
-                Err(error) => {
-                    self.finish_job(
-                        index,
-                        JobStatus::Failed,
-                        Some(diagnostic(&error, ErrorCode::ToolExecutionFailure)),
-                        Map::new(),
-                    );
-                }
-            }
-        }
-
-        /// executor settle — try/catch/finally の engine 側。
-        fn on_executed(&mut self, index: usize, result: Result<WorkflowExecutorResult, ToolError>) {
-            match result {
-                Ok(value) => {
-                    if self.jobs[index].outcome.is_none() {
-                        if let Some(outer) = self.outer_error {
-                            self.finish_job(
-                                index,
-                                JobStatus::Cancelled,
-                                Some(diagnostic_of(outer)),
-                                Map::new(),
-                            );
-                        } else {
-                            match self
-                                .workflow
-                                .validate_job_output(&self.jobs[index].id, &value.result)
-                            {
-                                Ok(output) => {
-                                    let meta = value.meta.unwrap_or_default();
-                                    self.results.insert(self.jobs[index].id.clone(), output);
-                                    self.finish_job(index, JobStatus::Succeeded, None, meta);
-                                }
-                                Err(error) => {
-                                    let error: ToolError = Box::new(error);
-                                    self.finish_job(
-                                        index,
-                                        JobStatus::Failed,
-                                        Some(diagnostic(&error, ErrorCode::ToolExecutionFailure)),
-                                        Map::new(),
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-                Err(error) => {
-                    let meta = error
-                        .downcast_ref::<WorkflowExecutorError>()
-                        .map(|w| w.meta().clone())
-                        .unwrap_or_default();
-                    let diag = match self.outer_error {
-                        Some(outer) => diagnostic_of(outer),
-                        None => diagnostic(&error, ErrorCode::ToolExecutionFailure),
-                    };
-                    self.finish_job(
-                        index,
-                        if self.outer_error.is_some() {
-                            JobStatus::Cancelled
-                        } else {
-                            JobStatus::Failed
-                        },
-                        Some(diag),
-                        meta,
-                    );
-                }
-            }
-            // `finally { releaseJobLease(lease); schedule() }`。
-            if let Some(lease) = self.jobs[index].lease.take() {
-                (self.ports.release_job_lease)(lease);
-            }
-        }
-    }
-
-    /// `diagnostic(outerError)` — `CheaperError` 入力直結用。
-    fn diagnostic_of(error: &CheaperError) -> WorkflowDiagnostic {
-        let source = error.message();
-        let mut message = String::new();
-        let mut bytes = 0usize;
-        for point in source.chars() {
-            let size = point.len_utf8();
-            if bytes + size > 2048 {
-                break;
-            }
-            message.push(point);
-            bytes += size;
-        }
-        WorkflowDiagnostic {
-            code: error.code().as_str().to_string(),
-            message,
-        }
-    }
-
-    // `stop(reason)`。`$at` は abort の発生時刻 — grace deadline の
-    // 起点(TS では `stop()` が abort listener 内で同期実行されるため
-    // abort 瞬間起点)。
-    macro_rules! stop {
-        ($reason:expr, $at:expr) => {{
-            if outer_error.is_none() {
-                let reason: AbortReason = $reason;
-                let at: Instant = $at;
-                let is_timeout = reason.code() == Some("TIMEOUT");
-                outer_error = Some(if is_timeout {
-                    CheaperError::new(ErrorCode::Timeout, "workflow timed out")
-                } else {
-                    CheaperError::new(ErrorCode::Aborted, "workflow aborted")
-                });
-                controller.abort(reason.clone());
-                (ports.abort)(&reason);
-                let mut pump_jobs = Pump {
-                    workflow,
-                    ports: &ports,
-                    jobs: &mut jobs,
-                    results: &mut results,
-                    running: &mut running,
-                    terminal: &mut terminal,
-                    outer_error: &outer_error,
-                    now: &now,
-                    finished: &mut finished,
-                    tx: &tx,
-                    controller: &controller,
-                    max_jobs,
-                };
-                for index in 0..pump_jobs.jobs.len() {
-                    if pump_jobs.jobs[index].outcome.is_some()
-                        || pump_jobs.jobs[index].phase == JobStatus::Running
-                    {
-                        continue;
-                    }
-                    if let Some(lease) = pump_jobs.jobs[index].lease.take() {
-                        (pump_jobs.ports.release_job_lease)(lease);
-                    }
-                    pump_jobs.finish_job(
-                        index,
-                        JobStatus::Cancelled,
-                        pump_jobs.outer_error.as_ref().map(diagnostic_of),
-                        Map::new(),
-                    );
-                }
-                if *pump_jobs.running > 0 {
-                    if abort_grace_ms == 0.0 {
-                        for index in 0..pump_jobs.jobs.len() {
-                            if pump_jobs.jobs[index].phase == JobStatus::Running {
-                                pump_jobs.finish_job(
-                                    index,
-                                    JobStatus::Cancelled,
-                                    pump_jobs.outer_error.as_ref().map(diagnostic_of),
-                                    Map::new(),
-                                );
-                            }
-                        }
-                    } else {
-                        let tx2 = tx.clone();
-                        let cancel = grace_cancel.clone();
-                        spawn_deadline(abort_grace_ms, at, cancel, move || {
-                            let _ = tx2.send(Event::Grace);
-                        });
-                    }
-                }
-                // pump の borrow を解放して outer_error / at を確定させる。
-                let _ = pump_jobs;
-                if terminal == jobs.len() {
-                    finished = true;
-                }
-            }
-        }};
-    }
+    let mut state = RunState {
+        workflow,
+        ports: &ports,
+        jobs,
+        results: HashMap::new(),
+        running: 0,
+        terminal: 0,
+        outer_error: None,
+        now: &now,
+        finished: false,
+        tx,
+        controller,
+        max_jobs,
+        abort_grace_ms,
+        timeout_cancel: CancellationToken::new(),
+        grace_cancel: CancellationToken::new(),
+    };
 
     // external abort listener — `addEventListener("abort", onAbort,
     // {once:true})`。
     let abort_listener = signal.as_ref().map(|signal| {
-        let tx = tx.clone();
+        let tx = state.tx.clone();
         (
             signal.clone(),
             signal.on_abort(move |reason| {
@@ -944,34 +945,20 @@ async fn run_workflow_inner(
         if signal.is_aborted() {
             // `options.signal?.aborted → onAbort()`。
             let reason = signal.reason().unwrap_or_else(AbortReason::aborted);
-            stop!(reason, Instant::now());
+            state.stop(reason, Instant::now());
         }
     }
-    if outer_error.is_none() {
+    if state.outer_error.is_none() {
         // timeout arm(入力 signal が生きている場合のみ)。
-        let tx2 = tx.clone();
-        let cancel = timeout_cancel.clone();
+        let tx2 = state.tx.clone();
+        let cancel = state.timeout_cancel.clone();
         spawn_deadline(timeout_ms, timeout_started, cancel, move || {
             let _ = tx2.send(Event::Timeout);
         });
-        let mut pump = Pump {
-            workflow,
-            ports: &ports,
-            jobs: &mut jobs,
-            results: &mut results,
-            running: &mut running,
-            terminal: &mut terminal,
-            outer_error: &outer_error,
-            now: &now,
-            finished: &mut finished,
-            tx: &tx,
-            controller: &controller,
-            max_jobs,
-        };
-        pump.pump();
+        state.pump();
     }
 
-    while !finished {
+    while !state.finished {
         let Some(event) = rx.recv().await else {
             break;
         };
@@ -989,49 +976,25 @@ async fn run_workflow_inner(
             _ => None,
         };
         if let Some((reason, at)) = abort {
-            stop!(reason, at);
+            state.stop(reason, at);
             continue;
         }
-        {
-            let mut pump = Pump {
-                workflow,
-                ports: &ports,
-                jobs: &mut jobs,
-                results: &mut results,
-                running: &mut running,
-                terminal: &mut terminal,
-                outer_error: &outer_error,
-                now: &now,
-                finished: &mut finished,
-                tx: &tx,
-                controller: &controller,
-                max_jobs,
-            };
-            match event {
-                Event::Admission { index, result } => pump.on_admission(index, result),
-                Event::Executed { index, result } => pump.on_executed(index, result),
-                Event::Grace => {
-                    // `detach()`。
-                    for index in 0..pump.jobs.len() {
-                        if pump.jobs[index].phase == JobStatus::Running {
-                            let diag = pump.outer_error.as_ref().map(diagnostic_of);
-                            pump.finish_job(index, JobStatus::Cancelled, diag, Map::new());
-                        }
-                    }
-                }
-                Event::Timeout | Event::ExternalAbort { .. } => {
-                    unreachable!("handled above")
-                }
+        match event {
+            Event::Admission { index, result } => state.on_admission(index, result),
+            Event::Executed { index, result } => state.on_executed(index, result),
+            Event::Grace => state.on_grace(),
+            Event::Timeout | Event::ExternalAbort { .. } => {
+                unreachable!("handled above")
             }
-            // `schedule()` された microtask pump — Rust 側は event ごとに
-            // 呼ぶ(pump は idempotent で `outerError` なら early return)。
-            pump.pump();
         }
+        // `schedule()` された microtask pump — Rust 側は event ごとに
+        // 呼ぶ(pump は idempotent で `outerError` なら early return)。
+        state.pump();
     }
 
     // `finally` — timer 停止・listener 除去。
-    timeout_cancel.cancel();
-    grace_cancel.cancel();
+    state.timeout_cancel.cancel();
+    state.grace_cancel.cancel();
     if let Some((signal, id)) = abort_listener {
         signal.remove_listener(id);
     }
@@ -1039,29 +1002,30 @@ async fn run_workflow_inner(
     // 閉じ、queue 済み event は drain して lease を解放する
     // (in-flight task の send は失敗 → task 側 release)。
     rx.close();
-    drop(tx);
+    drop(state.tx);
     while let Ok(event) = rx.try_recv() {
         match event {
             Event::Admission {
                 result: Ok(lease), ..
-            } => (ports.release_job_lease)(lease),
+            } => (state.ports.release_job_lease)(lease),
             Event::Executed { index, .. } => {
-                if let Some(lease) = jobs[index].lease.take() {
-                    (ports.release_job_lease)(lease);
+                if let Some(lease) = state.jobs[index].lease.take() {
+                    (state.ports.release_job_lease)(lease);
                 }
             }
             _ => {}
         }
     }
 
-    let states: HashMap<String, WorkflowJobState> = jobs
+    let states: HashMap<String, WorkflowJobState> = state
+        .jobs
         .iter()
         .map(|job| {
             (
                 job.id.clone(),
                 WorkflowJobState {
                     terminal: true,
-                    result: results.get(&job.id).cloned(),
+                    result: state.results.get(&job.id).cloned(),
                 },
             )
         })
@@ -1084,8 +1048,12 @@ async fn run_workflow_inner(
             }
         }
     }
-    let error = outer_error.or_else(|| {
-        if jobs.iter().any(|job| job.phase != JobStatus::Succeeded) {
+    let error = state.outer_error.or_else(|| {
+        if state
+            .jobs
+            .iter()
+            .any(|job| job.phase != JobStatus::Succeeded)
+        {
             Some(CheaperError::new(
                 ErrorCode::ToolExecutionFailure,
                 "workflow job failed",
@@ -1102,7 +1070,8 @@ async fn run_workflow_inner(
     Ok(WorkflowOutcome {
         ok: error.is_none(),
         result: outputs,
-        jobs: jobs
+        jobs: state
+            .jobs
             .into_iter()
             .map(|job| job.outcome.expect("terminal"))
             .collect(),

@@ -188,6 +188,12 @@ pub fn spread_into(
 /// JS `Number.MAX_SAFE_INTEGER`.
 pub const MAX_SAFE_INTEGER: f64 = 9_007_199_254_740_991.0;
 
+/// `Number.MAX_SAFE_INTEGER` as `i64` (exact in both directions).
+pub const MAX_SAFE_INTEGER_I64: i64 = 9_007_199_254_740_991;
+
+/// `Number.MAX_SAFE_INTEGER` as `u64` (exact in both directions).
+pub const MAX_SAFE_INTEGER_U64: u64 = 9_007_199_254_740_991;
+
 /// `Number.isSafeInteger(v)` → the integer value as `f64` (`None`
 /// otherwise). Handles i64/u64 and integral f64 like JS.
 pub fn safe_integer(v: &Value) -> Option<f64> {

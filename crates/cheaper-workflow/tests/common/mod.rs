@@ -120,7 +120,7 @@ pub fn fixture_worker() -> WorkerDefinition {
         instructions: "PRIVATE PROMPT".to_string(),
         source_path: "fake/bulk-reader.md".to_string(),
         origin: WorkerOrigin::Builtin,
-        input_schema: Some(
+        input_schema: Some(Arc::new(
             compile_schema(
                 json!({
                     "type": "object",
@@ -134,9 +134,10 @@ pub fn fixture_worker() -> WorkerDefinition {
                 SchemaKind::Input,
             )
             .expect("input schema compiles"),
+        )),
+        output_schema: Arc::new(
+            compile_schema(Map::new(), SchemaKind::Output).expect("output schema compiles"),
         ),
-        output_schema: compile_schema(Map::new(), SchemaKind::Output)
-            .expect("output schema compiles"),
     }
 }
 

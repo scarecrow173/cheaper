@@ -31,13 +31,11 @@ const DEFAULT_ARTIFACTS: WorkflowArtifactPolicy = WorkflowArtifactPolicy {
     max_read_bytes: 65_536,
 };
 
-const MAX_SAFE_INTEGER: f64 = 9_007_199_254_740_991.0;
-
 fn cap(minimum: i64) -> Value {
     json!({
         "type": "integer",
         "minimum": minimum,
-        "maximum": MAX_SAFE_INTEGER as u64,
+        "maximum": js::MAX_SAFE_INTEGER as u64,
     })
 }
 

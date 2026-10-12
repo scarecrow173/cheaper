@@ -15,7 +15,10 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
-use cheaper_cli::cli::{run_cli, CliHooks, CliIo, CliStdin, CliWrite};
+mod common;
+use common::{PipeStdin, VecSink};
+
+use cheaper_cli::cli::{run_cli, CliHooks, CliIo};
 use serde_json::Value;
 
 // ---------------------------------------------------------------------------
@@ -632,23 +635,6 @@ fn retention_keeps_most_recent_files() {
 // repeat-init(in-process — file 内容は assert しない唯一の経路)
 // ---------------------------------------------------------------------------
 
-struct VecSink(Vec<u8>);
-impl CliWrite for VecSink {
-    fn write_str(&mut self, s: &str) {
-        self.0.extend_from_slice(s.as_bytes());
-    }
-}
-
-struct PipeStdin;
-impl CliStdin for PipeStdin {
-    fn is_tty(&self) -> bool {
-        false
-    }
-    fn read_all(&mut self) -> std::io::Result<Vec<u8>> {
-        Ok(Vec::new())
-    }
-}
-
 /// Rule: repeat-init — install 済みでの再呼出しは first subscriber
 /// wins。同一 test binary 内で `run_cli` を複数回呼ぶ経路がこの
 /// contract に依存するため、in-process では本 test のみが logging を
@@ -672,7 +658,7 @@ async fn repeat_init_warns_and_continues() {
 
     for attempt in 0..2 {
         let env_lookup = |name: &str| env_map.get(name).cloned();
-        let mut stdin = PipeStdin;
+        let mut stdin = PipeStdin::empty(false);
         let mut out = VecSink(Vec::new());
         let mut err = VecSink(Vec::new());
         let mut io = CliIo {

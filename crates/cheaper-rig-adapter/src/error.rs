@@ -66,7 +66,7 @@ pub fn classify(error: &ProviderError) -> ErrorClass {
 /// Classify a relayed report the same way: `http_status` and `retryable`
 /// survive the wire boundary, so the decision does not depend on where the
 /// failure surfaced.
-pub fn classify_report(report: &ErrorReport) -> ErrorClass {
+pub(crate) fn classify_report(report: &ErrorReport) -> ErrorClass {
     if let Some(class) = classify_status(report.http_status) {
         return class;
     }
@@ -77,21 +77,12 @@ pub fn classify_report(report: &ErrorReport) -> ErrorClass {
     }
 }
 
-/// Classify a run-level prompt error.
-pub fn classify_prompt(error: &PromptError) -> ErrorClass {
-    match error {
-        PromptError::CompletionError(e) => classify(e),
-        PromptError::Report(r) => classify_report(r),
-        _ => ErrorClass::Permanent,
-    }
-}
-
 /// `ProviderError` → `CheaperError`。provider 起因の失敗は一律
 /// `PROVIDER_FAILURE`。details は TS `lastAssistant.stopReason ===
 /// "error"` 分岐(run.ts L382-390)と同じ `{errorMessage}` のみ —
 /// 分類(transient/permanent)は retry 判定で消費され、envelope
 /// contract には載らない。
-pub fn provider_error_to_cheaper(error: &ProviderError) -> CheaperError {
+pub(crate) fn provider_error_to_cheaper(error: &ProviderError) -> CheaperError {
     CheaperError::new(
         ErrorCode::ProviderFailure,
         format!("provider error: {error}"),
@@ -104,7 +95,7 @@ pub fn provider_error_to_cheaper(error: &ProviderError) -> CheaperError {
 
 /// `ErrorReport`(bus/hook/report 経路) → `CheaperError`。
 /// `ErrorKind` に応じて最も近い cheaper code へ写す。
-pub fn report_to_cheaper(report: &ErrorReport) -> CheaperError {
+pub(crate) fn report_to_cheaper(report: &ErrorReport) -> CheaperError {
     let code = match report.kind {
         ErrorKind::Cancelled => ErrorCode::Aborted,
         ErrorKind::Timeout => ErrorCode::Timeout,
@@ -162,7 +153,7 @@ pub fn report_to_cheaper(report: &ErrorReport) -> CheaperError {
 ///   contract に従わなかった provider 側失敗として `PROVIDER_FAILURE`
 /// - `MemoryError` は memory 未構成の adapter では到達不能に近い —
 ///   `INTERNAL_ERROR`
-pub fn prompt_error_to_cheaper(error: PromptError) -> CheaperError {
+pub(crate) fn prompt_error_to_cheaper(error: PromptError) -> CheaperError {
     match error {
         PromptError::CompletionError(e) => provider_error_to_cheaper(&e),
         PromptError::Report(r) => report_to_cheaper(&r),
@@ -188,7 +179,7 @@ pub fn prompt_error_to_cheaper(error: PromptError) -> CheaperError {
 }
 
 /// `StreamingError` → `PromptError` → `CheaperError`(PoC と同じ正規化)。
-pub fn streaming_error_to_cheaper(error: StreamingError) -> CheaperError {
+pub(crate) fn streaming_error_to_cheaper(error: StreamingError) -> CheaperError {
     let prompt = match error {
         StreamingError::Prompt(e) => e,
         StreamingError::Completion(e) => PromptError::CompletionError(e),

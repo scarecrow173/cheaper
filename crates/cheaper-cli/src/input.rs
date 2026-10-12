@@ -6,17 +6,7 @@ use cheaper_core::js::js_trim;
 use serde_json::{Map, Value};
 
 use crate::cli::CliStdin;
-
-fn invalid_request(
-    message: impl Into<String>,
-    details: Option<Map<String, Value>>,
-) -> CheaperError {
-    let e = CheaperError::new(ErrorCode::InvalidRequest, message.into());
-    match details {
-        Some(d) => e.with_details(d),
-        None => e,
-    }
-}
+use crate::errors::invalid_request;
 
 /// `readTaskInput`(DESIGN-0005)。
 /// - stdin が TTY のときは待たずに INVALID_REQUEST

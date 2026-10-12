@@ -89,10 +89,6 @@ struct DevinPluginAuth {
     windows: bool,
 }
 
-fn cli_error(e: crate::devin::cli::CliError) -> CheaperError {
-    CheaperError::new(ErrorCode::ProviderFailure, e.to_string()).with_cause(e)
-}
-
 impl PluginAuth for DevinPluginAuth {
     fn login(
         &self,
@@ -108,7 +104,7 @@ impl PluginAuth for DevinPluginAuth {
             ctx.env.env("APPDATA").as_deref(),
             interaction,
         )
-        .map_err(cli_error)?;
+        .map_err(crate::devin::cli::cli_error)?;
         Ok(to_stored_credential(
             creds.api_key,
             Some(creds.path.to_string_lossy().into_owned()),
