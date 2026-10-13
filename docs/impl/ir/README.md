@@ -56,6 +56,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zRDctzhtdFQ6yVmTUAg | Document launcher distribution and verify acquisition | completed | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
 | IMPL-034rArrzNyFlCc39TNLU1X | Extend usage.jsonl run record with savings section | completed | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | IMPL-034z1ST2V3s2UsM4Mi2S87 | Extract shared esbuild bundle helper | completed | [extract-shared-esbuild-bundle-helper.md](./extract-shared-esbuild-bundle-helper.md) |
+| IMPL-034EWF6HsxdlNyPsQepBQ9 | fixture DSL and degraded-run verification coverage | completed | [fixture-dsl-and-degraded-run-verification-coverage.md](./fixture-dsl-and-degraded-run-verification-coverage.md) |
 | IMPL-034r05iHy2gdnpwO94elRp | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | IMPL-swcR6qnZBfKwyIdckqQxae | grep eval-budget test stability via explicit budget injection | completed | [grep-eval-budget-test-stability-via-explicit-budget-injection.md](./grep-eval-budget-test-stability-via-explicit-budget-injection.md) |
 | IMPL-034z57jQrqVgbebkytTkwt | hook contract tests and adapter e2e port | completed | [hook-contract-tests-and-adapter-e2e-port.md](./hook-contract-tests-and-adapter-e2e-port.md) |

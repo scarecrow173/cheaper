@@ -310,3 +310,368 @@ async fn run_fake_stream_command_worker_denied_without_grants() {
         .contains("nonempty authorized grants"));
     assert_eq!(code, 4, "envelope: {env}");
 }
+
+// ---------------------------------------------------------------------------
+// optionalTools — opt-in 縮退の dev-seam 統合 test(issue #102 T4、
+// approved test-spec `docs/test-specs/tool-operator-built-in-worker.md`)。
+// admission(`tools.allow`)と call 経路の認可機構は一切緩めない。
+// ---------------------------------------------------------------------------
+
+/// DSL opt-in worker — `worker.optional_tools`(snake_case)が
+/// `to_markdown()` 経由で `cheaper.optionalTools` へ emit される経路を
+/// 含めて縮退 run を検証する。`status` enum は `blocked` を受理する。
+const OPT_IN_STATUS_SCHEMA: &str = r#"{
+  "type": "object",
+  "required": ["status"],
+  "properties": {
+    "status": {"type": "string", "enum": ["success", "partial", "failed", "blocked"]}
+  },
+  "additionalProperties": false
+}"#;
+
+fn opt_in_fixture(finish_text: &str, tool_calls: Option<&str>) -> String {
+    let calls = tool_calls
+        .map(|c| format!(r#"{{"tool_calls": {c}}},"#))
+        .unwrap_or_default();
+    let turn = if tool_calls.is_some() {
+        r#"{"turn": {"tool_calls": true}},"#
+    } else {
+        ""
+    };
+    format!(
+        r#"{{"name": "opt_in", "worker": {{
+          "name": "opt-worker",
+          "tools": ["read", "process", "command"],
+          "optional_tools": ["process", "command"],
+          "write_scope": null,
+          "output_schema": {OPT_IN_STATUS_SCHEMA}
+        }}, "sessions": [{{"steps": [
+          {calls}
+          {turn}
+          {{"finish": {{"text": {}}}}}]}}]}}"#,
+        serde_json::to_string(finish_text).unwrap()
+    )
+}
+
+/// builtin default policy(`process.tasks: {}` / `command.grants: {}`)
+/// では opt-in した `process`/`command` が未登録へ縮退し、run は
+/// `POLICY_VIOLATION` で死なず model session まで到達して完了する。
+/// model が `status: "blocked"` を返しても run-level error ではなく
+/// worker result として envelope へ載る(AC4/AC8)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_opt_in_degraded_run_completes_with_blocked_result() {
+    let fixture = opt_in_fixture(r#"{"status":"blocked"}"#, None);
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "t"}"#);
+    let (code, env, _) = f.run(&["run", "opt-worker"]).await;
+    assert_eq!(code, 0, "{env}");
+    assert_eq!(env["ok"], json!(true));
+    assert_eq!(env["worker"], json!("opt-worker"));
+    assert_eq!(env["result"], json!({"status": "blocked"}));
+    // 縮退 tool は実行経路を持たない — spawn/計上ともに起きない。
+    assert_eq!(env["meta"]["toolCalls"], json!(0));
+    // honest metadata — 宣言された mutating tool により
+    // `directlyComparable` は `process`/`command` 縮退後も false。
+    assert_eq!(env["meta"]["savings"]["directlyComparable"], json!(false));
+    assert_eq!(env["meta"]["changes"]["files"], json!([]));
+}
+
+/// 縮退した `process`/`command` と worker が宣言していない
+/// `write`/`edit` は同じく「未登録」として call を fail させる —
+/// いずれも metering/accounting に到達しない(`meta.toolCalls` は
+/// 実在登録 tool `read` の 1 件のみ)。`UNKNOWN_TOOL` の literal
+/// assert は runtime 層(`crates/cheaper-runtime/tests/run_dev_seam.rs`)
+/// の tee-session test が担う。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_degraded_and_undeclared_calls_have_no_exec_path() {
+    let calls = r#"[
+      {"name": "command", "input": {"name": "self", "args": ["x"]}},
+      {"name": "process", "input": {"task": "probe"}},
+      {"name": "write", "input": {"path": "x.txt", "content": "x"}},
+      {"name": "edit", "input": {"path": "x.txt", "oldText": "a", "newText": "b"}},
+      {"name": "read", "input": {"path": "seed.txt"}}
+    ]"#;
+    let fixture = opt_in_fixture(r#"{"status":"success"}"#, Some(calls));
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "t"}"#);
+    std::fs::write(f.ws_path().join("seed.txt"), "seed\n").unwrap();
+    let (code, env, _) = f.run(&["run", "opt-worker"]).await;
+    assert_eq!(code, 0, "{env}");
+    assert_eq!(env["ok"], json!(true));
+    // read のみ実行 — degraded/undeclared call は全て fail-closed。
+    assert_eq!(env["meta"]["toolCalls"], json!(1));
+    // write/edit call は実行されていない — audited changes は空のまま。
+    assert_eq!(env["meta"]["changes"]["files"], json!([]));
+    assert!(!f.ws_path().join("x.txt").exists());
+}
+
+/// opt-in worker 用 `--worker-file` — grants 非空で `command` が
+/// 実登録される経路を検証する(`writeScope` なし — 不併存 rule 不発)。
+const OPT_IN_COMMAND_WORKER_MD: &str = r#"---
+name: opt-command-worker
+description: opt-in command worker
+tools: [read, command]
+cheaper:
+  optionalTools: [command]
+  model:
+    tier: low
+  output:
+    schema:
+      inline:
+        type: object
+        required: [ok]
+        properties:
+          ok:
+            type: boolean
+---
+Use command when granted.
+"#;
+
+/// opt-in しても grants 非空では `command` は縮退せず実登録・実 spawn
+/// する — argv pattern + executable pin の authorization path は
+/// 非 opt-in と同一(design §(j) / test-spec AC4)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_opt_in_command_grant_executes_and_marks_not_comparable() {
+    let mut f = Fixture::new().with_fake_stream(FIXTURE_COMMAND_CALL);
+    let marker = f
+        .ws_path()
+        .join("cmd-marker")
+        .to_string_lossy()
+        .into_owned();
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        command_user_policy(&marker),
+    )
+    .unwrap();
+    let worker_path = f.ws_path().join("opt-command-worker.md");
+    std::fs::write(&worker_path, OPT_IN_COMMAND_WORKER_MD).unwrap();
+    f.stdin.data = br#"{"task":"t"}"#.to_vec();
+    let warg = worker_path.to_string_lossy().into_owned();
+    let (code, env, _) = f.run(&["run", "--worker-file", &warg]).await;
+    assert_eq!(code, 0, "{env}");
+    assert_eq!(env["ok"], json!(true));
+    assert_eq!(env["meta"]["toolCalls"], json!(1));
+    // real subprocess spawn — child が marker を実ファイルへ書く。
+    assert_eq!(std::fs::read_to_string(&marker).unwrap(), "ran");
+    // honest metadata — child process 副作用は audited change に混ぜない。
+    assert_eq!(env["meta"]["changes"]["files"], json!([]));
+    assert_eq!(env["meta"]["savings"]["directlyComparable"], json!(false));
+}
+
+/// `tools.allow` が declared tool を除外した場合は `optionalTools`
+/// 宣言と無関係に admission(`check_capabilities`)で fail-closed —
+/// `POLICY_VIOLATION` + `details.missing`(test-spec: admission と
+/// content-gate の分離)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_opt_in_capability_denied_is_policy_violation() {
+    let fixture = opt_in_fixture(r#"{"status":"success"}"#, None);
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "t"}"#);
+    // user(trusted)layer の `tools.allow` は builtin を replace —
+    // opt-in 宣言は `tools.allow` を広げない。
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        "version: 1\ntools: {allow: [read]}\n",
+    )
+    .unwrap();
+    let (code, env, _) = f.run(&["run", "opt-worker"]).await;
+    assert_eq!(code, 4);
+    assert_eq!(env["ok"], json!(false));
+    assert_eq!(env["error"]["code"], json!("POLICY_VIOLATION"));
+    assert_eq!(
+        env["error"]["details"]["missing"],
+        json!(["process", "command"]),
+        "{env}"
+    );
+}
+
+/// mixed policy(project layer で `process.tasks` 非空 × `command.grants`
+/// 空)では failed-gate の `command` のみ縮退し、`process` は実登録・実
+/// spawn する(縮退は per-tool — test-spec Rule)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_opt_in_mixed_policy_only_command_degrades() {
+    let calls = r#"[
+      {"name": "process", "input": {"task": "probe"}},
+      {"name": "command", "input": {"name": "self", "args": ["x"]}}
+    ]"#;
+    let fixture = opt_in_fixture(r#"{"status":"success"}"#, Some(calls));
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "t"}"#);
+    let exe = std::env::current_exe().unwrap();
+    let marker = f.ws_path().join("proc-out.txt");
+    // project layer は `command` section を持てない(Option A 信頼境界)
+    // — `process.tasks` のみ seed し grants は空のままにする。
+    let project_policy = format!(
+        "version: 1\nprocess:\n  tasks:\n    probe:\n      command: [{:?}, \"run_dev_seam_command_fixture_child\", \"--exact\", \"--nocapture\"]\n      inputs: []\n      outputs: []\n      env: {{CHEAPER_PROC_CHILD_MODE: \"probe\", CHEAPER_PROC_CHILD_ARG: {:?}}}\n",
+        exe.to_string_lossy(),
+        marker.to_string_lossy()
+    );
+    std::fs::create_dir_all(f.ws_path().join(".cheaper")).unwrap();
+    std::fs::write(f.ws_path().join(".cheaper/policy.yaml"), project_policy).unwrap();
+    let (code, env, _) = f.run(&["run", "opt-worker"]).await;
+    assert_eq!(code, 0, "{env}");
+    // process task が real spawn で marker を書き、command call は
+    // 未登録で metering/accounting に到達しない。
+    assert!(marker.exists());
+    assert_eq!(env["meta"]["toolCalls"], json!(1));
+    assert_eq!(env["meta"]["changes"]["files"], json!([]));
+}
+
+/// mixed policy 逆方向(user layer で `command.grants` 非空 ×
+/// `process.tasks` 空)では `process` のみ縮退し、`command` は
+/// authorization path(grant 解決 + argv pattern + executable pin)を
+/// そのまま通って実登録・実 spawn する。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_opt_in_mixed_policy_only_process_degrades() {
+    let calls = r#"[
+      {"name": "command", "input": {"name": "self",
+        "args": ["run_dev_seam_command_fixture_child", "--exact", "--nocapture"]}},
+      {"name": "process", "input": {"task": "probe"}}
+    ]"#;
+    let fixture = opt_in_fixture(r#"{"status":"success"}"#, Some(calls));
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "t"}"#);
+    let marker = f
+        .ws_path()
+        .join("cmd-marker")
+        .to_string_lossy()
+        .into_owned();
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        command_user_policy(&marker),
+    )
+    .unwrap();
+    let (code, env, _) = f.run(&["run", "opt-worker"]).await;
+    assert_eq!(code, 0, "{env}");
+    // command grant spawn は marker を書き、degraded process call は
+    // 計上されない。
+    assert_eq!(std::fs::read_to_string(&marker).unwrap(), "ran");
+    assert_eq!(env["meta"]["toolCalls"], json!(1));
+    assert_eq!(env["meta"]["changes"]["files"], json!([]));
+    assert_eq!(env["meta"]["savings"]["directlyComparable"], json!(false));
+}
+
+// ---------------------------------------------------------------------------
+// built-in `tool-operator` — alias 解約・status contract・bounded result・
+// honest metadata・usage record(approved test-spec AC1-AC10)。
+// ---------------------------------------------------------------------------
+
+/// builtin `tool-operator` 用 fake stream — sessions のみ(worker 節は
+/// builtin resolution が先に勝つため不要)。
+fn tool_operator_fixture(status: &str) -> String {
+    let result = serde_json::json!({
+        "status": status,
+        "summary": format!("run finished with {status}"),
+        "findings": [{
+            "title": "checked the target",
+            "detail": "looked at the requested inputs",
+            "evidence": [{"kind": "note", "detail": "e"}]
+        }],
+        "unresolved": if status == "success" { Vec::<&str>::new() } else { vec!["command unavailable"] },
+        "nextActions": if status == "success" { Vec::<&str>::new() } else { vec!["grant command policy"] }
+    });
+    format!(
+        r#"{{"name": "tool_op_{status}", "sessions": [{{"steps": [
+          {{"usage_delta": {{"input": 120, "output": 40}}}},
+          {{"turn": {{}}}},
+          {{"finish": {{"text": {}}}}}]}}]}}"#,
+        serde_json::to_string(&serde_json::to_string(&result).unwrap()).unwrap()
+    )
+}
+
+/// `cheaper tool-operate` alias が `run tool-operator` と等価に builtin
+/// worker を解決し、builtin default policy(tasks/grants 空)で
+/// `process`/`command` が縮退しても run は model session まで到達して
+/// 完了する(AC1/AC2/AC4)。`toolCalls == 0`・`meta.changes` 空・
+/// `directlyComparable == false`・usage record を併せて pin する。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_tool_operate_alias_completes_degraded() {
+    let fixture = tool_operator_fixture("success");
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "inspect the workspace"}"#);
+    let (code, env, stderr) = f.run(&["tool-operate"]).await;
+    assert_eq!(code, 0, "{env}");
+    assert_eq!(env["ok"], json!(true));
+    // alias は `tool-operator` へ解約される。
+    assert_eq!(env["worker"], json!("tool-operator"));
+    assert_eq!(env["result"]["status"], json!("success"));
+    assert!(stderr.contains("model: cheaper-fake/fake-model"));
+    // 縮退 tool は実行されていない。
+    assert_eq!(env["meta"]["toolCalls"], json!(0));
+    // honest metadata — child process 副作用は audited change に
+    // 混ぜず、mutating tool 宣言で directlyComparable は false。
+    assert_eq!(env["meta"]["changes"]["files"], json!([]));
+    assert_eq!(env["meta"]["savings"]["directlyComparable"], json!(false));
+    // usage.jsonl に run record が書かれる。
+    let log = f.usage_log().expect("usage.jsonl written");
+    assert!(log.contains(r#""kind":"run""#), "{log}");
+    assert!(log.contains(r#""worker":"tool-operator""#), "{log}");
+    assert!(log.contains(r#""directlyComparable":false"#), "{log}");
+}
+
+/// `partial` / `failed` / `blocked` はいずれも worker result であり
+/// run-level error ではない — envelope `ok: true` で `result.status`
+/// として返る(AC2/AC3/AC4)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_tool_operator_non_success_statuses_are_results() {
+    for status in ["partial", "failed", "blocked"] {
+        let fixture = tool_operator_fixture(status);
+        let mut f = Fixture::new()
+            .with_fake_stream(&fixture)
+            .with_input(r#"{"task": "t"}"#);
+        let (code, env, _) = f.run(&["run", "tool-operator"]).await;
+        assert_eq!(code, 0, "{status}: {env}");
+        assert_eq!(env["ok"], json!(true), "{status}");
+        assert_eq!(env["result"]["status"], json!(status), "{status}");
+        // non-success でも error envelope ではなく result。
+        assert!(env.get("error").is_none(), "{status}: {env}");
+    }
+}
+
+/// 大きな tool output は result に生転載されない — envelope の
+/// `result` は compact structured output のみで、`sourceTokens` が
+/// `returnedTokens` を上回る offload 実測として savings に出る(AC5)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_tool_operator_returns_bounded_result_only() {
+    let calls = r#"[{"name": "read", "input": {"path": "big.txt"}}]"#;
+    let result = serde_json::json!({
+        "status": "success",
+        "summary": "file inspected",
+        "findings": [{"title": "t", "detail": "d", "evidence": [{"kind": "note", "detail": "e"}]}],
+        "unresolved": [],
+        "nextActions": []
+    });
+    let fixture = format!(
+        r#"{{"name": "tool_op_bounded", "sessions": [{{"steps": [
+          {{"tool_calls": {calls}}},
+          {{"turn": {{"tool_calls": true}}}},
+          {{"finish": {{"text": {}}}}}]}}]}}"#,
+        serde_json::to_string(&serde_json::to_string(&result).unwrap()).unwrap()
+    );
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "inspect big.txt"}"#);
+    std::fs::write(f.ws_path().join("big.txt"), "A".repeat(64_000)).unwrap();
+    let (code, env, _) = f.run(&["run", "tool-operator"]).await;
+    assert_eq!(code, 0, "{env}");
+    assert_eq!(env["ok"], json!(true));
+    assert_eq!(env["meta"]["toolCalls"], json!(1));
+    assert_eq!(env["result"], result);
+    // result は bounded — read の生 output は envelope に現れない。
+    assert!(!env.to_string().contains("AAAA"));
+    let savings = &env["meta"]["savings"];
+    assert!(
+        savings["sourceTokens"].as_u64().unwrap() > 1_000,
+        "{savings}"
+    );
+    assert!(
+        savings["sourceTokens"].as_u64().unwrap() > savings["returnedTokens"].as_u64().unwrap(),
+        "{savings}"
+    );
+}

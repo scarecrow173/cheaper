@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EUvOR5z2gLPUgzBappw"
 type: "task"
-status: "todo"
+status: "done"
 title: "T4: fixture DSL・dev-seam/regression/golden test 実装"
 created: "2026-10-13"
 updated: "2026-10-13"
@@ -9,15 +9,25 @@ owners: ["scarecrow173"]
 relations:
   source: []
   changes:
-    added: []
-    modified: []
+    added:
+      - {"type":"doc","path":"docs/impl/ir/fixture-dsl-and-degraded-run-verification-coverage.md"}
+      - {"type":"code","path":"crates/cheaper-cli/tests/regression/cases/run-tool-operator-degraded.json"}
+      - {"type":"code","path":"crates/cheaper-cli/tests/regression/expected/run-tool-operator-degraded.json"}
+    modified:
+      - {"type":"code","path":"crates/cheaper-runtime/src/dev/fixture.rs"}
+      - {"type":"code","path":"crates/cheaper-runtime/tests/run_dev_seam.rs"}
+      - {"type":"code","path":"crates/cheaper-cli/tests/run_dev_seam.rs"}
+      - {"type":"code","path":"crates/cheaper-cli/tests/workflow_dev_seam.rs"}
+      - {"type":"code","path":"crates/cheaper-core/tests/golden/fixtures/worker/validate.json"}
+      - {"type":"doc","path":"docs/impl/ir/README.md"}
     deleted: []
     renamed: []
     moved: []
     generated: []
   implements:
     - "../plans/implement-tool-operator-built-in-worker.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/fixture-dsl-and-degraded-run-verification-coverage.md"
   depends-on:
     - "../plans/implement-tool-operator-built-in-worker.md"
     - "docs/tasks/optional-tools-core-machinery.md"
@@ -150,16 +160,16 @@ Risk #4）。
 
 ## Done When
 
-- [ ] degraded run の model 到達・grant-env の実 spawn・capability-denied
+- [x] degraded run の model 到達・grant-env の実 spawn・capability-denied
   の run 全体 fail・mixed-policy の片側のみ列挙・`UNKNOWN_TOOL`・
   `status` 4 値（blocked は envelope `result.status == "blocked"` で
   run-level error envelope と区別）・prompt 注記 assert・`meta.changes`
   空・`directlyComparable=false`・usage record の test が全て pass
-- [ ] regression corpus case + expected（capture 生成・diff review 済み）
+- [x] regression corpus case + expected（capture 生成・diff review 済み）
   と worker_validate golden accept/reject fixture が pass
-- [ ] `run_fake_stream_command_worker_denied_without_grants` が無変更で
+- [x] `run_fake_stream_command_worker_denied_without_grants` が無変更で
   green — 非 opt-in worker の fail-closed 意味論不変（Risk #6）
-- [ ] `optionalTools` は strictly capability-shrinking — admission
+- [x] `optionalTools` は strictly capability-shrinking — admission
   （`tools.allow` / `check_capabilities`）と call 経路の認可機構（grant
   解決・argv pattern・executable pin/検証）は一切緩めていない
 
@@ -176,6 +186,15 @@ Risk #4）。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --test regression --features cheaper-cli/dev-seam` exits 0（`regression` target は `required-features = ["dev-seam"]` で gate 済みのため flag 必須）
-- [ ] `CHEAPER_REGRESSION_CAPTURE=1 cargo test -p cheaper-cli --features dev-seam --test regression` で expected を生成し diff review 済み（capture 自体は検証でなく生成手順 — 生成物の commit 前 review が必須）
+実績（2026-10-13 — コマンドは `mise exec --` 経由相当の同一 toolchain で実行）:
+
+- [x] `cargo fmt --all -- --check` exits 0
+- [x] `cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam` exits 0（`run_dev_seam` 21/21 — 新規 mixed-policy prompt 注記・`UNKNOWN_TOOL` literal assert 含む）
+- [x] `cargo test -p cheaper-cli --test run_dev_seam --features cheaper-cli/dev-seam` exits 0（19/19 — opt-in 縮退/grant/capability-denied/mixed/status/bounded/alias/usage 9 件追加 + 非 opt-in 既存 test 無変更 green）
+- [x] `cargo test -p cheaper-cli --test workflow_dev_seam --features cheaper-cli/dev-seam` exits 0（2/2 — `kind: worker` job の縮退同一挙動 1 件追加）
+- [x] `cargo test -p cheaper-core --test golden -- worker_validate` exits 0（accept 1 + reject 7 case）
+- [x] `cargo test -p cheaper-cli --test regression --features cheaper-cli/dev-seam` exits 0（`regression` target は `required-features = ["dev-seam"]` で gate 済みのため flag 必須）
+- [x] `CHEAPER_REGRESSION_CAPTURE=1 cargo test -p cheaper-cli --features dev-seam --test regression` で expected を生成し diff review 済み（capture 自体は検証でなく生成手順 — 生成物の commit 前 review が必須。初回 capture が本機の stale `<temp>/cheaper-builtin-1.0.0/` materialize cache 由来の `POLICY_VIOLATION` になったため cache 削除後に再 capture — 詳細は impl record `docs/impl/ir/fixture-dsl-and-degraded-run-verification-coverage.md` 参照）
+- [x] `cargo clippy --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0

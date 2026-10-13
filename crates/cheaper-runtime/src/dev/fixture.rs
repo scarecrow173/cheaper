@@ -257,6 +257,10 @@ pub struct FixtureWorker {
     pub description: String,
     /// `tools: [read, write]`。
     pub tools: Vec<String>,
+    /// `cheaper.optionalTools` — content-gate(nonempty tasks/grants)
+    /// 不成立時に未登録へ縮退してよい scope-gated tool の opt-in 宣言
+    /// (ADR-034ESBcMTWxNCMDI9obdb8)。非空時のみ frontmatter へ emit。
+    pub optional_tools: Vec<String>,
     /// `cheaper.writeScope`。`None` で frontmatter から省略。
     pub write_scope: Option<String>,
     /// `cheaper.model.tier`。
@@ -273,6 +277,7 @@ impl Default for FixtureWorker {
             name: "fixture-worker".to_string(),
             description: "fixture worker".to_string(),
             tools: vec!["read".to_string(), "write".to_string()],
+            optional_tools: Vec::new(),
             write_scope: Some("files".to_string()),
             model_tier: Some("low".to_string()),
             output_schema: serde_json::json!({
@@ -294,6 +299,12 @@ impl FixtureWorker {
         out.push_str(&format!("description: {}\n", self.description));
         out.push_str(&format!("tools: [{}]\n", self.tools.join(", ")));
         out.push_str("cheaper:\n");
+        if !self.optional_tools.is_empty() {
+            out.push_str(&format!(
+                "  optionalTools: [{}]\n",
+                self.optional_tools.join(", ")
+            ));
+        }
         if let Some(tier) = &self.model_tier {
             out.push_str(&format!("  model:\n    tier: {tier}\n"));
         }
@@ -892,6 +903,45 @@ mod tests {
             .worker_definition(&dir.path().join("fixture-worker.md"))
             .unwrap();
         assert_eq!(def.name, "fixture-worker");
+    }
+
+    /// `worker.optional_tools`(snake_case DSL key)が frontmatter の
+    /// `cheaper.optionalTools`(camelCase contract key)へ非空時のみ
+    /// emit される(design §(i) — regression harness が
+    /// `worker_markdown()` を無条件で seed するため DSL knob が必須)。
+    #[test]
+    fn worker_optional_tools_emit_camel_frontmatter_key() {
+        let f = RunFixture::parse(
+            r#"{
+                "worker": {
+                    "name": "opt-worker",
+                    "tools": ["read", "process", "command"],
+                    "optional_tools": ["process", "command"],
+                    "write_scope": null
+                }
+            }"#,
+        )
+        .unwrap();
+        let md = f.worker_markdown();
+        assert!(md.contains("  optionalTools: [process, command]\n"), "{md}");
+        let dir = tempfile::tempdir().unwrap();
+        let def = f
+            .worker_definition(&dir.path().join("opt-worker.md"))
+            .unwrap();
+        assert_eq!(
+            def.cheaper.optional_tools,
+            [ToolName::Process, ToolName::Command]
+        );
+        assert!(def.cheaper.write_scope.is_none());
+    }
+
+    /// `optional_tools` 省略時は frontmatter に `optionalTools` を emit
+    /// しない(既存 fixture の markdown 出力は不変)。
+    #[test]
+    fn worker_markdown_omits_optional_tools_when_empty() {
+        let f = RunFixture::default();
+        let md = f.worker_markdown();
+        assert!(!md.contains("optionalTools"), "{md}");
     }
 
     #[test]
