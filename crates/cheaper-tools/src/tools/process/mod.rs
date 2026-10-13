@@ -1,11 +1,12 @@
-//! Port of `packages/tool-runtime/src/process.ts`.
+//! Port of `packages/tool-runtime/src/process.ts` の task 固有 glue。
 //!
-//! named task 解決・prepare(cwd/deny/writeScope 検査)・minimal env
-//! (Windows required env 空値遮断・SystemRoot 補完)・spawn(stdin
-//! ignore/stdout-stderr pipe/windowsHide/POSIX detached)・64KiB combined
-//! capture・timeout(`parseDuration`)+`onTimeout`・heartbeat stderr JSON・
-//! details{task,state,exitCode,signal,stdout,stderr}・64 文字 fold 表示・
-//! `processOperationDeclaration`(pool + access 導出)。
+//! named task 解決・prepare(cwd/deny/writeScope 検査)・details{task,
+//! state,exitCode,signal,stdout,stderr}・`processOperationDeclaration`
+//! (pool + access 導出)を所有し、managed-subprocess lifecycle
+//! (spawn/capture/timeout/heartbeat/cleanup/tree-kill)は shared
+//! `crate::tools::proc` へ移設済み(design §(e))。execute は
+//! `ProcLimits`/`ProcPrepared`/`ProcIdentity` を組み立てて
+//! [`crate::tools::proc::run`] を呼ぶ。
 //!
 //! T2-7 統合済み seam(T2-5 時点のローカル定義は撤去):
 //! - `AbortSignal`/`AbortController`/`AbortReason` — `crate::operation`。
@@ -13,107 +14,35 @@
 //! - `process_operation_declaration` は `crate::scheduler` の
 //!   `OperationDeclaration`/`OperationPool` を返す。
 
-pub mod executable;
-pub mod tree;
-
 use std::collections::HashSet;
-use std::sync::atomic::AtomicU8;
-use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::sync::Arc;
 
 use cheaper_core::duration::parse_duration;
-use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::errors::CheaperError;
 /// `MAX_PROCESS_OUTPUT_BYTES` re-export(TS `export { ... }` parity)。
 pub use cheaper_core::policy::process::MAX_PROCESS_OUTPUT_BYTES;
 use cheaper_core::policy::process::{resolve_process_task, ResolvedProcessPolicy};
 use cheaper_core::workspace::deny_paths::PathDenylist;
 use cheaper_core::workspace::paths::SymlinkPolicy;
-use serde_json::{json, Map, Value};
-use tokio_util::sync::CancellationToken;
+use serde_json::{json, Value};
 
 use crate::catalog::CanonicalToolResult;
-use crate::operation::{AbortController, AbortReason, AbortSignal};
+use crate::operation::AbortSignal;
 use crate::scheduler::{OperationDeclaration, OperationPool};
 use crate::ToolError;
 
-mod cleanup;
-mod monitor;
 mod prepare;
-mod spawn;
 #[cfg(test)]
 mod tests;
 
-use monitor::{
-    drive, read_stream, Captures, Diagnostics, StreamCapture, StreamKind, PHASE_RUNNING,
-};
-use prepare::{minimal_env, prepare};
-use spawn::{build_command, spawn_code, spawn_failure_is_async};
+use prepare::prepare;
 
-pub use monitor::StreamCaptureResult;
-
-// ---------------------------------------------------------------------------
-// abort helpers(canonical `crate::operation` 型)
-// ---------------------------------------------------------------------------
-
-/// `signal.reason` の rethrow 相当。`AbortReason` 自体を error として包む
-/// — `source()` 経由で error object(`CheaperError` 等)が辿れるため
-/// `find_cheaper_error` の code 判定がそのまま効く。
-fn aborted_err(reason: AbortReason) -> ToolError {
-    Box::new(reason)
-}
-
-/// `AbortSignal.any` 相当: どちらかが abort したらその reason で解決。
-/// 両方済みの場合は outer を優先する(発生順は区別不能)。
-async fn wait_aborted(outer: &AbortSignal, inner: &AbortSignal) -> AbortReason {
-    tokio::select! {
-        _ = outer.cancelled() => outer
-            .reason()
-            .or_else(|| inner.reason())
-            .unwrap_or_else(|| AbortReason::from(CheaperError::new(ErrorCode::Aborted, "aborted"))),
-        _ = inner.cancelled() => inner
-            .reason()
-            .or_else(|| outer.reason())
-            .unwrap_or_else(|| AbortReason::from(CheaperError::new(ErrorCode::Aborted, "aborted"))),
-    }
-}
-
-fn combined_reason(outer: &AbortSignal, inner: &AbortSignal) -> Option<AbortReason> {
-    outer.reason().or_else(|| inner.reason())
-}
-
-/// `ToolError`(Box<dyn Error>)を `CheaperError::with_cause`(sized
-/// `impl Error` bound)へ渡すための wrapper(TS `cause: error` parity)。
-#[derive(Debug)]
-struct BoxedCause(Arc<dyn std::error::Error + Send + Sync + 'static>);
-
-impl std::fmt::Display for BoxedCause {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-impl std::error::Error for BoxedCause {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        self.0
-            .source()
-            .map(|e| e as &(dyn std::error::Error + 'static))
-    }
-}
-
-/// `Box<dyn Error>` の source chain から `CheaperError` を探す
-/// (`Aborted` wrapper 越しの code 判定用)。
-pub fn find_cheaper_error<'a>(
-    err: &'a (dyn std::error::Error + 'static),
-) -> Option<&'a CheaperError> {
-    let mut current: Option<&(dyn std::error::Error + 'static)> = Some(err);
-    while let Some(e) = current {
-        if let Some(cheaper) = e.downcast_ref::<CheaperError>() {
-            return Some(cheaper);
-        }
-        current = e.source();
-    }
-    None
-}
+// `tools::proc` へ移設した item の公開 path 維持 re-export
+// (design §(e)/(l) — registry・workflow_run・既存 test が
+// `tools::process::{find_cheaper_error,OnTimeout,...}` を参照するため)。
+pub use crate::tools::proc::executable;
+pub use crate::tools::proc::tree;
+pub use crate::tools::proc::{find_cheaper_error, OnTimeout, StreamCaptureResult};
 
 // ---------------------------------------------------------------------------
 // Schemas / operation declaration / tool surface
@@ -187,10 +116,6 @@ pub fn process_operation_declaration(
     });
     Ok(declaration)
 }
-
-/// `onTimeout(reason)` callback type。Rust では reason を `&CheaperError`
-/// で渡す(reason object を呼出し側が再送しない前提)。
-pub type OnTimeout = Arc<dyn Fn(&CheaperError) + Send + Sync>;
 
 /// `Options`(TS `interface Options`)。
 pub struct ProcessToolOptions {
@@ -283,137 +208,54 @@ pub fn process_tool_definition(
 }
 
 // ---------------------------------------------------------------------------
-// execute
+// execute(task 固有 glue → shared proc::run)
 // ---------------------------------------------------------------------------
 async fn execute(
     options: &ProcessToolOptions,
     name: &str,
     outer: AbortSignal,
 ) -> Result<CanonicalToolResult, ToolError> {
-    // `AbortSignal.any([outerSignal, timeoutController.signal])` 相当。
-    let timeout_controller = AbortController::new();
-    let inner = timeout_controller.signal();
-    if let Some(reason) = combined_reason(&outer, &inner) {
+    use crate::tools::proc::{aborted_err, minimal_env, ProcIdentity, ProcLimits, ProcPrepared};
+
+    if let Some(reason) = outer.reason() {
         return Err(aborted_err(reason));
     }
     let task = resolve_process_task(&options.process, name)?;
     let prepared = prepare(options, name, &task)?;
-    if let Some(reason) = combined_reason(&outer, &inner) {
+    if let Some(reason) = outer.reason() {
         return Err(aborted_err(reason));
     }
 
-    let captures = Arc::new(Mutex::new(Captures {
-        stdout: StreamCapture::default(),
-        stderr: StreamCapture::default(),
-        remaining: options.process.max_output_bytes,
-    }));
-
-    let env = minimal_env(&task.env);
-    let mut command = build_command(&prepared, &task, env);
-    let mut child = match command.spawn() {
-        Ok(child) => {
-            tracing::debug!(target: "cheaper.tool.process", task = %name, "process spawn");
-            child
-        }
-        Err(error) => {
-            tracing::debug!(
-                target: "cheaper.tool.process",
-                task = %name,
-                error.code = spawn_code(&error),
-                "process spawn failed"
-            );
-            let stdout = StreamCapture::default().finish();
-            let stderr = StreamCapture::default().finish();
-            let mut details = Map::new();
-            details.insert("task".to_string(), json!(name));
-            details.insert("state".to_string(), json!("failed"));
-            details.insert("exitCode".to_string(), Value::Null);
-            details.insert("signal".to_string(), Value::Null);
-            details.insert("stdout".to_string(), stdout.to_json());
-            details.insert("stderr".to_string(), stderr.to_json());
-            details.insert("spawnCode".to_string(), json!(spawn_code(&error)));
-            // Node の非同期 `error` event + `close` 経路相当:
-            // `"managed process failed" + details.spawnCode`(cause なし)。
-            if spawn_failure_is_async(&error) {
-                return Err(CheaperError::new(
-                    ErrorCode::ToolExecutionFailure,
-                    "managed process failed",
-                )
-                .with_details(details)
-                .into());
-            }
-            // Node の sync throw 経路相当(``catch { spawn failed, cause }``)。
-            return Err(CheaperError::new(
-                ErrorCode::ToolExecutionFailure,
-                "managed process spawn failed",
-            )
-            .with_details(details)
-            .with_cause(error)
-            .into());
-        }
+    // `options.process.*` → `ProcLimits`(parse 済み ms)。
+    let limits = ProcLimits {
+        timeout_ms: parse_duration(&options.process.timeout)?,
+        kill_grace_ms: parse_duration(&options.process.kill_grace)?,
+        max_output_bytes: options.process.max_output_bytes,
+        heartbeat_interval_ms: parse_duration(&options.process.heartbeat.interval)?,
     };
-
-    let stdout_pipe = child.stdout.take().expect("stdout piped");
-    let stderr_pipe = child.stderr.take().expect("stderr piped");
-    let stdout_task = tokio::spawn(read_stream(
-        stdout_pipe,
-        StreamKind::Stdout,
-        Arc::clone(&captures),
-    ));
-    let stderr_task = tokio::spawn(read_stream(
-        stderr_pipe,
-        StreamKind::Stderr,
-        Arc::clone(&captures),
-    ));
-
-    let phase = Arc::new(AtomicU8::new(PHASE_RUNNING));
-    let diagnostics = Arc::new(Diagnostics {
-        task: name.to_string(),
-        pid: child.id(),
-        started: Instant::now(),
-        phase: Arc::clone(&phase),
-        captures: Arc::clone(&captures),
-    });
-
-    // `setInterval(diagnostic("process.heartbeat"), interval)`。
-    let heartbeat_interval_ms = parse_duration(&options.process.heartbeat.interval)?;
-    let heartbeat_stop = CancellationToken::new();
-    let heartbeat = {
-        let diagnostics = Arc::clone(&diagnostics);
-        let stop = heartbeat_stop.clone();
-        tokio::spawn(async move {
-            let mut interval =
-                tokio::time::interval(std::time::Duration::from_millis(heartbeat_interval_ms));
-            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-            // tokio interval の初回 tick は即時発火するため 1 回捨てる
-            // (TS `setInterval` は interval 経過後に初回発火)。
-            interval.tick().await;
-            loop {
-                tokio::select! {
-                    _ = interval.tick() => diagnostics.emit("process.heartbeat"),
-                    _ = stop.cancelled() => break,
-                }
-            }
-        })
+    let prepared = ProcPrepared {
+        executable: prepared.executable,
+        argv: task.command[1..].to_vec(),
+        cwd: prepared.cwd,
+        env: minimal_env(&task.env),
     };
-
-    let result = drive(
-        options,
-        name,
-        &outer,
-        &inner,
-        &timeout_controller,
-        &mut child,
-        Arc::clone(&captures),
-        Arc::clone(&diagnostics),
-        phase,
-        stdout_task,
-        stderr_task,
+    // `process` の identity: details `{task: name}`・display
+    // `"process {name}"`・diagnostics event prefix `"process"`。
+    let identity = ProcIdentity {
+        details: vec![("task".to_string(), json!(name))],
+        label: name.to_string(),
+        display: format!("process {name}"),
+        event_prefix: "process",
+        // `durationMs` は command 専用の spec-mandated field —
+        // process details schema は不変(AC1)。
+        report_duration_ms: false,
+    };
+    crate::tools::proc::run(
+        &prepared,
+        &limits,
+        &identity,
+        outer,
+        options.on_timeout.as_ref(),
     )
-    .await;
-
-    // `finally`: heartbeat/clearTimeout/readers 解放。
-    heartbeat_stop.cancel();
-    let _ = heartbeat.await;
-    result
+    .await
 }

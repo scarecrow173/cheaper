@@ -8,6 +8,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::policy::command::{resolve_command_policy, ResolvedCommandPolicy};
 use cheaper_core::policy::process::{resolve_process_policy, ResolvedProcessPolicy};
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::paths::SymlinkPolicy;
@@ -61,6 +62,11 @@ pub struct InvocationToolRuntimeOptions {
     pub artifacts: Option<ArtifactPorts>,
     /// `Partial<ProcessPolicy>` の raw JSON(`resolve_process_policy` 入力)。
     pub process: Option<Value>,
+    /// `Partial<CommandPolicy>` の raw JSON(`resolve_command_policy` 入力)。
+    /// pin は行わない(`names` を持たないため) — declared-shape の
+    /// `resolve_command_policy` のみ実行し `inner.command` に保持する
+    /// (design §(b)/(g))。scope への再注入は T4 で確定。
+    pub command: Option<Value>,
     pub root: String,
     pub symlink_policy: SymlinkPolicy,
     pub signal: Option<AbortSignal>,
@@ -89,6 +95,9 @@ struct InvocationInner {
     scheduler: ToolScheduler,
     artifacts: Option<ArtifactPorts>,
     process: ResolvedProcessPolicy,
+    /// declared-shape の resolved command policy — scope parity check
+    /// の比較対象(pin 済み path は含めない、design §(g))。
+    command: ResolvedCommandPolicy,
     root: String,
     symlink_policy: SymlinkPolicy,
     abort_grace_ms: Option<f64>,
@@ -214,6 +223,19 @@ impl InvocationToolRuntime {
                 return Err(Box::new(invalid_binding("process policy mismatch")));
             }
         }
+        // `command` も `process` と同型の declared-shape parity check —
+        // `options.runtime.command` を再 resolve して `inner.command` と
+        // `PartialEq` 比較する。比較対象は pin 前の declared-shape で、
+        // pin map は各 scope の `create_tool_runtime` が構築する
+        // (design §(b)/(g))。scope 生成後により広い grant set を
+        // 密輸できないようにする。
+        if let Some(raw) = &options.runtime.command {
+            let resolved =
+                resolve_command_policy(Some(raw)).map_err(|e| Box::new(e) as ToolError)?;
+            if resolved != inner.command {
+                return Err(Box::new(invalid_binding("command policy mismatch")));
+            }
+        }
         if options.owner_id.is_empty() || inner.owners.lock().unwrap().contains(&options.owner_id) {
             // 早期 fast path — authoritative な重複判定は commit 時点の
             // `HashSet::insert` の bool(後述)が担う(TS でも `owners.add`
@@ -240,6 +262,15 @@ impl InvocationToolRuntime {
             process: Some(
                 serde_json::to_value(&inner.process)
                     .expect("ResolvedProcessPolicy は必ず serialize 可能"),
+            ),
+            // `inner.process` と同型の再注入 — scope は常に
+            // invocation-resolved の declared-shape grants を受け取る。
+            // caller 指定の raw は上の parity check で `inner.command`
+            // との一致を検証済み、`None` もそのままでは scope へ漏れない
+            // (design §(g))。
+            command: Some(
+                serde_json::to_value(&inner.command)
+                    .expect("ResolvedCommandPolicy は必ず serialize 可能"),
             ),
             root: options.runtime.root,
             symlink_policy: options.runtime.symlink_policy,
@@ -359,6 +390,10 @@ pub fn create_invocation_tool_runtime(
 ) -> Result<InvocationToolRuntime, ToolError> {
     let process =
         resolve_process_policy(options.process.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
+    // `command` は declared-shape のみ resolve — pin は `names` を
+    // 持つ `create_tool_runtime` 境界の per-scope 責務(design §(b))。
+    let command =
+        resolve_command_policy(options.command.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
     if let Some(grace) = options.abort_grace_ms {
         if !(grace.is_finite() && grace >= 0.0) {
             return Err(Box::new(invalid_binding(
@@ -397,6 +432,7 @@ pub fn create_invocation_tool_runtime(
         scheduler,
         artifacts: options.artifacts,
         process,
+        command,
         root: options.root,
         symlink_policy: options.symlink_policy,
         abort_grace_ms: options.abort_grace_ms,

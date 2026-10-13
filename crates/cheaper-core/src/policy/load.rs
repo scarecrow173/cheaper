@@ -7,6 +7,7 @@ use serde_json::{json, Map, Value};
 
 use crate::config::layer::{read_yaml_layer, LayerKind};
 use crate::errors::{CheaperError, ErrorCode};
+use crate::policy::command::resolve_command_policy;
 use crate::policy::merge::{merge_policy_layers, MergeMode};
 use crate::policy::process::resolve_process_policy;
 use crate::policy::schema::{
@@ -80,6 +81,14 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
         "process".to_string(),
         serde_json::to_value(&resolved_process).unwrap_or(Value::Null),
     );
+    // `command` も同型に re-embed する — user partial が `grants` のみを
+    // 宣言した場合に complete schema の section required
+    // (`["maxConcurrent", "grants"]`)を resolved default で満たす。
+    let resolved_command = resolve_command_policy(effective.get("command"))?;
+    with_defaults.insert(
+        "command".to_string(),
+        serde_json::to_value(&resolved_command).unwrap_or(Value::Null),
+    );
     let mut execution = effective
         .get("execution")
         .and_then(Value::as_object)
@@ -99,9 +108,13 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
     let project_path = nodepath_join(opts.project_dir, "policy.yaml");
     if let Some(project) = read_policy_file(&project_path, false)? {
         tracing::debug!(policy.layer = "project", "policy layer merged");
+        // Option A の信頼境界: project partial schema は `command` section
+        // 全体を除外し、含む project policy は schema validation で
+        // `InvalidRuntimePolicy` に落ちる(grant authoring は trusted
+        // layer のみ)。
         effective = merge_policy_layers(
             &effective,
-            &validate_policy_schema(&Value::Object(project), PolicySchemaMode::Partial)?,
+            &validate_policy_schema(&Value::Object(project), PolicySchemaMode::ProjectPartial)?,
             MergeMode::RestrictConcurrency,
         )
         .map_err(|e| {

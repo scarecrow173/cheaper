@@ -54,6 +54,16 @@
                 "maxTotalBytes": 33554432
               },
               "maxJobs": 1
+            },
+            "command": {
+              "grants": {},
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
             }
           }
         }
@@ -150,6 +160,16 @@
                 "maxTotalBytes": 33554432
               },
               "maxJobs": 1
+            },
+            "command": {
+              "grants": {},
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
             }
           }
         }
@@ -248,6 +268,16 @@
                 "maxTotalBytes": 33554432
               },
               "maxJobs": 1
+            },
+            "command": {
+              "grants": {},
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
             }
           }
         }
@@ -399,6 +429,16 @@
                 "maxTotalBytes": 33554432
               },
               "maxJobs": 1
+            },
+            "command": {
+              "grants": {},
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
             }
           }
         }
@@ -464,7 +504,7 @@
           "retryable": false
         }
       },
-      "name": "concurrency widens → violation",
+      "name": "concurrency widens \u2192 violation",
       "policy": {
         "execution": {
           "concurrency": {
@@ -525,7 +565,7 @@
           "retryable": false
         }
       },
-      "name": "serialized→per-resource → violation",
+      "name": "serialized\u2192per-resource \u2192 violation",
       "policy": {
         "execution": {
           "concurrency": {
@@ -621,11 +661,21 @@
                 "maxTotalBytes": 33554432
               },
               "maxJobs": 1
+            },
+            "command": {
+              "grants": {},
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
             }
           }
         }
       },
-      "name": "concurrency null maxOperations → policy default",
+      "name": "concurrency null maxOperations \u2192 policy default",
       "policy": {
         "execution": {
           "concurrency": {
@@ -721,11 +771,21 @@
                 "maxTotalBytes": 33554432
               },
               "maxJobs": 1
+            },
+            "command": {
+              "grants": {},
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
             }
           }
         }
       },
-      "name": "concurrency null mutations → policy default",
+      "name": "concurrency null mutations \u2192 policy default",
       "policy": {
         "execution": {
           "concurrency": {
@@ -821,11 +881,21 @@
                 "maxTotalBytes": 33554432
               },
               "maxJobs": 1
+            },
+            "command": {
+              "grants": {},
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
             }
           }
         }
       },
-      "name": "concurrency null object → no-op",
+      "name": "concurrency null object \u2192 no-op",
       "policy": {
         "execution": {
           "concurrency": {
@@ -884,7 +954,7 @@
           "retryable": false
         }
       },
-      "name": "concurrency null maxOperations widens to default → violation",
+      "name": "concurrency null maxOperations widens to default \u2192 violation",
       "policy": {
         "execution": {
           "concurrency": {
@@ -992,7 +1062,7 @@
       "files": {
         "w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\",\"write\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
       },
-      "name": "missing tool → violation",
+      "name": "missing tool \u2192 violation",
       "op": "checkCapabilities",
       "policy": {
         "execution": {
@@ -1045,7 +1115,7 @@
       "files": {
         "w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"high\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
       },
-      "name": "tier over max → violation",
+      "name": "tier over max \u2192 violation",
       "op": "checkCapabilities",
       "policy": {
         "execution": {

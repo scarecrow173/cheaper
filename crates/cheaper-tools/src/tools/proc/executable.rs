@@ -30,10 +30,14 @@ pub struct ProcessExecutableOptions<'a> {
     pub search_path: Option<&'a str>,
 }
 
-fn unsupported() -> CheaperError {
+/// `subject` は error message の宣言種別を表す呼出し側 label
+/// (`resolve_process_executable` の `subject` 引数)。
+fn unsupported(subject: &str) -> CheaperError {
     CheaperError::new(
         ErrorCode::PolicyViolation,
-        "process requires a supported native executable; shell and script shims are unsupported",
+        format!(
+            "{subject} requires a supported native executable; shell and script shims are unsupported"
+        ),
     )
 }
 
@@ -112,15 +116,32 @@ fn native(candidate: &str) -> Option<String> {
     }
 }
 
+/// pin 済み executable の spawn 前再検証用 `native()` wrapper
+/// (design §(b) — `command` grant の pin path 差替え fail-closed)。
+/// `native()` の candidate 検証(realpath → shell/shim → is_file →
+/// win32 ext → X_OK → native magic)を再適用し、resolved canonical
+/// path を返す。不成立なら `None`(fail closed)。
+pub(crate) fn native_executable(candidate: &str) -> Option<String> {
+    native(candidate)
+}
+
 /// `resolveProcessExecutable`。bare `node` は Rust 版で host Node が
 /// 存在しないため PATH 解決せず明示 `POLICY_VIOLATION` error(固定ルール)。
 /// PATH 上に実在する `node.exe` があっても解決しない。
+///
+/// `subject` は error message の宣言種別 label(`"process"` →
+/// `"process requires a supported native executable..."`・
+/// `"process task \"node\" is unsupported..."`)。`process` 経路は
+/// `"process"` を渡して従来 message を維持し、`command` 経路(T3)は
+/// grant 文脈の label を渡して `"process task"` を出さないようにする
+/// (design §(b))。
 pub fn resolve_process_executable(
     command: &str,
     options: &ProcessExecutableOptions<'_>,
+    subject: &str,
 ) -> Result<String, ToolError> {
     if is_shell_process_executable(command) {
-        return Err(unsupported().into());
+        return Err(unsupported(subject).into());
     }
     if command.contains('/') || command.contains('\\') || nodepath::is_absolute(command) {
         let candidate = if nodepath::is_absolute(command) {
@@ -129,14 +150,14 @@ pub fn resolve_process_executable(
             let resolved = resolve_workspace_path(options.root, command, options.symlink_policy)?;
             if let Some(denylist) = options.denylist {
                 if denylist.is_denied(&resolved.display) {
-                    return Err(unsupported().into());
+                    return Err(unsupported(subject).into());
                 }
             }
             resolved.real
         };
         return match native(&candidate) {
             Some(found) => Ok(found),
-            None => Err(unsupported().into()),
+            None => Err(unsupported(subject).into()),
         };
     }
     // 設計固定ルール: `process.execPath` fast-path の等価物なし。`node` は
@@ -144,7 +165,9 @@ pub fn resolve_process_executable(
     if command == "node" {
         return Err(CheaperError::new(
             ErrorCode::PolicyViolation,
-            "process task \"node\" is unsupported: the Rust runtime has no Node.js host executable",
+            format!(
+                "{subject} task \"node\" is unsupported: the Rust runtime has no Node.js host executable"
+            ),
         )
         .into());
     }
@@ -163,7 +186,7 @@ pub fn resolve_process_executable(
             }
         }
     }
-    Err(unsupported().into())
+    Err(unsupported(subject).into())
 }
 
 #[cfg(test)]
@@ -261,10 +284,28 @@ mod tests {
                 search_path,
                 ..options(&root)
             };
-            let err = resolve_process_executable("node", &opts).unwrap_err();
+            let err = resolve_process_executable("node", &opts, "process").unwrap_err();
             assert!(policy_violation(&err));
             assert!(err.to_string().contains("\"node\""));
         }
+    }
+
+    /// subject 引数は error message の宣言種別 label になる —
+    /// `command` 経路(T3)で "process task" wording を出さないための
+    /// parameterize(design §(b))。
+    #[test]
+    fn error_subject_is_parameterized_by_caller() {
+        let dir = TempDir::new();
+        let root = dir.root();
+        let err = resolve_process_executable("node", &options(&root), "command grant").unwrap_err();
+        assert!(policy_violation(&err));
+        assert!(err.to_string().contains("command grant task"));
+        assert!(!err.to_string().contains("process task"));
+        let err =
+            resolve_process_executable("missing-tool", &options(&root), "command").unwrap_err();
+        assert!(err
+            .to_string()
+            .contains("command requires a supported native executable"));
     }
 
     #[test]
@@ -280,7 +321,7 @@ mod tests {
             search_path: Some(bin_dir.to_str().unwrap()),
             ..options(&root)
         };
-        let found = resolve_process_executable("tool", &opts).unwrap();
+        let found = resolve_process_executable("tool", &opts, "process").unwrap();
         assert_eq!(found, realpath(bin.to_str().unwrap()).unwrap());
     }
 
@@ -291,7 +332,7 @@ mod tests {
         for command in ["missing-tool", "node.exe"] {
             // `"node.exe"` は literal `node` と別名として PATH 解決を試み、
             // 見つからなければ unsupported(固定ルールは bare `node` のみ)。
-            let err = resolve_process_executable(command, &options(&root)).unwrap_err();
+            let err = resolve_process_executable(command, &options(&root), "process").unwrap_err();
             assert!(policy_violation(&err), "{command}");
         }
     }
@@ -302,7 +343,8 @@ mod tests {
         let root = dir.root();
         let shim = dir.join("pnpm.cmd");
         write(&shim, b"echo shim");
-        let err = resolve_process_executable(shim.to_str().unwrap(), &options(&root)).unwrap_err();
+        let err = resolve_process_executable(shim.to_str().unwrap(), &options(&root), "process")
+            .unwrap_err();
         assert!(policy_violation(&err));
         let text = dir.join(if cfg!(windows) {
             "script.exe"
@@ -311,7 +353,8 @@ mod tests {
         });
         write(&text, b"#!/bin/sh\necho hidden-shell\n");
         set_executable(&text);
-        let err = resolve_process_executable(text.to_str().unwrap(), &options(&root)).unwrap_err();
+        let err = resolve_process_executable(text.to_str().unwrap(), &options(&root), "process")
+            .unwrap_err();
         assert!(policy_violation(&err));
     }
 
@@ -333,10 +376,11 @@ mod tests {
         write(&bin, &native_bytes());
         set_executable(&bin);
         // relative → workspace-validated。
-        let found = resolve_process_executable(rel_name, &options(&root)).unwrap();
+        let found = resolve_process_executable(rel_name, &options(&root), "process").unwrap();
         assert_eq!(found, realpath(bin.to_str().unwrap()).unwrap());
         // absolute → allowed。
-        let found = resolve_process_executable(bin.to_str().unwrap(), &options(&root)).unwrap();
+        let found =
+            resolve_process_executable(bin.to_str().unwrap(), &options(&root), "process").unwrap();
         assert_eq!(found, realpath(bin.to_str().unwrap()).unwrap());
     }
 
@@ -349,7 +393,7 @@ mod tests {
         } else {
             "../outside"
         };
-        let err = resolve_process_executable(escape, &options(&root)).unwrap_err();
+        let err = resolve_process_executable(escape, &options(&root), "process").unwrap_err();
         assert!(err.is::<cheaper_core::workspace::paths::WorkspaceEscapeError>());
     }
 
@@ -362,14 +406,15 @@ mod tests {
         } else {
             "missing"
         });
-        let err =
-            resolve_process_executable(missing.to_str().unwrap(), &options(&root)).unwrap_err();
+        let err = resolve_process_executable(missing.to_str().unwrap(), &options(&root), "process")
+            .unwrap_err();
         assert!(policy_violation(&err));
         // native magic と一致しない file は reject。
         let wrong = dir.join(if cfg!(windows) { "wrong.exe" } else { "wrong" });
         write(&wrong, if cfg!(windows) { b"NOPE" } else { b"NOT!" });
         set_executable(&wrong);
-        let err = resolve_process_executable(wrong.to_str().unwrap(), &options(&root)).unwrap_err();
+        let err = resolve_process_executable(wrong.to_str().unwrap(), &options(&root), "process")
+            .unwrap_err();
         assert!(policy_violation(&err));
         // parity note: TS は `Buffer.alloc(4)` への partial read を
         // zero-fill のまま hex 判定するため、Windows で先頭が "MZ" の
@@ -378,7 +423,12 @@ mod tests {
         {
             let short = dir.join("short.exe");
             write(&short, b"MZ");
-            assert!(resolve_process_executable(short.to_str().unwrap(), &options(&root)).is_ok());
+            assert!(resolve_process_executable(
+                short.to_str().unwrap(),
+                &options(&root),
+                "process"
+            )
+            .is_ok());
         }
         // POSIX の ELF は先頭 byte だけでは一致しない。
         #[cfg(unix)]
@@ -387,7 +437,8 @@ mod tests {
             write(&short, &[0x7f, 0x45]);
             set_executable(&short);
             let err =
-                resolve_process_executable(short.to_str().unwrap(), &options(&root)).unwrap_err();
+                resolve_process_executable(short.to_str().unwrap(), &options(&root), "process")
+                    .unwrap_err();
             assert!(policy_violation(&err));
         }
     }

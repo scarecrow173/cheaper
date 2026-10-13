@@ -673,6 +673,7 @@ fn runtime_options(spec: &Value, ctx: &CaseCtx) -> (ToolRuntimeOptions, Arc<Muta
             read_strictness,
             artifacts,
             process,
+            command: None,
             root: ctx.root.clone(),
             symlink_policy: symlink_policy(&spec["symlinkPolicy"]),
             names,

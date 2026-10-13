@@ -94,7 +94,7 @@ input schema・tool・write scope 等の詳細は
   user overlay）・credential（`cheaper auth` で管理）
 - **tier 割当**: `models.yaml`（model → `low`/`medium`/`high`）
 - **実行 policy**: `policy.yaml`（execution・tools・filesystem・
-  model・output・retry・process）
+  model・output・retry・process・command）
 
 user config は `~/.config/cheaper`（`CHEAPER_CONFIG_DIR` で変更
 可）、project 単位の override は `<cwd>/.cheaper/`。詳細は
@@ -132,6 +132,8 @@ upstream の hook event 未提供のため shell-read のみ有効
   direct 呼び出しとの選択基準
 - [managed process](docs/guides/managed-process.md) — `process`
   tool の named task policy
+- [command](docs/guides/command.md) — `command` tool の grant
+  policy と trust / sandbox 限界
 - [Contributing](CONTRIBUTING.md) — リポジトリ開発の setup・
   test・構造
 - [docs index](docs/README.md) — 設計・実装・検証記録の索引

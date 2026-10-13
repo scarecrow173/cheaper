@@ -35,6 +35,7 @@ fn worker_scope_options(owner: &str, root: &str, names: Vec<ToolName>) -> Worker
             read_strictness: None,
             artifacts: None,
             process: None,
+            command: None,
             root: root.to_string(),
             symlink_policy: SymlinkPolicy::Deny,
             names,
@@ -105,6 +106,7 @@ async fn compiles_policy_process_producer_and_executes_materialized_jobs() {
     let runtime = create_invocation_tool_runtime(InvocationToolRuntimeOptions {
         artifacts: None,
         process: Some(process_policy.clone()),
+        command: None,
         root: root.clone(),
         symlink_policy: SymlinkPolicy::Deny,
         signal: None,

@@ -3,11 +3,10 @@
 
 use std::process::Stdio;
 
-use cheaper_core::policy::process::ProcessTask;
 use tokio::process::Command;
 
 use super::monitor::StreamCaptureResult;
-use super::prepare::Prepared;
+use super::ProcPrepared;
 
 pub(super) fn spawn_code(e: &std::io::Error) -> &'static str {
     if let Some(code) = e.raw_os_error() {
@@ -142,20 +141,18 @@ pub(super) fn status_parts(status: &std::process::ExitStatus) -> (Option<i64>, O
     (None, None)
 }
 
-pub(super) fn build_command(
-    prepared: &Prepared,
-    task: &ProcessTask,
-    env: Vec<(String, String)>,
-) -> Command {
+/// `build_command`: `(executable, argv, cwd, env)` 引数へ汎化済み —
+/// `ProcessTask` 依存は持たない(design §(e))。
+pub(super) fn build_command(prepared: &ProcPrepared) -> Command {
     let mut command = Command::new(&prepared.executable);
     command
-        .args(&task.command[1..])
+        .args(&prepared.argv)
         .current_dir(&prepared.cwd)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .env_clear();
-    for (key, value) in env {
+    for (key, value) in &prepared.env {
         command.env(key, value);
     }
     #[cfg(windows)]

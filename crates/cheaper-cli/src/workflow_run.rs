@@ -237,6 +237,13 @@ fn ensure_invocation(shared: &Shared) -> Result<InvocationToolRuntime, ToolError
                 Box::new(CheaperError::new(ErrorCode::InternalError, e.to_string()))
             })?,
         ),
+        // `command` も `process` と同型に resolved policy を serialize
+        // して渡す(T1 は passthrough のみ)。
+        command: Some(
+            serde_json::to_value(&shared.policy.command).map_err(|e| -> ToolError {
+                Box::new(CheaperError::new(ErrorCode::InternalError, e.to_string()))
+            })?,
+        ),
         root: shared.root.clone(),
         symlink_policy: shared.policy.filesystem.symlinks,
         signal: Some(shared.controller.signal()),
@@ -458,6 +465,7 @@ impl JobExecutor for ToolJobExecutor {
                     read_strictness: None,
                     artifacts: None,
                     process: None,
+                    command: None,
                     root: shared.root.clone(),
                     symlink_policy: shared.policy.filesystem.symlinks,
                     names: vec![name],

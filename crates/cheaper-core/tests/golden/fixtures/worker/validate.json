@@ -809,6 +809,7 @@
     {
       "expected": {
         "ok": {
+          "command": true,
           "edit": true,
           "grep": false,
           "process": true,

@@ -36,6 +36,12 @@ You are a worker that ...（instruction 本文）
 - `name`: `run <worker>` で参照する名前（`[a-z0-9][a-z0-9-]*`）。
 - `tools`: worker が使える tool。`policy.yaml` の `tools.allow`
   でさらに制限される（両方で許可された tool のみ有効）。
+  `command` を使う worker はこれに trusted layer の
+  `command.grants` が空でないことが加わる三重ゲート（`tools`
+  宣言 ∩ `tools.allow` ∩ `command.grants`）を通る。`tools.allow`
+  は exposure toggle であり executable の authorization ではない —
+  project が flip しても executable を認可することはできない
+  （[command ガイド](./command.md)）。
 - `cheaper.model.tier`: 要求する model tier（`low`/`medium`/
   `high`）。`policy.yaml` の `model.maxTier` が上限。
 - `cheaper.model.workload.outputPerInput`: 平均 output token /
@@ -47,7 +53,11 @@ You are a worker that ...（instruction 本文）
   file への path（worker file からの相対 path）。
 - `cheaper.writeScope`: `targets` を指定すると、runtime が
   `targets[].path` 以外への write を禁止する（writer 系 worker の
-  標準設定）。
+  標準設定）。`command` tool とは非両立で、writeScope を宣言した
+  worker が `command` を expose すると scope 生成が
+  `POLICY_VIOLATION` で fail closed する（子 process の副作用を
+  resource 層が観測できず coverage が vacuous になるため。詳細は
+  [command ガイド](./command.md)）。
 
 ## built-in worker
 
@@ -96,7 +106,10 @@ project が user、user が built-in を上書きする。
 runtime は `policy.yaml` の以下を参照して worker を制約する
 （詳細は [configuration ガイド](./configuration.md)）:
 
-- `tools.allow`: worker の `tools:` と intersect して許可
+- `tools.allow`: worker の `tools:` と intersect して許可。
+  `command` については exposure のみを制御し、executable の認可は
+  trusted layer の `command.grants` が担う
+  （[command ガイド](./command.md)）
 - `model.maxTier` / `model.tierFallback`: worker の
   `cheaper.model.tier` 要求の上限と fallback 挙動
 - `filesystem.symlinks` / `filesystem.denyPaths`: file access の
@@ -107,5 +120,7 @@ runtime は `policy.yaml` の以下を参照して worker を制約する
 ## 関連
 
 - CLI 呼び出し: [usage ガイド](./usage.md)
+- `command` tool の三重ゲート・grant・信頼境界:
+  [command ガイド](./command.md)
 - worker 定義の設計根拠: `docs/designs/writer-worker-contracts.md`・
   `docs/specs/code-writer-and-doc-writer-built-in-workers.md`

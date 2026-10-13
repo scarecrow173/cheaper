@@ -47,10 +47,13 @@ pub const MAX_PROCESS_OUTPUT_BYTES: u64 = 16_777_216;
 /// `MAX_TIMER_MS` (signed 32-bit timer limit).
 pub const MAX_TIMER_MS: u64 = 2_147_483_647;
 
-const DEFAULT_TIMEOUT: &str = "2m";
-const DEFAULT_MAX_OUTPUT_BYTES: u64 = 65_536;
-const DEFAULT_KILL_GRACE: &str = "2s";
-const DEFAULT_HEARTBEAT_INTERVAL: &str = "30s";
+/// `command` section が同じ lifecycle default 規約を共有するため
+/// `pub(crate)`(design §(a) — `{maxConcurrent, grants, timeout,
+/// maxOutputBytes, killGrace, heartbeat:{interval}}` 同型)。
+pub(crate) const DEFAULT_TIMEOUT: &str = "2m";
+pub(crate) const DEFAULT_MAX_OUTPUT_BYTES: u64 = 65_536;
+pub(crate) const DEFAULT_KILL_GRACE: &str = "2s";
+pub(crate) const DEFAULT_HEARTBEAT_INTERVAL: &str = "30s";
 
 /// `PROCESS_POLICY_PROPERTIES` verbatim (duration `pattern` uses the
 /// shared `DURATION_PATTERN` string).
@@ -126,7 +129,9 @@ fn script_ext_re() -> &'static regex::Regex {
     RE.get_or_init(|| regex::Regex::new("\\.(?:cmd|bat|ps1|sh)$").unwrap())
 }
 
-fn argv_shell_re() -> &'static regex::Regex {
+/// argv token / pattern の shell metachar 検査 shared regex。
+/// cheaper-tools の `command` execute が cross-crate で参照するため `pub`。
+pub fn argv_shell_re() -> &'static regex::Regex {
     static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     RE.get_or_init(|| regex::Regex::new("[\0\r\n|&;<>`]|\\$\\(").unwrap())
 }
@@ -142,7 +147,10 @@ pub fn is_shell_process_executable(executable: &str) -> bool {
     shell_executable_re().is_match(&name) || script_ext_re().is_match(&name)
 }
 
-fn relative(input: &str) -> Result<(), CheaperError> {
+/// workspace-relative path 検査。error prefix は呼出し側の section
+/// label(`"process"`/`"command"`)に合わせる — "path must be
+/// workspace-relative without traversal" 自体は section 非依存。
+pub(crate) fn relative(input: &str, label: &str) -> Result<(), CheaperError> {
     // Both platform `path.isAbsolute` and always-win32 `path.win32.
     // isAbsolute`, plus `/^[a-z]:/i` and `..` segments on either
     // separator — exactly the TS checks.
@@ -157,12 +165,15 @@ fn relative(input: &str) -> Result<(), CheaperError> {
         || drive
         || traversal
     {
-        return Err(invalid("path must be workspace-relative without traversal"));
+        return Err(CheaperError::new(
+            ErrorCode::InvalidRuntimePolicy,
+            format!("invalid {label} policy: path must be workspace-relative without traversal"),
+        ));
     }
     Ok(())
 }
 
-fn str_vec(v: &Value) -> Vec<String> {
+pub(crate) fn str_vec(v: &Value) -> Vec<String> {
     v.as_array()
         .map(|a| {
             a.iter()
@@ -172,13 +183,26 @@ fn str_vec(v: &Value) -> Vec<String> {
         .unwrap_or_default()
 }
 
-fn bounded_duration(value: &str, field: &str) -> Result<String, CheaperError> {
+/// `MAX_TIMER_MS` 上限の bounded duration 検査を section 間で共有する。
+/// `label` は error message の section 名("process"/"command") —
+/// `invalid {label} policy: {field} exceeds the {label} timer limit`。
+pub(crate) fn bounded_duration(
+    value: &str,
+    field: &str,
+    label: &str,
+) -> Result<String, CheaperError> {
+    let over = || {
+        CheaperError::new(
+            ErrorCode::InvalidRuntimePolicy,
+            format!("invalid {label} policy: {field} exceeds the {label} timer limit"),
+        )
+    };
     let milliseconds = match parse_duration(value) {
         Ok(ms) => ms,
-        Err(_) => return Err(invalid(&format!("{field} exceeds the process timer limit"))),
+        Err(_) => return Err(over()),
     };
     if milliseconds > MAX_TIMER_MS {
-        return Err(invalid(&format!("{field} exceeds the process timer limit")));
+        return Err(over());
     }
     Ok(value.to_string())
 }
@@ -209,6 +233,7 @@ pub fn resolve_process_policy(
             .and_then(Value::as_str)
             .unwrap_or(DEFAULT_TIMEOUT),
         "timeout",
+        "process",
     )?;
     let kill_grace = bounded_duration(
         raw_obj
@@ -216,6 +241,7 @@ pub fn resolve_process_policy(
             .and_then(Value::as_str)
             .unwrap_or(DEFAULT_KILL_GRACE),
         "killGrace",
+        "process",
     )?;
     let interval = bounded_duration(
         raw_obj
@@ -225,6 +251,7 @@ pub fn resolve_process_policy(
             .and_then(Value::as_str)
             .unwrap_or(DEFAULT_HEARTBEAT_INTERVAL),
         "heartbeat.interval",
+        "process",
     )?;
     let mut tasks = Map::new();
     let empty_tasks = Map::new();
@@ -256,9 +283,9 @@ pub fn resolve_process_policy(
             .and_then(Value::as_str)
             .unwrap_or(".")
             .to_string();
-        relative(&cwd)?;
+        relative(&cwd, "process")?;
         for value in inputs.iter().chain(&outputs) {
-            relative(value)?;
+            relative(value, "process")?;
         }
         let mut env = Map::new();
         let mut seen = std::collections::HashSet::new();

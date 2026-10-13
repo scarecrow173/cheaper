@@ -55,6 +55,7 @@ use std::path::{Path, PathBuf};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::model::tier::Tier;
+use cheaper_core::policy::command::ResolvedCommandPolicy;
 use cheaper_core::policy::process::{ProcessHeartbeat, ResolvedProcessPolicy};
 use cheaper_core::policy::schema::{
     ExecutionPolicy, FilesystemPolicy, ModelPolicy, OutputPolicy, RetryPolicy, RuntimePolicy,
@@ -757,6 +758,16 @@ pub fn default_policy() -> RuntimePolicy {
         process: ResolvedProcessPolicy {
             max_concurrent: 4,
             tasks: Map::new(),
+            timeout: "2m".into(),
+            max_output_bytes: 4096,
+            kill_grace: "2s".into(),
+            heartbeat: ProcessHeartbeat {
+                interval: "30s".into(),
+            },
+        },
+        command: ResolvedCommandPolicy {
+            max_concurrent: 4,
+            grants: std::collections::BTreeMap::new(),
             timeout: "2m".into(),
             max_output_bytes: 4096,
             kill_grace: "2s".into(),

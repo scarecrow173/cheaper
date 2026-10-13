@@ -52,6 +52,7 @@ Directory: `docs/designs`
 | DESIGN-034zAKcWuB8SuFkOePsubg | Pi sibling tool-call parallelism inside Workers | approved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DESIGN-034r05iHy2gdnoZAxhwPFa | Pi state paths under userConfigDir/pi | approved | [pi-state-paths-under-userconfigdir-pi.md](./pi-state-paths-under-userconfigdir-pi.md) |
 | DESIGN-034CM9o41G2FjaP5cV125c | Plugin catalog snapshot persistence and user models merge | approved | [plugin-catalog-snapshot-persistence-and-user-models-merge.md](./plugin-catalog-snapshot-persistence-and-user-models-merge.md) |
+| DESIGN-034EMWNJbQpMB0N3ZTXM5A | policy-gated command tool の grant 境界と managed-subprocess 共有基盤の設計 | approved | [policy-gated-command-tool.md](./policy-gated-command-tool.md) |
 | DESIGN-034EDkfp76WJ5Sn8aKMnUv | Post-feature structural refactoring | approved | [post-feature-structural-refactoring.md](./post-feature-structural-refactoring.md) |
 | DESIGN-034DyR22wfkjn91McXS5jv | Post-migration structural cleanup reorganization | approved | [post-migration-structural-cleanup-reorganization.md](./post-migration-structural-cleanup-reorganization.md) |
 | DESIGN-034r2qodyo7KRfBsGRJQty | provider/auth guide runtime sync design | approved | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
