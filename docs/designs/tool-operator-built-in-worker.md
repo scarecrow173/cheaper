@@ -25,6 +25,7 @@ relations:
     - "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
     - "../specs/policy-gated-command-tool.md"
     - "../designs/policy-gated-command-tool.md"
+    - "../test-specs/tool-operator-built-in-worker.md"
   refines: []
   refined-by: []
   derives-from:
@@ -206,7 +207,7 @@ if names.contains(&Command) {
 `crates/cheaper-runtime/src/run/mod.rs`（`create_session` :474-516）:
 
 - `tool_names` を `self.effective_tools` ではなく **実登録集合** `scope.definitions().iter().map(|d| d.name.as_str().to_string())` から組み立てる（`CanonicalToolDefinition.name` は `ToolName`、`crates/cheaper-tools/src/definition.rs:38`）。縮退した tool は model の tool 一覧からも消えるため、model 側から見て degraded tool は存在しない。名前での call は既存の unknown-tool / invalid-call 経路（`invalid_tool_retries` budget 内）で安全に失敗する。
-- 縮退名を `scope.degraded_names()` から取得し、`build_system_prompt` へ `unavailable_tools` として渡す。加えて `cheaper.run.tool_scope` span（:417）に `tools.degraded = tracing::field::Empty` field を宣言し、縮退名の join（`options.names` 宣言順 — (e)）を `record` する（payload ではなく分類値の metadata-only 規約に従う）。**record の位置**: `create_worker_scope` の return（:462、entered guard 保持中の sync 区間）と `scope.ready().instrument(tool_scope_stage)`（:465 — `instrument` が span を move する）の間で `tool_scope_stage.record("tools.degraded", …)` を呼ぶ。async ready 区間以後では record できず、guard drop 後の再 enter にも依存しない。
+- 縮退名を `scope.degraded_names()` から取得し、`build_system_prompt` へ `unavailable_tools` として渡す。加えて `cheaper.run.tool_scope` span（:417）に `tools.degraded = tracing::field::Empty` field を宣言し、縮退名の join（`options.names` 宣言順 — (e)）を `record` する（payload ではなく分類値の metadata-only 規約に従う）。**record の位置**: `create_worker_scope` の return（:462 — `_stage_guard` はここで inner block 閉鎖とともに drop 済み）と `scope.ready().instrument(tool_scope_stage)`（:465 — `instrument` が span を move する）の間で `tool_scope_stage.record("tools.degraded", …)` を呼ぶ。`Span::record` は entry を要しないため guard は不要だが、`instrument` に span が move した後では record できない。
 
 `crates/cheaper-rig-adapter/src/agent.rs` の `build_system_prompt`（:225-264）に第 4 引数 `unavailable_tools: &[String]` を追加する。非空時のみ、"Available tools" 行の直後に利用不可注記を emit する（文言を cheaper-runtime test で固定する）:
 
@@ -413,7 +414,7 @@ input schema は `$defs` を持たない — `$defs.path` はどの property か
 
 - **struct-literal compile-forced 波及**: `ToolRuntimeOptions` 新 field は全 literal 構築 site の compile error を強制する（(i)/(j) で列挙済み — `run/mod.rs`・`workflow_run.rs`・cheaper-tools/rig-adapter/workflow 各 test の literal。`src/dev/fixture.rs` は literal を持たず対象外）。`WorkerCheaper.optional_tools` も同様。漏れは compile error で検出されるため silent miss はない。
 - **golden / fixture churn**: worker_validate golden・regression expected・dev-seam fixture に `optionalTools` 系 case を追加する。`RuntimePolicy` / vocabulary / envelope shape は不変のため広い fixture 再生成は不要の見込み — 差分が出た場合は本設計の対象かどうかを確認する。
-- **degraded-name observability**: 「tool が allow 済みだが未登録」の中間状態が span + prompt にしか残らない。prompt 注記の内容は cheaper-runtime test で固定するが、`tools.degraded` span field の assert は行わない — repo に tracing-capture test harness が存在しない（`tracing_subscriber` は cheaper-observability `init` のみ）。span field は observability mechanism として残し、検証は `degraded_names()` accessor の unit test + prompt 注記で代替する（ADR consequence と同じ accepted trade-off）。
+- **degraded-name observability**: 「tool が allow 済みだが未登録」の中間状態が span + prompt にしか残らない。prompt 注記の内容は cheaper-runtime test で固定するが、`tools.degraded` span field の assert は本 change では行わない — in-process tracing-capture harness は存在しない（`.cheaper/logs` JSON sink を parse する `observability_dev_seam.rs` 経路なら可能だが、scope 過大のため採用しない）。span field は observability mechanism として残し、検証は `degraded_names()` accessor の unit test + prompt 注記で代替する（ADR consequence と同じ accepted trade-off）。
 - **user-defined worker の opt-in**: `optionalTools` は全 origin で使えるが capability-shrinking 専用 — 緩和が広げるのは「gate 不成立で未登録化する」挙動のみであり、権限を広げる方向には使えない。誤用（非 gated / 未宣言名の列挙）は validate error で通知する。
 - **model が degraded tool 名を呼ぶ**: prompt 注記で抑止し、呼ばれても unknown-tool 経路で安全に失敗するが invalid-tool retry budget を消費し得る（accepted）。
 - **`optionalTools` + schema の整合**: opt-in worker が `blocked` 相当の status を output schema に持たない場合、model の blocked 表現が schema validation で reject され repair/retry を消費する。`tool-operator` は enum に含める。user-defined opt-in worker 向けに docs で推奨を明記する。
@@ -444,4 +445,4 @@ input schema は `$defs` を持たない — `$defs.path` はどの property か
 - [ ] grant 定義環境で opt-in worker の `command` が登録され `command_user_policy` + `FIXTURE_COMMAND_CALL` パターンで実 spawn する test が通る。
 - [ ] `command` × writeScope 宣言 worker は `command` が登録される限り従来通り hard reject される test が通る。
 - [ ] workflow `kind: worker` job が opt-in worker を実行する経路で縮退が同一挙動となる test が通る。
-- [ ] `tools.degraded` span field は automated assert 対象外とする（repo に tracing-capture test harness が無い — `tracing_subscriber` は cheaper-observability `init` のみ）。span field 自体は observability mechanism として残し、検証は prompt 注記の内容固定と `degraded_names()` accessor の unit test で代替する。
+- [ ] `tools.degraded` span field は automated assert 対象外とする（`.cheaper/logs` JSON sink 経路では assert 可能だが scope 外）。span field 自体は observability mechanism として残し、検証は prompt 注記の内容固定と `degraded_names()` accessor の unit test で代替する。
