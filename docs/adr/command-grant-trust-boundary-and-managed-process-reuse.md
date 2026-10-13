@@ -23,8 +23,10 @@ relations:
   superseded-by: []
   related:
     - "../specs/policy-gated-command-tool.md"
+    - "../specs/tool-operator-built-in-worker.md"
     - "./managed-process-named-task-lifecycle.md"
     - "./managed-process-bounded-lifecycle-policy.md"
+    - "./opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
   refines: []
   refined-by: []
   derives-from: ["../discovery/policy-gated-command-tool.md"]

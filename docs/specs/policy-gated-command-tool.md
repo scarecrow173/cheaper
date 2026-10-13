@@ -21,7 +21,7 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: ["./managed-process-canonical-tool.md", "./managed-process-lifecycle-hardening.md", "../adr/command-grant-trust-boundary-and-managed-process-reuse.md"]
+  related: ["./managed-process-canonical-tool.md", "./managed-process-lifecycle-hardening.md", "../adr/command-grant-trust-boundary-and-managed-process-reuse.md", "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md", "../discovery/tool-operator-worker-built-in.md", "../designs/tool-operator-built-in-worker.md"]
   refines: []
   refined-by: []
   derives-from: ["../discovery/policy-gated-command-tool.md"]

@@ -469,6 +469,10 @@ impl JobExecutor for ToolJobExecutor {
                     root: shared.root.clone(),
                     symlink_policy: shared.policy.filesystem.symlinks,
                     names: vec![name],
+                    // `kind: tool` job は worker frontmatter を持たず
+                    // opt-in 不能(`kind: worker` job は run 経路で
+                    // worker 定義の `optional_tools` が流れる)。
+                    degradable: Vec::new(),
                     max_tool_calls: shared.policy.execution.max_tool_calls,
                     on_limit: Box::new(|| {}),
                     journal: Some(Arc::clone(&journal)),

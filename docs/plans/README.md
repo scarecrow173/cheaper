@@ -51,6 +51,7 @@ Directory: `docs/plans`
 | PLAN-034EO1kmKwJ8MAHSHWyCws | policy-gated command tool を実装する | completed | [implement-policy-gated-command-tool.md](./implement-policy-gated-command-tool.md) |
 | PLAN-034AadQgwgheMAV59FAcIZ | ResourceManager job lease を実装する | completed | [implement-resource-manager-job-leases.md](./implement-resource-manager-job-leases.md) |
 | PLAN-034zThvLa4bK934vj52jaC | Implement run-scoped artifact store | completed | [implement-run-scoped-artifact-store.md](./implement-run-scoped-artifact-store.md) |
+| PLAN-034ETMVrwmwh0Z0jq4gwtt | tool-operator built-in worker と cheaper.optionalTools 縮退機構を実装する | completed | [implement-tool-operator-built-in-worker.md](./implement-tool-operator-built-in-worker.md) |
 | PLAN-034zQHj1WyOgBNLGbDaFY8 | Implement version-pinned launcher acquisition | completed | [implement-version-pinned-launcher-acquisition.md](./implement-version-pinned-launcher-acquisition.md) |
 | PLAN-034zQ9Pet2QAuh0FP3ku3u | Workflow contract compiler を実装する | completed | [implement-workflow-contract-compiler.md](./implement-workflow-contract-compiler.md) |
 | PLAN-034zTiB05IwVw2pDB34sLk | Workflow loader と公開 interface CLI を接続する | completed | [implement-workflow-file-interface.md](./implement-workflow-file-interface.md) |

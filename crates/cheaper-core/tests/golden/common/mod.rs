@@ -425,6 +425,17 @@ pub fn dump_worker_def(
         );
     }
     let mut cheaper = Map::new();
+    if !def.cheaper.optional_tools.is_empty() {
+        cheaper.insert(
+            "optionalTools".to_string(),
+            json!(def
+                .cheaper
+                .optional_tools
+                .iter()
+                .map(|t| t.as_str())
+                .collect::<Vec<_>>()),
+        );
+    }
     cheaper.insert("model".to_string(), Value::Object(model));
     if let Some(input) = &def.cheaper.input {
         cheaper.insert(

@@ -1,5 +1,6 @@
 //! Port of `packages/core/src/worker/validate.ts`.
 
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -8,7 +9,7 @@ use serde_json::{json, Map, Value};
 use crate::errors::{CheaperError, ErrorCode};
 use crate::model::tier::{parse_tier, Tier};
 use crate::nodepath;
-use crate::tools::vocabulary::{normalize_tool_names, ToolName};
+use crate::tools::vocabulary::{is_scope_gated_tool, normalize_tool_names, ToolName};
 use crate::worker::parse::ParsedWorkerFile;
 use crate::worker::schema::{
     compile_schema, load_schema, parse_schema_ref, CompiledSchema, SchemaKind, SchemaRef,
@@ -64,6 +65,12 @@ pub struct WorkerCheaper {
     /// `writeScope`: input field whose `string[]`/`{path}[]` value limits
     /// write/edit/mkdir targets (SPEC-0010).
     pub write_scope: Option<String>,
+    /// `optionalTools`: `tools` に宣言された scope-gated tool
+    /// (`is_scope_gated_tool`)の部分集合。content-gate(nonempty
+    /// tasks/grants)不成立時に未登録へ縮退してよい tool の opt-in
+    /// 宣言(ADR-034ESBcMTWxNCMDI9obdb8 Option C1)。未指定時は空 —
+    /// 非 opt-in worker の意味論は不変。
+    pub optional_tools: Vec<ToolName>,
 }
 
 /// Port of `WorkerDefinition`.
@@ -91,7 +98,7 @@ pub(crate) fn name_re() -> &'static regex::Regex {
     RE.get_or_init(|| regex::Regex::new(NAME_PATTERN).unwrap())
 }
 
-const CHEAPER_KEYS: &[&str] = &["model", "input", "output", "writeScope"];
+const CHEAPER_KEYS: &[&str] = &["model", "input", "output", "writeScope", "optionalTools"];
 const MODEL_KEYS: &[&str] = &["tier", "workload"];
 const WORKLOAD_KEYS: &[&str] = &["outputPerInput"];
 const IO_KEYS: &[&str] = &["schema"];
@@ -243,6 +250,50 @@ pub fn validate_worker_definition(
         Some(_) => return Err(invalid(source_path, "writeScope-invalid")),
     };
 
+    // `optionalTools` — opt-in で content-gate 不成立時に未登録へ縮退して
+    // よい scope-gated tool の `tools` 真部分集合。全 reject は
+    // `InvalidWorkerDefinition`(`invalid()` 経由。`tools` field の
+    // `UnknownTool` code は使わない — ADR-034ESBcMTWxNCMDI9obdb8)。
+    let optional_tools = match cheaper.get("optionalTools") {
+        None => Vec::new(),
+        Some(raw) => {
+            let Some(arr) = raw.as_array() else {
+                return Err(invalid(source_path, "optionalTools-invalid"));
+            };
+            if !arr.iter().all(Value::is_string) {
+                return Err(invalid(source_path, "optionalTools-invalid"));
+            }
+            if arr.is_empty() {
+                return Err(invalid(source_path, "optionalTools-empty"));
+            }
+            let mut resolved = Vec::with_capacity(arr.len());
+            for v in arr {
+                let name = v.as_str().expect("checked is_string");
+                match ToolName::resolve(name) {
+                    Some(tool) => resolved.push(tool),
+                    None => return Err(invalid(source_path, "optionalTools-unknown-tool")),
+                }
+            }
+            if resolved.iter().any(|t| !tools.contains(t)) {
+                return Err(invalid(source_path, "optionalTools-undeclared"));
+            }
+            if resolved.iter().any(|t| !is_scope_gated_tool(*t)) {
+                return Err(invalid(source_path, "optionalTools-not-gated"));
+            }
+            let mut seen = HashSet::with_capacity(resolved.len());
+            if !resolved.iter().all(|t| seen.insert(*t)) {
+                return Err(invalid(source_path, "optionalTools-duplicate"));
+            }
+            // `resolved ⊆ tools` は undeclared/duplicate 検査済みで保証
+            // されるため、`tools` を全て覆う = tool 0 個の run を許す
+            // nonsense 宣言をここで reject する。
+            if tools.iter().all(|t| seen.contains(t)) {
+                return Err(invalid(source_path, "optionalTools-not-proper-subset"));
+            }
+            resolved
+        }
+    };
+
     Ok(WorkerDefinition {
         name,
         description,
@@ -257,6 +308,7 @@ pub fn validate_worker_definition(
             input: input_ref.map(|schema| WorkerIo { schema }),
             output: WorkerIo { schema: output_ref },
             write_scope,
+            optional_tools,
         },
         instructions: parsed.body.clone(),
         source_path: source_path.to_string(),
@@ -314,6 +366,9 @@ mod tests {
     use crate::worker::parse;
 
     const BASE_FM: &str = "name: w\ndescription: d\ntools: [read]\ncheaper:\n  model: {tier: low}\n  output: {schema: {inline: {type: string}}}";
+    /// `tools` に gated tool(`process` / `command`)を含む variant —
+    /// `optionalTools` test の base。
+    const GATED_FM: &str = "name: w\ndescription: d\ntools: [read, process, command]\ncheaper:\n  model: {tier: low}\n  output: {schema: {inline: {type: string}}}";
 
     /// Build a worker file in a fresh tmpdir and validate it.
     fn validate(frontmatter: &str, stem: &str) -> Result<WorkerDefinition, CheaperError> {
@@ -422,6 +477,105 @@ mod tests {
         assert!(is_mutating_tool(ToolName::Edit));
         assert!(is_mutating_tool(ToolName::Process));
         assert!(!is_mutating_tool(ToolName::Read));
+    }
+
+    #[test]
+    fn optional_tools_defaults_to_empty() {
+        let def = validate(BASE_FM, "w").unwrap();
+        assert!(def.cheaper.optional_tools.is_empty());
+    }
+
+    #[test]
+    fn accepts_and_normalizes_optional_tools() {
+        let fm = GATED_FM.replace("cheaper:", "cheaper:\n  optionalTools: [process, command]");
+        let def = validate(&fm, "w").unwrap();
+        assert_eq!(
+            def.cheaper.optional_tools,
+            [ToolName::Process, ToolName::Command]
+        );
+    }
+
+    #[test]
+    fn rejects_optional_tools_non_array_and_non_string() {
+        for opt in [
+            "optionalTools: process",
+            "optionalTools: {a: 1}",
+            "optionalTools: [process, 3]",
+        ] {
+            let fm = GATED_FM.replace("cheaper:", &format!("cheaper:\n  {opt}"));
+            let e = validate(&fm, "w").unwrap_err();
+            assert_eq!(e.code(), ErrorCode::InvalidWorkerDefinition, "{opt}");
+            assert_eq!(
+                e.details().unwrap()["reason"],
+                json!("optionalTools-invalid"),
+                "{opt}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_optional_tools_empty_array() {
+        let fm = GATED_FM.replace("cheaper:", "cheaper:\n  optionalTools: []");
+        let e = validate(&fm, "w").unwrap_err();
+        assert_eq!(e.details().unwrap()["reason"], json!("optionalTools-empty"));
+    }
+
+    #[test]
+    fn rejects_optional_tools_unknown_tool() {
+        let fm = GATED_FM.replace("cheaper:", "cheaper:\n  optionalTools: [bash]");
+        let e = validate(&fm, "w").unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidWorkerDefinition);
+        assert_eq!(
+            e.details().unwrap()["reason"],
+            json!("optionalTools-unknown-tool")
+        );
+    }
+
+    #[test]
+    fn rejects_optional_tools_undeclared() {
+        // `command` は解決できるが `tools` 未宣言。
+        let fm = "name: w\ndescription: d\ntools: [read, process]\ncheaper:\n  optionalTools: [command]\n  model: {tier: low}\n  output: {schema: {inline: {type: string}}}";
+        let e = validate(fm, "w").unwrap_err();
+        assert_eq!(
+            e.details().unwrap()["reason"],
+            json!("optionalTools-undeclared")
+        );
+    }
+
+    #[test]
+    fn rejects_optional_tools_not_gated() {
+        // `read` は宣言済みだが scope-gated でない。alias 名 `Read` も
+        // `ToolName::resolve` で正規化された上で同じ検査に落ちる。
+        for opt in ["optionalTools: [read]", "optionalTools: [Read]"] {
+            let fm = GATED_FM.replace("cheaper:", &format!("cheaper:\n  {opt}"));
+            let e = validate(&fm, "w").unwrap_err();
+            assert_eq!(
+                e.details().unwrap()["reason"],
+                json!("optionalTools-not-gated"),
+                "{opt}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_optional_tools_duplicates() {
+        let fm = GATED_FM.replace("cheaper:", "cheaper:\n  optionalTools: [process, process]");
+        let e = validate(&fm, "w").unwrap_err();
+        assert_eq!(
+            e.details().unwrap()["reason"],
+            json!("optionalTools-duplicate")
+        );
+    }
+
+    #[test]
+    fn rejects_optional_tools_covering_all_tools() {
+        // `optionalTools ⊇ tools` — 全 tool が縮退し得る宣言は reject。
+        let fm = "name: w\ndescription: d\ntools: [process, command]\ncheaper:\n  optionalTools: [process, command]\n  model: {tier: low}\n  output: {schema: {inline: {type: string}}}";
+        let e = validate(fm, "w").unwrap_err();
+        assert_eq!(
+            e.details().unwrap()["reason"],
+            json!("optionalTools-not-proper-subset")
+        );
     }
 
     #[test]

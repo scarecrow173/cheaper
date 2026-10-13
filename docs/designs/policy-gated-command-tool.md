@@ -24,6 +24,7 @@ relations:
   related:
     - "./managed-process-canonical-tool.md"
     - "./managed-process-lifecycle-hardening.md"
+    - "./tool-operator-built-in-worker.md"
   refines: []
   refined-by: []
   derives-from:

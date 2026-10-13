@@ -58,6 +58,29 @@ You are a worker that ...（instruction 本文）
   `POLICY_VIOLATION` で fail closed する（子 process の副作用を
   resource 層が観測できず coverage が vacuous になるため。詳細は
   [command ガイド](./command.md)）。
+- `cheaper.optionalTools`: `tools` に宣言した scope-gated tool
+  （現状 `process` と `command` のみ）の **真部分集合** を列挙する
+  opt-in key。列挙した tool は content-gate（`process.tasks` /
+  `command.grants` が空）不成立時に `POLICY_VIOLATION` で scope
+  構築を失敗させる代わりに **未登録へ縮退** し、run は残りの
+  tool で継続する。縮退した tool は system prompt に利用不可注記
+  として列挙され、model が呼んでも登録経路が存在しないため
+  unknown-tool として安全に失敗する。opt-in は capability を
+  縮める方向にのみ働き、権限を広げることには使えない。
+  `tools.allow` による admission 除外・grant 解決・argv
+  pattern・executable pin 等の call 経路の認可機構は一切変わらず、
+  `tools.allow` で除外された宣言 tool は opt-in worker でも
+  従来通り run 全体を `POLICY_VIOLATION` で fail させる
+  （admission と content-gate は別の層 —
+  [command ガイド](./command.md)）。検査 rule: 配列でない /
+  空配列 / `tools` 未宣言の名 / vocabulary に無い名 / gated で
+  ない tool / 重複 / `tools` 全体を含む宣言は全て
+  `InvalidWorkerDefinition` で拒否される。opt-in worker は出力
+  schema の `status`（相当 field）に `blocked` 相当の終了状態を
+  含めることを推奨する — runtime は `status` enum に `"blocked"`
+  がある worker にのみ「利用不可 tool が必要なら blocked で
+  終了せよ」の誘導行を prompt へ追加し、schema が受理しない
+  終了状態を促す矛盾を防ぐ。
 
 ## built-in worker
 
@@ -66,9 +89,18 @@ You are a worker that ...（instruction 本文）
 | `bulk-reader` | `bulk-read` | 大規模 read・抽出・圧縮された構造化 findings を返す（read-only） | `0.05` | read, grep, find, ls, count_tokens |
 | `code-writer` | `code-write` | 機械的・pattern ベースのコード生成・変更を workspace に適用する | `0.3` | read, grep, find, ls, write, edit, count_tokens |
 | `doc-writer` | `doc-write` | decisions/facts から document を生成する | `1.0` | read, grep, find, ls, write, edit, count_tokens |
+| `tool-operator` | `tool-operate` | 目標に向かって tool call を反復する操作 worker — evidence 付きの compact structured result を返す | `0.3` | read, grep, find, ls, count_tokens, process, command |
 
 `outputPerInput` の built-in 値は暫定の推定値であり、
 telemetry（usage log）による検証は follow-up 予定。
+
+`tool-operator` は `process` / `command` を `cheaper.optionalTools`
+で opt-in 宣言している（上記 frontmatter key 参照）。policy が
+tasks / grants を定義しない環境ではこれらは未登録へ縮退して
+run が継続し、worker は残りの tool で実行を続けるか、必要な
+capability が欠けていれば `status: "blocked"` で終了する。
+grants / tasks が定義された環境では通常通り登録され、宣言
+task 名・grant 名に限定して利用できる。
 
 writer 系 2 worker は `writeScope: targets` で、`targets[].path`
 以外への write を runtime が強制的に禁止する。
@@ -83,6 +115,8 @@ writer 系 2 worker は `writeScope: targets` で、`targets[].path`
   `plan`/`task`/`readme`/`guide`/`reference`/`release-notes`/
   `other`）・`targets`（必須）・`decisions`・`facts`・
   `references`・`constraints`
+- `tool-operator`: `task`（必須）・`context`・`constraints`・
+  `output`（`focus`・`maxFindings` の hint）
 
 schema の完全な定義は CLI パッケージ同梱の
 `workers/schemas/*.schema.json` を参照。

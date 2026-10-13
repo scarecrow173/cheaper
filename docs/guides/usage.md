@@ -14,6 +14,7 @@ Commands:
   bulk-read              Alias for: run bulk-reader
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
+  tool-operate           Alias for: run tool-operator
   count-tokens <path>    Count canonical tokens of a workspace file
   workflow interface <path> Show the public workflow inputs and outputs
   workflow run <path>       Run a one-shot workflow
@@ -25,8 +26,8 @@ Commands:
   hook <event>           Agent hook entry (internal; --target <agent>)
 ```
 
-`bulk-read` / `code-write` / `doc-write` は `run bulk-reader` 等の
-エイリアス。built-in 以外の worker も `run <worker>` で呼べる
+`bulk-read` / `code-write` / `doc-write` / `tool-operate` は
+`run bulk-reader` 等のエイリアス。built-in 以外の worker も `run <worker>` で呼べる
 （[workers ガイド](./workers.md)参照）。`workflow` は tool call
 と worker 実行を宣言的な DAG へ束ねて 1 回で実行する系で、
 使い分けの指針は [workflow ガイド](./workflow-usage.md) を参照。
@@ -105,6 +106,12 @@ echo '{"task": "setup 手順を整理して",
        "targets": [{"path": "docs/setup.md", "intent": "create"}],
        "decisions": ["セットアップは install.sh に一本化"]}' \
   | cheaper doc-write --cwd /path/to/workspace
+
+# tool-operate: 操作を反復させて evidence 付きの結果を取得
+echo '{"task": "テスト suite を実行して結果を報告して",
+       "context": ["named task \"test\" が使える環境"],
+       "constraints": ["新規 install はしない"]}' \
+  | cheaper tool-operate --cwd /path/to/workspace
 
 # custom worker file を直接実行
 echo '{"task": "..."}' | cheaper run --worker-file ./my-worker.md
@@ -243,7 +250,13 @@ file の costUsd 合計は「同じ算出式の値の和」ではない点に
   直接実行と比較可能か」の flag。`write`/`edit` tool または
   `writeScope` を持つ mutation 系 worker（code-writer /
   doc-writer 等）では返却 result が ingest 内容の圧縮表現に
-  ならないため `false` になる。`savings` 自体は全 worker で
+  ならないため `false` になる。`process` / `command` を宣言する
+  worker（tool-operator）も mutating tool 判定のため常に
+  `false` — 判定は worker の **宣言** tools を見る保守的なもの
+  であり、`cheaper.optionalTools` で縮退して実際には実行
+  しなかった run でも `false` のままになる（child process の
+  副作用が観測不能なため estimated 母数に入れない）。
+  `savings` 自体は全 worker で
   計測されるが、estimated の母数には `directlyComparable: true`
   の record のみ入る（flag を持たない旧 record は非 comparable
   扱い）。

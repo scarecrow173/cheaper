@@ -46,6 +46,7 @@ Directory: `docs/test-specs`
 | TSPEC-034rBrs4K5W7pe0ixjegZk | Shell-read blocking contract tests | approved | [shell-read-blocking-contract-tests.md](./shell-read-blocking-contract-tests.md) |
 | TSPEC-034z1OZC4sSkRlvZfFfIXt | Standalone executable contract parity | superseded | [standalone-executable-contract-parity.md](./standalone-executable-contract-parity.md) |
 | TSPEC-034DmUtUjWCThCnJulok0c | thin PATH launchers and slim APM payload contract | approved | [thin-path-launchers-and-slim-apm-payload-contract.md](./thin-path-launchers-and-slim-apm-payload-contract.md) |
+| TSPEC-034EUg38cXy0yzKhkggeIg | tool-operator built-in worker と cheaper.optionalTools 縮退機構の行為保証 | approved | [tool-operator-built-in-worker.md](./tool-operator-built-in-worker.md) |
 | TSPEC-034zQTnsUJl3pXIuYsvZIQ | Version-pinned launcher integrity and stream preservation | superseded | [version-pinned-launcher-integrity-and-stream-preservation.md](./version-pinned-launcher-integrity-and-stream-preservation.md) |
 | TSPEC-034D9bHOWe5zvPoIeMncr9 | Volume-root workspace boundary predicate behavior | draft | [volume-root-workspace-boundary-predicate-behavior.md](./volume-root-workspace-boundary-predicate-behavior.md) |
 | TSPEC-034AJ8C35s1GpJJoxU3sey | Workflow における明示 bounded artifact read | proposed | [workflow-artifact-publication-and-consumption.md](./workflow-artifact-publication-and-consumption.md) |

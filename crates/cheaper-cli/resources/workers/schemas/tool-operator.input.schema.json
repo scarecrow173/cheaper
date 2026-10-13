@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task"],
+  "properties": {
+    "task": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "context": {
+      "type": "array",
+      "maxItems": 30,
+      "items": { "type": "string", "maxLength": 1000 }
+    },
+    "constraints": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "maxLength": 300 }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "focus": {
+          "type": "array",
+          "maxItems": 10,
+          "items": { "type": "string", "maxLength": 300 }
+        },
+        "maxFindings": { "type": "integer", "minimum": 1, "maximum": 30 }
+      }
+    }
+  }
+}

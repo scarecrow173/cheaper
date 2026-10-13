@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "path": {
+      "type": "string",
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!\\.\\.(/|$))(?!.*/\\.\\.(/|$)).+$"
+    },
+    "lines": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "integer", "minimum": 1 },
+        "end": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["location", "commit", "exitCode", "truncation", "note"]
+        },
+        "path": { "$ref": "#/$defs/path" },
+        "lines": { "$ref": "#/$defs/lines" },
+        "commit": { "type": "string", "maxLength": 100 },
+        "exitCode": { "type": "integer" },
+        "truncated": { "type": "boolean" },
+        "detail": { "type": "string", "maxLength": 600 }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "summary", "findings", "unresolved", "nextActions"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["success", "partial", "failed", "blocked"]
+    },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 1500 },
+    "findings": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "detail", "evidence"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 120 },
+          "detail": { "type": "string", "maxLength": 1200 },
+          "evidence": {
+            "type": "array",
+            "maxItems": 10,
+            "items": { "$ref": "#/$defs/evidence" }
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "maxItems": 30,
+      "items": { "$ref": "#/$defs/evidence" }
+    },
+    "unresolved": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "maxLength": 500 }
+    },
+    "nextActions": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "maxLength": 500 }
+    }
+  }
+}

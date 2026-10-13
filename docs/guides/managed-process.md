@@ -1,6 +1,6 @@
 # Managed process
 
-`process` は policy で事前登録した named task を実行する canonical tool。Worker と Workflow は同じ `{"kind":"tool","tool":"process","input":{"task":"test"}}` を使う。Worker では `tools` と policy の `tools.allow` に `process` が必要で、task が空なら expose されない。
+`process` は policy で事前登録した named task を実行する canonical tool。Worker と Workflow は同じ `{"kind":"tool","tool":"process","input":{"task":"test"}}` を使う。Worker では `tools` と policy の `tools.allow` に `process` が必要で、task が空なら expose されない（`cheaper.optionalTools` opt-in の worker は未登録へ縮退して run が継続し、opt-in していない worker では scope 構築が `POLICY_VIOLATION` で失敗する — [workers ガイド](./workers.md) 参照）。
 
 ```yaml
 process:

@@ -209,6 +209,7 @@ fn options(root: &str, command: Value, names: Vec<ToolName>) -> ToolRuntimeOptio
         root: root.to_string(),
         symlink_policy: SymlinkPolicy::Deny,
         names,
+        degradable: Vec::new(),
         max_tool_calls: 20,
         on_limit: Box::new(|| {}),
         journal: None,

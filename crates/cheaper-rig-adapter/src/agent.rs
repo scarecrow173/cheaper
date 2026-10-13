@@ -219,13 +219,16 @@ impl RigSession {
 /// 文字列完全再現する(行の並び・文言を TS と一致させる)。
 ///
 /// `instructions` は worker.md body、`output_schema` は `worker.outputSchema
-/// .schema`、`tool_names` は sandbox 済みの canonical tool 名。
+/// .schema`、`tool_names` は実登録集合の canonical tool 名、
+/// `unavailable_tools` は宣言済みだが content-gate 不成立で縮退した
+/// tool 名(design §(f) — `optionalTools` opt-in のみ非空)。
 /// TS: `worker.instructions.trimEnd()` + contract lines + `JSON.stringify(
 /// schema, null, 2)`。
 pub fn build_system_prompt(
     instructions: &str,
     output_schema: &serde_json::Value,
     tool_names: &[String],
+    unavailable_tools: &[String],
 ) -> String {
     let mut contract: Vec<String> = vec![
         String::new(),
@@ -244,6 +247,22 @@ pub fn build_system_prompt(
             }
         ),
     ];
+    // 宣言済みだが content-gate 不成立で未登録へ縮退した tool の注記
+    // (design §(f) — Rust 側拡張行)。列挙行は schema-neutral なので
+    // 非空なら常に emit し、blocked 誘導行は output schema が
+    // `status: "blocked"` を受理する場合のみ追加する(schema が
+    // 受理しない終了状態を prompt が促さない)。
+    if !unavailable_tools.is_empty() {
+        contract.push(format!(
+            "- Declared but unavailable under current policy: {}",
+            unavailable_tools.join(", ")
+        ));
+        if output_schema_accepts_blocked(output_schema) {
+            contract.push(
+                "- If the task requires an unavailable tool, do not call it; finish with status \"blocked\" and list the missing capability in unresolved and nextActions.".to_string(),
+            );
+        }
+    }
     // same-turn batching ガイダンス(issue #55 / DESIGN-034zAKcWuB8SuFkOePsubg)。
     // tool 0 件の "none" と同居しないよう非空時のみ emit する(TS parity)。
     if !tool_names.is_empty() {
@@ -261,6 +280,17 @@ pub fn build_system_prompt(
     // (JS number formatting — `1.0` → `1`、`|x| >= 1e21` 等)に揃える。
     contract.push(stringify_pretty(output_schema));
     format!("{}\n{}\n", instructions.trim_end(), contract.join("\n"))
+}
+
+/// run の output schema が `status: "blocked"` を受理するか —
+/// `properties.status.enum` の membership 検査(design §(f))。
+/// `blocked` を受理しない opt-in worker には blocked 誘導行を
+/// emit しないための conditional 判定。
+fn output_schema_accepts_blocked(output_schema: &serde_json::Value) -> bool {
+    output_schema
+        .pointer("/properties/status/enum")
+        .and_then(serde_json::Value::as_array)
+        .is_some_and(|values| values.iter().any(|v| v.as_str() == Some("blocked")))
 }
 
 /// `buildUserPrompt` — run.ts の user prompt 組立(`Task input (JSON):`)。

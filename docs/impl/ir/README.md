@@ -56,6 +56,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zRDctzhtdFQ6yVmTUAg | Document launcher distribution and verify acquisition | completed | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
 | IMPL-034rArrzNyFlCc39TNLU1X | Extend usage.jsonl run record with savings section | completed | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | IMPL-034z1ST2V3s2UsM4Mi2S87 | Extract shared esbuild bundle helper | completed | [extract-shared-esbuild-bundle-helper.md](./extract-shared-esbuild-bundle-helper.md) |
+| IMPL-034EWF6HsxdlNyPsQepBQ9 | fixture DSL and degraded-run verification coverage | completed | [fixture-dsl-and-degraded-run-verification-coverage.md](./fixture-dsl-and-degraded-run-verification-coverage.md) |
 | IMPL-034r05iHy2gdnpwO94elRp | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | IMPL-swcR6qnZBfKwyIdckqQxae | grep eval-budget test stability via explicit budget injection | completed | [grep-eval-budget-test-stability-via-explicit-budget-injection.md](./grep-eval-budget-test-stability-via-explicit-budget-injection.md) |
 | IMPL-034z57jQrqVgbebkytTkwt | hook contract tests and adapter e2e port | completed | [hook-contract-tests-and-adapter-e2e-port.md](./hook-contract-tests-and-adapter-e2e-port.md) |
@@ -86,6 +87,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | IMPL-034A9TTHbXQNav6LxGvo49 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | IMPL-034zTprBbdY0tsPiphc2wE | Operation manager state lifecycle | completed | [operation-manager-state-lifecycle.md](./operation-manager-state-lifecycle.md) |
+| IMPL-034EUQHxLuXN3I40r1pNs8 | optionalTools core machinery and propagation | completed | [optionaltools-core-machinery-and-propagation.md](./optionaltools-core-machinery-and-propagation.md) |
 | IMPL-034Bh4xhHhdbrsNKFkZ6iH | Phase 0: Rig PoC go/no-go spike | completed | [phase-0-rig-poc-go-no-go-spike.md](./phase-0-rig-poc-go-no-go-spike.md) |
 | IMPL-034BkjFKD4ZgRkPCBBn1kk | Phase 1: port cheaper-core | completed | [phase-1-port-cheaper-core.md](./phase-1-port-cheaper-core.md) |
 | IMPL-034CLj96KIHERKMfbd1Qe3S | Phase 2: port cheaper-tools | completed | [phase-2-port-cheaper-tools.md](./phase-2-port-cheaper-tools.md) |
@@ -100,6 +102,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zU5o0mgVqx5ZwBdxc0L | Prepare one-dispatch release artifacts | completed | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
 | IMPL-034r2qodykm6M1ReYSbIkc | provider/auth guide runtime sync (PLAN-034r2qodyxvN3g3xktwPOF) | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | IMPL-034r05iHy2gdnpELwCtyPv | Provider-only registration layer (PLAN-034r05iHK8bA7g2BMsfjFu) | completed | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
+| IMPL-034E5b824duUI8BjKw5jx1 | registry degrade path and prompt surfacing | completed | [registry-degrade-path-and-prompt-surfacing.md](./registry-degrade-path-and-prompt-surfacing.md) |
 | IMPL-034z57lgR0CQbaWKMcKP6v | remove legacy js adapters and final verify | completed | [remove-legacy-js-adapters-and-final-verify.md](./remove-legacy-js-adapters-and-final-verify.md) |
 | IMPL-034r05iHy2gdnpr4JOT5qQ | Repair abort grace and provider failure normalization | completed | [repair-abort-grace-and-provider-failure-normalization.md](./repair-abort-grace-and-provider-failure-normalization.md) |
 | IMPL-034r05iHy2gdnpv1ZWjBbz | Repository-owned setup/check entrypoints (PLAN-034r05iHE1Fbkp7833DuTu) | completed | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |
@@ -111,6 +114,7 @@ Directory: `docs/impl/ir`
 | IMPL-034A6gXDwnMxGVaPiuSCxb | Shared tool scheduler | completed | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
 | IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |
+| IMPL-034EVH2F3b1QJYE8LSAfkT | tool-operator worker definition schemas and tool-operate alias | completed | [tool-operator-worker-definition-schemas-and-tool-operate-alias.md](./tool-operator-worker-definition-schemas-and-tool-operate-alias.md) |
 | IMPL-034z3CE24rUsOGqD0BfeqZ | track executables with git lfs | completed | [track-executables-with-git-lfs.md](./track-executables-with-git-lfs.md) |
 | IMPL-034r05iHy2gdnpx0u8vJaz | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | IMPL-034z1STqpGaGE7SWSnCLo3 | Unify packageVersion on builtinDir | completed | [unify-packageversion-on-builtindir.md](./unify-packageversion-on-builtindir.md) |
@@ -119,6 +123,7 @@ Directory: `docs/impl/ir`
 | IMPL-034rAty3hDG6bnv9waKpx5 | Update guides for pricing catalog | completed | [update-guides-for-pricing-catalog.md](./update-guides-for-pricing-catalog.md) |
 | IMPL-034z2rYSzkxUjQSkAXW3IP | update release guide | completed | [update-release-guide.md](./update-release-guide.md) |
 | IMPL-034r2HoPHxqYBy0c98U70r | Align usage.jsonl recording-scope docs (PLAN-034r2puWPUDxxDyfTSffZR) | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
+| IMPL-034EWZtjDHdhil5oaHVIvr | user-facing docs and cheaper-tool-operate APM skill | completed | [user-facing-docs-and-cheaper-tool-operate-apm-skill.md](./user-facing-docs-and-cheaper-tool-operate-apm-skill.md) |
 | IMPL-034r05iHy2gdnpCk8YlDWb | User-facing documentation information architecture (PLAN-034r05iHE1FbkpeFEXECDx) | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | IMPL-034A6mdUuMzX4DtyfiRMjx | Verify consumer acquisition and close migration | completed | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
 | IMPL-034z3CEPSQBJaEVBVxxzmL | verify launchers and apm payload | completed | [verify-launchers-and-apm-payload.md](./verify-launchers-and-apm-payload.md) |

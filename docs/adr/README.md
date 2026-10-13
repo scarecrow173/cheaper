@@ -52,6 +52,7 @@ Directory: `docs/adr`
 | ADR-034CWHw0NjYQjdE5o4kErV | OpenAI Codex subscription provider wire, OAuth, and catalog | proposed | [openai-codex-subscription-provider-wire-oauth-and-catalog.md](./openai-codex-subscription-provider-wire-oauth-and-catalog.md) |
 | ADR-034A8u7fBRIGJ7eRFYvg38 | Operation execution metrics | accepted | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | ADR-034zT6bqTxOvK1nP0ELSyR | OperationManager の cancel 要求と実 settle を分離する | accepted | [operation-manager-settlement.md](./operation-manager-settlement.md) |
+| ADR-034ESBcMTWxNCMDI9obdb8 | policy-gated tool の露出を worker opt-in の optional 宣言で縮退可能にする | accepted | [opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md](./opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md) |
 | ADR-034zWr0viJFoTiUALvhE6N | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | ADR-034CKnwOWyYssJ1VZR9spo | plugin live catalog は providers/<id>/catalog.json に永続化し user models[] は plugin provider で additive merge にする | proposed | [persist-plugin-catalog-snapshot-and-merge-user-models-on-plugin-providers.md](./persist-plugin-catalog-snapshot-and-merge-user-models-on-plugin-providers.md) |
 | ADR-034r05iHrZUE6Wn59hpaOg | Pi persistent state は userConfigDir/pi 配下へ ModelRuntime.create の明示 path で集約する | superseded | [pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md](./pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md) |

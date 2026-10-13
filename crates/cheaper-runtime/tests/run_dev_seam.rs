@@ -34,16 +34,17 @@ use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::worker::parse::parse_worker_file;
 use cheaper_core::worker::validate::{validate_worker_definition, WorkerOrigin};
 use cheaper_core::workspace::paths::SymlinkPolicy;
-use cheaper_rig_adapter::UsageSnapshot;
+use cheaper_rig_adapter::{RunEvent, UsageSnapshot};
 use cheaper_runtime::auth::api_key::ProviderEnv;
 use cheaper_runtime::catalog::schema::{ModelCostJson, ModelDefinitionJson};
 use cheaper_runtime::dev::fake_provider::{FakeResponse, FakeSessionFactory, ToolCallSpec};
 use cheaper_runtime::plugin::{
     CheaperProviderPlugin, PluginProviderRegistration, ProviderPluginContext, ProviderRegistry,
 };
-use cheaper_runtime::run::{run_worker, RunWorkerDeps, RunWorkerOk};
+use cheaper_runtime::run::{run_worker, RunWorkerDeps, RunWorkerOk, SessionFactory, WorkerSession};
 use cheaper_runtime::Runtime;
 use cheaper_tools::operation::{AbortController, AbortReason};
+use futures::StreamExt;
 use serde_json::{json, Map, Value};
 
 // ---------------------------------------------------------------------------
@@ -105,6 +106,46 @@ impl CheaperProviderPlugin for FakeProviderPlugin {
             catalog: None,
         });
     }
+}
+
+/// `cheaper.optionalTools` opt-in worker — `tools: [read, process,
+/// command]` で両 gated tool を opt-in 宣言し、builtin default policy
+/// 相当(tasks/grants 空)で両方が縮退する。
+fn opt_in_worker_definition(
+    root: &std::path::Path,
+    blocked_status: bool,
+) -> cheaper_core::worker::validate::WorkerDefinition {
+    let path = root.join("opt-worker.md");
+    let status_enum = if blocked_status {
+        "[success, partial, failed, blocked]"
+    } else {
+        "[success, failed]"
+    };
+    let content = format!(
+        r#"---
+name: opt-worker
+description: opt-in gated worker
+tools: [read, process, command]
+cheaper:
+  optionalTools: [process, command]
+  model:
+    tier: low
+  output:
+    schema:
+      inline:
+        type: object
+        required: [status]
+        properties:
+          status:
+            type: string
+            enum: {status_enum}
+---
+Do the thing.
+"#
+    );
+    std::fs::write(&path, &content).unwrap();
+    let parsed = parse_worker_file(content.as_str(), path.to_str().unwrap()).unwrap();
+    validate_worker_definition(&parsed, path.to_str().unwrap(), WorkerOrigin::Explicit).unwrap()
 }
 
 fn worker_definition(root: &std::path::Path) -> cheaper_core::worker::validate::WorkerDefinition {
@@ -751,6 +792,77 @@ async fn filesystem_symlinks_policy_reaches_tool_scope() {
     }
 }
 
+// ---------------------------------------------------------------------------
+// optionalTools degrade — prompt surfacing(design §(f)、test-spec AC4/AC8)
+// ---------------------------------------------------------------------------
+
+/// empty tasks/grants で opt-in した `process`/`command` が縮退する
+/// run は "Available tools" を実登録集合から組み立て、利用不可注記と
+/// (`status` enum が受理する場合の) blocked 誘導行を prompt に載せる。
+/// `FakeSessionFactory` の `RecordedSpec.system_prompt` で文言を固定する。
+#[tokio::test]
+async fn degraded_run_surfaces_unavailable_tools_and_blocked_hint() {
+    let mut p = policy();
+    p.tools.allow = vec![ToolName::Read, ToolName::Process, ToolName::Command];
+    let mut fx = fixture(p);
+    fx.worker = opt_in_worker_definition(&fx.root, true);
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Complete {
+        text: r#"{"status":"success"}"#.into(),
+        usage: usage(10, 1),
+        turns: 1,
+        last_turn_tool_calls: false,
+        transient_retries: 0,
+    }]);
+    let ok = run_worker(&deps(&fx, &factory)).await.unwrap();
+    assert_eq!(ok.result["status"], json!("success"));
+
+    let prompt = &factory.created()[0].system_prompt;
+    // 実登録集合 — 縮退した process/command は列挙されず、直後に
+    // 宣言順(process → command)の利用不可注記が続く。
+    assert!(
+        prompt.contains(
+            "- Available tools: read\n\
+             - Declared but unavailable under current policy: process, command"
+        ),
+        "{prompt}"
+    );
+    // output schema が `status: "blocked"` を受理するため誘導行も emit。
+    assert!(
+        prompt.contains(
+            "- If the task requires an unavailable tool, do not call it; \
+             finish with status \"blocked\" and list the missing capability \
+             in unresolved and nextActions."
+        ),
+        "{prompt}"
+    );
+}
+
+/// `status` enum に `"blocked"` を持たない opt-in worker では利用
+/// 不可列挙行のみ emit され blocked 誘導行は出ない — schema が
+/// 受理しない終了状態を prompt が促さない(test-spec Example)。
+#[tokio::test]
+async fn degraded_run_omits_blocked_hint_when_schema_lacks_blocked() {
+    let mut p = policy();
+    p.tools.allow = vec![ToolName::Read, ToolName::Process, ToolName::Command];
+    let mut fx = fixture(p);
+    fx.worker = opt_in_worker_definition(&fx.root, false);
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Complete {
+        text: r#"{"status":"success"}"#.into(),
+        usage: usage(10, 1),
+        turns: 1,
+        last_turn_tool_calls: false,
+        transient_retries: 0,
+    }]);
+    run_worker(&deps(&fx, &factory)).await.unwrap();
+
+    let prompt = &factory.created()[0].system_prompt;
+    assert!(
+        prompt.contains("- Declared but unavailable under current policy: process, command"),
+        "{prompt}"
+    );
+    assert!(!prompt.contains("status \"blocked\""), "{prompt}");
+}
+
 #[tokio::test]
 async fn policy_max_turns_flows_to_session_spec() {
     // F7: `policy.execution.maxTurns` が `SessionSpec.policy_max_turns`
@@ -782,4 +894,175 @@ async fn policy_max_turns_flows_to_session_spec() {
     assert_eq!(created.len(), 2);
     assert_eq!(created[0].policy_max_turns, 2048);
     assert_eq!(created[1].policy_max_turns, 2048);
+}
+
+/// mixed policy — `process.tasks` 非空 × `command.grants` 空では
+/// "Available tools" に `process` が残り、利用不可注記は failed-gate
+/// の `command` のみ列挙する(縮退は per-tool — test-spec Rule)。
+#[tokio::test]
+async fn degraded_run_prompt_lists_only_the_failed_gate_tool() {
+    let mut p = policy();
+    p.tools.allow = vec![ToolName::Read, ToolName::Process, ToolName::Command];
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    p.process.tasks.insert(
+        "probe".to_string(),
+        json!({"command": [exe], "inputs": [], "outputs": [], "cwd": ".", "env": {}}),
+    );
+    let mut fx = fixture(p);
+    fx.worker = opt_in_worker_definition(&fx.root, true);
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Complete {
+        text: r#"{"status":"success"}"#.into(),
+        usage: usage(10, 1),
+        turns: 1,
+        last_turn_tool_calls: false,
+        transient_retries: 0,
+    }]);
+    let ok = run_worker(&deps(&fx, &factory)).await.unwrap();
+    assert_eq!(ok.result["status"], json!("success"));
+
+    let prompt = &factory.created()[0].system_prompt;
+    // 実登録集合 — `process` は gate 通過で残る。
+    assert!(
+        prompt.contains("- Available tools: read, process"),
+        "{prompt}"
+    );
+    // 利用不可注記は failed-gate の `command` のみ。
+    assert!(
+        prompt.contains("- Declared but unavailable under current policy: command"),
+        "{prompt}"
+    );
+    assert!(
+        !prompt.contains("unavailable under current policy: process"),
+        "{prompt}"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// degraded / undeclared call → UNKNOWN_TOOL — stream event での literal
+// assert(envelope には載らないため session seam 経由で `ToolResult` を
+// 記録する — test-spec「degraded/undeclared tool call は UNKNOWN_TOOL」)。
+// ---------------------------------------------------------------------------
+
+/// `RunEvent::ToolResult` の `output` を記録する `WorkerSession`
+/// wrapper — fake provider が `tool_runtime.execute` 経由で返す error
+/// result の literal content を検証する。
+struct RecordingSession {
+    inner: Arc<dyn WorkerSession>,
+    tool_results: Arc<std::sync::Mutex<Vec<Value>>>,
+}
+
+impl WorkerSession for RecordingSession {
+    fn stream_run(
+        &self,
+        prompt: String,
+        signal: Option<cheaper_tools::operation::AbortSignal>,
+    ) -> cheaper_rig_adapter::RunStream {
+        let sink = Arc::clone(&self.tool_results);
+        Box::pin(self.inner.stream_run(prompt, signal).inspect(move |item| {
+            if let Ok(RunEvent::ToolResult { output, .. }) = item {
+                sink.lock().unwrap().push(output.clone());
+            }
+        }))
+    }
+    fn abort(&self) {
+        self.inner.abort();
+    }
+    fn snapshot(&self) -> cheaper_rig_adapter::RunSnapshot {
+        self.inner.snapshot()
+    }
+}
+
+struct RecordingSessionFactory {
+    inner: FakeSessionFactory,
+    tool_results: Arc<std::sync::Mutex<Vec<Value>>>,
+}
+
+impl RecordingSessionFactory {
+    fn new(responses: Vec<FakeResponse>) -> Self {
+        Self {
+            inner: FakeSessionFactory::new(responses),
+            tool_results: Arc::new(std::sync::Mutex::new(Vec::new())),
+        }
+    }
+}
+
+impl SessionFactory for RecordingSessionFactory {
+    fn create_session(
+        &self,
+        spec: &cheaper_runtime::run::SessionSpec<'_>,
+    ) -> Result<Arc<dyn WorkerSession>, CheaperError> {
+        let inner = self.inner.create_session(spec)?;
+        Ok(Arc::new(RecordingSession {
+            inner,
+            tool_results: Arc::clone(&self.tool_results),
+        }))
+    }
+}
+
+/// 縮退した opt-in tool(`command`/`process`)と worker が宣言して
+/// いない tool(`write`)への call は、fake provider が `tool_runtime.
+/// execute` 経由で流す `ToolResult` の `{"error": "unknown or
+/// unregistered tool: <name>"}` として安全に失敗し、run 自体は完走
+/// する。いずれも metering/accounting に到達しない(`toolCalls == 0`)。
+#[tokio::test]
+async fn degraded_and_undeclared_calls_fail_unknown_tool() {
+    use cheaper_runtime::dev::fake_provider::{ScriptStep, ScriptedSession};
+
+    let mut p = policy();
+    p.tools.allow = vec![
+        ToolName::Read,
+        ToolName::Process,
+        ToolName::Command,
+        ToolName::Write,
+    ];
+    let mut fx = fixture(p);
+    fx.worker = opt_in_worker_definition(&fx.root, true);
+    let factory = RecordingSessionFactory::new(vec![FakeResponse::Scripted(ScriptedSession {
+        steps: vec![
+            ScriptStep::ToolCalls {
+                calls: vec![
+                    ToolCallSpec {
+                        name: "command".into(),
+                        input: json!({"name": "self", "args": []}),
+                    },
+                    ToolCallSpec {
+                        name: "process".into(),
+                        input: json!({"task": "probe"}),
+                    },
+                    ToolCallSpec {
+                        name: "write".into(),
+                        input: json!({"path": "x.txt", "content": "x"}),
+                    },
+                ],
+            },
+            ScriptStep::Finish {
+                text: r#"{"status":"blocked"}"#.into(),
+            },
+        ],
+    })]);
+    let deps = RunWorkerDeps {
+        session_factory: &factory,
+        ..deps(&fx, &factory.inner)
+    };
+    let ok = run_worker(&deps).await.unwrap();
+    assert_eq!(ok.result["status"], json!("blocked"));
+    assert_eq!(ok.meta.tool_calls, 0);
+
+    let results = factory.tool_results.lock().unwrap();
+    assert_eq!(results.len(), 3, "{results:?}");
+    for (name, output) in [
+        ("command", &results[0]),
+        ("process", &results[1]),
+        ("write", &results[2]),
+    ] {
+        assert_eq!(
+            output["error"].as_str().unwrap_or(""),
+            format!("unknown or unregistered tool: {name}"),
+            "{name}: {output}"
+        );
+    }
+    assert!(!fx.root.join("x.txt").exists());
 }

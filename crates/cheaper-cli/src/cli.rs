@@ -516,6 +516,7 @@ Commands:
   bulk-read              Alias for: run bulk-reader
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
+  tool-operate           Alias for: run tool-operator
   count-tokens <path>    Count canonical tokens of a workspace file
   workflow interface <path> Show the public workflow inputs and outputs
   workflow run <path>       Run a one-shot workflow

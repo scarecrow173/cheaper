@@ -76,6 +76,7 @@ fn scope_options(owner: &str, root: &str) -> WorkerScopeOptions {
             root: root.to_string(),
             symlink_policy: cheaper_core::workspace::paths::SymlinkPolicy::Deny,
             names: vec![cheaper_core::tools::vocabulary::ToolName::Read],
+            degradable: Vec::new(),
             max_tool_calls: 100,
             on_limit: Box::new(|| {}),
             journal: None,

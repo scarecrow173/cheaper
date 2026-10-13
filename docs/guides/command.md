@@ -6,7 +6,9 @@
 
 Worker 経路は三重ゲート: worker 定義の `tools` 宣言 ∩ policy の `tools.allow` ∩ `command.grants`。Workflow `kind: tool` job は `tools.allow` の admission check と nonempty-grants registration gate の二重で、worker の `tools` 宣言 gate は適用されない。
 
-`tools.allow` は exposure toggle であり authorization ではない。`command` の唯一の信頼境界は `command.grants` で、authoring できるのは trusted layer（builtin policy + user-scope `<userConfigDir>/policy.yaml`）のみ。project の `.cheaper/policy.yaml` に `command` section（narrowing 用の field を含む任意の key）を含めると schema validation が fail し、policy load 全体が `InvalidRuntimePolicy` で拒否される — project は grant の追加も `command.*` の tightening もできない。builtin policy は `grants: {}`（空）を同梱するため既定の grant は 0 個で、`command` を expose する runtime 構築は `POLICY_VIOLATION` で fail closed する。`command` を expose しない runtime は grant が ambient PATH で解決不能でも dormant として許容される。
+`tools.allow` は exposure toggle であり authorization ではない。`command` の唯一の信頼境界は `command.grants` で、authoring できるのは trusted layer（builtin policy + user-scope `<userConfigDir>/policy.yaml`）のみ。project の `.cheaper/policy.yaml` に `command` section（narrowing 用の field を含む任意の key）を含めると schema validation が fail し、policy load 全体が `InvalidRuntimePolicy` で拒否される — project は grant の追加も `command.*` の tightening もできない。builtin policy は `grants: {}`（空）を同梱するため既定の grant は 0 個で、`command` を expose する runtime 構築は `POLICY_VIOLATION` で fail closed する。例外は worker が `cheaper.optionalTools` で `command` を opt-in 宣言した場合のみで、そのときは grants 空でも scope 構築は失敗せず `command` は未登録へ縮退し、run は残りの tool で継続する（[workers ガイド](./workers.md) の `cheaper.optionalTools` 参照）。縮退が緩めるのは登録面のみであり、grant 解決・argv pattern・executable pin 等の call 経路の認可機構は一切変わらない。`command` を expose しない runtime は grant が ambient PATH で解決不能でも dormant として許容される。
+
+この fail-closed gate（content-gate）と `tools.allow` の除外（admission）は別の層である。admission は scope 構築より先に評価され、`tools.allow` が宣言 tool を除外した場合は `optionalTools` opt-in の有無に関わらず run 全体が `POLICY_VIOLATION` で fail する。したがって admin が「`command` の実行を禁止しつつ opt-in worker の縮退実行は許す」には、`tools.allow` から `command` を外すのではなく grant を定義しないことで実現する — `tools.allow` から外すと縮退ではなく run 全体の fail になる。
 
 ## grant の宣言
 

@@ -62,6 +62,7 @@ Directory: `docs/specs`
 | SPEC-034rBhR3SNIRFZ1B6n26iH | Shell-read large-file blocking via canonical routing policy | approved | [shell-read-large-file-blocking.md](./shell-read-large-file-blocking.md) |
 | SPEC-034z14nGIf6fXRtTskkrk8 | Standalone executable distribution for cheaper CLI including APM bundles | superseded | [standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md](./standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md) |
 | SPEC-003hd7W00xCikuCXnwHA4C | Synchronize distributed cheaper-usage skill and parent-agent integration guide | implemented | [synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md](./synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md) |
+| SPEC-034EStsweRrzPq1Og6oCzl | tool-operator built-in Worker | approved | [tool-operator-built-in-worker.md](./tool-operator-built-in-worker.md) |
 | SPEC-034r05iHK8bA7grnYLdwgl | Unified version and release source of truth | implemented | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | SPEC-034rzGnCaRQc5ceI95lf5i | Usage and savings telemetry aggregation | implemented | [usage-and-savings-telemetry-aggregation.md](./usage-and-savings-telemetry-aggregation.md) |
 | SPEC-034r2eqGCyFZr7j0uSfst0 | Usage log recording scope documentation contract | implemented | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |

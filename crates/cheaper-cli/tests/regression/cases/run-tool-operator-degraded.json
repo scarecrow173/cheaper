@@ -1,0 +1,31 @@
+{
+  "name": "run_tool_operator_degraded",
+  "fixture": {
+    "name": "tool_operator_degraded",
+    "worker": {
+      "name": "tool-operator",
+      "tools": ["read", "process", "command"],
+      "optional_tools": ["process", "command"],
+      "write_scope": null
+    },
+    "input": { "task": "inspect the workspace" },
+    "files_note": "builtin default policy(tasks/grants 空)で optionalTools opt-in の process/command が未登録へ縮退 — degraded command call は UNKNOWN_TOOL で metering/accounting に到達せず meta.toolCalls は read の 1 件のみ",
+    "sessions": [
+      {
+        "steps": [
+          {
+            "tool_calls": [
+              { "name": "command", "input": { "name": "self", "args": ["x"] } },
+              { "name": "read", "input": { "path": "a.txt" } }
+            ]
+          },
+          { "turn": { "tool_calls": true } },
+          { "usage_delta": { "input": 400, "output": 80 } },
+          { "turn": {} },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "files": { "a.txt": "alpha\n" }
+}

@@ -66,6 +66,14 @@ impl ToolName {
             _ => return None,
         })
     }
+
+    /// Single-sourced name resolver — canonical name first, then the
+    /// `tool_alias` alias table. `tools` (`normalize_tool_names`) and
+    /// `cheaper.optionalTools` share this so their resolution rules
+    /// cannot drift.
+    pub fn resolve(name: &str) -> Option<Self> {
+        Self::from_canonical(name).or_else(|| tool_alias(name))
+    }
 }
 
 /// `TOOL_ALIASES`: exact-match alias → canonical name (declaration order kept
@@ -83,6 +91,13 @@ fn tool_alias(name: &str) -> Option<ToolName> {
         .iter()
         .find(|(alias, _)| *alias == name)
         .map(|(_, tool)| *tool)
+}
+
+/// scope 構築時に content-gate(nonempty tasks/grants)を持つ tool の
+/// 一権威集合。`cheaper.optionalTools` の validate 検査が使う —
+/// gated 集合を二重定義しないための唯一の predicate。
+pub fn is_scope_gated_tool(name: ToolName) -> bool {
+    matches!(name, ToolName::Process | ToolName::Command)
 }
 
 fn with_reason(message: &str, reason: &str) -> CheaperError {
@@ -108,7 +123,7 @@ pub fn normalize_tool_names(raw: &Value) -> Result<Vec<ToolName>, CheaperError> 
     let mut names = Vec::with_capacity(arr.len());
     for v in arr {
         let name = v.as_str().expect("checked is_string");
-        let tool = ToolName::from_canonical(name).or_else(|| tool_alias(name));
+        let tool = ToolName::resolve(name);
         match tool {
             Some(tool) => names.push(tool),
             None => {
@@ -202,6 +217,37 @@ mod tests {
         let err = normalize_tool_names(&json!(["read", "Read"])).unwrap_err();
         assert_eq!(err.code(), ErrorCode::InvalidWorkerDefinition);
         assert_eq!(err.details().unwrap()["reason"], json!("tools-duplicate"));
+    }
+
+    #[test]
+    fn resolve_accepts_canonical_names_then_aliases() {
+        assert_eq!(ToolName::resolve("read"), Some(ToolName::Read));
+        assert_eq!(
+            ToolName::resolve("count_tokens"),
+            Some(ToolName::CountTokens)
+        );
+        assert_eq!(ToolName::resolve("command"), Some(ToolName::Command));
+        assert_eq!(ToolName::resolve("Read"), Some(ToolName::Read));
+        assert_eq!(ToolName::resolve("Glob"), Some(ToolName::Find));
+        assert_eq!(ToolName::resolve("bash"), None);
+        assert_eq!(ToolName::resolve("READ"), None);
+    }
+
+    #[test]
+    fn is_scope_gated_tool_marks_only_process_and_command() {
+        assert!(is_scope_gated_tool(ToolName::Process));
+        assert!(is_scope_gated_tool(ToolName::Command));
+        for t in [
+            ToolName::Read,
+            ToolName::Grep,
+            ToolName::Find,
+            ToolName::Ls,
+            ToolName::Write,
+            ToolName::Edit,
+            ToolName::CountTokens,
+        ] {
+            assert!(!is_scope_gated_tool(t), "{t:?}");
+        }
     }
 
     #[test]

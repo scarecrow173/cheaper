@@ -819,6 +819,217 @@
       },
       "name": "isMutatingTool",
       "op": "isMutatingTool"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\", \"process\", \"command\"]\ncheaper:\n  optionalTools: [\"process\", \"command\"]\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "ok": {
+          "def": {
+            "cheaper": {
+              "model": {
+                "tier": "low"
+              },
+              "optionalTools": [
+                "process",
+                "command"
+              ],
+              "output": {
+                "schema": {
+                  "inline": {
+                    "properties": {
+                      "ok": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "ok"
+                    ],
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "description": "d",
+            "directlyComparable": false,
+            "inputSchema": null,
+            "instructions": "Do things.",
+            "name": "w",
+            "origin": "project",
+            "outputSchema": {
+              "schema": {
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "ok"
+                ],
+                "type": "object"
+              }
+            },
+            "sourcePath": "<ROOT>\\w.md",
+            "tools": [
+              "read",
+              "process",
+              "command"
+            ]
+          }
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "optionalTools accepted",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\", \"process\", \"command\"]\ncheaper:\n  optionalTools: \"process\"\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "optionalTools-invalid",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "optionalTools non-array",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\", \"process\", \"command\"]\ncheaper:\n  optionalTools: []\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "optionalTools-empty",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "optionalTools empty",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\", \"process\", \"command\"]\ncheaper:\n  optionalTools: [\"bash\"]\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "optionalTools-unknown-tool",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "optionalTools unknown tool",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\", \"process\"]\ncheaper:\n  optionalTools: [\"command\"]\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "optionalTools-undeclared",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "optionalTools undeclared",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\", \"process\"]\ncheaper:\n  optionalTools: [\"read\"]\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "optionalTools-not-gated",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "optionalTools not gated",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\", \"process\", \"command\"]\ncheaper:\n  optionalTools: [\"process\", \"process\"]\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "optionalTools-duplicate",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "optionalTools duplicate",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
+    },
+    {
+      "content": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"process\", \"command\"]\ncheaper:\n  optionalTools: [\"process\", \"command\"]\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n",
+      "expected": {
+        "error": {
+          "code": "INVALID_WORKER_DEFINITION",
+          "details": {
+            "reason": "optionalTools-not-proper-subset",
+            "sourcePath": "<ROOT>\\w.md"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {},
+      "input": null,
+      "name": "optionalTools not proper subset",
+      "op": "validate",
+      "origin": "project",
+      "sourcePath": "w.md"
     }
   ],
   "platform": "win32"

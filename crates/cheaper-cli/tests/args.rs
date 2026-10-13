@@ -77,11 +77,16 @@ fn run_alias() {
         ("bulk-read", "bulk-reader"),
         ("code-write", "code-writer"),
         ("doc-write", "doc-writer"),
+        ("tool-operate", "tool-operator"),
     ] {
         let ParsedCli::Run(a) = parse_cli_args(&args(&[alias])).unwrap() else {
             panic!()
         };
         assert_eq!(a.worker_name.as_deref(), Some(worker));
+        // alias は extra positional を受理しない(canonical
+        // invocation は `--input` / stdin JSON のみ)
+        let e = err(&[alias, "extra"]);
+        assert_eq!(e.message(), "unexpected arguments: extra");
     }
 }
 

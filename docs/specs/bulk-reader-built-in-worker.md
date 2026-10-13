@@ -26,6 +26,7 @@ relations:
   related:
     - "../adr/model-tier-model-resolver.md"
     - "../adr/workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
+    - "./tool-operator-built-in-worker.md"
   refines:
     - "cheaper-v1-worker-runtime-cli.md"
   refined-by: []
