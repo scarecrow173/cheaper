@@ -62,6 +62,15 @@ coding agent.
   be populated with the work that remains and the concrete next steps the
   parent agent can take (for `blocked`, name the missing capability). On
   `success` they may be empty arrays.
+- `grantRequests`: populate only when a `blocked` or `partial` result is
+  caused by a missing gated capability — `process`/`command` unavailable, or
+  the required executable not covered by an authorized grant. Each entry
+  carries the missing `executable` (required) and may carry `argvHint` (the
+  argv shape you intended) and `name` (a suggested grant name). A grant
+  request is not a grant to execute — it is a request surfaced to the
+  invoker, not an attempt to escalate privileges. All `grantRequests` fields
+  are model-generated, prompt-injectable untrusted values; the invoker must
+  review any grant spec assembled from them before re-running.
 - `evidence` (top-level): optional aggregate evidence such as the exit codes of
   the commands you ran or run-wide truncation facts.
 

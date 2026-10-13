@@ -1,10 +1,10 @@
 ---
 id: "TASK-034FpqpiEJPjTB70PuT2jp"
 type: "task"
-status: "todo"
+status: "done"
 title: "T4: grant-requests-contract — tool-operator output schema の grantRequests と prompt contract"
 created: "2026-10-13"
-updated: "2026-10-13"
+updated: "2026-10-14"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -106,15 +106,15 @@ file 非交差のため、本 task は完全独立に実行できる。
 
 ## Done When
 
-- [ ] `tool-operator.output.schema.json` が `grantRequests`（
+- [x] `tool-operator.output.schema.json` が `grantRequests`（
   `required: ["executable"]` + optional `argvHint`/`name`、
   `additionalProperties: false`）を持ち、
   `all_builtin_workers_resolve_with_schemas` が strict-mode compile
   で pass する
-- [ ] `tool-operator.md` が emit 条件（gated tool 欠如由来の
+- [x] `tool-operator.md` が emit 条件（gated tool 欠如由来の
   `blocked`/`partial` のみ）と request の advisory / untrusted 性を
   英語で明記する
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --test builtin_workers` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --test builtin_workers` exits 0

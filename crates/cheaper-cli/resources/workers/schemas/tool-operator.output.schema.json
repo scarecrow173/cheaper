@@ -73,6 +73,28 @@
       "type": "array",
       "maxItems": 20,
       "items": { "type": "string", "maxLength": 500 }
+    },
+    "grantRequests": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["executable"],
+        "properties": {
+          "executable": { "type": "string", "minLength": 1, "maxLength": 4096 },
+          "argvHint": {
+            "type": "array",
+            "maxItems": 256,
+            "items": { "type": "string", "maxLength": 4096 }
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          }
+        }
+      }
     }
   }
 }
