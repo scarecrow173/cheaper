@@ -107,6 +107,46 @@ impl CheaperProviderPlugin for FakeProviderPlugin {
     }
 }
 
+/// `cheaper.optionalTools` opt-in worker — `tools: [read, process,
+/// command]` で両 gated tool を opt-in 宣言し、builtin default policy
+/// 相当(tasks/grants 空)で両方が縮退する。
+fn opt_in_worker_definition(
+    root: &std::path::Path,
+    blocked_status: bool,
+) -> cheaper_core::worker::validate::WorkerDefinition {
+    let path = root.join("opt-worker.md");
+    let status_enum = if blocked_status {
+        "[success, partial, failed, blocked]"
+    } else {
+        "[success, failed]"
+    };
+    let content = format!(
+        r#"---
+name: opt-worker
+description: opt-in gated worker
+tools: [read, process, command]
+cheaper:
+  optionalTools: [process, command]
+  model:
+    tier: low
+  output:
+    schema:
+      inline:
+        type: object
+        required: [status]
+        properties:
+          status:
+            type: string
+            enum: {status_enum}
+---
+Do the thing.
+"#
+    );
+    std::fs::write(&path, &content).unwrap();
+    let parsed = parse_worker_file(content.as_str(), path.to_str().unwrap()).unwrap();
+    validate_worker_definition(&parsed, path.to_str().unwrap(), WorkerOrigin::Explicit).unwrap()
+}
+
 fn worker_definition(root: &std::path::Path) -> cheaper_core::worker::validate::WorkerDefinition {
     let path = root.join("test-worker.md");
     let content = r#"---
@@ -749,6 +789,77 @@ async fn filesystem_symlinks_policy_reaches_tool_scope() {
             "symlinks={symlinks:?}"
         );
     }
+}
+
+// ---------------------------------------------------------------------------
+// optionalTools degrade — prompt surfacing(design §(f)、test-spec AC4/AC8)
+// ---------------------------------------------------------------------------
+
+/// empty tasks/grants で opt-in した `process`/`command` が縮退する
+/// run は "Available tools" を実登録集合から組み立て、利用不可注記と
+/// (`status` enum が受理する場合の) blocked 誘導行を prompt に載せる。
+/// `FakeSessionFactory` の `RecordedSpec.system_prompt` で文言を固定する。
+#[tokio::test]
+async fn degraded_run_surfaces_unavailable_tools_and_blocked_hint() {
+    let mut p = policy();
+    p.tools.allow = vec![ToolName::Read, ToolName::Process, ToolName::Command];
+    let mut fx = fixture(p);
+    fx.worker = opt_in_worker_definition(&fx.root, true);
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Complete {
+        text: r#"{"status":"success"}"#.into(),
+        usage: usage(10, 1),
+        turns: 1,
+        last_turn_tool_calls: false,
+        transient_retries: 0,
+    }]);
+    let ok = run_worker(&deps(&fx, &factory)).await.unwrap();
+    assert_eq!(ok.result["status"], json!("success"));
+
+    let prompt = &factory.created()[0].system_prompt;
+    // 実登録集合 — 縮退した process/command は列挙されず、直後に
+    // 宣言順(process → command)の利用不可注記が続く。
+    assert!(
+        prompt.contains(
+            "- Available tools: read\n\
+             - Declared but unavailable under current policy: process, command"
+        ),
+        "{prompt}"
+    );
+    // output schema が `status: "blocked"` を受理するため誘導行も emit。
+    assert!(
+        prompt.contains(
+            "- If the task requires an unavailable tool, do not call it; \
+             finish with status \"blocked\" and list the missing capability \
+             in unresolved and nextActions."
+        ),
+        "{prompt}"
+    );
+}
+
+/// `status` enum に `"blocked"` を持たない opt-in worker では利用
+/// 不可列挙行のみ emit され blocked 誘導行は出ない — schema が
+/// 受理しない終了状態を prompt が促さない(test-spec Example)。
+#[tokio::test]
+async fn degraded_run_omits_blocked_hint_when_schema_lacks_blocked() {
+    let mut p = policy();
+    p.tools.allow = vec![ToolName::Read, ToolName::Process, ToolName::Command];
+    let mut fx = fixture(p);
+    fx.worker = opt_in_worker_definition(&fx.root, false);
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Complete {
+        text: r#"{"status":"success"}"#.into(),
+        usage: usage(10, 1),
+        turns: 1,
+        last_turn_tool_calls: false,
+        transient_retries: 0,
+    }]);
+    run_worker(&deps(&fx, &factory)).await.unwrap();
+
+    let prompt = &factory.created()[0].system_prompt;
+    assert!(
+        prompt.contains("- Declared but unavailable under current policy: process, command"),
+        "{prompt}"
+    );
+    assert!(!prompt.contains("status \"blocked\""), "{prompt}");
 }
 
 #[tokio::test]

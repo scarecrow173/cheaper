@@ -20,7 +20,7 @@ use cheaper_core::policy::command::{resolve_command_policy, ResolvedCommandPolic
 use cheaper_core::policy::process::{resolve_process_policy, ResolvedProcessPolicy};
 use cheaper_core::resources::predicates::claim_contains;
 use cheaper_core::resources::types::{ClaimMode, ResourceScope};
-use cheaper_core::tools::vocabulary::ToolName;
+use cheaper_core::tools::vocabulary::{is_scope_gated_tool, ToolName};
 use cheaper_core::worker::schema::{compile_schema, CompiledSchema, SchemaKind};
 use cheaper_core::worker::validate::is_mutating_tool;
 use cheaper_core::workspace::deny_paths::PathDenylist;
@@ -333,7 +333,11 @@ struct RuntimeInner {
     /// 相当の `ToolName::from_canonical` で行う)。
     registered: HashMap<ToolName, Arc<RegisteredTool>>,
     /// `opts.names` 順(definitions/external defs の order 保持)。
+    /// opt-in gated tool の content-gate 縮退後の有効集合(design §(e))。
     names: Vec<ToolName>,
+    /// 縮退した tool 名(`options.names` 宣言順 — `degraded_names()`
+    /// で報告。非 opt-in / 全 gate 通過なら空)。
+    degraded: Vec<ToolName>,
     accounting: ToolBudgetRunner,
     metering: ToolMeterRunner,
     controller: AbortController,
@@ -721,6 +725,14 @@ impl ToolRuntime {
         &self.definitions
     }
 
+    /// content-gate(nonempty tasks/grants)不成立で未登録へ縮退した
+    /// tool 名を `options.names` 宣言順で返す(design §(e))。run 層は
+    /// `definitions()` との差分を再計算せず、この accessor を一権威
+    /// として使う。非 opt-in / 全 gate 通過なら空。
+    pub fn degraded_names(&self) -> &[ToolName] {
+        &self.inner.degraded
+    }
+
     /// `ready()`。`readyPromise` memoization は `OnceCell` に `Result`
     /// を格納する `get_or_init` — TS 同様、reject された promise は
     /// retry せず永続 memoize される。`ready_requested` は sync 呼出し
@@ -1066,39 +1078,83 @@ pub fn create_tool_runtime(
     options: ToolRuntimeOptions,
     binding: Option<OperationBinding>,
 ) -> Result<ToolRuntime, ToolError> {
+    // `options.degradable` を scope-gated 集合で clamp — validate を
+    // bypass する直接 caller への防御(design §(c)/(e))。worker 経路では
+    // validate 済みの gated 部分集合のみが届くため無変化。
+    let mut degradable = options.degradable.clone();
+    degradable.retain(|n| is_scope_gated_tool(*n));
+    // effective names — opt-in した gated tool が content-gate
+    // (nonempty tasks/grants)不成立のとき `options.names` から未登録へ
+    // 縮退し、この有効集合だけが以降の全 consumer(pin 判定・
+    // capability・registered・`RuntimeInner.names`)へ届く(design §(e))。
+    let mut names = options.names.clone();
+    let mut degraded = Vec::new();
     // `opts.process = resolveProcessPolicy(options.process)`。
     let process =
         resolve_process_policy(options.process.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
-    if options.names.contains(&ToolName::Process) && process.tasks.is_empty() {
-        return Err(Box::new(CheaperError::new(
-            ErrorCode::PolicyViolation,
-            "process exposure requires nonempty authorized tasks",
-        )));
+    if names.contains(&ToolName::Process) && process.tasks.is_empty() {
+        if degradable.contains(&ToolName::Process) {
+            names.retain(|n| *n != ToolName::Process);
+            degraded.push(ToolName::Process);
+        } else {
+            return Err(Box::new(CheaperError::new(
+                ErrorCode::PolicyViolation,
+                "process exposure requires nonempty authorized tasks",
+            )));
+        }
     }
     // `opts.command = resolveCommandPolicy(options.command)`。
     let command =
         resolve_command_policy(options.command.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
-    if options.names.contains(&ToolName::Command) {
+    if names.contains(&ToolName::Command) {
         // `command` の実効的な権限境界: trusted layer の grant が
         // 空なら exposure を fail-closed(process gate と同型、
-        // design §(g))。`Command` を含まない runtime は grant が
-        // ambient PATH で解決不能でも dormant として許容する。
+        // design §(g))。opt-in 時は `POLICY_VIOLATION` ではなく
+        // 未登録へ縮退する(design §(e))。`Command` を含まない
+        // runtime は grant が ambient PATH で解決不能でも dormant
+        // として許容する。
         if command.grants.is_empty() {
-            return Err(Box::new(CheaperError::new(
-                ErrorCode::PolicyViolation,
-                "command exposure requires nonempty authorized grants",
-            )));
-        }
-        // writeScope × command は fail-closed reject(design §(c)) —
-        // 子 process の副作用を resource 層が観測不能のため、
-        // vacuous な coverage を許さない。
-        if options.write_scope.is_some() {
+            if degradable.contains(&ToolName::Command) {
+                names.retain(|n| *n != ToolName::Command);
+                degraded.push(ToolName::Command);
+            } else {
+                return Err(Box::new(CheaperError::new(
+                    ErrorCode::PolicyViolation,
+                    "command exposure requires nonempty authorized grants",
+                )));
+            }
+        } else if options.write_scope.is_some() {
+            // writeScope × command は fail-closed reject(design §(c)) —
+            // 子 process の副作用を resource 層が観測不能のため、
+            // vacuous な coverage を許さない。opt-in tool に対しても
+            // hard のまま(grants 空で縮退した場合は不発)。
             return Err(Box::new(CheaperError::new(
                 ErrorCode::PolicyViolation,
                 "command is incompatible with worker writeScope",
             )));
         }
     }
+    // zero-effective-names guard — degradation が全 tool を縮退した
+    // scope は tool 0 個の runtime を生成せず `POLICY_VIOLATION` で
+    // fail-closed とする(design §(e))。worker 経路では validate の
+    // `optionalTools-not-proper-subset` + `tools` non-empty rule が
+    // 既に防ぐため、validate bypass の直接 caller 向け防御。
+    if names.is_empty() {
+        return Err(Box::new(CheaperError::new(
+            ErrorCode::PolicyViolation,
+            "degradation left no tools to register",
+        )));
+    }
+    // 縮退名は gate 分岐の push 順(process → command)ではなく
+    // `options.names` の宣言順に整列する — prompt 注記と
+    // `tools.degraded` span field を宣言順で stable にするため
+    // (design §(e))。
+    let degraded: Vec<ToolName> = options
+        .names
+        .iter()
+        .copied()
+        .filter(|n| degraded.contains(n))
+        .collect();
     let abort_grace_ms = options.abort_grace_ms.unwrap_or(5000.0);
     if !(abort_grace_ms.is_finite() && abort_grace_ms >= 0.0) {
         return Err(Box::new(CheaperError::new(
@@ -1142,7 +1198,7 @@ pub fn create_tool_runtime(
     // workspace-resident の grant は runtime 構築自体を
     // `POLICY_VIOLATION` で fail させる。`Command` を expose しない
     // runtime は pin を試行せず dormant とする。
-    let command_pins = if options.names.contains(&ToolName::Command) {
+    let command_pins = if names.contains(&ToolName::Command) {
         pin_command_grants(
             &command,
             &resources.root,
@@ -1177,7 +1233,7 @@ pub fn create_tool_runtime(
             scope: scope.clone(),
             root: resources.root.clone(),
             symlink_policy: options.symlink_policy,
-            names: options.names.clone(),
+            names: names.clone(),
             denylist: options.denylist.clone(),
             catalog: catalog.clone(),
         },
@@ -1247,9 +1303,10 @@ pub fn create_tool_runtime(
         on_timeout: Some(on_timeout),
         observe_access: observe,
     });
-    // `registered` — `opts.names.map(definitions)` + `compileSchema` pair。
-    let mut registered = HashMap::with_capacity(options.names.len());
-    for &name in &options.names {
+    // `registered` — `opts.names.map(definitions)` + `compileSchema` pair
+    // (縮退後の有効 names のみ)。
+    let mut registered = HashMap::with_capacity(names.len());
+    for &name in &names {
         let definition = registered_definition(name, &tool_ctx)?;
         let schema = compile_schema(definition.parameters.clone(), SchemaKind::Input)
             .map_err(|e| Box::new(e) as ToolError)?;
@@ -1260,7 +1317,8 @@ pub fn create_tool_runtime(
         journal,
         access,
         registered,
-        names: options.names.clone(),
+        names,
+        degraded,
         accounting,
         metering,
         controller,

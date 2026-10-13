@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EUvFhVkFFo9cY6aX6LB"
 type: "task"
-status: "todo"
+status: "done"
 title: "T2: registry degrade path と prompt surfacing"
 created: "2026-10-13"
 updated: "2026-10-13"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "../plans/implement-tool-operator-built-in-worker.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/registry-degrade-path-and-prompt-surfacing.md"
   depends-on:
     - "../plans/implement-tool-operator-built-in-worker.md"
     - "docs/tasks/optional-tools-core-machinery.md"
@@ -141,13 +142,13 @@ prompt への surfacing（"Available tools" を `scope.definitions()` の実登�
 
 ## Done When
 
-- [ ] degrade path の unit test が pass — effective names・宣言順
+- [x] degrade path の unit test が pass — effective names・宣言順
   `degraded_names()`・zero-effective-names guard・`degradable` clamp・
   非 opt-in / pin 失敗 / writeScope × `command` の hard 維持
-- [ ] `build_system_prompt` の注記 emit / blocked 誘導行 conditional
+- [x] `build_system_prompt` の注記 emit / blocked 誘導行 conditional
   （`status` enum に `"blocked"` を含む schema のみ emit）の unit test が
   pass — schema が受理しない終了状態を prompt が促さない
-- [ ] `run_fake_stream_command_worker_denied_without_grants` が無変更で
+- [x] `run_fake_stream_command_worker_denied_without_grants` が無変更で
   green — 非 opt-in worker の fail-closed 意味論不変
 
 ## Rollback
@@ -162,5 +163,5 @@ prompt への surfacing（"Available tools" を `scope.definitions()` の実登�
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-tools -p cheaper-rig-adapter -p cheaper-runtime --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --test run_dev_seam --features cheaper-cli/dev-seam` exits 0（`run_fake_stream_command_worker_denied_without_grants` 無変更 green を含む）
+- [x] `mise exec -- cargo test -p cheaper-tools -p cheaper-rig-adapter -p cheaper-runtime --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0（`cheaper-cli/dev-seam` は cheaper-cli 非選択時に受理されないため `cheaper-runtime/dev-seam` で実行 — T1 と同じ feature 解決）
+- [x] `mise exec -- cargo test -p cheaper-cli --test run_dev_seam --features cheaper-cli/dev-seam` exits 0（`run_fake_stream_command_worker_denied_without_grants` 無変更 green を含む）

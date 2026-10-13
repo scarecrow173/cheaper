@@ -366,6 +366,7 @@ async fn tool_call_executes_through_cheaper_tools() {
             "test worker",
             &json!({"type": "object"}),
             &["read".to_string()],
+            &[],
         ),
         tool_runtime: Some(runtime),
         max_output_tokens: 1024,
@@ -562,6 +563,7 @@ fn prompts_match_ts_shape() {
         "You are a worker.\n",
         &json!({"type": "object", "properties": {"answer": {"type": "string"}}}),
         &["read".to_string(), "grep".to_string()],
+        &[],
     );
     assert!(prompt.starts_with("You are a worker.\n\n## Output contract\n"));
     assert!(prompt.contains("- Available tools: read, grep"));
@@ -570,12 +572,75 @@ fn prompts_match_ts_shape() {
     assert!(prompt.contains("Output schema:\n{"));
     assert!(prompt.ends_with("}\n"));
 
-    let none = build_system_prompt("w", &json!({}), &[]);
+    let none = build_system_prompt("w", &json!({}), &[], &[]);
     assert!(none.contains("- Available tools: none"));
     assert!(!none.contains("Independent tool calls"));
 
     let user = build_user_prompt(&json!({"path": "src"}));
     assert_eq!(user, "Task input (JSON):\n{\n  \"path\": \"src\"\n}");
+}
+
+#[test]
+fn system_prompt_notes_unavailable_tools_and_emits_blocked_hint() {
+    // design §(f) — 縮退 tool の列挙行は schema-neutral で常に emit、
+    // blocked 誘導行は `status` enum が `"blocked"` を受理する場合のみ。
+    let schema = json!({
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["success", "partial", "failed", "blocked"]}
+        }
+    });
+    let prompt = build_system_prompt(
+        "w",
+        &schema,
+        &["read".to_string()],
+        &["process".to_string(), "command".to_string()],
+    );
+    // 列挙行は "Available tools" の直後に宣言順で載る。
+    let available = prompt
+        .find("- Available tools: read")
+        .expect("available tools line");
+    let note = prompt
+        .find("- Declared but unavailable under current policy: process, command")
+        .expect("unavailable tools note");
+    assert!(available < note, "{prompt}");
+    assert!(
+        prompt.contains(
+            "- If the task requires an unavailable tool, do not call it; \
+             finish with status \"blocked\" and list the missing capability \
+             in unresolved and nextActions."
+        ),
+        "{prompt}"
+    );
+}
+
+#[test]
+fn system_prompt_omits_blocked_hint_when_schema_lacks_blocked_status() {
+    // `status` enum に `"blocked"` を持たない schema — 列挙行のみ emit。
+    let schema = json!({
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["success", "failed"]}
+        }
+    });
+    let prompt = build_system_prompt(
+        "w",
+        &schema,
+        &["read".to_string()],
+        &["command".to_string()],
+    );
+    assert!(prompt.contains("- Declared but unavailable under current policy: command"));
+    assert!(!prompt.contains("status \"blocked\""), "{prompt}");
+
+    // `status` property 自体が無い schema でも同様。
+    let prompt = build_system_prompt(
+        "w",
+        &json!({"type": "object"}),
+        &["read".to_string()],
+        &["command".to_string()],
+    );
+    assert!(prompt.contains("Declared but unavailable"));
+    assert!(!prompt.contains("status \"blocked\""), "{prompt}");
 }
 
 // ---------------------------------------------------------------------------
@@ -740,7 +805,7 @@ fn prompts_use_json_stringify_number_format() {
     assert!(user.contains("\"big\": 1e+21"), "{user}");
     assert!(user.contains("\"small\": 1e-7"), "{user}");
 
-    let system = build_system_prompt("w", &json!({"min": 1.0}), &[]);
+    let system = build_system_prompt("w", &json!({"min": 1.0}), &[], &[]);
     assert!(system.contains("\"min\": 1"), "{system}");
     assert!(!system.contains("1.0"), "{system}");
 }

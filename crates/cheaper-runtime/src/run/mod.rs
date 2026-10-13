@@ -414,7 +414,10 @@ impl<'a> RunCtx<'a> {
         // `cheaper.run.tool_scope` stage span — scope 生成の sync 区間は
         // `enter` で、`ready()` の async 区間は同じ span を `Instrument`
         // で継続する(単一 span が stage 全体の close timing を持つ)。
-        let tool_scope_stage = tracing::info_span!("cheaper.run.tool_scope");
+        let tool_scope_stage = tracing::info_span!(
+            "cheaper.run.tool_scope",
+            tools.degraded = tracing::field::Empty,
+        );
         let scope = {
             let _stage_guard = tool_scope_stage.enter();
             let write_scope = extract_write_scope(worker, deps.input)
@@ -464,6 +467,19 @@ impl<'a> RunCtx<'a> {
                 })
                 .map_err(|e| self.fail(tool_boundary_error("worker tool scope", e)))?
         };
+        // `tools.degraded` — opt-in 縮退した tool 名の宣言順 join を
+        // metadata-only field として record する(design §(f))。
+        // `create_worker_scope` の return 直後(ここで `_stage_guard`
+        // は inner block 閉鎖とともに drop 済み)から、span を move
+        // する `.instrument(tool_scope_stage)` の前までの sync 区間
+        // でしか record できない。
+        let degraded = scope
+            .degraded_names()
+            .iter()
+            .map(|n| n.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
+        tool_scope_stage.record("tools.degraded", degraded.as_str());
         scope
             .ready()
             .instrument(tool_scope_stage)
@@ -487,15 +503,23 @@ impl<'a> RunCtx<'a> {
         // `cheaper.run.session` stage span(sync 区間 — entered guard)。
         let session = {
             let _stage = tracing::info_span!("cheaper.run.session").entered();
-            let tool_names: Vec<String> = self
-                .effective_tools
+            // "Available tools" は実登録集合から組み立てる — 縮退した
+            // tool は model の tool 一覧からも消える(design §(f))。
+            let tool_names: Vec<String> = scope
+                .definitions()
                 .iter()
-                .map(|t| t.as_str().to_string())
+                .map(|d| d.name.as_str().to_string())
+                .collect();
+            let unavailable: Vec<String> = scope
+                .degraded_names()
+                .iter()
+                .map(|n| n.as_str().to_string())
                 .collect();
             let system_prompt = build_system_prompt(
                 &worker.instructions,
                 &Value::Object(worker.output_schema.schema.clone()),
                 &tool_names,
+                &unavailable,
             );
             deps.session_factory
                 .create_session(&SessionSpec {
