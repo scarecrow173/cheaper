@@ -17,6 +17,7 @@ Directory: `docs/test-specs`
 | TSPEC-034DzTH1ljq4pSfIHyGwVs | dev-seam feature の build-mode contract | approved | [dev-seam-feature-build-mode-contract.md](./dev-seam-feature-build-mode-contract.md) |
 | TSPEC-034Dak4h2lD4Kk5dB1y5q8 | Devin provider Windows credential contract behavior | draft | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
 | TSPEC-034z1P09dg86lO9uB31cUi | Embedded builtin resource resolution across distribution forms | superseded | [embedded-builtin-resource-resolution-across-distribution-forms.md](./embedded-builtin-resource-resolution-across-distribution-forms.md) |
+| TSPEC-034FoDgwSnThCuTO5aNUYj | invocation-scoped command grant（--grant）・grantRequests・cheaper policy grant の行為保証 | approved | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |
 | TSPEC-034AGg47u5fWQqP0pEJfI9 | Managed process bounded lifecycle guarantees | approved | [managed-process-bounded-lifecycle-guarantees.md](./managed-process-bounded-lifecycle-guarantees.md) |
 | TSPEC-034A9yliLanxBMr6oB85Z7 | managed process の bounded lifecycle と adapter 共有 | approved | [managed-process-lifecycle.md](./managed-process-lifecycle.md) |
 | TSPEC-034A9ykvVgiieTjkU129tm | managed process task の認可と resource ownership | approved | [managed-process-task-authorization.md](./managed-process-task-authorization.md) |

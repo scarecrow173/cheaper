@@ -109,7 +109,7 @@ issue #105 由来の要求:
 
 ### Test 表面
 
-- `tests/args.rs` の parse table、dev-seam の Fixture + fake_stream（`run_dev_seam.rs` — `--grant` → degrade 解消 → command usable の E2E が書ける）、regression harness（`extra_args` + `config.files` で user policy seeding）、core の golden `policy_load`、`proc_invocation` parity test。
+- `tests/args.rs` の parse table、dev-seam の Fixture + fake_stream（`run_dev_seam.rs` — `--grant` → degrade 解消 → command usable の E2E が書ける）、regression harness（`extraArgs` + `config.files` で user policy seeding）、core の golden `policy_load`、`proc_invocation` parity test。
 
 ## Alternatives and Comparison
 

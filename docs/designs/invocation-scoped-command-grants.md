@@ -276,7 +276,7 @@ ADR が採用した 2 面を実装する:
 - `crates/cheaper-cli/tests/args.rs`: repeatable `--grant`（`--grant <v>` / `--grant=<v>` 両形・複数指定の順序保持）、alias 経由受理、非 run 系全 command（`usage` / `count-tokens` / `models` / `auth` / `policy` / `workflow interface`）の `InvalidRequest` reject、`policy grant` parse table、64KiB bound。
 - `crates/cheaper-cli/tests/run_dev_seam.rs`: AC1/AC2/AC3/AC4/AC8/AC10/AC13/AC15 系の fixture test。
 - `crates/cheaper-cli/tests/policy.rs`（新規）: `policy grant add/list/remove` の temp `CHEAPER_CONFIG_DIR` round-trip・write-mode（POSIX `0600`）・error envelope。
-- `crates/cheaper-cli/tests/regression/cases/` + `expected/`: `extra_args` に `--grant`、`config.files` で user policy seeding する case。
+- `crates/cheaper-cli/tests/regression/cases/` + `expected/`: `extraArgs` に `--grant`、`config.files` で user policy seeding する case。
 - `crates/cheaper-tools/tests/proc_invocation.rs`: parity test が変更無しで green であること。
 
 **docs / APM**（(j) 参照）
@@ -351,4 +351,4 @@ ADR が採用した 2 面を実装する:
 - [ ] `proc_invocation` parity test が変更無しで green。
 - [ ] 非露出 warn: `--grant` を渡したが worker が `command` を非宣言の run（`--worker-file` worker 含む）で stderr warning + 続行、`tools.allow` 除外は `POLICY_VIOLATION` で fail の test。
 - [ ] POSIX で `policy.yaml` が `0600` で書かれ、`windows_remove_first: false` 経路の atomic rename が行われる write-mode test。
-- [ ] regression case（`extra_args` + `config.files` seeding）の追加。
+- [ ] regression case（`extraArgs` + `config.files` seeding）の追加。
