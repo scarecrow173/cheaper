@@ -20,7 +20,7 @@ use serde_json::Value;
 /// `serde_yml::Error` wrapper: keeps the deprecated shim type behind the
 /// module boundary so callers need no `#[allow(deprecated)]`.
 #[derive(Debug)]
-pub(crate) struct YamlError(serde_yml::Error);
+pub struct YamlError(serde_yml::Error);
 
 impl std::fmt::Display for YamlError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -41,4 +41,12 @@ impl std::error::Error for YamlError {
 /// `frontmatter-not-object` check.
 pub(crate) fn parse_yaml(text: &str) -> Result<Value, YamlError> {
     serde_yml::from_str(text).map_err(YamlError)
+}
+
+/// Serialize a `serde_json::Value` to a YAML document (`yaml.stringify`
+/// 相当)。`cheaper policy grant` の write path が user `policy.yaml`
+/// 保存に使う(design §(g))。rewrite は comment・key 順・整形を保存
+/// しない(accepted caveat — ADR-034FlTS3BaiV3WKz8bX1Xv)。
+pub fn stringify_yaml(value: &Value) -> Result<String, YamlError> {
+    serde_yml::to_string(value).map_err(YamlError)
 }

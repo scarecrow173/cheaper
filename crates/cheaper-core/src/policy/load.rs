@@ -47,7 +47,13 @@ const POLICY_LAYER: LayerKind = LayerKind {
     event: "policy file read",
 };
 
-fn read_policy_file(
+/// `policy.yaml` を読む public wrapper — `read_yaml_layer` +
+/// `POLICY_LAYER` の薄い facade。`LayerKind`/`read_yaml_layer` 自体は
+/// `pub(crate)` のまま(公開面は policy 用途に絞る)。absent
+/// (ENOENT/ENOTDIR) は `Ok(None)`;`required` で absent は error。
+/// `cheaper policy grant` の write 前 read-modify-write が本経路を
+/// 使う(design §(g))。
+pub fn read_policy_yaml(
     file_path: &str,
     required: bool,
 ) -> Result<Option<Map<String, Value>>, CheaperError> {
@@ -96,12 +102,12 @@ fn with_invocation_layer(e: CheaperError) -> CheaperError {
 /// silently ignored.
 pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, CheaperError> {
     let builtin_raw =
-        read_policy_file(opts.builtin_policy_path, true)?.expect("required policy file");
+        read_policy_yaml(opts.builtin_policy_path, true)?.expect("required policy file");
     let mut effective =
         validate_policy_schema(&Value::Object(builtin_raw), PolicySchemaMode::Complete)?;
 
     let user_path = nodepath_join(opts.user_config_dir, "policy.yaml");
-    if let Some(user) = read_policy_file(&user_path, false)? {
+    if let Some(user) = read_policy_yaml(&user_path, false)? {
         tracing::debug!(policy.layer = "user", "policy layer merged");
         effective = merge_policy_layers(
             &effective,
@@ -221,7 +227,7 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
     effective = with_defaults;
 
     let project_path = nodepath_join(opts.project_dir, "policy.yaml");
-    if let Some(project) = read_policy_file(&project_path, false)? {
+    if let Some(project) = read_policy_yaml(&project_path, false)? {
         tracing::debug!(policy.layer = "project", "policy layer merged");
         // Option A の信頼境界: project partial schema は `command` section
         // 全体を除外し、含む project policy は schema validation で

@@ -154,6 +154,25 @@ pub enum AuthAction {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct PolicyCliArgs {
+    /// `policy grant` の action。
+    pub action: PolicyAction,
+    pub format: CliFormat,
+    pub quiet: bool,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PolicyAction {
+    /// `policy grant add <name> <spec-json>` — spec は生 JSON 文字列
+    /// (`command.grants` の map value shape。`name` key は含まない)。
+    GrantAdd { name: String, spec: String },
+    /// `policy grant list`。
+    GrantList,
+    /// `policy grant remove <name>`。
+    GrantRemove { name: String },
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct UsageCliArgs {
     /// `--since` の生文字列。cli 層で `parse_duration` する。
     pub since: Option<String>,
@@ -178,6 +197,7 @@ pub enum ParsedCli {
     Auth(AuthCliArgs),
     Models(ModelsCliArgs),
     Usage(UsageCliArgs),
+    Policy(PolicyCliArgs),
 }
 
 impl ParsedCli {
@@ -192,6 +212,7 @@ impl ParsedCli {
             Self::WorkflowInterface(a) => Some(a.format),
             Self::WorkflowRun(a) => Some(a.format),
             Self::Auth(a) => Some(a.format),
+            Self::Policy(a) => Some(a.format),
             Self::Help | Self::Version | Self::Models(_) => None,
         }
     }
@@ -205,6 +226,7 @@ impl ParsedCli {
             Self::WorkflowInterface(a) => Some(a.quiet),
             Self::WorkflowRun(a) => Some(a.quiet),
             Self::Auth(a) => Some(a.quiet),
+            Self::Policy(a) => Some(a.quiet),
             Self::Help | Self::Version | Self::Models(_) => None,
         }
     }
@@ -218,6 +240,19 @@ fn invalid_worker_name(name: &str) -> CheaperError {
         format!("invalid worker name: {name}"),
     )
     .with_details(details)
+}
+
+/// `policy grant add|remove <name>` の parse 段検査 — grant
+/// `propertyNames`(`^[a-z][a-z0-9_-]{0,63}$`)と同一規則を
+/// `grant::is_valid_grant_name` で共有する。
+fn check_policy_grant_name(name: &str) -> Result<(), CheaperError> {
+    if crate::grant::is_valid_grant_name(name) {
+        return Ok(());
+    }
+    Err(invalid_request(
+        format!("invalid grant name: {name}"),
+        Some(Map::from_iter([("grant".to_string(), json!(name))])),
+    ))
 }
 
 // ---------------------------------------------------------------------------
@@ -524,7 +559,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
 
     let Some(command) = positionals.first() else {
         return Err(invalid_request(
-            "command required: run | bulk-read | code-write | doc-write | tool-operate | count-tokens | usage | models | auth | workflow",
+            "command required: run | bulk-read | code-write | doc-write | tool-operate | count-tokens | usage | models | auth | workflow | policy",
             None,
         ));
     };
@@ -883,6 +918,52 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 Some("api_key") => AuthTypeArg::ApiKey,
                 _ => AuthTypeArg::Oauth,
             },
+            format,
+            quiet,
+        }));
+    }
+
+    if command == "policy" {
+        // `policy grant add <name> <spec-json>`(4)/`list`(2)/
+        // `remove <name>`(3)以外の形状は受理しない。grant name は
+        // add/remove とも `^[a-z][a-z0-9_-]{0,63}$`(grant
+        // `propertyNames` と同一)を parse 段で検査する。
+        let sub = &positionals[1..];
+        let action = match sub {
+            [cmd, verb, name, spec] if cmd == "grant" && verb == "add" => {
+                check_policy_grant_name(name)?;
+                PolicyAction::GrantAdd {
+                    name: name.clone(),
+                    spec: spec.clone(),
+                }
+            }
+            [cmd, verb] if cmd == "grant" && verb == "list" => PolicyAction::GrantList,
+            [cmd, verb, name] if cmd == "grant" && verb == "remove" => {
+                check_policy_grant_name(name)?;
+                PolicyAction::GrantRemove { name: name.clone() }
+            }
+            _ => {
+                return Err(invalid_request(
+                    "policy requires grant add <name> <spec>|list|remove <name>",
+                    None,
+                ))
+            }
+        };
+        // utility command の flag allowlist — `--grant`・`--worker-file`・
+        // `--cwd`・`--input`・`--timeout` 等他 option は全て reject
+        // する(workflow arm と同型の option_tokens 走査。`Values.grants`
+        // の「非 run command は grants 非空検査を持つ」規約はこの
+        // allowlist が包含する)。
+        for token in &option_tokens {
+            if !["format", "quiet", "log", "log-format"].contains(&token.name.as_str()) {
+                return Err(invalid_request(
+                    format!("--{} is not valid for `policy`", token.name),
+                    None,
+                ));
+            }
+        }
+        return Ok(ParsedCli::Policy(PolicyCliArgs {
+            action,
             format,
             quiet,
         }));

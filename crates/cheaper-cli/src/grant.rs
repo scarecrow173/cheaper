@@ -11,8 +11,9 @@ use serde_json::{json, Map, Value};
 
 /// grant `propertyNames` pattern — `command.rs` の
 /// `^[a-z][a-z0-9_-]{0,63}$` と同一規則を byte 走査で再現する
-/// (`args.rs::is_valid_worker_name` と同じ手法)。
-fn is_valid_grant_name(name: &str) -> bool {
+/// (`args.rs::is_valid_worker_name` と同じ手法)。`--grant` flag 値と
+/// `policy grant add|remove <name>` positional で同一規則を共有する。
+pub(crate) fn is_valid_grant_name(name: &str) -> bool {
     let bytes = name.as_bytes();
     if bytes.is_empty() || bytes.len() > 64 {
         return false;

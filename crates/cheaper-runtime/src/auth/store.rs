@@ -260,10 +260,10 @@ impl CredentialStore {
         let body = serde_json::to_string_pretty(&file).expect("credentials serialize");
         // Windows: target 存在で rename 失敗するため事前 remove を維持
         // （persisted catalog 経路とは option で差分を吸収）。
-        crate::fs_util::atomic_write(
+        cheaper_core::fs_util::atomic_write(
             &self.path,
             &body,
-            &crate::fs_util::AtomicWriteOptions {
+            &cheaper_core::fs_util::AtomicWriteOptions {
                 windows_remove_first: true,
                 #[cfg(unix)]
                 unix_mode: Some(0o600),

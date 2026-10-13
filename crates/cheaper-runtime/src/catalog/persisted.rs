@@ -104,10 +104,10 @@ pub fn write_plugin_catalog(path: &Path, file: &PluginCatalogFile) -> Result<(),
     })?;
     let body = serde_json::to_string_pretty(file)
         .map_err(|e| format!("Failed to serialize plugin catalog: {e}"))?;
-    crate::fs_util::atomic_write(
+    cheaper_core::fs_util::atomic_write(
         path,
         &body,
-        &crate::fs_util::AtomicWriteOptions {
+        &cheaper_core::fs_util::AtomicWriteOptions {
             windows_remove_first: false,
             #[cfg(unix)]
             unix_mode: None,

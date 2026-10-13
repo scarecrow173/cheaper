@@ -1,7 +1,7 @@
 ---
 id: "TASK-034FpqibELWYvjxZennqEn"
 type: "task"
-status: "todo"
+status: "done"
 title: "T3: policy-grant-command — cheaper policy grant {add,list,remove} と core write 基盤"
 created: "2026-10-13"
 updated: "2026-10-13"
@@ -169,17 +169,17 @@ dispatch を本 task で一体実装する。`cheaper policy` は utility comman
 
 ## Done When
 
-- [ ] `policy grant add/list/remove` の round-trip が temp
+- [x] `policy grant add/list/remove` の round-trip が temp
   `CHEAPER_CONFIG_DIR` で動作し、add 済み grant が user
   `policy.yaml` に `0600`（POSIX）+ atomic write で永続化される
-- [ ] invalid spec・構造前提違反・存在しない name が file 不変 +
+- [x] invalid spec・構造前提違反・存在しない name が file 不変 +
   正しい error 分類（shared validation 由来は `InvalidRuntimePolicy`、
   入力構造の失敗は `InvalidRequest`）で返る
-- [ ] success envelope `result` に `tokens` key が無く、
+- [x] success envelope `result` に `tokens` key が無く、
   usage.jsonl に record が残らない（AC9・AC16）
-- [ ] `policy` arm の flag allowlist が `--grant` 等を `InvalidRequest`
+- [x] `policy` arm の flag allowlist が `--grant` 等を `InvalidRequest`
   で reject する（AC17 完結）
-- [ ] `fs_util` 移動後の runtime caller（credentials・persisted
+- [x] `fs_util` 移動後の runtime caller（credentials・persisted
   catalog）test が green で半移動状態を残さない
 
 ## Rollback
@@ -194,8 +194,8 @@ dispatch を本 task で一体実装する。`cheaper policy` は utility comman
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --test policy` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --test args` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-core` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam` exits 0（`fs_util`/`atomic_write` の移動 caller は `cheaper-runtime` 側 `auth/store.rs`・`catalog/persisted.rs` — core/cli の test だけでは半移動を検出できないため必須）
-- [ ] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --test policy` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --test args` exits 0
+- [x] `mise exec -- cargo test -p cheaper-core` exits 0
+- [x] `mise exec -- cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam` exits 0（`fs_util`/`atomic_write` の移動 caller は `cheaper-runtime` 側 `auth/store.rs`・`catalog/persisted.rs` — core/cli の test だけでは半移動を検出できないため必須）
+- [x] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0

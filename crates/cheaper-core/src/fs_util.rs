@@ -1,17 +1,23 @@
-//! crate 内共有の filesystem helper。
+//! crate 間共有の filesystem helper。
+//!
+//! `cheaper-runtime`(`auth/store.rs`・`catalog/persisted.rs`)と
+//! `cheaper-cli`(`policy grant` の user `policy.yaml` write)が共有する
+//! temp+rename atomic write。runtime から core へ移動した単一実装
+//! (design §(g) — 複製しない)。
 
 use std::io;
 use std::path::{Path, PathBuf};
 
 /// `atomic_write` の経路差分 option。
-pub(crate) struct AtomicWriteOptions {
+pub struct AtomicWriteOptions {
     /// Windows で rename 前に既存 target を事前 remove する。
     /// `std::fs::rename` は `MoveFileExW`+`MOVEFILE_REPLACE_EXISTING`
     /// semantics で本来不要だが、credentials 保存の継承 workaround は
-    /// この option で維持する（persisted catalog は `false`）。
+    /// この option で維持する（persisted catalog・user policy は
+    /// `false`）。
     pub windows_remove_first: bool,
     /// unix で write 後に temp file へ適用する permission mode
-    /// （例: credentials の `0o600`）。
+    /// （例: credentials・policy.yaml の `0o600`）。
     #[cfg(unix)]
     pub unix_mode: Option<u32>,
 }
@@ -25,7 +31,7 @@ pub(crate) struct AtomicWriteOptions {
 /// 各 caller が固有 message を維持する。
 /// `auth/store.rs`（credentials）と `catalog/persisted.rs`
 /// （plugin catalog）で複製していた同一骨格を集約。
-pub(crate) fn atomic_write(
+pub fn atomic_write(
     path: &Path,
     body: &str,
     options: &AtomicWriteOptions,
