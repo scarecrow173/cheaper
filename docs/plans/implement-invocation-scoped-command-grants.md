@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034FotRu2jWCjjdO4oBWJE"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "invocation-scoped command grant（--grant）・grantRequests・cheaper policy grant を実装する"
 created: "2026-10-13"
 updated: "2026-10-14"
@@ -26,6 +26,7 @@ relations:
     - "../adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "../plans/implement-policy-gated-command-tool.md"
     - "../plans/implement-tool-operator-built-in-worker.md"
+    - "../test-specs/invocation-scoped-command-grants.md"
   refines: []
   refined-by: []
   derives-from:

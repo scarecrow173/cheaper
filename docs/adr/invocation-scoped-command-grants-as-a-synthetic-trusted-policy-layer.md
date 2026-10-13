@@ -26,6 +26,8 @@ relations:
     - "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
     - "../specs/policy-gated-command-tool.md"
     - "../specs/invocation-scoped-command-grants.md"
+    - "../test-specs/invocation-scoped-command-grants.md"
+    - "../plans/implement-invocation-scoped-command-grants.md"
   refines: []
   refined-by: []
   derives-from: ["../discovery/invocation-scoped-command-grants.md"]

@@ -97,10 +97,10 @@ Directory: `docs/tasks`
 | TASK-034D9bpfd4n0vQJjgXtBzj | Fix volume-root workspace boundary predicate | done | [fix-volume-root-workspace-boundary-predicate.md](./fix-volume-root-workspace-boundary-predicate.md) |
 | TASK-034EUvOR5z2gLPUgzBappw | T4: fixture DSL・dev-seam/regression/golden test 実装 | done | [fixture-dsl-and-verification.md](./fixture-dsl-and-verification.md) |
 | TASK-034DzYI5SJnPTX6KZeAvYU | T8: dev-seam feature gate (F2) | done | [gate-dev-seams-behind-dev-seam-feature.md](./gate-dev-seams-behind-dev-seam-feature.md) |
-| TASK-034FpqCHFW0zJzTo0Kmv24 | T6: grant-docs-and-apm — guides・README・APM skill・impl record | todo | [grant-docs-and-apm.md](./grant-docs-and-apm.md) |
-| TASK-034FpqBkFDhANMoaYZLw5G | T5: grant-e2e-verification — dev-seam / regression / parity の結合検証 | todo | [grant-e2e-verification.md](./grant-e2e-verification.md) |
-| TASK-034Fpq9sfBaQAX6pFPjWJr | T2: grant-flag-and-plumbing — repeatable --grant flag・build_invocation_layer・run/workflow 配線（RunWorkerDeps propagation 所有） | todo | [grant-flag-and-plumbing.md](./grant-flag-and-plumbing.md) |
-| TASK-034FpqpiEJPjTB70PuT2jp | T4: grant-requests-contract — tool-operator output schema の grantRequests と prompt contract | todo | [grant-requests-contract.md](./grant-requests-contract.md) |
+| TASK-034FpqCHFW0zJzTo0Kmv24 | T6: grant-docs-and-apm — guides・README・APM skill・impl record | done | [grant-docs-and-apm.md](./grant-docs-and-apm.md) |
+| TASK-034FpqBkFDhANMoaYZLw5G | T5: grant-e2e-verification — dev-seam / regression / parity の結合検証 | done | [grant-e2e-verification.md](./grant-e2e-verification.md) |
+| TASK-034Fpq9sfBaQAX6pFPjWJr | T2: grant-flag-and-plumbing — repeatable --grant flag・build_invocation_layer・run/workflow 配線（RunWorkerDeps propagation 所有） | done | [grant-flag-and-plumbing.md](./grant-flag-and-plumbing.md) |
+| TASK-034FpqpiEJPjTB70PuT2jp | T4: grant-requests-contract — tool-operator output schema の grantRequests と prompt contract | done | [grant-requests-contract.md](./grant-requests-contract.md) |
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
 | TASK-034r05iHQeQpDqeuofmk64 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [hook-fast-path-and-fail-closed-file-too-large-block.md](./hook-fast-path-and-fail-closed-file-too-large-block.md) |
 | TASK-034r05iHK8bA7h4BqSHmqd | Implement boundary-checked tool operations with atomic writes | done | [implement-boundary-checked-tool-operations-with-atomic-writes.md](./implement-boundary-checked-tool-operations-with-atomic-writes.md) |
@@ -170,7 +170,7 @@ Directory: `docs/tasks`
 | TASK-034AGiKxX1qSMznOGzJrLb | Integrate process runtime disposal | done | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
 | TASK-034zTTjWYMNKiiVb4ZZ6LV | Workflow compiler に resource inference を接続する | done | [integrate-workflow-resource-inference.md](./integrate-workflow-resource-inference.md) |
 | TASK-034AJd4IRjNpoxGSXgU36n | Workflow run CLI と public envelope を統合する | done | [integrate-workflow-run-cli.md](./integrate-workflow-run-cli.md) |
-| TASK-034FppMiRb1TxdOmzgt11q | T1: invocation-policy-layer — core load_policy への合成 invocation layer（compile-forced propagation 所有） | todo | [invocation-policy-layer.md](./invocation-policy-layer.md) |
+| TASK-034FppMiRb1TxdOmzgt11q | T1: invocation-policy-layer — core load_policy への合成 invocation layer（compile-forced propagation 所有） | done | [invocation-policy-layer.md](./invocation-policy-layer.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
@@ -205,7 +205,7 @@ Directory: `docs/tasks`
 | TASK-034BgKkC4U7NTKprsORKCH | Phase 5: switch distribution to Rust binary | done | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
 | TASK-034BgKlddxEi2ozLgZMFi3 | Phase 6: remove TypeScript Node Pi | done | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | TASK-034DlFISpHRPrXyhhlFXfa | Pin devin cache-hit usage mapping in stream tests | done | [pin-devin-cache-hit-usage-mapping-in-stream-tests.md](./pin-devin-cache-hit-usage-mapping-in-stream-tests.md) |
-| TASK-034FpqibELWYvjxZennqEn | T3: policy-grant-command — cheaper policy grant {add,list,remove} と core write 基盤 | todo | [policy-grant-command.md](./policy-grant-command.md) |
+| TASK-034FpqibELWYvjxZennqEn | T3: policy-grant-command — cheaper policy grant {add,list,remove} と core write 基盤 | done | [policy-grant-command.md](./policy-grant-command.md) |
 | TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | done | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |
 | TASK-034zTWibd7OKesgJgoGxJu | Prepare one-dispatch release artifacts | done | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
 | TASK-034EOHIeC6KauJaRop87sk | T2: shared managed-process 機構の tools/proc 抽出 | done | [proc-extraction.md](./proc-extraction.md) |

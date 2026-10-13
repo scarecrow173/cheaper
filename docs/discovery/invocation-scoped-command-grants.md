@@ -32,6 +32,7 @@ relations:
   derived-by:
     - "../specs/invocation-scoped-command-grants.md"
     - "../adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
+    - "../designs/invocation-scoped-command-grants.md"
   verifies: []
   verified-by: []
   references: []

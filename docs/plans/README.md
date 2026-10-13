@@ -37,7 +37,7 @@ Directory: `docs/plans`
 | PLAN-034z3OwYgplUxa7Usrjwxq | Implement cheaper hook subcommands and migrate hooks.json off Node adapters | completed | [implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md](./implement-cheaper-hook-subcommands-and-migrate-hooks-json-off-node-adapters.md) |
 | PLAN-034r05iHy2gdnpIrX0mTIb | Implement @cheaper/runtime-pi execution engine and sandboxed tools | completed | [implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md](./implement-cheaper-runtime-pi-execution-engine-and-sandboxed-tools.md) |
 | PLAN-034zQqWCWWNpushz8Itm5d | Implement core resource manifest normalization | completed | [implement-core-resource-manifest-normalization.md](./implement-core-resource-manifest-normalization.md) |
-| PLAN-034FotRu2jWCjjdO4oBWJE | invocation-scoped command grant（--grant）・grantRequests・cheaper policy grant を実装する | approved | [implement-invocation-scoped-command-grants.md](./implement-invocation-scoped-command-grants.md) |
+| PLAN-034FotRu2jWCjjdO4oBWJE | invocation-scoped command grant（--grant）・grantRequests・cheaper policy grant を実装する | completed | [implement-invocation-scoped-command-grants.md](./implement-invocation-scoped-command-grants.md) |
 | PLAN-034A91M2XAsWK6QNypcEPX | managed process canonical tool を実装する | completed | [implement-managed-process-canonical-tool.md](./implement-managed-process-canonical-tool.md) |
 | PLAN-034AEwZy3GcNygp87aXrL7 | Implement managed process lifecycle hardening | completed | [implement-managed-process-lifecycle-hardening.md](./implement-managed-process-lifecycle-hardening.md) |
 | PLAN-034rzUgf26bzSEwLr1L6Pl | implement model pricing catalog and curated exceptions | approved | [implement-model-pricing-catalog.md](./implement-model-pricing-catalog.md) |

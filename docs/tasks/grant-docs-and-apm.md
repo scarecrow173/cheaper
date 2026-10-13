@@ -1,23 +1,42 @@
 ---
 id: "TASK-034FpqCHFW0zJzTo0Kmv24"
 type: "task"
-status: "todo"
+status: "done"
 title: "T6: grant-docs-and-apm — guides・README・APM skill・impl record"
 created: "2026-10-13"
-updated: "2026-10-13"
+updated: "2026-10-14"
 owners: ["scarecrow173"]
 relations:
   source: []
   changes:
-    added: []
-    modified: []
+    added:
+      - {"type":"doc","path":"docs/impl/ir/grant-docs-and-apm-skill-updates.md"}
+    modified:
+      - {"type":"doc","path":"README.md"}
+      - {"type":"doc","path":"docs/guides/command.md"}
+      - {"type":"doc","path":"docs/guides/workers.md"}
+      - {"type":"doc","path":"docs/guides/usage.md"}
+      - {"type":"doc","path":"docs/guides/configuration.md"}
+      - {"type":"doc","path":"packages/apm/.apm/skills/cheaper-usage/SKILL.md"}
+      - {"type":"doc","path":"packages/apm/.apm/skills/cheaper-tool-operate/SKILL.md"}
+      - {"type":"doc","path":"docs/plans/implement-invocation-scoped-command-grants.md"}
+      - {"type":"doc","path":"docs/plans/README.md"}
+      - {"type":"doc","path":"docs/plans/implement-policy-gated-command-tool.md"}
+      - {"type":"doc","path":"docs/plans/implement-tool-operator-built-in-worker.md"}
+      - {"type":"doc","path":"docs/adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"}
+      - {"type":"doc","path":"docs/designs/policy-gated-command-tool.md"}
+      - {"type":"doc","path":"docs/designs/tool-operator-built-in-worker.md"}
+      - {"type":"doc","path":"docs/discovery/invocation-scoped-command-grants.md"}
+      - {"type":"doc","path":"docs/tasks/README.md"}
+      - {"type":"doc","path":"docs/impl/ir/README.md"}
     deleted: []
     renamed: []
     moved: []
     generated: []
   implements:
     - "docs/plans/implement-invocation-scoped-command-grants.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/grant-docs-and-apm-skill-updates.md"
   depends-on:
     - "docs/plans/implement-invocation-scoped-command-grants.md"
     - "docs/tasks/grant-e2e-verification.md"
@@ -122,20 +141,23 @@ T5 で確定済みであることが前提。docs の記述内容そのものは
 
 ## Done When
 
-- [ ] design §(j) の 4 項目（`--grant` contract・`grantRequests` →
+- [x] design §(j) の 4 項目（`--grant` contract・`grantRequests` →
   approval → re-run loop・`policy grant` UX + write caveat・cmdline
   露出 warning）が guides・README・両 SKILL.md に記載され、実装挙動
   と突合で矛盾がない（AC11）
-- [ ] impl record が `docs/impl/ir/` に生成されている
-- [ ] 全 task の green を確認した上で `mise run check` が pipeline
+- [x] impl record が `docs/impl/ir/` に生成されている
+- [x] 全 task の green を確認した上で `mise run check` が pipeline
   全段 exit 0（AC12）
 
 ## Verification
 
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --type all` exits 0
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `node scripts/check-apm-payload.mjs` exits 0
-- [ ] `grep -rn -- "--grant" docs/guides/command.md docs/guides/usage.md packages/apm/.apm/skills/` returns matches
-- [ ] `grep -n "policy grant" README.md docs/guides/usage.md` returns matches
-- [ ] `grep -n "grantRequests" docs/guides/workers.md` returns matches
-- [ ] `mise run check` exits 0（canonical verification — AC12、全 task 完了後の最終 gate）
+実績（2026-10-14）:
+
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --type all` exits 0
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `node scripts/check-apm-payload.mjs` exits 0
+- [x] `node .agents/skills/impl-doc/scripts/audit_impl_record.js` exits 0
+- [x] `grep -rn -- "--grant" docs/guides/command.md docs/guides/usage.md packages/apm/.apm/skills/` returns matches
+- [x] `grep -n "policy grant" README.md docs/guides/usage.md` returns matches
+- [x] `grep -n "grantRequests" docs/guides/workers.md` returns matches
+- [x] `mise run check` exits 0（canonical verification — AC12、全 task 完了後の最終 gate）
