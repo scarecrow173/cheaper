@@ -31,6 +31,7 @@ relations:
   derived-by:
     - "../specs/tool-operator-built-in-worker.md"
     - "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
+    - "../designs/tool-operator-built-in-worker.md"
   verifies: []
   verified-by: []
   references: []

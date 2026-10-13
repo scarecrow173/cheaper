@@ -26,6 +26,8 @@ relations:
     - "../specs/policy-gated-command-tool.md"
     - "../specs/tool-operator-built-in-worker.md"
     - "../test-specs/tool-operator-built-in-worker.md"
+    - "../designs/tool-operator-built-in-worker.md"
+    - "../plans/implement-tool-operator-built-in-worker.md"
   refines: []
   refined-by: []
   derives-from: ["../discovery/tool-operator-worker-built-in.md"]
