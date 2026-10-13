@@ -4,7 +4,7 @@ type: "discovery"
 status: "draft"
 title: "tool-operator worker を built-in 追加する"
 created: "2026-10-12"
-updated: "2026-10-12"
+updated: "2026-10-14"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -24,6 +24,7 @@ relations:
   superseded-by: []
   related:
     - "../discovery/policy-gated-command-tool.md"
+    - "../discovery/invocation-scoped-command-grants.md"
     - "../specs/policy-gated-command-tool.md"
   refines: []
   refined-by: []

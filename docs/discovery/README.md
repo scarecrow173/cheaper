@@ -21,6 +21,7 @@ Directory: `docs/discovery`
 | DISC-034Dlp0gvInn5w4EsnfZB0 | devin provider usage accounting reports uncached input only | draft | [devin-provider-usage-accounting-reports-uncached-input-only.md](./devin-provider-usage-accounting-reports-uncached-input-only.md) |
 | DISC-034D9AL1up7opdx1NuFeir | Devin provider Windows credential isolation limitation | draft | [devin-provider-windows-credential-isolation-limitation.md](./devin-provider-windows-credential-isolation-limitation.md) |
 | DISC-034r05iHy2gdnpcXzmUKaV | Huge-file token count guard and fail-closed hook behavior | resolved | [huge-file-token-count-guard-and-fail-closed-hook-behavior.md](./huge-file-token-count-guard-and-fail-closed-hook-behavior.md) |
+| DISC-034FlIAczzK2ruZW3HTcJi | invocation-scoped command grant と grant-request フローを整理する | draft | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |
 | DISC-034A8pIq50dPYXsDhld9st | managed process の認可と lifecycle を整理する | resolved | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
 | DISC-034Aq1bAPGiJ8GsKHAeKAL | managed process lifecycle hardening | resolved | [managed-process-lifecycle-hardening.md](./managed-process-lifecycle-hardening.md) |
 | DISC-034rzGKaCRO8vRQUpNJvWd | model-pricing-catalog-and-curated-exceptions | resolved | [model-pricing-catalog-and-curated-exceptions.md](./model-pricing-catalog-and-curated-exceptions.md) |

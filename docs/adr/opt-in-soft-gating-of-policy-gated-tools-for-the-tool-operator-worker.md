@@ -4,7 +4,7 @@ type: "adr"
 status: "accepted"
 title: "policy-gated tool の露出を worker opt-in の optional 宣言で縮退可能にする"
 created: "2026-10-13"
-updated: "2026-10-13"
+updated: "2026-10-14"
 owners: ["scarecrow173"]
 relations:
   source: ["https://github.com/scarecrow173/cheaper/issues/102"]
@@ -23,8 +23,10 @@ relations:
   superseded-by: []
   related:
     - "../adr/command-grant-trust-boundary-and-managed-process-reuse.md"
+    - "../adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "../specs/policy-gated-command-tool.md"
     - "../specs/tool-operator-built-in-worker.md"
+    - "../specs/invocation-scoped-command-grants.md"
     - "../test-specs/tool-operator-built-in-worker.md"
     - "../designs/tool-operator-built-in-worker.md"
     - "../plans/implement-tool-operator-built-in-worker.md"

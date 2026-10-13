@@ -4,7 +4,7 @@ type: "spec"
 status: "approved"
 title: "tool-operator built-in Worker"
 created: "2026-10-12"
-updated: "2026-10-13"
+updated: "2026-10-14"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -28,8 +28,10 @@ relations:
   related:
     - "./bulk-reader-built-in-worker.md"
     - "./code-writer-and-doc-writer-built-in-workers.md"
+    - "./invocation-scoped-command-grants.md"
     - "../adr/command-grant-trust-boundary-and-managed-process-reuse.md"
     - "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
+    - "../discovery/invocation-scoped-command-grants.md"
   refines: []
   refined-by: []
   derives-from:
