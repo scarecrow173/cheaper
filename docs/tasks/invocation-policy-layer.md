@@ -1,10 +1,10 @@
 ---
 id: "TASK-034FppMiRb1TxdOmzgt11q"
 type: "task"
-status: "todo"
+status: "done"
 title: "T1: invocation-policy-layer — core load_policy への合成 invocation layer（compile-forced propagation 所有）"
 created: "2026-10-13"
-updated: "2026-10-13"
+updated: "2026-10-14"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -140,21 +140,21 @@ green** であることが必須条件（#101/#102 precedent —
 
 ## Done When
 
-- [ ] `LoadPolicyOptions.invocation` が存在し、grant map が user merge
+- [x] `LoadPolicyOptions.invocation` が存在し、grant map が user merge
   直後に `MergeMode::Replace` で畳み込まれる（project partial は
   `command` section を schema reject するため invocation grant を
   override 不能 — trusted boundary の不変条件）
-- [ ] grants 以外の key・collision が `InvalidRequest` +
+- [x] grants 以外の key・collision が `InvalidRequest` +
   `details.layer="invocation"`、deny 該当 spec が inner code
   `InvalidRuntimePolicy` 保持 + `details.layer` で fail する unit test
   と golden invocation case が pass する
-- [ ] 全 8 literal site が `invocation: None` で更新され、
+- [x] 全 8 literal site が `invocation: None` で更新され、
   `cargo build --workspace --all-targets`（dev-seam feature 付き）が
   green — compile-forced propagation 完遂の証明
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core` exits 0（load.rs unit
+- [x] `mise exec -- cargo test -p cheaper-core` exits 0（load.rs unit
   test + `--test golden` の `policy_load`/`policy_schema`/
   `policy_restrict`/`policy_merge` を含む）
-- [ ] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0

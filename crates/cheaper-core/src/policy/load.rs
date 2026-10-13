@@ -1,7 +1,27 @@
 //! Port of `packages/core/src/policy/load.ts` — the §23 load order:
-//! built-in (complete) → user (partial) merge → typed policy
-//! completion → project (partial) `restrict-concurrency` merge →
-//! complete validation → normalize.
+//! built-in (complete) → user (partial) merge → invocation (grants-only
+//! synthetic partial) merge → typed policy completion → project
+//! (partial) `restrict-concurrency` merge → complete validation →
+//! normalize.
+//!
+//! The `invocation` layer is a trusted, non-persisted layer supplied by
+//! the invoker (`--grant`) for the lifetime of a single run
+//! (ADR-034FlTS3BaiV3WKz8bX1Xv, Option A). It is restricted to
+//! `{"version":1,"command":{"grants":{..}}}` shape — top-level keys ⊆
+//! `{version, command}` and `command` keys ⊆ `{grants}` — and merges
+//! with `MergeMode::Replace` immediately after the user layer, so the
+//! grant runtime semantics (deny list, argv pattern, executable pin,
+//! env/cwd rules) are identical to user-policy grants. The project
+//! layer cannot override it: `ProjectPartial` schema rejects the
+//! `command` section outright.
+//!
+//! Accepted limitation (attribution gap): checks that only fire on the
+//! merged map — e.g. `command.grants` `maxProperties: 128` exceeded by
+//! the builtin + user + invocation total — are not reachable from the
+//! invocation layer's standalone validation and surface as
+//! `InvalidRuntimePolicy` without `details.layer`. Per-grant rule
+//! violations are all caught by the layer's own Partial validate and do
+//! carry `details.layer = "invocation"`.
 
 use serde_json::{json, Map, Value};
 
@@ -40,11 +60,36 @@ fn read_policy_file(
 }
 
 /// `loadPolicy` options (`builtinPolicyPath`, `userConfigDir`,
-/// `projectDir`).
+/// `projectDir`, `invocation`).
 pub struct LoadPolicyOptions<'a> {
     pub builtin_policy_path: &'a str,
     pub user_config_dir: &'a str,
     pub project_dir: &'a str,
+    /// 合成 trusted layer — `{"version":1,"command":{"grants":{..}}}` のみ
+    /// 受理する grants-only 入力。user merge 直後・typed re-resolve 直前
+    /// に Partial validate + Replace merge される。
+    pub invocation: Option<&'a Map<String, Value>>,
+}
+
+/// error attribution 規約 — invocation 入力の構造的失敗(malformed 値・
+/// `name` 欠落/pattern 違反・grants 以外の key・同名重複・policy との
+/// collision)は `InvalidRequest` + `details.layer = "invocation"` で返す。
+/// grant name が関与する場合は `details.grant` に載せる。
+fn invocation_invalid_request(message: impl Into<String>, details: Value) -> CheaperError {
+    let mut details = details.as_object().cloned().unwrap_or_default();
+    details.insert("layer".to_string(), Value::from("invocation"));
+    CheaperError::new(ErrorCode::InvalidRequest, message).with_details(details)
+}
+
+/// error attribution 規約 — shared validation(`validate_policy_schema` /
+/// `resolve_command_policy`)由来の失敗は inner error code(通常
+/// `InvalidRuntimePolicy`)を保持し、既存 details へ
+/// `layer = "invocation"` を畳み込む。同一 spec を user policy に置いた
+/// 場合と error code を揃え、policy 内容由来の失敗であることを表す。
+fn with_invocation_layer(e: CheaperError) -> CheaperError {
+    let mut details = e.details().cloned().unwrap_or_default();
+    details.insert("layer".to_string(), Value::from("invocation"));
+    e.with_details(details)
 }
 
 /// `loadPolicy` — 引継ぎ §23 load order. An invalid policy is never
@@ -64,6 +109,76 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
             MergeMode::Replace,
         )
         .expect("replace-mode merge cannot fail");
+    }
+    if let Some(invocation) = opts.invocation {
+        // (1) grants-only key 制約 — schema ではなく merge 前検査。
+        // Partial schema だけでは `execution`/`tools`/`model` 等他
+        // section が素通りするため、合成 layer を「grant 供給のみ」へ
+        // 縛る構造的 guard として先に検査する。
+        for key in invocation.keys() {
+            if key != "version" && key != "command" {
+                return Err(invocation_invalid_request(
+                    format!("invocation layer may only declare command.grants: {key}"),
+                    json!({"key": key}),
+                ));
+            }
+        }
+        match invocation.get("command").map(Value::as_object) {
+            Some(None) => {
+                return Err(invocation_invalid_request(
+                    "invocation layer may only declare command.grants",
+                    json!({"key": "command"}),
+                ));
+            }
+            Some(Some(command)) => {
+                for key in command.keys() {
+                    if key != "grants" {
+                        return Err(invocation_invalid_request(
+                            format!("invocation layer may only declare command.grants: {key}"),
+                            json!({"key": format!("command.{key}")}),
+                        ));
+                    }
+                }
+            }
+            None => {}
+        }
+        // (2) Partial validate — `resolve_command_policy` が deny
+        // list・`ArgPattern::compile`・env/cwd 規則を継承する。
+        // shared validation 由来の失敗は inner code を保持し
+        // `details.layer` のみ畳み込む。
+        let validated = validate_policy_schema(
+            &Value::Object(invocation.clone()),
+            PolicySchemaMode::Partial,
+        )
+        .map_err(with_invocation_layer)?;
+        // (3) builtin + user の merge 済み `command.grants` との
+        // collision 検査 — Replace merge は同名 grant を黙って上書きする
+        // ため fail-loud。validate 通過後に行い、malformed spec が
+        // collision error を装わない。
+        let existing_grants = effective
+            .get("command")
+            .and_then(Value::as_object)
+            .and_then(|command| command.get("grants"))
+            .and_then(Value::as_object);
+        let incoming_grants = validated
+            .get("command")
+            .and_then(Value::as_object)
+            .and_then(|command| command.get("grants"))
+            .and_then(Value::as_object);
+        if let (Some(existing), Some(incoming)) = (existing_grants, incoming_grants) {
+            if let Some(name) = incoming.keys().find(|k| existing.contains_key(*k)) {
+                return Err(invocation_invalid_request(
+                    format!("invocation grant collides with an existing grant: {name}"),
+                    json!({"grant": name}),
+                ));
+            }
+        }
+        // (4) Replace merge。(5) `policy.layer` record は sibling
+        // (user/project)と同様 merge 呼出しの直前に揃える — post-merge
+        // 配置だと log 行順が merge 結果の帰属を誤読させる。
+        tracing::debug!(policy.layer = "invocation", "policy layer merged");
+        effective = merge_policy_layers(&effective, &validated, MergeMode::Replace)
+            .expect("replace-mode merge cannot fail");
     }
     // After the trusted merge and before the project restriction, fill
     // legacy/partial omissions with the typed policy resolvers.
@@ -164,6 +279,7 @@ retry: {transientAttempts: 2}
             builtin_policy_path: tmp.path().join("builtin-policy.yaml").to_str().unwrap(),
             user_config_dir: tmp.path().join("user").to_str().unwrap(),
             project_dir: tmp.path().join("proj").to_str().unwrap(),
+            invocation: None,
         })
         .unwrap();
         assert_eq!(p.execution.timeout_ms, 300_000);
@@ -194,6 +310,7 @@ retry: {transientAttempts: 2}
             builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
             user_config_dir: user.to_str().unwrap(),
             project_dir: project.to_str().unwrap(),
+            invocation: None,
         })
         .unwrap();
         assert_eq!(p.execution.timeout_ms, 600_000);
@@ -208,6 +325,7 @@ retry: {transientAttempts: 2}
             builtin_policy_path: tmp.path().join("absent.yaml").to_str().unwrap(),
             user_config_dir: tmp.path().to_str().unwrap(),
             project_dir: tmp.path().to_str().unwrap(),
+            invocation: None,
         })
         .unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
@@ -223,8 +341,158 @@ retry: {transientAttempts: 2}
             builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
             user_config_dir: tmp.path().to_str().unwrap(),
             project_dir: project.to_str().unwrap(),
+            invocation: None,
         })
         .unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+    }
+
+    /// `{"version":1,"command":{"grants":{..}}}` shape の invocation
+    /// layer object。
+    fn invocation_layer(grants: Value) -> Map<String, Value> {
+        json!({"version": 1, "command": {"grants": grants}})
+            .as_object()
+            .unwrap()
+            .clone()
+    }
+
+    fn layer_detail(e: &CheaperError) -> Option<&Value> {
+        e.details().and_then(|d| d.get("layer"))
+    }
+
+    #[test]
+    fn invocation_grants_merge_after_user_layer() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "builtin.yaml", BUILTIN);
+        let user = tmp.path().join("user");
+        write(
+            &user,
+            "policy.yaml",
+            "version: 1\ncommand:\n  grants:\n    git-log:\n      executable: git\n",
+        );
+        let invocation = invocation_layer(json!({
+            "cargo-fmt": {"executable": "cargo", "argv": ["fmt"]},
+        }));
+        let p = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: user.to_str().unwrap(),
+            project_dir: tmp.path().join("proj").to_str().unwrap(),
+            invocation: Some(&invocation),
+        })
+        .unwrap();
+        // user grant はそのまま残り、invocation grant が追加される。
+        assert_eq!(p.command.grants["git-log"].executable, "git");
+        assert_eq!(
+            p.command.grants["cargo-fmt"].argv,
+            Some(vec!["fmt".to_string()])
+        );
+    }
+
+    #[test]
+    fn invocation_grants_survive_project_layer() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "builtin.yaml", BUILTIN);
+        let project = tmp.path().join("proj");
+        write(
+            &project,
+            "policy.yaml",
+            "version: 1\nexecution: {concurrency: {maxOperations: 2}}\n",
+        );
+        let invocation = invocation_layer(json!({
+            "git-log": {"executable": "git", "argv": ["log", "*"]},
+        }));
+        let p = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().join("user").to_str().unwrap(),
+            project_dir: project.to_str().unwrap(),
+            invocation: Some(&invocation),
+        })
+        .unwrap();
+        // project partial は `command` section を schema reject するため
+        // invocation grant を override 不能 — trusted boundary の不変条件。
+        assert!(p.command.grants.contains_key("git-log"));
+        assert_eq!(p.execution.concurrency.unwrap().max_operations, 2);
+    }
+
+    #[test]
+    fn invocation_rejects_non_grants_keys() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "builtin.yaml", BUILTIN);
+        // top-level の grants 以外 key。
+        let top = json!({"version": 1, "tools": {"allow": ["read"]}})
+            .as_object()
+            .unwrap()
+            .clone();
+        let e = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().to_str().unwrap(),
+            project_dir: tmp.path().to_str().unwrap(),
+            invocation: Some(&top),
+        })
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRequest);
+        assert_eq!(e.details().unwrap()["key"], json!("tools"));
+        assert_eq!(layer_detail(&e), Some(&json!("invocation")));
+        // `command` 内の grants 以外 key も同じ制約。
+        let nested = json!({"version": 1, "command": {"timeout": "2m"}})
+            .as_object()
+            .unwrap()
+            .clone();
+        let e = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().to_str().unwrap(),
+            project_dir: tmp.path().to_str().unwrap(),
+            invocation: Some(&nested),
+        })
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRequest);
+        assert_eq!(e.details().unwrap()["key"], json!("command.timeout"));
+        assert_eq!(layer_detail(&e), Some(&json!("invocation")));
+    }
+
+    #[test]
+    fn invocation_grant_collision_is_invalid_request() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "builtin.yaml", BUILTIN);
+        let user = tmp.path().join("user");
+        write(
+            &user,
+            "policy.yaml",
+            "version: 1\ncommand:\n  grants:\n    git-log:\n      executable: git\n",
+        );
+        let invocation = invocation_layer(json!({
+            "git-log": {"executable": "git", "argv": ["status"]},
+        }));
+        let e = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: user.to_str().unwrap(),
+            project_dir: tmp.path().join("proj").to_str().unwrap(),
+            invocation: Some(&invocation),
+        })
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRequest);
+        assert_eq!(e.details().unwrap()["grant"], json!("git-log"));
+        assert_eq!(layer_detail(&e), Some(&json!("invocation")));
+    }
+
+    #[test]
+    fn invocation_denied_executable_keeps_inner_code_with_layer() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "builtin.yaml", BUILTIN);
+        // deny list 該当(interpreter)の grant — shared validation 由来の
+        // 失敗は inner code `InvalidRuntimePolicy` を保持する。
+        let invocation = invocation_layer(json!({
+            "run-python": {"executable": "python"},
+        }));
+        let e = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().to_str().unwrap(),
+            project_dir: tmp.path().to_str().unwrap(),
+            invocation: Some(&invocation),
+        })
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        assert!(e.message().contains("invalid command policy"));
+        assert_eq!(layer_detail(&e), Some(&json!("invocation")));
     }
 }

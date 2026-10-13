@@ -144,6 +144,7 @@ async fn execute_inner(
         builtin_policy_path: &builtin_policy_path.to_string_lossy(),
         user_config_dir: &ucd,
         project_dir: &pdir,
+        invocation: None,
     })?;
     #[cfg(feature = "dev-seam")]
     let policy = {

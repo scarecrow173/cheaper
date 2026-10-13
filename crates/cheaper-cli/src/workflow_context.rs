@@ -278,6 +278,7 @@ pub(crate) fn prepare_workflow_context(
         builtin_policy_path: &builtin_policy_path.to_string_lossy(),
         user_config_dir: &dirs.user_config_dir.to_string_lossy(),
         project_dir: &dirs.project_dir.to_string_lossy(),
+        invocation: None,
     })?;
     // `createToolCatalog({process: policy.process})` — resolved policy
     // からの直接構築(serialize→再 resolve の二重経路を避ける —

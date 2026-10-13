@@ -428,6 +428,335 @@
         "projectDir": "proj/.cheaper",
         "userConfigDir": "user"
       }
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 64,
+              "maxTurns": 8,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [],
+              "symlinks": "within-workspace"
+            },
+            "model": {
+              "maxTier": "medium",
+              "tierFallback": "none"
+            },
+            "output": {
+              "maxTokens": 2000,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "command": {
+              "grants": {
+                "cargo-fmt": {
+                  "argv": [
+                    "fmt",
+                    "--check*"
+                  ],
+                  "cwd": ".",
+                  "env": {},
+                  "executable": "cargo",
+                  "killGrace": "2s",
+                  "maxOutputBytes": 65536,
+                  "timeout": "2m"
+                },
+                "git-log": {
+                  "argv": [
+                    "log",
+                    "*"
+                  ],
+                  "cwd": ".",
+                  "env": {},
+                  "executable": "git",
+                  "killGrace": "2s",
+                  "maxOutputBytes": 65536,
+                  "timeout": "2m"
+                }
+              },
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 1
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep",
+                "find",
+                "ls",
+                "write",
+                "edit",
+                "count_tokens",
+                "process"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "files": {
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "user/policy.yaml": "version: 1\ncommand:\n  grants:\n    git-log:\n      executable: git\n      argv:\n        - log\n        - \"*\"\n"
+      },
+      "name": "invocation grant merges after user",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "invocation": {
+          "command": {
+            "grants": {
+              "cargo-fmt": {
+                "argv": [
+                  "fmt",
+                  "--check*"
+                ],
+                "executable": "cargo"
+              }
+            }
+          },
+          "version": 1
+        },
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 2,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 64,
+              "maxTurns": 8,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [],
+              "symlinks": "within-workspace"
+            },
+            "model": {
+              "maxTier": "medium",
+              "tierFallback": "none"
+            },
+            "output": {
+              "maxTokens": 2000,
+              "repairAttempts": 1
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "command": {
+              "grants": {
+                "git-log": {
+                  "argv": [
+                    "log",
+                    "*"
+                  ],
+                  "cwd": ".",
+                  "env": {},
+                  "executable": "git",
+                  "killGrace": "2s",
+                  "maxOutputBytes": 65536,
+                  "timeout": "2m"
+                }
+              },
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 1
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep",
+                "find",
+                "ls",
+                "write",
+                "edit",
+                "count_tokens",
+                "process"
+              ]
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            }
+          }
+        }
+      },
+      "files": {
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "proj/.cheaper/policy.yaml": "version: 1\nexecution:\n  concurrency:\n    maxOperations: 2\n"
+      },
+      "name": "invocation grant survives project layer",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "invocation": {
+          "command": {
+            "grants": {
+              "git-log": {
+                "argv": [
+                  "log",
+                  "*"
+                ],
+                "executable": "git"
+              }
+            }
+          },
+          "version": 1
+        },
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": {
+            "grant": "git-log",
+            "layer": "invocation"
+          },
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "user/policy.yaml": "version: 1\ncommand:\n  grants:\n    git-log:\n      executable: git\n"
+      },
+      "name": "invocation grant collides with user grant",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "invocation": {
+          "command": {
+            "grants": {
+              "git-log": {
+                "executable": "git"
+              }
+            }
+          },
+          "version": 1
+        },
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_REQUEST",
+          "details": {
+            "key": "tools",
+            "layer": "invocation"
+          },
+          "exitCode": 2,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n"
+      },
+      "name": "invocation non-grants key rejects",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "invocation": {
+          "tools": {
+            "allow": [
+              "read"
+            ]
+          },
+          "version": 1
+        },
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
+    },
+    {
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "details": {
+            "layer": "invocation"
+          },
+          "exitCode": 3,
+          "kind": "cheaper",
+          "retryable": false
+        }
+      },
+      "files": {
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n"
+      },
+      "name": "invocation denied executable keeps inner code",
+      "opts": {
+        "builtinPolicyPath": "builtin/policy.yaml",
+        "invocation": {
+          "command": {
+            "grants": {
+              "run-python": {
+                "executable": "python"
+              }
+            }
+          },
+          "version": 1
+        },
+        "projectDir": "proj/.cheaper",
+        "userConfigDir": "user"
+      }
     }
   ],
   "platform": "win32"
