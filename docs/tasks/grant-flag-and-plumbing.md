@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Fpq9sfBaQAX6pFPjWJr"
 type: "task"
-status: "todo"
+status: "done"
 title: "T2: grant-flag-and-plumbing — repeatable --grant flag・build_invocation_layer・run/workflow 配線（RunWorkerDeps propagation 所有）"
 created: "2026-10-13"
-updated: "2026-10-13"
+updated: "2026-10-14"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -165,26 +165,26 @@ compile-forced にし、dispatch 無しの stub を生むため — T2 時点の
 
 ## Done When
 
-- [ ] `run`・全 worker alias・`workflow run` が `--grant` を両受理形・
+- [x] `run`・全 worker alias・`workflow run` が `--grant` を両受理形・
   宣言順保持で受け、`usage`/`count-tokens`/`models`/`auth`/
   `workflow interface` が `InvalidRequest` で reject し、64KiB 超が
   reject される（`policy` arm は T3 — T2 時点は `unknown command` で
   `InvalidRequest`）
-- [ ] `build_invocation_layer` の unit test（`name` strip・duplicate・
+- [x] `build_invocation_layer` の unit test（`name` strip・duplicate・
   malformed・empty → `None`）が pass し、`{"version":1,"command":
   {"grants":{...}}}` shape と宣言順 names を返す
-- [ ] run / workflow run 経路が invocation layer を `load_policy` へ
+- [x] run / workflow run 経路が invocation layer を `load_policy` へ
   接続し、stderr `grant: <names>` 行と `grants.invocation` span
   field を emit する（`--quiet` で stderr 行抑制）
-- [ ] `command` 非宣言 worker への `--grant` が warn-and-continue で、
+- [x] `command` 非宣言 worker への `--grant` が warn-and-continue で、
   `tools.allow` 除外・pin 失敗は hard `POLICY_VIOLATION` のまま
-- [ ] 全 6 `RunWorkerDeps` literal site が更新され workspace build
+- [x] 全 6 `RunWorkerDeps` literal site が更新され workspace build
   （dev-seam feature 付き `--all-targets`）が green
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --test args` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --lib` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --test args` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --lib` exits 0
   （`build_invocation_layer` unit test）
-- [ ] `mise exec -- cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam` exits 0
-- [ ] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam` exits 0
+- [x] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0

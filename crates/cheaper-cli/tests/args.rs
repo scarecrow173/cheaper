@@ -353,6 +353,101 @@ fn workflow_interface_and_run() {
     assert_eq!(e.message(), "workflow requires interface|run <path>");
 }
 
+// --- --grant(T2: repeatable / non-run reject / 64KiB bound) -------------------
+
+#[test]
+fn run_grant_flag_repeatable() {
+    // `--grant <v>` 形
+    let ParsedCli::Run(a) =
+        parse_cli_args(&args(&["run", "w", "--grant", r#"{"name":"a"}"#])).unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(a.grants, [r#"{"name":"a"}"#]);
+
+    // `--grant=<v>` 形 + 複数指定は宣言順保持(last-wins ではない —
+    // `Values.grants` の push arm)。
+    let ParsedCli::Run(a) = parse_cli_args(&args(&[
+        "run",
+        "w",
+        r#"--grant={"name":"a"}"#,
+        "--grant",
+        r#"{"name":"b"}"#,
+        r#"--grant={"name":"c"}"#,
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    assert_eq!(
+        a.grants,
+        [r#"{"name":"a"}"#, r#"{"name":"b"}"#, r#"{"name":"c"}"#]
+    );
+}
+
+#[test]
+fn run_alias_accepts_grant() {
+    // alias command は `ParsedCli::Run` fold により無変更で `--grant`
+    // を受ける。
+    let ParsedCli::Run(a) = parse_cli_args(&args(&[
+        "tool-operate",
+        "--grant",
+        r#"{"name":"self","executable":"/x"}"#,
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    assert_eq!(a.worker_name.as_deref(), Some("tool-operator"));
+    assert_eq!(a.grants, [r#"{"name":"self","executable":"/x"}"#]);
+}
+
+#[test]
+fn workflow_run_accepts_grant() {
+    let ParsedCli::WorkflowRun(a) = parse_cli_args(&args(&[
+        "workflow",
+        "run",
+        "wf.json",
+        "--grant",
+        r#"{"name":"a"}"#,
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    assert_eq!(a.grants, [r#"{"name":"a"}"#]);
+}
+
+#[test]
+fn grant_value_over_64kib_is_rejected() {
+    let oversized = format!("--grant={}", "x".repeat(64 * 1024 + 1));
+    let e = err(&["run", "w", &oversized]);
+    assert_eq!(e.code(), ErrorCode::InvalidRequest);
+    let e = err(&["workflow", "run", "wf.json", &oversized]);
+    assert_eq!(e.code(), ErrorCode::InvalidRequest);
+    // ちょうど 64KiB は受理(bound は「超過」で発火)。
+    let boundary = format!("--grant={}", "x".repeat(64 * 1024));
+    assert!(parse_cli_args(&args(&["run", "w", &boundary])).is_ok());
+    assert!(parse_cli_args(&args(&["workflow", "run", "wf.json", &boundary])).is_ok());
+}
+
+#[test]
+fn grant_rejected_on_non_run_commands() {
+    // AC17 — 非 run 系全 command で `InvalidRequest`(silent drop なし)。
+    // `workflow interface` は allowlist 拒否、`policy` は T3 で command
+    // 本体が実装されるまで `unknown command` の `InvalidRequest` で
+    // fail する(T2 時点でも silent drop は発生しない)。
+    let grant = r#"--grant={"name":"a"}"#;
+    for argv in [
+        vec!["usage", grant],
+        vec!["count-tokens", "f", grant],
+        vec!["models", grant],
+        vec!["auth", "status", grant],
+        vec!["workflow", "interface", "wf.json", grant],
+        vec!["policy", "grant", "list", grant],
+    ] {
+        let e = err(&argv);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "{argv:?}");
+    }
+}
+
 // --- parseArgs 意味論 ---------------------------------------------------------
 
 #[test]

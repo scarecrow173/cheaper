@@ -280,6 +280,7 @@ fn deps<'a>(fx: &'a Fixture, factory: &'a FakeSessionFactory) -> RunWorkerDeps<'
         abort_grace_ms: Some(80.0),
         execution: None,
         operation_clock: None,
+        invocation_grants: &[],
     }
 }
 
@@ -1045,6 +1046,7 @@ async fn degraded_and_undeclared_calls_fail_unknown_tool() {
     })]);
     let deps = RunWorkerDeps {
         session_factory: &factory,
+        invocation_grants: &[],
         ..deps(&fx, &factory.inner)
     };
     let ok = run_worker(&deps).await.unwrap();

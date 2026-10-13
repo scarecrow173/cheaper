@@ -32,6 +32,7 @@ pub mod envelope;
 pub mod errors;
 #[cfg(feature = "dev-seam")]
 pub mod fake_stream;
+pub mod grant;
 pub mod hook;
 pub mod input;
 pub mod models;

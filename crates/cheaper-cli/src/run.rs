@@ -31,6 +31,7 @@ use cheaper_core::duration::parse_duration;
 use cheaper_core::model::config::{load_model_config, LoadModelConfigOptions};
 use cheaper_core::policy::load::{load_policy, LoadPolicyOptions};
 use cheaper_core::policy::restrict::{restrict_policy, PolicyRestrictions};
+use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::worker::resolve::resolve_worker_file;
 use cheaper_core::worker::validate::{validate_worker_input, WorkerDefinition};
 #[cfg(feature = "dev-seam")]
@@ -137,6 +138,10 @@ async fn execute_inner(
     let input = Value::Object(input_map);
     validate_worker_input(&worker, &input)?;
 
+    // `--grant` 値列 → 合成 invocation layer + 宣言順 names
+    // (`grant.rs` — workflow run 経路と共有する builder)。
+    let (invocation_layer, grant_names) = crate::grant::build_invocation_layer(&args.grants)?;
+
     let builtin_policy_path = builtin_dir.join("policy.yaml");
     let ucd = dirs.user_config_dir.to_string_lossy();
     let pdir = dirs.project_dir.to_string_lossy();
@@ -144,7 +149,7 @@ async fn execute_inner(
         builtin_policy_path: &builtin_policy_path.to_string_lossy(),
         user_config_dir: &ucd,
         project_dir: &pdir,
-        invocation: None,
+        invocation: invocation_layer.as_ref(),
     })?;
     #[cfg(feature = "dev-seam")]
     let policy = {
@@ -157,6 +162,22 @@ async fn execute_inner(
         }
         policy
     };
+
+    // `grant: <names>` — invocation-sourced grant を policy-sourced run
+    // と区別する audit surface(`model:` line・catalog warning と同じ
+    // stderr diagnostics 規約、`--quiet` で抑制)。
+    if !grant_names.is_empty() && !args.quiet {
+        io.stderr
+            .write_str(&format!("grant: {}\n", grant_names.join(", ")));
+        // worker が `command` tool を宣言しない場合 grant は露出しない
+        // — warn-and-continue(`tools.allow` 除外・executable pin 失敗は
+        // 下流の hard POLICY_VIOLATION のまま、warning へ変換しない)。
+        if !worker.tools.contains(&ToolName::Command) {
+            io.stderr.write_str(
+                "warning: --grant supplied but worker does not declare the command tool\n",
+            );
+        }
+    }
 
     let timeout_ms = match &args.timeout {
         Some(t) => Some(parse_duration(t).map_err(|_| crate::errors::invalid_timeout(t))?),
@@ -245,6 +266,7 @@ async fn execute_inner(
         abort_grace_ms,
         execution: None,
         operation_clock: None,
+        invocation_grants: &grant_names,
     };
 
     let outcome = run_worker(&deps).await;

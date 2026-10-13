@@ -37,7 +37,7 @@ use cheaper_workflow::{
     ResourceInferenceResult, WorkerCatalog, WorkflowCompiler, WorkflowCompilerPorts,
     WorkflowFileOptions, WorkspaceResourceInference,
 };
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use crate::cli::{BoxError, CliHooks, CliIo};
 
@@ -264,10 +264,13 @@ impl WorkflowContext {
 /// workspace root canonicalize → config dirs → policy → tool catalog →
 /// resource inference。`loadWorkflowFile` 相当は [`WorkflowContext::
 /// load_workflow`]。
+/// `invocation` は `--grant` 由来の合成 policy layer — `workflow run`
+/// 経路のみが渡し、`workflow interface` は `None` 固定。
 pub(crate) fn prepare_workflow_context(
     cwd: Option<&str>,
     io: &CliIo<'_>,
     hooks: &CliHooks,
+    invocation: Option<&Map<String, Value>>,
 ) -> Result<WorkflowContext, BoxError> {
     let layout = crate::compose::resolve_workspace_layout(cwd, io, hooks)?;
     let builtin_dir = layout.builtin_dir;
@@ -278,7 +281,7 @@ pub(crate) fn prepare_workflow_context(
         builtin_policy_path: &builtin_policy_path.to_string_lossy(),
         user_config_dir: &dirs.user_config_dir.to_string_lossy(),
         project_dir: &dirs.project_dir.to_string_lossy(),
-        invocation: None,
+        invocation,
     })?;
     // `createToolCatalog({process: policy.process})` — resolved policy
     // からの直接構築(serialize→再 resolve の二重経路を避ける —

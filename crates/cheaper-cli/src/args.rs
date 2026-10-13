@@ -81,6 +81,9 @@ pub struct RunCliArgs {
     pub timeout: Option<String>,
     /// `--model <provider>/<id>` 直接指定。
     pub model: Option<String>,
+    /// repeatable `--grant <json>` の宣言順値列 — invocation-scoped
+    /// command grant(invoker 供給の非永続 grant)。
+    pub grants: Vec<String>,
     pub format: CliFormat,
     pub quiet: bool,
 }
@@ -122,6 +125,9 @@ pub struct WorkflowRunCliArgs {
     pub input: Option<String>,
     pub cwd: Option<String>,
     pub timeout: Option<String>,
+    /// repeatable `--grant <json>` の宣言順値列(workflow arm の
+    /// `run` 側 allowlist のみが受理する)。
+    pub grants: Vec<String>,
     pub format: CliFormat,
     pub quiet: bool,
 }
@@ -239,6 +245,9 @@ const STRING_OPTIONS: &[&str] = &[
     "worker",
     "compare-model",
     "format",
+    // repeatable — last-wins 規約からの deliberate deviation
+    // (`set_string` の `"grant"` arm 参照)。
+    "grant",
     // observability activation(T2)の global option。値は `Values`
     // field に保持せず、消費は `global_log_flags` が argv scan で
     // 担う(parse 済み値と activation 値の二重表現を避ける)。
@@ -267,6 +276,12 @@ struct Values {
     worker: Option<String>,
     compare_model: Option<String>,
     format: String,
+    /// repeatable `--grant` の宣言順蓄積。`Vec` は default-empty の
+    /// 受け皿なので、値を消費しない非 run command arm は
+    /// `!values.grants.is_empty()` の reject 検査を持つ — silent
+    /// drop 防止規約。新規 command arm を追加する場合も同じ検査を
+    /// 置くこと(run / workflow run 以外は全て reject)。
+    grants: Vec<String>,
     quiet: bool,
     help: bool,
     version: bool,
@@ -288,6 +303,7 @@ impl Default for Values {
             worker: None,
             compare_model: None,
             format: "json".to_string(),
+            grants: Vec::new(),
             quiet: false,
             help: false,
             version: false,
@@ -311,6 +327,10 @@ impl Values {
             "worker" => self.worker = Some(value),
             "compare-model" => self.compare_model = Some(value),
             "format" => self.format = value,
+            // `--grant` は repeatable — 本 file の冒頭に文書化された
+            // last-wins 規約からの deliberate deviation(Node `parseArgs`
+            // の `multiple: true` 相当)。宣言順を保持するため push で畳む。
+            "grant" => self.grants.push(value),
             // 受理のみで値は捨てる — activation 入力は
             // `global_log_flags` が argv から直接 scan する。
             "log" | "log-format" => {}
@@ -349,6 +369,29 @@ fn unknown_option(raw: &str) -> CheaperError {
         "Unknown option '{raw}'. To specify a positional argument starting with a '-', \
 place it at the end of the command after '--', as in '-- \"{raw}\"'"
     ))
+}
+
+/// `--grant` flag 値の byte 上限(64KiB)— cmdline 長制限と無制限
+/// 入力への sanity bound。populate 段で enforce する(非 run command
+/// では `!values.grants.is_empty()` の reject が先に発火するため、
+/// 「その command では使えない」旨の error が size error より優先
+/// される)。
+fn check_grant_value_bounds(grants: &[String]) -> Result<(), CheaperError> {
+    const MAX_GRANT_VALUE_BYTES: usize = 64 * 1024;
+    if grants.iter().any(|g| g.len() > MAX_GRANT_VALUE_BYTES) {
+        return Err(invalid_request(
+            "--grant value exceeds the 64KiB limit",
+            None,
+        ));
+    }
+    Ok(())
+}
+
+/// 非 run command arm 共通の `--grant` reject — `Values.grants` の
+/// 規約 comment(「非 run command は grants 非空検査を持つ」)を満たす
+/// 各 arm の呼出し点。
+fn reject_grant_flag() -> CheaperError {
+    invalid_request("--grant is only valid for `run` and `workflow run`", None)
 }
 
 struct ParseOutcome {
@@ -503,6 +546,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "input",
                 "cwd",
                 "timeout",
+                "grant",
                 "format",
                 "quiet",
                 "log",
@@ -524,6 +568,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
             }
         }
         if action == Some("run") {
+            check_grant_value_bounds(&values.grants)?;
             return Ok(ParsedCli::WorkflowRun(WorkflowRunCliArgs {
                 path: positionals[2].clone(),
                 input: if option_tokens.iter().any(|t| t.name == "input") {
@@ -533,6 +578,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 },
                 cwd: values.cwd.clone(),
                 timeout: values.timeout.clone(),
+                grants: values.grants.clone(),
                 format,
                 quiet,
             }));
@@ -561,6 +607,10 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "--worker-file is only valid for `run`",
                 None,
             ));
+        }
+        // 規約: 非 run command は grants 非空検査を持つ(silent drop 防止)。
+        if !values.grants.is_empty() {
+            return Err(reject_grant_flag());
         }
         if values.timeout.is_some() || values.input != "-" {
             return Err(invalid_request(
@@ -610,6 +660,10 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "--worker-file is only valid for `run`",
                 None,
             ));
+        }
+        // 規約: 非 run command は grants 非空検査を持つ(silent drop 防止)。
+        if !values.grants.is_empty() {
+            return Err(reject_grant_flag());
         }
         if values.timeout.is_some() {
             return Err(invalid_request(
@@ -664,6 +718,10 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "--worker-file is only valid for `run`",
                 None,
             ));
+        }
+        // 規約: 非 run command は grants 非空検査を持つ(silent drop 防止)。
+        if !values.grants.is_empty() {
+            return Err(reject_grant_flag());
         }
         if values.model.is_some() {
             return Err(invalid_request(
@@ -731,6 +789,10 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "--worker-file is only valid for `run`",
                 None,
             ));
+        }
+        // 規約: 非 run command は grants 非空検査を持つ(silent drop 防止)。
+        if !values.grants.is_empty() {
+            return Err(reject_grant_flag());
         }
         if values.timeout.is_some() {
             return Err(invalid_request(
@@ -900,6 +962,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         }
     }
 
+    check_grant_value_bounds(&values.grants)?;
     Ok(ParsedCli::Run(RunCliArgs {
         worker_name,
         worker_file,
@@ -907,6 +970,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         cwd: values.cwd,
         timeout: values.timeout,
         model,
+        grants: values.grants,
         format,
         quiet,
     }))

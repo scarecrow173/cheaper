@@ -126,6 +126,7 @@ async fn replay(fixture: &RunFixture) -> ReplayOutput {
         abort_grace_ms: Some(fixture.abort_grace_ms.unwrap_or(80.0)),
         execution: None,
         operation_clock: None,
+        invocation_grants: &[],
     };
     let result = run_worker(&deps).await;
     ReplayOutput {

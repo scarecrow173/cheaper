@@ -530,6 +530,8 @@ Commands:
 Options:
   --input <file|->       Task input JSON (default: stdin)
   --worker-file <path>   Run an explicit worker file (run only)
+  --grant <json>         Grant a command for this run only (repeatable;
+                         run/workflow run only)
   --cwd <path>           Workspace root (default: process.cwd())
   --timeout <duration>   Narrow policy timeout (e.g. 30s, 5m)
   --model <prov>/<id>    run: explicit model; usage: filter by model

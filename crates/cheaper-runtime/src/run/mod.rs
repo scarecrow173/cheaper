@@ -417,6 +417,7 @@ impl<'a> RunCtx<'a> {
         let tool_scope_stage = tracing::info_span!(
             "cheaper.run.tool_scope",
             tools.degraded = tracing::field::Empty,
+            grants.invocation = tracing::field::Empty,
         );
         let scope = {
             let _stage_guard = tool_scope_stage.enter();
@@ -480,6 +481,14 @@ impl<'a> RunCtx<'a> {
             .collect::<Vec<_>>()
             .join(", ");
         tool_scope_stage.record("tools.degraded", degraded.as_str());
+        // `grants.invocation` — `--grant` 由来 grant 名の宣言順 join を
+        // metadata-only field として同じ sync 区間で record する
+        // (design §(d) — invocation-sourced grant を policy-sourced
+        // run と区別する audit surface)。
+        tool_scope_stage.record(
+            "grants.invocation",
+            deps.invocation_grants.join(", ").as_str(),
+        );
         scope
             .ready()
             .instrument(tool_scope_stage)

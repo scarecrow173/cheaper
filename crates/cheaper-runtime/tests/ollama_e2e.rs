@@ -306,6 +306,7 @@ async fn run(fx: &E2eFixture, worker: &WorkerDefinition, input: Value) -> RunWor
         abort_grace_ms: None,
         execution: None,
         operation_clock: None,
+        invocation_grants: &[],
     };
     let started = Instant::now();
     let outcome = run_worker(&deps).await;
