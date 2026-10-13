@@ -704,8 +704,7 @@ fn command_grant_flag(marker: &str) -> String {
 /// `policy grant add <name> <spec-json>` 用の spec JSON —
 /// `command.grants` の map value shape(`name` key を含まない)。
 fn command_grant_spec(marker: &str) -> String {
-    let flag: serde_json::Value =
-        serde_json::from_str(&command_grant_flag(marker)).unwrap();
+    let flag: serde_json::Value = serde_json::from_str(&command_grant_flag(marker)).unwrap();
     let mut spec = flag.as_object().unwrap().clone();
     spec.remove("name");
     serde_json::Value::Object(spec).to_string()
@@ -910,9 +909,7 @@ async fn run_fake_stream_policy_grant_add_then_run_executes() {
     let mut f = Fixture::new().with_fake_stream(FIXTURE_COMMAND_CALL);
     let (warg, marker) = opt_in_command_worker(&f);
     let spec = command_grant_spec(&marker);
-    let (code, env, err) = f
-        .run(&["policy", "grant", "add", "self", &spec])
-        .await;
+    let (code, env, err) = f.run(&["policy", "grant", "add", "self", &spec]).await;
     assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
     assert_eq!(env["result"]["grant"]["name"], json!("self"));
     assert!(f.cfg.path().join("policy.yaml").exists());
@@ -934,9 +931,7 @@ async fn run_fake_stream_policy_grant_remove_then_run_degrades() {
     let (warg, marker) = opt_in_command_worker(&f);
     // add → remove(write path 双方を通す)。
     let spec = command_grant_spec(&marker);
-    let (code, env, err) = f
-        .run(&["policy", "grant", "add", "self", &spec])
-        .await;
+    let (code, env, err) = f.run(&["policy", "grant", "add", "self", &spec]).await;
     assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
     let (code, env, err) = f.run(&["policy", "grant", "remove", "self"]).await;
     assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
@@ -997,16 +992,12 @@ async fn run_fake_stream_grant_on_worker_without_command_warns() {
         "executable": std::env::current_exe().unwrap().to_string_lossy(),
     })
     .to_string();
-    let (code, env, err) = f
-        .run(&["run", "fixture-worker", "--grant", &grant])
-        .await;
+    let (code, env, err) = f.run(&["run", "fixture-worker", "--grant", &grant]).await;
     assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
     assert_eq!(env["ok"], json!(true));
     assert!(err.contains("grant: self\n"), "stderr: {err}");
     assert!(
-        err.contains(
-            "warning: --grant supplied but worker does not declare the command tool"
-        ),
+        err.contains("warning: --grant supplied but worker does not declare the command tool"),
         "stderr: {err}"
     );
 }
