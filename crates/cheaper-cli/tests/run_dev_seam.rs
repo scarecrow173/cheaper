@@ -675,3 +675,415 @@ async fn run_fake_stream_tool_operator_returns_bounded_result_only() {
         "{savings}"
     );
 }
+
+// ---------------------------------------------------------------------------
+// `--grant` — invocation-scoped command grant(issue #105 T5、
+// approved test-spec `docs/test-specs/invocation-scoped-command-grants.md`)。
+// flag 由来 grant は合成 `invocation` layer として user merge 直後に
+// 畳まれ、当該 run で user-policy grant と同一の runtime 挙動を持つ一方
+// policy file に一切永続化されない。
+// ---------------------------------------------------------------------------
+
+/// `--grant` flag 値(JSON)— `command_user_policy` と同型の
+/// self-reshim grant(executable = test binary 自身、literal argv pin、
+/// `env` で fixture mode + marker path を渡す)を `name` 内包の flag
+/// JSON として組み立てる。
+fn command_grant_flag(marker: &str) -> String {
+    serde_json::json!({
+        "name": "self",
+        "executable": std::env::current_exe().unwrap().to_string_lossy(),
+        "argv": ["run_dev_seam_command_fixture_child", "--exact", "--nocapture"],
+        "env": {
+            "CHEAPER_PROC_CHILD_MODE": "probe",
+            "CHEAPER_PROC_CHILD_ARG": marker,
+        }
+    })
+    .to_string()
+}
+
+/// `policy grant add <name> <spec-json>` 用の spec JSON —
+/// `command.grants` の map value shape(`name` key を含まない)。
+fn command_grant_spec(marker: &str) -> String {
+    let flag: serde_json::Value =
+        serde_json::from_str(&command_grant_flag(marker)).unwrap();
+    let mut spec = flag.as_object().unwrap().clone();
+    spec.remove("name");
+    serde_json::Value::Object(spec).to_string()
+}
+
+/// opt-in `command` worker を `--worker-file` で配置し、`(worker arg,
+/// marker path)` を返す helper。grant run 群が共有する setup。
+fn opt_in_command_worker(f: &Fixture) -> (String, String) {
+    let marker = f
+        .ws_path()
+        .join("cmd-marker")
+        .to_string_lossy()
+        .into_owned();
+    let worker_path = f.ws_path().join("opt-command-worker.md");
+    std::fs::write(&worker_path, OPT_IN_COMMAND_WORKER_MD).unwrap();
+    (worker_path.to_string_lossy().into_owned(), marker)
+}
+
+/// AC1 — opt-in 縮退した `command` を `--grant` flag JSON 経由の
+/// invocation grant が un-degrade し、scripted `command` call が実
+/// subprocess を spawn する。grant の runtime 挙動(argv pattern・
+/// executable pin・grant env 伝播)は user-policy grant と同一。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_grant_flag_un_degrades_command_and_spawns() {
+    let mut f = Fixture::new().with_fake_stream(FIXTURE_COMMAND_CALL);
+    let (warg, marker) = opt_in_command_worker(&f);
+    f.stdin.data = br#"{"task":"t"}"#.to_vec();
+    let grant = command_grant_flag(&marker);
+    let (code, env, err) = f
+        .run(&["run", "--worker-file", &warg, "--grant", &grant])
+        .await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    assert_eq!(env["meta"]["toolCalls"], json!(1));
+    // 実 subprocess spawn — grant env(minimal env)経由で子が marker
+    // を workspace 内へ書いた。
+    assert_eq!(std::fs::read_to_string(&marker).unwrap(), "ran");
+}
+
+/// AC2 — `--grant` は一切永続化しない。granted run の後に flag 無しで
+/// 同一 run を再実行すると `command` は再び縮退し(degraded call は
+/// `meta.toolCalls` に計上されない)、`<cfg>/policy.yaml` は run の
+/// どの時点でも書き込まれない。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_grant_flag_is_not_persisted() {
+    let mut f = Fixture::new().with_fake_stream(FIXTURE_COMMAND_CALL);
+    let (warg, marker) = opt_in_command_worker(&f);
+    f.stdin.data = br#"{"task":"t"}"#.to_vec();
+    let grant = command_grant_flag(&marker);
+    let (code, env, err) = f
+        .run(&["run", "--worker-file", &warg, "--grant", &grant])
+        .await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["meta"]["toolCalls"], json!(1));
+    assert_eq!(std::fs::read_to_string(&marker).unwrap(), "ran");
+    std::fs::remove_file(&marker).unwrap();
+
+    // flag 無し再実行 — `PipeStdin::read_all` が stdin を消費するため
+    // 再装填する(Fixture::run の doc comment 参照)。
+    f.stdin.data = br#"{"task":"t"}"#.to_vec();
+    let (code, env, err) = f.run(&["run", "--worker-file", &warg]).await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    // 再縮退 — command call は未登録で metering/accounting に到達
+    // しない。
+    assert_eq!(env["meta"]["toolCalls"], json!(0));
+    assert!(!std::path::Path::new(&marker).exists());
+    // `--grant` は policy file を一切書かない。
+    assert!(!f.cfg.path().join("policy.yaml").exists());
+}
+
+/// AC3 — deny list 該当 executable(`python` — interpreter)を含む
+/// `--grant` spec は run 開始前に reject される。shared validation
+/// 由来として inner code `INVALID_RUNTIME_POLICY`(exit 3)を保持し
+/// `details.layer == "invocation"` を持つ — invocation 経路は deny
+/// list を迂回しない。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_grant_deny_listed_executable_rejected() {
+    let fixture = opt_in_fixture(r#"{"status":"success"}"#, None);
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "t"}"#);
+    let (code, env, _err) = f
+        .run(&[
+            "run",
+            "opt-worker",
+            "--grant",
+            r#"{"name":"x","executable":"python"}"#,
+        ])
+        .await;
+    assert_eq!(env["ok"], json!(false), "envelope: {env}");
+    assert_eq!(env["error"]["code"], json!("INVALID_RUNTIME_POLICY"));
+    assert_eq!(
+        env["error"]["details"]["layer"],
+        json!("invocation"),
+        "envelope: {env}"
+    );
+    assert_eq!(code, 3, "envelope: {env}");
+}
+
+/// AC4 — flag 由来 grant が builtin/user policy の同名 grant と衝突
+/// する場合、run 開始前に `INVALID_REQUEST`(exit 2) +
+/// `details.grant` + `details.layer="invocation"` で fail する。
+/// silent 上書き・last-wins は存在しない。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_grant_collides_with_user_policy() {
+    let fixture = opt_in_fixture(r#"{"status":"success"}"#, None);
+    let mut f = Fixture::new().with_fake_stream(&fixture);
+    let marker = f
+        .ws_path()
+        .join("cmd-marker")
+        .to_string_lossy()
+        .into_owned();
+    // user(trusted)layer に同名 grant `self` を seed。
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        command_user_policy(&marker),
+    )
+    .unwrap();
+    f.stdin.data = br#"{"task":"t"}"#.to_vec();
+    let grant = command_grant_flag(&marker);
+    let (code, env, _err) = f.run(&["run", "opt-worker", "--grant", &grant]).await;
+    assert_eq!(env["ok"], json!(false), "envelope: {env}");
+    assert_eq!(env["error"]["code"], json!("INVALID_REQUEST"));
+    assert_eq!(env["error"]["details"]["grant"], json!("self"));
+    assert_eq!(env["error"]["details"]["layer"], json!("invocation"));
+    assert_eq!(code, 2, "envelope: {env}");
+}
+
+/// AC13 — 同一 invocation 内の同名 `--grant` 重複も `INVALID_REQUEST`
+/// + `details.grant` + `details.layer` で fail(宣言順 push の暗黙
+/// last-wins を許さない)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_grant_duplicate_name_rejected() {
+    let fixture = opt_in_fixture(r#"{"status":"success"}"#, None);
+    let mut f = Fixture::new().with_fake_stream(&fixture);
+    let marker = f
+        .ws_path()
+        .join("cmd-marker")
+        .to_string_lossy()
+        .into_owned();
+    f.stdin.data = br#"{"task":"t"}"#.to_vec();
+    let grant = command_grant_flag(&marker);
+    let (code, env, _err) = f
+        .run(&["run", "opt-worker", "--grant", &grant, "--grant", &grant])
+        .await;
+    assert_eq!(env["ok"], json!(false), "envelope: {env}");
+    assert_eq!(env["error"]["code"], json!("INVALID_REQUEST"));
+    assert_eq!(env["error"]["details"]["grant"], json!("self"));
+    assert_eq!(env["error"]["details"]["layer"], json!("invocation"));
+    assert_eq!(code, 2, "envelope: {env}");
+}
+
+/// AC5 — gated tool 欠如由来の `blocked` で tool-operator が
+/// `grantRequests[]` を emit した場合、success envelope `result` から
+/// parse でき宣言 output schema(`required: ["executable"]` +
+/// optional `argvHint`/`name`・`additionalProperties: false`)に適合
+/// する。success envelope への到達自体が field 宣言の証明(strict
+/// schema validation が非適合を `INVALID_OUTPUT` に落とすため)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_tool_operator_blocked_emits_grant_requests() {
+    let result = serde_json::json!({
+        "status": "blocked",
+        "summary": "command unavailable under current policy",
+        "findings": [{
+            "title": "checked the target",
+            "detail": "looked at the requested inputs",
+            "evidence": [{"kind": "note", "detail": "e"}]
+        }],
+        "unresolved": ["command unavailable"],
+        "nextActions": ["grant command policy"],
+        "grantRequests": [{"executable": "rg", "argvHint": ["--files"], "name": "rg"}]
+    });
+    let fixture = format!(
+        r#"{{"name": "tool_op_grant_requests", "sessions": [{{"steps": [
+          {{"usage_delta": {{"input": 120, "output": 40}}}},
+          {{"turn": {{}}}},
+          {{"finish": {{"text": {}}}}}]}}]}}"#,
+        serde_json::to_string(&serde_json::to_string(&result).unwrap()).unwrap()
+    );
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "t"}"#);
+    let (code, env, err) = f.run(&["run", "tool-operator"]).await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    // envelope `result` から machine-readable に parse できる。
+    assert_eq!(env["result"]["status"], json!("blocked"));
+    assert_eq!(
+        env["result"]["grantRequests"],
+        json!([{"executable": "rg", "argvHint": ["--files"], "name": "rg"}]),
+        "envelope: {env}"
+    );
+}
+
+/// AC6(行為側半分)— `policy grant add` で user policy へ永続化した
+/// grant が、後続の flag 無し opt-in run でそのまま効く(command が
+/// 実登録・実 spawn)。同一 `Fixture` の連続 `f.run` —
+/// `tests/common/mod.rs` の multi-call 対応が前提。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_policy_grant_add_then_run_executes() {
+    let mut f = Fixture::new().with_fake_stream(FIXTURE_COMMAND_CALL);
+    let (warg, marker) = opt_in_command_worker(&f);
+    let spec = command_grant_spec(&marker);
+    let (code, env, err) = f
+        .run(&["policy", "grant", "add", "self", &spec])
+        .await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["result"]["grant"]["name"], json!("self"));
+    assert!(f.cfg.path().join("policy.yaml").exists());
+
+    // flag 無しの run が user policy の grant で command を実行する。
+    f.stdin.data = br#"{"task":"t"}"#.to_vec();
+    let (code, env, err) = f.run(&["run", "--worker-file", &warg]).await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    assert_eq!(env["meta"]["toolCalls"], json!(1));
+    assert_eq!(std::fs::read_to_string(&marker).unwrap(), "ran");
+}
+
+/// AC7(行為側半分)— `policy grant remove` で削除した grant は後続の
+/// flag 無し run で効かなくなる(opt-in `command` が縮退へ復帰)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_policy_grant_remove_then_run_degrades() {
+    let mut f = Fixture::new().with_fake_stream(FIXTURE_COMMAND_CALL);
+    let (warg, marker) = opt_in_command_worker(&f);
+    // add → remove(write path 双方を通す)。
+    let spec = command_grant_spec(&marker);
+    let (code, env, err) = f
+        .run(&["policy", "grant", "add", "self", &spec])
+        .await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    let (code, env, err) = f.run(&["policy", "grant", "remove", "self"]).await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+
+    // flag 無し run は再び縮退 — command call は未登録で計上されない。
+    f.stdin.data = br#"{"task":"t"}"#.to_vec();
+    let (code, env, err) = f.run(&["run", "--worker-file", &warg]).await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    assert_eq!(env["meta"]["toolCalls"], json!(0));
+    assert!(!std::path::Path::new(&marker).exists());
+}
+
+/// AC8 — invocation-sourced grant が適用された run は stderr
+/// diagnostic 行 `grant: <names>`(宣言順、`model:` line 規約に一致)
+/// で audit surface を持ち、`--quiet` で抑制される。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_grant_emits_stderr_diagnostic() {
+    let fixture = opt_in_fixture(r#"{"status":"success"}"#, None);
+    let marker_hint = "unused-marker";
+    let grant = command_grant_flag(marker_hint);
+
+    // 非 quiet — `grant: self` 行が stderr に出る。
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "t"}"#);
+    let (code, env, err) = f.run(&["run", "opt-worker", "--grant", &grant]).await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    assert!(err.contains("grant: self\n"), "stderr: {err}");
+
+    // `--quiet` — model line・warning と同規約で抑制される。
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "t"}"#);
+    let (code, env, err) = f
+        .run(&["run", "opt-worker", "--quiet", "--grant", &grant])
+        .await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    assert_eq!(err, "", "stderr: {err}");
+}
+
+/// 非露出 warn — `command` を宣言しない worker(`--worker-file` 含む)
+/// への `--grant` は warn-and-continue: stderr に warning 行を出して
+/// run は続行する。`tools.allow` 除外・pin 失敗は hard
+/// `POLICY_VIOLATION` のまま(warning へ変換しない)— 後者は既存
+/// `run_fake_stream_opt_in_capability_denied_is_policy_violation` の
+/// 無変更 green で固定。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_grant_on_worker_without_command_warns() {
+    // `fixture-worker`(default tools `[read, write]` — `command` 非宣言)。
+    let mut f = Fixture::new()
+        .with_fake_stream(FIXTURE_BASIC)
+        .with_input(r#"{"files":["a.txt"]}"#);
+    let grant = serde_json::json!({
+        "name": "self",
+        "executable": std::env::current_exe().unwrap().to_string_lossy(),
+    })
+    .to_string();
+    let (code, env, err) = f
+        .run(&["run", "fixture-worker", "--grant", &grant])
+        .await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    assert!(err.contains("grant: self\n"), "stderr: {err}");
+    assert!(
+        err.contains(
+            "warning: --grant supplied but worker does not declare the command tool"
+        ),
+        "stderr: {err}"
+    );
+}
+
+/// AC10 — `tool-operate` alias 経由でも `--grant` が同等に効く
+/// (`ParsedCli::Run` fold parity)。builtin `tool-operator` は
+/// `optionalTools: [process, command]` opt-in 宣言済みのため flag
+/// grant で `command` が実登録され、scripted call が spawn する。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_tool_operate_alias_accepts_grant() {
+    let result = serde_json::json!({
+        "status": "success",
+        "summary": "ran the granted command",
+        "findings": [{
+            "title": "t", "detail": "d",
+            "evidence": [{"kind": "note", "detail": "e"}]
+        }],
+        "unresolved": [],
+        "nextActions": []
+    });
+    let fixture = format!(
+        r#"{{"name": "tool_op_grant", "sessions": [{{"steps": [
+          {{"tool_calls": [{{"name": "command", "input": {{"name": "self", "args": ["run_dev_seam_command_fixture_child", "--exact", "--nocapture"]}}}}]}},
+          {{"turn": {{"tool_calls": true}}}},
+          {{"usage_delta": {{"input": 100, "output": 20}}}},
+          {{"finish": {{"text": {}}}}}]}}]}}"#,
+        serde_json::to_string(&serde_json::to_string(&result).unwrap()).unwrap()
+    );
+    let mut f = Fixture::new().with_fake_stream(&fixture);
+    let marker = f
+        .ws_path()
+        .join("cmd-marker")
+        .to_string_lossy()
+        .into_owned();
+    f.stdin.data = br#"{"task":"t"}"#.to_vec();
+    let grant = command_grant_flag(&marker);
+    let (code, env, err) = f.run(&["tool-operate", "--grant", &grant]).await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    // alias は `tool-operator` へ解約される。
+    assert_eq!(env["worker"], json!("tool-operator"));
+    assert_eq!(env["result"]["status"], json!("success"));
+    assert_eq!(env["meta"]["toolCalls"], json!(1));
+    assert_eq!(std::fs::read_to_string(&marker).unwrap(), "ran");
+}
+
+/// AC15 — repeatable `--grant` で複数 grant が 1 つの run に同時注入
+/// される。2 つの grant が effective `command.grants` に共存し(pin
+/// される)、stderr diagnostic の `grant:` 行に宣言順で列挙される。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_multiple_grants_injected() {
+    let mut f = Fixture::new().with_fake_stream(FIXTURE_COMMAND_CALL);
+    let (warg, marker) = opt_in_command_worker(&f);
+    f.stdin.data = br#"{"task":"t"}"#.to_vec();
+    let grant_self = command_grant_flag(&marker);
+    // 2 件目 — 同じ pin 先(test binary)を持つ未 call の grant。
+    let grant_other = serde_json::json!({
+        "name": "other",
+        "executable": std::env::current_exe().unwrap().to_string_lossy(),
+    })
+    .to_string();
+    let (code, env, err) = f
+        .run(&[
+            "run",
+            "--worker-file",
+            &warg,
+            "--grant",
+            &grant_self,
+            "--grant",
+            &grant_other,
+        ])
+        .await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    // scripted call(grant `self`)が実 spawn する。
+    assert_eq!(env["meta"]["toolCalls"], json!(1));
+    assert_eq!(std::fs::read_to_string(&marker).unwrap(), "ran");
+    // `grant:` 行は宣言順に両名を列挙する。
+    assert!(err.contains("grant: self, other\n"), "stderr: {err}");
+}

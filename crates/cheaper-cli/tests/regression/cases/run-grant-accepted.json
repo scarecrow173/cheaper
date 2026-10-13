@@ -1,0 +1,22 @@
+{
+  "name": "run_grant_accepted",
+  "fixture": {
+    "name": "grant_accepted",
+    "files_note": "`--grant` policy-layer 受理(fixture worker は command 非宣言 — grant は invocation layer として受理・merge され `grant:` 行 + 非露出 warning が出るが pin は走らない)",
+    "input": { "files": ["a.txt"], "task": "t" },
+    "sessions": [
+      {
+        "steps": [
+          { "turn": {} },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "extraArgs": [
+    "--grant",
+    "{\"name\":\"self\",\"executable\":\"/nonexistent/grant-target\",\"argv\":[\"--probe\"]}"
+  ],
+  "files": { "a.txt": "alpha\n" },
+  "compareStderr": true
+}

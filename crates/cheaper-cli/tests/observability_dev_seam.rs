@@ -228,6 +228,12 @@ struct Run {
 }
 
 fn spawn_logged_run() -> Run {
+    spawn_logged_run_with(&[])
+}
+
+/// `spawn_logged_run` の extra-argv 版 — `run obs-worker` argv の末尾
+/// に `extra_args` を付ける(`--grant` 等の flag 検証用)。
+fn spawn_logged_run_with(extra_args: &[&str]) -> Run {
     let tmp = tempfile::tempdir().unwrap();
     let ws = tmp.path().join("ws");
     let cfg = tmp.path().join("cfg");
@@ -258,6 +264,7 @@ fn spawn_logged_run() -> Run {
 
     let argv: Vec<String> = ["run", "obs-worker"]
         .iter()
+        .chain(extra_args.iter())
         .map(|s| s.to_string())
         .collect();
     let stdin = serde_json::to_vec(&run_input()).unwrap();
@@ -363,6 +370,56 @@ fn fixture_run_stage_timing_and_tool_events() {
     assert!(named("cheaper.auth"), "{span_names:?}");
     assert!(named("cheaper.auth.store"), "{targets:?}");
     assert!(named("cheaper.catalog"), "{targets:?}");
+}
+
+/// AC8 — invocation-sourced grant の audit surface(span field)。
+/// `--grant` 付き run の `cheaper.run.tool_scope` span record が
+/// `grants.invocation` field(宣言順 join)を持つことを JSON file sink
+/// の close event で確定 assert する — `tools.degraded` と同じ sync
+/// 区間で record されるため deterministic。in-process Fixture 経路は
+/// global subscriber を install できないため subprocess 経路で担保。
+#[test]
+fn grants_invocation_span_field_is_recorded() {
+    // `obs-worker` は `command` を宣言しない(tools: [read, process])
+    // — grant は policy layer で受理・merge され `grant:` stderr 行 +
+    // 非露出 warning が出るが、pin は `command` 非露出のため走らない
+    // (executable の存在確認は行われない)。
+    let grant = r#"{"name":"self","executable":"/nonexistent/grant-target"}"#;
+    let run = spawn_logged_run_with(&["--grant", grant]);
+    assert_eq!(
+        run.out.code,
+        Some(0),
+        "stderr: {}",
+        String::from_utf8_lossy(&run.out.stderr)
+    );
+    let stderr = String::from_utf8_lossy(&run.out.stderr);
+    assert!(stderr.contains("grant: self"), "stderr: {stderr}");
+
+    let text = log_text(&run.ws);
+    assert!(!text.is_empty(), "file sink must contain events");
+    // JSON formatter は span の record 済み field を close event の
+    // `span` object へ inline する(`fields` ではない — close event の
+    // `fields` は `message`/`time.busy`/`time.idle` のみ)。span 内で
+    // record 前に emit された event の `spans[]` context は field を
+    // 持たないことがあるため、確定 assert は close event(final
+    // recorded state)に限定する。
+    let mut found = false;
+    for line in text.lines().filter(|l| !l.is_empty()) {
+        let ev: Value = serde_json::from_str(line)
+            .unwrap_or_else(|e| panic!("log line must parse as JSON: {e} ({line:?})"));
+        if ev["span"]["name"].as_str() == Some("cheaper.run.tool_scope") {
+            assert_eq!(
+                ev["span"]["grants.invocation"].as_str(),
+                Some("self"),
+                "grants.invocation field missing on tool_scope close event: {ev}"
+            );
+            found = true;
+        }
+    }
+    assert!(
+        found,
+        "cheaper.run.tool_scope close event with grants.invocation field missing"
+    );
 }
 
 #[test]

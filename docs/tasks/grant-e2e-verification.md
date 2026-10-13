@@ -1,10 +1,10 @@
 ---
 id: "TASK-034FpqBkFDhANMoaYZLw5G"
 type: "task"
-status: "todo"
+status: "done"
 title: "T5: grant-e2e-verification — dev-seam / regression / parity の結合検証"
 created: "2026-10-13"
-updated: "2026-10-13"
+updated: "2026-10-14"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -170,27 +170,27 @@ AC8・AC10・AC13–AC15 を網羅する。前提として `tests/common/mod.rs`
 
 ## Done When
 
-- [ ] `--grant` re-run で opt-in 縮退が解消し実 spawn し、flag 無し
+- [x] `--grant` re-run で opt-in 縮退が解消し実 spawn し、flag 無し
   再実行で再縮退 + `policy.yaml` 不変（AC1・AC2）
-- [ ] deny/collision/intra-invocation duplicate が run 開始前に正しい
+- [x] deny/collision/intra-invocation duplicate が run 開始前に正しい
   error 分類 + `details.layer="invocation"` で fail（AC3・AC4・AC13）
-- [ ] `grantRequests` を含む blocked 出力が schema 適合 + envelope
+- [x] `grantRequests` を含む blocked 出力が schema 適合 + envelope
   `result` parse 可能（AC5）、`policy grant add/remove` 後の flag
   無し run が grant に従い実行/縮退する（AC6・AC7 行為側半分）
-- [ ] stderr `grant:` 行（`--quiet` 抑制）と `grants.invocation`
+- [x] stderr `grant:` 行（`--quiet` 抑制）と `grants.invocation`
   span field（observability file sink）が確定 assert される（AC8）、
   `tool-operate` alias・`workflow run`（worker job + tool job）の
   parity・複数 grant 注入・非露出 warn と `POLICY_VIOLATION` の区別
   が固定される（AC10・AC14・AC15）
-- [ ] regression case（policy-layer 結果のみ — positive spawn は
+- [x] regression case（policy-layer 結果のみ — positive spawn は
   dev-seam のみ）が生成・diff review 済みで、`proc_invocation`
   parity が無変更 green
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --test run_dev_seam --features cheaper-cli/dev-seam` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --test workflow_dev_seam --features cheaper-cli/dev-seam` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --test observability_dev_seam --features cheaper-cli/dev-seam` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --test regression --features cheaper-cli/dev-seam` exits 0（expected 生成は `CHEAPER_REGRESSION_CAPTURE=1 cargo test -p cheaper-cli --features dev-seam --test regression`）
-- [ ] `mise exec -- cargo test -p cheaper-tools --test proc_invocation` exits 0
-- [ ] `mise exec -- cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --test run_dev_seam --features cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --test workflow_dev_seam --features cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --test observability_dev_seam --features cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --test regression --features cheaper-cli/dev-seam` exits 0（expected 生成は `CHEAPER_REGRESSION_CAPTURE=1 cargo test -p cheaper-cli --features dev-seam --test regression`）
+- [x] `mise exec -- cargo test -p cheaper-tools --test proc_invocation` exits 0
+- [x] `mise exec -- cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
