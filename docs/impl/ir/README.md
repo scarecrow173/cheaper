@@ -113,6 +113,7 @@ Directory: `docs/impl/ir`
 | IMPL-034A6gXDwnMxGVaPiuSCxb | Shared tool scheduler | completed | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
 | IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |
+| IMPL-034EVH2F3b1QJYE8LSAfkT | tool-operator worker definition schemas and tool-operate alias | completed | [tool-operator-worker-definition-schemas-and-tool-operate-alias.md](./tool-operator-worker-definition-schemas-and-tool-operate-alias.md) |
 | IMPL-034z3CE24rUsOGqD0BfeqZ | track executables with git lfs | completed | [track-executables-with-git-lfs.md](./track-executables-with-git-lfs.md) |
 | IMPL-034r05iHy2gdnpx0u8vJaz | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | IMPL-034z1STqpGaGE7SWSnCLo3 | Unify packageVersion on builtinDir | completed | [unify-packageversion-on-builtindir.md](./unify-packageversion-on-builtindir.md) |

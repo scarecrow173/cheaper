@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EUvKoVCWZdud4HyTGSK"
 type: "task"
-status: "todo"
+status: "done"
 title: "T3: tool-operator worker 定義・schema・tool-operate alias"
 created: "2026-10-13"
 updated: "2026-10-13"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "../plans/implement-tool-operator-built-in-worker.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/tool-operator-worker-definition-schemas-and-tool-operate-alias.md"
   depends-on:
     - "../plans/implement-tool-operator-built-in-worker.md"
     - "docs/tasks/optional-tools-core-machinery.md"
@@ -132,12 +133,12 @@ model session まで到達して evidence 付き compact structured result を�
 
 ## Done When
 
-- [ ] `tool-operator` が worker discovery で load され input/output schema
+- [x] `tool-operator` が worker discovery で load され input/output schema
   が解決する（`resolve_worker` が parse + schema compile に成功）
-- [ ] `cheaper tool-operate` が `cheaper run tool-operator` と等価に解約
+- [x] `cheaper tool-operate` が `cheaper run tool-operator` と等価に解約
   され、extra positional を reject する（canonical invocation は
   `--input` / stdin JSON のみ）
-- [ ] `builtin_dir()` loop test が `tool-operator` を含む全 builtin
+- [x] `builtin_dir()` loop test が `tool-operator` を含む全 builtin
   worker で pass — `optionalTools` key 未実装（T1）では strict-key
   reject で fail するため T3→T1 ordering が機械的に enforce される
 
@@ -153,4 +154,4 @@ model session まで到達して evidence 付き compact structured result を�
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-cli/dev-seam` exits 0（`--test args` の alias table + positional reject + builtin resolve loop test を含む）
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-cli/dev-seam` exits 0（`--test args` の alias table + positional reject + builtin resolve loop test を含む）

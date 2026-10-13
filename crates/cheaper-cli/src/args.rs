@@ -41,6 +41,7 @@ pub(crate) fn alias_worker(command: &str) -> Option<&'static str> {
         "bulk-read" => Some("bulk-reader"),
         "code-write" => Some("code-writer"),
         "doc-write" => Some("doc-writer"),
+        "tool-operate" => Some("tool-operator"),
         _ => None,
     }
 }
@@ -480,7 +481,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
 
     let Some(command) = positionals.first() else {
         return Err(invalid_request(
-            "command required: run | bulk-read | code-write | doc-write | count-tokens | usage | models | auth | workflow",
+            "command required: run | bulk-read | code-write | doc-write | tool-operate | count-tokens | usage | models | auth | workflow",
             None,
         ));
     };
