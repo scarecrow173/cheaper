@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034ETMVrwmwh0Z0jq4gwtt"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "tool-operator built-in worker と cheaper.optionalTools 縮退機構を実装する"
 created: "2026-10-13"
 updated: "2026-10-13"

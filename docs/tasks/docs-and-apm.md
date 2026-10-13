@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EUvSZEQbvfLXkjtnqnF"
 type: "task"
-status: "todo"
+status: "done"
 title: "T5: user-facing docs・APM skill・impl record"
 created: "2026-10-13"
 updated: "2026-10-13"
@@ -9,15 +9,29 @@ owners: ["scarecrow173"]
 relations:
   source: []
   changes:
-    added: []
-    modified: []
+    added:
+      - {"type":"doc","path":"docs/impl/ir/user-facing-docs-and-cheaper-tool-operate-apm-skill.md"}
+      - {"type":"doc","path":"packages/apm/.apm/skills/cheaper-tool-operate/SKILL.md"}
+    modified:
+      - {"type":"doc","path":"README.md"}
+      - {"type":"doc","path":"docs/guides/workers.md"}
+      - {"type":"doc","path":"docs/guides/usage.md"}
+      - {"type":"doc","path":"docs/guides/command.md"}
+      - {"type":"doc","path":"docs/guides/managed-process.md"}
+      - {"type":"doc","path":"docs/guides/parent-agent-integration.md"}
+      - {"type":"doc","path":"packages/apm/.apm/skills/cheaper-usage/SKILL.md"}
+      - {"type":"doc","path":"docs/plans/implement-tool-operator-built-in-worker.md"}
+      - {"type":"doc","path":"docs/plans/README.md"}
+      - {"type":"doc","path":"docs/tasks/README.md"}
+      - {"type":"doc","path":"docs/impl/ir/README.md"}
     deleted: []
     renamed: []
     moved: []
     generated: []
   implements:
     - "../plans/implement-tool-operator-built-in-worker.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/user-facing-docs-and-cheaper-tool-operate-apm-skill.md"
   depends-on:
     - "../plans/implement-tool-operator-built-in-worker.md"
     - "docs/tasks/tool-operator-worker-and-alias.md"
@@ -128,14 +142,14 @@ impl-doc の既存規約に従い scaffold で生成する。
 
 ## Done When
 
-- [ ] built-in workers 表（README + workers.md）・workers.md 入力 schema
+- [x] built-in workers 表（README + workers.md）・workers.md 入力 schema
   要点・`optionalTools` frontmatter key リファレンス・縮退挙動・
   blocked-status 推奨が記載されている
-- [ ] command.md の opt-in caveat・admission/content-gate 棲み分け、
+- [x] command.md の opt-in caveat・admission/content-gate 棲み分け、
   usage.md の alias 行/列挙文/使用例・`directlyComparable` 記述が揃う
-- [ ] `cheaper-tool-operate` skill が parity で存在し、cheaper-usage
+- [x] `cheaper-tool-operate` skill が parity で存在し、cheaper-usage
   SKILL.md の command list + delegation guidance が更新されている
-- [ ] impl record が `docs/impl/ir/` に生成されている
+- [x] impl record が `docs/impl/ir/` に生成されている
 
 ## Rollback
 
@@ -147,7 +161,11 @@ impl-doc の既存規約に従い scaffold で生成する。
 
 ## Verification
 
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --type all` exits 0
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `grep -n "tool-operate" README.md docs/guides/workers.md docs/guides/usage.md` returns matches
-- [ ] `grep -n "optionalTools" docs/guides/workers.md docs/guides/command.md` returns matches
+実績（2026-10-13）:
+
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --type all` exits 0
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `node scripts/check-apm-payload.mjs` exits 0
+- [x] `node .agents/skills/impl-doc/scripts/audit_impl_record.js` exits 0
+- [x] `grep -n "tool-operate" README.md docs/guides/workers.md docs/guides/usage.md` returns matches
+- [x] `grep -n "optionalTools" docs/guides/workers.md docs/guides/command.md` returns matches

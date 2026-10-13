@@ -123,6 +123,7 @@ Directory: `docs/impl/ir`
 | IMPL-034rAty3hDG6bnv9waKpx5 | Update guides for pricing catalog | completed | [update-guides-for-pricing-catalog.md](./update-guides-for-pricing-catalog.md) |
 | IMPL-034z2rYSzkxUjQSkAXW3IP | update release guide | completed | [update-release-guide.md](./update-release-guide.md) |
 | IMPL-034r2HoPHxqYBy0c98U70r | Align usage.jsonl recording-scope docs (PLAN-034r2puWPUDxxDyfTSffZR) | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
+| IMPL-034EWZtjDHdhil5oaHVIvr | user-facing docs and cheaper-tool-operate APM skill | completed | [user-facing-docs-and-cheaper-tool-operate-apm-skill.md](./user-facing-docs-and-cheaper-tool-operate-apm-skill.md) |
 | IMPL-034r05iHy2gdnpCk8YlDWb | User-facing documentation information architecture (PLAN-034r05iHE1FbkpeFEXECDx) | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | IMPL-034A6mdUuMzX4DtyfiRMjx | Verify consumer acquisition and close migration | completed | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
 | IMPL-034z3CEPSQBJaEVBVxxzmL | verify launchers and apm payload | completed | [verify-launchers-and-apm-payload.md](./verify-launchers-and-apm-payload.md) |

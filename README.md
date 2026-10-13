@@ -28,7 +28,8 @@ cheaper を使うと
 
 - **built-in worker**: `bulk-read`（大規模 read の圧縮・抽出）・
   `code-write`（機械的なコード生成・変更）・`doc-write`
-  （document 生成）
+  （document 生成）・`tool-operate`（目標に向かって tool call を
+  反復し evidence 付きの結果を返す操作 worker）
 - **custom worker**: 自分で定義した worker を `run` で実行できる
 - **count-tokens**: workspace file の token 数を LLM なしで測定
 - **workflow**: tool call と worker 実行を宣言的な DAG へ束ねて
@@ -68,6 +69,7 @@ echo '{"task": "src/ のエントリポイントを特定して",
 
 cheaper code-write < task.json
 cheaper doc-write < task.json
+cheaper tool-operate < task.json
 cheaper count-tokens src/huge.ts
 cheaper auth status openai-codex
 ```
@@ -84,6 +86,7 @@ command・option・exit code の詳細は
 | `bulk-read` | 大きな file・多数の file を read-only で解析し、圧縮された構造化 findings を返す |
 | `code-write` | 機械的・pattern ベースのコード生成・変更を workspace に適用する |
 | `doc-write` | decisions/facts から document を生成する |
+| `tool-operate` | 目標に向かって tool call（認可された named task・command を含む）を反復し、evidence 付きの compact な結果を返す |
 
 input schema・tool・write scope 等の詳細は
 [workers ガイド](docs/guides/workers.md) を参照。

@@ -79,7 +79,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDq49V3Gwah | Delegation loop e2e (pre_read_code block to bundled bulk-read) | done | [delegation-loop-e2e.md](./delegation-loop-e2e.md) |
 | TASK-034r05iHWkNF7zPe6DL42d | Devin provider docs, status sync, bundle, and final verification | done | [devin-docs-status-sync-bundle-and-final-verification.md](./devin-docs-status-sync-bundle-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNWvK4AnL | Devin provider plugin registration and tests | done | [devin-provider-plugin-registration-and-tests.md](./devin-provider-plugin-registration-and-tests.md) |
-| TASK-034EUvSZEQbvfLXkjtnqnF | T5: user-facing docs・APM skill・impl record | todo | [docs-and-apm.md](./docs-and-apm.md) |
+| TASK-034EUvSZEQbvfLXkjtnqnF | T5: user-facing docs・APM skill・impl record | done | [docs-and-apm.md](./docs-and-apm.md) |
 | TASK-034DmVRCxSEu4CdutLtxfM | docs and cheaper-usage skill rewrite for cargo source install | done | [docs-and-cheaper-usage-skill-rewrite-for-cargo-source-install.md](./docs-and-cheaper-usage-skill-rewrite-for-cargo-source-install.md) |
 | TASK-034r05iHWkNF7zLmXY8W9D | Update docs, regenerate bundle, and run final verification | done | [docs-status-sync-bundle-and-final-verification.md](./docs-status-sync-bundle-and-final-verification.md) |
 | TASK-034zTWjm1NjME6ZzgLXNF7 | Document and verify one-dispatch release migration | done | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
@@ -95,7 +95,7 @@ Directory: `docs/tasks`
 | TASK-034z1PGTvhoaHhdTUgPahz | Extract shared esbuild bundle helper from bundle-cli.mjs | done | [extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md](./extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md) |
 | TASK-034r05iHQeQpDqhWcXGfA0 | Finalize contract matrix and consumer pointer | done | [finalize-contract-matrix-and-consumer-pointer.md](./finalize-contract-matrix-and-consumer-pointer.md) |
 | TASK-034D9bpfd4n0vQJjgXtBzj | Fix volume-root workspace boundary predicate | done | [fix-volume-root-workspace-boundary-predicate.md](./fix-volume-root-workspace-boundary-predicate.md) |
-| TASK-034EUvOR5z2gLPUgzBappw | T4: fixture DSL・dev-seam/regression/golden test 実装 | todo | [fixture-dsl-and-verification.md](./fixture-dsl-and-verification.md) |
+| TASK-034EUvOR5z2gLPUgzBappw | T4: fixture DSL・dev-seam/regression/golden test 実装 | done | [fixture-dsl-and-verification.md](./fixture-dsl-and-verification.md) |
 | TASK-034DzYI5SJnPTX6KZeAvYU | T8: dev-seam feature gate (F2) | done | [gate-dev-seams-behind-dev-seam-feature.md](./gate-dev-seams-behind-dev-seam-feature.md) |
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
 | TASK-034r05iHQeQpDqeuofmk64 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [hook-fast-path-and-fail-closed-file-too-large-block.md](./hook-fast-path-and-fail-closed-file-too-large-block.md) |
@@ -175,7 +175,7 @@ Directory: `docs/tasks`
 | TASK-034rAcF1RPJJogj2vzFDrF | New adapter scripts and hooks.json event registration | done | [new-adapter-scripts-and-hooks-json-event-registration.md](./new-adapter-scripts-and-hooks-json-event-registration.md) |
 | TASK-034DVHrszM9fxMAyaOCqFt | T6: observability contract test + verification | done | [observability-contract-tests-and-verification.md](./observability-contract-tests-and-verification.md) |
 | TASK-034A9yFQqZLtHt5ibjhE1h | Operation execution metrics | done | [operation-execution-metrics.md](./operation-execution-metrics.md) |
-| TASK-034EUvBkRkmTjWxeq3iG0h | T1: optionalTools core machinery と compile-forced propagation | todo | [optional-tools-core-machinery.md](./optional-tools-core-machinery.md) |
+| TASK-034EUvBkRkmTjWxeq3iG0h | T1: optionalTools core machinery と compile-forced propagation | done | [optional-tools-core-machinery.md](./optional-tools-core-machinery.md) |
 | TASK-034EDQ2U9suHgZ8yJxDtPt | T03: cheaper-cli error/signal helpers and runtime entry | done | [p0-cli-shared-helpers.md](./p0-cli-shared-helpers.md) |
 | TASK-034EDQ3rigtcVChwaRKAWD | T04: cheaper-cli tests common module | done | [p0-cli-tests-common.md](./p0-cli-tests-common.md) |
 | TASK-034EDQ1S6FcEJLJQze19Ey | T01: cheaper-core shared helpers consolidation | done | [p0-core-shared-helpers.md](./p0-core-shared-helpers.md) |
@@ -205,7 +205,7 @@ Directory: `docs/tasks`
 | TASK-034EOHIeC6KauJaRop87sk | T2: shared managed-process 機構の tools/proc 抽出 | done | [proc-extraction.md](./proc-extraction.md) |
 | TASK-034r05iHWkNF7zKMZPhFky | Provider plugin tests and resource isolation verification | done | [provider-plugin-tests-and-resource-isolation.md](./provider-plugin-tests-and-resource-isolation.md) |
 | TASK-034r05iHQeQpDpEony1i5k | Record experiment log and verify test regression | done | [record-experiment-log-and-verify-test-regression.md](./record-experiment-log-and-verify-test-regression.md) |
-| TASK-034EUvFhVkFFo9cY6aX6LB | T2: registry degrade path と prompt surfacing | todo | [registry-degrade-and-prompt-surfacing.md](./registry-degrade-and-prompt-surfacing.md) |
+| TASK-034EUvFhVkFFo9cY6aX6LB | T2: registry degrade path と prompt surfacing | done | [registry-degrade-and-prompt-surfacing.md](./registry-degrade-and-prompt-surfacing.md) |
 | TASK-034DzYbfe9r0G8Nd58FQjy | T1: js_json shim 削除 (F3) | done | [remove-js-json-shim.md](./remove-js-json-shim.md) |
 | TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |
 | TASK-034DzYfbw07gFHdsAguwHp | T4: poc-rig 削除 (F5) | done | [remove-poc-rig-crate.md](./remove-poc-rig-crate.md) |
@@ -239,7 +239,7 @@ Directory: `docs/tasks`
 | TASK-034r2qodyq0oWVUNGquMgr | Sync providers.md guide with runtime auth surface | done | [sync-providers-guide-with-runtime-auth-surface.md](./sync-providers-guide-with-runtime-auth-surface.md) |
 | TASK-034DmVQG3C2W8kElIVtwPN | thin launchers rename rewrite and hooks.json references | done | [thin-launchers-rename-rewrite-and-hooks-json-references.md](./thin-launchers-rename-rewrite-and-hooks-json-references.md) |
 | TASK-034r05iHQeQpDpUao5Hjj3 | Token counter CLI/tool parity tests and full verification | done | [token-counter-parity-and-verification.md](./token-counter-parity-and-verification.md) |
-| TASK-034EUvKoVCWZdud4HyTGSK | T3: tool-operator worker 定義・schema・tool-operate alias | todo | [tool-operator-worker-and-alias.md](./tool-operator-worker-and-alias.md) |
+| TASK-034EUvKoVCWZdud4HyTGSK | T3: tool-operator worker 定義・schema・tool-operate alias | done | [tool-operator-worker-and-alias.md](./tool-operator-worker-and-alias.md) |
 | TASK-034z3zPzG5T5Q8QpwsaoTJ | Track APM executables with Git LFS and keep freshness check valid | done | [track-apm-executables-with-git-lfs-and-keep-freshness-check-valid.md](./track-apm-executables-with-git-lfs-and-keep-freshness-check-valid.md) |
 | TASK-034z1PNNPwye2uvwy1eAG8 | Unify packageVersion resolution on builtinDir | done | [unify-packageversion-resolution-on-builtindir.md](./unify-packageversion-resolution-on-builtindir.md) |
 | TASK-034r05iHQeQpDqD0biyV0P | Unify versions, wire check, and document release | done | [unify-versions-wire-check-and-document-release.md](./unify-versions-wire-check-and-document-release.md) |

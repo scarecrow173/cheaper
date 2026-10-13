@@ -18,6 +18,7 @@ cheaper <command> [options]
   bulk-read              Alias for: run bulk-reader
   code-write             Alias for: run code-writer
   doc-write              Alias for: run doc-writer
+  tool-operate           Alias for: run tool-operator
   count-tokens <path>    Count canonical tokens of a workspace file
   workflow interface <path> Show the public workflow inputs and outputs
   workflow run <path>       Run a one-shot workflow
@@ -209,3 +210,8 @@ project or `.cheaper/`. The model map is configured via
 - Delegate large-file reading to `bulk-read` (see the `cheaper-bulk-read`
   skill), mechanical code changes to `code-write` (`cheaper-code-write`),
   and mechanical document work to `doc-write` (`cheaper-doc-write`).
+- Delegate multi-step operational loops — run an authorized task/command,
+  interpret the result, pick the next step — to `tool-operate`
+  (`cheaper-tool-operate`). It works with or without authorized
+  tasks/grants and may return `status: "blocked"` when a required
+  capability is unavailable under policy.
