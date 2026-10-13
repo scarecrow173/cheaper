@@ -1,7 +1,7 @@
 ---
 id: "TASK-034EUvBkRkmTjWxeq3iG0h"
 type: "task"
-status: "todo"
+status: "done"
 title: "T1: optionalTools core machinery と compile-forced propagation"
 created: "2026-10-13"
 updated: "2026-10-13"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "../plans/implement-tool-operator-built-in-worker.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/optionaltools-core-machinery-and-propagation.md"
   depends-on:
     - "../plans/implement-tool-operator-built-in-worker.md"
   blocks: []
@@ -152,14 +153,14 @@ silent miss はない。
 
 ## Done When
 
-- [ ] `cargo test -p cheaper-core` が pass — `optionalTools` の 7 reject
+- [x] `cargo test -p cheaper-core` が pass — `optionalTools` の 7 reject
   rule + accept + 未指定時の既存挙動不変の unit test を含む
-- [ ] `cargo build --workspace --all-targets --features
+- [x] `cargo build --workspace --all-targets --features
   cheaper-runtime/dev-seam,cheaper-cli/dev-seam` が green —
   compile-forced propagation 完遂の証明（dev-seam feature 付き
   `--all-targets` が exit criteria。dev-seam 無しでは seam 依存 test
   target が検証から抜け落ちる — ADR-034DyGyITd0YaATg8fkld7）
-- [ ] `is_scope_gated_tool` が gated 集合の一権威 predicate として
+- [x] `is_scope_gated_tool` が gated 集合の一権威 predicate として
   定義され、`optionalTools` key は `optional_tools` 空の非 opt-in worker
   の意味論を一切変えない
 
@@ -179,5 +180,5 @@ silent miss はない。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core` exits 0
-- [ ] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-core` exits 0
+- [x] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0

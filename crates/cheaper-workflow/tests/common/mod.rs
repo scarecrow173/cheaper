@@ -116,6 +116,7 @@ pub fn fixture_worker() -> WorkerDefinition {
                 schema: SchemaRef::Inline(Map::new()),
             },
             write_scope: None,
+            optional_tools: Vec::new(),
         },
         instructions: "PRIVATE PROMPT".to_string(),
         source_path: "fake/bulk-reader.md".to_string(),

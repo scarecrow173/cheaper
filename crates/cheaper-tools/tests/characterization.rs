@@ -81,6 +81,7 @@ fn options(
         root,
         symlink_policy: SymlinkPolicy::Deny,
         names,
+        degradable: Vec::new(),
         max_tool_calls: 100,
         on_limit: Box::new(|| {}),
         journal: None,

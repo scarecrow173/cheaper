@@ -677,6 +677,7 @@ fn runtime_options(spec: &Value, ctx: &CaseCtx) -> (ToolRuntimeOptions, Arc<Muta
             root: ctx.root.clone(),
             symlink_policy: symlink_policy(&spec["symlinkPolicy"]),
             names,
+            degradable: Vec::new(),
             max_tool_calls: spec["maxToolCalls"].as_u64().unwrap_or(100),
             on_limit: Box::new(|| {}),
             journal: Some(Arc::clone(&journal)),

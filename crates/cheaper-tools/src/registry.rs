@@ -103,6 +103,12 @@ pub struct ToolRuntimeOptions {
     pub root: String,
     pub symlink_policy: SymlinkPolicy,
     pub names: Vec<ToolName>,
+    /// worker frontmatter `cheaper.optionalTools` 由来の縮退許可集合 —
+    /// content-gate(nonempty tasks/grants)不成立時に `names` から
+    /// 未登録へ縮退してよい scope-gated tool の opt-in 宣言
+    /// (design §(d))。`names` と同じく scope 単位の宣言であり、
+    /// policy ではない。非 opt-in の構築 site は空 vec を渡す。
+    pub degradable: Vec<ToolName>,
     pub max_tool_calls: u64,
     pub on_limit: Box<dyn Fn() + Send + Sync>,
     /// shared journal(未指定なら runtime 内に新規生成)。

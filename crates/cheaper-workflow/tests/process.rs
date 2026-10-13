@@ -39,6 +39,7 @@ fn worker_scope_options(owner: &str, root: &str, names: Vec<ToolName>) -> Worker
             root: root.to_string(),
             symlink_policy: SymlinkPolicy::Deny,
             names,
+            degradable: Vec::new(),
             max_tool_calls: 10,
             on_limit: Box::new(|| {}),
             journal: None,

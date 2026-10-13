@@ -435,6 +435,10 @@ impl<'a> RunCtx<'a> {
                         // F5: invocation runtime と同じく policy 由来。
                         symlink_policy: policy.filesystem.symlinks,
                         names: self.effective_tools.clone(),
+                        // worker frontmatter `cheaper.optionalTools` の
+                        // opt-in 縮退許可集合(validate 済み — gated tool の
+                        // `tools` 真部分集合のみが届く)。
+                        degradable: worker.cheaper.optional_tools.clone(),
                         max_tool_calls: policy.execution.max_tool_calls,
                         on_limit: Box::new(move || {
                             limit_abort.request_abort(RunAbortReason::MaxToolCalls);

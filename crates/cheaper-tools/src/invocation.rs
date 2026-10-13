@@ -275,6 +275,7 @@ impl InvocationToolRuntime {
             root: options.runtime.root,
             symlink_policy: options.runtime.symlink_policy,
             names: options.runtime.names,
+            degradable: options.runtime.degradable,
             max_tool_calls: options.runtime.max_tool_calls,
             on_limit: options.runtime.on_limit,
             journal: options.runtime.journal,

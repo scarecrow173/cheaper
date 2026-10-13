@@ -86,6 +86,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | IMPL-034A9TTHbXQNav6LxGvo49 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | IMPL-034zTprBbdY0tsPiphc2wE | Operation manager state lifecycle | completed | [operation-manager-state-lifecycle.md](./operation-manager-state-lifecycle.md) |
+| IMPL-034EUQHxLuXN3I40r1pNs8 | optionalTools core machinery and propagation | completed | [optionaltools-core-machinery-and-propagation.md](./optionaltools-core-machinery-and-propagation.md) |
 | IMPL-034Bh4xhHhdbrsNKFkZ6iH | Phase 0: Rig PoC go/no-go spike | completed | [phase-0-rig-poc-go-no-go-spike.md](./phase-0-rig-poc-go-no-go-spike.md) |
 | IMPL-034BkjFKD4ZgRkPCBBn1kk | Phase 1: port cheaper-core | completed | [phase-1-port-cheaper-core.md](./phase-1-port-cheaper-core.md) |
 | IMPL-034CLj96KIHERKMfbd1Qe3S | Phase 2: port cheaper-tools | completed | [phase-2-port-cheaper-tools.md](./phase-2-port-cheaper-tools.md) |

@@ -321,6 +321,7 @@ fn read_scope(root: &str) -> cheaper_tools::registry::ToolRuntime {
             root: root.to_string(),
             symlink_policy: SymlinkPolicy::Deny,
             names: vec![ToolName::Read],
+            degradable: Vec::new(),
             max_tool_calls: 20,
             on_limit: Box::new(|| {}),
             journal: None,
