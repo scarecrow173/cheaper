@@ -283,6 +283,8 @@ ADR が採用した 2 面を実装する:
 
 ### (i) compile-forced propagation / back-compat
 
+> **Post-implementation note**: 以下の site 数・行番号は実装前の enumeration に基づく。unit test 追加等で site 数は増え、行番号も drift し得る（実装時点の一覧は compile error が強制するため silent miss の懸念はない）。
+
 - `LoadPolicyOptions` の新 field は struct literal の compile error で全構築 site を強制列挙する — `run.rs:143`・`workflow_context.rs:277`・`count.rs:69`・`load.rs` unit test :163/:193/:207/:222・golden `policy_load.rs:18` の 8 site。漏れは compile error で検出されるため silent miss はない。
 - `RunWorkerDeps.invocation_grants` も同様 — literal site は `run.rs:234`・`workflow_run.rs:358`・runtime tests `run_dev_seam.rs:270`/:1046・`run_fixture_test.rs:116`・`ollama_e2e.rs:296` の 6 site。
 - `RunCliArgs` / `WorkflowRunCliArgs` / `PolicyCliArgs` の literal 構築 site は `args.rs:903`・`:527` の 2 site のみ（tests は `parse_cli_args` の戻り値を destructure するため波及しない）。`ParsedCli::Policy` variant の追加は `format()`/`quiet()`/`command_name`/dispatch の exhaustive match で compile-forced。

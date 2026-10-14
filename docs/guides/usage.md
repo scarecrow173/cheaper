@@ -49,7 +49,7 @@ Commands:
 | `--model <provider>/<id>` | `run` では tier 解決を bypass する model 直接指定、`usage` では model filter |
 | `--provider <id>` | `models` の出力・`usage` の集計を provider で絞る |
 | `--tier <low\|medium\|high>` | `models` の出力を effective tier で絞る |
-| `--worker <name>` | `models` の auto tier 分類をその worker の workload profile で計算する |
+| `--worker <name>` | `usage` では worker filter、`models` では auto tier 分類をその worker の workload profile で計算する |
 | `--format <json\|text>` | stdout の形式（既定: `json`） |
 | `--quiet` | stderr の diagnostics を抑制する |
 | `--log <level>` | `.cheaper/logs` + stderr への logging を有効化（`off`/`error`/`warn`/`info`/`debug`/`trace`、env `CHEAPER_LOG`） |
@@ -57,7 +57,7 @@ Commands:
 | `--help` / `--version` | help / version 表示 |
 
 `--method`・`--type` は `auth login` 専用（下記参照）。
-`--since`・`--worker`・`--compare-model` は `usage` 専用（後述）。
+`--since`・`--compare-model` は `usage` 専用（後述）。
 
 ## stdin / stdout 契約
 

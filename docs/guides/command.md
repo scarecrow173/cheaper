@@ -41,7 +41,7 @@ echo '{"task": "..."}' | cheaper tool-operate \
 ```
 
 - flag 値は grant name を `name` key で内包する complete JSON object。`name` は `command.grants` の map key として取り出され、残りの key は上記「grant の宣言」と同一の spec shape（`executable` 必須、`argv`・`cwd`・`env`・lifecycle override は optional）。`--grant <v>` と `--grant=<v>` の両形を受理し、繰り返すと宣言順に複数 grant を同時注入する。値の上限は 64KiB（超過は `InvalidRequest`）。
-- `run`・`workflow run` 以外の command（`usage`・`count-tokens`・`models`・`auth`・`policy`・`workflow interface`）へ渡すと `InvalidRequest` で reject される。`workflow run` でも `run` と同一の意味論で注入され、`kind: tool` job の `command` がその grant を使える。
+- `run`・`workflow run` 以外の command（`usage`・`count-tokens`・`models`・`auth`・`policy`・`workflow interface`）へ渡すと `InvalidRequest` で reject される。`workflow run` でも `run` と同一の意味論で注入され、`kind: tool` job の `command` がその grant を使える。例外として `hook` command は `parse_cli_args` に到達しない独立 parse path を持ち、`--grant` を含む未知 option を silent に無視する — run 系 command ではないため reject 契約の対象外の spec 適合 known gap（[test-spec](../test-specs/invocation-scoped-command-grants.md) 参照）。
 - 注入された grant はその run の effective grant 集合に畳み込まれ、runtime 上は user policy の grant と区別なく振る舞う。deny list・argv pattern・executable pin 等の検査は policy 由来 grant と同一経路で走る — invocation 経路は deny list を迂回しない。deny list 該当の spec は `InvalidRuntimePolicy`（`details.layer` = `"invocation"`）で reject される。
 - **非永続**: grant は in-memory の `RuntimePolicy` にのみ存在し、policy file・`usage.jsonl`・`.cheaper/` のいずれにも書き込まれない。flag 無しの後続 run では効果を持たない。
 - 同名の grant が builtin/user policy に既に存在する場合、および同一 invocation 内で複数の `--grant` が同名を指定した場合は、run 開始前に `InvalidRequest`（`details.grant` に衝突名）で失敗する — silent な上書き・last-wins は行わない。

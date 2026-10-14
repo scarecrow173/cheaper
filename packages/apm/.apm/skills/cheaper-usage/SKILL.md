@@ -201,7 +201,9 @@ policy. Two supply routes exist for an invoker:
 
 - `--grant <json>` — a **run-scoped, non-persistent** grant accepted by
   `cheaper run`, every worker alias, and `cheaper workflow run`
-  (repeatable; other commands reject it with `INVALID_REQUEST`). The value
+  (repeatable; the other commands reject it with `INVALID_REQUEST` — except
+  `hook`, whose independent parse path silently ignores unknown options,
+  including `--grant`). The value
   is a complete JSON object carrying the grant name in `name`, e.g.
   `--grant '{"name":"git-read","executable":"git","argv":["log","*"]}'`.
   The grant lives only in that run's in-memory policy — nothing is written

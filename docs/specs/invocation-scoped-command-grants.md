@@ -143,23 +143,23 @@ issue #105 が採用した 3 component でこれらを埋める。
 
 ## Acceptance Criteria
 
-- [ ] AC1: grant を持たない環境で degrade / blocked した tool-operator run に対し、`--grant` 付きで re-run すると当該 command が利用可能になり run が成功（または blocked でなくなる）ことを検証する test が通る。
-- [ ] AC2: `--grant` は永続化されない — flag 無しで同じ run を再度実行すると再び degrade / blocked する。policy file が一切変更されていないことを検証する。
-- [ ] AC3: deny list 該当 executable を含む `--grant` spec は run 開始前に reject される（invocation 経路で deny list を迂回できない）。error は ADR の attribution 規約に従い shared validation の inner code（`InvalidRuntimePolicy`）を保持し `details.layer="invocation"` を持つ。
-- [ ] AC4: flag 由来 grant と user policy の同名 grant が衝突した場合の挙動が ADR で定義した意味論どおりであり、test で固定されている。
-- [ ] AC5: blocked となった tool-operator run の成功 run envelope `result` から machine-readable な grant-request field が parse でき、宣言した output schema に適合する（`additionalProperties` discipline 維持）。
-- [ ] AC6: `cheaper policy grant add` が validation を通した grant を user policy へ永続化し、後続の flag 無し run がその grant で command を実行できる。invalid spec（deny list 該当・argv compile 失敗・schema 違反）は policy file を変更せず error を返す。
-- [ ] AC7: `cheaper policy grant list` が effective user grants を表示し、`remove <name>` で削除すると後続 run でその grant が効かなくなる。存在しない name の remove は `InvalidRequest` の error envelope を返す。
-- [ ] AC8: `--grant` を伴う run が、audit surface（ADR で確定した機構）で invocation-sourced grant の適用を区別して観測できる。
-- [ ] AC9: `cheaper policy` 系 command が `usage.jsonl` に record を残さない（utility command 規約）。
-- [ ] AC10: worker alias（`tool-operate`）経由でも `--grant` が同等に効く（`ParsedCli::Run` fold による parity）。
-- [ ] AC11: parent-facing docs（cheaper-usage / cheaper-tool-operate SKILL、必要に応じて guides）に grant-request → approval → `--grant` re-run loop が文書化されている。
-- [ ] AC12: `mise run check` が pass する。
-- [ ] AC13: 同一 invocation で同名 grant を複数 `--grant` に指定した場合 `InvalidRequest` で reject される（intra-invocation duplicate — flag-vs-policy collision と同じ fail-loud 規約）。
-- [ ] AC14: `cheaper workflow run --grant` が `run` と同一の意味論で grant を注入する（`prepare_workflow_context` の load path 共有による parity）。
-- [ ] AC15: repeatable `--grant` で複数 grant が 1 つの run に同時注入される。
-- [ ] AC16: `cheaper policy` の success envelope `result` に top-level `tokens` key が無い（`usage.jsonl` の count-record 判定との衝突を防ぐ）。
-- [ ] AC17: 非 run 系 command（`usage`・`count-tokens`・`models`・`auth`・`policy`・`workflow interface`）への `--grant` が全 command arm で明示 error（`InvalidRequest`）で reject される — silent drop しない。
+- [x] AC1: grant を持たない環境で degrade / blocked した tool-operator run に対し、`--grant` 付きで re-run すると当該 command が利用可能になり run が成功（または blocked でなくなる）ことを検証する test が通る。
+- [x] AC2: `--grant` は永続化されない — flag 無しで同じ run を再度実行すると再び degrade / blocked する。policy file が一切変更されていないことを検証する。
+- [x] AC3: deny list 該当 executable を含む `--grant` spec は run 開始前に reject される（invocation 経路で deny list を迂回できない）。error は ADR の attribution 規約に従い shared validation の inner code（`InvalidRuntimePolicy`）を保持し `details.layer="invocation"` を持つ。
+- [x] AC4: flag 由来 grant と user policy の同名 grant が衝突した場合の挙動が ADR で定義した意味論どおりであり、test で固定されている。
+- [x] AC5: blocked となった tool-operator run の成功 run envelope `result` から machine-readable な grant-request field が parse でき、宣言した output schema に適合する（`additionalProperties` discipline 維持）。
+- [x] AC6: `cheaper policy grant add` が validation を通した grant を user policy へ永続化し、後続の flag 無し run がその grant で command を実行できる。invalid spec（deny list 該当・argv compile 失敗・schema 違反）は policy file を変更せず error を返す。
+- [x] AC7: `cheaper policy grant list` が effective user grants を表示し、`remove <name>` で削除すると後続 run でその grant が効かなくなる。存在しない name の remove は `InvalidRequest` の error envelope を返す。
+- [x] AC8: `--grant` を伴う run が、audit surface（ADR で確定した機構）で invocation-sourced grant の適用を区別して観測できる。
+- [x] AC9: `cheaper policy` 系 command が `usage.jsonl` に record を残さない（utility command 規約）。
+- [x] AC10: worker alias（`tool-operate`）経由でも `--grant` が同等に効く（`ParsedCli::Run` fold による parity）。
+- [x] AC11: parent-facing docs（cheaper-usage / cheaper-tool-operate SKILL、必要に応じて guides）に grant-request → approval → `--grant` re-run loop が文書化されている。
+- [x] AC12: `mise run check` が pass する。
+- [x] AC13: 同一 invocation で同名 grant を複数 `--grant` に指定した場合 `InvalidRequest` で reject される（intra-invocation duplicate — flag-vs-policy collision と同じ fail-loud 規約）。
+- [x] AC14: `cheaper workflow run --grant` が `run` と同一の意味論で grant を注入する（`prepare_workflow_context` の load path 共有による parity）。
+- [x] AC15: repeatable `--grant` で複数 grant が 1 つの run に同時注入される。
+- [x] AC16: `cheaper policy` の success envelope `result` に top-level `tokens` key が無い（`usage.jsonl` の count-record 判定との衝突を防ぐ）。
+- [x] AC17: 非 run 系 command（`usage`・`count-tokens`・`models`・`auth`・`policy`・`workflow interface`）への `--grant` が全 command arm で明示 error（`InvalidRequest`）で reject される — silent drop しない。
 
 ## Deferred Design Concerns
 

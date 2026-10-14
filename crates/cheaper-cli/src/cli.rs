@@ -531,9 +531,9 @@ Commands:
   usage                  Aggregate usage.jsonl (worker cost / measured savings)
   models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
-  hook <event>          Agent hook entry (internal; --target <agent>)
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
+  hook <event>           Agent hook entry (internal; --target <agent>)
   policy grant add <name> <json>  Add a command grant to user policy
   policy grant list          List command grants in user policy
   policy grant remove <name> Remove a command grant from user policy
