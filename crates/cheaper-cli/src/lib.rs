@@ -15,7 +15,9 @@
 //! - `usage_report.rs` / `pricing.rs` — `cheaper usage` 集計
 //!   (`usage-report.ts`/`pricing.ts`, T4)
 //! - `text_format.rs` — `--format text`(`text-format.ts`)
-//! - `run.rs` / `models.rs` / `auth.rs` — command 本体(T3/T4/T5)
+//! - `run.rs` / `models.rs` / `auth.rs` / `policy.rs` — command 本体
+//!   (T3/T4/T5。`policy.rs` は `policy grant` の user policy.yaml
+//!   管理 command — DESIGN-034FntkIZGiffhdU4caSkN §(f))
 //! - `hook/` — hook entry(T6)
 //! - `workflow_context.rs` / `workflow_run.rs` — workflow command(T7)
 //!
@@ -32,9 +34,11 @@ pub mod envelope;
 pub mod errors;
 #[cfg(feature = "dev-seam")]
 pub mod fake_stream;
+pub mod grant;
 pub mod hook;
 pub mod input;
 pub mod models;
+pub mod policy;
 pub mod pricing;
 pub mod run;
 pub mod signal;

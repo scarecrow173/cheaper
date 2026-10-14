@@ -1,0 +1,27 @@
+{
+  "name": "run_grant_coexists",
+  "fixture": {
+    "name": "grant_coexists",
+    "files_note": "user policy の grant `other` と flag の grant `self` が共存 — collision なく受理・merge される",
+    "input": { "files": ["a.txt"], "task": "t" },
+    "sessions": [
+      {
+        "steps": [
+          { "turn": {} },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "config": {
+    "files": {
+      "policy.yaml": "version: 1\ncommand:\n  grants:\n    other:\n      executable: 'git'\n      argv: ['status']\n"
+    }
+  },
+  "extraArgs": [
+    "--grant",
+    "{\"name\":\"self\",\"executable\":\"/nonexistent/grant-target\"}"
+  ],
+  "files": { "a.txt": "alpha\n" },
+  "compareStderr": true
+}

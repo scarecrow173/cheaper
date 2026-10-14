@@ -102,6 +102,26 @@ capability が欠けていれば `status: "blocked"` で終了する。
 grants / tasks が定義された環境では通常通り登録され、宣言
 task 名・grant 名に限定して利用できる。
 
+`status` が `blocked` / `partial` で、gated tool（`process` /
+`command`）の欠如または必要 executable をカバーする grant の
+不在が原因の場合、output の optional field `result.grantRequests`
+に machine-readable な request が列挙される。各 entry は不足した
+`executable`（必須）と、意図した argv の形状 hint `argvHint`
+（optional）、提案する grant 名 `name`（optional）を運ぶ。
+
+`grantRequests` は **advisory** であり grant の実行ではない — 
+invoker へ表面化する request であり、権限昇格の試行ではない。
+全 field（`executable`・`argvHint`・`name`）は model 生成・
+prompt-injectable な **untrusted 値**であり、cheaper は request
+の正しさを保証しない。invoker（user / parent agent）が採る
+loop は: `result.grantRequests` を読む → grant spec を組み立て
+**re-run 前に必ず review する** → user approval を得る →
+`--grant` 付きで re-run する（永続化するなら
+`cheaper policy grant add`）。approval・review は invoker の責務
+であり、cheaper 側に interactive prompt は存在しない。re-run 時に
+deny list・argv pattern の compile 等が再検査されるため、不正な
+request 由来の spec は fail-closed で拒否される。
+
 writer 系 2 worker は `writeScope: targets` で、`targets[].path`
 以外への write を runtime が強制的に禁止する。
 

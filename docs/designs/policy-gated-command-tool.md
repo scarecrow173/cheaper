@@ -25,6 +25,7 @@ relations:
     - "./managed-process-canonical-tool.md"
     - "./managed-process-lifecycle-hardening.md"
     - "./tool-operator-built-in-worker.md"
+    - "./invocation-scoped-command-grants.md"
   refines: []
   refined-by: []
   derives-from:

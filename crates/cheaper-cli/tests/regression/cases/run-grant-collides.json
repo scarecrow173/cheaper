@@ -1,0 +1,26 @@
+{
+  "name": "run_grant_collides",
+  "fixture": {
+    "name": "grant_collides",
+    "files_note": "user policy の同名 grant `self` と flag の `--grant` が衝突 — run 開始前に INVALID_REQUEST + details{grant,layer} で fail(silent 上書きなし)",
+    "input": { "files": ["a.txt"], "task": "t" },
+    "sessions": [
+      {
+        "steps": [
+          { "turn": {} },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "config": {
+    "files": {
+      "policy.yaml": "version: 1\ncommand:\n  grants:\n    self:\n      executable: 'git'\n      argv: ['status']\n"
+    }
+  },
+  "extraArgs": [
+    "--grant",
+    "{\"name\":\"self\",\"executable\":\"/nonexistent/grant-target\"}"
+  ],
+  "files": { "a.txt": "alpha\n" }
+}

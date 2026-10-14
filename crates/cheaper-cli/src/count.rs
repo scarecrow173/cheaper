@@ -70,6 +70,7 @@ pub fn count_workspace_file_tokens(
         builtin_policy_path: &builtin_policy_path,
         user_config_dir: &user_config_dir,
         project_dir: &project_dir,
+        invocation: None,
     })
     .map_err(BoxError::from)?;
     let max_bytes = count_max_bytes(env);

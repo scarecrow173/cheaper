@@ -1,0 +1,23 @@
+{
+  "name": "run_grant_duplicate",
+  "fixture": {
+    "name": "grant_duplicate",
+    "files_note": "同一 invocation 内の同名 `--grant` 重複 — intra-invocation duplicate は INVALID_REQUEST + details{grant,layer}(宣言順 push の暗黙 last-wins なし)",
+    "input": { "files": ["a.txt"], "task": "t" },
+    "sessions": [
+      {
+        "steps": [
+          { "turn": {} },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "extraArgs": [
+    "--grant",
+    "{\"name\":\"self\",\"executable\":\"/nonexistent/a\"}",
+    "--grant",
+    "{\"name\":\"self\",\"executable\":\"/nonexistent/b\"}"
+  ],
+  "files": { "a.txt": "alpha\n" }
+}

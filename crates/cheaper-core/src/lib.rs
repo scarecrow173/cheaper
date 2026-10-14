@@ -7,6 +7,7 @@
 pub mod config;
 pub mod duration;
 pub mod errors;
+pub mod fs_util;
 pub mod js;
 pub mod js16;
 pub mod json;
@@ -21,4 +22,4 @@ pub mod token;
 pub mod tools;
 pub mod worker;
 pub mod workspace;
-pub(crate) mod yaml;
+pub mod yaml;

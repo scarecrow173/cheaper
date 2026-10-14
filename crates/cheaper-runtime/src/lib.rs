@@ -32,7 +32,6 @@
 
 pub mod auth;
 pub mod catalog;
-mod fs_util;
 pub mod plugin;
 pub mod runtime;
 

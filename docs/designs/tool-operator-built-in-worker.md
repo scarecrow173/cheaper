@@ -26,6 +26,7 @@ relations:
     - "../specs/policy-gated-command-tool.md"
     - "../designs/policy-gated-command-tool.md"
     - "../test-specs/tool-operator-built-in-worker.md"
+    - "../designs/invocation-scoped-command-grants.md"
   refines: []
   refined-by: []
   derives-from:

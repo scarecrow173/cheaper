@@ -132,3 +132,189 @@ async fn workflow_run_tool_operator_degrades_like_run() {
     assert_eq!(job["meta"]["toolCalls"], json!(0));
     assert_eq!(job["meta"]["savings"]["directlyComparable"], json!(false));
 }
+
+// ---------------------------------------------------------------------------
+// `workflow run --grant` — invocation-scoped command grant(AC14、
+// approved test-spec `docs/test-specs/invocation-scoped-command-grants.md`)。
+// `execute_run_inner` → `build_invocation_layer` → `prepare_workflow_context`
+// → `load_policy` の同一 merge 経路で `run` と parity が保たれる。
+// `kind: tool` job は `cheaper.run.tool_scope` span を通らないため
+// stderr の `grant: <names>` 行が workflow 経路の audit surface。
+// ---------------------------------------------------------------------------
+
+/// `command` grant が spawn する fixture child — `workflow run` の
+/// worker/tool job がこの test binary 自身を再実行する。
+/// `tests/workflow.rs` の `workflow_command_fixture_child` は別 test
+/// binary のため `current_exe` 解決上再利用不可 — 本 file 内に同名の
+/// self-reshim を持つ。`CHEAPER_PROC_CHILD_MODE` 未設定(通常の
+/// `cargo test`)なら no-op。`probe` は `CHEAPER_PROC_CHILD_ARG` へ
+/// marker file を書く。
+#[test]
+fn workflow_dev_seam_command_fixture_child() {
+    let Ok(mode) = std::env::var("CHEAPER_PROC_CHILD_MODE") else {
+        return;
+    };
+    match mode.as_str() {
+        "probe" => {
+            std::fs::write(std::env::var("CHEAPER_PROC_CHILD_ARG").unwrap(), "ran").unwrap();
+        }
+        other => panic!("unknown fixture mode: {other}"),
+    }
+}
+
+/// `--grant` flag 値(JSON)— executable = この test binary 自身
+/// (workspace 外のため workspace-resident 拒否に掛からない)、argv
+/// literal pin、`env` で fixture mode + marker path を渡す。
+fn workflow_command_grant_flag(marker: &str) -> String {
+    serde_json::json!({
+        "name": "self",
+        "executable": std::env::current_exe().unwrap().to_string_lossy(),
+        "argv": ["workflow_dev_seam_command_fixture_child", "--exact", "--nocapture"],
+        "env": {
+            "CHEAPER_PROC_CHILD_MODE": "probe",
+            "CHEAPER_PROC_CHILD_ARG": marker,
+        }
+    })
+    .to_string()
+}
+
+/// opt-in `command` worker — `cheaper.optionalTools` で `command` を
+/// opt-in 宣言(grants 空なら縮退、grant があれば実登録)。
+/// workflow の worker 解決は project/user/builtin dir のみを見る
+/// (fixture `worker` 節 fallback は `run` 専用)ため、project workers
+/// dir(`<ws>/.cheaper/workers/`)へ配置して参照する。
+const WF_OPT_COMMAND_WORKER_MD: &str = r#"---
+name: wf-opt-command-worker
+description: opt-in command worker for workflow
+tools: [read, command]
+cheaper:
+  optionalTools: [command]
+  model:
+    tier: low
+  output:
+    schema:
+      inline:
+        type: object
+        required: [ok]
+        properties:
+          ok:
+            type: boolean
+---
+Use command when granted.
+"#;
+
+/// `command` tool call を 1 件 emit してから正常終了する fixture —
+/// grant name `self`・args は child fixture fn の self-reshim argv。
+const FIXTURE_WORKFLOW_COMMAND_CALL: &str = r#"{
+  "name": "cli-t7-grant-command",
+  "sessions": [
+    {"steps": [
+      {"tool_calls": [{"name": "command", "input": {"name": "self", "args": ["workflow_dev_seam_command_fixture_child", "--exact", "--nocapture"]}}]},
+      {"turn": {"tool_calls": true}},
+      {"usage_delta": {"input": 100, "output": 20}},
+      {"finish": {"text": "{\"ok\":true}"}}
+    ]}
+  ]
+}"#;
+
+/// AC14 — `workflow run --grant` が `kind: worker` job(opt-in worker)
+/// の縮退を解消する。`load_policy` の同一 merge 経路で grant が
+/// `RuntimePolicy.command` へ畳まれ、scripted `command` call が実
+/// subprocess を spawn する。stderr `grant:` 行は invocation-sourced
+/// grant の audit surface。
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_run_grant_reaches_worker_job() {
+    let mut f = Fixture::new().with_fake_stream(FIXTURE_WORKFLOW_COMMAND_CALL);
+    let marker = f
+        .ws_path()
+        .join("wf-cmd-marker")
+        .to_string_lossy()
+        .into_owned();
+    // project workers dir へ opt-in worker を配置。
+    let workers = f.ws_path().join(".cheaper").join("workers");
+    std::fs::create_dir_all(&workers).unwrap();
+    std::fs::write(
+        workers.join("wf-opt-command-worker.md"),
+        WF_OPT_COMMAND_WORKER_MD,
+    )
+    .unwrap();
+    f = f.with_workflow(json!({
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+            "op": {
+                "kind": "worker",
+                "worker": "wf-opt-command-worker",
+                "input": { "task": "t" }
+            }
+        },
+        "outputs": {
+            "ok": { "schema": { "type": "boolean" }, "value": { "$from": "op", "path": "/ok" } }
+        }
+    }));
+    let grant = workflow_command_grant_flag(&marker);
+    let (code, env, err) = f
+        .run(&["workflow", "run", "workflow.json", "--grant", &grant])
+        .await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    // `kind: worker` job でも stderr `grant:` 行が出る
+    // (audit surface — span field は worker job の
+    // `cheaper.run.tool_scope` にも record される)。
+    assert!(err.contains("grant: self\n"), "stderr: {err}");
+    assert_eq!(env["result"], json!({"ok": true}));
+    let jobs = env["jobs"].as_array().unwrap();
+    let job = jobs.iter().find(|j| j["id"] == json!("op")).unwrap();
+    assert_eq!(job["status"], json!("succeeded"), "job: {job}");
+    // 縮退解消 — command call が実 spawn(metering に計上)。
+    assert_eq!(job["meta"]["toolCalls"], json!(1));
+    assert_eq!(std::fs::read_to_string(&marker).unwrap(), "ran");
+}
+
+/// AC14 — `kind: tool` job の `command` call が `inner.command`
+/// 再注入経由(invocation grant 込み resolved policy)で grant を受け
+/// 実 subprocess を spawn する。`command: None` で parity check を
+/// skip しても grant は tool job に届く。
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_run_grant_reaches_tool_job() {
+    let mut f = Fixture::new();
+    let marker = f
+        .ws_path()
+        .join("wf-cmd-marker")
+        .to_string_lossy()
+        .into_owned();
+    f = f.with_workflow(json!({
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+            "cmd": {
+                "kind": "tool",
+                "tool": "command",
+                "input": {
+                    "name": "self",
+                    "args": ["workflow_dev_seam_command_fixture_child", "--exact", "--nocapture"]
+                }
+            }
+        },
+        "outputs": {
+            "state": { "schema": { "type": "string" }, "value": { "$from": "cmd", "path": "/details/state" } },
+            "exit": { "schema": { "type": "number" }, "value": { "$from": "cmd", "path": "/details/exitCode" } }
+        }
+    }));
+    let grant = workflow_command_grant_flag(&marker);
+    let (code, env, err) = f
+        .run(&["workflow", "run", "workflow.json", "--grant", &grant])
+        .await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    assert_eq!(env["result"], json!({"state": "completed", "exit": 0}));
+    // `kind: tool` job は tool_scope span を通らない — stderr の
+    // `grant:` 行が唯一の audit surface。
+    assert!(err.contains("grant: self\n"), "stderr: {err}");
+    let jobs = env["jobs"].as_array().unwrap();
+    let job = jobs.iter().find(|j| j["id"] == json!("cmd")).unwrap();
+    assert_eq!(job["status"], json!("succeeded"), "job: {job}");
+    assert_eq!(job["meta"]["toolCalls"], json!(1));
+    // 実 spawn — grant env(minimal env)経由で子が marker を書いた。
+    assert_eq!(std::fs::read_to_string(&marker).unwrap(), "ran");
+}

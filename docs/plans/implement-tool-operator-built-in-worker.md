@@ -24,6 +24,7 @@ relations:
   superseded-by: []
   related:
     - "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
+    - "../plans/implement-invocation-scoped-command-grants.md"
   refines: []
   refined-by: []
   derives-from:

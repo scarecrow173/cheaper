@@ -160,7 +160,13 @@ bare `*` は zero-or-more の残余 token を受ける rest marker）。
 `command.grants` は builtin と user-scope の `policy.yaml` でのみ
 authoring でき、project `.cheaper/policy.yaml` に `command` key を
 含めると policy load が `InvalidRuntimePolicy` で失敗する
-（narrowing も不可）。grant・信頼境界・sandbox 限界の詳細は
+（narrowing も不可）。user policy の grants は
+`cheaper policy grant {add,list,remove}` で管理できる（validation
+付きの managed 経路。write path の caveat — read-modify-write の
+last-wins・comment/整形の非保存 — は
+[usage ガイド](./usage.md) を参照）。その他に invoker が
+`--grant` flag で run 単位の非永続 grant を注入する経路がある。
+grant・信頼境界・sandbox 限界の詳細は
 [command ガイド](./command.md) を参照。
 
 部分 override では `version` と必要な項目だけ書く。

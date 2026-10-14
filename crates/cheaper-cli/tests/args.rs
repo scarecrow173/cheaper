@@ -2,7 +2,7 @@
 
 use cheaper_cli::args::{
     global_flag_present, global_log_flags, parse_cli_args, AuthAction, AuthTypeArg, CliFormat,
-    ParsedCli,
+    ParsedCli, PolicyAction,
 };
 use cheaper_core::errors::ErrorCode;
 
@@ -351,6 +351,210 @@ fn workflow_interface_and_run() {
 
     let e = err(&["workflow"]);
     assert_eq!(e.message(), "workflow requires interface|run <path>");
+}
+
+// --- --grant(T2: repeatable / non-run reject / 64KiB bound) -------------------
+
+#[test]
+fn run_grant_flag_repeatable() {
+    // `--grant <v>` 形
+    let ParsedCli::Run(a) =
+        parse_cli_args(&args(&["run", "w", "--grant", r#"{"name":"a"}"#])).unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(a.grants, [r#"{"name":"a"}"#]);
+
+    // `--grant=<v>` 形 + 複数指定は宣言順保持(last-wins ではない —
+    // `Values.grants` の push arm)。
+    let ParsedCli::Run(a) = parse_cli_args(&args(&[
+        "run",
+        "w",
+        r#"--grant={"name":"a"}"#,
+        "--grant",
+        r#"{"name":"b"}"#,
+        r#"--grant={"name":"c"}"#,
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    assert_eq!(
+        a.grants,
+        [r#"{"name":"a"}"#, r#"{"name":"b"}"#, r#"{"name":"c"}"#]
+    );
+}
+
+#[test]
+fn run_alias_accepts_grant() {
+    // alias command は `ParsedCli::Run` fold により無変更で `--grant`
+    // を受ける。
+    let ParsedCli::Run(a) = parse_cli_args(&args(&[
+        "tool-operate",
+        "--grant",
+        r#"{"name":"self","executable":"/x"}"#,
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    assert_eq!(a.worker_name.as_deref(), Some("tool-operator"));
+    assert_eq!(a.grants, [r#"{"name":"self","executable":"/x"}"#]);
+}
+
+#[test]
+fn workflow_run_accepts_grant() {
+    let ParsedCli::WorkflowRun(a) = parse_cli_args(&args(&[
+        "workflow",
+        "run",
+        "wf.json",
+        "--grant",
+        r#"{"name":"a"}"#,
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    assert_eq!(a.grants, [r#"{"name":"a"}"#]);
+}
+
+#[test]
+fn grant_value_over_64kib_is_rejected() {
+    let oversized = format!("--grant={}", "x".repeat(64 * 1024 + 1));
+    let e = err(&["run", "w", &oversized]);
+    assert_eq!(e.code(), ErrorCode::InvalidRequest);
+    let e = err(&["workflow", "run", "wf.json", &oversized]);
+    assert_eq!(e.code(), ErrorCode::InvalidRequest);
+    // ちょうど 64KiB は受理(bound は「超過」で発火)。
+    let boundary = format!("--grant={}", "x".repeat(64 * 1024));
+    assert!(parse_cli_args(&args(&["run", "w", &boundary])).is_ok());
+    assert!(parse_cli_args(&args(&["workflow", "run", "wf.json", &boundary])).is_ok());
+}
+
+#[test]
+fn grant_rejected_on_non_run_commands() {
+    // AC17 — 非 run 系全 command で `InvalidRequest`(silent drop なし)。
+    // `workflow interface`・`policy` は allowlist 拒否。
+    let grant = r#"--grant={"name":"a"}"#;
+    for argv in [
+        vec!["usage", grant],
+        vec!["count-tokens", "f", grant],
+        vec!["models", grant],
+        vec!["auth", "status", grant],
+        vec!["workflow", "interface", "wf.json", grant],
+        vec!["policy", "grant", "list", grant],
+    ] {
+        let e = err(&argv);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "{argv:?}");
+    }
+}
+
+// --- policy grant(T3: positional parse + flag allowlist) ---------------------
+
+#[test]
+fn policy_grant_parse_table() {
+    // `add <name> <spec-json>`(4 positional)。
+    let ParsedCli::Policy(a) = parse_cli_args(&args(&[
+        "policy",
+        "grant",
+        "add",
+        "git-log",
+        r#"{"executable":"git","argv":["log"]}"#,
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    assert_eq!(
+        a.action,
+        PolicyAction::GrantAdd {
+            name: "git-log".to_string(),
+            spec: r#"{"executable":"git","argv":["log"]}"#.to_string(),
+        }
+    );
+
+    // `list`(2)。
+    let ParsedCli::Policy(a) = parse_cli_args(&args(&["policy", "grant", "list"])).unwrap() else {
+        panic!()
+    };
+    assert_eq!(a.action, PolicyAction::GrantList);
+
+    // `remove <name>`(3)。
+    let ParsedCli::Policy(a) =
+        parse_cli_args(&args(&["policy", "grant", "remove", "git-log"])).unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(
+        a.action,
+        PolicyAction::GrantRemove {
+            name: "git-log".to_string()
+        }
+    );
+
+    // 形状違反 — 全て `InvalidRequest`。
+    for argv in [
+        vec!["policy"],
+        vec!["policy", "grant"],
+        vec!["policy", "list"],
+        vec!["policy", "grant", "add", "only-name"],
+        vec!["policy", "grant", "add", "n", "spec", "extra"],
+        vec!["policy", "grant", "list", "extra"],
+        vec!["policy", "grant", "remove"],
+        vec!["policy", "grant", "remove", "n", "extra"],
+        vec!["policy", "other", "list"],
+    ] {
+        let e = err(&argv);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "{argv:?}");
+    }
+
+    // grant name は `^[a-z][a-z0-9_-]{0,63}$`(grant `propertyNames`
+    // と同一)— add/remove とも parse 段で検査する。
+    for name in ["Bad", "a b", "0abc", "-x", &"a".repeat(65)] {
+        let e = err(&["policy", "grant", "add", name, "{}"]);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "add {name}");
+        let e = err(&["policy", "grant", "remove", name]);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "remove {name}");
+    }
+
+    // utility flag は受理する。
+    let ParsedCli::Policy(a) = parse_cli_args(&args(&[
+        "policy",
+        "grant",
+        "list",
+        "--format",
+        "text",
+        "--quiet",
+        "--log",
+        "info",
+        "--log-format",
+        "json",
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    assert_eq!(a.format, CliFormat::Text);
+    assert!(a.quiet);
+}
+
+#[test]
+fn policy_grant_flag_allowlist() {
+    // utility flag allowlist — `--grant` 等他 flag は全て
+    // `InvalidRequest` で reject する(AC17 の `policy` arm)。
+    for flag in [
+        r#"--grant={"name":"a"}"#,
+        "--worker-file=w.json",
+        "--cwd=/tmp",
+        "--input=f.json",
+        "--timeout=30s",
+        "--model=a/b",
+        "--provider=p",
+        "--worker=w",
+        "--tier=low",
+        "--since=24h",
+        "--compare-model=a/b",
+        "--method=x",
+        "--type=oauth",
+    ] {
+        let e = err(&["policy", "grant", "list", flag]);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "{flag}");
+    }
 }
 
 // --- parseArgs 意味論 ---------------------------------------------------------

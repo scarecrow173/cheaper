@@ -4,7 +4,7 @@ type: "adr"
 status: "accepted"
 title: "command grant の信頼境界を trusted layer のみに固定し managed-process 基盤を再利用する"
 created: "2026-10-13"
-updated: "2026-10-13"
+updated: "2026-10-14"
 owners: ["scarecrow173"]
 relations:
   source: ["https://github.com/scarecrow173/cheaper/issues/101"]
@@ -24,9 +24,11 @@ relations:
   related:
     - "../specs/policy-gated-command-tool.md"
     - "../specs/tool-operator-built-in-worker.md"
+    - "../specs/invocation-scoped-command-grants.md"
     - "./managed-process-named-task-lifecycle.md"
     - "./managed-process-bounded-lifecycle-policy.md"
     - "./opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
+    - "./invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
   refines: []
   refined-by: []
   derives-from: ["../discovery/policy-gated-command-tool.md"]

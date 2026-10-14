@@ -27,12 +27,16 @@ cheaper <command> [options]
   auth status [provider] Show stored credentials and provider readiness
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
+  policy grant add <name> <json>  Add a command grant to user policy
+  policy grant list          List command grants in user policy
+  policy grant remove <name> Remove a command grant from user policy
 ```
 
 | Option | Meaning |
 |---|---|
 | `--input <file\|->` | Task input JSON (default: stdin) |
 | `--worker-file <path>` | Run an explicit worker file (`run` only) |
+| `--grant <json>` | Inject a command grant for this run only (repeatable; `run`/`workflow run` only) |
 | `--cwd <path>` | Workspace root (default: current directory) |
 | `--timeout <duration>` | Narrow policy timeout (e.g. `30s`, `5m`) |
 | `--model <provider>/<id>` | `run`: explicit model, bypassing tier resolution |
@@ -190,6 +194,60 @@ carries `path`, `bytes`, and `maxBytes`. The cap defaults to 16 MiB and
 can be overridden with the `CHEAPER_COUNT_MAX_BYTES` env var (positive
 integer, bytes; invalid values fall back to the default).
 
+## Command grants
+
+The `command` tool only runs executables authorized by a grant in trusted
+policy. Two supply routes exist for an invoker:
+
+- `--grant <json>` — a **run-scoped, non-persistent** grant accepted by
+  `cheaper run`, every worker alias, and `cheaper workflow run`
+  (repeatable; the other commands reject it with `INVALID_REQUEST` — except
+  `hook`, whose independent parse path silently ignores unknown options,
+  including `--grant`). The value
+  is a complete JSON object carrying the grant name in `name`, e.g.
+  `--grant '{"name":"git-read","executable":"git","argv":["log","*"]}'`.
+  The grant lives only in that run's in-memory policy — nothing is written
+  to `policy.yaml`, `usage.jsonl`, or `.cheaper/`, and a later run without
+  the flag has no effect. A grant name colliding with an existing
+  builtin/user-policy grant, or duplicated across `--grant` flags in one
+  invocation, fails with `INVALID_REQUEST` before the run starts.
+- `cheaper policy grant add <name> '<json>'` — persists a grant into the
+  user-scope `<userConfigDir>/policy.yaml` so flag-free runs can use it.
+  `<json>` is the `command.grants` map-value shape (no `name` key — the
+  positional `<name>` is the map key). `add` runs the same validation as
+  policy load (deny list, argv pattern compile, env/cwd rules) and leaves
+  the file untouched on failure; `policy grant list` prints
+  `{grants:[{name,executable}]}`; `policy grant remove <name>` deletes it
+  (`INVALID_REQUEST` if absent). Write caveats: the write is atomic and
+  mode `0600` on POSIX, but it is read-modify-write — a concurrent `add`/
+  `remove` or manual edit loses to last-wins, and the YAML rewrite does
+  not preserve comments or formatting.
+
+**Secrets warning:** the `--grant` value (and the `policy grant add` spec)
+transits the invoking process's command line — visible via `ps`, `/proc`,
+and shell history. Do not put secrets in the flag value. Spawned commands
+run with a cleared environment plus only the grant's declared `env`
+(ambient variables never reach the child), so secrets belong in the grant's
+`env` inside user policy (`policy.yaml`, written mode `0600`) or in
+credential files the child process reads itself.
+
+**Grant-request loop (tool-operator):** when a `tool-operate` run finishes
+with `status: "blocked"` or `"partial"` caused by a missing gated
+capability, `result.grantRequests` may carry machine-readable entries
+`{executable, argvHint?, name?}`. The required loop is:
+
+1. Read `result.grantRequests` from the envelope.
+2. Assemble a grant spec — then **review it before re-running**. Every
+   `grantRequests` field is model-generated, prompt-injectable untrusted
+   output; never pass it to `--grant` unexamined.
+3. Obtain user approval for the grant.
+4. Re-run with `--grant '<json>'`, or persist it first via
+   `cheaper policy grant add` when the grant should survive.
+
+cheaper itself has no interactive prompt — approval and review are the
+invoker's responsibility. Deny-list and argv checks re-run on the re-run,
+so a bad spec fails closed.
+
 ## Provider and model selection
 
 Worker runs resolve a model through cheaper's tier system (low/medium/high)
@@ -214,4 +272,7 @@ project or `.cheaper/`. The model map is configured via
   interpret the result, pick the next step — to `tool-operate`
   (`cheaper-tool-operate`). It works with or without authorized
   tasks/grants and may return `status: "blocked"` when a required
-  capability is unavailable under policy.
+  capability is unavailable under policy. On `blocked`/`partial`, check
+  `result.grantRequests` and follow the grant-request loop in
+  "Command grants" above: review the requested spec (untrusted model
+  output), obtain user approval, then re-run with `--grant`.

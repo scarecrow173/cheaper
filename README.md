@@ -72,6 +72,7 @@ cheaper doc-write < task.json
 cheaper tool-operate < task.json
 cheaper count-tokens src/huge.ts
 cheaper auth status openai-codex
+cheaper policy grant list
 ```
 
 stdin に worker の input schema に従う JSON を渡すと、stdout に

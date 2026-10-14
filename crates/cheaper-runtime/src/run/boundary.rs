@@ -69,6 +69,11 @@ pub struct RunWorkerDeps<'a> {
     pub execution: Option<ExecutionBinding>,
     /// tool operation の時間源(test 用 override)。
     pub operation_clock: Option<Clock>,
+    /// `--grant` 由来の invocation grant 名(宣言順)—
+    /// `cheaper.run.tool_scope` span の `grants.invocation` field へ
+    /// record する。runtime 層では policy と区別不能のため cli 層から
+    /// 運ぶ(DESIGN-034FntkIZGiffhdU4caSkN §(d))。未指定は空 slice。
+    pub invocation_grants: &'a [String],
 }
 
 /// `runWorker` 成功結果。

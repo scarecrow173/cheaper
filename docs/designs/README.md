@@ -35,6 +35,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHy2gdnoS2PWvNo0 | grep batchMaxBytes invariant enforcement | approved | [grep-batch-max-bytes-invariant-enforcement.md](./grep-batch-max-bytes-invariant-enforcement.md) |
 | DESIGN-034r6oM1pW6bz2SSvR3rWT | grep eval-budget test stabilization via explicit budget injection | approved | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | DESIGN-034r05iHy2gdnoLt52txFG | Huge-file byte cap guard and fail-closed hook | approved | [huge-file-byte-cap-guard-and-fail-closed-hook.md](./huge-file-byte-cap-guard-and-fail-closed-hook.md) |
+| DESIGN-034FntkIZGiffhdU4caSkN | invocation-scoped command grant（--grant）・grantRequests・cheaper policy grant の設計 | approved | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |
 | DESIGN-034A8ubkLAdLl7ICQZRYM5 | managed process canonical executor の設計 | approved | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
 | DESIGN-034Au1ncZwENCfsEQyf0cD | managed process lifecycle hardening | approved | [managed-process-lifecycle-hardening.md](./managed-process-lifecycle-hardening.md) |
 | DESIGN-034rzP2XX0QSo5LRQDfr9B | model pricing catalog and curated exceptions | approved | [model-pricing-catalog-and-curated-exceptions.md](./model-pricing-catalog-and-curated-exceptions.md) |

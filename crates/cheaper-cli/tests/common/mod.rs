@@ -165,7 +165,16 @@ impl Fixture {
 
     /// `run_cli` を実行し `(exit code, stdout envelope Value, stderr)`
     /// を返す。stdout は JSON envelope 前提(`from_str` unwrap)。
+    ///
+    /// multi-call 対応 — `run()` 冒頭で `out.0`/`err.0` を clear する
+    /// (clear-before)。caller が call ごとの stderr assert を行うため
+    /// read 後 clear より自然。同一 `Fixture` の連続 `f.run`(`policy
+    /// grant` → flag 無し run 等)では、`PipeStdin::read_all` が
+    /// `mem::take` で stdin を消費するため、2 回目以降の呼出し前に
+    /// caller が `f.stdin.data` を再装填する必要がある。
     pub async fn run(&mut self, argv: &[&str]) -> (i32, Value, String) {
+        self.out.0.clear();
+        self.err.0.clear();
         let env_lookup = env_lookup(&self.env_map);
         let cwd = self.ws.path().to_string_lossy().into_owned();
         let mut io = CliIo {

@@ -136,6 +136,10 @@ struct Shared {
     /// `modelPromise` memo — `ensureModel()` の失敗も TS の rejected
     /// promise memoization と同じく再 throw する。
     model: Mutex<Option<Result<Arc<ModelBundle>, SharedToolError>>>,
+    /// `--grant` 由来の invocation grant 名(宣言順)— `kind: worker`
+    /// job の `RunWorkerDeps.invocation_grants`(`grants.invocation`
+    /// span field)へ渡す。
+    invocation_grants: Vec<String>,
 }
 
 impl Shared {
@@ -373,6 +377,7 @@ impl JobExecutor for WorkerJobExecutor {
                             resource_manifest,
                         }),
                         operation_clock: None,
+                        invocation_grants: &inner.invocation_grants,
                     };
                     run_worker(&deps).await
                 })
@@ -662,7 +667,8 @@ async fn execute_interface_inner(
     hooks: &CliHooks,
     started_at: f64,
 ) -> Result<CommandOut, BoxError> {
-    let ctx = prepare_workflow_context(args.cwd.as_deref(), io, hooks)?;
+    // interface 検査経路に grant を流す意味はない — `None` 固定。
+    let ctx = prepare_workflow_context(args.cwd.as_deref(), io, hooks, None)?;
     let loaded = ctx.load_workflow(&args.path).await?;
     let interface = loaded.compiler.project_interface(loaded.definition.raw())?;
     let result = match serde_json::to_value(&interface).map_err(BoxError::from)? {
@@ -698,7 +704,17 @@ async fn execute_run_inner(
     hooks: &CliHooks,
     _started_at: f64,
 ) -> Result<CommandOut, BoxError> {
-    let ctx = prepare_workflow_context(args.cwd.as_deref(), io, hooks)?;
+    // `--grant` 値列 → 合成 invocation layer + 宣言順 names
+    // (`run` 経路と共有する `grant.rs` builder)。
+    let (invocation_layer, grant_names) = crate::grant::build_invocation_layer(&args.grants)?;
+    let ctx = prepare_workflow_context(args.cwd.as_deref(), io, hooks, invocation_layer.as_ref())?;
+    // `grant: <names>` — `kind: tool` job は `cheaper.run.tool_scope`
+    // span を通らないため workflow 経路ではこの stderr 行が唯一の
+    // audit surface(run 経路と同じ diagnostics 規約、`--quiet` で抑制)。
+    if !grant_names.is_empty() && !args.quiet {
+        io.stderr
+            .write_str(&format!("grant: {}\n", grant_names.join(", ")));
+    }
     let inputs = match &args.input {
         None => Map::new(),
         Some(input) => read_task_input(input, io.stdin)?,
@@ -744,6 +760,7 @@ async fn execute_run_inner(
         store: Mutex::new(None),
         ledger: Arc::new(Mutex::new(Vec::new())),
         model: Mutex::new(None),
+        invocation_grants: grant_names,
     });
     let ports = build_ports(&shared);
     let now_clock: Arc<dyn Fn() -> f64 + Send + Sync> = match hooks.now.clone() {

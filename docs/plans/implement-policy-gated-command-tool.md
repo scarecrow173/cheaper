@@ -25,6 +25,7 @@ relations:
   related:
     - "../plans/implement-managed-process-canonical-tool.md"
     - "../plans/implement-managed-process-lifecycle-hardening.md"
+    - "../plans/implement-invocation-scoped-command-grants.md"
   refines: []
   refined-by: []
   derives-from:

@@ -412,6 +412,13 @@ async fn dispatch(
             write_output(io, &out.envelope, args.format);
             Ok(out.exit_code)
         }
+        ParsedCli::Policy(args) => {
+            // utility command 規約 — `record_usage` を呼ばない
+            // (usage.jsonl 記録対象外)。
+            let out = crate::policy::execute(&args, io, hooks, started_at).await?;
+            write_output(io, &out.envelope, args.format);
+            Ok(out.exit_code)
+        }
         ParsedCli::Run(args) => {
             let out = crate::run::execute(&args, io, hooks, started_at, ctx).await?;
             if let Some(line) = &out.model_line {
@@ -458,6 +465,7 @@ fn command_name(parsed: &ParsedCli) -> &'static str {
         ParsedCli::Auth(_) => "auth",
         ParsedCli::Models(_) => "models",
         ParsedCli::Usage(_) => "usage",
+        ParsedCli::Policy(_) => "policy",
     }
 }
 
@@ -523,13 +531,18 @@ Commands:
   usage                  Aggregate usage.jsonl (worker cost / measured savings)
   models                 List available models with tier and pricing info
   auth status [provider] Show stored credentials and provider readiness
-  hook <event>          Agent hook entry (internal; --target <agent>)
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
+  hook <event>           Agent hook entry (internal; --target <agent>)
+  policy grant add <name> <json>  Add a command grant to user policy
+  policy grant list          List command grants in user policy
+  policy grant remove <name> Remove a command grant from user policy
 
 Options:
   --input <file|->       Task input JSON (default: stdin)
   --worker-file <path>   Run an explicit worker file (run only)
+  --grant <json>         Grant a command for this run only (repeatable;
+                         run/workflow run only)
   --cwd <path>           Workspace root (default: process.cwd())
   --timeout <duration>   Narrow policy timeout (e.g. 30s, 5m)
   --model <prov>/<id>    run: explicit model; usage: filter by model

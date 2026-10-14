@@ -81,6 +81,9 @@ pub struct RunCliArgs {
     pub timeout: Option<String>,
     /// `--model <provider>/<id>` 直接指定。
     pub model: Option<String>,
+    /// repeatable `--grant <json>` の宣言順値列 — invocation-scoped
+    /// command grant(invoker 供給の非永続 grant)。
+    pub grants: Vec<String>,
     pub format: CliFormat,
     pub quiet: bool,
 }
@@ -122,6 +125,9 @@ pub struct WorkflowRunCliArgs {
     pub input: Option<String>,
     pub cwd: Option<String>,
     pub timeout: Option<String>,
+    /// repeatable `--grant <json>` の宣言順値列(workflow arm の
+    /// `run` 側 allowlist のみが受理する)。
+    pub grants: Vec<String>,
     pub format: CliFormat,
     pub quiet: bool,
 }
@@ -145,6 +151,25 @@ pub enum AuthAction {
     Status,
     Login,
     Logout,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PolicyCliArgs {
+    /// `policy grant` の action。
+    pub action: PolicyAction,
+    pub format: CliFormat,
+    pub quiet: bool,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PolicyAction {
+    /// `policy grant add <name> <spec-json>` — spec は生 JSON 文字列
+    /// (`command.grants` の map value shape。`name` key は含まない)。
+    GrantAdd { name: String, spec: String },
+    /// `policy grant list`。
+    GrantList,
+    /// `policy grant remove <name>`。
+    GrantRemove { name: String },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -172,6 +197,7 @@ pub enum ParsedCli {
     Auth(AuthCliArgs),
     Models(ModelsCliArgs),
     Usage(UsageCliArgs),
+    Policy(PolicyCliArgs),
 }
 
 impl ParsedCli {
@@ -186,6 +212,7 @@ impl ParsedCli {
             Self::WorkflowInterface(a) => Some(a.format),
             Self::WorkflowRun(a) => Some(a.format),
             Self::Auth(a) => Some(a.format),
+            Self::Policy(a) => Some(a.format),
             Self::Help | Self::Version | Self::Models(_) => None,
         }
     }
@@ -199,6 +226,7 @@ impl ParsedCli {
             Self::WorkflowInterface(a) => Some(a.quiet),
             Self::WorkflowRun(a) => Some(a.quiet),
             Self::Auth(a) => Some(a.quiet),
+            Self::Policy(a) => Some(a.quiet),
             Self::Help | Self::Version | Self::Models(_) => None,
         }
     }
@@ -212,6 +240,19 @@ fn invalid_worker_name(name: &str) -> CheaperError {
         format!("invalid worker name: {name}"),
     )
     .with_details(details)
+}
+
+/// `policy grant add|remove <name>` の parse 段検査 — grant
+/// `propertyNames`(`^[a-z][a-z0-9_-]{0,63}$`)と同一規則を
+/// `grant::is_valid_grant_name` で共有する。
+fn check_policy_grant_name(name: &str) -> Result<(), CheaperError> {
+    if crate::grant::is_valid_grant_name(name) {
+        return Ok(());
+    }
+    Err(invalid_request(
+        format!("invalid grant name: {name}"),
+        Some(Map::from_iter([("grant".to_string(), json!(name))])),
+    ))
 }
 
 // ---------------------------------------------------------------------------
@@ -239,6 +280,9 @@ const STRING_OPTIONS: &[&str] = &[
     "worker",
     "compare-model",
     "format",
+    // repeatable — last-wins 規約からの deliberate deviation
+    // (`set_string` の `"grant"` arm 参照)。
+    "grant",
     // observability activation(T2)の global option。値は `Values`
     // field に保持せず、消費は `global_log_flags` が argv scan で
     // 担う(parse 済み値と activation 値の二重表現を避ける)。
@@ -267,6 +311,12 @@ struct Values {
     worker: Option<String>,
     compare_model: Option<String>,
     format: String,
+    /// repeatable `--grant` の宣言順蓄積。`Vec` は default-empty の
+    /// 受け皿なので、値を消費しない非 run command arm は
+    /// `!values.grants.is_empty()` の reject 検査を持つ — silent
+    /// drop 防止規約。新規 command arm を追加する場合も同じ検査を
+    /// 置くこと(run / workflow run 以外は全て reject)。
+    grants: Vec<String>,
     quiet: bool,
     help: bool,
     version: bool,
@@ -288,6 +338,7 @@ impl Default for Values {
             worker: None,
             compare_model: None,
             format: "json".to_string(),
+            grants: Vec::new(),
             quiet: false,
             help: false,
             version: false,
@@ -311,6 +362,10 @@ impl Values {
             "worker" => self.worker = Some(value),
             "compare-model" => self.compare_model = Some(value),
             "format" => self.format = value,
+            // `--grant` は repeatable — 本 file の冒頭に文書化された
+            // last-wins 規約からの deliberate deviation(Node `parseArgs`
+            // の `multiple: true` 相当)。宣言順を保持するため push で畳む。
+            "grant" => self.grants.push(value),
             // 受理のみで値は捨てる — activation 入力は
             // `global_log_flags` が argv から直接 scan する。
             "log" | "log-format" => {}
@@ -349,6 +404,29 @@ fn unknown_option(raw: &str) -> CheaperError {
         "Unknown option '{raw}'. To specify a positional argument starting with a '-', \
 place it at the end of the command after '--', as in '-- \"{raw}\"'"
     ))
+}
+
+/// `--grant` flag 値の byte 上限(64KiB)— cmdline 長制限と無制限
+/// 入力への sanity bound。populate 段で enforce する(非 run command
+/// では `!values.grants.is_empty()` の reject が先に発火するため、
+/// 「その command では使えない」旨の error が size error より優先
+/// される)。
+fn check_grant_value_bounds(grants: &[String]) -> Result<(), CheaperError> {
+    const MAX_GRANT_VALUE_BYTES: usize = 64 * 1024;
+    if grants.iter().any(|g| g.len() > MAX_GRANT_VALUE_BYTES) {
+        return Err(invalid_request(
+            "--grant value exceeds the 64KiB limit",
+            None,
+        ));
+    }
+    Ok(())
+}
+
+/// 非 run command arm 共通の `--grant` reject — `Values.grants` の
+/// 規約 comment(「非 run command は grants 非空検査を持つ」)を満たす
+/// 各 arm の呼出し点。
+fn reject_grant_flag() -> CheaperError {
+    invalid_request("--grant is only valid for `run` and `workflow run`", None)
 }
 
 struct ParseOutcome {
@@ -481,7 +559,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
 
     let Some(command) = positionals.first() else {
         return Err(invalid_request(
-            "command required: run | bulk-read | code-write | doc-write | tool-operate | count-tokens | usage | models | auth | workflow",
+            "command required: run | bulk-read | code-write | doc-write | tool-operate | count-tokens | usage | models | auth | workflow | policy",
             None,
         ));
     };
@@ -503,6 +581,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "input",
                 "cwd",
                 "timeout",
+                "grant",
                 "format",
                 "quiet",
                 "log",
@@ -524,6 +603,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
             }
         }
         if action == Some("run") {
+            check_grant_value_bounds(&values.grants)?;
             return Ok(ParsedCli::WorkflowRun(WorkflowRunCliArgs {
                 path: positionals[2].clone(),
                 input: if option_tokens.iter().any(|t| t.name == "input") {
@@ -533,6 +613,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 },
                 cwd: values.cwd.clone(),
                 timeout: values.timeout.clone(),
+                grants: values.grants.clone(),
                 format,
                 quiet,
             }));
@@ -561,6 +642,10 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "--worker-file is only valid for `run`",
                 None,
             ));
+        }
+        // 規約: 非 run command は grants 非空検査を持つ(silent drop 防止)。
+        if !values.grants.is_empty() {
+            return Err(reject_grant_flag());
         }
         if values.timeout.is_some() || values.input != "-" {
             return Err(invalid_request(
@@ -610,6 +695,10 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "--worker-file is only valid for `run`",
                 None,
             ));
+        }
+        // 規約: 非 run command は grants 非空検査を持つ(silent drop 防止)。
+        if !values.grants.is_empty() {
+            return Err(reject_grant_flag());
         }
         if values.timeout.is_some() {
             return Err(invalid_request(
@@ -664,6 +753,10 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "--worker-file is only valid for `run`",
                 None,
             ));
+        }
+        // 規約: 非 run command は grants 非空検査を持つ(silent drop 防止)。
+        if !values.grants.is_empty() {
+            return Err(reject_grant_flag());
         }
         if values.model.is_some() {
             return Err(invalid_request(
@@ -731,6 +824,10 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "--worker-file is only valid for `run`",
                 None,
             ));
+        }
+        // 規約: 非 run command は grants 非空検査を持つ(silent drop 防止)。
+        if !values.grants.is_empty() {
+            return Err(reject_grant_flag());
         }
         if values.timeout.is_some() {
             return Err(invalid_request(
@@ -826,6 +923,52 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         }));
     }
 
+    if command == "policy" {
+        // `policy grant add <name> <spec-json>`(4)/`list`(2)/
+        // `remove <name>`(3)以外の形状は受理しない。grant name は
+        // add/remove とも `^[a-z][a-z0-9_-]{0,63}$`(grant
+        // `propertyNames` と同一)を parse 段で検査する。
+        let sub = &positionals[1..];
+        let action = match sub {
+            [cmd, verb, name, spec] if cmd == "grant" && verb == "add" => {
+                check_policy_grant_name(name)?;
+                PolicyAction::GrantAdd {
+                    name: name.clone(),
+                    spec: spec.clone(),
+                }
+            }
+            [cmd, verb] if cmd == "grant" && verb == "list" => PolicyAction::GrantList,
+            [cmd, verb, name] if cmd == "grant" && verb == "remove" => {
+                check_policy_grant_name(name)?;
+                PolicyAction::GrantRemove { name: name.clone() }
+            }
+            _ => {
+                return Err(invalid_request(
+                    "policy requires grant add <name> <spec>|list|remove <name>",
+                    None,
+                ))
+            }
+        };
+        // utility command の flag allowlist — `--grant`・`--worker-file`・
+        // `--cwd`・`--input`・`--timeout` 等他 option は全て reject
+        // する(workflow arm と同型の option_tokens 走査。`Values.grants`
+        // の「非 run command は grants 非空検査を持つ」規約はこの
+        // allowlist が包含する)。
+        for token in &option_tokens {
+            if !["format", "quiet", "log", "log-format"].contains(&token.name.as_str()) {
+                return Err(invalid_request(
+                    format!("--{} is not valid for `policy`", token.name),
+                    None,
+                ));
+            }
+        }
+        return Ok(ParsedCli::Policy(PolicyCliArgs {
+            action,
+            format,
+            quiet,
+        }));
+    }
+
     let worker_name: Option<String> = if command == "run" {
         if positionals.len() > 2 {
             return Err(invalid_request(
@@ -900,6 +1043,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         }
     }
 
+    check_grant_value_bounds(&values.grants)?;
     Ok(ParsedCli::Run(RunCliArgs {
         worker_name,
         worker_file,
@@ -907,6 +1051,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         cwd: values.cwd,
         timeout: values.timeout,
         model,
+        grants: values.grants,
         format,
         quiet,
     }))

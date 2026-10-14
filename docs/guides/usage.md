@@ -24,6 +24,9 @@ Commands:
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
   hook <event>           Agent hook entry (internal; --target <agent>)
+  policy grant add <name> <json>  Add a command grant to user policy
+  policy grant list          List command grants in user policy
+  policy grant remove <name> Remove a command grant from user policy
 ```
 
 `bulk-read` / `code-write` / `doc-write` / `tool-operate` は
@@ -40,12 +43,13 @@ Commands:
 | --- | --- |
 | `--input <file\|->` | task input JSON の読み元。`-`（既定）は stdin |
 | `--worker-file <path>` | 明示的な worker file を実行する（`run` のみ） |
+| `--grant <json>` | その invocation のみ有効な command grant を注入する（repeatable。`run`・`workflow run` のみ。詳細は [command ガイド](./command.md)） |
 | `--cwd <path>` | workspace root（既定: カレントディレクトリ） |
 | `--timeout <duration>` | policy timeout を narrow する（例: `30s`, `5m`）。policy 上限は越えられない |
 | `--model <provider>/<id>` | `run` では tier 解決を bypass する model 直接指定、`usage` では model filter |
 | `--provider <id>` | `models` の出力・`usage` の集計を provider で絞る |
 | `--tier <low\|medium\|high>` | `models` の出力を effective tier で絞る |
-| `--worker <name>` | `models` の auto tier 分類をその worker の workload profile で計算する |
+| `--worker <name>` | `usage` では worker filter、`models` では auto tier 分類をその worker の workload profile で計算する |
 | `--format <json\|text>` | stdout の形式（既定: `json`） |
 | `--quiet` | stderr の diagnostics を抑制する |
 | `--log <level>` | `.cheaper/logs` + stderr への logging を有効化（`off`/`error`/`warn`/`info`/`debug`/`trace`、env `CHEAPER_LOG`） |
@@ -53,7 +57,7 @@ Commands:
 | `--help` / `--version` | help / version 表示 |
 
 `--method`・`--type` は `auth login` 専用（下記参照）。
-`--since`・`--worker`・`--compare-model` は `usage` 専用（後述）。
+`--since`・`--compare-model` は `usage` 専用（後述）。
 
 ## stdin / stdout 契約
 
@@ -80,7 +84,12 @@ Commands:
     `input + cacheRead` で読む。`totalTokens` は `input +
     output` で `cacheRead` を含まない（issue #86）。
 - stderr には diagnostics（`model: provider/id (tier X)` や error
-  要約）が出る。`--quiet` で抑制できる。
+  要約）が出る。`--quiet` で抑制できる。`--grant` 付きの run は
+  開始時に `grant: <names>` の diagnostic 行を出す — invocation
+  grant の適用を policy 由来のみの run と区別する audit surface
+  の一面で、もう一面は log 有効時の `cheaper.run.tool_scope`
+  span の `grants.invocation` field（`usage.jsonl` の record
+  shape は不変）。
 - exit code は error.code に対応する（0=成功、2=入力不備、
   3=worker/policy 不備、4=policy 違反、5=provider/model 不備、
   6=実行失敗、7=timeout、8=abort、9=部分書き込み、70=内部）。
@@ -180,6 +189,41 @@ cheaper auth logout openai-codex  # credential 削除
 provider 一覧・認証方法の詳細は [providers ガイド](./providers.md)
 を参照。
 
+## policy grant（command grant の管理）
+
+user-scope `<userConfigDir>/policy.yaml` の `command.grants` を
+管理する utility command。対象は user policy のみで、project
+policy（`.cheaper/policy.yaml`）は触れない。
+
+```bash
+cheaper policy grant add git-read '{"executable":"git","argv":["log","*"]}'
+cheaper policy grant list        # {grants:[{name,executable}]}（name 順）
+cheaper policy grant remove git-read
+```
+
+- `add <name> <json>`: spec は `command.grants` の map value shape
+  の JSON object（`name` key は含めない — map key として載る）。
+  書き込み前に policy load と同一の検査（schema・deny list・
+  argv pattern の compile・env/cwd 規則）を通し、invalid spec は
+  file を変更せず error を返す。executable の存在確認は add 時に
+  は行わない（pin は scope 構築時の runtime 検査）。既存の同名
+  grant がある場合は `InvalidRequest`（置き換えは `remove` →
+  `add`）。
+- `remove <name>`: 存在しない name は `InvalidRequest` の error
+  envelope を返す。
+- write path は atomic（temp + rename、POSIX `0600`）。caveat:
+  read-modify-write のため並行する `add`/`remove` や手編集が
+  割り込むと last-wins で lost update しうる。また serde_yml
+  rewrite が file 内の comment・key 順・整形を保存しない —
+  hand-editing と併用する場合は注意。
+- spec-json は cmdline に一時的に載る（`--grant` flag と同種の
+  露出 caveat — secret は spec に含めず、grant `env` の値として
+  file 側に書く。詳細は [command ガイド](./command.md) の
+  cmdline 露出と secrets）。
+- utility command のため `usage.jsonl` には記録されず、success
+  envelope の `result` は `{grant:{name,executable}}`（`list` は
+  `{grants:[...]}`）で `tokens` key を含まない。
+
 ## 計測 log
 
 `run`（worker alias 含む）と `count-tokens` の実行結果は、
@@ -197,8 +241,8 @@ best-effort で append する。書き込み失敗は stdout・exit code
 - `count-tokens`: token count が成功し `tokens` を返した実行。
   `FILE_TOO_LARGE`・file not found・workspace escape 等の失敗は
   記録されない。
-- `auth`・`usage`・`--help`・`--version` 等の utility command は
-  記録対象外。
+- `auth`・`usage`・`policy`・`--help`・`--version` 等の utility
+  command は記録対象外。
 - `hook`（agent hook 経路）は token 計測を行っても記録対象外。
   hook 呼び出しは高頻度かつ infra 的な性質のため、telemetry には
   載せない設計としている。
