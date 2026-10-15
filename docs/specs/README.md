@@ -19,7 +19,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gdbCbWupr | Canonical Token Counter, count_tokens tool, and count-tokens CLI | implemented | [canonical-token-counter.md](./canonical-token-counter.md) |
 | SPEC-034zILh8aauVSReoD33mtV | Canonical Tool Runtime 抽出 | approved | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | SPEC-034Dmb2S8y3tdJI8WdKhG0 | cargo source install distribution for APM consumers | implemented | [cargo-source-install-distribution-for-apm-consumers.md](./cargo-source-install-distribution-for-apm-consumers.md) |
-| SPEC-034GssA0IjLKSiDdIHpAC8 | Case-insensitive native tools and Devin registration | approved | [case-insensitive-native-tools-and-devin-registration.md](./case-insensitive-native-tools-and-devin-registration.md) |
+| SPEC-034GssA0IjLKSiDdIHpAC8 | Case-insensitive native tools and Devin registration | implemented | [case-insensitive-native-tools-and-devin-registration.md](./case-insensitive-native-tools-and-devin-registration.md) |
 | SPEC-034r05iHK8bA7g7YRKGyQr | cheap-writer built-in Worker | superseded | [cheap-writer-built-in-worker.md](./cheap-writer-built-in-worker.md) |
 | SPEC-034DjvgZNwy9e9aLXb2alN | cheaper-usage skill hook path examples match APM deploy naming | approved | [cheaper-usage-skill-hook-path-examples.md](./cheaper-usage-skill-hook-path-examples.md) |
 | SPEC-034r05iHK8bA7g59V25ltC | cheaper V1 Worker Runtime と CLI | implemented | [cheaper-v1-worker-runtime-cli.md](./cheaper-v1-worker-runtime-cli.md) |

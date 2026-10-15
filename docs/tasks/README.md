@@ -212,7 +212,7 @@ Directory: `docs/tasks`
 | TASK-034EOHIeC6KauJaRop87sk | T2: shared managed-process 機構の tools/proc 抽出 | done | [proc-extraction.md](./proc-extraction.md) |
 | TASK-034r05iHWkNF7zKMZPhFky | Provider plugin tests and resource isolation verification | done | [provider-plugin-tests-and-resource-isolation.md](./provider-plugin-tests-and-resource-isolation.md) |
 | TASK-034r05iHQeQpDpEony1i5k | Record experiment log and verify test regression | done | [record-experiment-log-and-verify-test-regression.md](./record-experiment-log-and-verify-test-regression.md) |
-| TASK-034GtBzKmwPf5z06kAahym | Register Devin hooks from APM skill | todo | [register-devin-hooks-from-apm-skill.md](./register-devin-hooks-from-apm-skill.md) |
+| TASK-034GtBzKmwPf5z06kAahym | Register Devin hooks from APM skill | done | [register-devin-hooks-from-apm-skill.md](./register-devin-hooks-from-apm-skill.md) |
 | TASK-034EUvFhVkFFo9cY6aX6LB | T2: registry degrade path と prompt surfacing | done | [registry-degrade-and-prompt-surfacing.md](./registry-degrade-and-prompt-surfacing.md) |
 | TASK-034DzYbfe9r0G8Nd58FQjy | T1: js_json shim 削除 (F3) | done | [remove-js-json-shim.md](./remove-js-json-shim.md) |
 | TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |

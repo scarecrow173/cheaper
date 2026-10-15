@@ -115,9 +115,10 @@ one workspace file so you can measure context cost before reading it.
   - **GitHub Copilot** — `preToolUse`; oversized `view` and shell-tool
     calls are denied via `{"permissionDecision":"deny"}` on stdout
     with exit 0.
-  - **Claude Code** — `PreToolUse` (`Read`/`Bash`/`PowerShell`
-    matcher); denies return `hookSpecificOutput.permissionDecision:
-    "deny"` on stdout with exit 0.
+  - **Claude Code** — `PreToolUse` (case-insensitive exact `read`/`grep`/
+    `bash`/`powershell` matcher); single-file reads/searches and shell reads
+    use the shared whole-file guard. Denies return
+    `hookSpecificOutput.permissionDecision: "deny"` on stdout with exit 0.
   - **Cursor** — `beforeReadFile` / `beforeShellExecution`; every
     response is a schema-valid `{"permission": ...}` JSON, exit 0.
 - On **OpenAI Codex** the same `PreToolUse` registration is deployed
@@ -129,6 +130,38 @@ one workspace file so you can measure context cost before reading it.
   For the per-target contract, see the canonical matrix in
   DISC-034r05iHy2gdnpdai9KGpW
   (`docs/discovery/cross-agent-hook-distribution-and-contract-matrix.md`).
+
+### Devin CLI native registration (Windows)
+
+APM distributes the registration helper as part of this skill. For a new
+Devin-only consumer, install the package with `apm install --target agent-skills`.
+For an existing consumer, keep its configured targets and use the normal
+`apm install` flow; do not replace targets merely to obtain the helper.
+Use the actual deployed skill path when `--legacy-skill-paths` is enabled.
+Plain `apm install` can replay the existing lockfile. To obtain this helper
+from a newer package revision, preview a scoped update with
+`apm update scarecrow173/cheaper/packages/apm --dry-run`, then run the same
+command without `--dry-run` after reviewing its plan. Preserve the existing
+targets. If the dependency is pinned to an immutable ref, select the new ref
+explicitly through your normal dependency review.
+
+From the consumer root, preview with:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .agents/skills/cheaper-usage/scripts/install-devin-hooks.ps1
+```
+
+Add `-Apply` to register native read/grep hooks in `.devin/config.json`.
+The helper requires a CLI that reports `devin` through `cheaper hook targets --json`;
+updating APM resources does not update the separately installed CLI. It preserves
+unrelated configuration and refuses known duplicate cheaper read hooks. Resolve
+legacy registrations explicitly, then use `/hooks` to check all loaded sources,
+including global and ancestor configurations. Native shell tools are not registered.
+
+This is supplemental registration, not an APM-managed hook target. APM uninstall
+does not remove the native entry; remove only its `cheaper hook pre-tool-use --target devin`
+group manually when uninstalling. The guard still measures whole files: native
+registration and case normalization do not resolve bounded-read issue #107.
 
 ## stdin → stdout contract
 

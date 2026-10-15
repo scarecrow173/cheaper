@@ -921,9 +921,8 @@ async fn devin_event_gate_and_fail_open_are_silent() {
         ),
         (
             &["pre-tool-use", "--target", "devin"],
-            format!(
-                "{{\"hook_event_name\":\"PostToolUse\",\"tool_name\":\"read\",\"tool_input\":{{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}}}}"
-            ),
+            "{\"hook_event_name\":\"PostToolUse\",\"tool_name\":\"read\",\"tool_input\":{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}}"
+                .to_string(),
         ),
         (
             &["pre-tool-use", "--target", "devin"],

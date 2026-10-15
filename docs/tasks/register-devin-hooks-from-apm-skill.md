@@ -1,7 +1,7 @@
 ---
 id: "TASK-034GtBzKmwPf5z06kAahym"
 type: "task"
-status: "todo"
+status: "done"
 title: "Register Devin hooks from APM skill"
 created: "2026-10-15"
 updated: "2026-10-15"
@@ -17,7 +17,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-native-tool-normalization-and-devin-bootstrap.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/register-devin-hooks-from-apm-skill.md"
   depends-on:
     - "docs/plans/implement-native-tool-normalization-and-devin-bootstrap.md"
     - "docs/tasks/normalize-tools-and-add-devin-hook-capability.md"
@@ -77,20 +78,23 @@ integration gate を 1 回実行する。
 
 ## Done When
 
-- [ ] installer test が red → 実装 → green（fixture 限定、Windows
+- [x] installer test が red → 実装 → green（fixture 限定、Windows
       PS 5.1、他 OS 明示 skip）。
-- [ ] `SKILL.md` / `distribution.md` が plan の lead-authored copy で
+- [x] `SKILL.md` / `distribution.md` が plan の lead-authored copy で
       更新済み（文面の自前生成なし）。
-- [ ] 手動 integration gate（isolated consumer、APM 0.28.0
+- [x] 手動 integration gate（isolated consumer、APM 0.28.0
       `install --target agent-skills`、hash 一致・`.windsurf`/
       `.claude` hook 未生成）が 1 回 pass。
 
 ## Verification
 
-- [ ] `mise exec -- node --test scripts/test/devin-hooks-install.test.mjs` — exit 0（installer 部分含む全体）。
-- [ ] 手動 integration gate: repo 内 ignored `tmp` の fresh
+- [x] `mise exec -- node --test scripts/test/devin-hooks-install.test.mjs` — exit 0、21 passed / 0 failed（installer 部分含む全体、Windows PS 5.1 full-path spawn、log `tmp/issue107-t2-node-green10.log`）。
+- [x] 手動 integration gate: repo 内 ignored `tmp` の fresh
       isolated consumer（`apm.yml` に `packages/apm` local-path
       dependency）で `apm install --target agent-skills` を 1 回
       実行し、deploy 済み helper の hash が source と一致・
       `.windsurf`/`.claude` hook が未生成であること。network/model
       不要、admission bypass・global/consumer 設定変更なし。
+      → 実行済み（`tmp/issue107-apm-consumer`、exit 0、SHA256
+      `338e671b…e2fc` 一致、hook file 未生成を確認。最終 source の
+      log `tmp/issue107-apm-gate5.log`）。

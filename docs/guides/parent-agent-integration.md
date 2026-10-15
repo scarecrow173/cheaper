@@ -86,12 +86,12 @@ hook の動作は target の hook event 体系に依存する。
   command を adapter が受け取り、`cat` / `head` / `tail` /
   `less` / `more` による large-read は deny（exit 2 + stderr
   の誘導メッセージ）で block される。
-- **Claude Code**: `PreToolUse`（`Read` / `Bash` / `PowerShell`
-  matcher）経由で `cheaper hook pre-tool-use --target pretooluse`
-  が動作する。`Read` の file-read に加え、`Bash` / `PowerShell`
-  の shell command 内の large-read も block される。deny は
-  stdout の `hookSpecificOutput.permissionDecision: "deny"`
-  JSON で返し、常に exit 0。
+- **Claude Code**: `PreToolUse`（`read` / `grep` / `bash` /
+  `powershell` の ASCII case-insensitive exact matcher）経由で
+  `cheaper hook pre-tool-use --target pretooluse` が動作する。
+  単一ファイルの read/grep と shell command 内の large-read を
+  共有の全文 policy で判定する。deny は
+  `hookSpecificOutput.permissionDecision: "deny"` + exit 0。
 - **Cursor**: `beforeReadFile` / `beforeShellExecution` event
   経由で `cheaper hook before-read-file` / `before-shell-execution
   --target cursor` が動作する。応答は `{"permission":"deny"}`
@@ -108,16 +108,23 @@ hook の動作は target の hook event 体系に依存する。
   も同一 policy で block される。worker 定義・schema・policy は
   binary に embedded されているため、copilot target の `.json`
   deploy 除外は worker の利用に影響しない（issue #85）。
-- **Codex**: `PreToolUse`（`Read|Bash|PowerShell` matcher、
-  Claude と同一の nested group 登録）経由で
+- **Codex**: `PreToolUse`（Claude と同じ ASCII case-insensitive
+  exact matcher と nested group 登録）経由で
   `cheaper hook pre-tool-use --target pretooluse` が動作し、
   `Bash` / `PowerShell` の shell command 内の large-read を block
   できる。**file-read interception は unsupported** — Codex の
   read 系 tool は `PreToolUse` を emit しない upstream gap
   （openai/codex#18491・#20204）が残存する。
-- **その他 target**（agent-skills 等）: hook 登録は deploy されるが、
-  認識されない event 名（例: `pre_read_code`）の登録は no-op と
-  して扱われる（登録は harmless。DISC-034r05iHy2gdnpdai9KGpW）。
+- **Devin CLI（Windows）**: APM が `cheaper-usage` skill と一緒に配布する
+  helper を明示実行し、`.devin/config.json` の native `PreToolUse`
+  （read/grep）へ `cheaper hook pre-tool-use --target devin` を登録する。
+  deny は `{"decision":"block","reason":...}` + exit 0。native shell
+  tool は登録しない。互換 hook との競合は検出して停止し、自動移行は
+  行わない。配置・更新・解除の手順は [配布 guide](./distribution.md) を参照。
+- **agent-skills**: skills とその resource のみを deploy する target。
+  native hook の自動登録はない。
+- **その他の target**: hook の配布・有効性は APM と harness の対応に
+  依存する。skills の利用と native hook の対応は区別して確認する。
 
 skills（`cheaper-usage` 等）は target 非依存で機能する。
 

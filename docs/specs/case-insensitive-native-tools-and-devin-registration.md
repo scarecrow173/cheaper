@@ -1,10 +1,10 @@
 ---
 id: "SPEC-034GssA0IjLKSiDdIHpAC8"
 type: "spec"
-status: "approved"
+status: "implemented"
 title: "Case-insensitive native tools and Devin registration"
 created: "2026-10-15"
-updated: "2026-10-15"
+updated: "2026-10-16"
 owners: ["scarecrow173"]
 relations:
   source:

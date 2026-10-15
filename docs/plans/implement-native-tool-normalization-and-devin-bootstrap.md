@@ -1,10 +1,10 @@
 ---
 id: "PLAN-034GtndRTaEqU3lA6Tnquu"
 type: "plan"
-status: "in-progress"
+status: "completed"
 title: "Implement native tool normalization and Devin bootstrap"
 created: "2026-10-15"
-updated: "2026-10-15"
+updated: "2026-10-16"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -110,7 +110,7 @@ pin 維持。
 
 ### T1（Normalize + capability）
 
-- [ ] `hook.rs` に fail test を追加する: `read`/`grep` 各 case
+- [x] `hook.rs` に fail test を追加する: `read`/`grep` 各 case
       variant の同一 routing、threshold 超過 file deny / 小 file
       allow / `file_path` 欠落・非 string fail-open / 未知・
       prefix/suffix tool fail-open、`tool_input` 非 object・root 非
@@ -121,24 +121,24 @@ pin 維持。
       `{"decision":"block","reason":...}` 1 行・`reason`
       passthrough・allow/fallback silent、`ALL` parse roundtrip、
       `targets --json` の 1 行 JSON・stdin 非読取・usage 非記録。
-- [ ] `scripts/test/devin-hooks-install.test.mjs` の source matcher
+- [x] `scripts/test/devin-hooks-install.test.mjs` の source matcher
       test 部分を作成する（各 case 一致 + prefix/suffix 未知 tool
       不一致、crossplatform 実行可能部分のみ。hooks.json 変更前に
       置く）。
-- [ ] `mise exec -- cargo test -p cheaper-cli --features dev-seam
+- [x] `mise exec -- cargo test -p cheaper-cli --features dev-seam
       --test hook` と `mise exec -- node --test
       scripts/test/devin-hooks-install.test.mjs` の双方で red を
       確認する。
-- [ ] `targets.rs`（`HookTarget::Devin`・`ALL`・`tool_use_normalize`・
+- [x] `targets.rs`（`HookTarget::Devin`・`ALL`・`tool_use_normalize`・
       `devin_render`）と `mod.rs`（capability 分岐）を実装し、
       `packages/apm/.apm/hooks/hooks.json` の `PreToolUse` matcher を
       spec の char class exact に更新する。
-- [ ] 同一 cargo test + node test の双方を再実行して green を確認
+- [x] 同一 cargo test + node test の双方を再実行して green を確認
       する。
 
 ### T2（APM-distributed registration helper）
 
-- [ ] `devin-hooks-install.test.mjs` に installer test を追加する
+- [x] `devin-hooks-install.test.mjs` に installer test を追加する
       （design の fixture/stub/semantics: repo `tmp` 下 fixture、PS 5.1
       full path spawn、`fixturebin/cheaper.cmd` stub で固定 capability
       出力、PATH は fixturebin + 必要 systemdir のみ、preview が file
@@ -151,19 +151,19 @@ pin 維持。
       duplicate/caseCollision/escapedDuplicate/hugeNumber/
       high-precision float/exponent の保全拒否、secret-sentinel
       非出現）。
-- [ ] 同一 node test を実行して red を確認する。
-- [ ] `install-devin-hooks.ps1` を design の algorithm で実装する
+- [x] 同一 node test を実行して red を確認する。
+- [x] `install-devin-hooks.ps1` を design の algorithm で実装する
       （`param([string]$ProjectRoot,[switch]$Apply)`、schema 検査、
       design `## JSON Preservation Helper` の `Get-JsonShape` 保全
       gate、conflict scan、capability handshake、temp + atomic
       `File.Replace`/`File.Move`、`finally` cleanup、notice 出力）。
-- [ ] 同一 node test を再実行して green を確認する。
-- [ ] `docs/guides/distribution.md` に消費手順を追記し、
+- [x] 同一 node test を再実行して green を確認する。
+- [x] `docs/guides/distribution.md` に消費手順を追記し、
       `SKILL.md` に lead-authored exact copy（下記）を挿入する。
       既存 Claude bullet は lead-authored 差し替え copy（下記
       authoritative copy）で現行 4 行（L118-120 付近）を置換する。
       文面は生成しない。
-- [ ] 手動 targeted integration gate を 1 回実行する（後述
+- [x] 手動 targeted integration gate を 1 回実行する（後述
       Verification）。
 
 T2 `SKILL.md` へ挿入する lead-authored exact copy（英文、そのまま
@@ -177,6 +177,12 @@ Devin-only consumer, install the package with `apm install --target agent-skills
 For an existing consumer, keep its configured targets and use the normal
 `apm install` flow; do not replace targets merely to obtain the helper.
 Use the actual deployed skill path when `--legacy-skill-paths` is enabled.
+Plain `apm install` can replay the existing lockfile. To obtain this helper
+from a newer package revision, preview a scoped update with
+`apm update scarecrow173/cheaper/packages/apm --dry-run`, then run the same
+command without `--dry-run` after reviewing its plan. Preserve the existing
+targets. If the dependency is pinned to an immutable ref, select the new ref
+explicitly through your normal dependency review.
 
 From the consumer root, preview with:
 
@@ -322,3 +328,14 @@ subagent/remote context は起動しない。
   lead-authored authoritative copy も記録済みで open question は
   解消。修正後差分は lead が全文確認して ACCEPT、status approved
   へ更新済み。
+- 2026-10-16: T1/T2 実装完了・lead が各差分/証拠を review して
+  ACCEPT（T2 Reviewer B の B1〜B4 confirmed P1 は rework で解消、
+  B5〜B8 easy fix 適用、Reviewer A O-B は UNVERIFIED nonblocking
+  のまま推測修正なし）。最終 gate `mise run check` を実行 —
+  biome format・clippy `useless_format`（`hook.rs` の新規
+  `format!` literal）・`apm-install-targets` claude smoke の旧
+  matcher literal の 3 件はいずれも本差分起因で修正済み、全 stage
+  pass（log: `tmp/issue107-final-check.log` /
+  `tmp/issue107-final-check2.log`）。status completed。pending
+  task-graph-to-implementation edge の commit gate は lead commit
+  待ち。

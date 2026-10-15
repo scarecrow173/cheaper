@@ -76,6 +76,54 @@ stale file を **prune しない**（APM 0.28.0 実測）。upgrade 後に
 残存 file は実害なしだが、再 deploy を確実にしたい場合は bundle dir
 全体を消して `apm install` を再実行すればよい。
 
+### Devin CLI の native hook 登録（Windows）
+
+Devin CLI は APM hook target ではなく、native hook は `.devin/config.json`
+へ登録する。登録 helper（PowerShell 5.1 向け）は `cheaper-usage` skill の
+resource として APM package に同梱される。
+
+- **新規の Devin-only consumer**: `apm install --target agent-skills` で
+  package を install すれば helper が deploy される。
+- **既存 consumer**: 設定済み target を維持したまま通常の `apm install`
+  flow で更新する。helper を得るためだけに target を置き換えない。
+- `--legacy-skill-paths` 有効時は実際に deploy された skill path を使う。
+
+通常の `apm install` は lockfile の旧 commit を再利用する場合がある。
+新しい helper を取得する更新は、既存 target を保持したまま
+`apm update scarecrow173/cheaper/packages/apm --dry-run` で preview し、
+内容を確認してから `--dry-run` を外して実行する。immutable ref に pin
+している場合は、依存更新の通常レビューで新 ref を明示的に選ぶ。
+
+consumer root から preview（書き込みなし・CLI 不要）:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .agents/skills/cheaper-usage/scripts/install-devin-hooks.ps1
+```
+
+`-Apply` を付けると `.devin/config.json` の `hooks.PreToolUse` に
+read/grep（ASCII case-insensitive exact matcher）の
+`cheaper hook pre-tool-use --target devin` entry を追加する。apply 前に
+`cheaper hook targets --json` の capability handshake で CLI が `devin`
+target を報告することを必須とするため、古い CLI では何も書かず拒否する
+— APM resource の更新は別途 install された CLI を更新しない点に注意。
+
+helper は既存 config の無関係な key/value/structure を保全し、`.devin/` や
+config file は validation・capability が全て通ってから初めて作る。
+`.windsurf`・`.claude`・global/ancestor config には一切書き込まない。
+既知の重複 cheaper read hook（`.windsurf/hooks.json`・`.devin/hooks.json`・
+`.devin/hooks.v1.json`・`.devin/config.local.json`・`.claude/settings*.json`
+や primary config 内の他 target 登録）を検出した場合は relative path を
+報告して停止する — provider の登録を削除・無効化はしないので、legacy
+registration は利用者が明示的に解消し、Devin の `/hooks` で global・
+ancestor を含む全 loaded source を確認する。native shell tool
+（Bash/PowerShell 相当）は登録しない。
+
+これは **supplemental registration であり APM-managed hook target ではない**。
+`apm uninstall` は native entry を除去しない — uninstall 時は
+`cheaper hook pre-tool-use --target devin` の group だけを手動で削除する。
+guard は引き続き whole file を測定する: native 登録と case normalization は
+bounded-read の issue #107 を解決しない（範囲評価は別対応）。
+
 ## Launcher の挙動
 
 - **POSIX**（`cheaper.sh`）: `command -v cheaper` で PATH 上の CLI を

@@ -485,3 +485,19 @@ fixture 再現で item 1（stdin field names / bounds）は取得済み、
 item 3 の発火重複は fixture 内で dual `pre_tool` firing を実測
 （reported 環境の他 provider 重複は依然未知）。item 2（bounded
 output semantics 保証）は open item として Open Questions に残す。
+
+### 派生 chain 完了 checkpoint（2026-10-16 追記）
+
+本 discovery から派生した partial chain は完了:
+spec `SPEC-034GssA0IjLKSiDdIHpAC8`（implemented）→ ADR（accepted）
++ design（approved）→ plan `PLAN-034GtndRTaEqU3lA6Tnquu`（completed）→
+task `TASK-034GtBzfyOaeVS6nlm1ZkC` / `TASK-034GtBzKmwPf5z06kAahym`
+（done）→ T1/T2 実装・`mise run check` 全 stage pass。ただしこの
+chain が扱うのは native tool の case-insensitive normalization と
+Devin 登録 bootstrap であり、**issue #107 本体の bounded
+`offset`/`limit`/`max_results` 範囲評価は依然未対応** — wire の
+bounds 消失点（native → compatibility 変換）は特定済みのまま、
+bounded-read semantics の修正は後続の spec/plan が担う。本
+discovery の status は `active` のまま、凍結 wire 証拠本文は
+変更しない。pending `task-graph-to-implementation` edge の commit
+gate は lead commit 待ち（完了 checkpoint は lead commit 後）。

@@ -104,6 +104,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zU5o0mgVqx5ZwBdxc0L | Prepare one-dispatch release artifacts | completed | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
 | IMPL-034r2qodykm6M1ReYSbIkc | provider/auth guide runtime sync (PLAN-034r2qodyxvN3g3xktwPOF) | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | IMPL-034r05iHy2gdnpELwCtyPv | Provider-only registration layer (PLAN-034r05iHK8bA7g2BMsfjFu) | completed | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
+| IMPL-034Gu2UGm6tPXaR2rvwH0U | Register Devin hooks from APM skill | completed | [register-devin-hooks-from-apm-skill.md](./register-devin-hooks-from-apm-skill.md) |
 | IMPL-034E5b824duUI8BjKw5jx1 | registry degrade path and prompt surfacing | completed | [registry-degrade-path-and-prompt-surfacing.md](./registry-degrade-path-and-prompt-surfacing.md) |
 | IMPL-034z57lgR0CQbaWKMcKP6v | remove legacy js adapters and final verify | completed | [remove-legacy-js-adapters-and-final-verify.md](./remove-legacy-js-adapters-and-final-verify.md) |
 | IMPL-034r05iHy2gdnpr4JOT5qQ | Repair abort grace and provider failure normalization | completed | [repair-abort-grace-and-provider-failure-normalization.md](./repair-abort-grace-and-provider-failure-normalization.md) |

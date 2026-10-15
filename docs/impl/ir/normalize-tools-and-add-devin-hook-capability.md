@@ -165,8 +165,22 @@ pending。
 - `rustfmt --edition 2021` を変更 3 file のみに適用。
 - `mise exec -- biome check --write scripts/test/devin-hooks-install.test.mjs`
   → import order 修正後 clean（`biome check` exit 0）。
-- `mise run check` / 全 suite / APM integration gate は未実施
-  （lead の review gate・T2 後の最終 gate に委譲）。
+- 最終 gate `mise run check`（`CHEAPER_E2E_OLLAMA=0`、実行 process
+  のみ）を実施: `tmp/issue107-final-check.log`（biome 段で stop、
+  exit 1）→ 修正後 stage を mise.toml 順に継続した
+  `tmp/issue107-final-check2.log`。本差分起因の指摘 3 件を修正:
+  `hook.rs` の新規 `format!` literal → `.to_string()`（clippy
+  `useless_format`）、`devin-hooks-install.test.mjs` の format +
+  fixture 未 cleanup（junction 残留で biome warning、
+  `afterEach`+`rmSync` 追加）、`apm-install-targets.test.mjs`
+  claude smoke の旧 matcher literal `Read|Bash|PowerShell` → 新
+  canonical matcher への期待値更新。最終全 stage exit 0
+  （biome/fmt/clippy/version/doc-ids/cargo test workspace/node
+  scripts 51 pass/node benchmarks 12 pass/lockfile/apm-payload）。
+- lead review: T1 全差分 ACCEPT（confirmed P0/P1 なし、easy fix 適用
+  後）。commit は lead が実行（T1 = `cb76fcc`）。pending
+  task-graph-to-implementation edge の commit gate は T2 commit
+  完了まで未通過。
 
 ## Risks
 
@@ -178,7 +192,11 @@ pending。
 
 ## Follow-ups
 
-- T2（`docs/tasks/register-devin-hooks-from-apm-skill.md`）:
-  `install-devin-hooks.ps1`・installer test・`SKILL.md`/
-  `distribution.md` 更新・手動 APM integration gate。
-- 全実装 review 後の最終 gate で `mise run check` を 1 回実行。
+- T2（`docs/tasks/register-devin-hooks-from-apm-skill.md`）は実装・
+  ACCEPT 済み（IR: `register-devin-hooks-from-apm-skill.md`）。
+- 最終 gate: `mise run check` 初回 invocation は biome 段で失敗
+  （exit 1）、修正後に未実行残 stage を mise.toml 順で継続して全
+  pass を確認（単一 invocation の exit 0 ではない。log:
+  `tmp/issue107-final-check.log` / `tmp/issue107-final-check2.log`）。
+- pending task-graph-to-implementation edge の commit gate は lead
+  commit 待ち。

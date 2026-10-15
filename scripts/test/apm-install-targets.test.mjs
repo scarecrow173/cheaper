@@ -124,12 +124,16 @@ for (const target of HOOK_TARGETS) {
         assert.ok(apmPreToolEntry);
         assert.ok(apmPreToolEntry.matcher);
         // native PreToolUse group(DESIGN-034rA79Uog7JOa7evw6rOL):
-        // matcher Read|Bash|PowerShell で pre-read-code-pretooluse
-        // が live 登録される。copilot 由来の flat entry は lowercase
-        // matcher を保持し、claude の capitalized tool 名には一致
-        // しない(cross-fire 防止)。
+        // case-insensitive read/grep/bash/powershell matcher で
+        // pre-read-code-pretooluse が live 登録される。copilot 由来の
+        // flat entry は lowercase matcher を保持し、claude の
+        // capitalized tool 名には一致しない(cross-fire 防止)。
         const preToolGroups = settingsEvents.PreToolUse;
-        const nativeGroup = preToolGroups.find((g) => g.matcher === "Read|Bash|PowerShell");
+        const nativeGroup = preToolGroups.find(
+          (g) =>
+            g.matcher ===
+            "^([Rr][Ee][Aa][Dd]|[Gg][Rr][Ee][Pp]|[Bb][Aa][Ss][Hh]|[Pp][Oo][Ww][Ee][Rr][Ss][Hh][Ee][Ll][Ll])$",
+        );
         assert.ok(nativeGroup);
         assert.match(String(nativeGroup.hooks[0].command), /hook pre-tool-use --target pretooluse/);
         const copilotGroup = preToolGroups.find((g) => g.matcher === "view|bash|powershell|shell");
