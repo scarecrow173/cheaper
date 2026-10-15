@@ -499,5 +499,28 @@ Devin 登録 bootstrap であり、**issue #107 本体の bounded
 bounds 消失点（native → compatibility 変換）は特定済みのまま、
 bounded-read semantics の修正は後続の spec/plan が担う。本
 discovery の status は `active` のまま、凍結 wire 証拠本文は
-変更しない。pending `task-graph-to-implementation` edge の commit
-gate は lead commit 待ち（完了 checkpoint は lead commit 後）。
+変更しない。`task-graph-to-implementation` edge は実装 commit
+`1ef366c` 後の clean worktree を確認し commit gate を通過した。
+
+`implementation-to-followup-triage` の required audits は
+`impl-record` → `task` の順に実行した。IR は findings なし、task は
+既存の reciprocal-relation warnings のみで blocking findings なし。
+今回の 2 task / 2 IR に finding はない（保存済みログ:
+`tmp/issue107-followup-audit-impl.log` /
+`tmp/issue107-followup-audit-task.log`）。本 partial chain の follow-up は
+`followup-terminal` と分類し、#107 の範囲評価は既存の open item として
+引き続き保持する。
+
+`followup-triage-terminal` の `doc-status --type all` 監査も
+blocking/error なし、今回の chain への finding なしで Completable
+（`tmp/issue107-exit-audit-all.log`）。lead が実結果を確認して
+`implementation-verified` / `followup-terminal` / `exit-audit-pass` を
+与え、`exit-audit-to-complete` 後の router 出力が `status: terminal`、
+`current: complete`、`blockers: []` となったことを確認した。
+
+実行 trace は `probe-to-briefing` → `briefing-to-design` →
+`design-to-planning` → `planning-to-task-graph` →
+`task-graph-to-implementation` → `implementation-to-followup-triage` →
+`followup-triage-terminal` → `exit-audit-to-complete`（8 hops、固定
+`taskBudgetCount: 2` / `maxHops: 11`、commit waiver なし）。これは
+今回の partial plan の terminal であり、#107 全体の resolved 宣言ではない。
