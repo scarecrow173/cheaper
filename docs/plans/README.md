@@ -41,6 +41,7 @@ Directory: `docs/plans`
 | PLAN-034A91M2XAsWK6QNypcEPX | managed process canonical tool を実装する | completed | [implement-managed-process-canonical-tool.md](./implement-managed-process-canonical-tool.md) |
 | PLAN-034AEwZy3GcNygp87aXrL7 | Implement managed process lifecycle hardening | completed | [implement-managed-process-lifecycle-hardening.md](./implement-managed-process-lifecycle-hardening.md) |
 | PLAN-034rzUgf26bzSEwLr1L6Pl | implement model pricing catalog and curated exceptions | approved | [implement-model-pricing-catalog.md](./implement-model-pricing-catalog.md) |
+| PLAN-034GtndRTaEqU3lA6Tnquu | Implement native tool normalization and Devin bootstrap | in-progress | [implement-native-tool-normalization-and-devin-bootstrap.md](./implement-native-tool-normalization-and-devin-bootstrap.md) |
 | PLAN-034z1M6zCAdKb12eiCWZRm | Implement Node 26 SEA standalone executable proof of concept | completed | [implement-node-26-sea-standalone-executable-proof-of-concept.md](./implement-node-26-sea-standalone-executable-proof-of-concept.md) |
 | PLAN-034DVGKbl3V2g7msSfpXv0 | Implement observability foundation | approved | [implement-observability-foundation.md](./implement-observability-foundation.md) |
 | PLAN-034zTJptHTdovrvYW7wQ1k | Implement one-dispatch release workflow | completed | [implement-one-dispatch-release-workflow.md](./implement-one-dispatch-release-workflow.md) |

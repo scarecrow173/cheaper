@@ -14,25 +14,28 @@ use serde_json::{Map, Value};
 
 use super::routing_policy::{evaluate, EvaluateOptions, RoutingRequest, Verdict};
 
-/// `HookTarget` — `HOOK_TARGETS` の 4 値。
+/// `HookTarget` — `HOOK_TARGETS` の 5 値。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HookTarget {
     Windsurf,
     Copilot,
     Pretooluse,
     Cursor,
+    Devin,
 }
 
 /// `HOOK_TARGETS` — argv の `--target` 値 → target。
 impl HookTarget {
+    pub const ALL: [Self; 5] = [
+        Self::Windsurf,
+        Self::Copilot,
+        Self::Pretooluse,
+        Self::Cursor,
+        Self::Devin,
+    ];
+
     pub fn parse(s: &str) -> Option<HookTarget> {
-        match s {
-            "windsurf" => Some(HookTarget::Windsurf),
-            "copilot" => Some(HookTarget::Copilot),
-            "pretooluse" => Some(HookTarget::Pretooluse),
-            "cursor" => Some(HookTarget::Cursor),
-            _ => None,
-        }
+        Self::ALL.iter().find(|t| t.as_str() == s).copied()
     }
 
     /// `--target` 値の canonical 表現(`cheaper.hook` span の `target`
@@ -43,6 +46,7 @@ impl HookTarget {
             HookTarget::Copilot => "copilot",
             HookTarget::Pretooluse => "pretooluse",
             HookTarget::Cursor => "cursor",
+            HookTarget::Devin => "devin",
         }
     }
 }
@@ -101,6 +105,20 @@ fn stringify_ordered(pairs: &[(&str, Value)]) -> String {
         map.insert((*k).to_string(), v.clone());
     }
     stringify(&Value::Object(map))
+}
+
+pub fn targets_json_line() -> String {
+    let targets: Vec<Value> = HookTarget::ALL
+        .iter()
+        .map(|t| Value::from(t.as_str()))
+        .collect();
+    format!(
+        "{}\n",
+        stringify_ordered(&[
+            ("schemaVersion", Value::from(1)),
+            ("targets", Value::Array(targets)),
+        ])
+    )
 }
 
 /// `reason.split("\n").join(" ")` — multi-line guidance を 1 行へ。
@@ -279,36 +297,55 @@ fn copilot_render(verdict: Verdict) -> HookResponse {
     }
 }
 
-// --- pretooluse (claude / codex): deny = hookSpecificOutput JSON + exit 0 ---
-
-const PRETOOLUSE_READ_TOOLS: &[&str] = &["Read"];
-const PRETOOLUSE_SHELL_TOOLS: &[&str] = &["Bash", "PowerShell"];
-
-fn pretooluse_normalize(input: &Value, cwd: &str) -> Option<RoutingRequest> {
+fn tool_use_normalize(
+    input: &Value,
+    cwd: &str,
+    source_prefix: &str,
+    shell_tools: &[&str],
+) -> Option<RoutingRequest> {
     let payload = input.as_object()?;
     let tool_name = payload.get("tool_name").and_then(Value::as_str)?;
-    let tool_input = payload.get("tool_input").and_then(Value::as_object);
-    if PRETOOLUSE_READ_TOOLS.contains(&tool_name) {
-        let file_path = tool_input
-            .and_then(|t| t.get("file_path"))
-            .and_then(Value::as_str)?;
-        return Some(RoutingRequest::FileRead {
-            path: file_path.to_string(),
-            cwd: cwd.to_string(),
-            source_tool: Some(format!("pretooluse:{tool_name}")),
-        });
+    let tool_input = payload.get("tool_input").and_then(Value::as_object)?;
+    let normalized = tool_name.to_ascii_lowercase();
+    let source_tool = Some(format!("{source_prefix}:{tool_name}"));
+    match normalized.as_str() {
+        "read" => {
+            let file_path = tool_input.get("file_path").and_then(Value::as_str)?;
+            Some(RoutingRequest::FileRead {
+                path: file_path.to_string(),
+                cwd: cwd.to_string(),
+                source_tool,
+            })
+        }
+        "grep" => {
+            let path = match tool_input.get("path") {
+                None => ".",
+                Some(v) => v.as_str()?,
+            };
+            Some(RoutingRequest::FileRead {
+                path: path.to_string(),
+                cwd: cwd.to_string(),
+                source_tool,
+            })
+        }
+        name if shell_tools.contains(&name) => {
+            let command = tool_input.get("command").and_then(Value::as_str)?;
+            Some(RoutingRequest::Shell {
+                command: command.to_string(),
+                cwd: cwd.to_string(),
+                source_tool,
+            })
+        }
+        _ => None,
     }
-    if PRETOOLUSE_SHELL_TOOLS.contains(&tool_name) {
-        let command = tool_input
-            .and_then(|t| t.get("command"))
-            .and_then(Value::as_str)?;
-        return Some(RoutingRequest::Shell {
-            command: command.to_string(),
-            cwd: cwd.to_string(),
-            source_tool: Some(format!("pretooluse:{tool_name}")),
-        });
-    }
-    None
+}
+
+// --- pretooluse (claude / codex): deny = hookSpecificOutput JSON + exit 0 ---
+
+const PRETOOLUSE_SHELL_TOOLS: &[&str] = &["bash", "powershell"];
+
+fn pretooluse_normalize(input: &Value, cwd: &str) -> Option<RoutingRequest> {
+    tool_use_normalize(input, cwd, "pretooluse", PRETOOLUSE_SHELL_TOOLS)
 }
 
 fn pretooluse_render(verdict: Verdict) -> HookResponse {
@@ -329,6 +366,34 @@ fn pretooluse_render(verdict: Verdict) -> HookResponse {
                         inner
                     }),
                 )])
+            )),
+            stderr: None,
+            exit: 0,
+        },
+        Verdict::Allow => silent_allow(),
+    }
+}
+
+fn devin_normalize(event: &str, input: &Value, cwd: &str) -> Option<RoutingRequest> {
+    if event != "pre-tool-use" {
+        return None;
+    }
+    let payload = input.as_object()?;
+    if payload.get("hook_event_name").and_then(Value::as_str) != Some("PreToolUse") {
+        return None;
+    }
+    tool_use_normalize(input, cwd, "devin", &[])
+}
+
+fn devin_render(verdict: Verdict) -> HookResponse {
+    match verdict {
+        Verdict::Deny { reason } => HookResponse {
+            stdout: Some(format!(
+                "{}\n",
+                stringify_ordered(&[
+                    ("decision", Value::from("block")),
+                    ("reason", Value::from(reason)),
+                ])
             )),
             stderr: None,
             exit: 0,
@@ -428,6 +493,13 @@ pub async fn handle_hook(
             Some(request) => {
                 let verdict = evaluate(&request, &deps.eval_opts()).await;
                 (verdict_name(&verdict), pretooluse_render(verdict))
+            }
+        },
+        HookTarget::Devin => match devin_normalize(event, input, deps.cwd) {
+            None => ("allow", silent_allow()),
+            Some(request) => {
+                let verdict = evaluate(&request, &deps.eval_opts()).await;
+                (verdict_name(&verdict), devin_render(verdict))
             }
         },
         HookTarget::Cursor => match cursor_normalize(input, deps.cwd) {

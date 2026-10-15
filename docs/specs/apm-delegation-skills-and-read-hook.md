@@ -25,6 +25,8 @@ relations:
   superseded-by: []
   related:
     - "../adr/canonical-tokenizer-js-tiktoken.md"
+    - "../adr/apm-distributed-devin-native-hook-bootstrap.md"
+    - "./case-insensitive-native-tools-and-devin-registration.md"
   refines: []
   refined-by: []
   derives-from:

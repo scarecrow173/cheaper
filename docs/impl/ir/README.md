@@ -84,6 +84,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | IMPL-034A6i3cxbZXoHqDxhuyjB | Migrate native workflows and release guidance | completed | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
+| IMPL-034GtH0PU9VrkGZfPEk4FR | Normalize tools and add Devin hook capability | completed | [normalize-tools-and-add-devin-hook-capability.md](./normalize-tools-and-add-devin-hook-capability.md) |
 | IMPL-034EcqaOLmLoT2kL3ztbwk | Observability foundation | completed | [observability-foundation.md](./observability-foundation.md) |
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | IMPL-034A9TTHbXQNav6LxGvo49 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |

@@ -32,6 +32,7 @@ relations:
     - "cargo-source-install-distribution-and-thin-path-launchers.md"
     - "post-migration-structural-cleanup-reorganization.md"
     - "observability-foundation-logging-and-instrumentation-wiring.md"
+    - "devin-native-hooks-and-apm-bootstrap.md"
   refines: []
   refined-by: []
   derives-from:
@@ -133,3 +134,7 @@ relations:
 ## Observability foundation（SPEC-034DUFyMl47o924O1KW8Ya）
 
 - [Observability foundation logging and instrumentation wiring](./observability-foundation-logging-and-instrumentation-wiring.md) — `cheaper-observability` crate（activation 解釈・file+stderr dual sink・format 選択）の公開面、`--log`/`--log-format` activation 配線、hook 経路の stderr sink 抑制、daily rolling + 世代 retention、全 crate の `cheaper.*` span/field 規約と instrumentation 配置、log 無効時 overhead 計測方法を定義。
+
+## Devin native hook bootstrap（SPEC-034GssA0IjLKSiDdIHpAC8 / ADR-034GssAufIiId3hgh4jrSQ）
+
+- [Devin native hooks and APM bootstrap](./devin-native-hooks-and-apm-bootstrap.md) — `HookTarget::Devin` + 共有 `tool_use_normalize`（tool_name ASCII lowercase→per-tool routing）・`devin_render`・`cheaper hook targets --json` capability query・配布 `hooks.json` matcher 拡大・`install-devin-hooks.ps1`（preview/`-Apply`・capability handshake・non-destructive atomic write）の機械設計。#107 の範囲評価本体は引き続き deferred。

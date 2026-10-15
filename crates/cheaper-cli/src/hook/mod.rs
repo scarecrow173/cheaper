@@ -8,8 +8,8 @@
 //! exit も deny と解釈するため、この command は windsurf deny の
 //! exit 2 を除き非 0 を返さない。
 //!
-//! - `targets.rs` — 4 target (windsurf/copilot/pretooluse/cursor) の
-//!   normalize + render(byte 互換 JSON 出力が contract)
+//! - `targets.rs` — 5 target (windsurf/copilot/pretooluse/cursor/devin)
+//!   の normalize + render(byte 互換 JSON 出力が contract)
 //! - `routing_policy.rs` — threshold・byte fast path・30s 計測
 //!   timeout・shell tokenizer / `extract_read_candidates`
 
@@ -19,7 +19,9 @@ pub mod targets;
 use serde_json::Value;
 use tracing::Instrument;
 
-use self::targets::{fallback_allow, handle_hook, HookDeps, HookResponse, HookTarget};
+use self::targets::{
+    fallback_allow, handle_hook, targets_json_line, HookDeps, HookResponse, HookTarget,
+};
 use crate::cli::{CliHooks, CliIo};
 
 /// `KNOWN_EVENTS` — 受け付ける hook event 名。
@@ -109,6 +111,16 @@ fn emit(io: &mut CliIo<'_>, response: HookResponse) -> i32 {
 /// envelope JSON が stdout に出たり非 0 が返ると copilot が全 tool
 /// call を deny するため。
 pub async fn execute_hook(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i32 {
+    if argv.iter().map(String::as_str).eq(["targets", "--json"]) {
+        return emit(
+            io,
+            HookResponse {
+                stdout: Some(targets_json_line()),
+                stderr: None,
+                exit: 0,
+            },
+        );
+    }
     let HookArgv { event, target } = parse_hook_argv(argv);
     let inner = execute_hook_inner(event, target, io, hooks);
     // scrutinee の temporary が match 腕まで `&mut CliIo` を保持する

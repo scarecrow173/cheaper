@@ -31,6 +31,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHy2gdnoXu6h71XL | Delegation usage measurement log (usage.jsonl) | approved | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
 | DESIGN-034r05iHy2gdnoPoUu7BiO | Development APM project / distributable cheaper package layout | approved | [dev-apm-project-and-distributable-package-layout.md](./dev-apm-project-and-distributable-package-layout.md) |
 | DESIGN-034r05iHy2gdnp1MdNwuw6 | Devin Local provider plugin | approved | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
+| DESIGN-034Gt74p3BYG40NTwu2kST | Devin native hooks and APM bootstrap | approved | [devin-native-hooks-and-apm-bootstrap.md](./devin-native-hooks-and-apm-bootstrap.md) |
 | DESIGN-034DlAaOWn3RyI3onq5uj1 | devin usage accounting contract test and docs | approved | [devin-usage-accounting-contract-test-and-docs.md](./devin-usage-accounting-contract-test-and-docs.md) |
 | DESIGN-034r05iHy2gdnoS2PWvNo0 | grep batchMaxBytes invariant enforcement | approved | [grep-batch-max-bytes-invariant-enforcement.md](./grep-batch-max-bytes-invariant-enforcement.md) |
 | DESIGN-034r6oM1pW6bz2SSvR3rWT | grep eval-budget test stabilization via explicit budget injection | approved | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |

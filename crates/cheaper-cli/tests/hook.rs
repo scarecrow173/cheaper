@@ -212,6 +212,7 @@ async fn panic_in_stdin_read_falls_back_to_allow() {
         ("copilot", ""),
         ("pretooluse", ""),
         ("cursor", "{\"permission\":\"allow\"}\n"),
+        ("devin", ""),
     ] {
         let mut stdin = PanicStdin;
         let mut out = VecSink(Vec::new());
@@ -681,4 +682,350 @@ fn hook_target_parse_table() {
     assert_eq!(HookTarget::parse("cursor"), Some(HookTarget::Cursor));
     assert_eq!(HookTarget::parse("claude"), None);
     assert_eq!(HookTarget::parse(""), None);
+}
+
+fn tool_use_payload(tool_name: &str, tool_input: &str) -> String {
+    format!(
+        "{{\"tool_name\":{},\"tool_input\":{}}}",
+        serde_json::to_string(tool_name).unwrap(),
+        tool_input
+    )
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn pretooluse_read_grep_case_variants_share_file_routing() {
+    let fx = Fixture::new();
+    fx.write_big("big.txt");
+    fx.write("small.txt", b"hello\n");
+    for tool_name in ["Read", "READ", "read", "rEaD"] {
+        let r = run_hook(
+            &fx,
+            &["pre-tool-use", "--target", "pretooluse"],
+            &tool_use_payload(
+                tool_name,
+                "{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}",
+            ),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 0, "tool_name={tool_name}");
+        assert!(
+            r.stdout.contains("\"permissionDecision\":\"deny\""),
+            "tool_name={tool_name} stdout={:?}",
+            r.stdout
+        );
+    }
+    for tool_name in ["Grep", "GREP", "grep", "gReP"] {
+        let r = run_hook(
+            &fx,
+            &["pre-tool-use", "--target", "pretooluse"],
+            &tool_use_payload(
+                tool_name,
+                "{\"path\":\"big.txt\",\"pattern\":\"x\",\"max_results\":1}",
+            ),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 0, "tool_name={tool_name}");
+        assert!(
+            r.stdout.contains("\"permissionDecision\":\"deny\""),
+            "tool_name={tool_name} stdout={:?}",
+            r.stdout
+        );
+    }
+    let allow = run_hook(
+        &fx,
+        &["pre-tool-use", "--target", "pretooluse"],
+        &tool_use_payload("read", "{\"file_path\":\"small.txt\"}"),
+        &[],
+    )
+    .await;
+    assert_eq!(allow.code, 0);
+    assert!(allow.stdout.is_empty());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn pretooluse_grep_path_file_dir_omitted_and_nonstring() {
+    let fx = Fixture::new();
+    fx.write_big("big.txt");
+    let ws = fx.ws.to_string_lossy().into_owned();
+    let dir_input = format!("{{\"path\":{}}}", serde_json::to_string(&ws).unwrap());
+    for (tool_input, expect_deny) in [
+        (
+            "{\"path\":\"big.txt\",\"pattern\":\"x\",\"max_results\":1}".to_string(),
+            true,
+        ),
+        (dir_input, false),
+        ("{\"pattern\":\"x\"}".to_string(), false),
+        ("{\"path\":42}".to_string(), false),
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-tool-use", "--target", "pretooluse"],
+            &tool_use_payload("grep", &tool_input),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 0, "tool_input={tool_input}");
+        assert_eq!(
+            r.stdout.contains("\"permissionDecision\":\"deny\""),
+            expect_deny,
+            "tool_input={tool_input} stdout={:?}",
+            r.stdout
+        );
+        if !expect_deny {
+            assert!(r.stdout.is_empty(), "tool_input={tool_input}");
+        }
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn pretooluse_shell_case_variants_and_fail_open_shapes() {
+    let fx = Fixture::new();
+    fx.write_big("big.txt");
+    for tool_name in ["Bash", "bash", "BASH", "PowerShell", "powershell"] {
+        let r = run_hook(
+            &fx,
+            &["pre-tool-use", "--target", "pretooluse"],
+            &tool_use_payload(tool_name, "{\"command\":\"cat big.txt\"}"),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 0, "tool_name={tool_name}");
+        assert!(
+            r.stdout.contains("\"permissionDecision\":\"deny\""),
+            "tool_name={tool_name} stdout={:?}",
+            r.stdout
+        );
+    }
+    let allow = run_hook(
+        &fx,
+        &["pre-tool-use", "--target", "pretooluse"],
+        &tool_use_payload("bash", "{\"command\":\"cd src && cat big.txt\"}"),
+        &[],
+    )
+    .await;
+    assert_eq!(allow.code, 0);
+    assert!(allow.stdout.is_empty());
+    for stdin in [
+        tool_use_payload("reads", "{\"file_path\":\"big.txt\"}"),
+        tool_use_payload("xread", "{\"file_path\":\"big.txt\"}"),
+        tool_use_payload("grepx", "{\"path\":\"big.txt\"}"),
+        tool_use_payload("bashx", "{\"command\":\"cat big.txt\"}"),
+        tool_use_payload("Write", "{\"file_path\":\"big.txt\"}"),
+        "{\"tool_name\":\"read\"}".to_string(),
+        "{\"tool_name\":\"read\",\"tool_input\":\"x\"}".to_string(),
+        "{\"tool_name\":\"read\",\"tool_input\":{\"file_path\":42}}".to_string(),
+        "{\"tool_input\":{\"file_path\":\"big.txt\"}}".to_string(),
+        "[]".to_string(),
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-tool-use", "--target", "pretooluse"],
+            &stdin,
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 0, "stdin={stdin}");
+        assert!(r.stdout.is_empty(), "stdin={stdin} stdout={:?}", r.stdout);
+    }
+}
+
+fn devin_payload(tool_name: &str, tool_input: &str) -> String {
+    format!(
+        "{{\"hook_event_name\":\"PreToolUse\",\"tool_name\":{},\"tool_input\":{}}}",
+        serde_json::to_string(tool_name).unwrap(),
+        tool_input
+    )
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn devin_deny_emits_block_json_with_reason_passthrough() {
+    let fx = Fixture::new();
+    fx.write_big("big.txt");
+    let reference = run_hook(
+        &fx,
+        &["pre-tool-use", "--target", "pretooluse"],
+        &tool_use_payload(
+            "Read",
+            "{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}",
+        ),
+        &[],
+    )
+    .await;
+    let reference_out: serde_json::Value = serde_json::from_str(reference.stdout.trim()).unwrap();
+    let reference_reason = reference_out["hookSpecificOutput"]["permissionDecisionReason"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    for tool_name in ["read", "Read", "READ"] {
+        let r = run_hook(
+            &fx,
+            &["pre-tool-use", "--target", "devin"],
+            &devin_payload(
+                tool_name,
+                "{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}",
+            ),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 0, "tool_name={tool_name}");
+        assert!(r.stderr.is_empty(), "tool_name={tool_name}");
+        assert!(
+            r.stdout
+                .starts_with("{\"decision\":\"block\",\"reason\":\"cheaper: 'big.txt' has "),
+            "tool_name={tool_name} stdout={:?}",
+            r.stdout
+        );
+        assert!(r.stdout.ends_with("}\n"), "tool_name={tool_name}");
+        let out: serde_json::Value = serde_json::from_str(r.stdout.trim()).unwrap();
+        let reason = out["reason"].as_str().unwrap();
+        assert!(
+            reason.contains("workspace-relative path: big.txt"),
+            "{reason}"
+        );
+        assert!(reason.contains('\n'), "{reason}");
+        assert_eq!(reason.replace('\n', " "), reference_reason);
+    }
+    let grep = run_hook(
+        &fx,
+        &["pre-tool-use", "--target", "devin"],
+        &devin_payload(
+            "Grep",
+            "{\"path\":\"big.txt\",\"pattern\":\"x\",\"max_results\":1}",
+        ),
+        &[],
+    )
+    .await;
+    assert_eq!(grep.code, 0);
+    assert!(
+        grep.stdout.starts_with("{\"decision\":\"block\""),
+        "{}",
+        grep.stdout
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn devin_event_gate_and_fail_open_are_silent() {
+    let fx = Fixture::new();
+    fx.write_big("big.txt");
+    fx.write("small.txt", b"hello\n");
+    let ws = fx.ws.to_string_lossy().into_owned();
+    let cases: Vec<(&[&str], String)> = vec![
+        (
+            &["pre-read-code", "--target", "devin"],
+            devin_payload(
+                "read",
+                "{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}",
+            ),
+        ),
+        (
+            &["pre-tool-use", "--target", "devin"],
+            format!(
+                "{{\"hook_event_name\":\"PostToolUse\",\"tool_name\":\"read\",\"tool_input\":{{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}}}}"
+            ),
+        ),
+        (
+            &["pre-tool-use", "--target", "devin"],
+            "{\"tool_name\":\"read\",\"tool_input\":{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}}".to_string(),
+        ),
+        (
+            &["pre-tool-use", "--target", "devin"],
+            "{\"hook_event_name\":42,\"tool_name\":\"read\",\"tool_input\":{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}}"
+                .to_string(),
+        ),
+        (
+            &["pre-tool-use", "--target", "devin"],
+            devin_payload("bash", "{\"command\":\"cat big.txt\"}"),
+        ),
+        (
+            &["pre-tool-use", "--target", "devin"],
+            devin_payload("write", "{\"file_path\":\"big.txt\"}"),
+        ),
+        (
+            &["pre-tool-use", "--target", "devin"],
+            devin_payload("read", "{\"file_path\":\"small.txt\"}"),
+        ),
+        (
+            &["pre-tool-use", "--target", "devin"],
+            devin_payload("read", "{\"file_path\":\"missing.txt\"}"),
+        ),
+        (
+            &["pre-tool-use", "--target", "devin"],
+            devin_payload(
+                "grep",
+                &format!("{{\"path\":{}}}", serde_json::to_string(&ws).unwrap()),
+            ),
+        ),
+        (
+            &["pre-tool-use", "--target", "devin"],
+            devin_payload("grep", "{\"pattern\":\"x\"}"),
+        ),
+        (&["pre-tool-use", "--target", "devin"], "not json".to_string()),
+        (&["pre-tool-use", "--target", "devin"], "[]".to_string()),
+    ];
+    for (args, stdin) in cases {
+        let r = run_hook(&fx, args, &stdin, &[]).await;
+        assert_eq!(r.code, 0, "args={args:?} stdin={stdin}");
+        assert!(r.stdout.is_empty(), "args={args:?} stdout={:?}", r.stdout);
+        assert!(r.stderr.is_empty(), "args={args:?} stderr={:?}", r.stderr);
+    }
+}
+
+const TARGETS_JSON_LINE: &str =
+    "{\"schemaVersion\":1,\"targets\":[\"windsurf\",\"copilot\",\"pretooluse\",\"cursor\",\"devin\"]}\n";
+
+#[tokio::test(flavor = "current_thread")]
+async fn hook_targets_json_emits_capability_line_without_usage() {
+    let fx = Fixture::new();
+    let r = run_hook(&fx, &["targets", "--json"], "ignored stdin", &[]).await;
+    assert_eq!(r.code, 0);
+    assert_eq!(r.stdout, TARGETS_JSON_LINE);
+    assert!(r.stderr.is_empty());
+    assert!(!Path::new(&fx.env["CHEAPER_CONFIG_DIR"])
+        .join("usage.jsonl")
+        .exists());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn hook_targets_json_does_not_read_stdin() {
+    let fx = Fixture::new();
+    let env_map = fx.env.clone();
+    let env_lookup = move |name: &str| env_map.get(name).cloned();
+    let mut stdin = PanicStdin;
+    let mut out = VecSink(Vec::new());
+    let mut err = VecSink(Vec::new());
+    let mut io = CliIo {
+        stdin: &mut stdin,
+        stdout: &mut out,
+        stderr: &mut err,
+        env: &env_lookup,
+        cwd: fx.ws.to_string_lossy().into_owned(),
+    };
+    let hooks = CliHooks {
+        builtin_dir: Some(fx.builtin_dir.clone()),
+        ..Default::default()
+    };
+    let argv: Vec<String> = ["hook", "targets", "--json"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    let code = run_cli(&argv, &mut io, &hooks).await;
+    assert_eq!(code, 0);
+    assert_eq!(String::from_utf8(out.0).unwrap(), TARGETS_JSON_LINE);
+    assert!(String::from_utf8(err.0).unwrap().is_empty());
+}
+
+#[test]
+fn hook_target_parse_as_str_roundtrip() {
+    for name in ["windsurf", "copilot", "pretooluse", "cursor", "devin"] {
+        assert_eq!(
+            HookTarget::parse(name).map(|t| t.as_str()),
+            Some(name),
+            "target={name}"
+        );
+    }
+    for name in ["Devin", "DEVIN", "claude", ""] {
+        assert_eq!(HookTarget::parse(name), None, "target={name}");
+    }
 }
