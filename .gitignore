@@ -57,8 +57,7 @@ apm_modules/
 .windsurf/workflows/
 
 # SDP generated artifacts (regenerate via skill-discovery-protocol); inference JSON is agent-authored
-.sdp/*
-!.sdp/skill-reference-inferences.json
+.sdp/
 
 tmp/
 
