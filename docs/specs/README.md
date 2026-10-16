@@ -13,12 +13,14 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7ghSWRbNU8 | cheaper auth command for provider login without a pi installation | implemented | [auth-login-command.md](./auth-login-command.md) |
 | SPEC-034r05iHK8bA7gmLlq6ikw | Auth tests do not launch the OS default browser | implemented | [auth-tests-do-not-launch-os-browser.md](./auth-tests-do-not-launch-os-browser.md) |
 | SPEC-H9CuNdGONsV6HEHetvRCxh | Worker workload と effectiveCost による自動 tier 分類 | implemented | [auto-tier-classification.md](./auto-tier-classification.md) |
+| SPEC-034H2WAU6TQG6N9dmmmKNA | Bounded native hook evaluation and managed Devin registration | proposed | [bounded-native-hook-evaluation-and-managed-devin-registration.md](./bounded-native-hook-evaluation-and-managed-devin-registration.md) |
 | SPEC-034zWd1FiG9tv3X6uaAMep | ToolScheduler の bounded operation scheduling | approved | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
 | SPEC-034r05iHK8bA7g6PcCiDBp | bulk-reader built-in Worker | implemented | [bulk-reader-built-in-worker.md](./bulk-reader-built-in-worker.md) |
 | SPEC-034r05iHK8bA7gkTEj7TdU | Bulk-reader huge-file safe I/O | implemented | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | SPEC-034r05iHK8bA7gdbCbWupr | Canonical Token Counter, count_tokens tool, and count-tokens CLI | implemented | [canonical-token-counter.md](./canonical-token-counter.md) |
 | SPEC-034zILh8aauVSReoD33mtV | Canonical Tool Runtime 抽出 | approved | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | SPEC-034Dmb2S8y3tdJI8WdKhG0 | cargo source install distribution for APM consumers | implemented | [cargo-source-install-distribution-for-apm-consumers.md](./cargo-source-install-distribution-for-apm-consumers.md) |
+| SPEC-034GssA0IjLKSiDdIHpAC8 | Case-insensitive native tools and Devin registration | implemented | [case-insensitive-native-tools-and-devin-registration.md](./case-insensitive-native-tools-and-devin-registration.md) |
 | SPEC-034r05iHK8bA7g7YRKGyQr | cheap-writer built-in Worker | superseded | [cheap-writer-built-in-worker.md](./cheap-writer-built-in-worker.md) |
 | SPEC-034DjvgZNwy9e9aLXb2alN | cheaper-usage skill hook path examples match APM deploy naming | approved | [cheaper-usage-skill-hook-path-examples.md](./cheaper-usage-skill-hook-path-examples.md) |
 | SPEC-034r05iHK8bA7g59V25ltC | cheaper V1 Worker Runtime と CLI | implemented | [cheaper-v1-worker-runtime-cli.md](./cheaper-v1-worker-runtime-cli.md) |

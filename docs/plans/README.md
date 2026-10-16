@@ -11,6 +11,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1FbkoZibpg86T | cheaper auth command (provider login absorbed into the CLI) | completed | [auth-command.md](./auth-command.md) |
 | PLAN-zDQIdChPXY1lrGJyzZTiQc | Route auth text/select prompts through the injected CliIo stderr | completed | [auth-io-boundary.md](./auth-io-boundary.md) |
 | PLAN-034r05iHE1Fbkp4xxlyMdV | Injectable auth URL opener seam for hermetic tests | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
+| PLAN-034H3ODf3yWW5G5NgvUvt8 | Bounded hook evaluation and hook-config registration lifecycle | draft | [bounded-hook-evaluation-and-hook-config-lifecycle.md](./bounded-hook-evaluation-and-hook-config-lifecycle.md) |
 | PLAN-034r05iHE1Fbkp3qMZZB17 | Bulk-reader huge-file safe I/O | completed | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | PLAN-034r05iHE1FbkoVrzp9sac | Implement canonical Token Counter, count_tokens tool, and count-tokens CLI | completed | [canonical-token-counter.md](./canonical-token-counter.md) |
 | PLAN-034DmUmGAPaPy50HcfoPOK | cargo source install distribution and thin PATH launchers | completed | [cargo-source-install-distribution-and-thin-path-launchers.md](./cargo-source-install-distribution-and-thin-path-launchers.md) |
@@ -41,6 +42,7 @@ Directory: `docs/plans`
 | PLAN-034A91M2XAsWK6QNypcEPX | managed process canonical tool を実装する | completed | [implement-managed-process-canonical-tool.md](./implement-managed-process-canonical-tool.md) |
 | PLAN-034AEwZy3GcNygp87aXrL7 | Implement managed process lifecycle hardening | completed | [implement-managed-process-lifecycle-hardening.md](./implement-managed-process-lifecycle-hardening.md) |
 | PLAN-034rzUgf26bzSEwLr1L6Pl | implement model pricing catalog and curated exceptions | approved | [implement-model-pricing-catalog.md](./implement-model-pricing-catalog.md) |
+| PLAN-034GtndRTaEqU3lA6Tnquu | Implement native tool normalization and Devin bootstrap | completed | [implement-native-tool-normalization-and-devin-bootstrap.md](./implement-native-tool-normalization-and-devin-bootstrap.md) |
 | PLAN-034z1M6zCAdKb12eiCWZRm | Implement Node 26 SEA standalone executable proof of concept | completed | [implement-node-26-sea-standalone-executable-proof-of-concept.md](./implement-node-26-sea-standalone-executable-proof-of-concept.md) |
 | PLAN-034DVGKbl3V2g7msSfpXv0 | Implement observability foundation | approved | [implement-observability-foundation.md](./implement-observability-foundation.md) |
 | PLAN-034zTJptHTdovrvYW7wQ1k | Implement one-dispatch release workflow | completed | [implement-one-dispatch-release-workflow.md](./implement-one-dispatch-release-workflow.md) |

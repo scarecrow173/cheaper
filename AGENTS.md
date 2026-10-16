@@ -51,6 +51,36 @@ Node.js は repo tooling（`scripts/`・`benchmarks/`・doc-suite skills）の�
 toolchain に残る。product・distribution・hook 実行経路に Node 依存はない
 （runtime は Rust workspace = `crates/`、agent runtime は Rig）。
 
+### CLI integration test の配置
+
+通常の CLI 契約テストは `crates/cheaper-cli/tests/integration/` に配置し、
+新しい module を追加したら `main.rs` に `mod` 宣言を追加する。
+共通 helper は既存の `tests/common/mod.rs` を共有する。
+個別領域は test target ではなく module filter で指定する（例: hook）。
+
+```bash
+mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::
+```
+
+`workflow`、`run_dev_seam`、`workflow_dev_seam`、observability 系2 target、
+`regression` は独立 target として維持する。自己再実行の `--exact` filter、
+プロセス隔離、`required-features` の境界を崩さず、容量目的でテストを無効化しない。
+
+### runtime / workflow integration test の配置
+
+`cheaper-runtime` の通常契約テストは `tests/contracts/` にまとめる。
+`cheaper-workflow` は `tests/compile_contracts/`（binding・compiler・interface・依存規約）と
+`tests/filesystem_contracts/`（artifact・loader・resource inference）に分ける。
+新しい module を追加したら各 `main.rs` に宣言を追加し、個別領域は module filter で指定する。
+
+```bash
+mise exec -- cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test contracts auth::
+mise exec -- cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test filesystem_contracts loader::
+```
+
+runtime の `run_dev_seam` / `run_fixture_test` の feature gate と `ollama_e2e`、
+workflow の `engine` / `process` は独立 target として維持する。
+
 ## 検証用 Ollama コンテナ
 
 実 provider smoke 検証には Ollama を Docker コンテナで使う（ADR-034r05iHlWosDpQ6Z1LgJo）。ホストへのインストールは行わない。

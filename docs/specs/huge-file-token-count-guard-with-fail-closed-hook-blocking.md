@@ -25,6 +25,8 @@ relations:
   superseded-by: []
   related:
     - "../adr/default-large-read-threshold.md"
+    - "./bounded-native-hook-evaluation-and-managed-devin-registration.md"
+    - "../adr/range-aware-file-read-and-bounded-search-requests-in-hook-routing.md"
   refines: []
   refined-by: []
   derives-from:

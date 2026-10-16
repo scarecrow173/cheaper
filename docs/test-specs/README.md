@@ -7,6 +7,7 @@ Directory: `docs/test-specs`
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
 | TSPEC-034EeitmhHjX9tjAWLQ7gk | Setup-boundary abort classification contract | approved | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
+| TSPEC-034GtAElEShJ9SxImZE2ot | APM-distributed Devin registration preservation | approved | [apm-distributed-devin-registration-preservation.md](./apm-distributed-devin-registration-preservation.md) |
 | TSPEC-034z3yKWLolrImpMY8UMhZ | APM executable payload layout and launcher dispatch contract | superseded | [apm-executable-payload-layout-and-launcher-dispatch-contract.md](./apm-executable-payload-layout-and-launcher-dispatch-contract.md) |
 | TSPEC-CcB52hP0U8aHcOIhg0D0ge | auto tier classification by effectiveCost percentile | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
 | TSPEC-034zXj8km4o9pyOGLhz1oM | Concurrency policy の信頼境界 | approved | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
@@ -23,6 +24,7 @@ Directory: `docs/test-specs`
 | TSPEC-034A9ykvVgiieTjkU129tm | managed process task の認可と resource ownership | approved | [managed-process-task-authorization.md](./managed-process-task-authorization.md) |
 | TSPEC-034rzVr1S8qFdi1JqWSN9Z | model exclude and explicit selection guards | approved | [model-exclude-and-explicit-selection.md](./model-exclude-and-explicit-selection.md) |
 | TSPEC-034rzVqBmfD2pkA9f82Eoa | model tier classification pipeline | approved | [model-tier-classification-pipeline.md](./model-tier-classification-pipeline.md) |
+| TSPEC-034GtADUaoOPo8wHPI3Liu | Native tool name normalization and Devin hook contract | approved | [native-tool-name-normalization-and-devin-hook-contract.md](./native-tool-name-normalization-and-devin-hook-contract.md) |
 | TSPEC-034DWcP8v4SUuuui8hvhnT | Observability foundation contract | approved | [observability-foundation-contract.md](./observability-foundation-contract.md) |
 | TSPEC-034CYp5Xbp8sJ8ZV199qV3 | OpenAI Codex subscription provider guarantees | draft | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
 | TSPEC-034A9yAv68yBK2XeFKEToG | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |

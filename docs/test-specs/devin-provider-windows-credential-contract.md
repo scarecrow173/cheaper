@@ -4,7 +4,7 @@ type: "test-spec"
 status: "draft"
 title: "Devin provider Windows credential contract behavior"
 created: "2026-10-09"
-updated: "2026-10-09"
+updated: "2026-10-17"
 owners: []
 relations:
   source: []
@@ -65,6 +65,7 @@ Devin provider auth contract on Windows — login snapshot・reuse
   解決する。
 - Rule: Windows contract は注入 platform flag で動作し、全 AC は
   Linux CI で実行可能。
+- Rule: resolver の fixture は、実行 OS の `PathBuf` が構成要素を解釈できる native path を使う。Windows workflow の注入は foreign path syntax の変換を意味しない。Windows の実行では native fixture 自体が Windows 形式となる。
 
 ## Examples
 
@@ -83,6 +84,8 @@ Devin provider auth contract on Windows — login snapshot・reuse
   含まず、cheaper toml 削除 + global 継続 notify。
 - Example: `auth status` 出力に `File:` 行なし + `APPDATA` env
   あり → `%APPDATA%\devin\credentials.toml` に fallback。
+- Example: 空白を含む native credential path を持つ複数 `File:` 行・CRLF 出力は最後の有効行を採用し、APPDATA fallback より優先する。
+- Example: CLI が exit 非 `0` でも、stderr に有効な native `File:` 行があれば採用する。
 
 ## Guarantees
 

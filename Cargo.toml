@@ -99,3 +99,16 @@ strip = true
 codegen-units = 1
 # panic = "abort" is forbidden: run/command boundaries rely on catch_unwind.
 panic = "unwind"
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.debugging]
+inherits = "dev"
+debug = true
+
+[profile.debugging.package."*"]
+debug = true

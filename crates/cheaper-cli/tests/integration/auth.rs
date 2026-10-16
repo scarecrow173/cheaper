@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-mod common;
+use crate::common;
 use common::{PipeStdin, VecSink};
 
 use cheaper_cli::args::{AuthAction, AuthCliArgs, AuthTypeArg, CliFormat};

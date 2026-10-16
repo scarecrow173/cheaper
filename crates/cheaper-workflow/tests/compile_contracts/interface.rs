@@ -4,7 +4,7 @@
 //! を持つため、`list` が呼ばれないことは trait surface で保証される
 //! (Rust では呼び出し不能)。`resourceInference` 未呼出しは flag で検査。
 
-mod common;
+use crate::common;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;

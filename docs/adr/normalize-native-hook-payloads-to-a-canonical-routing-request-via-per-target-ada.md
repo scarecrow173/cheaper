@@ -34,8 +34,12 @@ relations:
     - "../designs/apm-skills-and-pre-read-hook.md"
     - "../designs/copilot-pre-read-hook-adapter.md"
     - "../specs/cross-agent-native-routing-adapters-over-apm-distribution.md"
+    - "../specs/case-insensitive-native-tools-and-devin-registration.md"
+    - "../designs/devin-native-hooks-and-apm-bootstrap.md"
+    - "./range-aware-file-read-and-bounded-search-requests-in-hook-routing.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "./apm-distributed-devin-native-hook-bootstrap.md"
   derives-from:
     - "../discovery/cross-agent-native-routing-adapter-contract-re-verification.md"
   derived-by: []

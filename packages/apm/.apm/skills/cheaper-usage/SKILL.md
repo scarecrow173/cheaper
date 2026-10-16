@@ -115,9 +115,12 @@ one workspace file so you can measure context cost before reading it.
   - **GitHub Copilot** — `preToolUse`; oversized `view` and shell-tool
     calls are denied via `{"permissionDecision":"deny"}` on stdout
     with exit 0.
-  - **Claude Code** — `PreToolUse` (`Read`/`Bash`/`PowerShell`
-    matcher); denies return `hookSpecificOutput.permissionDecision:
-    "deny"` on stdout with exit 0.
+  - **Claude Code** — `PreToolUse` (case-insensitive exact `read`/`grep`/
+    `bash`/`powershell` matcher); single-file reads/searches and shell reads
+    use the shared guard. Bounded reads (`offset`/`limit`) and searches are
+    evaluated on the materialized window/result, not the whole file
+    (issue #107). Denies return
+    `hookSpecificOutput.permissionDecision: "deny"` on stdout with exit 0.
   - **Cursor** — `beforeReadFile` / `beforeShellExecution`; every
     response is a schema-valid `{"permission": ...}` JSON, exit 0.
 - On **OpenAI Codex** the same `PreToolUse` registration is deployed
@@ -129,6 +132,68 @@ one workspace file so you can measure context cost before reading it.
   For the per-target contract, see the canonical matrix in
   DISC-034r05iHy2gdnpdai9KGpW
   (`docs/discovery/cross-agent-hook-distribution-and-contract-matrix.md`).
+
+### Devin CLI native registration (Windows)
+
+APM distributes the registration helper as part of this skill. For a new
+Devin-only consumer, install the package with `apm install --target agent-skills`.
+For an existing consumer, keep its configured targets and use the normal
+`apm install` flow; do not replace targets merely to obtain the helper.
+Use the actual deployed skill path when `--legacy-skill-paths` is enabled.
+Plain `apm install` can replay the existing lockfile. To obtain this helper
+from a newer package revision, preview a scoped update with
+`apm update scarecrow173/cheaper/packages/apm --dry-run`, then run the same
+command without `--dry-run` after reviewing its plan. Preserve the existing
+targets. If the dependency is pinned to an immutable ref, select the new ref
+explicitly through your normal dependency review.
+
+Registration is owned by the CLI's `hook-config` command (the bundled
+PowerShell helper is a thin preview/`-Apply` wrapper around it):
+
+```bash
+cheaper hook-config verify   # read-only report: own entry, drift, legacy
+                             # conflicts, shadow files, orphan temp files
+cheaper hook-config sync     # idempotently upsert the canonical entry
+                             # (matcher: read|grep|exec, case-insensitive)
+cheaper hook-config remove   # remove only the owned entry
+```
+
+`sync` refuses to write while a legacy cheaper read-hook registration
+coexists in a known source (`.windsurf/hooks.json`, `.devin/hooks*.json`,
+`.devin/config.local.json`, `.claude/settings*.json`, other registrations
+in the target config) — resolve duplicates explicitly, then use `/hooks`
+to check all loaded sources, including global and ancestor configurations.
+The CLI must report `devin` and `hookConfig` through
+`cheaper hook targets --json`; updating APM resources does not update the
+separately installed CLI.
+
+To converge the registration from APM lifecycle events, wire the
+`lifecycle:` block in the consumer `apm.yml` (project scripts require
+`apm lifecycle trust`; the cheaper dependency must carry
+`targets: [agent-skills]` or the whole dependency is skipped):
+
+```yaml
+lifecycle:
+  post-install:   cheaper hook-config --event-stdin
+  post-update:    cheaper hook-config --event-stdin
+  post-uninstall: cheaper hook-config --event-stdin
+```
+
+`post-uninstall` removes the entry only when the payload's `packages`
+names cheaper. `APM_NO_SCRIPTS=1`, missing trust, or script failure skips
+convergence — `verify` is the authoritative fallback. Without lifecycle
+wiring, APM uninstall does not remove the native entry; run
+`cheaper hook-config remove` (or delete only the
+`cheaper hook pre-tool-use --target devin` group) when uninstalling.
+
+The guard is bounded (issue #107): `read` honors `offset`/`limit`
+windows, `grep` materializes the bounded result set for measurement, and
+the verified Devin shell tool `exec` (`tool_input.command`) is covered.
+On Windows, preview/apply is also available via the bundled helper:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .agents/skills/cheaper-usage/scripts/install-devin-hooks.ps1
+```
 
 ## stdin → stdout contract
 

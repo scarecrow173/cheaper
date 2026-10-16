@@ -835,6 +835,7 @@ dependencies = [
  "cheaper-tools",
  "cheaper-workflow",
  "include_dir",
+ "regex",
  "rpassword",
  "serde",
  "serde_json",

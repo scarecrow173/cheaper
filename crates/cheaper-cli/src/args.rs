@@ -173,6 +173,30 @@ pub enum PolicyAction {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct HookConfigCliArgs {
+    /// `hook-config sync|verify|remove` の action。`--event-stdin`
+    /// 指定時は positional action 不要(`None`)で、stdin の lifecycle
+    /// event payload から action を決める。
+    pub action: Option<HookConfigAction>,
+    /// `project`(既定)|`user`。その他の値は実行時 error。
+    pub scope: Option<String>,
+    /// `--project-root <path>` — project scope の対象 root
+    /// (既定は process cwd)。
+    pub project_root: Option<String>,
+    /// APM lifecycle event JSON を stdin から読む。
+    pub event_stdin: bool,
+    pub format: CliFormat,
+    pub quiet: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HookConfigAction {
+    Sync,
+    Verify,
+    Remove,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct UsageCliArgs {
     /// `--since` の生文字列。cli 層で `parse_duration` する。
     pub since: Option<String>,
@@ -198,6 +222,9 @@ pub enum ParsedCli {
     Models(ModelsCliArgs),
     Usage(UsageCliArgs),
     Policy(PolicyCliArgs),
+    /// `hook-config` — `hook` が早期 dispatch されるため別 top-level
+    /// command として分離する(ADR-034H2WBNtC4We8dyC5lQZJ)。
+    HookConfig(HookConfigCliArgs),
 }
 
 impl ParsedCli {
@@ -213,6 +240,7 @@ impl ParsedCli {
             Self::WorkflowRun(a) => Some(a.format),
             Self::Auth(a) => Some(a.format),
             Self::Policy(a) => Some(a.format),
+            Self::HookConfig(a) => Some(a.format),
             Self::Help | Self::Version | Self::Models(_) => None,
         }
     }
@@ -227,6 +255,7 @@ impl ParsedCli {
             Self::WorkflowRun(a) => Some(a.quiet),
             Self::Auth(a) => Some(a.quiet),
             Self::Policy(a) => Some(a.quiet),
+            Self::HookConfig(a) => Some(a.quiet),
             Self::Help | Self::Version | Self::Models(_) => None,
         }
     }
@@ -283,6 +312,9 @@ const STRING_OPTIONS: &[&str] = &[
     // repeatable — last-wins 規約からの deliberate deviation
     // (`set_string` の `"grant"` arm 参照)。
     "grant",
+    // `hook-config` 専用(`hook-config` arm 以外は reject)。
+    "scope",
+    "project-root",
     // observability activation(T2)の global option。値は `Values`
     // field に保持せず、消費は `global_log_flags` が argv scan で
     // 担う(parse 済み値と activation 値の二重表現を避ける)。
@@ -291,7 +323,7 @@ const STRING_OPTIONS: &[&str] = &[
 ];
 
 /// boolean option(`type: "boolean"`)。
-const BOOL_OPTIONS: &[&str] = &["quiet", "help", "version"];
+const BOOL_OPTIONS: &[&str] = &["quiet", "help", "version", "event-stdin"];
 
 /// `values` — parseArgs の `values` object 相当。string option は
 /// `Option`、default 付き(`input`-`"-"`・`format`-`"json"`)は
@@ -317,6 +349,9 @@ struct Values {
     /// drop 防止規約。新規 command arm を追加する場合も同じ検査を
     /// 置くこと(run / workflow run 以外は全て reject)。
     grants: Vec<String>,
+    scope: Option<String>,
+    project_root: Option<String>,
+    event_stdin: bool,
     quiet: bool,
     help: bool,
     version: bool,
@@ -339,6 +374,9 @@ impl Default for Values {
             compare_model: None,
             format: "json".to_string(),
             grants: Vec::new(),
+            scope: None,
+            project_root: None,
+            event_stdin: false,
             quiet: false,
             help: false,
             version: false,
@@ -366,6 +404,8 @@ impl Values {
             // last-wins 規約からの deliberate deviation(Node `parseArgs`
             // の `multiple: true` 相当)。宣言順を保持するため push で畳む。
             "grant" => self.grants.push(value),
+            "scope" => self.scope = Some(value),
+            "project-root" => self.project_root = Some(value),
             // 受理のみで値は捨てる — activation 入力は
             // `global_log_flags` が argv から直接 scan する。
             "log" | "log-format" => {}
@@ -378,6 +418,7 @@ impl Values {
             "quiet" => self.quiet = true,
             "help" => self.help = true,
             "version" => self.version = true,
+            "event-stdin" => self.event_stdin = true,
             _ => unreachable!("set_bool called with non-bool option"),
         }
     }
@@ -559,7 +600,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
 
     let Some(command) = positionals.first() else {
         return Err(invalid_request(
-            "command required: run | bulk-read | code-write | doc-write | tool-operate | count-tokens | usage | models | auth | workflow | policy",
+            "command required: run | bulk-read | code-write | doc-write | tool-operate | count-tokens | usage | models | auth | workflow | policy | hook-config",
             None,
         ));
     };
@@ -918,6 +959,75 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 Some("api_key") => AuthTypeArg::ApiKey,
                 _ => AuthTypeArg::Oauth,
             },
+            format,
+            quiet,
+        }));
+    }
+
+    if command == "hook-config" {
+        // utility command の flag allowlist — `hook-config` 専用
+        // option(`scope`/`project-root`/`event-stdin`)と共通の
+        // format/quiet/log のみ受理する。
+        for token in &option_tokens {
+            if ![
+                "scope",
+                "project-root",
+                "event-stdin",
+                "format",
+                "quiet",
+                "log",
+                "log-format",
+            ]
+            .contains(&token.name.as_str())
+            {
+                return Err(invalid_request(
+                    format!("--{} is not valid for `hook-config`", token.name),
+                    None,
+                ));
+            }
+        }
+        // 規約: 非 run command は grants 非空検査を持つ
+        // (`--grant` は上の allowlist で既に reject されるが、
+        // 規約の explicit 検査として残す)。
+        if !values.grants.is_empty() {
+            return Err(reject_grant_flag());
+        }
+        let action = match positionals.get(1).map(String::as_str) {
+            Some("sync") => Some(HookConfigAction::Sync),
+            Some("verify") => Some(HookConfigAction::Verify),
+            Some("remove") => Some(HookConfigAction::Remove),
+            Some(other) => {
+                return Err(invalid_request(
+                    format!("unknown hook-config action: {other} (expected sync|verify|remove)"),
+                    None,
+                ));
+            }
+            None => None,
+        };
+        if positionals.len() > 2 {
+            return Err(invalid_request(
+                format!("unexpected arguments: {}", positionals[2..].join(" ")),
+                None,
+            ));
+        }
+        if action.is_none() && !values.event_stdin {
+            return Err(invalid_request(
+                "hook-config requires sync|verify|remove (or --event-stdin)",
+                None,
+            ));
+        }
+        if action.is_some() && values.event_stdin {
+            return Err(invalid_request(
+                "--event-stdin cannot be combined with an action \
+                 (the lifecycle event selects the action)",
+                None,
+            ));
+        }
+        return Ok(ParsedCli::HookConfig(HookConfigCliArgs {
+            action,
+            scope: values.scope.clone(),
+            project_root: values.project_root.clone(),
+            event_stdin: values.event_stdin,
             format,
             quiet,
         }));

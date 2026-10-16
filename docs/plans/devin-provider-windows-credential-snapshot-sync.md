@@ -4,7 +4,7 @@ type: "plan"
 status: "approved"
 title: "Devin provider Windows credential snapshot sync"
 created: "2026-10-09"
-updated: "2026-10-09"
+updated: "2026-10-17"
 owners: []
 relations:
   source:
@@ -210,3 +210,11 @@ issue #80: Windows で `devin auth login` が global toml に書く前提に
 - review-protocol で確認: P1 exit-code gate、logout notify channel、
   platform seam、二重 resolution、mismatch notify 条件、atomic
   copy convention（rename は置換可・remove-first 旧式を踏襲しない）。
+
+## 2026-10-17 Follow-up: resolver test fixture の可搬性
+
+- Classification: `bug-fix`。既存 design の「Windows contract を Linux CI で検証可能にする」範囲内で、製品の auth/path 契約は変更しない。
+- `crates/cheaper-provider/tests/cli_credentials.rs` の `resolve_global_path_*` 3件は、Windows 区切り固定の fixture を TempDir 配下の native `PathBuf::join` へ置換する。複数 `File:` 行・CRLF・APPDATA 優先度・bogus 行拒否・CLI 未到達・APPDATA 未設定の assertion を維持する。
+- `File:` の有効パスに空白を含め、exit 非 `0` の stderr からも解決できる回帰例を追加する。実 credential・実 Devin CLI は使わない。
+- 順序: Linux 限定 red 再現 → fixture 修正 → Linux/Windows の `cli_credentials` target 全件と関連 clippy → 差分レビュー。対象 command は既存 task の follow-up Verification に記録する。
+- `credentials.rs`・非 Windows auth・依存・CI 設定は変更しない。既存 spec の `proposed` 状態など過去文書の一括整理は別扱いとし、本 follow-up で承認済み製品契約を拡張しない。

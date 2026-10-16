@@ -419,6 +419,13 @@ async fn dispatch(
             write_output(io, &out.envelope, args.format);
             Ok(out.exit_code)
         }
+        ParsedCli::HookConfig(args) => {
+            // utility command 規約 — `record_usage` を呼ばない
+            // (usage.jsonl 記録対象外)。
+            let out = crate::hook_config::execute(&args, io, hooks, started_at).await?;
+            write_output(io, &out.envelope, args.format);
+            Ok(out.exit_code)
+        }
         ParsedCli::Run(args) => {
             let out = crate::run::execute(&args, io, hooks, started_at, ctx).await?;
             if let Some(line) = &out.model_line {
@@ -466,6 +473,7 @@ fn command_name(parsed: &ParsedCli) -> &'static str {
         ParsedCli::Models(_) => "models",
         ParsedCli::Usage(_) => "usage",
         ParsedCli::Policy(_) => "policy",
+        ParsedCli::HookConfig(_) => "hook-config",
     }
 }
 
@@ -534,6 +542,9 @@ Commands:
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
   hook <event>           Agent hook entry (internal; --target <agent>)
+  hook-config sync       Register the managed Devin hook entry (project or --scope user)
+  hook-config verify     Inspect the managed Devin hook registration (read-only)
+  hook-config remove     Remove the managed Devin hook entry
   policy grant add <name> <json>  Add a command grant to user policy
   policy grant list          List command grants in user policy
   policy grant remove <name> Remove a command grant from user policy

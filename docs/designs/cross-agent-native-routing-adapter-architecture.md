@@ -29,6 +29,7 @@ relations:
     - "../specs/shell-read-large-file-blocking.md"
     - "../adr/conservative-shell-read-candidate-extraction-inside-the-shared-routing-policy.md"
     - "./shell-read-candidate-extraction.md"
+    - "./bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md"
   refines: []
   refined-by: []
   derives-from:

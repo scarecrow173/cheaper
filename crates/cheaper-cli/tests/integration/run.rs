@@ -9,7 +9,7 @@
 //! `CHEAPER_CONFIG_DIR` を temp dir へ向けて credential store /
 //! usage.jsonl を分離する。
 
-mod common;
+use crate::common;
 use common::Fixture;
 
 use serde_json::json;

@@ -32,6 +32,8 @@ relations:
     - "cargo-source-install-distribution-and-thin-path-launchers.md"
     - "post-migration-structural-cleanup-reorganization.md"
     - "observability-foundation-logging-and-instrumentation-wiring.md"
+    - "devin-native-hooks-and-apm-bootstrap.md"
+    - "bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md"
   refines: []
   refined-by: []
   derives-from:
@@ -133,3 +135,11 @@ relations:
 ## Observability foundation（SPEC-034DUFyMl47o924O1KW8Ya）
 
 - [Observability foundation logging and instrumentation wiring](./observability-foundation-logging-and-instrumentation-wiring.md) — `cheaper-observability` crate（activation 解釈・file+stderr dual sink・format 選択）の公開面、`--log`/`--log-format` activation 配線、hook 経路の stderr sink 抑制、daily rolling + 世代 retention、全 crate の `cheaper.*` span/field 規約と instrumentation 配置、log 無効時 overhead 計測方法を定義。
+
+## Devin native hook bootstrap（SPEC-034GssA0IjLKSiDdIHpAC8 / ADR-034GssAufIiId3hgh4jrSQ）
+
+- [Devin native hooks and APM bootstrap](./devin-native-hooks-and-apm-bootstrap.md) — `HookTarget::Devin` + 共有 `tool_use_normalize`（tool_name ASCII lowercase→per-tool routing）・`devin_render`・`cheaper hook targets --json` capability query・配布 `hooks.json` matcher 拡大・`install-devin-hooks.ps1`（preview/`-Apply`・capability handshake・non-destructive atomic write）の機械設計。範囲評価本体は後続 design へ。
+
+## Bounded hook evaluation + hook-config lifecycle（SPEC-034H2WAU6TQG6N9dmmmKNA / ADR-034H2WBlp8VXoEE7KVlGt5 / ADR-034H2WBNtC4We8dyC5lQZJ）
+
+- [Bounded hook request evaluation and hook-config registration lifecycle](./bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md) — `RoutingRequest::FileRead` の `range: Option<ReadRange>`（1-based offset・`limit<1` 無効→全文縮退）と `Search` variant（`path` 省略は cwd anchor、`.git` 除外・`SEARCH_SCAN_MAX_FILES=10,000`・`count_max_bytes` scan cap・`max_results`/`head_limit` は小さい方・`output_mode` 省略/Unknown は content 評価・`-i`/`--ignore-case` 正規化）による #107 の bounded 評価。`cheaper hook-config {sync|verify|remove}`（project/user scope、atomic replace、legacy-conflict gate、`--event-stdin` の APM lifecycle 写像・post-uninstall packages gate）と `install-devin-hooks.ps1` の CLI 委譲、per-dep `targets:`/`read_config_from` 移行経路。

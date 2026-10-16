@@ -45,12 +45,15 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqpy4V1ZNo | Auth URL opener final verification and status sync | done | [auth-url-opener-final-verification.md](./auth-url-opener-final-verification.md) |
 | TASK-034r05iHQeQpDqovKmKaZC | Auth URL opener seam and test isolation | done | [auth-url-opener-seam-and-test-isolation.md](./auth-url-opener-seam-and-test-isolation.md) |
 | TASK-034zXj9deJ0LTUdaiGwflX | Bounded concurrency policy を導入する | done | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
+| TASK-034H3PAQUN4a8s0VZqbjAb | Bounded eval and registration docs/e2e follow-through | todo | [bounded-eval-and-registration-docs-e2e.md](./bounded-eval-and-registration-docs-e2e.md) |
 | TASK-034r05iHQeQpDqkDLrHBxb | Bounded read tool and registry swap | done | [bounded-read-tool-and-registry-swap.md](./bounded-read-tool-and-registry-swap.md) |
+| TASK-034H3PzQISOeM552EcP64F | Bounded search and ranged read evaluation | todo | [bounded-search-and-ranged-read-evaluation.md](./bounded-search-and-ranged-read-evaluation.md) |
 | TASK-034AR8FgMmq4ecbz4SExZy | Seeded workflow benchmark fixtures と runner | done | [build-seeded-workflow-benchmark-fixtures-and-runner.md](./build-seeded-workflow-benchmark-fixtures-and-runner.md) |
 | TASK-034r05iHQeQpDq5zFfI7r5 | bulk-read delegation benchmark and read threshold decision | done | [bulk-read-benchmark-and-threshold-decision.md](./bulk-read-benchmark-and-threshold-decision.md) |
 | TASK-034r05iHQeQpDqn5moXUKS | Bulk-reader guidance, deny/registry parity, and final verification | done | [bulk-reader-guidance-parity-and-final-verification.md](./bulk-reader-guidance-parity-and-final-verification.md) |
 | TASK-034r05iHQeQpDq14tAA3rz | CLI bundle script and hook argv resolution | done | [cli-bundle-script-and-hook-argv.md](./cli-bundle-script-and-hook-argv.md) |
 | TASK-034r05iHQeQpDqdc3mJN2b | CLI count-tokens env override and FILE_TOO_LARGE envelope | done | [cli-count-tokens-env-override-and-file-too-large-envelope.md](./cli-count-tokens-env-override-and-file-too-large-envelope.md) |
+| TASK-034H3PAjzTZoboBflkoJYd | CLI-owned hook-config lifecycle | todo | [cli-owned-hook-config-lifecycle.md](./cli-owned-hook-config-lifecycle.md) |
 | TASK-034EOHDmemAJi6IbUQel4x | T1: command core policy・schema 分割と compile-forced propagation | done | [command-core-policy-and-propagation.md](./command-core-policy-and-propagation.md) |
 | TASK-034EOHYMMH4FnfoVhmfPeP | T6: command tool の user-facing docs と index 更新 | done | [command-docs.md](./command-docs.md) |
 | TASK-034EOHY1ZKj6PcEy0zVz2P | T5: command tool の unit・integration test と golden 整備 | done | [command-tests.md](./command-tests.md) |
@@ -178,6 +181,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqrbmtswfZ | Move .apm primitives to nested distributable package and make root apm.yml dev-only | done | [move-apm-primitives-to-distributable-package.md](./move-apm-primitives-to-distributable-package.md) |
 | TASK-034DzYjQDNWcel1Oqxnlia | T3: provider test 移動 (F7) | done | [move-devin-provider-tests-to-tests-dir.md](./move-devin-provider-tests-to-tests-dir.md) |
 | TASK-034rAcF1RPJJogj2vzFDrF | New adapter scripts and hooks.json event registration | done | [new-adapter-scripts-and-hooks-json-event-registration.md](./new-adapter-scripts-and-hooks-json-event-registration.md) |
+| TASK-034GtBzfyOaeVS6nlm1ZkC | Normalize tools and add Devin hook capability | done | [normalize-tools-and-add-devin-hook-capability.md](./normalize-tools-and-add-devin-hook-capability.md) |
 | TASK-034DVHrszM9fxMAyaOCqFt | T6: observability contract test + verification | done | [observability-contract-tests-and-verification.md](./observability-contract-tests-and-verification.md) |
 | TASK-034A9yFQqZLtHt5ibjhE1h | Operation execution metrics | done | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | TASK-034EUvBkRkmTjWxeq3iG0h | T1: optionalTools core machinery と compile-forced propagation | done | [optional-tools-core-machinery.md](./optional-tools-core-machinery.md) |
@@ -211,6 +215,7 @@ Directory: `docs/tasks`
 | TASK-034EOHIeC6KauJaRop87sk | T2: shared managed-process 機構の tools/proc 抽出 | done | [proc-extraction.md](./proc-extraction.md) |
 | TASK-034r05iHWkNF7zKMZPhFky | Provider plugin tests and resource isolation verification | done | [provider-plugin-tests-and-resource-isolation.md](./provider-plugin-tests-and-resource-isolation.md) |
 | TASK-034r05iHQeQpDpEony1i5k | Record experiment log and verify test regression | done | [record-experiment-log-and-verify-test-regression.md](./record-experiment-log-and-verify-test-regression.md) |
+| TASK-034GtBzKmwPf5z06kAahym | Register Devin hooks from APM skill | done | [register-devin-hooks-from-apm-skill.md](./register-devin-hooks-from-apm-skill.md) |
 | TASK-034EUvFhVkFFo9cY6aX6LB | T2: registry degrade path と prompt surfacing | done | [registry-degrade-and-prompt-surfacing.md](./registry-degrade-and-prompt-surfacing.md) |
 | TASK-034DzYbfe9r0G8Nd58FQjy | T1: js_json shim 削除 (F3) | done | [remove-js-json-shim.md](./remove-js-json-shim.md) |
 | TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |

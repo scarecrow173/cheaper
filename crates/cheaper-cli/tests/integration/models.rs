@@ -3,7 +3,7 @@
 //! `run_cli` 経路で検証する。実 credential 不要(catalog の configured
 //! 判定が空でも envelope 契約は同じ)。
 
-mod common;
+use crate::common;
 use common::Fixture;
 
 use serde_json::{json, Value};
