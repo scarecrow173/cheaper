@@ -1,7 +1,5 @@
 //! Port of `packages/workflow/test/bindings.test.ts`。
 
-mod common;
-
 use std::collections::HashMap;
 
 use cheaper_core::errors::ErrorCode;

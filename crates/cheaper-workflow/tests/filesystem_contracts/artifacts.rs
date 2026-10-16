@@ -6,7 +6,7 @@
 //! `removeEventListener` spy は Rust port に観測 seam がないため、
 //! abort 後の read 失敗と stats で同一 observable 状態を検査する。
 
-mod common;
+use crate::common;
 
 use std::sync::Arc;
 

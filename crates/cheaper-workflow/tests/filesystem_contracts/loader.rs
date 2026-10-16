@@ -3,7 +3,7 @@
 //! `symlink(..., "junction")` — Windows では特権不要の junction を
 //! `mklink /J` で作る(junction target は absolute 必須)。
 
-mod common;
+use crate::common;
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::nodepath;

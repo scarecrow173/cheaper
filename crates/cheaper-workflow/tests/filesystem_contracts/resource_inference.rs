@@ -4,7 +4,7 @@
 //! `expect.objectContaining` on diagnostics は variant-aware helper で
 //! 写す。`it.runIf(win32)` は `#[cfg]`/runtime split で移植する。
 
-mod common;
+use crate::common;
 
 use std::sync::Arc;
 

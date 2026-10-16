@@ -1,6 +1,6 @@
 //! Port of `packages/workflow/test/compiler.test.ts`。
 
-mod common;
+use crate::common;
 
 use std::collections::HashMap;
 use std::error::Error;
