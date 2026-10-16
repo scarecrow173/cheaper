@@ -1,6 +1,6 @@
 {
   "name": "timeout_delay",
-  "description": "delay_ms step が timeout abort で中断される → TIMEOUT 分類",
+  "description": "delay_ms step が timeout abort で中断される → TIMEOUT 分類。errorDetails は assert しない — abort が setup boundary(tool scope ready 待ち)中に発火した場合は code のみ復元され details を持たない設計で、高負荷 runner ではどちらの経路も取りうる。details.reason==\"timeout\" は run_dev_seam の unit pin で確定的に検証済み。",
   "policy": { "timeout_ms": 60 },
   "sessions": [
     {
@@ -14,7 +14,6 @@
     "status": "error",
     "errorCode": "TIMEOUT",
     "exitCode": 7,
-    "errorDetails": { "reason": "timeout" },
     "meta": {
       "model": { "provider": "cheaper-fake", "id": "fake-model" }
     }
