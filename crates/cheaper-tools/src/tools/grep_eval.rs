@@ -632,6 +632,10 @@ pub(crate) mod test_support {
     /// test binary 内の helper entry test 名(libtest filter 文字列)。
     pub const HELPER_ENTRY_TEST: &str = "tools::grep_eval::tests::helper_entry";
 
+    /// 設定時、helper_entry が `helper_main` 開始前に指定 ms sleep する
+    /// (watch timeout の確定的検証用 — process spawn 時間に依存させない)。
+    pub const HELPER_DELAY_ENV: &str = "CHEAPER_GREP_EVAL_TEST_DELAY_MS";
+
     /// `std::env::current_exe()`(test binary)を helper 化する spawn spec。
     pub fn test_spawn() -> EvalSpawn {
         EvalSpawn {
@@ -669,6 +673,12 @@ mod tests {
     fn helper_entry() {
         if std::env::var_os(HELPER_ENV).is_none() {
             return;
+        }
+        if let Some(ms) = std::env::var(test_support::HELPER_DELAY_ENV)
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+        {
+            std::thread::sleep(std::time::Duration::from_millis(ms));
         }
         std::process::exit(helper_main());
     }
@@ -734,8 +744,17 @@ mod tests {
 
     #[test]
     fn watch_timeout_kills_helper() {
-        // watch=1ms は helper 応答前に必ず切れる → Timeout + dead + kill。
-        let mut w = GrepEvalWorker::spawn(&test_eval_options(), "x", "").expect("spawn");
+        // helper を 5s 遅延させて watch=1ms が必ず切れるようにする
+        // (process spawn に依存した 1ms race を排除)。
+        let mut spawn = test_support::test_spawn();
+        spawn
+            .envs
+            .push((test_support::HELPER_DELAY_ENV.to_string(), "5000".to_string()));
+        let opts = EvalOptions {
+            spawn,
+            reply_max_bytes: EVAL_REPLY_MAX_BYTES,
+        };
+        let mut w = GrepEvalWorker::spawn(&opts, "x", "").expect("spawn");
         let err = w
             .evaluate("f", 1, &["x".to_string()], 1.0, None)
             .expect_err("should time out");
