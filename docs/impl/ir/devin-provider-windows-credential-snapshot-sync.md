@@ -4,7 +4,7 @@ type: "impl"
 status: "completed"
 title: "Devin provider Windows credential snapshot sync"
 created: "2026-10-09"
-updated: "2026-10-09"
+updated: "2026-10-17"
 owners: []
 relations:
   source: []
@@ -160,3 +160,13 @@ task `implement-devin-provider-windows-credential-snapshot-contract`
 ## Follow-ups
 
 - issue #80 へ検証証跡を comment して close。
+
+## 2026-10-17 Follow-up: resolver fixture の Linux 可搬性
+
+- 既知の `resolve_global_path_*` 3件を Linux で限定再実行し、3 failed を再現した。固定 Windows path の backslash が Linux の `file_name` では区切りにならず、`join` も native `/` を生成するため、fixture と期待値が契約に合っていなかった。
+- 3件の fixture を、既存の Windows workflow 注入テストと同じ TempDir + native `PathBuf::join` に揃えた。複数 File 行・CRLF・空白・File 優先度・bogus 行拒否・APPDATA None/空白・CLI 未到達の assertion は維持した。
+- `resolve_global_path_parses_stderr_when_logged_out` を追加し、code `1` の stderr にある有効 File 行を APPDATA 無しでも採用する既存契約を pin した。実 Devin CLI・実 credential にはアクセスしていない。
+- 変更された Rust file は `crates/cheaper-provider/tests/cli_credentials.rs` のみ。production source・依存・lockfile・CI 設定は不変。
+- Windows host と Linux 隔離環境で、`cargo test --locked --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test cli_credentials` はともに24 passed /0 failed /0 ignored。Linux では同じ command に `--offline` も付けた。
+- 両 OS で同 feature/target 選択の `cargo clippy -- -D warnings` と `cargo fmt --all -- --check` が成功し、host `git diff --check` も成功した。今回の follow-up では workspace 全テスト・`mise run check`・実認証 smoke・CI は再実行していない。
+- Review: native/foreign path の責任境界、元の3件の意味、追加例、cfg/ignore/serial を増やしていないことを確認し、未解決 blocker なし。過去の spec/status・crate 名などの一括整理は別扱いとした。

@@ -4,7 +4,7 @@ type: "task"
 status: "done"
 title: "Implement Devin provider Windows credential snapshot contract"
 created: "2026-10-09"
-updated: "2026-10-09"
+updated: "2026-10-17"
 owners: []
 relations:
   source: []
@@ -92,3 +92,18 @@ toml の atomic copy・key 一致 reuse・logout 非 spawn + notify）
 - [x] `mise exec -- cargo test -p cheaper-runtime -p cheaper-cli`
       pass
 - [x] `mise run check` pass
+
+## 2026-10-17 Follow-up
+
+既存実装の製品契約は維持し、`crates/cheaper-provider/tests/cli_credentials.rs` の native path fixture と resolver の回帰例だけを修正する。Windows 固定の文字列表現を期待したため Linux の `PathBuf::file_name` / `join` と一致しなかった3件を対象とし、OS gate や ignore で隠さない。
+
+### Follow-up Verification
+
+以下は Linux 隔離環境と Windows の両方で実行する。実モデル・実認証 CLI は不要。
+
+- [x] `mise exec -- cargo test --locked --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test cli_credentials` が exit `0`（Linux/Windows とも24 passed、0 failed、0 ignored）。
+- [x] `mise exec -- cargo clippy --locked --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test cli_credentials -- -D warnings` が exit `0`（両 OS）。
+- [x] `mise exec -- cargo fmt --all -- --check` と `git diff --check` が exit `0`。
+- [x] production source・依存・CI 設定が不変で、3件の意味と追加 stderr/nonzero case を維持していることを差分レビューした。
+
+Linux の再現・検証は既存隔離環境で runner UID 1001 と固定 Rust toolchain を使用し、Cargo に `--offline` も付けた。今回の follow-up では `mise run check`・workspace 全テスト・実認証 smoke・CI は再実行していない。上の元タスク Verification は2026-10-09の履歴として保持する。

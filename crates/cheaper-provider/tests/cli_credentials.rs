@@ -678,15 +678,22 @@ fn windows_logout_removes_snapshot_without_spawning_cli() {
 fn resolve_global_path_parses_last_file_line() {
     let dir = tempfile::tempdir().unwrap();
     let data_dir = devin_data_dir(dir.path());
+    let first = dir.path().join("first").join("credentials.toml");
+    let last = dir.path().join("last path").join("credentials.toml");
+    let appdata = dir.path().join("appdata");
     // CRLF 出力・複数 `File:` 行は最後を採用・APPDATA より `File:` 優先。
     let (cli, _) = cli_with(
-        ok("File: C:\\first\\credentials.toml\r\nother\r\n  File: C:\\last\\credentials.toml  \r\n"),
+        ok(&format!(
+            "File: {}\r\nother\r\n  File: {}  \r\n",
+            first.display(),
+            last.display()
+        )),
         BTreeMap::new(),
         &data_dir,
     );
     assert_eq!(
-        resolve_global_credentials_path(&cli, Some("D:\\appdata")),
-        Some(std::path::PathBuf::from(r"C:\last\credentials.toml"))
+        resolve_global_credentials_path(&cli, appdata.to_str()),
+        Some(last)
     );
 }
 
@@ -694,18 +701,19 @@ fn resolve_global_path_parses_last_file_line() {
 fn resolve_global_path_rejects_bogus_file_lines() {
     let dir = tempfile::tempdir().unwrap();
     let data_dir = devin_data_dir(dir.path());
+    let appdata = dir.path().join("appdata");
+    let expected = appdata.join("devin").join("credentials.toml");
+    let bogus = dir.path().join("other").join("config.toml");
     // 空値・`credentials.toml` 以外を指す `File:` 行は採用せず
     // APPDATA fallback へ回る。
     let (cli, _) = cli_with(
-        ok("File:   \nFile: C:\\other\\config.toml\n"),
+        ok(&format!("File:   \nFile: {}\n", bogus.display())),
         BTreeMap::new(),
         &data_dir,
     );
     assert_eq!(
-        resolve_global_credentials_path(&cli, Some("D:\\appdata")),
-        Some(std::path::PathBuf::from(
-            "D:\\appdata\\devin\\credentials.toml"
-        ))
+        resolve_global_credentials_path(&cli, appdata.to_str()),
+        Some(expected)
     );
     // bogus な `File:` + APPDATA 無し → None。
     assert_eq!(resolve_global_credentials_path(&cli, None), None);
@@ -718,13 +726,13 @@ fn resolve_global_path_rejects_bogus_file_lines() {
 fn resolve_global_path_appdata_fallback_and_none() {
     let dir = tempfile::tempdir().unwrap();
     let data_dir = devin_data_dir(dir.path());
+    let appdata = dir.path().join("appdata");
+    let expected = appdata.join("devin").join("credentials.toml");
     // `File:` 行なし → APPDATA fallback。
     let (cli, _) = cli_with(ok("not logged in"), BTreeMap::new(), &data_dir);
     assert_eq!(
-        resolve_global_credentials_path(&cli, Some(r"C:\Users\x\AppData\Roaming")),
-        Some(std::path::PathBuf::from(
-            r"C:\Users\x\AppData\Roaming\devin\credentials.toml"
-        ))
+        resolve_global_credentials_path(&cli, appdata.to_str()),
+        Some(expected.clone())
     );
     // `File:` 行なし + APPDATA 無し → None。
     assert_eq!(resolve_global_credentials_path(&cli, None), None);
@@ -735,9 +743,24 @@ fn resolve_global_path_appdata_fallback_and_none() {
         &data_dir,
     );
     assert_eq!(
-        resolve_global_credentials_path(&cli, Some("D:\\appdata")),
-        Some(std::path::PathBuf::from(
-            "D:\\appdata\\devin\\credentials.toml"
-        ))
+        resolve_global_credentials_path(&cli, appdata.to_str()),
+        Some(expected)
     );
+}
+
+#[test]
+fn resolve_global_path_parses_stderr_when_logged_out() {
+    let dir = tempfile::tempdir().unwrap();
+    let data_dir = devin_data_dir(dir.path());
+    let path = dir.path().join("logged out path").join("credentials.toml");
+    let (cli, _) = cli_with(
+        Ok(DevinCliResult {
+            stdout: "not logged in".to_string(),
+            stderr: format!("  File: {}\n", path.display()),
+            code: 1,
+        }),
+        BTreeMap::new(),
+        &data_dir,
+    );
+    assert_eq!(resolve_global_credentials_path(&cli, None), Some(path));
 }
