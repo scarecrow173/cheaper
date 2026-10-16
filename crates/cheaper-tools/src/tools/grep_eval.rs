@@ -747,9 +747,10 @@ mod tests {
         // helper を 5s 遅延させて watch=1ms が必ず切れるようにする
         // (process spawn に依存した 1ms race を排除)。
         let mut spawn = test_support::test_spawn();
-        spawn
-            .envs
-            .push((test_support::HELPER_DELAY_ENV.to_string(), "5000".to_string()));
+        spawn.envs.push((
+            test_support::HELPER_DELAY_ENV.to_string(),
+            "5000".to_string(),
+        ));
         let opts = EvalOptions {
             spawn,
             reply_max_bytes: EVAL_REPLY_MAX_BYTES,
