@@ -109,6 +109,7 @@ export function nodeFreePath(root) {
   const directory = path.join(root, "system-bin");
   mkdirSync(directory, { recursive: true });
   for (const tool of [
+    "sh",
     "dirname",
     "uname",
     "head",
