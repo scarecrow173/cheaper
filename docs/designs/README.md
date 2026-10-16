@@ -6,6 +6,7 @@ Directory: `docs/designs`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
+| DESIGN-giTr4G7NzwSzWJTVgBo3ax | bulk-reader 出力上限・INVALID_OUTPUT 指針の skill 文書設計 | approved | [bulk-reader-output-limits-and-invalid-output-skill-docs.md](./bulk-reader-output-limits-and-invalid-output-skill-docs.md) |
 | DESIGN-OVERVIEW | System Design Overview | draft | [overview.md](./overview.md) |
 | DESIGN-034EehnT1xOPAee9dK22Kx | Setup-boundary abort classification via core ErrorCode reverse lookup | approved | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
 | DESIGN-034z1EgnQwax4VamK2xmdT | APM executable payload layout and platform launchers | superseded | [apm-executable-payload-layout-and-platform-launchers.md](./apm-executable-payload-layout-and-platform-launchers.md) |

@@ -56,6 +56,56 @@ Input (`bulk-reader` schema):
 `meta.changes` is always empty (read-only worker). `meta.usage` reports the
 tokens the cheaper model spent.
 
+## Output field limits
+
+The worker's output is schema-validated. If it violates the schema, the run
+fails with `INVALID_OUTPUT` (see below). The canonical limits (canonical
+source: `crates/cheaper-cli/resources/workers/schemas/bulk-reader.output.schema.json`
+in the cheaper repository, embedded into the binary — there is no CLI command
+that dumps a worker schema):
+
+| Field | Limit |
+|---|---|
+| `summary` | string, 1–1500 chars (required) |
+| `findings[]` | ≤30 items |
+| `findings[].title` / `.detail` | 120 / 1200 chars |
+| `findings[].confidence` | `high` / `medium` / `low` |
+| `findings[].locations[]` | ≤10 items |
+| `locations[].path` | workspace-relative (no absolute, no `..`) |
+| `locations[].lines` | `{start, end}` integers ≥1 (optional) |
+| `locations[].excerpt` | **600 chars** |
+| `relevantFiles[]` / `suggestedReads[]` | ≤30 / ≤10 items, `reason` ≤300 chars |
+| `suggestedReads[].lines` | `{start, end}` integers ≥1 (optional) |
+| `openQuestions[]` | ≤10 items, each ≤300 chars |
+
+All five top-level fields are required and every object is closed
+(`additionalProperties: false`) — extra or misspelled keys and missing
+required keys also fail validation, not just oversized values.
+
+## When it fails with `INVALID_OUTPUT`
+
+`error.code === "INVALID_OUTPUT"` (exit 6, `retryable: false`) means the
+worker's output failed schema validation even after the bounded repair
+attempt(s). On worker `run` invocations the envelope carries:
+
+- `error.details.errors` — the first 20 schema/JSON-parse errors (after a
+  repair attempt, from the last attempt). Use them to find the offending
+  field, e.g. `/findings/4/locations/0/excerpt` exceeding 600 chars.
+- `error.details.rawOutput` — the worker's raw output truncated to the first
+  2000 characters. **It is a diagnostic excerpt, not a validated result**,
+  and may be empty. Do not adopt it — or anything parsed out of it — as the
+  answer.
+
+Recovery, in order:
+
+1. Re-run with a narrower scope — a more specific `task`, fewer `paths`,
+   or a lower `maxFindings` — guided by `details.errors`.
+2. If failures repeat, raise `output.repairAttempts` (bundled default is 1;
+   `docs/guides/configuration.md` in the cheaper repo recommends 4 for
+   smaller models) or `output.maxTokens` in your project/user `policy.yaml`.
+3. Fall back to reading the files directly or splitting the work into
+   smaller `bulk-read` calls.
+
 ## Recommended flow
 
 ```text

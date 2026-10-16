@@ -259,6 +259,17 @@ carries `path`, `bytes`, and `maxBytes`. The cap defaults to 16 MiB and
 can be overridden with the `CHEAPER_COUNT_MAX_BYTES` env var (positive
 integer, bytes; invalid values fall back to the default).
 
+Exit 6 covers both tool-execution and output-validation failures; inspect
+`error.code`. For worker `run` invocations (and aliases like `bulk-read`),
+`error.code === "INVALID_OUTPUT"` carries `error.details.errors` — the first
+20 schema/JSON-parse errors — and `error.details.rawOutput`, the worker's
+raw output truncated to the first 2000 characters. `rawOutput` is a
+diagnostic excerpt, **not** a validated `result` (a failed run has no
+`result`), and may be empty; never adopt it as the answer. (`workflow run`
+can also emit `INVALID_OUTPUT` with a different `details` shape — e.g. no
+`rawOutput`.) Per-worker output limits and recovery steps are documented in
+the worker skills (see `cheaper-bulk-read`).
+
 ## Command grants
 
 The `command` tool only runs executables authorized by a grant in trusted
