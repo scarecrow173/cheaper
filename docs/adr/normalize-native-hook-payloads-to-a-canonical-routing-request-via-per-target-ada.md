@@ -36,6 +36,7 @@ relations:
     - "../specs/cross-agent-native-routing-adapters-over-apm-distribution.md"
     - "../specs/case-insensitive-native-tools-and-devin-registration.md"
     - "../designs/devin-native-hooks-and-apm-bootstrap.md"
+    - "./range-aware-file-read-and-bounded-search-requests-in-hook-routing.md"
   refines: []
   refined-by:
     - "./apm-distributed-devin-native-hook-bootstrap.md"

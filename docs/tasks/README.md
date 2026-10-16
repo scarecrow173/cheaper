@@ -45,12 +45,15 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqpy4V1ZNo | Auth URL opener final verification and status sync | done | [auth-url-opener-final-verification.md](./auth-url-opener-final-verification.md) |
 | TASK-034r05iHQeQpDqovKmKaZC | Auth URL opener seam and test isolation | done | [auth-url-opener-seam-and-test-isolation.md](./auth-url-opener-seam-and-test-isolation.md) |
 | TASK-034zXj9deJ0LTUdaiGwflX | Bounded concurrency policy を導入する | done | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
+| TASK-034H3PAQUN4a8s0VZqbjAb | Bounded eval and registration docs/e2e follow-through | todo | [bounded-eval-and-registration-docs-e2e.md](./bounded-eval-and-registration-docs-e2e.md) |
 | TASK-034r05iHQeQpDqkDLrHBxb | Bounded read tool and registry swap | done | [bounded-read-tool-and-registry-swap.md](./bounded-read-tool-and-registry-swap.md) |
+| TASK-034H3PzQISOeM552EcP64F | Bounded search and ranged read evaluation | todo | [bounded-search-and-ranged-read-evaluation.md](./bounded-search-and-ranged-read-evaluation.md) |
 | TASK-034AR8FgMmq4ecbz4SExZy | Seeded workflow benchmark fixtures と runner | done | [build-seeded-workflow-benchmark-fixtures-and-runner.md](./build-seeded-workflow-benchmark-fixtures-and-runner.md) |
 | TASK-034r05iHQeQpDq5zFfI7r5 | bulk-read delegation benchmark and read threshold decision | done | [bulk-read-benchmark-and-threshold-decision.md](./bulk-read-benchmark-and-threshold-decision.md) |
 | TASK-034r05iHQeQpDqn5moXUKS | Bulk-reader guidance, deny/registry parity, and final verification | done | [bulk-reader-guidance-parity-and-final-verification.md](./bulk-reader-guidance-parity-and-final-verification.md) |
 | TASK-034r05iHQeQpDq14tAA3rz | CLI bundle script and hook argv resolution | done | [cli-bundle-script-and-hook-argv.md](./cli-bundle-script-and-hook-argv.md) |
 | TASK-034r05iHQeQpDqdc3mJN2b | CLI count-tokens env override and FILE_TOO_LARGE envelope | done | [cli-count-tokens-env-override-and-file-too-large-envelope.md](./cli-count-tokens-env-override-and-file-too-large-envelope.md) |
+| TASK-034H3PAjzTZoboBflkoJYd | CLI-owned hook-config lifecycle | todo | [cli-owned-hook-config-lifecycle.md](./cli-owned-hook-config-lifecycle.md) |
 | TASK-034EOHDmemAJi6IbUQel4x | T1: command core policy・schema 分割と compile-forced propagation | done | [command-core-policy-and-propagation.md](./command-core-policy-and-propagation.md) |
 | TASK-034EOHYMMH4FnfoVhmfPeP | T6: command tool の user-facing docs と index 更新 | done | [command-docs.md](./command-docs.md) |
 | TASK-034EOHY1ZKj6PcEy0zVz2P | T5: command tool の unit・integration test と golden 整備 | done | [command-tests.md](./command-tests.md) |

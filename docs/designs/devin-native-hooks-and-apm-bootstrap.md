@@ -26,6 +26,7 @@ relations:
     - "../adr/normalize-native-hook-payloads-to-a-canonical-routing-request-via-per-target-ada.md"
     - "../discovery/bounded-hook-read-request-contract.md"
     - "./overview.md"
+    - "./bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md"
   refines: []
   refined-by: []
   derives-from:

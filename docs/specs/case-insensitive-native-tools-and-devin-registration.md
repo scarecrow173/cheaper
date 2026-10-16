@@ -27,6 +27,7 @@ relations:
     - "../adr/apm-distributed-devin-native-hook-bootstrap.md"
     - "../adr/normalize-native-hook-payloads-to-a-canonical-routing-request-via-per-target-ada.md"
     - "./apm-delegation-skills-and-read-hook.md"
+    - "./bounded-native-hook-evaluation-and-managed-devin-registration.md"
   refines: []
   refined-by: []
   derives-from:

@@ -76,53 +76,83 @@ stale file を **prune しない**（APM 0.28.0 実測）。upgrade 後に
 残存 file は実害なしだが、再 deploy を確実にしたい場合は bundle dir
 全体を消して `apm install` を再実行すればよい。
 
-### Devin CLI の native hook 登録（Windows）
+### Devin CLI の native hook 登録（`cheaper hook-config`）
 
 Devin CLI は APM hook target ではなく、native hook は `.devin/config.json`
-へ登録する。登録 helper（PowerShell 5.1 向け）は `cheaper-usage` skill の
-resource として APM package に同梱される。
+へ登録する。登録・検査・除去は **CLI 自身の `hook-config` command が担う**
+（ADR-034H2WBNtC4We8dyC5lQZJ、issue #107 — 旧 PowerShell script の直接
+JSON 編集は CLI への thin wrapper に縮退した）。
 
-- **新規の Devin-only consumer**: `apm install --target agent-skills` で
-  package を install すれば helper が deploy される。
-- **既存 consumer**: 設定済み target を維持したまま通常の `apm install`
-  flow で更新する。helper を得るためだけに target を置き換えない。
-- `--legacy-skill-paths` 有効時は実際に deploy された skill path を使う。
-
-通常の `apm install` は lockfile の旧 commit を再利用する場合がある。
-新しい helper を取得する更新は、既存 target を保持したまま
-`apm update scarecrow173/cheaper/packages/apm --dry-run` で preview し、
-内容を確認してから `--dry-run` を外して実行する。immutable ref に pin
-している場合は、依存更新の通常レビューで新 ref を明示的に選ぶ。
-
-consumer root から preview（書き込みなし・CLI 不要）:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .agents/skills/cheaper-usage/scripts/install-devin-hooks.ps1
+```bash
+cheaper hook-config verify              # 登録状態の読み取り専用レポート
+cheaper hook-config sync                # canonical entry を冪等に upsert
+cheaper hook-config remove              # own entry のみ除去（非破壊）
+cheaper hook-config sync --scope user   # user scope（~/.config/devin 等）
+cheaper hook-config --event-stdin       # APM lifecycle payload を stdin から実行
 ```
 
-`-Apply` を付けると `.devin/config.json` の `hooks.PreToolUse` に
-read/grep（ASCII case-insensitive exact matcher）の
-`cheaper hook pre-tool-use --target devin` entry を追加する。apply 前に
-`cheaper hook targets --json` の capability handshake で CLI が `devin`
-target を報告することを必須とするため、古い CLI では何も書かず拒否する
-— APM resource の更新は別途 install された CLI を更新しない点に注意。
+canonical entry は matcher `^([Rr][Ee][Aa][Dd]|[Gg][Rr][Ee][Pp]|[Ee][Xx][Ee][Cc])$`
+（read/grep/exec、case-insensitive）+ command
+`cheaper hook pre-tool-use --target devin`。旧 `read|grep` matcher を持つ
+既存登録は `sync` が canonical matcher へ収束させる。
 
-helper は既存 config の無関係な key/value/structure を保全し、`.devin/` や
-config file は validation・capability が全て通ってから初めて作る。
-`.windsurf`・`.claude`・global/ancestor config には一切書き込まない。
-既知の重複 cheaper read hook（`.windsurf/hooks.json`・`.devin/hooks.json`・
-`.devin/hooks.v1.json`・`.devin/config.local.json`・`.claude/settings*.json`
-や primary config 内の他 target 登録）を検出した場合は relative path を
-報告して停止する — provider の登録を削除・無効化はしないので、legacy
-registration は利用者が明示的に解消し、Devin の `/hooks` で global・
-ancestor を含む全 loaded source を確認する。native shell tool
-（Bash/PowerShell 相当）は登録しない。
+`sync` の安全条件:
 
-これは **supplemental registration であり APM-managed hook target ではない**。
-`apm uninstall` は native entry を除去しない — uninstall 時は
-`cheaper hook pre-tool-use --target devin` の group だけを手動で削除する。
-guard は引き続き whole file を測定する: native 登録と case normalization は
-bounded-read の issue #107 を解決しない（範囲評価は別対応）。
+- PATH 上の `cheaper` が `hook targets --json` で `devin` target と
+  `hookConfig: true` を報告すること（capability gate — 古い CLI では
+  何も書かず拒否する）
+- 既知の重複 cheaper read hook（`.windsurf/hooks.json`・`.devin/hooks.json`・
+  `.devin/hooks.v1.json`・`.devin/config.local.json`・`.claude/settings*.json`
+  や対象 config 内の他登録）を検出した場合は conflict file を報告して停止する
+  — 二重発火を防ぐため利用者が明示的に解消する
+- config は strict JSON のみ。JSONC/comment・大小文字違いの key・外部変更・
+  symlink/reparse 経路は拒否。既存の無関係な key/entry は保全し、書き込みは
+  temp file + atomic rename
+
+Devin tool 評価は bounded になった（issue #107）: `read` の `offset`/`limit`
+は window のみを計測し、`grep` は検索結果（一致行 + context）を上限付きで
+実体化して計測する — 巨大 file の短い範囲読みは通る。shell は Devin の
+検証済み tool `exec`（`tool_input.command`）を read-candidate 抽出で評価する。
+
+#### APM lifecycle 連携（opt-in）
+
+consumer の `apm.yml` に project lifecycle script を登録すると、
+`apm install`/`update`/`uninstall` で hook-config が収束される:
+
+```yaml
+dependencies:
+  apm:
+  - scarecrow173/cheaper/packages/apm#main
+    targets: [agent-skills]   # 必須 — これが無いと dep 全体が skip される
+lifecycle:
+  post-install:  cheaper hook-config --event-stdin
+  post-update:   cheaper hook-config --event-stdin
+  post-uninstall: cheaper hook-config --event-stdin
+```
+
+lifecycle payload は stdin JSON で渡り、`hook-config` が event を写像する
+（`post-install`/`post-update` → sync+verify、`post-uninstall` → packages に
+cheaper が含まれる場合のみ remove、`pre-*`/未知 → noop）。project script は
+`apm lifecycle trust` での明示 trust が必要で、`APM_NO_SCRIPTS=1` や trust
+未了・script 失敗では自動収束されない — `verify` が残余状態を報告する
+fallback として使う。
+
+#### 既存 consumer からの移行
+
+旧 APM 配布（`.windsurf/hooks.json` への cheaper 登録）からの移行条件:
+
+- cheaper dependency が **`targets: [agent-skills]`** を持つこと。無いと
+  APM の reconcile が dep 自体を skip し skills まで外れる
+- `read_config_from` で `windsurf`/`claude` の自動 import を有効にして
+  いる環境では、旧登録が再 import され conflict gate が発火しうる —
+  import を明示的に無効化するか、旧 file の cheaper entry を消してから
+  `sync` を実行する
+- `verify` は残余 artifact・matcher drift・shadow（`.devin/hooks.v1.json`
+  等が config.json を shadow する可能性）を検出して remediation を報告する
+
+Windows 向けの preview/`-Apply` helper（`cheaper-usage` skill resource
+`install-devin-hooks.ps1`）は残るが、実処理は `cheaper hook-config` へ
+委譲する thin wrapper。POSIX では CLI を直接呼ぶ（wrapper 不要）。
 
 ## Launcher の挙動
 

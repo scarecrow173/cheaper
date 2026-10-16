@@ -4,7 +4,7 @@ type: "discovery"
 status: "active"
 title: "Bounded hook read request contract"
 created: "2026-10-14"
-updated: "2026-10-15"
+updated: "2026-10-17"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -12,6 +12,7 @@ relations:
     - "https://github.com/scarecrow173/cheaper/issues/107#issuecomment-6172569369"
     - "https://github.com/scarecrow173/cheaper/issues/107#issuecomment-6182313362"
     - "https://github.com/scarecrow173/cheaper/issues/107#issuecomment-6183636932"
+    - "https://github.com/scarecrow173/cheaper/pull/109#issuecomment-6221192905"
     - "https://docs.devin.ai/desktop/cascade/hooks"
     - "https://docs.devin.ai/cli/extensibility/hooks/lifecycle-hooks"
     - "https://docs.devin.ai/cli/extensibility/hooks/overview"
@@ -35,6 +36,9 @@ relations:
   derived-by:
     - "../adr/apm-distributed-devin-native-hook-bootstrap.md"
     - "../specs/case-insensitive-native-tools-and-devin-registration.md"
+    - "../adr/range-aware-file-read-and-bounded-search-requests-in-hook-routing.md"
+    - "../adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
+    - "../specs/bounded-native-hook-evaluation-and-managed-devin-registration.md"
   verifies: []
   verified-by: []
   references:
@@ -524,3 +528,70 @@ blocking/error なし、今回の chain への finding なしで Completable
 `followup-triage-terminal` → `exit-audit-to-complete`（8 hops、固定
 `taskBudgetCount: 2` / `maxHops: 11`、commit waiver なし）。これは
 今回の partial plan の terminal であり、#107 全体の resolved 宣言ではない。
+
+## Review-driven scope expansion（2026-10-17、PR #109 comment-6221192905）
+
+PR #109 の owner review が #107 の範囲評価を「out of scope」から
+この PR の必須条件へ昇格させた。10 項目の指摘をコード・一次資料・
+実機検証と突き合わせて確認した事実を記録する（設計・実装は決定
+しない）。
+
+### 確認済み: 指摘の事実基盤
+
+- `RoutingRequest` は `FileRead { path, cwd, source_tool }` と
+  `Shell { command, cwd, source_tool }` のみ。`targets.rs` の
+  `normalize_pretooluse` / `normalize_devin` は `tool_input` の
+  `offset`/`limit`/`max_results`/`glob_pattern` を一切読まず、
+  `FileRead` へ flatten する。全文 token guard（既定 8192）が
+  要求範囲ではなくファイル全体を評価する構造が #107 の根因。
+- Devin adapter の `shell_tools` は現行 `&[]` — `bash`/`exec` 系は
+  Shell 評価へ届かない（`hook.rs` fixture でも `bash` は silent
+  allow で通る）。
+- cheaper 管理 registration は PowerShell script
+  `install-devin-hooks.ps1`（preview / `-Apply`、Windows のみ）
+  のみで、CLI 側に inspect/remove/lifecycle を持たない。
+- APM uninstall・再 install での cheaper-native 登録の converge /
+  stale 登録検出は未提供。
+
+### 一次資料・実機で確認した事実（2026-10-17）
+
+- **Devin tool 名**: 公式 docs.devin.ai の hooks / tools 資料で
+  shell 実行 tool は `exec`（`tool_input.command`）、file read は
+  `read`、search は `grep`・`glob` と確認。`bash` 名の native tool
+  は確認できない。matcher へ追加する場合は `exec` のみ。
+- **APM per-dependency `targets:`**: APM 0.28.0 実機で検証済み。
+  project `targets` が `[agent-skills, windsurf]` で dep が
+  `targets: [agent-skills]` の場合、cheaper の Windsurf hook は
+  deploy されず skills のみ配置される。既存 consumer が per-dep
+  targets に移行して再 install すると、APM が cheaper 所有の
+  `.windsurf/hooks/apm/*`・`apm-hooks.json`・`.windsurf/hooks.json`
+  内の cheaper entries を reconcile で除去する（実測）。ただし
+  project `targets` に `agent-skills` が無いと dep 全体が skip
+  され skills も消える — 移行手順の必須条件。
+- **APM lifecycle**: consumer `apm.yml` の `lifecycle:` key に
+  `pre-install` / `post-install` / `pre-update` / `post-update` /
+  `pre-uninstall` / `post-uninstall` を登録可能。project script は
+  `apm lifecycle trust` による明示 trust が必須で、script 失敗は
+  install/update 操作自体を abort しない（fail-soft）。
+  command script は stdin に `event`/`packages`/`scope`/
+  timestamp/CLI version/cwd の JSON payload を受け取る。
+  `APM_NO_SCRIPTS=1` で抑制可能。したがって lifecycle script だけで
+  登録の強制はできず、CLI 側の収束コマンド + 検出・案内と組み合
+  わせる設計が必要。
+- **`count_text_tokens(&str)`**: `cheaper_core::token::count` に
+  文字列 slice を計測する API が既存。範囲評価は読み込んだ範囲
+  slice をこの API で計測でき、全文 tokenize を避けられる。
+
+### Promotion 判断に影響する open item の解消
+
+- 「実 tool が範囲を尊重する保証」: native wire で `offset`/`limit`
+  が adapter へ届くことは fixture 済み。評価が「要求範囲の token
+  数」を行う限り、tool 側の実効範囲との完全一致は block 条件と
+  しない（評価は防御境界であり tool 実行結果の pin ではない）。
+- Devin `read` の offset 基数は 1-based line number として扱う
+  （Claude/Devin 系の line-window 慣行と wire 観測 `offset:334,
+  limit:81` と整合）。 EOF 超過・offset が総行数超過は空範囲として
+  許容し、tool 側の実挙動は範囲外。
+
+Promotion: 本 expansion の要件・構造決定は新規 spec / ADR へ派生
+させる（Graph checkpoint の新規 chain を参照）。

@@ -117,7 +117,9 @@ one workspace file so you can measure context cost before reading it.
     with exit 0.
   - **Claude Code** — `PreToolUse` (case-insensitive exact `read`/`grep`/
     `bash`/`powershell` matcher); single-file reads/searches and shell reads
-    use the shared whole-file guard. Denies return
+    use the shared guard. Bounded reads (`offset`/`limit`) and searches are
+    evaluated on the materialized window/result, not the whole file
+    (issue #107). Denies return
     `hookSpecificOutput.permissionDecision: "deny"` on stdout with exit 0.
   - **Cursor** — `beforeReadFile` / `beforeShellExecution`; every
     response is a schema-valid `{"permission": ...}` JSON, exit 0.
@@ -145,23 +147,53 @@ command without `--dry-run` after reviewing its plan. Preserve the existing
 targets. If the dependency is pinned to an immutable ref, select the new ref
 explicitly through your normal dependency review.
 
-From the consumer root, preview with:
+Registration is owned by the CLI's `hook-config` command (the bundled
+PowerShell helper is a thin preview/`-Apply` wrapper around it):
+
+```bash
+cheaper hook-config verify   # read-only report: own entry, drift, legacy
+                             # conflicts, shadow files, orphan temp files
+cheaper hook-config sync     # idempotently upsert the canonical entry
+                             # (matcher: read|grep|exec, case-insensitive)
+cheaper hook-config remove   # remove only the owned entry
+```
+
+`sync` refuses to write while a legacy cheaper read-hook registration
+coexists in a known source (`.windsurf/hooks.json`, `.devin/hooks*.json`,
+`.devin/config.local.json`, `.claude/settings*.json`, other registrations
+in the target config) — resolve duplicates explicitly, then use `/hooks`
+to check all loaded sources, including global and ancestor configurations.
+The CLI must report `devin` and `hookConfig` through
+`cheaper hook targets --json`; updating APM resources does not update the
+separately installed CLI.
+
+To converge the registration from APM lifecycle events, wire the
+`lifecycle:` block in the consumer `apm.yml` (project scripts require
+`apm lifecycle trust`; the cheaper dependency must carry
+`targets: [agent-skills]` or the whole dependency is skipped):
+
+```yaml
+lifecycle:
+  post-install:   cheaper hook-config --event-stdin
+  post-update:    cheaper hook-config --event-stdin
+  post-uninstall: cheaper hook-config --event-stdin
+```
+
+`post-uninstall` removes the entry only when the payload's `packages`
+names cheaper. `APM_NO_SCRIPTS=1`, missing trust, or script failure skips
+convergence — `verify` is the authoritative fallback. Without lifecycle
+wiring, APM uninstall does not remove the native entry; run
+`cheaper hook-config remove` (or delete only the
+`cheaper hook pre-tool-use --target devin` group) when uninstalling.
+
+The guard is bounded (issue #107): `read` honors `offset`/`limit`
+windows, `grep` materializes the bounded result set for measurement, and
+the verified Devin shell tool `exec` (`tool_input.command`) is covered.
+On Windows, preview/apply is also available via the bundled helper:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .agents/skills/cheaper-usage/scripts/install-devin-hooks.ps1
 ```
-
-Add `-Apply` to register native read/grep hooks in `.devin/config.json`.
-The helper requires a CLI that reports `devin` through `cheaper hook targets --json`;
-updating APM resources does not update the separately installed CLI. It preserves
-unrelated configuration and refuses known duplicate cheaper read hooks. Resolve
-legacy registrations explicitly, then use `/hooks` to check all loaded sources,
-including global and ancestor configurations. Native shell tools are not registered.
-
-This is supplemental registration, not an APM-managed hook target. APM uninstall
-does not remove the native entry; remove only its `cheaper hook pre-tool-use --target devin`
-group manually when uninstalling. The guard still measures whole files: native
-registration and case normalization do not resolve bounded-read issue #107.
 
 ## stdin → stdout contract
 
