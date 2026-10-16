@@ -82,6 +82,15 @@ impl Fixture {
     fn write_big(&self, name: &str) {
         self.write(name, big_text().as_bytes());
     }
+
+    /// 複数行の巨大 file(#107 の ranged-read シナリオ用) —
+    /// 各行は小さいが合計が threshold を超える。
+    fn write_big_lines(&self, name: &str) {
+        let text = (0..2000)
+            .map(|i| format!("line {i} lorem ipsum dolor sit amet\n"))
+            .collect::<String>();
+        self.write(name, text.as_bytes());
+    }
 }
 
 fn windsurf_read(file_path: &str) -> String {
@@ -600,6 +609,7 @@ async fn evaluate_typed_entry_matches_ts_verdicts() {
                 path: path.to_string(),
                 cwd: ws.clone(),
                 source_tool: Some("test".to_string()),
+                range: None,
             },
             &opts,
         )
@@ -612,6 +622,7 @@ async fn evaluate_typed_entry_matches_ts_verdicts() {
             path: "big.txt".to_string(),
             cwd: ws.clone(),
             source_tool: Some("test".to_string()),
+            range: None,
         },
         &opts,
     )
@@ -693,18 +704,16 @@ fn tool_use_payload(tool_name: &str, tool_input: &str) -> String {
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn pretooluse_read_grep_case_variants_share_file_routing() {
+async fn pretooluse_read_grep_case_variants() {
     let fx = Fixture::new();
     fx.write_big("big.txt");
     fx.write("small.txt", b"hello\n");
+    // 全文 read(範囲無し)は従来どおり threshold 超過で deny。
     for tool_name in ["Read", "READ", "read", "rEaD"] {
         let r = run_hook(
             &fx,
             &["pre-tool-use", "--target", "pretooluse"],
-            &tool_use_payload(
-                tool_name,
-                "{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}",
-            ),
+            &tool_use_payload(tool_name, "{\"file_path\":\"big.txt\"}"),
             &[],
         )
         .await;
@@ -715,23 +724,82 @@ async fn pretooluse_read_grep_case_variants_share_file_routing() {
             r.stdout
         );
     }
-    for tool_name in ["Grep", "GREP", "grep", "gReP"] {
-        let r = run_hook(
-            &fx,
-            &["pre-tool-use", "--target", "pretooluse"],
-            &tool_use_payload(
-                tool_name,
-                "{\"path\":\"big.txt\",\"pattern\":\"x\",\"max_results\":1}",
-            ),
-            &[],
-        )
-        .await;
-        assert_eq!(r.code, 0, "tool_name={tool_name}");
-        assert!(
-            r.stdout.contains("\"permissionDecision\":\"deny\""),
-            "tool_name={tool_name} stdout={:?}",
-            r.stdout
-        );
+    // 範囲 read(#107): window のみ評価する。複数行巨大 file の
+    // 小 window は allow、window が大きすぎれば deny、単一行が巨大
+    // なら window 自体も deny。
+    fx.write_big_lines("big_lines.txt");
+    for (tool_input, expect_deny) in [
+        (
+            "{\"file_path\":\"big_lines.txt\",\"offset\":100,\"limit\":10}",
+            false,
+        ),
+        ("{\"file_path\":\"big_lines.txt\",\"offset\":1}", true),
+        ("{\"file_path\":\"big_lines.txt\"}", true),
+        // 無効値は全文評価へ縮退 → deny。
+        (
+            "{\"file_path\":\"big_lines.txt\",\"offset\":0,\"limit\":10}",
+            true,
+        ),
+        (
+            "{\"file_path\":\"big_lines.txt\",\"offset\":1.5,\"limit\":10}",
+            true,
+        ),
+        (
+            "{\"file_path\":\"big_lines.txt\",\"offset\":100,\"limit\":0}",
+            true,
+        ),
+        // EOF 超過 window は空 → allow。
+        (
+            "{\"file_path\":\"big_lines.txt\",\"offset\":99999,\"limit\":10}",
+            false,
+        ),
+        ("{\"file_path\":\"big.txt\",\"offset\":1,\"limit\":1}", true),
+    ] {
+        for tool_name in ["Read", "rEaD"] {
+            let r = run_hook(
+                &fx,
+                &["pre-tool-use", "--target", "pretooluse"],
+                &tool_use_payload(tool_name, tool_input),
+                &[],
+            )
+            .await;
+            assert_eq!(r.code, 0, "tool_name={tool_name} input={tool_input}");
+            assert_eq!(
+                r.stdout.contains("\"permissionDecision\":\"deny\""),
+                expect_deny,
+                "tool_name={tool_name} input={tool_input} stdout={:?}",
+                r.stdout
+            );
+        }
+    }
+    // grep: pattern が一致する巨大行の実体化は threshold 超過で
+    // deny、非一致 pattern は allow。
+    for (tool_input, expect_deny) in [
+        (
+            "{\"path\":\"big.txt\",\"pattern\":\"lorem\",\"max_results\":1}",
+            true,
+        ),
+        (
+            "{\"path\":\"big.txt\",\"pattern\":\"zzz-no-such-token\",\"max_results\":1}",
+            false,
+        ),
+    ] {
+        for tool_name in ["Grep", "GREP", "grep", "gReP"] {
+            let r = run_hook(
+                &fx,
+                &["pre-tool-use", "--target", "pretooluse"],
+                &tool_use_payload(tool_name, tool_input),
+                &[],
+            )
+            .await;
+            assert_eq!(r.code, 0, "tool_name={tool_name} input={tool_input}");
+            assert_eq!(
+                r.stdout.contains("\"permissionDecision\":\"deny\""),
+                expect_deny,
+                "tool_name={tool_name} input={tool_input} stdout={:?}",
+                r.stdout
+            );
+        }
     }
     let allow = run_hook(
         &fx,
@@ -751,12 +819,16 @@ async fn pretooluse_grep_path_file_dir_omitted_and_nonstring() {
     let ws = fx.ws.to_string_lossy().into_owned();
     let dir_input = format!("{{\"path\":{}}}", serde_json::to_string(&ws).unwrap());
     for (tool_input, expect_deny) in [
+        // pattern 一致行の実体化が巨大 → deny。
         (
-            "{\"path\":\"big.txt\",\"pattern\":\"x\",\"max_results\":1}".to_string(),
+            "{\"path\":\"big.txt\",\"pattern\":\"lorem\",\"max_results\":1}".to_string(),
             true,
         ),
+        // dir path だが pattern 無し → normalize 失敗 → allow。
         (dir_input, false),
-        ("{\"pattern\":\"x\"}".to_string(), false),
+        // dir 走査(ws)で非一致 → allow。
+        ("{\"pattern\":\"zzz-no-such-token\"}".to_string(), false),
+        // path が非 string + pattern 無し → allow。
         ("{\"path\":42}".to_string(), false),
     ] {
         let r = run_hook(
@@ -846,10 +918,7 @@ async fn devin_deny_emits_block_json_with_reason_passthrough() {
     let reference = run_hook(
         &fx,
         &["pre-tool-use", "--target", "pretooluse"],
-        &tool_use_payload(
-            "Read",
-            "{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}",
-        ),
+        &tool_use_payload("Read", "{\"file_path\":\"big.txt\"}"),
         &[],
     )
     .await;
@@ -862,10 +931,7 @@ async fn devin_deny_emits_block_json_with_reason_passthrough() {
         let r = run_hook(
             &fx,
             &["pre-tool-use", "--target", "devin"],
-            &devin_payload(
-                tool_name,
-                "{\"file_path\":\"big.txt\",\"offset\":334,\"limit\":81}",
-            ),
+            &devin_payload(tool_name, "{\"file_path\":\"big.txt\"}"),
             &[],
         )
         .await;
@@ -887,12 +953,13 @@ async fn devin_deny_emits_block_json_with_reason_passthrough() {
         assert!(reason.contains('\n'), "{reason}");
         assert_eq!(reason.replace('\n', " "), reference_reason);
     }
+    // grep: 一致行の実体化が threshold 超過 → deny。
     let grep = run_hook(
         &fx,
         &["pre-tool-use", "--target", "devin"],
         &devin_payload(
             "Grep",
-            "{\"path\":\"big.txt\",\"pattern\":\"x\",\"max_results\":1}",
+            "{\"path\":\"big.txt\",\"pattern\":\"lorem\",\"max_results\":1}",
         ),
         &[],
     )
@@ -902,6 +969,21 @@ async fn devin_deny_emits_block_json_with_reason_passthrough() {
         grep.stdout.starts_with("{\"decision\":\"block\""),
         "{}",
         grep.stdout
+    );
+    // 検証済み shell tool `exec` — `cat big.txt` の read candidate が
+    // threshold 超過 file を指すため deny。
+    let exec = run_hook(
+        &fx,
+        &["pre-tool-use", "--target", "devin"],
+        &devin_payload("exec", "{\"command\":\"cat big.txt\"}"),
+        &[],
+    )
+    .await;
+    assert_eq!(exec.code, 0);
+    assert!(
+        exec.stdout.starts_with("{\"decision\":\"block\""),
+        "{}",
+        exec.stdout
     );
 }
 
@@ -972,7 +1054,7 @@ async fn devin_event_gate_and_fail_open_are_silent() {
 }
 
 const TARGETS_JSON_LINE: &str =
-    "{\"schemaVersion\":1,\"targets\":[\"windsurf\",\"copilot\",\"pretooluse\",\"cursor\",\"devin\"]}\n";
+    "{\"schemaVersion\":1,\"targets\":[\"windsurf\",\"copilot\",\"pretooluse\",\"cursor\",\"devin\"],\"hookConfig\":true}\n";
 
 #[tokio::test(flavor = "current_thread")]
 async fn hook_targets_json_emits_capability_line_without_usage() {

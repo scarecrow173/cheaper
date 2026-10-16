@@ -38,6 +38,34 @@ pub const DEFAULT_THRESHOLD: f64 = 8192.0;
 /// が resolve するよう同じ 30s bound を掛ける。
 const MEASURE_TIMEOUT: Duration = Duration::from_millis(30_000);
 
+/// `ReadRange` — read 系 tool の範囲指定(1-based 開始行 + 任意の
+/// 最大行数)。`limit: None` は `offset` からファイル末尾までを
+/// 意味する(`offset == 1` かつ `None` のみ全文評価と同値)。
+/// 無効値(非整数・負値・`offset < 1`・`limit < 1`・非数値)は
+/// adapter の normalize で `range: None` へ縮退し全文評価へ倒す。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ReadRange {
+    pub offset: u64,
+    pub limit: Option<u64>,
+}
+
+/// `Search` の `output_mode` 正規化値。`Unknown`(未知値)は評価時に
+/// `Content` と同じ扱いとする(fail-open せず実体化して計測する)。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SearchOutputMode {
+    Content,
+    FilesWithMatches,
+    Count,
+    Unknown,
+}
+
+/// Search の dir 走査 file 数上限(SPEC-034H2WAU6TQG6N9dmmmKNA R7)。
+/// 到達した時点で評価完了不能とみなし deny(部分結果では評価しない)。
+const SEARCH_SCAN_MAX_FILES: usize = 10_000;
+
+/// `max_results`/`head_limit` 省略時の実体化 match 既定 cap。
+const SEARCH_DEFAULT_MAX_RESULTS: u64 = 250;
+
 /// canonical routing request (`RoutingRequest`)。
 ///
 /// `source_tool` は TS request shape の一部(`{kind,path,cwd,sourceTool}`)
@@ -49,6 +77,22 @@ pub enum RoutingRequest {
         path: String,
         cwd: String,
         source_tool: Option<String>,
+        range: Option<ReadRange>,
+    },
+    /// grep 系 tool の bounded 検索。`pattern` は normalize で
+    /// `as_str` 済み、`path` は file/dir/省略時 `"."`、
+    /// `max_results` は `head_limit` との小さい方へ畳み込み済み、
+    /// `context` は `-C`/`context` と `-A`/`-B` の max。
+    Search {
+        path: String,
+        cwd: String,
+        source_tool: Option<String>,
+        pattern: String,
+        max_results: Option<u64>,
+        context: u64,
+        glob: Option<String>,
+        output_mode: SearchOutputMode,
+        case_insensitive: bool,
     },
     Shell {
         command: String,
@@ -192,48 +236,98 @@ async fn measure_tokens(resolved_path: &str, cwd: &str, opts: &EvaluateOptions<'
     }
 }
 
-/// `evaluateFileRead` — measured verdict が唯一の fail-closed。
-/// 全ての infrastructure 失敗は allow へ倒す。
-async fn evaluate_file_read(path: &str, cwd: &str, opts: &EvaluateOptions<'_>) -> Verdict {
+/// request の `cwd` を解決規則どおり正規化する —
+/// `request.cwd || process.cwd()`、相対 base は `process.cwd()` に
+/// anchor する(Node `path.resolve` と同じ anchor — hook payload 由来の
+/// cwd が相対でも lexical 判定が壊れないよう)。
+fn resolve_request_cwd(cwd: &str) -> (String, String) {
     let cwd = if cwd.is_empty() {
         process_cwd()
     } else {
         cwd.to_string()
     };
-    // Node `path.resolve` は相対 base を process.cwd() に anchor する —
-    // hook payload 由来の cwd が相対でも lexical 判定が壊れないよう
-    // 同じ anchor を掛ける。
     let cwd_abs = if nodepath::is_absolute(&cwd) {
         cwd.clone()
     } else {
         nodepath::resolve(&process_cwd(), &cwd)
     };
+    (cwd, cwd_abs)
+}
+
+/// resolve + containment + metadata の結果。
+enum Resolution {
+    /// 既存規則の allow 側 — workspace 外・非 file/dir・missing・
+    /// metadata 取得失敗。`Search` の dir 扱いにだけ例外があるため
+    /// `Dir`/`Root` は別 variant で返す。
+    OutOfScope,
+    /// workspace 内の regular file。
+    File {
+        resolved: String,
+        rel_posix: String,
+        len: u64,
+    },
+    /// workspace 内の dir。FileRead では allow、Search では走査対象。
+    Dir { resolved: String, rel_posix: String },
+    /// workspace root そのもの(`rel` 空)。FileRead では allow、
+    /// Search では dir 走査対象。
+    WorkspaceRoot { resolved: String },
+}
+
+/// `path` を `cwd` 相対で解決し containment + metadata を分類する。
+fn resolve_target(path: &str, cwd: &str) -> (String, Resolution) {
+    let (cwd, cwd_abs) = resolve_request_cwd(cwd);
     let resolved = nodepath::resolve(&cwd_abs, path);
     let rel = nodepath::relative(&cwd_abs, &resolved);
     // ".." 単独・"../" prefix は outside。"..foo.ts" のような
     // `..` 始まりの名前は workspace 内。
-    if rel.is_empty()
-        || rel == ".."
+    if rel == ".."
         || rel.starts_with(&format!("..{}", nodepath::SEP))
         || nodepath::is_absolute(&rel)
     {
-        return Verdict::Allow;
+        return (cwd, Resolution::OutOfScope);
+    }
+    if rel.is_empty() {
+        return (cwd, Resolution::WorkspaceRoot { resolved });
     }
     let rel_posix = rel.replace(nodepath::SEP, "/");
-    let md = match std::fs::metadata(&resolved) {
-        Ok(md) => {
-            if !md.is_file() {
-                return Verdict::Allow;
-            }
-            md
-        }
-        Err(_) => return Verdict::Allow,
+    match std::fs::metadata(&resolved) {
+        Ok(md) if md.is_file() => (
+            cwd,
+            Resolution::File {
+                resolved,
+                rel_posix,
+                len: md.len(),
+            },
+        ),
+        Ok(md) if md.is_dir() => (
+            cwd,
+            Resolution::Dir {
+                resolved,
+                rel_posix,
+            },
+        ),
+        _ => (cwd, Resolution::OutOfScope),
+    }
+}
+
+/// `evaluateFileRead` — measured verdict が唯一の fail-closed。
+/// 全ての infrastructure 失敗は allow へ倒す。
+async fn evaluate_file_read(path: &str, cwd: &str, opts: &EvaluateOptions<'_>) -> Verdict {
+    let (cwd, resolution) = resolve_target(path, cwd);
+    let (resolved, rel_posix, len) = match resolution {
+        Resolution::File {
+            resolved,
+            rel_posix,
+            len,
+        } => (resolved, rel_posix, len),
+        // workspace 外・root・非 file・missing は従来どおり allow。
+        _ => return Verdict::Allow,
     };
     // Fast path (DESIGN-0017): tokens <= bytes が常に成り立つため、
     // byte size が threshold に収まる file は計測を skip できる
     // (builtin dir 解決・policy/tokenizer 初期化も走らない)。
     let limit = threshold(opts.env);
-    if (md.len() as f64) <= limit {
+    if (len as f64) <= limit {
         return Verdict::Allow;
     }
 
@@ -264,6 +358,454 @@ async fn evaluate_file_read(path: &str, cwd: &str, opts: &EvaluateOptions<'_>) -
                 ),
             }
         }
+    }
+}
+
+/// ranged read の走査結果(blocking 側)。
+#[derive(Debug)]
+enum RangedScan {
+    /// 収集した `[offset, offset+limit)` のテキスト。
+    Window(String),
+    /// skip を含む走査 byte が計測 cap を超過。
+    ByteCapExceeded { scanned: u64, max_bytes: u64 },
+    /// IO 失敗 — 計測不能(fail-open)。
+    Failed,
+}
+
+/// `[offset, offset+limit)` の行ウィンドウのみを `BufRead` で収集する。
+/// `offset` までの skip を含む走査 byte を `max_bytes` で bound する —
+/// cap は「計測可能な上限」の意味で、超過は FileTooLarge 相当の deny。
+/// `read_until(b'\n')` で byte 数を正確に勘定し、行は収集しない
+/// skip 段階でも byte を数える。
+fn scan_ranged_window(path: &str, range: ReadRange, max_bytes: u64) -> RangedScan {
+    use std::io::BufRead;
+    let file = match std::fs::File::open(path) {
+        Ok(f) => f,
+        Err(_) => return RangedScan::Failed,
+    };
+    let mut reader = std::io::BufReader::new(file);
+    let start = range.offset.max(1);
+    let end = range
+        .limit
+        .map(|l| start.saturating_add(l))
+        .unwrap_or(u64::MAX);
+    let mut scanned: u64 = 0;
+    let mut line_no: u64 = 1;
+    let mut window = String::new();
+    let mut buf: Vec<u8> = Vec::new();
+    loop {
+        buf.clear();
+        let n = match reader.read_until(b'\n', &mut buf) {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(_) => return RangedScan::Failed,
+        };
+        scanned += n as u64;
+        if scanned > max_bytes {
+            return RangedScan::ByteCapExceeded { scanned, max_bytes };
+        }
+        if line_no >= start && line_no < end {
+            window.push_str(&String::from_utf8_lossy(&buf));
+        }
+        if line_no >= end {
+            break;
+        }
+        line_no += 1;
+    }
+    RangedScan::Window(window)
+}
+
+/// 範囲 read 評価 — `[offset, offset+limit)` のみを実体化して
+/// tokenize し、既存と同じ fail-open/fail-closed 原則で判定する。
+async fn evaluate_ranged_read(
+    path: &str,
+    cwd: &str,
+    range: ReadRange,
+    opts: &EvaluateOptions<'_>,
+) -> Verdict {
+    let (_cwd, resolution) = resolve_target(path, cwd);
+    let (resolved, rel_posix, len) = match resolution {
+        Resolution::File {
+            resolved,
+            rel_posix,
+            len,
+        } => (resolved, rel_posix, len),
+        _ => return Verdict::Allow,
+    };
+    let limit = threshold(opts.env);
+    // File 全体が byte fast path に収まるなら window も当然収まる。
+    if (len as f64) <= limit {
+        return Verdict::Allow;
+    }
+    let max_bytes = crate::count::count_max_bytes(opts.env)
+        .unwrap_or(cheaper_core::token::count::DEFAULT_COUNT_MAX_BYTES);
+    let resolved_for_scan = resolved.clone();
+    let scan = tokio::task::spawn_blocking(move || {
+        scan_ranged_window(&resolved_for_scan, range, max_bytes)
+    });
+    match tokio::time::timeout(MEASURE_TIMEOUT, scan).await {
+        Ok(Ok(RangedScan::Window(window))) => {
+            // 計測自体は同期の `count_text_tokens`(o200k_base)。token
+            // 数が bytes を超えることはないため、window の byte が
+            // threshold を超える場合のみ tokenizer を回す。
+            if window.is_empty() {
+                return Verdict::Allow;
+            }
+            if (window.len() as f64) <= limit {
+                return Verdict::Allow;
+            }
+            match cheaper_core::token::count::count_text_tokens(&window) {
+                Ok(tokens) if (tokens as f64) <= limit => Verdict::Allow,
+                Ok(tokens) => Verdict::Deny {
+                    reason: format!(
+                        "cheaper: '{rel_posix}' read window (offset {}, limit {}) has {} tokens (threshold {}).\n\
+                         Narrow the read range (offset/limit) or delegate through the cheaper-bulk-read skill.\n\
+                         workspace-relative path: {rel_posix}",
+                        range.offset,
+                        range
+                            .limit
+                            .map(|l| l.to_string())
+                            .unwrap_or_else(|| "to-end".to_string()),
+                        format_number(tokens as f64),
+                        format_number(limit),
+                    ),
+                },
+                // SpecialToken 等の計測失敗 → fail-open。
+                Err(_) => Verdict::Allow,
+            }
+        }
+        Ok(Ok(RangedScan::ByteCapExceeded { scanned, max_bytes })) => Verdict::Deny {
+            reason: format!(
+                "cheaper: '{rel_posix}' read window scan exceeds the {max_bytes}-byte measurement cap (scanned {scanned} bytes before the window could be collected).\n\
+                 Narrow the read range (offset/limit) or delegate through the cheaper-bulk-read skill.\n\
+                 workspace-relative path: {rel_posix}"
+            ),
+        },
+        // IO error・JoinError・timeout → fail-open。
+        _ => Verdict::Allow,
+    }
+}
+
+// --- bounded search evaluation (issue #107) -----------------------------
+// `grep` 系 tool の返却内容を上限付きで実体化し、その token 数を
+// threshold と比較する。実体化は tool 実出力の近似(over-scan /
+// over-count を安全方向に倒す)。
+
+/// `glob`/`glob_pattern` を file name filter の regex へ変換する。
+/// 対応するのは `**`・`*`・`?` のみ(それ以外は literal)。変換不能な
+/// 文字が混ざる場合でも regex compile は失敗しない(escape 済み)。
+/// `{a,b}`・`[...]`・`!` negation は tool 非依存で対象外とし、
+/// 未対応パターンは filter なし(over-scan — 安全方向)へ倒す。
+fn glob_to_regex(glob: &str) -> Option<regex::Regex> {
+    let mut out = String::from("(^|/)");
+    let mut chars = glob.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '*' => {
+                if chars.peek() == Some(&'*') {
+                    chars.next();
+                    // `**/` は 0 個以上の dir を跨ぐ。
+                    if chars.peek() == Some(&'/') {
+                        chars.next();
+                        out.push_str("(?:.*/)?");
+                    } else {
+                        out.push_str(".*");
+                    }
+                } else {
+                    out.push_str("[^/]*");
+                }
+            }
+            '?' => out.push_str("[^/]"),
+            '/' => out.push('/'),
+            c => {
+                if c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | '~' | '@') {
+                    out.push(c);
+                } else {
+                    // `[`/`]`・`{`/`}`・`!` 等の glob 拡張記法は
+                    // 安全側へ倒すため未対応 — filter を外す。
+                    return None;
+                }
+            }
+        }
+    }
+    out.push('$');
+    regex::Regex::new(&out).ok()
+}
+
+/// Search の走査結果(blocking 側)。
+#[derive(Debug)]
+enum SearchScan {
+    /// 実体化した返却内容(content は一致+context 行、非 content は
+    /// file path 一覧)。
+    Materialized(String),
+    /// scan cap(file 数・走査 byte)到達 → 評価完了不能。
+    CapExceeded { files: usize, scanned_bytes: u64 },
+    /// IO 失敗 — 計測不能(fail-open)。
+    Failed,
+}
+
+/// dir 配下の regular file を再帰列挙する(`.git` 除外・hidden 含む・
+/// gitignore 非適用 — over-scan が安全方向)。file 数上限まで。
+/// 決定論のため entry を名前順に sort して辿る。
+fn collect_search_files(root: &str, max_files: usize) -> Option<Vec<String>> {
+    let mut out: Vec<String> = Vec::new();
+    let mut stack: Vec<PathBuf> = vec![PathBuf::from(root)];
+    while let Some(dir) = stack.pop() {
+        let mut entries: Vec<_> = match std::fs::read_dir(&dir) {
+            Ok(rd) => rd.filter_map(|e| e.ok()).collect(),
+            Err(_) => return None,
+        };
+        entries.sort_by_key(|e| e.file_name());
+        for entry in entries {
+            let name = entry.file_name();
+            if name.to_string_lossy() == ".git" {
+                continue;
+            }
+            let path = entry.path();
+            let ft = match entry.file_type() {
+                Ok(ft) => ft,
+                Err(_) => continue,
+            };
+            if ft.is_dir() {
+                stack.push(path);
+            } else if ft.is_file() {
+                out.push(path.to_string_lossy().into_owned());
+                if out.len() > max_files {
+                    return Some(out);
+                }
+            }
+            // symlink・その他は走査しない(metadata 非 file と同じ扱い)。
+        }
+    }
+    Some(out)
+}
+
+/// file 1件から pattern に一致する行 + 前後 `context` 行を収集する。
+/// `scanned_bytes` は全走査の共有 byte 勘定(cap に含める)。
+/// 戻り値は (収集行, 一致行数)。
+fn scan_file_matches(
+    path: &str,
+    re: &regex::Regex,
+    context: u64,
+    scanned_bytes: &mut u64,
+    max_bytes: u64,
+) -> Result<(Vec<String>, u64), ()> {
+    use std::io::BufRead;
+    let file = std::fs::File::open(path).map_err(|_| ())?;
+    let mut rd = std::io::BufReader::new(file);
+    let mut lines: Vec<String> = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
+    loop {
+        buf.clear();
+        match rd.read_until(b'\n', &mut buf) {
+            Ok(0) => break,
+            Ok(n) => {
+                *scanned_bytes += n as u64;
+                if *scanned_bytes > max_bytes {
+                    return Err(());
+                }
+                lines.push(String::from_utf8_lossy(&buf).into_owned());
+            }
+            Err(_) => return Err(()),
+        }
+    }
+    let hits: Vec<usize> = lines
+        .iter()
+        .enumerate()
+        .filter_map(|(i, l)| re.is_match(l).then_some(i))
+        .collect();
+    let n_matches = hits.len() as u64;
+    if n_matches == 0 || context == 0 {
+        let kept: Vec<String> = hits.into_iter().map(|i| lines[i].clone()).collect();
+        return Ok((kept, n_matches));
+    }
+    // context あり: match 行 ±context を union して収集する。
+    let ctx = context as usize;
+    let mut included = vec![false; lines.len()];
+    for i in hits {
+        let lo = i.saturating_sub(ctx);
+        let hi = (i + ctx + 1).min(lines.len());
+        for flag in included.iter_mut().take(hi).skip(lo) {
+            *flag = true;
+        }
+    }
+    let kept = lines
+        .into_iter()
+        .zip(included)
+        .filter_map(|(l, keep)| keep.then_some(l))
+        .collect();
+    Ok((kept, n_matches))
+}
+
+/// `RoutingRequest::Search` の評価に使う query 集合(clippy の
+/// too_many_arguments 回避も兼ねる)。`max_results` は `head_limit`
+/// との小さい方へ畳み込み済みの実効値。
+struct SearchQuery {
+    pattern: String,
+    glob: Option<String>,
+    max_results: u64,
+    context: u64,
+    output_mode: SearchOutputMode,
+    case_insensitive: bool,
+}
+
+/// dir 走査 + 実体化。`max_results` は収集 match 組の上限。
+fn run_search_scan(
+    resolved: &str,
+    rel_posix: &str,
+    is_dir: bool,
+    query: &SearchQuery,
+    max_files: usize,
+    max_bytes: u64,
+) -> SearchScan {
+    let re = match regex::RegexBuilder::new(&query.pattern)
+        .case_insensitive(query.case_insensitive)
+        .build()
+    {
+        Ok(r) => r,
+        Err(_) => return SearchScan::Failed, // compile 失敗 → 評価不能
+    };
+    let glob_re = query.glob.as_deref().and_then(glob_to_regex);
+    let files: Vec<String> = if is_dir {
+        match collect_search_files(resolved, max_files) {
+            Some(f) if f.len() > max_files => {
+                return SearchScan::CapExceeded {
+                    files: f.len(),
+                    scanned_bytes: 0,
+                };
+            }
+            Some(f) => f,
+            None => return SearchScan::Failed,
+        }
+    } else {
+        vec![resolved.to_string()]
+    };
+    let mut scanned_bytes: u64 = 0;
+    let mut collected: Vec<String> = Vec::new();
+    let mut results: u64 = 0;
+    for file in &files {
+        // glob filter — pattern は file の workspace/dir 相対 path に
+        // 適用する(dir 走査時は dir からの相対、file 指定時は basename)。
+        if let Some(gr) = &glob_re {
+            let rel = if is_dir {
+                file.strip_prefix(resolved)
+                    .unwrap_or(file)
+                    .trim_start_matches(['/', '\\'])
+                    .replace('\\', "/")
+            } else {
+                file.rsplit(['/', '\\']).next().unwrap_or(file).to_string()
+            };
+            if !gr.is_match(&rel) {
+                continue;
+            }
+        }
+        let (mut lines, n_matches) =
+            match scan_file_matches(file, &re, query.context, &mut scanned_bytes, max_bytes) {
+                Ok(v) => v,
+                Err(()) => {
+                    if scanned_bytes > max_bytes {
+                        return SearchScan::CapExceeded {
+                            files: files.len().min(max_files),
+                            scanned_bytes,
+                        };
+                    }
+                    return SearchScan::Failed;
+                }
+            };
+        if n_matches == 0 {
+            continue;
+        }
+        match query.output_mode {
+            SearchOutputMode::FilesWithMatches | SearchOutputMode::Count => {
+                // 非 content: file path 一覧を実体化する(件数分の行は
+                // path 一覧で過剰側へ近似)。
+                let display = if is_dir {
+                    file.strip_prefix(resolved)
+                        .unwrap_or(file)
+                        .trim_start_matches(['/', '\\'])
+                        .replace('\\', "/")
+                } else {
+                    rel_posix.to_string()
+                };
+                collected.push(display);
+                collected.push("\n".to_string());
+            }
+            _ => collected.append(&mut lines),
+        }
+        // `max_results` は一致件数を bound する。file 内で cap を
+        // 超えてもその file の一致は全て実体化する(over-collect が
+        // 安全方向 — under-collect すると allow 穴になる)。
+        results += n_matches;
+        if results >= query.max_results {
+            break;
+        }
+    }
+    SearchScan::Materialized(collected.concat())
+}
+
+/// `evaluateSearch` — bounded 実体化 → token 比較。scan cap 到達は
+/// 「範囲を絞る」guidance 付き deny、計測不能は fail-open。
+async fn evaluate_search(
+    path: &str,
+    cwd: &str,
+    query: SearchQuery,
+    opts: &EvaluateOptions<'_>,
+) -> Verdict {
+    let (_cwd, resolution) = resolve_target(path, cwd);
+    let (resolved, rel_posix, is_dir) = match resolution {
+        Resolution::File {
+            resolved,
+            rel_posix,
+            ..
+        } => (resolved, rel_posix, false),
+        Resolution::Dir {
+            resolved,
+            rel_posix,
+        } => (resolved, rel_posix, true),
+        // Search では workspace root 自体も走査対象とする
+        // (FileRead では `rel` 空 → allow の既存規則を保つ)。
+        Resolution::WorkspaceRoot { resolved } => (resolved, ".".to_string(), true),
+        Resolution::OutOfScope => return Verdict::Allow,
+    };
+    let limit = threshold(opts.env);
+    let max_bytes = crate::count::count_max_bytes(opts.env)
+        .unwrap_or(cheaper_core::token::count::DEFAULT_COUNT_MAX_BYTES);
+    let scan = tokio::task::spawn_blocking(move || {
+        run_search_scan(
+            &resolved,
+            &rel_posix,
+            is_dir,
+            &query,
+            SEARCH_SCAN_MAX_FILES,
+            max_bytes,
+        )
+    });
+    match tokio::time::timeout(MEASURE_TIMEOUT, scan).await {
+        Ok(Ok(SearchScan::Materialized(text))) => {
+            if text.is_empty() || (text.len() as f64) <= limit {
+                return Verdict::Allow;
+            }
+            match cheaper_core::token::count::count_text_tokens(&text) {
+                Ok(tokens) if (tokens as f64) <= limit => Verdict::Allow,
+                Ok(tokens) => Verdict::Deny {
+                    reason: format!(
+                        "cheaper: search result has {} tokens (threshold {}).\n\
+                         Narrow the search (path, glob, max_results) or delegate through the cheaper-bulk-read skill.",
+                        format_number(tokens as f64),
+                        format_number(limit),
+                    ),
+                },
+                Err(_) => Verdict::Allow,
+            }
+        }
+        Ok(Ok(SearchScan::CapExceeded { files, scanned_bytes })) => Verdict::Deny {
+            reason: format!(
+                "cheaper: search scope exceeds the measurement cap ({files} files scanned, {scanned_bytes} bytes).\n\
+                 Narrow the search (path, glob, max_results) or delegate through the cheaper-bulk-read skill."
+            ),
+        },
+        // compile/IO/timeout → 評価不能 → fail-open。
+        _ => Verdict::Allow,
     }
 }
 
@@ -687,11 +1229,43 @@ async fn evaluate_shell(command: &str, cwd: &str, opts: &EvaluateOptions<'_>) ->
 /// adapter の normalize(None → allow)で表現され、ここには到達しない。
 pub async fn evaluate(request: &RoutingRequest, opts: &EvaluateOptions<'_>) -> Verdict {
     match request {
-        RoutingRequest::FileRead { path, cwd, .. } => {
+        RoutingRequest::FileRead {
+            path, cwd, range, ..
+        } => {
             if path.is_empty() {
                 return Verdict::Allow;
             }
-            evaluate_file_read(path, cwd, opts).await
+            match range {
+                // `offset == 1 && limit None` は全文と同値だが、
+                // ranged 経路は skip-inclusive byte cap の勘定を伴う
+                // ため、明示的に ranged として扱う。
+                Some(r) => evaluate_ranged_read(path, cwd, *r, opts).await,
+                None => evaluate_file_read(path, cwd, opts).await,
+            }
+        }
+        RoutingRequest::Search {
+            path,
+            cwd,
+            pattern,
+            max_results,
+            context,
+            glob,
+            output_mode,
+            case_insensitive,
+            ..
+        } => {
+            if pattern.is_empty() {
+                return Verdict::Allow;
+            }
+            let query = SearchQuery {
+                pattern: pattern.clone(),
+                glob: glob.clone(),
+                max_results: max_results.unwrap_or(SEARCH_DEFAULT_MAX_RESULTS).max(1),
+                context: *context,
+                output_mode: *output_mode,
+                case_insensitive: *case_insensitive,
+            };
+            evaluate_search(path, cwd, query, opts).await
         }
         RoutingRequest::Shell { command, cwd, .. } => {
             if command.is_empty() {
@@ -905,5 +1479,235 @@ mod tests {
         assert_eq!(collapse_command("cat   big.txt"), "cat big.txt");
         assert_eq!(collapse_command("  cat\tbig.txt\n"), "cat big.txt");
         assert_eq!(collapse_command("cat big.txt"), "cat big.txt");
+    }
+
+    // --- glob_to_regex (search 評価) -----------------------------------
+
+    #[test]
+    fn glob_to_regex_matches_basename_and_paths() {
+        let rs = glob_to_regex("*.rs").unwrap();
+        assert!(rs.is_match("src/main.rs"));
+        assert!(rs.is_match("main.rs"));
+        assert!(!rs.is_match("main.txt"));
+        // `**/` は 0 個以上の dir を跨ぐ。
+        let nested = glob_to_regex("**/*.rs").unwrap();
+        assert!(nested.is_match("src/deep/main.rs"));
+        assert!(nested.is_match("main.rs"));
+        // `?` は 1 文字。
+        let q = glob_to_regex("?.rs").unwrap();
+        assert!(q.is_match("a.rs"));
+        assert!(!q.is_match("ab.rs"));
+        // 未対応記法(`{}`/`[]`/`!`)は filter 無し(over-scan)へ倒す。
+        assert!(glob_to_regex("*.{rs,toml}").is_none());
+        assert!(glob_to_regex("[a-z].rs").is_none());
+        assert!(glob_to_regex("!x").is_none());
+    }
+
+    // --- scan_ranged_window --------------------------------------------
+
+    #[test]
+    fn ranged_window_collects_only_requested_lines() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("f.txt");
+        std::fs::write(&path, "l1\nl2\nl3\nl4\nl5\n").unwrap();
+        let path_s = path.to_string_lossy().into_owned();
+
+        // [2, 4) → l2, l3。
+        let RangedScan::Window(w) = scan_ranged_window(
+            &path_s,
+            ReadRange {
+                offset: 2,
+                limit: Some(2),
+            },
+            u64::MAX,
+        ) else {
+            panic!("expected window")
+        };
+        assert_eq!(w, "l2\nl3\n");
+
+        // limit 無し → EOF まで。
+        let RangedScan::Window(w) = scan_ranged_window(
+            &path_s,
+            ReadRange {
+                offset: 4,
+                limit: None,
+            },
+            u64::MAX,
+        ) else {
+            panic!("expected window")
+        };
+        assert_eq!(w, "l4\nl5\n");
+
+        // EOF 超過 → 空 window。
+        let RangedScan::Window(w) = scan_ranged_window(
+            &path_s,
+            ReadRange {
+                offset: 99,
+                limit: Some(1),
+            },
+            u64::MAX,
+        ) else {
+            panic!("expected window")
+        };
+        assert!(w.is_empty());
+    }
+
+    #[test]
+    fn ranged_window_byte_cap_includes_skip() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("f.txt");
+        std::fs::write(&path, "l1\nl2\nl3\nl4\nl5\n").unwrap();
+        let path_s = path.to_string_lossy().into_owned();
+        // offset=5 の window は 4 行(12 bytes)の skip を伴う。
+        // cap 11 → skip 段階で cap 超過。
+        match scan_ranged_window(
+            &path_s,
+            ReadRange {
+                offset: 5,
+                limit: Some(1),
+            },
+            11,
+        ) {
+            RangedScan::ByteCapExceeded { .. } => {}
+            other => panic!("expected byte cap, got {other:?}"),
+        }
+        // cap 15 → skip 12 + l5 の 3 bytes = 15 で収まる。
+        let RangedScan::Window(w) = scan_ranged_window(
+            &path_s,
+            ReadRange {
+                offset: 5,
+                limit: Some(1),
+            },
+            15,
+        ) else {
+            panic!("expected window")
+        };
+        assert_eq!(w, "l5\n");
+    }
+
+    // --- collect_search_files / scan_file_matches ----------------------
+
+    #[test]
+    fn collect_search_files_skips_git_and_respects_cap() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("ws");
+        std::fs::create_dir_all(root.join(".git").join("objects")).unwrap();
+        std::fs::create_dir_all(root.join("src")).unwrap();
+        std::fs::write(root.join(".git").join("config"), "x").unwrap();
+        std::fs::write(root.join("a.txt"), "x").unwrap();
+        std::fs::write(root.join("src").join("b.txt"), "x").unwrap();
+        std::fs::write(root.join(".hidden"), "x").unwrap();
+        let root_s = root.to_string_lossy().into_owned();
+
+        let files = collect_search_files(&root_s, 10_000).unwrap();
+        let names: Vec<String> = files
+            .iter()
+            .map(|p| p.replace('\\', "/").rsplit('/').next().unwrap().to_string())
+            .collect();
+        assert_eq!(names.len(), 3, "{names:?}");
+        assert!(names.contains(&"a.txt".to_string()));
+        assert!(names.contains(&"b.txt".to_string()));
+        // hidden は含む、`.git` は除外。
+        assert!(names.contains(&".hidden".to_string()));
+        assert!(!names.contains(&"config".to_string()));
+
+        // cap 到達は `> max_files` の Vec を返す(caller が CapExceeded)。
+        let capped = collect_search_files(&root_s, 1).unwrap();
+        assert!(capped.len() > 1);
+    }
+
+    #[test]
+    fn scan_file_matches_collects_context_union() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("f.txt");
+        std::fs::write(&path, "h1\nmatch A\nh2\nh3\nmatch B\nh4\n").unwrap();
+        let path_s = path.to_string_lossy().into_owned();
+        let re = regex::Regex::new("match").unwrap();
+        let mut bytes = 0u64;
+
+        // context 0 → match 行のみ。
+        let (lines, n) = scan_file_matches(&path_s, &re, 0, &mut bytes, u64::MAX).unwrap();
+        assert_eq!(n, 2);
+        assert_eq!(lines, vec!["match A\n", "match B\n"]);
+
+        // context 1 → ±1 行 union。
+        let (lines, _) = scan_file_matches(&path_s, &re, 1, &mut bytes, u64::MAX).unwrap();
+        assert_eq!(
+            lines,
+            vec!["h1\n", "match A\n", "h2\n", "h3\n", "match B\n", "h4\n"]
+        );
+        // 読み取り byte 勘定が cap に含まれる。
+        assert!(bytes > 0);
+    }
+
+    #[test]
+    fn run_search_scan_output_modes_and_caps() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("ws");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(root.join("a.txt"), "hit a\n").unwrap();
+        std::fs::write(root.join("b.txt"), "hit b\n").unwrap();
+        let root_s = root.to_string_lossy().into_owned();
+        let query =
+            |pattern: &str, glob: Option<&str>, mode: SearchOutputMode, ci: bool| SearchQuery {
+                pattern: pattern.to_string(),
+                glob: glob.map(|g| g.to_string()),
+                max_results: 250,
+                context: 0,
+                output_mode: mode,
+                case_insensitive: ci,
+            };
+
+        // files_with_matches → path 一覧の実体化。
+        let SearchScan::Materialized(text) = run_search_scan(
+            &root_s,
+            ".",
+            true,
+            &query("hit", None, SearchOutputMode::FilesWithMatches, false),
+            10_000,
+            u64::MAX,
+        ) else {
+            panic!("expected materialized")
+        };
+        assert!(text.contains("a.txt") && text.contains("b.txt"), "{text}");
+
+        // glob filter で file を絞る。
+        let SearchScan::Materialized(text) = run_search_scan(
+            &root_s,
+            ".",
+            true,
+            &query("hit", Some("a.txt"), SearchOutputMode::Content, false),
+            10_000,
+            u64::MAX,
+        ) else {
+            panic!("expected materialized")
+        };
+        assert_eq!(text, "hit a\n");
+
+        // case_insensitive。
+        let SearchScan::Materialized(text) = run_search_scan(
+            &root_s,
+            ".",
+            true,
+            &query("HIT", None, SearchOutputMode::Content, true),
+            10_000,
+            u64::MAX,
+        ) else {
+            panic!("expected materialized")
+        };
+        assert_eq!(text, "hit a\nhit b\n");
+
+        // 不正 pattern → Failed(fail-open 側)。
+        match run_search_scan(
+            &root_s,
+            ".",
+            true,
+            &query("([", None, SearchOutputMode::Content, false),
+            10_000,
+            u64::MAX,
+        ) {
+            SearchScan::Failed => {}
+            other => panic!("expected failed, got {other:?}"),
+        }
     }
 }

@@ -26,6 +26,8 @@ cheaper-observability = { path = "../cheaper-observability" }
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
+# hook Search 評価の pattern 照合(#107)。workspace 共有依存。
+regex.workspace = true
 # tokio: run_cli entry runtime + SIGINT/SIGTERM → abort relay (T3 run
 # 経路). `signal`/`rt-multi-thread` are approved feature additions.
 tokio = { workspace = true, features = ["signal", "rt-multi-thread"] }
