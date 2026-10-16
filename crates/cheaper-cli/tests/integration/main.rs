@@ -6,6 +6,7 @@ mod cli;
 mod common;
 mod envelope;
 mod hook;
+mod hook_config;
 mod input;
 mod models;
 mod policy;

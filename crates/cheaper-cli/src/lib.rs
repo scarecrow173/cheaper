@@ -36,6 +36,7 @@ pub mod errors;
 pub mod fake_stream;
 pub mod grant;
 pub mod hook;
+pub mod hook_config;
 pub mod input;
 pub mod models;
 pub mod policy;
