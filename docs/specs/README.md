@@ -17,6 +17,7 @@ Directory: `docs/specs`
 | SPEC-034zWd1FiG9tv3X6uaAMep | ToolScheduler の bounded operation scheduling | approved | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
 | SPEC-034r05iHK8bA7g6PcCiDBp | bulk-reader built-in Worker | implemented | [bulk-reader-built-in-worker.md](./bulk-reader-built-in-worker.md) |
 | SPEC-034r05iHK8bA7gkTEj7TdU | Bulk-reader huge-file safe I/O | implemented | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
+| SPEC-7GjKOMzR6m3HfBdpPmzSIe | bulk-reader 出力フィールド上限と INVALID_OUTPUT 回復指針の文書化 | implemented | [bulk-reader-output-limits-and-invalid-output-documentation.md](./bulk-reader-output-limits-and-invalid-output-documentation.md) |
 | SPEC-034r05iHK8bA7gdbCbWupr | Canonical Token Counter, count_tokens tool, and count-tokens CLI | implemented | [canonical-token-counter.md](./canonical-token-counter.md) |
 | SPEC-034zILh8aauVSReoD33mtV | Canonical Tool Runtime 抽出 | approved | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | SPEC-034Dmb2S8y3tdJI8WdKhG0 | cargo source install distribution for APM consumers | implemented | [cargo-source-install-distribution-for-apm-consumers.md](./cargo-source-install-distribution-for-apm-consumers.md) |
