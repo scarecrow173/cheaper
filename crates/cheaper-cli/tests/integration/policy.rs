@@ -15,7 +15,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-mod common;
+use crate::common;
 use common::{ambient_env, PipeStdin, SharedVecSink};
 
 use cheaper_cli::cli::{run_cli, CliHooks, CliIo};

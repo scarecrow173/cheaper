@@ -2,7 +2,7 @@
 
 use std::process::Command;
 
-mod common;
+use crate::common;
 use common::{ambient_env, PipeStdin, VecSink};
 
 use cheaper_cli::cli::{run_cli, CliHooks, CliIo};

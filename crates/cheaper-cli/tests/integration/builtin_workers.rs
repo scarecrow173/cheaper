@@ -8,7 +8,7 @@
 //! 未実装だと strict-key reject で load 不能 — を機械的に enforce
 //! する側でもある)。
 
-mod common;
+use crate::common;
 
 use cheaper_core::config::dirs::ConfigDirs;
 use cheaper_core::worker::resolve::resolve_worker;
