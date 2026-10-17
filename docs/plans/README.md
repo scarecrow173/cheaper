@@ -12,6 +12,7 @@ Directory: `docs/plans`
 | PLAN-zDQIdChPXY1lrGJyzZTiQc | Route auth text/select prompts through the injected CliIo stderr | completed | [auth-io-boundary.md](./auth-io-boundary.md) |
 | PLAN-034r05iHE1Fbkp4xxlyMdV | Injectable auth URL opener seam for hermetic tests | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
 | PLAN-034H3ODf3yWW5G5NgvUvt8 | Bounded hook evaluation and hook-config registration lifecycle | completed | [bounded-hook-evaluation-and-hook-config-lifecycle.md](./bounded-hook-evaluation-and-hook-config-lifecycle.md) |
+| PLAN-1OcqXwgY7qMQZeFcn7KJHn | builtin materialize content fingerprint 実装計画 | approved | [builtin-materialize-content-fingerprint.md](./builtin-materialize-content-fingerprint.md) |
 | PLAN-034r05iHE1Fbkp3qMZZB17 | Bulk-reader huge-file safe I/O | completed | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | PLAN-ANDDozesHfjJTzvFeRN6bf | bulk-reader 出力上限・INVALID_OUTPUT 指針の skill 文書化計画 | completed | [bulk-reader-output-limits-and-invalid-output-skill-docs.md](./bulk-reader-output-limits-and-invalid-output-skill-docs.md) |
 | PLAN-034r05iHE1FbkoVrzp9sac | Implement canonical Token Counter, count_tokens tool, and count-tokens CLI | completed | [canonical-token-counter.md](./canonical-token-counter.md) |

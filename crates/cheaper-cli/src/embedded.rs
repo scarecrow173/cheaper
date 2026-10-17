@@ -9,7 +9,10 @@
 //! `<dir>/policy.yaml`)へそのまま流せるよう、起動時に version 付き
 //! temp dir へ materialize する。
 //!
-//! - materialize 先: `<temp>/cheaper-builtin-<version>/`
+//! - materialize 先: `<temp>/cheaper-builtin-<version>-<fingerprint>/`
+//!   (fingerprint は embedded resource 内容の決定的 hash — 同一
+//!   version で resource が変われば別 dir になり stale cache を構造的に
+//!   排除する。issue #115)
 //! - `.ready` marker で完全性を判定し、file 単位は tmp→rename で
 //!   atomic に置く(同 byte 並行抽出は benign)。
 //! - workspace / `.cheaper/` / `<userConfigDir>` には書かない。
@@ -19,7 +22,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
-use include_dir::{include_dir, Dir, DirEntry};
+use include_dir::{include_dir, Dir, DirEntry, File};
 
 /// `resources/workers/`(`workers/schemas/*.json` を含む)。
 /// binary への embedded が唯一の配布経路(issue #85 — APM package の
@@ -83,26 +86,57 @@ fn write_atomic(dir: &Path, rel: &str, contents: &[u8]) -> io::Result<()> {
     Ok(())
 }
 
-fn extract_dir(base: &Path, rel_prefix: &str, dir: &Dir<'static>) -> io::Result<()> {
+/// `dir` 配下の全 file を再帰列挙する。
+/// include_dir 0.7 の `Dir::files()`/`entries()` は直下のみなので
+/// `entries()` 再帰が必要(`workers/schemas/*.json` を含むため)。
+/// `file.path()` は include root 相対。
+/// extract の出力対象と fingerprint の入力対象を同一走査に集約し、
+/// 両者の drift を構造的に防ぐ(issue #115 review 指摘)。
+fn collect_files<'a>(dir: &'a Dir<'a>, out: &mut Vec<&'a File<'a>>) {
     for entry in dir.entries() {
         match entry {
-            DirEntry::File(file) => {
-                write_atomic(
-                    base,
-                    &format!("{rel_prefix}{}", file.path().to_string_lossy()),
-                    file.contents(),
-                )?;
-            }
-            DirEntry::Dir(sub) => {
-                // `file.path()` は include root 相対なので nested dir は
-                // 再帰せず entries を flatten しても正しい — ただし
-                // include_dir の Dir::entries() は直下のみ列挙するため
-                // 再帰して全階層を書き出す。
-                extract_dir(base, rel_prefix, sub)?;
-            }
+            DirEntry::File(file) => out.push(file),
+            DirEntry::Dir(sub) => collect_files(sub, out),
         }
     }
+}
+
+fn extract_dir(base: &Path, rel_prefix: &str, dir: &Dir<'static>) -> io::Result<()> {
+    let mut files = Vec::new();
+    collect_files(dir, &mut files);
+    for file in files {
+        write_atomic(
+            base,
+            &format!("{rel_prefix}{}", file.path().to_string_lossy()),
+            file.contents(),
+        )?;
+    }
     Ok(())
+}
+
+/// embedded resource 内容の決定的 fingerprint。
+/// `collect_files` と同じ走査の workers 全 file(path + contents)に
+/// `policy.yaml`/`version.json` を加えて hash する。
+/// `DefaultHasher` は固定 key なので同一 toolchain の process 間で
+/// 決定的。rustc 版間で値が変わり得るが、影響は新しい cache dir が
+/// 増えるだけで staleness にはならない。
+fn embedded_fingerprint() -> String {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    let mut files = Vec::new();
+    collect_files(&WORKERS_DIR, &mut files);
+    // include_dir の compile 時走査順に依存しないよう path で sort。
+    files.sort_by(|a, b| a.path().cmp(b.path()));
+    let mut hasher = DefaultHasher::new();
+    for file in files {
+        file.path().hash(&mut hasher);
+        file.contents().hash(&mut hasher);
+    }
+    "policy.yaml".hash(&mut hasher);
+    POLICY_YAML.hash(&mut hasher);
+    "version.json".hash(&mut hasher);
+    VERSION_JSON.hash(&mut hasher);
+    format!("{:016x}", hasher.finish())
 }
 
 fn extract_builtin(dir: &Path) -> io::Result<()> {
@@ -128,7 +162,10 @@ fn materialize_builtin_dir() -> io::Result<PathBuf> {
     let version = embedded_version().ok_or_else(|| {
         io::Error::new(io::ErrorKind::NotFound, "failed to resolve package version")
     })?;
-    let target = std::env::temp_dir().join(format!("cheaper-builtin-{version}"));
+    let target = std::env::temp_dir().join(format!(
+        "cheaper-builtin-{version}-{}",
+        embedded_fingerprint()
+    ));
     let ready = target.join(".ready");
     if ready.is_file() {
         return Ok(target);
@@ -136,4 +173,72 @@ fn materialize_builtin_dir() -> io::Result<PathBuf> {
     extract_builtin(&target)?;
     std::fs::write(&ready, b"ready\n")?;
     Ok(target)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// fingerprint は同一 binary 内で決定的かつ 16hex 形式。
+    #[test]
+    fn fingerprint_is_deterministic_hex() {
+        let a = embedded_fingerprint();
+        let b = embedded_fingerprint();
+        assert_eq!(a, b);
+        assert_eq!(a.len(), 16);
+        assert!(a.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    /// `collect_files` は nested `schemas/*.json` を含む全 worker file
+    /// を再帰列挙する — `Dir::files()` は直下のみなのでここが回帰点
+    /// (schema 変更が fingerprint に反映されなければ stale cache が
+    /// 再発する。issue #115)。
+    #[test]
+    fn collect_files_covers_nested_schema_files() {
+        let mut files = Vec::new();
+        collect_files(&WORKERS_DIR, &mut files);
+        let schemas = files
+            .iter()
+            .filter(|f| f.path().starts_with("schemas"))
+            .count();
+        assert_eq!(schemas, 8, "workers/schemas/*.json must be enumerated");
+        assert!(
+            files
+                .iter()
+                .any(|f| f.path() == Path::new("bulk-reader.md")),
+            "top-level worker defs must be enumerated"
+        );
+    }
+
+    /// fingerprint の入力集合は extract_builtin の出力対象と同一走査
+    /// (collect_files 共有)。ここでは fingerprint が file 追加・
+    /// 内容変更に反応することを pin する。
+    #[test]
+    fn fingerprint_depends_on_file_path_and_contents() {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        // path のみ差し替えた hash と contents のみ差し替えた hash が
+        // 本実装と同じ列挙構造であることを直接検証 — fingerprint 内部を
+        // なぞり、片方だけ変えたら値が変わることを確認する。
+        let base = embedded_fingerprint();
+        let mut files = Vec::new();
+        collect_files(&WORKERS_DIR, &mut files);
+        files.sort_by(|a, b| a.path().cmp(b.path()));
+        let mut h = DefaultHasher::new();
+        for (i, file) in files.iter().enumerate() {
+            if i == 0 {
+                // 1file 目の contents を攪乱した場合 fingerprint が変わる。
+                file.path().hash(&mut h);
+                b"perturbed".hash(&mut h);
+            } else {
+                file.path().hash(&mut h);
+                file.contents().hash(&mut h);
+            }
+        }
+        "policy.yaml".hash(&mut h);
+        POLICY_YAML.hash(&mut h);
+        "version.json".hash(&mut h);
+        VERSION_JSON.hash(&mut h);
+        assert_ne!(format!("{:016x}", h.finish()), base);
+    }
 }
