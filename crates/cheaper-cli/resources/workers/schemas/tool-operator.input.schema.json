@@ -4,16 +4,14 @@
   "additionalProperties": false,
   "required": ["task"],
   "properties": {
-    "task": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "task": { "type": "string", "minLength": 1 },
     "context": {
       "type": "array",
-      "maxItems": 30,
-      "items": { "type": "string", "maxLength": 1000 }
+      "items": { "type": "string" }
     },
     "constraints": {
       "type": "array",
-      "maxItems": 20,
-      "items": { "type": "string", "maxLength": 300 }
+      "items": { "type": "string" }
     },
     "output": {
       "type": "object",
@@ -21,10 +19,9 @@
       "properties": {
         "focus": {
           "type": "array",
-          "maxItems": 10,
-          "items": { "type": "string", "maxLength": 300 }
+          "items": { "type": "string" }
         },
-        "maxFindings": { "type": "integer", "minimum": 1, "maximum": 30 }
+        "maxFindings": { "type": ["integer", "null"], "minimum": 1 }
       }
     }
   }

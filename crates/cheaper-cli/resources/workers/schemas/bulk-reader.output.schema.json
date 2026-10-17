@@ -19,21 +19,19 @@
   "additionalProperties": false,
   "required": ["summary", "findings", "relevantFiles", "suggestedReads", "openQuestions"],
   "properties": {
-    "summary": { "type": "string", "minLength": 1, "maxLength": 1500 },
+    "summary": { "type": "string", "minLength": 1 },
     "findings": {
       "type": "array",
-      "maxItems": 30,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["title", "detail", "confidence", "locations"],
         "properties": {
-          "title": { "type": "string", "maxLength": 120 },
-          "detail": { "type": "string", "maxLength": 1200 },
+          "title": { "type": "string" },
+          "detail": { "type": "string" },
           "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
           "locations": {
             "type": "array",
-            "maxItems": 10,
             "items": {
               "type": "object",
               "additionalProperties": false,
@@ -41,7 +39,7 @@
               "properties": {
                 "path": { "$ref": "#/$defs/path" },
                 "lines": { "$ref": "#/$defs/lines" },
-                "excerpt": { "type": "string", "maxLength": 600 }
+                "excerpt": { "type": "string" }
               }
             }
           }
@@ -50,20 +48,18 @@
     },
     "relevantFiles": {
       "type": "array",
-      "maxItems": 30,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["path", "reason"],
         "properties": {
           "path": { "$ref": "#/$defs/path" },
-          "reason": { "type": "string", "maxLength": 300 }
+          "reason": { "type": "string" }
         }
       }
     },
     "suggestedReads": {
       "type": "array",
-      "maxItems": 10,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -71,14 +67,13 @@
         "properties": {
           "path": { "$ref": "#/$defs/path" },
           "lines": { "$ref": "#/$defs/lines" },
-          "reason": { "type": "string", "maxLength": 300 }
+          "reason": { "type": "string" }
         }
       }
     },
     "openQuestions": {
       "type": "array",
-      "maxItems": 10,
-      "items": { "type": "string", "maxLength": 300 }
+      "items": { "type": "string" }
     }
   }
 }

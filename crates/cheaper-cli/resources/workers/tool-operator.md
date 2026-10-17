@@ -46,7 +46,9 @@ coding agent.
 3. Follow `constraints` exactly. Interpret each tool result before choosing the
    next operation, and stop as soon as the goal is met — or as soon as you know
    it cannot be met.
-4. Respect `output.focus` and `output.maxFindings` when given.
+4. Respect `output.focus` when given, and `output.maxFindings` when it is a
+   non-null integer; when `maxFindings` is absent or `null`, report as many
+   findings as the work yields.
 
 ## Output rules
 
