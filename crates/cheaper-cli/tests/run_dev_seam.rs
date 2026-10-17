@@ -190,19 +190,15 @@ async fn run_invalid_output_persists_full_raw_output() {
 
 /// 保存失敗は best-effort — `rawOutputPath` が省略されるだけで
 /// `INVALID_OUTPUT` の分類・exit code は不変(issue #114)。
-/// `CHEAPER_CONFIG_DIR` を通常 file へ向けて `invalid-outputs/` の
-/// mkdir を失敗させる。
+/// `<cfg>/invalid-outputs` を通常 file として事前作成し、
+/// `create_dir_all` のみを失敗させる(config dir 全体を壊すと先に
+/// 別の error になる — 保存経路だけの失敗を隔離する)。
 #[tokio::test(flavor = "current_thread")]
 async fn run_invalid_output_save_failure_omits_path() {
     let mut f = Fixture::new()
         .with_fake_stream(FIXTURE_TWO_BAD)
         .with_input(r#"{"task":"t"}"#);
-    let blocker = f.ws.path().join("not-a-dir");
-    std::fs::write(&blocker, "x").unwrap();
-    f.env_map.insert(
-        "CHEAPER_CONFIG_DIR".to_string(),
-        blocker.to_string_lossy().into_owned(),
-    );
+    std::fs::write(f.cfg.path().join("invalid-outputs"), "x").unwrap();
     let (code, env, _err) = f.run(&["run", "bulk-reader"]).await;
     assert_eq!(env["ok"], json!(false));
     assert_eq!(env["error"]["code"], json!("INVALID_OUTPUT"));
