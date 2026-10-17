@@ -794,6 +794,7 @@ impl<'a> RunCtx<'a> {
                         progress: run_abort.progress_handle(),
                         signal: run_abort.signal(),
                         grace_ms,
+                        user_config_dir: deps.runtime.user_config_dir(),
                         on_attempt: &mut |attempt| repairs = attempt,
                     };
                     // `cheaper.run.repair` stage span(async 区間 —

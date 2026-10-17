@@ -89,4 +89,5 @@ Directory: `docs/plans`
 | PLAN-034r05iHy2gdnpLvJw9CNY | Verify cheaper real-provider path with Ollama on Docker | completed | [verify-cheaper-real-provider-path-with-ollama-on-docker.md](./verify-cheaper-real-provider-path-with-ollama-on-docker.md) |
 | PLAN-034D8SPOCUdlPoQHojlMCb | Volume-root workspace boundary predicate fix | approved | [volume-root-workspace-boundary-predicate-fix.md](./volume-root-workspace-boundary-predicate-fix.md) |
 | PLAN-enjTBUdUwFPP2aCo1QGmER | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume の実装計画 | approved | [worker-run-nullable-maxturns-stall-timeout-and-resume.md](./worker-run-nullable-maxturns-stall-timeout-and-resume.md) |
+| PLAN-MtzbsOB5Isq6zESyqf6thT | worker schema magnitude 撤廃・maxFindings nullable・INVALID_OUTPUT raw output 永続化の実装計画 | approved | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |
 | PLAN-034r05iHE1FbkoYP7AZgHF | Write-scope enforcement and privacy deny list | completed | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |

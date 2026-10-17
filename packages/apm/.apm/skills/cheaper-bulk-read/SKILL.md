@@ -36,10 +36,10 @@ Input (`bulk-reader` schema):
 
 | Field | Type | Meaning |
 |---|---|---|
-| `task` (required) | string ≤4000 | What you need to learn — write the question, not a file dump request |
-| `paths` | array ≤50 | Workspace-relative paths or globs to analyze |
-| `hints` | array ≤20 | Terms, symbol names, or areas to focus on |
-| `maxFindings` | int 1–30 | Cap on returned findings |
+| `task` (required) | string | What you need to learn — write the question, not a file dump request |
+| `paths` | array | Workspace-relative paths or globs to analyze |
+| `hints` | array | Terms, symbol names, or areas to focus on |
+| `maxFindings` | int ≥1, or null | Cap on returned findings — absent/`null` leaves the count to the worker |
 
 ## Consuming the result
 
@@ -56,31 +56,28 @@ Input (`bulk-reader` schema):
 `meta.changes` is always empty (read-only worker). `meta.usage` reports the
 tokens the cheaper model spent.
 
-## Output field limits
+## Output shape
 
-The worker's output is schema-validated. If it violates the schema, the run
-fails with `INVALID_OUTPUT` (see below). The canonical limits (canonical
-source: `crates/cheaper-cli/resources/workers/schemas/bulk-reader.output.schema.json`
+The worker's output is schema-validated — the schema enforces **structure**,
+not size: no field has a character or item-count cap. Canonical source:
+`crates/cheaper-cli/resources/workers/schemas/bulk-reader.output.schema.json`
 in the cheaper repository, embedded into the binary — there is no CLI command
-that dumps a worker schema):
+that dumps a worker schema.
 
-| Field | Limit |
+| Field | Contract |
 |---|---|
-| `summary` | string, 1–1500 chars (required) |
-| `findings[]` | ≤30 items |
-| `findings[].title` / `.detail` | 120 / 1200 chars |
+| `summary` | string (required) |
+| `findings[]` | array of objects (required) |
 | `findings[].confidence` | `high` / `medium` / `low` |
-| `findings[].locations[]` | ≤10 items |
 | `locations[].path` | workspace-relative (no absolute, no `..`) |
 | `locations[].lines` | `{start, end}` integers ≥1 (optional) |
-| `locations[].excerpt` | **600 chars** |
-| `relevantFiles[]` / `suggestedReads[]` | ≤30 / ≤10 items, `reason` ≤300 chars |
-| `suggestedReads[].lines` | `{start, end}` integers ≥1 (optional) |
-| `openQuestions[]` | ≤10 items, each ≤300 chars |
+| `relevantFiles[]` / `suggestedReads[]` | objects with `path` + `reason` |
+| `openQuestions[]` | array of strings |
 
 All five top-level fields are required and every object is closed
 (`additionalProperties: false`) — extra or misspelled keys and missing
-required keys also fail validation, not just oversized values.
+required keys still fail validation. Size is a worker-prose guideline, not a
+hard limit: an oversized `title` or `excerpt` no longer fails the run.
 
 ## When it fails with `INVALID_OUTPUT`
 
@@ -90,11 +87,16 @@ attempt(s). On worker `run` invocations the envelope carries:
 
 - `error.details.errors` — the first 20 schema/JSON-parse errors (after a
   repair attempt, from the last attempt). Use them to find the offending
-  field, e.g. `/findings/4/locations/0/excerpt` exceeding 600 chars.
+  field, e.g. `/findings/4/locations/0/path` being an absolute path.
 - `error.details.rawOutput` — the worker's raw output truncated to the first
   2000 characters. **It is a diagnostic excerpt, not a validated result**,
   and may be empty. Do not adopt it — or anything parsed out of it — as the
   answer.
+- `error.details.rawOutputPath` — when present, an absolute path to the
+  **complete, untruncated** raw output saved under
+  `<userConfigDir>/invalid-outputs/`. Read that file to recover or inspect
+  the full output; the key is omitted when the raw output was empty or the
+  save failed (best-effort).
 
 Recovery, in order:
 

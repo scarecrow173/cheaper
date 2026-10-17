@@ -146,6 +146,10 @@ fn schema_parse_error(file: &str, kind: SchemaKind) -> CheaperError {
         .with_details(details)
 }
 
+/// error `details.errors` に入れる上限 — `INVALID_INPUT`/
+/// `INVALID_OUTPUT` 両経路で共通(envelope 肥大化防止、issue #113)。
+pub const MAX_DETAIL_ERRORS: usize = 20;
+
 /// One entry of the `{instancePath, message}` error array contract.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SchemaErrorEntry {

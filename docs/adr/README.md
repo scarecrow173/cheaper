@@ -40,6 +40,7 @@ Directory: `docs/adr`
 | ADR-034r6mq2Glfp3YlWyQdlIO | 大規模 fixture テストの eval budget は test 側で明示注入して環境非依存にする | accepted | [grep-eval-budget-test-stability-budget-injection.md](./grep-eval-budget-test-stability-budget-injection.md) |
 | ADR-034D85IukRi32huPbZDbCT | Guard trailing separator in workspace boundary predicate | proposed | [guard-trailing-separator-in-workspace-boundary-predicate.md](./guard-trailing-separator-in-workspace-boundary-predicate.md) |
 | ADR-034r05iHrZUE6WcElqgQIr | auth interaction の browser 起動を注入可能な URL opener seam にする | accepted | [inject-url-opener-seam-for-auth-interaction.md](./inject-url-opener-seam-for-auth-interaction.md) |
+| ADR-zHFZ3QOA0Q6lEoWmS5gzIQ | INVALID_OUTPUT の raw output を file へ保存し details に参照を返す | proposed | [invalid-output-raw-output-persistence.md](./invalid-output-raw-output-persistence.md) |
 | ADR-034FlTS3BaiV3WKz8bX1Xv | invocation-scoped command grant を合成 trusted layer として policy load に注入する | accepted | [invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md](./invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md) |
 | ADR-034zTe2Gt1o8oAkX43ilEm | Keep artifact storage invocation-local and bounded | accepted | [keep-artifact-storage-invocation-local-and-bounded.md](./keep-artifact-storage-invocation-local-and-bounded.md) |
 | ADR-034Dlq0a0IpzuDPMae9zdn | Keep Devin uncached-input usage passthrough and document cache semantics | accepted | [keep-devin-uncached-input-usage-passthrough-and-document-cache-semantics.md](./keep-devin-uncached-input-usage-passthrough-and-document-cache-semantics.md) |
@@ -82,6 +83,7 @@ Directory: `docs/adr`
 | ADR-034zIOoBXZtluQdBMlJQge | Version pinned launcher acquisition | superseded | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | ADR-034D9BG9UKuUaVNeCIKfNo | Windows credential isolation fallback via copy-based snapshot | accepted | [windows-credential-isolation-fallback-via-copy-based-snapshot.md](./windows-credential-isolation-fallback-via-copy-based-snapshot.md) |
 | ADR-034r05iHlWosDpJ3DpG3XW | Worker Definition / Runtime Policy / Runtime Invariants の三層 capability モデル | accepted | [worker-definition-runtime-policy-runtime-invariants-capability.md](./worker-definition-runtime-policy-runtime-invariants-capability.md) |
+| ADR-BTZgr7PG9GhlAGhdhbirlM | worker JSON Schema は構造を検証し magnitude を検証しない | proposed | [worker-schema-structural-validation-not-magnitude.md](./worker-schema-structural-validation-not-magnitude.md) |
 | ADR-034r05iHlWosDpIq9VUsl7 | Worker を YAML frontmatter + Markdown の宣言的定義にする | accepted | [worker-yaml-frontmatter-markdown.md](./worker-yaml-frontmatter-markdown.md) |
 | ADR-034zTpAnvDWILMV1LH66Wd | Workflow の既知 resource と safety fallback を分離する | accepted | [workflow-resource-inference-sources.md](./workflow-resource-inference-sources.md) |
 | ADR-034r05iHlWosDpO699OwYF | workspace filesystem boundary は cheaper 提供の sandboxed tool 実装で強制する | accepted | [workspace-filesystem-boundary-cheaper-sandboxed-tool.md](./workspace-filesystem-boundary-cheaper-sandboxed-tool.md) |

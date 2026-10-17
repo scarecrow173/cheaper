@@ -79,6 +79,17 @@ fn normalize_obj(obj: &mut Map<String, Value>, scrub: &[(String, String)]) {
                     }
                 }
             }
+            // `rawOutputPath` — `INVALID_OUTPUT` 時の raw output 保存先
+            // (`<CFG>/invalid-outputs/run-<pid>-<nanos>.txt`)。file 名の
+            // run-id 部分のみ `run-<id>.txt` へ畳む(issue #114)。
+            if let Some(Value::String(path)) = details.get_mut("rawOutputPath") {
+                if let Some(pos) = path.rfind(['/', '\\']) {
+                    let name = &path[pos + 1..];
+                    if name.starts_with("run-") && name.ends_with(".txt") {
+                        *path = format!("{}run-<id>.txt", &path[..=pos]);
+                    }
+                }
+            }
             if let Some(Value::Array(errors)) = details.get_mut("errors") {
                 for e in errors.iter_mut() {
                     normalize_inner(e, scrub);

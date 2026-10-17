@@ -10,16 +10,14 @@
   "additionalProperties": false,
   "required": ["summary", "notes", "unresolved"],
   "properties": {
-    "summary": { "type": "string", "minLength": 1, "maxLength": 1500 },
+    "summary": { "type": "string", "minLength": 1 },
     "notes": {
       "type": "array",
-      "maxItems": 20,
-      "items": { "type": "string", "maxLength": 500 }
+      "items": { "type": "string" }
     },
     "unresolved": {
       "type": "array",
-      "maxItems": 20,
-      "items": { "type": "string", "maxLength": 500 }
+      "items": { "type": "string" }
     }
   }
 }

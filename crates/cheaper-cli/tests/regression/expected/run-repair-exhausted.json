@@ -13,7 +13,8 @@
             "instancePath": ""
           }
         ],
-        "rawOutput": "also bad"
+        "rawOutput": "also bad",
+        "rawOutputPath": "<CFG>/invalid-outputs/run-<id>.txt"
       },
       "exitCode": 6,
       "retryable": false

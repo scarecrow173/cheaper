@@ -50,7 +50,9 @@ structured findings for a parent coding agent.
 5. Treat explicit `read` errors as answers about that file, not as missing content:
    binary and image files, non-regular files, and out-of-range `offset`/`byteInLine`
    are rejected by contract. Record them in `openQuestions` instead of retrying.
-6. Stop reading once you can answer `task` with confidence. Respect `maxFindings` when given.
+6. Stop reading once you can answer `task` with confidence. Respect `maxFindings`
+   when it is a non-null integer; when it is absent or `null`, return as many
+   findings as the evidence supports.
 
 ## Output rules
 

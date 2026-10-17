@@ -25,10 +25,10 @@
         },
         "path": { "$ref": "#/$defs/path" },
         "lines": { "$ref": "#/$defs/lines" },
-        "commit": { "type": "string", "maxLength": 100 },
+        "commit": { "type": "string" },
         "exitCode": { "type": "integer" },
         "truncated": { "type": "boolean" },
-        "detail": { "type": "string", "maxLength": 600 }
+        "detail": { "type": "string" }
       }
     }
   },
@@ -40,20 +40,18 @@
       "type": "string",
       "enum": ["success", "partial", "failed", "blocked"]
     },
-    "summary": { "type": "string", "minLength": 1, "maxLength": 1500 },
+    "summary": { "type": "string", "minLength": 1 },
     "findings": {
       "type": "array",
-      "maxItems": 30,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["title", "detail", "evidence"],
         "properties": {
-          "title": { "type": "string", "maxLength": 120 },
-          "detail": { "type": "string", "maxLength": 1200 },
+          "title": { "type": "string" },
+          "detail": { "type": "string" },
           "evidence": {
             "type": "array",
-            "maxItems": 10,
             "items": { "$ref": "#/$defs/evidence" }
           }
         }
@@ -61,18 +59,15 @@
     },
     "evidence": {
       "type": "array",
-      "maxItems": 30,
       "items": { "$ref": "#/$defs/evidence" }
     },
     "unresolved": {
       "type": "array",
-      "maxItems": 20,
-      "items": { "type": "string", "maxLength": 500 }
+      "items": { "type": "string" }
     },
     "nextActions": {
       "type": "array",
-      "maxItems": 20,
-      "items": { "type": "string", "maxLength": 500 }
+      "items": { "type": "string" }
     },
     "grantRequests": {
       "type": "array",

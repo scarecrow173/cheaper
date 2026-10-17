@@ -13,6 +13,7 @@ use crate::tools::vocabulary::{is_scope_gated_tool, normalize_tool_names, ToolNa
 use crate::worker::parse::ParsedWorkerFile;
 use crate::worker::schema::{
     compile_schema, load_schema, parse_schema_ref, CompiledSchema, SchemaKind, SchemaRef,
+    MAX_DETAIL_ERRORS,
 };
 
 /// `WorkerOrigin`.
@@ -345,9 +346,12 @@ pub fn validate_worker_input(def: &WorkerDefinition, input: &Value) -> Result<()
         Ok(()) => Ok(()),
         Err(errors) => {
             let mut details = Map::new();
+            // `INVALID_OUTPUT` と同じ cap — envelope 肥大化防止
+            // (issue #113)。違反箇所は先頭 20 件の instancePath で明示。
+            let capped: Vec<_> = errors.iter().take(MAX_DETAIL_ERRORS).collect();
             details.insert(
                 "errors".to_string(),
-                serde_json::to_value(&errors).unwrap_or(Value::Null),
+                serde_json::to_value(&capped).unwrap_or(Value::Null),
             );
             Err(CheaperError::new(
                 ErrorCode::InvalidInput,
@@ -590,5 +594,34 @@ mod tests {
         assert_eq!(e.code(), ErrorCode::InvalidInput);
         let errors = e.details().unwrap()["errors"].as_array().unwrap();
         assert_eq!(errors[0]["instancePath"], json!(""));
+    }
+
+    #[test]
+    fn validate_worker_input_caps_error_details() {
+        // 21 件超の違反でも `details.errors` は MAX_DETAIL_ERRORS(20)に
+        // cap — `INVALID_OUTPUT` 経路と同じ診断面(issue #113)。
+        // instancePath は違反箇所の明示として残る。
+        let props: String = (0..25)
+            .map(|i| format!("p{i}: {{type: integer}}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let fm = format!(
+            "cheaper:\n  input: {{schema: {{inline: {{type: object, properties: {{{props}}}}}}}}}\n  model: {{tier: low}}\n  output: {{schema: {{inline: {{type: string}}}}}}"
+        );
+        let fm = BASE_FM.replace(
+            "cheaper:\n  model: {tier: low}\n  output: {schema: {inline: {type: string}}}",
+            &fm,
+        );
+        let def = validate(&fm, "w").unwrap();
+        let input: serde_json::Map<String, Value> = (0..25)
+            .map(|i| (format!("p{i}"), json!("not-an-integer")))
+            .collect();
+        let e = validate_worker_input(&def, &Value::Object(input)).unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidInput);
+        let errors = e.details().unwrap()["errors"].as_array().unwrap();
+        assert_eq!(errors.len(), MAX_DETAIL_ERRORS);
+        assert!(errors
+            .iter()
+            .all(|entry| entry["instancePath"].as_str().unwrap().starts_with("/p")));
     }
 }
