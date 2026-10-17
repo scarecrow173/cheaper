@@ -45,11 +45,13 @@ pub struct SessionSpec<'a> {
     /// `policy.retry.transientAttempts`。
     pub transient_retries: usize,
     /// `policy.execution.maxTurns` — runtime 側の正規 turn 上限。
-    /// Rig の `max_turns` は runaway 対策の内部 guard であり、cheaper
-    /// の maxTurns abort(T3 が stream event から分類)より先に発火して
-    /// はいけないため、factory は `max(internal_max_turns, policy_max_
-    /// turns)` を内部 budget に使う(F7)。
-    pub policy_max_turns: u64,
+    /// `None`(`maxTurns: null`/欠落)は policy 上限なし — 内部
+    /// runaway guard のみが残る。明示整数がある場合、Rig の
+    /// `max_turns` は runaway 対策の内部 guard であり、cheaper の
+    /// maxTurns abort(T3 が stream event から分類)より先に発火して
+    /// はいけないため、factory は `max(internal_max_turns, policy_
+    /// max_turns)` を内部 budget に使う(F7)。
+    pub policy_max_turns: Option<u64>,
 }
 
 /// `session.prompt`/`session.abort`/`collector.snapshot` を束ねた
@@ -129,12 +131,15 @@ impl<F: CompletionModelFactory> SessionFactory for RigSessionFactory<F> {
 }
 
 impl<F> RigSessionFactory<F> {
-    /// Rig 内部 turn guard の実効値 — `max(internal_max_turns,
-    /// policy_max_turns)`(F7)。policy maxTurns が guard を上回ると
-    /// runaway 対策が cheaper の maxTurns 分類(`MAX_TURNS_EXCEEDED`
-    /// abort)より先に発火し、error code・event 列ともに TS からずれる。
-    fn effective_internal_max_turns(&self, policy_max_turns: u64) -> usize {
-        let policy = usize::try_from(policy_max_turns).unwrap_or(usize::MAX);
+    /// Rig 内部 turn guard の実効値 — `None` なら `internal_max_
+    /// turns` のみ、明示整数なら `max(internal_max_turns, policy_max_
+    /// turns)`(F7)。policy maxTurns が guard を上回ると runaway
+    /// 対策が cheaper の maxTurns 分類(`MAX_TURNS_EXCEEDED` abort)
+    /// より先に発火し、error code・event 列ともに TS からずれる。
+    fn effective_internal_max_turns(&self, policy_max_turns: Option<u64>) -> usize {
+        let policy = policy_max_turns
+            .map(|p| usize::try_from(p).unwrap_or(usize::MAX))
+            .unwrap_or(0);
         self.internal_max_turns.max(policy)
     }
 }
@@ -165,9 +170,13 @@ mod tests {
     #[test]
     fn internal_max_turns_is_at_least_policy_max_turns() {
         let factory = RigSessionFactory::new(());
-        assert_eq!(factory.effective_internal_max_turns(10), 1024);
-        assert_eq!(factory.effective_internal_max_turns(1024), 1024);
-        assert_eq!(factory.effective_internal_max_turns(2048), 2048);
-        assert_eq!(factory.effective_internal_max_turns(u64::MAX), usize::MAX);
+        assert_eq!(factory.effective_internal_max_turns(None), 1024);
+        assert_eq!(factory.effective_internal_max_turns(Some(10)), 1024);
+        assert_eq!(factory.effective_internal_max_turns(Some(1024)), 1024);
+        assert_eq!(factory.effective_internal_max_turns(Some(2048)), 2048);
+        assert_eq!(
+            factory.effective_internal_max_turns(Some(u64::MAX)),
+            usize::MAX
+        );
     }
 }

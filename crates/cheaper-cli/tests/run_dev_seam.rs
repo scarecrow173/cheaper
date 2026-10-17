@@ -1078,3 +1078,126 @@ async fn run_fake_stream_multiple_grants_injected() {
     // `grant:` 行は宣言順に両名を列挙する。
     assert!(err.contains("grant: self, other\n"), "stderr: {err}");
 }
+
+// ---------------------------------------------------------------------------
+// issue #111 — `--resume` checkpoint 経路(CLI 面)
+// ---------------------------------------------------------------------------
+
+/// 検証済み schemaVersion=1 の checkpoint を `<ws>/<name>.json` へ書き、
+/// その path を返す。
+fn write_checkpoint(f: &Fixture, name: &str, worker: &str) -> String {
+    let path = f.ws_path().join(name);
+    std::fs::write(
+        &path,
+        serde_json::json!({
+            "schemaVersion": 1,
+            "worker": worker,
+            "input": {"files": ["a.txt"]},
+            "abortReason": "maxTurns",
+            "turns": 2,
+            "toolCalls": 1,
+            "rejectedToolCalls": 0,
+            "observationsTruncated": false,
+            "observations": [
+                {"tool": "read", "args": {"path": "a.txt"}, "resultExcerpt": "alpha"}
+            ],
+        })
+        .to_string(),
+    )
+    .unwrap();
+    path.to_string_lossy().into_owned()
+}
+
+/// `--resume <path>` — 有効な checkpoint で run が完走する。
+/// `--input` 非指定時は checkpoint stored input を使い stdin を読まない
+/// (stdin 空でも成功することが fallback を pin する)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_resume_uses_checkpoint_input_and_completes() {
+    let mut f = Fixture::new().with_fake_stream(FIXTURE_BASIC);
+    let cp = write_checkpoint(&f, "cp.json", "fixture-worker");
+    // stdin は空のまま — checkpoint input が使われる。
+    let (code, env, err) = f.run(&["run", "fixture-worker", "--resume", &cp]).await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+    assert_eq!(env["worker"], json!("fixture-worker"));
+    assert_eq!(env["result"], json!({"ok": true}));
+}
+
+/// `--resume` + 明示 `--input -` — stdin が優先される(explicit
+/// input は stored input を上書きする)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_resume_explicit_input_overrides_checkpoint() {
+    let mut f = Fixture::new()
+        .with_fake_stream(FIXTURE_BASIC)
+        .with_input(r#"{"files":["b.txt"]}"#);
+    // stored input は worker の input 検証を通る shape だが、
+    // explicit `--input` の方が優先される(args.rs の parse test で
+    // `input_explicit` 検知を pin — ここでは組合せ成立を確認)。
+    let cp = write_checkpoint(&f, "cp.json", "fixture-worker");
+    let (code, env, err) = f
+        .run(&["run", "fixture-worker", "--resume", &cp, "--input", "-"])
+        .await;
+    assert_eq!(code, 0, "stderr: {err}; envelope: {env}");
+    assert_eq!(env["ok"], json!(true));
+}
+
+/// 不正 checkpoint(malformed JSON / version 不一致 / worker 不一致)
+/// は `INVALID_INPUT`。
+#[tokio::test(flavor = "current_thread")]
+async fn run_resume_invalid_checkpoint_invalid_input() {
+    let mut f = Fixture::new().with_fake_stream(FIXTURE_BASIC);
+
+    // malformed JSON。
+    let bad = f.ws_path().join("bad.json");
+    std::fs::write(&bad, "{ not json").unwrap();
+    let (code, env, _err) = f
+        .run(&["run", "fixture-worker", "--resume", &bad.to_string_lossy()])
+        .await;
+    assert_eq!(code, 2);
+    assert_eq!(env["ok"], json!(false));
+    assert_eq!(env["error"]["code"], json!("INVALID_INPUT"));
+
+    // version 不一致。
+    let old = f.ws_path().join("old.json");
+    std::fs::write(
+        &old,
+        serde_json::json!({
+            "schemaVersion": 2,
+            "worker": "fixture-worker",
+            "input": {},
+            "observations": [],
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let (_code, env, _err) = f
+        .run(&["run", "fixture-worker", "--resume", &old.to_string_lossy()])
+        .await;
+    assert_eq!(env["error"]["code"], json!("INVALID_INPUT"));
+
+    // 存在しない path。
+    let missing = f.ws_path().join("missing.json");
+    let (_code, env, _err) = f
+        .run(&[
+            "run",
+            "fixture-worker",
+            "--resume",
+            &missing.to_string_lossy(),
+        ])
+        .await;
+    assert_eq!(env["error"]["code"], json!("INVALID_INPUT"));
+}
+
+/// checkpoint.worker ≠ resolved worker 名は `INVALID_INPUT`。
+#[tokio::test(flavor = "current_thread")]
+async fn run_resume_worker_mismatch_invalid_input() {
+    let mut f = Fixture::new().with_fake_stream(FIXTURE_BASIC);
+    let cp = write_checkpoint(&f, "cp.json", "other-worker");
+    let (code, env, _err) = f.run(&["run", "fixture-worker", "--resume", &cp]).await;
+    assert_eq!(code, 2);
+    assert_eq!(env["error"]["code"], json!("INVALID_INPUT"));
+    assert!(env["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("worker mismatch"));
+}

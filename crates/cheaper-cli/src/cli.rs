@@ -556,6 +556,8 @@ Options:
                          run/workflow run only)
   --cwd <path>           Workspace root (default: process.cwd())
   --timeout <duration>   Narrow policy timeout (e.g. 30s, 5m)
+  --resume <path>        Resume a run from a budget-exhaustion checkpoint
+                         (run/worker aliases only)
   --model <prov>/<id>    run: explicit model; usage: filter by model
   --provider <id>        models/usage: filter by provider
   --tier <low|med|high>  Filter 'models' output by effective tier

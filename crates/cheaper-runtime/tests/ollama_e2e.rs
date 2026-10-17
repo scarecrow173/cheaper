@@ -248,7 +248,7 @@ fn fixture() -> E2eFixture {
         },
         execution: ExecutionPolicy {
             timeout_ms: 600_000,
-            max_turns: 16,
+            max_turns: Some(16),
             max_tool_calls: 50,
             concurrency: None,
         },
@@ -307,6 +307,7 @@ async fn run(fx: &E2eFixture, worker: &WorkerDefinition, input: Value) -> RunWor
         execution: None,
         operation_clock: None,
         invocation_grants: &[],
+        resume: None,
     };
     let started = Instant::now();
     let outcome = run_worker(&deps).await;

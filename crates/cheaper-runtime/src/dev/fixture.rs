@@ -341,7 +341,7 @@ impl FixturePolicy {
             policy.execution.timeout_ms = v;
         }
         if let Some(v) = self.max_turns {
-            policy.execution.max_turns = v;
+            policy.execution.max_turns = Some(v);
         }
         if let Some(v) = self.max_tool_calls {
             policy.execution.max_tool_calls = v;
@@ -788,7 +788,7 @@ pub fn default_policy() -> RuntimePolicy {
         },
         execution: ExecutionPolicy {
             timeout_ms: 60_000,
-            max_turns: 10,
+            max_turns: None,
             max_tool_calls: 50,
             concurrency: None,
         },

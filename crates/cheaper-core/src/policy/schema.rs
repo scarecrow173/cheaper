@@ -112,8 +112,11 @@ pub struct RuntimePolicy {
 pub struct ExecutionPolicy {
     #[serde(rename = "timeoutMs")]
     pub timeout_ms: u64,
+    /// `null` / 欠落は policy レベルの turn 上限なし(内部 runaway
+    /// ガード `DEFAULT_MAX_TURNS` のみが残る)。明示整数は従来どおり
+    /// `MAX_TURNS_EXCEEDED` の policy abort 境界。
     #[serde(rename = "maxTurns")]
-    pub max_turns: u64,
+    pub max_turns: Option<u64>,
     #[serde(rename = "maxToolCalls")]
     pub max_tool_calls: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -190,7 +193,7 @@ fn concurrency_properties() -> Value {
 fn execution_properties(concurrency_required: bool) -> Value {
     json!({
         "timeout": {"type": "string", "pattern": DURATION_PATTERN},
-        "maxTurns": {"type": "integer", "minimum": 1},
+        "maxTurns": {"type": ["integer", "null"], "minimum": 1},
         "maxToolCalls": {"type": "integer", "minimum": 1},
         "concurrency": object_schema(
             if concurrency_required { &["maxOperations", "mutations"][..] } else { &[][..] },
@@ -424,6 +427,15 @@ fn get_u64(obj: &Map<String, Value>, key: &str) -> u64 {
     obj.get(key).and_then(js::safe_u64).unwrap_or(0)
 }
 
+/// nullable policy 値用 — `null`・欠落は `None`。非 null の不正値は
+/// `Some(0)` として残る(complete schema 検証で本来弾かれる残留経路)。
+fn get_optional_u64(obj: &Map<String, Value>, key: &str) -> Option<u64> {
+    match obj.get(key) {
+        None | Some(Value::Null) => None,
+        value => Some(value.and_then(js::safe_u64).unwrap_or(0)),
+    }
+}
+
 /// `normalizePolicy` (expects a complete-schema-validated policy).
 ///
 /// Accepted divergence: several `raw.<section>` values are coerced
@@ -507,7 +519,7 @@ pub fn normalize_policy(raw: &Map<String, Value>) -> Result<RuntimePolicy, Cheap
         command: resolve_command_policy(raw.get("command"))?,
         execution: ExecutionPolicy {
             timeout_ms,
-            max_turns: get_u64(execution, "maxTurns"),
+            max_turns: get_optional_u64(execution, "maxTurns"),
             max_tool_calls: get_u64(execution, "maxToolCalls"),
             concurrency: Some(resolve_concurrency_policy(execution.get("concurrency"))?),
         },
@@ -659,13 +671,48 @@ mod tests {
         let raw = validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap();
         let policy = normalize_policy(&raw).unwrap();
         assert_eq!(policy.execution.timeout_ms, 120_000);
-        assert_eq!(policy.execution.max_turns, 10);
+        assert_eq!(policy.execution.max_turns, Some(10));
         assert_eq!(policy.execution.concurrency.unwrap().max_operations, 8);
         assert_eq!(policy.tools.allow, vec![ToolName::Read, ToolName::Grep]);
         assert_eq!(policy.model.max_tier, Tier::High);
         assert_eq!(policy.model.tier_fallback, TierFallback::Higher);
         assert_eq!(policy.output.max_tokens, 4096);
         assert_eq!(policy.retry.transient_attempts, 2);
+    }
+
+    #[test]
+    fn max_turns_null_means_unbounded() {
+        // `maxTurns: null` — policy レベルの turn 上限なし。
+        let mut p = valid_policy();
+        p["execution"]["maxTurns"] = Value::Null;
+        let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
+        assert_eq!(normalize_policy(&raw).unwrap().execution.max_turns, None);
+        // complete schema では maxTurns は required — 欠落は reject。
+        // partial(project/user layer)では欠落可で `None` になる。
+        let mut p = valid_policy();
+        p["execution"].as_object_mut().unwrap().remove("maxTurns");
+        assert!(validate_policy_schema(&p, PolicySchemaMode::Complete).is_err());
+        let raw = validate_policy_schema(&p, PolicySchemaMode::Partial).unwrap();
+        assert_eq!(normalize_policy(&raw).unwrap().execution.max_turns, None);
+        // 明示整数は bounded のまま。
+        assert_eq!(
+            normalize_policy(
+                &validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap()
+            )
+            .unwrap()
+            .execution
+            .max_turns,
+            Some(10)
+        );
+        // 非 null の不正値は schema が拒否する。
+        for bad in [json!(0), json!(-1), json!("8"), json!(1.5)] {
+            let mut p = valid_policy();
+            p["execution"]["maxTurns"] = bad.clone();
+            assert!(
+                validate_policy_schema(&p, PolicySchemaMode::Complete).is_err(),
+                "{bad}"
+            );
+        }
     }
 
     #[test]

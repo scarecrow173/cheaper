@@ -75,7 +75,7 @@ async fn run_invalid_timeout_invalid_request() {
 
 #[tokio::test(flavor = "current_thread")]
 async fn run_timeout_over_policy_policy_violation() {
-    // builtin policy の execution.timeoutMs(既定 120s)を超える
+    // builtin policy の execution.timeoutMs(既定 300s)を超える
     // `--timeout` は narrow ではなく違反。
     let mut f = Fixture::new().with_input(r#"{"task":"t"}"#);
     let (code, env, _err) = f.run(&["run", "bulk-reader", "--timeout", "9999s"]).await;

@@ -166,9 +166,9 @@ pub struct RecordedSpec {
     pub has_output_schema: bool,
     pub max_output_tokens: u64,
     pub transient_retries: usize,
-    /// `policy.execution.maxTurns` — factory が内部 guard
-    /// (`max(1024, this)`)を算出する材料として渡される値(F7)。
-    pub policy_max_turns: u64,
+    /// `policy.execution.maxTurns` — factory が内部 guard を算出する
+    /// 材料として渡される値(F7)。`None` = policy 上限なし。
+    pub policy_max_turns: Option<u64>,
 }
 
 /// scripted `SessionFactory` — queue から response を取り出し session
@@ -513,6 +513,10 @@ impl FakeState {
                         arguments: call.input.clone(),
                     }));
                 }
+                // `ToolCommitted`(commit 確定・hook patch 後引数)は
+                // admission を通過した call に限る — `Execute` が各 call の
+                // budget 判定結果に応じて emit する(issue #111 の観測
+                // capture がこの event を join 元にする)。
                 queued.push_back(QueuedWork::Execute(calls));
                 // tool call を産んだ completion call は完了 — 次 step は
                 // 新しい call(`error` の pre-item retry 判定を reset)。
@@ -626,6 +630,13 @@ fn fake_stream(
                             // `ToolRuntime::execute` の実経路を辿る。
                             let mut results = VecDeque::with_capacity(calls.len());
                             for (i, call) in calls.iter().enumerate() {
+                                // admission 判定: budget の `tool_calls` が
+                                // 増えた call だけ commit された扱いにし
+                                // `ToolCommitted` を emit する(上限拒否は
+                                // commit されず error ToolResult のみ —
+                                // run.ts/adapter と同じ形)。
+                                let admitted_before =
+                                    st.tool_runtime.as_ref().map(|rt| rt.budget().tool_calls());
                                 let output = match &st.tool_runtime {
                                     Some(rt) => match rt
                                         .execute(
@@ -643,6 +654,23 @@ fn fake_stream(
                                     },
                                     None => Value::Null,
                                 };
+                                let committed = st
+                                    .tool_runtime
+                                    .as_ref()
+                                    .map(|rt| rt.budget().tool_calls())
+                                    .is_some_and(|after| {
+                                        admitted_before.is_some_and(|b| after > b)
+                                    })
+                                    // tool runtime 無し(budget 無し)の
+                                    // scripted call も commit 済み扱い。
+                                    || st.tool_runtime.is_none();
+                                if committed {
+                                    results.push_back(QueuedWork::Event(RunEvent::ToolCommitted {
+                                        call_id: format!("call-{i}"),
+                                        name: call.name.clone(),
+                                        arguments: call.input.clone(),
+                                    }));
+                                }
                                 results.push_back(QueuedWork::Event(RunEvent::ToolResult {
                                     call_id: format!("call-{i}"),
                                     name: call.name.clone(),

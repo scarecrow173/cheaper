@@ -159,6 +159,72 @@ fn run_invalid_model_ref() {
 }
 
 #[test]
+fn run_resume_flag() {
+    // `--resume <path>` — run/alias 共有の受理(issue #111)。
+    let ParsedCli::Run(a) = parse_cli_args(&args(&["run", "w", "--resume", "cp.json"])).unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(a.resume.as_deref(), Some("cp.json"));
+    // `--input` 未指定 — checkpoint stored input へ fallback する。
+    assert!(!a.input_explicit);
+
+    let ParsedCli::Run(a) = parse_cli_args(&args(&[
+        "run",
+        "w",
+        "--resume=cp.json",
+        "--input",
+        "in.json",
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    assert_eq!(a.resume.as_deref(), Some("cp.json"));
+    assert_eq!(a.input, "in.json");
+    assert!(a.input_explicit);
+
+    // `--input -`(stdin 明示)も explicit 扱い。
+    let ParsedCli::Run(a) =
+        parse_cli_args(&args(&["run", "w", "--input", "-", "--resume", "cp.json"])).unwrap()
+    else {
+        panic!()
+    };
+    assert!(a.input_explicit);
+
+    // alias でも受理。
+    let ParsedCli::Run(a) = parse_cli_args(&args(&["bulk-read", "--resume", "cp.json"])).unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(a.resume.as_deref(), Some("cp.json"));
+}
+
+#[test]
+fn resume_rejected_on_non_run_commands() {
+    // 非 run 系全 command で `InvalidRequest`(silent drop なし)。
+    // field 検査の arm は専用文言、allowlist arm は
+    // `--resume is not valid for <cmd>`。
+    for argv in [
+        vec!["usage", "--resume", "cp.json"],
+        vec!["count-tokens", "f", "--resume", "cp.json"],
+        vec!["models", "--resume", "cp.json"],
+        vec!["auth", "status", "--resume", "cp.json"],
+        vec!["workflow", "run", "wf.json", "--resume", "cp.json"],
+        vec!["workflow", "interface", "wf.json", "--resume", "cp.json"],
+        vec!["policy", "grant", "list", "--resume", "cp.json"],
+        vec!["hook-config", "verify", "--resume", "cp.json"],
+    ] {
+        let e = err(&argv);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "{argv:?}");
+        assert!(
+            e.message().contains("--resume"),
+            "{argv:?} → {}",
+            e.message()
+        );
+    }
+}
+
+#[test]
 fn run_rejects_models_only_options() {
     let e = err(&["run", "w", "--provider", "openai"]);
     assert_eq!(

@@ -127,6 +127,7 @@ async fn replay(fixture: &RunFixture) -> ReplayOutput {
         execution: None,
         operation_clock: None,
         invocation_grants: &[],
+        resume: None,
     };
     let result = run_worker(&deps).await;
     ReplayOutput {
