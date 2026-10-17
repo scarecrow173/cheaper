@@ -16,6 +16,7 @@ Directory: `docs/designs`
 | DESIGN-C4VbdOatUn4aVt3blVe8pk | auto tier classification by workload effectiveCost percentile | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
 | DESIGN-034H3c448Lvz0CfBjd5Xlz | Bounded hook request evaluation and hook-config registration lifecycle | approved | [bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md](./bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md) |
 | DESIGN-034zWclUCjCIH7M27XEu4j | ToolScheduler の共有 admission 設計 | approved | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
+| DESIGN-7G7UEmtrTGU4vh6og30Q0g | builtin materialize fingerprint 設計 | approved | [builtin-materialize-content-fingerprint.md](./builtin-materialize-content-fingerprint.md) |
 | DESIGN-034r05iHrZUE6WxkSJi9GF | bulk-reader contract | approved | [bulk-reader-contract.md](./bulk-reader-contract.md) |
 | DESIGN-034r05iHy2gdnoNaWH2bos | Bulk-reader huge-file safe I/O | approved | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | DESIGN-giTr4G7NzwSzWJTVgBo3ax | bulk-reader 出力上限・INVALID_OUTPUT 指針の skill 文書設計 | approved | [bulk-reader-output-limits-and-invalid-output-skill-docs.md](./bulk-reader-output-limits-and-invalid-output-skill-docs.md) |

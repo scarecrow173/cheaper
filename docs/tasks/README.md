@@ -50,6 +50,7 @@ Directory: `docs/tasks`
 | TASK-034H3PzQISOeM552EcP64F | Bounded search and ranged read evaluation | done | [bounded-search-and-ranged-read-evaluation.md](./bounded-search-and-ranged-read-evaluation.md) |
 | TASK-rWWDt7x2fqKommosSX8tnb | budget 枯渇時の checkpoint 保存と envelope 最外層 details 付与 | done | [budget-exhaustion-checkpoint-persistence.md](./budget-exhaustion-checkpoint-persistence.md) |
 | TASK-034AR8FgMmq4ecbz4SExZy | Seeded workflow benchmark fixtures と runner | done | [build-seeded-workflow-benchmark-fixtures-and-runner.md](./build-seeded-workflow-benchmark-fixtures-and-runner.md) |
+| TASK-NQhhbHCzfcBiPGkcoasEIZ | embedded.rs: collect_files 集約 + fingerprint 混入 | done | [builtin-materialize-content-fingerprint.md](./builtin-materialize-content-fingerprint.md) |
 | TASK-034r05iHQeQpDq5zFfI7r5 | bulk-read delegation benchmark and read threshold decision | done | [bulk-read-benchmark-and-threshold-decision.md](./bulk-read-benchmark-and-threshold-decision.md) |
 | TASK-034r05iHQeQpDqn5moXUKS | Bulk-reader guidance, deny/registry parity, and final verification | done | [bulk-reader-guidance-parity-and-final-verification.md](./bulk-reader-guidance-parity-and-final-verification.md) |
 | TASK-pPgGrBzIU7zBVDTCFkV4aV | bulk-reader 出力上限・INVALID_OUTPUT 指針の skill 文書化 | done | [bulk-reader-output-limits-skill-docs.md](./bulk-reader-output-limits-skill-docs.md) |

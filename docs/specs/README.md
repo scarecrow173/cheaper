@@ -15,6 +15,7 @@ Directory: `docs/specs`
 | SPEC-H9CuNdGONsV6HEHetvRCxh | Worker workload と effectiveCost による自動 tier 分類 | implemented | [auto-tier-classification.md](./auto-tier-classification.md) |
 | SPEC-034H2WAU6TQG6N9dmmmKNA | Bounded native hook evaluation and managed Devin registration | implemented | [bounded-native-hook-evaluation-and-managed-devin-registration.md](./bounded-native-hook-evaluation-and-managed-devin-registration.md) |
 | SPEC-034zWd1FiG9tv3X6uaAMep | ToolScheduler の bounded operation scheduling | approved | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
+| SPEC-Ihed47KqbjDSmZt2jp7L7M | builtin materialize cache に embedded content fingerprint を混入 | approved | [builtin-materialize-content-fingerprint.md](./builtin-materialize-content-fingerprint.md) |
 | SPEC-034r05iHK8bA7g6PcCiDBp | bulk-reader built-in Worker | implemented | [bulk-reader-built-in-worker.md](./bulk-reader-built-in-worker.md) |
 | SPEC-034r05iHK8bA7gkTEj7TdU | Bulk-reader huge-file safe I/O | implemented | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | SPEC-7GjKOMzR6m3HfBdpPmzSIe | bulk-reader 出力フィールド上限と INVALID_OUTPUT 回復指針の文書化 | implemented | [bulk-reader-output-limits-and-invalid-output-documentation.md](./bulk-reader-output-limits-and-invalid-output-documentation.md) |

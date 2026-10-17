@@ -14,6 +14,7 @@ Directory: `docs/adr`
 | ADR-034AQOixbRjL2Fjn1hwUUF | Benchmark harness placement and accounting | accepted | [benchmark-harness-placement-and-accounting.md](./benchmark-harness-placement-and-accounting.md) |
 | ADR-034zWjPbCrCggmdSxHvnzR | Bounded tool scheduler | accepted | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
 | ADR-dQUWgKzTTSsUBIhYYpNAtC | turn/tool 予算枯渇時に checkpoint を保存し resume 可能にする | proposed | [budget-exhaustion-checkpoint-and-resume.md](./budget-exhaustion-checkpoint-and-resume.md) |
+| ADR-KFmeF9E3oB3ManY01TWZVX | materialize cache key を version+fingerprint にする | accepted | [builtin-materialize-content-fingerprint.md](./builtin-materialize-content-fingerprint.md) |
 | ADR-034r05iHrZUE6Wb2K7GmPw | bulk-reader の巨大ファイル I/O を有界 read・streaming grep・path-only find にする | accepted | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | ADR-034r05iHrZUE6WeDAi63F3 | canonical setup/check entrypoint を mise TOML task として mise.toml に定義する | accepted | [canonical-setup-check-entrypoints-as-mise-toml-tasks.md](./canonical-setup-check-entrypoints-as-mise-toml-tasks.md) |
 | ADR-034r05iHrZUE6W3U1rbJq4 | Use js-tiktoken o200k_base as the single canonical tokenizer | superseded | [canonical-tokenizer-js-tiktoken.md](./canonical-tokenizer-js-tiktoken.md) |

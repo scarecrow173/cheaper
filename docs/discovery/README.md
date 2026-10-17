@@ -10,6 +10,7 @@ Directory: `docs/discovery`
 | DISC-Hsh18eGWIzyBCzpfoRxUb3 | auto-tier-classification-effective-cost | resolved | [auto-tier-classification-effective-cost.md](./auto-tier-classification-effective-cost.md) |
 | DISC-034FRguX1hjhDZ7ZMEBnbm | Bounded hook read request contract | active | [bounded-hook-read-request-contract.md](./bounded-hook-read-request-contract.md) |
 | DISC-034zWckRcYKm7QivslioOd | ToolScheduler の admission と ownership 境界 | resolved | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
+| DISC-ar7NQWbsDe0TtIFAlAsUdv | builtin materialize cache の stale 化(同一 version の embedded 変更) | draft | [builtin-materialize-cache-stale-on-same-version.md](./builtin-materialize-cache-stale-on-same-version.md) |
 | DISC-034r05iHy2gdnpb598KIca | bulk-read delegation benchmark and large-read threshold evidence | resolved | [bulk-read-delegation-benchmark.md](./bulk-read-delegation-benchmark.md) |
 | DISC-034r05iHy2gdnpeCjN4yfM | bulk-reader の巨大ファイル安全 I/O | resolved | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | DISC-x1vmG1ECubKZNQ0QMyUyi5 | bulk-reader low-tier 無回答: turn 枯渇と固定 timeout の構造分析 | resolved | [bulk-reader-low-tier-no-result-turn-budget-and-timeout.md](./bulk-reader-low-tier-no-result-turn-budget-and-timeout.md) |
