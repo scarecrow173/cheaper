@@ -141,9 +141,79 @@ async fn run_fake_stream_named_worker_takes_precedence_over_fallback() {
     assert_ne!(code, 0);
 }
 
-// ---------------------------------------------------------------------------
-// catalog error の stderr surfacing(spec Req 4)
-// ---------------------------------------------------------------------------
+/// `INVALID_OUTPUT` 確定時、最終 raw output の全文が
+/// `<userConfigDir>/invalid-outputs/` へ保存され `details.rawOutputPath`
+/// に path が返る(issue #114)。`rawOutput` excerpt は従来どおり先頭
+/// 2000 文字に切り詰まるため、2000 字超の raw で file 側が非 truncate
+/// であることを pin する。
+#[tokio::test(flavor = "current_thread")]
+async fn run_invalid_output_persists_full_raw_output() {
+    // `{"ok":"…3000字…"}` — bulk-reader schema の required 欠落で
+    // INVALID_OUTPUT。3000字超の raw で excerpt との区別を付ける。
+    let padding = "x".repeat(3_000);
+    let raw = format!("{{\"ok\":\"{padding}\"}}");
+    let fixture = format!(
+        r#"{{"name":"cli-invalid-output-raw","sessions":[
+          {{"steps":[{{"finish":{{"text":{0}}}}}]}},
+          {{"steps":[{{"finish":{{"text":{0}}}}}]}}]}}"#,
+        serde_json::to_string(&raw).unwrap()
+    );
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task":"t"}"#);
+    let (code, env, _err) = f.run(&["run", "bulk-reader"]).await;
+    assert_eq!(env["ok"], json!(false));
+    assert_eq!(env["error"]["code"], json!("INVALID_OUTPUT"));
+    assert_ne!(code, 0);
+
+    // `rawOutput` excerpt は切り詰め済み、file は全文。
+    let excerpt = env["error"]["details"]["rawOutput"]
+        .as_str()
+        .expect("rawOutput excerpt");
+    assert!(excerpt.len() < raw.len(), "excerpt must be truncated");
+    let path_str = env["error"]["details"]["rawOutputPath"]
+        .as_str()
+        .expect("rawOutputPath missing");
+    let path = std::path::Path::new(path_str);
+    assert_eq!(
+        path.parent()
+            .map(|p| p.file_name().unwrap().to_str().unwrap().to_string()),
+        Some("invalid-outputs".to_string()),
+        "unexpected dir: {path_str}"
+    );
+    assert_eq!(
+        std::fs::read_to_string(path).expect("raw output file"),
+        raw,
+        "file must hold the untruncated raw output"
+    );
+}
+
+/// 保存失敗は best-effort — `rawOutputPath` が省略されるだけで
+/// `INVALID_OUTPUT` の分類・exit code は不変(issue #114)。
+/// `CHEAPER_CONFIG_DIR` を通常 file へ向けて `invalid-outputs/` の
+/// mkdir を失敗させる。
+#[tokio::test(flavor = "current_thread")]
+async fn run_invalid_output_save_failure_omits_path() {
+    let mut f = Fixture::new()
+        .with_fake_stream(FIXTURE_TWO_BAD)
+        .with_input(r#"{"task":"t"}"#);
+    let blocker = f.ws.path().join("not-a-dir");
+    std::fs::write(&blocker, "x").unwrap();
+    f.env_map.insert(
+        "CHEAPER_CONFIG_DIR".to_string(),
+        blocker.to_string_lossy().into_owned(),
+    );
+    let (code, env, _err) = f.run(&["run", "bulk-reader"]).await;
+    assert_eq!(env["ok"], json!(false));
+    assert_eq!(env["error"]["code"], json!("INVALID_OUTPUT"));
+    assert_ne!(code, 0);
+    assert!(
+        env["error"]["details"].get("rawOutputPath").is_none(),
+        "rawOutputPath must be omitted on save failure: {}",
+        env["error"]["details"]
+    );
+    assert!(env["error"]["details"]["rawOutput"].is_string());
+}
 
 #[tokio::test(flavor = "current_thread")]
 async fn run_emits_catalog_warnings_for_malformed_plugin_catalog() {

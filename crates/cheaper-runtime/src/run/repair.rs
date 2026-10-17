@@ -14,11 +14,13 @@
 //!   配線は provider/adapter 側の責務(未配線なら corrective prompt と
 //!   回数上限のみが contract を担保する)。
 
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::fs_util::{atomic_write, AtomicWriteOptions};
 use cheaper_core::json::stringify::stringify_pretty;
-use cheaper_core::worker::schema::{CompiledSchema, SchemaErrorEntry};
+use cheaper_core::worker::schema::{CompiledSchema, SchemaErrorEntry, MAX_DETAIL_ERRORS};
 use cheaper_rig_adapter::RunSnapshot;
 use cheaper_tools::operation::AbortSignal;
 use serde_json::{Map, Value};
@@ -31,7 +33,8 @@ use crate::auth::ResolvedAuth;
 use crate::catalog::CatalogModel;
 
 /// error `details` に入れる上限(TS `MAX_DETAIL_ERRORS`/`MAX_DETAIL_RAW`)。
-const MAX_DETAIL_ERRORS: usize = 20;
+/// `MAX_DETAIL_ERRORS` は `INVALID_INPUT` 経路と共通の
+/// `cheaper_core::worker::schema::MAX_DETAIL_ERRORS` を使う(issue #113)。
 const MAX_DETAIL_RAW: usize = 2000;
 
 /// `RepairOptions`。`on_attempt` は TS `onAttempt` — attempt 開始毎に
@@ -61,6 +64,10 @@ pub struct RepairOptions<'a> {
     pub signal: AbortSignal,
     /// `promptWithAbortGrace` の grace ms(既定 5000)。
     pub grace_ms: f64,
+    /// `INVALID_OUTPUT` 確定時の raw output 保存先
+    /// (`<dir>/invalid-outputs/`)。best-effort — 保存失敗は
+    /// `details.rawOutputPath` の省略のみ。
+    pub user_config_dir: &'a Path,
     pub on_attempt: &'a mut dyn FnMut(u64),
 }
 
@@ -137,28 +144,77 @@ pub async fn repair_output(
         }
     }
 
-    Err(invalid_output_error(&errors, &raw_output))
+    // 回収不能を避けるため最終 raw output を file へ保存する
+    // (issue #114 — `rawOutput` excerpt は先頭 2000 字に切り詰まる)。
+    // raw が空(assistant message 無し)なら保存しない。失敗は
+    // best-effort で path key を省略するだけ。
+    let raw_output_path = (!raw_output.is_empty())
+        .then(|| save_raw_output(opts.user_config_dir, &raw_output).ok())
+        .flatten();
+    Err(invalid_output_error(
+        &errors,
+        &raw_output,
+        raw_output_path.as_deref(),
+    ))
+}
+
+/// 最終 raw output を `<userConfigDir>/invalid-outputs/run-<pid>-<nanos>.txt`
+/// へ atomic write する(checkpoint と同じ命名・保存規則 — issue #114)。
+fn save_raw_output(user_config_dir: &Path, raw_output: &str) -> std::io::Result<PathBuf> {
+    let dir = user_config_dir.join("invalid-outputs");
+    std::fs::create_dir_all(&dir)?;
+    let id = format!(
+        "run-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0)
+    );
+    let path = dir.join(format!("{id}.txt"));
+    atomic_write(
+        &path,
+        raw_output,
+        &AtomicWriteOptions {
+            windows_remove_first: false,
+            #[cfg(unix)]
+            unix_mode: Some(0o600),
+        },
+    )?;
+    Ok(path)
 }
 
 /// `throw new CheaperError("INVALID_OUTPUT", ...)` — details は
-/// `errors` 先頭 20 件・`rawOutput` 先頭 2000 文字。
-fn invalid_output_error(errors: &[SchemaErrorEntry], raw_output: &str) -> CheaperError {
+/// `errors` 先頭 20 件・`rawOutput` 先頭 2000 文字。raw output の
+/// file 保存に成功していれば `rawOutputPath` を追加する(issue #114)。
+fn invalid_output_error(
+    errors: &[SchemaErrorEntry],
+    raw_output: &str,
+    raw_output_path: Option<&Path>,
+) -> CheaperError {
     let capped_errors: Vec<Value> = errors
         .iter()
         .take(MAX_DETAIL_ERRORS)
         .map(|e| serde_json::to_value(e).unwrap_or(Value::Null))
         .collect();
-    CheaperError::new(
-        ErrorCode::InvalidOutput,
-        "worker output failed schema validation",
-    )
-    .with_details(Map::from_iter([
+    let mut details = Map::from_iter([
         ("errors".to_string(), Value::Array(capped_errors)),
         (
             "rawOutput".to_string(),
             Value::from(truncate_chars(raw_output, MAX_DETAIL_RAW)),
         ),
-    ]))
+    ]);
+    if let Some(path) = raw_output_path {
+        details.insert(
+            "rawOutputPath".to_string(),
+            Value::from(path.to_string_lossy().into_owned()),
+        );
+    }
+    CheaperError::new(
+        ErrorCode::InvalidOutput,
+        "worker output failed schema validation",
+    )
+    .with_details(details)
 }
 
 /// 先頭 `n` 文字までに切り詰め。TS `slice(0, 2000)` は UTF-16 code unit
