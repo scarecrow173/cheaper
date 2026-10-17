@@ -266,10 +266,14 @@ Exit 6 covers both tool-execution and output-validation failures; inspect
 20 schema/JSON-parse errors — and `error.details.rawOutput`, the worker's
 raw output truncated to the first 2000 characters. `rawOutput` is a
 diagnostic excerpt, **not** a validated `result` (a failed run has no
-`result`), and may be empty; never adopt it as the answer. (`workflow run`
-can also emit `INVALID_OUTPUT` with a different `details` shape — e.g. no
-`rawOutput`.) Per-worker output limits and recovery steps are documented in
-the worker skills (see `cheaper-bulk-read`).
+`result`), and may be empty; never adopt it as the answer. When the raw
+output was non-empty, `error.details.rawOutputPath` points to the complete,
+untruncated text saved under `<userConfigDir>/invalid-outputs/` — read that
+file to recover or inspect it (the key is omitted if the save failed;
+persistence is best-effort). (`workflow run` can also emit `INVALID_OUTPUT`
+with a different `details` shape — e.g. no `rawOutput`.) Per-worker output
+contracts and recovery steps are documented in the worker skills (see
+`cheaper-bulk-read`).
 
 ## Run timeout and budget-exhaustion checkpoints
 

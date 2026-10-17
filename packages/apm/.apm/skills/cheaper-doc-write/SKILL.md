@@ -31,13 +31,13 @@ Input (`doc-writer` schema):
 
 | Field | Type | Meaning |
 |---|---|---|
-| `task` (required) | string ≤6000 | What document work to do |
+| `task` (required) | string | What document work to do |
 | `documentType` (required) | enum | `adr`, `spec`, `design`, `plan`, `task`, `readme`, `guide`, `reference`, `release-notes`, `other` |
-| `targets` (required) | array 1–20 | `{path, intent, notes?}` — docs the worker may create/modify |
-| `decisions` | array ≤30 | Settled decisions the document must reflect |
-| `facts` | array ≤30 | Verified facts to include |
-| `references` | array ≤30 | Paths to read for style/format |
-| `constraints` | array ≤20 | Hard rules (language, format, length) |
+| `targets` (required) | array ≥1 | `{path, intent, notes?}` — docs the worker may create/modify |
+| `decisions` | array | Settled decisions the document must reflect |
+| `facts` | array | Verified facts to include |
+| `references` | array | Paths to read for style/format |
+| `constraints` | array | Hard rules (language, format, length) |
 
 ## Consuming the result
 

@@ -62,6 +62,7 @@ Directory: `docs/tasks`
 | TASK-034EOHORutYi73P8DaumoH | T3: command tool 実装と catalog/registry/invocation 配線 | done | [command-tool-and-registry.md](./command-tool-and-registry.md) |
 | TASK-034r05iHQeQpDpByADDPCn | Configure Pi models.json and cheaper models.yaml for Ollama provider | done | [configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md](./configure-pi-models-json-and-cheaper-models-yaml-for-ollama-provider.md) |
 | TASK-034DzYnno038qspspOYHv2 | T2: js16 core 集約 (F4) | done | [consolidate-js16-into-cheaper-core.md](./consolidate-js16-into-cheaper-core.md) |
+| TASK-mCX3oPsAX62vs24tiU1ilI | consumer skill/guides の magnitude 撤廃・rawOutputPath 追随 | done | [consumer-docs-schema-magnitude.md](./consumer-docs-schema-magnitude.md) |
 | TASK-034r05iHQeQpDq2z00rDnn | Consumer install smoke e2e and skill updates | done | [consumer-install-smoke.md](./consumer-install-smoke.md) |
 | TASK-034rAcG63A1KaVZH5VyAWA | Contract matrix and parent-agent guide updates | done | [contract-matrix-and-parent-agent-guide-updates.md](./contract-matrix-and-parent-agent-guide-updates.md) |
 | TASK-034r05iHQeQpDqFsYcuUHl | Copilot adapter script, hooks.json registration, and stdin-injection tests | done | [copilot-adapter-script-and-hook-tests.md](./copilot-adapter-script-and-hook-tests.md) |
@@ -175,6 +176,8 @@ Directory: `docs/tasks`
 | TASK-034AGiKxX1qSMznOGzJrLb | Integrate process runtime disposal | done | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
 | TASK-034zTTjWYMNKiiVb4ZZ6LV | Workflow compiler に resource inference を接続する | done | [integrate-workflow-resource-inference.md](./integrate-workflow-resource-inference.md) |
 | TASK-034AJd4IRjNpoxGSXgU36n | Workflow run CLI と public envelope を統合する | done | [integrate-workflow-run-cli.md](./integrate-workflow-run-cli.md) |
+| TASK-Y48pGJwcxZmcMbiClyRyd5 | INVALID_INPUT details.errors の 20 件 cap 揃え | done | [invalid-input-errors-cap.md](./invalid-input-errors-cap.md) |
+| TASK-EnsmZdrtj5ic4bLBfseeL3 | INVALID_OUTPUT の raw output 全文 file 永続化 | done | [invalid-output-raw-output-persistence.md](./invalid-output-raw-output-persistence.md) |
 | TASK-034FppMiRb1TxdOmzgt11q | T1: invocation-policy-layer — core load_policy への合成 invocation layer（compile-forced propagation 所有） | done | [invocation-policy-layer.md](./invocation-policy-layer.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-6uOJTepTvP210AgeeaBtkq | issue-111 文書追随・回帰 fixture・最終検証 | done | [issue-111-docs-and-final-verification.md](./issue-111-docs-and-final-verification.md) |
@@ -221,6 +224,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpEony1i5k | Record experiment log and verify test regression | done | [record-experiment-log-and-verify-test-regression.md](./record-experiment-log-and-verify-test-regression.md) |
 | TASK-034GtBzKmwPf5z06kAahym | Register Devin hooks from APM skill | done | [register-devin-hooks-from-apm-skill.md](./register-devin-hooks-from-apm-skill.md) |
 | TASK-034EUvFhVkFFo9cY6aX6LB | T2: registry degrade path と prompt surfacing | done | [registry-degrade-and-prompt-surfacing.md](./registry-degrade-and-prompt-surfacing.md) |
+| TASK-bFmQKy8wlXPsJ8TxH83XGQ | issue-113/114 regression normalize・最終検証・impl 記録 | done | [regression-and-final-verification-113-114.md](./regression-and-final-verification-113-114.md) |
 | TASK-034DzYbfe9r0G8Nd58FQjy | T1: js_json shim 削除 (F3) | done | [remove-js-json-shim.md](./remove-js-json-shim.md) |
 | TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |
 | TASK-034DzYfbw07gFHdsAguwHp | T4: poc-rig 削除 (F5) | done | [remove-poc-rig-crate.md](./remove-poc-rig-crate.md) |
@@ -295,5 +299,7 @@ Directory: `docs/tasks`
 | TASK-034AJcULdYBQSjyy18XSVw | Canonical artifact read/publisher を配線する | done | [wire-workflow-artifact-tools.md](./wire-workflow-artifact-tools.md) |
 | TASK-034zTsqC9tEk1qHUgWFefU | wire-workflow-interface | done | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | TASK-034AJcZY4VW7Wfwx1AOzvh | Workflow Worker permission と lease lifetime を配線する | done | [wire-workflow-worker-leases.md](./wire-workflow-worker-leases.md) |
+| TASK-Qv0y8UiqVlBjROUfcjHGA6 | worker prose の maxFindings null semantics 明記 | done | [worker-prose-maxfindings-null.md](./worker-prose-maxfindings-null.md) |
+| TASK-u2PMRboiXvyOu5ebYhDvVE | worker schema magnitude 制約の撤廃と maxFindings nullable 化 | done | [worker-schema-magnitude-removal.md](./worker-schema-magnitude-removal.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |
 | TASK-034r05iHQeQpDqac6FjqrJ | Writer writeScope declaration and e2e verification | done | [writer-write-scope-and-e2e-verification.md](./writer-write-scope-and-e2e-verification.md) |

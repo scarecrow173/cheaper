@@ -75,6 +75,7 @@ Directory: `docs/specs`
 | SPEC-034zIO2lm7gJPz6Gy4JIQP | Version-pinned launcher acquisition | superseded | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | SPEC-034D85I40UBKtNgeam655z | Volume-root workspace boundary acceptance | proposed | [volume-root-workspace-boundary-acceptance.md](./volume-root-workspace-boundary-acceptance.md) |
 | SPEC-onzPU8E4tKg3C6Iv4s9VK0 | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume | proposed | [worker-run-nullable-maxturns-and-stall-timeout.md](./worker-run-nullable-maxturns-and-stall-timeout.md) |
+| SPEC-s8dMxk0QAbLuWaOrsuikSp | worker schema の magnitude 制約撤廃と INVALID_OUTPUT raw output の回復経路 | proposed | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |
 | SPEC-034zIKj7DJcwZFr3FvjLrP | Workflow JSON v1 を検証済み DAG へ compile する | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
 | SPEC-034zSVZlWjFAMpwmhsLTkx | 明示 workflow loader と公開 interface command の契約 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | SPEC-034AQOi1TPvVMDkNrhfTM5 | Benchmark workflow orchestration overhead | approved | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |

@@ -34,10 +34,10 @@ Input (`tool-operator` schema):
 
 | Field | Type | Meaning |
 |---|---|---|
-| `task` (required) | string ≤4000 | The operational goal to work toward |
-| `context` | array ≤30 | Background facts the worker needs |
-| `constraints` | array ≤20 | Hard rules it must follow |
-| `output` | object | Hints — `focus` (array ≤10) and `maxFindings` (int 1–30) |
+| `task` (required) | string | The operational goal to work toward |
+| `context` | array | Background facts the worker needs |
+| `constraints` | array | Hard rules it must follow |
+| `output` | object | Hints — `focus` (array) and `maxFindings` (int ≥1, or null = no cap) |
 
 ## Consuming the result
 

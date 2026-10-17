@@ -1,7 +1,9 @@
-// cheaper-bulk-read skill の出力上限表と canonical schema の drift 検知
-// (issue #108 / SPEC-7GjKOMzR6m3HfBdpPmzSIe)。SKILL.md に記載する上限値が
-// bulk-reader.output.schema.json と一致することを検証する — schema 側を
-// 変更した場合は skill 文書も追随させるためのガード。
+// cheaper-bulk-read skill の contract 記述と canonical schema の drift 検知
+// (issue #113/#114 — SPEC worker-schema-structure-not-magnitude)。
+// schema は magnitude(文字数・件数)を検証せず構造のみを検証する。
+// この test は (a) schema に magnitude 制約が再混入しないこと、
+// (b) SKILL.md が構造契約と rawOutputPath 回復経路を記載していることを
+// guard する。
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -32,37 +34,39 @@ const skillPath = path.join(
 const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
 const skill = readFileSync(skillPath, "utf8");
 
-const finding = schema.properties.findings.items;
-const location = finding.properties.locations.items;
+function* walk(node) {
+  if (node && typeof node === "object") {
+    yield node;
+    for (const value of Object.values(node)) {
+      yield* walk(value);
+    }
+  }
+}
 
-test("bulk-read skill documents the schema's output limits", () => {
-  const expectations = [
-    // [skill に含まれるべき文字列, schema 由来の実際値]
-    ["1500", schema.properties.summary.maxLength],
-    ["1200", finding.properties.detail.maxLength],
-    ["120", finding.properties.title.maxLength],
-    ["600", location.properties.excerpt.maxLength],
-    ["30", schema.properties.findings.maxItems],
-    ["10", finding.properties.locations.maxItems],
-    ["30", schema.properties.relevantFiles.maxItems],
-    ["10", schema.properties.suggestedReads.maxItems],
-    ["10", schema.properties.openQuestions.maxItems],
-    ["300", schema.properties.relevantFiles.items.properties.reason.maxLength],
-  ];
-  for (const [needle, expected] of expectations) {
-    assert.equal(String(expected), needle, `schema value changed for ${needle}`);
-    assert.match(
-      skill,
-      new RegExp(`\\b${needle}\\b`),
-      `SKILL.md is missing the ${needle} limit from ${schemaPath}`,
-    );
+test("bulk-reader output schema carries no magnitude constraints", () => {
+  // payload magnitude 制約(maxLength/maxItems/maximum)は撤廃済み
+  // (issue #113/#114) — 再混入を防ぐ。構造制約(minimum/minItems/
+  // pattern/required/enum)はこの対象外。
+  for (const node of walk(schema)) {
+    for (const key of ["maxLength", "maxItems", "maximum"]) {
+      assert.equal(
+        node[key],
+        undefined,
+        `magnitude constraint ${key} reappeared at ${JSON.stringify(node).slice(0, 120)}`,
+      );
+    }
   }
 });
 
-test("bulk-read skill states the closed-schema requirement", () => {
+test("bulk-read skill documents the structural contract", () => {
   assert.equal(schema.additionalProperties, false);
   assert.match(skill, /additionalProperties:\s*false/);
-  assert.match(skill, /600/);
   assert.match(skill, /INVALID_OUTPUT/);
   assert.match(skill, /rawOutput/);
+  // issue #114 — 全量 raw output の file 回収経路。
+  assert.match(skill, /rawOutputPath/);
+  assert.match(skill, /invalid-outputs/);
+  // 構造制約の記載 — confidence enum と workspace-relative path。
+  assert.match(skill, /confidence/);
+  assert.match(skill, /workspace-relative/);
 });
