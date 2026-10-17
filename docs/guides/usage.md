@@ -45,7 +45,8 @@ Commands:
 | `--worker-file <path>` | 明示的な worker file を実行する（`run` のみ） |
 | `--grant <json>` | その invocation のみ有効な command grant を注入する（repeatable。`run`・`workflow run` のみ。詳細は [command ガイド](./command.md)） |
 | `--cwd <path>` | workspace root（既定: カレントディレクトリ） |
-| `--timeout <duration>` | policy timeout を narrow する（例: `30s`, `5m`）。policy 上限は越えられない |
+| `--timeout <duration>` | policy timeout を narrow する（例: `30s`, `5m`）。policy 上限は越えられない。`run` では進捗でリセットされる stall window、`workflow run` では全体の絶対期限として解釈される（詳細は [configuration ガイド](./configuration.md)） |
+| `--resume <path>` | budget 枯渇（`MAX_TURNS_EXCEEDED`/`MAX_TOOL_CALLS_EXCEEDED`）時に保存された checkpoint から run を再開する（`run`・worker alias のみ） |
 | `--model <provider>/<id>` | `run` では tier 解決を bypass する model 直接指定、`usage` では model filter |
 | `--provider <id>` | `models` の出力・`usage` の集計を provider で絞る |
 | `--tier <low\|medium\|high>` | `models` の出力を effective tier で絞る |

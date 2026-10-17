@@ -156,7 +156,7 @@ CLI alias `cheaper tool-operate` を `cheaper run tool-operator` と等価の入
 以下の deferred concern は ADR-034ESBcMTWxNCMDI9obdb8（accepted）の決定で解決済み:
 
 - `process` / `command` 未許可時挙動の実現機構 → **解決済み**: worker frontmatter の `cheaper.optionalTools` による per-tool opt-in 縮退機構（Option C1）を採用。`process` は `command` とともに初期 tools 集合に含め、`optionalTools: [process, command]` で縮退可能として宣言する
-- per-worker execution 制限 → **解決済み**: override 機構は設けず global policy 制限（`execution.maxTurns=8` / `maxToolCalls=64` / `timeout=120s` / `output.maxTokens=2000`）に従う
+- per-worker execution 制限 → **解決済み**: override 機構は設けず global policy 制限（`execution.maxTurns=null`（無制限・明示整数で opt-in bounded）/ `maxToolCalls=64` / `timeout=300s` stall window / `output.maxTokens=2000`、issue #111 で改訂）に従う
 - model tier と `workload.outputPerInput` → **解決済み**: `tier: low`・`workload.outputPerInput: 0.3`
 - worker 別 APM skill `cheaper-tool-operate` → **解決済み**: `packages/apm` に追加する
 - `ollama_e2e.rs` の実 provider 検証 → **解決済み**: 本 iteration の対象外（dev-seam fixture + regression corpus が primary 検証）
@@ -164,7 +164,7 @@ CLI alias `cheaper tool-operate` を `cheaper run tool-operator` と等価の入
 引き続き deferred:
 
 - `cheaper tool-operate "<task>"` 形の positional-sugar（alias が task positional を解釈して input JSON へ詰め替える parser 変更）| 理由: 既存 alias は extra positional を reject する規約であり、canonical `--input` / stdin 経路で要件を満たせる | 再着手: positional 入力の需要が実測された場合、parser 規約ごと別 spec で検討
-- execution 制限（global `maxTurns=8` / `maxToolCalls=64` / `timeout=120s` / `output.maxTokens=2000`）が multi-step 反復に実用上足りるかの実測 | per-worker override が要ると判明した場合は strict `cheaper` frontmatter keys の拡張 = core 変更として別 spec へ | 実装・benchmark で実測後に判断
+- execution 制限（global `maxTurns=null` / `maxToolCalls=64` / `timeout=300s` stall / `output.maxTokens=2000`）が multi-step 反復に実用上足りるかの実測 | per-worker override が要ると判明した場合は strict `cheaper` frontmatter keys の拡張 = core 変更として別 spec へ | 実装・benchmark で実測後に判断
 
 ## Sources and Relations
 

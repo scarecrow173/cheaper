@@ -38,7 +38,8 @@ cheaper <command> [options]
 | `--worker-file <path>` | Run an explicit worker file (`run` only) |
 | `--grant <json>` | Inject a command grant for this run only (repeatable; `run`/`workflow run` only) |
 | `--cwd <path>` | Workspace root (default: current directory) |
-| `--timeout <duration>` | Narrow policy timeout (e.g. `30s`, `5m`) |
+| `--timeout <duration>` | Narrow policy timeout (e.g. `30s`, `5m`) — `run`: stall window (progress-reset); `workflow run`: absolute deadline |
+| `--resume <path>` | Resume a run from a budget-exhaustion checkpoint (`run`/worker aliases only) |
 | `--model <provider>/<id>` | `run`: explicit model, bypassing tier resolution |
 | `--method <id>` | Auto-answer auth login select prompts (e.g. `device`) |
 | `--type <oauth\|api_key>` | Auth method for `auth login` (default: `oauth`) |
@@ -269,6 +270,41 @@ diagnostic excerpt, **not** a validated `result` (a failed run has no
 can also emit `INVALID_OUTPUT` with a different `details` shape — e.g. no
 `rawOutput`.) Per-worker output limits and recovery steps are documented in
 the worker skills (see `cheaper-bulk-read`).
+
+## Run timeout and budget-exhaustion checkpoints
+
+- `execution.timeout` on the `run` path is a **stall window**: every
+  observed progress event resets it, and `TIMEOUT` fires only after
+  `timeout` of silence. Long-running progress is fine; a hung provider
+  or tool still dies at the window. The same field on `workflow run` is
+  an absolute whole-workflow deadline — do not assume one meaning for
+  both. Provider transient retries (`retry.transientAttempts`, reported
+  as `meta.transientRetries`) only cover per-completion-call failures
+  (429/5xx/unresponsive transport); run-level aborts
+  (`TIMEOUT`/`MAX_TURNS_EXCEEDED`/`ABORTED`/`MAX_TOOL_CALLS_EXCEEDED`)
+  are never retried, and retry backoff counts as stall-window silence.
+- `execution.maxTurns` is `null` by default — no policy-level turn cap
+  (an internal runaway guard still applies). Setting it to a positive
+  integer opts back into a bounded turn budget; `execution.maxToolCalls`
+  remains bounded by default (64).
+- When a bounded budget is exhausted (`MAX_TURNS_EXCEEDED` or
+  `MAX_TOOL_CALLS_EXCEEDED`, exit 6 — or `PARTIAL_MUTATION`, exit 9,
+  when the run had already written files), the runtime saves a
+  resumable checkpoint under `<userConfigDir>/checkpoints/` and the
+  outermost `error.details.checkpoint` carries `{path,
+  observationsCount}`. The envelope never embeds the observations
+  themselves — read the checkpoint file only via `--resume`.
+- Continue the work with `cheaper run <worker> --resume <path>`. The
+  checkpoint's worker must match (`--worker-file` compares the resolved
+  name); explicit `--input` (including `-` for stdin) overrides the
+  stored input, otherwise the stored input is used and stdin is not
+  read. A resumed run starts a fresh session/policy/budget — prior tool
+  observations are injected into the prompt, `--grant` flags are **not**
+  persisted in the checkpoint and must be passed again. If the resumed
+  run hits the budget again, the new checkpoint accumulates old + new
+  observations, so `run → resume → resume …` chains work. Changing
+  `--input` on resume leaves prior observations as stale context from
+  the old task.
 
 ## Command grants
 
