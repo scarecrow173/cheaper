@@ -84,6 +84,13 @@ pub struct RunCliArgs {
     /// repeatable `--grant <json>` の宣言順値列 — invocation-scoped
     /// command grant(invoker 供給の非永続 grant)。
     pub grants: Vec<String>,
+    /// `--resume <path>` — budget 枯渇 checkpoint からの再開
+    /// (issue #111)。run/alias のみ受理。
+    pub resume: Option<String>,
+    /// `--input` が明示指定されたか(値 `-` の stdin 指定を含む)。
+    /// resume 時の input 解決で「省略 → checkpoint stored input」を
+    /// 区別するために `option_tokens` から採る。
+    pub input_explicit: bool,
     pub format: CliFormat,
     pub quiet: bool,
 }
@@ -315,6 +322,9 @@ const STRING_OPTIONS: &[&str] = &[
     // `hook-config` 専用(`hook-config` arm 以外は reject)。
     "scope",
     "project-root",
+    // `run`/worker alias 専用 — budget 枯渇 checkpoint からの再開
+    // (issue #111)。非 run command arm は field 検査で reject する。
+    "resume",
     // observability activation(T2)の global option。値は `Values`
     // field に保持せず、消費は `global_log_flags` が argv scan で
     // 担う(parse 済み値と activation 値の二重表現を避ける)。
@@ -349,6 +359,7 @@ struct Values {
     /// drop 防止規約。新規 command arm を追加する場合も同じ検査を
     /// 置くこと(run / workflow run 以外は全て reject)。
     grants: Vec<String>,
+    resume: Option<String>,
     scope: Option<String>,
     project_root: Option<String>,
     event_stdin: bool,
@@ -374,6 +385,7 @@ impl Default for Values {
             compare_model: None,
             format: "json".to_string(),
             grants: Vec::new(),
+            resume: None,
             scope: None,
             project_root: None,
             event_stdin: false,
@@ -404,6 +416,7 @@ impl Values {
             // last-wins 規約からの deliberate deviation(Node `parseArgs`
             // の `multiple: true` 相当)。宣言順を保持するため push で畳む。
             "grant" => self.grants.push(value),
+            "resume" => self.resume = Some(value),
             "scope" => self.scope = Some(value),
             "project-root" => self.project_root = Some(value),
             // 受理のみで値は捨てる — activation 入力は
@@ -694,6 +707,12 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 None,
             ));
         }
+        if values.resume.is_some() {
+            return Err(invalid_request(
+                "--resume is only valid for worker runs",
+                None,
+            ));
+        }
         if values.method.is_some() || values.auth_type.is_some() {
             return Err(invalid_request(
                 "--method/--type are only valid for `auth login`",
@@ -750,6 +769,12 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         if values.input != "-" {
             return Err(invalid_request(
                 "--input is only valid for worker runs",
+                None,
+            ));
+        }
+        if values.resume.is_some() {
+            return Err(invalid_request(
+                "--resume is only valid for worker runs",
                 None,
             ));
         }
@@ -817,6 +842,12 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 None,
             ));
         }
+        if values.resume.is_some() {
+            return Err(invalid_request(
+                "--resume is only valid for worker runs",
+                None,
+            ));
+        }
         if values.method.is_some() || values.auth_type.is_some() {
             return Err(invalid_request(
                 "--method/--type are only valid for `auth login`",
@@ -879,6 +910,12 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         if values.input != "-" {
             return Err(invalid_request(
                 "--input is only valid for worker runs",
+                None,
+            ));
+        }
+        if values.resume.is_some() {
+            return Err(invalid_request(
+                "--resume is only valid for worker runs",
                 None,
             ));
         }
@@ -1162,6 +1199,11 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         timeout: values.timeout,
         model,
         grants: values.grants,
+        resume: values.resume,
+        // `--input`(値 `-` の stdin 指定を含む)の明示有無 — resume
+        // 時の「checkpoint stored input へ fallback するか」の判定に
+        // 使う(workflow arm と同じ option_tokens presence 規約)。
+        input_explicit: option_tokens.iter().any(|t| t.name == "input"),
         format,
         quiet,
     }))

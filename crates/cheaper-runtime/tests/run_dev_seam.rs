@@ -177,7 +177,9 @@ Do the thing.
 fn policy() -> RuntimePolicy {
     policy_with(ExecutionPolicy {
         timeout_ms: 60_000,
-        max_turns: 10,
+        // 既定は `maxTurns: null` 相当(policy 上限なし)— bounded が
+        // 必要な test は個別に `Some(N)` を立てる。
+        max_turns: None,
         max_tool_calls: 50,
         concurrency: None,
     })
@@ -281,6 +283,7 @@ fn deps<'a>(fx: &'a Fixture, factory: &'a FakeSessionFactory) -> RunWorkerDeps<'
         execution: None,
         operation_clock: None,
         invocation_grants: &[],
+        resume: None,
     }
 }
 
@@ -443,6 +446,64 @@ async fn timeout_abort_classifies_time_out() {
     assert!(err.run_meta().unwrap().model.is_some());
 }
 
+/// T3(issue #111): run 経路の `timeoutMs` は stall window — 進捗
+/// `RunEvent` が流れ続ける限り全体時間が window を超えても完走する。
+/// 50ms 間隔の emit で合計 ~650ms > window(500ms)としても TIMEOUT
+/// にならないことを pin する。
+#[tokio::test]
+async fn progress_events_reset_stall_timeout() {
+    use cheaper_runtime::dev::fake_provider::{ScriptStep, ScriptedSession};
+
+    let mut p = policy();
+    p.execution.timeout_ms = 500;
+    let fx = fixture(p);
+    let mut steps = Vec::new();
+    for i in 0..12 {
+        steps.push(ScriptStep::Delay { ms: 50 });
+        steps.push(ScriptStep::Emit {
+            event: RunEvent::TextDelta {
+                text: format!("delta-{i}"),
+            },
+        });
+    }
+    steps.push(ScriptStep::Finish {
+        text: OK_OUTPUT.into(),
+    });
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Scripted(ScriptedSession { steps })]);
+    let start = std::time::Instant::now();
+    run_worker(&deps(&fx, &factory)).await.unwrap();
+    // 進捗駆動なので window 超過分(~600ms)掛かるが TIMEOUT にならない。
+    assert!(start.elapsed() >= Duration::from_millis(500));
+}
+
+/// T4(issue #111): 最後の進捗から `timeoutMs` を超えて event が途絶えた
+/// run は `TIMEOUT` で abort される(stall window の発火側)。
+#[tokio::test]
+async fn stall_timeout_fires_without_progress() {
+    use cheaper_runtime::dev::fake_provider::{ScriptStep, ScriptedSession};
+
+    let mut p = policy();
+    p.execution.timeout_ms = 100;
+    let fx = fixture(p);
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Scripted(ScriptedSession {
+        steps: vec![
+            ScriptStep::Emit {
+                event: RunEvent::TextDelta {
+                    text: "first".into(),
+                },
+            },
+            // 進捗が止まる — delay 中に stall window が発火する。
+            ScriptStep::Delay { ms: 60_000 },
+        ],
+    })]);
+    let start = std::time::Instant::now();
+    let err = run_worker(&deps(&fx, &factory)).await.unwrap_err();
+    assert_eq!(err.code(), ErrorCode::Timeout);
+    assert_eq!(err.details().unwrap()["reason"], json!("timeout"));
+    // stall window ~100ms + abort 処理で返る(60s delay までは待たない)。
+    assert!(start.elapsed() < Duration::from_secs(10));
+}
+
 #[tokio::test]
 async fn external_signal_classifies_aborted() {
     let fx = fixture(policy());
@@ -486,10 +547,30 @@ async fn hanging_stream_stops_waiting_after_grace() {
     assert!(start.elapsed() < Duration::from_secs(5));
 }
 
+/// T1(issue #111): `maxTurns: null`(既定 `None`)では policy レベルの
+/// turn 上限が無く、低 tier model 相当の多 turn run も完走する。
+/// 以前の既定(8)を超える turn 数で pinned する。
+#[tokio::test]
+async fn null_max_turns_allows_multi_turn_run_to_complete() {
+    let fx = fixture(policy());
+    assert_eq!(fx.policy.execution.max_turns, None);
+    // `last_turn_tool_calls: true` + turns > 旧既定(8) — bounded
+    // `Some(8)` なら `MAX_TURNS_EXCEEDED` になる組合せで、null 既定が
+    // policy abort を発火させないことを pin する。
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Complete {
+        text: OK_OUTPUT.into(),
+        usage: usage(10, 1),
+        turns: 12,
+        last_turn_tool_calls: true,
+        transient_retries: 0,
+    }]);
+    run_worker(&deps(&fx, &factory)).await.unwrap();
+}
+
 #[tokio::test]
 async fn max_turns_classifies_max_turns_exceeded() {
     let mut p = policy();
-    p.execution.max_turns = 2;
+    p.execution.max_turns = Some(2);
     let fx = fixture(p);
     let factory = FakeSessionFactory::new(vec![FakeResponse::Complete {
         text: OK_OUTPUT.into(),
@@ -646,8 +727,11 @@ async fn timeout_does_not_reclassify_existing_signal_reason() {
     }]);
     let mut d = deps(&fx, &factory);
     d.signal = Some(&signal);
+    // stall window(進捗起点の 60ms)と spawn 済み signal(20ms)の
+    // 起点がずれる — 高負荷 runner で spawn の初回 poll が遅れると
+    // timeout が先に fire し得るため、signal 側を即 abort にして
+    // 確定的に先勝ちさせる。
     tokio::spawn(async move {
-        tokio::time::sleep(Duration::from_millis(20)).await;
         controller.abort(AbortReason::new("test", "user abort", None));
     });
     let err = run_worker(&d).await.unwrap_err();
@@ -670,7 +754,7 @@ async fn max_turns_waits_for_final_tool_batch_before_aborting() {
     // `ScriptStep::ToolCalls` は Rig と同じ emit 順序を再現する —
     // `ToolCall` event → batch 実行 → `ToolResult` event。
     let mut p = policy();
-    p.execution.max_turns = 1;
+    p.execution.max_turns = Some(1);
     let fx = fixture(p);
     let root = fx.root.clone();
     let factory = FakeSessionFactory::new(vec![FakeResponse::Scripted(ScriptedSession {
@@ -704,6 +788,165 @@ async fn max_turns_waits_for_final_tool_batch_before_aborting() {
     assert_eq!(err.run_meta().unwrap().tool_calls, Some(1));
 }
 
+/// T6(issue #111): budget 枯渇 abort は checkpoint を
+/// `<userConfigDir>/checkpoints/` へ保存し、envelope 最外層 error
+/// (mutation 経路では `PARTIAL_MUTATION` wrapper)の
+/// `details.checkpoint = {path, observationsCount}` を付ける。
+#[tokio::test]
+async fn budget_abort_saves_checkpoint_and_surfaces_details() {
+    use cheaper_runtime::dev::fake_provider::{ScriptStep, ScriptedSession};
+
+    let mut p = policy();
+    p.execution.max_turns = Some(1);
+    let fx = fixture(p);
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Scripted(ScriptedSession {
+        steps: vec![
+            ScriptStep::Turn { tool_calls: true },
+            ScriptStep::ToolCalls {
+                calls: vec![ToolCallSpec {
+                    name: "write".into(),
+                    input: json!({"path": "a.txt", "content": "x"}),
+                }],
+            },
+            ScriptStep::WaitAbort,
+        ],
+    })]);
+    let err = run_worker(&deps(&fx, &factory)).await.unwrap_err();
+    assert_eq!(err.code(), ErrorCode::PartialMutation);
+    // envelope 最外層(wrapper)に checkpoint details があること —
+    // cause 側(inner MAX_TURNS_EXCEEDED)だけでは envelope 直列化で
+    // 落ちてしまう(issue #111 review の P1 指摘)。
+    let checkpoint = &err.details().unwrap()["checkpoint"];
+    let path = checkpoint["path"].as_str().expect("checkpoint.path");
+    assert_eq!(checkpoint["observationsCount"], json!(1));
+    // 既存 keys(changes)は保持される。
+    assert!(err.details().unwrap()["changes"].is_object());
+
+    // checkpoint file の内容を検証する。
+    let saved: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    assert_eq!(saved["schemaVersion"], json!(1));
+    assert_eq!(saved["worker"], json!("test-worker"));
+    assert_eq!(saved["abortReason"], json!("maxTurns"));
+    assert_eq!(saved["turns"], json!(1));
+    assert_eq!(saved["toolCalls"], json!(1));
+    // input はそのまま保持される(resume 時の default input)。
+    assert!(saved["input"].is_object());
+    // ToolCommitted(hook patch 後 args) + ToolResult が join された
+    // 観測 — write call の args と実行結果抜粋。
+    let obs = &saved["observations"][0];
+    assert_eq!(obs["tool"], json!("write"));
+    assert_eq!(obs["args"], json!({"path": "a.txt", "content": "x"}));
+    assert!(obs["resultExcerpt"].is_string());
+}
+
+/// T6b(issue #111): 再開可能な状態を持たない abort(timeout・signal)は
+/// checkpoint を保存しない — `details.checkpoint` は付かない。
+#[tokio::test]
+async fn timeout_abort_saves_no_checkpoint() {
+    let mut p = policy();
+    p.execution.timeout_ms = 60;
+    let fx = fixture(p);
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Hang]);
+    let err = run_worker(&deps(&fx, &factory)).await.unwrap_err();
+    assert_eq!(err.code(), ErrorCode::Timeout);
+    // timeout には部分進行を再開する材料が無い — checkpoint 非対象。
+    assert!(err
+        .details()
+        .and_then(|d| d.get("checkpoint").cloned())
+        .is_none());
+}
+
+// ---------------------------------------------------------------------------
+// issue #111 — `--resume`(checkpoint 継続注入 / 連鎖 resume)
+// ---------------------------------------------------------------------------
+
+/// T7: `deps.resume` 指定の run は前回観測・counter を user prompt 末尾へ
+/// 注入し(continuation section)、新規 session で完走する。
+#[tokio::test]
+async fn resume_injects_prior_observations_into_prompt() {
+    use cheaper_runtime::run::checkpoint::ResumeCheckpoint;
+
+    let fx = fixture(policy());
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Complete {
+        text: format!("```json\n{OK_OUTPUT}\n```"),
+        usage: usage(10, 5),
+        turns: 1,
+        last_turn_tool_calls: false,
+        transient_retries: 0,
+    }]);
+    let prior = ResumeCheckpoint {
+        abort_reason: "maxTurns".to_string(),
+        turns: 8,
+        tool_calls: 3,
+        observations: vec![json!({
+            "tool": "read",
+            "args": {"path": "a.txt"},
+            "resultExcerpt": "alpha"
+        })],
+    };
+    let mut d = deps(&fx, &factory);
+    d.resume = Some(&prior);
+    let ok = run_worker(&d).await.unwrap();
+    assert_eq!(ok.result["ok"], json!(true));
+    let prompt = &factory.prompts()[0];
+    assert!(prompt.contains("interrupted by maxTurns after 8 turns and 3 tool calls"));
+    assert!(prompt.contains("\"tool\": \"read\""));
+    assert!(prompt.contains("Continue the task from this state"));
+}
+
+/// T8: 連鎖 resume — resume run が再度 `MaxTurns` で abort した場合、
+/// 新 checkpoint は前回観測 + 新規観測を累積して保存する。
+#[tokio::test]
+async fn chained_resume_accumulates_observations() {
+    use cheaper_runtime::dev::fake_provider::{ScriptStep, ScriptedSession};
+    use cheaper_runtime::run::checkpoint::ResumeCheckpoint;
+
+    let mut p = policy();
+    p.execution.max_turns = Some(1);
+    let fx = fixture(p);
+    let factory = FakeSessionFactory::new(vec![FakeResponse::Scripted(ScriptedSession {
+        steps: vec![
+            ScriptStep::Turn { tool_calls: true },
+            ScriptStep::ToolCalls {
+                calls: vec![ToolCallSpec {
+                    name: "read".into(),
+                    input: json!({"path": "a.txt"}),
+                }],
+            },
+            ScriptStep::WaitAbort,
+        ],
+    })]);
+    let prior = ResumeCheckpoint {
+        abort_reason: "maxTurns".to_string(),
+        turns: 8,
+        tool_calls: 3,
+        observations: vec![
+            json!({"tool":"read","args":{"path":"old.txt"},"resultExcerpt":"o1"}),
+            json!({"tool":"write","args":{"path":"w.txt"},"resultExcerpt":"o2"}),
+        ],
+    };
+    let mut d = deps(&fx, &factory);
+    d.resume = Some(&prior);
+    let err = run_worker(&d).await.unwrap_err();
+    assert_eq!(err.code(), ErrorCode::MaxTurnsExceeded);
+    // observationsCount = prior(2) + 新規(1)。
+    assert_eq!(
+        err.details().unwrap()["checkpoint"]["observationsCount"],
+        json!(3)
+    );
+    let path = err.details().unwrap()["checkpoint"]["path"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let saved: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    let obs = saved["observations"].as_array().unwrap();
+    assert_eq!(obs.len(), 3);
+    // 累積順 — 前回観測が先、今回の新規観測が後。
+    assert_eq!(obs[0]["resultExcerpt"], json!("o1"));
+    assert_eq!(obs[1]["resultExcerpt"], json!("o2"));
+    assert_eq!(obs[2]["tool"], json!("read"));
+}
+
 #[tokio::test]
 async fn rolled_back_turn_counts_toward_max_turns() {
     use cheaper_rig_adapter::RunEvent;
@@ -715,7 +958,7 @@ async fn rolled_back_turn_counts_toward_max_turns() {
     // `RolledBackTurn` step が adapter hook と同じ計上点を replay
     // する — `turns` 計上 + `last_turn_tool_calls = true`。
     let mut p = policy();
-    p.execution.max_turns = 1;
+    p.execution.max_turns = Some(1);
     let fx = fixture(p);
     let factory = FakeSessionFactory::new(vec![FakeResponse::Scripted(ScriptedSession {
         steps: vec![
@@ -741,7 +984,7 @@ async fn max_turns_still_aborts_without_tool_calls_in_final_turn() {
     // `stopReason === "toolUse"` 条件が必須なので text 終了で
     // maxTurns 到達は abort しない(TS: turn_end の toolUse check)。
     let mut p = policy();
-    p.execution.max_turns = 1;
+    p.execution.max_turns = Some(1);
     let fx = fixture(p);
     let factory = FakeSessionFactory::new(vec![FakeResponse::Complete {
         text: OK_OUTPUT.into(),
@@ -871,7 +1114,7 @@ async fn policy_max_turns_flows_to_session_spec() {
     // `max(1024, policy)` の算出は `RigSessionFactory` 側(単体 test は
     // run.rs 内) — ここでは policy 値の wiring を検証する。
     let mut p = policy();
-    p.execution.max_turns = 2048;
+    p.execution.max_turns = Some(2048);
     let fx = fixture(p);
     let factory = FakeSessionFactory::new(vec![
         // 1 本目を extract 失敗させて repair session も生成させる。
@@ -893,8 +1136,8 @@ async fn policy_max_turns_flows_to_session_spec() {
     run_worker(&deps(&fx, &factory)).await.unwrap();
     let created = factory.created();
     assert_eq!(created.len(), 2);
-    assert_eq!(created[0].policy_max_turns, 2048);
-    assert_eq!(created[1].policy_max_turns, 2048);
+    assert_eq!(created[0].policy_max_turns, Some(2048));
+    assert_eq!(created[1].policy_max_turns, Some(2048));
 }
 
 /// mixed policy — `process.tasks` 非空 × `command.grants` 空では
@@ -1047,6 +1290,7 @@ async fn degraded_and_undeclared_calls_fail_unknown_tool() {
     let deps = RunWorkerDeps {
         session_factory: &factory,
         invocation_grants: &[],
+        resume: None,
         ..deps(&fx, &factory.inner)
     };
     let ok = run_worker(&deps).await.unwrap();

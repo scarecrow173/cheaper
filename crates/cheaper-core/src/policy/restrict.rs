@@ -142,7 +142,7 @@ mod tests {
             },
             execution: ExecutionPolicy {
                 timeout_ms: 300_000,
-                max_turns: 10,
+                max_turns: Some(10),
                 max_tool_calls: 20,
                 concurrency: Some(ConcurrencyPolicy {
                     max_operations: 8,

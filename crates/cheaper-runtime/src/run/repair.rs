@@ -14,6 +14,8 @@
 //!   配線は provider/adapter 側の責務(未配線なら corrective prompt と
 //!   回数上限のみが contract を担保する)。
 
+use std::sync::Arc;
+
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::json::stringify::stringify_pretty;
 use cheaper_core::worker::schema::{CompiledSchema, SchemaErrorEntry};
@@ -49,8 +51,12 @@ pub struct RepairOptions<'a> {
     /// `policy.retry.transientAttempts`。
     pub transient_retries: usize,
     /// `policy.execution.maxTurns` — session factory が内部 turn guard
-    /// (`max(1024, policy maxTurns)`)を算出する材料(F7)。
-    pub policy_max_turns: u64,
+    /// を算出する材料(F7)。`None`(`maxTurns: null`)は policy 上限
+    /// なしで内部 guard のみ。
+    pub policy_max_turns: Option<u64>,
+    /// stall timeout の進捗記録先 — attempt の event sink が RunEvent を
+    /// 通すたびに `note` する(issue #111)。
+    pub progress: Arc<super::abort::Progress>,
     /// run 集約 abort signal(`runAbort.signal`)。abort で残り attempt を打ち切る。
     pub signal: AbortSignal,
     /// `promptWithAbortGrace` の grace ms(既定 5000)。
@@ -90,7 +96,8 @@ pub async fn repair_output(
             transient_retries: opts.transient_retries,
             policy_max_turns: opts.policy_max_turns,
         })?;
-        let mut sink = |_event: &cheaper_rig_adapter::RunEvent| {};
+        let progress = Arc::clone(&opts.progress);
+        let mut sink = move |_event: &cheaper_rig_adapter::RunEvent| progress.note();
         let outcome = prompt_with_abort_grace(
             &session,
             repair_user_prompt(&raw_output, &errors),

@@ -6,7 +6,6 @@ Directory: `docs/designs`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
-| DESIGN-giTr4G7NzwSzWJTVgBo3ax | bulk-reader 出力上限・INVALID_OUTPUT 指針の skill 文書設計 | approved | [bulk-reader-output-limits-and-invalid-output-skill-docs.md](./bulk-reader-output-limits-and-invalid-output-skill-docs.md) |
 | DESIGN-OVERVIEW | System Design Overview | draft | [overview.md](./overview.md) |
 | DESIGN-034EehnT1xOPAee9dK22Kx | Setup-boundary abort classification via core ErrorCode reverse lookup | approved | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
 | DESIGN-034z1EgnQwax4VamK2xmdT | APM executable payload layout and platform launchers | superseded | [apm-executable-payload-layout-and-platform-launchers.md](./apm-executable-payload-layout-and-platform-launchers.md) |
@@ -15,10 +14,11 @@ Directory: `docs/designs`
 | DESIGN-Hz0wDP9E6GjkHNLwOEOGiw | Auth terminal prompt I/O boundary (injected stderr for text/select prompts) | approved | [auth-io-boundary.md](./auth-io-boundary.md) |
 | DESIGN-034r05iHy2gdnoOvi1vrou | Auth URL opener seam (injectable browser launch) | approved | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
 | DESIGN-C4VbdOatUn4aVt3blVe8pk | auto tier classification by workload effectiveCost percentile | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
-| DESIGN-034H3c448Lvz0CfBjd5Xlz | Bounded hook request evaluation and hook-config registration lifecycle | draft | [bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md](./bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md) |
+| DESIGN-034H3c448Lvz0CfBjd5Xlz | Bounded hook request evaluation and hook-config registration lifecycle | approved | [bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md](./bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md) |
 | DESIGN-034zWclUCjCIH7M27XEu4j | ToolScheduler の共有 admission 設計 | approved | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
 | DESIGN-034r05iHrZUE6WxkSJi9GF | bulk-reader contract | approved | [bulk-reader-contract.md](./bulk-reader-contract.md) |
 | DESIGN-034r05iHy2gdnoNaWH2bos | Bulk-reader huge-file safe I/O | approved | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
+| DESIGN-giTr4G7NzwSzWJTVgBo3ax | bulk-reader 出力上限・INVALID_OUTPUT 指針の skill 文書設計 | approved | [bulk-reader-output-limits-and-invalid-output-skill-docs.md](./bulk-reader-output-limits-and-invalid-output-skill-docs.md) |
 | DESIGN-034zIUgKgoIuBD5BY6jLjf | Canonical Tool Runtime と Pi adapter | approved | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | DESIGN-034Dmk2RqH0fMzF3gLrR0T | cargo source install distribution and thin PATH launchers | approved | [cargo-source-install-distribution-and-thin-path-launchers.md](./cargo-source-install-distribution-and-thin-path-launchers.md) |
 | DESIGN-034r05iHrZUE6Wy5X0Hc88 | cheap-writer contract | superseded | [cheap-writer-contract.md](./cheap-writer-contract.md) |
@@ -80,6 +80,7 @@ Directory: `docs/designs`
 | DESIGN-034zQkHD65kAeG9xVGSoFX | Version-pinned launcher acquisition | superseded | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | DESIGN-034D9Xs2f06fbVcxdT08le | Windows credential snapshot sync for Devin provider | approved | [windows-credential-snapshot-sync-for-devin-provider.md](./windows-credential-snapshot-sync-for-devin-provider.md) |
 | DESIGN-034r05iHrZUE6WrdtQIOmE | コアドメインモデル: Worker Definition・Resolver・Runtime Policy・tool vocabulary・error model | approved | [worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md](./worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md) |
+| DESIGN-LAY8HNBqNyjH7L5DFvTPc2 | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume の実装設計 | approved | [worker-run-nullable-maxturns-and-stall-timeout.md](./worker-run-nullable-maxturns-and-stall-timeout.md) |
 | DESIGN-034zJ38fX1W3g0Zrceda1E | WorkflowCompiler の validation と materialization 境界 | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
 | DESIGN-034zT2MINVpakJb3AhS0m5 | Workflow file loader と interface CLI の接続設計 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | DESIGN-034AQQsGub6ocuyzZg3Fuv | Design workflow orchestration benchmark harness | approved | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |

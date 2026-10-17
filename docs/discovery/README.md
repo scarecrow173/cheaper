@@ -12,6 +12,7 @@ Directory: `docs/discovery`
 | DISC-034zWckRcYKm7QivslioOd | ToolScheduler の admission と ownership 境界 | resolved | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
 | DISC-034r05iHy2gdnpb598KIca | bulk-read delegation benchmark and large-read threshold evidence | resolved | [bulk-read-delegation-benchmark.md](./bulk-read-delegation-benchmark.md) |
 | DISC-034r05iHy2gdnpeCjN4yfM | bulk-reader の巨大ファイル安全 I/O | resolved | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
+| DISC-x1vmG1ECubKZNQ0QMyUyi5 | bulk-reader low-tier 無回答: turn 枯渇と固定 timeout の構造分析 | resolved | [bulk-reader-low-tier-no-result-turn-budget-and-timeout.md](./bulk-reader-low-tier-no-result-turn-budget-and-timeout.md) |
 | DISC-NXzrfJIbmACuqdlsNsxtWN | bulk-reader 出力フィールド上限と INVALID_OUTPUT 回復指針の文書化 | resolved | [bulk-reader-output-limits-and-invalid-output-guidance.md](./bulk-reader-output-limits-and-invalid-output-guidance.md) |
 | DISC-034zIL9lJBa7f3clZmUHin | Canonical Tool Runtime 抽出 | resolved | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | DISC-034DlM8Pf1tWBtLqX1VWFc | cargo source install replaces release binary acquisition for APM consumers | resolved | [cargo-source-install-replaces-release-binary-acquisition-for-apm-consumers.md](./cargo-source-install-replaces-release-binary-acquisition-for-apm-consumers.md) |

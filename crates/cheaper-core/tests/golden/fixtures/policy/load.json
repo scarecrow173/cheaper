@@ -10,8 +10,8 @@
                 "mutations": "serialized"
               },
               "maxToolCalls": 64,
-              "maxTurns": 8,
-              "timeoutMs": 120000
+              "maxTurns": null,
+              "timeoutMs": 300000
             },
             "filesystem": {
               "denyPaths": [],
@@ -47,7 +47,8 @@
                 "write",
                 "edit",
                 "count_tokens",
-                "process"
+                "process",
+                "command"
               ]
             },
             "workflow": {
@@ -73,7 +74,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n"
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n"
       },
       "name": "builtin only",
       "opts": {
@@ -92,7 +93,7 @@
                 "mutations": "serialized"
               },
               "maxToolCalls": 64,
-              "maxTurns": 8,
+              "maxTurns": null,
               "timeoutMs": 300000
             },
             "filesystem": {
@@ -148,7 +149,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
         "proj/.cheaper/policy.yaml": "version: 1\nexecution:\n  concurrency:\n    maxOperations: 2\nprocess:\n  timeout: 30s\n",
         "user/policy.yaml": "version: 1\nmodel:\n  maxTier: medium\nexecution:\n  timeout: 5m\ntools:\n  allow: [read]\n"
       },
@@ -176,7 +177,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
         "user/policy.yaml": "version: 1\nbogus: 1\n"
       },
       "name": "invalid user policy errors",
@@ -203,7 +204,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
         "proj/.cheaper/policy.yaml": "version: 1\nbogus: 1\n"
       },
       "name": "invalid project policy errors",
@@ -272,7 +273,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
         "user/policy.yaml": "version: [unclosed\n"
       },
       "name": "malformed yaml errors",
@@ -296,7 +297,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
         "user/policy.yaml": "- a\n- b\n"
       },
       "name": "non-object yaml errors",
@@ -323,7 +324,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
         "proj/.cheaper/policy.yaml": "version: 1\ncommand:\n  grants:\n    git-log:\n      executable: git\n"
       },
       "name": "project command section rejected",
@@ -343,8 +344,8 @@
                 "mutations": "serialized"
               },
               "maxToolCalls": 64,
-              "maxTurns": 8,
-              "timeoutMs": 120000
+              "maxTurns": null,
+              "timeoutMs": 300000
             },
             "filesystem": {
               "denyPaths": [],
@@ -403,7 +404,8 @@
                 "write",
                 "edit",
                 "count_tokens",
-                "process"
+                "process",
+                "command"
               ]
             },
             "workflow": {
@@ -419,7 +421,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
         "user/policy.yaml": "version: 1\ncommand:\n  grants:\n    git-log:\n      executable: git\n      argv:\n        - log\n        - \"*\"\n"
       },
       "name": "user command grants accepted",
@@ -439,8 +441,8 @@
                 "mutations": "serialized"
               },
               "maxToolCalls": 64,
-              "maxTurns": 8,
-              "timeoutMs": 120000
+              "maxTurns": null,
+              "timeoutMs": 300000
             },
             "filesystem": {
               "denyPaths": [],
@@ -511,7 +513,8 @@
                 "write",
                 "edit",
                 "count_tokens",
-                "process"
+                "process",
+                "command"
               ]
             },
             "workflow": {
@@ -527,7 +530,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
         "user/policy.yaml": "version: 1\ncommand:\n  grants:\n    git-log:\n      executable: git\n      argv:\n        - log\n        - \"*\"\n"
       },
       "name": "invocation grant merges after user",
@@ -561,8 +564,8 @@
                 "mutations": "serialized"
               },
               "maxToolCalls": 64,
-              "maxTurns": 8,
-              "timeoutMs": 120000
+              "maxTurns": null,
+              "timeoutMs": 300000
             },
             "filesystem": {
               "denyPaths": [],
@@ -621,7 +624,8 @@
                 "write",
                 "edit",
                 "count_tokens",
-                "process"
+                "process",
+                "command"
               ]
             },
             "workflow": {
@@ -637,7 +641,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
         "proj/.cheaper/policy.yaml": "version: 1\nexecution:\n  concurrency:\n    maxOperations: 2\n"
       },
       "name": "invocation grant survives project layer",
@@ -675,7 +679,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n",
         "user/policy.yaml": "version: 1\ncommand:\n  grants:\n    git-log:\n      executable: git\n"
       },
       "name": "invocation grant collides with user grant",
@@ -709,7 +713,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n"
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n"
       },
       "name": "invocation non-grants key rejects",
       "opts": {
@@ -739,7 +743,7 @@
         }
       },
       "files": {
-        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\nexecution:\n  timeout: 120s\n  maxTurns: 8\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern\uff08core DEFAULT_DENY_PATHS\uff09\u306b\u8ffd\u52a0\u3059\u308b deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n"
+        "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n"
       },
       "name": "invocation denied executable keeps inner code",
       "opts": {

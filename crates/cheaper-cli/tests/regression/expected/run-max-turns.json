@@ -8,7 +8,11 @@
     "error": {
       "code": "MAX_TURNS_EXCEEDED",
       "details": {
-        "reason": "maxTurns"
+        "reason": "maxTurns",
+        "checkpoint": {
+          "path": "<CFG>/checkpoints/run-<id>.json",
+          "observationsCount": 2
+        }
       },
       "exitCode": 6,
       "retryable": false

@@ -18,8 +18,12 @@ command:
   grants: {}
 
 execution:
-  timeout: 120s
-  maxTurns: 8
+  # run 経路では進捗 RunEvent の観測でリセットされる stall window
+  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。
+  timeout: 300s
+  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。
+  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。
+  maxTurns: null
   maxToolCalls: 64
 
 tools:

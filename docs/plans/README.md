@@ -11,7 +11,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1FbkoZibpg86T | cheaper auth command (provider login absorbed into the CLI) | completed | [auth-command.md](./auth-command.md) |
 | PLAN-zDQIdChPXY1lrGJyzZTiQc | Route auth text/select prompts through the injected CliIo stderr | completed | [auth-io-boundary.md](./auth-io-boundary.md) |
 | PLAN-034r05iHE1Fbkp4xxlyMdV | Injectable auth URL opener seam for hermetic tests | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
-| PLAN-034H3ODf3yWW5G5NgvUvt8 | Bounded hook evaluation and hook-config registration lifecycle | draft | [bounded-hook-evaluation-and-hook-config-lifecycle.md](./bounded-hook-evaluation-and-hook-config-lifecycle.md) |
+| PLAN-034H3ODf3yWW5G5NgvUvt8 | Bounded hook evaluation and hook-config registration lifecycle | completed | [bounded-hook-evaluation-and-hook-config-lifecycle.md](./bounded-hook-evaluation-and-hook-config-lifecycle.md) |
 | PLAN-034r05iHE1Fbkp3qMZZB17 | Bulk-reader huge-file safe I/O | completed | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
 | PLAN-ANDDozesHfjJTzvFeRN6bf | bulk-reader 出力上限・INVALID_OUTPUT 指針の skill 文書化計画 | completed | [bulk-reader-output-limits-and-invalid-output-skill-docs.md](./bulk-reader-output-limits-and-invalid-output-skill-docs.md) |
 | PLAN-034r05iHE1FbkoVrzp9sac | Implement canonical Token Counter, count_tokens tool, and count-tokens CLI | completed | [canonical-token-counter.md](./canonical-token-counter.md) |
@@ -88,4 +88,5 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1FbkpeFEXECDx | User-facing documentation IA — implementation plan | completed | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | PLAN-034r05iHy2gdnpLvJw9CNY | Verify cheaper real-provider path with Ollama on Docker | completed | [verify-cheaper-real-provider-path-with-ollama-on-docker.md](./verify-cheaper-real-provider-path-with-ollama-on-docker.md) |
 | PLAN-034D8SPOCUdlPoQHojlMCb | Volume-root workspace boundary predicate fix | approved | [volume-root-workspace-boundary-predicate-fix.md](./volume-root-workspace-boundary-predicate-fix.md) |
+| PLAN-enjTBUdUwFPP2aCo1QGmER | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume の実装計画 | approved | [worker-run-nullable-maxturns-stall-timeout-and-resume.md](./worker-run-nullable-maxturns-stall-timeout-and-resume.md) |
 | PLAN-034r05iHE1FbkoYP7AZgHF | Write-scope enforcement and privacy deny list | completed | [write-scope-and-privacy-deny.md](./write-scope-and-privacy-deny.md) |

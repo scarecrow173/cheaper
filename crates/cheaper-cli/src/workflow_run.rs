@@ -378,6 +378,9 @@ impl JobExecutor for WorkerJobExecutor {
                         }),
                         operation_clock: None,
                         invocation_grants: &inner.invocation_grants,
+                        // workflow job は checkpoint/resume 対象外
+                        // (issue #111 design §3b — run 経路のみ)。
+                        resume: None,
                     };
                     run_worker(&deps).await
                 })

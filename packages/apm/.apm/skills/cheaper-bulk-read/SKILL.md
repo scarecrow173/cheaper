@@ -106,6 +106,29 @@ Recovery, in order:
 3. Fall back to reading the files directly or splitting the work into
    smaller `bulk-read` calls.
 
+## When it fails with budget exhaustion or timeout
+
+- `error.code === "TIMEOUT"` (exit 7, retryable) means the run went
+  silent for the whole `execution.timeout` stall window (default 300s) —
+  not that it ran too long in total. `transientAttempts` retries only
+  provider transient failures, so they never extend this window; the
+  backoff itself counts toward it. Re-run, or raise `execution.timeout`
+  in your `policy.yaml` if legitimate single steps (large `process`
+  tasks, non-streaming completions) outlast the window.
+- `error.code === "MAX_TURNS_EXCEEDED"` or `"MAX_TOOL_CALLS_EXCEEDED"`
+  (exit 6 — or exit 9 `PARTIAL_MUTATION`; bulk-reader is read-only so
+  6 applies) means a **configured** budget was hit. `execution.maxTurns`
+  defaults to `null` (no policy turn cap), so this only occurs when you
+  or policy bounded it — or when `maxToolCalls` (default 64) was
+  reached. These errors carry `error.details.checkpoint = {path,
+  observationsCount}` pointing to a saved checkpoint under
+  `<userConfigDir>/checkpoints/`; continue with
+  `cheaper bulk-read --resume <path>` (same worker, fresh budget, prior
+  observations injected; pass `--grant` again if used). Resumed runs
+  that exhaust again accumulate observations into a new checkpoint, so
+  chained resume works. Prefer resuming over blind retry — the worker
+  keeps its prior findings instead of restarting from scratch.
+
 ## Recommended flow
 
 ```text

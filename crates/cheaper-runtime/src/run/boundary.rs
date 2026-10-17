@@ -16,6 +16,7 @@ use serde_json::{Map, Value};
 use tracing::Instrument;
 
 use super::abort::{RunAbort, RunAbortReason};
+use super::checkpoint::ResumeCheckpoint;
 use super::error::WorkerRunError;
 use super::meta::WorkerRunMeta;
 use super::panic_boundary::catch_run_panic;
@@ -74,6 +75,9 @@ pub struct RunWorkerDeps<'a> {
     /// record する。runtime 層では policy と区別不能のため cli 層から
     /// 運ぶ(DESIGN-034FntkIZGiffhdU4caSkN §(d))。未指定は空 slice。
     pub invocation_grants: &'a [String],
+    /// `cheaper run --resume` 由来の前回 checkpoint(issue #111)—
+    /// 観測注入・連鎖 resume 累積に使う。session/budget は新規。
+    pub resume: Option<&'a ResumeCheckpoint>,
 }
 
 /// `runWorker` 成功結果。
@@ -107,13 +111,27 @@ async fn run_worker_inner(deps: &RunWorkerDeps<'_>) -> Result<RunWorkerOk, Worke
     let grace_ms = deps.abort_grace_ms.unwrap_or(DEFAULT_ABORT_GRACE_MS);
     let run_abort = Arc::new(RunAbort::new());
 
-    // `setTimeout(onTimeout, timeoutMs)`。
+    // `setTimeout(onTimeout, timeoutMs)` → issue #111 で run 経路は
+    // stall window 化: 観測された `RunEvent`(進捗)が timeout を
+    // リセットする。`last_progress + timeout` で起床し、起きた時点の
+    // 最終進捗で再判定 — 進捗があれば次の期限へ延長、無ければ
+    // `TIMEOUT` abort。sleep 中に届いた進捗で旧 deadline が過去に
+    // なるケースは起床後の fresh read で救済される。
+    // (workflow 経路の timeout は `engine.rs`/`spawn_deadline` の
+    //  absolute deadline のまま — 意味を共有しない。)
     let timeout_task = {
         let abort = Arc::clone(&run_abort);
-        let timeout_ms = policy.execution.timeout_ms;
+        let progress = run_abort.progress_handle();
+        let timeout = Duration::from_millis(policy.execution.timeout_ms);
         tokio::spawn(async move {
-            tokio::time::sleep(Duration::from_millis(timeout_ms)).await;
-            abort.request_abort(RunAbortReason::Timeout);
+            loop {
+                let deadline = progress.last() + timeout;
+                tokio::time::sleep_until(deadline).await;
+                if tokio::time::Instant::now() >= progress.last() + timeout {
+                    abort.request_abort(RunAbortReason::Timeout);
+                    return;
+                }
+            }
         })
     };
     // `deps.signal.onAbort → requestAbort("signal")`。

@@ -134,9 +134,46 @@ async fn execute_inner(
     // `cheaper.cli.command` span の `worker.name` field(分類値のみ)。
     tracing::Span::current().record("worker.name", worker.name.as_str());
 
-    let input_map = read_task_input(&args.input, io.stdin)?;
-    let input = Value::Object(input_map);
+    // `--resume`(issue #111)— checkpoint を load・validate し、
+    // 解決済み worker との一致を検査する(named resolution・
+    // `--worker-file` ともに resolved `worker.name` と比較)。
+    // 不一致・不正 file は `INVALID_INPUT`。
+    let checkpoint = match &args.resume {
+        Some(path) => {
+            let cp = cheaper_runtime::run::checkpoint::load_checkpoint(std::path::Path::new(path))?;
+            let cp_worker = cp.get("worker").and_then(Value::as_str).unwrap_or_default();
+            if cp_worker != worker.name.as_str() {
+                return Err(cheaper_core::errors::CheaperError::new(
+                    cheaper_core::errors::ErrorCode::InvalidInput,
+                    format!(
+                        "checkpoint worker mismatch: checkpoint is for `{cp_worker}`, not `{}`",
+                        worker.name
+                    ),
+                )
+                .into());
+            }
+            Some(cp)
+        }
+        None => None,
+    };
+
+    // input 解決 — 明示 `--input`(値 `-` の stdin 指定を含む)が
+    // checkpoint stored input に優先する。resume かつ未指定時は
+    // checkpoint input を使い stdin を読まない(design §3c)。
+    let input = if args.input_explicit || checkpoint.is_none() {
+        Value::Object(read_task_input(&args.input, io.stdin)?)
+    } else {
+        checkpoint
+            .as_ref()
+            .and_then(|cp| cp.get("input").cloned())
+            .expect("load_checkpoint guarantees `input` object")
+    };
     validate_worker_input(&worker, &input)?;
+    // runtime 側へ渡す継続状態 — 観測注入(continuation section)と
+    // 連鎖 resume の観測累積に使われる。
+    let resume = checkpoint
+        .as_ref()
+        .map(cheaper_runtime::run::checkpoint::ResumeCheckpoint::from_checkpoint);
 
     // `--grant` 値列 → 合成 invocation layer + 宣言順 names
     // (`grant.rs` — workflow run 経路と共有する builder)。
@@ -267,6 +304,7 @@ async fn execute_inner(
         execution: None,
         operation_clock: None,
         invocation_grants: &grant_names,
+        resume: resume.as_ref(),
     };
 
     let outcome = run_worker(&deps).await;

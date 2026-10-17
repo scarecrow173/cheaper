@@ -8,7 +8,11 @@
     "error": {
       "code": "MAX_TOOL_CALLS_EXCEEDED",
       "details": {
-        "reason": "maxToolCalls"
+        "reason": "maxToolCalls",
+        "checkpoint": {
+          "path": "<CFG>/checkpoints/run-<id>.json",
+          "observationsCount": 0
+        }
       },
       "exitCode": 6,
       "retryable": false

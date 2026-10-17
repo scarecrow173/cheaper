@@ -22,6 +22,7 @@
 //! runtime の public API から rig crate 型は露出しない。
 
 pub mod abort;
+pub mod checkpoint;
 pub mod error;
 pub mod grace;
 pub mod meta;
@@ -59,6 +60,7 @@ use serde_json::{Map, Value};
 use tracing::Instrument;
 
 use self::abort::{RunAbort, RunAbortReason};
+use self::checkpoint::{save_checkpoint, CheckpointInfo, RunObservations};
 use self::error::{PartialRunMeta, WorkerRunError};
 use self::grace::{prompt_with_abort_grace, PromptOutcome};
 use self::meta::{build_meta, merge_snapshots, MetaInputs, WorkerRunMeta};
@@ -95,6 +97,10 @@ struct RunCtx<'a> {
     repair_snap: RunSnapshot,
     /// `repairs` — 消費 repair attempt 数。
     repairs: u64,
+    /// main session の tool 観測 buffer — budget 枯渇 checkpoint
+    /// (issue #111)の `observations` 元。`on_event` funnel が通す
+    /// `ToolCommitted`/`ToolResult` を `call_id` で join する。
+    observations: std::sync::Arc<std::sync::Mutex<RunObservations>>,
 }
 
 impl<'a> RunCtx<'a> {
@@ -113,6 +119,12 @@ impl<'a> RunCtx<'a> {
             session: None,
             repair_snap: RunSnapshot::default(),
             repairs: 0,
+            // resume 由来の前回観測を seed し、連鎖 resume で新規
+            // checkpoint が累積保存されるようにする(design §3d)。
+            observations: std::sync::Arc::new(std::sync::Mutex::new(match &deps.resume {
+                Some(r) => RunObservations::with_prior(r.observations.clone()),
+                None => RunObservations::new(),
+            })),
         }
     }
 
@@ -199,27 +211,71 @@ impl<'a> RunCtx<'a> {
 
     /// `throwClassified(err)` — abort reason を code 化し、mutation が
     /// あれば `PARTIAL_MUTATION` で wrap(cause = 元の abort error)。
+    ///
+    /// budget 枯渇(`MaxTurns`/`MaxToolCalls`)では checkpoint を best-
+    /// effort 保存し、envelope 最外層 error の `details.checkpoint`
+    /// (`{path, observationsCount}`)へ載せる — `PARTIAL_MUTATION`
+    /// wrap 時は wrapper 側に付ける(envelope 直列化が inner cause の
+    /// details を落とすため)。`Timeout`/`Signal` や workflow job は
+    /// 対象外(issue #111 design §3)。
     fn classified(&self, reason: RunAbortReason) -> WorkerRunError {
         let meta = match self.full_meta(None) {
             Ok(meta) => PartialRunMeta::from(meta),
             Err(meta_err) => return self.fail(meta_err),
         };
+        let checkpoint = match reason {
+            RunAbortReason::MaxTurns | RunAbortReason::MaxToolCalls => {
+                self.save_budget_checkpoint(reason)
+            }
+            _ => None,
+        };
         let abort_err = reason.cheaper_error();
         let mutated = meta.changes.as_ref().is_some_and(|c| c.totals.files > 0);
         let err = if mutated {
+            let mut details = Map::from_iter([(
+                "changes".to_string(),
+                serde_json::to_value(&meta.changes).unwrap_or_default(),
+            )]);
+            if let Some(info) = &checkpoint {
+                details.insert("checkpoint".to_string(), checkpoint_details(info));
+            }
             CheaperError::new(
                 ErrorCode::PartialMutation,
                 "worker aborted after partial mutations",
             )
-            .with_details(Map::from_iter([(
-                "changes".to_string(),
-                serde_json::to_value(&meta.changes).unwrap_or_default(),
-            )]))
+            .with_details(details)
             .with_cause(abort_err)
         } else {
-            abort_err
+            match checkpoint {
+                Some(info) => {
+                    let mut details = abort_err.details().cloned().unwrap_or_default();
+                    details.insert("checkpoint".to_string(), checkpoint_details(&info));
+                    abort_err.with_details(details)
+                }
+                None => abort_err,
+            }
         };
         WorkerRunError::new(err, Some(meta))
+    }
+
+    /// budget abort の checkpoint 保存 — best-effort(失敗時は `None`
+    /// で `details.checkpoint` を省略するだけ)。
+    fn save_budget_checkpoint(&self, reason: RunAbortReason) -> Option<CheckpointInfo> {
+        let observations = self.observations.lock().unwrap_or_else(|e| e.into_inner());
+        let snapshot = self
+            .session
+            .as_ref()
+            .map(|s| s.snapshot())
+            .unwrap_or_default();
+        save_checkpoint(
+            self.deps.runtime.user_config_dir(),
+            self.deps.worker.name.as_str(),
+            self.deps.input,
+            reason.as_str(),
+            &snapshot,
+            &observations,
+        )
+        .ok()
     }
 
     // -- inner body --------------------------------------------------------
@@ -569,7 +625,22 @@ impl<'a> RunCtx<'a> {
         if let Some(reason) = run_abort.reason() {
             return Err(self.classified(reason));
         }
-        let user_prompt = build_user_prompt(deps.input);
+        let mut user_prompt = build_user_prompt(deps.input);
+        // `--resume` 継続注入(design §3c)— 前回 abort の counter と
+        // 観測を user prompt 末尾へ付け、「続きから最終 JSON」を指示する。
+        // session/policy/budget は新規で、観測のみ引き継ぐ。
+        if let Some(resume) = deps.resume {
+            user_prompt.push_str(&format!(
+                "\n\nThe previous run was interrupted by {} after {} turns and {} tool calls. \
+                 Observations collected so far (JSON):\n{}\n\
+                 Continue the task from this state and produce the final JSON answer.",
+                resume.abort_reason,
+                resume.turns,
+                resume.tool_calls,
+                serde_json::to_string_pretty(&resume.observations)
+                    .unwrap_or_else(|_| "[]".to_string()),
+            ));
+        }
         let max_turns = policy.execution.max_turns;
         let outcome = {
             let check_session = Arc::clone(session);
@@ -582,7 +653,20 @@ impl<'a> RunCtx<'a> {
             // `ToolCall` 件数と `ToolResult` 件数の差が 0 に戻った時点で
             // abort すれば最終 batch は完全に surface される。
             let mut pending_tool_calls = 0u64;
+            // stall timeout(issue #111)— 観測された RunEvent 全般を
+            // 進捗として記録し、boundary の timeout watcher が
+            // `last_progress + timeout` まで延長する。
+            let progress = run_abort.progress_handle();
+            // budget 枯渇 checkpoint の観測 buffer — main session の
+            // `ToolCommitted`/`ToolResult` のみが対象(repair は
+            // tool-less)。
+            let observations = Arc::clone(&self.observations);
             let mut on_event = move |event: &RunEvent| {
+                progress.note();
+                observations
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .note(event);
                 match event {
                     // RunEvent boundary event(design §instrumentation
                     // 配置)— field は `call.id`/`tool.name`/usage counts
@@ -616,8 +700,13 @@ impl<'a> RunCtx<'a> {
                 // TS: turn_end 毎に `snapshot.turns >= maxTurns &&
                 // lastAssistant.stopReason === "toolUse"`。hook が item
                 // 送出前に turn を計上するので per-item 読みで同等以上。
+                // `maxTurns: null`(`None`)は policy 上限なし — 内部
+                // runaway guard のみが残り、ここでは abort しない。
                 let snap = check_session.snapshot();
-                if snap.turns >= max_turns && snap.last_turn_tool_calls && pending_tool_calls == 0 {
+                if max_turns.is_some_and(|m| snap.turns >= m)
+                    && snap.last_turn_tool_calls
+                    && pending_tool_calls == 0
+                {
                     check_abort.request_abort(RunAbortReason::MaxTurns);
                 }
             };
@@ -644,7 +733,7 @@ impl<'a> RunCtx<'a> {
         // 済んでいるため、ここで request しても別 reason は上書きしない。
         {
             let snap = session.snapshot();
-            if snap.turns >= max_turns && snap.last_turn_tool_calls {
+            if max_turns.is_some_and(|m| snap.turns >= m) && snap.last_turn_tool_calls {
                 run_abort.request_abort(RunAbortReason::MaxTurns);
                 if let Some(reason) = run_abort.reason() {
                     return Err(self.classified(reason));
@@ -702,6 +791,7 @@ impl<'a> RunCtx<'a> {
                         max_output_tokens: policy.output.max_tokens,
                         transient_retries: policy.retry.transient_attempts as usize,
                         policy_max_turns: policy.execution.max_turns,
+                        progress: run_abort.progress_handle(),
                         signal: run_abort.signal(),
                         grace_ms,
                         on_attempt: &mut |attempt| repairs = attempt,
@@ -766,6 +856,16 @@ fn model_policy_slice(policy: &RuntimePolicy) -> ModelPolicySlice {
         max_tier: policy.model.max_tier,
         tier_fallback: policy.model.tier_fallback,
     }
+}
+
+/// `details.checkpoint` の値 — `{path, observationsCount}`。
+/// 観測配列自体は checkpoint file 側にのみ置き、envelope には
+/// 載せない(issue #111 design §3)。
+fn checkpoint_details(info: &CheckpointInfo) -> Value {
+    serde_json::json!({
+        "path": info.path.to_string_lossy(),
+        "observationsCount": info.observations_count,
+    })
 }
 
 /// tool boundary の `ToolError`/`Box<dyn Error>` → CheaperError。

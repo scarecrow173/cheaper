@@ -60,6 +60,27 @@ async fn run_policy(config_dir: &Path, argv: &[&str]) -> (i32, Value, String) {
     )
 }
 
+/// built-in `resources/policy.yaml` の pin — embedded 実物を
+/// `load_policy` で load し、issue #111 の既定値(maxTurns null /
+/// timeout 300s の stall window)が resource 本体へ反映されていることを
+/// 保証する。golden snapshot だけでは `resources/policy.yaml` 自体の
+/// drift を検知できないため実 file を読む。
+#[test]
+fn builtin_policy_pins_nullable_max_turns_and_stall_window() {
+    let builtin = common::builtin_dir().join("policy.yaml");
+    let tmp = tempfile::tempdir().unwrap();
+    let policy =
+        cheaper_core::policy::load::load_policy(&cheaper_core::policy::load::LoadPolicyOptions {
+            builtin_policy_path: &builtin.to_string_lossy(),
+            user_config_dir: &tmp.path().to_string_lossy(),
+            project_dir: &tmp.path().to_string_lossy(),
+            invocation: None,
+        })
+        .unwrap();
+    assert_eq!(policy.execution.max_turns, None);
+    assert_eq!(policy.execution.timeout_ms, 300_000);
+}
+
 fn policy_path(config_dir: &Path) -> std::path::PathBuf {
     config_dir.join("policy.yaml")
 }

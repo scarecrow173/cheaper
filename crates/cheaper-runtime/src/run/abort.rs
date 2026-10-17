@@ -11,10 +11,11 @@
 //! adapter 側の `abort_reason_to_cheaper` が `code()` を逆引きして
 //! 分類済み code を復元するため、stream 終端 error と run 側分類が一致する。
 
-use std::sync::OnceLock;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_tools::operation::{AbortController, AbortReason, AbortSignal};
+use tokio::time::Instant;
 
 /// run 固有の abort reason(TS `AbortReason` union)。
 /// `requestAbort` で先勝ち記録され、error 分類の正になる。
@@ -75,12 +76,40 @@ impl RunAbortReason {
     }
 }
 
+/// 進捗観測点(issue #111 の stall timeout 用)。run 経路の `on_event`
+/// funnel が `RunEvent` を通すたびに `note` され、timeout watcher が
+/// 最終進捗時刻を読んで `last_progress + timeout` まで待機する。
+/// repair session の event sink も同じ handle を共有する。
+#[derive(Debug)]
+pub struct Progress {
+    last: Mutex<Instant>,
+}
+
+impl Progress {
+    fn new() -> Self {
+        Self {
+            last: Mutex::new(Instant::now()),
+        }
+    }
+
+    /// 進捗 event の観測を記録する。
+    pub fn note(&self) {
+        *self.last.lock().unwrap_or_else(|e| e.into_inner()) = Instant::now();
+    }
+
+    /// 最後に進捗が観測された時刻。
+    pub fn last(&self) -> Instant {
+        *self.last.lock().unwrap_or_else(|e| e.into_inner())
+    }
+}
+
 /// run 全体の集約 abort(TS の `runAbort` + `abortReason` + `requestAbort`)。
 /// reason は先勝ち — 2 つ目以降の trigger は記録を変えない。
 #[derive(Debug)]
 pub struct RunAbort {
     controller: AbortController,
     reason: OnceLock<RunAbortReason>,
+    progress: Arc<Progress>,
 }
 
 impl RunAbort {
@@ -88,7 +117,18 @@ impl RunAbort {
         Self {
             controller: AbortController::new(),
             reason: OnceLock::new(),
+            progress: Arc::new(Progress::new()),
         }
+    }
+
+    /// stall timeout watcher が読む進捗時刻の shared handle。
+    pub fn progress_handle(&self) -> Arc<Progress> {
+        Arc::clone(&self.progress)
+    }
+
+    /// `on_event` funnel から呼ぶ進捗記録(`progress_handle().note()`)。
+    pub fn note_progress(&self) {
+        self.progress.note();
     }
 
     /// `runAbort.signal` — tool scope・prompt・repair session へ渡す

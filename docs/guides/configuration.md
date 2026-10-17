@@ -112,8 +112,12 @@ command:
   grants: {}             # 実行を許可する grant（trusted layer のみ authoring 可）
 
 execution:
-  timeout: 120s          # run 全体の上限（model 解決・session 構築を含む）
-  maxTurns: 8            # agent loop の最大 turn 数
+  timeout: 300s          # run 経路: 進捗の最大無言間隔（stall window。
+                        # RunEvent の観測でリセット。workflow 経路は
+                        # 従来どおり全体の absolute deadline）
+  maxTurns: null         # null = turn 上限なし（既定）。正の整数は
+                        # opt-in の bounded budget で、到達時は
+                        # MAX_TURNS_EXCEEDED + checkpoint 保存
   maxToolCalls: 64       # tool call 総数の上限
 
 tools:
@@ -141,7 +145,10 @@ output:
   repairAttempts: 1      # schema 不適合 output の repair 試行回数
 
 retry:
-  transientAttempts: 1   # transient failure の retry 回数
+  transientAttempts: 1   # completion call 単位の provider transient
+                        # 失敗（429/5xx/応答なし transport）への retry
+                        # 回数。run-level abort は retry 対象外で、
+                        # backoff 待ちは stall window の無言として計上
 ```
 
 `process` tool（policy 事前登録の named task を実行する
@@ -168,6 +175,54 @@ last-wins・comment/整形の非保存 — は
 `--grant` flag で run 単位の非永続 grant を注入する経路がある。
 grant・信頼境界・sandbox 限界の詳細は
 [command ガイド](./command.md) を参照。
+
+### execution.timeout と maxTurns（run 経路）
+
+run 経路の `execution.timeout` は **stall window**（進捗の最大無言
+間隔）— stream から `RunEvent` が観測されるたびに期限がリセット
+され、最後の進捗から `timeout` だけ無言が続いた時点で `TIMEOUT`
+abort になる。run 全体の絶対時間ではないため、進捗し続ける長大な
+run は 300s を超えて完走できる。一方 `workflow run` の同名 field は
+従来どおり workflow 全体の **absolute deadline** であり、意味を共有
+しない。stall window は「進捗の最大無言間隔」なので、最長の単一
+tool/command 実行（`process.timeout`・grant `timeout`）や非
+streaming の completion call、transient retry の backoff 待ち
+（`retry.transientAttempts` — provider transient 失敗
+（429/5xx/応答なし transport）にのみ適用され、run-level abort
+（`TIMEOUT`/`MAX_TURNS_EXCEEDED`/`ABORTED`/`MAX_TOOL_CALLS_EXCEEDED`）
+は retry 対象外。retry の backoff 中は進捗 event が出ないため
+stall window として計上される）より長く設定する必要がある。
+
+`execution.maxTurns` は `null`（既定）または省略で **policy 上の
+turn 上限なし** — 内部の runaway guard（Rig agent loop の既定上限）
+のみ残る。正の整数を設定すると従来どおり `MAX_TURNS_EXCEEDED` の
+policy abort 境界になる。`maxToolCalls` も同様に
+`MAX_TOOL_CALLS_EXCEEDED` を発火する。
+
+### budget 枯渇 checkpoint と `--resume`（run 経路）
+
+`maxTurns`/`maxToolCalls` の policy 上限に達して abort した run は、
+その時点までの tool 観測（commit 済み call の引数 + 結果抜粋）を
+`<userConfigDir>/checkpoints/run-<id>.json` へ保存し、envelope 最外層
+error の `error.details.checkpoint = {path, observationsCount}` で
+参照を返す（`PARTIAL_MUTATION` wrap 時は wrapper の details に付く）。
+保存は best-effort で、失敗しても error の分類・exit code は変わら
+ない（`details.checkpoint` が省略されるだけ）。`TIMEOUT`・外部
+signal abort・workflow job は対象外 — 再開可能な観測の定義上、
+budget 枯渇のみを対象とする。
+
+checkpoint からは `cheaper run <worker> --resume <path>` で再開
+できる。worker 名は checkpoint に記録された worker と一致必須
+（`--worker-file` 使用時は resolved worker 名と比較）で、不一致や
+不正 file は `INVALID_INPUT`。再開 run は新しい session/policy/
+budget で走り、前回の観測のみ user prompt の continuation section
+として注入される。`--input`（値 `-` の stdin 指定を含む）を明示す
+ると checkpoint の stored input を上書きし、省略時は stored input
+を使って stdin を読まない。`--input` を変えて再開した場合、前回
+観測は旧 input 由来の stale context になり得ることに注意。
+`--grant` は checkpoint に永続化されない — 再開時に必要なら再度
+指定する。resume run が再び上限に達した場合、新しい checkpoint は
+前回+今回の観測を累積して保存する（連鎖 resume）。
 
 部分 override では `version` と必要な項目だけ書く。
 

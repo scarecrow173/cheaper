@@ -1315,6 +1315,79 @@
       },
       "name": "concurrency all null",
       "op": "resolveConcurrencyPolicy"
+    },
+    {
+      "name": "partial accepts execution maxTurns null",
+      "op": "validatePolicySchema",
+      "mode": "partial",
+      "input": {
+        "version": 1,
+        "execution": {
+          "maxTurns": null
+        }
+      },
+      "expected": {
+        "ok": {
+          "policy": {
+            "version": 1,
+            "execution": {
+              "maxTurns": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "partial rejects execution maxTurns zero",
+      "op": "validatePolicySchema",
+      "mode": "partial",
+      "input": {
+        "version": 1,
+        "execution": {
+          "maxTurns": 0
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "kind": "cheaper",
+          "retryable": false,
+          "exitCode": 3,
+          "details": {
+            "errors": [
+              {
+                "instancePath": "/execution/maxTurns"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "partial rejects execution maxTurns string",
+      "op": "validatePolicySchema",
+      "mode": "partial",
+      "input": {
+        "version": 1,
+        "execution": {
+          "maxTurns": "8"
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "kind": "cheaper",
+          "retryable": false,
+          "exitCode": 3,
+          "details": {
+            "errors": [
+              {
+                "instancePath": "/execution/maxTurns"
+              }
+            ]
+          }
+        }
+      }
     }
   ],
   "platform": "win32"

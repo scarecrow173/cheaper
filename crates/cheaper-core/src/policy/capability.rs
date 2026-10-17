@@ -115,7 +115,7 @@ mod tests {
             },
             execution: ExecutionPolicy {
                 timeout_ms: 1,
-                max_turns: 1,
+                max_turns: Some(1),
                 max_tool_calls: 1,
                 concurrency: None,
             },

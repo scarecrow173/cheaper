@@ -64,6 +64,21 @@ fn normalize_obj(obj: &mut Map<String, Value>, scrub: &[(String, String)]) {
     if let Some(err) = obj.get_mut("error") {
         strip_prose(err);
         if let Some(details) = err.get_mut("details").and_then(Value::as_object_mut) {
+            // `checkpoint.path` — budget 枯渇 checkpoint の保存先
+            // (`<CFG>/checkpoints/run-<pid>-<nanos>.json`)。`<CFG>`
+            // scrub は既存 rule が担うため、ここでは file 名の
+            // nondeterministic run-id 部分のみ `run-<id>.json` へ畳む
+            // (issue #111)。
+            if let Some(Value::Object(checkpoint)) = details.get_mut("checkpoint") {
+                if let Some(Value::String(path)) = checkpoint.get_mut("path") {
+                    if let Some(pos) = path.rfind(['/', '\\']) {
+                        let name = &path[pos + 1..];
+                        if name.starts_with("run-") && name.ends_with(".json") {
+                            *path = format!("{}run-<id>.json", &path[..=pos]);
+                        }
+                    }
+                }
+            }
             if let Some(Value::Array(errors)) = details.get_mut("errors") {
                 for e in errors.iter_mut() {
                     normalize_inner(e, scrub);

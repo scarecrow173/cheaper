@@ -148,7 +148,9 @@ pub(crate) fn report_to_cheaper(report: &ErrorReport) -> CheaperError {
 /// - `CompletionError`/`Report` は分類に従い `PROVIDER_FAILURE` 系へ
 /// - `PromptCancelled` は `ABORTED`(reason は runtime の abort 記録が正)
 /// - `MaxTurnsError` は adapter 内部 guard(`DEFAULT_MAX_TURNS`)への到達 —
-///   cheaper の policy maxTurns abort が正の経路なので `INTERNAL_ERROR` で区別
+///   `maxTurns: null` では内部 guard が唯一の turn 上限になり、明示整数の
+///   設定時も policy abort(`MAX_TURNS_EXCEEDED`)が正の経路なので、実装/
+///   backstop 側の失敗として `INTERNAL_ERROR` で区別
 /// - `UnknownToolCall` は invalid-call retry 予算尽き後の到達 — model が
 ///   contract に従わなかった provider 側失敗として `PROVIDER_FAILURE`
 /// - `MemoryError` は memory 未構成の adapter では到達不能に近い —
@@ -164,7 +166,7 @@ pub(crate) fn prompt_error_to_cheaper(error: PromptError) -> CheaperError {
         PromptError::MaxTurnsError { max_turns, .. } => CheaperError::new(
             ErrorCode::InternalError,
             format!(
-                "internal max-turns guard reached ({max_turns}); cheaper policy abort should have fired first"
+                "internal max-turns guard reached ({max_turns}); runaway loop or policy maxTurns unset — no policy-level turn bound fired"
             ),
         ),
         PromptError::UnknownToolCall { tool_name, .. } => CheaperError::new(
