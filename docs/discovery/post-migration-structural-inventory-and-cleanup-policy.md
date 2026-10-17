@@ -9,7 +9,6 @@ owners: ["scarecrow173"]
 relations:
   source:
     - "Cargo.toml"
-    - "tmp/architecture.html"
   changes:
     added: []
     modified: []
@@ -71,8 +70,9 @@ deep-dive で確定済みの決定軸:
   usage 集計の正は hook accumulator。`panic = "unwind"`。
 - 実施は behavior-preserving。`mise run check`(biome→fmt→clippy→
   version/doc-id→cargo test→node test→lockfile/payload check)green 維持。
-- 測定値は `wc -l` ベース(コメント・空行含む)。可視化スナップショットは
-  `tmp/architecture.html` 参照。
+- 測定値は `wc -l` ベース(コメント・空行含む)。可視化スナップショット
+  `tmp/architecture.html` は ephemeral な生成物であり既に削除済み
+  (gitignore 対象のため再取得不可)。本文の測定表が正とする。
 
 ## Inventory Findings
 
@@ -249,7 +249,9 @@ scheduler 1,113 / access 1,057 ≈ 6.5k)の 3 集団にほぼ分かれる。
 - 測定: `Cargo.toml` workspace、`crates/*/Cargo.toml` 依存宣言、
   `find crates -name '*.rs' | wc -l` による LOC 集計(2026-10-10 実施)。
 - 可視化スナップショット: `tmp/architecture.html`(crate 依存グラフ・
-  モジュール LOC 内訳・run パイプライン・ホットスポット一覧)。
+  モジュール LOC 内訳・run パイプライン・ホットスポット一覧)は
+  gitignore 対象の ephemeral 生成物として作成したが既に削除済み。
+  内容は本文の測定表に集約されている。
 - 上流: DESIGN-034Bbq1qY8WFBdL26tUdBw(crate 責務・境界ルールの正)、
   SPEC(migration 全体)、ADR-034BbhP6hJV7DFtv7k7AGs(Rust+Rig 移行決定)。
 - 決定軸の確定経緯: 本セッションの deep-dive(構造整理優先・crate 分割は
