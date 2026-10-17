@@ -45,16 +45,17 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqpy4V1ZNo | Auth URL opener final verification and status sync | done | [auth-url-opener-final-verification.md](./auth-url-opener-final-verification.md) |
 | TASK-034r05iHQeQpDqovKmKaZC | Auth URL opener seam and test isolation | done | [auth-url-opener-seam-and-test-isolation.md](./auth-url-opener-seam-and-test-isolation.md) |
 | TASK-034zXj9deJ0LTUdaiGwflX | Bounded concurrency policy を導入する | done | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
-| TASK-034H3PAQUN4a8s0VZqbjAb | Bounded eval and registration docs/e2e follow-through | todo | [bounded-eval-and-registration-docs-e2e.md](./bounded-eval-and-registration-docs-e2e.md) |
+| TASK-034H3Q05R2fMnFMJwYEuLl | Bounded eval and registration docs/e2e follow-through | done | [bounded-eval-and-registration-docs-e2e.md](./bounded-eval-and-registration-docs-e2e.md) |
 | TASK-034r05iHQeQpDqkDLrHBxb | Bounded read tool and registry swap | done | [bounded-read-tool-and-registry-swap.md](./bounded-read-tool-and-registry-swap.md) |
-| TASK-034H3PzQISOeM552EcP64F | Bounded search and ranged read evaluation | todo | [bounded-search-and-ranged-read-evaluation.md](./bounded-search-and-ranged-read-evaluation.md) |
+| TASK-034H3PzQISOeM552EcP64F | Bounded search and ranged read evaluation | done | [bounded-search-and-ranged-read-evaluation.md](./bounded-search-and-ranged-read-evaluation.md) |
+| TASK-rWWDt7x2fqKommosSX8tnb | budget 枯渇時の checkpoint 保存と envelope 最外層 details 付与 | done | [budget-exhaustion-checkpoint-persistence.md](./budget-exhaustion-checkpoint-persistence.md) |
 | TASK-034AR8FgMmq4ecbz4SExZy | Seeded workflow benchmark fixtures と runner | done | [build-seeded-workflow-benchmark-fixtures-and-runner.md](./build-seeded-workflow-benchmark-fixtures-and-runner.md) |
 | TASK-034r05iHQeQpDq5zFfI7r5 | bulk-read delegation benchmark and read threshold decision | done | [bulk-read-benchmark-and-threshold-decision.md](./bulk-read-benchmark-and-threshold-decision.md) |
 | TASK-034r05iHQeQpDqn5moXUKS | Bulk-reader guidance, deny/registry parity, and final verification | done | [bulk-reader-guidance-parity-and-final-verification.md](./bulk-reader-guidance-parity-and-final-verification.md) |
 | TASK-pPgGrBzIU7zBVDTCFkV4aV | bulk-reader 出力上限・INVALID_OUTPUT 指針の skill 文書化 | done | [bulk-reader-output-limits-skill-docs.md](./bulk-reader-output-limits-skill-docs.md) |
 | TASK-034r05iHQeQpDq14tAA3rz | CLI bundle script and hook argv resolution | done | [cli-bundle-script-and-hook-argv.md](./cli-bundle-script-and-hook-argv.md) |
 | TASK-034r05iHQeQpDqdc3mJN2b | CLI count-tokens env override and FILE_TOO_LARGE envelope | done | [cli-count-tokens-env-override-and-file-too-large-envelope.md](./cli-count-tokens-env-override-and-file-too-large-envelope.md) |
-| TASK-034H3PAjzTZoboBflkoJYd | CLI-owned hook-config lifecycle | todo | [cli-owned-hook-config-lifecycle.md](./cli-owned-hook-config-lifecycle.md) |
+| TASK-034H3PzzZ8InWeNS8Du0wB | CLI-owned hook-config lifecycle | done | [cli-owned-hook-config-lifecycle.md](./cli-owned-hook-config-lifecycle.md) |
 | TASK-034EOHDmemAJi6IbUQel4x | T1: command core policy・schema 分割と compile-forced propagation | done | [command-core-policy-and-propagation.md](./command-core-policy-and-propagation.md) |
 | TASK-034EOHYMMH4FnfoVhmfPeP | T6: command tool の user-facing docs と index 更新 | done | [command-docs.md](./command-docs.md) |
 | TASK-034EOHY1ZKj6PcEy0zVz2P | T5: command tool の unit・integration test と golden 整備 | done | [command-tests.md](./command-tests.md) |
@@ -176,6 +177,7 @@ Directory: `docs/tasks`
 | TASK-034AJd4IRjNpoxGSXgU36n | Workflow run CLI と public envelope を統合する | done | [integrate-workflow-run-cli.md](./integrate-workflow-run-cli.md) |
 | TASK-034FppMiRb1TxdOmzgt11q | T1: invocation-policy-layer — core load_policy への合成 invocation layer（compile-forced propagation 所有） | done | [invocation-policy-layer.md](./invocation-policy-layer.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
+| TASK-6uOJTepTvP210AgeeaBtkq | issue-111 文書追随・回帰 fixture・最終検証 | done | [issue-111-docs-and-final-verification.md](./issue-111-docs-and-final-verification.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
 | TASK-034zXB21CtI0XLnu6QAHPe | Migrate native workflows and release guidance | done | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
@@ -183,6 +185,7 @@ Directory: `docs/tasks`
 | TASK-034DzYjQDNWcel1Oqxnlia | T3: provider test 移動 (F7) | done | [move-devin-provider-tests-to-tests-dir.md](./move-devin-provider-tests-to-tests-dir.md) |
 | TASK-034rAcF1RPJJogj2vzFDrF | New adapter scripts and hooks.json event registration | done | [new-adapter-scripts-and-hooks-json-event-registration.md](./new-adapter-scripts-and-hooks-json-event-registration.md) |
 | TASK-034GtBzfyOaeVS6nlm1ZkC | Normalize tools and add Devin hook capability | done | [normalize-tools-and-add-devin-hook-capability.md](./normalize-tools-and-add-devin-hook-capability.md) |
+| TASK-gkjJbivCKNLqicYwSJj3x1 | execution.maxTurns の Option<u64> 化と built-in 既定の null 化 | done | [nullable-maxturns-policy-model-and-propagation.md](./nullable-maxturns-policy-model-and-propagation.md) |
 | TASK-034DVHrszM9fxMAyaOCqFt | T6: observability contract test + verification | done | [observability-contract-tests-and-verification.md](./observability-contract-tests-and-verification.md) |
 | TASK-034A9yFQqZLtHt5ibjhE1h | Operation execution metrics | done | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | TASK-034EUvBkRkmTjWxeq3iG0h | T1: optionalTools core machinery と compile-forced propagation | done | [optional-tools-core-machinery.md](./optional-tools-core-machinery.md) |
@@ -232,6 +235,8 @@ Directory: `docs/tasks`
 | TASK-034zBJcexygQMw7L8WTUYL | Run canonical verification and close out issue #55 implementation | done | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
 | TASK-034r05iHQeQpDpyBKGfmKB | Run document status audit | done | [run-document-status-audit.md](./run-document-status-audit.md) |
 | TASK-034r05iHQeQpDpwgKKyE0K | Run full build test and lint verification | done | [run-full-build-test-and-lint-verification.md](./run-full-build-test-and-lint-verification.md) |
+| TASK-nOwbfXxas6V704CAtb76b7 | cheaper run --resume <path> による checkpoint 再開 | done | [run-resume-cli.md](./run-resume-cli.md) |
+| TASK-lLkjLAEBHJc2S02t4gVnRW | run 経路の timeout を進捗リセット型 stall window へ変更 | done | [run-stall-timeout-progress-window.md](./run-stall-timeout-progress-window.md) |
 | TASK-034EOHPDg1Gg2LSKLw8WRT | T4: runtime/CLI plumbing と builtin policy 配線 | done | [runtime-cli-plumbing.md](./runtime-cli-plumbing.md) |
 | TASK-034r05iHQeQpDq84iLFgT3 | Runtime-pi scope and deny enforcement in sandboxed tools | done | [runtime-scope-and-deny-enforcement.md](./runtime-scope-and-deny-enforcement.md) |
 | TASK-034r05iHK8bA7hmVmOU1eX | Scaffold cheaper CLI package with bin entry | done | [scaffold-cheaper-cli-package-with-bin-entry.md](./scaffold-cheaper-cli-package-with-bin-entry.md) |
