@@ -13,7 +13,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7ghSWRbNU8 | cheaper auth command for provider login without a pi installation | implemented | [auth-login-command.md](./auth-login-command.md) |
 | SPEC-034r05iHK8bA7gmLlq6ikw | Auth tests do not launch the OS default browser | implemented | [auth-tests-do-not-launch-os-browser.md](./auth-tests-do-not-launch-os-browser.md) |
 | SPEC-H9CuNdGONsV6HEHetvRCxh | Worker workload と effectiveCost による自動 tier 分類 | implemented | [auto-tier-classification.md](./auto-tier-classification.md) |
-| SPEC-034H2WAU6TQG6N9dmmmKNA | Bounded native hook evaluation and managed Devin registration | proposed | [bounded-native-hook-evaluation-and-managed-devin-registration.md](./bounded-native-hook-evaluation-and-managed-devin-registration.md) |
+| SPEC-034H2WAU6TQG6N9dmmmKNA | Bounded native hook evaluation and managed Devin registration | implemented | [bounded-native-hook-evaluation-and-managed-devin-registration.md](./bounded-native-hook-evaluation-and-managed-devin-registration.md) |
 | SPEC-034zWd1FiG9tv3X6uaAMep | ToolScheduler の bounded operation scheduling | approved | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
 | SPEC-034r05iHK8bA7g6PcCiDBp | bulk-reader built-in Worker | implemented | [bulk-reader-built-in-worker.md](./bulk-reader-built-in-worker.md) |
 | SPEC-034r05iHK8bA7gkTEj7TdU | Bulk-reader huge-file safe I/O | implemented | [bulk-reader-huge-file-safe-io.md](./bulk-reader-huge-file-safe-io.md) |
@@ -74,6 +74,7 @@ Directory: `docs/specs`
 | SPEC-034zA513QKarQrr5SQtgp7 | Verify and leverage Pi sibling tool-call parallelism inside Workers | approved | [verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md](./verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md) |
 | SPEC-034zIO2lm7gJPz6Gy4JIQP | Version-pinned launcher acquisition | superseded | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | SPEC-034D85I40UBKtNgeam655z | Volume-root workspace boundary acceptance | proposed | [volume-root-workspace-boundary-acceptance.md](./volume-root-workspace-boundary-acceptance.md) |
+| SPEC-onzPU8E4tKg3C6Iv4s9VK0 | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume | proposed | [worker-run-nullable-maxturns-and-stall-timeout.md](./worker-run-nullable-maxturns-and-stall-timeout.md) |
 | SPEC-034zIKj7DJcwZFr3FvjLrP | Workflow JSON v1 を検証済み DAG へ compile する | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
 | SPEC-034zSVZlWjFAMpwmhsLTkx | 明示 workflow loader と公開 interface command の契約 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | SPEC-034AQOi1TPvVMDkNrhfTM5 | Benchmark workflow orchestration overhead | approved | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |
