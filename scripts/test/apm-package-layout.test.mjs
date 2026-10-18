@@ -55,7 +55,8 @@ describe("development / distributable APM package separation", () => {
       "apm-hook-windsurf",
       "apm-hook-cursor",
       "apm-hook-copilot",
-      "apm-hook-pretooluse",
+      "apm-hook-claude",
+      "apm-hook-codex",
     ]) {
       const dir = path.join(repoRoot, "packages", pkg);
       assert.ok(existsSync(path.join(dir, "apm.yml")), `${pkg}/apm.yml`);

@@ -1,6 +1,6 @@
 name: cheaper
 version: "1.0.0"
-description: Parent-agent delegation primitives for cheaper (skills + hook packages for windsurf/cursor/copilot/claude/codex)
+description: Parent-agent delegation primitives for cheaper (skills + per-target hook packages for windsurf/cursor/copilot/claude/codex)
 author: scarecrow173
 dependencies:
   apm:
@@ -10,5 +10,7 @@ dependencies:
       targets: [cursor]
     - path: ../apm-hook-copilot
       targets: [copilot]
-    - path: ../apm-hook-pretooluse
-      targets: [claude, codex]
+    - path: ../apm-hook-claude
+      targets: [claude]
+    - path: ../apm-hook-codex
+      targets: [codex]
