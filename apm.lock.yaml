@@ -1,6 +1,6 @@
 lockfile_version: '1'
-generated_at: '2026-10-03T11:29:01.907112+00:00'
-apm_version: 0.28.0
+generated_at: '2026-10-18T14:33:31.236438+00:00'
+apm_version: 0.33.0
 dependencies:
 - repo_url: scarecrow173/apm-packages
   name: basic-dev-foundation
@@ -3955,78 +3955,6 @@ deployments:
   content_hash: sha256:a6c67c1900064347c2a329990dd3c555657c51c3ec53b259a08aa01a2c26139a
 - kind: project-relative
   target: agents
-  value: .agents/skills/cheaper-bulk-read
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/cheaper-bulk-read/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:d0a9195e61544a55b93d9a785635d1309830953c4eed8539db543bcb534b75ba
-- kind: project-relative
-  target: agents
-  value: .agents/skills/cheaper-code-write
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/cheaper-code-write/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:d3c9588706cea1ba2ae88aabc8afee49da77298d719b1a5aff1febc923ef0ef0
-- kind: project-relative
-  target: agents
-  value: .agents/skills/cheaper-doc-write
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/cheaper-doc-write/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:89137ffe545afb402dc804f8b7dfa57bb26523cc999d9917092cad98a9b74d3f
-- kind: project-relative
-  target: agents
-  value: .agents/skills/cheaper-usage
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/cheaper-usage/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:b0edb6bc2a1ba200358c23163ab6a772b5acd75290a03505e05ebd56dda74da2
-- kind: project-relative
-  target: agents
   value: .agents/skills/writing-plans/plan-document-reviewer-prompt.md
   runtime: null
   scope: project
@@ -6608,6 +6536,78 @@ deployments:
   - microsoft/apm/packages/apm-guide
   active_owner: microsoft/apm/packages/apm-guide
   content_hash: sha256:f6cded3e7eef97ad8fff06208bcfd5a0beafb9cfe810f78e10294c90e16fd8ae
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/cheaper-bulk-read
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/cheaper-bulk-read/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:d0a9195e61544a55b93d9a785635d1309830953c4eed8539db543bcb534b75ba
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/cheaper-code-write
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/cheaper-code-write/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:d3c9588706cea1ba2ae88aabc8afee49da77298d719b1a5aff1febc923ef0ef0
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/cheaper-doc-write
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/cheaper-doc-write/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:89137ffe545afb402dc804f8b7dfa57bb26523cc999d9917092cad98a9b74d3f
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/cheaper-usage
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/cheaper-usage/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:b0edb6bc2a1ba200358c23163ab6a772b5acd75290a03505e05ebd56dda74da2
 - kind: uri
   target: mcp
   value: mise
@@ -6647,7 +6647,7 @@ deployments:
 - kind: uri
   target: mcp
   value: mise
-  runtime: cursor
+  runtime: copilot
   scope: project
   owners:
   - .
@@ -6656,7 +6656,7 @@ deployments:
 - kind: uri
   target: mcp
   value: serena
-  runtime: cursor
+  runtime: copilot
   scope: project
   owners:
   - .
@@ -6665,7 +6665,7 @@ deployments:
 - kind: uri
   target: mcp
   value: mise
-  runtime: vscode
+  runtime: cursor
   scope: project
   owners:
   - .
@@ -6674,7 +6674,7 @@ deployments:
 - kind: uri
   target: mcp
   value: serena
-  runtime: vscode
+  runtime: cursor
   scope: project
   owners:
   - .
@@ -6726,10 +6726,10 @@ mcp_target_servers:
   codex:
   - mise
   - serena
-  cursor:
+  copilot:
   - mise
   - serena
-  vscode:
+  cursor:
   - mise
   - serena
   windsurf:
