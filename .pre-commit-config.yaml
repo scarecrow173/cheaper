@@ -22,7 +22,7 @@ repos:
       - id: check-illegal-windows-names
   - repo: local
     hooks:
-      # biome.json の files.includes を mirror する。scope 外の file を明示
+      # biome.jsonc の files.includes を mirror する。scope 外の file を明示
       # 渡しすると biome が "No files were processed" で exit 1 になるため、
       # files/exclude で hook の発火対象を限定する。
       - id: biome-check
