@@ -99,8 +99,8 @@ install する。
   log activation（`--log` / `CHEAPER_LOG`）の observability 基盤
 - `packages/apm` — distributable APM package（consumer へ deploy
   される skills。CLI 本体は cargo install）。hook 宣言は
-  `packages/apm-hook-*/` 4 package（windsurf / cursor / copilot /
-  pretooluse=claude・codex）へ分離され、`apm.yml` の transitive
+  `packages/apm-hook-*/` 5 package（windsurf / cursor / copilot /
+  claude / codex）へ分離され、`apm.yml` の transitive
   `path:` dep 経由で配布される（issue #118）。hook event を追加・
   変更する際は該当 sibling package の `hooks.json` を編集し、
   `node scripts/check-apm-payload.mjs` で wiring を検証する

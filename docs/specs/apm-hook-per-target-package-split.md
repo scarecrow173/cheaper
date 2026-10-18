@@ -35,7 +35,7 @@ relations:
   verifies: []
   verified-by: []
   references:
-    - "packages/apm-hook-pretooluse/.apm/hooks/hooks.json"
+    - "packages/apm-hook-claude/.apm/hooks/hooks.json"
     - "packages/apm/apm.yml"
     - "scripts/check-apm-payload.mjs"
     - "scripts/check-doc-ids.mjs"
@@ -68,14 +68,16 @@ relations:
     `beforeReadFile` / `beforeShellExecution`(同)
   - `packages/apm-hook-copilot`(`target: copilot`):
     `preToolUse` flat entry(同)
-  - `packages/apm-hook-pretooluse`(`targets: [claude, codex]`):
+  - `packages/apm-hook-claude`(`target: claude`):
     `PreToolUse` nested entry(同)
+  - `packages/apm-hook-codex`(`target: codex`):
+    `PreToolUse` nested entry(同 — claude と同一内容)
 - R2: 各 hook package は `.apm/hooks/hooks.json` と launcher
   `cheaper.sh` / `cheaper.ps1` を自 package 内に持つ(hook command の
   `./cheaper.sh` 参照が bundle deploy の trigger である APM の規約上、
   script は package 毎に必要)。
 - R3: 親 `packages/apm` の `apm.yml` に `dependencies.apm` 配下
-  (group key は `apm` 固定)として 4 つの sibling `path:` dep
+  (group key は `apm` 固定)として 5 つの sibling `path:` dep
   (`../apm-hook-*`)を、対応する per-dep `targets:` 付きで宣言する。
   remote install では同一 repo・同一 ref に解決され、local `path:` dep
   でも transitive 解決される(0.28.0/0.30.0 で実証済み)。親 package 側に
@@ -86,7 +88,7 @@ relations:
   - `scripts/check-apm-payload.mjs` — `packages/*/.apm/hooks/` を glob
     走査し、launcher 契約(BOM/CRLF/shebang/git mode)・
     hooks.json↔launcher 整合・4 launcher copy 間の byte 一致を検査。
-    親 `apm.yml` が 4 sibling を正しい `targets:` で宣言している
+    親 `apm.yml` が 5 sibling を正しい `targets:` で宣言している
     wiring 検査も追加する。
   - `scripts/check-doc-ids.mjs` — 走査対象を `packages/apm/.apm/**/*.md`
     から `packages/*/.apm/**/*.md` へ拡張。
@@ -98,12 +100,12 @@ relations:
   - `scripts/test/apm-payload.test.mjs` — fixture の hooks source を
     `packages/apm-hook-*/.apm/hooks` 群へ変更。
   - `scripts/test/apm-package-layout.test.mjs` — `packages/apm` に
-    `.apm/hooks` が**無い**こと・4 sibling package が存在することを
+    `.apm/hooks` が**無い**こと・5 sibling package が存在することを
     assert する形へ反転。
   - `scripts/test/launcher-passthrough.test.mjs` — `cwd` を
     `packages/apm-hook-windsurf/.apm/hooks` 等の残存 dir へ変更。
   - `scripts/test/devin-hooks-install.test.mjs` — hooks.json 参照先を
-    `packages/apm-hook-pretooluse/.apm/hooks/hooks.json` へ変更。
+    `packages/apm-hook-claude/.apm/hooks/hooks.json` へ変更。
   - `scripts/check-version.mjs` / `scripts/set-version.mjs` — 新 manifest
     を version contract の対象に追加(sibling manifest の `version:` は
     canonical と一致させる)。
@@ -116,7 +118,7 @@ relations:
     [agent-skills]` recipe の挙動変化(R9)・local 部分コピーや
     `apm pack`/`publish` が非対応になった旨
   - `AGENTS.md` / `CONTRIBUTING.md` の `packages/apm` 説明
-    (skills+hooks 単一 package → skills + 4 sibling hook package)
+    (skills+hooks 単一 package → skills + 5 sibling hook package)
   - 旧 contract を記述した既存文書への superseded-by/注記(relations
     で相互 link: `keep-verbatim-pre-read-code-as-noop-on-non-windsurf-targets`
     ADR は supersedes 済み。その他 approved/implemented の spec・

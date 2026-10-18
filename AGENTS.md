@@ -44,7 +44,8 @@ root の `apm.yml` は development-only project であり、cheaper 自身の
 skill/hook は deploy されない。consumer へ配布する APM package は
 `packages/apm/`（skills のみ、`apm.yml` + `.apm/` primitives）と
 `packages/apm-hook-*/`（per-target hook package — `apm-hook-windsurf`・
-`apm-hook-cursor`・`apm-hook-copilot`・`apm-hook-pretooluse`）に分離
+`apm-hook-cursor`・`apm-hook-copilot`・`apm-hook-claude`・
+`apm-hook-codex`）に分離
 されている。hook 宣言は target 毎の sibling package が持ち、skills
 package が `dependencies.apm` の transitive `path:` dep で引き込む
 （issue #118 — 単一 `hooks.json` を全 target へ merge した旧構造の

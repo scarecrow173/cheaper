@@ -37,7 +37,7 @@ relations:
   verifies: []
   verified-by: []
   references:
-    - "packages/apm-hook-pretooluse/.apm/hooks/hooks.json"
+    - "packages/apm-hook-claude/.apm/hooks/hooks.json"
     - "packages/apm/apm.yml"
     - "scripts/check-apm-payload.mjs"
     - "scripts/check-doc-ids.mjs"
@@ -66,7 +66,7 @@ relations:
 ```
 packages/
   apm/                              # 親(skills のみ)
-    apm.yml                         # + dependencies.apm (4 sibling path deps)
+    apm.yml                         # + dependencies.apm (5 sibling path deps)
     .apm/skills/...                 # 不変
     .apm/hooks/                     # 削除
   apm-hook-windsurf/
@@ -84,8 +84,13 @@ packages/
     .apm/hooks/hooks.json           # preToolUse (flat, matcher 付き)
     .apm/hooks/cheaper.sh
     .apm/hooks/cheaper.ps1
-  apm-hook-pretooluse/
-    apm.yml                         # name: cheaper-hook-pretooluse / targets: [claude, codex]
+  apm-hook-claude/
+    apm.yml                         # name: cheaper-hook-claude / target: claude
+    .apm/hooks/hooks.json           # PreToolUse (nested matcher/hooks)
+    .apm/hooks/cheaper.sh
+    .apm/hooks/cheaper.ps1
+  apm-hook-codex/
+    apm.yml                         # name: cheaper-hook-codex / target: codex
     .apm/hooks/hooks.json           # PreToolUse (nested matcher/hooks)
     .apm/hooks/cheaper.sh
     .apm/hooks/cheaper.ps1
@@ -118,8 +123,10 @@ dependencies:
       targets: [cursor]
     - path: ../apm-hook-copilot
       targets: [copilot]
-    - path: ../apm-hook-pretooluse
-      targets: [claude, codex]
+    - path: ../apm-hook-claude
+      targets: [claude]
+    - path: ../apm-hook-codex
+      targets: [codex]
 ```
 
 - remote(virtual subpath)経路では `../apm-hook-*` が同一 repo root 内の
@@ -168,7 +175,7 @@ pin する全 test を同一 PR で直す(AC4)。
   git mode 確認の path も追従させる。
 - `scripts/test/apm-package-layout.test.mjs` — `packages/apm` に
   `.apm/hooks` が**存在する**ことを assert している。反転して
-  「`packages/apm` に `.apm/hooks` が無く、4 sibling package が
+  「`packages/apm` に `.apm/hooks` が無く、5 sibling package が
   `.apm/hooks` を持つ」assert に変更。
 - `scripts/test/launcher-passthrough.test.mjs` — 削除される
   `packages/apm/.apm/hooks` を `cwd` にしている。
@@ -176,7 +183,7 @@ pin する全 test を同一 PR で直す(AC4)。
 - `scripts/test/devin-hooks-install.test.mjs` —
   `packages/apm/.apm/hooks/hooks.json` を読んで PreToolUse matcher を
   pin している(module load で ENOENT)。参照先を
-  `packages/apm-hook-pretooluse/.apm/hooks/hooks.json` へ変更。
+  `packages/apm-hook-claude/.apm/hooks/hooks.json` へ変更。
 - `scripts/check-doc-ids.mjs` — `packages/apm/.apm/**/*.md` のみ走査。
   `packages/*/.apm/**/*.md` に広げ、sibling package 内の `.md` も
   doc-id contract の対象にする。
@@ -193,11 +200,11 @@ pin する全 test を同一 PR で直す(AC4)。
   `.apm/hooks/` を持つ各 package へ適用する。
 - `packages/apm` については `.apm/hooks/` が存在しないこと
   (hooks.json が消えたこと)を検査し、hooks 専用 dir 化の regress を防ぐ。
-- **launcher copy 間の byte 一致**: 4 package の `cheaper.sh` 同士・
+- **launcher copy 間の byte 一致**: 5 package の `cheaper.sh` 同士・
   `cheaper.ps1` 同士が byte-identical であることを assert(片方だけ
   修正される drift を機械的に防ぐ)。
 - **wiring 検査**: 親 `packages/apm/apm.yml` の `dependencies.apm` が
-  4 sibling 全てを宣言し、各 entry の `targets:` が対象 package の
+  5 sibling 全てを宣言し、各 entry の `targets:` が対象 package の
   manifest `target:`/`targets:` と整合することを検査(dep-edge と
   pkg-level の二重制限が drift すると silent non-delivery になるため)。
 

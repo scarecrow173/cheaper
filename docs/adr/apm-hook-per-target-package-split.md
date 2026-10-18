@@ -38,7 +38,7 @@ relations:
   verifies: []
   verified-by: []
   references:
-    - "packages/apm-hook-pretooluse/.apm/hooks/hooks.json"
+    - "packages/apm-hook-claude/.apm/hooks/hooks.json"
     - "packages/apm/apm.yml"
   defers: []
   deferred-by: []
@@ -78,8 +78,14 @@ hook 宣言を harness 別 sibling package に分離する:
 - `packages/apm-hook-windsurf`(`target: windsurf`)
 - `packages/apm-hook-cursor`(`target: cursor`)
 - `packages/apm-hook-copilot`(`target: copilot`)
-- `packages/apm-hook-pretooluse`(`targets: [claude, codex]` — event/shape
-  が共通なので 1 package に共有)
+- `packages/apm-hook-claude`(`target: claude`)
+- `packages/apm-hook-codex`(`target: codex`)
+
+claude/codex は event(`PreToolUse`)と entry shape が共通だが、ユーザー
+指示により target 毎に別 package とする(deploy dir・lockfile・
+uninstall 単位が target と一致し、片側だけの uninstall や debug が
+容易になる)。CLI 側の hook target 名 `pretooluse` は不変 — package
+分割は APM 配布単位であり runtime の routing target とは別軸。
 
 親 `packages/apm/apm.yml` の `dependencies.apm` に sibling `path:` dep を
 per-dep `targets:` 付きで宣言し、consumer の install 対象とする。

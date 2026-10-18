@@ -86,8 +86,8 @@ one workspace file so you can measure context cost before reading it.
   | Target | Hook bundle root |
   |---|---|
   | Windsurf | `.windsurf/hooks/apm-hook-windsurf/` |
-  | Claude Code | `.claude/hooks/apm-hook-pretooluse/` |
-  | OpenAI Codex | `.codex/hooks/apm-hook-pretooluse/` |
+  | Claude Code | `.claude/hooks/apm-hook-claude/` |
+  | OpenAI Codex | `.codex/hooks/apm-hook-codex/` |
   | Cursor | `.cursor/hooks/apm-hook-cursor/` |
   | GitHub Copilot | `.github/hooks/scripts/apm-hook-copilot/` |
 

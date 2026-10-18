@@ -20,7 +20,8 @@ export const HOOK_PACKAGE_NAMES = [
   "apm-hook-windsurf",
   "apm-hook-cursor",
   "apm-hook-copilot",
-  "apm-hook-pretooluse",
+  "apm-hook-claude",
+  "apm-hook-codex",
 ];
 
 // target → その target の hook を配布する package 名。
@@ -29,8 +30,8 @@ export const TARGET_HOOK_PACKAGE = {
   windsurf: "apm-hook-windsurf",
   cursor: "apm-hook-cursor",
   copilot: "apm-hook-copilot",
-  claude: "apm-hook-pretooluse",
-  codex: "apm-hook-pretooluse",
+  claude: "apm-hook-claude",
+  codex: "apm-hook-codex",
   "agent-skills": null,
 };
 
@@ -82,8 +83,8 @@ export function apmInstall(consumer, home, target = "windsurf") {
 // agent-skills は hook deploy 対象外。
 const BUNDLE_DIRS = {
   windsurf: [".windsurf", "hooks", "apm-hook-windsurf"],
-  claude: [".claude", "hooks", "apm-hook-pretooluse"],
-  codex: [".codex", "hooks", "apm-hook-pretooluse"],
+  claude: [".claude", "hooks", "apm-hook-claude"],
+  codex: [".codex", "hooks", "apm-hook-codex"],
   cursor: [".cursor", "hooks", "apm-hook-cursor"],
   copilot: [".github", "hooks", "scripts", "apm-hook-copilot"],
   "agent-skills": null,

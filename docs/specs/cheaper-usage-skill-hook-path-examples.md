@@ -94,7 +94,8 @@ doc 精度を是正する。
 > Note (issue #118): the `<dep-name>` deploy-dir rule predates the
 > per-target hook split — hook bundles now deploy under
 > `<hooks_root>/apm-hook-<package>` (`apm-hook-windsurf`,
-> `apm-hook-cursor`, `apm-hook-copilot`, `apm-hook-pretooluse`).
+> `apm-hook-cursor`, `apm-hook-copilot`, `apm-hook-claude`,
+> `apm-hook-codex`).
 
 ## Requirements
 

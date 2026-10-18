@@ -16,8 +16,8 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 // PreToolUse matcher の source of truth — issue #118 で hook 宣言は
 // per-target sibling package に分離され、claude/codex 向けの nested
-// PreToolUse group は apm-hook-pretooluse が持つ。
-const hooksPath = path.join(repoRoot, "packages/apm-hook-pretooluse/.apm/hooks/hooks.json");
+// PreToolUse group は apm-hook-claude / apm-hook-codex が持つ(内容同一)。
+const hooksPath = path.join(repoRoot, "packages/apm-hook-claude/.apm/hooks/hooks.json");
 const hooksJson = JSON.parse(readFileSync(hooksPath, "utf8"));
 
 const pretooluseGroups = (hooksJson.hooks?.PreToolUse ?? []).filter((group) =>
