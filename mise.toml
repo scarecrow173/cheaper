@@ -8,7 +8,7 @@ UV_EXCLUDE_NEWER = "1 week"
 
 [tools]
 node = "26"
-# aqua:biomejs/biome(npm 非経由)。biome.json の schema version に揃える
+# aqua:biomejs/biome(npm 非経由)。biome.jsonc の schema version に揃える
 biome = "2.5.13"
 # rig が rust-version 1.95 を要求するため >=1.95 の固定 version を pin する。
 # rustup default profile は環境依存なので fmt/clippy の component を明示する
