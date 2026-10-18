@@ -8,6 +8,10 @@
 // skills のみで cli/ payload を含まない。launcher の実行経路
 // (PATH 上 CLI の passthrough)は scripts/test/launcher-passthrough.test.mjs
 // が担う。
+// issue #118 で hook 宣言は per-target sibling package(apm-hook-*)に
+// 分離 — 各 target config にはその target の native event のみが
+// 登録され、他 harness の event key は一切残らない
+// (SPEC-2w4XxXeDF0glTfgrBVJnWb / ADR-1fVxZhjOm4z8ilPCUSXHMI)。
 
 import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
@@ -20,6 +24,7 @@ import {
   bundleRoot,
   generatedConfigPaths,
   makeConsumerLayout,
+  TARGET_NATIVE_EVENTS,
 } from "./lib/apm-fixture.mjs";
 
 const HOOK_TARGETS = ["windsurf", "copilot", "codex", "claude", "cursor"];
@@ -28,10 +33,21 @@ const SKILL_NAMES = [
   "cheaper-bulk-read",
   "cheaper-code-write",
   "cheaper-doc-write",
+  "cheaper-tool-operate",
 ];
+
+// 全 native event の集合 — foreign event 不在 assert の対照。
+const ALL_EVENTS = new Set(Object.values(TARGET_NATIVE_EVENTS).flat());
 
 const readJson = (file) => JSON.parse(readFileSync(file, "utf8"));
 const apmMissing = !apmAvailable();
+
+// event entry が flat(`command` 直下)でも nested(`hooks[].command`)でも
+// command 文字列を取り出す。
+const entryCommand = (entry) =>
+  typeof entry.command === "string"
+    ? String(entry.command)
+    : String((entry.hooks ?? [{}])[0].command);
 
 for (const target of HOOK_TARGETS) {
   describe(`APM consumer install smoke (${target} target)`, () => {
@@ -47,7 +63,7 @@ for (const target of HOOK_TARGETS) {
       if (root) rmSync(root, { recursive: true, force: true });
     });
 
-    it("deploys the binary-free hook bundle and registers pre_read_code verbatim", {
+    it("deploys the binary-free hook bundle and registers native events only", {
       timeout: 120_000,
       skip: apmMissing && "apm CLI not available on PATH",
     }, () => {
@@ -57,6 +73,7 @@ for (const target of HOOK_TARGETS) {
       // bundle layout — slim payload(issue #85): thin launcher + hooks.json
       // のみ。cli/ payload(version.json / workers / policy / bin)は
       // cargo binary の embedded resource に統合されたため配布しない。
+      // deploy dir 名は hook package 名(apm-hook-*、issue #118)。
       const bundle = bundleRoot(consumer, target);
       assert.notStrictEqual(bundle, null);
       for (const rel of ["cheaper.sh", "cheaper.ps1"]) {
@@ -83,117 +100,58 @@ for (const target of HOOK_TARGETS) {
         assert.ok(existsSync(p), `${target}: ${p}`);
       }
 
-      // 登録 event key が pre_read_code verbatim であることの記録
-      // (windsurf では native event として発火。non-windsurf では
-      // documented contract 上 expected no-op — ADR-0016)。
-      if (target === "claude") {
-        // .claude/settings.json: hooks → <event> → matcher → hooks の
-        // nested shape
-        const settingsPath = configPaths.find((p) => p.endsWith("settings.json"));
-        const apmHooksPath = configPaths.find((p) => p.endsWith("apm-hooks.json"));
-        assert.ok(settingsPath);
-        assert.ok(apmHooksPath);
-        const settings = readJson(settingsPath);
-        const apmHooks = readJson(apmHooksPath);
-        const settingsEvents = settings.hooks;
-        const settingsEntry = settingsEvents.pre_read_code[0];
-        assert.ok(settingsEntry);
-        assert.ok(settingsEntry.matcher);
-        const inner = settingsEntry.hooks;
-        assert.ok(Array.isArray(inner));
-        // ${CLAUDE_PROJECT_DIR} 補間はそのまま残る。command は
-        // launcher 経由の `cheaper hook` 呼び出し。
-        assert.match(String(inner[0].command), /hook pre-read-code --target windsurf/);
-        assert.doesNotMatch(String(inner[0].command), /node /);
-        // .claude/apm-hooks.json は top-level event key + 同じ nested shape
-        const apmEntry = apmHooks.pre_read_code[0];
-        assert.ok(apmEntry);
-        assert.ok(apmEntry.matcher);
-        assert.ok(Array.isArray(apmEntry.hooks));
-        // apm の claude adapter は event 名を native casing に正規化
-        // する: `preToolUse`(camelCase)は PascalCase `PreToolUse` に
-        // 変換される。flat entry の matcher は lowercase
-        // `view|bash|powershell|shell` に限定済みで claude の tool 名
-        // (Read/Bash/…)には一致しないため copilot adapter は発火しない。
-        const preToolEntry = settingsEvents.PreToolUse[0];
-        assert.ok(preToolEntry);
-        assert.strictEqual(preToolEntry.matcher, "view|bash|powershell|shell");
-        assert.match(String(preToolEntry.hooks[0].command), /hook pre-tool-use --target copilot/);
-        // apm-hooks.json 側も同じく PascalCase に正規化される
-        const apmPreToolEntry = apmHooks.PreToolUse[0];
-        assert.ok(apmPreToolEntry);
-        assert.ok(apmPreToolEntry.matcher);
-        // native PreToolUse group(DESIGN-034rA79Uog7JOa7evw6rOL):
-        // case-insensitive read/grep/bash/powershell matcher で
-        // pre-read-code-pretooluse が live 登録される。copilot 由来の
-        // flat entry は lowercase matcher を保持し、claude の
-        // capitalized tool 名には一致しない(cross-fire 防止)。
-        const preToolGroups = settingsEvents.PreToolUse;
-        const nativeGroup = preToolGroups.find(
-          (g) =>
-            g.matcher ===
-            "^([Rr][Ee][Aa][Dd]|[Gg][Rr][Ee][Pp]|[Bb][Aa][Ss][Hh]|[Pp][Oo][Ww][Ee][Rr][Ss][Hh][Ee][Ll][Ll])$",
+      const nativeEvents = TARGET_NATIVE_EVENTS[target];
+      const expectedScript = {
+        windsurf: /hook (pre-read-code|pre-run-command) --target windsurf/,
+        cursor: /hook (before-read-file|before-shell-execution) --target cursor/,
+        copilot: /hook pre-tool-use --target copilot/,
+        claude: /hook pre-tool-use --target pretooluse/,
+        codex: /hook pre-tool-use --target pretooluse/,
+      }[target];
+
+      // 全 generated config で event key が native event のみで、
+      // 登録 entry が対応 package の launcher を指すことを確認。
+      for (const cfgPath of configPaths) {
+        const cfg = readJson(cfgPath);
+        // apm-hooks.json のみ top-level event key の flat shape。
+        // copilot の <dep>-hooks.json や harness 本来の hooks.json /
+        // settings.json は `hooks` 直下に event を nest する。
+        const flat = path.basename(cfgPath) === "apm-hooks.json";
+        const eventsObj = flat ? cfg : cfg.hooks;
+        const eventKeys = Object.keys(eventsObj).filter((k) => ALL_EVENTS.has(k));
+        assert.deepEqual(
+          eventKeys.sort(),
+          [...nativeEvents].sort(),
+          `${target}: ${cfgPath} event keys`,
         );
-        assert.ok(nativeGroup);
-        assert.match(String(nativeGroup.hooks[0].command), /hook pre-tool-use --target pretooluse/);
-        const copilotGroup = preToolGroups.find((g) => g.matcher === "view|bash|powershell|shell");
-        assert.ok(copilotGroup);
-      } else {
-        // windsurf / codex / cursor / copilot: hooks.json(copilot は
-        // dep 名由来の <dep>-hooks.json)は `hooks` 直下に event を
-        // nest する shape。windsurf / codex / cursor では apm が同じ
-        // 登録を top-level event key shape の apm-hooks.json としても
-        // 追加生成する(DISC-0009 観測事実)。
-        for (const cfgPath of configPaths) {
-          const cfg = readJson(cfgPath);
-          const flat = path.basename(cfgPath) === "apm-hooks.json";
-          const entries = flat ? cfg.pre_read_code : cfg.hooks.pre_read_code;
-          assert.ok(Array.isArray(entries), `${target}: ${cfgPath}`);
-          assert.ok(entries.length > 0);
-          assert.match(String(entries[0].command), /hook pre-read-code --target windsurf/);
-          assert.doesNotMatch(String(entries[0].command), /node /);
-          // preToolUse(copilot native event)の登録も verbatim で全
-          // target config に入る。copilot では functional、他 target
-          // では unknown event または matcher 不一致として no-op
-          // (ADR-0023 / DESIGN-034rA79Uog7JOa7evw6rOL)。
-          const preToolEntries = flat ? cfg.preToolUse : cfg.hooks.preToolUse;
-          assert.ok(Array.isArray(preToolEntries), `${target}: ${cfgPath} preToolUse`);
-          assert.ok(preToolEntries.length > 0);
-          assert.match(String(preToolEntries[0].command), /hook pre-tool-use --target copilot/);
-          assert.strictEqual(preToolEntries[0].matcher, "view|bash|powershell|shell");
-          if (!flat && (target === "cursor" || target === "copilot")) {
-            assert.strictEqual(cfg.version, 1);
-          }
-          // per-target native event 登録(DESIGN-034rA79Uog7JOa7evw6rOL)。
-          // flat entry は `command`、nested matcher group は
-          // `hooks[].command` に script path を持つ。
-          const hooksObj = flat ? cfg : cfg.hooks;
-          const entryCommand = (entry) =>
-            typeof entry.command === "string"
-              ? String(entry.command)
-              : String((entry.hooks ?? [{}])[0].command);
-          const nativeEvents = {
-            windsurf: [["pre_run_command", "hook pre-run-command --target windsurf"]],
-            // copilot では nested PreToolUse group が preToolUse array
-            // に merge されて現れる(実質 no-op — 登録形状の記録として
-            // assert)。
-            copilot: [["preToolUse", "hook pre-tool-use --target pretooluse"]],
-            codex: [["PreToolUse", "hook pre-tool-use --target pretooluse"]],
-            cursor: [
-              ["beforeReadFile", "hook before-read-file --target cursor"],
-              ["beforeShellExecution", "hook before-shell-execution --target cursor"],
-            ],
-          };
-          for (const [event, script] of nativeEvents[target] ?? []) {
-            const evEntries = hooksObj[event];
-            assert.ok(Array.isArray(evEntries), `${target}: ${cfgPath} ${event}`);
-            assert.ok(evEntries.length > 0);
-            assert.ok(
-              evEntries.some((e) => entryCommand(e).includes(script)),
-              `${target}: ${cfgPath} ${event} -> ${script}`,
-            );
-          }
+        for (const event of nativeEvents) {
+          const entries = eventsObj[event];
+          assert.ok(Array.isArray(entries) && entries.length > 0, `${target}: ${cfgPath} ${event}`);
+          assert.ok(
+            entries.some((e) => expectedScript.test(entryCommand(e))),
+            `${target}: ${cfgPath} ${event} -> ${expectedScript}`,
+          );
+          assert.doesNotMatch(
+            JSON.stringify(entries),
+            /node /,
+            `${target}: ${cfgPath} ${event} must not invoke node`,
+          );
         }
+      }
+
+      // claude: PreToolUse は native pretooluse entry 1 件のみ —
+      // copilot 由来 flat entry(view|bash|powershell|shell matcher)の
+      // 重複登録が無いこと(issue #118 の副次不具合が消えたことの pin)。
+      if (target === "claude") {
+        const settingsPath = configPaths.find((p) => p.endsWith("settings.json"));
+        const settings = readJson(settingsPath);
+        const groups = settings.hooks.PreToolUse;
+        assert.strictEqual(groups.length, 1, "claude PreToolUse must have exactly one group");
+        assert.strictEqual(
+          groups[0].matcher,
+          "^([Rr][Ee][Aa][Dd]|[Gg][Rr][Ee][Pp]|[Bb][Aa][Ss][Hh]|[Pp][Oo][Ww][Ee][Rr][Ss][Hh][Ee][Ll][Ll])$",
+        );
+        assert.match(String(groups[0].hooks[0].command), /hook pre-tool-use --target pretooluse/);
       }
     });
   });
@@ -213,7 +171,7 @@ describe("APM consumer install smoke (agent-skills target)", () => {
     if (root) rmSync(root, { recursive: true, force: true });
   });
 
-  it("deploys the 4 skills and no hook bundle or hook config", {
+  it("deploys the skills and no hook bundle or hook config", {
     timeout: 120_000,
     skip: apmMissing && "apm CLI not available on PATH",
   }, () => {

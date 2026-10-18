@@ -4,8 +4,8 @@
 // suffix is always the retired scheme.
 // Wired into `mise run check`, so CI fails automatically on regression.
 //
-// Checked: docs/**/*.md, AGENTS.md, README.md, packages/apm/.apm/**/*.md
-// (tracked files only).
+// Checked: docs/**/*.md, AGENTS.md, README.md, packages/*/.apm/**/*.md
+// (tracked files only — every distributable package's .apm/ markdown).
 //
 // NOT checked: EXP-NNNN — experiment artifacts are .jsonl files
 // referenced by path and never received opaque IDs. Pre-existing
@@ -28,7 +28,7 @@ const tracked = execFileSync("git", ["ls-files", "*.md"], {
       f.startsWith("docs/") ||
       f === "AGENTS.md" ||
       f === "README.md" ||
-      f.startsWith("packages/apm/.apm/"),
+      /^packages\/[^/]+\/\.apm\//.test(f),
   );
 
 const legacyId = /\b(?:SPEC|DESIGN|DISC|ADR|IMPL|PLAN|TASK|IDEA|REQ|BRF)-\d+\b/g;

@@ -22,7 +22,8 @@ relations:
     - "./distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"
   blocks: []
   supersedes: []
-  superseded-by: []
+  superseded-by:
+    - "./apm-hook-per-target-package-split.md"
   related:
     - "../specs/cross-agent-distribution-verification.md"
     - "./distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md"

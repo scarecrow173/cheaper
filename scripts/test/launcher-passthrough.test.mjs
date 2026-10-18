@@ -14,7 +14,9 @@ import { test } from "node:test";
 
 import { nodeFreePath, repoRoot } from "./lib/apm-fixture.mjs";
 
-const hooksDir = path.join(repoRoot, "packages", "apm", ".apm", "hooks");
+// launcher は全 apm-hook-* package で byte-identical — 代表として
+// windsurf package の dir を spawn cwd に使う(issue #118 split)。
+const hooksDir = path.join(repoRoot, "packages", "apm-hook-windsurf", ".apm", "hooks");
 const isWindows = process.platform === "win32";
 const hasPosixShell = spawnSync("sh", ["-c", "exit 0"], { shell: false }).status === 0;
 // Windows では spawn の PATH env だけで `sh` を解決するため、sh.exe の

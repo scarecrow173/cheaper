@@ -1,0 +1,5 @@
+name: cheaper-hook-pretooluse
+version: "1.0.0"
+description: PreToolUse hook declarations for cheaper (claude / codex, thin PATH launchers)
+author: scarecrow173
+targets: [claude, codex]

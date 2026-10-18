@@ -7,6 +7,7 @@ Directory: `docs/plans`
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
 | PLAN-034r05iHE1FbkoW7f4XJXS | Implement APM delegation skills and pre_read_code hook | completed | [apm-delegation-layer.md](./apm-delegation-layer.md) |
+| PLAN-V0rSMLrOYWCEJaFcsQHZAf | APM hook 宣言 per-target サブパッケージ分離 実装計画 | approved | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |
 | PLAN-034z2ET4udxbq0djqYM2kl | Assemble APM executable payload with platform launchers | completed | [assemble-apm-executable-payload-with-platform-launchers.md](./assemble-apm-executable-payload-with-platform-launchers.md) |
 | PLAN-034r05iHE1FbkoZibpg86T | cheaper auth command (provider login absorbed into the CLI) | completed | [auth-command.md](./auth-command.md) |
 | PLAN-zDQIdChPXY1lrGJyzZTiQc | Route auth text/select prompts through the injected CliIo stderr | completed | [auth-io-boundary.md](./auth-io-boundary.md) |

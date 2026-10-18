@@ -9,6 +9,7 @@ Directory: `docs/designs`
 | DESIGN-OVERVIEW | System Design Overview | draft | [overview.md](./overview.md) |
 | DESIGN-034EehnT1xOPAee9dK22Kx | Setup-boundary abort classification via core ErrorCode reverse lookup | approved | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
 | DESIGN-034z1EgnQwax4VamK2xmdT | APM executable payload layout and platform launchers | superseded | [apm-executable-payload-layout-and-platform-launchers.md](./apm-executable-payload-layout-and-platform-launchers.md) |
+| DESIGN-kXMpXYHxw0mt0AE0SeAHTM | APM hook 宣言の per-target サブパッケージ分離 設計 | approved | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |
 | DESIGN-034r05iHy2gdnoFHbdllXV | APM skills and pre_read_code delegation hook | approved | [apm-skills-and-pre-read-hook.md](./apm-skills-and-pre-read-hook.md) |
 | DESIGN-034r05iHy2gdnoJ5j3v9Nk | cheaper auth command design (provider OAuth absorbed by the CLI) | approved | [auth-command.md](./auth-command.md) |
 | DESIGN-Hz0wDP9E6GjkHNLwOEOGiw | Auth terminal prompt I/O boundary (injected stderr for text/select prompts) | approved | [auth-io-boundary.md](./auth-io-boundary.md) |

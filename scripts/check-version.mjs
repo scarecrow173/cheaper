@@ -5,15 +5,19 @@
 // so CI fails automatically on divergence.
 //
 // Checked:
-//   Cargo.toml              canonical version
-//                           ([workspace.package] version)
-//   packages/apm/apm.yml    must equal canonical (version: line)
+//   Cargo.toml                  canonical version
+//                               ([workspace.package] version)
+//   packages/apm/apm.yml        must equal canonical (version: line)
+//   packages/apm-hook-*/apm.yml must equal canonical (issue #118 —
+//                               sibling hook packages are part of the
+//                               same distributable set)
 //
 // NOT checked: root apm.yml — it describes the cheaper-dev development
 // project, whose version is independent of the product. The generated
 // `cli/version.json` declaration site was removed in issue #85 (slim
 // APM payload — the binary embeds the version via build.rs).
 
+import { readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { apmPackageVersion, cargoWorkspaceVersion } from "./lib/release-artifacts.mjs";
@@ -22,8 +26,17 @@ const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 const canonical = cargoWorkspaceVersion(repoRoot);
 
+const hookPackages = readdirSync(path.join(repoRoot, "packages"), { withFileTypes: true })
+  .filter((d) => d.isDirectory() && d.name.startsWith("apm-hook-"))
+  .map((d) => d.name)
+  .sort();
+
 const declarations = [
   ["packages/apm/apm.yml", () => apmPackageVersion(path.join(repoRoot, "packages/apm/apm.yml"))],
+  ...hookPackages.map((pkg) => [
+    `packages/${pkg}/apm.yml`,
+    () => apmPackageVersion(path.join(repoRoot, "packages", pkg, "apm.yml")),
+  ]),
 ];
 
 let failed = false;

@@ -47,6 +47,12 @@ relations:
 
 ## What Should Be Built
 
+> Note (issue #118): the single-package `hooks.json` described here
+> was superseded by the per-target sibling package split — see
+> `apm-hook-per-target-package-split.md` and ADR
+> `apm-hook-per-target-package-split`. Deploy dir is now
+> `<hooks_root>/apm-hook-*`, not `<dep-name>`.
+
 Replace Release-binary acquisition with Cargo source install as the
 distribution model for APM consumers. The consumer install path
 becomes `cargo install --git <repo> --locked cheaper-cli`; the APM

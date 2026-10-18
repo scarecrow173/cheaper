@@ -49,32 +49,63 @@ cheaper models      # model catalog 解決の smoke
 ### APM package の install
 
 CLI とは別に、parent agent へ skills / hooks を deploy する APM
-package は従来どおり `apm install` で install する:
+package は従来どおり `apm install` で install する（apm ≥0.28 推奨 —
+hook package は transitive `path:` dep と per-dep `targets:` を使う。
+0.22 以降で動作する）:
 
 ```yaml
 # consumer の apm.yml
 dependencies:
   apm:
   - scarecrow173/cheaper/packages/apm#main   # virtual package 参照
-  # または local path: - path: ../cheaper/packages/apm
 ```
 
 ```bash
 apm install --target windsurf
 ```
 
-deploy される hook bundle は `<hooks_root>/<dep-name>/`（例:
-`.windsurf/hooks/apm/`）に `cheaper.sh` / `cheaper.ps1` /
-`hooks.json` を持つ。`cli/` payload は存在しない — worker 定義・
-policy・version は binary に embedded されている。
+issue #118 で hook 宣言は per-target sibling package（`apm-hook-*`）へ
+分離された。`packages/apm`（skills）が `dependencies.apm` の transitive
+`path:` dep として 4 package を引き込むため、consumer の dep 宣言は
+変わらず 1 本でよい。
 
-旧 package（`cli/` payload・extensionless `cheaper` launcher を持つ版）
-から upgrade する consumer は注意: APM の reinstall は deploy dir 内の
-stale file を **prune しない**（APM 0.28.0 実測）。upgrade 後に
-`<hooks_root>/<dep-name>/cli/` と拡張子なし `cheaper` が残る場合は
-1 回だけ手動で削除する。hook は `sh ./cheaper.sh` しか参照しないため
-残存 file は実害なしだが、再 deploy を確実にしたい場合は bundle dir
-全体を消して `apm install` を再実行すればよい。
+deploy される hook bundle は `<hooks_root>/<pkg>/` に `cheaper.sh` /
+`cheaper.ps1` / `hooks.json` を持つ — `<pkg>` は hook package 名で
+target 毎に決まる:
+
+| Target | Hook bundle root |
+|---|---|
+| Windsurf | `.windsurf/hooks/apm-hook-windsurf/` |
+| Claude Code | `.claude/hooks/apm-hook-pretooluse/` |
+| OpenAI Codex | `.codex/hooks/apm-hook-pretooluse/` |
+| Cursor | `.cursor/hooks/apm-hook-cursor/` |
+| GitHub Copilot | `.github/hooks/scripts/apm-hook-copilot/` |
+
+`cli/` payload は存在しない — worker 定義・policy・version は binary に
+embedded されている。各 target config には native event のみが登録
+される（他 harness の event key は残らない）。
+
+注意点:
+
+- `packages/apm` は self-contained ではなくなった。repo 全体ではなく
+  `packages/apm` dir だけをコピーして `path:` dep で install する
+  vendored 利用、`apm pack` / `apm publish` による registry 配布は
+  非対応（transitive `path:` の解決に sibling dir が要る）。
+- dep-edge `targets:`（例: `[agent-skills]`）で dep を narrow しても
+  transitive hook package へは**伝播しない**。harness target も
+  active な consumer で hook を出したくない場合は、install の active
+  target を `agent-skills` のみに絞るか、policy の
+  `dependencies.deny` で `apm-hook-*` を拒否する。
+
+旧 package から upgrade する consumer は注意: APM の reinstall /
+update は旧 package が merge した hook entry を **除去しない**
+（APM は hook file を失った package の entry を掃除しない）。split
+前の layout から移行するには `apm uninstall <dep>` → `apm install`
+を実行する（global install は `apm uninstall -g <dep>`）。旧 ref pin
+（`#<sha>`/`#<tag>`）の consumer は先に ref を post-split commit へ
+更新すること。uninstall が managed-file 変更を検出して nonzero で
+終わる場合は、生成 config（`.windsurf/hooks.json` 等）内で旧 dep を
+指す entry を手動で除去する。
 
 ### Devin CLI の native hook 登録（`cheaper hook-config`）
 

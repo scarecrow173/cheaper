@@ -37,6 +37,9 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqx9iKaroO | Align CI with canonical setup/check entrypoints and locked install | done | [align-ci-with-canonical-entrypoints.md](./align-ci-with-canonical-entrypoints.md) |
 | TASK-034r2ruj7LGYlehohv1Xjs | Align usage-log docs with recording contract | done | [align-usage-log-docs-with-recording-contract.md](./align-usage-log-docs-with-recording-contract.md) |
 | TASK-034r05iHQeQpDpIRiZMox8 | Anchor policy timeout at runWorker start and amend DESIGN-034r05iHrZUE6WvaQsRRsM | done | [anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
+| TASK-d1Fg1OH0NcI8xj5WAkWvts | packages/: hook package 分割(4 sibling + 親 deps + 旧 hooks 削除) | done | [apm-hook-packages-split.md](./apm-hook-packages-split.md) |
+| TASK-X2PS53bel6fwygkwU5RpqZ | consumer 向け・repo 文書の新 layout 追従と falsified doc set 関連付け | done | [apm-hook-split-docs.md](./apm-hook-split-docs.md) |
+| TASK-IYUgfVARCrZwwsvW6aNfFq | check script + scripts/test 群の新 layout 追従 | done | [apm-hook-split-test-follow.md](./apm-hook-split-test-follow.md) |
 | TASK-034zBJ64O6cfOluLvLxYIO | Append sibling tool-call parallelism section to execution-engine design doc | done | [append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md](./append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md) |
 | TASK-034r05iHQeQpDpHsFsVyxq | Apply abort grace and provider failure normalization to repair | done | [apply-abort-grace-and-provider-failure-normalization-to-repair.md](./apply-abort-grace-and-provider-failure-normalization-to-repair.md) |
 | TASK-034r05iHQeQpDqapXCLs3G | cheaper auth command (login/status/logout) | done | [auth-command.md](./auth-command.md) |

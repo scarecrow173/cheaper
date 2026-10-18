@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "sh ./cheaper.sh hook pre-tool-use --target copilot || exit 0",
+        "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook pre-tool-use --target copilot; exit 0",
+        "show_output": false,
+        "matcher": "view|bash|powershell|shell"
+      }
+    ]
+  }
+}

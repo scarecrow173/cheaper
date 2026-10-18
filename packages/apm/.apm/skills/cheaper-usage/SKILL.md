@@ -67,33 +67,35 @@ one workspace file so you can measure context cost before reading it.
   (`~/.cargo/bin` on POSIX, `%USERPROFILE%\.cargo\bin` on Windows) and
   restart the IDE/agent so it inherits the updated PATH. Verify with
   `cheaper --version`, then `cheaper models` as a smoke check.
-- In a workspace where cheaper was installed via APM, the deployed
-  hook bundle lives under `<hooks_root>/<dep-name>/`, where
-  `<dep-name>` is the name the dependency was installed under —
-  the basename for `path:` dependencies, or the last path segment
-  of a virtual package reference. For the canonical install
-  (`scarecrow173/cheaper/packages/apm`) that name is `apm`:
+- In a workspace where cheaper was installed via APM (apm ≥0.28
+  recommended — the hook packages use transitive `path:` dependencies
+  and per-dependency `targets:`, available since apm 0.22), hook
+  declarations are distributed as per-target sibling packages
+  (`apm-hook-*`, issue #118) — the skills package `packages/apm`
+  no longer carries hooks. Each hook bundle lives under
+  `<hooks_root>/<pkg>/` where `<pkg>` is the hook package's
+  directory name:
 
   ```bash
-  .windsurf/hooks/apm/cheaper.sh <command> [options]               # POSIX (via sh)
-  powershell .windsurf/hooks/apm/cheaper.ps1 <command> [options]  # Windows
+  .windsurf/hooks/apm-hook-windsurf/cheaper.sh <command> [options]  # POSIX (via sh)
+  powershell .windsurf/hooks/apm-hook-windsurf/cheaper.ps1 <command> [options]  # Windows
   ```
 
   Per-target hook bundle roots:
 
   | Target | Hook bundle root |
   |---|---|
-  | Windsurf | `.windsurf/hooks/<dep-name>/` |
-  | Claude Code | `.claude/hooks/<dep-name>/` |
-  | OpenAI Codex | `.codex/hooks/<dep-name>/` |
-  | Cursor | `.cursor/hooks/<dep-name>/` |
-  | GitHub Copilot | `.github/hooks/scripts/<dep-name>/` |
+  | Windsurf | `.windsurf/hooks/apm-hook-windsurf/` |
+  | Claude Code | `.claude/hooks/apm-hook-pretooluse/` |
+  | OpenAI Codex | `.codex/hooks/apm-hook-pretooluse/` |
+  | Cursor | `.cursor/hooks/apm-hook-cursor/` |
+  | GitHub Copilot | `.github/hooks/scripts/apm-hook-copilot/` |
 
   If you don't know the deployed bundle directory, read the
   generated hook config — its `command` entries carry the real path
   (`.windsurf/hooks.json`, `.claude/settings.json`,
   `.codex/hooks.json`, `.cursor/hooks.json`, or
-  `.github/hooks/<dep-name>-hooks.json` depending on target, plus
+  `.github/hooks/<dep>-hooks.json` depending on target, plus
   `apm-hooks.json` duplicates on some targets; Claude commands may
   contain a `${CLAUDE_PROJECT_DIR}` placeholder).
 
@@ -142,11 +144,14 @@ For an existing consumer, keep its configured targets and use the normal
 `apm install` flow; do not replace targets merely to obtain the helper.
 Use the actual deployed skill path when `--legacy-skill-paths` is enabled.
 Plain `apm install` can replay the existing lockfile. To obtain this helper
-from a newer package revision, preview a scoped update with
-`apm update scarecrow173/cheaper/packages/apm --dry-run`, then run the same
-command without `--dry-run` after reviewing its plan. Preserve the existing
-targets. If the dependency is pinned to an immutable ref, select the new ref
-explicitly through your normal dependency review.
+from a newer package revision, prefer `apm uninstall <dep>` followed by
+`apm install` — since the hook split (issue #118), `apm update` leaves the
+old package's merged hook entries orphaned (dead script path + duplicate
+registrations). `<dep>` is the name declared in your `apm.yml`
+(e.g. `scarecrow173/cheaper/packages/apm`; use `apm uninstall -g` for a
+global install). If the dependency is pinned to an immutable ref, move the
+ref to a post-split commit first so the reinstall fetches the new layout.
+Preserve the existing targets.
 
 Registration is owned by the CLI's `hook-config` command (the bundled
 PowerShell helper is a thin preview/`-Apply` wrapper around it):
@@ -171,7 +176,13 @@ separately installed CLI.
 To converge the registration from APM lifecycle events, wire the
 `lifecycle:` block in the consumer `apm.yml` (project scripts require
 `apm lifecycle trust`; the cheaper dependency must carry
-`targets: [agent-skills]` or the whole dependency is skipped):
+`targets: [agent-skills]` or the whole dependency is skipped).
+Note (issue #118): a dependency-edge `targets:` narrowing bounds only the
+skills package itself — APM does not propagate it to the transitive
+`apm-hook-*` dependencies. If harness targets are also active in the
+consumer, those hook packages deploy regardless; to install skills only,
+run the install with agent-skills as the sole active target or deny
+`apm-hook-*` via policy `dependencies.deny`.
 
 ```yaml
 lifecycle:

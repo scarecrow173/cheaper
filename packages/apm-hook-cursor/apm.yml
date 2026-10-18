@@ -1,0 +1,5 @@
+name: cheaper-hook-cursor
+version: "1.0.0"
+description: Cursor hook declarations for cheaper (beforeReadFile / beforeShellExecution, thin PATH launchers)
+author: scarecrow173
+target: cursor
