@@ -25,9 +25,12 @@ repos:
       # biome.jsonc の files.includes を mirror する。scope 外の file を明示
       # 渡しすると biome が "No files were processed" で exit 1 になるため、
       # files/exclude で hook の発火対象を限定する。
+      # entry は PATH 上の shim ではなく `mise exec` 経由で toolchain を
+      # 解決する(mise shims が PATH に載っていない mise activate 系の
+      # 環境でも動作する)。
       - id: biome-check
         name: biome check --write
-        entry: biome check --write
+        entry: mise exec -- biome check --write
         language: system
         files: '^(scripts|benchmarks|packages)/.*\.(mjs|json)$'
         exclude: '(^|/)(dist|node_modules)/|^benchmarks/results/'
@@ -35,7 +38,7 @@ repos:
       # (staged .rs があれば発火する)。
       - id: cargo-fmt
         name: cargo fmt
-        entry: cargo fmt --all
+        entry: mise exec -- cargo fmt --all
         language: system
         types: [rust]
         pass_filenames: false
