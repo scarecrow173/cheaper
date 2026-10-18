@@ -32,7 +32,8 @@ relations:
   verifies: []
   verified-by: []
   references:
-    - "packages/apm-hook-pretooluse/.apm/hooks/hooks.json"
+    - "packages/apm-hook-claude/.apm/hooks/hooks.json"
+    - "packages/apm-hook-codex/.apm/hooks/hooks.json"
     - "packages/apm/apm.yml"
     - "scripts/check-apm-payload.mjs"
     - "docs/guides/distribution.md"
