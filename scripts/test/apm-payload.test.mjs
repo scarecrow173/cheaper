@@ -9,6 +9,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -19,13 +20,26 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
-const hookPath = "packages/apm/.apm/hooks";
+const hookPath = "packages/apm-hook-windsurf/.apm/hooks";
 const hookDir = path.join(root, hookPath);
 
+// check-apm-payload.mjs は packages/ 配下の全 hook package と親
+// apm.yml の wiring を検査するため、fixture は親 manifest + 全
+// apm-hook-* package をコピーする(skills は対象外なので省く)。
 function fixture(t) {
   const dir = mkdtempSync(path.join(os.tmpdir(), "cheaper-source-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  cpSync(hookDir, path.join(dir, hookPath), { recursive: true });
+  mkdirSync(path.join(dir, "packages", "apm"), { recursive: true });
+  cpSync(
+    path.join(root, "packages", "apm", "apm.yml"),
+    path.join(dir, "packages", "apm", "apm.yml"),
+  );
+  for (const name of readdirSync(path.join(root, "packages"))) {
+    if (!name.startsWith("apm-hook-")) continue;
+    cpSync(path.join(root, "packages", name), path.join(dir, "packages", name), {
+      recursive: true,
+    });
+  }
   return dir;
 }
 

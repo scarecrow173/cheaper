@@ -30,9 +30,15 @@ describe("development / distributable APM package separation", () => {
     assert.strictEqual(existsSync(path.join(repoRoot, ".apm")), false);
   });
 
-  it("ships skills and hooks in the nested distributable package", () => {
+  it("ships skills in the nested distributable package (hooks live in apm-hook-* siblings)", () => {
     assert.ok(existsSync(path.join(apmPackageDir, "apm.yml")));
-    assert.ok(existsSync(path.join(apmPackageDir, ".apm", "hooks")));
+    // issue #118: hook 宣言は per-target sibling package の責務。
+    // packages/apm は skills-only で `.apm/hooks` を持たない。
+    assert.strictEqual(
+      existsSync(path.join(apmPackageDir, ".apm", "hooks")),
+      false,
+      "packages/apm/.apm/hooks must not exist",
+    );
     assert.ok(existsSync(path.join(apmPackageDir, ".apm", "skills")));
     const skills = readdirSync(path.join(apmPackageDir, ".apm", "skills"));
     for (const s of [
@@ -40,8 +46,23 @@ describe("development / distributable APM package separation", () => {
       "cheaper-bulk-read",
       "cheaper-code-write",
       "cheaper-doc-write",
+      "cheaper-tool-operate",
     ]) {
       assert.ok(skills.includes(s));
+    }
+    // sibling hook package が .apm/hooks を持つ。
+    for (const pkg of [
+      "apm-hook-windsurf",
+      "apm-hook-cursor",
+      "apm-hook-copilot",
+      "apm-hook-pretooluse",
+    ]) {
+      const dir = path.join(repoRoot, "packages", pkg);
+      assert.ok(existsSync(path.join(dir, "apm.yml")), `${pkg}/apm.yml`);
+      assert.ok(
+        existsSync(path.join(dir, ".apm", "hooks", "hooks.json")),
+        `${pkg}/.apm/hooks/hooks.json`,
+      );
     }
   });
 

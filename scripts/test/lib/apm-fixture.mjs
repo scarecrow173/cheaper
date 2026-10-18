@@ -10,9 +10,38 @@ import { fileURLToPath } from "node:url";
 export const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
 
 // 配布用 APM package(apm.yml + .apm/ primitives)の repo 内 path。
-// consumer e2e はこの package だけを一時 workspace へコピーして install
-// する。repo 本体(development project)は直接参照しない(DESIGN-0021)。
+// consumer e2e は packages/ 配下を一時 workspace へコピーして install
+// する — packages/apm は sibling apm-hook-* への transitive `path:` dep
+// を持つため、単体コピーは解決不能(issue #118 / DESIGN-kXMpXYHxw0mt0AE0SeAHTM)。
+// repo 本体(development project)は直接参照しない(DESIGN-0021)。
 export const apmPackageDir = path.join(repoRoot, "packages", "apm");
+
+export const HOOK_PACKAGE_NAMES = [
+  "apm-hook-windsurf",
+  "apm-hook-cursor",
+  "apm-hook-copilot",
+  "apm-hook-pretooluse",
+];
+
+// target → その target の hook を配布する package 名。
+// agent-skills は hook を持たない。
+export const TARGET_HOOK_PACKAGE = {
+  windsurf: "apm-hook-windsurf",
+  cursor: "apm-hook-cursor",
+  copilot: "apm-hook-copilot",
+  claude: "apm-hook-pretooluse",
+  codex: "apm-hook-pretooluse",
+  "agent-skills": null,
+};
+
+// target が期待する event key(native のみ — foreign event は登録されない)。
+export const TARGET_NATIVE_EVENTS = {
+  windsurf: ["pre_read_code", "pre_run_command"],
+  cursor: ["beforeReadFile", "beforeShellExecution"],
+  copilot: ["preToolUse"],
+  claude: ["PreToolUse"],
+  codex: ["PreToolUse"],
+};
 
 export function apmAvailable() {
   const r = spawnSync("apm", ["--version"], { shell: true, encoding: "utf8" });
@@ -20,19 +49,24 @@ export function apmAvailable() {
 }
 
 // local path dep として install する実 distribution package の写しを作る。
-// packages/apm(apm.yml + .apm/ primitives)をそのままコピーする
-// (DESIGN-0014 / DISC-0006 / DESIGN-0021)。
+// packages/ 配下の全 package(親 apm + apm-hook-* sibling)を `pkgs/<name>/`
+// へコピーする — 親の transitive `path: ../apm-hook-*` を解決するには
+// sibling が pkgs/ 直下に必要(APM は local dep の `source_path` を anchor
+// に相対解決する、#857 / issue #118 で 0.28.0/0.30.0 実証済み)。
 export function makeConsumerLayout(root, target = "windsurf") {
-  const pkg = path.join(root, "pkg");
+  const pkgs = path.join(root, "pkgs");
   const consumer = path.join(root, "consumer");
-  mkdirSync(pkg, { recursive: true });
   mkdirSync(consumer, { recursive: true });
-  cpSync(apmPackageDir, pkg, { recursive: true });
+  for (const name of ["apm", ...HOOK_PACKAGE_NAMES]) {
+    cpSync(path.join(repoRoot, "packages", name), path.join(pkgs, name), {
+      recursive: true,
+    });
+  }
   writeFileSync(
     path.join(consumer, "apm.yml"),
-    `name: consumer\nversion: "0.0.1"\ntargets:\n- ${target}\ndependencies:\n  apm:\n  - path: ../pkg\n`,
+    `name: consumer\nversion: "0.0.1"\ntargets:\n- ${target}\ndependencies:\n  apm:\n  - path: ../pkgs/apm\n`,
   );
-  return { pkg, consumer };
+  return { pkgs, consumer };
 }
 
 export function apmInstall(consumer, home, target = "windsurf") {
@@ -44,14 +78,14 @@ export function apmInstall(consumer, home, target = "windsurf") {
   });
 }
 
-// target → deploy 済み hook bundle の dir(dep dir 名 = "pkg")。
+// target → deploy 済み hook bundle の dir(dep dir 名 = hook package 名)。
 // agent-skills は hook deploy 対象外。
 const BUNDLE_DIRS = {
-  windsurf: [".windsurf", "hooks", "pkg"],
-  claude: [".claude", "hooks", "pkg"],
-  codex: [".codex", "hooks", "pkg"],
-  cursor: [".cursor", "hooks", "pkg"],
-  copilot: [".github", "hooks", "scripts", "pkg"],
+  windsurf: [".windsurf", "hooks", "apm-hook-windsurf"],
+  claude: [".claude", "hooks", "apm-hook-pretooluse"],
+  codex: [".codex", "hooks", "apm-hook-pretooluse"],
+  cursor: [".cursor", "hooks", "apm-hook-cursor"],
+  copilot: [".github", "hooks", "scripts", "apm-hook-copilot"],
   "agent-skills": null,
 };
 
