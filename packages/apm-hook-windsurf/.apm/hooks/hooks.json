@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "pre_read_code": [
+      {
+        "command": "sh ./cheaper.sh hook pre-read-code --target windsurf",
+        "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook pre-read-code --target windsurf; exit $LASTEXITCODE",
+        "show_output": false
+      }
+    ],
+    "pre_run_command": [
+      {
+        "command": "sh ./cheaper.sh hook pre-run-command --target windsurf",
+        "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook pre-run-command --target windsurf; exit $LASTEXITCODE",
+        "show_output": false
+      }
+    ]
+  }
+}

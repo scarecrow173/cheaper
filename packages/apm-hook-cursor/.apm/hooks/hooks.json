@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "beforeReadFile": [
+      {
+        "command": "sh ./cheaper.sh hook before-read-file --target cursor || echo '{\"permission\":\"allow\"}'",
+        "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook before-read-file --target cursor; if ($LASTEXITCODE -ne 0) { '{\"permission\":\"allow\"}' }; exit 0",
+        "show_output": false
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "sh ./cheaper.sh hook before-shell-execution --target cursor || echo '{\"permission\":\"allow\"}'",
+        "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook before-shell-execution --target cursor; if ($LASTEXITCODE -ne 0) { '{\"permission\":\"allow\"}' }; exit 0",
+        "show_output": false
+      }
+    ]
+  }
+}

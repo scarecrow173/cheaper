@@ -1,0 +1,5 @@
+name: cheaper-hook-copilot
+version: "1.0.0"
+description: Copilot hook declarations for cheaper (preToolUse, thin PATH launchers)
+author: scarecrow173
+target: copilot

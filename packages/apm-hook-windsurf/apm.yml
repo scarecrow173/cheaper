@@ -1,0 +1,5 @@
+name: cheaper-hook-windsurf
+version: "1.0.0"
+description: Windsurf hook declarations for cheaper (pre_read_code / pre_run_command, thin PATH launchers)
+author: scarecrow173
+target: windsurf
