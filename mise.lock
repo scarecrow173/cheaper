@@ -46,6 +46,10 @@ url = "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%402.5
 url_api = "https://api.github.com/repos/biomejs/biome/releases/assets/554847315"
 provenance = "github-attestations"
 
+[[tools.git-lfs]]
+version = "3.8.0"
+backend = "aqua:git-lfs/git-lfs"
+
 [[tools.node]]
 version = "26.10.0"
 backend = "core:node"
