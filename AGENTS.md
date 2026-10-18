@@ -23,7 +23,10 @@ Git LFS の既存履歴は保持する。consumer の前提・install 手順は
 `docs/guides/distribution.md` を参照する。
 
 `mise run setup` は toolchain（`mise.toml` + `mise.lock` の locked version）に加え、
-`apm install` → `cargo fetch` → `cargo build --workspace --all-targets` を復元する。
+`apm install` → `cargo fetch` → `cargo build --workspace --all-targets` を復元し、
+`prek install` で pre-commit hook を有効化する（定義は
+`.pre-commit-config.yaml` — 高速な整形・衛生 check のみ、重い検証は
+`mise run check` / CI 側）。
 `mise run check` は `biome check` → `cargo fmt --check` → `cargo clippy` →
 version/doc-id check → `cargo test --workspace` → `node --test`（scripts・
 benchmarks）→ committed lockfile check（`node scripts/check-lockfile.mjs`）→

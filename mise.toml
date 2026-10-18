@@ -20,6 +20,8 @@ uv = "0.11"
 # 壊れていた(WinError 3/206)が 0.32.0 の staging path 短縮(upstream #2941)で修正済み。
 "pipx:apm-cli"  = { version = "0.33.0", uvx_args = "--prerelease allow" }
 "pipx:serena-agent" = "1.7.0"
+# pre-commit 互換 runner(aqua:j178/prek)。hook 定義は .pre-commit-config.yaml
+prek = "0.5.5"
 
 # Repository-owned setup contract: fresh checkout を開発可能にする
 # canonical entrypoint。toolchain は mise.toml + mise.lock で復元される。
@@ -28,11 +30,12 @@ uv = "0.11"
 # feature 無しでは build/lint/test の検証から抜け落ちる —
 # ADR-034DyGyITd0YaATg8fkld7)。
 [tasks.setup]
-description = "Restore APM dependencies and Rust build outputs for a fresh checkout"
+description = "Restore APM dependencies, Rust build outputs and git hooks for a fresh checkout"
 run = [
   "apm install",
   "cargo fetch",
   "cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam",
+  "prek install",
 ]
 
 # Canonical verification contract: CI と同等の検証。

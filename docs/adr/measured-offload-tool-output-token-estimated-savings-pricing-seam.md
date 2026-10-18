@@ -221,4 +221,3 @@ Chosen option: "A + i + α"。
 - ADR-034r2eId2hXJGWDjBylKVE: 記録対象 contract（変更しない）。
 - `packages/runtime-pi/src/tools/budget.ts`: meter 追加位置の
   既存 wrap 層。
-

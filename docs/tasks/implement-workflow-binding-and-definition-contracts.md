@@ -57,5 +57,3 @@ strict JSON/binding/schema/DAG 契約が implementation と tests に存在し�
 
 - [x] `mise exec -- pnpm --filter @cheaper/workflow test -- test/bindings.test.ts test/no-pi-deps.test.ts` exits 0。
 - [x] `mise exec -- pnpm --filter @cheaper/workflow build` exits 0。
-
-

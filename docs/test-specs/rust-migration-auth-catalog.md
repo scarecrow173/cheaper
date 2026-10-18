@@ -142,4 +142,3 @@ contract parity
   再 login 案内を失わせる。silent fallback のある catalog は指定と異なる
   provider/model で run を実行し cost・資格の想定を静かに裏切る。secret
   の stdout 漏洩は即座に credential 侵害となる
-

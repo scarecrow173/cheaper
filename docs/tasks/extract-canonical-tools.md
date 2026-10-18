@@ -58,4 +58,3 @@ T1–T4: Pi-free handlers/catalog/schema、journal 正本、accounting 一元化
 
 - [x] `mise exec -- pnpm exec vitest run packages/tool-runtime/test packages/runtime-pi/test/tools packages/runtime-pi/test/tool-runtime-contract.test.ts` exits 0
 - [x] `mise exec -- pnpm typecheck` exits 0
-

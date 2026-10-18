@@ -125,7 +125,7 @@ factory → CLI wiring → test/docs 更新）。分割不要。
 - `modelsPath` を `null` にするか string にするか: Pi の型は
   `string | null`。SPEC-034r05iHK8bA7gxlRVZtAv の想定構成では file が存在する
   前提なので string を渡す。
-- real-provider e2e は Ollama 依存の auto-skip テスト — 
+- real-provider e2e は Ollama 依存の auto-skip テスト —
   変更は models.json 配置先のみ。
 
 ## Self-Review

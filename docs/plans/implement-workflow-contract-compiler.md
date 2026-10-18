@@ -99,5 +99,3 @@ run-until-yield。共有 ADR lineage による非 plan focus-required は coordi
 
 
 AC7 guidance は本 chain の IR に記録する。coordinator plan review が IR のみも受理可と確認し、fixture を tests に一致させた。
-
-

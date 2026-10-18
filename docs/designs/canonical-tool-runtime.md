@@ -115,4 +115,3 @@ canonical runtime はその validation に依存せず独立に一回検証す�
 core の countFileTokens は signal を受け取らず、開始済み tokenization を途中停止できない。
 scope は開始前に abort を拒否し、開始済み call は abortGraceMs で bound された drain まで待つ
 （grace 経過で放棄される未完の tokenization は late settle として破棄される）。
-

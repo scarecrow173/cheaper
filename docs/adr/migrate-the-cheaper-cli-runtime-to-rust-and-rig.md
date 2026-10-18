@@ -166,4 +166,3 @@ Chosen option: "(1) Rig", because provider 内蔵数が最大(Anthropic 含む 2
 * 移行計画 3 案比較: `docs/research/pi-runtime-replacement/migration-comparison.md`
 * Rig 詳細調査・移行計画: `docs/research/rig-agent-runtime/final-report.md`・`docs/research/rig-agent-runtime/migration-plan.md`
 * 本 ADR が置き換える決定: `agent-runtime-pi-sdk-earendil-works-pi-coding-agent.md`(Pi SDK 採用)。accept 後に同 ADR の `superseded-by` を本 ADR へ更新し、`typescript-pnpm-monorepo.md`・`distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md`・`pi-persistent-state-userconfigdir-pi-modelruntime-create-path.md`・`canonical-tokenizer-js-tiktoken.md` の status/relations も見直す
-
