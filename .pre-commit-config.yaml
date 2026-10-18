@@ -17,6 +17,9 @@ repos:
         exclude: '\.ps1$'
       - id: check-yaml
       - id: check-toml
+      # 秘密情報コミット禁止(AGENTS.md Never)と Windows 非互換 file 名の guard
+      - id: detect-private-key
+      - id: check-illegal-windows-names
   - repo: local
     hooks:
       # biome.json の files.includes を mirror する。scope 外の file を明示
