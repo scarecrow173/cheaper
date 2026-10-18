@@ -128,4 +128,3 @@ Rust binary における result envelope(serialization・exit code・stdout
   連鎖的に破壊される。数値表現の差異は比較・集計の silent な誤動作
   として残存し、panic 経路の envelope 無し終了は呼び出し側を「応答
   無し・理由不明」で停止させる
-

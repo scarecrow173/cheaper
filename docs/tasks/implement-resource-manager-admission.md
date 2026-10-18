@@ -54,4 +54,3 @@ plan の File Map の当該 slice。hot files は対象外。
 - [x] `mise exec -- pnpm lint` exits 0。
 - [x] `mise exec -- pnpm typecheck` exits 0。
 - [x] `mise exec -- pnpm build` exits 0。
-

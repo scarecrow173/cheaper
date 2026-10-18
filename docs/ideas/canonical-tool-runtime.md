@@ -32,4 +32,3 @@ helper-backed mutation と invocation lifetime の分離境界。
 ## Next Action
 
 - [x] discovery へ昇格する。
-

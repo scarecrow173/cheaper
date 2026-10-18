@@ -67,4 +67,3 @@ baseline 検証: 関連 tools/sibling/no-execution-mode/dependency guard の
 承認を代行せず、文書の partial checkpoint を保存して failed と報告する。
 doc id check は 464 markdown files で pass。index は chain 未完了のため未生成であり、
 design の index-missing-entry は未解消。mise run check / exit-audit は未実行。
-

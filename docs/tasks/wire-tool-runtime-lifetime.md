@@ -59,4 +59,3 @@ T5–T8: root/child abort、finite drain、owned/borrowed finally、canonical ch
 
 - [x] `mise exec -- pnpm exec vitest run packages/tool-runtime/test packages/runtime-pi/test/run.test.ts packages/runtime-pi/test/sibling-parallelism.test.ts packages/runtime-pi/test/no-execution-mode.test.ts` exits 0
 - [x] `mise exec -- pnpm typecheck` exits 0
-

@@ -1,0 +1,31 @@
+# prek(pre-commit 互換 runner)の hook 定義。
+# commit 時点で高速な整形・衛生 check のみ担い、重い検証は `mise run check` と
+# CI に委ねる。整形系は auto-fix で動き、修正が入った commit は一旦失敗する
+# (再 stage して commit し直す pre-commit 系の慣習どおり)。
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+  - repo: local
+    hooks:
+      # biome.json の files.includes を mirror する。scope 外の file を明示
+      # 渡しすると biome が "No files were processed" で exit 1 になるため、
+      # files/exclude で hook の発火対象を限定する。
+      - id: biome-check
+        name: biome check --write
+        entry: biome check --write
+        language: system
+        files: '^(scripts|benchmarks|packages)/.*\.(mjs|json)$'
+        exclude: '(^|/)(dist|node_modules)/|^benchmarks/results/'
+      # workspace 全体を整形するため file list は渡さない
+      # (staged .rs があれば発火する)。
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --all
+        language: system
+        types: [rust]
+        pass_filenames: false

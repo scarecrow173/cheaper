@@ -141,4 +141,3 @@ launcher sh/ps1・apm bundle 配置)が無改修で成立することを保証�
   Release への rollback 経路まで同時に失う。`panic="abort"` 混入や
   size 超過の未検出は「envelope 無し終了」「配布不能」を Release 後に
   露呈させ、fix-forward(新 tag)しか残らない
-

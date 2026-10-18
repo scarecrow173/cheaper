@@ -109,7 +109,7 @@ task 名・grant 名に限定して利用できる。
 `executable`（必須）と、意図した argv の形状 hint `argvHint`
 （optional）、提案する grant 名 `name`（optional）を運ぶ。
 
-`grantRequests` は **advisory** であり grant の実行ではない — 
+`grantRequests` は **advisory** であり grant の実行ではない —
 invoker へ表面化する request であり、権限昇格の試行ではない。
 全 field（`executable`・`argvHint`・`name`）は model 生成・
 prompt-injectable な **untrusted 値**であり、cheaper は request

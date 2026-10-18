@@ -165,4 +165,3 @@ OAuth 例に含まれないこと・model 一覧取得を示唆する記述が�
 - 実装 contract: `packages/runtime-pi/src/auth.ts`
   （`describeProviderAuth` / `listProviderAuth`）、
   `packages/cli/src/auth.ts`（`executeAuth` の status 分岐）
-

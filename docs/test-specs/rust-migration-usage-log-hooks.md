@@ -136,4 +136,3 @@ byte 一致・fail-open 維持
   の fail-open 欠落(特に copilot の非 0 exit)が親 agent の全 tool 呼出
   しを deny 相当に倒し consumer 環境を即座に停止させる。どちらも配布
   切替後に初めて実害となる regression である
-

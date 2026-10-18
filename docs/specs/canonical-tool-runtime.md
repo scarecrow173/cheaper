@@ -64,4 +64,3 @@ Worker/Workflow 実装者が schema、安全性、結果、計測を共有でき
 ## Sources and Relations
 
 GitHub issue #63 本文と Triage 2026-10-04、共有 ADR D1/D7 を契約とする。
-

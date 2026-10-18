@@ -155,4 +155,3 @@ tool call 計数の意味論 parity
   `cheaper usage` の集計が実態とずれる。maxTurns や invalid call の意味論
   差は稀な失敗経路でのみ発火するため、differential golden の case 選択と
   単体検証の両方が無いと検出漏れする
-
