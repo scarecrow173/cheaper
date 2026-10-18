@@ -42,10 +42,15 @@ worktree の探索・他 worktree の生成物（target / APM artifact）
 
 root の `apm.yml` は development-only project であり、cheaper 自身の
 skill/hook は deploy されない。consumer へ配布する APM package は
-`packages/apm/`（`apm.yml` + `.apm/` primitives）に分離されており、
-skills・`hooks.json`・thin launcher のみを含む。worker 定義・
-schema・policy は `crates/cheaper-cli/resources/` から Rust binary
-へ embedded されるため、`cli/` payload は配布しない（issue #85）。
+`packages/apm/`（skills のみ、`apm.yml` + `.apm/` primitives）と
+`packages/apm-hook-*/`（per-target hook package — `apm-hook-windsurf`・
+`apm-hook-cursor`・`apm-hook-copilot`・`apm-hook-pretooluse`）に分離
+されている。hook 宣言は target 毎の sibling package が持ち、skills
+package が `dependencies.apm` の transitive `path:` dep で引き込む
+（issue #118 — 単一 `hooks.json` を全 target へ merge した旧構造の
+foreign/dead registration を解消）。worker 定義・schema・policy は
+`crates/cheaper-cli/resources/` から Rust binary へ embedded されるため、
+`cli/` payload は配布しない（issue #85）。
 
 Node.js は repo tooling（`scripts/`・`benchmarks/`・doc-suite skills）のためだけに
 toolchain に残る。product・distribution・hook 実行経路に Node 依存はない

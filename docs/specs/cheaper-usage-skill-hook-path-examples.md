@@ -91,6 +91,11 @@ doc 精度を是正する。
   dep 名規則の補足追記は今回行わない（SKILL.md 改訂で規則が
   説明されるため）
 
+> Note (issue #118): the `<dep-name>` deploy-dir rule predates the
+> per-target hook split — hook bundles now deploy under
+> `<hooks_root>/apm-hook-<package>` (`apm-hook-windsurf`,
+> `apm-hook-cursor`, `apm-hook-copilot`, `apm-hook-pretooluse`).
+
 ## Requirements
 
 - R1: SKILL.md の path 例示は「deploy dir =

@@ -6,6 +6,7 @@ Directory: `docs/discovery`
 
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
+| DISC-1mk9ud9KQV9qy4ZC0sxDJa | APM hook 宣言を per-target サブパッケージへ分離(イベント名 casing 警告と cross-target 死骸エントリの解消) | draft | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |
 | DISC-034r05iHy2gdnp9k0MK7uO | Self-contained cheaper CLI distribution inside the APM hook bundle | resolved | [apm-self-contained-cli-distribution.md](./apm-self-contained-cli-distribution.md) |
 | DISC-Hsh18eGWIzyBCzpfoRxUb3 | auto-tier-classification-effective-cost | resolved | [auto-tier-classification-effective-cost.md](./auto-tier-classification-effective-cost.md) |
 | DISC-034FRguX1hjhDZ7ZMEBnbm | Bounded hook read request contract | active | [bounded-hook-read-request-contract.md](./bounded-hook-read-request-contract.md) |
