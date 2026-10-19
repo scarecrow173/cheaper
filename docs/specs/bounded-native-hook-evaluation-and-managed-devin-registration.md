@@ -36,6 +36,7 @@ relations:
     - "../adr/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
     - "../specs/hook-config-orphan-sweep-ownership-boundary.md"
     - "../discovery/hook-config-sweep-orphans-deletes-foreign-bak-files.md"
+    - "../designs/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
   refines: []
   refined-by: []
   derives-from:

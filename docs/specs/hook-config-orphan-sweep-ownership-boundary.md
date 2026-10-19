@@ -35,7 +35,8 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/hook-config-sweep-orphans-deletes-foreign-bak-files.md"
-  derived-by: []
+  derived-by:
+    - "../designs/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
   verifies: []
   verified-by: []
   references:
