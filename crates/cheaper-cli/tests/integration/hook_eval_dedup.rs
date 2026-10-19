@@ -235,14 +235,20 @@ fn spawn_hook(args: &[&str], ws: &Path, env: &[(String, String)]) -> io::Result<
     cmd.spawn()
 }
 
-/// stdin を書き切って出力を回収する(payload は小さいので
-/// pipe buffer 詰まりは無い)。
-fn collect_child(mut child: Child, stdin: &[u8]) -> io::Result<HookResult> {
+/// child の stdin を書き切って close する(payload は小さいので
+/// pipe buffer 詰まりは無い)。`wait` とは分離し、dual spawn では両
+/// child の stdin を先に feed してから wait する(真の overlap)。
+fn feed_stdin(child: &mut Child, stdin: &[u8]) -> io::Result<()> {
     use std::io::Write;
     if let Some(mut s) = child.stdin.take() {
         s.write_all(stdin)?;
         drop(s);
     }
+    Ok(())
+}
+
+/// spawn 済み child の終了を待って出力を回収する。
+fn wait_child(child: Child) -> io::Result<HookResult> {
     let out = child.wait_with_output()?;
     Ok(HookResult {
         code: out.status.code().unwrap_or(-1),
@@ -324,14 +330,18 @@ fn binary_dual_spawn_same_verdict() -> TestResult {
         &format!("{{\"file_path\":{}}}", serde_json::to_string(&big)?),
     );
     let env = child_env(&fx);
-    let a = spawn_hook(&["hook", "pre-tool-use", "--target", "devin"], &fx.ws, &env)?;
-    let b = spawn_hook(
+    let mut a = spawn_hook(&["hook", "pre-tool-use", "--target", "devin"], &fx.ws, &env)?;
+    let mut b = spawn_hook(
         &["hook", "pre-tool-use", "--target", "pretooluse"],
         &fx.ws,
         &env,
     )?;
-    let ra = collect_child(a, stdin.as_bytes())?;
-    let rb = collect_child(b, stdin.as_bytes())?;
+    // 両 process の stdin を wait 前に書き切る — write→wait の逐次だと
+    // overlap が起きず cross-process dedup を実証しない。
+    feed_stdin(&mut a, stdin.as_bytes())?;
+    feed_stdin(&mut b, stdin.as_bytes())?;
+    let ra = wait_child(a)?;
+    let rb = wait_child(b)?;
     assert_eq!(ra.code, 0, "devin stderr: {:?}", ra.stderr);
     assert_eq!(rb.code, 0, "pretooluse stderr: {:?}", rb.stderr);
     let da: serde_json::Value = serde_json::from_str(ra.stdout.trim())?;
@@ -485,7 +495,7 @@ async fn stat_change_new_fingerprint() -> TestResult {
     assert_eq!(calls.load(Ordering::SeqCst), 2, "stat 変化で再評価");
     let fps = record_fps(&store);
     assert_eq!(fps.len(), 2, "別 fingerprint の record が独立に残る");
-    assert!(fps.iter().all(|f| f != &fp1) || fps.contains(&fp1));
+    assert!(fps.contains(&fp1), "旧 record は TTL 内で残存する");
     Ok(())
 }
 
@@ -667,6 +677,63 @@ async fn stale_lock_takeover() -> TestResult {
         }
     );
     assert!(!lock.exists(), "takeover した leader が自 lock を release");
+    assert!(record_path(&store, &fp).exists(), "verdict を publish");
+    Ok(())
+}
+
+/// `fresh_lock_stale_crossing_takeover` — **fresh** mtime で植えた
+/// lock が follower の poll 中に `lock_stale` を跨ぐ経路(`lock_stale`
+/// 50ms << `follower_wait`)。初回 tick は Fresh → Wait、age が stale
+/// を越えた tick で Stale → rename-claim → takeover が決定的に走る
+/// (backdate 手配置の `stale_lock_takeover` では到達しない mid-poll
+/// の Fresh→Stale 遷移と claim 経路を検証)。
+#[tokio::test(flavor = "current_thread")]
+async fn fresh_lock_stale_crossing_takeover() -> TestResult {
+    let fx = Fixture::new();
+    fx.write_big("big.txt");
+    let env = SeamEnv::new(&fx, &[]);
+    let opts = env.opts();
+    let req = file_read("big.txt", &fx.ws.to_string_lossy());
+    let limits = DedupLimits {
+        lock_stale: Duration::from_millis(50),
+        follower_wait: Duration::from_millis(2_000),
+        ..default_limits()
+    };
+    let calls = Arc::new(AtomicUsize::new(0));
+    let store = store_dir(&fx);
+    evaluate_dedup_with(
+        &req,
+        &opts,
+        &limits,
+        fake_eval(calls.clone(), Duration::ZERO, "r"),
+    )
+    .await;
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    let fp = single_fp(&store)?;
+    std::fs::remove_file(record_path(&store, &fp))?;
+    // fresh mtime の valid-token lock を植える — poll の初回 tick で
+    // Fresh → Wait、~50ms 経過後の tick で Stale → claim → takeover。
+    let lock = lock_path(&store, &fp);
+    std::fs::write(&lock, lock_token_json(21))?;
+    let v = evaluate_dedup_with(
+        &req,
+        &opts,
+        &limits,
+        fake_eval(calls.clone(), Duration::ZERO, "r"),
+    )
+    .await;
+    assert_eq!(
+        calls.load(Ordering::SeqCst),
+        2,
+        "mid-poll stale crossing で takeover → 評価完遂"
+    );
+    assert_eq!(
+        v,
+        Verdict::Deny {
+            reason: "r".to_string()
+        }
+    );
+    assert!(!lock.exists(), "takeover leader は自 lock を release");
     assert!(record_path(&store, &fp).exists(), "verdict を publish");
     Ok(())
 }

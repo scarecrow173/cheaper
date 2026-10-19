@@ -11,13 +11,17 @@
 //! `.cheaper/` には書かない):
 //!
 //! ```text
-//! <fp>.json                     verdict record(atomic temp+rename)
-//! <fp>.lock                     leader election marker(owner token JSON)
-//! .<fp>.json.tmp-<pid>-<nanos>  atomic_write temp(orphan sweep 対象)
+//! <fp>.json                      verdict record(atomic temp+rename)
+//! <fp>.lock                      leader election marker(owner token JSON)
+//! <fp>.lock.claim-<pid>-<nonce>  stale takeover の rename-claim 残骸
+//! .<fp>.json.tmp-<pid>-<nanos>   atomic_write temp(orphan sweep 対象)
 //! ```
 //!
 //! 全失敗は `eval_fn` 直接呼出し(通常評価)へ畳まれる fail-open 設計 —
-//! 本 module は panic 経路を持たない。
+//! 本 module は panic 経路を持たない。協調が触れる全ての blocking fs
+//! I/O は `spawn_blocking` へ逃がし `DEDUP_IO_BOUND`(`MEASURE_TIMEOUT`
+//! と同値)で囲む — hang した fs(FIFO・dead network FS)でも verdict
+//! が bounded time で resolve する(`measure_tokens` と同じ規則)。
 
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
@@ -42,6 +46,13 @@ const STORE_DIR_NAME: &str = "hook-eval";
 
 /// fingerprint 構成の format version tag(構成変更時の混同防止)。
 const FINGERPRINT_TAG: &str = "hook-eval-v1";
+
+/// 協調の blocking fs I/O(`spawn_blocking` の await)に掛ける上界 —
+/// `MEASURE_TIMEOUT` と同値(DRY)。`spawn_blocking` から timeout で
+/// 切り離された task は cancel できず thread は継続するが、観測しない
+/// ため害は無い(`measure_tokens` と同じ受容済み妥協 — abandoned
+/// blocking thread acceptable)。
+const DEDUP_IO_BOUND: Duration = MEASURE_TIMEOUT;
 
 /// 協調の時間定数。production 値は [`DedupLimits::PRODUCTION`]。
 /// test は小さい値へ差し替えて wait/stale/TTL を ms スケールで検証する
@@ -101,16 +112,6 @@ where
     F: Fn() -> Fut,
     Fut: std::future::Future<Output = Verdict>,
 {
-    // fingerprint 対象列挙(sync — `resolve_target` 相当の metadata
-    // 呼出しは `evaluate` 内部と同じく async context 内の同期 fs で
-    // 既存規則どおり)。targets が完全に空なら定数 allow 経路なので
-    // cache を介さず直接評価する(共有する意味も signature も無い)。
-    let ctx = fingerprint_targets(request);
-    if ctx.targets.is_empty() {
-        tracing::debug!(dedup = "bypass", "hook eval dedup");
-        return eval_fn().await;
-    }
-
     // `EnvLookup`(&dyn Fn)は非 Send — fingerprint・store root が読む
     // env(`MEASURE_ENV_KEYS` ∪ `CHEAPER_READ_TOKEN_THRESHOLD`)を async
     // 側で owned map へ写す(`measure_tokens` と同じ snapshot pattern。
@@ -129,19 +130,47 @@ where
         homedir: None,
     })
     .join(STORE_DIR_NAME);
+    if !store_dir.is_absolute() {
+        // 相対 store root(相対 `CHEAPER_CONFIG_DIR` 等の env 由来)は
+        // process cwd 依存の解釈になり file 名衝突・意図しない書き込み
+        // 先を招くため協調を bypass する(fail-open)。
+        tracing::debug!(dedup = "bypass", "hook eval dedup");
+        return eval_fn().await;
+    }
     let builtin_dir = opts.builtin_dir.cloned();
     let variant = variant_inputs(request);
+    let request = request.clone();
     let limits = *limits;
 
-    // phase A(blocking): cache dir 確保 → sweep → policy/env 入力確定
-    // → stat signature 収集 → policy 層 signature → fingerprint 確定。
-    let prepared = match tokio::task::spawn_blocking(move || {
-        prepare_dedup(ctx, variant, env_map, builtin_dir, store_dir, limits)
-    })
+    // phase A(`DEDUP_IO_BOUND` で囲んだ blocking): fingerprint 対象
+    // 列挙(`resolve_target` 相当の sync metadata・canonicalize を含む
+    // — hang した fs でも timeout で畳めるよう async context には出さ
+    // ない)→ cache dir 確保 → sweep → policy/env 入力確定 → stat
+    // signature → policy 層 signature → fingerprint 確定。
+    // targets が完全に空なら定数 allow 経路なので cache を介さず直接
+    // 評価する(共有する意味も signature も無い)。
+    let prepared = match tokio::time::timeout(
+        DEDUP_IO_BOUND,
+        tokio::task::spawn_blocking(move || {
+            let ctx = fingerprint_targets(&request);
+            if ctx.targets.is_empty() {
+                return PrepareOutcome::Bypass;
+            }
+            match prepare_dedup(ctx, variant, env_map, builtin_dir, store_dir, limits) {
+                Some(prepared) => PrepareOutcome::Ready(prepared),
+                None => PrepareOutcome::Fallback,
+            }
+        }),
+    )
     .await
     {
-        Ok(Some(prepared)) => prepared,
-        // create_dir_all 失敗・JoinError — 全て直接評価へ畳む。
+        Ok(Ok(PrepareOutcome::Ready(prepared))) => prepared,
+        Ok(Ok(PrepareOutcome::Bypass)) => {
+            tracing::debug!(dedup = "bypass", "hook eval dedup");
+            return eval_fn().await;
+        }
+        // create_dir_all 失敗・JoinError・`DEDUP_IO_BOUND` 超過 —
+        // 全て直接評価へ畳む。
         _ => {
             tracing::debug!(dedup = "fallback", "hook eval dedup");
             return eval_fn().await;
@@ -163,19 +192,24 @@ where
     }
 
     // phase B + follower bounded poll: 1 tick 分の fs 操作(record
-    // read → lock `create_new` retry)を `spawn_blocking` へ逃がす。
-    // `follower_wait` deadline 到達で自前評価へ移る。
+    // read → lock `create_new` retry)を `spawn_blocking` へ逃がし
+    // `DEDUP_IO_BOUND` で囲む。`follower_wait` deadline 到達で自前評価
+    // へ移る。
     let deadline = tokio::time::Instant::now() + limits.follower_wait;
     let mut waited = false;
     loop {
         let store_dir = prepared.store_dir.clone();
         let fp = prepared.fingerprint.clone();
-        let outcome =
-            match tokio::task::spawn_blocking(move || poll_tick(&store_dir, &fp, &limits)).await {
-                Ok(outcome) => outcome,
-                // JoinError(panic/cancel)も fail-open。
-                Err(_) => TickOutcome::Fallback,
-            };
+        let outcome = match tokio::time::timeout(
+            DEDUP_IO_BOUND,
+            tokio::task::spawn_blocking(move || poll_tick(&store_dir, &fp, &limits)),
+        )
+        .await
+        {
+            Ok(Ok(outcome)) => outcome,
+            // JoinError(panic/cancel)・`DEDUP_IO_BOUND` 超過も fail-open。
+            _ => TickOutcome::Fallback,
+        };
         match outcome {
             TickOutcome::Serve(verdict) => {
                 tracing::debug!(
@@ -200,9 +234,17 @@ where
                 let body = verdict_record_body(&prepared.fingerprint, &verdict);
                 let store_dir = prepared.store_dir.clone();
                 let fp = prepared.fingerprint.clone();
-                let _ = tokio::task::spawn_blocking(move || {
-                    publish_and_release(&store_dir, &fp, body.as_deref(), &token)
-                })
+                // publish も `DEDUP_IO_BOUND` で囲む — timeout・JoinError
+                // 時は共有を諦め、計算済み verdict をそのまま返す
+                // (abandon された blocking thread は atomic_write・
+                // release を継続し得るが観測しない — `measure_tokens`
+                // と同じ受容済み妥協)。
+                let _ = tokio::time::timeout(
+                    DEDUP_IO_BOUND,
+                    tokio::task::spawn_blocking(move || {
+                        publish_and_release(&store_dir, &fp, body.as_deref(), &token)
+                    }),
+                )
                 .await;
                 return verdict;
             }
@@ -263,20 +305,28 @@ enum VariantInputs {
     },
 }
 
-/// target stat signature — `(resolved, kind, mtime, len)` の enum 表現
-/// (discriminant が `"file"`/`"dir"`/`"absent"` marker)。
+/// target stat signature — `(resolved, rel_posix, kind, mtime, len)` の
+/// enum 表現(discriminant が `"file"`/`"dir"`/`"absent"` marker)。
+/// `resolved`/`raw` は `OsStr::as_encoded_bytes` の生 bytes — lossy
+/// 変換で非 UTF-8 path を潰さない。`rel_posix` は deny reason が
+/// 埋め込む workspace-relative path で verdict 入力の一部。
 #[derive(Hash)]
 enum TargetSig {
     File {
-        resolved: String,
+        resolved: Vec<u8>,
+        rel_posix: String,
         mtime_nanos: u128,
         len: u64,
     },
     /// dir の len は platform 依存で意味を持たないため除外。
-    Dir { resolved: String, mtime_nanos: u128 },
+    Dir {
+        resolved: Vec<u8>,
+        rel_posix: String,
+        mtime_nanos: u128,
+    },
     /// `NonFile`・metadata 失敗は absent marker へ畳む(fs race は
     /// fingerprint 差異として自然に再評価へ倒れる)。
-    Absent { raw: String },
+    Absent { raw: Vec<u8> },
 }
 
 /// policy 層 signature — `policy.yaml` の `(mtime_nanos, len)` stat
@@ -407,26 +457,34 @@ fn stat_signature(path: &Path) -> Option<(u128, u64)> {
     Some((nanos, md.len()))
 }
 
+/// `resolved` の `OsStr::as_encoded_bytes` — 生 bytes で hash し、
+/// lossy 変換による非 UTF-8 path の衝突を防ぐ。
+fn resolved_bytes(path: &Path) -> Vec<u8> {
+    path.as_os_str().as_encoded_bytes().to_vec()
+}
+
 fn target_signature(target: &ResolvedTarget) -> TargetSig {
     if target.kind == ResolvedKind::NonFile {
         return TargetSig::Absent {
-            raw: target.resolved.clone(),
+            raw: resolved_bytes(&target.resolved),
         };
     }
-    match stat_signature(Path::new(&target.resolved)) {
+    match stat_signature(&target.resolved) {
         Some((mtime_nanos, len)) => match target.kind {
             ResolvedKind::File => TargetSig::File {
-                resolved: target.resolved.clone(),
+                resolved: resolved_bytes(&target.resolved),
+                rel_posix: target.rel_posix.clone(),
                 mtime_nanos,
                 len,
             },
             ResolvedKind::Dir | ResolvedKind::NonFile => TargetSig::Dir {
-                resolved: target.resolved.clone(),
+                resolved: resolved_bytes(&target.resolved),
+                rel_posix: target.rel_posix.clone(),
                 mtime_nanos,
             },
         },
         None => TargetSig::Absent {
-            raw: target.resolved.clone(),
+            raw: resolved_bytes(&target.resolved),
         },
     }
 }
@@ -451,6 +509,16 @@ struct Prepared {
     /// optional fast-path gate — 全 target が `len <= threshold` の
     /// File または全て NonFile のとき協調を skip する。
     fast_path: bool,
+}
+
+/// phase A(blocking)の結果分類。
+enum PrepareOutcome {
+    /// fingerprint 対象が空 — 定数 allow 経路で協調不要。
+    Bypass,
+    /// fingerprint 確定・協調へ進める。
+    Ready(Prepared),
+    /// 協調不能(`create_dir_all` 失敗等)— 直接評価へ畳む。
+    Fallback,
 }
 
 /// blocking phase A — cache dir 確保 → best-effort sweep → policy/env
@@ -552,12 +620,34 @@ fn read_lock_token(lock_path: &Path) -> Option<LockToken> {
 }
 
 /// delete-if-owner — remove 直前に payload を読み直し、観測した token
-/// と一致する場合に限り削除する。stale 判定 → takeover で後継 leader
-/// が lock を再取得した後に旧 leader が後継の lock を削除する経路を
-/// 防ぐ。payload が parse 不能な lock は一切削除しない(保守的)。
+/// と一致する場合に限り削除する。leader の release(remove 対象は自身
+/// が作った lock)に使う。stale takeover 側は read→remove 間に旧
+/// leader release + 新 leader acquire が挟まり得る TOCTOU を閉じる
+/// rename-claim(`claim_stale_lock`)へ分離済み。
+/// payload が parse 不能な lock は一切削除しない(保守的)。
+///
+/// 受容済み残存窓: `read`→`remove` の sub-µs gap に「自分の lock が
+/// rename-claim で取り去られ後継 lock が再設置」されると後継の live
+/// lock を消し得る。害は冗長評価のみで、観測も困難なため許容とする。
 fn remove_if_owner(lock_path: &Path, owner: &LockToken) {
     if read_lock_token(lock_path).as_ref() == Some(owner) {
         let _ = std::fs::remove_file(lock_path);
+    }
+}
+
+/// checked-age stale 判定 — 過去 mtime は `age > stale_after`、未来
+/// mtime(`now.duration_since` が `Err`)は `now + stale_after` を
+/// 超えるもののみ stale とみなす。skew 範囲内の未来 mtime・mtime
+/// 取得不能は「期限切れを証明できない」ため `false`(削除しない側)。
+fn past_stale_boundary(mtime: SystemTime, now: SystemTime, stale_after: Duration) -> bool {
+    match now.duration_since(mtime) {
+        Ok(age) => age > stale_after,
+        // 未来 mtime — `stale_after` より先まで進んでいると自然 expire
+        // しないため stale 扱い(takeover・sweep を許可)。
+        Err(_) => mtime
+            .duration_since(now)
+            .map(|ahead| ahead > stale_after)
+            .unwrap_or(true),
     }
 }
 
@@ -565,35 +655,96 @@ fn remove_if_owner(lock_path: &Path, owner: &LockToken) {
 enum LockState {
     /// 不存在・metadata 取得失敗(poll 中の fs error は継続扱い)。
     Absent,
-    /// `age <= lock_stale` の live lock。
+    /// live lock — `age <= lock_stale`、または skew 範囲内の未来
+    /// mtime(`now + lock_stale` 以下 — 削除せず待機側へ倒す)、
+    /// mtime 取得不能(期限切れを証明できない)。
     Fresh,
-    /// `age > lock_stale` または checked-age `None`(未来 mtime —
-    /// clock skew・fs timestamp 異常は stale 扱い)。`token` は観測した
-    /// owner token(payload parse 不能なら `None` → 削除不可)。
+    /// `past_stale_boundary` を越えた死骸(過去 `age > lock_stale`
+    /// または `now + lock_stale` を超える未来 mtime)。`token` は観測
+    /// した owner token(payload parse 不能なら `None` → claim 対象外)。
     Stale { token: Option<LockToken> },
+    /// file でない(dir・FIFO・socket 等)— `create_new` は永久に
+    /// AlreadyExists で、FIFO への `read_to_string` は無期限に
+    /// blocking し得るため payload read・削除の双方を行わない協調不能
+    /// 分類(caller は即時 self-eval 経路)。
+    Unrecoverable,
 }
 
 fn lock_state(lock_path: &Path, stale_after: Duration) -> LockState {
     let Ok(md) = std::fs::metadata(lock_path) else {
         return LockState::Absent;
     };
-    let age = md
-        .modified()
-        .ok()
-        .and_then(|mtime| SystemTime::now().duration_since(mtime).ok());
-    match age {
-        Some(age) if age <= stale_after => LockState::Fresh,
-        _ => LockState::Stale {
-            token: read_lock_token(lock_path),
-        },
+    if !md.is_file() {
+        return LockState::Unrecoverable;
     }
+    let now = SystemTime::now();
+    let Ok(mtime) = md.modified() else {
+        // mtime を取れない platform/entry では期限切れを証明できない —
+        // 削除せず live lock として待機側へ倒す(follower_wait が bound)。
+        return LockState::Fresh;
+    };
+    if past_stale_boundary(mtime, now, stale_after) {
+        LockState::Stale {
+            token: read_lock_token(lock_path),
+        }
+    } else {
+        LockState::Fresh
+    }
+}
+
+/// stale lock の takeover claim — `<fp>.lock` を
+/// `<fp>.lock.claim-<pid>-<nonce>` へ `rename` する。rename は atomic
+/// であり、成功した 1 者のみが claim file の owner token を観測値と
+/// 照合して削除する — 削除対象が「観測した stale file そのもの」と
+/// 証明できるため、`read`→`remove` 間に旧 leader の release と新
+/// leader の acquire が挟まり得る `remove_if_owner` 直接適用の
+/// TOCTOU を閉じる。
+///
+/// 戻り値は「stale file を除去した」か — 呼出し側は成否に関わらず
+/// `create_new` retry へ進む(claim 成功 → 不在で取得可、他者が先に
+/// acquire → AlreadyExists で Wait)。token 不一致・file でない claim
+/// (rename に先行して新 lock / 非 file が差し替わった残存窓)は file
+/// を殺さず `<fp>.lock` へ戻す(best-effort — 既に再占有されている
+/// 場合は上書きを避けて orphan とし、sweep の `claim-*` 規則で回収)。
+fn claim_stale_lock(lock_path: &Path, observed: &LockToken) -> bool {
+    let Some(name) = lock_path.file_name().and_then(|n| n.to_str()) else {
+        return false;
+    };
+    let claim_path = lock_path.with_file_name(format!(
+        "{name}.claim-{}-{}",
+        std::process::id(),
+        LOCK_NONCE.fetch_add(1, Ordering::Relaxed)
+    ));
+    // rename 失敗(NotFound = 他者が先に削除/claim 済み等)は敗者。
+    if std::fs::rename(lock_path, &claim_path).is_err() {
+        return false;
+    }
+    // claim した object が観測した stale lock かを照合。file でない
+    // (rename 先行で FIFO 等へ差し替わった残存窓)・token 不一致の
+    // 場合は削除しない — claim path の名前は nonce 入りで他者に知られ
+    // ないため、この照合の対象は rename 時点の file で確定している。
+    let claimed_is_file = std::fs::metadata(&claim_path)
+        .map(|md| md.is_file())
+        .unwrap_or(false);
+    if claimed_is_file && read_lock_token(&claim_path).as_ref() == Some(observed) {
+        let _ = std::fs::remove_file(&claim_path);
+        return true;
+    }
+    // 観測した file と別物 — live lock を殺さないよう元の名前へ戻す。
+    // `exists` 確認後に rename する residual race(sub-µs)は受容
+    // (remove_if_owner と同じ受容済み窓)。
+    if !lock_path.exists() {
+        let _ = std::fs::rename(&claim_path, lock_path);
+    }
+    false
 }
 
 /// `<fp>.lock` を `create_new`(O_EXCL 相当の atomic create)で取得し、
 /// owner token JSON を書き込む。token 書込みに失敗した lock は owner
-/// を証明できないため取得失敗として畳み、file は sweep が回収する
-/// (unparseable payload は delete-if-owner で消せないため自前 remove
-/// もしない)。
+/// を証明できないため取得失敗として畳む — `create_new` 成功済みなら
+/// その file は自プロセスの産物と確定しているので partial write の
+/// 残骸は自前で remove する(他人の lock を消す経路ではないため
+/// unparseable 非削除規則とは無関係)。
 fn acquire_lock(lock_path: &Path) -> io::Result<LockToken> {
     use std::io::Write;
     let token = new_lock_token();
@@ -603,7 +754,10 @@ fn acquire_lock(lock_path: &Path) -> io::Result<LockToken> {
         .write(true)
         .create_new(true)
         .open(lock_path)?;
-    file.write_all(body.as_bytes())?;
+    if let Err(e) = file.write_all(body.as_bytes()) {
+        let _ = std::fs::remove_file(lock_path);
+        return Err(e);
+    }
     Ok(token)
 }
 
@@ -629,9 +783,10 @@ enum TickOutcome {
 }
 
 /// follower poll tick — (1) record fresh+valid → serve、(2) lock 不在
-/// → `create_new` retry、(3) lock stale(checked-age `> lock_stale`
-/// または `None`)→ delete-if-owner remove + retry、(4) lock fresh →
-/// 次 tick。poll 中の fs error は「verdict 未着」として継続する。
+/// → `create_new` retry、(3) lock stale(`past_stale_boundary` 超過)
+/// → rename-claim で stale file を atomic に除去 + retry、(4) lock
+/// fresh → 次 tick、(5) lock が file でない → 協調不能。poll 中の
+/// fs error は「verdict 未着」として継続する。
 fn poll_tick(store_dir: &Path, fp: &str, limits: &DedupLimits) -> TickOutcome {
     if let Some(verdict) = read_fresh_verdict(store_dir, fp, limits.verdict_ttl) {
         return TickOutcome::Serve(verdict);
@@ -639,12 +794,16 @@ fn poll_tick(store_dir: &Path, fp: &str, limits: &DedupLimits) -> TickOutcome {
     let lock_path = store_dir.join(format!("{fp}.lock"));
     match lock_state(&lock_path, limits.lock_stale) {
         LockState::Fresh => TickOutcome::Wait,
+        LockState::Unrecoverable => TickOutcome::Fallback,
         LockState::Stale { token } => {
+            // rename-claim は観測 token を持つ stale lock に限る —
+            // unparseable payload は「観測した file との同一性」を照合
+            // できないため保守的に削除しない(mtime sweep のみで期限切れ
+            // 除去)。claim の成否に関わらず `create_new` retry は正規
+            // 経路(他者が先に acquire 済みなら AlreadyExists → Wait)。
             if let Some(token) = token {
-                remove_if_owner(&lock_path, &token);
+                claim_stale_lock(&lock_path, &token);
             }
-            // remove 不能(unparseable payload・token 交替済み)なら
-            // `create_new` は AlreadyExists → Wait で期限切れを待つ。
             acquire_or_wait(&lock_path)
         }
         LockState::Absent => acquire_or_wait(&lock_path),
@@ -671,10 +830,13 @@ fn publish_and_release(store_dir: &Path, fp: &str, body: Option<&str>, token: &L
 }
 
 /// dedup 経路先頭(blocking phase)で `hook-eval/` を best-effort sweep
-/// — `mtime > verdict_ttl` の `*.json`、`mtime > lock_stale` の
-/// `*.lock`、TTL 超過の `.<fp>.json.tmp-*` orphan を remove する。
-/// checked-age `None`(未来 mtime)も stale として remove 対象に含める。
-/// 失敗は無視(無制限蓄積を防ぐ起点であり、正確性には関与しない)。
+/// — `past_stale_boundary(verdict_ttl)` を越えた `*.json`、
+/// `past_stale_boundary(lock_stale)` を越えた `*.lock`・
+/// `*.lock.claim-*` orphan、TTL 超過の `.<fp>.json.tmp-*` orphan を
+/// remove する。checked-age `None`(未来 mtime)は `now + stale_after`
+/// を超えるもののみ stale — skew 範囲内の未来 mtime の live lock を
+/// 誤削除しない。失敗は無視(無制限蓄積を防ぐ起点であり、正確性に
+/// は関与しない)。
 fn sweep_store(store_dir: &Path, limits: &DedupLimits) {
     let Ok(entries) = std::fs::read_dir(store_dir) else {
         return;
@@ -687,7 +849,9 @@ fn sweep_store(store_dir: &Path, limits: &DedupLimits) {
         };
         let stale_after = if name.ends_with(".json") {
             limits.verdict_ttl
-        } else if name.ends_with(".lock") {
+        } else if name.ends_with(".lock") || name.contains(".lock.claim-") {
+            // `<fp>.lock.claim-<pid>-<nonce>` は rename-claim の orphan
+            // (claim 後 crash・復元失敗)— mtime は元 lock のまま。
             limits.lock_stale
         } else if name.starts_with('.') && name.contains(".json.tmp-") {
             // atomic_write の orphan temp(`temp_path` の命名規則)。
@@ -701,11 +865,10 @@ fn sweep_store(store_dir: &Path, limits: &DedupLimits) {
         if !md.is_file() {
             continue;
         }
-        let age = md
-            .modified()
-            .ok()
-            .and_then(|mtime| now.duration_since(mtime).ok());
-        if age.is_none_or(|age| age > stale_after) {
+        let Ok(mtime) = md.modified() else {
+            continue;
+        };
+        if past_stale_boundary(mtime, now, stale_after) {
             let _ = std::fs::remove_file(entry.path());
         }
     }
@@ -801,8 +964,10 @@ mod tests {
     }
 
     /// lock の checked-age 分類 — 不在 → Absent、fresh → Fresh、
-    /// `lock_stale` 超過・未来 mtime → Stale(owner token 観測付き、
-    /// unparseable payload は token 無し)。
+    /// `lock_stale` 超過 → Stale(owner token 観測付き、unparseable
+    /// payload は token 無し)。未来 mtime は skew 範囲内(`now +
+    /// lock_stale` 以下)→ Fresh、`now + lock_stale` 超過 → Stale。
+    /// file でない path は Unrecoverable(payload read・削除不可)。
     #[test]
     fn lock_state_checked_age_rules() -> TestResult {
         let dir = tempfile::tempdir()?;
@@ -816,21 +981,64 @@ mod tests {
             LockState::Stale { token: Some(t) } => assert_eq!(t, token(7)),
             _ => return Err("want stale lock with owner token".into()),
         }
+        // skew 範囲内の未来 mtime → live lock 扱いで削除不可(Fresh)。
+        set_mtime(&lock, SystemTime::now() + Duration::from_secs(60))?;
+        assert!(matches!(lock_state(&lock, stale), LockState::Fresh));
+        // `now + lock_stale` を超える未来 mtime → 自然 expire しない
+        // ため stale 扱い(takeover 可)。
         set_mtime(&lock, SystemTime::now() + Duration::from_secs(3600))?;
         assert!(matches!(lock_state(&lock, stale), LockState::Stale { .. }));
         // unparseable payload + stale mtime → token 無しの Stale
-        // (delete-if-owner の照合材料を持たず削除されない)。
+        // (claim の照合材料を持たず削除されない)。
         std::fs::write(&lock, "garbage")?;
         set_mtime(&lock, SystemTime::now() - Duration::from_secs(3600))?;
         assert!(matches!(
             lock_state(&lock, stale),
             LockState::Stale { token: None }
         ));
+        // file でない path(dir)は協調不能 — payload read・削除ともに
+        // 行わない immediate self-eval 分類。
+        let not_file = dir.path().join("dir.lock");
+        std::fs::create_dir(&not_file)?;
+        assert!(matches!(
+            lock_state(&not_file, stale),
+            LockState::Unrecoverable
+        ));
         Ok(())
     }
 
-    /// sweep — TTL 超過の record・stale lock・orphan tmp を remove し、
-    /// fresh entry は残す(未来 mtime も stale 扱いで除去)。
+    /// rename-claim — rename が atomic に file を capture し、観測
+    /// token と一致した claim のみ file を除去して takeover へ進める。
+    /// token 不一致(rename 窓で観測した file と別物)は `<fp>.lock`
+    /// へ戻して諦める(live lock を殺さない)。
+    #[test]
+    fn claim_stale_lock_verifies_observed_token() -> TestResult {
+        let dir = tempfile::tempdir()?;
+        let lock = dir.path().join("abc.lock");
+        // 不存在 → rename 失敗 → 敗者。
+        assert!(!claim_stale_lock(&lock, &token(1)));
+        // token 不一致(観測した file ではない)→ file を元へ戻す。
+        std::fs::write(&lock, serde_json::to_string(&token(3))?)?;
+        assert!(!claim_stale_lock(&lock, &token(9)));
+        assert_eq!(
+            std::fs::read_to_string(&lock)?,
+            serde_json::to_string(&token(3))?,
+            "token 不一致の file は `<fp>.lock` へ復元される"
+        );
+        // token 一致 → claim file を除去して takeover 可。
+        assert!(claim_stale_lock(&lock, &token(3)));
+        assert!(!lock.exists(), "stale file は claim 名へ退避後に除去");
+        assert!(
+            std::fs::read_dir(dir.path())?.next().is_none(),
+            "claim 残骸が残らない"
+        );
+        Ok(())
+    }
+
+    /// sweep — TTL 超過の record・stale lock・stale claim orphan・
+    /// orphan tmp を remove し、fresh entry は残す。未来 mtime は
+    /// `now + stale_after` 超過のみ除去 — skew 範囲内の未来 mtime は
+    /// live の可能性があるため残す。
     #[test]
     fn sweep_removes_only_stale_entries() -> TestResult {
         let dir = tempfile::tempdir()?;
@@ -845,16 +1053,22 @@ mod tests {
         let stale_record = store.join("b.json");
         let fresh_lock = store.join("a.lock");
         let stale_lock = store.join("b.lock");
+        let stale_claim = store.join("b.lock.claim-1-9");
         let orphan_tmp = store.join(".a.json.tmp-1-1");
         let future_record = store.join("c.json");
+        let near_future_lock = store.join("d.lock");
+        let far_future_lock = store.join("e.lock");
         let unrelated = store.join("keep.txt");
         for path in [
             &fresh_record,
             &stale_record,
             &fresh_lock,
             &stale_lock,
+            &stale_claim,
             &orphan_tmp,
             &future_record,
+            &near_future_lock,
+            &far_future_lock,
             &unrelated,
         ] {
             std::fs::write(path, "x")?;
@@ -863,16 +1077,32 @@ mod tests {
         let future = SystemTime::now() + Duration::from_secs(3600);
         set_mtime(&stale_record, old)?;
         set_mtime(&stale_lock, old)?;
+        set_mtime(&stale_claim, old)?;
         set_mtime(&orphan_tmp, old)?;
         set_mtime(&future_record, future)?;
+        set_mtime(&far_future_lock, future)?;
+        // skew 範囲内の未来 mtime(1s < lock_stale 2s)は残る。
+        set_mtime(
+            &near_future_lock,
+            SystemTime::now() + Duration::from_secs(1),
+        )?;
         sweep_store(store, &limits);
         assert!(fresh_record.exists());
         assert!(fresh_lock.exists());
         assert!(unrelated.exists());
         assert!(!stale_record.exists());
         assert!(!stale_lock.exists());
+        assert!(!stale_claim.exists(), "stale claim orphan を除去");
         assert!(!orphan_tmp.exists());
-        assert!(!future_record.exists(), "future mtime is stale");
+        assert!(!future_record.exists(), "far-future mtime is stale");
+        assert!(
+            !far_future_lock.exists(),
+            "horizon 超過の未来 mtime lock を除去"
+        );
+        assert!(
+            near_future_lock.exists(),
+            "skew 範囲内の未来 mtime lock は残る"
+        );
         Ok(())
     }
 
@@ -887,7 +1117,8 @@ mod tests {
                 range: Some((2, Some(10))),
             },
             targets: vec![TargetSig::File {
-                resolved: "/ws/big.txt".to_string(),
+                resolved: b"/ws/big.txt".to_vec(),
+                rel_posix: "big.txt".to_string(),
                 mtime_nanos: 42,
                 len: 100,
             }],

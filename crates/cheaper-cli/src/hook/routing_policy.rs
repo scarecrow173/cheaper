@@ -73,6 +73,10 @@ const SEARCH_DEFAULT_MAX_RESULTS: u64 = 250;
 /// として adapter が埋める provenance — policy 本体は読まない。
 /// `cwd` は `request.cwd || process.cwd()` 規則に合わせ、空文字列を
 /// 「未指定」とみなす。
+///
+/// `Clone` は `eval_cache` の fingerprint phase 用 — request を
+/// `spawn_blocking` の `'static` closure へ写すために使う。
+#[derive(Clone)]
 pub enum RoutingRequest {
     FileRead {
         path: String,
@@ -331,12 +335,20 @@ pub(crate) enum ResolvedKind {
     NonFile,
 }
 
-/// fingerprint 対象の resolved path + kind。
+/// fingerprint 対象の resolved path + workspace-relative path + kind。
 /// `resolved` は File/Dir で canonicalize 済みの絶対 path(cwd spelling
-/// 差を除去)、NonFile は candidate の raw 文字列。
+/// 差を除去)、NonFile は candidate の raw 文字列。`PathBuf` のまま
+/// 保持して hash 入力へ `as_encoded_bytes` を渡し、非 UTF-8 path を
+/// lossy 変換で潰さない。
+/// `rel_posix` は `resolve_target` が計算した workspace-relative posix
+/// path — deny reason が `workspace-relative path: {rel_posix}` を
+/// 埋め込むため verdict を変え得る入力であり、fingerprint の同一性に
+/// 含める。NonFile は `""`、WorkspaceRoot 由来の Dir は
+/// `evaluate_search` と同じ `"."`。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ResolvedTarget {
-    pub resolved: String,
+    pub resolved: PathBuf,
+    pub rel_posix: String,
     pub kind: ResolvedKind,
 }
 
@@ -353,14 +365,20 @@ pub(crate) struct FingerprintContext {
 /// `resolve_target` の lexical resolved path を canonicalize 済み絶対
 /// path へ写す。canonicalize 失敗(resolve 後の fs race)はその候補を
 /// `NonFile`(absent)へ畳む。
-fn canonicalize_resolved(resolved: String, kind: ResolvedKind) -> ResolvedTarget {
+fn canonicalize_resolved(
+    resolved: String,
+    rel_posix: String,
+    kind: ResolvedKind,
+) -> ResolvedTarget {
     match std::fs::canonicalize(&resolved) {
         Ok(path) => ResolvedTarget {
-            resolved: path.to_string_lossy().into_owned(),
+            resolved: path,
+            rel_posix,
             kind,
         },
         Err(_) => ResolvedTarget {
-            resolved,
+            resolved: PathBuf::from(resolved),
+            rel_posix,
             kind: ResolvedKind::NonFile,
         },
     }
@@ -372,10 +390,14 @@ fn canonicalize_resolved(resolved: String, kind: ResolvedKind) -> ResolvedTarget
 /// - `FileRead` — `Resolution::File` のみ `[File]`。それ以外は常時
 ///   allow の定数経路で `[]`(dedup 対象外)。
 /// - `Search` — `File` → `[File]`、`Dir`/`WorkspaceRoot` → `[Dir]`、
-///   `OutOfScope` → `[]`。
+///   `OutOfScope` → `[]`。空 `pattern` は `evaluate` と同じ定数 allow
+///   経路のため target を列挙しない(`[]` → dedup bypass)。
 /// - `Shell` — `extract_read_candidates` の各候補を `File`/`Dir` →
 ///   対応 kind、それ以外 → `NonFile`(raw candidate 文字列を保持)。
 ///   candidates 空 → `[]`。
+///
+/// `WorkspaceRoot` 由来の Dir target の `rel_posix` は
+/// `evaluate_search` と同じ `"."` を使う。
 pub(crate) fn fingerprint_targets(request: &RoutingRequest) -> FingerprintContext {
     let cwd = match request {
         RoutingRequest::FileRead { cwd, .. }
@@ -387,30 +409,90 @@ pub(crate) fn fingerprint_targets(request: &RoutingRequest) -> FingerprintContex
     let mut targets: Vec<ResolvedTarget> = Vec::new();
     match request {
         RoutingRequest::FileRead { path, cwd, .. } => {
-            if let Resolution::File { resolved, .. } = resolve_target(path, cwd).1 {
-                targets.push(canonicalize_resolved(resolved, ResolvedKind::File));
+            if let Resolution::File {
+                resolved,
+                rel_posix,
+                ..
+            } = resolve_target(path, cwd).1
+            {
+                targets.push(canonicalize_resolved(
+                    resolved,
+                    rel_posix,
+                    ResolvedKind::File,
+                ));
             }
         }
-        RoutingRequest::Search { path, cwd, .. } => match resolve_target(path, cwd).1 {
-            Resolution::File { resolved, .. } => {
-                targets.push(canonicalize_resolved(resolved, ResolvedKind::File));
+        RoutingRequest::Search {
+            path, cwd, pattern, ..
+        } => {
+            if !pattern.is_empty() {
+                match resolve_target(path, cwd).1 {
+                    Resolution::File {
+                        resolved,
+                        rel_posix,
+                        ..
+                    } => {
+                        targets.push(canonicalize_resolved(
+                            resolved,
+                            rel_posix,
+                            ResolvedKind::File,
+                        ));
+                    }
+                    Resolution::Dir {
+                        resolved,
+                        rel_posix,
+                    } => {
+                        targets.push(canonicalize_resolved(
+                            resolved,
+                            rel_posix,
+                            ResolvedKind::Dir,
+                        ));
+                    }
+                    Resolution::WorkspaceRoot { resolved } => {
+                        targets.push(canonicalize_resolved(
+                            resolved,
+                            ".".to_string(),
+                            ResolvedKind::Dir,
+                        ));
+                    }
+                    Resolution::OutOfScope => {}
+                }
             }
-            Resolution::Dir { resolved, .. } | Resolution::WorkspaceRoot { resolved } => {
-                targets.push(canonicalize_resolved(resolved, ResolvedKind::Dir));
-            }
-            Resolution::OutOfScope => {}
-        },
+        }
         RoutingRequest::Shell { command, cwd, .. } => {
             for candidate in extract_read_candidates(command) {
                 match resolve_target(&candidate, cwd).1 {
-                    Resolution::File { resolved, .. } => {
-                        targets.push(canonicalize_resolved(resolved, ResolvedKind::File));
+                    Resolution::File {
+                        resolved,
+                        rel_posix,
+                        ..
+                    } => {
+                        targets.push(canonicalize_resolved(
+                            resolved,
+                            rel_posix,
+                            ResolvedKind::File,
+                        ));
                     }
-                    Resolution::Dir { resolved, .. } | Resolution::WorkspaceRoot { resolved } => {
-                        targets.push(canonicalize_resolved(resolved, ResolvedKind::Dir));
+                    Resolution::Dir {
+                        resolved,
+                        rel_posix,
+                    } => {
+                        targets.push(canonicalize_resolved(
+                            resolved,
+                            rel_posix,
+                            ResolvedKind::Dir,
+                        ));
+                    }
+                    Resolution::WorkspaceRoot { resolved } => {
+                        targets.push(canonicalize_resolved(
+                            resolved,
+                            ".".to_string(),
+                            ResolvedKind::Dir,
+                        ));
                     }
                     Resolution::OutOfScope => targets.push(ResolvedTarget {
-                        resolved: candidate,
+                        resolved: PathBuf::from(candidate),
+                        rel_posix: String::new(),
                         kind: ResolvedKind::NonFile,
                     }),
                 }
