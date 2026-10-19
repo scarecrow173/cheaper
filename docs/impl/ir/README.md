@@ -138,6 +138,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
 | IMPL-034APqdMTW2hYck2FYoKv1 | Verify workflow execution integration | completed | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | IMPL-034D9oWccQJEPfXsMNRpH5 | Volume-root workspace boundary predicate の trailing separator guard | completed | [volume-root-workspace-boundary-predicate-trailing-separator-guard.md](./volume-root-workspace-boundary-predicate-trailing-separator-guard.md) |
+| IMPL-034IqcrVJL4pxtau4WVtRV | Wire evaluate_dedup into hook target call sites | in-progress | [wire-evaluate-dedup-into-hook-target-call-sites.md](./wire-evaluate-dedup-into-hook-target-call-sites.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |
 | IMPL-034zUpcuJnZnznZ79UL3Q2 | Wire one-dispatch release publication | completed | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
 | IMPL-034zTIoMYLPhPUbedvunjx | wire-workflow-interface | completed | [wire-workflow-interface.md](./wire-workflow-interface.md) |
