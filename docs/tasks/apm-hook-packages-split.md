@@ -43,7 +43,8 @@ relations:
   verified-by: []
   references:
     - "packages/apm/apm.yml"
-    - "packages/apm-hook-pretooluse/.apm/hooks/hooks.json"
+    - "packages/apm-hook-claude/.apm/hooks/hooks.json"
+    - "packages/apm-hook-codex/.apm/hooks/hooks.json"
   defers: []
   deferred-by: []
 ---

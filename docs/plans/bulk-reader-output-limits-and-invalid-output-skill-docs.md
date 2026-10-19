@@ -3,8 +3,9 @@ id: "PLAN-ANDDozesHfjJTzvFeRN6bf"
 type: "plan"
 status: "completed"
 title: "bulk-reader 出力上限・INVALID_OUTPUT 指針の skill 文書化計画"
+test-spec-skip: "scripts/test/ の skill 記載値照合 node test と mise run check（crates/cheaper-cli/tests/ を含む workspace test）で検証済みのため、独立した test-spec artifact は作成していない。"
 created: "2026-10-17"
-updated: "2026-10-17"
+updated: "2026-10-19"
 owners:
   - scarecrow173
 relations:

@@ -3,8 +3,9 @@ id: "PLAN-034H3ODf3yWW5G5NgvUvt8"
 type: "plan"
 status: "completed"
 title: "Bounded hook evaluation and hook-config registration lifecycle"
+test-spec-skip: "crates/cheaper-cli/tests/ 配下の integration test で検証済みのため、独立した test-spec artifact は作成していない。"
 created: "2026-10-16"
-updated: "2026-10-17"
+updated: "2026-10-19"
 owners:
   - scarecrow173
 relations:

@@ -12,8 +12,9 @@ use cheaper_core::config::dirs::EnvLookup;
 use cheaper_core::json::stringify::stringify;
 use serde_json::{Map, Value};
 
+use super::eval_cache;
 use super::routing_policy::{
-    evaluate, EvaluateOptions, ReadRange, RoutingRequest, SearchOutputMode, Verdict,
+    EvaluateOptions, ReadRange, RoutingRequest, SearchOutputMode, Verdict,
 };
 
 /// `HookTarget` — `HOOK_TARGETS` の 5 値。
@@ -635,7 +636,7 @@ pub async fn handle_hook(
         HookTarget::Windsurf => match windsurf_normalize(event, input, deps.cwd) {
             None => ("allow", silent_allow()),
             Some(request) => {
-                let verdict = evaluate(&request, &deps.eval_opts()).await;
+                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
                 (verdict_name(&verdict), windsurf_render(verdict))
             }
         },
@@ -643,21 +644,21 @@ pub async fn handle_hook(
             CopilotOutcome::None => ("allow", silent_allow()),
             CopilotOutcome::Respond(r) => ("allow", r),
             CopilotOutcome::Request(request) => {
-                let verdict = evaluate(&request, &deps.eval_opts()).await;
+                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
                 (verdict_name(&verdict), copilot_render(verdict))
             }
         },
         HookTarget::Pretooluse => match pretooluse_normalize(input, deps.cwd) {
             None => ("allow", silent_allow()),
             Some(request) => {
-                let verdict = evaluate(&request, &deps.eval_opts()).await;
+                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
                 (verdict_name(&verdict), pretooluse_render(verdict))
             }
         },
         HookTarget::Devin => match devin_normalize(event, input, deps) {
             None => ("allow", silent_allow()),
             Some(request) => {
-                let verdict = evaluate(&request, &deps.eval_opts()).await;
+                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
                 (verdict_name(&verdict), devin_render(verdict))
             }
         },
@@ -668,7 +669,7 @@ pub async fn handle_hook(
                 // (計測失敗は内部で allow)が、TS の try/catch allow
                 // 経路と同じく verdict に関わらず schema-valid JSON を
                 // 返すことは変えない。
-                let verdict = evaluate(&request, &deps.eval_opts()).await;
+                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
                 (verdict_name(&verdict), cursor_render(verdict))
             }
         },

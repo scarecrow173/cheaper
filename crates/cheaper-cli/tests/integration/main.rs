@@ -7,6 +7,7 @@ mod common;
 mod envelope;
 mod hook;
 mod hook_config;
+mod hook_eval_dedup;
 mod input;
 mod models;
 mod policy;

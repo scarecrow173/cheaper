@@ -21,6 +21,7 @@ Directory: `docs/tasks`
 | TASK-034EekRVLtDbzc0slwVFX0 | T1: cheaper-core ErrorCode::from_str reverse lookup | done | [add-errorcode-from-str-reverse-lookup-in-cheaper-core.md](./add-errorcode-from-str-reverse-lookup-in-cheaper-core.md) |
 | TASK-034r05iHQeQpDpu1iPmr1q | Add fake stream hook and e2e execution tests | done | [add-fake-stream-hook-and-e2e-execution-tests.md](./add-fake-stream-hook-and-e2e-execution-tests.md) |
 | TASK-034z52KS4mSEHAIf28JHuj | add hook contract tests and port existing adapter e2e | done | [add-hook-contract-tests-and-port-existing-adapter-e2e.md](./add-hook-contract-tests-and-port-existing-adapter-e2e.md) |
+| TASK-034IpPzy0tH0R50dS4XIN0 | Add hook_eval_dedup integration tests | done | [add-hook-eval-dedup-integration-tests.md](./add-hook-eval-dedup-integration-tests.md) |
 | TASK-034zQTNEJMgP0EgzXJbGtM | Add launcher acquisition contract tests | done | [add-launcher-acquisition-contract-tests.md](./add-launcher-acquisition-contract-tests.md) |
 | TASK-034rzWI7U1txBCpGr7WZaJ | Add model pricing metadata layer and bundled data | done | [add-model-pricing-metadata-layer.md](./add-model-pricing-metadata-layer.md) |
 | TASK-034rzWIEgBvwU5S4KYY68N | Add models.yaml exclude with union merge | done | [add-models-config-exclude.md](./add-models-config-exclude.md) |
@@ -125,6 +126,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gHSXhJFHL | Implement config directory resolution | done | [implement-config-directory-resolution.md](./implement-config-directory-resolution.md) |
 | TASK-034r05iHK8bA7gEdDgIUDn | Implement core error model and exit code table | done | [implement-core-error-model-and-exit-code-table.md](./implement-core-error-model-and-exit-code-table.md) |
 | TASK-034r05iHQeQpDpQjb4veqT | Implement core Token Counter with js-tiktoken | done | [implement-core-token-counter.md](./implement-core-token-counter.md) |
+| TASK-034IpPs1L6kjNy6HyCalZs | Implement dedup helpers and eval_cache module | done | [implement-dedup-helpers-and-eval-cache-module.md](./implement-dedup-helpers-and-eval-cache-module.md) |
 | TASK-034Dak5Arnf42bv3QpLooy | Implement Devin provider Windows credential snapshot contract | done | [implement-devin-provider-windows-credential-snapshot-contract.md](./implement-devin-provider-windows-credential-snapshot-contract.md) |
 | TASK-034r05iHK8bA7gFkeCQ9Xu | Implement duration parser | done | [implement-duration-parser.md](./implement-duration-parser.md) |
 | TASK-034r05iHK8bA7hf8fHPk7j | Implement final output extraction and schema validation | done | [implement-final-output-extraction-and-schema-validation.md](./implement-final-output-extraction-and-schema-validation.md) |
@@ -296,6 +298,7 @@ Directory: `docs/tasks`
 | TASK-034zTjXTqV7nvYYkf1bUH9 | Wire canonical operation ownership and abort | done | [wire-canonical-operation-ownership.md](./wire-canonical-operation-ownership.md) |
 | TASK-034DVH7HJKxbc1zEF7638b | T2: cli --log/--log-format flag 配線と init 呼出し | done | [wire-cli-log-flags-and-observability-init.md](./wire-cli-log-flags-and-observability-init.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
+| TASK-034IpPwmpKldYJ5rPUuq4z | Wire evaluate_dedup into hook target call sites | done | [wire-evaluate-dedup-into-hook-target-call-sites.md](./wire-evaluate-dedup-into-hook-target-call-sites.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
 | TASK-034zTWiLbk14ZhGMpiNo7M | Wire one-dispatch release publication | done | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
 | TASK-034AaXZ7nc5LQuUvG9iFY8 | 実 I/O と Pi job lease を配線する | done | [wire-resource-manager-observation.md](./wire-resource-manager-observation.md) |
