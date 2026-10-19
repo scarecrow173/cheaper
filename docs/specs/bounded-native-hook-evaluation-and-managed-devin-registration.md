@@ -33,6 +33,9 @@ relations:
     - "../specs/apm-delegation-skills-and-read-hook.md"
     - "../adr/range-aware-file-read-and-bounded-search-requests-in-hook-routing.md"
     - "../adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
+    - "../adr/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
+    - "../specs/hook-config-orphan-sweep-ownership-boundary.md"
+    - "../discovery/hook-config-sweep-orphans-deletes-foreign-bak-files.md"
   refines: []
   refined-by: []
   derives-from:

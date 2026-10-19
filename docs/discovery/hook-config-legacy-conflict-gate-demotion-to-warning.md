@@ -31,6 +31,8 @@ relations:
     - "../adr/dedup-concurrent-hook-firings-via-canonical-request-fingerprint-verdict-cache.md"
     - "../adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
     - "../designs/bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md"
+    - "../specs/hook-config-orphan-sweep-ownership-boundary.md"
+    - "./hook-config-sweep-orphans-deletes-foreign-bak-files.md"
   refines: []
   refined-by: []
   derives-from: []

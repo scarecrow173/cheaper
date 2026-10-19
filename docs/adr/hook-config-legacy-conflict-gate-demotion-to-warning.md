@@ -28,6 +28,7 @@ relations:
   related:
     - "./dedup-concurrent-hook-firings-via-canonical-request-fingerprint-verdict-cache.md"
     - "./cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
+    - "./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
     - "../specs/hook-config-legacy-conflict-gate-demotion-to-warning.md"
   refines: []
   refined-by: []

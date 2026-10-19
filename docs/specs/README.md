@@ -39,6 +39,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gqGaD6qpk | grep batchMaxBytes / decoded line payload invariant | implemented | [grep-batch-max-bytes-line-payload-invariant.md](./grep-batch-max-bytes-line-payload-invariant.md) |
 | SPEC-034r6kd649rTDnOi828voj | Stabilize environment-sensitive grep eval-budget tests | implemented | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | SPEC-034IKGkW4dQEVw6QigMFxQ | hook-config legacy conflict gate demotion to warning | approved | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |
+| SPEC-034IOh5OATJ4AcprA5u47p | Restrict hook-config orphan sweep to cheaper-owned temp files | proposed | [hook-config-orphan-sweep-ownership-boundary.md](./hook-config-orphan-sweep-ownership-boundary.md) |
 | SPEC-034Ie1ZEdUR2aBFVoqkBay | Hook duplicate firing single-evaluation dedup | approved | [hook-duplicate-firing-single-evaluation-dedup.md](./hook-duplicate-firing-single-evaluation-dedup.md) |
 | SPEC-034r05iHK8bA7gjwZTji8t | Huge-file token count guard with fail-closed hook blocking | implemented | [huge-file-token-count-guard-with-fail-closed-hook-blocking.md](./huge-file-token-count-guard-with-fail-closed-hook-blocking.md) |
 | SPEC-034FlOz4hiN9m0nQW7lBN2 | invocation-scoped command grant と grant-request フロー | approved | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |

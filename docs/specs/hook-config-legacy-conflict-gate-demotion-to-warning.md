@@ -32,6 +32,7 @@ relations:
     - "../discovery/hook-duplicate-firing-dedup-via-canonical-request-fingerprint.md"
     - "../adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
     - "../designs/bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md"
+    - "./hook-config-orphan-sweep-ownership-boundary.md"
   refines: []
   refined-by: []
   derives-from:
