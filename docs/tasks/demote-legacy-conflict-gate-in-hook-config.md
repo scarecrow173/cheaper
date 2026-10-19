@@ -1,7 +1,7 @@
 ---
 id: "TASK-034IM7QWavO611vU5ZdhmT"
 type: "task"
-status: "todo"
+status: "done"
 title: "Demote legacy conflict gate in hook_config.rs and update Rust integration tests"
 created: "2026-10-19"
 updated: "2026-10-20"
@@ -55,14 +55,14 @@ test を新規約へ更新する。文言は design の Wording Contract の確�
 
 ### Code 変更(`crates/cheaper-cli/src/hook_config.rs`)
 
-- [ ] `run_verify`(:668-682)— `blocker = true` を除去。per-file
+- [x] `run_verify`(:668-682)— `blocker = true` を除去。per-file
       `legacy-conflict:` finding push と `legacyConflicts` 常時 populate
       (:679-682)は維持し、finding 文言を新契約へ置き換える:
       `legacy-conflict: {f} contains a cheaper hook registration (safe to keep — duplicate firings are deduplicated at eval time for identical requests; remove that registration to converge on a single registration)`
-- [ ] `run_verify` `remediation`(:730-738)— `!quiet && blocker` gate は
+- [x] `run_verify` `remediation`(:730-738)— `!quiet && blocker` gate は
       維持し文言のみ置き換える:
       `run \`cheaper hook-config sync\` to converge the registration; see docs/guides/distribution.md for the APM lifecycle wiring`
-- [ ] `run_sync`(:757-768)— `invalid_request` early return を除去し、
+- [x] `run_sync`(:757-768)— `invalid_request` early return を除去し、
       `let conflicts = legacy_conflicts(&root_dir, &config_path);` を write
       前位置で保持(降格 comment 付き)。upsert 継続後、result 組立(:850
       付近、`changed`/`matcher` insert 直後・quiet gated `note` の**外**)
@@ -70,10 +70,10 @@ test を新規約へ更新する。文言は design の Wording Contract の確�
       insert し、conflict 検出時のみ `warning` を insert(R1/R2 — `note`
       の quiet gate :852-858 を複製しない)。`warning` 文言:
       `legacy cheaper hook registrations remain (see legacyConflicts); coexisting is safe — duplicate firings are deduplicated at eval time for identical requests, so removal is needed only to converge on a single registration. A pre-dedup cheaper binary on PATH still evaluates each firing independently (duplicate evaluation only — the verdict is identical); see docs/guides/distribution.md`
-- [ ] `run_remove`(:932-938)— `residualRegistrations` key・emit 条件は
+- [x] `run_remove`(:932-938)— `residualRegistrations` key・emit 条件は
       不変のまま `note` 文言のみ置き換える:
       `remove deleted only the canonical entry; other files still contain cheaper registrations (safe to keep — duplicate firings are deduplicated at eval time for identical requests); run \`cheaper hook-config verify\` to inspect`
-- [ ] stale comment 修正 — `legacy_conflicts` :377 の「parse 不能 file は
+- [x] stale comment 修正 — `legacy_conflicts` :377 の「parse 不能 file は
       verify の finding で別途報告」を実動作(verify は sibling の parse
       失敗を報告しない best-effort skip)へ修正。`run_sync` doc-comment
       :742 を「canonical own entry の冪等 upsert + legacy conflict の
@@ -82,7 +82,7 @@ test を新規約へ更新する。文言は design の Wording Contract の確�
       test file `crates/cheaper-cli/tests/integration/hook_config.rs:4` の
       header doc-comment「legacy gate」も :377/:742 と併せて降格後表現
       (「legacy conflict reporting」等)へ更新する
-- [ ] `run_event_stdin`(:973-1053)はコード変更なし — verify code
+- [x] `run_event_stdin`(:973-1053)はコード変更なし — verify code
       passthrough 構造で降格を継承する(検出規則
       `CONFLICT_PATTERN`・`KNOWN_LEGACY_FILES`・`legacy_conflicts()` も
       不変)
@@ -91,7 +91,7 @@ test を新規約へ更新する。文言は design の Wording Contract の確�
 
 `fixture_with_cheaper_on_path` PATH shim パターンを再利用。
 
-- [ ] :132 `hook_config_sync_fails_on_legacy_conflict` を
+- [x] :132 `hook_config_sync_fails_on_legacy_conflict` を
       `hook_config_sync_warns_on_legacy_conflict` へ rewrite —
       `.windsurf/hooks.json` legacy 登録 fixture は流用。`sync` →
       `code == 0`・`env["ok"] == true`・`result.legacyConflicts` が len 1
@@ -100,31 +100,31 @@ test を新規約へ更新する。文言は design の Wording Contract の確�
       書き込まれている。`verify` → `code == 0`・`result.clean == true`・
       `legacyConflicts` populate・findings に `legacy-conflict:` prefix
       entry・全 finding が "duplicate firing is unsafe" を含まない
-- [ ] 新規 `hook_config_event_stdin_converges_on_legacy_conflict` —
+- [x] 新規 `hook_config_event_stdin_converges_on_legacy_conflict` —
       conflict setup + `{"event":"post-install","packages":["cheaper"]}`
       → `code == 0`・config 書込み・`result.sync.legacyConflicts` 非空・
       `result.sync.warning` 存在・`result.verify.clean == true`。
       続けて `{"event":"post-update","packages":["cheaper"]}` →
       `code == 0` + `config_path(&fx).exists()` と own entry(canonical
       matcher + `OWN_COMMAND`)の存在を assert
-- [ ] 新規 post-uninstall 判定不能 × conflict-only residual — own entry
+- [x] 新規 post-uninstall 判定不能 × conflict-only residual — own entry
       書込み済み + conflict 残りで `{"event":"post-uninstall"}`(packages
       欠落)→ `code == 0`・`result.action == "skipped"`・
       `result.verify.clean == true`(降格前は exit 2)
-- [ ] 新規 `hook_config_sync_quiet_keeps_conflict_fields` — conflict
+- [x] 新規 `hook_config_sync_quiet_keeps_conflict_fields` — conflict
       setup + `sync --quiet` → `code == 0`・`result.legacyConflicts` 非空・
       `result.warning` 存在・`result.note` 不在(R2 guard)
-- [ ] retained error — conflict 併存下で malformed `.devin/config.json` /
+- [x] retained error — conflict 併存下で malformed `.devin/config.json` /
       未知 matcher の modified own entry / duplicate own entry の各条件で
       `sync` が `code == 2`・`env["ok"] == false`(1 test に fixture 再
       setup でまとめても良い)
-- [ ] verify blocker retention — conflict + own entry missing →
+- [x] verify blocker retention — conflict + own entry missing →
       `code == 2`・`clean == false`・findings が `missing` と
       `legacy-conflict` の両方を含む;own entry に余分な key(または未知
       matcher)→ `code == 2`・`modified:` prefix finding;own entry
       group 2 件 → `code == 2`・`duplicate:` finding(absent-config・
       malformed は既存 test :62-76・:222-254 が担保)
-- [ ] remove residual — conflict setup + own entry 書込み済み → `remove`
+- [x] remove residual — conflict setup + own entry 書込み済み → `remove`
       → `code == 0`・`result.residualRegistrations` 非空・`result.note` が
       新文言("deduplicated at eval time" を含む)
 
@@ -158,16 +158,16 @@ Out of scope(本 task では触らない): `scripts/test/devin-hooks-install.tes
 
 ## Done When
 
-- [ ] 上記 code 変更 6 項目と test 変更 7 項目が実装され、新規約
+- [x] 上記 code 変更 6 項目と test 変更 7 項目が実装され、新規約
       (conflict で sync/verify/lifecycle が exit 0 収束・informational
       報告)と retained error/blocker(exit 2 維持)が test で固定される
-- [ ] finding・`warning`・`note`・`remediation` の文言に "duplicate firing
+- [x] finding・`warning`・`note`・`remediation` の文言に "duplicate firing
       is unsafe" が残っていない
-- [ ] 既存 `hook_config::` test 群を含む integration target に回帰が無い
+- [x] 既存 `hook_config::` test 群を含む integration target に回帰が無い
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook_config::` が exit 0
-- [ ] `mise exec -- cargo fmt --check` が exit 0
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` が exit 0
-- [ ] `grep -n "duplicate firing is unsafe" crates/cheaper-cli/src/hook_config.rs` が 0 件
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook_config::` が exit 0
+- [x] `mise exec -- cargo fmt --check` が exit 0
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` が exit 0
+- [x] `grep -n "duplicate firing is unsafe" crates/cheaper-cli/src/hook_config.rs` が 0 件

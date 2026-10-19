@@ -374,7 +374,9 @@ fn legacy_conflicts(root: &Path, target: &Path) -> Vec<String> {
             continue;
         };
         let Ok(value) = serde_json::from_slice::<Value>(&bytes) else {
-            continue; // parse 不能 file は verify の finding で別途報告
+            // parse 不能な sibling file は best-effort 規約で黙って skip —
+            // verify は sibling の parse 失敗を finding として報告しない。
+            continue;
         };
         let mut strings = Vec::new();
         collect_command_strings(&value, &mut strings);
@@ -665,16 +667,15 @@ fn run_verify(
     }
     result.insert("ownEntry".to_string(), Value::from(own_state));
 
-    // legacy conflict scan。
+    // legacy conflict scan — informational(dedup により共存は安全)。
     let conflicts = legacy_conflicts(&root_dir, &config_path);
-    if !conflicts.is_empty() {
-        blocker = true;
-        for f in &conflicts {
-            findings.push(Value::from(format!(
-                "legacy-conflict: {f} contains a cheaper hook registration \
-                 (remove it before sync — duplicate firing is unsafe)"
-            )));
-        }
+    for f in &conflicts {
+        findings.push(Value::from(format!(
+            "legacy-conflict: {f} contains a cheaper hook registration \
+             (safe to keep — duplicate firings are deduplicated at eval \
+             time for identical requests; remove that registration to \
+             converge on a single registration)"
+        )));
     }
     result.insert(
         "legacyConflicts".to_string(),
@@ -731,7 +732,7 @@ fn run_verify(
         result.insert(
             "remediation".to_string(),
             Value::from(
-                "run `cheaper hook-config sync` after resolving any legacy conflicts; \
+                "run `cheaper hook-config sync` to converge the registration; \
                  see docs/guides/distribution.md for the APM lifecycle wiring",
             ),
         );
@@ -739,7 +740,8 @@ fn run_verify(
     Ok((result, if blocker { 2 } else { 0 }))
 }
 
-/// `sync` — canonical own entry の冪等 upsert + legacy gate。
+/// `sync` — canonical own entry の冪等 upsert + legacy conflict の
+/// informational 報告。
 fn run_sync(
     args: &HookConfigCliArgs,
     io: &CliIo<'_>,
@@ -754,18 +756,9 @@ fn run_sync(
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(io.cwd.clone()));
 
-    // legacy gate: target file 以外の既知 file に cheaper read-hook が
-    // 残っている間は二重発火を避けるため sync を拒否する(旧 script の
-    // conflict gate — #107 の実 path でもある)。
+    // legacy conflict は blocker ではなく informational — dedup が
+    // 重複発火を無害化するため upsert を継続し、結果で報告する。
     let conflicts = legacy_conflicts(&root_dir, &config_path);
-    if !conflicts.is_empty() {
-        return Err(invalid_request(format!(
-            "legacy cheaper hook registrations detected in: {}. \
-             Remove them first (e.g. `cheaper hook-config remove` on the old config, \
-             or delete the entries) before syncing.",
-            conflicts.join(", ")
-        )));
-    }
 
     let removed_orphans = sweep_orphans(&config_path);
     let loaded = load_config(&config_path)?;
@@ -849,6 +842,24 @@ fn run_sync(
     }
     result.insert("changed".to_string(), Value::from(changed));
     result.insert("matcher".to_string(), Value::from(CANONICAL_MATCHER));
+    result.insert(
+        "legacyConflicts".to_string(),
+        Value::Array(conflicts.iter().map(|f| Value::from(f.clone())).collect()),
+    );
+    if !conflicts.is_empty() {
+        result.insert(
+            "warning".to_string(),
+            Value::from(
+                "legacy cheaper hook registrations remain (see legacyConflicts); \
+                 coexisting is safe — duplicate firings are deduplicated at eval \
+                 time for identical requests, so removal is needed only to \
+                 converge on a single registration. A pre-dedup cheaper binary \
+                 on PATH still evaluates each firing independently (duplicate \
+                 evaluation only — the verdict is identical); see \
+                 docs/guides/distribution.md",
+            ),
+        );
+    }
     if !quiet {
         result.insert(
             "note".to_string(),
@@ -933,7 +944,9 @@ fn run_remove(
             "note".to_string(),
             Value::from(
                 "remove deleted only the canonical entry; other files still contain \
-                 cheaper registrations — run `cheaper hook-config verify` to inspect",
+                 cheaper registrations (safe to keep — duplicate firings are \
+                 deduplicated at eval time for identical requests); run \
+                 `cheaper hook-config verify` to inspect",
             ),
         );
     }
