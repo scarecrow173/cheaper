@@ -164,11 +164,15 @@ cheaper hook-config sync     # idempotently upsert the canonical entry
 cheaper hook-config remove   # remove only the owned entry
 ```
 
-`sync` refuses to write while a legacy cheaper read-hook registration
-coexists in a known source (`.windsurf/hooks.json`, `.devin/hooks*.json`,
-`.devin/config.local.json`, `.claude/settings*.json`, other registrations
-in the target config) — resolve duplicates explicitly, then use `/hooks`
-to check all loaded sources, including global and ancestor configurations.
+`sync` writes the canonical entry even when a legacy cheaper read-hook
+registration coexists in a known source (`.windsurf/hooks.json`,
+`.devin/hooks*.json`, `.devin/config.local.json`, `.claude/settings*.json`,
+other registrations in the target config) — coexisting sources are reported
+in the result as `legacyConflicts` plus a `warning`, not blocked. Duplicate
+firings are deduplicated at eval time for identical requests (issue #127),
+so coexistence is safe; removing the legacy registration is optional and
+only needed to converge on a single registration. Use `/hooks` to check
+all loaded sources, including global and ancestor configurations.
 The CLI must report `devin` and `hookConfig` through
 `cheaper hook targets --json`; updating APM resources does not update the
 separately installed CLI.
@@ -192,10 +196,13 @@ lifecycle:
 ```
 
 `post-uninstall` removes the entry only when the payload's `packages`
-names cheaper. `APM_NO_SCRIPTS=1`, missing trust, or script failure skips
-convergence — `verify` is the authoritative fallback. Without lifecycle
-wiring, APM uninstall does not remove the native entry; run
-`cheaper hook-config remove` (or delete only the
+names cheaper; when `packages` cannot be determined it runs `verify` and
+passes its exit code through, so residual legacy registrations — reported
+as informational findings (`clean: true`, exit 0) — never fail the
+lifecycle. `APM_NO_SCRIPTS=1`, missing trust, or script failure skips
+convergence — `verify` is the authoritative fallback for reporting the
+residual state. Without lifecycle wiring, APM uninstall does not remove
+the native entry; run `cheaper hook-config remove` (or delete only the
 `cheaper hook pre-tool-use --target devin` group) when uninstalling.
 
 The guard is bounded (issue #107): `read` honors `offset`/`limit`
