@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "Bounded hook request evaluation and hook-config registration lifecycle"
 created: "2026-10-16"
-updated: "2026-10-17"
+updated: "2026-10-20"
 owners:
   - scarecrow173
 relations:
@@ -151,8 +151,15 @@ ADR-034H2WBNtC4We8dyC5lQZJ（CLI 所有の registration lifecycle）
   import し、旧登録残存時は bounded 修正が発動しないため）。通過後は
   canonical entry の upsert（旧 matcher のみは現行へ収束）、
   重複/改変/曖昧な own entry は error。temp+rename で atomic
-  replace、`config.json.*.tmp`/`.bak` の orphan sweep を起動時と
-  失敗時に行う。
+  replace、`config.json.*.tmp` のみの orphan sweep を sync 開始時に
+  1 回行う（失敗時の別途 sweep は行わず、rename 失敗時の temp
+  除去は atomic write 自身が行う）。
+
+  > Amend（2026-10-20 — SPEC-034IOh5OATJ4AcprA5u47p / issue #137）:
+  > orphan sweep の対象を `config.json.*.tmp`（cheaper 生成 temp）に
+  > 限定し、実行時点を「sync 開始時の 1 回（失敗時の別途 sweep
+  > なし）」へ訂正 — 旧記述の `.bak` sweep と「起動時 + 失敗時」
+  > timing は実装と齟齬していた。
 - `verify`: 同じ scan を読み取りのみで実行し、登録の有無・drift・
   既知 legacy cheaper hook の残存を報告。`.devin/hooks.v1.json`
   /`.devin/hooks.json` が `config.json` と併存する場合は shadow の
@@ -266,8 +273,16 @@ ADR-034H2WBNtC4We8dyC5lQZJ（CLI 所有の registration lifecycle）
   `count_max_bytes` byte・`.git` 除外・hidden file 含む・
   gitignore 非適用で bounded とする。
 - `hook-config` の書き込みは temp+rename で atomic replace、外部
-  変更を capability 確認との間で検出して中断し、`config.json.*.tmp`/
-  `.bak` の orphan を sweep する。
+  変更を capability 確認との間で検出して中断し、`config.json.*.tmp`
+  のみの orphan を sync 開始時に 1 回 sweep する（失敗時の別途
+  sweep は行わず、rename 失敗時の temp 除去は atomic write 自身が
+  行う）。
+
+  > Amend（2026-10-20 — SPEC-034IOh5OATJ4AcprA5u47p / issue #137）:
+  > orphan sweep の対象を `config.json.*.tmp`（cheaper 生成 temp）に
+  > 限定し、実行時点を「sync 開始時の 1 回（失敗時の別途 sweep
+  > なし）」へ訂正 — 旧記述の `.bak` sweep と「起動時 + 失敗時」
+  > timing は実装と齟齬していた。
 - symlink / reparse point は設定 file の対象にしない（PowerShell
   script の既存規則を継承）。
 - 新規 runtime 依存は入れず、regex・JSON・path 処理は workspace

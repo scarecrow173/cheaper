@@ -4,7 +4,7 @@ type: "adr"
 status: "accepted"
 title: "CLI-owned Devin hook registration lifecycle with APM integration"
 created: "2026-10-16"
-updated: "2026-10-17"
+updated: "2026-10-20"
 owners:
   - scarecrow173
 relations:
@@ -148,8 +148,10 @@ strict parse — コメント有りは「コメント除去か手動編集」の
 error。書き込みでコメントは保持されない既知の制限）・非 schema・
 重複/改変 own entry・symlink/reparse point は書かず error、
 temp+rename の atomic replace（`fs::rename` は dest 存在時に
-置換）、capability 確認との間の外部変更検出、`config.json.*.tmp`/
-`.bak` の orphan sweep（起動時 + 失敗時）、無関係 entry の保持、
+置換）、capability 確認との間の外部変更検出、`config.json.*.tmp`
+のみの orphan sweep（sync 開始時に 1 回 — 失敗時の別途 sweep
+は行わず、rename 失敗時の temp 除去は atomic write 自身が行う）、
+無関係 entry の保持、
 own entry の識別は command 完全一致 + matcher canonical 集合
 （`{read|grep, read|grep|exec}` の 2 形を受理し現行へ収束）。
 判定不能な変更は自動修復しない。capability 確認は PATH 解決の
@@ -157,6 +159,12 @@ own entry の識別は command 完全一致 + matcher canonical 集合
 （登録 command が PATH 経由で走るため）。capability line は
 `"hookConfig": true` を追加し wrapper が対応 binary を判別できる
 ようにする。
+
+> Amend（2026-10-20 — SPEC-034IOh5OATJ4AcprA5u47p / issue #137）:
+> orphan sweep の対象を `config.json.*.tmp`（cheaper 生成 temp）に
+> 限定し、実行時点を「sync 開始時の 1 回（失敗時の別途 sweep
+> なし）」へ訂正 — 旧記述の `.bak` sweep と「起動時 + 失敗時」
+> timing は実装と齟齬していた。
 
 `install-devin-hooks.ps1` は Windows 向けの preview/`-Apply` UX を
 残したまま、実際の config 編集を `cheaper hook-config` へ委譲する

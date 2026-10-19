@@ -159,6 +159,7 @@ PowerShell helper is a thin preview/`-Apply` wrapper around it):
 ```bash
 cheaper hook-config verify   # read-only report: own entry, drift, legacy
                              # conflicts, shadow files, orphan temp files
+                             # (.bak orphans are reported but never auto-removed)
 cheaper hook-config sync     # idempotently upsert the canonical entry
                              # (matcher: read|grep|exec, case-insensitive)
 cheaper hook-config remove   # remove only the owned entry

@@ -4,7 +4,7 @@ type: "spec"
 status: "implemented"
 title: "Bounded native hook evaluation and managed Devin registration"
 created: "2026-10-16"
-updated: "2026-10-17"
+updated: "2026-10-20"
 owners:
   - scarecrow173
 relations:
@@ -275,8 +275,16 @@ issue #107 の根本修正と Devin native hook 登録の lifecycle 完備。
   script は CLI 呼び出しへの薄い wrapper へ縮退する。POSIX consumer
   には CLI を直接呼ぶ手順を提供する。`hook-config` の書き込みは
   temp file + atomic replace（`fs::rename` は dest 存在時に
-  置換）で、capability 確認との間の外部変更検出・`config.json.*.tmp`/
-  `.bak` の orphan sweep を持つ。
+  置換）で、capability 確認との間の外部変更検出・`config.json.*.tmp`
+  のみの orphan sweep（sync 開始時に 1 回 — 失敗時の別途 sweep
+  は行わず、rename 失敗時の temp 除去は atomic write 自身が
+  行う）を持つ。
+
+  > Amend（2026-10-20 — SPEC-034IOh5OATJ4AcprA5u47p / issue #137）:
+  > orphan sweep の対象を `config.json.*.tmp`（cheaper 生成 temp）に
+  > 限定し、実行時点を「sync 開始時の 1 回（失敗時の別途 sweep
+  > なし）」へ訂正 — 旧記述の `.bak` sweep と「起動時 + 失敗時」
+  > timing は実装と齟齬していた。
 
 ## Acceptance Criteria
 
