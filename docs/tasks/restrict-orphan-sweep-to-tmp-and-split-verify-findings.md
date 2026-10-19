@@ -1,7 +1,7 @@
 ---
 id: "TASK-034IQdP0etbaZJqUzaP6sl"
 type: "task"
-status: "todo"
+status: "done"
 title: "Restrict orphan sweep to .tmp and split verify orphan findings"
 created: "2026-10-19"
 updated: "2026-10-20"
@@ -57,20 +57,20 @@ contract test 6 本を追加する。文言は design の Wording Contract の�
 
 ### Code 変更(`crates/cheaper-cli/src/hook_config.rs`)
 
-- [ ] `sweep_orphans`(:482-503)の is_orphan predicate(:496-497)を
+- [x] `sweep_orphans`(:482-503)の is_orphan predicate(:496-497)を
       `(fname.ends_with(".tmp") || fname.ends_with(".bak"))` から
       `fname.ends_with(".tmp")` へ narrow — `.bak` は cheaper が生成
       しない(所有境界外)旨の comment を併記。signature・戻り値
       `Vec<String>`・`removed` push 条件(`remove_file` 成功時のみ
       :498-499)・`read_dir` 失敗時 empty(:491-493)は不変
-- [ ] `sweep_orphans` doc comment(:480-481)を 2 箇所訂正 —
+- [x] `sweep_orphans` doc comment(:480-481)を 2 箇所訂正 —
       (a) 対象記述を `{name}.` prefix + `.tmp` suffix(`config.json.*.tmp`
       相当)へ(現行の `config.json.<pid>.tmp`/`*.bak` 列挙は stale:
       glob は pid 成分を要求せず `.bak` は削除しない)、
       (b) 戻り値説明を「verify の finding 用」から「sync result の
       `orphansRemoved` field(:774-784)用 — verify が使う走査は
       `find_orphans`」へ
-- [ ] `run_verify`(:708-719)の `orphan:` finding を
+- [x] `run_verify`(:708-719)の `orphan:` finding を
       `o.ends_with(".tmp")` で区分 — `.tmp` 側:
       `orphan: {o} (leftover atomic-write temp; auto-removed by the next \`hook-config sync\`)`、
       else 側(`.bak`):
@@ -78,10 +78,10 @@ contract test 6 本を追加する。文言は design の Wording Contract の�
       `orphan:` prefix・findings の string array 形式・informational
       扱い(`clean` flag に影響しない)・`orphans` field populate
       (:716-719)は不変。"safe to delete" は `.bak` に対し廃止
-- [ ] 直上の inline comment(`// orphan temp/bak。` :707)を区分後
+- [x] 直上の inline comment(`// orphan temp/bak。` :707)を区分後
       contract に整合する内容へ更新(`.tmp` は自身の atomic write 残留で
       次回 sync が自動回収、`.bak` は cheaper 管理外で削除判断は user)
-- [ ] `find_orphans`(:506-525、glob :520)・`run_sync`(:763・:774-784)・
+- [x] `find_orphans`(:506-525、glob :520)・`run_sync`(:763・:774-784)・
       `run_event_stdin`(:1013-1019)・`write_config_atomic`(:565-571)
       はコード変更なし — 新 contract は predicate 経由で自動継承。
       確認のみ
@@ -91,19 +91,19 @@ contract test 6 本を追加する。文言は design の Wording Contract の�
 `fixture_with_cheaper_on_path` PATH shim・`config_path(&fx)`・
 `fx.run(&[...])`・`fx.stdin.data` 差替え(:334 pattern)を再利用。
 
-- [ ] helper `write_orphan_file(fx, name)` 相当を追加 — `.devin/` dir 作成 +
+- [x] helper `write_orphan_file(fx, name)` 相当を追加 — `.devin/` dir 作成 +
       任意名 file 書込み
-- [ ] 新規 `hook_config_sync_sweeps_tmp_orphan` —
+- [x] 新規 `hook_config_sync_sweeps_tmp_orphan` —
       `config.json.12345.tmp` 配置 → `sync` → `code == 0`・file 削除済み・
       `result.orphansRemoved` に `.tmp` 名が載る
-- [ ] 新規 `hook_config_sync_preserves_bak_files` —
+- [x] 新規 `hook_config_sync_preserves_bak_files` —
       `config.json.bak` + `config.json.manual.bak` 配置 → `sync` →
       `code == 0`・両 file 残存・`result.orphansRemoved` が `.bak` 名を
       一切含まない(orphan 無しなら key 不在 — 出現条件 :774-784)
-- [ ] 新規 `hook_config_sync_sweeps_only_tmp_among_mixed` —
+- [x] 新規 `hook_config_sync_sweeps_only_tmp_among_mixed` —
       `config.json.<x>.tmp` + `config.json.bak` 混在 → `sync` → `.tmp`
       のみ削除・`.bak` 残存・`orphansRemoved` が `.tmp` 名のみ含む
-- [ ] 新規 `hook_config_verify_reports_bak_orphan_informational` —
+- [x] 新規 `hook_config_verify_reports_bak_orphan_informational` —
       先に converged config を用意(`write_config_with_groups` で own
       entry 登録済み — config 不在だと `absent-config` blocker で
       `clean:false`・exit 2 になるため前提必須)→ `config.json.bak`
@@ -112,11 +112,11 @@ contract test 6 本を追加する。文言は design の Wording Contract の�
       "not managed by cheaper" を含む・`clean`/exit code は blocker
       有無のみで決まる(informational — `.bak` orphan 単独では
       `clean:true`・exit 0)
-- [ ] 新規 `hook_config_verify_tmp_orphan_wording_and_readonly` —
+- [x] 新規 `hook_config_verify_tmp_orphan_wording_and_readonly` —
       `config.json.<x>.tmp` 配置 → `verify` → `orphan:` finding が sync
       自動回収を示す文言(`auto-removed` + `sync` を含む)・verify 実行後も
       `.tmp` file が残存(read-only 契約の pin — R5)
-- [ ] 新規 `hook_config_event_stdin_preserves_bak` — `config.json.bak`
+- [x] 新規 `hook_config_event_stdin_preserves_bak` — `config.json.bak`
       配置 → `{"event":"post-install","packages":["cheaper"]}` と
       `{"event":"post-update","packages":["cheaper"]}` を同 fixture で
       連続実行(`fx.stdin.data` 差替え)→ 両実行とも `code == 0`・`.bak`
@@ -157,17 +157,17 @@ lifecycle 経路の `.bak` 保全は `--event-stdin` test が pin する)。
 
 ## Done When
 
-- [ ] is_orphan predicate が `.tmp` のみを削除対象とし、doc comment が
+- [x] is_orphan predicate が `.tmp` のみを削除対象とし、doc comment が
       `config.json.*.tmp` 相当・`orphansRemoved` field 用の 2 点へ訂正
       されている
-- [ ] `orphan:` finding が `.tmp`(sync 自動回収)/`.bak`(cheaper
+- [x] `orphan:` finding が `.tmp`(sync 自動回収)/`.bak`(cheaper
       管理外・手動削除判断)で区分され、"safe to delete" が残っていない
-- [ ] 6 本の新規 test が上記 contract を pin し、既存 `hook_config::`
+- [x] 6 本の新規 test が上記 contract を pin し、既存 `hook_config::`
       test 群を含む integration target に回帰が無い
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook_config::` が exit 0
-- [ ] `mise exec -- cargo fmt --check` が exit 0
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` が exit 0
-- [ ] `grep -n "safe to delete" crates/cheaper-cli/src/hook_config.rs` が 0 件
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook_config::` が exit 0
+- [x] `mise exec -- cargo fmt --check` が exit 0
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` が exit 0
+- [x] `grep -n "safe to delete" crates/cheaper-cli/src/hook_config.rs` が 0 件
