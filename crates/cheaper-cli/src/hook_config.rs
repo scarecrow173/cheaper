@@ -34,7 +34,7 @@ const CANONICAL_MATCHER: &str = "^([Rr][Ee][Aa][Dd]|[Gg][Rr][Ee][Pp]|[Ee][Xx][Ee
 const KNOWN_MATCHERS: &[&str] = &["^([Rr][Ee][Aa][Dd]|[Gg][Rr][Ee][Pp])$", CANONICAL_MATCHER];
 
 /// legacy cheaper read-hook 登録を検出する pattern
-/// (`install-devin-hooks.ps1` の `$conflictRegex` と同一)。
+/// (旧 `install-devin-hooks.ps1` の `$conflictRegex` と同一)。
 const CONFLICT_PATTERN: &str = r"cheaper[^\r\n]*hook[^\r\n]*(pre-read-code|pre-tool-use)";
 
 /// project scope の legacy 走査対象(既知 config file 群)。

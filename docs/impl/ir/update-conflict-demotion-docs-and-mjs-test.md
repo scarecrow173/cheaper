@@ -115,7 +115,7 @@ finding)へ書き換えた。
     passthrough で residual legacy 登録が informational finding
     (`clean: true`・exit 0)となり lifecycle を失敗させない旨を追記。
     `verify` が残余状態を報告する fallback である記述は維持。
-- `scripts/test/devin-hooks-install.test.mjs`(:269-311)
+- `scripts/test/devin-hooks-install.test.mjs`(:269-330)
   - "stops on legacy cheaper registrations in known sources" →
     "warns on legacy cheaper registrations in known sources" へ rewrite。
     wrapper `-Apply` run で `r.code === 0`・`existsSync(configAt(root))
@@ -127,6 +127,12 @@ finding)へ書き換えた。
     windsurf file を含むこと・`result.findings` に `legacy-conflict:`
     entry・`result.clean === true` を assert。`legacyConflicts` の path
     は混在 separator で返りうるため `path.resolve` で正規化して比較。
+  - `warning` field 自体は `hook-config sync --project-root` の direct
+    spawn で確認する(task の optional 項目、:312-329)。sync の
+    `check_capability` が PATH 上の cheaper を要求するため、spawn env の
+    `PATH` 先頭へ `path.dirname(cliExe)` を連結して渡す。`warning` が
+    非空 string で `legacyConflicts` が windsurf file を含むことを
+    assert。
   - 旧 assert(非ゼロ exit・config 非作成・`/legacy|conflict/i` match)
     は全て削除。win32 + `cliBuilt` gating は不変。
 - `docs/tasks/update-conflict-demotion-docs-and-mjs-test.md` — status
@@ -144,10 +150,11 @@ finding)へ書き換えた。
   Rust 側が `root.join(rel)` の display を返すため separator 混在
   (`dir\.windsurf/hooks.json`)が起こりうる環境差を吸収する。
 - `warning` field 自体の sync direct-spawn assert(task の optional 項目)
-  は追加しなかった — verify-spawn assert だけで spec AC を充足し、sync
-  は `check_capability` の PATH 要件が絡むため verify 側に留めた
-  (test-spec Non-goals と design の「verify-spawn assert だけで充足」の
-  判断に一致)。
+  も追加した — `check_capability` の PATH 要件は spawn env の `PATH`
+  先頭へ `path.dirname(cliExe)` を連結して満たし、`warning` 非空
+  string + `legacyConflicts` に windsurf file を含むことを sync 側でも
+  pin した(test-spec の「assert が欲しい場合のみ sync を direct
+  spawn」の選択肢を採用)。
 
 ## Related Experiments
 

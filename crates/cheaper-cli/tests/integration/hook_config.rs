@@ -114,6 +114,32 @@ async fn hook_config_verify_reports_absent_config() {
 }
 
 #[tokio::test(flavor = "current_thread")]
+async fn hook_config_verify_absent_config_reports_legacy_conflict() {
+    let mut fx = fixture_with_cheaper_on_path();
+    // config 不在 + legacy 登録残り — blocker の `absent-config` と
+    // informational の `legacy-conflict:` は意図的に併存する。
+    write_legacy_conflict(&fx);
+
+    let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+    assert_eq!(code, 2, "{env}");
+    assert_eq!(env["result"]["clean"], false);
+    assert_eq!(env["result"]["ownEntry"], "absent");
+    let findings = env["result"]["findings"].as_array().unwrap();
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.as_str().unwrap().contains("absent-config")),
+        "{findings:?}"
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.as_str().unwrap().starts_with("legacy-conflict:")),
+        "{findings:?}"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
 async fn hook_config_sync_creates_and_is_idempotent() {
     let mut fx = fixture_with_cheaper_on_path();
     // 既存の無関係 config を残しておく(保持されること)。
@@ -127,6 +153,16 @@ async fn hook_config_sync_creates_and_is_idempotent() {
     let (code, env, _err) = fx.run(&["hook-config", "sync"]).await;
     assert_eq!(code, 0, "{env}");
     assert_eq!(env["result"]["changed"], true);
+    // conflict 無しでは `legacyConflicts` は空 array として常時存在し、
+    // `warning` は emit されない(条件付き出力を pin)。
+    assert!(
+        env["result"]["legacyConflicts"]
+            .as_array()
+            .unwrap()
+            .is_empty(),
+        "{env}"
+    );
+    assert!(env["result"].get("warning").is_none(), "{env}");
     let cfg = read_config(&fx);
     // 無関係 key/entry は保持。
     assert_eq!(cfg["defaults"]["model"], "x");
@@ -135,10 +171,19 @@ async fn hook_config_sync_creates_and_is_idempotent() {
     assert_eq!(pre[1]["matcher"], CANONICAL_MATCHER);
     assert_eq!(pre[1]["hooks"][0]["command"], OWN_COMMAND);
 
-    // 冪等: 2回目は変更無し。
+    // 冪等: 2回目は変更無し。`changed:false` 経路でも
+    // `legacyConflicts`(空)は emit され `warning` は付かない。
     let (code, env, _err) = fx.run(&["hook-config", "sync"]).await;
     assert_eq!(code, 0);
     assert_eq!(env["result"]["changed"], false);
+    assert!(
+        env["result"]["legacyConflicts"]
+            .as_array()
+            .unwrap()
+            .is_empty(),
+        "{env}"
+    );
+    assert!(env["result"].get("warning").is_none(), "{env}");
 
     // verify は clean。
     let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
@@ -212,6 +257,48 @@ async fn hook_config_sync_warns_on_legacy_conflict() {
             "{f}"
         );
     }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_target_file_conflict_warns_and_syncs() {
+    let mut fx = fixture_with_cheaper_on_path();
+    // target file 自身に foreign cheaper 登録(own command 以外)が残る —
+    // `file == target` && `!= OWN_COMMAND` の positive branch を通す。
+    // foreign entry は own でないため sync は upsert を継続する。
+    write_config_with_groups(
+        &fx,
+        &["{\"matcher\":\"^Read$\",\"hooks\":[{\"type\":\"command\",\"command\":\"cheaper hook pre-read-code\"}]}".to_string()],
+    );
+
+    // verify は target file 自体を `legacy-conflict:` として報告する
+    // (own entry 欠落の `missing:` blocker と併存)。
+    let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+    assert_eq!(code, 2, "{env}");
+    let conflicts = env["result"]["legacyConflicts"].as_array().unwrap();
+    assert!(
+        conflicts
+            .iter()
+            .any(|f| f.as_str().unwrap().contains("config.json")),
+        "{conflicts:?}"
+    );
+    let findings = env["result"]["findings"].as_array().unwrap();
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.as_str().unwrap().starts_with("legacy-conflict:")),
+        "{findings:?}"
+    );
+
+    // sync は foreign entry を保持しつつ own entry を upsert し、
+    // conflict は warning として報告して exit 0。
+    let (code, env, _err) = fx.run(&["hook-config", "sync"]).await;
+    assert_eq!(code, 0, "{env}");
+    assert_eq!(env["result"]["changed"], true);
+    assert!(env["result"]["warning"].is_string(), "{env}");
+    let cfg = read_config(&fx);
+    let pre = cfg["hooks"]["PreToolUse"].as_array().unwrap();
+    assert_eq!(pre.len(), 2, "{cfg}");
+    assert_own_entry_present(&cfg);
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -351,6 +438,15 @@ async fn hook_config_post_uninstall_undetermined_converges_on_conflict() {
     assert_eq!(code, 0, "{env}");
     assert_eq!(env["result"]["action"], "skipped");
     assert_eq!(env["result"]["verify"]["clean"], true);
+    // conflict state が実際に確立されていたことを pin(informational
+    // finding の前提を検証)。
+    assert!(
+        !env["result"]["verify"]["legacyConflicts"]
+            .as_array()
+            .unwrap()
+            .is_empty(),
+        "{env}"
+    );
 }
 
 #[tokio::test(flavor = "current_thread")]
