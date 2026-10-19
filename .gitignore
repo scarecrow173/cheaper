@@ -59,8 +59,8 @@ apm_modules/
 # SDP generated artifacts (regenerate via skill-discovery-protocol); inference JSON is agent-authored
 .sdp/
 
-# mise local state — .mise/locks/ は tracked sidecar として残す
-.mise/
+# mise local state — mise.lock が参照するsidecarを追跡可能にする
+.mise/*
 !.mise/locks/
 .mise.local.toml
 .mise.*.local.toml
