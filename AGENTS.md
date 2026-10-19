@@ -43,10 +43,28 @@ feature 無しでは seam 依存 test target が検証から抜け落ちる —
 ADR-034DyGyITd0YaATg8fkld7）。コマンド実行は `mise exec -- <command>` 経由で
 行い、mise.toml が管理するツールバージョンを有効化する。
 
-fresh worktree では `target/`・`apm_modules`・APM deploy 生成物が
-存在しない前提で `mise run setup` を実行すること。worktree の作成・sibling
-worktree の探索・他 worktree の生成物（target / APM artifact）
-の流用は Agent の責務ではなく、各 worktree は独立した checkout として扱う。
+worktree の作成・sibling worktree の探索・他 worktree の生成物（target /
+APM artifact）の独自流用は Agent の責務ではなく、各 worktree は独立した
+checkout として扱う。通常の worktree では `.worktreeinclude` に列挙された
+gitignore 対象の生成資産（`apm_modules/`・`.agents/`・`.sdp/`・各 agent
+tool 配下の deploy 物・`.mcp.json`・`.env` 系）が worktree 管理基盤
+（Orca）によって宣言的にコピーされる。これは Agent が独自に他 worktree を
+探してコピーする行為とは別物であり、Agent はこの仕組みの有無を前提に
+sibling を探索しない。依存定義や `apm.lock.yaml`・`mise.lock` を変更した
+場合はコピー済み資産が古くなり得るため、`mise install` → `mise run setup`
+で再生成する。完全に fresh な worktree（コピー無しまたは cleanup 済み）では
+`target/`・`apm_modules`・APM deploy 生成物が存在しない前提で
+`mise install` → `mise run setup` を実行する。
+
+完全に fresh な環境が必要な場合は、対象 worktree のルートでのみ
+`git clean -ndX` で ignore 対象の管理外ファイルをプレビューし、確認後に
+`git clean -fdX` で削除する。この操作では `.env`・APM 生成物・ローカル
+キャッシュも失われる点に注意。ignore 対象でない未追跡ファイルも消す必要が
+ある場合に限り `git clean -ndx` で対象を確認してから `git clean -fdx` を
+選ぶ（Git 管理ファイルは対象外）。shared path・symlink・外部参照がある
+場合は他 worktree への影響を事前に確認する。削除は setup task や worktree
+作成処理で無条件に自動実行しない。cleanup 後の再構築は
+`mise install` → `mise run setup` → `mise run check`。
 
 root の `apm.yml` は development-only project であり、cheaper 自身の
 skill/hook は deploy されない。consumer へ配布する APM package は
