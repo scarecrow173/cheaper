@@ -81,6 +81,7 @@ Directory: `docs/plans`
 | PLAN-034r2qodyxvN3g3xktwPOF | provider/auth guide runtime sync — implementation plan | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | PLAN-034r05iHK8bA7g2BMsfjFu | Provider-only registration layer — implementation plan | completed | [provider-only-registration-layer-implementation-plan.md](./provider-only-registration-layer-implementation-plan.md) |
 | PLAN-034r05iHE1Fbkp7833DuTu | Repository-owned setup/check entrypoints (mise run setup / mise run check) | completed | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |
+| PLAN-034IQ9W3TwoNQIp08Cn0SS | Restrict hook-config orphan sweep to cheaper-owned temp files | approved | [restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md](./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md) |
 | PLAN-034r05iHE1FbkoTVD7CTNi | Restructure built-in writer Workers (code-writer + doc-writer) | completed | [restructure-built-in-writer-workers.md](./restructure-built-in-writer-workers.md) |
 | PLAN-034r05iHy2gdnpHMZZk4ZU | Scaffold monorepo and implement @cheaper/core | completed | [scaffold-monorepo-and-implement-cheaper-core.md](./scaffold-monorepo-and-implement-cheaper-core.md) |
 | PLAN-034r05iHE1FbkoWI8p70oC | Self-contained CLI bundle distribution | completed | [self-contained-cli-bundle.md](./self-contained-cli-bundle.md) |

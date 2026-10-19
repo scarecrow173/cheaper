@@ -19,6 +19,7 @@ Directory: `docs/test-specs`
 | TSPEC-034Dak4h2lD4Kk5dB1y5q8 | Devin provider Windows credential contract behavior | draft | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
 | TSPEC-034z1P09dg86lO9uB31cUi | Embedded builtin resource resolution across distribution forms | superseded | [embedded-builtin-resource-resolution-across-distribution-forms.md](./embedded-builtin-resource-resolution-across-distribution-forms.md) |
 | TSPEC-034IM5B88Ph3dNfw748cmj | hook-config legacy conflict demotion contract | approved | [hook-config-legacy-conflict-warning-contract.md](./hook-config-legacy-conflict-warning-contract.md) |
+| TSPEC-034IQa6tpizWQ1s8A9Dvh0 | hook-config orphan sweep ownership contract | proposed | [hook-config-orphan-sweep-ownership-contract.md](./hook-config-orphan-sweep-ownership-contract.md) |
 | TSPEC-034IpNMbAuIAGTxh12swmj | Hook eval dedup verdict cache contract | draft | [hook-eval-dedup-verdict-cache-contract.md](./hook-eval-dedup-verdict-cache-contract.md) |
 | TSPEC-034FoDgwSnThCuTO5aNUYj | invocation-scoped command grant（--grant）・grantRequests・cheaper policy grant の行為保証 | approved | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |
 | TSPEC-034AGg47u5fWQqP0pEJfI9 | Managed process bounded lifecycle guarantees | approved | [managed-process-bounded-lifecycle-guarantees.md](./managed-process-bounded-lifecycle-guarantees.md) |

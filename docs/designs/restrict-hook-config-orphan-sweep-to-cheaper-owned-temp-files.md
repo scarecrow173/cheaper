@@ -47,7 +47,9 @@ relations:
   derives-from:
     - "docs/specs/hook-config-orphan-sweep-ownership-boundary.md"
     - "docs/adr/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
-  derived-by: []
+  derived-by:
+    - "../plans/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
+    - "../test-specs/hook-config-orphan-sweep-ownership-contract.md"
   verifies: []
   verified-by: []
   references:
