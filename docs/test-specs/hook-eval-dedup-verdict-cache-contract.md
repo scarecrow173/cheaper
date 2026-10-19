@@ -108,18 +108,23 @@ lock 取得失敗・record 破損・TTL 超過等のあらゆる失敗は `eval_
   する。
 - Rule(AC4 / R5): leader crash 相当の stale lock・fresh lock + verdict
   未 commit(crash mid-eval)では、follower が `lock_stale` takeover また
-  は `follower_wait` deadline の self-eval で必ず verdict を返す。lock
-  削除は delete-if-owner(owner token 照合)に限定され、token 不一致・
-  unparseable payload の lock は削除しない(保守的)。
+  は `follower_wait` deadline の self-eval で必ず verdict を返す。stale
+  takeover は rename-claim(`<fp>.lock` → `<fp>.lock.claim-<pid>-<nonce>`
+  + 観測 owner token 照合)で atomic に行い、leader の release は
+  delete-if-owner(token 照合)に限定される。token 不一致・unparseable
+  payload の lock は削除しない(保守的)。非 file lock は協調不能で
+  即時 self-eval。
 - Rule(AC5 / R5,R6): 破損 record(非 JSON・未知 `schemaVersion`・
   `fingerprint` field 不一致・TTL 超過)・cache dir 作成不能等の失敗は
   「存在しない」ものとして通常評価へ fallback し、fail-open を要求する
   contract(copilot の never-nonzero-exit)で非 0 exit を生じない。
 - Rule(AC6 / R7,R8): verdict record(`verdict_ttl`)・lock
-  (`lock_stale`)・orphan `.tmp-*` は checked-age 規則(`now -
-  mtime` が `None` の未来 mtime も stale 扱い)で期限切れ判定され、
-  serve されず sweep で除去される。dedup 状態は workspace・
-  `.cheaper/` に一切書かない。
+  (`lock_stale`)・orphan `.tmp-*`・rename-claim 残骸 `.lock.claim-*`
+  は checked-age 規則で期限切れ判定され、serve されず sweep で除去
+  される。record の未来 mtime は常に not-served。lock の未来 mtime
+  は skew 範囲内(`now + lock_stale` 以下)は live 扱いで削除せず、
+  `now + lock_stale` 超過のみ takeover・sweep 対象とする。dedup
+  状態は workspace・`.cheaper/` に一切書かない。
 
 ## Examples
 
@@ -131,9 +136,11 @@ lock 取得失敗・record 破損・TTL 超過等のあらゆる失敗は `eval_
   devin` 1 process + `--target pretooluse` 1 process を同一
   `CHEAPER_CONFIG_DIR`・同一 cwd で同時 spawn し、両 process へ同一の
   devin-shaped payload(`{"hook_event_name":"PreToolUse","tool_name":
-  "read","tool_input":{"file_path":...}}`)を流す — 余分な key は
-  `tool_use_normalize` で無視され、両 target が同一 FileRead request へ
-  normalize されるため cross-target dedup を証明する。`file_path` は
+  "read","tool_input":{"file_path":...}}`)を流す — 両 child の
+  stdin を **wait 前に全て書き切って**真に重なった実行にする
+  (write→wait の逐次 spawn では overlap が起きず dedup を実証しない)。
+  余分な key は `tool_use_normalize` で無視され、両 target が同一
+  FileRead request へ normalize されるため cross-target dedup を証明する。`file_path` は
   threshold 超過の実 file を pin し、deny verdict が token 計測経路を
   通る(optional fast-path gate 採用時も skip されない)ことを保証。
   assert: 両 process が各 target contract で同一 deny を render(devin
@@ -161,6 +168,12 @@ lock 取得失敗・record 破損・TTL 超過等のあらゆる失敗は `eval_
 - `stale_lock_takeover`(AC4)— `<fp>.lock` 手配置 +
   `std::fs::File::set_modified` で `lock_stale` 超過の古い mtime →
   follower が takeover して評価完遂。
+- `fresh_lock_stale_crossing_takeover`(AC4)— **fresh** mtime で
+  植えた lock が follower の poll 中に `lock_stale` を跨ぐ経路
+  (`DedupLimits{lock_stale: ~50ms, follower_wait: ~2s}`)。初回
+  tick は Fresh → Wait、stale 越えの tick で Stale →
+  rename-claim → takeover が決定的に走る — backdate 手配置では
+  到達しない mid-poll の Fresh→Stale 遷移と claim 経路を固定する。
 - `fresh_lock_no_verdict_self_eval`(AC4)— fresh lock + verdict 無し
   (crash mid-eval 模擬)で follower が `follower_wait` deadline 後に
   self-eval(計数 = 2)。

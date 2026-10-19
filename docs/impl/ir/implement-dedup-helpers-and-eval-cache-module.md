@@ -196,3 +196,50 @@ unit test 検証まで。挙動は additive で不変。
 - T4: `tests/integration/hook_eval_dedup.rs` + `main.rs` mod 宣言
   (module 層 seam は `evaluate_dedup_with`/`DedupLimits` として
   既に `#[doc(hidden)] pub` で到達可能)。
+
+## Post-review hardening(2026-10-19、commit `fe85d76`)
+
+実装 review で CONFIRMED となった指摘への修正を同一 module に適用
+(design には Amendments として loopback 済み、status approved 維持):
+
+- **blocking I/O bound(C1)**: 全 `spawn_blocking` await(prepare・
+  各 poll tick・publish)を新規 `DEDUP_IO_BOUND`(= `MEASURE_TIMEOUT`)
+  の `tokio::time::timeout` で囲む。`fingerprint_targets` の sync
+  canonicalize も request clone(`RoutingRequest` に `Clone` derive
+  追加)で同一 blocking phase へ移し、hang した fs でも bounded
+  time で直接評価・verdict 返却へ畳む。
+- **stale takeover の atomic rename-claim(C2a)**: `poll_tick` の
+  Stale arm で `remove_if_owner` を直接呼ぶ代わりに
+  `claim_stale_lock` — `<fp>.lock` → `<fp>.lock.claim-<pid>-<nonce>`
+  rename で atomic に file を capture し、観測 token 照合後に削除
+  する 1 者のみが takeover へ進む(read→remove 間の TOCTOU を閉じる)。
+  token 不一致・非 file の claim は `<fp>.lock` へ復元(best-effort)。
+  leader release は delete-if-owner のまま — `read`→`remove` の
+  sub-µs 残存窓は code comment・design に受容済みとして明記。
+- **future-mtime lock semantics(C2b/c)**: 新規
+  `past_stale_boundary(mtime, now, stale_after)` で stale 判定を一本化
+  — 過去 `age > stale_after` または `now + stale_after` 超過の未来
+  mtime のみ stale。skew 範囲内の未来 mtime・mtime 取得不能の lock
+  は Fresh(削除不可・wait→self-eval)。record の未来 mtime は不変
+  (serve しない)。sweep も同一規則 + `.lock.claim-*` orphan を対象化。
+- **非 file lock(C10)**: `LockState::Unrecoverable` 新設 —
+  metadata が非 file(dir・FIFO)なら payload read・削除をせず
+  `TickOutcome::Fallback`(即時 self-eval。FIFO open blocking 防止)。
+- **fingerprint 入力(C3/C8)**: `ResolvedTarget.resolved` を PathBuf
+  化して `OsStr::as_encoded_bytes` で hash(非 UTF-8 path の lossy
+  潰れを防止)、`resolve_target` 由来の `rel_posix` を
+  ResolvedTarget/TargetSig::File/Dir 経由で stat signature に追加
+  (deny reason の `workspace-relative path:` は verdict 入力)。
+  WorkspaceRoot 由来 Dir は `evaluate_search` と同じ `"."`。
+- **relative store guard(C4)**: `!store_dir.is_absolute()` →
+  dedup bypass(fail-open)。
+- **`acquire_lock`(C7)**: `write_all` 失敗時に自 file を remove
+  (create_new 済み = 自産物確定、unparseable 非削除規則と無関係)。
+- **`fingerprint_targets`(C11)**: 空 `pattern` の Search は
+  `evaluate` の定数 allow 経路に揃えて target を列挙しない
+  (`[]` → bypass)。
+- 新規 unit test `claim_stale_lock_verifies_observed_token`、
+  `lock_state_checked_age_rules`・`sweep_removes_only_stale_entries`
+  を新 semantics へ更新。`--lib hook::` 26/26 pass。
+- integration 側の test 変更(C5/C6/C9)は
+  `add-hook-eval-dedup-integration-tests.md` の IR を参照。

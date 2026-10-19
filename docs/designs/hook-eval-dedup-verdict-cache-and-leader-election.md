@@ -236,9 +236,13 @@ pub enum Verdict { Allow, Deny { reason: String } }
 /// absent → file の出現が別 fingerprint になることを保証)。
 pub(crate) enum ResolvedKind { File, Dir, NonFile }
 pub(crate) struct ResolvedTarget {
-    // File/Dir: canonicalize 済みの絶対 path(cwd spelling 差を除去)。
+    // File/Dir: canonicalize 済みの絶対 path(cwd spelling 差を除去、
+    // PathBuf — hash へ as_encoded_bytes を渡す)。
     // NonFile: candidate の raw 文字列。
-    pub resolved: String,
+    pub resolved: PathBuf,
+    // resolve_target が計算した workspace-relative posix path —
+    // deny reason への埋め込みで verdict を変え得る入力。
+    pub rel_posix: String,
     pub kind: ResolvedKind,
 }
 /// fingerprint の workspace context。`workspace_root` は
@@ -258,7 +262,7 @@ pub(crate) fn fingerprint_targets(request: &RoutingRequest) -> FingerprintContex
 | variant | 返す targets |
 | --- | --- |
 | `FileRead { path, cwd, .. }` | `resolve_target(path, cwd)` が `Resolution::File` → `[File]`。`Dir`/`WorkspaceRoot`/`OutOfScope` → `[]`(常時 allow の定数経路で dedup 対象外) |
-| `Search { path, cwd, .. }` | `File` → `[File]`、`Dir`/`WorkspaceRoot` → `[Dir]`、`OutOfScope` → `[]` |
+| `Search { path, cwd, .. }` | `File` → `[File]`、`Dir`/`WorkspaceRoot` → `[Dir]`、`OutOfScope` → `[]`。空 `pattern` は `evaluate` の定数 allow 経路に揃えて target を列挙しない(`[]` → bypass) |
 | `Shell { command, cwd }` | `extract_read_candidates(command)` の各候補を `resolve_target` し、`File` → `File`、`Dir`/`WorkspaceRoot` → `Dir`、それ以外 → `NonFile`(raw candidate 文字列を `resolved` に保持)。candidates が空 → `[]` |
 
 ### `hook::targets`
@@ -274,15 +278,20 @@ pub(crate) fn fingerprint_targets(request: &RoutingRequest) -> FingerprintContex
 
 ```
 <userConfigDir>/hook-eval/
-  <fingerprint>.json    # verdict record (atomic temp+rename)
-  <fingerprint>.lock    # leader election marker
-  .<fingerprint>.json.tmp-<pid>-<nanos>   # atomic_write の temp (orphan sweep 対象)
+  <fingerprint>.json                    # verdict record (atomic temp+rename)
+  <fingerprint>.lock                    # leader election marker
+  <fingerprint>.lock.claim-<pid>-<nonce> # stale takeover の rename-claim 残骸(orphan sweep 対象)
+  .<fingerprint>.json.tmp-<pid>-<nanos> # atomic_write の temp (orphan sweep 対象)
 ```
 
 - `<userConfigDir>` は `resolve_user_config_dir(UserConfigDirOptions {
   env: Some(opts.env), homedir: None })`(`cheaper-core/config/dirs.rs:37`)
   で解決し、`hook-eval` を join する。`usage_log.rs` と同じ境界 —
   workspace・`.cheaper/` には一切書かない。
+- 解決した store dir が**絶対 path でない**場合(相対
+  `CHEAPER_CONFIG_DIR` 等の env 由来)は cwd 依存の解釈になり file
+  名衝突・意図しない書き込み先を招くため、協調を bypass して
+  `eval_fn` 直接呼出しへ畳む(fail-open — amendment 参照)。
 - `CHEAPER_CONFIG_DIR`/`XDG_CONFIG_HOME`/`USERPROFILE`/`HOME` はこの
   root を分岐するため、firing 間でこれらが異なれば構造的に別 store
   へ分離される — fingerprint への追加は不要(ADR の決定どおり)。
@@ -317,13 +326,19 @@ hash 入力は `eval_cache` 内の専用 struct に field 単位で明示列挙�
    を埋め込むため、candidate 集合が同じでも command 文字列が異なれば
    verdict(reason 文字列)が異なる。
 3. stat signature — `FingerprintContext.targets` の各 target について、
-   列挙順のまま `(resolved, kind, mtime, len)`:
-   - `File` → `(resolved, file, mtime_nanos, len)`
-   - `Dir` → `(resolved, dir, mtime_nanos)`(dir の `len` は platform
-     依存で意味を持たないため除外)
+   列挙順のまま `(resolved, rel_posix, kind, mtime, len)`:
+   - `File` → `(resolved, rel_posix, file, mtime_nanos, len)`
+   - `Dir` → `(resolved, rel_posix, dir, mtime_nanos)`(dir の `len`
+     は platform 依存で意味を持たないため除外)
    - `NonFile` → `(raw candidate, absent)` marker
-   `resolved` は File / Dir について canonicalize 済みの値を使う
-   (`ResolvedTarget.resolved` 参照)。
+   `resolved` は File / Dir について canonicalize 済みの値を使い、
+   `OsStr::as_encoded_bytes` の生 bytes で hash する(`PathBuf` のまま
+   保持 — lossy 変換で非 UTF-8 path を潰さない)。
+   `rel_posix` は `resolve_target` が計算した workspace-relative
+   posix path(`ResolvedTarget.rel_posix`)— deny reason が
+   `workspace-relative path: {rel_posix}` を埋め込むため verdict を
+   変え得る入力であり同一性に含める(NonFile は `""`、
+   `WorkspaceRoot` 由来の Dir は `evaluate_search` と同じ `"."`)。
    mtime は `metadata.modified()` の `duration_since(UNIX_EPOCH).
    as_nanos()`。metadata 取得に失敗した target は `absent` marker へ
    畳む(fs race は fingerprint 差異として自然に再評価へ倒れる)。
@@ -406,9 +421,14 @@ optional fast-path gate を実装した場合はそちらで直接評価へ畳�
   判定は checked-age 規則 — `now.checked_duration_since(mtime)` が
   `Some(age) <= verdict_ttl` の record のみ serve し、`None`
   (未来 mtime — clock skew・fs timestamp 異常)は TTL 超過と同じ
-  stale 扱いで serve せず sweep 対象とする。lock の stale 判定にも
-  同じ checked-age 規則を適用する(`None` = stale として remove
-  候補)。なお verdict が反映するのは評価開始時点の入力であり
+  stale 扱いで serve しない(**record の未来 mtime semantics は
+  不変**)。lock の stale 判定は別規則(amendment — 未来 mtime を
+  一律 stale としない): 過去 `age > lock_stale` または未来 mtime が
+  `now + lock_stale` を超えるもののみ takeover/sweep 対象とし、
+  skew 範囲内(`now + lock_stale` 以下)の未来 mtime・mtime 取得
+  不能の lock は live 扱い(Fresh — 待機後 self-eval)。同一の
+  horizon 規則(`past_stale_boundary`)を sweep にも適用する。
+  なお verdict が反映するのは評価開始時点の入力であり
   record の mtime は評価完了時に刻まれるため、serve される
   verdict の staleness 上界は「評価時間 + TTL」となる。
 - 書き込みは `cheaper_core::fs_util::atomic_write`(`fs_util.rs:34`、
@@ -427,12 +447,28 @@ create_new(true)` で取得する(O_EXCL 相当の atomic create)。file
 `(pid, createdAt, nonce)` の triple が lock owner を一意に識別する
 **owner token** となる。権威は file の存在と mtime + token 照合 —
 pid 生存確認のような新規依存・platform 分岐は持ち込まない。
-lock を削除する操作はすべて **delete-if-owner** — remove 直前に
-payload を読み直し、自分が観測・記録した token(leader は自分の
-token、follower は stale と判定した token)と一致する場合に限り
-削除する。これにより、stale 判定 → takeover で後継 leader が lock
-を再取得した後に旧 leader が目覚めて後継の lock を削除する経路を
-防ぐ。
+lock の削除は 2 経路に分かれる(amendment):
+
+- **leader の release — delete-if-owner**: remove 直前に payload を
+  読み直し、自分の token と一致する場合に限り削除する。stale 判定
+  → takeover で後継 leader が lock を再取得した後に旧 leader が
+  後継の lock を削除する経路を防ぐ。`read`→`remove` の sub-µs gap
+  に「自分の lock が claim で取り去られ後継 lock が再設置」される
+  と後継 lock を消し得る残存窓は、害が冗長評価のみで観測困難な
+  ため**受容済み**とする。
+- **follower の stale takeover — rename-claim**: 観測した owner
+  token を持つ stale lock を `<fp>.lock` → `<fp>.lock.claim-
+  <pid>-<nonce>` へ `rename` する。rename は atomic で、成功した
+  1 者のみが claim file の token を観測値と照合してから削除する
+  — 削除対象が「観測した stale file そのもの」と証明でき、
+  `remove_if_owner` を takeover に直接適用した場合の TOCTOU
+  (read→remove 間に旧 release + 新 acquire が挟まる)を閉じる。
+  token 不一致・非 file の claim(窓で新 lock / 非 file に
+  差し替わった残存 race)は file を殺さず `<fp>.lock` へ戻す
+  (best-effort — 再占有済みなら上書きせず orphan とし、sweep が
+  `claim-*` 規則で回収)。rename 敗者・unparseable payload(token
+  未観測)の lock は `create_new` retry へ畳み AlreadyExists で
+  Wait(mtime sweep のみで期限切れ除去)。
 
 - **leader**(lock 取得者): owner token を書き込んで lock を作成 →
   `eval_fn(request, opts).await` → verdict record を
@@ -448,19 +484,24 @@ token、follower は stale と判定した token)と一致する場合に限り
   1. `<fp>.json` を読み fresh+valid → その verdict を返す(serve)。
   2. lock が存在しない → `create_new` を retry。成功なら自らが
      leader となり評価・publish・release する。失敗なら次 tick へ。
-  3. lock の mtime が `lock_stale` 超過(leader crash 等の死骸)→
-     payload の token を照合のうえ best-effort で remove
-     (delete-if-owner)→ `create_new` retry(同上)。
-  4. lock が生きている(mtime が fresh)→ `tokio::time::sleep(
-     poll_interval)` して次 tick。
+  3. lock が stale(過去 `age > lock_stale`、または未来 mtime が
+     `now + lock_stale` 超過 — leader crash 等の死骸)→
+     rename-claim(上記)で stale file を atomic に除去 →
+     `create_new` retry(同上)。
+  4. lock が生きている(fresh mtime、または skew 範囲内の未来
+     mtime)→ `tokio::time::sleep(poll_interval)` して次 tick。
+  5. lock が file でない(FIFO・dir 等)— `create_new` は永久に
+     AlreadyExists で payload read は blocking し得るため協調不能
+     → 即時自前評価(fallback)。
   `follower_wait` deadline 到達 → **自前評価**(`eval_fn` を直接呼ぶ。
   cache write は行わない — publish 経路を leader 単独に保ち、fallback
   側の協調状態を増やさない)。
-- **stale takeover**: 死骸 lock の delete-if-owner remove +
-  `create_new` retry により、leader crash 時も待機中の follower の
-  1 つが leader へ昇格し評価を完遂できる。競合しても `create_new`
-  が 1 者のみ通すため、最悪でも「順次 2 者が同一 verdict を計算」
-  = 冗長コストのみで、出力が分岐することはない。
+- **stale takeover**: 死骸 lock の rename-claim 除去 + `create_new`
+  retry により、leader crash 時も待機中の follower の 1 つが
+  leader へ昇格し評価を完遂できる。rename に成功するのは常に 1 者
+  のみで、競合しても `create_new` が 1 者のみ通すため、最悪でも
+  「順次 2 者が同一 verdict を計算」= 冗長コストのみで、出力が
+  分岐することはない。
 - **live leader の誤判定**: `lock_stale`(120s)は単一 candidate の
   計測 timeout(`MEASURE_TIMEOUT` 30s)を十分上回るが、shell の
   multi-candidate 評価は candidate 数 × `MEASURE_TIMEOUT` で非有界
@@ -470,47 +511,58 @@ token、follower は stale と判定した token)と一致する場合に限り
   lock を消せず、verdict record は同一 fingerprint・同一 verdict
   で上書きされるだけである。
 - **sweep**: dedup 経路の先頭(blocking phase 内)で `hook-eval/` を
-  best-effort sweep する — `mtime > verdict_ttl` の `*.json`、
-  `mtime > lock_stale` の `*.lock`、TTL 超過の `.tmp-*` orphan を
-  remove。無制限蓄積を防ぐ起点で、失敗は無視。
+  best-effort sweep する — `past_stale_boundary(verdict_ttl)` を
+  越えた `*.json`、`past_stale_boundary(lock_stale)` を越えた
+  `*.lock`・`*.lock.claim-*` orphan、TTL 超過の `.tmp-*` orphan を
+  remove(未来 mtime は horizon 超過のみ — skew 範囲内の live lock
+  を誤削除しない)。無制限蓄積を防ぐ起点で、失敗は無視。
 
 ## Data and Control Flow
 
 `evaluate_dedup` 1 回の呼出し:
 
-1. `fingerprint_targets(request)`(sync — `resolve_target` 相当の
-   metadata 呼出しは `evaluate` 内部と同じく async context 内の
-   同期 fs で既存規則どおり)→ `FingerprintContext`。
-   `ctx.targets` が空 → `eval_fn` 直接呼出し(bypass、定数 allow
-   経路)。
-2. env snapshot(async 側): `opts.env`(`EnvLookup` = `&dyn Fn` で
+1. env snapshot(async 側): `opts.env`(`EnvLookup` = `&dyn Fn` で
    非 Send、`dirs.rs:16`)から fingerprint が必要とする env key を読んで
    owned map に写す — `MEASURE_ENV_KEYS`(`:176`)∪
    `CHEAPER_READ_TOKEN_THRESHOLD`(`threshold` の入力)。
    `measure_tokens`(`:215`)と同じ snapshot pattern を再利用し、
-   blocking phase へ env closure 自体は渡さない。
-3. `spawn_blocking` phase A: sweep → env snapshot から policy / env
-   入力(`threshold`・`count_max_bytes`)を確定 → 各 target の stat
+   blocking phase へ env closure 自体は渡さない。store root 解決後、
+   相対 store dir は bypass(fail-open)。
+2. `spawn_blocking` phase A(`DEDUP_IO_BOUND` で囲む): request を
+   clone して closure へ渡し、`fingerprint_targets`(sync —
+   `resolve_target` 相当の metadata・canonicalize 呼出しを含む)→
+   `ctx.targets` が空 → `eval_fn` 直接呼出し(bypass、定数 allow
+   経路)。続けて sweep → env snapshot から policy / env 入力
+   (`threshold`・`count_max_bytes`)を確定 → 各 target の stat
    signature 収集(metadata 失敗は `absent` marker へ畳む)→
    builtin / user / project `policy.yaml` signature → fingerprint
-   確定。fs error・cache dir `create_dir_all` 失敗 → `eval_fn`
-   直接呼出し。
-4. `spawn_blocking` phase B: `<fp>.json` read(schemaVersion・
-   `fingerprint` field 照合・deserialize・file mtime checked-age
-   検証)→ fresh+valid なら **serve**(eval_fn 不呼出し)。さも
-   なくば `create_new` lock 試行(owner token 書込み)。
-5. 分岐:
+   確定。fs error・cache dir `create_dir_all` 失敗・timeout →
+   `eval_fn` 直接呼出し。
+3. `spawn_blocking` phase B(各 tick `DEDUP_IO_BOUND` で囲む):
+   `<fp>.json` read(schemaVersion・`fingerprint` field 照合・
+   deserialize・file mtime checked-age 検証)→ fresh+valid なら
+   **serve**(eval_fn 不呼出し)。さもなくば `create_new` lock 試行
+   (owner token 書込み)。
+4. 分岐:
    - **serve**: verdict を返す。
    - **leader**: `eval_fn` await → blocking で record write +
-     delete-if-owner で lock release → verdict を返す。
+     delete-if-owner で lock release(publish も `DEDUP_IO_BOUND`
+     で囲み、timeout 時は計算済み verdict をそのまま返す)→
+     verdict を返す。
    - **follower**: bounded poll(上記)→ serve / takeover / deadline
      → 最終的に verdict を返す。
-6. 返った `Verdict` は `handle_hook` の既存経路(`verdict_name` +
+5. 返った `Verdict` は `handle_hook` の既存経路(`verdict_name` +
    per-target render)へそのまま流す。
 
 **phase A/B を `spawn_blocking` に載せる**のは `measure_tokens`
 (`:201`)と同じ構造 — hook の tokio runtime を fs 待ちで占有しない。
 `tokio::time::sleep` 以外の blocking `std::thread::sleep` は使わない。
+全ての `spawn_blocking` await は `DEDUP_IO_BOUND`(=
+`MEASURE_TIMEOUT`、単一 source)の `tokio::time::timeout` で囲む
+(amendment)— hang した fs(FIFO・dead network FS)でも prepare・
+poll tick は直接評価へ、publish は共有を諦めて計算済み verdict を
+返す。timeout で切り離された blocking thread は cancel できず継続
+するが観測しない(`measure_tokens` と同じ受容済み妥協)。
 
 **optional fast-path gate**(実装判断): `ctx.targets` が全て `File`
 かつ各 file の `len <= threshold`(byte fast path —
@@ -547,13 +599,15 @@ fast-path は共有を諦めるだけで verdict の correctness に影響
 
 | 失敗 | 挙動 |
 | --- | --- |
-| `resolve_user_config_dir` | PathBuf を返すのみで失敗しない |
+| `resolve_user_config_dir` | PathBuf を返すのみで失敗しない(相対 store dir は bypass — amendment) |
 | `create_dir_all` / sweep の fs error | 無視 → `eval_fn` 直接呼出しへ畳む |
 | verdict read: 不存在・parse 失敗・未知 schemaVersion・`fingerprint` 不一致・TTL 超過(未来 mtime 含む) | 「absent」として扱い serve しない |
 | lock `create_new` の非 AlreadyExists error | `eval_fn` 直接呼出し |
+| lock が非 file(FIFO・dir 等) | 協調不能 → `eval_fn` 直接呼出し(payload read・削除をしない) |
+| `spawn_blocking` await の `DEDUP_IO_BOUND` timeout / JoinError | prepare・poll tick → `eval_fn` 直接呼出し、publish → 計算済み verdict をそのまま返す |
 | poll 中の fs error | 「verdict 未着」として継続、deadline で self-eval |
 | leader の `atomic_write` 失敗 | lock を delete-if-owner で remove して verdict を返す(共有できないだけ) |
-| leader crash(verdict 未 write / lock 残存) | follower は poll → `lock_stale` で takeover、または `follower_wait` で self-eval |
+| leader crash(verdict 未 write / lock 残存) | follower は poll → `lock_stale` で rename-claim takeover、または `follower_wait` で self-eval |
 | eval_cache 内 panic | `execute_hook` の `catch_run_panic` が `fallback_allow`(exit 0)へ畳む — ただし設計上 `unwrap`/`expect`/`panic!` を置かず、到達させない |
 | copilot target の全 cache/lock 失敗 | どの経路も `Verdict` を返して `copilot_render` へ進むため、新たな非 0 exit を生じない(never-nonzero 契約維持) |
 
@@ -625,6 +679,39 @@ fast-path は共有を諦めるだけで verdict の correctness に影響
   計測・実体化に限定 | spawn が測定上の問題になった時点 | 登録数分の
   process 起動コストは残る。
 
+## Amendments(implementation loopback — post-review)
+
+実装 review で確定した修正を本文へ loopback 済み(design status は
+approved のまま — 責務・境界・fail-open 規約・store 配置の変更は
+なく、協調プロトコルの堅牢化と fingerprint 入力の精緻化のみ):
+
+- **blocking I/O bound**: 全 `spawn_blocking` await(prepare・各
+  poll tick・publish)を `DEDUP_IO_BOUND`(= `MEASURE_TIMEOUT`)の
+  `tokio::time::timeout` で囲む。fingerprint target 列挙(sync
+  canonicalize 含む)も request clone で同一 blocking phase へ移し、
+  hang した fs でも bounded time で verdict resolve。
+- **stale takeover の atomic claim**: follower の stale lock 除去を
+  `remove_if_owner` 直接適用から rename-claim
+  (`<fp>.lock` → `<fp>.lock.claim-<pid>-<nonce>` + token 照合)へ
+  変更し、read→remove 間の TOCTOU を閉じる。leader release は
+  delete-if-owner のまま(sub-µs 残存窓は受容済みとして明記)。
+- **future-mtime semantics(record vs lock)**: record は不変(serve
+  しない)。lock は skew 範囲内(`now + lock_stale` 以下)の未来
+  mtime・mtime 取得不能を Fresh(削除不可)とし、`now + lock_stale`
+  超過の未来 mtime または過去 `age > lock_stale` のみ takeover・
+  sweep 対象(`past_stale_boundary` — sweep にも同一規則を適用)。
+- **非 file lock**: dir・FIFO 等は Unrecoverable — payload read・
+  削除を行わず即時 self-eval。
+- **fingerprint 入力**: `resolved` を `OsStr::as_encoded_bytes` で
+  hash(PathBuf 保持、lossy 回避)し、`rel_posix`(deny reason が
+  埋め込む workspace-relative path)を stat signature に追加。
+- **relative store dir guard**: 解決した store dir が絶対でなければ
+  dedup を bypass(fail-open)。
+- **その他**: `acquire_lock` の write_all 失敗時に自前 remove、
+  `fingerprint_targets` の空 `pattern` Search を `evaluate` と同じ
+  定数 allow 経路へ揃える(`[]` → bypass)、`.lock.claim-*` orphan
+  を sweep 対象に追加。
+
 ## Verification Notes
 
 test の配置は `crates/cheaper-cli/tests/integration/hook_eval_dedup.rs`
@@ -657,14 +744,19 @@ test の配置は `crates/cheaper-cli/tests/integration/hook_eval_dedup.rs`
   より古くする(`std::fs::File::set_modified` — 新規 dep 不要)と
   follower が takeover して評価完遂。fresh lock + verdict 無し
   (crash mid-eval)では follower が bounded wait 後に self-eval
-  (計数 = 2)。
+  (計数 = 2)。**fresh** mtime で植えた lock が poll 中に `lock_stale`
+  を跨ぐ経路(小さい `DedupLimits`)では mid-poll の Fresh→Stale
+  遷移から rename-claim → takeover が走ること。
 - [ ] live leader の takeover safety: `lock_stale` を超える長時間
   eval の live leader がいる状態で follower が stale 判定 →
   takeover しても、旧 leader が delete-if-owner の token 照合で
   後継 lock を削除できないこと(module 層で lock payload 操作を
   模擬)。
 - [ ] 未来 mtime(`now.checked_duration_since(mtime)` → `None`)の
-  record / lock が serve されず stale 扱いで sweep 対象になること。
+  record が serve されず sweep 対象になること。lock は skew 範囲内
+  (`now + lock_stale` 以下)の未来 mtime が live 扱い(削除されず
+  wait→self-eval)、`now + lock_stale` 超過のみ takeover・sweep
+  対象になること(amendment — `past_stale_boundary`)。
 - [ ] 異なる cwd spelling(`./sub`・`sub`・symlink 経由等)で書かれた
   request が canonical 化(`workspace_root` + resolved path)により
   同一 fingerprint になること。

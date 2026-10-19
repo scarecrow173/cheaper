@@ -214,3 +214,41 @@ invalidation・fail-open fallback を timing race 非依存で決定的に
   本 task の commit に含まれる)。
 - `mise run check` を resource に余裕のある環境で再実行し、workspace
   全体の回帰無しを確認する。
+
+## Post-review hardening(2026-10-19、commit `fe85d76`)
+
+実装 review で CONFIRMED となった test 側の指摘への修正:
+
+- **`binary_dual_spawn_same_verdict` の真の overlap(C5)**:
+  `collect_child` を `feed_stdin` + `wait_child` に分割し、dual
+  spawn では両 child の stdin を **wait 前に全て書き切る**。従来の
+  write→wait 逐次では overlap が起きず cross-process dedup を実証
+  していなかった。record 1 件・lock 非残存・両 target の同一
+  verdict render の assert は維持。
+- **`stat_change_new_fingerprint` の恒真 assert 修正(C6)**:
+  `fps.iter().all(|f| f != &fp1) || fps.contains(&fp1)`(常に真)
+  → `fps.contains(&fp1)` — 「別 fingerprint の record が追加されて
+  も旧 record は TTL 内で残存する」意図どおりの assert に修正。
+- **新規 `fresh_lock_stale_crossing_takeover`(C9、17 件目)**:
+  fresh mtime の valid-token lock を植え、`DedupLimits{lock_stale:
+  50ms, follower_wait: 2s}` で follower の poll 中に lock が stale
+  境界を跨ぐ経路を検証 — 初回 tick は Fresh → Wait、stale 越えの
+  tick で Stale → rename-claim → takeover が決定的に走る。backdate
+  手配置の `stale_lock_takeover` では到達しない mid-poll の
+  Fresh→Stale 遷移と claim 経路を固定する。
+- module 側の review 修正(C1/C2/C3/C4/C7/C8/C10/C11)は
+  `implement-dedup-helpers-and-eval-cache-module.md` の IR を参照。
+
+### Post-review Validation
+
+- `mise exec -- cargo test -p cheaper-cli --features
+  cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration
+  hook_eval_dedup::` → **17/17 pass**(新規 test 含む)
+- `mise exec -- cargo test -p cheaper-cli --features
+  cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration` →
+  **203/203 pass**
+- `mise exec -- cargo clippy -p cheaper-cli --features
+  cheaper-cli/dev-seam --all-targets -- -D warnings` → clean
+- `cargo fmt --check` → clean
+- `mise run check` は引き続き host の commit limit 枯渇リスクのため
+  未実行(前回 Risks と同じ環境要因)。
