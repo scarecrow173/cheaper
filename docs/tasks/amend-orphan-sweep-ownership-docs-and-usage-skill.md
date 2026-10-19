@@ -1,7 +1,7 @@
 ---
 id: "TASK-034IQdTig12S00T3Bnz5UQ"
 type: "task"
-status: "todo"
+status: "done"
 title: "Amend historical docs and cheaper-usage skill for orphan sweep boundary"
 created: "2026-10-19"
 updated: "2026-10-20"
@@ -76,7 +76,7 @@ blockquote):
 
 ### spec(`docs/specs/bounded-native-hook-evaluation-and-managed-devin-registration.md`)
 
-- [ ] R17 内(:275-278)— before: 「…`hook-config` の書き込みは temp file
+- [x] R17 内(:275-278)— before: 「…`hook-config` の書き込みは temp file
       + atomic replace（`fs::rename` は dest 存在時に置換）で、capability
       確認との間の外部変更検出・`config.json.*.tmp`/`.bak` の orphan
       sweep を持つ。」→ after: 「…`config.json.*.tmp` のみの orphan
@@ -87,13 +87,13 @@ blockquote):
 
 ### design(`docs/designs/bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md`)— 2 箇所
 
-- [ ] :152-154(`sync` bullet 内)— before: 「…temp+rename で atomic
+- [x] :152-154(`sync` bullet 内)— before: 「…temp+rename で atomic
       replace、`config.json.*.tmp`/`.bak` の orphan sweep を起動時と
       失敗時に行う。」→ after: 「…temp+rename で atomic replace、
       `config.json.*.tmp` のみの orphan sweep を sync 開始時に 1 回行う
       （失敗時の別途 sweep は行わず、rename 失敗時の temp 除去は atomic
       write 自身が行う）。」+ amend-note
-- [ ] :267-269(Non-Functional Constraints)— before: 「…`hook-config`
+- [x] :267-269(Non-Functional Constraints)— before: 「…`hook-config`
       の書き込みは temp+rename で atomic replace、外部変更を capability
       確認との間で検出して中断し、`config.json.*.tmp`/`.bak` の orphan
       を sweep する。」→ after: 「…`config.json.*.tmp` のみの orphan を
@@ -102,7 +102,7 @@ blockquote):
 
 ### ADR(`docs/adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md`)
 
-- [ ] :149-151 — before: 「…temp+rename の atomic replace（`fs::rename`
+- [x] :149-151 — before: 「…temp+rename の atomic replace（`fs::rename`
       は dest 存在時に置換）、capability 確認との間の外部変更検出、
       `config.json.*.tmp`/`.bak` の orphan sweep（起動時 + 失敗時）、
       無関係 entry の保持、…」→ after: 「…`config.json.*.tmp` のみの
@@ -117,7 +117,7 @@ blockquote):
 配布 source のみを更新 — repo 内 `.agents/skills/cheaper-usage/SKILL.md` は
 deploy 写しで対象外。
 
-- [ ] :160-161 — verify の説明 comment「…orphan temp files」に、`.bak`
+- [x] :160-161 — verify の説明 comment「…orphan temp files」に、`.bak`
       orphan は verify が報告するが sync が自動除去しない旨を 1 行追記
       (explainability の wording 変更のみ — 挙動変更なし)
 
@@ -159,18 +159,18 @@ historical change record であり amend 対象外、R7 が明示)、repo 内
 
 ## Done When
 
-- [ ] 4 箇所全てが「対象 `config.json.*.tmp` のみ・sync 開始時に 1 回
+- [x] 4 箇所全てが「対象 `config.json.*.tmp` のみ・sync 開始時に 1 回
       (失敗時 sweep なし — rename 失敗時の temp 除去は atomic write
       自身)」へ in-place 訂正され、各箇所の直後に dated amend-note
       (SPEC-034IOh5OATJ4AcprA5u47p / issue #137 への参照付き)がある
-- [ ] 旧記述(`.bak` sweep・「起動時 + 失敗時」timing)が対象 file に
+- [x] 旧記述(`.bak` sweep・「起動時 + 失敗時」timing)が対象 file に
       残っていない
-- [ ] cheaper-usage SKILL.md の verify 説明に `.bak` orphan が sync で
+- [x] cheaper-usage SKILL.md の verify 説明に `.bak` orphan が sync で
       自動除去されない旨が追記されている
 
 ## Verification
 
-- [ ] `grep -n "config.json.\*.tmp.\/.bak\|orphan sweep（起動時" docs/specs/bounded-native-hook-evaluation-and-managed-devin-registration.md docs/designs/bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md docs/adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md` が 0 件(旧 sweep 記述の残存なし)
-- [ ] `grep -n "Amend（2026-10-20" docs/specs/bounded-native-hook-evaluation-and-managed-devin-registration.md docs/designs/bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md docs/adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md` が 4 件(各訂正箇所に dated note)
-- [ ] `grep -n "not.*auto-removed\|never auto-removed\|自動除去" packages/apm/.apm/skills/cheaper-usage/SKILL.md` が 1 件以上
-- [ ] `mise run check` が exit 0(canonical pipeline 全体)
+- [x] `grep -n "config.json.\*.tmp.\/.bak\|orphan sweep（起動時" docs/specs/bounded-native-hook-evaluation-and-managed-devin-registration.md docs/designs/bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md docs/adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md` が 0 件(旧 sweep 記述の残存なし)
+- [x] `grep -n "Amend（2026-10-20" docs/specs/bounded-native-hook-evaluation-and-managed-devin-registration.md docs/designs/bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md docs/adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md` が 4 件(各訂正箇所に dated note)
+- [x] `grep -n "not.*auto-removed\|never auto-removed\|自動除去" packages/apm/.apm/skills/cheaper-usage/SKILL.md` が 1 件以上
+- [x] `mise run check` が exit 0(canonical pipeline 全体)

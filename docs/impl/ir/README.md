@@ -21,6 +21,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z1STQxtFa8POTFVCwbd | Add SEA entrypoint sea-main.ts | completed | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | IMPL-034rArskSHUOoayxrLW4s8 | Add usage telemetry e2e coverage docs and bundle regen | completed | [add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md](./add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md) |
 | IMPL-034ATHURho1jepnqtCXbcf | Aggregate workflow benchmark evidence | completed | [aggregate-workflow-benchmark-evidence.md](./aggregate-workflow-benchmark-evidence.md) |
+| IMPL-034IQI6Q5wQd1Ql4s3At3r | Amend orphan sweep ownership docs and usage skill | completed | [amend-orphan-sweep-ownership-docs-and-usage-skill.md](./amend-orphan-sweep-ownership-docs-and-usage-skill.md) |
 | IMPL-GJ30PMdgql2TCIEuURop04 | APM hook 宣言の per-target サブパッケージ分離 | completed | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |
 | IMPL-034zCh2bBRGkSHaq79bBvu | Append sibling tool-call parallelism section to execution-engine design doc | completed | [append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md](./append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md) |
 | IMPL-2OYQijUxRdsfa8Cig2DuQe | Auth text/select prompt I/O boundary routing (PLAN-zDQIdChPXY1lrGJyzZTiQc) | completed | [auth-io-boundary.md](./auth-io-boundary.md) |
