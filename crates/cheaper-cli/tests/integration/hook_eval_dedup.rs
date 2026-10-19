@@ -638,6 +638,11 @@ async fn cwd_spelling_same_fingerprint() -> TestResult {
 
 /// `stale_lock_takeover` — `<fp>.lock` 手配置 + `set_modified` で
 /// `lock_stale` 超過の古い mtime → follower が takeover して評価完遂。
+/// 実際に通る機構は `prepare_dedup` の `sweep_store` — backdated lock
+/// は poll 開始前の sweep で除去され、`poll_tick` は `Absent` から
+/// `create_new` で取得する(rename-claim `claim_stale_lock` 経路は
+/// 踏まない)。claim 経路は `fresh_lock_stale_crossing_takeover` と
+/// unit test `claim_stale_lock_verifies_observed_token` がカバーする。
 #[tokio::test(flavor = "current_thread")]
 async fn stale_lock_takeover() -> TestResult {
     let fx = Fixture::new();

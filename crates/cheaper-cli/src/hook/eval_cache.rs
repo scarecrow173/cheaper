@@ -49,9 +49,12 @@ const FINGERPRINT_TAG: &str = "hook-eval-v1";
 
 /// 協調の blocking fs I/O(`spawn_blocking` の await)に掛ける上界 —
 /// `MEASURE_TIMEOUT` と同値(DRY)。`spawn_blocking` から timeout で
-/// 切り離された task は cancel できず thread は継続するが、観測しない
-/// ため害は無い(`measure_tokens` と同じ受容済み妥協 — abandoned
-/// blocking thread acceptable)。
+/// 切り離された task は cancel できず thread は継続する。
+/// `measure_tokens` と異なり、abandon された `poll_tick` thread は
+/// acquire 済みの fresh valid-token `<fp>.lock` を残し得る — 以降の
+/// 同一 fp 発火は lock が `lock_stale` を越えて sweep・stale 判定で
+/// 除去されるまで `follower_wait` を支払い自前評価へ倒れる。
+/// bounded・自己治癒・hang した fs の病理経路のみの受容済み妥協。
 const DEDUP_IO_BOUND: Duration = MEASURE_TIMEOUT;
 
 /// 協調の時間定数。production 値は [`DedupLimits::PRODUCTION`]。
@@ -69,7 +72,11 @@ pub struct DedupLimits {
     pub lock_stale: Duration,
     /// follower が共有 verdict を待つ上限 — `MEASURE_TIMEOUT` と同値。
     /// これを超えて待っても leader の評価完了は保証されないため、
-    /// deadline で自前評価へ移る(dedup による追加 latency の上界)。
+    /// deadline で自前評価へ移る。dedup が追加する latency の真の上界
+    /// ではない — worst case は `DEDUP_IO_BOUND`(prepare)+
+    /// `follower_wait` + in-flight tick の slack で ~60s 超に達し得る
+    /// (hang した fs の病理経路のみ。通常経路では `follower_wait` +
+    /// `poll_interval` が実効 bound)。
     pub follower_wait: Duration,
     /// verdict file の poll 間隔。
     pub poll_interval: Duration,
@@ -235,10 +242,14 @@ where
                 let store_dir = prepared.store_dir.clone();
                 let fp = prepared.fingerprint.clone();
                 // publish も `DEDUP_IO_BOUND` で囲む — timeout・JoinError
-                // 時は共有を諦め、計算済み verdict をそのまま返す
-                // (abandon された blocking thread は atomic_write・
-                // release を継続し得るが観測しない — `measure_tokens`
-                // と同じ受容済み妥協)。
+                // 時は共有を諦め、計算済み verdict をそのまま返す。
+                // abandon された blocking thread は atomic_write・
+                // release を継続するが、`measure_tokens` と異なり観測
+                // 可能な残留を残し得る: release 完了まで fresh
+                // valid-token `<fp>.lock` が残り、同一 fp 発火は
+                // `follower_wait` を支払い自前評価へ倒れる
+                // (`lock_stale`・sweep までの bounded・自己治癒の
+                // 病理経路のみ)。
                 let _ = tokio::time::timeout(
                     DEDUP_IO_BOUND,
                     tokio::task::spawn_blocking(move || {
@@ -862,6 +873,8 @@ fn sweep_store(store_dir: &Path, limits: &DedupLimits) {
         let Ok(md) = entry.metadata() else {
             continue;
         };
+        // file でない `*.lock.claim-*` orphan 等は一切回収されない —
+        // 病理経路のみ・stray dir entry が残るだけの bounded な害。
         if !md.is_file() {
             continue;
         }
