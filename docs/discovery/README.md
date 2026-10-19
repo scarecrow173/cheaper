@@ -25,7 +25,7 @@ Directory: `docs/discovery`
 | DISC-034rA43JiB611pUjLPA4yR | Cross-agent native routing adapter contract re-verification | resolved | [cross-agent-native-routing-adapter-contract-re-verification.md](./cross-agent-native-routing-adapter-contract-re-verification.md) |
 | DISC-034Dlp0gvInn5w4EsnfZB0 | devin provider usage accounting reports uncached input only | draft | [devin-provider-usage-accounting-reports-uncached-input-only.md](./devin-provider-usage-accounting-reports-uncached-input-only.md) |
 | DISC-034D9AL1up7opdx1NuFeir | Devin provider Windows credential isolation limitation | draft | [devin-provider-windows-credential-isolation-limitation.md](./devin-provider-windows-credential-isolation-limitation.md) |
-| DISC-034IdYnTDqD7Ao1nG3aoY9 | Hook duplicate firing dedup via canonical request fingerprint | draft | [hook-duplicate-firing-dedup-via-canonical-request-fingerprint.md](./hook-duplicate-firing-dedup-via-canonical-request-fingerprint.md) |
+| DISC-034IdYnTDqD7Ao1nG3aoY9 | Hook duplicate firing dedup via canonical request fingerprint | resolved | [hook-duplicate-firing-dedup-via-canonical-request-fingerprint.md](./hook-duplicate-firing-dedup-via-canonical-request-fingerprint.md) |
 | DISC-034r05iHy2gdnpcXzmUKaV | Huge-file token count guard and fail-closed hook behavior | resolved | [huge-file-token-count-guard-and-fail-closed-hook-behavior.md](./huge-file-token-count-guard-and-fail-closed-hook-behavior.md) |
 | DISC-034FlIAczzK2ruZW3HTcJi | invocation-scoped command grant と grant-request フローを整理する | draft | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |
 | DISC-034A8pIq50dPYXsDhld9st | managed process の認可と lifecycle を整理する | resolved | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
