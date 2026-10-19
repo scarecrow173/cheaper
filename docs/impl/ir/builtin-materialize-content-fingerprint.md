@@ -1,7 +1,7 @@
 ---
 id: "IMPL-gY3xK9wV2mNbQ8rTzAhJdL5"
 type: "impl"
-status: "done"
+status: "completed"
 title: "IR: builtin materialize content fingerprint"
 created: "2026-10-17"
 updated: "2026-10-17"
@@ -38,11 +38,30 @@ relations:
     - "crates/cheaper-cli/src/embedded.rs"
   defers: []
   deferred-by: []
+metadata:
+  experiments:
+    adopted: []
+    rejected: []
 ---
 
 # IR: builtin materialize content fingerprint
 
-## 実装内容
+## Summary
+
+Issue #115。builtin resource の materialize cache が version のみで
+key 付けされ、同一 version で embedded resource(schema/policy)が
+変わっても stale dir が再利用される問題を、cache key へ
+content fingerprint を加えることで解消した。materialize target は
+`cheaper-builtin-{version}-{fingerprint}` となった。
+
+## Context
+
+worker schema 変更(#113/#114 対応)後も builtin dir が旧 schema を
+保持し続ける不具合が #113/#114 実装中の Findings として発見され、
+issue #115 として起票された。原因は materialize cache の key が
+`{version}` のみで、resource contents を考慮しない設計にあった。
+
+## Implementation
 
 `crates/cheaper-cli/src/embedded.rs`:
 
@@ -59,7 +78,7 @@ relations:
   `cheaper-builtin-{version}-{fingerprint}` に変更。
 - header doc comment を新 dir 名に合わせて更新。
 
-## レビュー対応
+### review-protocol 対応
 
 review-protocol (Reviewer A/B via bulk-read + Validator):
 
@@ -71,7 +90,11 @@ review-protocol (Reviewer A/B via bulk-read + Validator):
 - 非回帰(既存挙動)の指摘 — `.ready` torn 書込、OnceLock poison、
   temp dir 累積、path sanitize — は scope 外として記録のみ。
 
-## 検証
+## Related Experiments
+
+なし。
+
+## Validation
 
 - `cargo test -p cheaper-cli --lib embedded` — 3 件 pass
   (fingerprint 決定性/16hex、nested schemas 8 file の列挙、
@@ -83,3 +106,13 @@ review-protocol (Reviewer A/B via bulk-read + Validator):
   `%TEMP%/cheaper-builtin-1.0.0-9a4930bdb12941dd/` が新規 materialize
   され、展開 content は新 schema/policy( magnitude 制約撤廃済み)に
   一致。旧命名 dir(`cheaper-builtin-1.0.0`)は設計どおり残留。
+
+## Risks
+
+- review-protocol で記録された非回帰(既存挙動)の残件 —
+  `.ready` torn 書込・OnceLock poison・temp dir 累積・path
+  sanitize — は scope 外として記録のみで未対応。
+
+## Follow-ups
+
+なし(本 task の残件は記録されていない)。

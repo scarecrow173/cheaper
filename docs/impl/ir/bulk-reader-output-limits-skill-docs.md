@@ -10,10 +10,13 @@ relations:
   source: []
   changes:
     added:
-      - "scripts/test/bulk-reader-skill-limits.test.mjs"
+      - type: "file"
+        path: "scripts/test/bulk-reader-skill-limits.test.mjs"
     modified:
-      - "packages/apm/.apm/skills/cheaper-bulk-read/SKILL.md"
-      - "packages/apm/.apm/skills/cheaper-usage/SKILL.md"
+      - type: "file"
+        path: "packages/apm/.apm/skills/cheaper-bulk-read/SKILL.md"
+      - type: "file"
+        path: "packages/apm/.apm/skills/cheaper-usage/SKILL.md"
     deleted: []
     renamed: []
     moved: []
@@ -58,7 +61,14 @@ closed-object・required の注記付き）と `INVALID_OUTPUT` 回復指針
 節に worker run 経路の `error.details` 補足を追加した。drift 検知用に
 schema 値と skill 記載値を照合する node test を新設した。
 
-## What was implemented
+## Context
+
+Issue #108 — bulk-reader の出力フィールド制約と `INVALID_OUTPUT` 時の
+回復手順が consumer skill へ記載されておらず、caller が制約超過時の
+対処を知る術がなかった。schema の制約値を skill 文書として露出し、
+drift 検知 test で両者の整合を保証する。
+
+## Implementation
 
 - `cheaper-bulk-read/SKILL.md` — 「Output field limits」表と
   「When it fails with `INVALID_OUTPUT`」節
@@ -67,10 +77,23 @@ schema 値と skill 記載値を照合する node test を新設した。
 - `scripts/test/bulk-reader-skill-limits.test.mjs` — schema JSON ↔
   SKILL.md 表の値照合 + closed-schema/INVALID_OUTPUT 記載の存在確認
 
-## Verification
+## Related Experiments
+
+なし。
+
+## Validation
 
 - `node --test scripts/test/bulk-reader-skill-limits.test.mjs`: 2 pass
 - `node --test scripts/test/`: 43 pass（新規 test 含む）
 - `node --test benchmarks/test/`: 12 pass
 - `mise run check`: 全ステージ pass（biome・fmt・clippy・version・
   doc-id・cargo test・node test・lockfile・payload）
+
+## Risks
+
+- SKILL.md 記載値と schema 制約値の drift は新設の照合 test で検知
+  されるが、表にない新規制約の追加時は test 更新も必要。
+
+## Follow-ups
+
+なし(本 task の残件は記録されていない)。
