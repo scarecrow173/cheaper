@@ -37,7 +37,7 @@ Directory: `docs/tasks`
 | TASK-034AR8FLSgTI6VLWpQZrQS | Benchmark evidence 集計と workflow usage guidance | done | [aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md](./aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md) |
 | TASK-034r05iHQeQpDqx9iKaroO | Align CI with canonical setup/check entrypoints and locked install | done | [align-ci-with-canonical-entrypoints.md](./align-ci-with-canonical-entrypoints.md) |
 | TASK-034r2ruj7LGYlehohv1Xjs | Align usage-log docs with recording contract | done | [align-usage-log-docs-with-recording-contract.md](./align-usage-log-docs-with-recording-contract.md) |
-| TASK-034IQdTig12S00T3Bnz5UQ | Amend historical docs and cheaper-usage skill for orphan sweep boundary | todo | [amend-orphan-sweep-ownership-docs-and-usage-skill.md](./amend-orphan-sweep-ownership-docs-and-usage-skill.md) |
+| TASK-034IQdTig12S00T3Bnz5UQ | Amend historical docs and cheaper-usage skill for orphan sweep boundary | done | [amend-orphan-sweep-ownership-docs-and-usage-skill.md](./amend-orphan-sweep-ownership-docs-and-usage-skill.md) |
 | TASK-034r05iHQeQpDpIRiZMox8 | Anchor policy timeout at runWorker start and amend DESIGN-034r05iHrZUE6WvaQsRRsM | done | [anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
 | TASK-d1Fg1OH0NcI8xj5WAkWvts | packages/: hook package 分割(4 sibling + 親 deps + 旧 hooks 削除) | done | [apm-hook-packages-split.md](./apm-hook-packages-split.md) |
 | TASK-X2PS53bel6fwygkwU5RpqZ | consumer 向け・repo 文書の新 layout 追従と falsified doc set 関連付け | done | [apm-hook-split-docs.md](./apm-hook-split-docs.md) |
@@ -241,7 +241,7 @@ Directory: `docs/tasks`
 | TASK-034DzYs0gJRVZ5JJfKAIAn | T5: cheaper-tools 内部再配置 (F1) | done | [reorganize-cheaper-tools-modules.md](./reorganize-cheaper-tools-modules.md) |
 | TASK-034r05iHQeQpDqsCIiTDOz | Repoint bundle pipeline and CI freshness check to packages/apm | done | [repoint-bundle-pipeline-and-ci-freshness.md](./repoint-bundle-pipeline-and-ci-freshness.md) |
 | TASK-034EekSpuRWpAF5iF3T316 | T2: setup boundary abort code restore and shared reverse lookup | done | [restore-setup-boundary-abort-classification.md](./restore-setup-boundary-abort-classification.md) |
-| TASK-034IQdP0etbaZJqUzaP6sl | Restrict orphan sweep to .tmp and split verify orphan findings | todo | [restrict-orphan-sweep-to-tmp-and-split-verify-findings.md](./restrict-orphan-sweep-to-tmp-and-split-verify-findings.md) |
+| TASK-034IQdP0etbaZJqUzaP6sl | Restrict orphan sweep to .tmp and split verify orphan findings | done | [restrict-orphan-sweep-to-tmp-and-split-verify-findings.md](./restrict-orphan-sweep-to-tmp-and-split-verify-findings.md) |
 | TASK-034r05iHQeQpDqOOFD90gZ | Restructure README, create docs index, and run final verification | done | [restructure-readme-docs-index-and-final-verification.md](./restructure-readme-docs-index-and-final-verification.md) |
 | TASK-034DkRYMmhq7VdzfD1NcT8 | Rewrite cheaper-usage SKILL.md hook path section | done | [rewrite-cheaper-usage-skill-hook-path-section.md](./rewrite-cheaper-usage-skill-hook-path-section.md) |
 | TASK-034r05iHQeQpDpDygNnvfq | Run bulk-read and cheap-write smoke against Ollama | done | [run-bulk-read-and-cheap-write-smoke-against-ollama.md](./run-bulk-read-and-cheap-write-smoke-against-ollama.md) |

@@ -19,6 +19,8 @@ relations:
         path: "crates/cheaper-cli/tests/integration/hook_config.rs"
       - type: "file"
         path: "docs/tasks/restrict-orphan-sweep-to-tmp-and-split-verify-findings.md"
+      - type: "file"
+        path: "docs/impl/ir/README.md"
     deleted: []
     renamed: []
     moved: []
