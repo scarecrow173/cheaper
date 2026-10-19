@@ -1,7 +1,7 @@
 ---
 id: "TASK-034IpPs1L6kjNy6HyCalZs"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement dedup helpers and eval_cache module"
 created: "2026-10-19"
 updated: "2026-10-19"
@@ -60,19 +60,19 @@ commit で land する。挙動は additive で不変(`targets.rs` 配線は次 
 
 ### T1 — routing_policy helpers(additive・挙動不変)
 
-- [ ] `Verdict`(`routing_policy.rs:105`)に `#[derive(serde::Serialize,
+- [x] `Verdict`(`routing_policy.rs:105`)に `#[derive(serde::Serialize,
       serde::Deserialize, PartialEq, Debug)]` + `#[serde(tag = "decision",
       rename_all = "lowercase")]` を追加 — wire 表現は `Allow →
       {"decision":"allow"}`、`Deny{reason} →
       {"decision":"deny","reason":"…"}`。`PartialEq`/`Debug` は test が
       2 つの verdict を `assert_eq!` で比較するために必要
-- [ ] `MEASURE_TIMEOUT`(`:39`)を `pub(crate) const` 化 — follower wait
+- [x] `MEASURE_TIMEOUT`(`:39`)を `pub(crate) const` 化 — follower wait
       上限の単一 source(DRY)
-- [ ] `MEASURE_ENV_KEYS`(`:176`)を `pub(crate)` 化 — eval_cache の env
+- [x] `MEASURE_ENV_KEYS`(`:176`)を `pub(crate)` 化 — eval_cache の env
       snapshot が `measure_tokens` と同じ key 集合を cross-module で参照
       するため(consumer は `eval_cache` のみ。`resolve_request_cwd` は
       `fingerprint_targets` と同 module のため widening しない)
-- [ ] `pub(crate) enum ResolvedKind { File, Dir, NonFile }`・
+- [x] `pub(crate) enum ResolvedKind { File, Dir, NonFile }`・
       `pub(crate) struct ResolvedTarget { pub resolved: String, pub kind:
       ResolvedKind }`・`pub(crate) struct FingerprintContext { pub
       workspace_root: Option<String>, pub targets: Vec<ResolvedTarget> }`・
@@ -95,25 +95,25 @@ commit で land する。挙動は additive で不変(`targets.rs` 配線は次 
     して `./x`・symlink 経由・語尾 `/` 差等の spelling 差を除去)。
     canonicalize 失敗(resolve 後の fs race)はその候補を `NonFile`
     (absent)へ畳む
-- [ ] `embedded.rs` の `embedded_fingerprint()`(`:123`)を `pub(crate)` 化
+- [x] `embedded.rs` の `embedded_fingerprint()`(`:123`)を `pub(crate)` 化
 
 ### T2 — eval_cache.rs 本体
 
-- [ ] `hook/mod.rs` の module 宣言群(`:16`–`17`)へ `pub mod
+- [x] `hook/mod.rs` の module 宣言群(`:16`–`17`)へ `pub mod
       eval_cache;` を追加
-- [ ] `DedupLimits`(`#[doc(hidden)]`、`Clone + Copy`、全 field `pub`)+
+- [x] `DedupLimits`(`#[doc(hidden)]`、`Clone + Copy`、全 field `pub`)+
       `DedupLimits::PRODUCTION` const を定義 — `verdict_ttl = 60_000ms`・
       `lock_stale = 120_000ms`・`follower_wait =
       routing_policy::MEASURE_TIMEOUT`(30_000ms)・`poll_interval = 50ms`
-- [ ] store root を `resolve_user_config_dir(UserConfigDirOptions { env:
+- [x] store root を `resolve_user_config_dir(UserConfigDirOptions { env:
       Some(opts.env), homedir: None }).join("hook-eval")` で解決
       (`cheaper-core/config/dirs.rs:37` の既存規則を複製しない —
       `usage_log.rs` と同じ境界)
-- [ ] env snapshot: `opts.env`(`EnvLookup` = `&dyn Fn`、非 Send)から
+- [x] env snapshot: `opts.env`(`EnvLookup` = `&dyn Fn`、非 Send)から
       `MEASURE_ENV_KEYS`(`:176`)∪ `CHEAPER_READ_TOKEN_THRESHOLD` を owned
       map へ写す(`measure_tokens`(`:201`)と同じ snapshot pattern。
       blocking phase へ env closure 自体は渡さない)
-- [ ] fingerprint 算出: hash 入力専用の `#[derive(Hash)]` struct へ field
+- [x] fingerprint 算出: hash 入力専用の `#[derive(Hash)]` struct へ field
       単位で明示列挙し、`DefaultHasher` → `format!("{:016x}",
       hasher.finish())`(`embedded_fingerprint` と同じ形)。hash 入力は
       design Fingerprint 節の列挙どおり:
@@ -141,7 +141,7 @@ commit で land する。挙動は additive で不変(`targets.rs` 配線は次 
     pid・`CHEAPER_CONFIG_DIR`/`XDG_CONFIG_HOME`/`USERPROFILE`/`HOME`
     (store root 分岐で構造的分離済み)・hook event 名。`RoutingRequest`
     への `derive(Hash)` は使わない(`source_tool` 混入で key が割れる)
-- [ ] verdict record read: `<fp>.json` を読み `schemaVersion == 1`・
+- [x] verdict record read: `<fp>.json` を読み `schemaVersion == 1`・
       `fingerprint` field が期待 fingerprint と一致・`verdict` deserialize
       成功・file mtime の checked-age(`SystemTime::now()
       .checked_duration_since(mtime)` が `Some(age) && age <=
@@ -149,14 +149,14 @@ commit で land する。挙動は additive で不変(`targets.rs` 配線は次 
       失敗・未知 version・fingerprint 不一致・TTL 超過・未来 mtime
       (`None` — clock skew・fs timestamp 異常)は全て absent 扱い
       (`usage.jsonl` と同じ forward-compat 規約)
-- [ ] verdict record write: `{"schemaVersion":1,"createdAt":<epoch ms —
+- [x] verdict record write: `{"schemaVersion":1,"createdAt":<epoch ms —
       観察用で freshness 判定には使わない>,"fingerprint":<16hex>,
       "verdict":<Verdict serde>}` を `cheaper_core::fs_util::atomic_write`
       (`fs_util.rs:34`)で書く。`windows_remove_first: false`・
       `#[cfg(unix)] unix_mode: Some(0o600)` は struct literal 指定
       (auth/store.rs 慣行 — Windows build でもそのまま compile)。
       parent dir の `create_dir_all` は caller(eval_cache)の責務
-- [ ] leader lock: `<fp>.lock` を `OpenOptions::new().write(true)
+- [x] leader lock: `<fp>.lock` を `OpenOptions::new().write(true)
       .create_new(true)` で取得し、`{"pid":…,"createdAt":…,"nonce":…}`
       の owner token JSON を書込む(nonce は `SystemTime` nanos + process
       内 `AtomicU64` counter で生成可 — 新規 dep 不要)。lock 削除は全て
@@ -168,7 +168,7 @@ commit で land する。挙動は additive で不変(`targets.rs` 配線は次 
       publish 順序は verdict `atomic_write` 完了 → lock release(「lock
       無し・verdict 未 commit」の窓を消す)。`create_new` の非
       `AlreadyExists` error は `eval_fn` 直接呼出しへ畳む
-- [ ] follower bounded poll: `poll_interval` 周期で 1 tick 分の fs 操作を
+- [x] follower bounded poll: `poll_interval` 周期で 1 tick 分の fs 操作を
       `spawn_blocking` へ逃がし、(1) record fresh+valid → serve、(2)
       lock 不在 → `create_new` retry(成功で昇格して評価・publish・
       release)、(3) lock mtime checked-age が `lock_stale` 超過
@@ -181,12 +181,12 @@ commit で land する。挙動は additive で不変(`targets.rs` 配線は次 
       `follower_wait` deadline 到達で `eval_fn` 直接呼出し(cache
       write しない — publish 経路を leader 単独に保つ)。blocking
       `std::thread::sleep` は使わない
-- [ ] sweep: dedup 経路先頭(blocking phase 内)で `hook-eval/` を
+- [x] sweep: dedup 経路先頭(blocking phase 内)で `hook-eval/` を
       best-effort sweep — `mtime > verdict_ttl` の `*.json`、`mtime >
       lock_stale` の `*.lock`、TTL 超過の `.<fp>.json.tmp-*` orphan を
       remove。checked-age 規則は上記と同一 — checked-age `None`(未来
       mtime)の entry も stale として remove 候補に含める。失敗は無視
-- [ ] `#[doc(hidden)] pub async fn evaluate_dedup_with(request, opts,
+- [x] `#[doc(hidden)] pub async fn evaluate_dedup_with(request, opts,
       limits, eval_fn) -> Verdict` を実装 — `fingerprint_targets`(sync)
       → `ctx.targets` が完全に空なら `eval_fn` 直接呼出し(bypass — 定数
       allow 経路。全候補 `NonFile` の Shell は空ではなく cache 対象)→
@@ -205,18 +205,18 @@ commit で land する。挙動は additive で不変(`targets.rs` 配線は次 
       `F: Fn() -> Fut, Fut: Future<Output = Verdict>`(借用を取る
       closure の HRTB 問題を構造で消す — caller が request/opts を
       capture する形)
-- [ ] `pub async fn evaluate_dedup(request, opts) -> Verdict` =
+- [x] `pub async fn evaluate_dedup(request, opts) -> Verdict` =
       `evaluate_dedup_with(request, opts, &DedupLimits::PRODUCTION,
       || evaluate(request, opts))`
-- [ ] dedup 分類(hit/leader/follower/fallback/bypass)を `tracing::debug!`
+- [x] dedup 分類(hit/leader/follower/fallback/bypass)を `tracing::debug!`
       で emit(metadata-only 規約 — `verdict` field と同じ分類値スタイル)。
       `HookResponse` shape・stdout/stderr 契約には触れない
-- [ ] 任意(design が「実装判断」と明記): fast-path gate — `ctx.targets`
+- [x] 任意(design が「実装判断」と明記): fast-path gate — `ctx.targets`
       が全て `File` かつ各 `len <= threshold`(byte fast path で allow
       確定)または全て `NonFile`(評価対象実 file 無し)の場合は協調を
       skip して `eval_fn` 直接呼出し。導入しても `NonFile` absent marker
       自体は fingerprint 構成に残す(mixed candidate 集合の同一性に必要)
-- [ ] fail-open 確認: eval_cache 内に `unwrap`/`expect`/`panic!` を置かず、
+- [x] fail-open 確認: eval_cache 内に `unwrap`/`expect`/`panic!` を置かず、
       全失敗が `eval_fn` 直接呼出しへ畳まれることを code review で確認
       (design Failure model 表。copilot 経路で新たな非 0 exit を生じない)
 
@@ -248,23 +248,23 @@ commit で land する。挙動は additive で不変(`targets.rs` 配線は次 
 
 ## Done When
 
-- [ ] `Verdict` が internally-tagged serde 表現(`{"decision":"allow"}` /
+- [x] `Verdict` が internally-tagged serde 表現(`{"decision":"allow"}` /
       `{"decision":"deny","reason":"…"}`)で serialize/deserialize でき、
       `PartialEq`/`Debug` を持つ
-- [ ] `fingerprint_targets` が `resolve_target` の containment 規則を
+- [x] `fingerprint_targets` が `resolve_target` の containment 規則を
       複製せず再利用し、variant 別 target 列挙 + canonical
       `workspace_root` を返す
-- [ ] `eval_cache` が fingerprint 算出・record read/write(checked-age
+- [x] `eval_cache` が fingerprint 算出・record read/write(checked-age
       TTL)・leader lock(owner token + delete-if-owner)・follower
       bounded poll・TTL sweep・`evaluate_dedup`/`evaluate_dedup_with`/
       `DedupLimits` を提供する
-- [ ] eval_cache 内に `unwrap`/`expect`/`panic!` が無く、全失敗が
+- [x] eval_cache 内に `unwrap`/`expect`/`panic!` が無く、全失敗が
       `eval_fn` 直接呼出しへ畳まれる(fail-open)
-- [ ] T1+T2 が同一 commit で land している(dead_code 回避)
+- [x] T1+T2 が同一 commit で land している(dead_code 回避)
 
 ## Verification
 
-- [ ] `mise exec -- cargo check -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` が exit 0
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` が exit 0(dead_code 警告無し)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` が exit 0(既存 hook 契約が不変)
-- [ ] `grep -n "unwrap\|expect\|panic!" crates/cheaper-cli/src/hook/eval_cache.rs` が 0 件(fail-open 確認)
+- [x] `mise exec -- cargo check -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` が exit 0
+- [x] `mise exec -- cargo clippy -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` が exit 0(dead_code 警告無し)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` が exit 0(既存 hook 契約が不変)
+- [x] `grep -n "unwrap\|expect\|panic!" crates/cheaper-cli/src/hook/eval_cache.rs` が 0 件(fail-open 確認)

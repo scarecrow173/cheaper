@@ -25,6 +25,7 @@ use cheaper_core::config::dirs::EnvLookup;
 use cheaper_core::json::number::format_number;
 use cheaper_core::nodepath;
 use cheaper_core::token::count::FileTooLargeError;
+use cheaper_core::workspace::paths::canonicalize_workspace_root;
 
 use crate::count::count_workspace_file_tokens;
 use crate::embedded;
@@ -36,7 +37,7 @@ pub const DEFAULT_THRESHOLD: f64 = 8192.0;
 /// limit の subprocess で呼んでいた。in-process 版は計測を blocking
 /// thread へ逃がし、hang した I/O (FIFO・dead network FS) でも verdict
 /// が resolve するよう同じ 30s bound を掛ける。
-const MEASURE_TIMEOUT: Duration = Duration::from_millis(30_000);
+pub(crate) const MEASURE_TIMEOUT: Duration = Duration::from_millis(30_000);
 
 /// `ReadRange` — read 系 tool の範囲指定(1-based 開始行 + 任意の
 /// 最大行数)。`limit: None` は `offset` からファイル末尾までを
@@ -102,6 +103,12 @@ pub enum RoutingRequest {
 }
 
 /// routing verdict (`Verdict`)。
+/// verdict record(`hook::eval_cache`)への serialize のため serde
+/// derive を持つ — wire 表現は internally tagged(`Allow` →
+/// `{"decision":"allow"}`、`Deny{reason}` →
+/// `{"decision":"deny","reason":"…"}`)。
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "decision", rename_all = "lowercase")]
 pub enum Verdict {
     Allow,
     Deny { reason: String },
@@ -173,7 +180,7 @@ fn is_js_space(c: char) -> bool {
 /// `resolve_user_config_dir`(`CHEAPER_CONFIG_DIR`/`XDG_CONFIG_HOME`/
 /// `USERPROFILE`/`HOME`)と `count_max_bytes`(`CHEAPER_COUNT_MAX_BYTES`)
 /// の閉じた集合(TS `opts.env` 経由と同じ値が渡る)。
-const MEASURE_ENV_KEYS: &[&str] = &[
+pub(crate) const MEASURE_ENV_KEYS: &[&str] = &[
     "CHEAPER_CONFIG_DIR",
     "XDG_CONFIG_HOME",
     "USERPROFILE",
@@ -307,6 +314,111 @@ fn resolve_target(path: &str, cwd: &str) -> (String, Resolution) {
             },
         ),
         _ => (cwd, Resolution::OutOfScope),
+    }
+}
+
+/// fingerprint 用の resolved target 分類(`eval_cache` 専用)。
+/// `NonFile` は resolved 先が file/dir でない(missing・その他・
+/// workspace 外)候補を指し、fingerprint 上は "absent" marker として
+/// 符号化される — 「評価時点では存在しなかった」は verdict を変え得る
+/// ため signature に含める必要がある(Shell の multi-candidate で
+/// absent → file の出現が別 fingerprint になることを保証)。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ResolvedKind {
+    File,
+    Dir,
+    NonFile,
+}
+
+/// fingerprint 対象の resolved path + kind。
+/// `resolved` は File/Dir で canonicalize 済みの絶対 path(cwd spelling
+/// 差を除去)、NonFile は candidate の raw 文字列。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ResolvedTarget {
+    pub resolved: String,
+    pub kind: ResolvedKind,
+}
+
+/// fingerprint の workspace context。`workspace_root` は
+/// `canonicalize_workspace_root`(request cwd の絶対解決側)の結果
+/// (失敗時 `None`)で、同一 workspace の異なる cwd spelling(`./x`・
+/// symlink 経由・語尾 `/` 差等)を同一 fingerprint へ収束させる。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct FingerprintContext {
+    pub workspace_root: Option<String>,
+    pub targets: Vec<ResolvedTarget>,
+}
+
+/// `resolve_target` の lexical resolved path を canonicalize 済み絶対
+/// path へ写す。canonicalize 失敗(resolve 後の fs race)はその候補を
+/// `NonFile`(absent)へ畳む。
+fn canonicalize_resolved(resolved: String, kind: ResolvedKind) -> ResolvedTarget {
+    match std::fs::canonicalize(&resolved) {
+        Ok(path) => ResolvedTarget {
+            resolved: path.to_string_lossy().into_owned(),
+            kind,
+        },
+        Err(_) => ResolvedTarget {
+            resolved,
+            kind: ResolvedKind::NonFile,
+        },
+    }
+}
+
+/// `resolve_target` と同一の containment + metadata 規則で、request が
+/// verdict を左右し得る filesystem target を列挙する
+/// (`eval_cache` の fingerprint 入力)。variant 別規則:
+/// - `FileRead` — `Resolution::File` のみ `[File]`。それ以外は常時
+///   allow の定数経路で `[]`(dedup 対象外)。
+/// - `Search` — `File` → `[File]`、`Dir`/`WorkspaceRoot` → `[Dir]`、
+///   `OutOfScope` → `[]`。
+/// - `Shell` — `extract_read_candidates` の各候補を `File`/`Dir` →
+///   対応 kind、それ以外 → `NonFile`(raw candidate 文字列を保持)。
+///   candidates 空 → `[]`。
+pub(crate) fn fingerprint_targets(request: &RoutingRequest) -> FingerprintContext {
+    let cwd = match request {
+        RoutingRequest::FileRead { cwd, .. }
+        | RoutingRequest::Search { cwd, .. }
+        | RoutingRequest::Shell { cwd, .. } => cwd.as_str(),
+    };
+    let (_, cwd_abs) = resolve_request_cwd(cwd);
+    let workspace_root = canonicalize_workspace_root(&cwd_abs).ok();
+    let mut targets: Vec<ResolvedTarget> = Vec::new();
+    match request {
+        RoutingRequest::FileRead { path, cwd, .. } => {
+            if let Resolution::File { resolved, .. } = resolve_target(path, cwd).1 {
+                targets.push(canonicalize_resolved(resolved, ResolvedKind::File));
+            }
+        }
+        RoutingRequest::Search { path, cwd, .. } => match resolve_target(path, cwd).1 {
+            Resolution::File { resolved, .. } => {
+                targets.push(canonicalize_resolved(resolved, ResolvedKind::File));
+            }
+            Resolution::Dir { resolved, .. } | Resolution::WorkspaceRoot { resolved } => {
+                targets.push(canonicalize_resolved(resolved, ResolvedKind::Dir));
+            }
+            Resolution::OutOfScope => {}
+        },
+        RoutingRequest::Shell { command, cwd, .. } => {
+            for candidate in extract_read_candidates(command) {
+                match resolve_target(&candidate, cwd).1 {
+                    Resolution::File { resolved, .. } => {
+                        targets.push(canonicalize_resolved(resolved, ResolvedKind::File));
+                    }
+                    Resolution::Dir { resolved, .. } | Resolution::WorkspaceRoot { resolved } => {
+                        targets.push(canonicalize_resolved(resolved, ResolvedKind::Dir));
+                    }
+                    Resolution::OutOfScope => targets.push(ResolvedTarget {
+                        resolved: candidate,
+                        kind: ResolvedKind::NonFile,
+                    }),
+                }
+            }
+        }
+    }
+    FingerprintContext {
+        workspace_root,
+        targets,
     }
 }
 
@@ -1316,6 +1428,23 @@ mod tests {
             let e = env_of(&pairs);
             assert_eq!(threshold(&e), 8192.0, "env={bad}");
         }
+    }
+
+    // --- Verdict serde(eval_cache の verdict record wire 表現)---------
+
+    #[test]
+    fn verdict_serde_uses_internally_tagged_decision() {
+        let allow = serde_json::to_value(Verdict::Allow).unwrap();
+        assert_eq!(allow, serde_json::json!({"decision": "allow"}));
+        let deny = Verdict::Deny {
+            reason: "r".to_string(),
+        };
+        let value = serde_json::to_value(&deny).unwrap();
+        assert_eq!(
+            value,
+            serde_json::json!({"decision": "deny", "reason": "r"})
+        );
+        assert_eq!(serde_json::from_value::<Verdict>(value).unwrap(), deny);
     }
 
     // --- tokenize_shell ----------------------------------------------

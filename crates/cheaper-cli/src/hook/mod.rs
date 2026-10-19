@@ -12,7 +12,10 @@
 //!   の normalize + render(byte 互換 JSON 出力が contract)
 //! - `routing_policy.rs` — threshold・byte fast path・30s 計測
 //!   timeout・shell tokenizer / `extract_read_candidates`
+//! - `eval_cache.rs` — canonical request fingerprint ベースの verdict
+//!   cache + leader election(重複 firing の dedup、issue #127)
 
+pub mod eval_cache;
 pub mod routing_policy;
 pub mod targets;
 

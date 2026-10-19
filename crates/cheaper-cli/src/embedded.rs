@@ -120,7 +120,9 @@ fn extract_dir(base: &Path, rel_prefix: &str, dir: &Dir<'static>) -> io::Result<
 /// `DefaultHasher` は固定 key なので同一 toolchain の process 間で
 /// 決定的。rustc 版間で値が変わり得るが、影響は新しい cache dir が
 /// 増えるだけで staleness にはならない。
-fn embedded_fingerprint() -> String {
+/// `pub(crate)`: `hook::eval_cache` が builtin policy 層 `None`
+/// (embedded 解決)の fingerprint marker として使う。
+pub(crate) fn embedded_fingerprint() -> String {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     let mut files = Vec::new();

@@ -71,6 +71,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpgYK6Sj6D | Implement @cheaper/core (PLAN-034r05iHy2gdnpHMZZk4ZU) | completed | [implement-cheaper-core-plan-0001.md](./implement-cheaper-core-plan-0001.md) |
 | IMPL-034r05iHy2gdnpj3u9aHj7 | Implement @cheaper/runtime-pi (PLAN-034r05iHy2gdnpIrX0mTIb) | completed | [implement-cheaper-runtime-pi-plan-0002.md](./implement-cheaper-runtime-pi-plan-0002.md) |
 | IMPL-034rAiKtIOGy4Ja8gzLN0C | Implement classification pipeline and explicit resolver | completed | [implement-classification-pipeline-and-explicit-resolver.md](./implement-classification-pipeline-and-explicit-resolver.md) |
+| IMPL-034IpXmCLMAEep0qsWBOkZ | Implement dedup helpers and eval_cache module | completed | [implement-dedup-helpers-and-eval-cache-module.md](./implement-dedup-helpers-and-eval-cache-module.md) |
 | IMPL-034ALJN6e40bNeMK86YJ6Y | Implement injected workflow engine | completed | [implement-injected-workflow-engine.md](./implement-injected-workflow-engine.md) |
 | IMPL-034A9Jn7YGuSj9pYwoT7f1 | Implement managed process executor | completed | [implement-managed-process-executor.md](./implement-managed-process-executor.md) |
 | IMPL-034A9AU7e20SHvZ2sH66sP | Implement managed process policy | completed | [implement-managed-process-policy.md](./implement-managed-process-policy.md) |
