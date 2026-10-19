@@ -50,6 +50,80 @@ provenance = "github-attestations"
 version = "3.8.0"
 backend = "aqua:git-lfs/git-lfs"
 
+[tools.git-lfs."platforms.linux-arm64"]
+checksum = "sha256:ac9c8efac980bb0505ead384d087e2acb6486fd8498691a2165fa174ec6118c2"
+url = "https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-linux-arm64-v3.8.0.tar.gz"
+url_api = "https://api.github.com/repos/git-lfs/git-lfs/releases/assets/532993825"
+
+[tools.git-lfs."platforms.linux-arm64-musl"]
+checksum = "sha256:ac9c8efac980bb0505ead384d087e2acb6486fd8498691a2165fa174ec6118c2"
+url = "https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-linux-arm64-v3.8.0.tar.gz"
+url_api = "https://api.github.com/repos/git-lfs/git-lfs/releases/assets/532993825"
+
+[tools.git-lfs."platforms.linux-x64"]
+checksum = "sha256:e455e00f15d9b95661b8d53498ffb0c3367962cf1ec73c31ab7369516cd6ab8d"
+url = "https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-linux-amd64-v3.8.0.tar.gz"
+url_api = "https://api.github.com/repos/git-lfs/git-lfs/releases/assets/532993734"
+
+[tools.git-lfs."platforms.linux-x64-musl"]
+checksum = "sha256:e455e00f15d9b95661b8d53498ffb0c3367962cf1ec73c31ab7369516cd6ab8d"
+url = "https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-linux-amd64-v3.8.0.tar.gz"
+url_api = "https://api.github.com/repos/git-lfs/git-lfs/releases/assets/532993734"
+
+[tools.git-lfs."platforms.macos-arm64"]
+checksum = "sha256:caff76a7d070d8160c89bc39b6e85d98f24135b6fed038a3b4de2590d25102d8"
+url = "https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-darwin-arm64-v3.8.0.zip"
+url_api = "https://api.github.com/repos/git-lfs/git-lfs/releases/assets/532993595"
+
+[tools.git-lfs."platforms.macos-x64"]
+checksum = "sha256:f1c17aeca0b4eaab9ea606226477dbed3b84b56fe0811a9f967d2ea2b2393c53"
+url = "https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-darwin-amd64-v3.8.0.zip"
+url_api = "https://api.github.com/repos/git-lfs/git-lfs/releases/assets/532993568"
+
+[tools.git-lfs."platforms.windows-x64"]
+checksum = "sha256:b62e7b8ceddee635f691233d77de8eaa4b213e9209e0173811d8cfa77f7882c1"
+url = "https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-windows-amd64-v3.8.0.zip"
+url_api = "https://api.github.com/repos/git-lfs/git-lfs/releases/assets/532993969"
+
+[[tools."github:microsoft/apm"]]
+version = "0.33.0"
+backend = "github:microsoft/apm"
+
+[tools."github:microsoft/apm"."platforms.linux-arm64"]
+checksum = "sha256:ac40dd0efd1af35a56847beedde96854530d2f54851e026728da017d3af827f8"
+url = "https://github.com/microsoft/apm/releases/download/v0.33.0/apm-linux-arm64.tar.gz"
+url_api = "https://api.github.com/repos/microsoft/apm/releases/assets/606234095"
+
+[tools."github:microsoft/apm"."platforms.linux-arm64-musl"]
+checksum = "sha256:ac40dd0efd1af35a56847beedde96854530d2f54851e026728da017d3af827f8"
+url = "https://github.com/microsoft/apm/releases/download/v0.33.0/apm-linux-arm64.tar.gz"
+url_api = "https://api.github.com/repos/microsoft/apm/releases/assets/606234095"
+
+[tools."github:microsoft/apm"."platforms.linux-x64"]
+checksum = "sha256:e6374402c74318f7c8bef97a90d8572d049fdab0dc3871492c6b0647ae9e881f"
+url = "https://github.com/microsoft/apm/releases/download/v0.33.0/apm-linux-x86_64.tar.gz"
+url_api = "https://api.github.com/repos/microsoft/apm/releases/assets/606234092"
+
+[tools."github:microsoft/apm"."platforms.linux-x64-musl"]
+checksum = "sha256:e6374402c74318f7c8bef97a90d8572d049fdab0dc3871492c6b0647ae9e881f"
+url = "https://github.com/microsoft/apm/releases/download/v0.33.0/apm-linux-x86_64.tar.gz"
+url_api = "https://api.github.com/repos/microsoft/apm/releases/assets/606234092"
+
+[tools."github:microsoft/apm"."platforms.macos-arm64"]
+checksum = "sha256:312002dca9e1410557bc0da414b7d9bc8438c905c6573e81c06370fde9910857"
+url = "https://github.com/microsoft/apm/releases/download/v0.33.0/apm-darwin-arm64.tar.gz"
+url_api = "https://api.github.com/repos/microsoft/apm/releases/assets/606234085"
+
+[tools."github:microsoft/apm"."platforms.macos-x64"]
+checksum = "sha256:a192f5915b44dac0f7aed9574a98e34e7cda96607760999e4601d1fde773c4f9"
+url = "https://github.com/microsoft/apm/releases/download/v0.33.0/apm-darwin-x86_64.tar.gz"
+url_api = "https://api.github.com/repos/microsoft/apm/releases/assets/606234097"
+
+[tools."github:microsoft/apm"."platforms.windows-x64"]
+checksum = "sha256:ab0fba071ef9c04a72fc2c13314f71ebd10fdb599ba3c985a09f5ba38095d0a1"
+url = "https://github.com/microsoft/apm/releases/download/v0.33.0/apm-windows-x86_64.zip"
+url_api = "https://api.github.com/repos/microsoft/apm/releases/assets/606234100"
+
 [[tools.node]]
 version = "26.10.0"
 backend = "core:node"
@@ -81,13 +155,6 @@ url = "https://nodejs.org/dist/v26.10.0/node-v26.10.0-darwin-x64.tar.gz"
 [tools.node."platforms.windows-x64"]
 checksum = "sha256:9fef7eca6743a6b910989cd8e78712376b394fcb9b6e1e9c44a0799a287f90c5"
 url = "https://nodejs.org/dist/v26.10.0/node-v26.10.0-win-x64.zip"
-
-[[tools."pipx:apm-cli"]]
-version = "0.33.0"
-backend = "pipx:apm-cli"
-
-[tools."pipx:apm-cli".options]
-uvx_args = "--prerelease allow"
 
 [[tools."pipx:serena-agent"]]
 version = "1.7.0"

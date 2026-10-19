@@ -10,6 +10,7 @@ frontier model のコストを抑えるため、巨大コンテキストの処�
 ## セットアップ
 
 ```bash
+mise install     # mise 管理 toolchain を mise.toml + mise.lock の locked version で復元
 mise run setup   # fresh checkout を開発可能にする canonical setup contract
 mise run check   # CI と同等の canonical verification contract
 ```
@@ -22,7 +23,9 @@ consumer が `cargo install --git https://github.com/scarecrow173/cheaper.git
 Git LFS の既存履歴は保持する。consumer の前提・install 手順は
 `docs/guides/distribution.md` を参照する。
 
-`mise run setup` は toolchain（`mise.toml` + `mise.lock` の locked version）に加え、
+`mise install` は `mise.toml` + `mise.lock` の locked version と checksum に従って
+mise 管理 toolchain（node・rust・python・apm・prek・git-lfs 等）を復元する。
+`mise run setup` はその toolchain を使って
 `apm install` → `cargo fetch` → `cargo build --workspace --all-targets` を復元し、
 `prek install` で pre-commit hook を有効化し（定義は
 `.pre-commit-config.yaml` — 高速な整形・衛生 check のみ、重い検証は

@@ -18,7 +18,9 @@ python = "3.12"
 uv = "0.11"
 # apm.lock.yaml は apm 0.33.0 で生成。0.30.0-0.31.0 は Windows で path dep 解決が
 # 壊れていた(WinError 3/206)が 0.32.0 の staging path 短縮(upstream #2941)で修正済み。
-"pipx:apm-cli"  = { version = "0.33.0", uvx_args = "--prerelease allow" }
+# GitHub release バイナリを backend にし pipx/uv 経由を避ける(pipx 固有の
+# 依存 sidecar を lockfile に持たないため)
+"github:microsoft/apm"  = "0.33.0"
 "pipx:serena-agent" = "1.7.0"
 # pre-commit 互換 runner(aqua:j178/prek)。hook 定義は .pre-commit-config.yaml
 prek = "0.5.5"
