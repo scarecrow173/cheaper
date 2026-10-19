@@ -10,7 +10,7 @@ frontier model のコストを抑えるため、巨大コンテキストの処�
 ## セットアップ
 
 ```bash
-mise install     # mise 管理 toolchain を mise.toml + mise.lock の locked version で復元
+mise install     # mise 管理toolchainを mise.toml + mise.lock の固定バージョンで復元
 mise run setup   # fresh checkout を開発可能にする canonical setup contract
 mise run check   # CI と同等の canonical verification contract
 ```
@@ -23,7 +23,7 @@ consumer が `cargo install --git https://github.com/scarecrow173/cheaper.git
 Git LFS の既存履歴は保持する。consumer の前提・install 手順は
 `docs/guides/distribution.md` を参照する。
 
-`mise install` は `mise.toml` + `mise.lock` の locked version と checksum に従って
+`mise install` は `mise.toml` と整合する `mise.lock` の固定バージョンとchecksumに従って
 mise 管理 toolchain（node・rust・python・apm・prek・git-lfs 等）を復元する。
 `mise run setup` はその toolchain を使って
 `apm install` → `cargo fetch` → `cargo build --workspace --all-targets` を復元し、
@@ -47,8 +47,7 @@ worktree の作成・sibling worktree の探索・他 worktree の生成物（ta
 APM artifact）の独自流用は Agent の責務ではなく、各 worktree は独立した
 checkout として扱う。通常の worktree では `.worktreeinclude` に列挙された
 gitignore 対象の生成資産（`apm_modules/`・`.agents/`・`.sdp/`・各 agent
-tool 配下の deploy 物・`.mcp.json`・`.env` 系）が worktree 管理基盤
-（Orca）によって宣言的にコピーされる。これは Agent が独自に他 worktree を
+tool 配下の deploy 物・`.mcp.json`・`.env` 系）が worktree 作成基盤によって宣言的にコピーされる。これは Agent が独自に他 worktree を
 探してコピーする行為とは別物であり、Agent はこの仕組みの有無を前提に
 sibling を探索しない。依存定義や `apm.lock.yaml`・`mise.lock` を変更した
 場合はコピー済み資産が古くなり得るため、`mise install` → `mise run setup`
