@@ -11,54 +11,101 @@ relations:
     - "https://github.com/scarecrow173/cheaper/issues/111"
   changes:
     added:
-      - "crates/cheaper-runtime/src/run/checkpoint.rs"
-      - "docs/adr/budget-exhaustion-checkpoint-and-resume.md"
-      - "docs/adr/execution-timeout-as-progress-reset-stall-window.md"
-      - "docs/adr/nullable-execution-maxturns-unbounded-by-default.md"
-      - "docs/designs/worker-run-nullable-maxturns-and-stall-timeout.md"
-      - "docs/discovery/bulk-reader-low-tier-no-result-turn-budget-and-timeout.md"
-      - "docs/plans/worker-run-nullable-maxturns-stall-timeout-and-resume.md"
-      - "docs/specs/worker-run-nullable-maxturns-and-stall-timeout.md"
-      - "docs/tasks/budget-exhaustion-checkpoint-persistence.md"
-      - "docs/tasks/issue-111-docs-and-final-verification.md"
-      - "docs/tasks/nullable-maxturns-policy-model-and-propagation.md"
-      - "docs/tasks/run-resume-cli.md"
-      - "docs/tasks/run-stall-timeout-progress-window.md"
+      - type: "file"
+        path: "crates/cheaper-runtime/src/run/checkpoint.rs"
+      - type: "file"
+        path: "docs/adr/budget-exhaustion-checkpoint-and-resume.md"
+      - type: "file"
+        path: "docs/adr/execution-timeout-as-progress-reset-stall-window.md"
+      - type: "file"
+        path: "docs/adr/nullable-execution-maxturns-unbounded-by-default.md"
+      - type: "file"
+        path: "docs/designs/worker-run-nullable-maxturns-and-stall-timeout.md"
+      - type: "file"
+        path: "docs/discovery/bulk-reader-low-tier-no-result-turn-budget-and-timeout.md"
+      - type: "file"
+        path: "docs/plans/worker-run-nullable-maxturns-stall-timeout-and-resume.md"
+      - type: "file"
+        path: "docs/specs/worker-run-nullable-maxturns-and-stall-timeout.md"
+      - type: "file"
+        path: "docs/tasks/budget-exhaustion-checkpoint-persistence.md"
+      - type: "file"
+        path: "docs/tasks/issue-111-docs-and-final-verification.md"
+      - type: "file"
+        path: "docs/tasks/nullable-maxturns-policy-model-and-propagation.md"
+      - type: "file"
+        path: "docs/tasks/run-resume-cli.md"
+      - type: "file"
+        path: "docs/tasks/run-stall-timeout-progress-window.md"
     modified:
-      - "crates/cheaper-cli/resources/policy.yaml"
-      - "crates/cheaper-cli/src/args.rs"
-      - "crates/cheaper-cli/src/cli.rs"
-      - "crates/cheaper-cli/src/run.rs"
-      - "crates/cheaper-cli/src/workflow_run.rs"
-      - "crates/cheaper-cli/tests/integration/args.rs"
-      - "crates/cheaper-cli/tests/integration/policy.rs"
-      - "crates/cheaper-cli/tests/integration/run.rs"
-      - "crates/cheaper-cli/tests/regression/expected/run-max-tool-calls.json"
-      - "crates/cheaper-cli/tests/regression/expected/run-max-turns.json"
-      - "crates/cheaper-cli/tests/regression/normalize.rs"
-      - "crates/cheaper-cli/tests/run_dev_seam.rs"
-      - "crates/cheaper-core/src/policy/capability.rs"
-      - "crates/cheaper-core/src/policy/restrict.rs"
-      - "crates/cheaper-core/src/policy/schema.rs"
-      - "crates/cheaper-core/tests/golden/fixtures/policy/load.json"
-      - "crates/cheaper-core/tests/golden/fixtures/policy/schema.json"
-      - "crates/cheaper-rig-adapter/src/error.rs"
-      - "crates/cheaper-runtime/src/dev/fake_provider.rs"
-      - "crates/cheaper-runtime/src/dev/fixture.rs"
-      - "crates/cheaper-runtime/src/run/abort.rs"
-      - "crates/cheaper-runtime/src/run/boundary.rs"
-      - "crates/cheaper-runtime/src/run/mod.rs"
-      - "crates/cheaper-runtime/src/run/repair.rs"
-      - "crates/cheaper-runtime/src/run/session.rs"
-      - "crates/cheaper-runtime/tests/fixtures/05-timeout-delay.json"
-      - "crates/cheaper-runtime/tests/ollama_e2e.rs"
-      - "crates/cheaper-runtime/tests/run_dev_seam.rs"
-      - "crates/cheaper-runtime/tests/run_fixture_test.rs"
-      - "docs/guides/configuration.md"
-      - "docs/guides/usage.md"
-      - "docs/specs/tool-operator-built-in-worker.md"
-      - "packages/apm/.apm/skills/cheaper-bulk-read/SKILL.md"
-      - "packages/apm/.apm/skills/cheaper-usage/SKILL.md"
+      - type: "file"
+        path: "crates/cheaper-cli/resources/policy.yaml"
+      - type: "file"
+        path: "crates/cheaper-cli/src/args.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/src/cli.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/src/run.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/src/workflow_run.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/integration/args.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/integration/policy.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/integration/run.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/regression/expected/run-max-tool-calls.json"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/regression/expected/run-max-turns.json"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/regression/normalize.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/run_dev_seam.rs"
+      - type: "file"
+        path: "crates/cheaper-core/src/policy/capability.rs"
+      - type: "file"
+        path: "crates/cheaper-core/src/policy/restrict.rs"
+      - type: "file"
+        path: "crates/cheaper-core/src/policy/schema.rs"
+      - type: "file"
+        path: "crates/cheaper-core/tests/golden/fixtures/policy/load.json"
+      - type: "file"
+        path: "crates/cheaper-core/tests/golden/fixtures/policy/schema.json"
+      - type: "file"
+        path: "crates/cheaper-rig-adapter/src/error.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/src/dev/fake_provider.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/src/dev/fixture.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/src/run/abort.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/src/run/boundary.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/src/run/mod.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/src/run/repair.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/src/run/session.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/tests/fixtures/05-timeout-delay.json"
+      - type: "file"
+        path: "crates/cheaper-runtime/tests/ollama_e2e.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/tests/run_dev_seam.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/tests/run_fixture_test.rs"
+      - type: "file"
+        path: "docs/guides/configuration.md"
+      - type: "file"
+        path: "docs/guides/usage.md"
+      - type: "file"
+        path: "docs/specs/tool-operator-built-in-worker.md"
+      - type: "file"
+        path: "packages/apm/.apm/skills/cheaper-bulk-read/SKILL.md"
+      - type: "file"
+        path: "packages/apm/.apm/skills/cheaper-usage/SKILL.md"
     deleted: []
     renamed: []
     moved: []
@@ -109,7 +156,15 @@ run-<id>.json` へ atomic 保存し、envelope 最外層の
 として再開でき、観測は連鎖 resume で累積する。workflow 経路の timeout
 は従来どおり absolute deadline。
 
-## What was implemented
+## Context
+
+Issue #111 — bulk-reader が low-tier model 下で `MAX_TURNS_EXCEEDED` /
+`TIMEOUT` により結果を一切返さず、投入コストが全て失われる問題。
+nullable maxTurns・stall window・checkpoint/resume の設計は spec /
+design / 3 ADR(relations.related 参照)で確定済みであり、本 task は
+その実装と検証を担う。
+
+## Implementation
 
 - **nullable maxTurns** — `ExecutionPolicy.max_turns: Option<u64>`、
   schema `"type": ["integer","null"]` + minimum 1、builtin policy
@@ -148,7 +203,11 @@ run-<id>.json` へ atomic 保存し、envelope 最外層の
   cheaper-usage / cheaper-bulk-read SKILL.md、tool-operator spec の
   旧既定値(8/120s)表記を更新。
 
-## Verification
+## Related Experiments
+
+なし。
+
+## Validation
 
 - `cargo test -p cheaper-runtime --features dev-seam --test
   run_dev_seam`: 28 pass(nullable/stall/checkpoint/resume/連鎖累積/
@@ -174,3 +233,17 @@ run-<id>.json` へ atomic 保存し、envelope 最外層の
 - `05-timeout-delay` — setup boundary 中の abort は code のみ復元
   (details/meta.model 欠落)する設計のため、fixture 期待を同範囲に
   合わせた(実装側の対称性強制は行わない — TS parity 契約)。
+
+## Risks
+
+- stall timeout は進捗 RunEvent で reset されるため、進捗を出し続ける
+  run は無制限に継続し得る(意図的な設計 — 絶対時間の上限は caller
+  側の責務)。
+- checkpoint 保存は best-effort であり、save 失敗は code/exit を
+  変えず回復経路が失われる。
+- timeout・signal abort・workflow job は checkpoint 対象外であり、
+  これらの中断は resume できない。
+
+## Follow-ups
+
+なし(本 task の残件は記録されていない)。

@@ -132,7 +132,15 @@ Cursor の casing warning を生じさせていた。hook 宣言を 4 つの
 per-target sibling package へ分離し、skills package が transitive
 `path:` dep + per-dep `targets:` で引き込む構造へ変更した。
 
-## What was implemented
+## Context
+
+Issue #118 — `packages/apm/.apm/hooks/hooks.json` 単一宣言が 4 harness
+(windsurf/cursor/copilot/claude)の native event 名を混在させており、
+APM の全 file merge により各 target config へ foreign/dead registration
+が混入していた。Claude には Copilot 由来の重複 `PreToolUse`、Cursor
+には event casing warning が発生していた。
+
+## Implementation
 
 - **sibling package 4 件新設**: `apm-hook-windsurf`(`target: windsurf`)、
   `apm-hook-cursor`(`target: cursor`)、`apm-hook-copilot`
@@ -158,7 +166,11 @@ per-target sibling package へ分離し、skills package が transitive
   注意へ更新。superseded contract を記述する spec へ注記、旧 ADR へ
   `superseded-by` を追記。
 
-## Verification
+## Related Experiments
+
+なし。
+
+## Validation
 
 - `mise run check` 全段グリーン(biome・fmt・clippy・version/doc-id・
   cargo test workspace・node --test 43 件・lockfile・payload check)
@@ -168,3 +180,13 @@ per-target sibling package へ分離し、skills package が transitive
   positive のみ
 - remote git ref 経路で sibling `path:` が同一 ref 展開されることを
   fixture で実証
+
+## Risks
+
+- `targets:` narrowing は transitive dep へ伝播しないため、将来 dep
+  構造を変える際に edge 宣言の保守が必要(文書に注意として記録済み)。
+
+## Follow-ups
+
+- Cursor の event casing warning は upstream(apm)側の false positive
+  であり、本 repo の対応範囲外 — upstream 修正待ち。

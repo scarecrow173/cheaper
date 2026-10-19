@@ -29,7 +29,7 @@ Directory: `docs/impl/ir`
 | IMPL-034rC4k38aJJf0vfVaefeV | auto tier 分類ガイドの更新 | completed | [auto-tier.md](./auto-tier.md) |
 | IMPL-034A64NK6xfzCOIY0zLm75 | Bounded concurrency policy | completed | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
 | IMPL-034ARlQpkPs620j6TP15Rv | Seeded workflow benchmark fixtures と runner | completed | [build-seeded-workflow-benchmark-fixtures-and-runner.md](./build-seeded-workflow-benchmark-fixtures-and-runner.md) |
-| IMPL-gY3xK9wV2mNbQ8rTzAhJdL5 | IR: builtin materialize content fingerprint | done | [builtin-materialize-content-fingerprint.md](./builtin-materialize-content-fingerprint.md) |
+| IMPL-gY3xK9wV2mNbQ8rTzAhJdL5 | IR: builtin materialize content fingerprint | completed | [builtin-materialize-content-fingerprint.md](./builtin-materialize-content-fingerprint.md) |
 | IMPL-DmstmSWJ77ju7HuPDdrM7h | bulk-reader 出力上限・INVALID_OUTPUT 指針の skill 文書化 | completed | [bulk-reader-output-limits-skill-docs.md](./bulk-reader-output-limits-skill-docs.md) |
 | IMPL-034AMOOcav5x6lqiVb9awU | Canonical artifact read と publisher を配線する | completed | [canonical-artifact-read-publisher.md](./canonical-artifact-read-publisher.md) |
 | IMPL-034zTD17WKcBN1E1xeYf41 | Canonical operation ownership wiring | completed | [canonical-operation-ownership-wiring.md](./canonical-operation-ownership-wiring.md) |

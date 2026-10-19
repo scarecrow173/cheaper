@@ -120,7 +120,15 @@ output の全文を `<userConfigDir>/invalid-outputs/run-<pid>-<nanos>.txt`
 `INVALID_INPUT` の `details.errors` も `INVALID_OUTPUT` と同じ 20 件
 cap に揃えた。
 
-## What was implemented
+## Context
+
+Issue #113/#114 — bulk-reader が undocumented `maxLength` で既列入力を
+拒否する問題(#113)と、単一の schema 違反(例: findings[].title
+120 文字超)で完了済み run を `INVALID_OUTPUT` として破棄する問題
+(#114)。「schema は構造を検証し magnitude を検証しない」原則と
+raw output 永続化による回復経路で対処した。
+
+## Implementation
 
 - **schema magnitude 撤廃**: 8 schema から `maxLength`/`maxItems`/
   `maximum` を除去。`maxFindings` 系は `type: ["integer","null"]` +
@@ -145,7 +153,11 @@ cap に揃えた。
   へ書き換え — magnitude 制約の再混入防止 + 構造契約/rawOutputPath
   記載の存在確認。
 
-## Verification
+## Related Experiments
+
+なし。
+
+## Validation
 
 - `builtin_workers::builtin_schemas_validate_structure_not_magnitude`:
   旧上限超過入力/出力の受理・構造違反の拒否を全 4 worker で pin。
@@ -158,10 +170,15 @@ cap に揃えた。
 - `mise run check` 全段 pass(biome・fmt・clippy・version・doc-id・
   cargo test --workspace・node test・lockfile・apm payload)。
 
-## Findings
+## Risks
+
+- magnitude 制約の撤廃により worker が構造的に有効な任意 size の
+  output を返し得る — 構造 contract のみを保証する意図的な変更。
+
+## Follow-ups
 
 - builtin materialize cache は version のみで key 付けされるため、同一
   version で embedded resource(schema/policy)が変わっても stale dir が
- 再利用される(本 PR の根因の一つとして起票候補)。
+ 再利用される(起票候補として記録 → issue #115 として対応済み)。
 - `INVALID_OUTPUT` の repair prompt は現状も raw output を無制限で
   session prompt へ載せる(回帰ではない既存状態 — 後続検討事項)。
