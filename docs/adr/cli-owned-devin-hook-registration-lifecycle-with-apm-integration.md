@@ -31,6 +31,7 @@ relations:
   superseded-by: []
   related:
     - "./apm-distributed-devin-native-hook-bootstrap.md"
+    - "./hook-config-legacy-conflict-gate-demotion-to-warning.md"
     - "../specs/bounded-native-hook-evaluation-and-managed-devin-registration.md"
   refines: []
   refined-by: []

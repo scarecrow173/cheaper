@@ -27,6 +27,7 @@ relations:
   superseded-by: []
   related:
     - "./cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
+    - "./hook-config-legacy-conflict-gate-demotion-to-warning.md"
     - "./apm-distributed-devin-native-hook-bootstrap.md"
     - "./range-aware-file-read-and-bounded-search-requests-in-hook-routing.md"
     - "./conservative-shell-read-candidate-extraction-inside-the-shared-routing-policy.md"
