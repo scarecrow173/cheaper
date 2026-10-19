@@ -38,6 +38,7 @@ relations:
   related:
     - "./bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md"
     - "./hook-eval-dedup-verdict-cache-and-leader-election.md"
+    - "./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
     - "../adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
   refines: []
   refined-by: []

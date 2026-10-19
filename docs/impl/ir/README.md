@@ -21,6 +21,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z1STQxtFa8POTFVCwbd | Add SEA entrypoint sea-main.ts | completed | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | IMPL-034rArskSHUOoayxrLW4s8 | Add usage telemetry e2e coverage docs and bundle regen | completed | [add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md](./add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md) |
 | IMPL-034ATHURho1jepnqtCXbcf | Aggregate workflow benchmark evidence | completed | [aggregate-workflow-benchmark-evidence.md](./aggregate-workflow-benchmark-evidence.md) |
+| IMPL-034IQI6Q5wQd1Ql4s3At3r | Amend orphan sweep ownership docs and usage skill | completed | [amend-orphan-sweep-ownership-docs-and-usage-skill.md](./amend-orphan-sweep-ownership-docs-and-usage-skill.md) |
 | IMPL-GJ30PMdgql2TCIEuURop04 | APM hook 宣言の per-target サブパッケージ分離 | completed | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |
 | IMPL-034zCh2bBRGkSHaq79bBvu | Append sibling tool-call parallelism section to execution-engine design doc | completed | [append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md](./append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md) |
 | IMPL-2OYQijUxRdsfa8Cig2DuQe | Auth text/select prompt I/O boundary routing (PLAN-zDQIdChPXY1lrGJyzZTiQc) | completed | [auth-io-boundary.md](./auth-io-boundary.md) |
@@ -117,6 +118,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpv1ZWjBbz | Repository-owned setup/check entrypoints (PLAN-034r05iHE1Fbkp7833DuTu) | completed | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |
 | IMPL-034AaY3USHTmzeYrZ7pa7J | Resource manager admission の実装記録 | completed | [resource-manager-admission.md](./resource-manager-admission.md) |
 | IMPL-034Aca4oJotR844AUJf6QR | Resource manager observation の実装記録 | completed | [resource-manager-observation.md](./resource-manager-observation.md) |
+| IMPL-o1iX554igoTSDCyr03s9Bh | Restrict orphan sweep to .tmp and split verify orphan findings | completed | [restrict-orphan-sweep-to-tmp-and-split-verify-findings.md](./restrict-orphan-sweep-to-tmp-and-split-verify-findings.md) |
 | IMPL-034zCh2EsO3oqQBXBAlfuM | Run canonical verification and close out issue 55 implementation | completed | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
 | IMPL-034EPz49PYz6zXgEeh5Fly | shared managed-process machinery extraction into tools proc | completed | [shared-managed-process-machinery-extraction-into-tools-proc.md](./shared-managed-process-machinery-extraction-into-tools-proc.md) |

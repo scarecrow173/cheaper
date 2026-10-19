@@ -477,8 +477,9 @@ fn find_on_path(io: &CliIo<'_>, name: &str) -> Option<PathBuf> {
     None
 }
 
-/// `config.json.<pid>.tmp` / `config.json.*.tmp`/`*.bak` の orphan を
-/// 削除する。戻り値は削除した file 名(verify の finding 用)。
+/// `{name}.` prefix + `.tmp` suffix(`config.json.*.tmp` 相当)の
+/// orphan を削除する。戻り値は削除した file 名 — sync result の
+/// `orphansRemoved` field 用(verify が使う走査は `find_orphans`)。
 fn sweep_orphans(config_path: &Path) -> Vec<String> {
     let Some(dir) = config_path.parent() else {
         return Vec::new();
@@ -493,8 +494,9 @@ fn sweep_orphans(config_path: &Path) -> Vec<String> {
     };
     for entry in rd.flatten() {
         let fname = entry.file_name().to_string_lossy().into_owned();
-        let is_orphan =
-            fname.starts_with(&tmp_prefix) && (fname.ends_with(".tmp") || fname.ends_with(".bak"));
+        // 削除対象は自身の atomic write が残しうる `{name}.` prefix +
+        // `.tmp` suffix のみ — `.bak` は cheaper が生成しない(所有境界外)。
+        let is_orphan = fname.starts_with(&tmp_prefix) && fname.ends_with(".tmp");
         if is_orphan && std::fs::remove_file(entry.path()).is_ok() {
             removed.push(fname);
         }
@@ -704,13 +706,22 @@ fn run_verify(
         Value::Array(shadows.iter().map(|s| Value::from(s.clone())).collect()),
     );
 
-    // orphan temp/bak。
+    // orphan temp/bak — `.tmp` は自身の atomic write 残留で次回 sync が
+    // 自動回収、`.bak` は cheaper 管理外 file で削除判断は user。
     let orphans = find_orphans(&config_path);
     if !orphans.is_empty() {
         for o in &orphans {
-            findings.push(Value::from(format!(
-                "orphan: {o} (leftover temp/backup; safe to delete)"
-            )));
+            if o.ends_with(".tmp") {
+                findings.push(Value::from(format!(
+                    "orphan: {o} (leftover atomic-write temp; auto-removed \
+                     by the next `hook-config sync`)"
+                )));
+            } else {
+                findings.push(Value::from(format!(
+                    "orphan: {o} (not managed by cheaper; remove manually \
+                     if unwanted)"
+                )));
+            }
         }
     }
     result.insert(

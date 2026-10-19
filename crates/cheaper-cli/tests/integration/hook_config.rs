@@ -79,6 +79,15 @@ fn write_config_with_groups(fx: &Fixture, groups: &[String]) {
     .unwrap();
 }
 
+/// `.devin/` 配下に任意名の sibling file(orphan 候補)を書き込む。
+/// 戻り値は作成した file の path。
+fn write_orphan_file(fx: &Fixture, name: &str) -> PathBuf {
+    std::fs::create_dir_all(fx.ws.path().join(".devin")).unwrap();
+    let path = fx.ws.path().join(".devin").join(name);
+    std::fs::write(&path, "orphan fixture\n").unwrap();
+    path
+}
+
 /// own entry(canonical matcher + `OWN_COMMAND`)を持つ group が
 /// config の `hooks.PreToolUse` に存在することを assert する。
 fn assert_own_entry_present(cfg: &Value) {
@@ -560,4 +569,151 @@ async fn hook_config_remove_reports_residual_conflict() {
     assert!(!residual.is_empty(), "{env}");
     let note = env["result"]["note"].as_str().unwrap();
     assert!(note.contains("deduplicated at eval time"), "{note}");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_sync_sweeps_tmp_orphan() {
+    let mut fx = fixture_with_cheaper_on_path();
+    // atomic write 残留相当の `.tmp` orphan — sweep 対象。
+    let tmp = write_orphan_file(&fx, "config.json.12345.tmp");
+
+    let (code, env, _err) = fx.run(&["hook-config", "sync"]).await;
+    assert_eq!(code, 0, "{env}");
+    assert!(!tmp.exists(), ".tmp orphan must be swept");
+    let removed = env["result"]["orphansRemoved"].as_array().unwrap();
+    assert!(
+        removed
+            .iter()
+            .any(|v| v.as_str() == Some("config.json.12345.tmp")),
+        "{env}"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_sync_preserves_bak_files() {
+    let mut fx = fixture_with_cheaper_on_path();
+    // `.bak` は cheaper が生成しない foreign file — sweep 対象外。
+    let bak = write_orphan_file(&fx, "config.json.bak");
+    let manual_bak = write_orphan_file(&fx, "config.json.manual.bak");
+
+    let (code, env, _err) = fx.run(&["hook-config", "sync"]).await;
+    assert_eq!(code, 0, "{env}");
+    assert!(bak.exists(), ".bak must survive sync");
+    assert!(manual_bak.exists(), ".bak must survive sync");
+    // `.bak` のみの環境では削除対象が無いため `orphansRemoved` key 自体
+    // 不在でもよい(insert は削除 1 件以上が条件)。present なら `.bak`
+    // 名を一切含まないことを pin する。
+    if let Some(removed) = env["result"]["orphansRemoved"].as_array() {
+        assert!(
+            !removed
+                .iter()
+                .any(|v| v.as_str().unwrap().ends_with(".bak")),
+            "{env}"
+        );
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_sync_sweeps_only_tmp_among_mixed() {
+    let mut fx = fixture_with_cheaper_on_path();
+    // `.tmp` + `.bak` 混在 — 削除されるのは `.tmp` のみ。
+    let tmp = write_orphan_file(&fx, "config.json.777.tmp");
+    let bak = write_orphan_file(&fx, "config.json.bak");
+
+    let (code, env, _err) = fx.run(&["hook-config", "sync"]).await;
+    assert_eq!(code, 0, "{env}");
+    assert!(!tmp.exists(), ".tmp orphan must be swept");
+    assert!(bak.exists(), ".bak must survive sync");
+    let removed = env["result"]["orphansRemoved"].as_array().unwrap();
+    assert_eq!(removed.len(), 1, "{env}");
+    assert_eq!(removed[0].as_str().unwrap(), "config.json.777.tmp");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_verify_reports_bak_orphan_informational() {
+    let mut fx = fixture_with_cheaper_on_path();
+    // converged config を先に用意 — config 不在だと `absent-config`
+    // blocker で clean:false・exit 2 となり、`.bak` orphan が
+    // informational であることの pin が立てられない。
+    write_config_with_groups(&fx, &[own_entry(CANONICAL_MATCHER)]);
+    let bak = write_orphan_file(&fx, "config.json.bak");
+
+    let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+    // `.bak` orphan 単独では informational — clean:true・exit 0。
+    assert_eq!(code, 0, "{env}");
+    assert_eq!(env["result"]["clean"], true, "{env}");
+    let orphans = env["result"]["orphans"].as_array().unwrap();
+    assert!(
+        orphans
+            .iter()
+            .any(|v| v.as_str() == Some("config.json.bak")),
+        "{env}"
+    );
+    let findings = env["result"]["findings"].as_array().unwrap();
+    let bak_finding = findings
+        .iter()
+        .filter_map(|f| f.as_str())
+        .find(|f| f.starts_with("orphan:") && f.contains("config.json.bak"))
+        .unwrap_or_else(|| panic!("missing orphan finding for config.json.bak: {findings:?}"));
+    assert!(
+        bak_finding.contains("not managed by cheaper"),
+        "{bak_finding}"
+    );
+    assert!(!bak_finding.contains("safe to delete"), "{bak_finding}");
+    assert!(bak.exists(), "verify must not delete .bak");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_verify_tmp_orphan_wording_and_readonly() {
+    let mut fx = fixture_with_cheaper_on_path();
+    write_config_with_groups(&fx, &[own_entry(CANONICAL_MATCHER)]);
+    let tmp = write_orphan_file(&fx, "config.json.999.tmp");
+
+    let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+    assert_eq!(code, 0, "{env}");
+    let findings = env["result"]["findings"].as_array().unwrap();
+    let tmp_finding = findings
+        .iter()
+        .filter_map(|f| f.as_str())
+        .find(|f| f.starts_with("orphan:") && f.contains("config.json.999.tmp"))
+        .unwrap_or_else(|| panic!("missing orphan finding: {findings:?}"));
+    // `.tmp` orphan は次回 sync が自動回収する旨の文言。
+    assert!(tmp_finding.contains("auto-removed"), "{tmp_finding}");
+    assert!(tmp_finding.contains("sync"), "{tmp_finding}");
+    // verify は read-only — `.tmp` file は残存する。
+    assert!(tmp.exists(), "verify must not delete .tmp orphan");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_event_stdin_preserves_bak() {
+    let mut fx = fixture_with_cheaper_on_path();
+    let bak = write_orphan_file(&fx, "config.json.bak");
+
+    // post-install → sync + verify — `.bak` は残存。
+    fx.stdin.data = b"{\"event\":\"post-install\",\"packages\":[\"cheaper\"]}".to_vec();
+    let (code, env, _err) = fx.run(&["hook-config", "--event-stdin"]).await;
+    assert_eq!(code, 0, "{env}");
+    assert!(bak.exists(), ".bak must survive post-install sync");
+    if let Some(removed) = env["result"]["sync"]["orphansRemoved"].as_array() {
+        assert!(
+            !removed
+                .iter()
+                .any(|v| v.as_str().unwrap().ends_with(".bak")),
+            "{env}"
+        );
+    }
+
+    // post-update — 同一 arm の contract 継承を pin。
+    fx.stdin.data = b"{\"event\":\"post-update\",\"packages\":[\"cheaper\"]}".to_vec();
+    let (code, env, _err) = fx.run(&["hook-config", "--event-stdin"]).await;
+    assert_eq!(code, 0, "{env}");
+    assert!(bak.exists(), ".bak must survive post-update sync");
+    if let Some(removed) = env["result"]["sync"]["orphansRemoved"].as_array() {
+        assert!(
+            !removed
+                .iter()
+                .any(|v| v.as_str().unwrap().ends_with(".bak")),
+            "{env}"
+        );
+    }
 }

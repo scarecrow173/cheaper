@@ -37,6 +37,7 @@ Directory: `docs/tasks`
 | TASK-034AR8FLSgTI6VLWpQZrQS | Benchmark evidence 集計と workflow usage guidance | done | [aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md](./aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md) |
 | TASK-034r05iHQeQpDqx9iKaroO | Align CI with canonical setup/check entrypoints and locked install | done | [align-ci-with-canonical-entrypoints.md](./align-ci-with-canonical-entrypoints.md) |
 | TASK-034r2ruj7LGYlehohv1Xjs | Align usage-log docs with recording contract | done | [align-usage-log-docs-with-recording-contract.md](./align-usage-log-docs-with-recording-contract.md) |
+| TASK-034IQdTig12S00T3Bnz5UQ | Amend historical docs and cheaper-usage skill for orphan sweep boundary | done | [amend-orphan-sweep-ownership-docs-and-usage-skill.md](./amend-orphan-sweep-ownership-docs-and-usage-skill.md) |
 | TASK-034r05iHQeQpDpIRiZMox8 | Anchor policy timeout at runWorker start and amend DESIGN-034r05iHrZUE6WvaQsRRsM | done | [anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md](./anchor-policy-timeout-at-runworker-start-and-amend-design-0004.md) |
 | TASK-d1Fg1OH0NcI8xj5WAkWvts | packages/: hook package 分割(4 sibling + 親 deps + 旧 hooks 削除) | done | [apm-hook-packages-split.md](./apm-hook-packages-split.md) |
 | TASK-X2PS53bel6fwygkwU5RpqZ | consumer 向け・repo 文書の新 layout 追従と falsified doc set 関連付け | done | [apm-hook-split-docs.md](./apm-hook-split-docs.md) |
@@ -88,7 +89,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqNHsAnxcJ | Create workers/integration guides and reorganize providers.md | done | [create-workers-integration-guides-and-reorg-providers.md](./create-workers-integration-guides-and-reorg-providers.md) |
 | TASK-034r05iHQeQpDqvWrATTbr | Define mise setup/check TOML tasks and lockfile setting | done | [define-mise-setup-check-tasks-and-lockfile-setting.md](./define-mise-setup-check-tasks-and-lockfile-setting.md) |
 | TASK-034r05iHQeQpDq49V3Gwah | Delegation loop e2e (pre_read_code block to bundled bulk-read) | done | [delegation-loop-e2e.md](./delegation-loop-e2e.md) |
-| TASK-034IM7QWavO611vU5ZdhmT | Demote legacy conflict gate in hook_config.rs and update Rust integration tests | todo | [demote-legacy-conflict-gate-in-hook-config.md](./demote-legacy-conflict-gate-in-hook-config.md) |
+| TASK-034IM7QWavO611vU5ZdhmT | Demote legacy conflict gate in hook_config.rs and update Rust integration tests | done | [demote-legacy-conflict-gate-in-hook-config.md](./demote-legacy-conflict-gate-in-hook-config.md) |
 | TASK-034r05iHWkNF7zPe6DL42d | Devin provider docs, status sync, bundle, and final verification | done | [devin-docs-status-sync-bundle-and-final-verification.md](./devin-docs-status-sync-bundle-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNWvK4AnL | Devin provider plugin registration and tests | done | [devin-provider-plugin-registration-and-tests.md](./devin-provider-plugin-registration-and-tests.md) |
 | TASK-034EUvSZEQbvfLXkjtnqnF | T5: user-facing docs・APM skill・impl record | done | [docs-and-apm.md](./docs-and-apm.md) |
@@ -240,6 +241,7 @@ Directory: `docs/tasks`
 | TASK-034DzYs0gJRVZ5JJfKAIAn | T5: cheaper-tools 内部再配置 (F1) | done | [reorganize-cheaper-tools-modules.md](./reorganize-cheaper-tools-modules.md) |
 | TASK-034r05iHQeQpDqsCIiTDOz | Repoint bundle pipeline and CI freshness check to packages/apm | done | [repoint-bundle-pipeline-and-ci-freshness.md](./repoint-bundle-pipeline-and-ci-freshness.md) |
 | TASK-034EekSpuRWpAF5iF3T316 | T2: setup boundary abort code restore and shared reverse lookup | done | [restore-setup-boundary-abort-classification.md](./restore-setup-boundary-abort-classification.md) |
+| TASK-034IQdP0etbaZJqUzaP6sl | Restrict orphan sweep to .tmp and split verify orphan findings | done | [restrict-orphan-sweep-to-tmp-and-split-verify-findings.md](./restrict-orphan-sweep-to-tmp-and-split-verify-findings.md) |
 | TASK-034r05iHQeQpDqOOFD90gZ | Restructure README, create docs index, and run final verification | done | [restructure-readme-docs-index-and-final-verification.md](./restructure-readme-docs-index-and-final-verification.md) |
 | TASK-034DkRYMmhq7VdzfD1NcT8 | Rewrite cheaper-usage SKILL.md hook path section | done | [rewrite-cheaper-usage-skill-hook-path-section.md](./rewrite-cheaper-usage-skill-hook-path-section.md) |
 | TASK-034r05iHQeQpDpDygNnvfq | Run bulk-read and cheap-write smoke against Ollama | done | [run-bulk-read-and-cheap-write-smoke-against-ollama.md](./run-bulk-read-and-cheap-write-smoke-against-ollama.md) |
@@ -273,7 +275,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqD0biyV0P | Unify versions, wire check, and document release | done | [unify-versions-wire-check-and-document-release.md](./unify-versions-wire-check-and-document-release.md) |
 | TASK-034zXB1vK84hUCtRlEyiqG | Untrack payload and validate source assets | done | [untrack-payload-and-validate-source-assets.md](./untrack-payload-and-validate-source-assets.md) |
 | TASK-034z3zQ6V08kM7gUKnUzfL | Update cheaper-usage skill guidance for executable-based CLI | done | [update-cheaper-usage-skill-guidance-for-executable-based-cli.md](./update-cheaper-usage-skill-guidance-for-executable-based-cli.md) |
-| TASK-034IM7WZt5kW1QHzLRcugI | Update hook-config docs and devin-hooks-install test for conflict demotion | todo | [update-conflict-demotion-docs-and-mjs-test.md](./update-conflict-demotion-docs-and-mjs-test.md) |
+| TASK-034IM7WZt5kW1QHzLRcugI | Update hook-config docs and devin-hooks-install test for conflict demotion | done | [update-conflict-demotion-docs-and-mjs-test.md](./update-conflict-demotion-docs-and-mjs-test.md) |
 | TASK-034r05iHQeQpDqtGttOcbh | Update consumer e2e fixtures to packages/apm and add no-self-deploy verification | done | [update-consumer-verification-and-no-self-deploy-tests.md](./update-consumer-verification-and-no-self-deploy-tests.md) |
 | TASK-034r05iHQeQpDqylmM3Elr | Update README/AGENTS for canonical contract and verify clean-state setup/check | done | [update-docs-and-verify-clean-state-setup-check.md](./update-docs-and-verify-clean-state-setup-check.md) |
 | TASK-034r05iHQeQpDpQ62tRnRU | Update docs indexes, supersede relations, and verify writer restructure | done | [update-docs-and-verify-writer-restructure.md](./update-docs-and-verify-writer-restructure.md) |
