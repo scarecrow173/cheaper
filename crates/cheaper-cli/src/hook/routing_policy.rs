@@ -819,7 +819,7 @@ fn scan_file_matches(
     let mut included = vec![false; lines.len()];
     for i in hits {
         let lo = i.saturating_sub(ctx);
-        let hi = (i + ctx + 1).min(lines.len());
+        let hi = i.saturating_add(ctx).saturating_add(1).min(lines.len());
         for flag in included.iter_mut().take(hi).skip(lo) {
             *flag = true;
         }
