@@ -50,6 +50,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z2rYkK5IZuxqTMYHtAs | create manual dispatch release workflow | completed | [create-manual-dispatch-release-workflow.md](./create-manual-dispatch-release-workflow.md) |
 | IMPL-034rALLKuPPgsnclaaPRYT | Cross-agent native routing adapters over APM distribution | completed | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
 | IMPL-034r05iHy2gdnpARFuxZVi | Delegation usage measurement log (PLAN-034r05iHE1Fbkpd5tkg6Gs) | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
+| IMPL-034IMWFzhYCEc3udAKl2xZ | Demote legacy conflict gate in hook config | completed | [demote-legacy-conflict-gate-in-hook-config.md](./demote-legacy-conflict-gate-in-hook-config.md) |
 | IMPL-034r05iHy2gdnpusDjHBDw | Separate development APM project from distributable package (PLAN-034r05iHE1Fbkp5YZSKJM2) | completed | [dev-apm-and-distributable-package-separation.md](./dev-apm-and-distributable-package-separation.md) |
 | IMPL-034r05iHy2gdnpG0UOqdhK | Devin Local provider plugin (PLAN-034r05iHK8bA7g45xvDT4a) | completed | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
 | IMPL-034DaJCOheEsDZAq8GWBXw | Devin provider Windows credential snapshot sync | completed | [devin-provider-windows-credential-snapshot-sync.md](./devin-provider-windows-credential-snapshot-sync.md) |
@@ -128,6 +129,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z1STqpGaGE7SWSnCLo3 | Unify packageVersion on builtinDir | completed | [unify-packageversion-on-builtindir.md](./unify-packageversion-on-builtindir.md) |
 | IMPL-034zXB37yW53DP9xUVf57j | Untrack payload and validate source assets | completed | [untrack-payload-and-validate-source-assets.md](./untrack-payload-and-validate-source-assets.md) |
 | IMPL-034z3CEqPwEgMOcgeJ69S5 | update cheaper-usage guidance | completed | [update-cheaper-usage-guidance.md](./update-cheaper-usage-guidance.md) |
+| IMPL-034IQb7Nk2ZxRv8WtPfYsCd | Update hook-config docs and devin-hooks-install test for conflict demotion | completed | [update-conflict-demotion-docs-and-mjs-test.md](./update-conflict-demotion-docs-and-mjs-test.md) |
 | IMPL-034rAty3hDG6bnv9waKpx5 | Update guides for pricing catalog | completed | [update-guides-for-pricing-catalog.md](./update-guides-for-pricing-catalog.md) |
 | IMPL-034z2rYSzkxUjQSkAXW3IP | update release guide | completed | [update-release-guide.md](./update-release-guide.md) |
 | IMPL-034r2HoPHxqYBy0c98U70r | Align usage.jsonl recording-scope docs (PLAN-034r2puWPUDxxDyfTSffZR) | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |

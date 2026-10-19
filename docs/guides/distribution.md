@@ -134,8 +134,11 @@ canonical entry は matcher `^([Rr][Ee][Aa][Dd]|[Gg][Rr][Ee][Pp]|[Ee][Xx][Ee][Cc
   何も書かず拒否する）
 - 既知の重複 cheaper read hook（`.windsurf/hooks.json`・`.devin/hooks.json`・
   `.devin/hooks.v1.json`・`.devin/config.local.json`・`.claude/settings*.json`
-  や対象 config 内の他登録）を検出した場合は conflict file を報告して停止する
-  — 二重発火を防ぐため利用者が明示的に解消する
+  や対象 config 内の他登録）を検出した場合は、conflict を `legacyConflicts`
+  array + `warning` 文字列として result に報告しつつ upsert を継続する
+  — 同一 request の重複発火は評価時の dedup（issue #127）で無害化されるため
+  共存は安全。warning を消して単一登録へ収束したい場合のみ、旧 file 側の
+  cheaper 登録を除去する（optional）
 - config は strict JSON のみ。JSONC/comment・大小文字違いの key・外部変更・
   symlink/reparse 経路は拒否。既存の無関係な key/entry は保全し、書き込みは
   temp file + atomic rename
@@ -168,6 +171,23 @@ cheaper が含まれる場合のみ remove、`pre-*`/未知 → noop）。projec
 未了・script 失敗では自動収束されない — `verify` が残余状態を報告する
 fallback として使う。
 
+`post-install`/`post-update` は legacy conflict（`.windsurf/hooks.json` や
+`.claude/settings*.json` 等に残る旧 cheaper 登録）があっても収束する —
+`sync` は conflict を `legacyConflicts` + `warning` で報告しつつ upsert し、
+後続の `verify` は conflict を informational `legacy-conflict:` finding
+として扱うため exit code は 0 で透過される（issue #128）。`post-uninstall`
+で payload の `packages` を判定できない場合も同じく `verify` の code を
+透過するため、conflict-only の残余状態では exit 0 となる。
+
+複数登録 path（`.devin/config.json` の native 登録 + `.claude/settings.json`
+の import 等）から発火する cheaper hook は、fingerprint が一致する同一
+canonical request の間で評価 1 回・全 firing 同一 verdict へ収束する
+（issue #127 の eval-time dedup）。注意: PATH 上の `cheaper` binary が
+dedup 導入前の旧 version の場合、重複登録は firing 毎に独立評価される —
+影響は duplicate evaluation（同一 tool call の token 計測・bounded
+materialization・bounded scan が重複実行される）のみで、verdict は同一・
+correctness は維持される。
+
 #### 既存 consumer からの移行
 
 旧 APM 配布（`.windsurf/hooks.json` への cheaper 登録）からの移行条件:
@@ -175,9 +195,10 @@ fallback として使う。
 - cheaper dependency が **`targets: [agent-skills]`** を持つこと。無いと
   APM の reconcile が dep 自体を skip し skills まで外れる
 - `read_config_from` で `windsurf`/`claude` の自動 import を有効にして
-  いる環境では、旧登録が再 import され conflict gate が発火しうる —
-  import を明示的に無効化するか、旧 file の cheaper entry を消してから
-  `sync` を実行する
+  いる環境では、旧登録が再 import されて残りうる — `sync` / lifecycle を
+  block せず `legacyConflicts` + `warning` で報告されるだけなので導入自体は
+  そのまま進む。単一登録へ収束したい場合のみ、import を明示的に無効化するか
+  旧 file の cheaper entry を消す（optional 手順）
 - `verify` は残余 artifact・matcher drift・shadow（`.devin/hooks.v1.json`
   等が config.json を shadow する可能性）を検出して remediation を報告する
 

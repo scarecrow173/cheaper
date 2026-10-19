@@ -266,7 +266,7 @@ describe("install-devin-hooks.ps1 + real cheaper CLI", {
     assert.equal(updated.hooks.PreToolUse[0].matcher, CANON_MATCHER);
   });
 
-  it("stops on legacy cheaper registrations in known sources", () => {
+  it("warns on legacy cheaper registrations in known sources", () => {
     const { root } = makeRealConsumer();
     const realBin = REAL_BIN();
     writeAt(
@@ -278,10 +278,55 @@ describe("install-devin-hooks.ps1 + real cheaper CLI", {
         },
       }),
     );
+    // 降格後は conflict 有りでも install は収束する — sync は warning として
+    // 報告しつつ canonical entry を書き込む。
     const r = runInstaller(root, { apply: true, binRoot: realBin });
-    assert.notEqual(r.code, 0, r.combined);
-    assert.equal(existsSync(configAt(root)), false);
-    assert.match(r.combined, /legacy|conflict/i, r.combined);
+    assert.equal(r.code, 0, r.combined);
+    assert.equal(existsSync(configAt(root)), true);
+    const config = JSON.parse(readFileSync(configAt(root), "utf8"));
+    const own = (config.hooks?.PreToolUse ?? []).filter(
+      (g) =>
+        g.matcher === CANON_MATCHER && (g.hooks ?? []).some((h) => h.command === CANON_COMMAND),
+    );
+    assert.equal(own.length, 1, JSON.stringify(config));
+
+    // wrapper は成功時に sync envelope を echo しないため、warning surfacing は
+    // 実 CLI の verify を direct spawn で確認する(verify は capability check を
+    // 持たないので PATH 加工は不要)。
+    const verify = spawnSync(cliExe, ["hook-config", "verify", "--project-root", root], {
+      encoding: "utf8",
+    });
+    assert.equal(verify.status, 0, `${verify.stdout ?? ""}\n${verify.stderr ?? ""}`);
+    const vresult = JSON.parse(verify.stdout).result;
+    const windsurfFile = path.join(root, ".windsurf", "hooks.json");
+    assert.ok(
+      (vresult.legacyConflicts ?? []).some((f) => path.resolve(f) === windsurfFile),
+      `legacyConflicts: ${JSON.stringify(vresult.legacyConflicts)}`,
+    );
+    assert.ok(
+      (vresult.findings ?? []).some((f) => f.startsWith("legacy-conflict:")),
+      `findings: ${JSON.stringify(vresult.findings)}`,
+    );
+    assert.equal(vresult.clean, true, JSON.stringify(vresult.findings));
+
+    // `warning` field 自体の確認 — sync は冪等なので再実行しても `warning`
+    // が返る。`check_capability` が PATH 上の cheaper を要求するため CLI の
+    // dir を PATH へ含めて spawn する。
+    const sync = spawnSync(cliExe, ["hook-config", "sync", "--project-root", root], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${path.dirname(cliExe)}${path.delimiter}${process.env.PATH}`,
+      },
+    });
+    assert.equal(sync.status, 0, `${sync.stdout ?? ""}\n${sync.stderr ?? ""}`);
+    const sresult = JSON.parse(sync.stdout).result;
+    assert.equal(typeof sresult.warning, "string", JSON.stringify(sresult));
+    assert.ok(sresult.warning.length > 0);
+    assert.ok(
+      (sresult.legacyConflicts ?? []).some((f) => path.resolve(f) === windsurfFile),
+      `legacyConflicts: ${JSON.stringify(sresult.legacyConflicts)}`,
+    );
   });
 
   it("rejects malformed config without writes", () => {
