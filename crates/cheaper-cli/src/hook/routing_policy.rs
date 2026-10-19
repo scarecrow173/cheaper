@@ -253,11 +253,12 @@ fn resolve_request_cwd(cwd: &str) -> (String, String) {
     } else {
         cwd.to_string()
     };
-    let cwd_abs = if nodepath::is_absolute(&cwd) {
-        cwd.clone()
-    } else {
-        nodepath::resolve(&process_cwd(), &cwd)
-    };
+    // Node `path.resolve(process.cwd(), cwd)` semantics — absolute input
+    // も `resolve` 側で `.`/`..` や語尾 separator を normalize する。
+    // `cwd_abs` は後続の lexical containment(`nodepath::relative`)の
+    // `from` に使われ、`.`/UNC spelling 差が残ると workspace 内 file を
+    // OutOfScope と誤判定して allow へ倒れるため、ここで normalize する。
+    let cwd_abs = nodepath::resolve(&process_cwd(), &cwd);
     (cwd, cwd_abs)
 }
 

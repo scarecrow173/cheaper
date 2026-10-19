@@ -19,7 +19,8 @@ use cheaper_cli::hook::targets::HookTarget;
 
 /// `"lorem ipsum dolor sit amet ".repeat(4000)` — hook-contract.test.ts
 /// と同一の 8192 token 超 fixture(27 bytes × 4000 = 108000 bytes)。
-fn big_text() -> String {
+/// `pub(crate)`: sibling `hook_eval_dedup` から再利用。
+pub(crate) fn big_text() -> String {
     "lorem ipsum dolor sit amet ".repeat(4000)
 }
 
@@ -34,16 +35,20 @@ impl CliStdin for PanicStdin {
     }
 }
 
-struct Fixture {
+/// `pub(crate)`: sibling `hook_eval_dedup` から再利用 —
+/// `CHEAPER_CONFIG_DIR`・`HOME`・`USERPROFILE` を tempdir へ隔離する
+/// env map を供給し、test が実 `~/.config/cheaper/hook-eval/` を
+/// 一切触れないことを構造的に保証する。
+pub(crate) struct Fixture {
     _dir: tempfile::TempDir,
-    ws: PathBuf,
+    pub(crate) ws: PathBuf,
     /// `makeIsolatedEnv` 相当の env map。
-    env: HashMap<String, String>,
-    builtin_dir: PathBuf,
+    pub(crate) env: HashMap<String, String>,
+    pub(crate) builtin_dir: PathBuf,
 }
 
 impl Fixture {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         let dir = tempfile::tempdir().unwrap();
         let ws = dir.path().join("ws");
         std::fs::create_dir_all(&ws).unwrap();
@@ -75,11 +80,11 @@ impl Fixture {
         }
     }
 
-    fn write(&self, name: &str, contents: &[u8]) {
+    pub(crate) fn write(&self, name: &str, contents: &[u8]) {
         std::fs::write(self.ws.join(name), contents).unwrap();
     }
 
-    fn write_big(&self, name: &str) {
+    pub(crate) fn write_big(&self, name: &str) {
         self.write(name, big_text().as_bytes());
     }
 
@@ -93,20 +98,23 @@ impl Fixture {
     }
 }
 
-fn windsurf_read(file_path: &str) -> String {
+/// `pub(crate)`: sibling `hook_eval_dedup` から再利用。
+pub(crate) fn windsurf_read(file_path: &str) -> String {
     format!(
         "{{\"agent_action_name\":\"pre_read_code\",\"tool_info\":{{\"file_path\":{}}}}}",
         serde_json::to_string(file_path).unwrap()
     )
 }
 
-struct HookResult {
-    code: i32,
-    stdout: String,
-    stderr: String,
+/// `pub(crate)`: sibling `hook_eval_dedup` から再利用。
+pub(crate) struct HookResult {
+    pub(crate) code: i32,
+    pub(crate) stdout: String,
+    pub(crate) stderr: String,
 }
 
-async fn run_hook(
+/// `pub(crate)`: sibling `hook_eval_dedup` から再利用。
+pub(crate) async fn run_hook(
     fx: &Fixture,
     args: &[&str],
     stdin: &str,
@@ -695,7 +703,8 @@ fn hook_target_parse_table() {
     assert_eq!(HookTarget::parse(""), None);
 }
 
-fn tool_use_payload(tool_name: &str, tool_input: &str) -> String {
+/// `pub(crate)`: sibling `hook_eval_dedup` から再利用。
+pub(crate) fn tool_use_payload(tool_name: &str, tool_input: &str) -> String {
     format!(
         "{{\"tool_name\":{},\"tool_input\":{}}}",
         serde_json::to_string(tool_name).unwrap(),
@@ -903,7 +912,8 @@ async fn pretooluse_shell_case_variants_and_fail_open_shapes() {
     }
 }
 
-fn devin_payload(tool_name: &str, tool_input: &str) -> String {
+/// `pub(crate)`: sibling `hook_eval_dedup` から再利用。
+pub(crate) fn devin_payload(tool_name: &str, tool_input: &str) -> String {
     format!(
         "{{\"hook_event_name\":\"PreToolUse\",\"tool_name\":{},\"tool_input\":{}}}",
         serde_json::to_string(tool_name).unwrap(),
