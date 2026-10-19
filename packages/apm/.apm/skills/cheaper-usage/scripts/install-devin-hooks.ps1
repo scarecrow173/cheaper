@@ -2,8 +2,10 @@ param([string]$ProjectRoot = (Get-Location).Path, [switch]$Apply)
 
 # Devin hook 登録の所有権は Rust CLI (`cheaper hook-config`) が持つ。
 # この script は preview/apply UX のみを提供する thin wrapper —
-# config の解析・検証・atomic write・legacy conflict gate は
-# `hook-config sync|verify` が担う(ADR-034H2WBNtC4We8dyC5lQZJ、
+# config の解析・検証・atomic write は `hook-config sync|verify` が担う。
+# legacy conflict 登録は検出時に warning として報告されるが
+# sync/verify の成功を妨げない(issue #128 で blocker から warning へ
+# 降格: ADR-034IKJq6tKWWAep0Q0ONzK。旧決定: ADR-034H2WBNtC4We8dyC5lQZJ、
 # issue #107)。
 
 $ErrorActionPreference = 'Stop'
