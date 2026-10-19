@@ -39,7 +39,8 @@ Directory: `docs/designs`
 | DESIGN-034DlAaOWn3RyI3onq5uj1 | devin usage accounting contract test and docs | approved | [devin-usage-accounting-contract-test-and-docs.md](./devin-usage-accounting-contract-test-and-docs.md) |
 | DESIGN-034r05iHy2gdnoS2PWvNo0 | grep batchMaxBytes invariant enforcement | approved | [grep-batch-max-bytes-invariant-enforcement.md](./grep-batch-max-bytes-invariant-enforcement.md) |
 | DESIGN-034r6oM1pW6bz2SSvR3rWT | grep eval-budget test stabilization via explicit budget injection | approved | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
-| DESIGN-034IefWW6OJ9rvESaNvKUK | Hook eval dedup verdict cache and leader election | draft | [hook-eval-dedup-verdict-cache-and-leader-election.md](./hook-eval-dedup-verdict-cache-and-leader-election.md) |
+| DESIGN-034ILuADFr70oZoUROR13q | hook-config legacy conflict gate demotion to warning | draft | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |
+| DESIGN-034IefWW6OJ9rvESaNvKUK | Hook eval dedup verdict cache and leader election | approved | [hook-eval-dedup-verdict-cache-and-leader-election.md](./hook-eval-dedup-verdict-cache-and-leader-election.md) |
 | DESIGN-034r05iHy2gdnoLt52txFG | Huge-file byte cap guard and fail-closed hook | approved | [huge-file-byte-cap-guard-and-fail-closed-hook.md](./huge-file-byte-cap-guard-and-fail-closed-hook.md) |
 | DESIGN-034FntkIZGiffhdU4caSkN | invocation-scoped command grant（--grant）・grantRequests・cheaper policy grant の設計 | approved | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |
 | DESIGN-034A8ubkLAdLl7ICQZRYM5 | managed process canonical executor の設計 | approved | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
