@@ -1,7 +1,7 @@
 ---
 id: "DISC-034IKBmCjJBeLD5qG9DoUM"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "hook-config legacy conflict gate demotion to warning"
 created: "2026-10-19"
 updated: "2026-10-20"
