@@ -1,7 +1,7 @@
 ---
 id: "DISC-034IO86RVnmQ8AU5Lac8bw"
 type: "discovery"
-status: "active"
+status: "resolved"
 title: "hook-config sweep_orphans の .bak sweep が cheaper 非生成 file を削除する"
 created: "2026-10-19"
 updated: "2026-10-19"

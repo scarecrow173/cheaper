@@ -51,7 +51,8 @@ relations:
     - "../plans/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
     - "../test-specs/hook-config-orphan-sweep-ownership-contract.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "docs/test-specs/hook-config-orphan-sweep-ownership-contract.md"
   references:
     - "../discovery/hook-config-sweep-orphans-deletes-foreign-bak-files.md"
     - "../../crates/cheaper-cli/src/hook_config.rs"

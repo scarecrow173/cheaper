@@ -39,7 +39,8 @@ relations:
     - "../designs/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
     - "../plans/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "docs/test-specs/hook-config-orphan-sweep-ownership-contract.md"
   references:
     - "crates/cheaper-cli/src/hook_config.rs"
     - "crates/cheaper-cli/tests/integration/hook_config.rs"
