@@ -1,10 +1,10 @@
 ---
 id: "SPEC-034Ie1ZEdUR2aBFVoqkBay"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "Hook duplicate firing single-evaluation dedup"
 created: "2026-10-18"
-updated: "2026-10-18"
+updated: "2026-10-19"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -170,13 +170,19 @@ search scan）を高々 1 回だけ実行し、全 firing が同一 verdict
   限る。同一性キーに target・source_tool・session・process
   固有値を含めてはならない（含めると firing 間でキーが
   割れて dedup 効果が消える）。
-- R2: verdict を変え得る全ての入力（request 内容・file 状態・
-  threshold・policy / env 入力）は同一性キーに反映される
-  か、dedup の適用外としなければならない。共有 verdict の
-  reuse は近似ではなく厳密に正しいこと — 現行 `evaluate`
-  の verdict が request + file 状態 + threshold の決定的
-  関数である前提に依存し、取りこぼしがあれば dedup 対象外
-  とする。
+- R2: verdict を変え得る全ての**観測可能な**入力（request の
+  各 field・resolved target の stat signature・threshold・
+  count cap・builtin / user / project の各 policy 層・実効
+  cwd）は同一性キーに反映されるか、dedup の適用外としなけ
+  ればならない。共有 verdict の reuse は同一の観測可能入力
+  に対して近似ではなく厳密に正しいこと — stat signature
+  に現れない内容変化（mtime granularity 内の in-place 変更・
+  dir target の nested file 編集等）は TTL で bound される
+  受容済みの残差であり、contract 違反とは見なさない。なお
+  `evaluate` は計測の transient 失敗（timeout・IO error・
+  import 失敗）で失敗由来の `Allow` を非決定的に返し得る
+  が、この `Allow` は fail-open 方向への共有として TTL 内
+  で reuse してよい（受容済み）。
 - R3: 同一評価グループ内で高コストな評価処理（token 計測・
   bounded materialization・search scan）は高々 1 回だけ
   実行される。最初に評価を完遂した firing が結果を共有し、
@@ -202,8 +208,12 @@ search scan）を高々 1 回だけ実行し、全 firing が同一 verdict
   共有に関わる書き込み失敗は hook 応答・exit code に影響
   しない。
 - R9: host が観測する挙動は不変 — N firing に対し N 件の
-  verdict が返り、各 verdict の内容は dedup 無しの場合と
-  同一である（deny を allow へ弱める近似をしない）。
+  verdict が返り、各 verdict の内容は同一の観測可能入力が
+  与えられた場合に dedup 無しの場合と同一である（deny を
+  allow へ弱める近似をしない）。signature に現れない入力
+  変化の取りこぼしによる残差は Deferred Design Concerns の
+  mtime granularity・clock skew 項目のとおり TTL で bound
+  される受容済みのものとする。
 
 ## Acceptance Criteria
 
@@ -217,9 +227,12 @@ search scan）を高々 1 回だけ実行し、全 firing が同一 verdict
   が test で固定される（例: devin 系 firing は devin の
   decision contract、claude 系 firing は `hookSpecificOutput`
   contract で応答）。
-- [ ] file stat（mtime または size）の変化、または異なる
-  threshold が異なる fingerprint を生成し、独立に評価される
-  ことが test で固定される。
+- [ ] **File target** の stat（mtime または size）の変化、
+  または異なる threshold が異なる fingerprint を生成し、
+  独立に評価されることが test で固定される。Dir target の
+  nested file 編集は dir の stat signature に現れないため、
+  同一 fingerprint 内では TTL のみで bound される（別
+  fingerprint への切替は要求しない）。
 - [ ] leader プロセスの crash または lock の stale 化が
   あっても follower は独立評価へ fallback し verdict を返す
   ことが test で固定される。

@@ -1,10 +1,10 @@
 ---
 id: "ADR-034Ie3HFd6tIJms6Z2NIow"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Dedup concurrent hook firings via canonical request fingerprint verdict cache"
 created: "2026-10-18"
-updated: "2026-10-18"
+updated: "2026-10-19"
 owners:
   - scarecrow173
 relations:
@@ -92,17 +92,24 @@ sync を拒否する blocker であり、native 登録と import 系統の共存
 `evaluate`(`routing_policy.rs`)の `Verdict` は canonical
 `RoutingRequest`・対象 file 状態・threshold
 (`CHEAPER_READ_TOKEN_THRESHOLD`)・計測 cap
-(`CHEAPER_COUNT_MAX_BYTES`)の決定的関数で、target / `source_tool` /
-session には依存しない。この決定性が verdict cache を「近似」では
-なく「厳密に正しい」ものにする前提条件である。
+(`CHEAPER_COUNT_MAX_BYTES`)・policy 層(builtin / user / project
+`policy.yaml`)の実効内容・実効 cwd の決定的関数で、target /
+`source_tool` / session には依存しない — ただし計測の transient
+失敗(`Measured::Failed`・`RangedScan` / `SearchScan` の失敗は
+`Allow` へ畳まれる)による非決定性を modulo とする。この決定性が
+verdict cache を「近似」ではなく「厳密に正しい」ものにする前提
+条件であり、失敗由来の `Allow` が TTL 内の兄弟 firing に共有
+され得る点は受容済みの fail-open トレードオフとする。
 
 ## Decision Drivers
 
 * **correctness**: cache reuse は verdict を変えてはならない。
-  fingerprint は `evaluate` が読む全入力(canonical request の
-  policy 関連 field・対象 file 状態・threshold・count cap・
-  builtin dir 識別)を網羅し、target / `source_tool` / session /
-  process id は含めない。
+  fingerprint は `evaluate` が読む全**観測可能**入力(canonical
+  request の policy 関連 field・対象 file 状態・threshold・
+  count cap・builtin / user / project の policy 層 signature・
+  実効 cwd)を網羅し、target / `source_tool` / session /
+  process id は含めない。signature に現れない内容変化は TTL で
+  bound する受容済み残差とする。
 * **fail-open**: copilot は「いかなる」非 0 exit も deny と解釈する
   (ADR-034r05iHrZUE6WizQ4LgPa)。cache / lock / fs のあらゆる失敗は
   通常評価へ縮退し、cache 経路が新たな非 0 exit・panic・deny 化
@@ -112,8 +119,9 @@ session には依存しない。この決定性が verdict cache を「近似」
   出力契約(targets.rs、`cheaper_core::json::stringify` + `"\n"`)を
   侵さない。
 * **boundedness**: TTL・lock stale 判定・sweep で cache dir の肥大と
-  follower の無限 wait を防ぐ。follower wait は計測の worst-case
-  (`MEASURE_TIMEOUT` = 30s)を暫定上限とする。
+  follower の無限 wait を防ぐ。follower wait は個別計測呼出しの
+  timeout(`MEASURE_TIMEOUT` = 30s)を暫定上限とする(評価全体の
+  worst-case は shell multi-candidate で非有界 — design 参照)。
 * **minimal surface**: 新規依存を増やさず、既存の atomic write・
   userConfigDir 解決・fingerprint 前例を再利用する(KISS / YAGNI /
   DRY)。
@@ -147,44 +155,71 @@ correctness を保ったままコストだけ削減できるため。
   `{:016x}` 形式)で `hash(canonical request + stat signature +
   policy inputs)` を算出し、`<fingerprint>` を file 名に使う。
   - canonical request: `RoutingRequest` の policy が読む field
-    (kind・path・cwd・range・pattern・max_results・context・glob・
-    output_mode・case_insensitive・command)を field 単位で明示
-    列挙して hash 入力とする。`source_tool`・target・session・pid
-    は**含めない**(含めると firing 間で key が割れて dedup 効果が
-    消える)。`source_tool` を保持する enum への `derive(Hash)` は
-    使わない。
+    (kind・range・pattern・max_results・context・glob・
+    output_mode・case_insensitive)を field 単位で明示列挙して
+    hash 入力とし、これに canonical 化した実効 cwd
+    (`canonicalize_workspace_root(resolve_request_cwd)` の
+    `workspace_root`)を加える。raw `path`・`cwd` は hash しない
+    — path の同一性は stat signature の resolved(canonicalized)
+    path で、cwd の同一性は `workspace_root` でカバーし、cwd
+    spelling 差(`./x`・symlink 経由・語尾 `/` 差)による key の
+    分裂を防ぐ。`command` だけは raw 文字列を hash する —
+    Shell の deny reason が `collapse_command(command)` を
+    埋め込むため、candidate 集合が同じでも command 文字列が
+    異なれば verdict が異なる。`source_tool`・target・session・
+    pid は**含めない**(含めると firing 間で key が割れて dedup
+    効果が消える)。`source_tool` を保持する enum への
+    `derive(Hash)` は使わない。
   - stat signature: request が解決する filesystem target それぞれの
-    `(resolved path, mtime, len)`。FileRead / Search は
-    `resolve_target` と同じ containment 規則で解決した path、
-    Shell は `extract_read_candidates` の各 operand を同規則で cwd
-    解決した集合とする。解決結果が 0 件(out-of-scope・missing・
-    候補無し)の request は cache を介さず直接 `evaluate` する
-    (その verdict は定数 allow で、cache する意味も stat 署名も
-    無い)。
+    `(resolved canonical path, mtime, len)`。FileRead / Search は
+    `resolve_target` と同じ containment 規則で解決・canonicalize
+    した path、Shell は `extract_read_candidates` の各 operand を
+    同規則で cwd 解決した集合とする。file/dir に解決できない
+    候補(missing・非 file/dir・workspace 外)は `absent` marker
+    として signature に含める — 「評価時点では存在しなかった」
+    は verdict を変え得るためで、absent → file 出現の遷移が別
+    fingerprint になることを保証する。cache を bypass するのは
+    target 一覧が**完全に空**の request のみ — FileRead / Search
+    が out-of-scope に解決した場合と、Shell の candidate が 0 件
+    (parse 不能・read command 無し)の場合であり、全候補が
+    `absent` の Shell request は空ではなく通常どおり cache
+    される。
   - policy inputs: `threshold(opts.env)`
     (`CHEAPER_READ_TOKEN_THRESHOLD`)、`count_max_bytes(opts.env)`
-    (`CHEAPER_COUNT_MAX_BYTES`)、`builtin_dir` 識別(`Some(path)` の
-    path 文字列 / `None`)。`CHEAPER_CONFIG_DIR` /
-    `XDG_CONFIG_HOME` / `USERPROFILE` / `HOME` は cache root
-    (`<userConfigDir>`)自体を分岐するため、store 配置で構造的に
-    分離済みであり fingerprint への追加は不要。
+    (`CHEAPER_COUNT_MAX_BYTES`)、および policy 層 signature —
+    `builtin_dir` は `Some(dir)` なら `<dir>/policy.yaml` の stat
+    signature(mtime+len)、`None` なら embedded fingerprint
+    (`embedded.rs` の `embedded_fingerprint()` — `pub(crate)` 化)
+    を marker とする。user policy は `<userConfigDir>/policy.yaml`、
+    project policy は `<canonical workspace root>/.cheaper/
+    policy.yaml` の stat signature(不在は `absent`)。
+    `CHEAPER_CONFIG_DIR` / `XDG_CONFIG_HOME` / `USERPROFILE` /
+    `HOME` は cache root(`<userConfigDir>`)自体を分岐するため、
+    store 配置で構造的に分離済みであり fingerprint への追加は
+    不要。
   - hash は同一 binary 内で決定的であればよい — toolchain 差で値が
     変わっても効果は hit rate 低下のみで correctness には影響しない。
     新規 hash 依存(sha2 等)は追加しない。
 - **store**: `<userConfigDir>/hook-eval/<fingerprint>.json` に
   canonical verdict を JSON で保存する(record 例:
-  `{schemaVersion: 1, createdAt, verdict}`)。`<userConfigDir>` は
+  `{schemaVersion: 1, createdAt, fingerprint, verdict}` —
+  `fingerprint` field は read 時に期待値と照合する)。
+  `<userConfigDir>` は
   `resolve_user_config_dir` 経由で解決し、workspace・`.cheaper/`
-  には書かない。TTL は暫定 ~60 秒(`createdAt` / file mtime で判定、
-  discovery の暫定指針。実測ベースの調整は spec / follow-up の
-  責務)。read/write は全て best-effort — `usage_log.rs` と同じ
-  「失敗しても exit code・stdout を変えない」契約。
+  には書かない。TTL は暫定 ~60 秒(file mtime の checked-age で
+  判定、`createdAt` は観察用 — discovery の暫定指針。実測ベースの
+  調整は spec / follow-up の責務)。read/write は全て best-effort —
+  `usage_log.rs` と同じ「失敗しても exit code・stdout を変えない」
+  契約。
 - **leader election**: `<fingerprint>.lock` を
   `OpenOptions::new().create_new(true)`(O_EXCL 相当の atomic
   create)で取得する。取得した process(leader)が `evaluate` を実行
   し、verdict file を `cheaper_core::fs_util::atomic_write`
   (temp+rename)で書いてから lock file を remove する。lock file
-  には pid + timestamp を書き stale 判定に使う。
+  には pid + timestamp + nonce からなる一意の owner token を書き、
+  stale 判定(mtime)と delete-if-owner(remove 前に payload の
+  token を照合 — stale takeover で後継が再取得した lock を旧
+  leader が消す経路を防ぐ)に使う。
 - **follower**: lock 取得に失敗した process は verdict file を一定
   間隔で bounded-poll し、出現した fresh entry(TTL 内)を schema
   検証のうえ採用する。poll timeout・lock が stale(mtime が閾値
@@ -268,6 +303,9 @@ correctness を保ったままコストだけ削減できるため。
     containment 規則で resolved path を返す `pub(crate)` helper を
     公開し、規則の複製を避ける。`extract_read_candidates` は既に
     `pub`。
+  - `crates/cheaper-cli/src/embedded.rs` — `embedded_fingerprint()`
+    を `pub(crate)` 化(builtin `None` の fingerprint marker に
+    使用)。
   - `crates/cheaper-cli/tests/integration/` — dedup 用 test module
     (例 `hook_eval_dedup.rs`)を追加し、
     `tests/integration/main.rs` に `mod` 宣言を追加する
@@ -287,8 +325,9 @@ correctness を保ったままコストだけ削減できるため。
   - fingerprint hash は `embedded.rs` の `embedded_fingerprint()`
     (`DefaultHasher` → `format!("{:016x}", ...)`)の前例に倣う。
   - lock は `std::fs::OpenOptions::new().create_new(true)`
-    `.write(true)` の atomic create — pid + timestamp を書き込み、
-    stale 判定(lock mtime が閾値超過)に使う。
+    `.write(true)` の atomic create — pid + timestamp + nonce の
+    owner token を書き込み、stale 判定(lock mtime が閾値超過)と
+    delete-if-owner(remove 前の token 照合)に使う。
   - follower wait は `tokio::time::sleep` による async poll とし、
     fs 操作は `tokio::task::spawn_blocking` へ逃がす
     (`measure_tokens` の blocking offload と同じ構造)。wait 上限は
