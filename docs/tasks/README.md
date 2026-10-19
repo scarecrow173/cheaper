@@ -88,6 +88,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqNHsAnxcJ | Create workers/integration guides and reorganize providers.md | done | [create-workers-integration-guides-and-reorg-providers.md](./create-workers-integration-guides-and-reorg-providers.md) |
 | TASK-034r05iHQeQpDqvWrATTbr | Define mise setup/check TOML tasks and lockfile setting | done | [define-mise-setup-check-tasks-and-lockfile-setting.md](./define-mise-setup-check-tasks-and-lockfile-setting.md) |
 | TASK-034r05iHQeQpDq49V3Gwah | Delegation loop e2e (pre_read_code block to bundled bulk-read) | done | [delegation-loop-e2e.md](./delegation-loop-e2e.md) |
+| TASK-034IM7QWavO611vU5ZdhmT | Demote legacy conflict gate in hook_config.rs and update Rust integration tests | todo | [demote-legacy-conflict-gate-in-hook-config.md](./demote-legacy-conflict-gate-in-hook-config.md) |
 | TASK-034r05iHWkNF7zPe6DL42d | Devin provider docs, status sync, bundle, and final verification | done | [devin-docs-status-sync-bundle-and-final-verification.md](./devin-docs-status-sync-bundle-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNWvK4AnL | Devin provider plugin registration and tests | done | [devin-provider-plugin-registration-and-tests.md](./devin-provider-plugin-registration-and-tests.md) |
 | TASK-034EUvSZEQbvfLXkjtnqnF | T5: user-facing docs・APM skill・impl record | done | [docs-and-apm.md](./docs-and-apm.md) |
@@ -272,6 +273,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqD0biyV0P | Unify versions, wire check, and document release | done | [unify-versions-wire-check-and-document-release.md](./unify-versions-wire-check-and-document-release.md) |
 | TASK-034zXB1vK84hUCtRlEyiqG | Untrack payload and validate source assets | done | [untrack-payload-and-validate-source-assets.md](./untrack-payload-and-validate-source-assets.md) |
 | TASK-034z3zQ6V08kM7gUKnUzfL | Update cheaper-usage skill guidance for executable-based CLI | done | [update-cheaper-usage-skill-guidance-for-executable-based-cli.md](./update-cheaper-usage-skill-guidance-for-executable-based-cli.md) |
+| TASK-034IM7WZt5kW1QHzLRcugI | Update hook-config docs and devin-hooks-install test for conflict demotion | todo | [update-conflict-demotion-docs-and-mjs-test.md](./update-conflict-demotion-docs-and-mjs-test.md) |
 | TASK-034r05iHQeQpDqtGttOcbh | Update consumer e2e fixtures to packages/apm and add no-self-deploy verification | done | [update-consumer-verification-and-no-self-deploy-tests.md](./update-consumer-verification-and-no-self-deploy-tests.md) |
 | TASK-034r05iHQeQpDqylmM3Elr | Update README/AGENTS for canonical contract and verify clean-state setup/check | done | [update-docs-and-verify-clean-state-setup-check.md](./update-docs-and-verify-clean-state-setup-check.md) |
 | TASK-034r05iHQeQpDpQ62tRnRU | Update docs indexes, supersede relations, and verify writer restructure | done | [update-docs-and-verify-writer-restructure.md](./update-docs-and-verify-writer-restructure.md) |

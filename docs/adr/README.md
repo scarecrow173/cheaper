@@ -42,7 +42,7 @@ Directory: `docs/adr`
 | ADR-034r05iHrZUE6WgelFx89a | grep の batchMaxBytes invariant 違反を tool 構築時に reject する | accepted | [grep-batch-max-bytes-invariant-reject-at-construction.md](./grep-batch-max-bytes-invariant-reject-at-construction.md) |
 | ADR-034r6mq2Glfp3YlWyQdlIO | 大規模 fixture テストの eval budget は test 側で明示注入して環境非依存にする | accepted | [grep-eval-budget-test-stability-budget-injection.md](./grep-eval-budget-test-stability-budget-injection.md) |
 | ADR-034D85IukRi32huPbZDbCT | Guard trailing separator in workspace boundary predicate | proposed | [guard-trailing-separator-in-workspace-boundary-predicate.md](./guard-trailing-separator-in-workspace-boundary-predicate.md) |
-| ADR-034IKJq6tKWWAep0Q0ONzK | hook-config legacy conflict gate demotion to warning | proposed | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |
+| ADR-034IKJq6tKWWAep0Q0ONzK | hook-config legacy conflict gate demotion to warning | accepted | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |
 | ADR-034r05iHrZUE6WcElqgQIr | auth interaction の browser 起動を注入可能な URL opener seam にする | accepted | [inject-url-opener-seam-for-auth-interaction.md](./inject-url-opener-seam-for-auth-interaction.md) |
 | ADR-zHFZ3QOA0Q6lEoWmS5gzIQ | INVALID_OUTPUT の raw output を file へ保存し details に参照を返す | proposed | [invalid-output-raw-output-persistence.md](./invalid-output-raw-output-persistence.md) |
 | ADR-034FlTS3BaiV3WKz8bX1Xv | invocation-scoped command grant を合成 trusted layer として policy load に注入する | accepted | [invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md](./invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md) |
