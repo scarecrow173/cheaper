@@ -1,7 +1,7 @@
 ---
 id: "TASK-034Jg6j7EASBiaIqXlc07u"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add proc full-output tee sink for route logging"
 created: "2026-10-20"
 updated: "2026-10-20"

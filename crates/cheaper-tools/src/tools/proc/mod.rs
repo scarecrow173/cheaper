@@ -109,6 +109,13 @@ pub fn find_cheaper_error<'a>(
 /// で渡す(reason object を呼出し側が再送しない前提)。
 pub type OnTimeout = Arc<dyn Fn(&CheaperError) + Send + Sync>;
 
+/// 全量 output tee sink(design §proc の全量 output tee、R26) —
+/// bounded capture とは別に stdout/stderr 両 stream の raw bytes を
+/// chunk 到着順に interleaved で受け取る。sink 内の write 失敗は
+/// closure が自身の状態へ記録する(postprocessFailure 縮退、R29)
+/// — tee が capture を失敗させることはない。
+pub type ProcTee = Arc<dyn Fn(&[u8]) + Send + Sync>;
+
 // ---------------------------------------------------------------------------
 // run の入力: prepared / limits / identity
 // ---------------------------------------------------------------------------
@@ -269,6 +276,7 @@ pub async fn run(
     identity: &ProcIdentity,
     outer: AbortSignal,
     on_timeout: Option<&OnTimeout>,
+    tee: Option<ProcTee>,
 ) -> Result<CanonicalToolResult, ToolError> {
     // `durationMs` の測定起点 — spawn 失敗 details にも載せるため
     // spawn 前に取る(`identity.report_duration_ms` が true の場合のみ
@@ -285,6 +293,7 @@ pub async fn run(
         stdout: StreamCapture::default(),
         stderr: StreamCapture::default(),
         remaining: limits.max_output_bytes,
+        tee,
     }));
 
     let mut command = build_command(prepared);

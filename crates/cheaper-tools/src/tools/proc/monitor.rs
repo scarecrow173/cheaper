@@ -102,10 +102,16 @@ pub(super) struct Captures {
     pub(super) stdout: StreamCapture,
     pub(super) stderr: StreamCapture,
     pub(super) remaining: u64,
+    /// 全量 tee sink — bounded cap に関係なく chunk 全量へ呼ぶ。
+    /// lock 下で stream 交差順を保つ(design §proc tee)。
+    pub(super) tee: Option<super::ProcTee>,
 }
 
 impl Captures {
     fn append(&mut self, kind: StreamKind, chunk: &[u8]) {
+        if let Some(tee) = &self.tee {
+            tee(chunk);
+        }
         let taken = match kind {
             StreamKind::Stdout => self.stdout.append(chunk, self.remaining),
             StreamKind::Stderr => self.stderr.append(chunk, self.remaining),

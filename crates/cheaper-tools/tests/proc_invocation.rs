@@ -124,6 +124,7 @@ fn scope_options(root: &str, names: Vec<ToolName>) -> ToolRuntimeOptions {
         abort_grace_ms: None,
         concurrency: None,
         eval_spawn: None,
+        log_tee: None,
     }
 }
 

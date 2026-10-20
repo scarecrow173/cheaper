@@ -40,6 +40,7 @@ use crate::tools::proc::executable::{
 };
 use crate::tools::proc::{
     aborted_err, minimal_env, prepare_cwd, OnTimeout, ProcIdentity, ProcLimits, ProcPrepared,
+    ProcTee,
 };
 use crate::ToolError;
 
@@ -270,6 +271,11 @@ pub struct CommandToolOptions {
     /// `onTimeout(reason)`。
     pub on_timeout: Option<OnTimeout>,
     pub denylist: Option<PathDenylist>,
+    /// 全量 output tee sink(R26)— route scope 構築からのみ
+    /// 注入される option。`None` で従来挙動不変。tee 内部の
+    /// write 失敗は sink が自身へ記録し capture を失敗させない
+    /// (postprocessFailure 縮退、R29)。
+    pub log_tee: Option<ProcTee>,
 }
 
 /// `createCommandTool` が返す canonical definition。
@@ -463,6 +469,7 @@ async fn execute(
         &identity,
         outer,
         options.on_timeout.as_ref(),
+        options.log_tee.clone(),
     )
     .await
 }
@@ -556,6 +563,7 @@ mod tests {
             pins: BTreeMap::new(),
             on_timeout: None,
             denylist: None,
+            log_tee: None,
         });
         assert!(tool.description().contains("cargo-build"));
         assert!(tool.description().contains("git-read"));
@@ -732,6 +740,7 @@ mod tests {
             pins: BTreeMap::new(),
             on_timeout: None,
             denylist: None,
+            log_tee: None,
         };
         let tool = create_command_tool(options);
         let err = tool

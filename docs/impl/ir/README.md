@@ -18,6 +18,7 @@ Directory: `docs/impl/ir`
 | IMPL-034rAiJgmYQKgmJC2mF9zN | Add models.yaml exclude with union merge | completed | [add-models-yaml-exclude-with-union-merge.md](./add-models-yaml-exclude-with-union-merge.md) |
 | IMPL-034r05iHy2gdnpmfo09FGX | Add Ollama docker-compose and AGENTS.md container usage | completed | [add-ollama-docker-compose-and-agents-md-container-usage.md](./add-ollama-docker-compose-and-agents-md-container-usage.md) |
 | IMPL-034z3CD7wXV3MNmCy9JnHs | add platform launchers to hooks payload | completed | [add-platform-launchers-to-hooks-payload.md](./add-platform-launchers-to-hooks-payload.md) |
+| IMPL-034JimbubuiHpBv6IpimHs | Add proc full-output tee sink for route logging | completed | [add-proc-full-output-tee-sink-for-route-logging.md](./add-proc-full-output-tee-sink-for-route-logging.md) |
 | IMPL-034JhZPcBMjCslZpw77s0m | Add route declaration schema and three-layer loader | completed | [add-route-declaration-schema-and-three-layer-loader.md](./add-route-declaration-schema-and-three-layer-loader.md) |
 | IMPL-034JidY17wnSZzkiMrhixl | Add route log store and RouteLogReader | completed | [add-route-log-store-and-routelogreader.md](./add-route-log-store-and-routelogreader.md) |
 | IMPL-034zCh1C1Qy6Pc2cvIFlOP | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | completed | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |

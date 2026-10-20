@@ -285,6 +285,7 @@ impl InvocationToolRuntime {
             abort_grace_ms: options.runtime.abort_grace_ms.or(inner.abort_grace_ms),
             concurrency: options.runtime.concurrency,
             eval_spawn: options.runtime.eval_spawn,
+            log_tee: options.runtime.log_tee,
         };
         let scope = create_tool_runtime(
             runtime_options,

@@ -257,6 +257,7 @@ async fn execute(
         &identity,
         outer,
         options.on_timeout.as_ref(),
+        None,
     )
     .await
 }

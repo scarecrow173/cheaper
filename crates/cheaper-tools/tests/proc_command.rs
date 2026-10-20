@@ -19,8 +19,10 @@
 //! - 独自 pool `"command"`(`command.maxConcurrent`)+ Exclusive claim の
 //!   serialize
 
-use std::io::{BufRead, BufReader, Write};
+use std::io::{self, BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
@@ -219,6 +221,7 @@ fn options(root: &str, command: Value, names: Vec<ToolName>) -> ToolRuntimeOptio
         abort_grace_ms: None,
         concurrency: None,
         eval_spawn: None,
+        log_tee: None,
     }
 }
 
@@ -1052,6 +1055,87 @@ async fn output_cap_truncates_streams() {
         stdout["capturedBytes"].as_u64().unwrap() + stderr["capturedBytes"].as_u64().unwrap();
     assert_eq!(captured, 256);
     assert!(stdout["truncated"] == json!(true) || stderr["truncated"] == json!(true));
+}
+
+/// `log_tee` 全量 sink(R26) — `maxOutputBytes` cap を超えた分も含め
+/// stdout/stderr 全 byte が sink へ届き、bounded result は不変。
+#[tokio::test]
+async fn log_tee_captures_full_output_beyond_cap() {
+    let dir = TempDir::new();
+    let captured = Arc::new(Mutex::new(Vec::<u8>::new()));
+    let sink = {
+        let captured = Arc::clone(&captured);
+        move |chunk: &[u8]| captured.lock().unwrap().extend_from_slice(chunk)
+    };
+    let mut opts = options(
+        &dir.root(),
+        command_policy(json!({
+            "self": grant_with("output", Some("5000"), json!({"maxOutputBytes": 256}))
+        })),
+        vec![ToolName::Command],
+    );
+    opts.log_tee = Some(Arc::new(sink));
+    let rt = create_tool_runtime(opts, None).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    let tee = captured.lock().unwrap();
+    // tee には bounded cap を超えた全量(5000B stdout + 3B stderr)
+    // が届く — interleaved 順序は不定だが各 stream の byte は含む。
+    let x_bytes = tee.iter().filter(|b| **b == b'x').count();
+    assert!(x_bytes >= 5000, "tee x bytes: {x_bytes}");
+    assert!(
+        tee.windows(3).any(|w| w == b"err"),
+        "tee missing stderr bytes"
+    );
+    // bounded result は従来どおり cap 適用。
+    let details = result.details.as_ref().expect("details");
+    let bounded = details["stdout"]["capturedBytes"].as_u64().unwrap()
+        + details["stderr"]["capturedBytes"].as_u64().unwrap();
+    assert_eq!(bounded, 256);
+}
+
+/// tee sink の write 失敗は closure 自身が記録し command 結果を
+/// 壊さない(postprocessFailure 縮退、R29)。
+#[tokio::test]
+async fn log_tee_sink_failure_does_not_break_result() {
+    let dir = TempDir::new();
+    // sink 側が write 失敗を記録する形(実 sink は RouteLogWriter)。
+    let failed = Arc::new(AtomicBool::new(false));
+    let sink = {
+        let failed = Arc::clone(&failed);
+        move |_: &[u8]| {
+            let write: io::Result<()> = Err(io::Error::other("disk full"));
+            if write.is_err() {
+                failed.store(true, Ordering::SeqCst);
+            }
+        }
+    };
+    let mut opts = options(
+        &dir.root(),
+        command_policy(json!({"self": self_grant("output", Some("64"))})),
+        vec![ToolName::Command],
+    );
+    opts.log_tee = Some(Arc::new(sink));
+    let rt = create_tool_runtime(opts, None).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    assert!(failed.load(Ordering::SeqCst));
+    assert_eq!(
+        result.details.as_ref().unwrap()["state"],
+        json!("completed")
+    );
 }
 
 /// `command` は shared process-tree cleanup を使う — abort で direct 子
