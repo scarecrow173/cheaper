@@ -1,7 +1,7 @@
 ---
 id: "TASK-034Jg6uR3fxSVODX2EdmEz"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add route and route-refetch usage records"
 created: "2026-10-20"
 updated: "2026-10-20"

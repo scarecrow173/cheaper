@@ -290,3 +290,49 @@ fn rust_written_records_satisfy_ts_reader_field_contract() {
     assert_eq!(parsed[1], err);
     assert_eq!(parsed[2], count);
 }
+
+// --- route / route-refetch records (B4) ---------------------------------------
+
+#[test]
+fn route_record_shape() {
+    use cheaper_cli::usage_log::{build_route_record, RouteRecordInput};
+    let input = RouteRecordInput {
+        route: "cargo-test".to_string(),
+        command: "SECRET_TOKEN=x cargo test".to_string(),
+        original_tokens: 1000.0,
+        returned_tokens: 250.0,
+        worker: json!({"model": {"provider":"ollama","id":"q"}, "usage": {"input":1}}),
+        duration_ms: json!({"exec": 10, "analyze": 5, "total": 15}),
+        log_ref: "1700000000000-1-abcd".to_string(),
+        refetches: 0.0,
+        postprocess_failures: 0.0,
+        exit_code: 0,
+        ok: true,
+    };
+    let r = build_route_record(&input, "/w", &fixed(0.0));
+    assert_eq!(r["kind"], "route");
+    assert_eq!(r["route"], "cargo-test");
+    assert_eq!(r["logRef"], "1700000000000-1-abcd");
+    assert_eq!(r["exitCode"], 0);
+    assert_eq!(r["originalTokens"], 1000.0);
+    assert_eq!(r["returnedTokens"], 250.0);
+    assert_eq!(r["reductionRatio"], 0.75);
+    assert_eq!(r["ok"], true);
+    // command 本文(env 値を含み得る)は載らず `commandHash` のみ。
+    let text = serde_json::to_string(&r).unwrap();
+    assert!(!text.contains("SECRET_TOKEN"), "{text}");
+    assert!(r["commandHash"].as_str().unwrap().len() == 16);
+    // deterministic — 同入力は同 hash。
+    let r2 = build_route_record(&input, "/w", &fixed(0.0));
+    assert_eq!(r["commandHash"], r2["commandHash"]);
+}
+
+#[test]
+fn route_refetch_record_shape() {
+    use cheaper_cli::usage_log::build_route_refetch_record;
+    let r = build_route_refetch_record("rid-1", 4096, "/w", &fixed(0.0));
+    assert_eq!(r["kind"], "route-refetch");
+    assert_eq!(r["logRef"], "rid-1");
+    assert_eq!(r["bytesRead"], 4096);
+    assert_eq!(r["root"], "/w");
+}

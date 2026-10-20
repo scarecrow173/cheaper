@@ -213,9 +213,15 @@ fn str_field<'a>(v: &'a Value, key: &str) -> Option<&'a str> {
     get(v, key).and_then(Value::as_str)
 }
 
-/// `isRecord` — object かつ `kind` が `"run"` / `"count"`。
+/// `isRecord` — object かつ `kind` が `"run"` / `"count"` /
+/// `"route"` / `"route-refetch"`。route 系は独立 bucket へ集計
+/// され、run 集計・`directlyComparable` 母数へは混入しない(D9)。
 fn is_record(v: &Value) -> bool {
-    v.is_object() && matches!(str_field(v, "kind"), Some("run") | Some("count"))
+    v.is_object()
+        && matches!(
+            str_field(v, "kind"),
+            Some("run") | Some("count") | Some("route") | Some("route-refetch")
+        )
 }
 
 /// `readUsageRecords` — per-line parse。file 不在・破損行は skip
@@ -489,6 +495,48 @@ fn estimate(
     ])))
 }
 
+/// `kind:"route"`/`"route-refetch"` の独立 bucket — run/count の
+/// filter(`--since`/`--worker` 等)には従属せず、全 record から
+/// kind 別に集計する。route record は `truthy(ok)` の error 集計
+/// へ誤分類しないよう `aggregate`/`filter_run_records` とは分離
+/// する。
+fn route_bucket(records: &[Value]) -> Map<String, Value> {
+    let mut executions = 0.0;
+    let mut refetches = 0.0;
+    let mut refetch_bytes = 0.0;
+    let mut original_tokens = 0.0;
+    let mut returned_tokens = 0.0;
+    let mut failures = 0.0;
+    let mut postprocess_failures = 0.0;
+    for r in records {
+        match str_field(r, "kind") {
+            Some("route") => {
+                executions += 1.0;
+                original_tokens += or_zero(get(r, "originalTokens"));
+                returned_tokens += or_zero(get(r, "returnedTokens"));
+                postprocess_failures += or_zero(get(r, "postprocessFailures"));
+                if !truthy(get(r, "ok")) {
+                    failures += 1.0;
+                }
+            }
+            Some("route-refetch") => {
+                refetches += 1.0;
+                refetch_bytes += or_zero(get(r, "bytesRead"));
+            }
+            _ => {}
+        }
+    }
+    Map::from_iter([
+        ("executions".to_string(), num(executions)),
+        ("failures".to_string(), num(failures)),
+        ("refetches".to_string(), num(refetches)),
+        ("refetchBytes".to_string(), num(refetch_bytes)),
+        ("originalTokens".to_string(), num(original_tokens)),
+        ("returnedTokens".to_string(), num(returned_tokens)),
+        ("postprocessFailures".to_string(), num(postprocess_failures)),
+    ])
+}
+
 /// `buildUsageReport`。usage.jsonl → filter → 集計 →(compare-model +
 /// pricing が揃い、直接比較可能な run があるときのみ)estimated。
 /// 戻り値は `UsageReport` object(`Map`、TS literal 順)で、caller が
@@ -500,9 +548,12 @@ pub fn build_usage_report(
     compare_catalog_model: Option<ModelInfo>,
     now: &dyn Fn() -> f64,
 ) -> Result<Map<String, Value>, CheaperError> {
-    let records = filter_run_records(read_usage_records(user_config_dir), filters, now);
+    let all = read_usage_records(user_config_dir);
+    let routes = route_bucket(&all);
+    let records = filter_run_records(all, filters, now);
     let agg = aggregate(&records)?;
     let mut report = report_map(records.len(), &agg);
+    report.insert("route".to_string(), Value::Object(routes));
 
     let Some(cm) = compare_model else {
         return Ok(report);
