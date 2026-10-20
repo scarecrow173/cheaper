@@ -36,6 +36,7 @@ relations:
     - "../designs/bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md"
     - "../discovery/cross-agent-hook-distribution-and-contract-matrix.md"
     - "../discovery/bounded-hook-read-request-contract.md"
+    - "./pretooluse-route-resolver-and-workflow-delegation.md"
   refines: []
   refined-by: []
   derives-from:

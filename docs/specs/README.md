@@ -60,6 +60,7 @@ Directory: `docs/specs`
 | SPEC-034EMbEGBOWM4CAM6YSWm6 | policy-gated dynamic command を canonical tool として提供する | approved | [policy-gated-command-tool.md](./policy-gated-command-tool.md) |
 | SPEC-034EDjYmUWLJ96Zqy7XOEw | Post-feature structural refactoring scope | approved | [post-feature-structural-refactoring-scope.md](./post-feature-structural-refactoring-scope.md) |
 | SPEC-034DyDAOW1my2ihNQIVNfN | Post-migration structural cleanup scope | approved | [post-migration-structural-cleanup-scope.md](./post-migration-structural-cleanup-scope.md) |
+| SPEC-034J7SxWvGL3oSbeBpo8a3 | PreToolUse auto-routing: route resolution and delegated workflow execution | draft | [pretooluse-route-resolver-and-workflow-delegation.md](./pretooluse-route-resolver-and-workflow-delegation.md) |
 | SPEC-034r2qodmutbif9L0DLskN | Correct provider and auth documentation to match runtime capabilities | implemented | [provider-auth-docs-runtime-sync.md](./provider-auth-docs-runtime-sync.md) |
 | SPEC-034r05iHK8bA7gz3bFqgXr | Provider-only registration layer without Pi extensions | implemented | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
 | SPEC-034r05iHK8bA7g9KcsCqKj | Repair and abort hardening, telemetry consistency, and test hermeticity | implemented | [repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |

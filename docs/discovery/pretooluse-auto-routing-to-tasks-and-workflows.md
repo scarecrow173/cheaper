@@ -36,7 +36,8 @@ relations:
   refines: []
   refined-by: []
   derives-from: []
-  derived-by: []
+  derived-by:
+    - "../specs/pretooluse-route-resolver-and-workflow-delegation.md"
   verifies: []
   verified-by: []
   references:

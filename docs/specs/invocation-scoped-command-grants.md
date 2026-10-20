@@ -30,6 +30,7 @@ relations:
     - "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
     - "../adr/command-grant-trust-boundary-and-managed-process-reuse.md"
     - "../adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
+    - "./pretooluse-route-resolver-and-workflow-delegation.md"
   refines: []
   refined-by: []
   derives-from:
