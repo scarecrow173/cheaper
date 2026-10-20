@@ -63,6 +63,23 @@ pub struct ResolvedCommandPolicy {
     pub heartbeat: ProcessHeartbeat,
 }
 
+impl ResolvedCommandPolicy {
+    /// route run の単一 grant 投影(design C9)— `grants` を対象
+    /// grant 1 件へ限定し、routed workflow(project 層由来でも
+    /// 可)が他の user grant を `input.name` で呼ぶ confused
+    /// deputy を構造的に防ぐ。Shared/invocation 構築**前**の
+    /// resolved policy に適用するため worker scope の parity
+    /// check は保たれる。対象 grant が無ければ false(呼出し側が
+    /// route 宣言不整合として扱う)。
+    pub fn project_grant(&mut self, name: &str) -> bool {
+        let Some(grant) = self.grants.get(name).cloned() else {
+            return false;
+        };
+        self.grants = BTreeMap::from([(name.to_string(), grant)]);
+        true
+    }
+}
+
 /// `command_policy_properties` — `command` section の JSON schema
 /// properties(design §(a))。complete schema 側の section required key は
 /// `["maxConcurrent", "grants"]`(`process` の `["maxConcurrent", "tasks"]`
@@ -750,6 +767,43 @@ mod tests {
         let serialized = serde_json::to_value(&p).unwrap();
         assert!(serialized["grants"]["g"].get("argv").is_none());
         assert_eq!(p, resolve_command_policy(Some(&serialized)).unwrap());
+    }
+
+    /// route run の単一 grant 投影(C9)— resolved policy の
+    /// `grants` map が対象 1 件へ縮退し、投影外 grant は
+    /// `resolve_command_grant` で unknown 扱いになる。
+    /// resolved JSON への serialize は再 resolve で同一形に
+    /// 戻る(scope parity check が保たれる)。
+    #[test]
+    fn project_grant_limits_grants_to_declared_route_grant() {
+        let mut p = resolve_command_policy(Some(&json!({
+            "grants": {
+                "route-grant": {"executable": "git"},
+                "other": {"executable": "my-tool"},
+            }
+        })))
+        .unwrap();
+        assert!(p.grants.contains_key("other"));
+        assert!(p.project_grant("route-grant"));
+        assert_eq!(p.grants.len(), 1);
+        assert!(p.grants.contains_key("route-grant"));
+        // 投影外 grant は unknown grant 扱い。
+        assert!(resolve_command_grant(&p, "other").is_err());
+        assert_eq!(
+            resolve_command_grant(&p, "route-grant").unwrap().executable,
+            "git"
+        );
+        // resolved → serialize → re-resolve round-trip が同一形
+        // (worker scope parity check を通過する)。
+        let serialized = serde_json::to_value(&p).unwrap();
+        assert_eq!(p, resolve_command_policy(Some(&serialized)).unwrap());
+        // 対象不在は false で policy を変えない。
+        let mut q = resolve_command_policy(Some(&json!({
+            "grants": {"g": {"executable": "git"}}
+        })))
+        .unwrap();
+        assert!(!q.project_grant("absent"));
+        assert!(q.grants.contains_key("g"));
     }
 
     #[test]

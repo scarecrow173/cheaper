@@ -91,7 +91,7 @@ fn options(
         abort_grace_ms: None,
         concurrency: None,
         eval_spawn: Some(fixture_eval_spawn()),
-        log_tee: None,
+        route_context: None,
     }
 }
 

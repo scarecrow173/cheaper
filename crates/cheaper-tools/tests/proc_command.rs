@@ -30,6 +30,7 @@ use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::paths::{canonicalize_workspace_root, SymlinkPolicy};
 use cheaper_tools::operation::{AbortController, AbortReason, OperationState};
 use cheaper_tools::registry::{create_tool_runtime, ToolCallContext, ToolRuntimeOptions};
+use cheaper_tools::tools::command::RouteCommandContext;
 use cheaper_tools::ToolError;
 use serde_json::{json, Map, Value};
 
@@ -221,7 +222,7 @@ fn options(root: &str, command: Value, names: Vec<ToolName>) -> ToolRuntimeOptio
         abort_grace_ms: None,
         concurrency: None,
         eval_spawn: None,
-        log_tee: None,
+        route_context: None,
     }
 }
 
@@ -1074,7 +1075,10 @@ async fn log_tee_captures_full_output_beyond_cap() {
         })),
         vec![ToolName::Command],
     );
-    opts.log_tee = Some(Arc::new(sink));
+    opts.route_context = Some(RouteCommandContext {
+        log_tee: Some(Arc::new(sink)),
+        ..RouteCommandContext::default()
+    });
     let rt = create_tool_runtime(opts, None).unwrap();
     let result = rt
         .execute(
@@ -1121,7 +1125,10 @@ async fn log_tee_sink_failure_does_not_break_result() {
         command_policy(json!({"self": self_grant("output", Some("64"))})),
         vec![ToolName::Command],
     );
-    opts.log_tee = Some(Arc::new(sink));
+    opts.route_context = Some(RouteCommandContext {
+        log_tee: Some(Arc::new(sink)),
+        ..RouteCommandContext::default()
+    });
     let rt = create_tool_runtime(opts, None).unwrap();
     let result = rt
         .execute(
@@ -1136,6 +1143,125 @@ async fn log_tee_sink_failure_does_not_break_result() {
         result.details.as_ref().unwrap()["state"],
         json!("completed")
     );
+}
+
+/// route context `extra_env` — `grant.env` への override として
+/// 子 process env へ畳まれる(A3)。grant env `MODE=fail` を
+/// `MODE=inspect` で上書きし sentinel 出力が返ることを検証する。
+#[tokio::test]
+async fn route_context_extra_env_overrides_grant_env() {
+    let dir = TempDir::new();
+    let mut opts = options(
+        &dir.root(),
+        command_policy(json!({"self": self_grant("fail", None)})),
+        vec![ToolName::Command],
+    );
+    let mut extra_env = Map::new();
+    extra_env.insert(MODE_ENV.to_string(), json!("inspect"));
+    opts.route_context = Some(RouteCommandContext {
+        extra_env,
+        ..RouteCommandContext::default()
+    });
+    let rt = create_tool_runtime(opts, None).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    let stdout_text = result.details.as_ref().unwrap()["stdout"]["text"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let inspected = sentinel_json(&stdout_text);
+    assert_eq!(inspected["mode"], json!("inspect"));
+}
+
+/// route context `exec_cwd` — grant.cwd 経路を bypass し、workspace
+/// containment 無しで payload cwd を復元する(R18)。`inspect`
+/// fixture が報告する実 cwd が override dir と一致するか検証。
+#[tokio::test]
+async fn route_context_exec_cwd_overrides_grant_cwd() {
+    let dir = TempDir::new();
+    let outside = TempDir::new(); // workspace 外の実行 dir
+    let mut opts = options(
+        &dir.root(),
+        command_policy(json!({"self": self_grant("inspect", None)})),
+        vec![ToolName::Command],
+    );
+    opts.route_context = Some(RouteCommandContext {
+        exec_cwd: Some(outside.0.to_string_lossy().into_owned()),
+        ..RouteCommandContext::default()
+    });
+    let rt = create_tool_runtime(opts, None).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    let stdout_text = result.details.as_ref().unwrap()["stdout"]["text"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let inspected = sentinel_json(&stdout_text);
+    // Windows verbatim prefix・大小文字・separator 差を正規化して比較。
+    let norm = |p: &str| {
+        p.trim_start_matches(r"\\?\")
+            .replace('/', "\\")
+            .to_lowercase()
+    };
+    assert_eq!(
+        norm(inspected["cwd"].as_str().unwrap()),
+        norm(&outside.root())
+    );
+}
+
+/// route context `accept_any_exit_code` — declared grant の
+/// `exitCodes` を上書きして非 0 exit を result 化する(C2)。
+#[tokio::test]
+async fn route_context_accept_any_exit_code_mirrors_exit() {
+    let dir = TempDir::new();
+    // baseline: accept_any 無しは exit 7 が ToolExecutionFailure。
+    let baseline = command_runtime(
+        &dir.root(),
+        command_policy(json!({"self": self_grant("fail", None)})),
+    )
+    .unwrap();
+    assert!(baseline
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .is_err());
+    // accept_any_exit_code で同じ grant が exitCode 7 result を返す。
+    let mut opts = options(
+        &dir.root(),
+        command_policy(json!({"self": self_grant("fail", None)})),
+        vec![ToolName::Command],
+    );
+    opts.route_context = Some(RouteCommandContext {
+        accept_any_exit_code: true,
+        ..RouteCommandContext::default()
+    });
+    let rt = create_tool_runtime(opts, None).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    let details = result.details.as_ref().expect("details");
+    assert_eq!(details["state"], json!("completed"));
+    assert_eq!(details["exitCode"], json!(7));
 }
 
 /// `command` は shared process-tree cleanup を使う — abort で direct 子

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034Jg6jKK9lLmnOPTaQhAW"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add route context scope options and single-grant policy projection"
 created: "2026-10-20"
 updated: "2026-10-20"

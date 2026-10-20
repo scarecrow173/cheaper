@@ -36,7 +36,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHWkNF7zJyX85ZOT | Add provider plugin contract and registration order | done | [add-provider-plugin-contract-and-registration-order.md](./add-provider-plugin-contract-and-registration-order.md) |
 | TASK-034r05iHWkNF7zFyMzc7zU | Add resolveUserConfigDir helper and Pi state path wiring | done | [add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md](./add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md) |
 | TASK-034Jg6Irzs6nV7o5ocyN2Q | Add route subcommand CLI wiring and help docs | todo | [add-route-cli-wiring.md](./add-route-cli-wiring.md) |
-| TASK-034Jg6jKK9lLmnOPTaQhAW | Add route context scope options and single-grant policy projection | todo | [add-route-context-scope-options.md](./add-route-context-scope-options.md) |
+| TASK-034Jg6jKK9lLmnOPTaQhAW | Add route context scope options and single-grant policy projection | done | [add-route-context-scope-options.md](./add-route-context-scope-options.md) |
 | TASK-034Jg6kYud58YUAHEYOIDt | Add route declaration schema and three-layer loader | done | [add-route-declaration-loader.md](./add-route-declaration-loader.md) |
 | TASK-034Jg6wIaUwhyIQnDJRAuu | Add route fingerprint to hook dedup cache | todo | [add-route-dedup-fingerprint.md](./add-route-dedup-fingerprint.md) |
 | TASK-034Jg6IVuYRxFj2Zn3JPI9 | Add route integration and compile-contract tests | todo | [add-route-integration-tests.md](./add-route-integration-tests.md) |

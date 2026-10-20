@@ -261,6 +261,34 @@ pub(crate) fn prepare_cwd(
     Ok(resolved.real)
 }
 
+/// route context の `exec_cwd` 用 cwd 解決(R18)— `prepare_cwd` と
+/// 異なり workspace containment を課さない(payload `cwd` は原
+/// command の cwd をそのまま復元する意図)。canonicalize +
+/// denylist + is_dir 検査のみ行う。
+pub(crate) fn prepare_exec_cwd(
+    cwd: &str,
+    denylist: Option<&PathDenylist>,
+) -> Result<String, ToolError> {
+    let real = std::fs::canonicalize(cwd)
+        .map_err(|e| Box::new(node_io_error("stat", cwd, e)) as ToolError)?;
+    let display = real.display().to_string();
+    if let Some(denylist) = denylist {
+        if denylist.is_denied(&display) {
+            return Err(denied_declared_path(&display, "command"));
+        }
+    }
+    let stat = std::fs::metadata(&real)
+        .map_err(|e| Box::new(node_io_error("stat", cwd, e)) as ToolError)?;
+    if !stat.is_dir() {
+        return Err(CheaperError::new(
+            ErrorCode::InvalidRequest,
+            "command cwd must be an existing directory".to_string(),
+        )
+        .into());
+    }
+    Ok(display)
+}
+
 // ---------------------------------------------------------------------------
 // run
 // ---------------------------------------------------------------------------

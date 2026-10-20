@@ -520,7 +520,7 @@ impl<'a> RunCtx<'a> {
                             .concurrency
                             .map(|c| serde_json::to_value(c).unwrap_or_default()),
                         eval_spawn: None,
-                        log_tee: None,
+                        route_context: None,
                     },
                 })
                 .map_err(|e| self.fail(tool_boundary_error("worker tool scope", e)))?

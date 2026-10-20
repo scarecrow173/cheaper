@@ -49,7 +49,7 @@ fn worker_scope_options(owner: &str, root: &str, names: Vec<ToolName>) -> Worker
             abort_grace_ms: None,
             concurrency: None,
             eval_spawn: None,
-            log_tee: None,
+            route_context: None,
         },
     }
 }

@@ -39,8 +39,8 @@ use crate::tools::proc::executable::{
     native_executable, resolve_process_executable, ProcessExecutableOptions,
 };
 use crate::tools::proc::{
-    aborted_err, minimal_env, prepare_cwd, OnTimeout, ProcIdentity, ProcLimits, ProcPrepared,
-    ProcTee,
+    aborted_err, minimal_env, prepare_cwd, prepare_exec_cwd, OnTimeout, ProcIdentity, ProcLimits,
+    ProcPrepared, ProcTee,
 };
 use crate::ToolError;
 
@@ -271,10 +271,31 @@ pub struct CommandToolOptions {
     /// `onTimeout(reason)`。
     pub on_timeout: Option<OnTimeout>,
     pub denylist: Option<PathDenylist>,
-    /// 全量 output tee sink(R26)— route scope 構築からのみ
-    /// 注入される option。`None` で従来挙動不変。tee 内部の
-    /// write 失敗は sink が自身へ記録し capture を失敗させない
-    /// (postprocessFailure 縮退、R29)。
+    /// route scope 構築層のみが注入する route context(design
+    /// §route context 注入)。`None` で従来挙動不変。
+    pub route_context: Option<RouteCommandContext>,
+}
+
+/// route scope の command tool 注入 context(design §route context
+/// 注入、R18/R26/C2)。
+#[derive(Clone, Default)]
+pub struct RouteCommandContext {
+    /// `env-prefix` + ambient allowlist 合成の子 env 上乗せ分。
+    /// 優先順位 `env-prefix > ambient` の合成は注入側で済み、
+    /// tool は `grant.env` への override として畳むのみ
+    /// (= extra_env > grant.env)。
+    pub extra_env: Map<String, Value>,
+    /// payload `cwd` の子 process cwd override(R18)— grant.cwd
+    /// 経路を bypass し、workspace containment は課さない
+    /// (存在確認 + denylist 検査のみ)。
+    pub exec_cwd: Option<String>,
+    /// 任意の completed exit を result 化(exit-code mirror、C2)—
+    /// `accepted_exit_codes: None` へ投影する。spawn 失敗・timeout・
+    /// abort は従来どおり Err。
+    pub accept_any_exit_code: bool,
+    /// 全量 output tee sink(R26)— tee 内部の write 失敗は sink が
+    /// 自身へ記録し capture を失敗させない(postprocessFailure
+    /// 縮退、R29)。
     pub log_tee: Option<ProcTee>,
 }
 
@@ -411,16 +432,23 @@ async fn execute(
     let grant =
         resolve_command_grant(&options.command, &name).map_err(|e| Box::new(e) as ToolError)?;
     authorize_args(&name, &grant, &args)?;
+    let route_ctx = options.route_context.as_ref();
     // `command` の prepare は cwd 解決(denylist + is_dir stat)のみ —
     // manifest/writeScope coverage 検査は持たない(writeScope 自体が
     // registration gate で拒否されるため、design §(c)/(e))。
-    let cwd = prepare_cwd(
-        &options.root,
-        &grant.cwd,
-        options.symlink_policy,
-        options.denylist.as_ref(),
-        "command",
-    )?;
+    // route context の `exec_cwd` は grant.cwd 経路を bypass し
+    // canonicalize + denylist + is_dir のみで workspace containment を
+    // 課さない(R18 — 原 command の cwd を復元する)。
+    let cwd = match route_ctx.and_then(|r| r.exec_cwd.as_deref()) {
+        Some(exec_cwd) => prepare_exec_cwd(exec_cwd, options.denylist.as_ref())?,
+        None => prepare_cwd(
+            &options.root,
+            &grant.cwd,
+            options.symlink_policy,
+            options.denylist.as_ref(),
+            "command",
+        )?,
+    };
     // pin 済み executable の spawn 前再検証(pin 後差替えへの
     // fail-closed — design §(b))。pin map に無い grant は
     // `names` 未経由の direct 構築として fail-closed。
@@ -441,13 +469,28 @@ async fn execute(
         kill_grace_ms: parse_duration(&grant.kill_grace)?,
         max_output_bytes: grant.max_output_bytes,
         heartbeat_interval_ms: parse_duration(&options.command.heartbeat.interval)?,
-        accepted_exit_codes: Some(grant.exit_codes.clone()),
+        // route context の `accept_any_exit_code` は declared grant の
+        // `exitCodes` を上書きして任意の completed exit を result 化
+        // する(C2 — routed scope でのみ注入される)。
+        accepted_exit_codes: if route_ctx.is_some_and(|r| r.accept_any_exit_code) {
+            None
+        } else {
+            Some(grant.exit_codes.clone())
+        },
     };
+    // `extra_env` は `grant.env` への override — 合成済み map を
+    // `minimal_env` へ渡し正規化を一箇所へ集約する。
+    let mut declared_env = grant.env.clone();
+    if let Some(extra) = route_ctx.map(|r| &r.extra_env) {
+        for (key, value) in extra {
+            declared_env.insert(key.clone(), value.clone());
+        }
+    }
     let prepared = ProcPrepared {
         executable: pinned.clone(),
         argv: args.clone(),
         cwd,
-        env: minimal_env(&grant.env),
+        env: minimal_env(&declared_env),
     };
     // `command` の identity: details `{grant: name, argv: args}`・
     // display `"command {name}"`・diagnostics event prefix `"command"`。
@@ -469,7 +512,7 @@ async fn execute(
         &identity,
         outer,
         options.on_timeout.as_ref(),
-        options.log_tee.clone(),
+        route_ctx.and_then(|r| r.log_tee.clone()),
     )
     .await
 }
@@ -563,7 +606,7 @@ mod tests {
             pins: BTreeMap::new(),
             on_timeout: None,
             denylist: None,
-            log_tee: None,
+            route_context: None,
         });
         assert!(tool.description().contains("cargo-build"));
         assert!(tool.description().contains("git-read"));
@@ -740,7 +783,7 @@ mod tests {
             pins: BTreeMap::new(),
             on_timeout: None,
             denylist: None,
-            log_tee: None,
+            route_context: None,
         };
         let tool = create_command_tool(options);
         let err = tool

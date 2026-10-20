@@ -691,7 +691,7 @@ fn runtime_options(spec: &Value, ctx: &CaseCtx) -> (ToolRuntimeOptions, Arc<Muta
             abort_grace_ms: spec.get("abortGraceMs").and_then(Value::as_f64),
             concurrency: spec.get("concurrency").cloned(),
             eval_spawn: Some(fixture_eval_spawn()),
-            log_tee: None,
+            route_context: None,
         },
         journal,
     )
