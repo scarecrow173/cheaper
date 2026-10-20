@@ -687,6 +687,57 @@ async fn shell_route_arm_engages_via_firing_load() {
     );
 }
 
+/// C4 — routed shell request の per-target render contract。
+/// claude(pretooluse)は `hookSpecificOutput.updatedInput`、codex は
+/// fallback verdict(hookSpecificOutput deny/allow)のみ render する。
+#[tokio::test(flavor = "current_thread")]
+async fn routed_shell_per_target_render_contract() {
+    let payload = || tool_use_payload("Bash", "{\"command\":\"cat big.txt\"}");
+
+    // claude — Rewrite → updatedInput.command + exit 0。
+    let claude_fx = routed_shell_fixture();
+    claude_fx.write("small.txt", b"hi\n");
+    let r = run_hook(
+        &claude_fx,
+        &["pre-tool-use", "--target", "pretooluse"],
+        &tool_use_payload("Bash", "{\"command\":\"cat small.txt\"}"),
+        &[],
+    )
+    .await;
+    assert_eq!(r.code, 0, "{}", r.stderr);
+    let v: serde_json::Value = serde_json::from_str(r.stdout.trim()).unwrap();
+    let cmd = v
+        .pointer("/hookSpecificOutput/updatedInput/command")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_else(|| panic!("claude updatedInput 無し: {}", r.stdout));
+    assert!(cmd.contains("route run --payload"), "{cmd}");
+    assert!(v
+        .pointer("/hookSpecificOutput/permissionDecision")
+        .is_none());
+
+    // codex — 同一 payload は fallback verdict(deny)のみ render
+    // され updatedInput は発行されない。
+    let codex_fx = routed_shell_fixture();
+    codex_fx.write_big("big.txt");
+    let r = run_hook(
+        &codex_fx,
+        &["pre-tool-use", "--target", "codex"],
+        &payload(),
+        &[],
+    )
+    .await;
+    assert_eq!(r.code, 0, "{}", r.stderr);
+    let v: serde_json::Value = serde_json::from_str(r.stdout.trim()).unwrap();
+    assert_eq!(
+        v.pointer("/hookSpecificOutput/permissionDecision")
+            .and_then(serde_json::Value::as_str),
+        Some("deny"),
+        "{}",
+        r.stdout
+    );
+    assert!(v.pointer("/hookSpecificOutput/updatedInput").is_none());
+}
+
 #[tokio::test(flavor = "current_thread")]
 async fn evaluate_typed_entry_matches_ts_verdicts() {
     // routing-policy.test.ts の file-read/shell verdict 相当を
@@ -789,7 +840,7 @@ async fn evaluate_typed_entry_matches_ts_verdicts() {
     }
 }
 
-/// `HookTarget::parse` — `HOOK_TARGETS` の 4 値のみ。
+/// `HookTarget::parse` — `HOOK_TARGETS` の 6 値のみ。
 #[test]
 fn hook_target_parse_table() {
     assert_eq!(HookTarget::parse("windsurf"), Some(HookTarget::Windsurf));
@@ -799,6 +850,8 @@ fn hook_target_parse_table() {
         Some(HookTarget::Pretooluse)
     );
     assert_eq!(HookTarget::parse("cursor"), Some(HookTarget::Cursor));
+    assert_eq!(HookTarget::parse("devin"), Some(HookTarget::Devin));
+    assert_eq!(HookTarget::parse("codex"), Some(HookTarget::Codex));
     assert_eq!(HookTarget::parse("claude"), None);
     assert_eq!(HookTarget::parse(""), None);
 }
@@ -1164,7 +1217,7 @@ async fn devin_event_gate_and_fail_open_are_silent() {
 }
 
 const TARGETS_JSON_LINE: &str =
-    "{\"schemaVersion\":1,\"targets\":[\"windsurf\",\"copilot\",\"pretooluse\",\"cursor\",\"devin\"],\"hookConfig\":true}\n";
+    "{\"schemaVersion\":1,\"targets\":[\"windsurf\",\"copilot\",\"pretooluse\",\"cursor\",\"devin\",\"codex\"],\"hookConfig\":true}\n";
 
 #[tokio::test(flavor = "current_thread")]
 async fn hook_targets_json_emits_capability_line_without_usage() {

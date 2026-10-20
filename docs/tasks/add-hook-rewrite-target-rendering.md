@@ -1,7 +1,7 @@
 ---
 id: "TASK-034Jg6w6lRkQeutruaa2Wd"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add hook target rendering for Rewrite and codex split"
 created: "2026-10-20"
 updated: "2026-10-20"
