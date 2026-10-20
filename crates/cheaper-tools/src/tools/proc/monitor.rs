@@ -282,7 +282,7 @@ pub(super) async fn drive(
         && limits
             .accepted_exit_codes
             .as_ref()
-            .map_or(true, |set| set.contains(&exit_code.unwrap()));
+            .is_none_or(|set| set.contains(&exit_code.unwrap()));
     let state = if exit_accepted { "completed" } else { "failed" };
     let mut details = Map::new();
     for (key, value) in &identity.details {
