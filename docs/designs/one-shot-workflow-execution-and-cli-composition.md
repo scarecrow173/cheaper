@@ -21,7 +21,8 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related:
+    - "./pretooluse-route-resolver-and-delegated-workflow-execution.md"
   refines: []
   refined-by: []
   derives-from:

@@ -40,7 +40,8 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/pretooluse-auto-routing-to-tasks-and-workflows.md"
-  derived-by: []
+  derived-by:
+    - "docs/designs/pretooluse-route-resolver-and-delegated-workflow-execution.md"
   verifies: []
   verified-by: []
   references:

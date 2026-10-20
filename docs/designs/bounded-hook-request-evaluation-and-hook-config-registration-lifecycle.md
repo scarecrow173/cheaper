@@ -34,6 +34,7 @@ relations:
     - "../discovery/hook-config-sweep-orphans-deletes-foreign-bak-files.md"
     - "./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
     - "../plans/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
+    - "./pretooluse-route-resolver-and-delegated-workflow-execution.md"
   refines: []
   refined-by: []
   derives-from:

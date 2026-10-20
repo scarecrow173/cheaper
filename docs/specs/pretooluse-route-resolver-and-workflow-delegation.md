@@ -44,7 +44,8 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/pretooluse-auto-routing-to-tasks-and-workflows.md"
-  derived-by: []
+  derived-by:
+    - "docs/designs/pretooluse-route-resolver-and-delegated-workflow-execution.md"
   verifies: []
   verified-by: []
   references:
@@ -329,9 +330,13 @@ output capture + token 計測 + conditional worker による縮約)。
   workflow を介さない executor は設けない。
 - R18: 実行互換 — `cwd` は hook payload の cwd を復元、env は
   `minimal_env` + grant 宣言 `env` + `passthroughEnv` capture 値
-  のみ、timeout/killGrace は grant/policy の bound へ clamp、
-  signal/process-tree 伝播(親の中断・kill が子 process 木へ届く)
-  を維持、stdin は子 process へ接続しない。
+  + 原 command の env-prefix 宣言(`FOO=1 cmd` の leading
+  `KEY=VALUE` assignment — command 自身の semantics であり
+  ambient env capture ではない。`payload.command` から再導出
+  されるため payload で transport しない)のみ、timeout/killGrace
+  は grant/policy の bound へ clamp、signal/process-tree 伝播
+  (親の中断・kill が子 process 木へ届く)を維持、stdin は子
+  process へ接続しない。
 
 ### command tool `exitCodes`
 

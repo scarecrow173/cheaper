@@ -26,6 +26,7 @@ relations:
     - "./managed-process-lifecycle-hardening.md"
     - "./tool-operator-built-in-worker.md"
     - "./invocation-scoped-command-grants.md"
+    - "./pretooluse-route-resolver-and-delegated-workflow-execution.md"
   refines: []
   refined-by: []
   derives-from:
