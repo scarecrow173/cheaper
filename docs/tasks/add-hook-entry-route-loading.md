@@ -1,7 +1,7 @@
 ---
 id: "TASK-034Jg6xqeFUtHyZ5MxHgzu"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add hook entry route loading and eval supply"
 created: "2026-10-20"
 updated: "2026-10-20"

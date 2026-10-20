@@ -8,3 +8,4 @@ pub mod log_store;
 pub mod payload;
 pub mod resolve;
 pub mod routes;
+pub mod supply;

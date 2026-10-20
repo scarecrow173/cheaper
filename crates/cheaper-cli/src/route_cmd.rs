@@ -13,19 +13,16 @@
 //!   側が担う。
 
 use cheaper_core::errors::CheaperError;
-use cheaper_core::policy::load::{load_policy, LoadPolicyOptions};
-use cheaper_core::workspace::deny_paths::create_path_denylist;
 use serde_json::{json, Map, Value};
 use tracing::Instrument;
 
 use crate::args::{RouteAction, RouteCliArgs};
 use crate::cli::{BoxError, CliHooks, CliIo, CommandOut};
-use crate::compose::resolve_workspace_layout;
 use crate::envelope::utility_success_envelope;
 use crate::errors::invalid_request;
 use crate::hook::routing_policy::tokenize_shell;
-use crate::route::resolve::{self, CommandPolicyView, ResolveInput};
-use crate::route::routes::{self, RouteLoadOptions};
+use crate::route::resolve::{self, ResolveInput};
+use crate::route::supply;
 
 /// `route` command 本体。`cheaper.cli.command` span(utility
 /// command instrumentation 規約)。
@@ -60,45 +57,19 @@ async fn execute_inner(
         _ => unreachable!("parse 層で相互排他を保証済み"),
     };
 
-    // workspace preamble — builtin dir 解決 + root canonicalize +
-    // config dir 解決(run/workflow と同一 sequence)。
-    let layout = resolve_workspace_layout(cwd.as_deref().or(Some(&io.cwd)), io, hooks)?;
-
-    // effective route set — hook eval・route run と同一 loader。
-    let effective = routes::load(&RouteLoadOptions {
-        builtin_dir: &layout.builtin_dir,
-        user_config_dir: &layout.dirs.user_config_dir,
-        project_dir: &layout.dirs.project_dir,
-    })?;
-
-    // effective command policy — run と同一 load 経路(invocation
-    // layer 無し。route resolve は hook 評価と同じ policy 面を見る)。
-    let builtin_policy_path = layout.builtin_dir.join("policy.yaml");
-    let ucd = layout.dirs.user_config_dir.to_string_lossy();
-    let pdir = layout.dirs.project_dir.to_string_lossy();
-    let policy = load_policy(&LoadPolicyOptions {
-        builtin_policy_path: &builtin_policy_path.to_string_lossy(),
-        user_config_dir: &ucd,
-        project_dir: &pdir,
-        invocation: None,
-    })?;
-    let deny: Vec<&str> = policy
-        .filesystem
-        .deny_paths
-        .iter()
-        .map(String::as_str)
-        .collect();
-    let denylist = create_path_denylist(&deny);
-    let view = CommandPolicyView {
-        policy: &policy.command,
-        root: &layout.root,
-        symlink_policy: policy.filesystem.symlinks,
-        denylist: Some(&denylist),
-    };
+    // effective routes + command policy — hook eval・route run と
+    // 同一 load 経路(`route::supply` が builtin 解決・root
+    // canonicalize・config dir 解決・denylist 構築を一括で担う)。
+    let supply = supply::load(
+        cwd.as_deref().unwrap_or(&io.cwd),
+        io.env,
+        hooks.builtin_dir.as_deref(),
+    )?;
+    let view = supply.command_view();
     let resolution = resolve::resolve(&ResolveInput {
         argv: &argv_tokens,
-        cwd: &layout.root,
-        routes: &effective,
+        cwd: &supply.root,
+        routes: &supply.routes,
         command_policy: &view,
         unsafe_command,
     });

@@ -638,6 +638,29 @@ fn verdict_name(verdict: &Verdict) -> &'static str {
     }
 }
 
+/// request の cwd — 各 variant は `cwd` field を持つ(normalize が
+/// payload・`deps.cwd` fallback で確定済み)。route supply の project
+/// 層起点・resolve cwd に使う。
+fn request_cwd(request: &RoutingRequest) -> &str {
+    match request {
+        RoutingRequest::FileRead { cwd, .. }
+        | RoutingRequest::Search { cwd, .. }
+        | RoutingRequest::Shell { cwd, .. } => cwd,
+    }
+}
+
+/// request 単位で routes + command policy を 1 回 load し eval へ
+/// 供給する(C1 — firing あたり 1 回の load に集約。per-candidate
+/// reload はしない)。load 失敗は `route: None`(route arm 不活性)
+/// へ畳み eval 自体は従来どおり走る — hook の fail-open 規約。
+async fn evaluate_with_routes(request: &RoutingRequest, deps: &HookDeps<'_>) -> Verdict {
+    let supply =
+        crate::route::supply::load_or_none(request_cwd(request), deps.env, deps.builtin_dir);
+    let mut opts = deps.eval_opts();
+    opts.route = supply.as_ref().map(|s| s.eval_input());
+    eval_cache::evaluate_dedup(request, &opts).await
+}
+
 /// target 別の normalize → evaluate → render。
 /// normalize/render のどの段でも失敗した場合は呼び出し側の catch-all
 /// が fallback へ倒す。
@@ -651,7 +674,7 @@ pub async fn handle_hook(
         HookTarget::Windsurf => match windsurf_normalize(event, input, deps.cwd) {
             None => ("allow", silent_allow()),
             Some(request) => {
-                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
+                let verdict = evaluate_with_routes(&request, deps).await;
                 (verdict_name(&verdict), windsurf_render(verdict))
             }
         },
@@ -659,21 +682,21 @@ pub async fn handle_hook(
             CopilotOutcome::None => ("allow", silent_allow()),
             CopilotOutcome::Respond(r) => ("allow", r),
             CopilotOutcome::Request(request) => {
-                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
+                let verdict = evaluate_with_routes(&request, deps).await;
                 (verdict_name(&verdict), copilot_render(verdict))
             }
         },
         HookTarget::Pretooluse => match pretooluse_normalize(input, deps.cwd) {
             None => ("allow", silent_allow()),
             Some(request) => {
-                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
+                let verdict = evaluate_with_routes(&request, deps).await;
                 (verdict_name(&verdict), pretooluse_render(verdict))
             }
         },
         HookTarget::Devin => match devin_normalize(event, input, deps) {
             None => ("allow", silent_allow()),
             Some(request) => {
-                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
+                let verdict = evaluate_with_routes(&request, deps).await;
                 (verdict_name(&verdict), devin_render(verdict))
             }
         },
@@ -684,7 +707,7 @@ pub async fn handle_hook(
                 // (計測失敗は内部で allow)が、TS の try/catch allow
                 // 経路と同じく verdict に関わらず schema-valid JSON を
                 // 返すことは変えない。
-                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
+                let verdict = evaluate_with_routes(&request, deps).await;
                 (verdict_name(&verdict), cursor_render(verdict))
             }
         },
