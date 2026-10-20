@@ -375,6 +375,13 @@ struct FingerprintInput {
     builtin_policy: PolicySig,
     user_policy: PolicySig,
     project_policy: PolicySig,
+    /// `routes.yaml` 3 層(builtin/user/project)の stat signature —
+    /// Shell variant のみ立てる(route 宣言は shell eval のみの
+    /// verdict 入力。非 shell request は空 vec で、routes 変更が
+    /// File/Search の fingerprint を不必要に割らない)。route
+    /// declaration の変更で stale shell verdict が serve されない
+    /// ことを保証する invalidation 入力(C3・design §dedup)。
+    routes_sig: Vec<PolicySig>,
 }
 
 /// verdict record(`<fp>.json`)の read 側 wire schema。`createdAt` は
@@ -569,6 +576,30 @@ fn prepare_dedup(
         Some(root) => policy_file_sig(Path::new(root).join(".cheaper").join("policy.yaml")),
         None => PolicySig::Unresolved,
     };
+    // routes 3 層 signature — Shell variant のみ(design §dedup の
+    // route fingerprint)。層 path は `route::routes::load` と同じ
+    // 解決規約(builtin_dir/routes.yaml・userConfigDir/routes.yaml・
+    // <root>/.cheaper/routes.yaml)。builtin は embedded marker と
+    // file sig を policy と同じ分岐で選ぶ。
+    let routes_sig = if matches!(variant, VariantInputs::Shell { .. }) {
+        let user_dir = store_dir.parent().map(|d| d.join("routes.yaml"));
+        let project_routes = ctx
+            .workspace_root
+            .as_ref()
+            .map(|root| Path::new(root).join(".cheaper").join("routes.yaml"));
+        vec![
+            match &builtin_dir {
+                Some(dir) => policy_file_sig(dir.join("routes.yaml")),
+                None => PolicySig::Embedded(crate::embedded::embedded_fingerprint()),
+            },
+            user_dir.map(policy_file_sig).unwrap_or(PolicySig::Absent),
+            project_routes
+                .map(policy_file_sig)
+                .unwrap_or(PolicySig::Unresolved),
+        ]
+    } else {
+        Vec::new()
+    };
     let input = FingerprintInput {
         tag: FINGERPRINT_TAG,
         workspace_root: ctx.workspace_root,
@@ -579,6 +610,7 @@ fn prepare_dedup(
         builtin_policy,
         user_policy,
         project_policy,
+        routes_sig,
     };
     Some(Prepared {
         store_dir,
@@ -606,13 +638,30 @@ fn read_fresh_verdict(store_dir: &Path, fp: &str, ttl: Duration) -> Option<Verdi
     if record.schema_version != 1 || record.fingerprint != fp {
         return None;
     }
-    Some(record.verdict)
+    // shareable でない verdict は serve しない(防御的 gate —
+    // publish 側が既に書き込まないが、手作業・version 差で混入した
+    // record を後続 firing へ返さない)。
+    is_shareable(&record.verdict).then_some(record.verdict)
+}
+
+/// dedup cache で persist/serve してよい verdict の gate。
+/// `Verdict::Rewrite` は rewrite command の env 値を含み得るため
+/// 共有対象外(C3・design §dedup) — env leak を防ぐ意味でも
+/// allowlist 形の exhaustive match にし、variant 追加時に明示
+/// 判断を強制する。
+fn is_shareable(verdict: &Verdict) -> bool {
+    match verdict {
+        Verdict::Allow | Verdict::Deny { .. } => true,
+    }
 }
 
 /// `{"schemaVersion":1,"createdAt":<epoch ms>,"fingerprint":<16hex>,
 /// "verdict":<Verdict serde>}` — `createdAt` は観察用 field
 /// (freshness 判定には使わない)。
 fn verdict_record_body(fp: &str, verdict: &Verdict) -> Option<String> {
+    if !is_shareable(verdict) {
+        return None;
+    }
     let mut map = serde_json::Map::new();
     map.insert("schemaVersion".to_string(), serde_json::Value::from(1));
     map.insert(
@@ -1140,11 +1189,180 @@ mod tests {
             builtin_policy: PolicySig::Embedded("deadbeefdeadbeef".to_string()),
             user_policy: PolicySig::Absent,
             project_policy: PolicySig::Unresolved,
+            routes_sig: Vec::new(),
         };
         let base = compute_fingerprint(&input(8192.0f64.to_bits()));
         assert_eq!(base, compute_fingerprint(&input(8192.0f64.to_bits())));
         assert_eq!(base.len(), 16);
         assert!(base.chars().all(|c| c.is_ascii_hexdigit()));
         assert_ne!(base, compute_fingerprint(&input(1024.0f64.to_bits())));
+    }
+
+    /// routes signature は fingerprint 入力 — routes.yaml の内容
+    /// 変化(stat 差)が fingerprint を割る。同一 store_dir・同一
+    /// request で routes 差だけ key が変われば stale verdict の
+    /// serve は構造上あり得ない。
+    #[test]
+    fn fingerprint_includes_routes_signature() {
+        let input = |routes_sig: Vec<PolicySig>| FingerprintInput {
+            tag: FINGERPRINT_TAG,
+            workspace_root: Some("/ws".to_string()),
+            variant: VariantInputs::Shell {
+                command: "cargo test".to_string(),
+            },
+            targets: vec![TargetSig::Absent {
+                raw: b"/ws/x".to_vec(),
+            }],
+            threshold_bits: 8192.0f64.to_bits(),
+            count_max_bytes: DEFAULT_COUNT_MAX_BYTES,
+            builtin_policy: PolicySig::Absent,
+            user_policy: PolicySig::Absent,
+            project_policy: PolicySig::Absent,
+            routes_sig,
+        };
+        let base = compute_fingerprint(&input(vec![
+            PolicySig::Absent,
+            PolicySig::Absent,
+            PolicySig::Absent,
+        ]));
+        assert_ne!(
+            base,
+            compute_fingerprint(&input(vec![
+                PolicySig::Absent,
+                PolicySig::File {
+                    mtime_nanos: 7,
+                    len: 42
+                },
+                PolicySig::Absent,
+            ])),
+            "user 層 routes.yaml 出現で fingerprint が変わる"
+        );
+        assert_ne!(
+            base,
+            compute_fingerprint(&input(vec![
+                PolicySig::Absent,
+                PolicySig::Absent,
+                PolicySig::File {
+                    mtime_nanos: 9,
+                    len: 42
+                },
+            ])),
+            "project 層 routes.yaml 出現で fingerprint が変わる"
+        );
+    }
+
+    /// `prepare_dedup` は Shell variant のみ routes signature を
+    /// fingerprint へ載せる — File/Search request では routes.yaml
+    /// の有無が fingerprint を割らない(route 非入力の eval を
+    /// routes 変更で不必要に invalidate しない)。
+    #[test]
+    fn prepare_dedup_scopes_routes_sig_to_shell_variant() -> TestResult {
+        let dir = tempfile::tempdir()?;
+        let store = dir.path().join("store");
+        let user_cfg = dir.path();
+        let workspace = dir.path().join("ws");
+        std::fs::create_dir_all(&workspace)?;
+        let limits = DedupLimits {
+            verdict_ttl: Duration::from_millis(1_000),
+            lock_stale: Duration::from_millis(2_000),
+            follower_wait: Duration::from_millis(100),
+            poll_interval: Duration::from_millis(10),
+        };
+        let mk_ctx = |target: &str| FingerprintContext {
+            workspace_root: Some(
+                workspace
+                    .canonicalize()
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned(),
+            ),
+            targets: vec![ResolvedTarget {
+                resolved: workspace.join(target),
+                rel_posix: target.to_string(),
+                kind: ResolvedKind::NonFile,
+            }],
+        };
+        let env_map: HashMap<String, String> = HashMap::new();
+        // user 層 routes.yaml が無い状態の baseline。
+        let ctx = mk_ctx("a.txt");
+        let shell_base = prepare_dedup(
+            ctx,
+            VariantInputs::Shell {
+                command: "cargo test".to_string(),
+            },
+            env_map.clone(),
+            None,
+            store.clone(),
+            limits,
+        )
+        .ok_or("prepare_dedup fallback")?
+        .fingerprint;
+        let file_base = prepare_dedup(
+            mk_ctx("a.txt"),
+            VariantInputs::FileRead {
+                range: Some((0, Some(10))),
+            },
+            env_map.clone(),
+            None,
+            store.clone(),
+            limits,
+        )
+        .ok_or("prepare_dedup fallback")?
+        .fingerprint;
+        // user 層 routes.yaml 出現(store_dir の parent = user config)。
+        std::fs::write(user_cfg.join("routes.yaml"), "routes: []\n")?;
+        let shell_after = prepare_dedup(
+            mk_ctx("a.txt"),
+            VariantInputs::Shell {
+                command: "cargo test".to_string(),
+            },
+            env_map.clone(),
+            None,
+            store.clone(),
+            limits,
+        )
+        .ok_or("prepare_dedup fallback")?
+        .fingerprint;
+        let file_after = prepare_dedup(
+            mk_ctx("a.txt"),
+            VariantInputs::FileRead {
+                range: Some((0, Some(10))),
+            },
+            env_map,
+            None,
+            store,
+            limits,
+        )
+        .ok_or("prepare_dedup fallback")?
+        .fingerprint;
+        assert_ne!(
+            shell_base, shell_after,
+            "routes.yaml 出現で shell fingerprint が変わる(stale verdict 無効化)"
+        );
+        assert_eq!(
+            file_base, file_after,
+            "file-read fingerprint は routes 変更に不変"
+        );
+        Ok(())
+    }
+
+    /// publish 側 gate — shareable verdict のみ record body を生成。
+    /// `Verdict::Rewrite` 追加時は `is_shareable` の exhaustive
+    /// match が compile error で明示判断を強制する。
+    #[test]
+    fn verdict_record_body_only_serializes_shareable_verdicts() -> TestResult {
+        let body =
+            verdict_record_body("0123456789abcdef", &Verdict::Allow).ok_or("allow は shareable")?;
+        let json: serde_json::Value = serde_json::from_str(&body)?;
+        assert_eq!(json["fingerprint"], "0123456789abcdef");
+        assert_eq!(json["verdict"]["decision"], "allow");
+        assert!(verdict_record_body(
+            "0123456789abcdef",
+            &Verdict::Deny {
+                reason: "r".to_string()
+            }
+        )
+        .is_some());
+        Ok(())
     }
 }

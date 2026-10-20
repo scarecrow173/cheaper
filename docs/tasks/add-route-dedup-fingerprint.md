@@ -1,7 +1,7 @@
 ---
 id: "TASK-034Jg6wIaUwhyIQnDJRAuu"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add route fingerprint to hook dedup cache"
 created: "2026-10-20"
 updated: "2026-10-20"
