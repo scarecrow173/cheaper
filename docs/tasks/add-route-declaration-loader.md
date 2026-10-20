@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Jg6kYud58YUAHEYOIDt"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add route declaration schema and three-layer loader"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: []
 relations:
   source: []

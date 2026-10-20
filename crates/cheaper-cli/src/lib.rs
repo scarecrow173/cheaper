@@ -41,6 +41,7 @@ pub mod input;
 pub mod models;
 pub mod policy;
 pub mod pricing;
+pub mod route;
 pub mod run;
 pub mod signal;
 pub mod text_format;

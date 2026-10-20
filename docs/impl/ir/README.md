@@ -18,10 +18,11 @@ Directory: `docs/impl/ir`
 | IMPL-034rAiJgmYQKgmJC2mF9zN | Add models.yaml exclude with union merge | completed | [add-models-yaml-exclude-with-union-merge.md](./add-models-yaml-exclude-with-union-merge.md) |
 | IMPL-034r05iHy2gdnpmfo09FGX | Add Ollama docker-compose and AGENTS.md container usage | completed | [add-ollama-docker-compose-and-agents-md-container-usage.md](./add-ollama-docker-compose-and-agents-md-container-usage.md) |
 | IMPL-034z3CD7wXV3MNmCy9JnHs | add platform launchers to hooks payload | completed | [add-platform-launchers-to-hooks-payload.md](./add-platform-launchers-to-hooks-payload.md) |
+| IMPL-034JhZPcBMjCslZpw77s0m | Add route declaration schema and three-layer loader | completed | [add-route-declaration-schema-and-three-layer-loader.md](./add-route-declaration-schema-and-three-layer-loader.md) |
 | IMPL-034zCh1C1Qy6Pc2cvIFlOP | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | completed | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
 | IMPL-034z1STQxtFa8POTFVCwbd | Add SEA entrypoint sea-main.ts | completed | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | IMPL-034rArskSHUOoayxrLW4s8 | Add usage telemetry e2e coverage docs and bundle regen | completed | [add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md](./add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md) |
-| IMPL-034JhCuYprFfcFcaGX6qsA | Add workflow job when condition evaluation | in-progress | [add-workflow-job-when-condition-evaluation.md](./add-workflow-job-when-condition-evaluation.md) |
+| IMPL-034JhCuYprFfcFcaGX6qsA | Add workflow job when condition evaluation | completed | [add-workflow-job-when-condition-evaluation.md](./add-workflow-job-when-condition-evaluation.md) |
 | IMPL-034ATHURho1jepnqtCXbcf | Aggregate workflow benchmark evidence | completed | [aggregate-workflow-benchmark-evidence.md](./aggregate-workflow-benchmark-evidence.md) |
 | IMPL-034IQI6Q5wQd1Ql4s3At3r | Amend orphan sweep ownership docs and usage skill | completed | [amend-orphan-sweep-ownership-docs-and-usage-skill.md](./amend-orphan-sweep-ownership-docs-and-usage-skill.md) |
 | IMPL-GJ30PMdgql2TCIEuURop04 | APM hook 宣言の per-target サブパッケージ分離 | completed | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |
