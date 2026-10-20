@@ -1055,7 +1055,9 @@ fn is_escapable(c: char) -> bool {
 }
 
 /// `ENV_PREFIX` (`/^[A-Za-z_][A-Za-z0-9_]*=/`)— prefix match。
-fn is_env_prefix(text: &str) -> bool {
+/// `route::resolve` の env-prefix skip 規約と共有する(crate
+/// 内部 API)。
+pub(crate) fn is_env_prefix(text: &str) -> bool {
     let mut chars = text.chars();
     match chars.next() {
         Some(c) if c.is_ascii_alphabetic() || c == '_' => {}
@@ -1291,7 +1293,8 @@ fn read_command_spec(name: &str) -> Option<ReadCommandSpec> {
 /// `commandName` — dir prefix(`/`・`\` のどちらでも)を剥がし、
 /// `.exe`/`.bat`/`.cmd` suffix (case-insensitive) を除去する。
 /// lowercase 化はしない(`CAT` は read command と認識しない TS 規則)。
-fn command_name(token: &str) -> String {
+/// `route::resolve` の executable 名判定と共有する(crate 内部 API)。
+pub(crate) fn command_name(token: &str) -> String {
     let base = token.rsplit(['/', '\\']).next().unwrap_or(token);
     for ext in [".exe", ".bat", ".cmd"] {
         // JS `\.(exe|bat|cmd)$` — ".exe" 単体でも match し "" になる。
@@ -1306,7 +1309,8 @@ fn command_name(token: &str) -> String {
 // PowerShell alias)。移動先は追跡しない — その後の read candidate は
 // hook の cwd と異なる base で解決されるため ambiguous であり、誤
 // block・誤 pass を避けて fail-open に倒す。
-const CWD_CHANGING_COMMANDS: &[&str] = &["cd", "chdir", "pushd", "popd", "set-location", "sl"];
+pub(crate) const CWD_CHANGING_COMMANDS: &[&str] =
+    &["cd", "chdir", "pushd", "popd", "set-location", "sl"];
 
 /// `extractReadCandidates` — shell command string から read command の
 /// file operand を抽出する。parse 不能・安全に読める参照が無い場合は

@@ -185,41 +185,61 @@ pub(crate) fn pin_command_grants(
 ) -> Result<BTreeMap<String, String>, ToolError> {
     let mut pins = BTreeMap::new();
     for (name, grant) in &policy.grants {
-        // (a) workspace-relative declared executable の pre-filter。
-        if is_relative_executable_path(&grant.executable) {
-            return Err(grant_violation(
-                name,
-                "workspace-resident executables are not grantable",
-            ));
-        }
-        let resolved = resolve_process_executable(
-            &grant.executable,
-            &ProcessExecutableOptions {
-                root,
-                symlink_policy,
-                denylist,
-                search_path: None,
-            },
-            "command grant",
-        )?;
-        // resolved basename の deny 再検査(design §(d) 適用点 2 —
-        // alias/symlink が denied executable へ解決する迂回を塞ぐ)。
-        if is_denied_command_executable(&resolved) {
-            return Err(grant_violation(
-                name,
-                "resolved executable is interpreter or exec-capable",
-            ));
-        }
-        // (b) realpath 後の workspace 内 canonical path を拒否。
-        if within_workspace(root, &resolved) {
-            return Err(grant_violation(
-                name,
-                "workspace-resident executables are not grantable",
-            ));
-        }
+        let resolved = pin_command_grant(name, grant, root, symlink_policy, denylist)?;
         pins.insert(name.clone(), resolved);
     }
     Ok(pins)
+}
+
+/// `pin_command_grants` の単一 grant 版 — `route::resolve` の
+/// viability 事前評価(`check_command_execution`)が scope pin 未
+/// 構築の状態でも同一 predicate を使うための共有 seam。
+/// workspace-resident executable は二段で拒否: (a) absolute でない
+/// separator 付き declared path は `resolve_process_executable` の
+/// workspace-relative 解決へ着地するため委譲前に
+/// `POLICY_VIOLATION`、(b) `native()` realpath 後の canonical path
+/// が workspace root 内なら同じく `POLICY_VIOLATION`。
+/// pin 不能・deny 該当 grant は `POLICY_VIOLATION` で返す。
+pub fn pin_command_grant(
+    name: &str,
+    grant: &CommandGrant,
+    root: &str,
+    symlink_policy: SymlinkPolicy,
+    denylist: Option<&PathDenylist>,
+) -> Result<String, ToolError> {
+    // (a) workspace-relative declared executable の pre-filter。
+    if is_relative_executable_path(&grant.executable) {
+        return Err(grant_violation(
+            name,
+            "workspace-resident executables are not grantable",
+        ));
+    }
+    let resolved = resolve_process_executable(
+        &grant.executable,
+        &ProcessExecutableOptions {
+            root,
+            symlink_policy,
+            denylist,
+            search_path: None,
+        },
+        "command grant",
+    )?;
+    // resolved basename の deny 再検査(design §(d) 適用点 2 —
+    // alias/symlink が denied executable へ解決する迂回を塞ぐ)。
+    if is_denied_command_executable(&resolved) {
+        return Err(grant_violation(
+            name,
+            "resolved executable is interpreter or exec-capable",
+        ));
+    }
+    // (b) realpath 後の workspace 内 canonical path を拒否。
+    if within_workspace(root, &resolved) {
+        return Err(grant_violation(
+            name,
+            "workspace-resident executables are not grantable",
+        ));
+    }
+    Ok(resolved)
 }
 
 /// pin 済み executable の spawn 前再検証(design §(b)) — pin 後の
@@ -381,6 +401,70 @@ pub fn command_tool_definition(
 /// token(pattern 適合・rest 残余を問わず)に match 前の独立 check
 /// として適用する(design §(a))。pattern 不一致・metachar 含有は
 /// `POLICY_VIOLATION`。
+/// `check_command_execution` の検証済み出力 — spawn に必要な
+/// grant・cwd・executable を保持する(predicate 結果の共有
+/// transport。`command::execute` はこの 3 値をそのまま使い、
+/// `route::resolve` は viability の成否のみ見る)。
+pub struct CheckedCommand {
+    pub grant: CommandGrant,
+    pub cwd: String,
+    /// 検証済み executable — scope pin があれば pin 済み path の
+    /// 再検証結果、無ければ declared executable のその場解決(pin
+    /// と同一 predicate: `pin_command_grant`)。
+    pub executable: String,
+}
+
+/// spawn 無しの事前 check(design §viability — B#3 共有 seam)。
+/// `command::execute` が実 spawn 前に課す全 gate を同一 predicate
+/// で評価する: grant 解決 → argv pattern/metachar → cwd
+/// (route context の `exec_cwd` override を含む)→ executable
+/// 検証(pin 済み path の spawn 前再検証、または pin 未構築時は
+/// declared executable のその場 pin 解決 — `route::resolve` の
+/// viability 経路)。predicate の複製による drift を防ぐため
+/// `command::execute` もこの entry を呼ぶ。
+pub fn check_command_execution(
+    options: &CommandToolOptions,
+    name: &str,
+    args: &[String],
+) -> Result<CheckedCommand, ToolError> {
+    let grant =
+        resolve_command_grant(&options.command, name).map_err(|e| Box::new(e) as ToolError)?;
+    authorize_args(name, &grant, args)?;
+    let route_ctx = options.route_context.as_ref();
+    let cwd = match route_ctx.and_then(|r| r.exec_cwd.as_deref()) {
+        Some(exec_cwd) => prepare_exec_cwd(exec_cwd, options.denylist.as_ref())?,
+        None => prepare_cwd(
+            &options.root,
+            &grant.cwd,
+            options.symlink_policy,
+            options.denylist.as_ref(),
+            "command",
+        )?,
+    };
+    // executable 事前検証 — pin 済み path がある scope(registry
+    // 構築経路)は spawn 前再検証、pin 未構築の dry-run 経路
+    // (`route::resolve` viability)は declared executable をその場
+    // 解決する。いずれも deny/residency の同一 predicate。
+    let executable = match options.pins.get(name) {
+        Some(pinned) => {
+            verify_pinned_executable(name, pinned, &options.root)?;
+            pinned.clone()
+        }
+        None => pin_command_grant(
+            name,
+            &grant,
+            &options.root,
+            options.symlink_policy,
+            options.denylist.as_ref(),
+        )?,
+    };
+    Ok(CheckedCommand {
+        grant,
+        cwd,
+        executable,
+    })
+}
+
 fn authorize_args(name: &str, grant: &CommandGrant, args: &[String]) -> Result<(), ToolError> {
     for token in args {
         if argv_shell_re().is_match(token) {
@@ -429,34 +513,15 @@ async fn execute(
                 .collect()
         })
         .unwrap_or_default();
-    let grant =
-        resolve_command_grant(&options.command, &name).map_err(|e| Box::new(e) as ToolError)?;
-    authorize_args(&name, &grant, &args)?;
+    // 事前 check は `check_command_execution` へ集約(design
+    // §viability — `route::resolve` と同一 predicate)。pin map に
+    // 無い direct 構築は declared executable のその場解決へ倒れ、
+    // deny/residency の検証は共通のまま。
+    let checked = check_command_execution(options, &name, &args)?;
+    let grant = checked.grant;
+    let cwd = checked.cwd;
+    let pinned = checked.executable;
     let route_ctx = options.route_context.as_ref();
-    // `command` の prepare は cwd 解決(denylist + is_dir stat)のみ —
-    // manifest/writeScope coverage 検査は持たない(writeScope 自体が
-    // registration gate で拒否されるため、design §(c)/(e))。
-    // route context の `exec_cwd` は grant.cwd 経路を bypass し
-    // canonicalize + denylist + is_dir のみで workspace containment を
-    // 課さない(R18 — 原 command の cwd を復元する)。
-    let cwd = match route_ctx.and_then(|r| r.exec_cwd.as_deref()) {
-        Some(exec_cwd) => prepare_exec_cwd(exec_cwd, options.denylist.as_ref())?,
-        None => prepare_cwd(
-            &options.root,
-            &grant.cwd,
-            options.symlink_policy,
-            options.denylist.as_ref(),
-            "command",
-        )?,
-    };
-    // pin 済み executable の spawn 前再検証(pin 後差替えへの
-    // fail-closed — design §(b))。pin map に無い grant は
-    // `names` 未経由の direct 構築として fail-closed。
-    let pinned = options
-        .pins
-        .get(&name)
-        .ok_or_else(|| grant_violation(&name, "grant has no pinned executable"))?;
-    verify_pinned_executable(&name, pinned, &options.root)?;
     if let Some(reason) = outer.reason() {
         return Err(aborted_err(reason));
     }

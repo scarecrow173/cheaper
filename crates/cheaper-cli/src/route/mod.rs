@@ -5,4 +5,6 @@
 //!   load・effective route set 構築。
 
 pub mod log_store;
+pub mod payload;
+pub mod resolve;
 pub mod routes;

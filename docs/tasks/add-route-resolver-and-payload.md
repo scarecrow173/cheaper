@@ -1,7 +1,7 @@
 ---
 id: "TASK-034Jg6lAjcLYbfDm0Y370r"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add route resolver payload codec and command preflight seam"
 created: "2026-10-20"
 updated: "2026-10-20"

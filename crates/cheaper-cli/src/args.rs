@@ -204,6 +204,30 @@ pub enum HookConfigAction {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct RouteCliArgs {
+    /// `route resolve` の action。
+    pub action: RouteAction,
+    pub format: CliFormat,
+    pub quiet: bool,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum RouteAction {
+    /// `route resolve` — dry-run のみ(workflow・外部 process は
+    /// 実行しない)。入力は `--command`/`--argv` のどちらか 1 つ。
+    Resolve {
+        /// `--command <string>` — shell command 文字列(tokenize 後
+        /// env-prefix strip で正規化)。
+        command: Option<String>,
+        /// `--argv <json-array>` — argv 列の JSON array
+        /// (string のみ。同一の env-prefix 正規化を受ける)。
+        argv: Option<String>,
+        /// `--cwd` — workspace root 解決の base。
+        cwd: Option<String>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct UsageCliArgs {
     /// `--since` の生文字列。cli 層で `parse_duration` する。
     pub since: Option<String>,
@@ -232,6 +256,8 @@ pub enum ParsedCli {
     /// `hook-config` — `hook` が早期 dispatch されるため別 top-level
     /// command として分離する(ADR-034H2WBNtC4We8dyC5lQZJ)。
     HookConfig(HookConfigCliArgs),
+    /// `route` — route resolve/run の route 層 utility command。
+    Route(RouteCliArgs),
 }
 
 impl ParsedCli {
@@ -248,6 +274,7 @@ impl ParsedCli {
             Self::Auth(a) => Some(a.format),
             Self::Policy(a) => Some(a.format),
             Self::HookConfig(a) => Some(a.format),
+            Self::Route(a) => Some(a.format),
             Self::Help | Self::Version | Self::Models(_) => None,
         }
     }
@@ -263,6 +290,7 @@ impl ParsedCli {
             Self::Auth(a) => Some(a.quiet),
             Self::Policy(a) => Some(a.quiet),
             Self::HookConfig(a) => Some(a.quiet),
+            Self::Route(a) => Some(a.quiet),
             Self::Help | Self::Version | Self::Models(_) => None,
         }
     }
@@ -325,6 +353,10 @@ const STRING_OPTIONS: &[&str] = &[
     // `run`/worker alias 専用 — budget 枯渇 checkpoint からの再開
     // (issue #111)。非 run command arm は field 検査で reject する。
     "resume",
+    // `route resolve` 専用 — 入力は `--command`/`--argv` の
+    // どちらか 1 つ。他 command arm は reject。
+    "command",
+    "argv",
     // observability activation(T2)の global option。値は `Values`
     // field に保持せず、消費は `global_log_flags` が argv scan で
     // 担う(parse 済み値と activation 値の二重表現を避ける)。
@@ -362,6 +394,9 @@ struct Values {
     resume: Option<String>,
     scope: Option<String>,
     project_root: Option<String>,
+    /// `route resolve` の `--command`/`--argv` 値。
+    command: Option<String>,
+    argv: Option<String>,
     event_stdin: bool,
     quiet: bool,
     help: bool,
@@ -388,6 +423,8 @@ impl Default for Values {
             resume: None,
             scope: None,
             project_root: None,
+            command: None,
+            argv: None,
             event_stdin: false,
             quiet: false,
             help: false,
@@ -419,6 +456,8 @@ impl Values {
             "resume" => self.resume = Some(value),
             "scope" => self.scope = Some(value),
             "project-root" => self.project_root = Some(value),
+            "command" => self.command = Some(value),
+            "argv" => self.argv = Some(value),
             // 受理のみで値は捨てる — activation 入力は
             // `global_log_flags` が argv から直接 scan する。
             "log" | "log-format" => {}
@@ -613,7 +652,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
 
     let Some(command) = positionals.first() else {
         return Err(invalid_request(
-            "command required: run | bulk-read | code-write | doc-write | tool-operate | count-tokens | usage | models | auth | workflow | policy | hook-config",
+            "command required: run | bulk-read | code-write | doc-write | tool-operate | count-tokens | usage | models | auth | workflow | policy | hook-config | route",
             None,
         ));
     };
@@ -683,6 +722,68 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
     // --model/--provider/--worker は run/models と意味を共有するため
     // usage 専用には含めない(TS コメント通り)。
     let usage_only_option_used = values.since.is_some() || values.compare_model.is_some();
+    // `route resolve` 専用 option — `route` arm 以外で値を持つ
+    // 場合は reject する(field 検査規約。`workflow`/`hook-config`/
+    // `policy` の allowlist 走査が先に発火するため、この guard は
+    // field 検査式の arm — usage/count-tokens/models/auth/run —
+    // に対して効く)。
+    let route_only_option_used = values.command.is_some() || values.argv.is_some();
+
+    if command == "route" {
+        // `route resolve` のみ受理する utility arm(B2)。shape は
+        // `route resolve` の 2 positional に限定し、将来 arm
+        // (`run`/`logs`)は別 task で追加する — 未実装 action 名は
+        // unknown として reject する。
+        if positionals.get(1).map(String::as_str) != Some("resolve") || positionals.len() != 2 {
+            return Err(invalid_request("route requires resolve", None));
+        }
+        // flag allowlist — `--command`/`--argv`/`--cwd` と共通の
+        // format/quiet/log のみ受理する。
+        for token in &option_tokens {
+            if ![
+                "command",
+                "argv",
+                "cwd",
+                "format",
+                "quiet",
+                "log",
+                "log-format",
+            ]
+            .contains(&token.name.as_str())
+            {
+                return Err(invalid_request(
+                    format!("--{} is not valid for `route resolve`", token.name),
+                    None,
+                ));
+            }
+        }
+        if !values.grants.is_empty() {
+            return Err(reject_grant_flag());
+        }
+        // `--command`/`--argv` は相互排他でどちらか 1 つ必須。
+        if values.command.is_some() == values.argv.is_some() {
+            return Err(invalid_request(
+                "route resolve requires exactly one of --command or --argv",
+                None,
+            ));
+        }
+        return Ok(ParsedCli::Route(RouteCliArgs {
+            action: RouteAction::Resolve {
+                command: values.command.clone(),
+                argv: values.argv.clone(),
+                cwd: values.cwd.clone(),
+            },
+            format,
+            quiet,
+        }));
+    }
+
+    if route_only_option_used {
+        return Err(invalid_request(
+            "--command/--argv are only valid for `route resolve`",
+            None,
+        ));
+    }
 
     if command == "usage" {
         if positionals.len() > 1 {

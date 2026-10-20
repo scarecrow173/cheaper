@@ -12,6 +12,7 @@ mod input;
 mod models;
 mod policy;
 mod pricing;
+mod route;
 mod run;
 mod usage_log;
 mod usage_report;

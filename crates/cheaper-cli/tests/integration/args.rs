@@ -748,3 +748,90 @@ fn global_flag_present_scan() {
         "quiet"
     ));
 }
+
+// --- route -------------------------------------------------------------------
+
+#[test]
+fn route_resolve_command_and_argv() {
+    let ParsedCli::Route(a) =
+        parse_cli_args(&args(&["route", "resolve", "--command", "cargo test"])).unwrap()
+    else {
+        panic!()
+    };
+    let cheaper_cli::args::RouteAction::Resolve { command, argv, cwd } = a.action;
+    assert_eq!(command.as_deref(), Some("cargo test"));
+    assert_eq!(argv, None);
+    assert_eq!(cwd, None);
+
+    let ParsedCli::Route(a) = parse_cli_args(&args(&[
+        "route",
+        "resolve",
+        "--argv",
+        "[\"cargo\",\"test\"]",
+        "--cwd",
+        "/w",
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    let cheaper_cli::args::RouteAction::Resolve { command, argv, cwd } = a.action;
+    assert_eq!(command, None);
+    assert_eq!(argv.as_deref(), Some("[\"cargo\",\"test\"]"));
+    assert_eq!(cwd.as_deref(), Some("/w"));
+}
+
+#[test]
+fn route_resolve_requires_resolve_action() {
+    let e = err(&["route"]);
+    assert_eq!(e.code(), ErrorCode::InvalidRequest);
+    assert_eq!(e.message(), "route requires resolve");
+    // 未実装 action(`run`/`logs`)は unknown として reject。
+    let e = err(&["route", "run"]);
+    assert_eq!(e.message(), "route requires resolve");
+    let e = err(&["route", "resolve", "extra"]);
+    assert_eq!(e.message(), "route requires resolve");
+}
+
+#[test]
+fn route_resolve_requires_exactly_one_input() {
+    for argv in [
+        vec!["route", "resolve"],
+        vec!["route", "resolve", "--command", "a", "--argv", "[]"],
+    ] {
+        let e = err(&argv);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "{argv:?}");
+        assert_eq!(
+            e.message(),
+            "route resolve requires exactly one of --command or --argv"
+        );
+    }
+}
+
+#[test]
+fn route_resolve_rejects_foreign_and_unrelated_options() {
+    // route arm 内 allowlist。
+    let e = err(&["route", "resolve", "--command", "a", "--model", "x/y"]);
+    assert_eq!(e.message(), "--model is not valid for `route resolve`");
+    let e = err(&["route", "resolve", "--command", "a", "--grant", "{}"]);
+    assert_eq!(e.message(), "--grant is not valid for `route resolve`");
+    // 非 route command では `--command`/`--argv` を受理しない
+    // (field 検査 guard)。
+    for argv in [
+        vec!["run", "w", "--command", "a"],
+        vec!["usage", "--argv", "[]"],
+        vec!["count-tokens", "f", "--command", "a"],
+        vec!["models", "--argv", "[]"],
+        vec!["auth", "status", "--command", "a"],
+        vec!["policy", "grant", "list", "--argv", "[]"],
+        vec!["hook-config", "verify", "--command", "a"],
+        vec!["workflow", "interface", "w.json", "--argv", "[]"],
+    ] {
+        let e = err(&argv);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "{argv:?}");
+        assert!(
+            e.message().contains("--command") || e.message().contains("--argv"),
+            "{argv:?} → {}",
+            e.message()
+        );
+    }
+}

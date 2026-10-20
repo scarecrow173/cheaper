@@ -426,6 +426,14 @@ async fn dispatch(
             write_output(io, &out.envelope, args.format);
             Ok(out.exit_code)
         }
+        ParsedCli::Route(args) => {
+            // utility command 規約 — `record_usage` を呼ばない
+            // (usage.jsonl 記録対象外。B4 の kind:"route" record は
+            // `route run` 側が担う)。
+            let out = crate::route_cmd::execute(&args, io, hooks, started_at).await?;
+            write_output(io, &out.envelope, args.format);
+            Ok(out.exit_code)
+        }
         ParsedCli::Run(args) => {
             let out = crate::run::execute(&args, io, hooks, started_at, ctx).await?;
             if let Some(line) = &out.model_line {
@@ -474,6 +482,7 @@ fn command_name(parsed: &ParsedCli) -> &'static str {
         ParsedCli::Usage(_) => "usage",
         ParsedCli::Policy(_) => "policy",
         ParsedCli::HookConfig(_) => "hook-config",
+        ParsedCli::Route(_) => "route",
     }
 }
 

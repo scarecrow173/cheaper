@@ -1503,3 +1503,50 @@ async fn spawn_time_revalidation_detects_swapped_executable() {
         e.message()
     );
 }
+
+/// `check_command_execution` — route resolver が使う spawn 無し
+/// preflight seam(design §viability・B#3)。`command::execute` と
+/// 同一 predicate であることを、受理・拒否の双方で確認する。
+#[test]
+fn check_command_execution_shares_execute_predicate() {
+    use cheaper_core::policy::command::resolve_command_policy;
+    use cheaper_tools::tools::command::{check_command_execution, CommandToolOptions};
+
+    let dir = TempDir::new();
+    let root = dir.root();
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    let policy = resolve_command_policy(Some(&json!({
+        "grants": {"t": {"executable": exe, "argv": ["test", "*"]}}
+    })))
+    .unwrap();
+    let options = CommandToolOptions {
+        root: root.clone(),
+        symlink_policy: SymlinkPolicy::Deny,
+        command: policy,
+        pins: Default::default(),
+        on_timeout: None,
+        denylist: None,
+        route_context: None,
+    };
+    // 受理 — grant 名・argv pattern・executable pin 解決・cwd 全通過。
+    let checked = check_command_execution(&options, "t", &["test".into(), "--x".into()]).unwrap();
+    assert!(!checked.executable.is_empty());
+    assert_eq!(checked.cwd, root);
+    // argv pattern 不一致 → execute と同じ POLICY_VIOLATION。
+    let e = check_command_execution(&options, "t", &["rm".into()])
+        .map(|_| ())
+        .unwrap_err();
+    assert_eq!(cheaper_err(&e).code(), ErrorCode::PolicyViolation);
+    // metachar token → 同じく POLICY_VIOLATION。
+    let e = check_command_execution(&options, "t", &["test".into(), "a;rm".into()])
+        .map(|_| ())
+        .unwrap_err();
+    assert_eq!(cheaper_err(&e).code(), ErrorCode::PolicyViolation);
+    // 未宣言 grant → `unknown or unauthorized command grant`
+    // (resolve_command_grant の fail-closed — resolver の no-grant
+    // viability が拾う分類)。
+    assert!(check_command_execution(&options, "absent", &[]).is_err());
+}

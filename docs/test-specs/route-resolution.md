@@ -62,7 +62,9 @@ route.yaml 宣言の load・match・viability 評価。
   `args`(match.command 以降)と `exec_args`(argv[1..])を区別する。
 - viability は self-bypass → INTERACTIVE_COMMANDS →
   check_command_execution(grant 解決・pin・denied・cwd)の固定順。
-- env-prefix token(FOO=1)を含む argv は route 対象外とする。
+- env-prefix token(FOO=1)は argv から除外して残り token で
+  route match し、`route run` が `payload.command` から再導出
+  する(design §C3 — routing 対象外ではない)。
 
 ## Examples
 
