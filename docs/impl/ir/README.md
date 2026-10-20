@@ -9,7 +9,7 @@ Directory: `docs/impl/ir`
 | IMPL-034Efz8DzzN46lcybHvrfu | Abort classification at setup boundary | completed | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
 | IMPL-034z57jprjlY9PUYkFPIdl | add cheaper hook command with target adapters | completed | [add-cheaper-hook-command-with-target-adapters.md](./add-cheaper-hook-command-with-target-adapters.md) |
 | IMPL-034rArrYQRvXbeSRXD6HQQ | Add cheaper usage aggregation command | completed | [add-cheaper-usage-aggregation-command.md](./add-cheaper-usage-aggregation-command.md) |
-| IMPL-034JhsoS4CooCbWSXWcx77 | Add command grant exitCodes and nonzero-exit result reporting | in-progress | [add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md](./add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md) |
+| IMPL-034JhsoS4CooCbWSXWcx77 | Add command grant exitCodes and nonzero-exit result reporting | completed | [add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md](./add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md) |
 | IMPL-034zCh129JMqV5Z5ta5wG6 | Add deterministic sibling-parallelism pin tests to runtime-pi | completed | [add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md](./add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md) |
 | IMPL-034IqeWzYxJ36cp819qQN4 | Add hook_eval_dedup integration tests | completed | [add-hook-eval-dedup-integration-tests.md](./add-hook-eval-dedup-integration-tests.md) |
 | IMPL-034zQZYpiexj1ILiP9NuIH | Add launcher acquisition contract tests | completed | [add-launcher-acquisition-contract-tests.md](./add-launcher-acquisition-contract-tests.md) |
@@ -21,6 +21,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zCh1C1Qy6Pc2cvIFlOP | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | completed | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
 | IMPL-034z1STQxtFa8POTFVCwbd | Add SEA entrypoint sea-main.ts | completed | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | IMPL-034rArskSHUOoayxrLW4s8 | Add usage telemetry e2e coverage docs and bundle regen | completed | [add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md](./add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md) |
+| IMPL-034JhCuYprFfcFcaGX6qsA | Add workflow job when condition evaluation | in-progress | [add-workflow-job-when-condition-evaluation.md](./add-workflow-job-when-condition-evaluation.md) |
 | IMPL-034ATHURho1jepnqtCXbcf | Aggregate workflow benchmark evidence | completed | [aggregate-workflow-benchmark-evidence.md](./aggregate-workflow-benchmark-evidence.md) |
 | IMPL-034IQI6Q5wQd1Ql4s3At3r | Amend orphan sweep ownership docs and usage skill | completed | [amend-orphan-sweep-ownership-docs-and-usage-skill.md](./amend-orphan-sweep-ownership-docs-and-usage-skill.md) |
 | IMPL-GJ30PMdgql2TCIEuURop04 | APM hook 宣言の per-target サブパッケージ分離 | completed | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |

@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Jg6koI5aIWEPUXfhobu"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add workflow job when condition evaluation"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: []
 relations:
   source: []

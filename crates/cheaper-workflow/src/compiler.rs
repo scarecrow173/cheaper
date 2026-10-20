@@ -165,11 +165,14 @@ fn materialize_resources(
 }
 
 impl CompiledWorkflow {
-    /// `materializeJobInput(jobId, results)`。
+    /// `materializeJobInput(jobId, results)`。`skipped` は
+    /// condition-skipped producer の job id 集合(該当 `$from` は
+    /// `null` に materialize される)。
     pub fn materialize_job_input(
         &self,
         job_id: &str,
         results: &HashMap<String, Value>,
+        skipped: &HashSet<String>,
     ) -> Result<Value, CheaperError> {
         let job = self.definition.job(job_id);
         let metadata = self.job_validation(job_id);
@@ -179,7 +182,10 @@ impl CompiledWorkflow {
                     &job.input,
                     &self.materialized_inputs,
                     results,
-                    MaterializeOptions::default(),
+                    MaterializeOptions {
+                        skipped_from: Some(skipped),
+                        ..Default::default()
+                    },
                 )?;
                 validate_job_input(metadata, &input)?;
                 Ok(input)
@@ -238,11 +244,22 @@ impl CompiledWorkflow {
         Ok(results)
     }
 
+    /// `#skipped(states)` — `condition_skipped` job id 集合。
+    /// `when` 評価・`$from` null materialization の両方で使う。
+    fn skipped_of(states: &HashMap<String, WorkflowJobState>) -> HashSet<String> {
+        states
+            .iter()
+            .filter(|(_, state)| state.condition_skipped)
+            .map(|(id, _)| id.clone())
+            .collect()
+    }
+
     /// `#output(name, results)`。
     fn output_value(
         &self,
         name: &str,
         results: &HashMap<String, Value>,
+        skipped: &HashSet<String>,
     ) -> Result<Value, CheaperError> {
         let output = self.definition.outputs().get(name);
         let validator = self.output_validation(name);
@@ -260,6 +277,7 @@ impl CompiledWorkflow {
             MaterializeOptions {
                 defer_from: false,
                 code: Some(ErrorCode::InvalidOutput),
+                skipped_from: Some(skipped),
             },
         )?;
         validator.validate(&value).map_err(|errors| {
@@ -286,7 +304,7 @@ impl CompiledWorkflow {
         states: &HashMap<String, WorkflowJobState>,
     ) -> Result<Value, CheaperError> {
         let results = self.results_of(states)?;
-        self.output_value(name, &results)
+        self.output_value(name, &results, &Self::skipped_of(states))
     }
 
     /// `materializeOutputs(states)` — output 名は code-unit sort。
@@ -295,11 +313,12 @@ impl CompiledWorkflow {
         states: &HashMap<String, WorkflowJobState>,
     ) -> Result<Map<String, Value>, CheaperError> {
         let results = self.results_of(states)?;
+        let skipped = Self::skipped_of(states);
         let mut names: Vec<&String> = self.definition.outputs().keys().collect();
         names.sort_by(|a, b| code_unit_compare(a, b));
         let mut out = Map::with_capacity(names.len());
         for name in names {
-            out.insert(name.clone(), self.output_value(name, &results)?);
+            out.insert(name.clone(), self.output_value(name, &results, &skipped)?);
         }
         Ok(out)
     }
@@ -389,6 +408,7 @@ impl<'a> WorkflowCompiler<'a> {
                     input,
                     needs,
                     resources,
+                    when: original.when,
                     manifest: None,
                 },
             ));
@@ -423,6 +443,7 @@ impl<'a> WorkflowCompiler<'a> {
                                 input: job.input.clone(),
                                 needs: job.needs.clone(),
                                 resources: job.resources.clone(),
+                                when: job.when.clone(),
                             },
                             worker,
                         },

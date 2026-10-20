@@ -5,7 +5,7 @@
 
 mod common;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use cheaper_core::errors::ErrorCode;
 use cheaper_core::nodepath;
@@ -147,7 +147,7 @@ async fn compiles_policy_process_producer_and_executes_materialized_jobs() {
             ))
             .expect("worker scope");
         let input = compiled
-            .materialize_job_input(&id, &results)
+            .materialize_job_input(&id, &results, &HashSet::new())
             .expect("materialize");
         let result = scope
             .execute(
@@ -191,6 +191,7 @@ async fn compiles_policy_process_producer_and_executes_materialized_jobs() {
                     name: "process".to_string(),
                     input: json!({ "task": "unknown" }),
                     needs: None,
+                    when: None,
                     resources: None,
                 },
                 worker: None,
@@ -213,6 +214,7 @@ async fn compiles_policy_process_producer_and_executes_materialized_jobs() {
                     name: "process".to_string(),
                     input: json!({ "task": "generate" }),
                     needs: None,
+                    when: None,
                     resources: None,
                 },
                 worker: None,

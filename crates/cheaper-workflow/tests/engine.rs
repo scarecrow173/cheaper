@@ -705,6 +705,197 @@ async fn boundary_errors_skip_dependents_and_keep_independent_outputs() {
     }
 }
 
+// ---- job `when` condition ----
+
+/// `when` false は CONDITION_SKIPPED で skip し、dependent への
+/// `$from` は `null` を materialize、workflow error には計上しない。
+#[tokio::test]
+async fn when_false_skips_without_failure_and_materializes_null() {
+    let mut raw = definition();
+    raw["jobs"]["exec"] = json!({
+        "kind": "tool", "tool": "grep",
+        "input": {},
+    });
+    raw["jobs"]["analyze"] = json!({
+        "kind": "tool", "tool": "grep",
+        "when": {
+            "left": { "$from": "exec", "path": "/content/0/text" },
+            "op": "eq",
+            "right": { "$literal": "never" },
+        },
+        "input": {},
+    });
+    raw["jobs"]["report"] = json!({
+        "kind": "tool", "tool": "grep",
+        "needs": ["analyze"],
+        "input": { "x": { "$from": "analyze", "path": "" } },
+    });
+    raw["outputs"]["x"] = json!({ "schema": {}, "value": { "$from": "analyze", "path": "" } });
+    let fixtures = FixtureSet::new();
+    let workflow = fixtures.compiler().compile(&raw, None).await.unwrap();
+    let mut h = common::default_harness();
+    let ran = Arc::new(Mutex::new(Vec::new()));
+    {
+        let ran = Arc::clone(&ran);
+        h.ports.tool = Arc::new(FnExecutor(move |ctx: WorkflowExecutionContext| {
+            ran.lock().unwrap().push(ctx.job_id.clone());
+            async move { Ok(tool_result("out")) }
+        }));
+    }
+    let outcome = run_workflow(options(&workflow, h.ports)).await.unwrap();
+    assert!(outcome.ok, "condition skip must not fail the workflow");
+    let by_id: HashMap<&str, &cheaper_workflow::WorkflowJobOutcome> =
+        outcome.jobs.iter().map(|j| (j.id.as_str(), j)).collect();
+    assert_eq!(by_id["analyze"].status, JobStatus::Skipped);
+    assert_eq!(
+        by_id["analyze"].error.as_ref().unwrap().code,
+        "CONDITION_SKIPPED"
+    );
+    // dependent は skip を伝播せず `null` binding で実行される。
+    assert_eq!(by_id["report"].status, JobStatus::Succeeded);
+    assert!(ran.lock().unwrap().contains(&"report".to_string()));
+    // outputs 側の `$from` も `null`。
+    assert_eq!(outcome.result["x"], Value::Null);
+}
+
+/// `when` true の job は通常通り実行される(eq/`$from` 数値比較)。
+#[tokio::test]
+async fn when_true_runs_job() {
+    let mut raw = definition();
+    raw["jobs"]["exec"] = json!({ "kind": "tool", "tool": "grep", "input": {} });
+    raw["jobs"]["analyze"] = json!({
+        "kind": "tool", "tool": "grep",
+        "when": {
+            "left": { "$from": "exec", "path": "/content/0/text" },
+            "op": "ne",
+            "right": { "$literal": "never" },
+        },
+        "input": {},
+    });
+    let fixtures = FixtureSet::new();
+    let workflow = fixtures.compiler().compile(&raw, None).await.unwrap();
+    let outcome = run_workflow(options(&workflow, common::default_harness().ports))
+        .await
+        .unwrap();
+    assert!(outcome.ok);
+    let by_id: HashMap<&str, &cheaper_workflow::WorkflowJobOutcome> =
+        outcome.jobs.iter().map(|j| (j.id.as_str(), j)).collect();
+    assert_eq!(by_id["analyze"].status, JobStatus::Succeeded);
+}
+
+/// `when` 内の `$from` は dep edge として推論され、producer 完了後に
+/// 条件評価される(needs 宣言無しでも producer 待ちになる)。
+#[tokio::test]
+async fn when_from_creates_dependency_edge() {
+    let mut raw = definition();
+    raw["jobs"]["producer"] = json!({ "kind": "tool", "tool": "grep", "input": {} });
+    raw["jobs"]["gated"] = json!({
+        "kind": "tool", "tool": "grep",
+        "when": { "left": { "$from": "producer", "path": "/content/0/text" }, "op": "exists" },
+        "input": {},
+    });
+    let fixtures = FixtureSet::new();
+    let workflow = fixtures.compiler().compile(&raw, None).await.unwrap();
+    // dep edge 推論 — order で producer が gated より前。
+    let order = &workflow.order;
+    assert!(
+        order.iter().position(|id| id == "producer") < order.iter().position(|id| id == "gated"),
+        "order: {order:?}"
+    );
+    let outcome = run_workflow(options(&workflow, common::default_harness().ports))
+        .await
+        .unwrap();
+    assert!(outcome.ok);
+    let by_id: HashMap<&str, &cheaper_workflow::WorkflowJobOutcome> =
+        outcome.jobs.iter().map(|j| (j.id.as_str(), j)).collect();
+    // producer の text は non-null — exists は true。
+    assert_eq!(by_id["gated"].status, JobStatus::Succeeded);
+}
+
+/// `gt`/`lt` は数値比較のみ — 非数値 operand は false(=skip)に
+/// 安全評価される。数値比較は通常通り真偽を返す。
+#[tokio::test]
+async fn when_numeric_operators_safely_evaluate() {
+    for (op, left, right, expect_skipped) in [
+        (
+            "gt",
+            json!({ "$literal": "text" }),
+            json!({ "$literal": 1 }),
+            true,
+        ), // 非数値 → false
+        (
+            "gt",
+            json!({ "$literal": 5 }),
+            json!({ "$literal": 1 }),
+            false,
+        ),
+        (
+            "lt",
+            json!({ "$literal": 5 }),
+            json!({ "$literal": 1 }),
+            true,
+        ),
+        (
+            "lt",
+            json!({ "$literal": null }),
+            json!({ "$literal": 1 }),
+            true,
+        ), // null → false
+    ] {
+        let mut raw = definition();
+        raw["jobs"]["a"] = json!({
+            "kind": "tool", "tool": "grep",
+            "when": { "left": left, "op": op, "right": right },
+            "input": {},
+        });
+        let fixtures = FixtureSet::new();
+        let workflow = fixtures.compiler().compile(&raw, None).await.unwrap();
+        let outcome = run_workflow(options(&workflow, common::default_harness().ports))
+            .await
+            .unwrap();
+        let by_id: HashMap<&str, &cheaper_workflow::WorkflowJobOutcome> =
+            outcome.jobs.iter().map(|j| (j.id.as_str(), j)).collect();
+        assert_eq!(
+            by_id["a"].status,
+            if expect_skipped {
+                JobStatus::Skipped
+            } else {
+                JobStatus::Succeeded
+            },
+            "op {op} left {left} right {right}"
+        );
+        assert!(outcome.ok);
+    }
+}
+
+/// `when` の binding 解決失敗(producer result 上に存在しない
+/// path — schema 上は不可能と証明できない open object 配下)は
+/// silent skip でなく job failure。
+#[tokio::test]
+async fn when_binding_failure_is_job_failure() {
+    let mut raw = definition();
+    raw["jobs"]["exec"] = json!({ "kind": "tool", "tool": "grep", "input": {} });
+    raw["jobs"]["a"] = json!({
+        "kind": "tool", "tool": "grep",
+        "needs": ["exec"],
+        "when": {
+            "left": { "$from": "exec", "path": "/details/absent" },
+            "op": "eq",
+            "right": { "$literal": true }
+        },
+        "input": {},
+    });
+    let fixtures = FixtureSet::new();
+    let workflow = fixtures.compiler().compile(&raw, None).await.unwrap();
+    let outcome = run_workflow(options(&workflow, common::default_harness().ports))
+        .await
+        .unwrap();
+    let by_id: HashMap<&str, &cheaper_workflow::WorkflowJobOutcome> =
+        outcome.jobs.iter().map(|j| (j.id.as_str(), j)).collect();
+    assert_eq!(by_id["a"].status, JobStatus::Failed);
+    assert!(!outcome.ok);
+}
+
 /// CheaperError を clone して新しい ToolError を作る(cause 非保持)。
 fn error_clone(e: &ToolError) -> ToolError {
     match e.downcast_ref::<CheaperError>() {
