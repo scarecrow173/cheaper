@@ -21,7 +21,8 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related:
+    - "./pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
   refines: []
   refined-by: []
   derives-from: ["../discovery/one-shot-workflow-execution-boundaries.md"]

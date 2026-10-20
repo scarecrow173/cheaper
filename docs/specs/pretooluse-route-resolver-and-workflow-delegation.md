@@ -39,6 +39,7 @@ relations:
     - "./delegation-usage-measurement-log.md"
     - "./one-shot-workflow-engine-and-run-cli.md"
     - "../adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
+    - "../adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
   refines: []
   refined-by: []
   derives-from:

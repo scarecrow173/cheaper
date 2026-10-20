@@ -35,6 +35,7 @@ relations:
     - "./usage-jsonl-in-user-config-dir-best-effort-append.md"
     - "../specs/bounded-native-hook-evaluation-and-managed-devin-registration.md"
     - "../specs/hook-duplicate-firing-single-evaluation-dedup.md"
+    - "./pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
   refines: []
   refined-by: []
   derives-from:

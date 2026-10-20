@@ -38,6 +38,7 @@ relations:
   derives-from: []
   derived-by:
     - "../specs/pretooluse-route-resolver-and-workflow-delegation.md"
+    - "../adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
   verifies: []
   verified-by: []
   references:
