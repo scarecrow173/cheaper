@@ -4,4 +4,5 @@
 //! - `routes`: routes.yaml schema 検証・builtin/user/project の 3 層
 //!   load・effective route set 構築。
 
+pub mod log_store;
 pub mod routes;

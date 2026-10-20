@@ -40,7 +40,7 @@ Directory: `docs/tasks`
 | TASK-034Jg6kYud58YUAHEYOIDt | Add route declaration schema and three-layer loader | done | [add-route-declaration-loader.md](./add-route-declaration-loader.md) |
 | TASK-034Jg6wIaUwhyIQnDJRAuu | Add route fingerprint to hook dedup cache | todo | [add-route-dedup-fingerprint.md](./add-route-dedup-fingerprint.md) |
 | TASK-034Jg6IVuYRxFj2Zn3JPI9 | Add route integration and compile-contract tests | todo | [add-route-integration-tests.md](./add-route-integration-tests.md) |
-| TASK-034Jg6ui9tEt8GFLDetq57 | Add route log store and RouteLogReader | todo | [add-route-log-store.md](./add-route-log-store.md) |
+| TASK-034Jg6ui9tEt8GFLDetq57 | Add route log store and RouteLogReader | done | [add-route-log-store.md](./add-route-log-store.md) |
 | TASK-034Jg6HVZoKBgwGDZT8ZT6 | Add route logs CLI arm | todo | [add-route-logs-cli.md](./add-route-logs-cli.md) |
 | TASK-034Jg6lAjcLYbfDm0Y370r | Add route resolver payload codec and command preflight seam | todo | [add-route-resolver-and-payload.md](./add-route-resolver-and-payload.md) |
 | TASK-034Jg6GTgeZjILEwH5ZvE6 | Add route run delegated workflow execution | todo | [add-route-run-delegated-exec.md](./add-route-run-delegated-exec.md) |
