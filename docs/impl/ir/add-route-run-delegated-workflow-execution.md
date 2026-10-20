@@ -223,6 +223,25 @@ Phase D1 / design §`route run` (R14・C3・C9)。
   cheaper-runtime/dev-seam,cheaper-cli/dev-seam` → warning 0
   (`tmp/handoff-d1-next/clippy2.txt`)。
 
+以下は当時の log の抜粋・要約であり、本記録は
+tmp file 無しで自己完結する(tmp path は履歴 label であり参照前提では
+ない)。数字は D1 時点の suite 規模であり現在の test 総数ではない。
+
+- stub red: `not implemented: route run payload revalidation` /
+  `test result: FAILED. 0 passed; 10 failed`。
+- 初回 green: `route::run` lib 10 passed / 0 failed。
+- review red(unit): 11 passed / 4 failed — `finish_*` 4 件が
+  engine error の Timeout/PolicyViolation 保持・workflow error record・
+  invalid captured exit の欠落を検出。
+- review red(integration): 13 passed / 1 failed —
+  `exec_infra_failure_returns_error` の
+  `assertion failed: !marker.exists()`(marker 残留の事実のみ記録、
+  原因の追加推定はしない)。
+- final review green: `route_run::` 14/0・`--lib route::run` 15/0・
+  `--test workflow` 18/0。
+- `tmp/handoff-d1-next/route-run-green2.txt` SHA256:
+  `c005b06663e8718452a60e6f3d16c092b7e4c5dbd3d75a741720e4a2c5bae3e2`。
+
 ## Risks
 
 - ~~SDP deterministic gate fail~~ → 解消済み(2026-10-21)。
@@ -236,6 +255,25 @@ Phase D1 / design §`route run` (R14・C3・C9)。
   `infer check` → `profile` → `validate` 全 4 gate pass
   (`.sdp/implementation-flow-default/validation-report.json`)。
   `.sdp/` は gitignored のため tracked artifact への影響なし。
+  修復で適用した skill → capability 対応(自己完結記録、tmp
+  snapshot は履歴 label):
+
+  | skill | capability |
+  | --- | --- |
+  | cheaper-bulk-read | bulk_read_delegation |
+  | cheaper-code-write | mechanical_code_delegation |
+  | cheaper-doc-write | mechanical_doc_delegation |
+  | cheaper-usage | cheaper_cli_guidance |
+  | doc-dashboard | progress_dashboard |
+  | doc-maintenance | doc_maintenance |
+  | review-protocol | evidence_gated_review |
+  | test-spec-doc | test_spec_authoring |
+
+  先頭 3 件は `cheaper_cli_guidance`(default cheaper-usage)を、
+  doc-maintenance は `doc_status_audit`(default doc-status)を
+  require する。`tmp/sdp-check/` の profile/catalog snapshot は
+  repair 前の履歴物であり現在の実行根拠ではない。4 gate pass は
+  当時の観測としての記録であり新規実行・設定変更ではない。
 - `worker_parity_and_route_log_read` は worker 起動時の policy
   parity と、`{$input:runId}` 動的 binding の `kind:tool` read
   job による現 run log の読み出しを検証する。worker 自身も

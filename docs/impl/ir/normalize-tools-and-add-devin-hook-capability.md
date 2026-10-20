@@ -4,7 +4,7 @@ type: "impl"
 status: "completed"
 title: "Normalize tools and add Devin hook capability"
 created: "2026-10-15"
-updated: "2026-10-15"
+updated: "2026-10-21"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -200,3 +200,17 @@ pending。
   `tmp/issue107-final-check.log` / `tmp/issue107-final-check2.log`）。
 - pending task-graph-to-implementation edge の commit gate は lead
   commit 待ち。
+
+## Evidence 保存状態（2026-10-21 追記）
+
+当時の wire/probe raw artifact(`tmp/issue107-*` raw file・one-off
+script)は履歴 label であり現在は利用不可・参照前提ではない。
+durable な正本は
+[discovery `bounded-hook-read-request-contract`](../../discovery/bounded-hook-read-request-contract.md)
+の実測 section(2026-10-15 setup・test matrix・sanitized record・
+bounds・exit outcome)に保持される。`Get-JsonShape` helper
+本体と JSON rejection matrix は
+[design `devin-native-hooks-and-apm-bootstrap`](../../designs/devin-native-hooks-and-apm-bootstrap.md)
+に保持。現行 test path:
+`crates/cheaper-cli/tests/integration/hook.rs`・
+`scripts/test/devin-hooks-install.test.mjs`。

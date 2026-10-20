@@ -126,6 +126,19 @@ arm と新 option を表示する。
 - `clippy --all-targets` → warning 0(`tmp/handoff-d4/clippy.txt`)。
 - impl-doc audit: No findings。
 
+以下は当時 log 結果の要約であり、本記録は tmp file 無しで
+自己完結する(tmp path は履歴 label であり参照前提ではない)。
+数字は D4 時点の suite 規模であり現在の test 総数ではない。
+
+| suite | passed / failed |
+| --- | --- |
+| `args::` | 45 / 0 |
+| `route_run::` | 18 / 0 |
+| `route::` | 5 / 0 |
+| `route_logs::` | 8 / 0 |
+| `cli::` | 7 / 0 |
+| `observability route_cwd` | 1 / 0 |
+
 ## Risks
 
 - なし(execution 本体は D1 で検証済み、CLI 層は dispatch のみ)。

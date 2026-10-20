@@ -301,7 +301,13 @@ builtin resource の load を前提)。D4 は D1-D3 統合、E1-E3 は
 
 R1-R40 / ADR D1-D13 の検証対応の詳細は
 [IR verification map](../impl/ir/add-route-integration-tests.md#spec--adr-verification-map)
-を参照。
+を参照。最終 canonical gate の抜粋・両 log digest・merge 実績・
+再実行手順は
+[IR Final canonical verification / Reproducibility](../impl/ir/add-route-integration-tests.md#final-canonical-verification)
+を、graph/audit evidence は
+[IR Graph / audit evidence](../impl/ir/add-route-integration-tests.md#graph--audit-evidence)
+をそれぞれ参照できる — tmp/ の raw log や JSON projection は
+参照前提ではなく、当時の結果・再実行手順を参照できる。
 
 ## Open Questions / Gaps(実装時に解決済み)
 

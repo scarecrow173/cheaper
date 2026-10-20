@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "Devin native hooks and APM bootstrap"
 created: "2026-10-15"
-updated: "2026-10-15"
+updated: "2026-10-21"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -174,9 +174,13 @@ script の algorithm、および後段 plan へ渡す検証設計。
   escaped duplicate・precision loss・case collision を検出する。
   指数表記のように値が等価でも差異となる config は保守的に拒否
   する（known limitation）。native JSON parse が失敗する資料は
-  当然拒否。exact helper は
-  `tmp/issue107-json-runtime-probe.ps1` の `Get-JsonShape` を参照
-  （同 function をそのまま利用可）。roundtrip 検査は既存 config へ
+  当然拒否。exact helper は下記
+  [JSON Preservation Helper](#json-preservation-helper) を参照
+  — その source provenance は当時の one-off probe
+  `tmp/issue107-json-runtime-probe.ps1` であり、同 file は
+  履歴 label であって現在の実行可能な参照ではない。committed
+  installer test `scripts/test/devin-hooks-install.test.mjs` が
+  現行の検証根拠。roundtrip 検査は既存 config へ
   apply し preview でも検査可。比較値はログしない。
   `ConvertFrom-Json` 同士の二度比較は禁止。
 - **旧 CLI の silent allow**: executable 存在だけでは devin 対応を
