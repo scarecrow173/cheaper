@@ -29,8 +29,12 @@ use include_dir::{include_dir, Dir, DirEntry, File};
 /// `cli/` payload は撤去済み)。
 static WORKERS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/resources/workers");
 
+static WORKFLOWS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/resources/workflows");
+
 /// `resources/policy.yaml`。
 const POLICY_YAML: &str = include_str!("../resources/policy.yaml");
+
+const ROUTES_YAML: &str = include_str!("../resources/routes.yaml");
 
 /// build.rs が `CARGO_PKG_VERSION`(workspace canonical version)から
 /// 生成した `version.json`。
@@ -101,17 +105,24 @@ fn collect_files<'a>(dir: &'a Dir<'a>, out: &mut Vec<&'a File<'a>>) {
     }
 }
 
-fn extract_dir(base: &Path, rel_prefix: &str, dir: &Dir<'static>) -> io::Result<()> {
-    let mut files = Vec::new();
-    collect_files(dir, &mut files);
-    for file in files {
-        write_atomic(
-            base,
-            &format!("{rel_prefix}{}", file.path().to_string_lossy()),
-            file.contents(),
-        )?;
+fn builtin_resources() -> Vec<(PathBuf, &'static [u8])> {
+    let mut out: Vec<(PathBuf, &'static [u8])> = Vec::new();
+    for (prefix, dir) in [("workers/", &WORKERS_DIR), ("workflows/", &WORKFLOWS_DIR)] {
+        let mut files = Vec::new();
+        collect_files(dir, &mut files);
+        for file in files {
+            out.push((
+                PathBuf::from(format!("{prefix}{}", file.path().to_string_lossy())),
+                file.contents(),
+            ));
+        }
     }
-    Ok(())
+    out.push((PathBuf::from("policy.yaml"), POLICY_YAML.as_bytes()));
+    out.push((PathBuf::from("routes.yaml"), ROUTES_YAML.as_bytes()));
+    out.push((PathBuf::from("version.json"), VERSION_JSON.as_bytes()));
+    // include_dir の compile 時走査順に依存しないよう path で sort。
+    out.sort_by(|a, b| a.0.cmp(&b.0));
+    out
 }
 
 /// embedded resource 内容の決定的 fingerprint。
@@ -125,26 +136,18 @@ fn extract_dir(base: &Path, rel_prefix: &str, dir: &Dir<'static>) -> io::Result<
 pub(crate) fn embedded_fingerprint() -> String {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
-    let mut files = Vec::new();
-    collect_files(&WORKERS_DIR, &mut files);
-    // include_dir の compile 時走査順に依存しないよう path で sort。
-    files.sort_by(|a, b| a.path().cmp(b.path()));
     let mut hasher = DefaultHasher::new();
-    for file in files {
-        file.path().hash(&mut hasher);
-        file.contents().hash(&mut hasher);
+    for (path, contents) in builtin_resources() {
+        path.hash(&mut hasher);
+        contents.hash(&mut hasher);
     }
-    "policy.yaml".hash(&mut hasher);
-    POLICY_YAML.hash(&mut hasher);
-    "version.json".hash(&mut hasher);
-    VERSION_JSON.hash(&mut hasher);
     format!("{:016x}", hasher.finish())
 }
 
 fn extract_builtin(dir: &Path) -> io::Result<()> {
-    extract_dir(dir, "workers/", &WORKERS_DIR)?;
-    write_atomic(dir, "policy.yaml", POLICY_YAML.as_bytes())?;
-    write_atomic(dir, "version.json", VERSION_JSON.as_bytes())?;
+    for (rel, contents) in builtin_resources() {
+        write_atomic(dir, &rel.to_string_lossy(), contents)?;
+    }
     Ok(())
 }
 
@@ -203,13 +206,66 @@ mod tests {
             .iter()
             .filter(|f| f.path().starts_with("schemas"))
             .count();
-        assert_eq!(schemas, 8, "workers/schemas/*.json must be enumerated");
+        assert_eq!(schemas, 10, "workers/schemas/*.json must be enumerated");
         assert!(
             files
                 .iter()
                 .any(|f| f.path() == Path::new("bulk-reader.md")),
             "top-level worker defs must be enumerated"
         );
+    }
+
+    #[test]
+    fn builtin_resources_extracts_routes_workflows_and_condense() {
+        let tmp = tempfile::tempdir().unwrap();
+        extract_builtin(tmp.path()).unwrap();
+        let mut expected: Vec<String> = builtin_resources()
+            .iter()
+            .map(|(p, _)| p.to_string_lossy().into_owned())
+            .collect();
+        expected.sort();
+        let mut actual: Vec<String> = Vec::new();
+        for entry in walkdir(tmp.path()) {
+            if entry.is_file() && entry.file_name() != Some(std::ffi::OsStr::new(".ready")) {
+                actual.push(
+                    entry
+                        .strip_prefix(tmp.path())
+                        .unwrap()
+                        .to_string_lossy()
+                        .replace('\\', "/"),
+                );
+            }
+        }
+        actual.sort();
+        assert_eq!(actual, expected);
+        for rel in [
+            "routes.yaml",
+            "workflows/routed-exec.workflow.json",
+            "workers/condense.md",
+            "workers/schemas/condense.input.schema.json",
+            "workers/schemas/condense.output.schema.json",
+        ] {
+            let on_disk = std::fs::read(tmp.path().join(rel)).unwrap();
+            let embedded = builtin_resources()
+                .iter()
+                .find(|(p, _)| p.to_string_lossy() == rel)
+                .unwrap()
+                .1;
+            assert_eq!(on_disk, embedded, "{rel} must be byte-identical");
+        }
+    }
+
+    fn walkdir(dir: &Path) -> Vec<PathBuf> {
+        let mut out = Vec::new();
+        for entry in std::fs::read_dir(dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                out.extend(walkdir(&path));
+            } else {
+                out.push(path);
+            }
+        }
+        out
     }
 
     /// fingerprint の入力集合は extract_builtin の出力対象と同一走査
@@ -223,24 +279,29 @@ mod tests {
         // 本実装と同じ列挙構造であることを直接検証 — fingerprint 内部を
         // なぞり、片方だけ変えたら値が変わることを確認する。
         let base = embedded_fingerprint();
-        let mut files = Vec::new();
-        collect_files(&WORKERS_DIR, &mut files);
-        files.sort_by(|a, b| a.path().cmp(b.path()));
+        let resources = builtin_resources();
         let mut h = DefaultHasher::new();
-        for (i, file) in files.iter().enumerate() {
+        for (i, (path, contents)) in resources.iter().enumerate() {
             if i == 0 {
                 // 1file 目の contents を攪乱した場合 fingerprint が変わる。
-                file.path().hash(&mut h);
+                path.hash(&mut h);
                 b"perturbed".hash(&mut h);
             } else {
-                file.path().hash(&mut h);
-                file.contents().hash(&mut h);
+                path.hash(&mut h);
+                contents.hash(&mut h);
             }
         }
-        "policy.yaml".hash(&mut h);
-        POLICY_YAML.hash(&mut h);
-        "version.json".hash(&mut h);
-        VERSION_JSON.hash(&mut h);
         assert_ne!(format!("{:016x}", h.finish()), base);
+        let mut h2 = DefaultHasher::new();
+        for (i, (path, contents)) in resources.iter().enumerate() {
+            if i == 0 {
+                "perturbed-path".hash(&mut h2);
+                contents.hash(&mut h2);
+            } else {
+                path.hash(&mut h2);
+                contents.hash(&mut h2);
+            }
+        }
+        assert_ne!(format!("{:016x}", h2.finish()), base);
     }
 }

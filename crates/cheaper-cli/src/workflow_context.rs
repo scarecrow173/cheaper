@@ -317,3 +317,54 @@ pub(crate) fn prepare_workflow_context(
     // `ToolCatalog::from_resolved_policy` は同一経路)。
     Ok(WorkflowContext::from_policy(root, dirs, policy))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn builtin_routed_exec_workflow_compiles() {
+        let builtin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources");
+        let tmp = tempfile::tempdir().unwrap();
+        let ws = tmp.path().join("ws");
+        std::fs::create_dir_all(&ws).unwrap();
+        let ws_root =
+            cheaper_core::workspace::paths::canonicalize_workspace_root(&ws.to_string_lossy())
+                .unwrap();
+        let env = |_k: &str| None::<String>;
+        let supply = crate::route::supply::load(&ws_root, &env, Some(&builtin)).unwrap();
+        let dirs = ConfigDirs {
+            user_config_dir: tmp.path().join("user"),
+            project_dir: tmp.path().join("project"),
+            builtin_dir: builtin.clone(),
+        };
+        let ctx = WorkflowContext::from_policy(ws_root.clone(), dirs, supply.policy);
+        let file_root = builtin.join("workflows").to_string_lossy().into_owned();
+        let loaded = ctx
+            .load_workflow_from("routed-exec.workflow.json", &file_root)
+            .await
+            .unwrap();
+        let raw = loaded.definition.raw();
+        assert_eq!(
+            raw["jobs"]["analyze"]["when"]["left"]["path"],
+            "/details/outputTokens"
+        );
+        assert_eq!(
+            raw["jobs"]["analyze"]["when"]["right"]["$input"],
+            "tokenThreshold"
+        );
+        let inputs = json!({
+            "grant": "cargo-test",
+            "executable": "/bin/cargo",
+            "argv": ["cargo", "test"],
+            "args": ["test"],
+            "execArgs": ["test"],
+            "cwd": ws_root,
+            "tokenThreshold": 8192,
+            "runId": "1700000000000-1-deadbeef"
+        });
+        loaded.compiler.compile(raw, Some(&inputs)).await.unwrap();
+    }
+}

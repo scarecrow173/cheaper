@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Jg6HoEn3yiLTP7PG0qz"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add builtin route workflow condense worker and embedded resources"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: []
 relations:
   source: []
@@ -71,12 +71,12 @@ input/output schema を新設し、embedded.rs materialize と
 
 ## Done When
 
-- [ ] builtin routes.yaml が loader の schema を通る
-- [ ] routed-exec workflow が compile を pass する
-- [ ] materialize 後 builtin dir に routes/workflows/condense が存在
-- [ ] fingerprint 列挙へ新規 resource が含まれる
+- [x] builtin routes.yaml が loader の schema を通る
+- [x] routed-exec workflow が compile を pass する
+- [x] materialize 後 builtin dir に routes/workflows/condense が存在
+- [x] fingerprint 列挙へ新規 resource が含まれる
 
 ## Verification
 
-- [ ] embedded materialize contract test + workflow compile test +
+- [x] embedded materialize contract test + workflow compile test +
       builtin_workers assertion 更新

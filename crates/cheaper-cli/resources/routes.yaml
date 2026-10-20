@@ -1,0 +1,8 @@
+version: 1
+routes:
+  - name: cargo-test
+    match: {command: [cargo, test]}
+    target: {kind: workflow, path: routed-exec.workflow.json}
+    grant: cargo-test
+    output: {tokenThreshold: 8192}
+    passthroughEnv: [CI]

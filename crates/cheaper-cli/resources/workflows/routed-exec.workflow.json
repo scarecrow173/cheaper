@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "inputs": {
+    "grant": {"type": "string"},
+    "executable": {"type": "string"},
+    "argv": {"type": "array", "items": {"type": "string"}},
+    "args": {"type": "array", "items": {"type": "string"}},
+    "execArgs": {"type": "array", "items": {"type": "string"}},
+    "cwd": {"type": "string"},
+    "tokenThreshold": {"type": "number", "minimum": 0},
+    "runId": {"type": "string"}
+  },
+  "jobs": {
+    "exec": {
+      "kind": "tool",
+      "tool": "command",
+      "input": {"name": {"$input": "grant"}, "args": {"$input": "execArgs"}}
+    },
+    "analyze": {
+      "kind": "worker",
+      "worker": "condense",
+      "needs": ["exec"],
+      "when": {
+        "left": {"$from": "exec", "path": "/details/outputTokens"},
+        "op": "gt",
+        "right": {"$input": "tokenThreshold"}
+      },
+      "input": {
+        "logRef": {"$from": "exec", "path": "/details/logRef"},
+        "originalTokens": {"$from": "exec", "path": "/details/outputTokens"},
+        "command": {"$input": "argv"}
+      }
+    }
+  },
+  "outputs": {
+    "execResult": {"schema": {"type": "object"}, "value": {"$from": "exec", "path": ""}},
+    "result": {"schema": {"type": ["string", "null"]}, "value": {"$from": "analyze", "path": "/summary"}}
+  }
+}
