@@ -32,7 +32,17 @@ relations:
     - "docs/adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "docs/test-specs/route-resolution.md"
+    - "docs/test-specs/hook-route-rewrite.md"
+    - "docs/test-specs/route-run-delegated-exec.md"
+    - "docs/test-specs/command-exitcodes-and-options.md"
+    - "docs/test-specs/workflow-when-condition.md"
+    - "docs/test-specs/route-logs.md"
+    - "docs/test-specs/hook-dedup-route-fingerprint.md"
+    - "docs/test-specs/route-usage-records.md"
+    - "docs/test-specs/builtin-route-resources.md"
+    - "docs/test-specs/hook-route-e2e.md"
   references: []
   defers: []
   deferred-by: []

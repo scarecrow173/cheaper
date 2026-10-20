@@ -11,8 +11,10 @@ Directory: `docs/test-specs`
 | TSPEC-034z3yKWLolrImpMY8UMhZ | APM executable payload layout and launcher dispatch contract | superseded | [apm-executable-payload-layout-and-launcher-dispatch-contract.md](./apm-executable-payload-layout-and-launcher-dispatch-contract.md) |
 | TSPEC-CcB52hP0U8aHcOIhg0D0ge | auto tier classification by effectiveCost percentile | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
 | TSPEC-034zXj8km4o9pyOGLhz1oM | Concurrency policy の信頼境界 | approved | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
+| TSPEC-034Jg5X0Tcrvv5lp9x578v | Builtin route resources and embedded materialize | draft | [builtin-route-resources.md](./builtin-route-resources.md) |
 | TSPEC-034zQr5gZxyNe4nWC1uHHg | Canonical Tool Runtime の adapter parity と所有境界 | proposed | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | TSPEC-034z50PbuzTYDWvQXYdvaG | cheaper hook subcommands and hooks.json executable contract | superseded | [cheaper-hook-subcommands-and-hooks-json-executable-contract.md](./cheaper-hook-subcommands-and-hooks-json-executable-contract.md) |
+| TSPEC-034Jg5UNPJ1sKpPwYxH8L3 | Command grant exitCodes and route context options | draft | [command-exitcodes-and-options.md](./command-exitcodes-and-options.md) |
 | TSPEC-034zQHrk9A6Zc7rrSLGeHA | Core resource manifest normalization | draft | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | TSPEC-034rAaJtM27Ibpy78mq0kP | Cross-agent adapter contract tests | approved | [cross-agent-adapter-contract-tests.md](./cross-agent-adapter-contract-tests.md) |
 | TSPEC-034DzTH1ljq4pSfIHyGwVs | dev-seam feature の build-mode contract | approved | [dev-seam-feature-build-mode-contract.md](./dev-seam-feature-build-mode-contract.md) |
@@ -20,7 +22,10 @@ Directory: `docs/test-specs`
 | TSPEC-034z1P09dg86lO9uB31cUi | Embedded builtin resource resolution across distribution forms | superseded | [embedded-builtin-resource-resolution-across-distribution-forms.md](./embedded-builtin-resource-resolution-across-distribution-forms.md) |
 | TSPEC-034IM5B88Ph3dNfw748cmj | hook-config legacy conflict demotion contract | approved | [hook-config-legacy-conflict-warning-contract.md](./hook-config-legacy-conflict-warning-contract.md) |
 | TSPEC-034IQa6tpizWQ1s8A9Dvh0 | hook-config orphan sweep ownership contract | proposed | [hook-config-orphan-sweep-ownership-contract.md](./hook-config-orphan-sweep-ownership-contract.md) |
+| TSPEC-034Jg5WcioU9vlqfkgBjPR | Hook dedup cache route fingerprint and Rewrite exclusion | draft | [hook-dedup-route-fingerprint.md](./hook-dedup-route-fingerprint.md) |
 | TSPEC-034IpNMbAuIAGTxh12swmj | Hook eval dedup verdict cache contract | draft | [hook-eval-dedup-verdict-cache-contract.md](./hook-eval-dedup-verdict-cache-contract.md) |
+| TSPEC-034Jg5XonLxlwll8pJ15V0 | Hook to route run end-to-end delegation | draft | [hook-route-e2e.md](./hook-route-e2e.md) |
+| TSPEC-034Jg5K8URUPa2X0HSK0mN | PreToolUse route verdict rewrite and target rendering | draft | [hook-route-rewrite.md](./hook-route-rewrite.md) |
 | TSPEC-034FoDgwSnThCuTO5aNUYj | invocation-scoped command grant（--grant）・grantRequests・cheaper policy grant の行為保証 | approved | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |
 | TSPEC-034AGg47u5fWQqP0pEJfI9 | Managed process bounded lifecycle guarantees | approved | [managed-process-bounded-lifecycle-guarantees.md](./managed-process-bounded-lifecycle-guarantees.md) |
 | TSPEC-034A9yliLanxBMr6oB85Z7 | managed process の bounded lifecycle と adapter 共有 | approved | [managed-process-lifecycle.md](./managed-process-lifecycle.md) |
@@ -41,6 +46,10 @@ Directory: `docs/test-specs`
 | TSPEC-034zTWhBVg6DzifF8qlhAc | Release publication and native smoke | superseded | [release-publication-and-native-smoke.md](./release-publication-and-native-smoke.md) |
 | TSPEC-034z2o64UhWCtNmYIhRT20 | Release workflow manual-dispatch and artifact contract | superseded | [release-workflow-manual-dispatch-and-artifact-contract.md](./release-workflow-manual-dispatch-and-artifact-contract.md) |
 | TSPEC-034AaXPxCwdUwH1XaYc6Jn | Resource lease の寿命とアクセス境界 | approved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
+| TSPEC-034Jg5VLupBVGDPELPFf83 | Route log store and route logs CLI | draft | [route-logs.md](./route-logs.md) |
+| TSPEC-034Jg5JHetTGqIaDM2E2cr | Route declaration loading and argv resolution | draft | [route-resolution.md](./route-resolution.md) |
+| TSPEC-034Jg5Kw1kunKPtgczOZ9L | Route run revalidation and delegated workflow execution | draft | [route-run-delegated-exec.md](./route-run-delegated-exec.md) |
+| TSPEC-034Jg5WCkcYfanmav19X1o | Route and route-refetch usage records | draft | [route-usage-records.md](./route-usage-records.md) |
 | TSPEC-034zTn31vnH33RcM6g7VYS | Run-scoped artifact boundaries | proposed | [run-scoped-artifact-boundaries.md](./run-scoped-artifact-boundaries.md) |
 | TSPEC-034BgubID9xC2jMbCQ0zEG | rust-migration-auth-catalog | proposed | [rust-migration-auth-catalog.md](./rust-migration-auth-catalog.md) |
 | TSPEC-034BgtZIn0KAN8vslhM1WI | rust-migration-differential-golden | proposed | [rust-migration-differential-golden.md](./rust-migration-differential-golden.md) |
@@ -66,4 +75,5 @@ Directory: `docs/test-specs`
 | TSPEC-034zTsgOgsTzuFTcEztxzd | workflow-public-interface | proposed | [workflow-public-interface.md](./workflow-public-interface.md) |
 | TSPEC-034zTTi4YDeiIdQUZuSsAC | Workflow resource inference の ownership と safety 保証 | proposed | [workflow-resource-inference.md](./workflow-resource-inference.md) |
 | TSPEC-034AJ8MX15GFDduILAiVko | workflow run の入力・public envelope・互換性 | proposed | [workflow-run-cli-public-projection.md](./workflow-run-cli-public-projection.md) |
+| TSPEC-034Jg5ViJvfxJIh9xELlBL | Workflow job when condition | draft | [workflow-when-condition.md](./workflow-when-condition.md) |
 | TSPEC-034AJ8HPIAVAf1tzuWKVa5 | Workflow parent safety と Worker child permission の寿命 | proposed | [workflow-worker-permissions-and-lease-lifetimes.md](./workflow-worker-permissions-and-lease-lifetimes.md) |
