@@ -278,11 +278,12 @@ pub(super) async fn drive(
         exit.code = exit_code,
         "process exit"
     );
-    let state = if exit_code == Some(0) {
-        "completed"
-    } else {
-        "failed"
-    };
+    let exit_accepted = exit_code.is_some()
+        && limits
+            .accepted_exit_codes
+            .as_ref()
+            .map_or(true, |set| set.contains(&exit_code.unwrap()));
+    let state = if exit_accepted { "completed" } else { "failed" };
     let mut details = Map::new();
     for (key, value) in &identity.details {
         details.insert(key.clone(), value.clone());
@@ -318,7 +319,7 @@ pub(super) async fn drive(
         .with_cause(BoxedCause(Arc::from(error)))
         .into());
     }
-    if exit_code != Some(0) {
+    if !exit_accepted {
         return Err(
             CheaperError::new(ErrorCode::ToolExecutionFailure, "managed process failed")
                 .with_details(details.as_object().cloned().unwrap_or_default())
@@ -327,8 +328,9 @@ pub(super) async fn drive(
     }
     // 表示だけを折り返す。raw stdout/stderr は details に保持する。
     let text = format!(
-        "{}: completed, exitCode=0\nstdout: {}\nstderr: {}",
+        "{}: completed, exitCode={}\nstdout: {}\nstderr: {}",
         identity.display,
+        exit_code.unwrap_or_default(),
         display(&stdout),
         display(&stderr),
     );

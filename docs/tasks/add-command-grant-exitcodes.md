@@ -1,7 +1,7 @@
 ---
 id: "TASK-034Jg6ieFXYQcEldcUVKri"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add command grant exitCodes and nonzero-exit result reporting"
 created: "2026-10-20"
 updated: "2026-10-20"

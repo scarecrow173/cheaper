@@ -43,6 +43,10 @@ pub struct CommandGrant {
     pub timeout: String,
     pub kill_grace: String,
     pub max_output_bytes: u64,
+    /// 完了扱いにする exit code 集合(default `[0]`)。route scope
+    /// では scope option の `accept_any_exit_code` がこの集合を
+    /// 上書きする — ここは declared grant の値のみを保持する。
+    pub exit_codes: Vec<i64>,
 }
 
 /// `ResolvedCommandPolicy`(lifecycle defaults applied)。`grants` は
@@ -96,6 +100,11 @@ pub fn command_policy_properties() -> Value {
                     "timeout": {"type": "string", "pattern": DURATION_PATTERN},
                     "killGrace": {"type": "string", "pattern": DURATION_PATTERN},
                     "maxOutputBytes": {"type": "integer", "minimum": 1, "maximum": MAX_PROCESS_OUTPUT_BYTES},
+                    "exitCodes": {
+                        "type": "array",
+                        "maxItems": 64,
+                        "items": {"type": "integer", "minimum": 0, "maximum": 4294967295u64},
+                    },
                 },
             },
         },
@@ -404,6 +413,13 @@ pub fn resolve_command_policy(
             .get("maxOutputBytes")
             .and_then(crate::js::safe_u64)
             .unwrap_or(max_output_bytes);
+        // 未宣言は `[0]`(従来挙動)。schema が非 integer/負値を
+        // 排除済み。
+        let exit_codes = grant
+            .get("exitCodes")
+            .and_then(Value::as_array)
+            .map(|codes| codes.iter().filter_map(Value::as_i64).collect())
+            .unwrap_or_else(|| vec![0]);
         grants.insert(
             name.clone(),
             CommandGrant {
@@ -414,6 +430,7 @@ pub fn resolve_command_policy(
                 timeout: grant_timeout,
                 kill_grace: grant_kill_grace,
                 max_output_bytes: grant_max_output_bytes,
+                exit_codes,
             },
         );
     }

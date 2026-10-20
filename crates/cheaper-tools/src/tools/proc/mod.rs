@@ -122,6 +122,10 @@ pub struct ProcLimits {
     pub kill_grace_ms: u64,
     pub max_output_bytes: u64,
     pub heartbeat_interval_ms: u64,
+    /// 完了扱いにする exit code 集合。`None` は全 completed exit を
+    /// 受理する(route scope の `accept_any_exit_code`)。signal kill
+    /// 等 `exit_code` を持たない終了は常に失敗扱い。
+    pub accepted_exit_codes: Option<Vec<i64>>,
 }
 
 /// 解決済みの spawn 入力。`env` は `env_clear` 後に設定する最小 env

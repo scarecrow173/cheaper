@@ -381,7 +381,10 @@
                   "executable": "git",
                   "killGrace": "2s",
                   "maxOutputBytes": 65536,
-                  "timeout": "2m"
+                  "timeout": "2m",
+                  "exitCodes": [
+                    0
+                  ]
                 }
               },
               "heartbeat": {
@@ -478,7 +481,10 @@
                   "executable": "cargo",
                   "killGrace": "2s",
                   "maxOutputBytes": 65536,
-                  "timeout": "2m"
+                  "timeout": "2m",
+                  "exitCodes": [
+                    0
+                  ]
                 },
                 "git-log": {
                   "argv": [
@@ -490,7 +496,10 @@
                   "executable": "git",
                   "killGrace": "2s",
                   "maxOutputBytes": 65536,
-                  "timeout": "2m"
+                  "timeout": "2m",
+                  "exitCodes": [
+                    0
+                  ]
                 }
               },
               "heartbeat": {
@@ -601,7 +610,10 @@
                   "executable": "git",
                   "killGrace": "2s",
                   "maxOutputBytes": 65536,
-                  "timeout": "2m"
+                  "timeout": "2m",
+                  "exitCodes": [
+                    0
+                  ]
                 }
               },
               "heartbeat": {

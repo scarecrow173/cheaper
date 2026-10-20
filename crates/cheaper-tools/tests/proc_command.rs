@@ -795,6 +795,77 @@ async fn grant_executes_and_reports_details() {
         .starts_with("command self: completed, exitCode=0\nstdout:"));
 }
 
+/// grant `exitCodes` 宣言内の非 0 exit は error ではなく completed
+/// result として返り、`state`/`exitCode`/表示 text が実 exit code を
+/// 報告する(design A1)。
+#[tokio::test]
+async fn declared_exitcodes_report_completed_result() {
+    let dir = TempDir::new();
+    let grant = grant_with("fail", None, json!({"exitCodes": [0, 7]}));
+    let rt = command_runtime(&dir.root(), command_policy(json!({"self": grant}))).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    let details = result.details.as_ref().expect("details");
+    assert_eq!(details["state"], json!("completed"));
+    assert_eq!(details["exitCode"], json!(7));
+    assert!(details["stdout"]["text"]
+        .as_str()
+        .unwrap()
+        .contains("before failure"));
+    assert!(result.content[0]
+        .text
+        .starts_with("command self: completed, exitCode=7\nstdout:"));
+}
+
+/// `exitCodes` 未宣言(default `[0]`)の非 0 exit は従来通り
+/// `TOOL_EXECUTION_FAILURE` error — 宣言 exitCodes に含まれない
+/// code も同じ。
+#[tokio::test]
+async fn undeclared_nonzero_exit_remains_failure() {
+    let dir = TempDir::new();
+    for grant in [
+        self_grant("fail", None),
+        grant_with("fail", None, json!({"exitCodes": [0, 3]})),
+    ] {
+        let rt = command_runtime(&dir.root(), command_policy(json!({"self": grant}))).unwrap();
+        let err = rt
+            .execute(
+                "command",
+                &json!({"name": "self", "args": self_args()}),
+                None,
+            )
+            .await
+            .unwrap_err();
+        let e = cheaper_err(&err);
+        assert_eq!(e.code(), ErrorCode::ToolExecutionFailure);
+        assert_eq!(e.details().unwrap()["exitCode"], json!(7));
+        assert_eq!(e.details().unwrap()["state"], json!("failed"));
+    }
+}
+
+/// `exitCodes` の非 integer 要素・非 array は policy resolve で
+/// `INVALID_RUNTIME_POLICY`。
+#[test]
+fn invalid_exitcodes_rejected_at_policy_resolution() {
+    let dir = TempDir::new();
+    for exit_codes in [json!("0"), json!([0, "1"]), json!([0.5]), json!([-1])] {
+        let grant = grant_with("inspect", None, json!({"exitCodes": exit_codes}));
+        let err = command_runtime(&dir.root(), command_policy(json!({"self": grant}))).unwrap_err();
+        let e = cheaper_err(&err);
+        assert_eq!(
+            e.code(),
+            ErrorCode::InvalidRuntimePolicy,
+            "exitCodes {exit_codes}"
+        );
+    }
+}
+
 /// grant `cwd` は workspace 内へ解決される — `cwd: "sub"` の grant は
 /// `root/sub` で実行される。
 #[tokio::test]

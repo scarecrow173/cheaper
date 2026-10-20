@@ -435,6 +435,7 @@ async fn execute(
         kill_grace_ms: parse_duration(&grant.kill_grace)?,
         max_output_bytes: grant.max_output_bytes,
         heartbeat_interval_ms: parse_duration(&options.command.heartbeat.interval)?,
+        accepted_exit_codes: Some(grant.exit_codes.clone()),
     };
     let prepared = ProcPrepared {
         executable: pinned.clone(),
