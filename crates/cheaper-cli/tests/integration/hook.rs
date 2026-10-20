@@ -601,6 +601,7 @@ async fn evaluate_typed_entry_matches_ts_verdicts() {
     let opts = EvaluateOptions {
         env: &env_lookup,
         builtin_dir: Some(&fx.builtin_dir),
+        route: None,
     };
     let ws = fx.ws.to_string_lossy().into_owned();
 

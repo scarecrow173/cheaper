@@ -76,6 +76,9 @@ impl<'a> HookDeps<'a> {
         EvaluateOptions {
             env: self.env,
             builtin_dir: self.builtin_dir,
+            // routes/command policy の供給は C1(hook entry loading)
+            // で配線 — 未供給の間 route arm は不活性。
+            route: None,
         }
     }
 }
@@ -187,6 +190,9 @@ fn windsurf_render(verdict: Verdict) -> HookResponse {
             exit: 2,
         },
         Verdict::Allow => silent_allow(),
+        // rewrite 非対応 target — fallback verdict を render する
+        // (C6 — deny 素通し防止)。
+        Verdict::Rewrite { fallback, .. } => windsurf_render(*fallback),
     }
 }
 
@@ -437,6 +443,7 @@ fn copilot_render(verdict: Verdict) -> HookResponse {
             exit: 0,
         },
         Verdict::Allow => silent_allow(),
+        Verdict::Rewrite { fallback, .. } => copilot_render(*fallback),
     }
 }
 
@@ -512,6 +519,9 @@ fn pretooluse_render(verdict: Verdict) -> HookResponse {
             exit: 0,
         },
         Verdict::Allow => silent_allow(),
+        // updatedInput render は C4 で導入 — それまでは fallback
+        // verdict render で安全側に倒す(deny を素通しさせない)。
+        Verdict::Rewrite { fallback, .. } => pretooluse_render(*fallback),
     }
 }
 
@@ -556,6 +566,9 @@ fn devin_render(verdict: Verdict) -> HookResponse {
             exit: 0,
         },
         Verdict::Allow => silent_allow(),
+        // updatedInput render は C4 で導入 — それまでは fallback
+        // verdict render で安全側に倒す。
+        Verdict::Rewrite { fallback, .. } => devin_render(*fallback),
     }
 }
 
@@ -610,6 +623,7 @@ fn cursor_render(verdict: Verdict) -> HookResponse {
     match verdict {
         Verdict::Deny { reason } => cursor_respond("deny", Some(&reason)),
         Verdict::Allow => cursor_respond("allow", None),
+        Verdict::Rewrite { fallback, .. } => cursor_render(*fallback),
     }
 }
 
@@ -620,6 +634,7 @@ fn verdict_name(verdict: &Verdict) -> &'static str {
     match verdict {
         Verdict::Allow => "allow",
         Verdict::Deny { .. } => "deny",
+        Verdict::Rewrite { .. } => "rewrite",
     }
 }
 

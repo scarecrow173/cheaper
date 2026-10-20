@@ -1,7 +1,7 @@
 ---
 id: "TASK-034Jg6vtyvGJ0uGKzCwGcu"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add hook route arm and Rewrite verdict"
 created: "2026-10-20"
 updated: "2026-10-20"

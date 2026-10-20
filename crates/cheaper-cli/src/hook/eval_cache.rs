@@ -652,6 +652,9 @@ fn read_fresh_verdict(store_dir: &Path, fp: &str, ttl: Duration) -> Option<Verdi
 fn is_shareable(verdict: &Verdict) -> bool {
     match verdict {
         Verdict::Allow | Verdict::Deny { .. } => true,
+        // rewrite command の payload は allowlist capture した env
+        // 値を含む — cache record へ永続化・共有しない(R32)。
+        Verdict::Rewrite { .. } => false,
     }
 }
 

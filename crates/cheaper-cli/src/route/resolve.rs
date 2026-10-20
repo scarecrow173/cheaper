@@ -65,6 +65,7 @@ pub struct ResolveInput<'a> {
 /// viability の grant-match/preflight が参照する command policy
 /// 環境 — `check_command_execution` と同一 predicate で評価する
 /// ため `CommandToolOptions` 構築に必要な面だけを束ねる。
+#[derive(Clone, Copy)]
 pub struct CommandPolicyView<'a> {
     pub policy: &'a ResolvedCommandPolicy,
     /// pin 解決・`prepare_cwd` の workspace root(通常 resolve
@@ -95,6 +96,10 @@ pub struct RouteResolution {
     pub viability: Option<Viability>,
     /// trust 不在で負けた project route 名(provenance 報告)。
     pub suppressed: Option<String>,
+    /// match した route の `passthroughEnv` 宣言 — payload encode
+    /// の ambient env allowlist(`route run` の再 resolve も同じ値
+    /// を使う)。no-match では空。
+    pub passthrough_env: Vec<String>,
 }
 
 /// `passthroughEnv` 未宣言でも best-effort で routing しない
@@ -197,6 +202,7 @@ fn no_match(
         exec_args: Vec::new(),
         viability: None,
         suppressed,
+        passthrough_env: Vec::new(),
     }
 }
 
@@ -252,6 +258,7 @@ pub fn resolve(input: &ResolveInput<'_>) -> RouteResolution {
         exec_args,
         viability: None,
         suppressed: suppressed(&best.command),
+        passthrough_env: best.passthrough_env.clone(),
     };
     // 3. viability 固定優先順(R12)— 最初に成立した 1 値。
     out.viability = Some(viability(input, best, &out, tied));

@@ -12,6 +12,7 @@ Directory: `docs/impl/ir`
 | IMPL-034JhsoS4CooCbWSXWcx77 | Add command grant exitCodes and nonzero-exit result reporting | completed | [add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md](./add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md) |
 | IMPL-034zCh129JMqV5Z5ta5wG6 | Add deterministic sibling-parallelism pin tests to runtime-pi | completed | [add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md](./add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md) |
 | IMPL-034IqeWzYxJ36cp819qQN4 | Add hook_eval_dedup integration tests | completed | [add-hook-eval-dedup-integration-tests.md](./add-hook-eval-dedup-integration-tests.md) |
+| IMPL-034JjvBItf3G44b0tll2Sh | Add hook route arm and Rewrite verdict | in-progress | [add-hook-route-arm-and-rewrite-verdict.md](./add-hook-route-arm-and-rewrite-verdict.md) |
 | IMPL-034zQZYpiexj1ILiP9NuIH | Add launcher acquisition contract tests | completed | [add-launcher-acquisition-contract-tests.md](./add-launcher-acquisition-contract-tests.md) |
 | IMPL-034rAtxE2k5HhaePoxBbI3 | Add --model flag and models command | completed | [add-model-flag-and-models-command.md](./add-model-flag-and-models-command.md) |
 | IMPL-034rzZLq1nbnzN4CvDSAk5 | Add model pricing metadata layer and bundled data | completed | [add-model-pricing-metadata-layer-and-bundled-data.md](./add-model-pricing-metadata-layer-and-bundled-data.md) |
@@ -22,7 +23,7 @@ Directory: `docs/impl/ir`
 | IMPL-034JjbLxN5vUbJ45QnDJdH | Add route and route-refetch usage records | completed | [add-route-and-route-refetch-usage-records.md](./add-route-and-route-refetch-usage-records.md) |
 | IMPL-034JiCcdU6kUQ9Hj4Sd44J | Add route context scope options and single-grant projection | completed | [add-route-context-scope-options-and-single-grant-projection.md](./add-route-context-scope-options-and-single-grant-projection.md) |
 | IMPL-034JhZPcBMjCslZpw77s0m | Add route declaration schema and three-layer loader | completed | [add-route-declaration-schema-and-three-layer-loader.md](./add-route-declaration-schema-and-three-layer-loader.md) |
-| IMPL-034Jjg7aEBfEFtFuSpSEi3 | Add route fingerprint to hook dedup cache | in-progress | [add-route-fingerprint-to-hook-dedup-cache.md](./add-route-fingerprint-to-hook-dedup-cache.md) |
+| IMPL-034Jjg7aEBfEFtFuSpSEi3 | Add route fingerprint to hook dedup cache | completed | [add-route-fingerprint-to-hook-dedup-cache.md](./add-route-fingerprint-to-hook-dedup-cache.md) |
 | IMPL-034JidY17wnSZzkiMrhixl | Add route log store and RouteLogReader | completed | [add-route-log-store-and-routelogreader.md](./add-route-log-store-and-routelogreader.md) |
 | IMPL-034Jj3NXbe1CLVRdkxXF6K | Add route resolver payload codec and command preflight seam | completed | [add-route-resolver-payload-codec-and-command-preflight-seam.md](./add-route-resolver-payload-codec-and-command-preflight-seam.md) |
 | IMPL-034zCh1C1Qy6Pc2cvIFlOP | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | completed | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
