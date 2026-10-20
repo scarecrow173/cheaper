@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034J7SxWvGL3oSbeBpo8a3"
 type: "spec"
-status: "draft"
+status: "proposed"
 title: "PreToolUse auto-routing: route resolution and delegated workflow execution"
 created: "2026-10-20"
 updated: "2026-10-20"
@@ -201,10 +201,6 @@ output capture + token 計測 + conditional worker による縮約)。
   routing — rewrite-safe gate が拒否し続ける。
 - project 層による grant 生成・route 経由の暗黙認可(routing は
   実行を認可しない)。
-- trust mechanics の具体的形(per-route field / trust 宣言 file
-  等)および `route run` の in-process / subprocess 起動方式 —
-  要件は本 spec で固定し、mechanism は sibling ADR / design で
-  確定する。
 - Claude `updatedInput` silent-ignore(#81340)の version 検出と
   doctor verb。
 
@@ -215,25 +211,35 @@ output capture + token 計測 + conditional worker による縮約)。
 - R1: `routes.yaml` は `{version: 1, routes: Route[]}` を持つ。
   Route の field は `{name, match:{command:[token,…]},
   target:{kind:"workflow", path}, grant, output:{tokenThreshold?},
-  passthroughEnv:[name,…]?}` とする。`name` は route を一意に
-  識別する ID、`match.command` は argv token prefix、`target` は
-  `kind:"workflow"` のみを許容し `path` は登録済み workflow file
-  を指す。`grant` は `command.grants` の既存 grant 名への参照で
-  あり、route は grant を生成しない。`output.tokenThreshold` は
-  routed workflow の conditional worker を起動する閾値の per-route
-  override、`passthroughEnv` は hook env から passthrough を許す
-  env 名の allowlist。
+  passthroughEnv:[name,…]?, trusted?}` とする。`name` は route
+  を一意に識別する ID、`match.command` は argv token prefix、
+  `target` は `kind:"workflow"` のみを許容し `path` は登録済み
+  workflow file を指す。`grant` は `command.grants` の既存 grant
+  名への参照であり、route は grant を生成しない。
+  `output.tokenThreshold` は routed workflow の conditional
+  worker を起動する閾値の per-route override、`passthroughEnv`
+  は hook env から passthrough を許す env 名の allowlist。
+  `trusted` は project 層 route にのみ意味を持つ optional bool
+  で、同一 `match.command` を持つ下位層(user/builtin)route を
+  shadow する明示宣言とする(R7 — mechanism は
+  ADR-034J8eZHNPqARi25HLFOL6 D7)。
 - R2: `routes.yaml` の読み込みは fail-loud とする — malformed
   YAML・schema 違反(未知 key・required field 欠落・`kind` 非
   `"workflow"` 等)は「invalid policy is never silently ignored」
   の `load_policy` 規約と同型に config error として表面化し、
   壊れた route を黙って drop しない。
 - R3: route 宣言は 3 層で解決する — builtin(binary embedded
-  resource、auto-granted な grant を伴わずに出荷)、user
+  resource、enabled で出荷するが auto-granted な grant を伴わない
+  — activation は user の grant 定義で実質 opt-in、
+  ADR-034J8eZHNPqARi25HLFOL6 D13)、user
   (`<userConfigDir>/routes.yaml`)、project
-  (`<workspace>/.cheaper/routes.yaml`)。層の解決順・merge 規則は
-  policy layer(builtin → user → invocation → project、
-  `crates/cheaper-core/src/policy/load.rs`)と同型の責務分離に従う。
+  (`<workspace>/.cheaper/routes.yaml`)。route 層に invocation
+  layer は設けない(hook 評価は firing 単位で bounded で供給元が
+  存在しない — ADR-034J8eZHNPqARi25HLFOL6 D7)。層の解決順は
+  builtin → user → project で、同一 `match.command` では上位層が
+  下位層を shadow する(R7 の trust 条件を除く)。merge 規則は
+  policy layer(`crates/cheaper-core/src/policy/load.rs`)と同型の
+  責務分離に従う。
 - R4: `match.command` は token 列の argv prefix match とする —
   `argv[i] == match.command[i]` が全 `i < len(match.command)` で
   成立した場合に match。match した route の `args` は
@@ -246,13 +252,19 @@ output capture + token 計測 + conditional worker による縮約)。
   (却下済み alternative F — project が user route を黙って差し替え
   られる経路を作らない)。
 - R7: 層間 trust — project 層の route は、明示 trust 規則が無い
-  限り、同一 prefix に対する user/builtin 層 route を shadow /
-  差し替えてはならない。trust 不在で衝突する project route はその
-  prefix について有効化されず、`route resolve` はその旨を
-  viability / 診断として報告する(静かに無視しない)。trust
-  mechanism の具体的形は sibling ADR で確定する — 本 spec は
-  「project route が silent に user route を置換できない」不変条件
-  のみを要求する。
+  限り、同一 `match.command` に対する user/builtin 層 route を
+  shadow / 差し替えてはならない。明示 trust 規則は project
+  route 上の `trusted: true` field とする
+  (ADR-034J8eZHNPqARi25HLFOL6 D7 で確定) — `trusted: true` を
+  宣言した project route のみが同一 `match.command` の下位層
+  (user/builtin)route を shadow する。trust 不在で衝突する project route は
+  その `match.command` について有効化されず(上位層 route が
+  勝ち)、`route resolve` はその旨を viability / 診断として報告
+  する(静かに無視しない)。`trusted: true` は explicitness の
+  mechanism であり consent の mechanism ではない(project 自身が
+  宣言可能 — 実行は引き続き trusted grant の argv match が
+  要求される)。override の provenance は `route resolve` と
+  `kind:"route"` record が報告する。
 - R8: rewrite-safe gate — 対象 command を `tokenize_shell`
   (`crates/cheaper-cli/src/hook/routing_policy.rs:1093`)で評価し、
   以下を全て満たす場合のみ routing 対象とする: (a) ちょうど 1
@@ -538,13 +550,6 @@ output capture + token 計測 + conditional worker による縮約)。
 
 ## Deferred Design Concerns
 
-- project route trust mechanics の具体的形 | R7 は不変条件のみを
-  要求し、明示 trust 宣言の形(per-route field・宣言 file 等)は
-  未確定 | sibling ADR で確定 | mechanism 未確定のまま実装すると
-  「silent override を許さない」境界の検証責務が分散する。
-- `route run` の workflow 起動が in-process か subprocess か |
-  discovery の open question | design で確定 | process
-  管理・signal 伝播・cwd 復元の責務境界が曖昧になる。
 - scoped log read の正確な形(`artifact://` URI 拡張か
   invocation-scoped read grant か) | discovery の open
   question | design で確定 | 境界を広く取ると workspace 外 file
@@ -553,9 +558,6 @@ output capture + token 計測 + conditional worker による縮約)。
   (version 検出・doctor verb) | upstream 不具合への検出手段が
   未確定 | 実装時または follow-up issue | silent-ignore されると
   rewrite が透過的に不発となり routing coverage が落ちる。
-- builtin routes を enabled で出荷するか opt-in で出荷するか |
-  product 判断が未確定 | ADR / release 判断 | 既定 ON なら
-  coverage 向上・既定 OFF なら採用課題が残る。
 - log retention の default 値・巨大 log の token 計測方法
   (streaming vs cap) | 実装値の確定が必要 | design で確定 |
   過小 retention で参照不能・過大で disk 圧迫。
