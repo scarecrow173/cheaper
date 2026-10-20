@@ -219,6 +219,139 @@ CLI が PATH 上に無い場合は launcher が install command と PATH 設定�
 実際の e2e 検証手順は [CONTRIBUTING.md](../../CONTRIBUTING.md) の
 「実 provider 検証」を参照。
 
+## PreToolUse 自動 route（実験的）
+
+shell command を `route run` payload へ rewrite し、route に
+宣言した workflow（command exec + 任意 worker postprocess）へ
+実行を委譲する仕組み。`hook pre-tool-use` が command を判定し、
+実行可能（runnable）な route への match 時のみ rewrite を返す
+— hook 自体は実行を行わない。runnable でない場合は従来の
+Allow/Deny verdict（legacy allow/deny）へフォールバックする。
+一方、`route run` 側の payload 再検証は fail-closed で、
+失敗時に raw command 実行へ落ちる経路は存在しない。
+
+### route の解決と宣言層
+
+route は 3 層で宣言する: **builtin**（`cheaper` 組み込み、
+binary embedded）・**user**（`<userConfigDir>/routes.yaml`）・
+**project**（`<workspace>/.cheaper/routes.yaml`）。層間の衝突は
+同じ `match.command` token prefix を key に判定され（route 名
+ではない）、上位層（builtin → user → project）が勝つ。project
+層が下位を shadow するのは `trusted: true` のときのみ —
+untrusted project route の match は suppressed provenance（
+`suppressed` field）として報告され、下位の route は active
+のまま残る。`trusted: true` は
+「この workspace の宣言を信頼する」という**明示的な layer
+override** であり、ユーザー承認やセキュリティ許可の代替では
+ない。
+
+builtin declaration の例（`resources/routes.yaml` に組み込み済み）:
+
+```yaml
+version: 1
+routes:
+  - name: cargo-test
+    match: {command: [cargo, test]}
+    target: {kind: workflow, path: routed-exec.workflow.json}
+    grant: cargo-test
+    output: {tokenThreshold: 8192}
+    passthroughEnv: [CI]
+```
+
+target の `path` は各層を root とする相対パス — builtin は
+`builtin/workflows/`、user は `<userConfigDir>/`、project は
+`<workspace>/.cheaper/` が起点となる。route を宣言するだけでは
+target workflow はその層へ配置されず、実行権限（grant）も
+発生しない。
+
+builtin の `cargo-test` route は組み込み済みだが、builtin
+policy に対応 grant は含まれない — **no-grant は fail-closed**
+で、ユーザーが明示的に grant するまで実行できない
+（opt-in）。確認は dry-run で行う:
+
+```bash
+cheaper route resolve --command 'cargo test --workspace'
+cheaper route resolve --argv '["cargo","test","--workspace"]'
+```
+
+`resolve` は実行しない（dry-run）— match・route・target・grant・
+viability（`runnable`/`no-grant`/…）・sanitized argv/args を
+JSON で返す。`no-grant` のままなら権限が無い。grant は user
+policy に追加する（下記は PLACEHOLDER — 実際の cargo path に
+置き換えること）:
+
+```bash
+cheaper policy grant add cargo-test '{"executable":"<absolute-native-cargo-path>","argv":["test","*"]}'
+```
+
+grant は repository のコードや build script を実行する権限を
+与える — OS sandbox ではなく、`argv` allowlist で対象 executable
+と引数形を限定する仕組み。
+
+### hook rewrite の承認保全と fallback
+
+`hook pre-tool-use` の rewrite 出力は native adapter の
+approval 機構を通る — cheaper は承認を bypass しない:
+
+- **Claude / Devin**: `hookSpecificOutput.updatedInput.command`
+  で rewrite command を返す — `permissionDecision`/`decision`
+  は付けず、承認は native 側の通常経路で行われる
+- **Codex / Cursor / Copilot**: rewrite の approval-bypass
+  検証が未了のため `updatedInput` を発行しない — 従来評価の
+  fallback verdict（deny/allow）をそのまま返す
+- **Windsurf**: fallback verdict 毎の native shape —
+  fallbackAllow は silent exit 0、fallbackDeny は stderr +
+  exit 2(read candidate 評価の deny 規約をそのまま維持)
+
+rewrite command は `<cheaper-exe> route run --payload <token>`。
+payload は opaque な base64url — 値は process の
+command line に現れ得る（cmdline は秘匿路ではない）。実行時に
+現在の routes/policy へ再検証され、route 削除・grant 削除・
+target 不在・cwd 不一致等の stale payload は全て fail-closed
+で拒否 — raw command fallback は存在しない。
+
+### `route run` の出力
+
+`route run --payload <token>` は実行に成功すれば**raw text**
+（stdout+stderr + route log footer）を直接 emit し、
+`--format json` でも envelope 化しない。子 process の
+exit code をそのまま mirror する — 元 command が非ゼロなら
+route run も非ゼロ。一方、payload 検証・policy 違反等の
+infrastructure error は従来の error envelope を返す。
+
+### `route logs` と log の取り扱い
+
+`route run` は子出力を `<userConfigDir>/route-logs/<runId>.log`
+（Unix では owner 限定の `0600` permission が適用される。
+Windows filemode では同規約が異なるため、owner 限定 permission
+は Unix `0600` の意図として扱うこと。workspace 外）へ全量
+tee する。
+`cheaper route logs <id> [--offset <bytes>] [--max-bytes <bytes>]`
+で bounded page を読む — offset/byte 単位（UTF-8 境界をまたぐ
+場合がある）で `{data,offset,nextOffset,eof}` を返し、
+`maxBytes` 未指定は policy の `workflow.artifacts.maxReadBytes`
+上限に従う。無効・不在 runId は拒否する。retention は
+best-effort sweep（30 日 / 200 件 / 256 MiB 上限）。
+
+### env と計測
+
+hook 実行環境は interactive shell env とは一致しない —
+`passthroughEnv` allowlist に列挙した名前だけが hook ambient
+env から payload へ capture される。command prefix
+（`FOO=bar cmd`）> captured ambient > grant env の順に適用
+され、子 env は最小化される。stdin を使う command や
+interactive/TTY 前提の実行には対応しない。
+
+route record（`kind:"route"`）と refetch record
+（`kind:"route-refetch"`）は別々に usage.jsonl へ記録する —
+集計は refetch 数を join して出す（[usage ガイド](./usage.md)
+参照）。env 値は payload transport にのみ使われ、usage record
+や worker input へ serialise されない — ただし子 process
+自身が env 値を stdout/log へ print することはあり得るため、
+route log は sensitive として扱うこと。worker postprocess の
+skip・失敗（`postprocessFailures`）は command 実行や exit
+code に影響しない — リトライもしない。
+
 ## 関連
 
 - CLI contract: [usage ガイド](./usage.md)

@@ -4,7 +4,7 @@ type: "test-spec"
 status: "draft"
 title: "Hook dedup cache route fingerprint and Rewrite exclusion"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: []
 relations:
   source: []
@@ -52,11 +52,17 @@ shell verdict cache key が route 宣言内容で invalidate される。
 - Rewrite verdict は env 値を含み得るため persist も serve もしない。
 - Allow/Deny dedup は従来通り有効。
 - routes 変更後の同一 command が stale verdict を返さない。
+- 内容 hash は更新時刻や byte 長が同じ編集でも変化する。
+  metadata だけを比較する cache key はこの保証を満たさない。
+- routes は shell verdict の入力であり、FileRead / Search の key は
+  routes の内容変更によって不必要に変化しない。
 
 ## Examples
 
 - routes.yaml 追加後に同一 command を eval → cache miss で新規
   resolve が走る。
+- 有効な route の grant 名を同じ長さの別名へ変更し、mtime を復元 →
+  shell fingerprint は変化し、非 shell fingerprint は変化しない。
 
 ## Guarantees
 

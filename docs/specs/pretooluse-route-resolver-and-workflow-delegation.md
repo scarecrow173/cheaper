@@ -4,7 +4,7 @@ type: "spec"
 status: "proposed"
 title: "PreToolUse auto-routing: route resolution and delegated workflow execution"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -503,63 +503,64 @@ output capture + token 計測 + conditional worker による縮約)。
 
 ## Acceptance Criteria
 
-- [ ] `routes.yaml` の schema(required field 欠落・未知 key・
+- [x] `routes.yaml` の schema(required field 欠落・未知 key・
   `kind` 非 `"workflow"`・同一 `match.command` 列の重複 route)が
   config error として表面化することが contract test で固定される
   (R2/R6)。
-- [ ] argv prefix match・longest-match precedence・self-bypass
+- [x] argv prefix match・longest-match precedence・self-bypass
   (`cheaper`・`cheaper.exe`・dir prefix 付き argv[0] が routing
   されない)が test で固定される(R4/R5/R9)。
-- [ ] rewrite-safe gate — pipe・chain・redirect・metachar・`cd` 系
+- [x] rewrite-safe gate — pipe・chain・redirect・metachar・`cd` 系
   head・複数 segment・tokenize 不能の各ケースが全て non-routed
   (`unsafe-command` viability)となることが test で固定される
   (R8/R12)。
-- [ ] `route resolve` が `--command` / `--argv` 両入力で規定の
+- [x] `route resolve` が `--command` / `--argv` 両入力で規定の
   output shape を返し、command・workflow・外部 process を一切
   実行しないこと、および viability 各値(runnable・no-grant・
   missing-target・invalid-route・unsafe-command・stdin-unsupported)
   が再現可能であることが test で固定される(R10-R12)。
-- [ ] trust 不在で project route が同一 prefix の user/builtin
+- [x] trust 不在で project route が同一 prefix の user/builtin
   route を shadow せず、resolve が当該状況を報告することが test
   で固定される(R7)。
-- [ ] `route run` が原 command の exit code(0・非 0)をそのまま
+- [x] `route run` が原 command の exit code(0・非 0)をそのまま
   返すこと、revalidation 失敗時に原 command を実行せず cheaper
   error code で終了すること、post-processing 失敗時に原 command
   を再実行しないことが test で固定される(R14-R16)。
-- [ ] `route run` の実行互換 — payload cwd 復元・env が
+- [x] `route run` の実行互換 — payload cwd 復元・env が
   `passthroughEnv` allowlist 外を含まないこと・stdin 非接続が
   test で固定される(R18/R32/R33)。
-- [ ] `exitCodes` — 集合内の非 0 exit が result data
+- [x] `exitCodes` — 集合内の非 0 exit が result data
   `{state, exitCode, stdout, stderr}` として返ること、集合外の非
   0・spawn 失敗・timeout・abort が Err のままであることが test
   で固定される(R19/R20)。
-- [ ] workflow `when` — `eq|ne|gt|lt|exists` 各 predicate、
+- [x] workflow `when` — `eq|ne|gt|lt|exists` 各 predicate、
   when-false → `skipped`(DEPENDENCY_FAILED と区別可能)、
   dependents の非伝播・`$from` skipped producer → `null`
   materialization、skip 含み workflow の `ok:true` valid result、
   dependency failure 時の従来挙動維持が test で固定される
   (R21-R25)。
-- [ ] route log store — `maxOutputBytes` 超過 output が
+- [x] route log store — `maxOutputBytes` 超過 output が
   `<userConfigDir>/route-logs/` に全量残り compact result に
   `truncated` が付くこと、runId-unique + temp+rename 命名、
   size/count/TTL retention、storage failure 時の exit status 保持
   が test で固定される(R26-R29)。
-- [ ] `cheaper route logs <id>` が bounded read(offset/maxBytes)
+- [x] `cheaper route logs <id>` が bounded read(offset/maxBytes)
   を提供し、workspace 外 generic file read 経路が存在しない
   ことが test で固定される(R30/R31)。
-- [ ] `kind:"route"` record が規定 field 群を持ち、best-effort
+- [x] `kind:"route"` record が規定 field 群を持ち、best-effort
   append(記録失敗が exit code/stdout を変えない)であることと、
   savings estimated 集計へ混入しないことが test で固定される
   (R34/R35)。
-- [ ] hook rewrite — claude/devin payload で runnable →
+- [x] hook rewrite — claude/devin payload で runnable →
   `updatedInput` のみの応答(`permissionDecision` 無し・exit 0)、
-  non-runnable / non-match → Allow、windsurf・codex・cursor・
+  non-runnable / non-match → 従来評価の Allow/Deny を維持、
+  windsurf・codex・cursor・
   copilot では Rewrite verdict を発行しないことが test で固定
   される(R36-R39)。
-- [ ] `VariantInputs::Shell` が `routes.yaml` hash を含み、
+- [x] `VariantInputs::Shell` が `routes.yaml` hash を含み、
   routes.yaml 変更で cached verdict が invalidate されることが
   test で固定される(R40)。
-- [ ] user-facing doc に routes.yaml 記法・routing≠
+- [x] user-facing doc に routes.yaml 記法・routing≠
   authorization・trust 境界・hook env ≠ shell env・fallback
   挙動が記述されていることが確認される。
 

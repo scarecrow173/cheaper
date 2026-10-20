@@ -582,6 +582,7 @@ fn finish(
             log_ref: log_ref.unwrap_or_default(),
             refetches: 0.0,
             postprocess_failures: failures.len() as f64,
+            suppressed: prepared.resolution.suppressed.clone(),
             exit_code,
             ok: exit_code == 0 && failures.is_empty(),
         },
@@ -1068,5 +1069,220 @@ mod tests {
             err.downcast_ref::<CheaperError>().map(CheaperError::code),
             Some(ErrorCode::InternalError)
         );
+    }
+
+    #[cfg(feature = "dev-seam")]
+    async fn run_worker_read(max_read_bytes: u64) -> (bool, usize, f64, Value) {
+        let tmp = tempfile::tempdir().unwrap();
+        let ws = tmp.path().join("ws");
+        let cfg = tmp.path().join("cfg");
+        std::fs::create_dir_all(&ws).unwrap();
+        std::fs::create_dir_all(&cfg).unwrap();
+        let builtin = crate::embedded::builtin_dir().unwrap();
+        let store = RouteLogStore::new(&cfg);
+        let seed = "ROUTE-WORKER-READ-MARK\n".repeat(64);
+        let mut writer = store.begin().unwrap();
+        let seeded_id = writer.run_id().to_string();
+        std::io::Write::write_all(&mut writer, seed.as_bytes()).unwrap();
+        writer.finish().unwrap();
+        let fixture_path = tmp.path().join("fake.json");
+        let fx = serde_json::to_string(&json!({
+            "name": "worker-read",
+            "sessions": [{
+                "steps": [
+                    {"turn": {"tool_calls": true}},
+                    {"tool_calls": [{
+                        "name": "read",
+                        "input": {
+                            "source": {
+                                "kind": "artifact",
+                                "reference": {
+                                    "artifact": seeded_id,
+                                    "runId": seeded_id,
+                                    "producer": {"jobId": "exec", "name": "command"},
+                                    "bytes": 0,
+                                    "preview": "",
+                                    "truncated": false,
+                                },
+                            },
+                            "offset": 0,
+                            "maxBytes": seed.len(),
+                        },
+                    }]},
+                    {"usage_delta": {"input": 120, "output": 30}},
+                    {"finish": {"text": "{\"summary\":\"WORKER-READ-FINISHED\"}"}},
+                ],
+            }],
+        }))
+        .unwrap();
+        std::fs::write(&fixture_path, fx).unwrap();
+        let ws_str = ws.to_string_lossy().into_owned();
+        let cfg_str = cfg.to_string_lossy().into_owned();
+        let fx_str = fixture_path.to_string_lossy().into_owned();
+        let cfg_for_env = cfg_str.clone();
+        let env = move |k: &str| match k {
+            "NODE_ENV" => Some("test".to_string()),
+            "CHEAPER_TEST_FAKE_STREAM" => Some(fx_str.clone()),
+            "CHEAPER_CONFIG_DIR" => Some(cfg_for_env.clone()),
+            _ => None,
+        };
+        let mut stdin = NopStdin;
+        let mut out = NopWrite;
+        let mut err = NopWrite;
+        let io = CliIo {
+            stdin: &mut stdin,
+            stdout: &mut out,
+            stderr: &mut err,
+            env: &env,
+            cwd: ws_str.clone(),
+        };
+        let hooks = CliHooks {
+            builtin_dir: Some(builtin.clone()),
+            now: None,
+            signal: None,
+        };
+        let mut policy = cheaper_core::policy::load::load_policy(
+            &cheaper_core::policy::load::LoadPolicyOptions {
+                builtin_policy_path: &builtin.join("policy.yaml").to_string_lossy(),
+                user_config_dir: &cfg_str,
+                project_dir: &ws_str,
+                invocation: None,
+            },
+        )
+        .unwrap();
+        policy.workflow.artifacts.max_read_bytes = max_read_bytes;
+        let dirs = cheaper_core::config::dirs::ConfigDirs {
+            user_config_dir: cfg.clone(),
+            project_dir: ws.join(".cheaper"),
+            builtin_dir: builtin.clone(),
+        };
+        let ctx = crate::workflow_context::WorkflowContext::from_policy(
+            ws_str.clone(),
+            dirs,
+            policy.clone(),
+        );
+        let file_root = tmp.path().join("flows");
+        std::fs::create_dir_all(&file_root).unwrap();
+        std::fs::write(
+            file_root.join("w.json"),
+            serde_json::to_string(&json!({
+                "schemaVersion": 1,
+                "inputs": {
+                    "logRef": {"type": "string"},
+                    "originalTokens": {"type": "integer"},
+                    "command": {"type": "array", "items": {"type": "string"}}
+                },
+                "jobs": {
+                    "analyze": {
+                        "kind": "worker",
+                        "worker": "condense",
+                        "input": {
+                            "logRef": {"$input": "logRef"},
+                            "originalTokens": {"$input": "originalTokens"},
+                            "command": {"$input": "command"}
+                        }
+                    }
+                },
+                "outputs": {
+                    "result": {
+                        "schema": {"type": ["string", "null"]},
+                        "value": {"$from": "analyze", "path": "/summary"}
+                    }
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let loaded = ctx
+            .load_workflow_from("w.json", &file_root.to_string_lossy())
+            .await
+            .unwrap();
+        let seed_tokens = cheaper_core::token::count::count_text_tokens(&seed).unwrap();
+        let inputs = Map::from_iter([
+            ("logRef".to_string(), json!(seeded_id)),
+            ("originalTokens".to_string(), json!(seed_tokens as i64)),
+            ("command".to_string(), json!(["routed"])),
+        ]);
+        let workflow = loaded
+            .compiler
+            .compile(loaded.definition.raw(), Some(&Value::Object(inputs)))
+            .await
+            .unwrap();
+        let route_exec = Arc::new(RouteExecution::new(
+            RouteLogStore::new(&cfg),
+            Map::new(),
+            ws_str,
+            "unused",
+            &[],
+            cheaper_core::token::count::DEFAULT_COUNT_MAX_BYTES,
+            max_read_bytes,
+        ));
+        let (_shared, outcome) =
+            crate::workflow_run::execute_compiled(crate::workflow_run::CompiledRun {
+                ctx: &ctx,
+                workflow: &workflow,
+                effective_policy: &policy,
+                invocation_grants: Vec::new(),
+                route_exec: Some(route_exec),
+                io: &io,
+                hooks: &hooks,
+            })
+            .await
+            .unwrap();
+        let outcome = outcome.unwrap();
+        let analyze = outcome
+            .jobs
+            .iter()
+            .find(|j| j.id == "analyze")
+            .expect("analyze job outcome");
+        let source_tokens = analyze
+            .meta
+            .extra
+            .get("savings")
+            .and_then(|s| s.get("sourceTokens"))
+            .and_then(Value::as_f64)
+            .unwrap_or(0.0);
+        let tool_calls = analyze
+            .meta
+            .extra
+            .get("toolCalls")
+            .and_then(Value::as_f64)
+            .unwrap_or(-1.0);
+        let succeeded = analyze.status == cheaper_workflow::engine::JobStatus::Succeeded;
+        let result = outcome.result.get("result").cloned().unwrap_or_default();
+        (
+            outcome.ok && succeeded,
+            source_tokens as usize,
+            tool_calls,
+            result,
+        )
+    }
+
+    #[cfg(feature = "dev-seam")]
+    #[tokio::test(flavor = "current_thread")]
+    async fn worker_reads_route_log_through_inherited_reader() {
+        let seed = "ROUTE-WORKER-READ-MARK\n".repeat(64);
+        let expected = cheaper_core::token::count::count_text_tokens(&seed).unwrap();
+        let (ok, source_tokens, tool_calls, result) = run_worker_read(65536).await;
+        assert!(ok);
+        assert_eq!(result, "WORKER-READ-FINISHED", "fixed fake summary finish");
+        assert_eq!(
+            source_tokens, expected,
+            "worker must meter the exact seeded log text"
+        );
+        assert_eq!(tool_calls, 1.0);
+    }
+
+    #[cfg(feature = "dev-seam")]
+    #[tokio::test(flavor = "current_thread")]
+    async fn worker_route_log_read_denied_by_policy_cap() {
+        let (ok, source_tokens, tool_calls, result) = run_worker_read(1).await;
+        assert!(ok, "denied read does not fail the run — fixed fake finish");
+        assert_eq!(result, "WORKER-READ-FINISHED");
+        assert_eq!(
+            source_tokens, 0,
+            "cap below request must meter zero (read denied)"
+        );
+        assert_eq!(tool_calls, 1.0);
     }
 }

@@ -116,7 +116,7 @@ impl ArtifactPublisher for LedgerPublisher {
 /// ports/executor/cleanup で共有する run-scoped state。TS の
 /// `store`/`invocation`/`modelPromise`/`ledger`/`abortController`
 /// closure state に相当。
-struct Shared {
+pub(crate) struct Shared {
     root: String,
     user_config_dir: String,
     project_dir: String,
@@ -787,17 +787,17 @@ async fn execute_run_inner(
     })
 }
 
-struct CompiledRun<'ctx, 'b, 'io> {
-    ctx: &'ctx WorkflowContext,
-    workflow: &'b CompiledWorkflow,
-    effective_policy: &'b RuntimePolicy,
-    invocation_grants: Vec<String>,
-    route_exec: Option<Arc<crate::route::run::RouteExecution>>,
-    io: &'b CliIo<'io>,
-    hooks: &'b CliHooks,
+pub(crate) struct CompiledRun<'ctx, 'b, 'io> {
+    pub(crate) ctx: &'ctx WorkflowContext,
+    pub(crate) workflow: &'b CompiledWorkflow,
+    pub(crate) effective_policy: &'b RuntimePolicy,
+    pub(crate) invocation_grants: Vec<String>,
+    pub(crate) route_exec: Option<Arc<crate::route::run::RouteExecution>>,
+    pub(crate) io: &'b CliIo<'io>,
+    pub(crate) hooks: &'b CliHooks,
 }
 
-async fn execute_compiled(
+pub(crate) async fn execute_compiled(
     run: CompiledRun<'_, '_, '_>,
 ) -> Result<(Arc<Shared>, Result<WorkflowOutcome, CheaperError>), BoxError> {
     let controller = AbortController::new();

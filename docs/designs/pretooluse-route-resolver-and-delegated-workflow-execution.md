@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "PreToolUse route resolver and delegated workflow execution"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: []
 relations:
   source:
@@ -533,11 +533,12 @@ claude/codex を区別できない(C7 — `tool_name` discriminator は
   `updatedInput` を発行しない — 構造的に codex へ rewrite が
   届かない)。
 - `devin_render`: Rewrite →
-  `{"decision":"allow","updatedInput":{"command":"<rewritten>"}}`
-  + exit 0 — devin 応答 envelope は `decision`/`reason` key を使う
-  現行規約に従いつつ、input-rewrite field として `updatedInput`
-  object を添える(field 名の正式 contract は Devin hook docs で
-  impl 時に再確認 — Deferred Design Concerns)。
+  `{"hookSpecificOutput":{"hookEventName":"PreToolUse","updatedInput":{"command":"<rewritten>"}}}`
+  + exit 0。E の実装時に公式 Devin hook docs と照合し、当初の
+  未検証な top-level `updatedInput` 例を訂正した。Rewrite は
+  `decision` / `permissionDecision` を持たず、既存 Deny の
+  top-level `decision:"block"`・Allow の silent 応答は不変。
+  Claude と同じ wire shape の Rewrite helper を共有する。
 - windsurf/cursor/copilot render: Rewrite → `fallback` を
   各 target の応答規約で render(fallback が Deny なら従来の
   deny 応答、Allow なら allow 応答 — read-candidate の context
@@ -1052,13 +1053,18 @@ raw bytes を log file へ append する tee。
   `route resolve`/`route run` の diagnostic が decode 結果を報告
   する経路で可読性を補う。
 
+### 実装時の upstream contract 確認
+
+Devin の入力書換え schema は E で公式
+[Hooks overview](https://docs.devin.ai/cli/extensibility/hooks/overview) と
+[Lifecycle hooks](https://docs.devin.ai/cli/extensibility/hooks/lifecycle-hooks)
+により確認した。`hookSpecificOutput.updatedInput` のみを使い、
+承認を決定する `decision` は付けない。これは ADR D3 / R37 の
+「入力だけを書き換え、上位の承認を保全する」という判断の変更ではなく、
+未検証だった具体的な wire 表現の確定である。
+
 ## Deferred Design Concerns
 
-- Devin `updatedInput` field 名の正式 contract | ADR D3 は「同等の
-  input-rewrite field」とのみ規定し、Devin hook response の正式
-  schema は未検証 | impl 時の Devin docs 確認(#148) | field 名が
-  異なる場合 render が無視され routing が silent に不発 — impl
-  test で pin する。
 - Claude `updatedInput` silent-ignore(#81340)| upstream 不具合で
   rewrite が透過的に不発となりうる | version 検出 + doctor verb
   (follow-up issue) | coverage が落ちるが fail-safe で command

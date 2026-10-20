@@ -106,7 +106,7 @@ for (const target of HOOK_TARGETS) {
         cursor: /hook (before-read-file|before-shell-execution) --target cursor/,
         copilot: /hook pre-tool-use --target copilot/,
         claude: /hook pre-tool-use --target pretooluse/,
-        codex: /hook pre-tool-use --target pretooluse/,
+        codex: /hook pre-tool-use --target codex/,
       }[target];
 
       // 全 generated config で event key が native event のみで、

@@ -306,6 +306,7 @@ fn route_record_shape() {
         log_ref: "1700000000000-1-abcd".to_string(),
         refetches: 0.0,
         postprocess_failures: 0.0,
+        suppressed: None,
         exit_code: 0,
         ok: true,
     };
@@ -325,6 +326,13 @@ fn route_record_shape() {
     // deterministic — 同入力は同 hash。
     let r2 = build_route_record(&input, "/w", &fixed(0.0));
     assert_eq!(r["commandHash"], r2["commandHash"]);
+    assert!(r.get("suppressed").is_none(), "None で wire 不変");
+    let input = RouteRecordInput {
+        suppressed: Some("project-shadow".to_string()),
+        ..input
+    };
+    let r = build_route_record(&input, "/w", &fixed(0.0));
+    assert_eq!(r["suppressed"], "project-shadow");
 }
 
 #[test]

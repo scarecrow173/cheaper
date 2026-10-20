@@ -535,6 +535,25 @@ fn updated_input(command: &str) -> Value {
     Value::Object(inner)
 }
 
+fn hook_specific_output_rewrite(command: &str) -> HookResponse {
+    HookResponse {
+        stdout: Some(format!(
+            "{}\n",
+            stringify_ordered(&[(
+                "hookSpecificOutput",
+                Value::Object({
+                    let mut inner = Map::new();
+                    inner.insert("hookEventName".to_string(), Value::from("PreToolUse"));
+                    inner.insert("updatedInput".to_string(), updated_input(command));
+                    inner
+                }),
+            )])
+        )),
+        stderr: None,
+        exit: 0,
+    }
+}
+
 /// claude(`--target pretooluse`)— Rewrite は
 /// `hookSpecificOutput.updatedInput` で emit する
 /// (`permissionDecision` は emit しない、D3)。
@@ -542,22 +561,7 @@ fn pretooluse_render(verdict: Verdict) -> HookResponse {
     match verdict {
         Verdict::Deny { reason } => hook_specific_output_deny(&reason),
         Verdict::Allow => silent_allow(),
-        Verdict::Rewrite { command, .. } => HookResponse {
-            stdout: Some(format!(
-                "{}\n",
-                stringify_ordered(&[(
-                    "hookSpecificOutput",
-                    Value::Object({
-                        let mut inner = Map::new();
-                        inner.insert("hookEventName".to_string(), Value::from("PreToolUse"));
-                        inner.insert("updatedInput".to_string(), updated_input(&command));
-                        inner
-                    }),
-                )])
-            )),
-            stderr: None,
-            exit: 0,
-        },
+        Verdict::Rewrite { command, .. } => hook_specific_output_rewrite(&command),
     }
 }
 
@@ -614,20 +618,10 @@ fn devin_render(verdict: Verdict) -> HookResponse {
             exit: 0,
         },
         Verdict::Allow => silent_allow(),
-        // devin 応答 envelope は `decision`/`reason` 規約 — Rewrite
-        // は `decision:"allow"` + `updatedInput` object で input
+        // devin 応答 envelope は `hookSpecificOutput` 規約 — Rewrite
+        // は `hookSpecificOutput.updatedInput.command` で input
         // rewrite を通知する(C4)。
-        Verdict::Rewrite { command, .. } => HookResponse {
-            stdout: Some(format!(
-                "{}\n",
-                stringify_ordered(&[
-                    ("decision", Value::from("allow")),
-                    ("updatedInput", updated_input(&command)),
-                ])
-            )),
-            stderr: None,
-            exit: 0,
-        },
+        Verdict::Rewrite { command, .. } => hook_specific_output_rewrite(&command),
     }
 }
 
@@ -847,18 +841,28 @@ mod tests {
             .is_some());
     }
 
-    /// devin — Rewrite は `{"decision":"allow","updatedInput":
-    /// {"command":…}}` envelope。
+    /// devin — Rewrite は hookSpecificOutput.updatedInput.command
+    /// のみを返す(承認判定 field は付けない)。
     #[test]
-    fn devin_rewrite_emits_allow_envelope_with_updated_input() {
+    fn devin_rewrite_emits_updated_input_without_permission() {
         let r = devin_render(rewrite("new-cmd", Verdict::Allow));
         assert_eq!(r.exit, 0);
         let v: Value = serde_json::from_str(&r.stdout.unwrap()).unwrap();
-        assert_eq!(v.get("decision").and_then(Value::as_str), Some("allow"));
+        assert!(v.get("decision").is_none());
+        assert!(v.get("updatedInput").is_none());
         assert_eq!(
-            v.pointer("/updatedInput/command").and_then(Value::as_str),
+            v.pointer("/hookSpecificOutput/hookEventName")
+                .and_then(Value::as_str),
+            Some("PreToolUse")
+        );
+        assert_eq!(
+            v.pointer("/hookSpecificOutput/updatedInput/command")
+                .and_then(Value::as_str),
             Some("new-cmd")
         );
+        assert!(v
+            .pointer("/hookSpecificOutput/permissionDecision")
+            .is_none());
     }
 
     /// codex — Rewrite は `updatedInput` を発行せず fallback verdict

@@ -411,9 +411,9 @@ pub fn command_tool_definition(
 pub struct CheckedCommand {
     pub grant: CommandGrant,
     pub cwd: String,
-    /// 検証済み executable — scope pin があれば pin 済み path の
-    /// 再検証結果、無ければ declared executable のその場解決(pin
-    /// と同一 predicate: `pin_command_grant`)。
+    /// 検証済み executable — scope pin map の pin 済み path を
+    /// spawn 前に再検証した結果(`verify_pinned_executable`)。
+    /// pin map に grant が無ければここへは到達しない。
     pub executable: String,
 }
 
@@ -421,10 +421,10 @@ pub struct CheckedCommand {
 /// `command::execute` が実 spawn 前に課す全 gate を同一 predicate
 /// で評価する: grant 解決 → argv pattern/metachar → cwd
 /// (route context の `exec_cwd` override を含む)→ executable
-/// 検証(pin 済み path の spawn 前再検証、または pin 未構築時は
-/// declared executable のその場 pin 解決 — `route::resolve` の
-/// viability 経路)。predicate の複製による drift を防ぐため
-/// `command::execute` もこの entry を呼ぶ。
+/// 検証(per-scope pin map の pin 済み path の再検証。pin 不在は
+/// `POLICY_VIOLATION` — resolver は選択 grant を `pin_command_grant`
+/// で pre-pin してから本 seam を呼ぶ)。predicate の複製による
+/// drift を防ぐため `command::execute` もこの entry を呼ぶ。
 pub fn check_command_execution(
     options: &CommandToolOptions,
     name: &str,
@@ -444,22 +444,18 @@ pub fn check_command_execution(
             "command",
         )?,
     };
-    // executable 事前検証 — pin 済み path がある scope(registry
-    // 構築経路)は spawn 前再検証、pin 未構築の dry-run 経路
-    // (`route::resolve` viability)は declared executable をその場
-    // 解決する。いずれも deny/residency の同一 predicate。
+    // executable 事前検証 — pin 済み path は scope 構築時点の
+    // canonical へ immutable に固定され、spawn 前にここで再検証
+    // する(verify_pinned)。pin map 無しの経路は fail-closed —
+    // いずれも deny/residency の同一 predicate。
     let executable = match options.pins.get(name) {
         Some(pinned) => {
             verify_pinned_executable(name, pinned, &options.root)?;
             pinned.clone()
         }
-        None => pin_command_grant(
-            name,
-            &grant,
-            &options.root,
-            options.symlink_policy,
-            options.denylist.as_ref(),
-        )?,
+        None => {
+            return Err(grant_violation(name, "no pinned executable"));
+        }
     };
     Ok(CheckedCommand {
         grant,
@@ -518,8 +514,8 @@ async fn execute(
         .unwrap_or_default();
     // 事前 check は `check_command_execution` へ集約(design
     // §viability — `route::resolve` と同一 predicate)。pin map に
-    // 無い direct 構築は declared executable のその場解決へ倒れ、
-    // deny/residency の検証は共通のまま。
+    // grant が無ければ即 `POLICY_VIOLATION`、pin 済み path は
+    // spawn 前再検証を経て deny/residency の同一 predicate を通す。
     let checked = check_command_execution(options, &name, &args)?;
     let grant = checked.grant;
     let cwd = checked.cwd;
@@ -844,10 +840,12 @@ mod tests {
         assert!(err.to_string().contains("workspace-resident"), "{err}");
         // pin map に無い grant は execute で fail-closed
         // (verify まで到達しない)。
+        let exe = std::env::current_exe().unwrap();
+        let exe = realpath(exe.to_str().unwrap()).unwrap();
         let options = CommandToolOptions {
             root: root.clone(),
             symlink_policy: SymlinkPolicy::Deny,
-            command: policy(json!({"grants": {"g": {"executable": "git"}}})),
+            command: policy(json!({"grants": {"g": {"executable": exe}}})),
             pins: BTreeMap::new(),
             on_timeout: None,
             denylist: None,
@@ -855,7 +853,7 @@ mod tests {
         };
         let tool = create_command_tool(options);
         let err = tool
-            .execute(&json!({"name": "g", "args": []}), None)
+            .execute(&json!({"name": "g", "args": ["--list"]}), None)
             .await
             .unwrap_err();
         assert!(policy_violation(&err));

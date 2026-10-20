@@ -1,10 +1,10 @@
 ---
 id: "PLAN-034Jcl2O612UZMGTK2IN1n"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "Implement PreToolUse route resolver and delegated workflow execution"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: []
 relations:
   source: []
@@ -132,15 +132,15 @@ Phase 依存: A(foundation)→ B(route core)→ C(hook 側)→ D(実行)→ E(�
 
 ### Phase A — 前提 primitive(並列可)
 
-- [ ] A1: `command.grants.<name>.exitCodes` schema + `command::execute` の
+- [x] A1: `command.grants.<name>.exitCodes` schema + `command::execute` の
       集合内非 0 exit result 化(`state`/`exitCode`/`spawnCode` の実
       shape 判定)+ contract test。pass: 集合内非 0 が result data・
       集合外/spawn 失敗が Err の test が pass(+ 必要時 golden
       fixture 再生成)
-- [ ] A2: proc tee sink — `proc::run` の optional `ProcTee` byte sink +
+- [x] A2: proc tee sink — `proc::run` の optional `ProcTee` byte sink +
       `CommandToolOptions.log_tee` + tee write 失敗の postprocess 縮退。
       pass: tee された全量 byte と bounded result の整合 test が pass
-- [ ] A3: route context scope option — `InvocationToolRuntimeOptions` 系
+- [x] A3: route context scope option — `InvocationToolRuntimeOptions` 系
       へ `extra_env`/`exec_cwd`/`accept_any_exit_code` を追加し
       registry → `ctx.command()` へ注入 + **resolved
       `RuntimePolicy.command.grants` の単一 grant 投影**(Shared/
@@ -149,7 +149,7 @@ Phase 依存: A(foundation)→ B(route core)→ C(hook 側)→ D(実行)→ E(�
       投影)。pass: scope option が command tool へ届く contract
       test + 投影外 grant を `input.name` で参照した job が失敗
       する test + worker job の parity check が通る test が pass
-- [ ] A4: workflow `when` — schema + compile `references()` 参加 +
+- [x] A4: workflow `when` — schema + compile `references()` 参加 +
       `pump()` 評価 + `CONDITION_SKIPPED` + materialization null +
       error 集約除外 + compile_contracts test。pass: when-false の
       skip が dependent へ伝播せず workflow failure に計上されない
@@ -157,12 +157,12 @@ Phase 依存: A(foundation)→ B(route core)→ C(hook 側)→ D(実行)→ E(�
 
 ### Phase B — route core
 
-- [ ] B1: `route::routes` — routes.yaml schema・3 層 load・`trusted`
+- [x] B1: `route::routes` — routes.yaml schema・3 層 load・`trusted`
       shadow・同一 `match.command` 重複 `invalid-route`・
       `target.path` 層起点 + traversal 拒否・`suppressed` provenance
       field。pass: unit test で 3 層 merge・shadow・重複・traversal
       拒否が全 pass
-- [ ] B2: `route::resolve` — `ResolveInput{argv, cwd, routes,
+- [x] B2: `route::resolve` — `ResolveInput{argv, cwd, routes,
       command_policy}` の純粋評価(caller が load 責務を持つ)・
       self-bypass・prefix/longest match・`args`/`exec_args` 区別・
       viability 固定優先順・env-prefix skip・`INTERACTIVE_COMMANDS`
@@ -174,38 +174,38 @@ Phase 依存: A(foundation)→ B(route core)→ C(hook 側)→ D(実行)→ E(�
       `route resolve --command/--argv` の contract test で
       viability 各分岐が pass + `check_command_execution` が
       `command::execute` の受理判定と一致する test が pass
-- [ ] B3: `route::log_store` — runId 採番・`<runId>.log.tmp` streaming +
+- [x] B3: `route::log_store` — runId 採番・`<runId>.log.tmp` streaming +
       rename・`0600`・TTL/count/size sweep(`*.tmp` 除外)・
       `RouteLogReader`(`ArtifactReader` impl、ref 検証共有)。
       pass: unit test で write/rename・sweep・ref 検証拒否が pass
-- [ ] B4: `usage_log` `kind:"route"`/`"route-refetch"` builder +
+- [x] B4: `usage_log` `kind:"route"`/`"route-refetch"` builder +
       `usage_report` 独立 bucket 集計。pass: record shape の
       unit test + usage 集計で route record が
       `directlyComparable` 母数に混入しないこと
 
 ### Phase C — hook 側
 
-- [ ] C1: `Verdict::Rewrite{command,fallback}` + `evaluate_shell` 先頭
+- [x] C1: `Verdict::Rewrite{command,fallback}` + `evaluate_shell` 先頭
       route arm(env-prefix skip・`passthroughEnv` capture・
       `current_exe` anchor・base64url payload・Rewrite 非 cache)+
       `hook/mod.rs` で firing ごとの effective routes +
       command policy load(`HookDeps`/`EvaluateOptions` 拡張)。
       pass: hook eval の unit/contract test で Rewrite 発行・
       non-runnable fallthrough・fallback 保持が pass
-- [ ] C2: target 分離 + render — `HookTarget::Codex` variant 追加・
+- [x] C2: target 分離 + render — `HookTarget::Codex` variant 追加・
       `apm-hook-codex` hooks.json を `--target codex` へ変更・
       `pretooluse_render`(claude)`updatedInput`・`devin_render`
       `updatedInput`・`codex_render` + windsurf/cursor/copilot は
       `fallback` render・`verdict_name` `"rewrite"`。pass:
       per-target render contract test で codex が updatedInput を
       受け取らないことを pin
-- [ ] C3: `eval_cache` — `VariantInputs::Shell` routes hash 追加 +
+- [x] C3: `eval_cache` — `VariantInputs::Shell` routes hash 追加 +
       Rewrite verdict の publish/serve 除外。pass: dedup test で
       routes 変更時 invalidation と Rewrite 非 persist が pass
 
 ### Phase D — route run + resources
 
-- [ ] D1: `route::run` — `route::payload` で decode・re-resolve/
+- [x] D1: `route::run` — `route::payload` で decode・re-resolve/
       revalidate・env-prefix 再導出・route context 合成(resolved
       `RuntimePolicy` 単一 grant 投影・`extra_env`/`exec_cwd`/
       `accept_any_exit_code`/`log_tee`)・in-process
@@ -218,7 +218,7 @@ Phase 依存: A(foundation)→ B(route core)→ C(hook 側)→ D(実行)→ E(�
       post-processing failure 分離・stdout compact result。
       pass: integration test で exit-code mirror・
       revalidation fail-closed・postprocessFailures 記録が pass
-- [ ] D2: builtin `routes.yaml` + `routed-exec.workflow.json`
+- [x] D2: builtin `routes.yaml` + `routed-exec.workflow.json`
       (analyze `when` = `{$from: exec,
       path:/details/outputTokens}` — `CanonicalToolResult.details`
       階層の pointer)+ `condense` worker 新設(md + input/
@@ -228,10 +228,10 @@ Phase 依存: A(foundation)→ B(route core)→ C(hook 側)→ D(実行)→ E(�
       欠く staleness 防止)。pass: embedded materialize
       contract test + routed-exec workflow compile が pass +
       builtin_workers assertion 更新が pass
-- [ ] D3: `route::logs` CLI arm + runId 検証 + bounded read +
+- [x] D3: `route::logs` CLI arm + runId 検証 + bounded read +
       `route-refetch` 記録。pass: `route logs` の offset/eof/
       invalid-id 拒否 contract test が pass
-- [ ] D4: `args.rs`/`cli.rs`/`lib.rs` wiring — `route` subcommand
+- [x] D4: `args.rs`/`cli.rs`/`lib.rs` wiring — `route` subcommand
       dispatch・`route run` は generic envelope/`write_output`
       経路を bypass し bounded command output を stdout へ生
       emit(`--format json` は direct CLI 呼出専用)・
@@ -241,12 +241,12 @@ Phase 依存: A(foundation)→ B(route core)→ C(hook 側)→ D(実行)→ E(�
 
 ### Phase E — 統合・文書
 
-- [ ] E1: `tests/integration/route.rs` — `route resolve`/`route run`/
+- [x] E1: `tests/integration/route.rs` — `route resolve`/`route run`/
       `route logs` CLI contract + hook 経由同一 contract 固定
-- [ ] E2: user-facing doc(routes.yaml 記法・routing≠authorization・
+- [x] E2: user-facing doc(routes.yaml 記法・routing≠authorization・
       trust 境界・hook env ≠ shell env・exit-code domain・fallback
       挙動)
-- [ ] E3: `mise run check` 全体 green + usage 集計 join の統合確認
+- [x] E3: `mise run check` 全体 green + usage 集計 join の統合確認
 
 ## Dependencies and Risks
 
@@ -282,36 +282,40 @@ builtin resource の load を前提)。D4 は D1-D3 統合、E1-E3 は
 
 ## Verification
 
-- [ ] `mise exec -- cargo test --workspace --features
+- [x] `mise exec -- cargo test --workspace --features
       cheaper-runtime/dev-seam,cheaper-cli/dev-seam` 全 green
-- [ ] `mise exec -- cargo test -p cheaper-cli --features
+- [x] `mise exec -- cargo test -p cheaper-cli --features
       cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration
       route::` で route CLI contract 全 pass
-- [ ] `mise exec -- cargo test --workspace --features
+- [x] `mise exec -- cargo test --workspace --features
       cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test
       compile_contracts` で `when` schema/dep-edge 全 pass
-- [ ] `mise run check` 全 green(biome/fmt/clippy/version/lockfile/
+- [x] `mise run check` 全 green(biome/fmt/clippy/version/lockfile/
       payload)
-- [ ] spec R1-R40・ADR D1-D13 の Acceptance Criteria が全て task/test
+- [x] spec R1-R40・ADR D1-D13 の Acceptance Criteria が全て task/test
       spec の検証条件へ写像されていること
-- [ ] hook eval 内の resolve が `route resolve` CLI の出力と同一で
+- [x] hook eval 内の resolve が `route resolve` CLI の出力と同一で
       あり、hook 発行の `route run` payload が direct CLI の
       `route run --payload` と同一 contract で処理されること
       (`route logs` は hook 経路を持たない CLI 専用)
 
-## Open Questions / Gaps
+R1-R40 / ADR D1-D13 の検証対応の詳細は
+[IR verification map](../impl/ir/add-route-integration-tests.md#spec--adr-verification-map)
+を参照。
 
-- Devin `updatedInput` field 名の正式 contract(issue #148 で impl 時に
-  docs 確認 — field 名が異なる場合は silent 不発となるため contract
-  test で pin)。
-- `condense` worker の定義内容 — 新規 builtin worker として
-  `condense.md` + input/output schema を authoring する必要がある
-  (builtin 4 worker に output 縮約 worker は非存在 — 選択ではなく
-  新設。worker 名は `condense` で確定、prompt/schema の細部は
-  D2 で固定)。
-- routed-exec の `tokenThreshold` default 値 — design は `output:
-  {tokenThreshold: 8192}` を例示、builtin routes.yaml の default 値は
-  impl 時に確定。
+## Open Questions / Gaps(実装時に解決済み)
+
+- Devin `updatedInput` field 名の正式 contract — 公式 docs で
+  `{hookSpecificOutput:{hookEventName:"PreToolUse",updatedInput:
+  {command:"..."}}}` の nested schema が確認され、Claude と共通の
+  `hook_specific_output_rewrite` helper で実装。unit + integration
+  test が nested shape・decision/permissionDecision 不在を pin 済み。
+  参照: https://docs.devin.ai/cli/extensibility/hooks/lifecycle-hooks
+- `condense` worker の定義内容 — builtin resource として
+  `condense.md` + input/output schema を embedded 済みで read-only。
+  prompt の変更は承認済み scope 外。
+- routed-exec の `tokenThreshold` default 値 — builtin routes.yaml の
+  `output: {tokenThreshold: 8192}` で確定。
 
 ## Self-Review
 

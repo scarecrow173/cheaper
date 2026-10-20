@@ -28,6 +28,7 @@ Directory: `docs/impl/ir`
 | IMPL-034JiCcdU6kUQ9Hj4Sd44J | Add route context scope options and single-grant projection | completed | [add-route-context-scope-options-and-single-grant-projection.md](./add-route-context-scope-options-and-single-grant-projection.md) |
 | IMPL-034JhZPcBMjCslZpw77s0m | Add route declaration schema and three-layer loader | completed | [add-route-declaration-schema-and-three-layer-loader.md](./add-route-declaration-schema-and-three-layer-loader.md) |
 | IMPL-034Jjg7aEBfEFtFuSpSEi3 | Add route fingerprint to hook dedup cache | completed | [add-route-fingerprint-to-hook-dedup-cache.md](./add-route-fingerprint-to-hook-dedup-cache.md) |
+| IMPL-034JmoINr6JYbqaA7G0Ex7 | Add route integration tests | completed | [add-route-integration-tests.md](./add-route-integration-tests.md) |
 | IMPL-034JidY17wnSZzkiMrhixl | Add route log store and RouteLogReader | completed | [add-route-log-store-and-routelogreader.md](./add-route-log-store-and-routelogreader.md) |
 | IMPL-034JlKZTnImZRXS5r7TSsf | Add route logs CLI and shared artifact read cap | completed | [add-route-logs-cli-and-shared-artifact-read-cap.md](./add-route-logs-cli-and-shared-artifact-read-cap.md) |
 | IMPL-034Jj3NXbe1CLVRdkxXF6K | Add route resolver payload codec and command preflight seam | completed | [add-route-resolver-payload-codec-and-command-preflight-seam.md](./add-route-resolver-payload-codec-and-command-preflight-seam.md) |

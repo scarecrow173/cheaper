@@ -182,6 +182,7 @@ pub struct RouteRecordInput {
     pub refetches: f64,
     /// postprocess の縮退数(partial-count・tee sink 失敗等)。
     pub postprocess_failures: f64,
+    pub suppressed: Option<String>,
     /// exit mirror した子 exit code(usage-bearing failure も対象)。
     pub exit_code: i32,
     /// 成否 — `false` は usage-bearing failure record。
@@ -229,6 +230,9 @@ pub fn build_route_record(input: &RouteRecordInput, root: &str, now: &dyn Fn() -
     );
     base.insert("exitCode".to_string(), Value::from(input.exit_code));
     base.insert("ok".to_string(), Value::Bool(input.ok));
+    if let Some(suppressed) = &input.suppressed {
+        base.insert("suppressed".to_string(), Value::from(suppressed.clone()));
+    }
     Value::Object(base)
 }
 

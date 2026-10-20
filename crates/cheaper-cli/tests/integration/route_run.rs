@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::io::Write;
 use std::path::Path;
 
 use crate::common::{env_lookup, Fixture};
@@ -55,6 +56,40 @@ fn command_fixture() {
                 std::fs::write(&marker, "spawned").unwrap();
             }
             std::thread::sleep(std::time::Duration::from_secs(30));
+        }
+        "e2e" => {
+            if let Ok(marker) = std::env::var("CHEAPER_ROUTE_CHILD_MARKER") {
+                std::fs::OpenOptions::new()
+                    .append(true)
+                    .create(true)
+                    .open(&marker)
+                    .unwrap()
+                    .write_all(b"ran\n")
+                    .unwrap();
+            }
+            let mut stdin_bytes = 0usize;
+            let mut buf = [0u8; 4096];
+            while let Ok(n) = std::io::Read::read(&mut std::io::stdin(), &mut buf) {
+                if n == 0 {
+                    break;
+                }
+                stdin_bytes += n;
+            }
+            if let Ok(out) = std::env::var("CHEAPER_ROUTE_CHILD_OUT") {
+                let body = format!(
+                    "FOO={}\nKEEP={}\nSECRET={}\nCWD={}\nSTDIN_BYTES={stdin_bytes}",
+                    std::env::var("FOO").unwrap_or_else(|_| "<unset>".into()),
+                    std::env::var("KEEP").unwrap_or_else(|_| "<unset>".into()),
+                    std::env::var("SECRET").unwrap_or_else(|_| "<unset>".into()),
+                    std::env::current_dir().unwrap().display(),
+                );
+                std::fs::write(&out, body).unwrap();
+            }
+            print!("ROUTE-E2E-HEAD");
+            print!("{}", "x".repeat(300));
+            print!("ROUTE-E2E-TAIL");
+            eprint!("ROUTE-E2E-ERR");
+            std::process::exit(7);
         }
         other => panic!("unknown fixture mode: {other}"),
     }
@@ -185,6 +220,59 @@ async fn run_cli_raw(f: &mut Fixture, argv: &[&str]) -> (i32, String, String) {
         String::from_utf8_lossy(&f.out.0).into_owned(),
         String::from_utf8_lossy(&f.err.0).into_owned(),
     )
+}
+
+fn reference_workflow() -> Value {
+    serde_json::from_str(
+        &std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/resources/workflows/routed-exec.workflow.json"
+        ))
+        .unwrap(),
+    )
+    .unwrap()
+}
+
+async fn hook_route_payload(f: &mut Fixture, raw: &str) -> String {
+    f.stdin.data = serde_json::json!({
+        "tool_name": "Bash",
+        "tool_input": {"command": raw}
+    })
+    .to_string()
+    .into_bytes();
+    let (code, out, _err) =
+        run_cli_raw(f, &["hook", "pre-tool-use", "--target", "pretooluse"]).await;
+    assert_eq!(code, 0, "hook out={out}");
+    let hook: Value = serde_json::from_str(&out).unwrap();
+    assert!(
+        hook.pointer("/hookSpecificOutput/permissionDecision")
+            .is_none()
+            && hook.get("decision").is_none(),
+        "no approval bypass: {hook}"
+    );
+    let command = hook
+        .pointer("/hookSpecificOutput/updatedInput/command")
+        .and_then(Value::as_str)
+        .unwrap_or_else(|| panic!("updatedInput 無し: {hook}"));
+    let (left, token) = command
+        .rsplit_once(" route run --payload ")
+        .unwrap_or_else(|| panic!("wrapper delimiter 無し: {command}"));
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    assert!(
+        left == format!("\"{exe}\"") || left == "cheaper",
+        "left token: {left}"
+    );
+    assert!(
+        !token.is_empty()
+            && token
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'),
+        "token must be base64url: {token}"
+    );
+    token.to_string()
 }
 
 fn route_record(f: &Fixture) -> Value {
@@ -1101,4 +1189,399 @@ async fn cli_run_cwd_override_uses_foreign_root() {
     let (code2, _, _) = run_cli_raw(&mut f, &["route", "run", "--payload", &token]).await;
     assert_ne!(code2, 0, "without override the same payload must reject");
     drop(foreign);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn suppressed_project_provenance_reaches_route_record() {
+    for trusted in [false, true] {
+        let mut f = Fixture::new();
+        routed_fx(
+            &f,
+            &reference_workflow(),
+            "      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n",
+            "",
+            "FOO",
+        );
+        let project_dir = f.ws.path().join(".cheaper");
+        std::fs::create_dir_all(&project_dir).unwrap();
+        let production = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/resources/workflows/routed-exec.workflow.json"
+        ))
+        .unwrap();
+        std::fs::write(project_dir.join("p.json"), production).unwrap();
+        std::fs::write(
+            project_dir.join("routes.yaml"),
+            format!(
+                "version: 1\nroutes:\n  - name: project-shadow\n    match: {{command: [routed]}}\n    target: {{kind: workflow, path: p.json}}\n    grant: child-run\n    trusted: {trusted}\n"
+            ),
+        )
+        .unwrap();
+        let (code, out, err) = f
+            .run(&[
+                "route",
+                "resolve",
+                "--argv",
+                "[\"routed\",\"route_run::command_fixture\",\"--exact\",\"--nocapture\"]",
+            ])
+            .await;
+        assert_eq!(code, 0, "trusted={trusted} out={out} err={err}");
+        let result = &out["result"];
+        if trusted {
+            assert_eq!(result["route"], "project-shadow");
+            assert!(
+                result.get("suppressed").is_none(),
+                "trusted project shadow には suppressed provenance なし"
+            );
+        } else {
+            assert_eq!(result["route"], "child-run");
+            assert_eq!(result["suppressed"], "project-shadow");
+        }
+        let token = payload_token(
+            &f,
+            &format!("routed {CHILD_ARGV}"),
+            &[
+                "routed",
+                "route_run::command_fixture",
+                "--exact",
+                "--nocapture",
+            ],
+            &[],
+            &[],
+            None,
+        );
+        let (code, _out, _err) = run_cli_raw(&mut f, &["route", "run", "--payload", &token]).await;
+        assert_eq!(code, 0, "trusted={trusted} route run must execute");
+        let record = route_record(&f);
+        if trusted {
+            assert_eq!(record["route"], "project-shadow");
+            assert!(record.get("suppressed").is_none(), "{record}");
+        } else {
+            assert_eq!(record["route"], "child-run");
+            assert_eq!(record["suppressed"], "project-shadow", "{record}");
+        }
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn e2e_hook_rewrite_to_cli_route_run() {
+    let mut f = Fixture::new();
+    let marker = f.ws.path().join("marker.txt");
+    let dump = f.ws.path().join("env-dump.txt");
+    routed_fx(
+        &f,
+        &reference_workflow(),
+        &format!(
+            "      env:\n        CHEAPER_ROUTE_CHILD_MODE: e2e\n        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n        CHEAPER_ROUTE_CHILD_OUT: '{}'\n        FOO: E2E-GRANT-FOO\n        KEEP: E2E-GRANT-KEEP\n",
+            marker.to_string_lossy().replace('\'', "''"),
+            dump.to_string_lossy().replace('\'', "''"),
+        ),
+        "",
+        "FOO, KEEP",
+    );
+    f.env_map.insert("FOO".into(), "E2E-CAPTURED-FOO".into());
+    f.env_map.insert("KEEP".into(), "E2E-CAPTURED-KEEP".into());
+    f.env_map.insert("SECRET".into(), "E2E-SECRET-VALUE".into());
+    let raw = format!("FOO=E2E-PREFIX-VALUE routed {CHILD_ARGV}");
+    let (code, out, _err) = f.run(&["route", "resolve", "--command", &raw]).await;
+    assert_eq!(code, 0, "resolve out={out}");
+    let result = &out["result"];
+    assert_eq!(result["matched"], true);
+    assert_eq!(result["route"], "child-run");
+    assert_eq!(result["grant"], "child-run");
+    assert_eq!(result["viability"], "runnable");
+    assert_eq!(
+        result["args"],
+        json!(["route_run::command_fixture", "--exact", "--nocapture"])
+    );
+    let token = hook_route_payload(&mut f, &raw).await;
+    assert!(!marker.exists(), "hook is dry-run — no side effect");
+    assert!(f.usage_log().is_none(), "no route record before run");
+    let (code, out, _err) = run_cli_raw(&mut f, &["route", "run", "--payload", &token]).await;
+    assert_eq!(code, 7, "out={out}");
+    assert!(out.contains("ROUTE-E2E-HEAD"), "out={out}");
+    assert!(out.contains("ROUTE-E2E-TAIL"), "out={out}");
+    assert!(out.contains("[cheaper route log:"), "out={out}");
+    let dumped = std::fs::read_to_string(&dump).unwrap();
+    assert!(dumped.contains("FOO=E2E-PREFIX-VALUE"), "{dumped}");
+    assert!(dumped.contains("KEEP=E2E-CAPTURED-KEEP"), "{dumped}");
+    assert!(dumped.contains("SECRET=<unset>"), "{dumped}");
+    assert!(dumped.contains("STDIN_BYTES=0"), "{dumped}");
+    let expected_cwd =
+        cheaper_core::workspace::paths::canonicalize_workspace_root(&f.ws.path().to_string_lossy())
+            .unwrap();
+    assert!(dumped.contains(&format!("CWD={expected_cwd}")), "{dumped}");
+    assert_eq!(
+        std::fs::read_to_string(&marker).unwrap(),
+        "ran\n",
+        "marker appended exactly once"
+    );
+    let record = route_record(&f);
+    assert_eq!(record["postprocessFailures"], 0);
+    assert!(
+        record["worker"].get("model").is_none() && record["worker"].get("usage").is_none(),
+        "condition-skipped worker must not meter: {record}"
+    );
+    let serialized = serde_json::to_string(&record).unwrap();
+    for secret in ["E2E-PREFIX-VALUE", "E2E-SECRET-VALUE", "E2E-GRANT-FOO"] {
+        assert!(
+            !serialized.contains(secret),
+            "record leaks {secret}: {serialized}"
+        );
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn e2e_bounded_output_full_log_and_refetch() {
+    let mut f = Fixture::new();
+    let marker = f.ws.path().join("marker.txt");
+    routed_fx(
+        &f,
+        &reference_workflow(),
+        &format!(
+            "      env:\n        CHEAPER_ROUTE_CHILD_MODE: e2e\n        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n      maxOutputBytes: 128\n",
+            marker.to_string_lossy().replace('\'', "''"),
+        ),
+        "",
+        "",
+    );
+    let token = payload_token(
+        &f,
+        &format!("routed {CHILD_ARGV}"),
+        &[
+            "routed",
+            "route_run::command_fixture",
+            "--exact",
+            "--nocapture",
+        ],
+        &[],
+        &[],
+        None,
+    );
+    let (code, out, _err) = run_cli_raw(&mut f, &["route", "run", "--payload", &token]).await;
+    assert_eq!(code, 7, "out={out}");
+    assert!(out.contains("ROUTE-E2E-HEAD"), "out={out}");
+    assert!(
+        !out.contains("ROUTE-E2E-TAIL"),
+        "bounded must drop tail: {out}"
+    );
+    assert!(out.contains("truncated: true"), "out={out}");
+    let record = route_record(&f);
+    let log_ref = record["logRef"].as_str().unwrap().to_string();
+    let log = std::fs::read_to_string(
+        f.cfg
+            .path()
+            .join("route-logs")
+            .join(format!("{log_ref}.log")),
+    )
+    .unwrap();
+    assert!(log.contains("ROUTE-E2E-TAIL"), "full log keeps tail");
+    assert!(log.contains("ROUTE-E2E-ERR"), "full log keeps stderr");
+    let (code, page, _err) = f
+        .run(&["route", "logs", &log_ref, "--max-bytes", "16"])
+        .await;
+    assert_eq!(code, 0, "page={page}");
+    assert_eq!(page["result"]["data"].as_str().unwrap().len(), 16);
+    assert_eq!(page["result"]["nextOffset"], 16);
+    let refetch: Vec<_> = f
+        .usage_log()
+        .unwrap()
+        .lines()
+        .filter_map(|l| serde_json::from_str::<Value>(l).ok())
+        .filter(|r| r["kind"] == "route-refetch")
+        .collect();
+    assert_eq!(refetch.len(), 1);
+    assert_eq!(refetch[0]["logRef"], log_ref);
+    assert_eq!(refetch[0]["bytesRead"], 16);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn e2e_stale_grant_fails_closed_after_rewrite() {
+    let mut f = Fixture::new();
+    let marker = f.ws.path().join("marker.txt");
+    routed_fx(
+        &f,
+        &reference_workflow(),
+        &format!(
+            "      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n",
+            marker.to_string_lossy().replace('\'', "''"),
+        ),
+        "",
+        "",
+    );
+    let token = hook_route_payload(&mut f, &format!("routed {CHILD_ARGV}")).await;
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        format!(
+            "version: 1\ncommand:\n  grants:\n    other:\n      executable: '{exe}'\n      argv: ['*']\n"
+        ),
+    )
+    .unwrap();
+    let (code, out, _err) = run_cli_raw(&mut f, &["route", "run", "--payload", &token]).await;
+    assert_ne!(code, 0);
+    let envelope: Value = serde_json::from_str(&out)
+        .unwrap_or_else(|_| panic!("error path must emit envelope: {out}"));
+    assert_eq!(envelope["ok"], false, "{envelope}");
+    assert_eq!(envelope["error"]["code"], "POLICY_VIOLATION", "{envelope}");
+    assert!(!marker.exists(), "raw command must not run");
+    let log = f.usage_log().unwrap_or_default();
+    assert!(
+        !log.lines().any(|l| l.contains("\"route\"")),
+        "no route record: {log}"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn routed_binary_does_not_forward_parent_stdin() {
+    let f = Fixture::new();
+    let marker = f.ws.path().join("marker.txt");
+    let dump = f.ws.path().join("env-dump.txt");
+    routed_fx(
+        &f,
+        &reference_workflow(),
+        &format!(
+            "      env:\n        CHEAPER_ROUTE_CHILD_MODE: e2e\n        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n        CHEAPER_ROUTE_CHILD_OUT: '{}'\n",
+            marker.to_string_lossy().replace('\'', "''"),
+            dump.to_string_lossy().replace('\'', "''"),
+        ),
+        "",
+        "",
+    );
+    let token = payload_token(
+        &f,
+        &format!("routed {CHILD_ARGV}"),
+        &[
+            "routed",
+            "route_run::command_fixture",
+            "--exact",
+            "--nocapture",
+        ],
+        &[],
+        &[],
+        None,
+    );
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_cheaper"))
+        .args(["route", "run", "--payload", &token])
+        .current_dir(f.ws.path())
+        .env_clear()
+        .envs(&f.env_map)
+        .env(
+            "SystemRoot",
+            std::env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".into()),
+        )
+        .envs(
+            ["TEMP", "TMP", "HOME", "USERPROFILE"]
+                .iter()
+                .filter_map(|k| std::env::var(k).ok().map(|v| (k.to_string(), v))),
+        )
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(b"MUST-NOT-REACH-CHILD")
+        .unwrap();
+    let out = child.wait_with_output().unwrap();
+    assert_eq!(
+        out.status.code(),
+        Some(7),
+        "stdout={:?} stderr={:?}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    assert_eq!(
+        std::fs::read_to_string(&marker).unwrap(),
+        "ran\n",
+        "exactly one child execution"
+    );
+    let dumped = std::fs::read_to_string(&dump).unwrap();
+    assert!(dumped.contains("STDIN_BYTES=0"), "{dumped}");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn devin_hook_rewrite_emits_nested_updated_input() {
+    let mut f = Fixture::new();
+    let marker = f.ws.path().join("marker.txt");
+    reject_fx(&f, ROUTES_YAML, "", &marker);
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        format!(
+            "version: 1\ncommand:\n  grants:\n    child-run:\n      executable: '{}'\n      argv: ['route_run::command_fixture', '--exact', '--nocapture']\n      timeout: '600s'\n      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n",
+            std::env::current_exe()
+                .unwrap()
+                .to_string_lossy()
+                .replace('\'', "''"),
+        ),
+    )
+    .unwrap();
+    f.stdin.data = serde_json::json!({
+        "hook_event_name": "PreToolUse",
+        "tool_name": "exec",
+        "tool_input": {"command": format!("routed {CHILD_ARGV}")}
+    })
+    .to_string()
+    .into_bytes();
+    let (code, hook_out, _err) =
+        run_cli_raw(&mut f, &["hook", "pre-tool-use", "--target", "devin"]).await;
+    assert_eq!(code, 0, "hook out={hook_out}");
+    let hook: Value = serde_json::from_str(&hook_out).unwrap();
+    assert!(
+        hook.get("decision").is_none(),
+        "top decision must be absent: {hook}"
+    );
+    assert!(
+        hook.get("updatedInput").is_none(),
+        "top updatedInput absent: {hook}"
+    );
+    assert_eq!(
+        hook.pointer("/hookSpecificOutput/hookEventName")
+            .and_then(Value::as_str),
+        Some("PreToolUse")
+    );
+    let command = hook
+        .pointer("/hookSpecificOutput/updatedInput/command")
+        .and_then(Value::as_str)
+        .unwrap_or_else(|| panic!("devin nested updatedInput 無し: {hook}"));
+    assert!(command.contains(" route run --payload "), "{command}");
+    assert!(hook
+        .pointer("/hookSpecificOutput/permissionDecision")
+        .is_none());
+    assert!(!marker.exists());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn builtin_cargo_test_route_registered_but_no_grant() {
+    let mut f = Fixture::new();
+    let (code, out, _err) = f
+        .run(&["route", "resolve", "--argv", "[\"cargo\",\"test\"]"])
+        .await;
+    assert_eq!(code, 0, "out={out}");
+    let result = &out["result"];
+    assert_eq!(result["matched"], true);
+    assert_eq!(result["route"], "cargo-test");
+    assert_eq!(result["viability"], "no-grant");
+    let raw = "cargo test";
+    f.stdin.data = serde_json::json!({
+        "tool_name": "Bash",
+        "tool_input": {"command": raw}
+    })
+    .to_string()
+    .into_bytes();
+    let (code, hook_out, _err) =
+        run_cli_raw(&mut f, &["hook", "pre-tool-use", "--target", "pretooluse"]).await;
+    assert_eq!(code, 0, "hook out={hook_out}");
+    let hook: Value = serde_json::from_str(&hook_out).unwrap_or(Value::Null);
+    assert!(
+        hook.pointer("/hookSpecificOutput/updatedInput/command")
+            .is_none(),
+        "no-grant must not rewrite: {hook}"
+    );
 }

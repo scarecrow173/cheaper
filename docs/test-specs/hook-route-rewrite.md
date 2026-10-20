@@ -4,7 +4,7 @@ type: "test-spec"
 status: "draft"
 title: "PreToolUse route verdict rewrite and target rendering"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: []
 relations:
   source: []
@@ -60,6 +60,10 @@ PreToolUse hook が対象 argv を resolve し、runnable なら
   保持し、non-runnable route は従来評価へ fallthrough する。
 - HookTarget::Codex は独自 variant で apm-hook-codex が登録する。
 - Rewrite verdict は dedup cache に persist/serve しない。
+- Claude / Devin の Rewrite は
+  `hookSpecificOutput:{hookEventName:"PreToolUse",updatedInput:{command}}`
+  を使う。`decision` / `permissionDecision` は付けず、adapter が
+  入力の書換えを根拠に承認まで決定することを防ぐ。
 - hook firing 1 回につき effective routes + command policy を 1 回
   load し HookDeps 経由で供給する。
 

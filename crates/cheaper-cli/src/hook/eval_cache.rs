@@ -348,6 +348,7 @@ enum PolicySig {
         mtime_nanos: u128,
         len: u64,
     },
+    Contents(u64),
     Absent,
     /// builtin_dir `None`(embedded 解決)は内容が binary 固定のため
     /// `embedded_fingerprint()` の値を marker として hash する。
@@ -514,6 +515,23 @@ fn policy_file_sig(path: PathBuf) -> PolicySig {
     }
 }
 
+fn route_file_sig(path: PathBuf) -> Option<PolicySig> {
+    let mut file = match std::fs::File::open(&path) {
+        Ok(file) => file,
+        Err(e) if cheaper_core::errors::is_absent_file_error(&e) => return Some(PolicySig::Absent),
+        Err(_) => return None,
+    };
+    let mut hasher = DefaultHasher::new();
+    let mut buf = [0u8; 8192];
+    loop {
+        match std::io::Read::read(&mut file, &mut buf) {
+            Ok(0) => return Some(PolicySig::Contents(hasher.finish())),
+            Ok(n) => std::hash::Hasher::write(&mut hasher, &buf[..n]),
+            Err(_) => return None,
+        }
+    }
+}
+
 fn compute_fingerprint(input: &FingerprintInput) -> String {
     let mut hasher = DefaultHasher::new();
     input.hash(&mut hasher);
@@ -589,13 +607,17 @@ fn prepare_dedup(
             .map(|root| Path::new(root).join(".cheaper").join("routes.yaml"));
         vec![
             match &builtin_dir {
-                Some(dir) => policy_file_sig(dir.join("routes.yaml")),
+                Some(dir) => route_file_sig(dir.join("routes.yaml"))?,
                 None => PolicySig::Embedded(crate::embedded::embedded_fingerprint()),
             },
-            user_dir.map(policy_file_sig).unwrap_or(PolicySig::Absent),
-            project_routes
-                .map(policy_file_sig)
-                .unwrap_or(PolicySig::Unresolved),
+            match user_dir {
+                Some(p) => route_file_sig(p)?,
+                None => PolicySig::Absent,
+            },
+            match project_routes {
+                Some(p) => route_file_sig(p)?,
+                None => PolicySig::Unresolved,
+            },
         ]
     } else {
         Vec::new()
@@ -1252,6 +1274,119 @@ mod tests {
             ])),
             "project 層 routes.yaml 出現で fingerprint が変わる"
         );
+        let contents_a = compute_fingerprint(&input(vec![
+            PolicySig::Absent,
+            PolicySig::Contents(1),
+            PolicySig::Absent,
+        ]));
+        assert_ne!(
+            contents_a,
+            compute_fingerprint(&input(vec![
+                PolicySig::Absent,
+                PolicySig::Contents(2),
+                PolicySig::Absent,
+            ])),
+            "user 層 routes.yaml の内容差分は fingerprint を変える"
+        );
+    }
+
+    #[test]
+    fn routes_content_change_with_preserved_stat_changes_fingerprint() -> TestResult {
+        let dir = tempfile::tempdir()?;
+        let user_cfg = dir.path().join("cfg");
+        let workspace = dir.path().join("ws");
+        std::fs::create_dir_all(&user_cfg)?;
+        std::fs::create_dir_all(&workspace)?;
+        let store = user_cfg.join("store");
+        let routes = user_cfg.join("routes.yaml");
+        std::fs::write(
+            &routes,
+            "version: 1\nroutes:\n  - {name: r, match: {command: [cargo]}, target: {kind: workflow, path: w.json}, grant: aaa}\n",
+        )?;
+        let before = std::fs::metadata(&routes)?;
+        let times = std::fs::FileTimes::new().set_modified(before.modified()?);
+        let limits = DedupLimits {
+            verdict_ttl: Duration::from_millis(1_000),
+            lock_stale: Duration::from_millis(2_000),
+            follower_wait: Duration::from_millis(100),
+            poll_interval: Duration::from_millis(10),
+        };
+        let mk_ctx = || FingerprintContext {
+            workspace_root: Some(
+                workspace
+                    .canonicalize()
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned(),
+            ),
+            targets: vec![ResolvedTarget {
+                resolved: workspace.join("a.txt"),
+                rel_posix: "a.txt".to_string(),
+                kind: ResolvedKind::NonFile,
+            }],
+        };
+        let env_map: HashMap<String, String> = HashMap::new();
+        let shell = || VariantInputs::Shell {
+            command: "cargo test".to_string(),
+        };
+        let fp1 = prepare_dedup(
+            mk_ctx(),
+            shell(),
+            env_map.clone(),
+            None,
+            store.clone(),
+            limits,
+        )
+        .ok_or("prepare_dedup fallback")?
+        .fingerprint;
+        let file_fp1 = prepare_dedup(
+            mk_ctx(),
+            VariantInputs::FileRead {
+                range: Some((0, Some(10))),
+            },
+            env_map.clone(),
+            None,
+            store.clone(),
+            limits,
+        )
+        .ok_or("prepare_dedup fallback")?
+        .fingerprint;
+        std::fs::write(
+            &routes,
+            "version: 1\nroutes:\n  - {name: r, match: {command: [cargo]}, target: {kind: workflow, path: w.json}, grant: bbb}\n",
+        )?;
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(&routes)?
+            .set_times(times)?;
+        let after = std::fs::metadata(&routes)?;
+        assert_eq!(before.len(), after.len(), "byte 長は不変");
+        assert_eq!(before.modified()?, after.modified()?, "mtime 復元確認");
+        let fp2 = prepare_dedup(
+            mk_ctx(),
+            shell(),
+            env_map.clone(),
+            None,
+            store.clone(),
+            limits,
+        )
+        .ok_or("prepare_dedup fallback")?
+        .fingerprint;
+        assert_ne!(fp1, fp2, "同 stat 内容差分で fingerprint が変わる");
+        let file_fp2 = prepare_dedup(
+            mk_ctx(),
+            VariantInputs::FileRead {
+                range: Some((0, Some(10))),
+            },
+            env_map,
+            None,
+            store,
+            limits,
+        )
+        .ok_or("prepare_dedup fallback")?
+        .fingerprint;
+        assert_eq!(file_fp1, file_fp2, "非 Shell は routes 非入力のまま");
+        Ok(())
     }
 
     /// `prepare_dedup` は Shell variant のみ routes signature を

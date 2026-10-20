@@ -432,6 +432,38 @@ async fn when_schema_and_dependency_inference() {
     }
 }
 
+#[tokio::test(flavor = "current_thread")]
+async fn numeric_when_left_path_and_right_input() {
+    let mut raw = definition();
+    raw["inputs"] = json!({
+        "threshold": {"type": "number", "minimum": 0, "default": 8192}
+    });
+    raw["jobs"]["producer"] = json!({ "kind": "tool", "tool": "grep", "input": {} });
+    raw["jobs"]["consumer"] = json!({
+        "kind": "tool", "tool": "grep", "input": {},
+        "when": {
+            "left": {"$from": "producer", "path": "/details/outputTokens"},
+            "op": "gt",
+            "right": {"$input": "threshold"}
+        }
+    });
+    let fixtures = FixtureSet::new();
+    let compiled = fixtures.compiler().compile(&raw, None).await.unwrap();
+    assert!(compiled
+        .edges
+        .iter()
+        .any(|e| e.from == "producer" && e.to == "consumer"));
+    let compiled = fixtures
+        .compiler()
+        .compile(&raw, Some(&json!({"threshold": 0})))
+        .await
+        .unwrap();
+    assert!(compiled
+        .edges
+        .iter()
+        .any(|e| e.from == "producer" && e.to == "consumer"));
+}
+
 #[test]
 fn unknown_top_level_and_output_fields_rejected() {
     for raw in [

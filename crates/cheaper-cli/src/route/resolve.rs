@@ -305,11 +305,23 @@ fn viability(
     // (routing≠authorization、D2)。`check_command_execution` と
     // 同一 predicate で、exec_cwd=payload cwd・accept_any_exit
     // の routed scope 前提で評価する。
+    let Some(grant) = input.command_policy.policy.grants.get(&route.grant) else {
+        return Viability::NoGrant;
+    };
+    let Ok(pinned) = cheaper_tools::tools::command::pin_command_grant(
+        &route.grant,
+        grant,
+        input.command_policy.root,
+        input.command_policy.symlink_policy,
+        input.command_policy.denylist,
+    ) else {
+        return Viability::NoGrant;
+    };
     let options = CommandToolOptions {
         root: input.command_policy.root.to_string(),
         symlink_policy: input.command_policy.symlink_policy,
         command: input.command_policy.policy.clone(),
-        pins: std::collections::BTreeMap::new(),
+        pins: std::collections::BTreeMap::from([(route.grant.clone(), pinned)]),
         on_timeout: None,
         denylist: input.command_policy.denylist.cloned(),
         route_context: Some(RouteCommandContext {

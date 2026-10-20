@@ -1525,11 +1525,27 @@ fn check_command_execution_shares_execute_predicate() {
     let options = CommandToolOptions {
         root: root.clone(),
         symlink_policy: SymlinkPolicy::Deny,
-        command: policy,
+        command: policy.clone(),
         pins: Default::default(),
         on_timeout: None,
         denylist: None,
         route_context: None,
+    };
+    let e = check_command_execution(&options, "t", &["test".into()])
+        .map(|_| ())
+        .unwrap_err();
+    assert_eq!(cheaper_err(&e).code(), ErrorCode::PolicyViolation);
+    let pinned = cheaper_tools::tools::command::pin_command_grant(
+        "t",
+        policy.grants.get("t").unwrap(),
+        &root,
+        SymlinkPolicy::Deny,
+        None,
+    )
+    .unwrap();
+    let options = CommandToolOptions {
+        pins: std::collections::BTreeMap::from([("t".to_string(), pinned)]),
+        ..options
     };
     // 受理 — grant 名・argv pattern・executable pin 解決・cwd 全通過。
     let checked = check_command_execution(&options, "t", &["test".into(), "--x".into()]).unwrap();

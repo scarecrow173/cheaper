@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Jg6IVuYRxFj2Zn3JPI9"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add route integration and compile-contract tests"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: []
 relations:
   source: []
@@ -73,13 +73,13 @@ D1-D13 の verification mapping を完走させる。
 
 ## Done When
 
-- [ ] hook eval resolve と `route resolve` が一致する
-- [ ] hook payload が direct `route run` と同一 contract で処理
-- [ ] e2e で exit/cwd/env-prefix/bounded output が保持される
-- [ ] `mise run check` 全 green
+- [x] hook eval resolve と `route resolve` が一致する
+- [x] hook payload が direct `route run` と同一 contract で処理
+- [x] e2e で exit/cwd/env-prefix/bounded output が保持される
+- [x] `mise run check` 全 green
 
 ## Verification
 
-- [ ] `mise exec -- cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route::`
-- [ ] `mise run check`
+- [x] `mise exec -- cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route::`
+- [x] `mise run check`

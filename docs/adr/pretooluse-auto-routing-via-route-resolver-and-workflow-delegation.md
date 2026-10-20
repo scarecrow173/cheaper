@@ -4,7 +4,7 @@ type: "adr"
 status: "proposed"
 title: "PreToolUse auto-routing via route resolver and workflow delegation"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -580,58 +580,59 @@ opt-in 出荷か」をここで確定する。
 
 ## Verification
 
-* [ ] `routes.yaml` の schema 違反(未知 key・required field 欠落・
+* [x] `routes.yaml` の schema 違反(未知 key・required field 欠落・
       `kind` 非 `"workflow"`・同一 `match.command` 列の重複)が config
       error として表面化し、argv prefix/longest-match/self-bypass が
       test で固定される(R2/R4-R6/R9)。
-* [ ] project route が `trusted: true` 無しに同一 prefix の
+* [x] project route が `trusted: true` 無しに同一 prefix の
       user/builtin route を shadow せず、resolve が抑制を viability /
       診断として報告すること、`trusted: true` 付き project route が
       shadow して provenance が報告されることが test で固定される
       (R7、D7)。
-* [ ] `route resolve` が `--command`/`--argv` で規定の output shape
+* [x] `route resolve` が `--command`/`--argv` で規定の output shape
       を返し、command・workflow・外部 process を実行せず、viability 各
       値が再現可能であることが test で固定される(R10-R12)。
-* [ ] `route run` が原 command の exit code を透過し、revalidation
+* [x] `route run` が原 command の exit code を透過し、revalidation
       失敗時に command を実行せず cheaper error code で終了し、
       post-processing 失敗時に再実行しないことが test で固定される
       (R14-R16、D11)。
-* [ ] `route run` の実行互換 — payload cwd 復元・env が
+* [x] `route run` の実行互換 — payload cwd 復元・env が
       `passthroughEnv` allowlist 外を含まないこと・stdin 非接続が
       test で固定される(R18/R32/R33、D8)。
-* [ ] `exitCodes` — 集合内の非 0 exit が result data として返る
+* [x] `exitCodes` — 集合内の非 0 exit が result data として返る
       こと、集合外・spawn 失敗・timeout・abort が Err のままである
       ことが test で固定される(R19/R20、D5)。
-* [ ] workflow `when` — `eq|ne|gt|lt|exists` 各 predicate、
+* [x] workflow `when` — `eq|ne|gt|lt|exists` 各 predicate、
       when-false → `skipped`(DEPENDENCY_FAILED と区別可能)、
       dependents の非伝播・`$from`→`null` materialization、skip 含み
       workflow の `ok:true` valid result が test で固定される
       (R21-R25、D4)。
-* [ ] route log store — `maxOutputBytes` 超過 output が
+* [x] route log store — `maxOutputBytes` 超過 output が
       `<userConfigDir>/route-logs/` に全量残り compact result に
       `truncated` が付くこと、runId-unique + temp+rename 命名、
       size/count/TTL retention、storage failure 時の exit status 保持
       が test で固定される(R26-R29、D6)。
-* [ ] `cheaper route logs <id>` が bounded read(offset/maxBytes)を
+* [x] `cheaper route logs <id>` が bounded read(offset/maxBytes)を
       提供し、workspace 外 generic file read 経路が存在しないことが
       test で固定される(R30/R31、D6)。
-* [ ] `kind:"route"` record が規定 field 群を持ち、best-effort
+* [x] `kind:"route"` record が規定 field 群を持ち、best-effort
       append であり、savings estimated 集計へ混入しないことが test
       で固定される(R34/R35、D9)。
-* [ ] hook rewrite — claude/devin payload で runnable →
+* [x] hook rewrite — claude/devin payload で runnable →
       `updatedInput` のみの応答(`permissionDecision` 無し・exit 0)、
-      non-runnable / non-match → Allow、windsurf・codex・cursor・
+      non-runnable / non-match → 従来評価の Allow/Deny を維持、
+      windsurf・codex・cursor・
       copilot で Rewrite verdict を発行しないことが test で固定
       される(R36-R39、D3)。
-* [ ] `VariantInputs::Shell` が `routes.yaml` hash を含み、
+* [x] `VariantInputs::Shell` が `routes.yaml` hash を含み、
       routes.yaml 変更で cached verdict が invalidate され、各
       firing が独立に実行されることが test で固定される(R40、D10)。
-* [ ] builtin routes が auto-grant 無しで embedded され、grant 未定義
+* [x] builtin routes が auto-grant 無しで embedded され、grant 未定義
       環境では rewrite が発火しないことが test で固定される(D2/D13)。
-* [ ] user-facing doc に routes.yaml 記法・routing≠authorization・
+* [x] user-facing doc に routes.yaml 記法・routing≠authorization・
       `trusted: true` の意味と限界・hook env ≠ shell env・exit-code
       domain・fallback 挙動が記述されていることが確認される。
-* [ ] `mise exec -- cargo test --workspace --features
+* [x] `mise exec -- cargo test --workspace --features
       cheaper-runtime/dev-seam,cheaper-cli/dev-seam` と `mise run
       check` が pass する。
 
