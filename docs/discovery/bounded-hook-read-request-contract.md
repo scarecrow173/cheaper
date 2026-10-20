@@ -4,7 +4,7 @@ type: "discovery"
 status: "active"
 title: "Bounded hook read request contract"
 created: "2026-10-14"
-updated: "2026-10-17"
+updated: "2026-10-21"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -595,3 +595,25 @@ PR #109 の owner review が #107 の範囲評価を「out of scope」から
 
 Promotion: 本 expansion の要件・構造決定は新規 spec / ADR へ派生
 させる（Graph checkpoint の新規 chain を参照）。
+
+## Evidence 保存状態（2026-10-21 追記）
+
+本 discovery の既存 section は当時の観測報告と選定された
+sanitized excerpt を保持しており、完全な原本 wire 全体ではない。
+tmp/ の raw artifact は参照前提ではない（tmp path は履歴
+label）。保存済みの durable section:
+
+- 2026-10-15 実測 setup・version・test matrix —
+  「実 consumer 観測」「実 native wire 観測」「合成再現 round 2」。
+- sanitized record の構造例・bounds・exit outcome —
+  「保存済み record」以下の wire/table 抜粋。
+- privacy 境界と未検証 causal claim の明記 —
+  上記各 section の privacy 注記。
+
+2026-10-21 の確認時点では `tmp/issue107-native-repro/` は空で、
+当時の wire/probe 原本はこの checkout に存在しない。今回、
+再取得・復元・native agent の再実行は行っていない。
+上記 durable section が正本であり、同一 byte の原本は本記録
+から復元できない。追試には本文の隔離条件・観測項目と
+committed tests を参照するが、当時の one-off script 自体の
+復元を保証しない。

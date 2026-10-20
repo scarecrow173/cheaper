@@ -251,7 +251,23 @@ production workflow への置換後の最終 canonical gate を末尾に記す�
   canonical 実行を根拠とする。
 - `cargo fmt --all -- --check` → clean(`tmp/handoff-e/fmt-final.txt`)、
   comment-only の最終 pass は `tmp/handoff-e/fmt-comment.txt`。
-- `clippy --all-targets` → 0 warnings(`tmp/handoff-e/clippy-final.txt`)。
+- `clippy --all-targets` → 1 件の warning(
+  `tmp/handoff-e/clippy-final.txt` — `clippy::needless_borrow` at
+  `route/resolve.rs:314`。distinct finding は 1 件で、lib-test
+  target が同じ warning を duplicate として再報告する。
+  zero-warning の記述は誤りであり、修正は needless borrow の
+  `&` 除去で解消。最終証拠は `-D warnings` 付きの canonical
+  gate 側)。
+- 中間 evidence の正直な記録: `integration.txt` の先頭は
+  `error: unexpected argument 'route::' found` — cargo test の
+  positional filter は 1 件のみ有効で、複数 filter は個別実行が
+  必要。個別実行の結果は `route_run::` 24/0・`route::` 5/0・
+  `route_logs::` 8/0・`args::` 45/0・`cli::` 7/0・
+  `usage_log::` 10/0。`suppressed.txt` は中間 red の 1 件
+  (0/1、観測 exit 3 vs 期待 0)で、後続の同名 test の green に
+  supersede される — 単独 assertion からの root cause 推定はしない。
+  `STATUS.md` は古い resume snapshot であり、残件を現行 TODO と
+  して扱わない。
 - 2 回目 gate は `node --test scripts/test/` の
   `apm-install-targets.test.mjs` で codex 期待
   `pre-tool-use --target pretooluse` との不一致 — 8f6cd12 の
@@ -261,6 +277,85 @@ production workflow への置換後の最終 canonical gate を末尾に記す�
 - **最終 `mise run check` → 全 gate green、CHECK_EXIT: 0**
   (`tmp/handoff-e/check-final.txt`)。optional dedup integration・
   real provider・native permission UI は実行していない。
+
+### Final canonical verification
+
+以下の抜粋・要約は当該 log から選んだものであり、本記録は
+tmp file 無しで自己完結する(tmp path は履歴 label であり
+参照前提ではない)。SHA256 は原 log の同一性識別であり、raw
+log の archive や復元手段ではない。
+
+- `check-final.txt` SHA256:
+  `568f99aec9ca6f1ff138c527b09fce6ac78fb51a5245605da5e6d38c6801e932`
+  — committed-HEAD の明記が無いため厳密な commit 帰属は付けない。
+- `check-merge.txt` SHA256:
+  `55a0fceaccdb1bf37de11432b7e2bc822cafc623e43bc09a33386bd81eabd040`
+  — merge 準備実行は committed HEAD
+  `e1667221a38faa4dd6175cf84ed3db5d5d861d96` 上で記録、
+  前後 `git status` clean・同一 HEAD。
+- 両 log は同一 stage を順に実行する: biome check →
+  `cargo fmt --all -- --check` → `cargo clippy --workspace
+  --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam
+  -- -D warnings` → `check-version.mjs` → `check-doc-ids.mjs` →
+  `cargo test --workspace --features
+  cheaper-runtime/dev-seam,cheaper-cli/dev-seam` →
+  `node --test scripts/test/` → `node --test benchmarks/test/` →
+  `check-lockfile.mjs` → `check-apm-payload.mjs`。
+- 結果の要約と原文抜粋: scripts tests `pass 43 / fail 0 /
+  skipped 0`、benchmarks `pass 12 / fail 0 / skipped 0`、
+  `lockfile check OK: committed Cargo.lock is consistent and
+  undrifted`、`APM slim payload OK (CLI is cargo-installed on
+  PATH)`、`CHECK_EXIT: 0`。総 Rust test 数の集計は意図的に
+  設けない。
+- merge 実績: PR #152 が `e9e8d966c3b40128af3755e3b7c0fbd109c8f1c5`
+  として merge された。local verification は GitHub CI ではなく、
+  本 repo の workflow は `workflow_dispatch` のみ。
+
+### Reproducibility（rerun 手順）
+
+下記は当該検証の再実行手順であり、native provider・permission
+UI の再計測を意味しない。原 log の byte 復元ではなく、同一
+gate の再実行で結果を確認する。
+
+```bash
+mise run check
+mise exec -- node .agents/skills/doc-status/scripts/doc_status.js audit --type all --json
+mise exec -- node .agents/skills/impl-doc/scripts/audit_impl_record.js --json
+mise exec -- node .agents/skills/doc-driven-dev-graph/scripts/build_task_graph.js --plan docs/plans/implement-pretooluse-route-resolver-and-delegated-workflow.md --json
+```
+
+### Graph / audit evidence
+
+- `task-graph.json`: 17 node 全て done・active/blocked/issues 空
+  (plan の 17 task が全て完了した投影として記録)。
+- graph route 観測: verified=`implementation-to-followup-triage`、
+  followup=`followup-triage-terminal → exit-audit`、
+  exit=`exit-audit-to-complete`、
+  complete=`current=next=complete`・condition=`status=terminal`・
+  `edgeId=null`・`blockers=[]`。
+- `route-doc-audit`・`doc-status`・`doc-status-final`・
+  `task-audit-final` は各 `blocking=0`、
+  `impl-audit-final` は `files=165`・`findings=[]`。
+- repo 全体の reciprocal-relation warning は non-blocking で残存
+  — 「repo 全体に finding 無し」とは記述しない。
+- maintenance preview/apply が task・plan の managed index を修復
+  — この snapshot は再生成可能な投影であり第二の state DB ではない。
+  Graph state と task graph は投影であり、authority は Markdown。
+
+### Evidence retention verification (2026-10-21)
+
+evidence 統合後の document-only 検証。tmp は一時 rename して
+absent 状態で実行し、終了後に必ず復元した(trap 保証)。
+tmp 不在時の観測: doc-status audit `--type all` の
+`blocking=0`、impl-record audit `files=165`・`findings=[]`、
+`check-doc-ids.mjs` OK、task graph は 17 node 全て
+completed・active/blocked/issues 空。新規 Markdown relative
+link は doc-status では検出されなかった 4 件の不整合を
+独自の存在確認で修正済み(両 issue107 IR の `../../` prefix)。
+これは document-only の archival 検証であり、native agent・
+provider・Rust test の再実行ではない。source log file 名は
+履歴 label であり、上記抜粋は原 raw log 全体の archive
+ではない。
 
 ### Spec / ADR verification map
 

@@ -110,6 +110,22 @@ schema を production resource として追加。builtin policy へ grant
 - `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` → warning 0(`tmp/handoff-d2/clippy.txt` — `extract_dir` dead code 検出 → 削除で解消)。
 - impl-doc audit: `audit_impl_record.js --dir docs/impl/ir` → No findings。
 
+以下の抜粋は当該 log から選んだ原文の result 行であり、本記録は
+tmp file 無しで自己完結する(tmp path は履歴 label であり参照前提では
+ない)。数字は D2 時点の suite 規模であり現在の test 総数ではない。
+
+- `embedded::` — `test result: ok. 4 passed; 0 failed`。
+- `workflow_context::` — `test result: ok. 1 passed; 0 failed`。
+- `builtin_workers::` — `test result: ok. 2 passed; 0 failed`。
+- 当時の impl-record audit は `Files: 162; No findings` — 162 は
+  D2 時点の履歴 count であり現在の file 数ではない。
+- `fmt.txt`/`fmt2.txt` は空出力であり、空であること単体は
+  exit code の独立証拠ではない。`clippy.txt` は完了出力を含む。
+  最終の canonical gate を併せて参照する。
+- 制約の維持: builtin route は grant を同梱しない(opt-in 前提)、
+  D2 検証は workflow compile までで実 worker の model 実行は
+  行っていない。
+
 ## Risks
 
 - `when` skip の `result` null → D1 `finish()` の clean path が `outputs.result` nonempty string を要求するため skip 時は fallback text へ。既存 `skipped_analyze_keeps_fallback_text` integration test と同型で挙動確認済み。

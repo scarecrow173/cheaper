@@ -4,7 +4,7 @@ type: "impl"
 status: "completed"
 title: "Register Devin hooks from APM skill"
 created: "2026-10-15"
-updated: "2026-10-16"
+updated: "2026-10-21"
 owners: ["scarecrow173"]
 relations:
   source: []
@@ -297,3 +297,16 @@ design `## JSON Preservation Helper` の frozen source を機械移植）。
 - plan status は completed。pending task-graph-to-implementation
   edge の commit gate は lead commit 待ち（完了 checkpoint は
   lead commit 後）。
+
+## Evidence 保存状態（2026-10-21 追記）
+
+当時の raw log・diff artifact(`tmp/issue107-t2.diff`・
+`tmp/issue107-final-check*.log` 等)は履歴 label であり参照前提
+ではない。登録 wire・matcher・config shape の durable な正本は
+[design `devin-native-hooks-and-apm-bootstrap`](../../designs/devin-native-hooks-and-apm-bootstrap.md)
+と
+[discovery `bounded-hook-read-request-contract`](../../discovery/bounded-hook-read-request-contract.md)
+に保持される。最終 gate の段階別結果は本 IR の Follow-ups に
+記録済み、raw log 自体は不要。現行 test path:
+`scripts/test/devin-hooks-install.test.mjs`・
+`crates/cheaper-cli/tests/integration/hook.rs`。

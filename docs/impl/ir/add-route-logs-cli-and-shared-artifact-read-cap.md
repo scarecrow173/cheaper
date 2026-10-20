@@ -144,6 +144,21 @@ D3 — `route logs <id> [--offset --max-bytes --cwd]` CLI arm と、
 - `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` → warning 0(`tmp/handoff-d3/clippy.txt`)。
 - impl-doc audit: `audit_impl_record.js --dir docs/impl/ir` → No findings。
 
+以下は当時の log の抜粋・要約であり、本記録は
+tmp file 無しで自己完結する(tmp path は履歴 label であり参照前提では
+ない)。数字は D3 時点の suite 規模であり現在の test 総数ではない。
+
+- `--lib route::` — `test result: ok. 32 passed; 0 failed`。
+- `route_logs::` — `8 passed; 0 failed`。
+- `route_run::` — `14 passed; 0 failed`。
+- `args::` — `43 passed; 0 failed`。
+- `route::` — `5 passed; 0 failed`。
+- `tmp/handoff-d3/lib-route.txt` SHA256:
+  `5685a6f86127f7ac5db6734b36ccb99114ab5d1b3ec8e62751e63c73d4d61a17`。
+- `worker_parity_and_route_log_read` は worker 内 read の成功を
+  証明しない(fake-stream は tool error 後も固定結果を返せる) —
+  worker read の実成功観測は E の observable metering で扱う。
+
 ## Risks
 
 - `route logs` の help/dispatch 上の surface は D4 で surface 化
