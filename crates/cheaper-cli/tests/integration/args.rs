@@ -758,7 +758,9 @@ fn route_resolve_command_and_argv() {
     else {
         panic!()
     };
-    let cheaper_cli::args::RouteAction::Resolve { command, argv, cwd } = a.action;
+    let cheaper_cli::args::RouteAction::Resolve { command, argv, cwd } = a.action else {
+        panic!()
+    };
     assert_eq!(command.as_deref(), Some("cargo test"));
     assert_eq!(argv, None);
     assert_eq!(cwd, None);
@@ -774,7 +776,9 @@ fn route_resolve_command_and_argv() {
     .unwrap() else {
         panic!()
     };
-    let cheaper_cli::args::RouteAction::Resolve { command, argv, cwd } = a.action;
+    let cheaper_cli::args::RouteAction::Resolve { command, argv, cwd } = a.action else {
+        panic!()
+    };
     assert_eq!(command, None);
     assert_eq!(argv.as_deref(), Some("[\"cargo\",\"test\"]"));
     assert_eq!(cwd.as_deref(), Some("/w"));
@@ -784,12 +788,14 @@ fn route_resolve_command_and_argv() {
 fn route_resolve_requires_resolve_action() {
     let e = err(&["route"]);
     assert_eq!(e.code(), ErrorCode::InvalidRequest);
-    assert_eq!(e.message(), "route requires resolve");
+    assert_eq!(e.message(), "route requires resolve | logs <id>");
     // 未実装 action(`run`/`logs`)は unknown として reject。
     let e = err(&["route", "run"]);
-    assert_eq!(e.message(), "route requires resolve");
+    assert_eq!(e.message(), "route requires resolve | logs <id>");
     let e = err(&["route", "resolve", "extra"]);
-    assert_eq!(e.message(), "route requires resolve");
+    assert_eq!(e.message(), "route requires resolve | logs <id>");
+    let e = err(&["route", "logs"]);
+    assert_eq!(e.message(), "route requires resolve | logs <id>");
 }
 
 #[test]

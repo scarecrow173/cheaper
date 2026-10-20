@@ -195,9 +195,10 @@ impl RouteLogStore {
     }
 
     /// `ArtifactPorts.reader` 注入用の `ArtifactReader`。
-    pub fn reader(&self) -> RouteLogReader {
+    pub fn reader(&self, max_read_bytes: u64) -> RouteLogReader {
         RouteLogReader {
             dir: self.dir.clone(),
+            max_read_bytes,
         }
     }
 }
@@ -265,6 +266,7 @@ impl Write for RouteLogWriter {
 /// 提供しない)。
 pub struct RouteLogReader {
     dir: PathBuf,
+    max_read_bytes: u64,
 }
 
 impl ArtifactReader for RouteLogReader {
@@ -273,6 +275,13 @@ impl ArtifactReader for RouteLogReader {
         source: &ArtifactSource,
         request: &ArtifactReadRequest,
     ) -> Result<ArtifactReadResult, ToolError> {
+        validate_read_range(request.offset, request.max_bytes)?;
+        if request.max_bytes > self.max_read_bytes {
+            return Err(Box::new(CheaperError::new(
+                ErrorCode::PolicyViolation,
+                "artifact read limit exceeded",
+            )));
+        }
         read_bounded(
             &self.dir,
             &source.reference.run_id,
@@ -280,6 +289,17 @@ impl ArtifactReader for RouteLogReader {
             request.max_bytes,
         )
     }
+}
+
+fn validate_read_range(offset: u64, max_bytes: u64) -> Result<(), ToolError> {
+    const MAX: u64 = cheaper_core::js::MAX_SAFE_INTEGER_I64 as u64;
+    if offset > MAX || max_bytes > MAX || max_bytes == 0 {
+        return Err(Box::new(CheaperError::new(
+            ErrorCode::InvalidInput,
+            "invalid artifact read range",
+        )));
+    }
+    Ok(())
 }
 
 /// 共有 bounded read — runId 検証 → open → seek → read。
@@ -292,6 +312,7 @@ fn read_bounded(
     if !is_valid_run_id(run_id) {
         return Err(invalid_run_id(run_id));
     }
+    validate_read_range(offset, max_bytes)?;
     let path = dir.join(format!("{run_id}.log"));
     let mut file = File::open(&path).map_err(|e| -> ToolError {
         if is_absent(&e) {
@@ -453,7 +474,7 @@ mod tests {
         let run_id = writer.run_id().to_string();
         writer.write_all(b"payload").unwrap();
         writer.finish().unwrap();
-        let reader = store.reader();
+        let reader = store.reader(64);
         let source = |id: &str| ArtifactSource {
             reference: cheaper_tools::artifact::ArtifactReference {
                 artifact: "route-log".to_string(),
@@ -476,6 +497,63 @@ mod tests {
         // traversal id は read を拒否する。
         assert!(reader.read(&source("../../etc/passwd"), &request).is_err());
         assert!(reader.read(&source("1-2-a.log"), &request).is_err());
+    }
+
+    #[test]
+    fn reader_enforces_policy_read_cap() {
+        let (_tmp, store) = store();
+        let mut writer = store.begin().unwrap();
+        let run_id = writer.run_id().to_string();
+        writer.write_all(b"0123456789").unwrap();
+        writer.finish().unwrap();
+        let reader = store.reader(4);
+        let source = ArtifactSource {
+            reference: cheaper_tools::artifact::ArtifactReference {
+                artifact: run_id.clone(),
+                run_id: run_id.clone(),
+                producer: cheaper_tools::artifact::ArtifactProducer {
+                    job_id: "exec".to_string(),
+                    name: "command".to_string(),
+                },
+                bytes: 10,
+                preview: String::new(),
+                truncated: false,
+            },
+        };
+        let read = |offset: u64, max_bytes: u64| {
+            reader.read(&source, &ArtifactReadRequest { offset, max_bytes })
+        };
+        let page = read(0, 4).unwrap();
+        assert_eq!(page.data, b"0123");
+        assert!(!page.eof);
+        let empty = read(10, 4).unwrap();
+        assert!(empty.data.is_empty() && empty.eof);
+        let err = read(0, 5).err().unwrap();
+        assert_eq!(
+            err.downcast_ref::<CheaperError>().map(CheaperError::code),
+            Some(ErrorCode::PolicyViolation)
+        );
+        assert!(read(9, 5).is_err());
+        for (offset, max_bytes) in [
+            (0, 0),
+            (0, cheaper_core::js::MAX_SAFE_INTEGER_I64 as u64 + 1),
+            (cheaper_core::js::MAX_SAFE_INTEGER_I64 as u64 + 1, 1),
+        ] {
+            let err = read(offset, max_bytes).err().unwrap();
+            assert_eq!(
+                err.downcast_ref::<CheaperError>().map(CheaperError::code),
+                Some(ErrorCode::InvalidInput)
+            );
+        }
+        assert_eq!(
+            store
+                .read_log(&run_id, 0, 0)
+                .err()
+                .unwrap()
+                .downcast_ref::<CheaperError>()
+                .map(CheaperError::code),
+            Some(ErrorCode::InvalidInput)
+        );
     }
 
     #[test]

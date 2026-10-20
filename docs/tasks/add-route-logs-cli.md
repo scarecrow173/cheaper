@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Jg6HVZoKBgwGDZT8ZT6"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add route logs CLI arm"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: []
 relations:
   source: []
@@ -66,10 +66,10 @@ relations:
 
 ## Done When
 
-- [ ] offset/eof semantics が既存 ArtifactReader 規約に従う
-- [ ] invalid runId が拒否される
-- [ ] route-refetch record が append される
+- [x] offset/eof semantics が既存 ArtifactReader 規約に従う
+- [x] invalid runId が拒否される
+- [x] route-refetch record が append される
 
 ## Verification
 
-- [ ] route logs contract test(offset/eof/invalid-id)
+- [x] route logs contract test(offset/eof/invalid-id)

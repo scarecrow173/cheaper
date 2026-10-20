@@ -134,6 +134,7 @@ pub(crate) struct RouteExecution {
     run_id: String,
     writer: Mutex<Option<RouteLogWriter>>,
     count_cap: u64,
+    max_read_bytes: u64,
     extra_env: Map<String, Value>,
     exec_cwd: String,
     expected_input: Value,
@@ -151,6 +152,7 @@ impl RouteExecution {
         grant: &str,
         exec_args: &[String],
         count_cap: u64,
+        max_read_bytes: u64,
     ) -> Self {
         let mut failures = Vec::new();
         if store.sweep().is_err() {
@@ -168,6 +170,7 @@ impl RouteExecution {
             run_id,
             writer: Mutex::new(writer),
             count_cap,
+            max_read_bytes,
             extra_env,
             exec_cwd,
             expected_input: json!({"name": grant, "args": exec_args}),
@@ -209,7 +212,7 @@ impl RouteExecution {
         inner: Arc<dyn ArtifactReader>,
     ) -> Arc<dyn ArtifactReader> {
         Arc::new(ComposedReader {
-            route: self.store.reader(),
+            route: self.store.reader(self.max_read_bytes),
             inner,
         })
     }
@@ -368,6 +371,7 @@ pub async fn execute(
         &prepared.route.grant,
         &prepared.resolution.exec_args,
         count_cap,
+        policy.workflow.artifacts.max_read_bytes,
     ));
     let run_id = route_exec.run_id().to_string();
     let inputs = Map::from_iter([
@@ -913,6 +917,7 @@ mod tests {
             &prepared.route.grant,
             &prepared.resolution.exec_args,
             cheaper_core::token::count::DEFAULT_COUNT_MAX_BYTES,
+            65_536,
         ));
         FinishFx {
             fx,

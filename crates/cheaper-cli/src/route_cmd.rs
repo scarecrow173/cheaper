@@ -46,8 +46,22 @@ async fn execute_inner(
     hooks: &CliHooks,
     started_at: f64,
 ) -> Result<CommandOut, BoxError> {
-    let RouteAction::Resolve { command, argv, cwd } = &args.action;
+    match &args.action {
+        RouteAction::Resolve { command, argv, cwd } => {
+            execute_resolve(command, argv, cwd, io, hooks, started_at).await
+        }
+        RouteAction::Logs { .. } => crate::route::logs::execute(args, io, hooks, started_at).await,
+    }
+}
 
+async fn execute_resolve(
+    command: &Option<String>,
+    argv: &Option<String>,
+    cwd: &Option<String>,
+    io: &mut CliIo<'_>,
+    hooks: &CliHooks,
+    started_at: f64,
+) -> Result<CommandOut, BoxError> {
     // 入力 argv 決定 — `--command` は tokenize、 `--argv` は JSON
     // array parse。env-prefix の strip は `route::resolve` 側で
     // 行う(2 入力形で規約が乖離しない)。

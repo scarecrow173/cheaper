@@ -225,6 +225,12 @@ pub enum RouteAction {
         /// `--cwd` — workspace root 解決の base。
         cwd: Option<String>,
     },
+    Logs {
+        id: String,
+        offset: u64,
+        max_bytes: Option<u64>,
+        cwd: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -357,6 +363,8 @@ const STRING_OPTIONS: &[&str] = &[
     // どちらか 1 つ。他 command arm は reject。
     "command",
     "argv",
+    "offset",
+    "max-bytes",
     // observability activation(T2)の global option。値は `Values`
     // field に保持せず、消費は `global_log_flags` が argv scan で
     // 担う(parse 済み値と activation 値の二重表現を避ける)。
@@ -397,6 +405,8 @@ struct Values {
     /// `route resolve` の `--command`/`--argv` 値。
     command: Option<String>,
     argv: Option<String>,
+    offset: Option<String>,
+    max_bytes: Option<String>,
     event_stdin: bool,
     quiet: bool,
     help: bool,
@@ -425,6 +435,8 @@ impl Default for Values {
             project_root: None,
             command: None,
             argv: None,
+            offset: None,
+            max_bytes: None,
             event_stdin: false,
             quiet: false,
             help: false,
@@ -458,6 +470,8 @@ impl Values {
             "project-root" => self.project_root = Some(value),
             "command" => self.command = Some(value),
             "argv" => self.argv = Some(value),
+            "offset" => self.offset = Some(value),
+            "max-bytes" => self.max_bytes = Some(value),
             // 受理のみで値は捨てる — activation 入力は
             // `global_log_flags` が argv から直接 scan する。
             "log" | "log-format" => {}
@@ -520,6 +534,19 @@ fn check_grant_value_bounds(grants: &[String]) -> Result<(), CheaperError> {
 /// 各 arm の呼出し点。
 fn reject_grant_flag() -> CheaperError {
     invalid_request("--grant is only valid for `run` and `workflow run`", None)
+}
+
+fn parse_js_safe_u64(raw: &str, flag: &str) -> Result<u64, CheaperError> {
+    let parsed = (!raw.is_empty() && raw.bytes().all(|b| b.is_ascii_digit()))
+        .then(|| raw.parse::<u64>().ok())
+        .flatten();
+    match parsed {
+        Some(value) if value <= cheaper_core::js::MAX_SAFE_INTEGER_I64 as u64 => Ok(value),
+        _ => Err(invalid_request(
+            format!("invalid --{flag}: expected a non-negative integer"),
+            None,
+        )),
+    }
 }
 
 struct ParseOutcome {
@@ -727,20 +754,38 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
     // `policy` の allowlist 走査が先に発火するため、この guard は
     // field 検査式の arm — usage/count-tokens/models/auth/run —
     // に対して効く)。
-    let route_only_option_used = values.command.is_some() || values.argv.is_some();
+    let route_only_option_used = values.command.is_some()
+        || values.argv.is_some()
+        || values.offset.is_some()
+        || values.max_bytes.is_some();
 
     if command == "route" {
         // `route resolve` のみ受理する utility arm(B2)。shape は
         // `route resolve` の 2 positional に限定し、将来 arm
         // (`run`/`logs`)は別 task で追加する — 未実装 action 名は
         // unknown として reject する。
-        if positionals.get(1).map(String::as_str) != Some("resolve") || positionals.len() != 2 {
-            return Err(invalid_request("route requires resolve", None));
+        let action = positionals.get(1).map(String::as_str);
+        let valid_shape = match action {
+            Some("resolve") => positionals.len() == 2,
+            Some("logs") => positionals.len() == 3 && !positionals[2].is_empty(),
+            _ => false,
+        };
+        if !valid_shape {
+            return Err(invalid_request("route requires resolve | logs <id>", None));
         }
         // flag allowlist — `--command`/`--argv`/`--cwd` と共通の
         // format/quiet/log のみ受理する。
-        for token in &option_tokens {
-            if ![
+        let allowed: &[&str] = match action {
+            Some("logs") => &[
+                "offset",
+                "max-bytes",
+                "cwd",
+                "format",
+                "quiet",
+                "log",
+                "log-format",
+            ],
+            _ => &[
                 "command",
                 "argv",
                 "cwd",
@@ -748,17 +793,51 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "quiet",
                 "log",
                 "log-format",
-            ]
-            .contains(&token.name.as_str())
-            {
+            ],
+        };
+        for token in &option_tokens {
+            if !allowed.contains(&token.name.as_str()) {
                 return Err(invalid_request(
-                    format!("--{} is not valid for `route resolve`", token.name),
+                    format!(
+                        "--{} is not valid for `route {}`",
+                        token.name,
+                        action.unwrap_or("")
+                    ),
                     None,
                 ));
             }
         }
         if !values.grants.is_empty() {
             return Err(reject_grant_flag());
+        }
+        if action == Some("logs") {
+            let offset = match values.offset.as_deref() {
+                Some(raw) => parse_js_safe_u64(raw, "offset")?,
+                None => 0,
+            };
+            let max_bytes = match values.max_bytes.as_deref() {
+                Some(raw) => {
+                    let value = parse_js_safe_u64(raw, "max-bytes")?;
+                    if value == 0 {
+                        return Err(invalid_request(
+                            "invalid --max-bytes: expected a positive integer",
+                            None,
+                        ));
+                    }
+                    Some(value)
+                }
+                None => None,
+            };
+            return Ok(ParsedCli::Route(RouteCliArgs {
+                action: RouteAction::Logs {
+                    id: positionals[2].clone(),
+                    offset,
+                    max_bytes,
+                    cwd: values.cwd.clone(),
+                },
+                format,
+                quiet,
+            }));
         }
         // `--command`/`--argv` は相互排他でどちらか 1 つ必須。
         if values.command.is_some() == values.argv.is_some() {
@@ -780,7 +859,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
 
     if route_only_option_used {
         return Err(invalid_request(
-            "--command/--argv are only valid for `route resolve`",
+            "--command/--argv/--offset/--max-bytes are only valid for `route` subcommands",
             None,
         ));
     }
