@@ -261,11 +261,15 @@ pub fn record_route(
     stderr: &mut dyn CliWrite,
     quiet: bool,
     now: &dyn Fn() -> f64,
-) {
+) -> bool {
     let record = build_route_record(input, root, now);
-    if let Err(e) = append_usage_log(user_config_dir, &record) {
-        if !quiet {
-            stderr.write_str(&format!("usage-log: {e}\n"));
+    match append_usage_log(user_config_dir, &record) {
+        Ok(()) => true,
+        Err(e) => {
+            if !quiet {
+                stderr.write_str(&format!("usage-log: {e}\n"));
+            }
+            false
         }
     }
 }

@@ -216,12 +216,41 @@ pub(crate) struct WorkflowContext {
 }
 
 impl WorkflowContext {
+    pub(crate) fn from_policy(
+        root: String,
+        dirs: ConfigDirs,
+        policy: RuntimePolicy,
+    ) -> WorkflowContext {
+        let tools = Arc::new(ToolCatalog::from_resolved_policy(policy.process.clone()));
+        let inference = CliResourceInference {
+            workspace_root: root.clone(),
+            symlink_policy: policy.filesystem.symlinks,
+            tools: Arc::clone(&tools),
+        };
+        WorkflowContext {
+            root,
+            dirs,
+            policy,
+            tools,
+            inference,
+            workers: OnceLock::new(),
+        }
+    }
+
     /// `loadWorkflowFile(options, createCompiler)`。`createCompiler`
     /// は file read 後の raw definition から worker 名を走査して事前
     /// 解決する — 検証(`validate_definition`)は loader 側に残る。
     pub(crate) async fn load_workflow<'a>(
         &'a self,
         path: &str,
+    ) -> Result<LoadedWorkflow<'a>, ToolError> {
+        self.load_workflow_from(path, &self.root).await
+    }
+
+    pub(crate) async fn load_workflow_from<'a>(
+        &'a self,
+        path: &str,
+        file_root: &str,
     ) -> Result<LoadedWorkflow<'a>, ToolError> {
         let deny: Vec<&str> = self
             .policy
@@ -231,7 +260,7 @@ impl WorkflowContext {
             .map(String::as_str)
             .collect();
         let options = WorkflowFileOptions {
-            root: self.root.clone(),
+            root: file_root.to_string(),
             path: path.to_string(),
             symlink_policy: self.policy.filesystem.symlinks,
             denylist: create_path_denylist(&deny),
@@ -286,18 +315,5 @@ pub(crate) fn prepare_workflow_context(
     // `createToolCatalog({process: policy.process})` — resolved policy
     // からの直接構築(serialize→再 resolve の二重経路を避ける —
     // `ToolCatalog::from_resolved_policy` は同一経路)。
-    let tools = Arc::new(ToolCatalog::from_resolved_policy(policy.process.clone()));
-    let inference = CliResourceInference {
-        workspace_root: root.clone(),
-        symlink_policy: policy.filesystem.symlinks,
-        tools: Arc::clone(&tools),
-    };
-    Ok(WorkflowContext {
-        root,
-        dirs,
-        policy,
-        tools,
-        inference,
-        workers: OnceLock::new(),
-    })
+    Ok(WorkflowContext::from_policy(root, dirs, policy))
 }

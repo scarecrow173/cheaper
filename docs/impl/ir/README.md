@@ -28,6 +28,7 @@ Directory: `docs/impl/ir`
 | IMPL-034Jjg7aEBfEFtFuSpSEi3 | Add route fingerprint to hook dedup cache | completed | [add-route-fingerprint-to-hook-dedup-cache.md](./add-route-fingerprint-to-hook-dedup-cache.md) |
 | IMPL-034JidY17wnSZzkiMrhixl | Add route log store and RouteLogReader | completed | [add-route-log-store-and-routelogreader.md](./add-route-log-store-and-routelogreader.md) |
 | IMPL-034Jj3NXbe1CLVRdkxXF6K | Add route resolver payload codec and command preflight seam | completed | [add-route-resolver-payload-codec-and-command-preflight-seam.md](./add-route-resolver-payload-codec-and-command-preflight-seam.md) |
+| IMPL-034Jk79Ki8cC6wYBZZ5VII | Add route run delegated workflow execution | in-progress | [add-route-run-delegated-workflow-execution.md](./add-route-run-delegated-workflow-execution.md) |
 | IMPL-034zCh1C1Qy6Pc2cvIFlOP | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | completed | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
 | IMPL-034z1STQxtFa8POTFVCwbd | Add SEA entrypoint sea-main.ts | completed | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | IMPL-034rArskSHUOoayxrLW4s8 | Add usage telemetry e2e coverage docs and bundle regen | completed | [add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md](./add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md) |

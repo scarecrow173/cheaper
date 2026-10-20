@@ -101,6 +101,9 @@ pub fn command_details_schema() -> Value {
             "durationMs": {"type": "integer", "minimum": 0},
             "stdout": stream,
             "stderr": stream,
+            "logRef": {"type": "string"},
+            "outputTokens": {"type": "integer", "minimum": 0},
+            "outputTokensTruncated": {"type": "boolean"},
         },
         "required": [
             "grant", "argv", "state", "exitCode", "signal", "durationMs",

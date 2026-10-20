@@ -204,7 +204,7 @@ impl RouteLogStore {
 
 /// `<unix-ms>-<pid>-<hex>` の runId 採番 — `fs_util::temp_path` の
 /// pid+nanos 規約と同型の衝突耐性(nanos 同一時は counter で分離)。
-fn new_run_id() -> String {
+pub(crate) fn new_run_id() -> String {
     static SEQ: AtomicU64 = AtomicU64::new(0);
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
@@ -234,6 +234,10 @@ pub struct RouteLogWriter {
 impl RouteLogWriter {
     pub fn run_id(&self) -> &str {
         &self.run_id
+    }
+
+    pub(crate) fn tmp_path(&self) -> &Path {
+        &self.tmp
     }
 
     /// tmp → `<runId>.log` へ rename(flush 後に移す)。rename 先が

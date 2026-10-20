@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Jg6GTgeZjILEwH5ZvE6"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add route run delegated workflow execution"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: []
 relations:
   source: []
@@ -79,12 +79,13 @@ record を記録。
 
 ## Done When
 
-- [ ] revalidation 失敗が raw command を実行せず fail する
-- [ ] execResult.details.exitCode が process exit へ mirror される
-- [ ] post-processing 失敗が exit/output を維持して記録される
-- [ ] env-prefix 再導出 precedence(env-prefix > ambient > grant env)
-- [ ] route usage record が append される
+- [x] revalidation 失敗が raw command を実行せず fail する
+- [x] execResult.details.exitCode が process exit へ mirror される
+- [x] post-processing 失敗が exit/output を維持して記録される
+- [x] env-prefix 再導出 precedence(env-prefix > ambient > grant env)
+- [x] route usage record が append される
 
 ## Verification
 
-- [ ] integration test: exit mirror・fail-closed・postprocessFailures
+- [x] integration test: exit mirror・fail-closed・postprocessFailures
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run::`
