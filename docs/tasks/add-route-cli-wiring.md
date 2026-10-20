@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Jg6Irzs6nV7o5ocyN2Q"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add route subcommand CLI wiring and help docs"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-21"
 owners: []
 relations:
   source: []
@@ -68,10 +68,10 @@ relations:
 
 ## Done When
 
-- [ ] `cheaper route --help` が全 arm を表示する
-- [ ] route run が envelope 無し raw stdout を emit する
-- [ ] dispatch smoke test が pass
+- [x] `cheaper route --help` が全 arm を表示する
+- [x] route run が envelope 無し raw stdout を emit する
+- [x] dispatch smoke test が pass
 
 ## Verification
 
-- [ ] CLI dispatch smoke test・help snapshot
+- [x] CLI dispatch smoke test・help snapshot

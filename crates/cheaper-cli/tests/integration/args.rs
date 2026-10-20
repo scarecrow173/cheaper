@@ -788,14 +788,14 @@ fn route_resolve_command_and_argv() {
 fn route_resolve_requires_resolve_action() {
     let e = err(&["route"]);
     assert_eq!(e.code(), ErrorCode::InvalidRequest);
-    assert_eq!(e.message(), "route requires resolve | logs <id>");
+    assert_eq!(e.message(), "route requires resolve | run | logs <id>");
     // 未実装 action(`run`/`logs`)は unknown として reject。
-    let e = err(&["route", "run"]);
-    assert_eq!(e.message(), "route requires resolve | logs <id>");
+    let e = err(&["route", "bogus"]);
+    assert_eq!(e.message(), "route requires resolve | run | logs <id>");
     let e = err(&["route", "resolve", "extra"]);
-    assert_eq!(e.message(), "route requires resolve | logs <id>");
+    assert_eq!(e.message(), "route requires resolve | run | logs <id>");
     let e = err(&["route", "logs"]);
-    assert_eq!(e.message(), "route requires resolve | logs <id>");
+    assert_eq!(e.message(), "route requires resolve | run | logs <id>");
 }
 
 #[test]
@@ -839,5 +839,56 @@ fn route_resolve_rejects_foreign_and_unrelated_options() {
             "{argv:?} → {}",
             e.message()
         );
+    }
+}
+
+#[test]
+fn route_run_parses_payload_shape() {
+    let ParsedCli::Route(a) = parse_cli_args(&args(&[
+        "route",
+        "run",
+        "--payload",
+        "tok",
+        "--cwd",
+        "/w",
+        "--quiet",
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    let cheaper_cli::args::RouteAction::Run { payload, cwd } = a.action else {
+        panic!()
+    };
+    assert_eq!(payload, "tok");
+    assert_eq!(cwd.as_deref(), Some("/w"));
+    assert!(a.quiet);
+}
+
+#[test]
+fn route_run_rejects_missing_payload_and_foreign_flags() {
+    for argv in [
+        vec!["route", "run"],
+        vec!["route", "run", "--payload", ""],
+        vec!["route", "run", "extra", "--payload", "t"],
+        vec!["route", "run", "--payload", "t", "--grant", "{}"],
+        vec!["route", "run", "--payload", "t", "--command", "x"],
+        vec!["route", "run", "--payload", "t", "--argv", "[]"],
+        vec!["route", "run", "--payload", "t", "--offset", "1"],
+        vec!["route", "run", "--payload", "t", "--max-bytes", "4"],
+        vec!["route", "resolve", "--command", "a", "--payload", "t"],
+        vec!["route", "logs", "1-2-a", "--payload", "t"],
+    ] {
+        let e = err(&argv);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "{argv:?}");
+    }
+    for argv in [
+        vec!["run", "w", "--payload", "t"],
+        vec!["models", "--payload", "t"],
+        vec!["count-tokens", "f", "--payload", "t"],
+        vec!["usage", "--payload", "t"],
+    ] {
+        let e = err(&argv);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "{argv:?}");
+        assert!(e.message().contains("--payload"), "{argv:?}");
     }
 }

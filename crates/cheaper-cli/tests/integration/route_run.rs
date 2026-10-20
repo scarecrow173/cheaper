@@ -158,7 +158,33 @@ async fn run_route(
         env: &env_lookup,
         cwd,
     };
-    execute(token, &mut io, &f.hooks, 0.0).await
+    execute(token, None, false, &mut io, &f.hooks, 0.0).await
+}
+
+async fn run_cli_raw(f: &mut Fixture, argv: &[&str]) -> (i32, String, String) {
+    f.out.0.clear();
+    f.err.0.clear();
+    let env = env_lookup(&f.env_map);
+    let cwd = f.ws.path().to_string_lossy().into_owned();
+    let mut io = CliIo {
+        stdin: &mut f.stdin,
+        stdout: &mut f.out,
+        stderr: &mut f.err,
+        env: &env,
+        cwd,
+    };
+    let code = cheaper_cli::cli::run_cli(
+        &argv.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
+        &mut io,
+        &f.hooks,
+    )
+    .await;
+    drop(io);
+    (
+        code,
+        String::from_utf8_lossy(&f.out.0).into_owned(),
+        String::from_utf8_lossy(&f.err.0).into_owned(),
+    )
 }
 
 fn route_record(f: &Fixture) -> Value {
@@ -907,4 +933,172 @@ async fn log_begin_failure_preserves_exit_without_logref() {
         failures.iter().any(|s| s.as_str() == Some("log-begin")),
         "failures: {failures:?}"
     );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn cli_run_emits_raw_text_exit_and_route_record() {
+    let mut f = Fixture::new();
+    let marker = f.ws.path().join("marker.txt");
+    routed_fx(
+        &f,
+        &exec_only_workflow(json!({}), json!({})),
+        &grant_env(
+            "io",
+            &format!(
+                "        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n",
+                marker
+                    .to_string_lossy()
+                    .replace('\\', "\\\\")
+                    .replace('\'', "''")
+            ),
+        ),
+        "",
+        "",
+    );
+    let token = payload_token(
+        &f,
+        &format!("routed {CHILD_ARGV}"),
+        &[
+            "routed",
+            "route_run::command_fixture",
+            "--exact",
+            "--nocapture",
+        ],
+        &[],
+        &[],
+        None,
+    );
+    let (code, out, _) = run_cli_raw(&mut f, &["route", "run", "--payload", &token]).await;
+    assert_eq!(code, 7);
+    assert!(out.contains("ROUTE-OUT-MARK"), "out: {out}");
+    assert!(out.contains("ROUTE-ERR-MARK"), "out: {out}");
+    assert!(out.contains("[cheaper route log:"), "out: {out}");
+    assert!(
+        serde_json::from_str::<Value>(&out).is_err(),
+        "raw text must not be a JSON envelope"
+    );
+    let record = route_record(&f);
+    assert_eq!(record["kind"], "route");
+    assert_eq!(record["exitCode"], 7);
+    assert!(record["worker"].is_null() || record["worker"].is_object());
+    let (code2, out2, _) = run_cli_raw(
+        &mut f,
+        &["route", "run", "--payload", &token, "--format", "json"],
+    )
+    .await;
+    assert_eq!(code2, 7);
+    assert!(out2.contains("ROUTE-OUT-MARK"), "out: {out2}");
+    assert!(serde_json::from_str::<Value>(&out2).is_err());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn cli_run_invalid_payload_is_error_envelope() {
+    let mut f = Fixture::new();
+    reject_fx(&f, ROUTES_YAML, "", &f.ws.path().join("marker.txt"));
+    let (code, out, _) =
+        run_cli_raw(&mut f, &["route", "run", "--payload", "!!!not-base64!!!"]).await;
+    assert_ne!(code, 0);
+    let envelope: Value = serde_json::from_str(&out)
+        .unwrap_or_else(|_| panic!("error path must emit envelope: {out}"));
+    assert!(envelope["ok"].is_boolean() || envelope["error"].is_object());
+    assert!(!f.ws.path().join("marker.txt").exists());
+    let log = f.usage_log().unwrap_or_default();
+    assert!(!log.lines().any(|l| l.contains("\"route\"")), "{log}");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn cli_run_quiet_suppresses_usage_failure_diagnostic() {
+    let mut f = Fixture::new();
+    let marker = f.ws.path().join("marker.txt");
+    std::fs::create_dir_all(f.cfg.path().join("usage.jsonl")).unwrap();
+    routed_fx(
+        &f,
+        &exec_only_workflow(json!({}), json!({})),
+        &grant_env(
+            "io",
+            &format!(
+                "        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n",
+                marker
+                    .to_string_lossy()
+                    .replace('\\', "\\\\")
+                    .replace('\'', "''")
+            ),
+        ),
+        "",
+        "",
+    );
+    let token = payload_token(
+        &f,
+        &format!("routed {CHILD_ARGV}"),
+        &[
+            "routed",
+            "route_run::command_fixture",
+            "--exact",
+            "--nocapture",
+        ],
+        &[],
+        &[],
+        None,
+    );
+    let (code, out, err) =
+        run_cli_raw(&mut f, &["route", "run", "--payload", &token, "--quiet"]).await;
+    assert_eq!(code, 7);
+    assert!(out.contains("ROUTE-OUT-MARK"), "out: {out}");
+    assert!(!err.contains("usage-log"), "quiet must suppress: {err}");
+    let (code, _, err) = run_cli_raw(&mut f, &["route", "run", "--payload", &token]).await;
+    assert_eq!(code, 7);
+    assert!(err.contains("usage-log"), "diagnostic expected: {err}");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn cli_run_cwd_override_uses_foreign_root() {
+    let mut f = Fixture::new();
+    let foreign = tempfile::tempdir().unwrap();
+    let dump = f.ws.path().join("env-dump.txt");
+    routed_fx(
+        &f,
+        &exec_only_workflow(json!({}), json!({})),
+        &grant_env(
+            "envdump",
+            &format!(
+                "        CHEAPER_ROUTE_CHILD_OUT: '{}'\n",
+                dump.to_string_lossy()
+                    .replace('\\', "\\\\")
+                    .replace('\'', "''")
+            ),
+        ),
+        "",
+        "",
+    );
+    let foreign_str = foreign.path().to_string_lossy().into_owned();
+    let token = payload_token(
+        &f,
+        &format!("routed {CHILD_ARGV}"),
+        &[
+            "routed",
+            "route_run::command_fixture",
+            "--exact",
+            "--nocapture",
+        ],
+        &[],
+        &[],
+        Some(foreign_str.clone()),
+    );
+    let (code, _, _) = run_cli_raw(
+        &mut f,
+        &["route", "run", "--payload", &token, "--cwd", &foreign_str],
+    )
+    .await;
+    assert_eq!(code, 0, "override must accept foreign cwd");
+    let dumped = std::fs::read_to_string(&dump).unwrap();
+    assert!(
+        dumped.contains(&format!(
+            "CWD={}",
+            cheaper_core::workspace::paths::canonicalize_workspace_root(&foreign_str).unwrap()
+        )),
+        "dump: {dumped}"
+    );
+    let (code2, _, _) = run_cli_raw(&mut f, &["route", "run", "--payload", &token]).await;
+    assert_ne!(code2, 0, "without override the same payload must reject");
+    drop(foreign);
 }

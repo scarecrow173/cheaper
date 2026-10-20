@@ -333,13 +333,20 @@ fn deadline_ms(grant_timeout: &str) -> Result<u64, CheaperError> {
 
 pub async fn execute(
     token: &str,
+    cwd: Option<&str>,
+    quiet: bool,
     io: &mut CliIo<'_>,
     hooks: &CliHooks,
     started_at: f64,
 ) -> Result<RouteRunOutput, BoxError> {
     let payload = payload::decode(token)?;
-    let prepared = prepare(&payload, &io.cwd, io.env, hooks.builtin_dir.as_deref())?;
-    let layout = crate::compose::resolve_workspace_layout(None, io, hooks)?;
+    let prepared = prepare(
+        &payload,
+        cwd.unwrap_or(&io.cwd),
+        io.env,
+        hooks.builtin_dir.as_deref(),
+    )?;
+    let layout = crate::compose::resolve_workspace_layout(cwd, io, hooks)?;
     let file_root = match prepared.route.layer {
         RouteLayer::Builtin => layout.builtin_dir.join("workflows"),
         RouteLayer::User => layout.dirs.user_config_dir.clone(),
@@ -409,6 +416,7 @@ pub async fn execute(
             payload: &payload,
             user_config_dir: &layout.dirs.user_config_dir.to_string_lossy(),
             hooks,
+            quiet,
             started_at,
         },
         io,
@@ -421,6 +429,7 @@ struct FinishArgs<'a> {
     payload: &'a RoutePayload,
     user_config_dir: &'a str,
     hooks: &'a CliHooks,
+    quiet: bool,
     started_at: f64,
 }
 
@@ -435,6 +444,7 @@ fn finish(
         payload,
         user_config_dir,
         hooks,
+        quiet,
         started_at,
     } = args;
     let Some(captured) = route_exec.captured() else {
@@ -578,7 +588,7 @@ fn finish(
         &prepared.supply.root,
         user_config_dir,
         io.stderr,
-        false,
+        quiet,
         &move || now(hooks),
     );
     if !recorded {
@@ -952,6 +962,7 @@ mod tests {
                 payload: &ffx.payload,
                 user_config_dir: &ucd,
                 hooks: &hooks,
+                quiet: false,
                 started_at: 0.0,
             },
             &mut io,

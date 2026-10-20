@@ -26,12 +26,17 @@ use crate::route::supply;
 
 /// `route` command 本体。`cheaper.cli.command` span(utility
 /// command instrumentation 規約)。
+pub enum RouteOutput {
+    Utility(CommandOut),
+    Run(crate::route::run::RouteRunOutput),
+}
+
 pub async fn execute(
     args: &RouteCliArgs,
     io: &mut CliIo<'_>,
     hooks: &CliHooks,
     started_at: f64,
-) -> Result<CommandOut, BoxError> {
+) -> Result<RouteOutput, BoxError> {
     execute_inner(args, io, hooks, started_at)
         .instrument(tracing::info_span!(
             "cheaper.cli.command",
@@ -45,12 +50,21 @@ async fn execute_inner(
     io: &mut CliIo<'_>,
     hooks: &CliHooks,
     started_at: f64,
-) -> Result<CommandOut, BoxError> {
+) -> Result<RouteOutput, BoxError> {
     match &args.action {
         RouteAction::Resolve { command, argv, cwd } => {
-            execute_resolve(command, argv, cwd, io, hooks, started_at).await
+            execute_resolve(command, argv, cwd, io, hooks, started_at)
+                .await
+                .map(RouteOutput::Utility)
         }
-        RouteAction::Logs { .. } => crate::route::logs::execute(args, io, hooks, started_at).await,
+        RouteAction::Logs { .. } => crate::route::logs::execute(args, io, hooks, started_at)
+            .await
+            .map(RouteOutput::Utility),
+        RouteAction::Run { payload, cwd } => {
+            crate::route::run::execute(payload, cwd.as_deref(), args.quiet, io, hooks, started_at)
+                .await
+                .map(RouteOutput::Run)
+        }
     }
 }
 
