@@ -46,6 +46,7 @@ relations:
     - "../discovery/pretooluse-auto-routing-to-tasks-and-workflows.md"
   derived-by:
     - "docs/designs/pretooluse-route-resolver-and-delegated-workflow-execution.md"
+    - "docs/plans/implement-pretooluse-route-resolver-and-delegated-workflow.md"
   verifies: []
   verified-by: []
   references:
@@ -458,12 +459,16 @@ output capture + token 計測 + conditional worker による縮約)。
 ### hook rewrite(`Verdict::Rewrite`)
 
 - R36: `Verdict` enum(`routing_policy.rs:116`)に
-  `Rewrite{command}` variant を追加する — wire 表現は既存の
-  internally-tagged serde 規約(`Allow` → `{"decision":"allow"}`)
-  に倣い `{"decision":"rewrite","command":"…"}`。Rewrite verdict
-  は command が route runnable の場合のみ発行し、command 文字列は
-  rewrite-safe に構成された単一 segment の `cheaper route run`
-  呼出し(R13 payload を保持)とする。
+  `Rewrite{command, fallback}` variant を追加する — wire 表現は
+  既存の internally-tagged serde 規約(`Allow` →
+  `{"decision":"allow"}`)に倣い
+  `{"decision":"rewrite","command":"…","fallback":{…}}`。
+  `command` は rewrite-safe に構成された単一 segment の
+  `cheaper route run` 呼出し(R13 payload を保持)、`fallback`
+  は routing 層を通らなかった場合にその command が得た verdict
+  (Allow または read-candidate Deny)を保持し、rewrite 非対応
+  target の render が採用する。Rewrite verdict は command が
+  route runnable の場合のみ発行する。
 - R37: render は target 別に `updatedInput` のみを発行し
   `permissionDecision` を emit しない — claude は
   `hookSpecificOutput` 内の `updatedInput`、devin は同等の
@@ -471,25 +476,30 @@ output capture + token 計測 + conditional worker による縮約)。
   flow を温存する(却下済み alternative E — `permissionDecision:
   "allow"` 併記は approval bypass のため不可)。
 - R38: rewrite 対象 target は claude + devin を先行とする。
-  windsurf は rewrite 非対応のため従来どおり Allow fallback、
-  codex/cursor/copilot では Rewrite verdict を発行しない
-  (approval-bypass 検証を要するため issue #150 へ defer)。
+  windsurf・codex・cursor・copilot では `updatedInput` を発行せず、
+  R36 の `fallback` verdict を各 target の応答規約で render する
+  (windsurf は rewrite 非対応、codex/cursor/copilot は
+  approval-bypass 検証を要するため issue #150 へ defer — いずれも
+  routing 層が read-candidate Deny を Allow に変えることはない)。
 - R39: viability が non-runnable(no-grant・missing-target・
   invalid-route・unsafe-command・stdin-unsupported)または route
-  non-match の場合、verdict は `Allow`(= passthrough、原
-  command 不変更)に倒す — Rewrite が deny・exec skip の意味を
-  持つことはなく、routing 層の不備が親の command 実行を阻害し
-  ない。
+  non-match の場合、routing 層は Rewrite を発行せず従来の評価
+  経路(read-candidate 評価含む)へ継続する — 最終 verdict は
+  従来経路が決める(Allow または Deny)。Rewrite が deny・exec
+  skip の意味を持つことはなく、routing 層の不備が親の command
+  実行を阻害しない。
 
 ### dedup
 
 - R40: hook eval dedup の `VariantInputs::Shell`
   (`eval_cache.rs:314`)に effective `routes.yaml` 集合の content
   hash を追加し、route 定義変更で cached verdict が自然に
-  invalidate されるようにする。dedup が共有するのは verdict
-  (rewrite 後 command を含む評価結果)のみであり、command の
-  実行そのものは dedup しない — 各 firing は独立して rewrite
-  され、実行は firing 毎に 1 回行われる。
+  invalidate されるようにする。dedup が共有するのは Allow/Deny
+  verdict のみ — Rewrite verdict は passthroughEnv capture 値を
+  payload 内に含みうるため verdict cache へ publish/serve しない
+  (R32 の非永続化意図を守る)。command の実行そのものは dedup
+  しない — 各 firing は独立して評価・rewrite され、実行は
+  firing 毎に 1 回行われる。
 
 ## Acceptance Criteria
 

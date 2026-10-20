@@ -57,6 +57,7 @@ Directory: `docs/plans`
 | PLAN-034zXjR2oE7USB76eUPCAq | Implement payload untracking migration | completed | [implement-payload-untracking-migration.md](./implement-payload-untracking-migration.md) |
 | PLAN-034zBjFcH4nDUr72Vc1XJ3 | Implement Pi sibling tool-call parallelism guidance and deterministic tests in runtime-pi | completed | [implement-pi-sibling-tool-call-parallelism.md](./implement-pi-sibling-tool-call-parallelism.md) |
 | PLAN-034EO1kmKwJ8MAHSHWyCws | policy-gated command tool を実装する | completed | [implement-policy-gated-command-tool.md](./implement-policy-gated-command-tool.md) |
+| PLAN-034Jcl2O612UZMGTK2IN1n | Implement PreToolUse route resolver and delegated workflow execution | approved | [implement-pretooluse-route-resolver-and-delegated-workflow.md](./implement-pretooluse-route-resolver-and-delegated-workflow.md) |
 | PLAN-034AadQgwgheMAV59FAcIZ | ResourceManager job lease を実装する | completed | [implement-resource-manager-job-leases.md](./implement-resource-manager-job-leases.md) |
 | PLAN-034zThvLa4bK934vj52jaC | Implement run-scoped artifact store | completed | [implement-run-scoped-artifact-store.md](./implement-run-scoped-artifact-store.md) |
 | PLAN-034ETMVrwmwh0Z0jq4gwtt | tool-operator built-in worker と cheaper.optionalTools 縮退機構を実装する | completed | [implement-tool-operator-built-in-worker.md](./implement-tool-operator-built-in-worker.md) |

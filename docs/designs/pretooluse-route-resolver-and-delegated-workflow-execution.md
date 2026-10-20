@@ -31,12 +31,22 @@ relations:
       - type: "file"
         path: "crates/cheaper-cli/src/route/log_store.rs"
       - type: "file"
+        path: "crates/cheaper-cli/src/route/payload.rs"
+      - type: "file"
         path: "crates/cheaper-cli/resources/routes.yaml"
       - type: "file"
         path: "crates/cheaper-cli/resources/workflows/routed-exec.workflow.json"
+      - type: "file"
+        path: "crates/cheaper-cli/resources/workers/condense.md"
+      - type: "file"
+        path: "crates/cheaper-cli/resources/workers/schemas/condense.input.schema.json"
+      - type: "file"
+        path: "crates/cheaper-cli/resources/workers/schemas/condense.output.schema.json"
     modified:
       - type: "file"
         path: "crates/cheaper-cli/src/lib.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/src/hook/mod.rs"
       - type: "file"
         path: "crates/cheaper-cli/src/hook/routing_policy.rs"
       - type: "file"
@@ -77,6 +87,8 @@ relations:
         path: "crates/cheaper-workflow/src/compiler.rs"
       - type: "file"
         path: "crates/cheaper-workflow/src/engine.rs"
+      - type: "file"
+        path: "packages/apm-hook-codex/.apm/hooks/hooks.json"
     deleted: []
     renamed: []
     moved: []
@@ -99,7 +111,8 @@ relations:
   derives-from:
     - "docs/specs/pretooluse-route-resolver-and-workflow-delegation.md"
     - "docs/adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
-  derived-by: []
+  derived-by:
+    - "docs/plans/implement-pretooluse-route-resolver-and-delegated-workflow.md"
   verifies: []
   verified-by: []
   references:
@@ -156,13 +169,21 @@ write は `fs_util::atomic_write` の temp+rename 規約、usage 記録は
   `resolve.rs`(`route resolve` dry-run + 共通 resolve 入口)、
   `run.rs`(`route run` — payload decode・revalidate・workflow
   in-process 起動・exit-code mirror)、`logs.rs`(`route logs <id>`
-  bounded read)、`log_store.rs`(route-logs store・retention)。
+  bounded read)、`log_store.rs`(route-logs store・retention)、
+  `payload.rs`(payload schema・base64url codec・allowlist
+  subsetting の単一 owner — encoder(hook eval)と decoder
+  (route run)の schema skew を防ぐ、B#6)。
+- `hook/mod.rs` — hook entry で effective routes + command policy
+  を 1 firing 1 回 load し `HookDeps` 経由で eval へ供給
+  (`EvaluateOptions` 拡張)。
 - `routing_policy.rs` — `Verdict::Rewrite{command, fallback}` 追加と
   `evaluate_shell` への route evaluation arm の組込(runnable →
   Rewrite、それ以外 → 従来の read-candidate 評価へ継続)。
-- `targets.rs` — pretooluse(claude)・devin の `updatedInput` のみの
-  render、その他 target の Rewrite → `fallback` verdict render、
-  `verdict_name` への `"rewrite"` 追加。
+- `targets.rs` — `HookTarget::Codex` variant・pretooluse(claude)・
+  devin の `updatedInput` のみの render、codex/windsurf/cursor/
+  copilot の Rewrite → `fallback` verdict render、`verdict_name`
+  への `"rewrite"` 追加。`packages/apm-hook-codex` の hooks.json
+  を `--target codex` へ変更。
 - `eval_cache.rs` — `VariantInputs::Shell` への effective
   `routes.yaml` content hash 追加。
 - `usage_log.rs` — `kind:"route"` / `kind:"route-refetch"` record
@@ -174,8 +195,12 @@ write は `fs_util::atomic_write` の temp+rename 規約、usage 記録は
   単一 grant 投影・`RouteLogReader` artifact port)の plumbing。
   `usage_report.rs` — `kind:"route"`/`"route-refetch"` の集計
   join。
-- `embedded.rs` + `resources/` — builtin `routes.yaml` と
-  routed-exec workflow の embed・materialize。
+- `embedded.rs` + `resources/` — builtin `routes.yaml`・
+  routed-exec workflow・`condense` worker の embed・materialize。
+  `extract_builtin`/`embedded_fingerprint` の resource 列挙を
+  `routes.yaml`・`workflows/` へ対称拡張する(列挙漏れは
+  `.ready` materialized dir が新規 file を欠く staleness を
+  生む — B#9)。
 - `cheaper-core/policy/command.rs` — `command.grants.<name>.exitCodes`
   schema(default `[0]`)。
 - `cheaper-tools` — command tool の `exitCodes` result 化・
@@ -217,12 +242,15 @@ write は `fs_util::atomic_write` の temp+rename 規約、usage 記録は
 | Component | 責務 | 新規/変更 |
 | --- | --- | --- |
 | `route::routes` | routes.yaml schema 検証・3 層 load・effective route set 構築(層 merge + `trusted` shadow 評価 + 同一 `match.command` 重複の `invalid-route` 化) | 新規 |
-| `route::resolve` | argv → route match(prefix/longest/self-bypass)→ viability 評価(rewrite-safe gate・invalid-route・target 存在・grant match・stdin)の共通入口。hook eval・`route resolve`・`route run` の 3 caller が共有する唯一の resolve 実装 | 新規 |
+| `route::resolve` | argv → route match(prefix/longest/self-bypass)→ viability 評価の純粋評価入口(`ResolveInput` で routes/command_policy を受領)。hook eval・`route resolve`・`route run` の 3 caller が共有する唯一の resolve 実装 | 新規 |
+| `route::payload` | payload schema + base64url codec + allowlist subsetting の単一 owner(encoder/decoder の skew 防止) | 新規 |
 | `route::run` | payload decode → re-resolve + revalidate → routed workflow in-process 起動 → exit-code mirror + usage/log 記録 | 新規 |
 | `route::logs` | `route logs <id>` — runId-addressed bounded read | 新規 |
 | `route::log_store` | `<userConfigDir>/route-logs/` への streaming temp write + rename、size/count/TTL retention sweep、runId 採番 | 新規 |
+| `hook/mod.rs` | hook entry での effective routes + command policy load(1 firing 1 回、`HookDeps` 経由) | 変更 |
 | `routing_policy` | `Verdict::Rewrite` variant・`evaluate_shell` 先頭の route evaluation arm | 変更 |
-| `targets` | Rewrite の per-target render(claude pretooluse/devin = `updatedInput` のみ、その他 = `fallback` verdict render) | 変更 |
+| `targets` | `HookTarget::Codex` variant・Rewrite の per-target render(claude pretooluse/devin = `updatedInput` のみ、codex/windsurf/cursor/copilot = `fallback` verdict render) | 変更 |
+| `apm-hook-codex` hooks.json | codex 登録 command を `--target codex` へ分離 | 変更 |
 | `eval_cache` | `VariantInputs::Shell` への routes hash 追加 | 変更 |
 | `usage_log` | `kind:"route"`/`"route-refetch"` record builder | 変更 |
 | `command` tool | `exitCodes` opt-in result 化・route scope option(`accept_any_exit_code`/`extra_env`/`exec_cwd`/`log_tee`)・route mode `outputTokens`/`logRef` details | 変更 |
@@ -230,7 +258,7 @@ write は `fs_util::atomic_write` の temp+rename 規約、usage 記録は
 | `invocation`/`registry`/`workflow_run` | route context の scope 注入 plumbing・単一 grant 投影・`RouteLogReader` artifact port | 変更 |
 | `usage_report` | `kind:"route"`/`"route-refetch"` の独立集計 bucket | 変更 |
 | `workflow` | job `when` schema + engine の condition-skip | 変更 |
-| `routes.yaml`(builtin)・`routed-exec.workflow.json` | route 宣言と routed 実行の参照 workflow | 新規 resource |
+| `routes.yaml`(builtin)・`routed-exec.workflow.json`・`condense` worker(md + schemas) | route 宣言と routed 実行の参照 workflow + output 縮約 worker | 新規 resource |
 
 境界の原則: route 宣言(`routes.rs`)は「どの argv がどの
 workflow へ行くか」の宣言解決のみ、認可は `command.grants`
@@ -314,7 +342,41 @@ pub enum Viability {
     UnsafeCommand,
     StdinUnsupported,
 }
+
+pub struct ResolveInput<'a> {
+    pub argv: &'a [String],
+    pub cwd: &'a str,
+    pub routes: &'a EffectiveRoutes,          // routes::load 済み 3 層解決結果
+    pub command_policy: &'a CommandPolicyView, // effective command.grants の参照面
+}
 ```
+
+**入力供給(hook eval での grants 経路 — A#10 修正)**: viability
+の grant-match は effective `command.grants` を要するが、現行の
+hook eval 経路(`EvaluateOptions{env, builtin_dir}`)は policy を
+一切 load しない。そこで resolve は `routes`/`command_policy` を
+**引数として受ける純粋評価**とし、load 責務は caller 側へ置く:
+
+- `route::routes::load(cwd) -> EffectiveRoutes` — builtin embedded +
+  `<userConfigDir>/routes.yaml` + `<cwd>/.cheaper/routes.yaml` の
+  3 層を読み merge する(file read のみ、bounded)。
+- command policy は既存 `load_policy` 系の層解決(builtin + user +
+  project `.cheaper`)で `command` section のみを解決する shared
+  loader を用いる — `route run` の policy load と同一規約。
+- hook eval では firing 1 回につき hook entry(`hook/mod.rs::run`
+  → targets dispatch)でこれらを load し `HookDeps`/`EvaluateOptions`
+  経由で `evaluate_shell` へ渡す — eval 内で file I/O を分散させ
+  ず、dedup verdict cache 命中時は load 自体が skip される
+  (routes hash が fingerprint 入力のため cache key 計算段で
+  routes file のみ読む — policy file は cache miss 時の eval で
+  初めて必要になるが、単純化のため firing ごと load とし、
+  policy file read コストは firing あたり 2-3 file の bounded
+  read に留まる)。load 自体の失敗(file 欠落/parse error)は
+  `invalid-route`/`no-grant` viability へ写像し、hook eval を
+  失敗させない(fail-safe — routing 層の不備が親の command 実行
+  を阻害しない、R39)。
+- `route resolve`/`route run` も同じ loader を使う — 3 caller が
+  同一の effective set を見る。
 
 resolve 手順(hook eval・`route resolve`・`route run` が共有):
 
@@ -353,7 +415,17 @@ resolve 手順(hook eval・`route resolve`・`route run` が共有):
      落ちる場合 — viability は「`command::execute` が受理するか」
      の事前評価として同じ predicate を共有し、`runnable` と
      判定した command が exec 段で policy/IO 失敗する乖離を
-     作らない(routing≠authorization、D2)。`exec_args` の shell
+     作らない(routing≠authorization、D2)。実現手段: これらの
+     事前 check は `cheaper-cli` から見える `pub` 面に無い
+     (`pin_command_grants`・`prepare_cwd`・`minimal_env`・
+     `native_executable` は `pub(crate)`、B#3)。cheaper-tools
+     `command` module に **`pub fn check_command_execution`**
+     (仮名 — grant 解決・pin・denied executable・cwd 事前
+     検査を `command::execute` と同一 predicate で行う軽量
+     entry、実 spawn はしない)を公開し、`command::execute` 本体
+     と `route::resolve` の双方がこの entry を呼ぶ — predicate
+     の複製(DRY 違反・恒久的ドリフト)を構造的に防ぐ。
+     `exec_args` の shell
      metachar(`argv_shell_re`)該当は `unsafe-command` 側に分類
      する(token 化済み argv であっても grant 側は metachar を
      拒否するため、実行不可の安全性問題として扱う)。
@@ -435,25 +507,38 @@ evaluate_shell(command, cwd, opts):
 - Rewrite verdict は hook env の `CliIo.env` から allowlist 値を
   capture する — allowlist 外は payload に載せない。
 
-### render(targets.rs)
+### render(targets.rs)と target 分離
 
-- `pretooluse_render`: `tool_name` を discriminator として使う —
-  normalize が既に `claude|codex` を parse しているため、render へ
-  `tool_name`(または bool `rewrite_capable`)を渡す。
-  `tool_name == "claude"` のみ Rewrite →
+claude/codex の discriminator は **`--target` 値そのもの**とする —
+`apm-hook-claude`/`apm-hook-codex` の hooks.json は現行ともに
+`--target pretooluse` を登録しており(各 package の
+`.apm/hooks/hooks.json:10`)、`tool_name` payload field は tool 名
+(`"bash"`等)で agent 名ではないため、pretooluse 内部では
+claude/codex を区別できない(C7 — `tool_name` discriminator は
+構造的に成立しない)。そこで target を分離する:
+
+- `HookTarget::Codex` variant を追加(`as_str() == "codex"`)、
+  `packages/apm-hook-codex/.apm/hooks/hooks.json` の登録 command
+  を `--target pretooluse` → `--target codex` へ変更する。
+  codex payload は claude と同一 shape のため normalize は
+  `pretooluse_normalize` をそのまま共有し、render のみ codex 専用
+  arm とする。`HookTarget::Pretooluse` はこの変更後 claude 専用
+  の意味になる。
+- `pretooluse_render`(claude): Rewrite →
   `{"hookSpecificOutput":{"hookEventName":"PreToolUse","updatedInput":{"command":"<rewritten>"}}}`
   を stdout emit + exit 0(`permissionDecision` は emit しない、
-  D3)。codex は R38 の approval-bypass 検証前のため Rewrite を
-  発行せず `fallback` を render する(target を分けない
-  pretooluse envelope のまま codex へ updatedInput が届くことを
-  防ぐ — C7)。
+  D3)。
+- `codex_render`: Rewrite → `fallback` verdict を codex の応答
+  規約で render(R38 の approval-bypass 検証前のため
+  `updatedInput` を発行しない — 構造的に codex へ rewrite が
+  届かない)。
 - `devin_render`: Rewrite →
   `{"decision":"allow","updatedInput":{"command":"<rewritten>"}}`
   + exit 0 — devin 応答 envelope は `decision`/`reason` key を使う
   現行規約に従いつつ、input-rewrite field として `updatedInput`
   object を添える(field 名の正式 contract は Devin hook docs で
   impl 時に再確認 — Deferred Design Concerns)。
-- windsurf/codex/cursor/copilot render: Rewrite → `fallback` を
+- windsurf/cursor/copilot render: Rewrite → `fallback` を
   各 target の応答規約で render(fallback が Deny なら従来の
   deny 応答、Allow なら allow 応答 — read-candidate の context
   guard が route 存在下でも維持される、C6)。
@@ -513,18 +598,27 @@ evaluate_shell(command, cwd, opts):
      — C2。spawn 失敗・timeout・abort は従来どおり Err で
      R20 と整合)。
    - `log_tee: Option<ProcTee>` — 全量 output tee(下記 proc §)。
-   さらに invocation へ渡す `command` policy raw JSON は
-   **route の grant 1 件だけを含む投影**
-   `{"grants":{<route.grant>:<resolved spec>}}` とする —
+   さらに **解決済み `RuntimePolicy.command.grants` を route の
+   grant 1 件だけへ投影する** — `load_policy` で得た resolved
+   policy の `command.grants` map を、Shared/invocation 構築
+   **前**に `{<route.grant>: <resolved spec>}` へ置き換える。
    routed workflow の command job が `input.name` で参照できる
    grant を route 宣言の grant に限定し、project 由来 workflow
    が他の user grant を勝手に呼ぶ confused deputy を構造的に
    防ぐ(C9。trusted: true の self-declared でも爆発半径は
    宣言 grant の argv pattern に閉じる)。
-   ※invocation **policy layer**(`load_policy` の `invocation`
-   引数)は使わない — 同名 grant を collision error で拒否する
-   (load.rs:160-181)ため。上記は `InvocationToolRuntimeOptions`
-   系の scope options 注入であり、policy layer merge ではない。
+   投影点は resolved policy であり `InvocationToolRuntimeOptions
+   .command` の raw JSON 注入ではない(B#2 — worker scope 生成は
+   `options.runtime.command` を `deps.policy.command` から再
+   serialize し parity check(invocation.rs:232-238)で
+   `inner.command` と比較する。投影を options 注入にすると
+   parity が崩れて `kind: worker` job が全滅する。resolved
+   policy 側を投影すれば invocation serialize と worker-scope
+   serialize が同一の投影済み policy を見るため parity は
+   自動的に保たれる)。`load_policy` の `invocation` 引数
+   (grants-only・additive・同名 collision 拒否、load.rs:119-185)
+   も使わない — additive merge は他 grant を除去できず単一
+   投影を表現できない。
    passthrough 値は options → 子 process env のみに流れ、
    log・usage・worker input には載らない(R32 不変条件)。
 3. **workflow in-process 起動(D12)** —
@@ -535,6 +629,18 @@ evaluate_shell(command, cwd, opts):
    command を実行する cwd は原 command の cwd と同一であり、
    `dirs` の `<cwd>/.cheaper` project 層規約により hook eval
    と同一の層解決に自然に一致する。policy layer は追加しない。
+   ただし **workflow file の load root は宣言層 dir** とする
+   (B#4) — `load_workflow_file` は `resolve_workspace_path(
+   options.root, path)` で workspace 境界を強制するため、
+   builtin 層の `target.path`(`<builtin_dir>/workflows/…`)は
+   workspace root 起点では escape 扱いで load 不能になる。
+   `route run` は層 dir を `options.root` として load する
+   経路を使い、routed workflow の compile/実行における
+   resource inference の `workspace_root` は引き続き payload
+   `cwd` 由来の workspace を指す(2 つの root — workflow file
+   自体の layer root と、job 内 file 参照の workspace root —
+   を混同しない)。`check_denied`/`CliResourceInference` は
+   実行側 workspace root 基準の従来規約を維持する。
    inputs は `{grant, executable, argv, args, execArgs, cwd,
    tokenThreshold, runId}` — `env` は inputs に含めない
    (passthrough 値が workflow input 経由で worker job の
@@ -551,18 +657,23 @@ evaluate_shell(command, cwd, opts):
    `accept_any_exit_code` により command の completed exit
    (0・非 0 問わず)は必ず exec job の result data になる。
    routed workflow の outputs に `execResult: {$from: exec}`
-   を必須で含め、`route run` は `outcome.result.execResult`
-   の `exitCode` をそのまま process exit code として mirror
-   する。exec 自体が失敗(spawn 失敗・timeout・abort・
-   workflow engine error)した場合は `execResult` が
-   materialize せず、cheaper error(code + exitCode)で終了
-   — command の失敗と routing infra の失敗を別 domain に
-   保つ。exec 成功後の post 段階失敗(analyze job 失敗・
-   output materialize error・log/usage 記録失敗)は
-   `execResult` が既にあるため exit code mirror と bounded
-   result emit を維持し、失敗項目を `postprocessFailures`
-   として記録する(R16/C8 — workflow error の有無ではなく
-   `execResult` の有無で mirror 可否を決める)。
+   を必須で含め、`route run` は
+   `outcome.result.execResult.details.exitCode` をそのまま
+   process exit code として mirror する — tool job の格納
+   result は `CanonicalToolResult{content, details}` の
+   serialize 形(`output_schema` の required が
+   `["content","details"]`、catalog.rs)であり、command 由来
+   field は全て `details` 階層にある(B#1)。exec 自体が失敗
+   (spawn 失敗・timeout・abort・workflow engine error)した
+   場合は `execResult` が materialize せず、cheaper error
+   (code + exitCode)で終了 — command の失敗と routing infra
+   の失敗を別 domain に保つ。exec 成功後の post 段階失敗
+   (analyze job 失敗・output materialize error・log/usage
+   記録失敗)は `execResult` が既にあるため exit code
+   mirror と bounded result emit を維持し、失敗項目を
+   `postprocessFailures` として記録する(R16/C8 —
+   workflow error の有無ではなく `execResult` の有無で
+   mirror 可否を決める)。
 5. **post-processing** — compact result(analyze 成功時は
    縮約結果、skip/failure 時は bounded output + logRef)を
    **stdout へ生 text として emit** — rewrite 済み command の
@@ -573,14 +684,18 @@ evaluate_shell(command, cwd, opts):
    (R16)。
 
 routed-exec builtin workflow(`resources/workflows/routed-exec.workflow.json`)
-の構成:
+の構成(analyze job の `condense` worker は新規 builtin worker —
+`resources/workers/` の現行 builtin は bulk-reader・code-writer・
+doc-writer・tool-operator の 4 件のみで output 縮約 worker は
+存在しないため、`condense.md` + input/output schema を新設する、
+B#5):
 
 ```text
 jobs:
   exec:    kind: tool, tool: command
            input: {name: $input.grant, args: $input.execArgs}
-  analyze: kind: worker, worker: <condense worker>
-           when: {left: {$from: exec, path: /outputTokens},
+  analyze: kind: worker, worker: condense
+           when: {left: {$from: exec, path: /details/outputTokens},
                   op: gt, right: {$input: tokenThreshold}}
            input: {logRef, originalTokens, command}
 outputs:
@@ -596,8 +711,11 @@ outputs:
   tokenizer で `outputTokens` を計測し、`logRef`(runId)・
   `outputTokensTruncated` と共に result details の optional
   field として返す — `command_details_schema` に 3 field を
-  optional 追加し、`when` が `{$from: exec, path:/outputTokens}`
-  を参照できるようにする。
+  optional 追加し、`when` が `{$from: exec,
+  path:/details/outputTokens}` を参照できるようにする
+  (pointer は `CanonicalToolResult.details` 階層を辿る —
+  `additionalProperties:false` の compile 検証を通るのは
+  `/details/…` のみ、B#1)。
 - `when` の `right` は `{$input: tokenThreshold}` — `$literal`
   wrapper は値をそのまま clone するため binding を入れ子に
   できない(C4 の `$literal:$input` 誤りを修正)。
@@ -880,11 +998,11 @@ raw bytes を log file へ append する tee。
     → run_workflow (in-process、D12)
       → exec job (command tool、accept_any_exit、proc tee →
          route-logs/<runId>.log.tmp、outputTokens 計測)
-      → analyze job (when: exec.outputTokens > tokenThreshold →
-         worker で縮約、skip 時は bounded output のみ)
+      → analyze job (when: exec.details.outputTokens > tokenThreshold
+         → worker で縮約、skip 時は bounded output のみ)
     → rename .log.tmp → .log、kind:"route" record append
     → compact result を stdout へ(親が tool result として受領)
-    → exit code = execResult.exitCode(原 command exit)
+    → exit code = execResult.details.exitCode(原 command exit)
 
 [route logs]
   `cheaper route logs <id> --offset --max-bytes`

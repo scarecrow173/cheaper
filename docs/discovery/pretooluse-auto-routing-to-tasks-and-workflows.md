@@ -33,6 +33,7 @@ relations:
   related:
     - "../specs/bounded-native-hook-evaluation-and-managed-devin-registration.md"
     - "../adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
+    - "../plans/implement-pretooluse-route-resolver-and-delegated-workflow.md"
   refines: []
   refined-by: []
   derives-from: []
