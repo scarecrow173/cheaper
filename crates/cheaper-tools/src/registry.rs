@@ -126,6 +126,10 @@ pub struct ToolRuntimeOptions {
     /// `current_exe` + `__grep-eval`、test は `test_spawn` 相当を注入)。
     /// TS では helper は worker file で固定。
     pub eval_spawn: Option<EvalSpawn>,
+    /// route scope 構築層のみが注入する route context(design
+    /// §route context 注入 — `extra_env`/`exec_cwd`/
+    /// `accept_any_exit_code`/`log_tee`)。`None` で従来挙動不変。
+    pub route_context: Option<crate::tools::command::RouteCommandContext>,
 }
 
 /// `createWorkerScope` が `createToolRuntime` へ渡す共有基盤
@@ -224,6 +228,8 @@ struct ToolCtx {
     eval_spawn: EvalSpawn,
     on_timeout: Option<OnTimeout>,
     observe_access: Arc<AccessObserver<'static>>,
+    /// route scope 由来の route context(`None` で不変)。
+    route_context: Option<crate::tools::command::RouteCommandContext>,
 }
 
 impl ToolCtx {
@@ -316,6 +322,7 @@ impl ToolCtx {
             pins: self.command_pins.clone(),
             on_timeout: self.on_timeout.clone(),
             denylist: self.denylist.clone(),
+            route_context: self.route_context.clone(),
         }
     }
 }
@@ -1302,6 +1309,7 @@ pub fn create_tool_runtime(
         eval_spawn,
         on_timeout: Some(on_timeout),
         observe_access: observe,
+        route_context: options.route_context.clone(),
     });
     // `registered` — `opts.names.map(definitions)` + `compileSchema` pair
     // (縮退後の有効 names のみ)。

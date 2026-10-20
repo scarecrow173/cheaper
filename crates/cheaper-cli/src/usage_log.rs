@@ -159,6 +159,144 @@ pub fn build_usage_record(env: &Value, root: &str, now: &dyn Fn() -> f64) -> Opt
     Some(Value::Object(base))
 }
 
+/// `kind:"route"` record の入力(R34)— `route run` の計測値を
+/// caller が束ねる。env 値・credential は field に含めない
+/// (構造保証)。
+pub struct RouteRecordInput {
+    /// route 名(宣言 `name`)。
+    pub route: String,
+    /// 原 shell command 文字列 — record には `DefaultHasher` hex
+    /// の `commandHash` のみ載せ、本文は残さない。
+    pub command: String,
+    /// capture した原 output の token 数。
+    pub original_tokens: f64,
+    /// 親へ返した compact result の token 数。
+    pub returned_tokens: f64,
+    /// exec job の worker meta(`{model, usage}`)。
+    pub worker: Value,
+    /// durationMs 内訳 — `{exec, analyze, total}`。
+    pub duration_ms: Value,
+    /// route log の runId。
+    pub log_ref: String,
+    /// write 時点までの `route logs` refetch 観測数(通常 0)。
+    pub refetches: f64,
+    /// postprocess の縮退数(partial-count・tee sink 失敗等)。
+    pub postprocess_failures: f64,
+    pub suppressed: Option<String>,
+    /// exit mirror した子 exit code(usage-bearing failure も対象)。
+    pub exit_code: i32,
+    /// 成否 — `false` は usage-bearing failure record。
+    pub ok: bool,
+}
+
+/// `kind:"route"` record(R34)を構築する。`commandHash` は
+/// `embedded_fingerprint` と同じ `DefaultHasher` hex 規約(同一
+/// toolchain 内のみ安定 — design C14f)。
+pub fn build_route_record(input: &RouteRecordInput, root: &str, now: &dyn Fn() -> f64) -> Value {
+    use std::hash::{DefaultHasher, Hash, Hasher};
+    let mut h = DefaultHasher::new();
+    input.command.hash(&mut h);
+    let reduction = if input.original_tokens > 0.0 {
+        1.0 - input.returned_tokens / input.original_tokens
+    } else {
+        0.0
+    };
+    let mut base = Map::new();
+    base.insert("schemaVersion".to_string(), Value::from(1));
+    base.insert("ts".to_string(), Value::from(iso8601(now())));
+    base.insert("root".to_string(), Value::from(root));
+    base.insert("kind".to_string(), Value::from("route"));
+    base.insert("route".to_string(), Value::from(input.route.clone()));
+    base.insert(
+        "commandHash".to_string(),
+        Value::from(format!("{:016x}", h.finish())),
+    );
+    base.insert(
+        "originalTokens".to_string(),
+        Value::from(input.original_tokens),
+    );
+    base.insert(
+        "returnedTokens".to_string(),
+        Value::from(input.returned_tokens),
+    );
+    base.insert("reductionRatio".to_string(), Value::from(reduction));
+    base.insert("worker".to_string(), input.worker.clone());
+    base.insert("durationMs".to_string(), input.duration_ms.clone());
+    base.insert("logRef".to_string(), Value::from(input.log_ref.clone()));
+    base.insert("refetches".to_string(), Value::from(input.refetches));
+    base.insert(
+        "postprocessFailures".to_string(),
+        Value::from(input.postprocess_failures),
+    );
+    base.insert("exitCode".to_string(), Value::from(input.exit_code));
+    base.insert("ok".to_string(), Value::Bool(input.ok));
+    if let Some(suppressed) = &input.suppressed {
+        base.insert("suppressed".to_string(), Value::from(suppressed.clone()));
+    }
+    Value::Object(base)
+}
+
+/// `kind:"route-refetch"` record — `route logs <id>` 1 実行ごとの
+/// append。`cheaper usage` が `logRef` で route record と join して
+/// 真の refetch 数を出す(JSONL は append-only で元 record を
+/// 更新できないための 2 面構成)。
+pub fn build_route_refetch_record(
+    log_ref: &str,
+    bytes_read: u64,
+    root: &str,
+    now: &dyn Fn() -> f64,
+) -> Value {
+    let mut base = Map::new();
+    base.insert("schemaVersion".to_string(), Value::from(1));
+    base.insert("ts".to_string(), Value::from(iso8601(now())));
+    base.insert("root".to_string(), Value::from(root));
+    base.insert("kind".to_string(), Value::from("route-refetch"));
+    base.insert("logRef".to_string(), Value::from(log_ref));
+    base.insert("bytesRead".to_string(), Value::from(bytes_read));
+    Value::Object(base)
+}
+
+/// `record_usage` と同じ best-effort append 規約の route 版 —
+/// `route run`(D1)が呼ぶ。失敗は stderr 行のみで exit/stdout 不変。
+pub fn record_route(
+    input: &RouteRecordInput,
+    root: &str,
+    user_config_dir: &str,
+    stderr: &mut dyn CliWrite,
+    quiet: bool,
+    now: &dyn Fn() -> f64,
+) -> bool {
+    let record = build_route_record(input, root, now);
+    match append_usage_log(user_config_dir, &record) {
+        Ok(()) => true,
+        Err(e) => {
+            if !quiet {
+                stderr.write_str(&format!("usage-log: {e}\n"));
+            }
+            false
+        }
+    }
+}
+
+/// `route logs <id>`(D4)が呼ぶ refetch record の best-effort
+/// append。
+pub fn record_route_refetch(
+    log_ref: &str,
+    bytes_read: u64,
+    root: &str,
+    user_config_dir: &str,
+    stderr: &mut dyn CliWrite,
+    quiet: bool,
+    now: &dyn Fn() -> f64,
+) {
+    let record = build_route_refetch_record(log_ref, bytes_read, root, now);
+    if let Err(e) = append_usage_log(user_config_dir, &record) {
+        if !quiet {
+            stderr.write_str(&format!("usage-log: {e}\n"));
+        }
+    }
+}
+
 /// `appendUsageLog` — `<userConfigDir>/usage.jsonl` へ 1 行 append
 /// (dir は必要に応じて作成)。
 pub fn append_usage_log(user_config_dir: &str, record: &Value) -> std::io::Result<()> {

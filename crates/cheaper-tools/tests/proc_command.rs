@@ -19,8 +19,10 @@
 //! - 独自 pool `"command"`(`command.maxConcurrent`)+ Exclusive claim の
 //!   serialize
 
-use std::io::{BufRead, BufReader, Write};
+use std::io::{self, BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
@@ -28,6 +30,7 @@ use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::paths::{canonicalize_workspace_root, SymlinkPolicy};
 use cheaper_tools::operation::{AbortController, AbortReason, OperationState};
 use cheaper_tools::registry::{create_tool_runtime, ToolCallContext, ToolRuntimeOptions};
+use cheaper_tools::tools::command::RouteCommandContext;
 use cheaper_tools::ToolError;
 use serde_json::{json, Map, Value};
 
@@ -219,6 +222,7 @@ fn options(root: &str, command: Value, names: Vec<ToolName>) -> ToolRuntimeOptio
         abort_grace_ms: None,
         concurrency: None,
         eval_spawn: None,
+        route_context: None,
     }
 }
 
@@ -795,6 +799,77 @@ async fn grant_executes_and_reports_details() {
         .starts_with("command self: completed, exitCode=0\nstdout:"));
 }
 
+/// grant `exitCodes` 宣言内の非 0 exit は error ではなく completed
+/// result として返り、`state`/`exitCode`/表示 text が実 exit code を
+/// 報告する(design A1)。
+#[tokio::test]
+async fn declared_exitcodes_report_completed_result() {
+    let dir = TempDir::new();
+    let grant = grant_with("fail", None, json!({"exitCodes": [0, 7]}));
+    let rt = command_runtime(&dir.root(), command_policy(json!({"self": grant}))).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    let details = result.details.as_ref().expect("details");
+    assert_eq!(details["state"], json!("completed"));
+    assert_eq!(details["exitCode"], json!(7));
+    assert!(details["stdout"]["text"]
+        .as_str()
+        .unwrap()
+        .contains("before failure"));
+    assert!(result.content[0]
+        .text
+        .starts_with("command self: completed, exitCode=7\nstdout:"));
+}
+
+/// `exitCodes` 未宣言(default `[0]`)の非 0 exit は従来通り
+/// `TOOL_EXECUTION_FAILURE` error — 宣言 exitCodes に含まれない
+/// code も同じ。
+#[tokio::test]
+async fn undeclared_nonzero_exit_remains_failure() {
+    let dir = TempDir::new();
+    for grant in [
+        self_grant("fail", None),
+        grant_with("fail", None, json!({"exitCodes": [0, 3]})),
+    ] {
+        let rt = command_runtime(&dir.root(), command_policy(json!({"self": grant}))).unwrap();
+        let err = rt
+            .execute(
+                "command",
+                &json!({"name": "self", "args": self_args()}),
+                None,
+            )
+            .await
+            .unwrap_err();
+        let e = cheaper_err(&err);
+        assert_eq!(e.code(), ErrorCode::ToolExecutionFailure);
+        assert_eq!(e.details().unwrap()["exitCode"], json!(7));
+        assert_eq!(e.details().unwrap()["state"], json!("failed"));
+    }
+}
+
+/// `exitCodes` の非 integer 要素・非 array は policy resolve で
+/// `INVALID_RUNTIME_POLICY`。
+#[test]
+fn invalid_exitcodes_rejected_at_policy_resolution() {
+    let dir = TempDir::new();
+    for exit_codes in [json!("0"), json!([0, "1"]), json!([0.5]), json!([-1])] {
+        let grant = grant_with("inspect", None, json!({"exitCodes": exit_codes}));
+        let err = command_runtime(&dir.root(), command_policy(json!({"self": grant}))).unwrap_err();
+        let e = cheaper_err(&err);
+        assert_eq!(
+            e.code(),
+            ErrorCode::InvalidRuntimePolicy,
+            "exitCodes {exit_codes}"
+        );
+    }
+}
+
 /// grant `cwd` は workspace 内へ解決される — `cwd: "sub"` の grant は
 /// `root/sub` で実行される。
 #[tokio::test]
@@ -981,6 +1056,212 @@ async fn output_cap_truncates_streams() {
         stdout["capturedBytes"].as_u64().unwrap() + stderr["capturedBytes"].as_u64().unwrap();
     assert_eq!(captured, 256);
     assert!(stdout["truncated"] == json!(true) || stderr["truncated"] == json!(true));
+}
+
+/// `log_tee` 全量 sink(R26) — `maxOutputBytes` cap を超えた分も含め
+/// stdout/stderr 全 byte が sink へ届き、bounded result は不変。
+#[tokio::test]
+async fn log_tee_captures_full_output_beyond_cap() {
+    let dir = TempDir::new();
+    let captured = Arc::new(Mutex::new(Vec::<u8>::new()));
+    let sink = {
+        let captured = Arc::clone(&captured);
+        move |chunk: &[u8]| captured.lock().unwrap().extend_from_slice(chunk)
+    };
+    let mut opts = options(
+        &dir.root(),
+        command_policy(json!({
+            "self": grant_with("output", Some("5000"), json!({"maxOutputBytes": 256}))
+        })),
+        vec![ToolName::Command],
+    );
+    opts.route_context = Some(RouteCommandContext {
+        log_tee: Some(Arc::new(sink)),
+        ..RouteCommandContext::default()
+    });
+    let rt = create_tool_runtime(opts, None).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    let tee = captured.lock().unwrap();
+    // tee には bounded cap を超えた全量(5000B stdout + 3B stderr)
+    // が届く — interleaved 順序は不定だが各 stream の byte は含む。
+    let x_bytes = tee.iter().filter(|b| **b == b'x').count();
+    assert!(x_bytes >= 5000, "tee x bytes: {x_bytes}");
+    assert!(
+        tee.windows(3).any(|w| w == b"err"),
+        "tee missing stderr bytes"
+    );
+    // bounded result は従来どおり cap 適用。
+    let details = result.details.as_ref().expect("details");
+    let bounded = details["stdout"]["capturedBytes"].as_u64().unwrap()
+        + details["stderr"]["capturedBytes"].as_u64().unwrap();
+    assert_eq!(bounded, 256);
+}
+
+/// tee sink の write 失敗は closure 自身が記録し command 結果を
+/// 壊さない(postprocessFailure 縮退、R29)。
+#[tokio::test]
+async fn log_tee_sink_failure_does_not_break_result() {
+    let dir = TempDir::new();
+    // sink 側が write 失敗を記録する形(実 sink は RouteLogWriter)。
+    let failed = Arc::new(AtomicBool::new(false));
+    let sink = {
+        let failed = Arc::clone(&failed);
+        move |_: &[u8]| {
+            let write: io::Result<()> = Err(io::Error::other("disk full"));
+            if write.is_err() {
+                failed.store(true, Ordering::SeqCst);
+            }
+        }
+    };
+    let mut opts = options(
+        &dir.root(),
+        command_policy(json!({"self": self_grant("output", Some("64"))})),
+        vec![ToolName::Command],
+    );
+    opts.route_context = Some(RouteCommandContext {
+        log_tee: Some(Arc::new(sink)),
+        ..RouteCommandContext::default()
+    });
+    let rt = create_tool_runtime(opts, None).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    assert!(failed.load(Ordering::SeqCst));
+    assert_eq!(
+        result.details.as_ref().unwrap()["state"],
+        json!("completed")
+    );
+}
+
+/// route context `extra_env` — `grant.env` への override として
+/// 子 process env へ畳まれる(A3)。grant env `MODE=fail` を
+/// `MODE=inspect` で上書きし sentinel 出力が返ることを検証する。
+#[tokio::test]
+async fn route_context_extra_env_overrides_grant_env() {
+    let dir = TempDir::new();
+    let mut opts = options(
+        &dir.root(),
+        command_policy(json!({"self": self_grant("fail", None)})),
+        vec![ToolName::Command],
+    );
+    let mut extra_env = Map::new();
+    extra_env.insert(MODE_ENV.to_string(), json!("inspect"));
+    opts.route_context = Some(RouteCommandContext {
+        extra_env,
+        ..RouteCommandContext::default()
+    });
+    let rt = create_tool_runtime(opts, None).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    let stdout_text = result.details.as_ref().unwrap()["stdout"]["text"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let inspected = sentinel_json(&stdout_text);
+    assert_eq!(inspected["mode"], json!("inspect"));
+}
+
+/// route context `exec_cwd` — grant.cwd 経路を bypass し、workspace
+/// containment 無しで payload cwd を復元する(R18)。`inspect`
+/// fixture が報告する実 cwd が override dir と一致するか検証。
+#[tokio::test]
+async fn route_context_exec_cwd_overrides_grant_cwd() {
+    let dir = TempDir::new();
+    let outside = TempDir::new(); // workspace 外の実行 dir
+    let mut opts = options(
+        &dir.root(),
+        command_policy(json!({"self": self_grant("inspect", None)})),
+        vec![ToolName::Command],
+    );
+    opts.route_context = Some(RouteCommandContext {
+        exec_cwd: Some(outside.0.to_string_lossy().into_owned()),
+        ..RouteCommandContext::default()
+    });
+    let rt = create_tool_runtime(opts, None).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    let stdout_text = result.details.as_ref().unwrap()["stdout"]["text"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let inspected = sentinel_json(&stdout_text);
+    // Windows verbatim prefix・大小文字・separator 差を正規化して比較。
+    let norm = |p: &str| {
+        p.trim_start_matches(r"\\?\")
+            .replace('/', "\\")
+            .to_lowercase()
+    };
+    assert_eq!(
+        norm(inspected["cwd"].as_str().unwrap()),
+        norm(&outside.root())
+    );
+}
+
+/// route context `accept_any_exit_code` — declared grant の
+/// `exitCodes` を上書きして非 0 exit を result 化する(C2)。
+#[tokio::test]
+async fn route_context_accept_any_exit_code_mirrors_exit() {
+    let dir = TempDir::new();
+    // baseline: accept_any 無しは exit 7 が ToolExecutionFailure。
+    let baseline = command_runtime(
+        &dir.root(),
+        command_policy(json!({"self": self_grant("fail", None)})),
+    )
+    .unwrap();
+    assert!(baseline
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .is_err());
+    // accept_any_exit_code で同じ grant が exitCode 7 result を返す。
+    let mut opts = options(
+        &dir.root(),
+        command_policy(json!({"self": self_grant("fail", None)})),
+        vec![ToolName::Command],
+    );
+    opts.route_context = Some(RouteCommandContext {
+        accept_any_exit_code: true,
+        ..RouteCommandContext::default()
+    });
+    let rt = create_tool_runtime(opts, None).unwrap();
+    let result = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+        .unwrap();
+    let details = result.details.as_ref().expect("details");
+    assert_eq!(details["state"], json!("completed"));
+    assert_eq!(details["exitCode"], json!(7));
 }
 
 /// `command` は shared process-tree cleanup を使う — abort で direct 子
@@ -1221,4 +1502,67 @@ async fn spawn_time_revalidation_detects_swapped_executable() {
         "{}",
         e.message()
     );
+}
+
+/// `check_command_execution` — route resolver が使う spawn 無し
+/// preflight seam(design §viability・B#3)。`command::execute` と
+/// 同一 predicate であることを、受理・拒否の双方で確認する。
+#[test]
+fn check_command_execution_shares_execute_predicate() {
+    use cheaper_core::policy::command::resolve_command_policy;
+    use cheaper_tools::tools::command::{check_command_execution, CommandToolOptions};
+
+    let dir = TempDir::new();
+    let root = dir.root();
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    let policy = resolve_command_policy(Some(&json!({
+        "grants": {"t": {"executable": exe, "argv": ["test", "*"]}}
+    })))
+    .unwrap();
+    let options = CommandToolOptions {
+        root: root.clone(),
+        symlink_policy: SymlinkPolicy::Deny,
+        command: policy.clone(),
+        pins: Default::default(),
+        on_timeout: None,
+        denylist: None,
+        route_context: None,
+    };
+    let e = check_command_execution(&options, "t", &["test".into()])
+        .map(|_| ())
+        .unwrap_err();
+    assert_eq!(cheaper_err(&e).code(), ErrorCode::PolicyViolation);
+    let pinned = cheaper_tools::tools::command::pin_command_grant(
+        "t",
+        policy.grants.get("t").unwrap(),
+        &root,
+        SymlinkPolicy::Deny,
+        None,
+    )
+    .unwrap();
+    let options = CommandToolOptions {
+        pins: std::collections::BTreeMap::from([("t".to_string(), pinned)]),
+        ..options
+    };
+    // 受理 — grant 名・argv pattern・executable pin 解決・cwd 全通過。
+    let checked = check_command_execution(&options, "t", &["test".into(), "--x".into()]).unwrap();
+    assert!(!checked.executable.is_empty());
+    assert_eq!(checked.cwd, root);
+    // argv pattern 不一致 → execute と同じ POLICY_VIOLATION。
+    let e = check_command_execution(&options, "t", &["rm".into()])
+        .map(|_| ())
+        .unwrap_err();
+    assert_eq!(cheaper_err(&e).code(), ErrorCode::PolicyViolation);
+    // metachar token → 同じく POLICY_VIOLATION。
+    let e = check_command_execution(&options, "t", &["test".into(), "a;rm".into()])
+        .map(|_| ())
+        .unwrap_err();
+    assert_eq!(cheaper_err(&e).code(), ErrorCode::PolicyViolation);
+    // 未宣言 grant → `unknown or unauthorized command grant`
+    // (resolve_command_grant の fail-closed — resolver の no-grant
+    // viability が拾う分類)。
+    assert!(check_command_execution(&options, "absent", &[]).is_err());
 }

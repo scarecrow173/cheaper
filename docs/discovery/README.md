@@ -26,7 +26,7 @@ Directory: `docs/discovery`
 | DISC-034Dlp0gvInn5w4EsnfZB0 | devin provider usage accounting reports uncached input only | draft | [devin-provider-usage-accounting-reports-uncached-input-only.md](./devin-provider-usage-accounting-reports-uncached-input-only.md) |
 | DISC-034D9AL1up7opdx1NuFeir | Devin provider Windows credential isolation limitation | draft | [devin-provider-windows-credential-isolation-limitation.md](./devin-provider-windows-credential-isolation-limitation.md) |
 | DISC-034IKBmCjJBeLD5qG9DoUM | hook-config legacy conflict gate demotion to warning | resolved | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |
-| DISC-034IO86RVnmQ8AU5Lac8bw | hook-config sweep_orphans の .bak sweep が cheaper 非生成 file を削除する | active | [hook-config-sweep-orphans-deletes-foreign-bak-files.md](./hook-config-sweep-orphans-deletes-foreign-bak-files.md) |
+| DISC-034IO86RVnmQ8AU5Lac8bw | hook-config sweep_orphans の .bak sweep が cheaper 非生成 file を削除する | resolved | [hook-config-sweep-orphans-deletes-foreign-bak-files.md](./hook-config-sweep-orphans-deletes-foreign-bak-files.md) |
 | DISC-034IdYnTDqD7Ao1nG3aoY9 | Hook duplicate firing dedup via canonical request fingerprint | resolved | [hook-duplicate-firing-dedup-via-canonical-request-fingerprint.md](./hook-duplicate-firing-dedup-via-canonical-request-fingerprint.md) |
 | DISC-034r05iHy2gdnpcXzmUKaV | Huge-file token count guard and fail-closed hook behavior | resolved | [huge-file-token-count-guard-and-fail-closed-hook-behavior.md](./huge-file-token-count-guard-and-fail-closed-hook-behavior.md) |
 | DISC-034FlIAczzK2ruZW3HTcJi | invocation-scoped command grant と grant-request フローを整理する | draft | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |
@@ -46,6 +46,7 @@ Directory: `docs/discovery`
 | DISC-034EDjXUQnxTiHz4batpQu | Post-feature structural refactoring inventory | resolved | [post-feature-structural-refactoring-inventory.md](./post-feature-structural-refactoring-inventory.md) |
 | DISC-034DxZdeAdWoFG3UuTyh5c | Post-migration structural inventory and cleanup policy | resolved | [post-migration-structural-inventory-and-cleanup-policy.md](./post-migration-structural-inventory-and-cleanup-policy.md) |
 | DISC-034r05iHy2gdnp6g5GTWKG | Post-smoke code review findings on abort, repair, and timeout semantics | resolved | [post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md](./post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md) |
+| DISC-034J7LwMEdPR5HxFkgOivZ | PreToolUse auto-routing to tasks and workflows | draft | [pretooluse-auto-routing-to-tasks-and-workflows.md](./pretooluse-auto-routing-to-tasks-and-workflows.md) |
 | DISC-034r05iHy2gdnp5sN3kF1s | Real provider smoke verification via Ollama | resolved | [real-provider-smoke-verification-via-ollama.md](./real-provider-smoke-verification-via-ollama.md) |
 | DISC-034A8jvNOxFXeSIc8tWQmE | Job lifetime lease の ownership と admission | resolved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | DISC-034zSQKiU63uXPcMSjjodn | Run-scoped artifact boundaries | resolved | [run-scoped-artifact-boundaries.md](./run-scoped-artifact-boundaries.md) |

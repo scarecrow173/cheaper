@@ -102,6 +102,7 @@ fn tool_job(
             name: name.to_string(),
             input,
             needs: None,
+            when: None,
             resources,
         },
         worker: None,
@@ -179,6 +180,7 @@ fn worker_job(
             name: worker.name.clone(),
             input,
             needs: None,
+            when: None,
             resources: Some(resources),
         },
         worker: Some(Arc::new(worker)),
@@ -751,6 +753,7 @@ async fn worker_read_only_and_unknown_mutation() {
                 name: worker.name.clone(),
                 input: json!({ "task": "x" }),
                 needs: None,
+                when: None,
                 resources: Some(resources),
             },
             worker: Some(Arc::new(worker)),
@@ -792,6 +795,7 @@ async fn worker_read_only_and_unknown_mutation() {
                     name: mutated.name.clone(),
                     input: json!({ "task": "x" }),
                     needs: None,
+                    when: None,
                     resources: Some(WorkflowResources {
                         reads: Some(Vec::new()),
                         ..Default::default()

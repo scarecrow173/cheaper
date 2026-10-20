@@ -30,6 +30,15 @@
           "returnedTokens": 0,
           "costUsd": 0
         }
+      },
+      "route": {
+        "executions": 0,
+        "failures": 0,
+        "refetches": 0,
+        "refetchBytes": 0,
+        "originalTokens": 0,
+        "returnedTokens": 0,
+        "postprocessFailures": 0
       }
     },
     "meta": {}

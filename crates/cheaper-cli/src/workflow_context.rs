@@ -216,12 +216,41 @@ pub(crate) struct WorkflowContext {
 }
 
 impl WorkflowContext {
+    pub(crate) fn from_policy(
+        root: String,
+        dirs: ConfigDirs,
+        policy: RuntimePolicy,
+    ) -> WorkflowContext {
+        let tools = Arc::new(ToolCatalog::from_resolved_policy(policy.process.clone()));
+        let inference = CliResourceInference {
+            workspace_root: root.clone(),
+            symlink_policy: policy.filesystem.symlinks,
+            tools: Arc::clone(&tools),
+        };
+        WorkflowContext {
+            root,
+            dirs,
+            policy,
+            tools,
+            inference,
+            workers: OnceLock::new(),
+        }
+    }
+
     /// `loadWorkflowFile(options, createCompiler)`。`createCompiler`
     /// は file read 後の raw definition から worker 名を走査して事前
     /// 解決する — 検証(`validate_definition`)は loader 側に残る。
     pub(crate) async fn load_workflow<'a>(
         &'a self,
         path: &str,
+    ) -> Result<LoadedWorkflow<'a>, ToolError> {
+        self.load_workflow_from(path, &self.root).await
+    }
+
+    pub(crate) async fn load_workflow_from<'a>(
+        &'a self,
+        path: &str,
+        file_root: &str,
     ) -> Result<LoadedWorkflow<'a>, ToolError> {
         let deny: Vec<&str> = self
             .policy
@@ -231,7 +260,7 @@ impl WorkflowContext {
             .map(String::as_str)
             .collect();
         let options = WorkflowFileOptions {
-            root: self.root.clone(),
+            root: file_root.to_string(),
             path: path.to_string(),
             symlink_policy: self.policy.filesystem.symlinks,
             denylist: create_path_denylist(&deny),
@@ -286,18 +315,56 @@ pub(crate) fn prepare_workflow_context(
     // `createToolCatalog({process: policy.process})` — resolved policy
     // からの直接構築(serialize→再 resolve の二重経路を避ける —
     // `ToolCatalog::from_resolved_policy` は同一経路)。
-    let tools = Arc::new(ToolCatalog::from_resolved_policy(policy.process.clone()));
-    let inference = CliResourceInference {
-        workspace_root: root.clone(),
-        symlink_policy: policy.filesystem.symlinks,
-        tools: Arc::clone(&tools),
-    };
-    Ok(WorkflowContext {
-        root,
-        dirs,
-        policy,
-        tools,
-        inference,
-        workers: OnceLock::new(),
-    })
+    Ok(WorkflowContext::from_policy(root, dirs, policy))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn builtin_routed_exec_workflow_compiles() {
+        let builtin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources");
+        let tmp = tempfile::tempdir().unwrap();
+        let ws = tmp.path().join("ws");
+        std::fs::create_dir_all(&ws).unwrap();
+        let ws_root =
+            cheaper_core::workspace::paths::canonicalize_workspace_root(&ws.to_string_lossy())
+                .unwrap();
+        let env = |_k: &str| None::<String>;
+        let supply = crate::route::supply::load(&ws_root, &env, Some(&builtin)).unwrap();
+        let dirs = ConfigDirs {
+            user_config_dir: tmp.path().join("user"),
+            project_dir: tmp.path().join("project"),
+            builtin_dir: builtin.clone(),
+        };
+        let ctx = WorkflowContext::from_policy(ws_root.clone(), dirs, supply.policy);
+        let file_root = builtin.join("workflows").to_string_lossy().into_owned();
+        let loaded = ctx
+            .load_workflow_from("routed-exec.workflow.json", &file_root)
+            .await
+            .unwrap();
+        let raw = loaded.definition.raw();
+        assert_eq!(
+            raw["jobs"]["analyze"]["when"]["left"]["path"],
+            "/details/outputTokens"
+        );
+        assert_eq!(
+            raw["jobs"]["analyze"]["when"]["right"]["$input"],
+            "tokenThreshold"
+        );
+        let inputs = json!({
+            "grant": "cargo-test",
+            "executable": "/bin/cargo",
+            "argv": ["cargo", "test"],
+            "args": ["test"],
+            "execArgs": ["test"],
+            "cwd": ws_root,
+            "tokenThreshold": 8192,
+            "runId": "1700000000000-1-deadbeef"
+        });
+        loaded.compiler.compile(raw, Some(&inputs)).await.unwrap();
+    }
 }

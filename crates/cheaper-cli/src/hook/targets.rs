@@ -17,7 +17,10 @@ use super::routing_policy::{
     EvaluateOptions, ReadRange, RoutingRequest, SearchOutputMode, Verdict,
 };
 
-/// `HookTarget` — `HOOK_TARGETS` の 5 値。
+/// `HookTarget` — `HOOK_TARGETS` の 6 値。
+/// `Pretooluse` は claude 専用、`Codex` は codex 専用 — payload
+/// shape は同一だが render contract が分かれる(C7 — discriminator
+/// は `--target` 値)。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HookTarget {
     Windsurf,
@@ -25,16 +28,18 @@ pub enum HookTarget {
     Pretooluse,
     Cursor,
     Devin,
+    Codex,
 }
 
 /// `HOOK_TARGETS` — argv の `--target` 値 → target。
 impl HookTarget {
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 6] = [
         Self::Windsurf,
         Self::Copilot,
         Self::Pretooluse,
         Self::Cursor,
         Self::Devin,
+        Self::Codex,
     ];
 
     pub fn parse(s: &str) -> Option<HookTarget> {
@@ -50,6 +55,7 @@ impl HookTarget {
             HookTarget::Pretooluse => "pretooluse",
             HookTarget::Cursor => "cursor",
             HookTarget::Devin => "devin",
+            HookTarget::Codex => "codex",
         }
     }
 }
@@ -76,6 +82,9 @@ impl<'a> HookDeps<'a> {
         EvaluateOptions {
             env: self.env,
             builtin_dir: self.builtin_dir,
+            // routes/command policy の供給は `evaluate_with_routes`
+            // が firing 単位で注入する(C1)。
+            route: None,
         }
     }
 }
@@ -187,6 +196,9 @@ fn windsurf_render(verdict: Verdict) -> HookResponse {
             exit: 2,
         },
         Verdict::Allow => silent_allow(),
+        // rewrite 非対応 target — fallback verdict を render する
+        // (C6 — deny 素通し防止)。
+        Verdict::Rewrite { fallback, .. } => windsurf_render(*fallback),
     }
 }
 
@@ -437,6 +449,7 @@ fn copilot_render(verdict: Verdict) -> HookResponse {
             exit: 0,
         },
         Verdict::Allow => silent_allow(),
+        Verdict::Rewrite { fallback, .. } => copilot_render(*fallback),
     }
 }
 
@@ -481,7 +494,7 @@ fn tool_use_normalize(
     }
 }
 
-// --- pretooluse (claude / codex): deny = hookSpecificOutput JSON + exit 0 ---
+// --- pretooluse (claude) / codex: deny = hookSpecificOutput JSON + exit 0 ---
 
 const PRETOOLUSE_SHELL_TOOLS: &[&str] = &["bash", "powershell"];
 
@@ -489,29 +502,78 @@ fn pretooluse_normalize(input: &Value, cwd: &str) -> Option<RoutingRequest> {
     tool_use_normalize(input, cwd, "pretooluse", PRETOOLUSE_SHELL_TOOLS)
 }
 
+/// `{"hookSpecificOutput":{"hookEventName":"PreToolUse",
+/// "permissionDecision":"deny",...}}` — claude/codex 共有の deny
+/// 応答 shape。
+fn hook_specific_output_deny(reason: &str) -> HookResponse {
+    HookResponse {
+        stdout: Some(format!(
+            "{}\n",
+            stringify_ordered(&[(
+                "hookSpecificOutput",
+                Value::Object({
+                    let mut inner = Map::new();
+                    inner.insert("hookEventName".to_string(), Value::from("PreToolUse"));
+                    inner.insert("permissionDecision".to_string(), Value::from("deny"));
+                    inner.insert(
+                        "permissionDecisionReason".to_string(),
+                        Value::from(flatten_reason(reason)),
+                    );
+                    inner
+                }),
+            )])
+        )),
+        stderr: None,
+        exit: 0,
+    }
+}
+
+/// `updatedInput` object — rewrite 対象 input の差し替え command。
+fn updated_input(command: &str) -> Value {
+    let mut inner = Map::new();
+    inner.insert("command".to_string(), Value::from(command));
+    Value::Object(inner)
+}
+
+fn hook_specific_output_rewrite(command: &str) -> HookResponse {
+    HookResponse {
+        stdout: Some(format!(
+            "{}\n",
+            stringify_ordered(&[(
+                "hookSpecificOutput",
+                Value::Object({
+                    let mut inner = Map::new();
+                    inner.insert("hookEventName".to_string(), Value::from("PreToolUse"));
+                    inner.insert("updatedInput".to_string(), updated_input(command));
+                    inner
+                }),
+            )])
+        )),
+        stderr: None,
+        exit: 0,
+    }
+}
+
+/// claude(`--target pretooluse`)— Rewrite は
+/// `hookSpecificOutput.updatedInput` で emit する
+/// (`permissionDecision` は emit しない、D3)。
 fn pretooluse_render(verdict: Verdict) -> HookResponse {
     match verdict {
-        Verdict::Deny { reason } => HookResponse {
-            stdout: Some(format!(
-                "{}\n",
-                stringify_ordered(&[(
-                    "hookSpecificOutput",
-                    Value::Object({
-                        let mut inner = Map::new();
-                        inner.insert("hookEventName".to_string(), Value::from("PreToolUse"));
-                        inner.insert("permissionDecision".to_string(), Value::from("deny"));
-                        inner.insert(
-                            "permissionDecisionReason".to_string(),
-                            Value::from(flatten_reason(&reason)),
-                        );
-                        inner
-                    }),
-                )])
-            )),
-            stderr: None,
-            exit: 0,
-        },
+        Verdict::Deny { reason } => hook_specific_output_deny(&reason),
         Verdict::Allow => silent_allow(),
+        Verdict::Rewrite { command, .. } => hook_specific_output_rewrite(&command),
+    }
+}
+
+/// codex(`--target codex`)— payload shape は claude と同一だが
+/// Rewrite の approval-bypass 検証が未了のため `updatedInput` を
+/// 発行しない(R38)。Rewrite は fallback verdict を codex の応答
+/// 規約で render する — 構造的に rewrite が codex へ届かない。
+fn codex_render(verdict: Verdict) -> HookResponse {
+    match verdict {
+        Verdict::Deny { reason } => hook_specific_output_deny(&reason),
+        Verdict::Allow => silent_allow(),
+        Verdict::Rewrite { fallback, .. } => codex_render(*fallback),
     }
 }
 
@@ -556,6 +618,10 @@ fn devin_render(verdict: Verdict) -> HookResponse {
             exit: 0,
         },
         Verdict::Allow => silent_allow(),
+        // devin 応答 envelope は `hookSpecificOutput` 規約 — Rewrite
+        // は `hookSpecificOutput.updatedInput.command` で input
+        // rewrite を通知する(C4)。
+        Verdict::Rewrite { command, .. } => hook_specific_output_rewrite(&command),
     }
 }
 
@@ -610,6 +676,7 @@ fn cursor_render(verdict: Verdict) -> HookResponse {
     match verdict {
         Verdict::Deny { reason } => cursor_respond("deny", Some(&reason)),
         Verdict::Allow => cursor_respond("allow", None),
+        Verdict::Rewrite { fallback, .. } => cursor_render(*fallback),
     }
 }
 
@@ -620,7 +687,31 @@ fn verdict_name(verdict: &Verdict) -> &'static str {
     match verdict {
         Verdict::Allow => "allow",
         Verdict::Deny { .. } => "deny",
+        Verdict::Rewrite { .. } => "rewrite",
     }
+}
+
+/// request の cwd — 各 variant は `cwd` field を持つ(normalize が
+/// payload・`deps.cwd` fallback で確定済み)。route supply の project
+/// 層起点・resolve cwd に使う。
+fn request_cwd(request: &RoutingRequest) -> &str {
+    match request {
+        RoutingRequest::FileRead { cwd, .. }
+        | RoutingRequest::Search { cwd, .. }
+        | RoutingRequest::Shell { cwd, .. } => cwd,
+    }
+}
+
+/// request 単位で routes + command policy を 1 回 load し eval へ
+/// 供給する(C1 — firing あたり 1 回の load に集約。per-candidate
+/// reload はしない)。load 失敗は `route: None`(route arm 不活性)
+/// へ畳み eval 自体は従来どおり走る — hook の fail-open 規約。
+async fn evaluate_with_routes(request: &RoutingRequest, deps: &HookDeps<'_>) -> Verdict {
+    let supply =
+        crate::route::supply::load_or_none(request_cwd(request), deps.env, deps.builtin_dir);
+    let mut opts = deps.eval_opts();
+    opts.route = supply.as_ref().map(|s| s.eval_input());
+    eval_cache::evaluate_dedup(request, &opts).await
 }
 
 /// target 別の normalize → evaluate → render。
@@ -636,7 +727,7 @@ pub async fn handle_hook(
         HookTarget::Windsurf => match windsurf_normalize(event, input, deps.cwd) {
             None => ("allow", silent_allow()),
             Some(request) => {
-                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
+                let verdict = evaluate_with_routes(&request, deps).await;
                 (verdict_name(&verdict), windsurf_render(verdict))
             }
         },
@@ -644,21 +735,21 @@ pub async fn handle_hook(
             CopilotOutcome::None => ("allow", silent_allow()),
             CopilotOutcome::Respond(r) => ("allow", r),
             CopilotOutcome::Request(request) => {
-                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
+                let verdict = evaluate_with_routes(&request, deps).await;
                 (verdict_name(&verdict), copilot_render(verdict))
             }
         },
         HookTarget::Pretooluse => match pretooluse_normalize(input, deps.cwd) {
             None => ("allow", silent_allow()),
             Some(request) => {
-                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
+                let verdict = evaluate_with_routes(&request, deps).await;
                 (verdict_name(&verdict), pretooluse_render(verdict))
             }
         },
         HookTarget::Devin => match devin_normalize(event, input, deps) {
             None => ("allow", silent_allow()),
             Some(request) => {
-                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
+                let verdict = evaluate_with_routes(&request, deps).await;
                 (verdict_name(&verdict), devin_render(verdict))
             }
         },
@@ -669,8 +760,15 @@ pub async fn handle_hook(
                 // (計測失敗は内部で allow)が、TS の try/catch allow
                 // 経路と同じく verdict に関わらず schema-valid JSON を
                 // 返すことは変えない。
-                let verdict = eval_cache::evaluate_dedup(&request, &deps.eval_opts()).await;
+                let verdict = evaluate_with_routes(&request, deps).await;
                 (verdict_name(&verdict), cursor_render(verdict))
+            }
+        },
+        HookTarget::Codex => match pretooluse_normalize(input, deps.cwd) {
+            None => ("allow", silent_allow()),
+            Some(request) => {
+                let verdict = evaluate_with_routes(&request, deps).await;
+                (verdict_name(&verdict), codex_render(verdict))
             }
         },
     };
@@ -693,5 +791,139 @@ pub fn fallback_allow(target: Option<HookTarget>) -> HookResponse {
     match target {
         Some(HookTarget::Cursor) => cursor_respond("allow", None),
         _ => silent_allow(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn rewrite(command: &str, fallback: Verdict) -> Verdict {
+        Verdict::Rewrite {
+            command: command.to_string(),
+            fallback: Box::new(fallback),
+        }
+    }
+
+    /// claude(`pretooluse`)— Rewrite は `updatedInput.command` を
+    /// emit し `permissionDecision` を載せない(D3)。exit 0。
+    #[test]
+    fn pretooluse_rewrite_emits_updated_input_without_permission() {
+        let r = pretooluse_render(rewrite(
+            "\"/x/cheaper\" route run --payload aa",
+            Verdict::Allow,
+        ));
+        assert_eq!(r.exit, 0);
+        let stdout = r.stdout.unwrap();
+        let v: Value = serde_json::from_str(&stdout).unwrap();
+        let hso = v.get("hookSpecificOutput").unwrap();
+        assert_eq!(
+            hso.get("hookEventName").and_then(Value::as_str),
+            Some("PreToolUse")
+        );
+        assert_eq!(
+            hso.pointer("/updatedInput/command").and_then(Value::as_str),
+            Some("\"/x/cheaper\" route run --payload aa")
+        );
+        assert!(hso.get("permissionDecision").is_none());
+    }
+
+    /// claude — Rewrite の render は fallback 内容に関わらず
+    /// `updatedInput` のみ(R37)。fallback の保持は rewrite 非対応
+    /// target 向けの verdict 構造であり、claude render は参照しない。
+    #[test]
+    fn pretooluse_rewrite_ignores_fallback_for_render() {
+        let r = pretooluse_render(rewrite("cmd", Verdict::Deny { reason: "x".into() }));
+        assert_eq!(r.exit, 0);
+        let v: Value = serde_json::from_str(&r.stdout.unwrap()).unwrap();
+        assert!(v
+            .pointer("/hookSpecificOutput/updatedInput/command")
+            .is_some());
+    }
+
+    /// devin — Rewrite は hookSpecificOutput.updatedInput.command
+    /// のみを返す(承認判定 field は付けない)。
+    #[test]
+    fn devin_rewrite_emits_updated_input_without_permission() {
+        let r = devin_render(rewrite("new-cmd", Verdict::Allow));
+        assert_eq!(r.exit, 0);
+        let v: Value = serde_json::from_str(&r.stdout.unwrap()).unwrap();
+        assert!(v.get("decision").is_none());
+        assert!(v.get("updatedInput").is_none());
+        assert_eq!(
+            v.pointer("/hookSpecificOutput/hookEventName")
+                .and_then(Value::as_str),
+            Some("PreToolUse")
+        );
+        assert_eq!(
+            v.pointer("/hookSpecificOutput/updatedInput/command")
+                .and_then(Value::as_str),
+            Some("new-cmd")
+        );
+        assert!(v
+            .pointer("/hookSpecificOutput/permissionDecision")
+            .is_none());
+    }
+
+    /// codex — Rewrite は `updatedInput` を発行せず fallback verdict
+    /// を render する(R38 — approval-bypass 検証前)。
+    #[test]
+    fn codex_rewrite_renders_fallback_only() {
+        // fallback Deny → hookSpecificOutput deny。
+        let r = codex_render(rewrite(
+            "cmd",
+            Verdict::Deny {
+                reason: "nope".into(),
+            },
+        ));
+        assert_eq!(r.exit, 0);
+        let v: Value = serde_json::from_str(&r.stdout.unwrap()).unwrap();
+        assert_eq!(
+            v.pointer("/hookSpecificOutput/permissionDecision")
+                .and_then(Value::as_str),
+            Some("deny")
+        );
+        assert!(v.pointer("/hookSpecificOutput/updatedInput").is_none());
+        // fallback Allow → silent。
+        let r = codex_render(rewrite("cmd", Verdict::Allow));
+        assert_eq!(r.exit, 0);
+        assert!(r.stdout.is_none() && r.stderr.is_none());
+    }
+
+    /// windsurf — Rewrite は fallback render(deny → stderr exit 2)。
+    #[test]
+    fn windsurf_rewrite_renders_fallback() {
+        let r = windsurf_render(rewrite(
+            "cmd",
+            Verdict::Deny {
+                reason: "blocked".into(),
+            },
+        ));
+        assert_eq!(r.exit, 2);
+        assert!(r.stderr.unwrap().contains("blocked"));
+        let r = windsurf_render(rewrite("cmd", Verdict::Allow));
+        assert_eq!(r.exit, 0);
+        assert!(r.stdout.is_none());
+    }
+
+    /// cursor/copilot — fallback のみ。
+    #[test]
+    fn cursor_and_copilot_rewrite_render_fallback() {
+        let r = cursor_render(rewrite("cmd", Verdict::Allow));
+        assert_eq!(r.exit, 0);
+        let v: Value = serde_json::from_str(&r.stdout.unwrap()).unwrap();
+        assert_eq!(v.get("permission").and_then(Value::as_str), Some("allow"));
+        let r = copilot_render(rewrite(
+            "cmd",
+            Verdict::Deny {
+                reason: "deny-reason".into(),
+            },
+        ));
+        assert_eq!(r.exit, 0);
+        let v: Value = serde_json::from_str(&r.stdout.unwrap()).unwrap();
+        assert_eq!(
+            v.get("permissionDecision").and_then(Value::as_str),
+            Some("deny")
+        );
     }
 }

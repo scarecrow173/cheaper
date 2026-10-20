@@ -110,21 +110,48 @@ pub enum RoutingRequest {
 /// verdict record(`hook::eval_cache`)への serialize のため serde
 /// derive を持つ — wire 表現は internally tagged(`Allow` →
 /// `{"decision":"allow"}`、`Deny{reason}` →
-/// `{"decision":"deny","reason":"…"}`)。
+/// `{"decision":"deny","reason":"…"}`、`Rewrite{command,fallback}`
+/// → `{"decision":"rewrite","command":"…","fallback":{…}}`)。
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "decision", rename_all = "lowercase")]
 pub enum Verdict {
     Allow,
-    Deny { reason: String },
+    Deny {
+        reason: String,
+    },
+    /// runnable route match — `command` は `cheaper route run
+    /// --payload <b64>` 形の書換え後 shell command、`fallback` は
+    /// routing 層を通さなかった場合の生 verdict(Allow または
+    /// read-candidate Deny)。non-rewrite target の render は
+    /// `fallback` を採用する(C6 — Rewrite→Allow 無条件降格は
+    /// read-candidate Deny を素通しさせる)。Rewrite は env 値を
+    /// 含み得るため dedup verdict cache へ persist/serve しない。
+    Rewrite {
+        command: String,
+        fallback: Box<Verdict>,
+    },
+}
+
+/// shell route arm の入力 — hook entry が firing 1 回に load した
+/// effective routes + command policy の参照面(A#10 — eval 内で
+/// file I/O を分散させず、純粋評価として供給する)。`None` の場合
+/// route arm は skip され従来評価のみが走る。
+#[derive(Clone, Copy)]
+pub struct RouteEvalInput<'a> {
+    pub routes: &'a crate::route::routes::EffectiveRoutes,
+    pub command_policy: crate::route::resolve::CommandPolicyView<'a>,
 }
 
 /// `EvaluateOptions` — `env` は stdin stub と同様に `CliIo.env` を
 /// そのまま渡し、`builtin_dir` は `CliHooks.builtin_dir`(未指定時は
-/// `embedded::builtin_dir()` を計測時に遅延解決)。
+/// `embedded::builtin_dir()` を計測時に遅延解決)。`route` は hook
+/// entry が load した routes/policy 参照面 — 未供給(utility
+/// caller・旧経路)では route arm が不活性のままになる。
 #[derive(Clone, Copy)]
 pub struct EvaluateOptions<'a> {
     pub env: EnvLookup<'a>,
     pub builtin_dir: Option<&'a PathBuf>,
+    pub route: Option<RouteEvalInput<'a>>,
 }
 
 /// `process.cwd()` 相当(計測 fail-open なので取得失敗時は空文字列)。
@@ -1055,7 +1082,9 @@ fn is_escapable(c: char) -> bool {
 }
 
 /// `ENV_PREFIX` (`/^[A-Za-z_][A-Za-z0-9_]*=/`)— prefix match。
-fn is_env_prefix(text: &str) -> bool {
+/// `route::resolve` の env-prefix skip 規約と共有する(crate
+/// 内部 API)。
+pub(crate) fn is_env_prefix(text: &str) -> bool {
     let mut chars = text.chars();
     match chars.next() {
         Some(c) if c.is_ascii_alphabetic() || c == '_' => {}
@@ -1291,7 +1320,8 @@ fn read_command_spec(name: &str) -> Option<ReadCommandSpec> {
 /// `commandName` — dir prefix(`/`・`\` のどちらでも)を剥がし、
 /// `.exe`/`.bat`/`.cmd` suffix (case-insensitive) を除去する。
 /// lowercase 化はしない(`CAT` は read command と認識しない TS 規則)。
-fn command_name(token: &str) -> String {
+/// `route::resolve` の executable 名判定と共有する(crate 内部 API)。
+pub(crate) fn command_name(token: &str) -> String {
     let base = token.rsplit(['/', '\\']).next().unwrap_or(token);
     for ext in [".exe", ".bat", ".cmd"] {
         // JS `\.(exe|bat|cmd)$` — ".exe" 単体でも match し "" になる。
@@ -1306,7 +1336,8 @@ fn command_name(token: &str) -> String {
 // PowerShell alias)。移動先は追跡しない — その後の read candidate は
 // hook の cwd と異なる base で解決されるため ambiguous であり、誤
 // block・誤 pass を避けて fail-open に倒す。
-const CWD_CHANGING_COMMANDS: &[&str] = &["cd", "chdir", "pushd", "popd", "set-location", "sl"];
+pub(crate) const CWD_CHANGING_COMMANDS: &[&str] =
+    &["cd", "chdir", "pushd", "popd", "set-location", "sl"];
 
 /// `extractReadCandidates` — shell command string から read command の
 /// file operand を抽出する。parse 不能・安全に読める参照が無い場合は
@@ -1402,9 +1433,101 @@ fn collapse_command(command: &str) -> String {
     out
 }
 
-/// `evaluateShell` — read candidate を file-read policy で順に評価し、
-/// 最初の deny で止める。
+/// `evaluateShell` — 先頭で route arm を試し、不成立なら従来の
+/// read-candidate 評価を行う(design §hook eval への Rewrite arm)。
 async fn evaluate_shell(command: &str, cwd: &str, opts: &EvaluateOptions<'_>) -> Verdict {
+    if let Some(rewrite) = evaluate_route_arm(command, cwd, opts).await {
+        return rewrite;
+    }
+    evaluate_read_candidates(command, cwd, opts).await
+}
+
+/// route arm — 単一 safe segment かつ routes/policy が供給されて
+/// いる場合のみ `route::resolve` を呼ぶ。runnable match では
+/// `route run --payload` rewrite command を生成し、fallback には
+/// 従来評価の生 verdict を載せて `Verdict::Rewrite` を返す。
+/// match しない・runnable でない・segment が unsafe/複数・入力
+/// 未供給のいずれかは `None`(caller が従来評価へ fallthrough)。
+async fn evaluate_route_arm(
+    command: &str,
+    cwd: &str,
+    opts: &EvaluateOptions<'_>,
+) -> Option<Verdict> {
+    let route_input = opts.route?;
+    let segments = tokenize_shell(command)?;
+    let [segment] = segments.as_slice() else {
+        return None;
+    };
+    if segment.unsafe_segment || segment.tokens.iter().any(|t| t.unsafe_token) {
+        return None;
+    }
+    // env-prefix は argv に含めない — resolve が先頭 `KEY=VALUE`
+    // token を strip する(ここでは raw token 列をそのまま渡す)。
+    let argv: Vec<String> = segment.tokens.iter().map(|t| t.text.clone()).collect();
+    let res = crate::route::resolve::resolve(&crate::route::resolve::ResolveInput {
+        argv: &argv,
+        cwd,
+        routes: route_input.routes,
+        command_policy: &route_input.command_policy,
+        unsafe_command: false,
+    });
+    if !res.matched || res.viability != Some(crate::route::resolve::Viability::Runnable) {
+        return None;
+    }
+    let rewrite_command = build_rewrite_command(command, cwd, &res, opts.env)?;
+    // fallback は routing 層を通さなかった場合の生 verdict —
+    // rewrite 失敗時・non-rewrite target の render が採用する
+    // (C6 — deny を素通しさせない)。
+    let fallback = evaluate_read_candidates(command, cwd, opts).await;
+    Some(Verdict::Rewrite {
+        command: rewrite_command,
+        fallback: Box::new(fallback),
+    })
+}
+
+/// `cheaper route run --payload <b64>` の単一 segment command を
+/// 構築する。executable は `current_exe()` の絶対 path で anchor
+/// する(PATH 解決差・別 version binary による payload drift 防止)。
+/// path に `"` を含む等 emit 不能な場合・encode 失敗は `None` —
+/// caller は従来評価へ fallthrough する(fail-safe)。
+fn build_rewrite_command(
+    command: &str,
+    cwd: &str,
+    res: &crate::route::resolve::RouteResolution,
+    env: EnvLookup<'_>,
+) -> Option<String> {
+    // passthroughEnv allowlist の名前だけ hook ambient env から
+    // capture する — env-prefix は transport せず `route run` が
+    // `payload.command` から再導出する(C3)。
+    let ambient_env: std::collections::BTreeMap<String, String> = res
+        .passthrough_env
+        .iter()
+        .filter_map(|name| env(name).map(|v| (name.clone(), v)))
+        .collect();
+    let token = crate::route::payload::encode(crate::route::payload::EncodeInput {
+        command: command.to_string(),
+        executable: res.executable.clone()?,
+        argv: res.argv.clone(),
+        args: res.args.clone(),
+        cwd: cwd.to_string(),
+        ambient_env,
+        passthrough_env: res.passthrough_env.clone(),
+    })
+    .ok()?;
+    // exe path は常に `"…"` で囲んで単一 token として emit する
+    // (space 含み path でも tokenize が 1 token を返す)。" を含む
+    // path は安全に emit できないため bare `cheaper` へ fallback。
+    let exe = std::env::current_exe()
+        .ok()
+        .map(|p| p.to_string_lossy().into_owned())
+        .and_then(|s| (!s.contains('"')).then_some(format!("\"{s}\"")))
+        .unwrap_or_else(|| "cheaper".to_string());
+    Some(format!("{exe} route run --payload {token}"))
+}
+
+/// 従来の `evaluateShell` 本体 — read candidate を file-read
+/// policy で順に評価し、最初の deny で止める。
+async fn evaluate_read_candidates(command: &str, cwd: &str, opts: &EvaluateOptions<'_>) -> Verdict {
     for candidate in extract_read_candidates(command) {
         let verdict = evaluate_file_read(&candidate, cwd, opts).await;
         if let Verdict::Deny { reason } = verdict {
@@ -1920,6 +2043,220 @@ mod tests {
         ) {
             SearchScan::Failed => {}
             other => panic!("expected failed, got {other:?}"),
+        }
+    }
+
+    // --- route arm / Verdict::Rewrite(C2)---------------------------
+
+    mod route_arm {
+        use super::*;
+        use crate::route::resolve::CommandPolicyView;
+        use crate::route::routes::{EffectiveRoutes, Route, RouteLayer};
+        use cheaper_core::policy::command::{resolve_command_policy, ResolvedCommandPolicy};
+        use cheaper_core::workspace::paths::SymlinkPolicy;
+        use serde_json::json;
+        use std::path::Path;
+
+        /// grant executable は test binary 自身を pin — `cat`/`cargo`
+        /// argv[0] の route 宣言でも `check_command_execution` が受理
+        /// する形(resolve unit test と同じ構造)。
+        fn grant_policy(argv: &[&str]) -> ResolvedCommandPolicy {
+            let exe = std::env::current_exe()
+                .unwrap()
+                .to_string_lossy()
+                .into_owned();
+            resolve_command_policy(Some(&json!({
+                "grants": {
+                    "g": { "executable": exe, "argv": argv }
+                }
+            })))
+            .unwrap()
+        }
+
+        fn route(name: &str, command: &[&str], grant: &str, target: &Path) -> Route {
+            Route {
+                name: name.to_string(),
+                command: command.iter().map(|s| s.to_string()).collect(),
+                target_path: target.to_path_buf(),
+                grant: grant.to_string(),
+                token_threshold: None,
+                passthrough_env: Vec::new(),
+                trusted: false,
+                layer: RouteLayer::Builtin,
+            }
+        }
+
+        fn route_opts<'a>(
+            lookup: &'a dyn Fn(&str) -> Option<String>,
+            routes: &'a EffectiveRoutes,
+            policy: &'a ResolvedCommandPolicy,
+            root: &'a str,
+        ) -> EvaluateOptions<'a> {
+            EvaluateOptions {
+                env: lookup,
+                builtin_dir: None,
+                route: Some(RouteEvalInput {
+                    routes,
+                    command_policy: CommandPolicyView {
+                        policy,
+                        root,
+                        symlink_policy: SymlinkPolicy::Deny,
+                        denylist: None,
+                    },
+                }),
+            }
+        }
+
+        fn shell(command: &str, cwd: &str) -> RoutingRequest {
+            RoutingRequest::Shell {
+                command: command.to_string(),
+                cwd: cwd.to_string(),
+                source_tool: None,
+            }
+        }
+
+        /// `Verdict::Rewrite` の internally-tagged wire —
+        /// `{"decision":"rewrite","command":…,"fallback":{…}}` で
+        /// round-trip する(R36)。
+        #[test]
+        fn rewrite_serde_round_trip() {
+            let v = Verdict::Rewrite {
+                command: "cheaper route run --payload tok".to_string(),
+                fallback: Box::new(Verdict::Deny {
+                    reason: "r".to_string(),
+                }),
+            };
+            let value = serde_json::to_value(&v).unwrap();
+            assert_eq!(
+                value,
+                json!({
+                    "decision": "rewrite",
+                    "command": "cheaper route run --payload tok",
+                    "fallback": {"decision": "deny", "reason": "r"},
+                })
+            );
+            assert_eq!(serde_json::from_value::<Verdict>(value).unwrap(), v);
+        }
+
+        /// runnable match → `route run --payload` rewrite command を
+        /// 返し、payload は元 command/cwd/argv・allowlist env のみを
+        /// decode できる。fallback は read-candidate 評価の生 verdict
+        /// (この command では Allow)。
+        #[tokio::test(flavor = "current_thread")]
+        async fn runnable_route_produces_rewrite() {
+            let dir = tempfile::tempdir().unwrap();
+            let root = dir.path().to_string_lossy().into_owned();
+            let target = dir.path().join("w.json");
+            std::fs::write(&target, "{}").unwrap();
+            let mut r = route("cargo-test", &["cargo", "test"], "g", &target);
+            r.passthrough_env = vec!["ALLOWED".to_string()];
+            let routes = EffectiveRoutes {
+                routes: vec![r],
+                ..Default::default()
+            };
+            let policy = grant_policy(&["test", "*"]);
+            let pairs = [("ALLOWED", "v1"), ("SECRET", "no-transport")];
+            let lookup = env_of(&pairs);
+            let opts = route_opts(&lookup, &routes, &policy, &root);
+            let verdict = evaluate(&shell("cargo test --workspace", &root), &opts).await;
+            let Verdict::Rewrite { command, fallback } = verdict else {
+                panic!("expected rewrite, got {verdict:?}")
+            };
+            // `<exe> route run --payload <b64>` の単一 segment。
+            assert!(command.contains(" route run --payload "), "{command}");
+            let token = command.rsplit(' ').next().unwrap();
+            let payload = crate::route::payload::decode(token).unwrap();
+            assert_eq!(payload.command, "cargo test --workspace");
+            assert_eq!(payload.executable, "cargo");
+            assert_eq!(payload.argv, vec!["cargo", "test", "--workspace"]);
+            assert_eq!(payload.args, vec!["--workspace"]);
+            assert_eq!(payload.cwd, root);
+            // allowlist のみ transport — SECRET は落ちる(R18/R32)。
+            assert_eq!(
+                payload.env,
+                std::collections::BTreeMap::from([("ALLOWED".to_string(), "v1".to_string())])
+            );
+            assert!(matches!(*fallback, Verdict::Allow));
+        }
+
+        /// read-candidate deny を持つ command(`cat <too-large>`)が
+        /// runnable route に match しても fallback は Deny を保持
+        /// する(C6 — Rewrite 化で deny が素通しされない)。
+        #[tokio::test(flavor = "current_thread")]
+        async fn rewrite_preserves_fallback_deny() {
+            let dir = tempfile::tempdir().unwrap();
+            let root = dir.path().to_string_lossy().into_owned();
+            let target = dir.path().join("w.json");
+            std::fs::write(&target, "{}").unwrap();
+            let big = dir.path().join("big.txt");
+            std::fs::write(&big, vec![b'x'; 256]).unwrap();
+            let routes = EffectiveRoutes {
+                routes: vec![route("cat-route", &["cat"], "g", &target)],
+                ..Default::default()
+            };
+            let policy = grant_policy(&["*"]);
+            // byte fast path(token threshold)を潜り byte cap で
+            // FileTooLarge deny を deterministic に起こす
+            // (tokenizer 不要 — 256B > threshold 1 > cap 10)。
+            let pairs = [
+                ("CHEAPER_READ_TOKEN_THRESHOLD", "1"),
+                ("CHEAPER_COUNT_MAX_BYTES", "10"),
+            ];
+            let lookup = env_of(&pairs);
+            let opts = route_opts(&lookup, &routes, &policy, &root);
+            let verdict = evaluate(&shell("cat big.txt", &root), &opts).await;
+            let Verdict::Rewrite { fallback, .. } = verdict else {
+                panic!("expected rewrite, got {verdict:?}")
+            };
+            assert!(
+                matches!(*fallback, Verdict::Deny { .. }),
+                "fallback must keep read-candidate deny, got {fallback:?}"
+            );
+        }
+
+        /// no-match・non-runnable・route 未供給・複数 segment は全て
+        /// 従来評価へ fallthrough する(R39)。
+        #[tokio::test(flavor = "current_thread")]
+        async fn non_runnable_falls_through() {
+            let dir = tempfile::tempdir().unwrap();
+            let root = dir.path().to_string_lossy().into_owned();
+            let target = dir.path().join("w.json");
+            std::fs::write(&target, "{}").unwrap();
+            let routes = EffectiveRoutes {
+                routes: vec![route("cargo-test", &["cargo", "test"], "g", &target)],
+                ..Default::default()
+            };
+            let policy = grant_policy(&["test", "*"]);
+            let pairs: [(&str, &str); 0] = [];
+            let lookup = env_of(&pairs);
+            let opts = route_opts(&lookup, &routes, &policy, &root);
+            // no-match → Allow(Rewrite ではない)。
+            assert!(matches!(
+                evaluate(&shell("git status", &root), &opts).await,
+                Verdict::Allow
+            ));
+            // grant argv に適合しない exec_args → no-grant → fallthrough。
+            let no_grant_policy = grant_policy(&["nope", "*"]);
+            let no_grant_opts = route_opts(&lookup, &routes, &no_grant_policy, &root);
+            assert!(matches!(
+                evaluate(&shell("cargo test --workspace", &root), &no_grant_opts).await,
+                Verdict::Allow
+            ));
+            // 複数 segment → route arm 自体が skip される。
+            assert!(matches!(
+                evaluate(&shell("cargo test && rm x", &root), &opts).await,
+                Verdict::Allow
+            ));
+            // route 未供給 → 従来評価のみ。
+            let plain_opts = EvaluateOptions {
+                env: &lookup,
+                builtin_dir: None,
+                route: None,
+            };
+            assert!(matches!(
+                evaluate(&shell("cargo test --workspace", &root), &plain_opts).await,
+                Verdict::Allow
+            ));
         }
     }
 }

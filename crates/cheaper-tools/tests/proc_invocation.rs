@@ -124,6 +124,7 @@ fn scope_options(root: &str, names: Vec<ToolName>) -> ToolRuntimeOptions {
         abort_grace_ms: None,
         concurrency: None,
         eval_spawn: None,
+        route_context: None,
     }
 }
 
@@ -671,5 +672,39 @@ async fn worker_scope_rejects_command_policy_mismatch() {
         .create_worker_scope(worker("cmd", opts))
         .unwrap_err();
     assert!(err_message(&err).contains("command policy mismatch"));
+    invocation.dispose().await;
+}
+
+/// 単一 grant 投影 + parity(A3/C9)— route 宣言 grant だけを残した
+/// declared policy を invocation・scope 両側へ供給すると parity
+/// check が通り、投影外 grant の `input.name` 参照は unknown
+/// grant で失敗する。
+#[tokio::test]
+async fn single_grant_projection_preserves_scope_parity() {
+    let dir = TempDir::new();
+    // route run が行う投影(D1)と同じ形: declared JSON から
+    // `project_grant` 相当に grants を 1 件へ絞った policy を
+    // invocation・scope 両側へ供給する。
+    let projected = json!({
+        "maxConcurrent": 1,
+        "grants": {"route-grant": self_grant()}
+    });
+    let mut opts = invocation_options(dir.root(), None);
+    opts.command = Some(projected.clone());
+    let invocation = create_invocation_tool_runtime(opts).unwrap();
+    let mut scope_opts = scope_options(&dir.root(), vec![ToolName::Command]);
+    scope_opts.command = Some(projected);
+    let scope = invocation
+        .create_worker_scope(worker("routed", scope_opts))
+        .unwrap();
+    // 投影外 grant の参照は unknown grant で失敗する。
+    let err = scope
+        .execute("command", &json!({"name": "other", "args": []}), None)
+        .await
+        .unwrap_err();
+    assert!(
+        err_message(&err).contains("unknown or unauthorized command grant"),
+        "{err}"
+    );
     invocation.dispose().await;
 }

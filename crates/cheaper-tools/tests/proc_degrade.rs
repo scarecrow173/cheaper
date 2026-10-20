@@ -65,6 +65,7 @@ fn options(root: &str, names: Vec<ToolName>, degradable: Vec<ToolName>) -> ToolR
         abort_grace_ms: None,
         concurrency: None,
         eval_spawn: None,
+        route_context: None,
     }
 }
 

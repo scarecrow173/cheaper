@@ -106,6 +106,19 @@ pub(crate) fn windsurf_read(file_path: &str) -> String {
     )
 }
 
+/// windsurf `pre_run_command` payload — shell request。
+pub(crate) fn windsurf_shell(command: &str) -> String {
+    format!(
+        "{{\"agent_action_name\":\"pre_run_command\",\"tool_info\":{{\"command_line\":{}}}}}",
+        serde_json::to_string(command).unwrap()
+    )
+}
+
+/// `<CHEAPER_CONFIG_DIR>/hook-eval/` — dedup verdict store。
+pub(crate) fn eval_store_dir(fx: &Fixture) -> std::path::PathBuf {
+    std::path::Path::new(&fx.env["CHEAPER_CONFIG_DIR"]).join("hook-eval")
+}
+
 /// `pub(crate)`: sibling `hook_eval_dedup` から再利用。
 pub(crate) struct HookResult {
     pub(crate) code: i32,
@@ -559,16 +572,10 @@ async fn file_too_large_is_fail_closed_deny_with_byte_cap_wording() {
 async fn shell_deny_and_cwd_changing_commands_fail_open() {
     let fx = Fixture::new();
     fx.write_big("big.txt");
-    let payload = |command: &str| {
-        format!(
-            "{{\"agent_action_name\":\"pre_run_command\",\"tool_info\":{{\"command_line\":{}}}}}",
-            serde_json::to_string(command).unwrap()
-        )
-    };
     let deny = run_hook(
         &fx,
         &["pre-run-command", "--target", "windsurf"],
-        &payload("cat big.txt"),
+        &windsurf_shell("cat big.txt"),
         &[],
     )
     .await;
@@ -581,11 +588,154 @@ async fn shell_deny_and_cwd_changing_commands_fail_open() {
     let allow = run_hook(
         &fx,
         &["pre-run-command", "--target", "windsurf"],
-        &payload("cd src && cat big.txt"),
+        &windsurf_shell("cd src && cat big.txt"),
         &[],
     )
     .await;
     assert_eq!(allow.code, 0);
+}
+
+// --- route supply(C1)------------------------------------------------------
+
+/// routes.yaml + grant policy + workflow file を `<cfg>`(user 層)へ
+/// 配置する fixture — `cat` へ route し、grant executable は test
+/// binary 自身を pin する(route.rs の fixture と同じ構造)。
+fn routed_shell_fixture() -> Fixture {
+    let f = Fixture::new();
+    let cfg = std::path::Path::new(&f.env["CHEAPER_CONFIG_DIR"]).to_path_buf();
+    std::fs::create_dir_all(&cfg).unwrap();
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    std::fs::write(
+        cfg.join("routes.yaml"),
+        "version: 1\nroutes:\n  - name: cat-route\n    match: {command: [cat]}\n    target: {kind: workflow, path: w.json}\n    grant: g\n",
+    )
+    .unwrap();
+    std::fs::write(cfg.join("w.json"), r#"{"version":1,"jobs":{}}"#).unwrap();
+    std::fs::write(
+        cfg.join("policy.yaml"),
+        format!(
+            "version: 1\ncommand:\n  grants:\n    g:\n      executable: \"{}\"\n      argv: [\"*\"]\n",
+            exe.replace('\\', "\\\\").replace('"', "\\\"")
+        ),
+    )
+    .unwrap();
+    f
+}
+
+/// dedup store 内の `<fp>.json` verdict record を列挙する。
+fn eval_records(fx: &Fixture) -> Vec<std::path::PathBuf> {
+    let dir = eval_store_dir(fx);
+    std::fs::read_dir(&dir)
+        .map(|rd| {
+            rd.filter_map(|e| e.ok())
+                .map(|e| e.path())
+                .filter(|p| p.extension().is_some_and(|x| x == "json"))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// C1 contract — hook firing が effective routes + command policy を
+/// load して eval へ供給する。routed `cat big.txt` は
+/// `Verdict::Rewrite{fallback: Deny}` を返し、windsurf render は
+/// fallback の deny 応答(exit 2)を返す。Rewrite は dedup cache へ
+/// persist されないため store に record が残らない — これが
+/// route arm が firing load 経由で活性化した観測可能な証明
+/// (unrouted の同一 command は Deny record を publish する)。
+#[tokio::test(flavor = "current_thread")]
+async fn shell_route_arm_engages_via_firing_load() {
+    let fx = routed_shell_fixture();
+    fx.write_big("big.txt");
+    let r = run_hook(
+        &fx,
+        &["pre-run-command", "--target", "windsurf"],
+        &windsurf_shell("cat big.txt"),
+        &[],
+    )
+    .await;
+    // fallback deny が render される — routing が deny を素通し
+    // しない(C6)。
+    assert_eq!(r.code, 2);
+    assert!(
+        r.stderr.contains("blocked shell command 'cat big.txt'."),
+        "{}",
+        r.stderr
+    );
+    assert!(
+        eval_records(&fx).is_empty(),
+        "Rewrite verdict は dedup record を書かない"
+    );
+
+    // control — routes/policy 無しの同一 firing は Deny record を
+    // publish する(route arm 不活性の対照経路)。
+    let plain = Fixture::new();
+    plain.write_big("big.txt");
+    let r = run_hook(
+        &plain,
+        &["pre-run-command", "--target", "windsurf"],
+        &windsurf_shell("cat big.txt"),
+        &[],
+    )
+    .await;
+    assert_eq!(r.code, 2);
+    assert!(
+        !eval_records(&plain).is_empty(),
+        "unrouted deny は dedup record を publish する"
+    );
+}
+
+/// C4 — routed shell request の per-target render contract。
+/// claude(pretooluse)は `hookSpecificOutput.updatedInput`、codex は
+/// fallback verdict(hookSpecificOutput deny/allow)のみ render する。
+#[tokio::test(flavor = "current_thread")]
+async fn routed_shell_per_target_render_contract() {
+    let payload = || tool_use_payload("Bash", "{\"command\":\"cat big.txt\"}");
+
+    // claude — Rewrite → updatedInput.command + exit 0。
+    let claude_fx = routed_shell_fixture();
+    claude_fx.write("small.txt", b"hi\n");
+    let r = run_hook(
+        &claude_fx,
+        &["pre-tool-use", "--target", "pretooluse"],
+        &tool_use_payload("Bash", "{\"command\":\"cat small.txt\"}"),
+        &[],
+    )
+    .await;
+    assert_eq!(r.code, 0, "{}", r.stderr);
+    let v: serde_json::Value = serde_json::from_str(r.stdout.trim()).unwrap();
+    let cmd = v
+        .pointer("/hookSpecificOutput/updatedInput/command")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_else(|| panic!("claude updatedInput 無し: {}", r.stdout));
+    assert!(cmd.contains("route run --payload"), "{cmd}");
+    assert!(v
+        .pointer("/hookSpecificOutput/permissionDecision")
+        .is_none());
+
+    // codex — 同一 payload は fallback verdict(deny)のみ render
+    // され updatedInput は発行されない。
+    let codex_fx = routed_shell_fixture();
+    codex_fx.write_big("big.txt");
+    let r = run_hook(
+        &codex_fx,
+        &["pre-tool-use", "--target", "codex"],
+        &payload(),
+        &[],
+    )
+    .await;
+    assert_eq!(r.code, 0, "{}", r.stderr);
+    let v: serde_json::Value = serde_json::from_str(r.stdout.trim()).unwrap();
+    assert_eq!(
+        v.pointer("/hookSpecificOutput/permissionDecision")
+            .and_then(serde_json::Value::as_str),
+        Some("deny"),
+        "{}",
+        r.stdout
+    );
+    assert!(v.pointer("/hookSpecificOutput/updatedInput").is_none());
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -601,6 +751,7 @@ async fn evaluate_typed_entry_matches_ts_verdicts() {
     let opts = EvaluateOptions {
         env: &env_lookup,
         builtin_dir: Some(&fx.builtin_dir),
+        route: None,
     };
     let ws = fx.ws.to_string_lossy().into_owned();
 
@@ -689,7 +840,7 @@ async fn evaluate_typed_entry_matches_ts_verdicts() {
     }
 }
 
-/// `HookTarget::parse` — `HOOK_TARGETS` の 4 値のみ。
+/// `HookTarget::parse` — `HOOK_TARGETS` の 6 値のみ。
 #[test]
 fn hook_target_parse_table() {
     assert_eq!(HookTarget::parse("windsurf"), Some(HookTarget::Windsurf));
@@ -699,6 +850,8 @@ fn hook_target_parse_table() {
         Some(HookTarget::Pretooluse)
     );
     assert_eq!(HookTarget::parse("cursor"), Some(HookTarget::Cursor));
+    assert_eq!(HookTarget::parse("devin"), Some(HookTarget::Devin));
+    assert_eq!(HookTarget::parse("codex"), Some(HookTarget::Codex));
     assert_eq!(HookTarget::parse("claude"), None);
     assert_eq!(HookTarget::parse(""), None);
 }
@@ -1064,7 +1217,7 @@ async fn devin_event_gate_and_fail_open_are_silent() {
 }
 
 const TARGETS_JSON_LINE: &str =
-    "{\"schemaVersion\":1,\"targets\":[\"windsurf\",\"copilot\",\"pretooluse\",\"cursor\",\"devin\"],\"hookConfig\":true}\n";
+    "{\"schemaVersion\":1,\"targets\":[\"windsurf\",\"copilot\",\"pretooluse\",\"cursor\",\"devin\",\"codex\"],\"hookConfig\":true}\n";
 
 #[tokio::test(flavor = "current_thread")]
 async fn hook_targets_json_emits_capability_line_without_usage() {

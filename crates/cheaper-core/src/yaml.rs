@@ -39,7 +39,7 @@ impl std::error::Error for YamlError {
 /// comment-only document yields `Value::Null`, matching the TS
 /// `parseYaml("") === null` behavior relied on by the
 /// `frontmatter-not-object` check.
-pub(crate) fn parse_yaml(text: &str) -> Result<Value, YamlError> {
+pub fn parse_yaml(text: &str) -> Result<Value, YamlError> {
     serde_yml::from_str(text).map_err(YamlError)
 }
 

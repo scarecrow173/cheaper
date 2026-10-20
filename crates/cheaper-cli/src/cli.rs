@@ -287,7 +287,7 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
 /// 書けない場合の stderr-only 降格は init 側が warning 化する)。
 fn resolve_log_root(argv: &[String], io: &CliIo<'_>) -> PathBuf {
     let cwd_flag_relevant = match argv.first().map(String::as_str) {
-        Some("run" | "workflow" | "models" | "count-tokens") => true,
+        Some("run" | "workflow" | "models" | "count-tokens" | "route") => true,
         Some(cmd) => crate::args::alias_worker(cmd).is_some(),
         None => false,
     };
@@ -426,6 +426,22 @@ async fn dispatch(
             write_output(io, &out.envelope, args.format);
             Ok(out.exit_code)
         }
+        ParsedCli::Route(args) => {
+            // utility command 規約 — `record_usage` を呼ばない
+            // (usage.jsonl 記録対象外。B4 の kind:"route" record は
+            // `route run` 側が担う)。
+            let out = crate::route_cmd::execute(&args, io, hooks, started_at).await?;
+            match out {
+                crate::route_cmd::RouteOutput::Utility(out) => {
+                    write_output(io, &out.envelope, args.format);
+                    Ok(out.exit_code)
+                }
+                crate::route_cmd::RouteOutput::Run(out) => {
+                    io.stdout.write_str(&out.text);
+                    Ok(out.exit_code)
+                }
+            }
+        }
         ParsedCli::Run(args) => {
             let out = crate::run::execute(&args, io, hooks, started_at, ctx).await?;
             if let Some(line) = &out.model_line {
@@ -474,6 +490,7 @@ fn command_name(parsed: &ParsedCli) -> &'static str {
         ParsedCli::Usage(_) => "usage",
         ParsedCli::Policy(_) => "policy",
         ParsedCli::HookConfig(_) => "hook-config",
+        ParsedCli::Route(_) => "route",
     }
 }
 
@@ -548,6 +565,9 @@ Commands:
   policy grant add <name> <json>  Add a command grant to user policy
   policy grant list          List command grants in user policy
   policy grant remove <name> Remove a command grant from user policy
+  route resolve         Dry-run route matching (--command or --argv)
+  route run             Execute a validated route payload (--payload)
+  route logs <id>       Read a bounded page from a route log
 
 Options:
   --input <file|->       Task input JSON (default: stdin)
@@ -567,10 +587,16 @@ Options:
   --since <duration>     usage: only records within the period (e.g. 24h)
   --worker <name>        usage: filter by worker name
   --compare-model <p/id> usage: estimate savings vs this model
+  --command <string>     route resolve: shell command to match
+  --argv <json-array>    route resolve: argv array (exclusive with --command)
+  --payload <token>      route run: opaque route payload
+  --offset <bytes>       route logs: byte offset (default: 0)
+  --max-bytes <bytes>    route logs: read size (bounded by policy)
   --log <level>          Enable logs to .cheaper/logs + stderr
                          (off|error|warn|info|debug|trace; env CHEAPER_LOG)
   --log-format <fmt>     Log format: text|json (env CHEAPER_LOG_FORMAT)
   --format <json|text>   Output format (default: json)
+                         route run always emits raw result text
   --quiet                Suppress stderr diagnostics
   --help                 Show this help
   --version              Show version

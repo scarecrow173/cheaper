@@ -112,3 +112,20 @@ fn normal_dispatch_still_works() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.starts_with("Usage: cheaper"));
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn route_help_lists_all_arms() {
+    let (code, out, _err) = run(&["route", "--help"]).await;
+    assert_eq!(code, 0);
+    for needle in [
+        "route resolve",
+        "route run",
+        "route logs <id>",
+        "--payload <token>",
+        "--offset <bytes>",
+        "--max-bytes <bytes>",
+        "route run always emits raw result text",
+    ] {
+        assert!(out.contains(needle), "missing {needle}: {out}");
+    }
+}

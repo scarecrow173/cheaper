@@ -784,3 +784,51 @@ async fn usage_missing_log_reports_zero_records() {
     assert_eq!(f64_at(&v, &["result", "records"]), 0.0);
     assert_eq!(f64_at(&v, &["result", "ok"]), 0.0);
 }
+
+// --- route bucket (B4) ---------------------------------------------------------
+
+#[test]
+fn route_records_aggregate_into_independent_bucket() {
+    let dir = tempfile::tempdir().unwrap();
+    let route_rec = json!({
+        "schemaVersion": 1, "ts": "2026-09-19T00:00:00.000Z",
+        "kind": "route", "route": "cargo-test", "root": "/ws",
+        "originalTokens": 1000, "returnedTokens": 250,
+        "logRef": "rid-1", "exitCode": 0, "ok": true,
+        "postprocessFailures": 0,
+    });
+    let route_fail = json!({
+        "schemaVersion": 1, "ts": "2026-09-19T00:00:00.000Z",
+        "kind": "route", "route": "cargo-test", "root": "/ws",
+        "originalTokens": 500, "returnedTokens": 500,
+        "logRef": "rid-2", "exitCode": 3, "ok": false,
+        "postprocessFailures": 1,
+    });
+    let refetch = json!({
+        "schemaVersion": 1, "ts": "2026-09-19T00:00:00.000Z",
+        "kind": "route-refetch", "logRef": "rid-1",
+        "bytesRead": 4096, "root": "/ws",
+    });
+    write_log(
+        dir.path(),
+        &[run_record().into(), route_rec, route_fail, refetch],
+    );
+    // route kind は is_record gate を通過して読まれる。
+    let records = read_usage_records(dir.path());
+    assert_eq!(records.len(), 4);
+    let report =
+        build_usage_report(dir.path(), &UsageFilters::default(), None, None, &now).unwrap();
+    // run 集計は route record を含まない(records=1, run record のみ)。
+    assert_eq!(report["records"], 1.0);
+    assert_eq!(report["ok"], 1.0);
+    assert_eq!(report["errors"], 0.0);
+    // route bucket は独立 join。
+    let route = &report["route"];
+    assert_eq!(route["executions"], 2.0);
+    assert_eq!(route["failures"], 1.0);
+    assert_eq!(route["refetches"], 1.0);
+    assert_eq!(route["refetchBytes"], 4096.0);
+    assert_eq!(route["originalTokens"], 1500.0);
+    assert_eq!(route["returnedTokens"], 750.0);
+    assert_eq!(route["postprocessFailures"], 1.0);
+}

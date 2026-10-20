@@ -36,6 +36,9 @@ relations:
     - "../specs/bounded-native-hook-evaluation-and-managed-devin-registration.md"
     - "../specs/hook-config-orphan-sweep-ownership-boundary.md"
     - "../discovery/hook-config-sweep-orphans-deletes-foreign-bak-files.md"
+    - "../discovery/pretooluse-auto-routing-to-tasks-and-workflows.md"
+    - "../specs/pretooluse-route-resolver-and-workflow-delegation.md"
+    - "./pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
     - "../designs/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
     - "../plans/restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md"
   refines: []

@@ -689,3 +689,38 @@ async fn repeat_init_warns_and_continues() {
         assert_eq!(env["schemaVersion"], 1);
     }
 }
+
+#[test]
+fn route_cwd_flag_anchors_log_root() {
+    let side = Side::new();
+    let other = side._tmp.path().join("other-ws");
+    std::fs::create_dir_all(&other).unwrap();
+    let out = side.spawn(
+        &[
+            "route",
+            "resolve",
+            "--command",
+            "no-match-xyz",
+            "--cwd",
+            &other.to_string_lossy(),
+            "--log",
+            "info",
+        ],
+        &[],
+        b"",
+    );
+    assert_eq!(out.code, Some(0), "stderr: {:?}", out.stderr);
+    let anchored = other.join(".cheaper").join("logs");
+    assert!(
+        std::fs::read_dir(&anchored)
+            .map(|rd| rd
+                .flatten()
+                .any(|e| e.file_name().to_string_lossy().starts_with("cheaper.log")))
+            .unwrap_or(false),
+        "route --cwd must anchor log root ({anchored:?})"
+    );
+    assert!(
+        !side.log_dir().exists(),
+        "process cwd must not receive .cheaper/logs"
+    );
+}

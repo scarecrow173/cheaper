@@ -2,7 +2,7 @@
 
 use crate::common;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
@@ -153,7 +153,8 @@ async fn root_defaults_preserve_json_types_no_invocation_sharing() {
     assert_eq!(raw["inputs"]["object"]["default"], json!({ "nested": [1] }));
     assert_eq!(input, json!({ "provided": ["caller"] }));
     assert_eq!(
-        a.materialize_job_input("a", &HashMap::new()).unwrap(),
+        a.materialize_job_input("a", &HashMap::new(), &HashSet::new())
+            .unwrap(),
         job(&b, "a").input
     );
 }
@@ -268,7 +269,7 @@ async fn prototype_collision_keys_are_safe() {
     assert!(compiled.inputs.contains_key("__proto__"));
     assert_eq!(
         compiled
-            .materialize_job_input("a", &HashMap::new())
+            .materialize_job_input("a", &HashMap::new(), &HashSet::new())
             .unwrap(),
         json!(1)
     );
@@ -350,7 +351,7 @@ async fn literal_defaults_do_not_create_from_edges() {
     assert!(compiled.edges.is_empty());
     assert_eq!(
         compiled
-            .materialize_job_input("a", &HashMap::new())
+            .materialize_job_input("a", &HashMap::new(), &HashSet::new())
             .unwrap(),
         json!({
             "x": { "$from": "ghost", "path": "" },
@@ -381,6 +382,86 @@ async fn invalid_job_reference_resource_is_invalid_request() {
         let err = fixtures.compiler().validate_definition(&raw).unwrap_err();
         assert_eq!(code(&err), Some(ErrorCode::InvalidRequest), "job: {job}");
     }
+}
+
+/// `when` — schema 形状の検証・`$from` binding の dep edge 推論・
+/// unknown reference 拒否。
+#[tokio::test]
+async fn when_schema_and_dependency_inference() {
+    // `when` の `$from` は consumer edge として推論される。
+    let mut raw = definition();
+    raw["jobs"]["producer"] = json!({ "kind": "tool", "tool": "grep", "input": {} });
+    raw["jobs"]["gated"] = json!({
+        "kind": "tool", "tool": "grep",
+        "when": { "left": { "$from": "producer", "path": "/details/x" }, "op": "exists" },
+        "input": {},
+    });
+    let fixtures = FixtureSet::new();
+    let compiled = fixtures.compiler().compile(&raw, None).await.unwrap();
+    assert!(compiled
+        .edges
+        .iter()
+        .any(|e| e.from == "producer" && e.to == "gated"));
+    // unknown `$from`/`$input`・不正 op・余分な key は InvalidRequest。
+    for job in [
+        json!({
+            "kind": "tool", "tool": "grep", "input": {},
+            "when": { "left": { "$from": "ghost", "path": "" }, "op": "exists" }
+        }),
+        json!({
+            "kind": "tool", "tool": "grep", "input": {},
+            "when": { "left": { "$input": "ghost" }, "op": "exists" }
+        }),
+        json!({
+            "kind": "tool", "tool": "grep", "input": {},
+            "when": { "left": true, "op": "and" }
+        }),
+        json!({
+            "kind": "tool", "tool": "grep", "input": {},
+            "when": { "left": true, "op": "exists", "extra": 1 }
+        }),
+        json!({
+            "kind": "tool", "tool": "grep", "input": {},
+            "when": { "op": "exists" }
+        }),
+    ] {
+        let mut bad = definition();
+        bad["jobs"]["a"] = job.clone();
+        let err = fixtures.compiler().validate_definition(&bad).unwrap_err();
+        assert_eq!(code(&err), Some(ErrorCode::InvalidRequest), "job: {job}");
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn numeric_when_left_path_and_right_input() {
+    let mut raw = definition();
+    raw["inputs"] = json!({
+        "threshold": {"type": "number", "minimum": 0, "default": 8192}
+    });
+    raw["jobs"]["producer"] = json!({ "kind": "tool", "tool": "grep", "input": {} });
+    raw["jobs"]["consumer"] = json!({
+        "kind": "tool", "tool": "grep", "input": {},
+        "when": {
+            "left": {"$from": "producer", "path": "/details/outputTokens"},
+            "op": "gt",
+            "right": {"$input": "threshold"}
+        }
+    });
+    let fixtures = FixtureSet::new();
+    let compiled = fixtures.compiler().compile(&raw, None).await.unwrap();
+    assert!(compiled
+        .edges
+        .iter()
+        .any(|e| e.from == "producer" && e.to == "consumer"));
+    let compiled = fixtures
+        .compiler()
+        .compile(&raw, Some(&json!({"threshold": 0})))
+        .await
+        .unwrap();
+    assert!(compiled
+        .edges
+        .iter()
+        .any(|e| e.from == "producer" && e.to == "consumer"));
 }
 
 #[test]
@@ -481,7 +562,7 @@ async fn deferred_from_input_validates_after_resolution() {
         );
         assert_eq!(
             compiled
-                .materialize_job_input("consumer", &results)
+                .materialize_job_input("consumer", &results, &HashSet::new())
                 .unwrap_err()
                 .code(),
             ErrorCode::InvalidInput
@@ -492,7 +573,7 @@ async fn deferred_from_input_validates_after_resolution() {
         );
         assert_eq!(
             compiled
-                .materialize_job_input("consumer", &results)
+                .materialize_job_input("consumer", &results, &HashSet::new())
                 .unwrap(),
             if kind == "tool" {
                 json!({ "path": "valid" })
@@ -502,14 +583,14 @@ async fn deferred_from_input_validates_after_resolution() {
         );
         assert_eq!(
             compiled
-                .materialize_job_input("consumer", &HashMap::new())
+                .materialize_job_input("consumer", &HashMap::new(), &HashSet::new())
                 .unwrap_err()
                 .code(),
             ErrorCode::InvalidInput
         );
         assert_eq!(
             compiled
-                .materialize_job_input("ghost", &results)
+                .materialize_job_input("ghost", &results, &HashSet::new())
                 .unwrap_err()
                 .code(),
             ErrorCode::InvalidRequest
@@ -540,7 +621,7 @@ async fn mutation_of_definition_invocation_catalog_keeps_snapshot() {
     ));
     assert_eq!(
         compiled
-            .materialize_job_input("a", &HashMap::new())
+            .materialize_job_input("a", &HashMap::new(), &HashSet::new())
             .unwrap(),
         json!({ "task": "original" })
     );
@@ -565,6 +646,7 @@ async fn output_hooks_readiness_schema_missing_partial() {
             WorkflowJobState {
                 terminal: true,
                 result: Some(json!({ "content": [], "details": { "value": 5 } })),
+                condition_skipped: false,
             },
         ),
         (
@@ -572,6 +654,7 @@ async fn output_hooks_readiness_schema_missing_partial() {
             WorkflowJobState {
                 terminal: false,
                 result: None,
+                condition_skipped: false,
             },
         ),
     ]);
@@ -639,6 +722,7 @@ async fn output_schema_binding_snapshot_false_result_not_missing() {
         WorkflowJobState {
             terminal: true,
             result: Some(json!(false)),
+            condition_skipped: false,
         },
     )]);
     assert_eq!(
@@ -666,7 +750,8 @@ async fn missing_pointer_is_output_error_empty_outputs_need_all_terminal() {
                 "a".to_string(),
                 WorkflowJobState {
                     terminal: true,
-                    result: None
+                    result: None,
+                    condition_skipped: false,
                 }
             )]))
             .unwrap(),
@@ -683,7 +768,8 @@ async fn missing_pointer_is_output_error_empty_outputs_need_all_terminal() {
                     "a".to_string(),
                     WorkflowJobState {
                         terminal: true,
-                        result: Some(json!({ "content": [], "details": {} }))
+                        result: Some(json!({ "content": [], "details": {} })),
+                        condition_skipped: false,
                     }
                 )])
             )
@@ -946,7 +1032,9 @@ async fn compact_fixture_matches_real_bulk_reader_schema() {
         json!({ "content": [{ "type": "text", "text": "Explain the source" }] }),
     )]);
     assert_eq!(
-        compiled.materialize_job_input("analyze", &results).unwrap(),
+        compiled
+            .materialize_job_input("analyze", &results, &HashSet::new())
+            .unwrap(),
         json!({ "task": "Explain the source" })
     );
     let states = HashMap::from([
@@ -955,6 +1043,7 @@ async fn compact_fixture_matches_real_bulk_reader_schema() {
             WorkflowJobState {
                 terminal: true,
                 result: None,
+                condition_skipped: false,
             },
         ),
         (
@@ -962,6 +1051,7 @@ async fn compact_fixture_matches_real_bulk_reader_schema() {
             WorkflowJobState {
                 terminal: true,
                 result: Some(json!({ "summary": "public" })),
+                condition_skipped: false,
             },
         ),
     ]);

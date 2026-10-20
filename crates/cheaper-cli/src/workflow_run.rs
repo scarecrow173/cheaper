@@ -48,7 +48,7 @@ use cheaper_tools::tools::process::find_cheaper_error;
 use cheaper_tools::ToolError;
 use cheaper_workflow::{
     project_artifact_metadata, run_workflow, ArtifactProjectionOptions, ArtifactStoreOptions,
-    JobExecutor, JobKind, JobLeaseRequest, RunArtifactStore, WorkflowEnginePorts,
+    CompiledWorkflow, JobExecutor, JobKind, JobLeaseRequest, RunArtifactStore, WorkflowEnginePorts,
     WorkflowExecutionContext, WorkflowExecutorError, WorkflowExecutorResult, WorkflowOutcome,
     WorkflowRunOptions,
 };
@@ -65,7 +65,7 @@ use crate::envelope::{utility_success_envelope, workflow_envelope};
 #[cfg(feature = "dev-seam")]
 use crate::fake_stream::load_test_stream;
 use crate::input::read_task_input;
-use crate::workflow_context::{prepare_workflow_context, SharedToolError};
+use crate::workflow_context::{prepare_workflow_context, SharedToolError, WorkflowContext};
 
 type BoxFuture<'a, T> = Pin<Box<dyn std::future::Future<Output = T> + Send + 'a>>;
 
@@ -116,7 +116,7 @@ impl ArtifactPublisher for LedgerPublisher {
 /// ports/executor/cleanup で共有する run-scoped state。TS の
 /// `store`/`invocation`/`modelPromise`/`ledger`/`abortController`
 /// closure state に相当。
-struct Shared {
+pub(crate) struct Shared {
     root: String,
     user_config_dir: String,
     project_dir: String,
@@ -140,6 +140,7 @@ struct Shared {
     /// job の `RunWorkerDeps.invocation_grants`(`grants.invocation`
     /// span field)へ渡す。
     invocation_grants: Vec<String>,
+    route_exec: Option<Arc<crate::route::run::RouteExecution>>,
 }
 
 impl Shared {
@@ -228,9 +229,13 @@ fn ensure_invocation(shared: &Shared) -> Result<InvocationToolRuntime, ToolError
         store: Arc::clone(&store),
         ledger: Arc::clone(&shared.ledger),
     });
+    let reader: Arc<dyn cheaper_tools::artifact::ArtifactReader> = match &shared.route_exec {
+        Some(route_exec) => route_exec.compose_reader(store.reader()),
+        None => store.reader(),
+    };
     let rt = create_invocation_tool_runtime(InvocationToolRuntimeOptions {
         artifacts: Some(ArtifactPorts {
-            reader: Some(store.reader()),
+            reader: Some(reader),
             publisher: Some(publisher),
         }),
         // `process: effectivePolicy.process` — resolved policy を
@@ -457,6 +462,24 @@ impl JobExecutor for ToolJobExecutor {
                     )])),
                 ) as ToolError);
             };
+            let route_exec = shared
+                .route_exec
+                .as_ref()
+                .filter(|_| ctx.job_id == "exec" && ctx.job.name == "command");
+            if let Some(route_exec) = route_exec {
+                if ctx.input != *route_exec.expected_input() {
+                    return Err(Box::new(
+                        CheaperError::new(
+                            ErrorCode::PolicyViolation,
+                            "routed exec job input does not match the prepared command",
+                        )
+                        .with_details(Map::from_iter([(
+                            "reason".to_string(),
+                            Value::from("exec-input-mismatch"),
+                        )])),
+                    ) as ToolError);
+                }
+            }
             let journal = Arc::new(MutationJournal::new());
             let deny: Vec<&str> = shared
                 .policy
@@ -490,6 +513,7 @@ impl JobExecutor for ToolJobExecutor {
                     abort_grace_ms: None,
                     concurrency: None,
                     eval_spawn: None,
+                    route_context: route_exec.map(|r| r.context()),
                 },
             })?;
             let executed = scope
@@ -506,12 +530,17 @@ impl JobExecutor for ToolJobExecutor {
             let meta = tool_meta(scope.budget().tool_calls(), &journal);
             scope.dispose().await;
             match executed {
-                Ok(result) => Ok(WorkflowExecutorResult {
-                    result: serde_json::to_value(&result).map_err(|e| -> ToolError {
-                        Box::new(CheaperError::new(ErrorCode::InternalError, e.to_string()))
-                    })?,
-                    meta: Some(meta),
-                }),
+                Ok(mut result) => {
+                    if let Some(route_exec) = route_exec {
+                        route_exec.complete(&mut result);
+                    }
+                    Ok(WorkflowExecutorResult {
+                        result: serde_json::to_value(&result).map_err(|e| -> ToolError {
+                            Box::new(CheaperError::new(ErrorCode::InternalError, e.to_string()))
+                        })?,
+                        meta: Some(meta),
+                    })
+                }
                 Err(error) => Err(Box::new(tool_executor_error(error.as_ref(), meta)) as ToolError),
             }
         })
@@ -740,20 +769,51 @@ async fn execute_run_inner(
         .compiler
         .compile(loaded.definition.raw(), Some(&Value::Object(inputs)))
         .await?;
+    let (shared, outcome) = execute_compiled(CompiledRun {
+        ctx: &ctx,
+        workflow: &workflow,
+        effective_policy: &effective_policy,
+        invocation_grants: grant_names,
+        route_exec: None,
+        io,
+        hooks,
+    })
+    .await?;
+    let outcome = outcome?;
+    Ok(CommandOut {
+        envelope: assemble_envelope(&shared, outcome),
+        exit_code: 0,
+        model_line: None,
+    })
+}
 
+pub(crate) struct CompiledRun<'ctx, 'b, 'io> {
+    pub(crate) ctx: &'ctx WorkflowContext,
+    pub(crate) workflow: &'b CompiledWorkflow,
+    pub(crate) effective_policy: &'b RuntimePolicy,
+    pub(crate) invocation_grants: Vec<String>,
+    pub(crate) route_exec: Option<Arc<crate::route::run::RouteExecution>>,
+    pub(crate) io: &'b CliIo<'io>,
+    pub(crate) hooks: &'b CliHooks,
+}
+
+pub(crate) async fn execute_compiled(
+    run: CompiledRun<'_, '_, '_>,
+) -> Result<(Arc<Shared>, Result<WorkflowOutcome, CheaperError>), BoxError> {
     let controller = AbortController::new();
-    let relay = crate::signal::SignalRelay::install_forwarding(&controller, hooks);
+    let relay = crate::signal::SignalRelay::install_forwarding(&controller, run.hooks);
     #[cfg(feature = "dev-seam")]
     let env = ["NODE_ENV", "CHEAPER_TEST_FAKE_STREAM"]
         .into_iter()
-        .filter_map(|name| (io.env)(name).map(|v| (name.to_string(), v)))
+        .filter_map(|name| (run.io.env)(name).map(|v| (name.to_string(), v)))
         .collect::<BTreeMap<_, _>>();
     let shared = Arc::new(Shared {
-        root: ctx.root.clone(),
-        user_config_dir: ctx.dirs.user_config_dir.to_string_lossy().into_owned(),
-        project_dir: ctx.dirs.project_dir.to_string_lossy().into_owned(),
-        policy: effective_policy.clone(),
-        workers: ctx
+        root: run.ctx.root.clone(),
+        user_config_dir: run.ctx.dirs.user_config_dir.to_string_lossy().into_owned(),
+        project_dir: run.ctx.dirs.project_dir.to_string_lossy().into_owned(),
+        policy: run.effective_policy.clone(),
+        workers: run
+            .ctx
             .worker_index()
             .expect("load_workflow が worker index を設定済み"),
         #[cfg(feature = "dev-seam")]
@@ -763,18 +823,19 @@ async fn execute_run_inner(
         store: Mutex::new(None),
         ledger: Arc::new(Mutex::new(Vec::new())),
         model: Mutex::new(None),
-        invocation_grants: grant_names,
+        invocation_grants: run.invocation_grants,
+        route_exec: run.route_exec,
     });
     let ports = build_ports(&shared);
-    let now_clock: Arc<dyn Fn() -> f64 + Send + Sync> = match hooks.now.clone() {
+    let now_clock: Arc<dyn Fn() -> f64 + Send + Sync> = match run.hooks.now.clone() {
         Some(f) => f,
         None => Arc::new(system_now),
     };
     let outcome = run_workflow(WorkflowRunOptions {
-        workflow: &workflow,
+        workflow: run.workflow,
         ports,
-        max_jobs: effective_policy.workflow.max_jobs as f64,
-        timeout_ms: effective_policy.execution.timeout_ms as f64,
+        max_jobs: run.effective_policy.workflow.max_jobs as f64,
+        timeout_ms: run.effective_policy.execution.timeout_ms as f64,
         signal: Some(controller.signal()),
         abort_grace_ms: None,
         now: Some(now_clock),
@@ -794,12 +855,88 @@ async fn execute_run_inner(
     if let Some(rt) = invocation {
         rt.dispose().await;
     }
-    let outcome = outcome?;
-    Ok(CommandOut {
-        envelope: assemble_envelope(&shared, outcome),
-        exit_code: 0,
-        model_line: None,
+    Ok((shared, outcome))
+}
+
+pub(crate) struct RoutedRun<'ctx, 'b, 'io> {
+    pub ctx: &'ctx WorkflowContext,
+    pub file_root: &'b str,
+    pub workflow_path: &'b str,
+    pub inputs: Map<String, Value>,
+    pub effective_policy: &'b RuntimePolicy,
+    pub route_exec: Arc<crate::route::run::RouteExecution>,
+    pub io: &'b CliIo<'io>,
+    pub hooks: &'b CliHooks,
+}
+
+pub(crate) async fn execute_routed(
+    run: RoutedRun<'_, '_, '_>,
+) -> Result<Result<WorkflowOutcome, CheaperError>, BoxError> {
+    let loaded = run
+        .ctx
+        .load_workflow_from(run.workflow_path, run.file_root)
+        .await?;
+    validate_routed_convention(loaded.definition.raw())?;
+    let workflow = loaded
+        .compiler
+        .compile(loaded.definition.raw(), Some(&Value::Object(run.inputs)))
+        .await?;
+    let (_shared, outcome) = execute_compiled(CompiledRun {
+        ctx: run.ctx,
+        workflow: &workflow,
+        effective_policy: run.effective_policy,
+        invocation_grants: Vec::new(),
+        route_exec: Some(run.route_exec),
+        io: run.io,
+        hooks: run.hooks,
     })
+    .await?;
+    Ok(outcome)
+}
+
+fn validate_routed_convention(raw: &Value) -> Result<(), CheaperError> {
+    let invalid = |reason: &'static str| {
+        CheaperError::new(
+            ErrorCode::InvalidRuntimePolicy,
+            "routed workflow does not satisfy the routed-exec convention",
+        )
+        .with_details(Map::from_iter([(
+            "reason".to_string(),
+            Value::from(reason),
+        )]))
+    };
+    let exec = raw
+        .get("jobs")
+        .and_then(Value::as_object)
+        .and_then(|jobs| jobs.get("exec"))
+        .and_then(Value::as_object)
+        .ok_or_else(|| invalid("missing-exec-job"))?;
+    if exec.get("kind").and_then(Value::as_str) != Some("tool")
+        || exec.get("tool").and_then(Value::as_str) != Some("command")
+        || exec.contains_key("when")
+    {
+        return Err(invalid("exec-job-shape"));
+    }
+    let exec_result = raw
+        .get("outputs")
+        .and_then(Value::as_object)
+        .and_then(|outputs| outputs.get("execResult"))
+        .and_then(Value::as_object)
+        .and_then(|output| output.get("value"))
+        .and_then(Value::as_object);
+    let whole_exec = exec_result.is_some_and(|binding| {
+        binding.get("$from").and_then(Value::as_str) == Some("exec")
+            && binding
+                .get("path")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .is_empty()
+            && binding.keys().all(|k| k == "$from" || k == "path")
+    });
+    if !whole_exec {
+        return Err(invalid("execResult-output"));
+    }
+    Ok(())
 }
 
 /// outcome → `workflow_envelope` 投影。`meta` は engine meta +

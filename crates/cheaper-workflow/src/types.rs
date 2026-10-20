@@ -84,6 +84,9 @@ pub struct WorkflowJob {
     pub input: Value,
     pub needs: Option<Vec<String>>,
     pub resources: Option<WorkflowResources>,
+    /// `when` predicate `{left, op, right?}` の raw JSON。
+    /// operand 内の binding は deferred(schedule 時に materialize)。
+    pub when: Option<Value>,
 }
 
 /// `WorkflowOutput`。`value` は binding object を保持した raw JSON。
@@ -159,6 +162,7 @@ pub(crate) fn parse_job(value: &Value) -> WorkflowJob {
                 .unwrap_or_default()
         }),
         resources,
+        when: obj.get("when").cloned(),
     }
 }
 
@@ -335,17 +339,22 @@ pub struct CompiledJob {
     pub input: Value,
     pub needs: Option<Vec<String>>,
     pub resources: Option<WorkflowResources>,
+    /// `when` predicate(raw — operand の binding は未展開)。
+    pub when: Option<Value>,
     pub manifest: Option<ResourceManifest>,
 }
 
 impl Serialize for CompiledJob {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        // `{kind, tool|worker, input, needs?, resources?, manifest?}`。
+        // `{kind, tool|worker, input, needs?, resources?, when?, manifest?}`。
         let mut len = 3;
         if self.needs.is_some() {
             len += 1;
         }
         if self.resources.is_some() {
+            len += 1;
+        }
+        if self.when.is_some() {
             len += 1;
         }
         if self.manifest.is_some() {
@@ -360,6 +369,9 @@ impl Serialize for CompiledJob {
         }
         if let Some(resources) = &self.resources {
             m.serialize_entry("resources", &SerializeWorkflowResources(resources))?;
+        }
+        if let Some(when) = &self.when {
+            m.serialize_entry("when", when)?;
         }
         if let Some(manifest) = &self.manifest {
             m.serialize_entry("manifest", manifest)?;
@@ -412,6 +424,9 @@ pub struct WorkflowJobState {
     pub terminal: bool,
     /// `result !== undefined` のみ `Some`(`null` result は区別される)。
     pub result: Option<Value>,
+    /// `when` 条件不成立による skip(`CONDITION_SKIPPED`)。この
+    /// producer への `$from` 参照は `null` に materialize される。
+    pub condition_skipped: bool,
 }
 
 /// `CompiledWorkflow`。`order` が job 実行順の正本。

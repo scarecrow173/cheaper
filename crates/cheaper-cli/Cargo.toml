@@ -36,6 +36,8 @@ tokio = { workspace = true, features = ["signal", "rt-multi-thread"] }
 include_dir = "0.7"
 # `auth login --type api_key` secret prompt (T5). Approved new dep.
 rpassword = "7"
+# route rewrite payload の base64url codec(B2)。workspace 共有依存。
+base64.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

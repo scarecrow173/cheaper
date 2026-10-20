@@ -29,6 +29,7 @@ relations:
     - "./managed-process-bounded-lifecycle-policy.md"
     - "./opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
     - "./invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
+    - "./pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
   refines: []
   refined-by: []
   derives-from: ["../discovery/policy-gated-command-tool.md"]

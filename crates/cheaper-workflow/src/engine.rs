@@ -9,7 +9,7 @@
 //! send 失敗を検知して release する(TS の `finally` が return 後も
 //! 走るのと同じ guarantee)。
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -31,8 +31,9 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use tracing::Instrument;
 
+use crate::bindings::{materialize_bindings, parse_binding, resolve_pointer, MaterializeOptions};
 use crate::json::clone_json;
-use crate::types::{CompiledJob, CompiledWorkflow, JobKind, WorkflowJobState};
+use crate::types::{Binding, CompiledJob, CompiledWorkflow, JobKind, WorkflowJobState};
 
 type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
@@ -469,6 +470,77 @@ enum Event {
     },
 }
 
+/// `when` predicate の deterministic 評価(LLM・I/O なし)。
+/// operand は `materialize_bindings` と同じ規則で解決する
+/// (skipped producer の `$from` は `null`)。binding 解決失敗は
+/// when-false ではなく error(呼出し側で job failure 化)。
+///
+/// - `exists`: `left` が非 `null` に materialize するか。
+///   `$from` の producer skipped/result 不在・pointer 未解決は
+///   `false`(`null`/missing は存在しない扱い)。
+/// - `eq`/`ne`: JSON 等価。
+/// - `gt`/`lt`: 両 operand が number のときのみ数値比較、
+///   片方でも非数値なら `false`(判定不能を安全側へ倒す)。
+fn evaluate_when(
+    when: &Value,
+    inputs: &Map<String, Value>,
+    results: &HashMap<String, Value>,
+    skipped: &HashSet<String>,
+) -> Result<bool, CheaperError> {
+    let obj = when.as_object();
+    let op = obj.and_then(|o| o.get("op")).and_then(Value::as_str);
+    let options = MaterializeOptions {
+        skipped_from: Some(skipped),
+        ..Default::default()
+    };
+    let (Some(obj), Some(op)) = (obj, op) else {
+        return Err(CheaperError::new(
+            ErrorCode::InvalidRequest,
+            "invalid when predicate",
+        ));
+    };
+    let left = obj.get("left").unwrap_or(&Value::Null);
+    if op == "exists" {
+        // `$from` operand は pointer 未解決・producer 不在を
+        // 「存在しない」として `false` へ倒す(error ではない)。
+        if let Some(Binding::From(b)) = parse_binding(left)? {
+            if skipped.contains(&b.from) {
+                return Ok(false);
+            }
+            return Ok(match results.get(&b.from) {
+                Some(result) => resolve_pointer(result, &b.path, ErrorCode::InvalidInput)
+                    .map(|v| !v.is_null())
+                    .unwrap_or(false),
+                None => false,
+            });
+        }
+        return Ok(!materialize_bindings(left, inputs, results, options)?.is_null());
+    }
+    let left = materialize_bindings(left, inputs, results, options)?;
+    let right = materialize_bindings(
+        obj.get("right").unwrap_or(&Value::Null),
+        inputs,
+        results,
+        options,
+    )?;
+    match op {
+        "eq" => Ok(left == right),
+        "ne" => Ok(left != right),
+        "gt" | "lt" => match (left.as_f64(), right.as_f64()) {
+            (Some(left), Some(right)) => Ok(if op == "gt" {
+                left > right
+            } else {
+                left < right
+            }),
+            _ => Ok(false),
+        },
+        _ => Err(CheaperError::new(
+            ErrorCode::InvalidRequest,
+            format!("unknown when op: {op}"),
+        )),
+    }
+}
+
 /// `diagnostic(outerError)` — `CheaperError` 入力直結用。
 fn diagnostic_of(error: &CheaperError) -> WorkflowDiagnostic {
     let source = error.message();
@@ -496,6 +568,10 @@ struct RunState<'x> {
     ports: &'x WorkflowEnginePorts,
     jobs: Vec<JobExecution>,
     results: HashMap<String, Value>,
+    /// `CONDITION_SKIPPED` で終了した job id — `$from` の null
+    /// materialization・`dependency_failed` 非伝播・workflow error
+    /// 集約除外の 3 箇所で参照する。
+    condition_skipped: HashSet<String>,
     running: usize,
     terminal: usize,
     outer_error: Option<CheaperError>,
@@ -524,6 +600,12 @@ impl<'x> RunState<'x> {
             self.running -= 1;
         }
         self.jobs[index].phase = status;
+        // `CONDITION_SKIPPED` は dependents へ伝播しない — 各 dependent
+        // は自身の `when` を評価するか、`when` が無ければ producer の
+        // `null` result を input に実行する。
+        let condition_skipped = error
+            .as_ref()
+            .is_some_and(|e| e.code == "CONDITION_SKIPPED");
         let prepared_at = self.jobs[index].prepared_at;
         let execution = (self.ports.execution_metrics)(Some(self.jobs[index].id.as_str()));
         self.jobs[index].outcome = Some(WorkflowJobOutcome {
@@ -541,7 +623,7 @@ impl<'x> RunState<'x> {
         let children = std::mem::take(&mut self.jobs[index].children);
         for child in &children {
             self.jobs[*child].remaining -= 1;
-            if status != JobStatus::Succeeded {
+            if status != JobStatus::Succeeded && !condition_skipped {
                 self.jobs[*child].dependency_failed = true;
             }
         }
@@ -555,10 +637,11 @@ impl<'x> RunState<'x> {
     }
 
     fn admit(&mut self, index: usize) {
-        match self
-            .workflow
-            .materialize_job_input(&self.jobs[index].id.clone(), &self.results)
-        {
+        match self.workflow.materialize_job_input(
+            &self.jobs[index].id.clone(),
+            &self.results,
+            &self.condition_skipped,
+        ) {
             Ok(input) => {
                 self.jobs[index].prepared_at = Some((self.now)());
                 self.jobs[index].input = Some(input.clone());
@@ -656,6 +739,42 @@ impl<'x> RunState<'x> {
                         }),
                         Map::new(),
                     );
+                } else if let Some(when) = self.jobs[index].job.when.clone() {
+                    // `when` は dependency 解決後・admission 前に評価する
+                    // (`when` 内 `$from` は dep edge 推論済みのため
+                    // producer は terminal)。
+                    match evaluate_when(
+                        &when,
+                        &self.workflow.inputs,
+                        &self.results,
+                        &self.condition_skipped,
+                    ) {
+                        Ok(true) => self.admit(index),
+                        Ok(false) => {
+                            self.condition_skipped.insert(self.jobs[index].id.clone());
+                            self.finish_job(
+                                index,
+                                JobStatus::Skipped,
+                                Some(WorkflowDiagnostic {
+                                    code: "CONDITION_SKIPPED".to_string(),
+                                    message: "job condition evaluated to false".to_string(),
+                                }),
+                                Map::new(),
+                            );
+                        }
+                        Err(error) => {
+                            // `when` の binding 解決失敗は silent skip で
+                            // なく job failure(compile を通過した参照が
+                            // runtime で失敗するのは engine 不変条件違反)。
+                            let error: ToolError = Box::new(error);
+                            self.finish_job(
+                                index,
+                                JobStatus::Failed,
+                                Some(diagnostic(&error, ErrorCode::ToolExecutionFailure)),
+                                Map::new(),
+                            );
+                        }
+                    }
                 } else {
                     self.admit(index);
                 }
@@ -913,6 +1032,7 @@ async fn run_workflow_inner(
         ports: &ports,
         jobs,
         results: HashMap::new(),
+        condition_skipped: HashSet::new(),
         running: 0,
         terminal: 0,
         outer_error: None,
@@ -1026,6 +1146,7 @@ async fn run_workflow_inner(
                 WorkflowJobState {
                     terminal: true,
                     result: state.results.get(&job.id).cloned(),
+                    condition_skipped: state.condition_skipped.contains(&job.id),
                 },
             )
         })
@@ -1049,11 +1170,9 @@ async fn run_workflow_inner(
         }
     }
     let error = state.outer_error.or_else(|| {
-        if state
-            .jobs
-            .iter()
-            .any(|job| job.phase != JobStatus::Succeeded)
-        {
+        if state.jobs.iter().any(|job| {
+            job.phase != JobStatus::Succeeded && !state.condition_skipped.contains(&job.id)
+        }) {
             Some(CheaperError::new(
                 ErrorCode::ToolExecutionFailure,
                 "workflow job failed",

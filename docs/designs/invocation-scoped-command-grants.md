@@ -25,6 +25,7 @@ relations:
   related:
     - "../designs/tool-operator-built-in-worker.md"
     - "../designs/policy-gated-command-tool.md"
+    - "../designs/pretooluse-route-resolver-and-delegated-workflow-execution.md"
   refines: []
   refined-by: []
   derives-from:

@@ -7,7 +7,7 @@
           {
             "type": "command",
             "shell": "bash",
-            "command": "sh ./cheaper.sh hook pre-tool-use --target pretooluse"
+            "command": "sh ./cheaper.sh hook pre-tool-use --target codex"
           }
         ]
       }

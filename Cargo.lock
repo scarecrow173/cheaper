@@ -827,6 +827,7 @@ dependencies = [
 name = "cheaper-cli"
 version = "1.0.0"
 dependencies = [
+ "base64 0.22.1",
  "cheaper-core",
  "cheaper-observability",
  "cheaper-provider",

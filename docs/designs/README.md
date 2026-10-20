@@ -63,6 +63,7 @@ Directory: `docs/designs`
 | DESIGN-034EMWNJbQpMB0N3ZTXM5A | policy-gated command tool の grant 境界と managed-subprocess 共有基盤の設計 | approved | [policy-gated-command-tool.md](./policy-gated-command-tool.md) |
 | DESIGN-034EDkfp76WJ5Sn8aKMnUv | Post-feature structural refactoring | approved | [post-feature-structural-refactoring.md](./post-feature-structural-refactoring.md) |
 | DESIGN-034DyR22wfkjn91McXS5jv | Post-migration structural cleanup reorganization | approved | [post-migration-structural-cleanup-reorganization.md](./post-migration-structural-cleanup-reorganization.md) |
+| DESIGN-034JbqoCWm85pKC033fgfd | PreToolUse route resolver and delegated workflow execution | approved | [pretooluse-route-resolver-and-delegated-workflow-execution.md](./pretooluse-route-resolver-and-delegated-workflow-execution.md) |
 | DESIGN-034r2qodyo7KRfBsGRJQty | provider/auth guide runtime sync design | approved | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | DESIGN-034r05iHy2gdnp0zOYnFNU | Provider-only registration layer | approved | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
 | DESIGN-034r05iHy2gdnoCKJhKNGD | Repair abort and failure normalization hardening | approved | [repair-abort-and-failure-normalization-hardening.md](./repair-abort-and-failure-normalization-hardening.md) |

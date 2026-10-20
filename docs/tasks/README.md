@@ -9,9 +9,11 @@ Directory: `docs/tasks`
 | TASK-034rAcFy8if4UmbPEMTdg1 | Adapter contract tests and APM install E2E assertions | done | [adapter-contract-tests-and-apm-install-e2e-assertions.md](./adapter-contract-tests-and-apm-install-e2e-assertions.md) |
 | TASK-034r05iHQeQpDpq6zeHAT0 | Add built-in worker definitions | done | [add-built-in-worker-definitions.md](./add-built-in-worker-definitions.md) |
 | TASK-034r05iHQeQpDppVaGtCgu | Add built-in worker JSON schemas | done | [add-built-in-worker-json-schemas.md](./add-built-in-worker-json-schemas.md) |
+| TASK-034Jg6HoEn3yiLTP7PG0qz | Add builtin route workflow condense worker and embedded resources | done | [add-builtin-route-resources.md](./add-builtin-route-resources.md) |
 | TASK-034z52ABwxDsaQWun7VUDu | add cheaper hook command with target adapters | done | [add-cheaper-hook-command-with-target-adapters.md](./add-cheaper-hook-command-with-target-adapters.md) |
 | TASK-034rzRuCuCgZ08BmHTCqgz | Add cheaper usage aggregation command with filters and estimated savings | done | [add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md](./add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md) |
 | TASK-034rzWT9V9bHwEIcrmbTor | Add CLI --model flag and models command | done | [add-cli-model-flag-and-models-command.md](./add-cli-model-flag-and-models-command.md) |
+| TASK-034Jg6ieFXYQcEldcUVKri | Add command grant exitCodes and nonzero-exit result reporting | done | [add-command-grant-exitcodes.md](./add-command-grant-exitcodes.md) |
 | TASK-034r05iHQeQpDpSS51up2r | Add count-tokens CLI command | done | [add-count-tokens-cli.md](./add-count-tokens-cli.md) |
 | TASK-034r05iHQeQpDpSeJahHce | Add count_tokens tool to runtime-pi registry and built-in workers | done | [add-count-tokens-tool.md](./add-count-tokens-tool.md) |
 | TASK-034zBIYG4bskj0L6ueomFK | Add deterministic sibling-parallelism pin tests to runtime-pi | done | [add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md](./add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md) |
@@ -21,19 +23,34 @@ Directory: `docs/tasks`
 | TASK-034EekRVLtDbzc0slwVFX0 | T1: cheaper-core ErrorCode::from_str reverse lookup | done | [add-errorcode-from-str-reverse-lookup-in-cheaper-core.md](./add-errorcode-from-str-reverse-lookup-in-cheaper-core.md) |
 | TASK-034r05iHQeQpDpu1iPmr1q | Add fake stream hook and e2e execution tests | done | [add-fake-stream-hook-and-e2e-execution-tests.md](./add-fake-stream-hook-and-e2e-execution-tests.md) |
 | TASK-034z52KS4mSEHAIf28JHuj | add hook contract tests and port existing adapter e2e | done | [add-hook-contract-tests-and-port-existing-adapter-e2e.md](./add-hook-contract-tests-and-port-existing-adapter-e2e.md) |
+| TASK-034Jg6xqeFUtHyZ5MxHgzu | Add hook entry route loading and eval supply | done | [add-hook-entry-route-loading.md](./add-hook-entry-route-loading.md) |
 | TASK-034IpPzy0tH0R50dS4XIN0 | Add hook_eval_dedup integration tests | done | [add-hook-eval-dedup-integration-tests.md](./add-hook-eval-dedup-integration-tests.md) |
+| TASK-034Jg6w6lRkQeutruaa2Wd | Add hook target rendering for Rewrite and codex split | done | [add-hook-rewrite-target-rendering.md](./add-hook-rewrite-target-rendering.md) |
+| TASK-034Jg6vtyvGJ0uGKzCwGcu | Add hook route arm and Rewrite verdict | done | [add-hook-route-rewrite.md](./add-hook-route-rewrite.md) |
 | TASK-034zQTNEJMgP0EgzXJbGtM | Add launcher acquisition contract tests | done | [add-launcher-acquisition-contract-tests.md](./add-launcher-acquisition-contract-tests.md) |
 | TASK-034rzWI7U1txBCpGr7WZaJ | Add model pricing metadata layer and bundled data | done | [add-model-pricing-metadata-layer.md](./add-model-pricing-metadata-layer.md) |
 | TASK-034rzWIEgBvwU5S4KYY68N | Add models.yaml exclude with union merge | done | [add-models-config-exclude.md](./add-models-config-exclude.md) |
 | TASK-034r05iHQeQpDpySHHPmpY | Add Ollama docker-compose and document container usage in AGENTS.md | done | [add-ollama-docker-compose-and-document-container-usage-in-agents-md.md](./add-ollama-docker-compose-and-document-container-usage-in-agents-md.md) |
 | TASK-034z3zOydB4GluAraLc16E | Add POSIX and PowerShell platform launchers to hooks payload | done | [add-posix-and-powershell-platform-launchers-to-hooks-payload.md](./add-posix-and-powershell-platform-launchers-to-hooks-payload.md) |
+| TASK-034Jg6j7EASBiaIqXlc07u | Add proc full-output tee sink for route logging | done | [add-proc-output-tee.md](./add-proc-output-tee.md) |
 | TASK-034r05iHWkNF7zJyX85ZOT | Add provider plugin contract and registration order | done | [add-provider-plugin-contract-and-registration-order.md](./add-provider-plugin-contract-and-registration-order.md) |
 | TASK-034r05iHWkNF7zFyMzc7zU | Add resolveUserConfigDir helper and Pi state path wiring | done | [add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md](./add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md) |
+| TASK-034Jg6Irzs6nV7o5ocyN2Q | Add route subcommand CLI wiring and help docs | done | [add-route-cli-wiring.md](./add-route-cli-wiring.md) |
+| TASK-034Jg6jKK9lLmnOPTaQhAW | Add route context scope options and single-grant policy projection | done | [add-route-context-scope-options.md](./add-route-context-scope-options.md) |
+| TASK-034Jg6kYud58YUAHEYOIDt | Add route declaration schema and three-layer loader | done | [add-route-declaration-loader.md](./add-route-declaration-loader.md) |
+| TASK-034Jg6wIaUwhyIQnDJRAuu | Add route fingerprint to hook dedup cache | done | [add-route-dedup-fingerprint.md](./add-route-dedup-fingerprint.md) |
+| TASK-034Jg6IVuYRxFj2Zn3JPI9 | Add route integration and compile-contract tests | done | [add-route-integration-tests.md](./add-route-integration-tests.md) |
+| TASK-034Jg6ui9tEt8GFLDetq57 | Add route log store and RouteLogReader | done | [add-route-log-store.md](./add-route-log-store.md) |
+| TASK-034Jg6HVZoKBgwGDZT8ZT6 | Add route logs CLI arm | done | [add-route-logs-cli.md](./add-route-logs-cli.md) |
+| TASK-034Jg6lAjcLYbfDm0Y370r | Add route resolver payload codec and command preflight seam | done | [add-route-resolver-and-payload.md](./add-route-resolver-and-payload.md) |
+| TASK-034Jg6GTgeZjILEwH5ZvE6 | Add route run delegated workflow execution | done | [add-route-run-delegated-exec.md](./add-route-run-delegated-exec.md) |
+| TASK-034Jg6uR3fxSVODX2EdmEz | Add route and route-refetch usage records | done | [add-route-usage-records.md](./add-route-usage-records.md) |
 | TASK-034zBJ55ACvdlADYOtaKKc | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | done | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
 | TASK-034r05iHK8bA7hdI3bUubr | Add scripted fake stream test fixture | done | [add-scripted-fake-stream-test-fixture.md](./add-scripted-fake-stream-test-fixture.md) |
 | TASK-034z1POhgJ49oVv2arDj6X | Add SEA entrypoint sea-main.ts | done | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | TASK-034r05iHQeQpDqCTYluKr1 | Add version check and set scripts | done | [add-version-check-and-set-scripts.md](./add-version-check-and-set-scripts.md) |
 | TASK-TttCTIVey8FHby8zR3UDqb | Add worker workload profile and auto tier classifier | done | [add-worker-workload-profile-and-auto-tier-classifier.md](./add-worker-workload-profile-and-auto-tier-classifier.md) |
+| TASK-034Jg6koI5aIWEPUXfhobu | Add workflow job when condition evaluation | done | [add-workflow-when.md](./add-workflow-when.md) |
 | TASK-034AR8FLSgTI6VLWpQZrQS | Benchmark evidence 集計と workflow usage guidance | done | [aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md](./aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md) |
 | TASK-034r05iHQeQpDqx9iKaroO | Align CI with canonical setup/check entrypoints and locked install | done | [align-ci-with-canonical-entrypoints.md](./align-ci-with-canonical-entrypoints.md) |
 | TASK-034r2ruj7LGYlehohv1Xjs | Align usage-log docs with recording contract | done | [align-usage-log-docs-with-recording-contract.md](./align-usage-log-docs-with-recording-contract.md) |

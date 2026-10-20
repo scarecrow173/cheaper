@@ -39,7 +39,8 @@ use crate::tools::proc::executable::{
     native_executable, resolve_process_executable, ProcessExecutableOptions,
 };
 use crate::tools::proc::{
-    aborted_err, minimal_env, prepare_cwd, OnTimeout, ProcIdentity, ProcLimits, ProcPrepared,
+    aborted_err, minimal_env, prepare_cwd, prepare_exec_cwd, OnTimeout, ProcIdentity, ProcLimits,
+    ProcPrepared, ProcTee,
 };
 use crate::ToolError;
 
@@ -100,6 +101,9 @@ pub fn command_details_schema() -> Value {
             "durationMs": {"type": "integer", "minimum": 0},
             "stdout": stream,
             "stderr": stream,
+            "logRef": {"type": "string"},
+            "outputTokens": {"type": "integer", "minimum": 0},
+            "outputTokensTruncated": {"type": "boolean"},
         },
         "required": [
             "grant", "argv", "state", "exitCode", "signal", "durationMs",
@@ -184,41 +188,61 @@ pub(crate) fn pin_command_grants(
 ) -> Result<BTreeMap<String, String>, ToolError> {
     let mut pins = BTreeMap::new();
     for (name, grant) in &policy.grants {
-        // (a) workspace-relative declared executable の pre-filter。
-        if is_relative_executable_path(&grant.executable) {
-            return Err(grant_violation(
-                name,
-                "workspace-resident executables are not grantable",
-            ));
-        }
-        let resolved = resolve_process_executable(
-            &grant.executable,
-            &ProcessExecutableOptions {
-                root,
-                symlink_policy,
-                denylist,
-                search_path: None,
-            },
-            "command grant",
-        )?;
-        // resolved basename の deny 再検査(design §(d) 適用点 2 —
-        // alias/symlink が denied executable へ解決する迂回を塞ぐ)。
-        if is_denied_command_executable(&resolved) {
-            return Err(grant_violation(
-                name,
-                "resolved executable is interpreter or exec-capable",
-            ));
-        }
-        // (b) realpath 後の workspace 内 canonical path を拒否。
-        if within_workspace(root, &resolved) {
-            return Err(grant_violation(
-                name,
-                "workspace-resident executables are not grantable",
-            ));
-        }
+        let resolved = pin_command_grant(name, grant, root, symlink_policy, denylist)?;
         pins.insert(name.clone(), resolved);
     }
     Ok(pins)
+}
+
+/// `pin_command_grants` の単一 grant 版 — `route::resolve` の
+/// viability 事前評価(`check_command_execution`)が scope pin 未
+/// 構築の状態でも同一 predicate を使うための共有 seam。
+/// workspace-resident executable は二段で拒否: (a) absolute でない
+/// separator 付き declared path は `resolve_process_executable` の
+/// workspace-relative 解決へ着地するため委譲前に
+/// `POLICY_VIOLATION`、(b) `native()` realpath 後の canonical path
+/// が workspace root 内なら同じく `POLICY_VIOLATION`。
+/// pin 不能・deny 該当 grant は `POLICY_VIOLATION` で返す。
+pub fn pin_command_grant(
+    name: &str,
+    grant: &CommandGrant,
+    root: &str,
+    symlink_policy: SymlinkPolicy,
+    denylist: Option<&PathDenylist>,
+) -> Result<String, ToolError> {
+    // (a) workspace-relative declared executable の pre-filter。
+    if is_relative_executable_path(&grant.executable) {
+        return Err(grant_violation(
+            name,
+            "workspace-resident executables are not grantable",
+        ));
+    }
+    let resolved = resolve_process_executable(
+        &grant.executable,
+        &ProcessExecutableOptions {
+            root,
+            symlink_policy,
+            denylist,
+            search_path: None,
+        },
+        "command grant",
+    )?;
+    // resolved basename の deny 再検査(design §(d) 適用点 2 —
+    // alias/symlink が denied executable へ解決する迂回を塞ぐ)。
+    if is_denied_command_executable(&resolved) {
+        return Err(grant_violation(
+            name,
+            "resolved executable is interpreter or exec-capable",
+        ));
+    }
+    // (b) realpath 後の workspace 内 canonical path を拒否。
+    if within_workspace(root, &resolved) {
+        return Err(grant_violation(
+            name,
+            "workspace-resident executables are not grantable",
+        ));
+    }
+    Ok(resolved)
 }
 
 /// pin 済み executable の spawn 前再検証(design §(b)) — pin 後の
@@ -270,6 +294,32 @@ pub struct CommandToolOptions {
     /// `onTimeout(reason)`。
     pub on_timeout: Option<OnTimeout>,
     pub denylist: Option<PathDenylist>,
+    /// route scope 構築層のみが注入する route context(design
+    /// §route context 注入)。`None` で従来挙動不変。
+    pub route_context: Option<RouteCommandContext>,
+}
+
+/// route scope の command tool 注入 context(design §route context
+/// 注入、R18/R26/C2)。
+#[derive(Clone, Default)]
+pub struct RouteCommandContext {
+    /// `env-prefix` + ambient allowlist 合成の子 env 上乗せ分。
+    /// 優先順位 `env-prefix > ambient` の合成は注入側で済み、
+    /// tool は `grant.env` への override として畳むのみ
+    /// (= extra_env > grant.env)。
+    pub extra_env: Map<String, Value>,
+    /// payload `cwd` の子 process cwd override(R18)— grant.cwd
+    /// 経路を bypass し、workspace containment は課さない
+    /// (存在確認 + denylist 検査のみ)。
+    pub exec_cwd: Option<String>,
+    /// 任意の completed exit を result 化(exit-code mirror、C2)—
+    /// `accepted_exit_codes: None` へ投影する。spawn 失敗・timeout・
+    /// abort は従来どおり Err。
+    pub accept_any_exit_code: bool,
+    /// 全量 output tee sink(R26)— tee 内部の write 失敗は sink が
+    /// 自身へ記録し capture を失敗させない(postprocessFailure
+    /// 縮退、R29)。
+    pub log_tee: Option<ProcTee>,
 }
 
 /// `createCommandTool` が返す canonical definition。
@@ -354,6 +404,66 @@ pub fn command_tool_definition(
 /// token(pattern 適合・rest 残余を問わず)に match 前の独立 check
 /// として適用する(design §(a))。pattern 不一致・metachar 含有は
 /// `POLICY_VIOLATION`。
+/// `check_command_execution` の検証済み出力 — spawn に必要な
+/// grant・cwd・executable を保持する(predicate 結果の共有
+/// transport。`command::execute` はこの 3 値をそのまま使い、
+/// `route::resolve` は viability の成否のみ見る)。
+pub struct CheckedCommand {
+    pub grant: CommandGrant,
+    pub cwd: String,
+    /// 検証済み executable — scope pin map の pin 済み path を
+    /// spawn 前に再検証した結果(`verify_pinned_executable`)。
+    /// pin map に grant が無ければここへは到達しない。
+    pub executable: String,
+}
+
+/// spawn 無しの事前 check(design §viability — B#3 共有 seam)。
+/// `command::execute` が実 spawn 前に課す全 gate を同一 predicate
+/// で評価する: grant 解決 → argv pattern/metachar → cwd
+/// (route context の `exec_cwd` override を含む)→ executable
+/// 検証(per-scope pin map の pin 済み path の再検証。pin 不在は
+/// `POLICY_VIOLATION` — resolver は選択 grant を `pin_command_grant`
+/// で pre-pin してから本 seam を呼ぶ)。predicate の複製による
+/// drift を防ぐため `command::execute` もこの entry を呼ぶ。
+pub fn check_command_execution(
+    options: &CommandToolOptions,
+    name: &str,
+    args: &[String],
+) -> Result<CheckedCommand, ToolError> {
+    let grant =
+        resolve_command_grant(&options.command, name).map_err(|e| Box::new(e) as ToolError)?;
+    authorize_args(name, &grant, args)?;
+    let route_ctx = options.route_context.as_ref();
+    let cwd = match route_ctx.and_then(|r| r.exec_cwd.as_deref()) {
+        Some(exec_cwd) => prepare_exec_cwd(exec_cwd, options.denylist.as_ref())?,
+        None => prepare_cwd(
+            &options.root,
+            &grant.cwd,
+            options.symlink_policy,
+            options.denylist.as_ref(),
+            "command",
+        )?,
+    };
+    // executable 事前検証 — pin 済み path は scope 構築時点の
+    // canonical へ immutable に固定され、spawn 前にここで再検証
+    // する(verify_pinned)。pin map 無しの経路は fail-closed —
+    // いずれも deny/residency の同一 predicate。
+    let executable = match options.pins.get(name) {
+        Some(pinned) => {
+            verify_pinned_executable(name, pinned, &options.root)?;
+            pinned.clone()
+        }
+        None => {
+            return Err(grant_violation(name, "no pinned executable"));
+        }
+    };
+    Ok(CheckedCommand {
+        grant,
+        cwd,
+        executable,
+    })
+}
+
 fn authorize_args(name: &str, grant: &CommandGrant, args: &[String]) -> Result<(), ToolError> {
     for token in args {
         if argv_shell_re().is_match(token) {
@@ -402,27 +512,15 @@ async fn execute(
                 .collect()
         })
         .unwrap_or_default();
-    let grant =
-        resolve_command_grant(&options.command, &name).map_err(|e| Box::new(e) as ToolError)?;
-    authorize_args(&name, &grant, &args)?;
-    // `command` の prepare は cwd 解決(denylist + is_dir stat)のみ —
-    // manifest/writeScope coverage 検査は持たない(writeScope 自体が
-    // registration gate で拒否されるため、design §(c)/(e))。
-    let cwd = prepare_cwd(
-        &options.root,
-        &grant.cwd,
-        options.symlink_policy,
-        options.denylist.as_ref(),
-        "command",
-    )?;
-    // pin 済み executable の spawn 前再検証(pin 後差替えへの
-    // fail-closed — design §(b))。pin map に無い grant は
-    // `names` 未経由の direct 構築として fail-closed。
-    let pinned = options
-        .pins
-        .get(&name)
-        .ok_or_else(|| grant_violation(&name, "grant has no pinned executable"))?;
-    verify_pinned_executable(&name, pinned, &options.root)?;
+    // 事前 check は `check_command_execution` へ集約(design
+    // §viability — `route::resolve` と同一 predicate)。pin map に
+    // grant が無ければ即 `POLICY_VIOLATION`、pin 済み path は
+    // spawn 前再検証を経て deny/residency の同一 predicate を通す。
+    let checked = check_command_execution(options, &name, &args)?;
+    let grant = checked.grant;
+    let cwd = checked.cwd;
+    let pinned = checked.executable;
+    let route_ctx = options.route_context.as_ref();
     if let Some(reason) = outer.reason() {
         return Err(aborted_err(reason));
     }
@@ -435,12 +533,28 @@ async fn execute(
         kill_grace_ms: parse_duration(&grant.kill_grace)?,
         max_output_bytes: grant.max_output_bytes,
         heartbeat_interval_ms: parse_duration(&options.command.heartbeat.interval)?,
+        // route context の `accept_any_exit_code` は declared grant の
+        // `exitCodes` を上書きして任意の completed exit を result 化
+        // する(C2 — routed scope でのみ注入される)。
+        accepted_exit_codes: if route_ctx.is_some_and(|r| r.accept_any_exit_code) {
+            None
+        } else {
+            Some(grant.exit_codes.clone())
+        },
     };
+    // `extra_env` は `grant.env` への override — 合成済み map を
+    // `minimal_env` へ渡し正規化を一箇所へ集約する。
+    let mut declared_env = grant.env.clone();
+    if let Some(extra) = route_ctx.map(|r| &r.extra_env) {
+        for (key, value) in extra {
+            declared_env.insert(key.clone(), value.clone());
+        }
+    }
     let prepared = ProcPrepared {
         executable: pinned.clone(),
         argv: args.clone(),
         cwd,
-        env: minimal_env(&grant.env),
+        env: minimal_env(&declared_env),
     };
     // `command` の identity: details `{grant: name, argv: args}`・
     // display `"command {name}"`・diagnostics event prefix `"command"`。
@@ -462,6 +576,7 @@ async fn execute(
         &identity,
         outer,
         options.on_timeout.as_ref(),
+        route_ctx.and_then(|r| r.log_tee.clone()),
     )
     .await
 }
@@ -555,6 +670,7 @@ mod tests {
             pins: BTreeMap::new(),
             on_timeout: None,
             denylist: None,
+            route_context: None,
         });
         assert!(tool.description().contains("cargo-build"));
         assert!(tool.description().contains("git-read"));
@@ -724,17 +840,20 @@ mod tests {
         assert!(err.to_string().contains("workspace-resident"), "{err}");
         // pin map に無い grant は execute で fail-closed
         // (verify まで到達しない)。
+        let exe = std::env::current_exe().unwrap();
+        let exe = realpath(exe.to_str().unwrap()).unwrap();
         let options = CommandToolOptions {
             root: root.clone(),
             symlink_policy: SymlinkPolicy::Deny,
-            command: policy(json!({"grants": {"g": {"executable": "git"}}})),
+            command: policy(json!({"grants": {"g": {"executable": exe}}})),
             pins: BTreeMap::new(),
             on_timeout: None,
             denylist: None,
+            route_context: None,
         };
         let tool = create_command_tool(options);
         let err = tool
-            .execute(&json!({"name": "g", "args": []}), None)
+            .execute(&json!({"name": "g", "args": ["--list"]}), None)
             .await
             .unwrap_err();
         assert!(policy_violation(&err));

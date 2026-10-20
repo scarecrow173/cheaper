@@ -72,6 +72,37 @@ fn resources() -> Value {
     })
 }
 
+/// `when` predicate — `{left, op, right?}`。operand は任意 JSON
+/// (binding wrapper 含む)。`right` は `exists` では未使用のため
+/// optional。
+fn when_predicate() -> Value {
+    json!({
+        "oneOf": [
+            // `exists` は `right` 禁止。
+            {
+                "type": "object",
+                "required": ["left", "op"],
+                "additionalProperties": false,
+                "properties": {
+                    "left": true,
+                    "op": { "const": "exists" },
+                },
+            },
+            // それ以外の op は `right` 必須。
+            {
+                "type": "object",
+                "required": ["left", "op", "right"],
+                "additionalProperties": false,
+                "properties": {
+                    "left": true,
+                    "op": { "enum": ["eq", "ne", "gt", "lt"] },
+                    "right": true,
+                },
+            },
+        ],
+    })
+}
+
 fn job_schema(kind: &str) -> Value {
     json!({
         "type": "object",
@@ -83,6 +114,7 @@ fn job_schema(kind: &str) -> Value {
             "input": true,
             "needs": { "type": "array", "items": named_string() },
             "resources": resources(),
+            "when": when_predicate(),
         },
     })
 }
@@ -278,6 +310,11 @@ pub fn validate_definition(
     for (id, job_value) in definition.jobs() {
         let job: WorkflowJob = parse_job(job_value);
         references(&definition, &jobs, &job.input, Some(id), &mut edges)?;
+        // `when` 内の `$from`/`$input` も参照解決・dep edge 推論の
+        // 対象(producer 完了前に条件評価されないよう edge を積む)。
+        if let Some(when) = &job.when {
+            references(&definition, &jobs, when, Some(id), &mut edges)?;
+        }
         if let Some(needs) = &job.needs {
             for from in needs {
                 edges.push(DependencyEdge {

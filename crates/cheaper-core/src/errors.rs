@@ -308,7 +308,7 @@ pub(crate) fn errno_string(e: &std::io::Error) -> String {
 /// `ENOENT`/`ENOTDIR`, plus Windows `ERROR_DIRECTORY` (267) which Rust
 /// maps to `NotADirectory` only for some path shapes — walking a path
 /// *through a file* surfaces 267 instead.
-pub(crate) fn is_absent_file_error(e: &std::io::Error) -> bool {
+pub fn is_absent_file_error(e: &std::io::Error) -> bool {
     e.kind() == std::io::ErrorKind::NotFound
         || e.kind() == std::io::ErrorKind::NotADirectory
         || e.raw_os_error() == Some(267)
@@ -319,7 +319,7 @@ pub(crate) fn is_absent_file_error(e: &std::io::Error) -> bool {
 /// reports `EISDIR` for Node's `fs.readFile` — check the path kind and
 /// special-case it. (POSIX `read` yields `EISDIR` directly, and a
 /// permission-denied directory must still report `EACCES`.)
-pub(crate) fn io_errno_display(path: &str, e: &std::io::Error) -> String {
+pub fn io_errno_display(path: &str, e: &std::io::Error) -> String {
     #[cfg(windows)]
     if e.kind() == std::io::ErrorKind::PermissionDenied && std::path::Path::new(path).is_dir() {
         return "EISDIR".to_string();

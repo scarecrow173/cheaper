@@ -109,6 +109,13 @@ pub fn find_cheaper_error<'a>(
 /// で渡す(reason object を呼出し側が再送しない前提)。
 pub type OnTimeout = Arc<dyn Fn(&CheaperError) + Send + Sync>;
 
+/// 全量 output tee sink(design §proc の全量 output tee、R26) —
+/// bounded capture とは別に stdout/stderr 両 stream の raw bytes を
+/// chunk 到着順に interleaved で受け取る。sink 内の write 失敗は
+/// closure が自身の状態へ記録する(postprocessFailure 縮退、R29)
+/// — tee が capture を失敗させることはない。
+pub type ProcTee = Arc<dyn Fn(&[u8]) + Send + Sync>;
+
 // ---------------------------------------------------------------------------
 // run の入力: prepared / limits / identity
 // ---------------------------------------------------------------------------
@@ -122,6 +129,10 @@ pub struct ProcLimits {
     pub kill_grace_ms: u64,
     pub max_output_bytes: u64,
     pub heartbeat_interval_ms: u64,
+    /// 完了扱いにする exit code 集合。`None` は全 completed exit を
+    /// 受理する(route scope の `accept_any_exit_code`)。signal kill
+    /// 等 `exit_code` を持たない終了は常に失敗扱い。
+    pub accepted_exit_codes: Option<Vec<i64>>,
 }
 
 /// 解決済みの spawn 入力。`env` は `env_clear` 後に設定する最小 env
@@ -250,6 +261,34 @@ pub(crate) fn prepare_cwd(
     Ok(resolved.real)
 }
 
+/// route context の `exec_cwd` 用 cwd 解決(R18)— `prepare_cwd` と
+/// 異なり workspace containment を課さない(payload `cwd` は原
+/// command の cwd をそのまま復元する意図)。canonicalize +
+/// denylist + is_dir 検査のみ行う。
+pub(crate) fn prepare_exec_cwd(
+    cwd: &str,
+    denylist: Option<&PathDenylist>,
+) -> Result<String, ToolError> {
+    let real = std::fs::canonicalize(cwd)
+        .map_err(|e| Box::new(node_io_error("stat", cwd, e)) as ToolError)?;
+    let display = real.display().to_string();
+    if let Some(denylist) = denylist {
+        if denylist.is_denied(&display) {
+            return Err(denied_declared_path(&display, "command"));
+        }
+    }
+    let stat = std::fs::metadata(&real)
+        .map_err(|e| Box::new(node_io_error("stat", cwd, e)) as ToolError)?;
+    if !stat.is_dir() {
+        return Err(CheaperError::new(
+            ErrorCode::InvalidRequest,
+            "command cwd must be an existing directory".to_string(),
+        )
+        .into());
+    }
+    Ok(display)
+}
+
 // ---------------------------------------------------------------------------
 // run
 // ---------------------------------------------------------------------------
@@ -265,6 +304,7 @@ pub async fn run(
     identity: &ProcIdentity,
     outer: AbortSignal,
     on_timeout: Option<&OnTimeout>,
+    tee: Option<ProcTee>,
 ) -> Result<CanonicalToolResult, ToolError> {
     // `durationMs` の測定起点 — spawn 失敗 details にも載せるため
     // spawn 前に取る(`identity.report_duration_ms` が true の場合のみ
@@ -281,6 +321,7 @@ pub async fn run(
         stdout: StreamCapture::default(),
         stderr: StreamCapture::default(),
         remaining: limits.max_output_bytes,
+        tee,
     }));
 
     let mut command = build_command(prepared);

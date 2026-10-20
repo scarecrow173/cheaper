@@ -186,10 +186,14 @@ pub fn resolve_pointer(
 }
 
 /// `materializeBindings` の option。`defer_from` は compile 表示専用。
+/// `skipped_from` は condition-skipped producer の job id 集合 —
+/// `$from` が集合内の job を指し result が不在のとき、binding 式
+/// 全体を `null` に materialize する(path 解決は行わない)。
 #[derive(Debug, Clone, Copy, Default)]
-pub struct MaterializeOptions {
+pub struct MaterializeOptions<'a> {
     pub defer_from: bool,
     pub code: Option<ErrorCode>,
+    pub skipped_from: Option<&'a HashSet<String>>,
 }
 
 /// `materializeBindings`。binding でない object は key を code-unit sort
@@ -198,7 +202,7 @@ pub fn materialize_bindings(
     value: &Value,
     inputs: &Map<String, Value>,
     results: &HashMap<String, Value>,
-    options: MaterializeOptions,
+    options: MaterializeOptions<'_>,
 ) -> Result<Value, CheaperError> {
     let code = options.code.unwrap_or(ErrorCode::InvalidInput);
     fn materialize(
@@ -207,6 +211,7 @@ pub fn materialize_bindings(
         results: &HashMap<String, Value>,
         code: ErrorCode,
         defer_from: bool,
+        skipped_from: Option<&HashSet<String>>,
     ) -> Result<Value, CheaperError> {
         if let Some(binding) = parse_binding(node)? {
             return match binding {
@@ -221,17 +226,25 @@ pub fn materialize_bindings(
                     if defer_from {
                         return clone_json(node, code);
                     }
-                    let result = results.get(&b.from).ok_or_else(|| {
-                        CheaperError::new(code, format!("missing job result: {}", b.from))
-                    })?;
-                    resolve_pointer(result, &b.path, code)
+                    match results.get(&b.from) {
+                        Some(result) => resolve_pointer(result, &b.path, code),
+                        // condition-skipped producer への参照は
+                        // binding 式全体が `null`。
+                        None if skipped_from.is_some_and(|s| s.contains(&b.from)) => {
+                            Ok(Value::Null)
+                        }
+                        None => Err(CheaperError::new(
+                            code,
+                            format!("missing job result: {}", b.from),
+                        )),
+                    }
                 }
             };
         }
         match node {
             Value::Array(items) => items
                 .iter()
-                .map(|child| materialize(child, inputs, results, code, defer_from))
+                .map(|child| materialize(child, inputs, results, code, defer_from, skipped_from))
                 .collect::<Result<Vec<_>, _>>()
                 .map(Value::Array),
             Value::Object(map) => {
@@ -241,7 +254,7 @@ pub fn materialize_bindings(
                 for key in keys {
                     out.insert(
                         key.clone(),
-                        materialize(&map[key], inputs, results, code, defer_from)?,
+                        materialize(&map[key], inputs, results, code, defer_from, skipped_from)?,
                     );
                 }
                 Ok(Value::Object(out))
@@ -249,7 +262,14 @@ pub fn materialize_bindings(
             _ => Ok(node.clone()),
         }
     }
-    materialize(value, inputs, results, code, options.defer_from)
+    materialize(
+        value,
+        inputs,
+        results,
+        code,
+        options.defer_from,
+        options.skipped_from,
+    )
 }
 
 /// `validatePointerSchema` — 閉じた単純 schema で証明できる不可能性だけ

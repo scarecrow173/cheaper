@@ -232,6 +232,7 @@ async fn execute(
         kill_grace_ms: parse_duration(&options.process.kill_grace)?,
         max_output_bytes: options.process.max_output_bytes,
         heartbeat_interval_ms: parse_duration(&options.process.heartbeat.interval)?,
+        accepted_exit_codes: Some(vec![0]),
     };
     let prepared = ProcPrepared {
         executable: prepared.executable,
@@ -256,6 +257,7 @@ async fn execute(
         &identity,
         outer,
         options.on_timeout.as_ref(),
+        None,
     )
     .await
 }

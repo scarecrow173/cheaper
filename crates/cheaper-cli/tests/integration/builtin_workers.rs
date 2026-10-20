@@ -11,6 +11,7 @@
 use crate::common;
 
 use cheaper_core::config::dirs::ConfigDirs;
+use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::worker::resolve::resolve_worker;
 use cheaper_core::worker::validate::{validate_worker_input, WorkerDefinition};
 use serde_json::json;
@@ -35,6 +36,10 @@ fn all_builtin_workers_resolve_with_schemas() {
     assert!(
         names.contains(&"tool-operator".to_string()),
         "tool-operator.md missing from builtin workers: {names:?}"
+    );
+    assert!(
+        names.contains(&"condense".to_string()),
+        "condense.md missing from builtin workers: {names:?}"
     );
 
     // project/user dir は空 — builtin 解決のみを検証する。
@@ -208,4 +213,37 @@ fn builtin_schemas_validate_structure_not_magnitude() {
             "grantRequests": [{"executable": "sh", "name": "Bad-Name!"}],
         }))
         .is_err());
+
+    let condense = resolve("condense");
+    assert_eq!(condense.tools, vec![ToolName::Read]);
+    input_ok(
+        &condense,
+        json!({
+            "logRef": "1700000000000-1234-deadbeef",
+            "originalTokens": 100,
+            "command": ["cargo", "test"],
+        }),
+    );
+    input_err(
+        &condense,
+        json!({
+            "logRef": "not-a-run-id",
+            "originalTokens": 100,
+            "command": ["cargo", "test"],
+        }),
+    );
+    input_err(
+        &condense,
+        json!({
+            "logRef": "1700000000000-1234-deadbeef",
+            "originalTokens": 100,
+            "command": ["cargo", "test"],
+            "env": {"SECRET": "x"},
+        }),
+    );
+    condense
+        .output_schema
+        .validate(&json!({"summary": "s"}))
+        .unwrap_or_else(|e| panic!("condense output rejected: {e:?}"));
+    assert!(condense.output_schema.validate(&json!({})).is_err());
 }

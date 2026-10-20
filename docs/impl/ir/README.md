@@ -7,19 +7,36 @@ Directory: `docs/impl/ir`
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
 | IMPL-034Efz8DzzN46lcybHvrfu | Abort classification at setup boundary | completed | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
+| IMPL-034JlxHYMvwfQ6QVTmGtMk | Add builtin route workflow condense worker and embedded resources | completed | [add-builtin-route-workflow-condense-worker-and-embedded-resources.md](./add-builtin-route-workflow-condense-worker-and-embedded-resources.md) |
 | IMPL-034z57jprjlY9PUYkFPIdl | add cheaper hook command with target adapters | completed | [add-cheaper-hook-command-with-target-adapters.md](./add-cheaper-hook-command-with-target-adapters.md) |
 | IMPL-034rArrYQRvXbeSRXD6HQQ | Add cheaper usage aggregation command | completed | [add-cheaper-usage-aggregation-command.md](./add-cheaper-usage-aggregation-command.md) |
+| IMPL-034JhsoS4CooCbWSXWcx77 | Add command grant exitCodes and nonzero-exit result reporting | completed | [add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md](./add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md) |
 | IMPL-034zCh129JMqV5Z5ta5wG6 | Add deterministic sibling-parallelism pin tests to runtime-pi | completed | [add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md](./add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md) |
+| IMPL-034JjGk8chOgCkQfzFETJY | Add hook entry route loading and eval supply | completed | [add-hook-entry-route-loading-and-eval-supply.md](./add-hook-entry-route-loading-and-eval-supply.md) |
 | IMPL-034IqeWzYxJ36cp819qQN4 | Add hook_eval_dedup integration tests | completed | [add-hook-eval-dedup-integration-tests.md](./add-hook-eval-dedup-integration-tests.md) |
+| IMPL-034JjvBItf3G44b0tll2Sh | Add hook route arm and Rewrite verdict | completed | [add-hook-route-arm-and-rewrite-verdict.md](./add-hook-route-arm-and-rewrite-verdict.md) |
+| IMPL-034JjMYRBAtmxiGp1639qW | Add hook target rendering for Rewrite and codex split | completed | [add-hook-target-rendering-for-rewrite-and-codex-split.md](./add-hook-target-rendering-for-rewrite-and-codex-split.md) |
 | IMPL-034zQZYpiexj1ILiP9NuIH | Add launcher acquisition contract tests | completed | [add-launcher-acquisition-contract-tests.md](./add-launcher-acquisition-contract-tests.md) |
 | IMPL-034rAtxE2k5HhaePoxBbI3 | Add --model flag and models command | completed | [add-model-flag-and-models-command.md](./add-model-flag-and-models-command.md) |
 | IMPL-034rzZLq1nbnzN4CvDSAk5 | Add model pricing metadata layer and bundled data | completed | [add-model-pricing-metadata-layer-and-bundled-data.md](./add-model-pricing-metadata-layer-and-bundled-data.md) |
 | IMPL-034rAiJgmYQKgmJC2mF9zN | Add models.yaml exclude with union merge | completed | [add-models-yaml-exclude-with-union-merge.md](./add-models-yaml-exclude-with-union-merge.md) |
 | IMPL-034r05iHy2gdnpmfo09FGX | Add Ollama docker-compose and AGENTS.md container usage | completed | [add-ollama-docker-compose-and-agents-md-container-usage.md](./add-ollama-docker-compose-and-agents-md-container-usage.md) |
 | IMPL-034z3CD7wXV3MNmCy9JnHs | add platform launchers to hooks payload | completed | [add-platform-launchers-to-hooks-payload.md](./add-platform-launchers-to-hooks-payload.md) |
+| IMPL-034JimbubuiHpBv6IpimHs | Add proc full-output tee sink for route logging | completed | [add-proc-full-output-tee-sink-for-route-logging.md](./add-proc-full-output-tee-sink-for-route-logging.md) |
+| IMPL-034JjbLxN5vUbJ45QnDJdH | Add route and route-refetch usage records | completed | [add-route-and-route-refetch-usage-records.md](./add-route-and-route-refetch-usage-records.md) |
+| IMPL-034Jm123U9YXuFo4LBNbtz | Add route CLI wiring | completed | [add-route-cli-wiring.md](./add-route-cli-wiring.md) |
+| IMPL-034JiCcdU6kUQ9Hj4Sd44J | Add route context scope options and single-grant projection | completed | [add-route-context-scope-options-and-single-grant-projection.md](./add-route-context-scope-options-and-single-grant-projection.md) |
+| IMPL-034JhZPcBMjCslZpw77s0m | Add route declaration schema and three-layer loader | completed | [add-route-declaration-schema-and-three-layer-loader.md](./add-route-declaration-schema-and-three-layer-loader.md) |
+| IMPL-034Jjg7aEBfEFtFuSpSEi3 | Add route fingerprint to hook dedup cache | completed | [add-route-fingerprint-to-hook-dedup-cache.md](./add-route-fingerprint-to-hook-dedup-cache.md) |
+| IMPL-034JmoINr6JYbqaA7G0Ex7 | Add route integration tests | completed | [add-route-integration-tests.md](./add-route-integration-tests.md) |
+| IMPL-034JidY17wnSZzkiMrhixl | Add route log store and RouteLogReader | completed | [add-route-log-store-and-routelogreader.md](./add-route-log-store-and-routelogreader.md) |
+| IMPL-034JlKZTnImZRXS5r7TSsf | Add route logs CLI and shared artifact read cap | completed | [add-route-logs-cli-and-shared-artifact-read-cap.md](./add-route-logs-cli-and-shared-artifact-read-cap.md) |
+| IMPL-034Jj3NXbe1CLVRdkxXF6K | Add route resolver payload codec and command preflight seam | completed | [add-route-resolver-payload-codec-and-command-preflight-seam.md](./add-route-resolver-payload-codec-and-command-preflight-seam.md) |
+| IMPL-034Jk79Ki8cC6wYBZZ5VII | Add route run delegated workflow execution | completed | [add-route-run-delegated-workflow-execution.md](./add-route-run-delegated-workflow-execution.md) |
 | IMPL-034zCh1C1Qy6Pc2cvIFlOP | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | completed | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
 | IMPL-034z1STQxtFa8POTFVCwbd | Add SEA entrypoint sea-main.ts | completed | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | IMPL-034rArskSHUOoayxrLW4s8 | Add usage telemetry e2e coverage docs and bundle regen | completed | [add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md](./add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md) |
+| IMPL-034JhCuYprFfcFcaGX6qsA | Add workflow job when condition evaluation | completed | [add-workflow-job-when-condition-evaluation.md](./add-workflow-job-when-condition-evaluation.md) |
 | IMPL-034ATHURho1jepnqtCXbcf | Aggregate workflow benchmark evidence | completed | [aggregate-workflow-benchmark-evidence.md](./aggregate-workflow-benchmark-evidence.md) |
 | IMPL-034IQI6Q5wQd1Ql4s3At3r | Amend orphan sweep ownership docs and usage skill | completed | [amend-orphan-sweep-ownership-docs-and-usage-skill.md](./amend-orphan-sweep-ownership-docs-and-usage-skill.md) |
 | IMPL-GJ30PMdgql2TCIEuURop04 | APM hook 宣言の per-target サブパッケージ分離 | completed | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |

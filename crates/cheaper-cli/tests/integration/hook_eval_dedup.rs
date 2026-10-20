@@ -75,6 +75,7 @@ impl SeamEnv {
         EvaluateOptions {
             env: &*self.lookup,
             builtin_dir: Some(&self.builtin_dir),
+            route: None,
         }
     }
 }

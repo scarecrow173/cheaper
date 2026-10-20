@@ -28,6 +28,7 @@ relations:
     - "./devin-native-hooks-and-apm-bootstrap.md"
     - "./cross-agent-native-routing-adapter-architecture.md"
     - "./huge-file-byte-cap-guard-and-fail-closed-hook.md"
+    - "./pretooluse-route-resolver-and-delegated-workflow-execution.md"
   refines: []
   refined-by: []
   derives-from:

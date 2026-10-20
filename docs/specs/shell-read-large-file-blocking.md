@@ -28,6 +28,7 @@ relations:
     - "../adr/treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md"
     - "../designs/huge-file-byte-cap-guard-and-fail-closed-hook.md"
     - "../designs/cross-agent-native-routing-adapter-architecture.md"
+    - "./pretooluse-route-resolver-and-workflow-delegation.md"
   refines: []
   refined-by:
     - "../adr/conservative-shell-read-candidate-extraction-inside-the-shared-routing-policy.md"
