@@ -10,6 +10,7 @@ use std::path::PathBuf;
 
 use cheaper_core::config::dirs::EnvLookup;
 use cheaper_core::json::stringify::stringify;
+use cheaper_core::nodepath;
 use serde_json::{Map, Value};
 
 use super::eval_cache;
@@ -160,6 +161,22 @@ fn windsurf_normalize(event: &str, input: &Value, cwd: &str) -> Option<RoutingRe
     }
     let tool_info = payload.get("tool_info").and_then(Value::as_object);
     if expected == "pre_read_code" {
+        // `pattern` 非空 string の search 形 payload は kind 判定を
+        // 最優先する — ただし `file_path` が file を指す併記形は
+        // FileRead(全文 eval、「全文 read が最悪ケース」)を優先し、
+        // 欠落・空文字・非 string・directory 解決の場合に限り
+        // `Search` へ倒す 2 条件 gate(issue #161)。空 `pattern` の
+        // fail-open・一致行 ⊆ file 内容実体化による過少評価を
+        // normalize 段で塞ぐ。
+        if let Some(t) = tool_info {
+            if t.get("pattern")
+                .and_then(Value::as_str)
+                .is_some_and(|p| !p.is_empty())
+                && windsurf_pattern_targets_search(t, cwd)
+            {
+                return normalize_search(t, cwd, Some("windsurf:pre_read_code".to_string()));
+            }
+        }
         let file_path = tool_info
             .and_then(|t| t.get("file_path"))
             .and_then(Value::as_str)?;
@@ -184,6 +201,25 @@ fn windsurf_normalize(event: &str, input: &Value, cwd: &str) -> Option<RoutingRe
         cwd: cwd.to_string(),
         source_tool: Some("windsurf:pre_run_command".to_string()),
     })
+}
+
+/// `pattern` 併記 `pre_read_code` payload が `Search` 経路を取るかの
+/// 判定 — `file_path` が欠落・空文字・非 string、または cwd 相対
+/// resolve(`resolve_target` と同一の「resolve → metadata 分類」
+/// 規約、normalize 層では workspace containment は見ない)先が
+/// directory の場合のみ true。file 解決・metadata 失敗は FileRead
+/// 優先(false)。normalize 層の fs 参照はこの metadata 1 回に
+/// 限定される(呼出し側が `pattern` 非空を先に gate する)。
+fn windsurf_pattern_targets_search(tool_info: &Map<String, Value>, cwd: &str) -> bool {
+    match tool_info.get("file_path").and_then(Value::as_str) {
+        // 欠落・非 string・空文字 → search root は `normalize_search`
+        // の `path`/`file_path`/`"."` fallback 側で解決する。
+        None => true,
+        Some("") => true,
+        Some(fp) => std::fs::metadata(nodepath::resolve(cwd, fp))
+            .map(|m| m.is_dir())
+            .unwrap_or(false),
+    }
 }
 
 fn windsurf_render(verdict: Verdict) -> HookResponse {
@@ -414,7 +450,9 @@ fn windsurf_read_range(tool_info: &Map<String, Value>) -> Option<ReadRange> {
 
 /// `Search` 正規化 — `grep` 系 tool の bounded 検索 request。
 /// `pattern` が非 string/欠落なら `None`(normalize 失敗 → allow と
-/// 同等)。`path` 欠落・非 string は `"."`。
+/// 同等)。search root は `path` 優先(非 string は `"."`)、`path`
+/// 欠落時は `file_path` の非空 string(windsurf `pre_read_code` は
+/// `file_path` 語彙)、両者欠落・`file_path` 空/非 string は `"."`。
 /// `max_results`/`head_limit` は小さい方へ畳み込む。`context` は
 /// `context`/`-C` と `-A`/`-B` の最大値。
 fn normalize_search(
@@ -424,8 +462,11 @@ fn normalize_search(
 ) -> Option<RoutingRequest> {
     let pattern = tool_input.get("pattern").and_then(Value::as_str)?;
     let path = match tool_input.get("path") {
-        None => ".".to_string(),
         Some(v) => v.as_str().unwrap_or(".").to_string(),
+        None => match tool_input.get("file_path").and_then(Value::as_str) {
+            Some(fp) if !fp.is_empty() => fp.to_string(),
+            _ => ".".to_string(),
+        },
     };
     let pick_u64 =
         |keys: &[&str]| -> Option<u64> { pick_value(tool_input, keys).and_then(json_count) };
@@ -1425,5 +1466,100 @@ mod tests {
             None,
         );
         assert_range("{\"file_path\":\"big_lines.txt\"}", None);
+    }
+
+    /// `windsurf_normalize` の `pattern`→`Search` gate 全分岐
+    /// (issue #161 T2)。`pattern` 非空 string は kind 判定を最優先
+    /// するが、`file_path` が file 解決・metadata 失敗の併記形は
+    /// FileRead(全文 eval)を維持し、`pattern` 空/非 string も
+    /// FileRead 判定へ進む(過少評価・fail-open を塞ぐ 2 条件 gate)。
+    #[test]
+    fn windsurf_normalize_pattern_gate_routes_search_or_fileread() {
+        let dir = tempfile::tempdir().unwrap();
+        let cwd = dir.path().to_string_lossy().to_string();
+        std::fs::create_dir(dir.path().join("sub")).unwrap();
+        std::fs::write(dir.path().join("f.txt"), "x").unwrap();
+
+        let normalize = |tool_info: &str| {
+            let input: Value = serde_json::from_str(&format!(
+                "{{\"agent_action_name\":\"pre_read_code\",\"tool_info\":{tool_info}}}"
+            ))
+            .unwrap();
+            windsurf_normalize("pre-read-code", &input, &cwd)
+        };
+        // `pattern` 非空 + `file_path` 欠落/空/非 string/dir 解決
+        // → `Search`(search root は normalize_search の
+        // `path`/`file_path`/`"."` fallback 側で解決)。
+        for (tool_info, expect_root) in [
+            ("{\"pattern\":\"lorem\"}", "."),
+            ("{\"file_path\":\"\",\"pattern\":\"lorem\"}", "."),
+            ("{\"file_path\":123,\"pattern\":\"lorem\"}", "."),
+            ("{\"file_path\":\"sub\",\"pattern\":\"lorem\"}", "sub"),
+            // `path` key は `file_path` より優先される。
+            (
+                "{\"file_path\":\"sub\",\"path\":\"alt\",\"pattern\":\"lorem\"}",
+                "alt",
+            ),
+        ] {
+            match normalize(tool_info) {
+                Some(RoutingRequest::Search {
+                    path,
+                    pattern,
+                    source_tool,
+                    ..
+                }) => {
+                    assert_eq!(pattern, "lorem", "{tool_info}");
+                    assert_eq!(path, expect_root, "{tool_info}");
+                    assert_eq!(
+                        source_tool.as_deref(),
+                        Some("windsurf:pre_read_code"),
+                        "{tool_info}"
+                    );
+                }
+                _ => panic!("expected Search for {tool_info}"),
+            }
+        }
+        // `file_path` が file 解決・metadata 失敗の併記形、および
+        // `pattern` 空/非 string → FileRead 維持(gate で潰さない)。
+        for tool_info in [
+            "{\"file_path\":\"f.txt\",\"pattern\":\"lorem\"}",
+            "{\"file_path\":\"nope.txt\",\"pattern\":\"lorem\"}",
+            "{\"file_path\":\"f.txt\",\"pattern\":\"\"}",
+            "{\"file_path\":\"f.txt\",\"pattern\":123}",
+        ] {
+            match normalize(tool_info) {
+                Some(RoutingRequest::FileRead { path, .. }) => {
+                    assert!(path == "f.txt" || path == "nope.txt", "{tool_info}");
+                }
+                _ => panic!("expected FileRead for {tool_info}"),
+            }
+        }
+    }
+
+    /// `normalize_search` の search root fallback — `path` 優先
+    /// (非 string は `"."`)、`path` 欠落時は非空 `file_path`、
+    /// 両者欠落/`file_path` 空・非 string は `"."`(issue #161 T2)。
+    #[test]
+    fn normalize_search_path_fallback_order() {
+        let search_root = |tool_input: &str| {
+            let v: Value = serde_json::from_str(tool_input).unwrap();
+            match normalize_search(v.as_object().unwrap(), "/w", None) {
+                Some(RoutingRequest::Search { path, .. }) => path,
+                _ => panic!("expected Search: {tool_input}"),
+            }
+        };
+        assert_eq!(search_root("{\"pattern\":\"p\",\"path\":\"x\"}"), "x");
+        // `path` 非 string は従来どおり `"."`(`file_path` へは落ちない)。
+        assert_eq!(
+            search_root("{\"pattern\":\"p\",\"path\":123,\"file_path\":\"fp\"}"),
+            "."
+        );
+        assert_eq!(
+            search_root("{\"pattern\":\"p\",\"file_path\":\"fp\"}"),
+            "fp"
+        );
+        assert_eq!(search_root("{\"pattern\":\"p\"}"), ".");
+        assert_eq!(search_root("{\"pattern\":\"p\",\"file_path\":\"\"}"), ".");
+        assert_eq!(search_root("{\"pattern\":\"p\",\"file_path\":123}"), ".");
     }
 }

@@ -382,6 +382,79 @@ async fn windsurf_ranged_read_vocabularies_bounded_eval() {
     }
 }
 
+/// issue #161 — windsurf `pre_read_code` の `pattern` 併記 payload は
+/// 2 条件 gate(`pattern` 非空 string かつ `file_path` が欠落/空/
+/// 非 string/dir 解決)を満たす場合のみ `Search` 評価へ倒す。
+/// `file_path` が file を指す併記形・`pattern` 空/非 string は
+/// FileRead(全文 eval)を維持し、過少評価・fail-open しない。
+#[tokio::test(flavor = "current_thread")]
+async fn windsurf_pattern_gate_routes_search_preserves_fileread() {
+    let fx = Fixture::new();
+    fx.write_big_lines("big_lines.txt");
+    std::fs::create_dir(fx.ws.join("sub")).unwrap();
+    fx.write("sub/small.txt", "lorem hit\n".as_bytes());
+    // `file_path` dir 解決 — `lorem` は big_lines.txt 全 2000 行へ
+    // 一致するため materialization は threshold 超過で Search 由来
+    // deny("search" 文言 — FileRead の `'<file>' has N tokens` と
+    // 区別)。`max_results` cap は file granularity(単一 file の
+    // 一致は全件実体化する over-collect 規約)なので既定値でも deny。
+    for tool_info in [
+        "{\"file_path\":\".\",\"pattern\":\"lorem\"}",
+        "{\"pattern\":\"lorem\",\"max_results\":2000}",
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-read-code", "--target", "windsurf"],
+            &windsurf_tool_info(tool_info),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 2, "tool_info={tool_info}");
+        assert!(
+            r.stderr.contains("search"),
+            "tool_info={tool_info} stderr={:?}",
+            r.stderr
+        );
+    }
+    // 少数一致の materialization・dir 解決の小さな match →
+    // Search allow(FileRead 全文 deny では到達しない経路)。
+    for tool_info in [
+        "{\"file_path\":\".\",\"pattern\":\"line 1999\"}",
+        "{\"pattern\":\"line 1999\"}",
+        "{\"file_path\":\"sub\",\"pattern\":\"lorem\"}",
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-read-code", "--target", "windsurf"],
+            &windsurf_tool_info(tool_info),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 0, "tool_info={tool_info} stderr={:?}", r.stderr);
+    }
+    // `file_path` が file 解決の併記形・`pattern` 空/非 string →
+    // FileRead 全文 eval 維持(deny は `'<file>' has N tokens` 文言)。
+    for tool_info in [
+        "{\"file_path\":\"big_lines.txt\",\"pattern\":\"lorem\"}",
+        "{\"file_path\":\"big_lines.txt\",\"pattern\":\"\"}",
+        "{\"file_path\":\"big_lines.txt\",\"pattern\":123}",
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-read-code", "--target", "windsurf"],
+            &windsurf_tool_info(tool_info),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 2, "tool_info={tool_info}");
+        assert!(
+            r.stderr.contains("'big_lines.txt' has") && !r.stderr.contains("search result"),
+            "tool_info={tool_info} stderr={:?}",
+            r.stderr
+        );
+    }
+}
+
 #[tokio::test(flavor = "current_thread")]
 async fn windsurf_exit0_fast_path_wrong_events_missing_fields() {
     let fx = Fixture::new();

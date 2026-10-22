@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KxDgCFTiXTthZajUTX1"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add gated pattern-to-Search normalization to windsurf pre_read_code"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -170,17 +170,17 @@ root)は `file_path` が ambient context の場合に unsafe 方向の
 
 ## Done When
 
-- [ ] `pattern` 非空 string かつ `file_path` が欠落/空/非 string/
+- [x] `pattern` 非空 string かつ `file_path` が欠落/空/非 string/
       dir 解決の payload が `RoutingRequest::Search` へ正規化される
-- [ ] `pattern` 非空かつ `file_path` が file 解決の payload が
+- [x] `pattern` 非空かつ `file_path` が file 解決の payload が
       FileRead 評価を維持する(過少評価しない)
-- [ ] `pattern:""`・非 string の payload が FileRead 判定へ進む
+- [x] `pattern:""`・非 string の payload が FileRead 判定へ進む
       (空 `pattern` の fail-open しない)
-- [ ] `normalize_search` の `path` 解決が `path` 優先・
+- [x] `normalize_search` の `path` 解決が `path` 優先・
       `file_path` fallback・`"."` 既定の規約で動く
-- [ ] normalize 層の fs access が `pattern` 非空かつ `file_path`
+- [x] normalize 層の fs access が `pattern` 非空かつ `file_path`
       非空時の metadata 1 回に限定される
-- [ ] deny guidance(T3)が未実装 — 本 task の normalize 変更のみ
+- [x] deny guidance(T3)が未実装 — 本 task の normalize 変更のみ
 
 ## Out of Scope
 
@@ -192,6 +192,6 @@ root)は `file_path` が ambient context の場合に unsafe 方向の
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib` exits 0(gate 全分岐の unit test 含む)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0(pattern gate fixture + 既存 search/shell 非回帰)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib` exits 0(gate 全分岐の unit test 含む) — 実測: 95 passed / 0 failed(新規 2 test: `windsurf_normalize_pattern_gate_routes_search_or_fileread`・`normalize_search_path_fallback_order`)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0(pattern gate fixture + 既存 search/shell 非回帰) — 実測: 28 passed / 0 failed(新規 `windsurf_pattern_gate_routes_search_preserves_fileread` — Search deny 2 系・allow 3 系・FileRead 維持 3 系)
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
