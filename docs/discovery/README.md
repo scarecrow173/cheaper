@@ -23,6 +23,7 @@ Directory: `docs/discovery`
 | DISC-034zIOnoIjhMd2vKGOtgXd | Core resource manifest identity investigation | resolved | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | DISC-034r05iHy2gdnpdai9KGpW | Cross-agent hook distribution and per-agent hook contract matrix | resolved | [cross-agent-hook-distribution-and-contract-matrix.md](./cross-agent-hook-distribution-and-contract-matrix.md) |
 | DISC-034rA43JiB611pUjLPA4yR | Cross-agent native routing adapter contract re-verification | resolved | [cross-agent-native-routing-adapter-contract-re-verification.md](./cross-agent-native-routing-adapter-contract-re-verification.md) |
+| DISC-gHDyRKX2Xbdm58SDpCFLLt | Devin PreToolUse rewrite runtime verification (issue #148) | resolved | [devin-pretooluse-rewrite-runtime-verification.md](./devin-pretooluse-rewrite-runtime-verification.md) |
 | DISC-034Dlp0gvInn5w4EsnfZB0 | devin provider usage accounting reports uncached input only | draft | [devin-provider-usage-accounting-reports-uncached-input-only.md](./devin-provider-usage-accounting-reports-uncached-input-only.md) |
 | DISC-034D9AL1up7opdx1NuFeir | Devin provider Windows credential isolation limitation | draft | [devin-provider-windows-credential-isolation-limitation.md](./devin-provider-windows-credential-isolation-limitation.md) |
 | DISC-034IKBmCjJBeLD5qG9DoUM | hook-config legacy conflict gate demotion to warning | resolved | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |
@@ -60,6 +61,7 @@ Directory: `docs/discovery`
 | DISC-034zIO1UQe9CI5VCzqot1c | Version-pinned launcher acquisition | resolved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | DISC-034D840CvSzto0OH0dO47y | Volume-root workspace boundary check double separator | draft | [volume-root-workspace-boundary-check-double-separator.md](./volume-root-workspace-boundary-check-double-separator.md) |
 | DISC-034r05iHy2gdnp9dPPZ28N | Windsurf Cascade hooks and APM hook deployment for pre-read delegation | resolved | [windsurf-cascade-hooks-and-apm-hook-deployment.md](./windsurf-cascade-hooks-and-apm-hook-deployment.md) |
+| DISC-034Kqi8LcVZaxgz7wxHfg4 | worker run 失敗率 31% の要因調査 (issue #141) | active | [worker-run-failure-rate-31pct-investigation.md](./worker-run-failure-rate-31pct-investigation.md) |
 | DISC-z4FTQSzd835hAlRqSPb7QY | worker schema の magnitude 制約と INVALID_OUTPUT 回復不能性の構造分析 | resolved | [worker-schema-magnitude-constraints-and-output-recovery.md](./worker-schema-magnitude-constraints-and-output-recovery.md) |
 | DISC-034zIKizOrTom96Q19mbYE | Workflow contract compiler の責務と検証境界 | resolved | [workflow-compiler-boundaries.md](./workflow-compiler-boundaries.md) |
 | DISC-034zSVnLYkkFBYQvt56QNJ | Workflow file と compiler の接続境界を調査する | resolved | [workflow-file-interface.md](./workflow-file-interface.md) |
