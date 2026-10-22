@@ -47,9 +47,12 @@ relations:
     - "docs/discovery/permission-model-responsibility-redesign.md"
     - "docs/specs/permission-model-responsibility-redesign.md"
     - "docs/adr/enforce-declared-contracts-over-content-audit.md"
-  derived-by: []
+  derived-by:
+    - "docs/plans/file-permission-model-redesign-implementation-issues.md"
+    - "docs/test-specs/permission-model-redesign-issue-decomposition.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "docs/test-specs/permission-model-redesign-issue-decomposition.md"
   references: []
   defers: []
   deferred-by: []

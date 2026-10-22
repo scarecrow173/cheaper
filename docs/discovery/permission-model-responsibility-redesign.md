@@ -26,6 +26,8 @@ relations:
   related:
     - "../specs/permission-model-responsibility-redesign.md"
     - "../adr/enforce-declared-contracts-over-content-audit.md"
+    - "../plans/file-permission-model-redesign-implementation-issues.md"
+    - "../test-specs/permission-model-redesign-issue-decomposition.md"
   refines: []
   refined-by: []
   derives-from: []

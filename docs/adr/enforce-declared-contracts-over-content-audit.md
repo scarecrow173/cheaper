@@ -4,7 +4,7 @@ type: "adr"
 status: "accepted"
 title: "宣言された実行契約の強制を責務とし内容審査を分離する"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -25,6 +25,7 @@ relations:
   superseded-by: []
   related:
     - "../specs/permission-model-responsibility-redesign.md"
+    - "../discovery/permission-model-responsibility-redesign.md"
     - "./command-grant-trust-boundary-and-managed-process-reuse.md"
     - "./worker-definition-runtime-policy-runtime-invariants-capability.md"
     - "./workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
@@ -34,7 +35,9 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/permission-model-responsibility-redesign.md"
-  derived-by: []
+  derived-by:
+    - "../plans/file-permission-model-redesign-implementation-issues.md"
+    - "../test-specs/permission-model-redesign-issue-decomposition.md"
   verifies: []
   verified-by: []
   references: []

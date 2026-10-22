@@ -4,7 +4,7 @@ type: "spec"
 status: "approved"
 title: "権限・Runtime Policy・Tool 実行制限の責務ベース再設計"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -18,13 +18,15 @@ relations:
     moved: []
     generated: []
   implements: []
-  implemented-by: []
+  implemented-by:
+    - "../plans/file-permission-model-redesign-implementation-issues.md"
   depends-on: []
   blocks: []
   supersedes: []
   superseded-by: []
   related:
     - "../adr/enforce-declared-contracts-over-content-audit.md"
+    - "../discovery/permission-model-responsibility-redesign.md"
     - "../adr/command-grant-trust-boundary-and-managed-process-reuse.md"
     - "../adr/worker-definition-runtime-policy-runtime-invariants-capability.md"
     - "../adr/workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
@@ -36,9 +38,12 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/permission-model-responsibility-redesign.md"
-  derived-by: []
+  derived-by:
+    - "../plans/file-permission-model-redesign-implementation-issues.md"
+    - "../test-specs/permission-model-redesign-issue-decomposition.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/permission-model-redesign-issue-decomposition.md"
   references: []
   defers: []
   deferred-by: []
