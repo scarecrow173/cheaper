@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KvxFX6oCd4TlEowM1kd"
 type: "task"
-status: "todo"
+status: "done"
 title: "起票 issue 6: trusted route flag 発行主体の再設計 (D4)"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -130,8 +130,8 @@ substitute #<ISSUE-5> の形)と直に交差するため、それらの形が
 
 ### 起票結果
 
-- URL: (未起票 — T8 完了時点で記録済みであること)
-- 番号: (未起票)
+- URL: https://github.com/scarecrow173/cheaper/issues/168
+- 番号: #168
 
 ## Classification
 
@@ -161,12 +161,12 @@ substitute #<ISSUE-5> の形)と直に交差するため、それらの形が
 
 ## Done When
 
-- [ ] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
+- [x] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
       既存を検出し skip)
-- [ ] issue body が `## Scope`・`## Acceptance Criteria`・
+- [x] issue body が `## Scope`・`## Acceptance Criteria`・
       `## Dependencies`・`## 参照` の 4 節を持ち、deps が
       placeholder ではなく実番号で記述されている
-- [ ] 起票 URL・番号が本 task の起票結果欄に記録されている
+- [x] 起票 URL・番号が本 task の起票結果欄に記録されている
 
 ## Verification
 

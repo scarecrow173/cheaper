@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KvxH8TvZ1HF0bfjydpk"
 type: "task"
-status: "todo"
+status: "done"
 title: "実装 issue URL の記録と issue #151 成果物基準の検証"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -136,21 +136,21 @@ PLAN-034KvwX4x7oaZlaECqhHc1 の T8(終端 task)。T1-T7 で起票した
 
 ## Done When
 
-- [ ] 7 issue の URL が plan Task Breakdown 記録欄・IR に記録され、
+- [x] 7 issue の URL が plan Task Breakdown 記録欄・IR に記録され、
       各起票 task の起票結果欄にも URL がある
-- [ ] issue #151 に分解結果サマリ comment が 1 件投稿されている
-- [ ] 成果物基準 5 項目の証跡が IR に記録されている
-- [ ] `node scripts/check-doc-ids.mjs` が pass
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --json --type task` / `--type plan` / `--type test-spec`
+- [x] issue #151 に分解結果サマリ comment が 1 件投稿されている
+- [x] 成果物基準 5 項目の証跡が IR に記録されている
+- [x] `node scripts/check-doc-ids.mjs` が pass
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --json --type task` / `--type plan` / `--type test-spec`
       で新規 error 0
 
 ## Verification
 
-- [ ] `gh issue list --repo scarecrow173/cheaper --search "権限モデル再設計" --state all --json number,title,url`
+- [x] `gh issue list --repo scarecrow173/cheaper --search "権限モデル再設計" --state all --json number,title,url`
       がちょうど 7 件を返す
-- [ ] `gh issue list --repo scarecrow173/cheaper --search "権限モデル再設計" --state all --json body --jq ".[].body"`
+- [x] `gh issue list --repo scarecrow173/cheaper --search "権限モデル再設計" --state all --json body --jq ".[].body"`
       の各出力が `## Scope`・`## Acceptance Criteria`・
       `## Dependencies`・`## 参照` を含み `<ISSUE` を含まない
-- [ ] `node scripts/check-doc-ids.mjs` が exit 0
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --json --type task`
+- [x] `node scripts/check-doc-ids.mjs` が exit 0
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --json --type task`
       の error 件数が本 task 群の追加前と同じ(新規 error 0)

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KvxjG6fUOLjtn1cOFTF"
 type: "task"
-status: "todo"
+status: "done"
 title: "起票 issue 1: exec-contract cleanup — 内容審査 7 項目の mandatory 層除去"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -153,8 +153,8 @@ shell/script/metachar 系 case、
 
 ### 起票結果
 
-- URL: (未起票 — T8 完了時点で記録済みであること)
-- 番号: (未起票)
+- URL: https://github.com/scarecrow173/cheaper/issues/163
+- 番号: #163
 
 ## Classification
 
@@ -180,11 +180,11 @@ shell/script/metachar 系 case、
 
 ## Done When
 
-- [ ] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
+- [x] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
       既存を検出し skip)
-- [ ] issue body が `## Scope`・`## Acceptance Criteria`・
+- [x] issue body が `## Scope`・`## Acceptance Criteria`・
       `## Dependencies`・`## 参照` の 4 節を持つ
-- [ ] 起票 URL・番号が本 task の起票結果欄に記録されている
+- [x] 起票 URL・番号が本 task の起票結果欄に記録されている
 
 ## Verification
 

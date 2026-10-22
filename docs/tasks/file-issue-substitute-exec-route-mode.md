@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KvxFptiaMDpvi8xe9dM"
 type: "task"
-status: "todo"
+status: "done"
 title: "起票 issue 5: substitute-exec route mode"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -158,8 +158,8 @@ strict さを保ったまま「宣言通り実行する command」を検査す�
 
 ### 起票結果
 
-- URL: (未起票 — T8 完了時点で記録済みであること)
-- 番号: (未起票)
+- URL: https://github.com/scarecrow173/cheaper/issues/167
+- 番号: #167
 
 ## Classification
 
@@ -187,15 +187,15 @@ strict さを保ったまま「宣言通り実行する command」を検査す�
 
 ## Done When
 
-- [ ] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
+- [x] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
       既存を検出し skip)
-- [ ] issue body が `## Scope`・`## Acceptance Criteria`・
+- [x] issue body が `## Scope`・`## Acceptance Criteria`・
       `## Dependencies`・`## 参照` の 4 節を持ち、deps が
       `#<ISSUE-4>` placeholder ではなく実番号で記述されている
-- [ ] body が substitute anchor 規約・D11 維持・「実行した
+- [x] body が substitute anchor 規約・D11 維持・「実行した
       command の exit」・Option E の open 扱いを含む
       (TSPEC-034Kvx6yD4sfTj8KFkFIF3 の issue 5 Rule)
-- [ ] 起票 URL・番号が本 task の起票結果欄に記録されている
+- [x] 起票 URL・番号が本 task の起票結果欄に記録されている
 
 ## Verification
 

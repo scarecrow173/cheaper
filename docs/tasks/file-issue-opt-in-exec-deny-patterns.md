@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KvxvHeO6yOVxflkxTPO"
 type: "task"
-status: "todo"
+status: "done"
 title: "起票 issue 2: opt-in security.execDenyPatterns profile (A9 降格)"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -150,8 +150,8 @@ security:
 
 ### 起票結果
 
-- URL: (未起票 — T8 完了時点で記録済みであること)
-- 番号: (未起票)
+- URL: https://github.com/scarecrow173/cheaper/issues/164
+- 番号: #164
 
 ## Classification
 
@@ -177,15 +177,15 @@ security:
 
 ## Done When
 
-- [ ] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
+- [x] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
       既存を検出し skip)
-- [ ] issue body が `## Scope`・`## Acceptance Criteria`・
+- [x] issue body が `## Scope`・`## Acceptance Criteria`・
       `## Dependencies`・`## 参照` の 4 節を持ち、deps が
       `#<ISSUE-1>` placeholder ではなく実番号で記述されている
-- [ ] body が既定=空・trusted 層のみ authoring・invocation grant
+- [x] body が既定=空・trusted 層のみ authoring・invocation grant
       にも効く・「deterministic executable deny-list」の表現規約を
       含む(TSPEC-034Kvx6yD4sfTj8KFkFIF3 の issue 2 Rule)
-- [ ] 起票 URL・番号が本 task の起票結果欄に記録されている
+- [x] 起票 URL・番号が本 task の起票結果欄に記録されている
 
 ## Verification
 

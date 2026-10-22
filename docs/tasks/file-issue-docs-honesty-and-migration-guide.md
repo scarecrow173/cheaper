@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KvxGAbTTWEsA1RbX7cn"
 type: "task"
-status: "todo"
+status: "done"
 title: "起票 issue 7: 文書正直性 sweep + breaking-change migration guide"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -182,8 +182,8 @@ placeholder は、T1-T6 各 task doc の起票結果に記録された実番号�
 
 ### 起票結果
 
-- URL: (未起票 — T8 完了時点で記録済みであること)
-- 番号: (未起票)
+- URL: https://github.com/scarecrow173/cheaper/issues/169
+- 番号: #169
 
 ## Classification
 
@@ -208,16 +208,16 @@ placeholder は、T1-T6 各 task doc の起票結果に記録された実番号�
 
 ## Done When
 
-- [ ] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
+- [x] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
       既存を検出し skip)
-- [ ] issue body が `## Scope`・`## Acceptance Criteria`・
+- [x] issue body が `## Scope`・`## Acceptance Criteria`・
       `## Dependencies`・`## 参照` の 4 節を持ち、deps が
       placeholder ではなく実番号で記述されている
-- [ ] body が「cheaper は OS sandbox ではない」・spawn API 層の
+- [x] body が「cheaper は OS sandbox ではない」・spawn API 層の
       shell-free と ENOEXEC fallback の区別・refine 対象一覧・
       破壊的変更一覧を含む(TSPEC-034Kvx6yD4sfTj8KFkFIF3 の
       issue 7 Rule)
-- [ ] 起票 URL・番号が本 task の起票結果欄に記録されている
+- [x] 起票 URL・番号が本 task の起票結果欄に記録されている
 
 ## Verification
 

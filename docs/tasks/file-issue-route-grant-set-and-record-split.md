@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KvxwOy3rcRuUnlZu4Ej"
 type: "task"
-status: "todo"
+status: "done"
 title: "起票 issue 4: route/hook 審査依存整理 + grant-set 投影 + record split"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -162,8 +162,8 @@ routing ≠ authorization(D2)は維持する。
 
 ### 起票結果
 
-- URL: (未起票 — T8 完了時点で記録済みであること)
-- 番号: (未起票)
+- URL: https://github.com/scarecrow173/cheaper/issues/166
+- 番号: #166
 
 ## Classification
 
@@ -193,15 +193,15 @@ routing ≠ authorization(D2)は維持する。
 
 ## Done When
 
-- [ ] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
+- [x] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
       既存を検出し skip)
-- [ ] issue body が `## Scope`・`## Acceptance Criteria`・
+- [x] issue body が `## Scope`・`## Acceptance Criteria`・
       `## Dependencies`・`## 参照` の 4 節を持ち、deps が
       placeholder ではなく実番号で記述されている
-- [ ] body が条件付き viability 弱化・`{command, executed}`
+- [x] body が条件付き viability 弱化・`{command, executed}`
       record split・`route.grant` attribution anchor を含む
       (TSPEC-034Kvx6yD4sfTj8KFkFIF3 の issue 4 Rule)
-- [ ] 起票 URL・番号が本 task の起票結果欄に記録されている
+- [x] 起票 URL・番号が本 task の起票結果欄に記録されている
 
 ## Verification
 

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034Kvxwfa7svHN4AuX95dA"
 type: "task"
-status: "todo"
+status: "done"
 title: "起票 issue 3: command.grants / process.tasks の単一 exec grant モデル統合"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -185,8 +185,8 @@ grant モデルのみを見る形になる(#<ISSUE-4> と整合)。
 
 ### 起票結果
 
-- URL: (未起票 — T8 完了時点で記録済みであること)
-- 番号: (未起票)
+- URL: https://github.com/scarecrow173/cheaper/issues/165
+- 番号: #165
 
 ## Classification
 
@@ -212,14 +212,14 @@ grant モデルのみを見る形になる(#<ISSUE-4> と整合)。
 
 ## Done When
 
-- [ ] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
+- [x] issue が `scarecrow173/cheaper` に起票済み(または重複確認で
       既存を検出し skip)
-- [ ] issue body が `## Scope`・`## Acceptance Criteria`・
+- [x] issue body が `## Scope`・`## Acceptance Criteria`・
       `## Dependencies`・`## 参照` の 4 節を持ち、deps が
       `#<ISSUE-1>` placeholder ではなく実番号で記述されている
-- [ ] body に merge fidelity 決定 M1-M5 が全て含まれる
+- [x] body に merge fidelity 決定 M1-M5 が全て含まれる
       (TSPEC-034Kvx6yD4sfTj8KFkFIF3 の issue 3 Rule)
-- [ ] 起票 URL・番号が本 task の起票結果欄に記録されている
+- [x] 起票 URL・番号が本 task の起票結果欄に記録されている
 
 ## Verification
 
