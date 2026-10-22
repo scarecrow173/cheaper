@@ -98,6 +98,7 @@ Directory: `docs/impl/ir`
 | IMPL-034A9AU7e20SHvZ2sH66sP | Implement managed process policy | completed | [implement-managed-process-policy.md](./implement-managed-process-policy.md) |
 | IMPL-034zR9OQeNgEdCN2OMdt8I | Implement native launcher acquisition and hook routing | completed | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
 | IMPL-034D0FJrA2AtPRSNfjfe2v | Implement OpenAI Codex subscription provider | completed | [implement-openai-codex-subscription-provider.md](./implement-openai-codex-subscription-provider.md) |
+| IMPL-034KtIguXiJnzT9ykiH7uV | Implement per-target hook rewrite enablement and approval bypass issue 150 | completed | [implement-per-target-hook-rewrite-enablement-and-approval-bypass-issue-150.md](./implement-per-target-hook-rewrite-enablement-and-approval-bypass-issue-150.md) |
 | IMPL-034AGqZzIjQvvNqijsHb1N | Implement process lifecycle policy | completed | [implement-process-lifecycle-policy.md](./implement-process-lifecycle-policy.md) |
 | IMPL-034AGM8MC9yqj5X6IozzSu | Implement process tree lifecycle | completed | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
 | IMPL-034zQvMyE33qrrPAVVG0da | Implement workflow binding and definition contracts | completed | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |

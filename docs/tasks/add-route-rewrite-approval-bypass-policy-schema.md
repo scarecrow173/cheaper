@@ -38,7 +38,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-per-target-hook-rewrite-enablement.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/implement-per-target-hook-rewrite-enablement-and-approval-bypass-issue-150.md"
   depends-on:
     - "docs/plans/implement-per-target-hook-rewrite-enablement.md"
   blocks:
