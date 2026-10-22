@@ -31,6 +31,7 @@ relations:
   derived-by:
     - "../specs/windsurf-compat-range-normalization-and-devin-registration-surfacing.md"
     - "../adr/defensive-compat-normalization-with-registration-surfacing.md"
+    - "../designs/windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md"
   verifies: []
   verified-by: []
   references:

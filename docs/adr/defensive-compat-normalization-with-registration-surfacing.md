@@ -31,7 +31,8 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/devin-compat-range-fields-dropped-read-code-deny.md"
-  derived-by: []
+  derived-by:
+    - "../designs/windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md"
   verifies: []
   verified-by: []
   references:
