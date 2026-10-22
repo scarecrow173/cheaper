@@ -28,7 +28,7 @@ Directory: `docs/designs`
 | DESIGN-034DkkcOv0Sos8KzcEP3oB | cheaper-usage SKILL.md hook path section rewrite | approved | [cheaper-usage-skill-hook-path-section-rewrite.md](./cheaper-usage-skill-hook-path-section-rewrite.md) |
 | DESIGN-034r05iHy2gdnoH3XDJcXx | cheaper CLI bundle layout inside .apm/hooks/cli | superseded | [cli-bundle-layout.md](./cli-bundle-layout.md) |
 | DESIGN-034r05iHrZUE6WvDuYjZB4 | CLI contract・result/error envelope・exit code | approved | [cli-contract-envelope-exit-codes.md](./cli-contract-envelope-exit-codes.md) |
-| DESIGN-034KsaxkFcfUHzvbR5hEB1 | Codex/Cursor/Copilot hook rewrite enablement | draft | [codex-cursor-copilot-hook-rewrite-enablement.md](./codex-cursor-copilot-hook-rewrite-enablement.md) |
+| DESIGN-034KsaxkFcfUHzvbR5hEB1 | Codex/Cursor/Copilot hook rewrite enablement | approved | [codex-cursor-copilot-hook-rewrite-enablement.md](./codex-cursor-copilot-hook-rewrite-enablement.md) |
 | DESIGN-034r05iHy2gdnoUHGunDtE | Copilot pre-read hook adapter | approved | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | DESIGN-034zJ3dYi8Rs6I6PIyc3Vu | Core resource manifest normalization design | approved | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | DESIGN-034r05iHy2gdnoLTC43RP5 | Cross-agent distribution verification | approved | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
@@ -58,6 +58,7 @@ Directory: `docs/designs`
 | DESIGN-034A8ubRdZsG57LdsNNTEw | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | DESIGN-034zSP4AJ6aRzdtIxTHW1Y | OperationManager の state と bounded drain | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | DESIGN-034zWr0ZeceJCJaL3ZRK3H | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
+| DESIGN-034KuDkWOmNXiBddEQ4XWK | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 | draft | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
 | DESIGN-034r05iHrZUE6WvaQsRRsM | Pi 実行エンジン: session・制限・abort・retry・出力抽出・repair・usage | approved | [pi-execution-engine.md](./pi-execution-engine.md) |
 | DESIGN-034zAKcWuB8SuFkOePsubg | Pi sibling tool-call parallelism inside Workers | approved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DESIGN-034r05iHy2gdnoZAxhwPFa | Pi state paths under userConfigDir/pi | approved | [pi-state-paths-under-userconfigdir-pi.md](./pi-state-paths-under-userconfigdir-pi.md) |
