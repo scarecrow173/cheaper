@@ -20,7 +20,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/fix-route-test-flake-via-test-side-determinism.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/fix-route-test-determinism-for-ubuntu-ci-flake-issue-157.md"
   depends-on:
     - "docs/plans/fix-route-test-flake-via-test-side-determinism.md"
   blocks:
