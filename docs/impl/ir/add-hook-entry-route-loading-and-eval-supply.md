@@ -4,7 +4,7 @@ type: "impl"
 status: "completed"
 title: "Add hook entry route loading and eval supply"
 created: "2026-10-20"
-updated: "2026-10-20"
+updated: "2026-10-22"
 owners: []
 relations:
   source:
@@ -42,7 +42,8 @@ relations:
     - "docs/designs/pretooluse-route-resolver-and-delegated-workflow-execution.md"
   derived-by: []
   verifies: []
-  verified-by: []
+  verified-by:
+    - "docs/discovery/devin-pretooluse-rewrite-runtime-verification.md"
   references: []
   defers: []
   deferred-by: []
