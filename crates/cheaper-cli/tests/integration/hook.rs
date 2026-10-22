@@ -100,10 +100,16 @@ impl Fixture {
 
 /// `pub(crate)`: sibling `hook_eval_dedup` から再利用。
 pub(crate) fn windsurf_read(file_path: &str) -> String {
-    format!(
-        "{{\"agent_action_name\":\"pre_read_code\",\"tool_info\":{{\"file_path\":{}}}}}",
+    windsurf_tool_info(&format!(
+        "{{\"file_path\":{}}}",
         serde_json::to_string(file_path).unwrap()
-    )
+    ))
+}
+
+/// `tool_info` を任意 JSON で指定する windsurf `pre_read_code`
+/// payload — range/search 語彙の fixture 用(issue #161)。
+fn windsurf_tool_info(tool_info_json: &str) -> String {
+    format!("{{\"agent_action_name\":\"pre_read_code\",\"tool_info\":{tool_info_json}}}")
 }
 
 /// windsurf `pre_run_command` payload — shell request。
@@ -311,6 +317,69 @@ async fn windsurf_deny_stderr_exit2_and_silent_allow() {
     assert_eq!(allow.code, 0);
     assert!(allow.stdout.is_empty());
     assert!(allow.stderr.is_empty());
+}
+
+/// issue #161 — windsurf `pre_read_code` の range 語彙を共有
+/// `tool_use_normalize` と parity で受理する。bounded window は
+/// threshold 内なら allow、無効・矛盾値は全文評価へ縮退して deny
+/// (過少評価しない fail-closed)。
+#[tokio::test(flavor = "current_thread")]
+async fn windsurf_ranged_read_vocabularies_bounded_eval() {
+    let fx = Fixture::new();
+    fx.write_big_lines("big_lines.txt");
+    // bounded allow 系 — 20 行 window は threshold 内。
+    for tool_info in [
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":1,\"end_line\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"view_range\":[1,20]}",
+        "{\"file_path\":\"big_lines.txt\",\"offset\":1,\"limit\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"line_offset\":1,\"line_limit\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"offset\":1,\"max_lines\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":1,\"limit\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"end_line\":20}",
+        // `[s,-1]` "to EOF" sentinel → `{s,None}`(末尾 6 行 → allow)。
+        "{\"file_path\":\"big_lines.txt\",\"view_range\":[1995,-1]}",
+        // lone `start_line` → `{s,None}`(s 行〜EOF、末尾 6 行 → allow)。
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":1995}",
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-read-code", "--target", "windsurf"],
+            &windsurf_tool_info(tool_info),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 0, "tool_info={tool_info} stderr={:?}", r.stderr);
+        assert!(r.stdout.is_empty(), "tool_info={tool_info}");
+    }
+    // 無効・矛盾値は全文評価へ縮退 → deny(全文 token 計測文言で
+    // pin し、`{s,None}` 等の狭い window 評価でないことを示す)。
+    for tool_info in [
+        // 矛盾 pair — Step C の `{1900,None}`(末尾 100 行 ≈ allow)
+        // へ落ちないことの識別 pin: 全文評価 deny が成立する。
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":1900,\"end_line\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"view_range\":[1900,2]}",
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":0}",
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":\"x\"}",
+        "{\"file_path\":\"big_lines.txt\",\"end_line\":\"x\"}",
+        "{\"file_path\":\"big_lines.txt\",\"view_range\":[1,\"x\"]}",
+        "{\"file_path\":\"big_lines.txt\",\"view_range\":[1,-5]}",
+        // range 無しは従来どおり全文 deny。
+        "{\"file_path\":\"big_lines.txt\"}",
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-read-code", "--target", "windsurf"],
+            &windsurf_tool_info(tool_info),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 2, "tool_info={tool_info}");
+        assert!(
+            r.stderr.contains("'big_lines.txt' has") && !r.stderr.contains("read window"),
+            "tool_info={tool_info} stderr={:?}",
+            r.stderr
+        );
+    }
 }
 
 #[tokio::test(flavor = "current_thread")]

@@ -170,9 +170,7 @@ fn windsurf_normalize(event: &str, input: &Value, cwd: &str) -> Option<RoutingRe
             path: file_path.to_string(),
             cwd: cwd.to_string(),
             source_tool: Some("windsurf:pre_read_code".to_string()),
-            range: tool_info.and_then(|t| {
-                normalize_read_range(t, &["offset", "line_offset"], &["limit", "line_limit"])
-            }),
+            range: tool_info.and_then(windsurf_read_range),
         });
     }
     let command = tool_info
@@ -289,6 +287,131 @@ fn normalize_read_range(
     Some(ReadRange { offset, limit })
 }
 
+/// `view_range`(`[startLine, endLine]` array、1-based・inclusive)の
+/// 正規化結果を 3 値で表す内部表現 — windsurf caller が「矛盾
+/// (helper 全体 `None` short-circuit)」と「不完全(次判定へ
+/// fall-through)」を区別するための型。copilot caller は non-`Valid`
+/// を全て `None` へ写像する(従来の `Option` 意味論と同値)。
+enum ViewRange {
+    /// `[start, end]`(`end >= start`)、または `[start, -1]` の
+    /// "to EOF" sentinel から `ReadRange` へ写像できた。
+    Valid(ReadRange),
+    /// `end < start` の complete array — emitter の意図範囲より狭い
+    /// 評価へ縮退させないため矛盾として扱う。
+    Contradiction,
+    /// array 非形成・`start`/`end` 受理不能(欠落・非整数・0・
+    /// `-1` 以外の負値) — 後続判定へ進む。
+    Incomplete,
+}
+
+/// `view_range`(`[startLine, endLine]`、1-based・inclusive)を
+/// `ReadRange` へ正規化する — copilot `view`・windsurf
+/// `pre_read_code` 共有の変換規約(旧 `copilot_view_range` の共有化)。
+/// `end == -1` は "to EOF" sentinel として `{offset:start,
+/// limit:None}` へ写像する(copilot wire では未観測だが同一規約と
+/// して許容 — `to EOF` 解釈は通用する)。`end < start` は
+/// `Contradiction`、それ以外の不受理は `Incomplete` を返す。
+fn normalize_view_range(args: &Map<String, Value>) -> ViewRange {
+    let Some(arr) = args.get("view_range").and_then(Value::as_array) else {
+        return ViewRange::Incomplete;
+    };
+    let Some(start) = arr.first().and_then(json_line_number) else {
+        return ViewRange::Incomplete;
+    };
+    let Some(end_v) = arr.get(1) else {
+        return ViewRange::Incomplete;
+    };
+    // `end == -1` は `view_range` 系の "to EOF" sentinel 慣例値 —
+    // `json_line_number` が負値を受理しないため先に raw 値で見る。
+    if end_v.as_f64() == Some(-1.0) {
+        return ViewRange::Valid(ReadRange {
+            offset: start,
+            limit: None,
+        });
+    }
+    let Some(end) = json_line_number(end_v) else {
+        return ViewRange::Incomplete;
+    };
+    if end < start {
+        return ViewRange::Contradiction;
+    }
+    ViewRange::Valid(ReadRange {
+        offset: start,
+        limit: Some(end - start + 1),
+    })
+}
+
+/// windsurf `pre_read_code` `tool_info` の `ReadRange` 抽出 —
+/// 共有 `tool_use_normalize`(`offset`/`line_offset`/`start_line` +
+/// `limit`/`line_limit`/`max_lines` の key 集合)と parity の受理面
+/// (issue #161)。受理優先順位:
+///
+/// - **Step A — 明示 alias 経路**: `offset`/`line_offset`/`limit`/
+///   `line_limit`/`max_lines` のいずれかの key が存在すれば
+///   `normalize_read_range`(上記 key 集合)をそのまま返し、
+///   pair/array/`end_line` 形式は参照しない(曖昧な混在 payload は
+///   明示語彙側へ deterministic 解決)。
+/// - **Step B — inclusive pair/array 形式**(Step A の key が 1 つも
+///   無い場合のみ): `start_line`+`end_line` が共に受理できるなら
+///   `{offset:s, limit:e-s+1}`(1-based・inclusive)。`e < s` の矛盾
+///   pair は helper 全体 `None` を即座に返す — Step C の lone
+///   `start_line` 規約で `{s,None}` へ倒すと emitter 意図範囲より
+///   狭い過少評価になり得るため(後続判定・Step C へも進まない)。
+///   complete pair 不成立の場合のみ `view_range`(`Contradiction`
+///   も同上で helper 全体 `None`)→ `end_line` 単独
+///   (`{offset:1, limit:e}`)を評価する。
+/// - **Step C — fallback**: 上記いずれも不成立なら
+///   `normalize_read_range`(Step A と同一 key 集合)を呼ぶ — lone
+///   `start_line` → `{s,None}`(s 行〜EOF)を受理する経路。矛盾に
+///   よる short-circuit `None` はここへ落ちない。
+///
+/// 単一語彙の入力では無効・矛盾・非整数値が `None`(全文評価)または
+/// より広い window 以外へ縮退しない(fail-closed)。混在語彙
+/// payload は本 precedence による deterministic 解決。
+fn windsurf_read_range(tool_info: &Map<String, Value>) -> Option<ReadRange> {
+    const OFFSET_KEYS: &[&str] = &["offset", "line_offset", "start_line"];
+    const LIMIT_KEYS: &[&str] = &["limit", "line_limit", "max_lines"];
+    // Step A — 明示 offset/limit 系 key が 1 つでも存在する。
+    // `start_line` は pair 語彙でもあるため trigger に含めない
+    // (`{start_line, end_line}` pair 判定を潰さない)。
+    if ["offset", "line_offset", "limit", "line_limit", "max_lines"]
+        .iter()
+        .any(|k| tool_info.contains_key(*k))
+    {
+        return normalize_read_range(tool_info, OFFSET_KEYS, LIMIT_KEYS);
+    }
+    // Step B — `start_line`+`end_line` inclusive pair → `view_range`
+    // array → `end_line` 単独の順に評価する。
+    let start_line = tool_info.get("start_line").and_then(json_line_number);
+    let end_line = tool_info.get("end_line").and_then(json_line_number);
+    if let (Some(s), Some(e)) = (start_line, end_line) {
+        return if e < s {
+            // 矛盾 pair — helper 全体 `None` で全文評価へ倒す。
+            None
+        } else {
+            Some(ReadRange {
+                offset: s,
+                limit: Some(e - s + 1),
+            })
+        };
+    }
+    match normalize_view_range(tool_info) {
+        ViewRange::Valid(range) => return Some(range),
+        ViewRange::Contradiction => return None,
+        ViewRange::Incomplete => {}
+    }
+    // `end_line` 単独(`start_line` 欠落・無効値)→ 1〜`end_line` 行
+    // (より広い評価 = 安全側)。
+    if let Some(e) = end_line {
+        return Some(ReadRange {
+            offset: 1,
+            limit: Some(e),
+        });
+    }
+    // Step C — fallback。`None` は全文評価縮退を意味する。
+    normalize_read_range(tool_info, OFFSET_KEYS, LIMIT_KEYS)
+}
+
 /// `Search` 正規化 — `grep` 系 tool の bounded 検索 request。
 /// `pattern` が非 string/欠落なら `None`(normalize 失敗 → allow と
 /// 同等)。`path` 欠落・非 string は `"."`。
@@ -395,7 +518,12 @@ fn copilot_handle(input: &Value, cwd: &str) -> CopilotOutcome {
                 path: file_path.to_string(),
                 cwd: cwd.to_string(),
                 source_tool: Some(format!("copilot:{tool_name}")),
-                range: copilot_view_range(&args),
+                // copilot は non-`Valid` を全て `None` へ写像する
+                // plain `Option` 扱い(従来意味論と同値)。
+                range: match normalize_view_range(&args) {
+                    ViewRange::Valid(range) => Some(range),
+                    ViewRange::Contradiction | ViewRange::Incomplete => None,
+                },
             }),
             None => CopilotOutcome::None,
         };
@@ -414,22 +542,6 @@ fn copilot_handle(input: &Value, cwd: &str) -> CopilotOutcome {
         }
     }
     CopilotOutcome::None
-}
-
-/// Copilot `view` の `view_range`(`[startLine, endLine]`、1-based・
-/// inclusive)を `ReadRange` へ正規化する。無効 shape は `None`
-/// (全文評価へ縮退)。
-fn copilot_view_range(args: &Map<String, Value>) -> Option<ReadRange> {
-    let arr = args.get("view_range")?.as_array()?;
-    let start = arr.first().and_then(json_line_number)?;
-    let end = arr.get(1).and_then(json_line_number)?;
-    if end < start {
-        return None;
-    }
-    Some(ReadRange {
-        offset: start,
-        limit: Some(end - start + 1),
-    })
 }
 
 fn copilot_render(verdict: Verdict) -> HookResponse {
@@ -1140,5 +1252,178 @@ mod tests {
             v.get("permissionDecision").and_then(Value::as_str),
             Some("deny")
         );
+    }
+
+    /// `windsurf_read_range` — Step A(明示 alias)→ Step B(pair/
+    /// array/`end_line` 単独)→ Step C(fallback)の受理順・矛盾
+    /// short-circuit・`-1` sentinel・混在 precedence を pin する
+    /// (issue #161)。`None` は全文評価縮退を意味し、矛盾 pair/array
+    /// が Step C の lone `start_line` 規約(`{s,None}`)へ落ちない
+    /// ことが fail-closed の肝。
+    #[test]
+    fn windsurf_read_range_table() {
+        type Case = (&'static str, Option<(u64, Option<u64>)>);
+        let cases: &[Case] = &[
+            // Step A — 明示 alias 経路(`start_line` は offset alias
+            // として受理 — 共有 `tool_use_normalize` と同一 key 集合)。
+            ("{\"offset\":10,\"limit\":5}", Some((10, Some(5)))),
+            ("{\"line_offset\":10,\"line_limit\":5}", Some((10, Some(5)))),
+            ("{\"offset\":1,\"max_lines\":20}", Some((1, Some(20)))),
+            ("{\"start_line\":5,\"limit\":20}", Some((5, Some(20)))),
+            ("{\"start_line\":5,\"line_limit\":20}", Some((5, Some(20)))),
+            ("{\"start_line\":5,\"max_lines\":20}", Some((5, Some(20)))),
+            ("{\"limit\":20}", Some((1, Some(20)))),
+            // explicit key が 1 つでもあれば pair/array/end_line は
+            // 参照しない(混在語彙は deterministic 解決)。
+            (
+                "{\"offset\":10,\"limit\":5,\"view_range\":[1,1000]}",
+                Some((10, Some(5))),
+            ),
+            (
+                "{\"limit\":5,\"start_line\":10,\"end_line\":30}",
+                Some((10, Some(5))),
+            ),
+            (
+                "{\"line_limit\":5,\"start_line\":10,\"end_line\":30}",
+                Some((10, Some(5))),
+            ),
+            // Step B — `start_line`+`end_line` inclusive pair。
+            ("{\"start_line\":10,\"end_line\":30}", Some((10, Some(21)))),
+            ("{\"start_line\":10,\"end_line\":10}", Some((10, Some(1)))),
+            // `start_line` が無効でも `end_line` が有効なら
+            // `end_line` 単独(`{1,e}` — より広い評価=安全側)へ縮退。
+            ("{\"start_line\":0,\"end_line\":30}", Some((1, Some(30)))),
+            // `view_range` array — pair 不成立時のみ評価。
+            ("{\"view_range\":[10,30]}", Some((10, Some(21)))),
+            // `[s,-1]` は "to EOF" sentinel → `{s,None}`。
+            ("{\"view_range\":[10,-1]}", Some((10, None))),
+            ("{\"view_range\":[1,-1]}", Some((1, None))),
+            // `end_line` 単独 → `{1,e}`。
+            ("{\"end_line\":30}", Some((1, Some(30)))),
+            // Step C — lone `start_line` → `{s,None}`(s 行〜EOF)。
+            ("{\"start_line\":5}", Some((5, None))),
+            // 矛盾 short-circuit — helper 全体 `None` で Step C へ
+            // 落ちない(`{500,None}` にはならない)。
+            ("{\"start_line\":500,\"end_line\":20}", None),
+            (
+                "{\"start_line\":500,\"end_line\":20,\"view_range\":[1,10]}",
+                None,
+            ),
+            ("{\"view_range\":[10,2]}", None),
+            // 無効・非整数値 → `None`(全文評価縮退)。
+            ("{}", None),
+            ("{\"start_line\":0}", None),
+            ("{\"start_line\":-3}", None),
+            ("{\"start_line\":1.5}", None),
+            ("{\"start_line\":\"5\"}", None),
+            ("{\"view_range\":[10,0]}", None),
+            ("{\"view_range\":[10,-5]}", None),
+            ("{\"view_range\":[0,10]}", None),
+            ("{\"view_range\":\"x\"}", None),
+            ("{\"view_range\":[10]}", None),
+            ("{\"end_line\":0}", None),
+            ("{\"end_line\":\"x\"}", None),
+            // `offset == 1 && limit == None` は全文と同値で
+            // `normalize_read_range` が `None` へ畳む。
+            ("{\"offset\":1}", None),
+            ("{\"offset\":0,\"limit\":10}", None),
+            ("{\"offset\":10,\"limit\":0}", None),
+        ];
+        for (json_str, expect) in cases {
+            let v: Value = serde_json::from_str(json_str).unwrap();
+            let map = v.as_object().unwrap();
+            let got = windsurf_read_range(map).map(|r| (r.offset, r.limit));
+            assert_eq!(got, *expect, "tool_info={json_str}");
+        }
+    }
+
+    /// copilot `view` — 共有 `normalize_view_range` の non-`Valid` は
+    /// 全て `None`(従来意味論と同値)。`[s,-1]` → `{s,None}` の
+    /// "to EOF" sentinel は共有化に伴い copilot にも効く(design
+    /// 受理済の差分 — copilot wire では `-1` 未観測)。
+    #[test]
+    fn copilot_view_range_maps_non_valid_to_none() {
+        let range_of = |tool_args: &str| {
+            let input: Value = serde_json::from_str(&format!(
+                "{{\"toolName\":\"view\",\"toolArgs\":{tool_args}}}"
+            ))
+            .unwrap();
+            match copilot_handle(&input, "/w") {
+                CopilotOutcome::Request(RoutingRequest::FileRead { range, .. }) => {
+                    range.map(|r| (r.offset, r.limit))
+                }
+                _ => panic!("expected FileRead request"),
+            }
+        };
+        assert_eq!(
+            range_of("{\"path\":\"f.txt\",\"view_range\":[10,-1]}"),
+            Some((10, None))
+        );
+        // `end` 不受理(`0`)は `None` — 全文評価縮退(従来どおり)。
+        assert_eq!(range_of("{\"path\":\"f.txt\",\"view_range\":[10,0]}"), None);
+        // `end < start` の矛盾も `None`(従来どおり)。
+        assert_eq!(range_of("{\"path\":\"f.txt\",\"view_range\":[10,2]}"), None);
+        assert_eq!(
+            range_of("{\"path\":\"f.txt\",\"view_range\":[10,30]}"),
+            Some((10, Some(21)))
+        );
+        // `view_range` 欠落・非 array は `None`。
+        assert_eq!(range_of("{\"path\":\"f.txt\"}"), None);
+        assert_eq!(range_of("{\"path\":\"f.txt\",\"view_range\":\"x\"}"), None);
+    }
+
+    /// `windsurf_normalize` — `pre_read_code` payload の各 `tool_info`
+    /// 形が期待 `ReadRange` を持つ `FileRead` request へ正規化される
+    /// (adapter 接続の smoke — 受理規則本体は `windsurf_read_range`
+    /// の table test で pin)。
+    #[test]
+    fn windsurf_normalize_maps_tool_info_range_vocabularies() {
+        let normalize = |tool_info: &str| {
+            let input: Value = serde_json::from_str(&format!(
+                "{{\"agent_action_name\":\"pre_read_code\",\"tool_info\":{tool_info}}}"
+            ))
+            .unwrap();
+            windsurf_normalize("pre-read-code", &input, "/w")
+        };
+        let assert_range =
+            |tool_info: &str, expect: Option<(u64, Option<u64>)>| match normalize(tool_info) {
+                Some(RoutingRequest::FileRead {
+                    path,
+                    range,
+                    source_tool,
+                    ..
+                }) => {
+                    assert_eq!(path, "big_lines.txt", "{tool_info}");
+                    assert_eq!(source_tool.as_deref(), Some("windsurf:pre_read_code"));
+                    assert_eq!(range.map(|r| (r.offset, r.limit)), expect, "{tool_info}");
+                }
+                _ => panic!("expected FileRead: {tool_info}"),
+            };
+        assert_range(
+            "{\"file_path\":\"big_lines.txt\",\"start_line\":1,\"end_line\":20}",
+            Some((1, Some(20))),
+        );
+        assert_range(
+            "{\"file_path\":\"big_lines.txt\",\"view_range\":[1,20]}",
+            Some((1, Some(20))),
+        );
+        assert_range(
+            "{\"file_path\":\"big_lines.txt\",\"offset\":1,\"limit\":20}",
+            Some((1, Some(20))),
+        );
+        assert_range(
+            "{\"file_path\":\"big_lines.txt\",\"end_line\":20}",
+            Some((1, Some(20))),
+        );
+        assert_range(
+            "{\"file_path\":\"big_lines.txt\",\"start_line\":1995}",
+            Some((1995, None)),
+        );
+        // 矛盾 pair → `range: None`(全文評価縮退)。
+        assert_range(
+            "{\"file_path\":\"big_lines.txt\",\"start_line\":1900,\"end_line\":20}",
+            None,
+        );
+        assert_range("{\"file_path\":\"big_lines.txt\"}", None);
     }
 }

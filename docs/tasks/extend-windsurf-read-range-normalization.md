@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KxDc5lyn6aDJbljcI3N"
 type: "task"
-status: "todo"
+status: "done"
 title: "Extend windsurf pre_read_code ReadRange normalization parity"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -206,20 +206,20 @@ deterministic 解決(不変条件の限定は design「§`windsurf_read_range`�
 
 ## Done When
 
-- [ ] `normalize_view_range` が 3 値(Valid/Contradiction/
+- [x] `normalize_view_range` が 3 値(Valid/Contradiction/
       Incomplete)を返し、copilot 経路が従来どおり plain `None`
       写像で動く
-- [ ] `windsurf_read_range` が Step A/B/C の受理順で
+- [x] `windsurf_read_range` が Step A/B/C の受理順で
       alias/pair/array/end_line/fallback を写像する
-- [ ] 矛盾 pair/array が helper 全体 `None` で short-circuit し
+- [x] 矛盾 pair/array が helper 全体 `None` で short-circuit し
       Step C へ落ちない(`{start_line:500,end_line:20}`→`{500,None}`
       にならない)
-- [ ] `view_range:[s,-1]` が `{s,None}` へ写像される
-- [ ] windsurf `pre_read_code` の ranged payload が integration
+- [x] `view_range:[s,-1]` が `{s,None}` へ写像される
+- [x] windsurf `pre_read_code` の ranged payload が integration
       test で bounded allow・invalid が全文縮退 deny になる
-- [ ] copilot `view_range:[s,-1]`/`[s,0]` の unit test が pin
+- [x] copilot `view_range:[s,-1]`/`[s,0]` の unit test が pin
       されている
-- [ ] `pattern`→`Search` 分岐・deny guidance が未実装(T2/T3
+- [x] `pattern`→`Search` 分岐・deny guidance が未実装(T2/T3
       の範囲)
 
 ## Out of Scope
@@ -234,6 +234,6 @@ deterministic 解決(不変条件の限定は design「§`windsurf_read_range`�
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib` exits 0(`mod tests` の新規 unit test 含む全 pass)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0(windsurf ranged fixture + 既存 contract 非回帰)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib` exits 0(`mod tests` の新規 unit test 含む全 pass) — 実測: 93 passed / 0 failed(新規 3 test: `windsurf_read_range_table`・`copilot_view_range_maps_non_valid_to_none`・`windsurf_normalize_maps_tool_info_range_vocabularies`)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0(windsurf ranged fixture + 既存 contract 非回帰) — 実測: 27 passed / 0 failed(新規 `windsurf_ranged_read_vocabularies_bounded_eval` — bounded allow 9 系・全文縮退 deny 8 系を loop assert)
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
