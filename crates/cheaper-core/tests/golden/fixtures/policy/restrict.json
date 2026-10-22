@@ -64,6 +64,11 @@
               "maxConcurrent": 1,
               "maxOutputBytes": 65536,
               "timeout": "2m"
+            },
+            "route": {
+              "rewrite": {
+                "approvalBypass": []
+              }
             }
           }
         }
@@ -170,6 +175,11 @@
               "maxConcurrent": 1,
               "maxOutputBytes": 65536,
               "timeout": "2m"
+            },
+            "route": {
+              "rewrite": {
+                "approvalBypass": []
+              }
             }
           }
         }
@@ -278,6 +288,11 @@
               "maxConcurrent": 1,
               "maxOutputBytes": 65536,
               "timeout": "2m"
+            },
+            "route": {
+              "rewrite": {
+                "approvalBypass": []
+              }
             }
           }
         }
@@ -439,6 +454,11 @@
               "maxConcurrent": 1,
               "maxOutputBytes": 65536,
               "timeout": "2m"
+            },
+            "route": {
+              "rewrite": {
+                "approvalBypass": []
+              }
             }
           }
         }
@@ -671,6 +691,11 @@
               "maxConcurrent": 1,
               "maxOutputBytes": 65536,
               "timeout": "2m"
+            },
+            "route": {
+              "rewrite": {
+                "approvalBypass": []
+              }
             }
           }
         }
@@ -781,6 +806,11 @@
               "maxConcurrent": 1,
               "maxOutputBytes": 65536,
               "timeout": "2m"
+            },
+            "route": {
+              "rewrite": {
+                "approvalBypass": []
+              }
             }
           }
         }
@@ -891,6 +921,11 @@
               "maxConcurrent": 1,
               "maxOutputBytes": 65536,
               "timeout": "2m"
+            },
+            "route": {
+              "rewrite": {
+                "approvalBypass": []
+              }
             }
           }
         }

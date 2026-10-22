@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KsKLJ7FGv1ytMp8eLbx"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add route.rewrite.approvalBypass policy schema and normalized flag"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -206,6 +206,45 @@ compile か test が壊れる)。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0(schema・load・golden 全 pass)
-- [ ] `mise exec -- cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0(literal site の compile・test 追随)
-- [ ] `mise exec -- cargo clippy -p cheaper-core -p cheaper-runtime --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+- [x] `mise exec -- cargo test -p cheaper-core --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0(schema・load・golden 全 pass)
+- [x] `mise exec -- cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0(literal site の compile・test 追随)
+- [x] `mise exec -- cargo clippy -p cheaper-core -p cheaper-runtime --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+
+## Done
+
+2026-10-23 実施。`route` section(schema + normalized 表現 + builtin
+既定値)を `command` section と同型の trusted-layer 規約で追加した。
+
+- `schema.rs` — `route_properties()`(`approvalBypass`:
+  `["array","null"]` + enum `[codex,cursor,copilot]` + `uniqueItems`)
+  を complete/partial schema の optional property に追加。
+  `policy_project_partial_schema` には property を置かず、
+  `additionalProperties: false` が `route` key を持つ project
+  policy を `InvalidRuntimePolicy` で拒否する(fail-closed)。
+- `RoutePolicy{rewrite: RewritePolicy{approval_bypass: Vec<String>}}`
+  (`Default` derive)を追加し `RuntimePolicy.route` を `command` 直後に
+  配置。serialize は `approvalBypass`(camelCase)。
+  `approval_bypass_enabled(target)` が flag 判定の単一 owner。
+- `normalize_policy` に `route` の passthrough 解決を追加
+  (`null`/欠落 → default `[]`)。
+- `resources/policy.yaml` に `route: {rewrite: {approvalBypass: []}}`
+  を追記。
+- `RuntimePolicy{…}` literal 5 site(fixture.rs `default_policy`・
+  restrict.rs・capability.rs test・run_dev_seam.rs・ollama_e2e.rs)に
+  `route: RoutePolicy::default()` を追記し `cargo check` で compile
+  網羅を確認。
+- golden fixture `{load,restrict,schema}.json` の normalized
+  `expected.ok.policy`(`execution.timeoutMs` を discriminator)へ
+  `route: {rewrite: {approvalBypass: []}}` を挿入して再生成
+  (script は検証後に削除、合計 15 object)。
+- unit test — `route_section_schema_and_normalize`(受理・default
+  等価・project partial 拒否・domain 外 fail-loud・serialize)と
+  `route_approval_bypass_merges_and_project_route_fails`(user merge・
+  project `route` key で load error)を追加。
+- 検証: `cargo test -p cheaper-core -p cheaper-runtime --features
+  cheaper-runtime/dev-seam` 全 pass(golden 含む、`-p` 指定時は
+  owning package の feature のみ指定可のため `cheaper-cli/dev-seam`
+  は付与不可 — cli test は T2 で検証)。`cargo clippy -p cheaper-core
+  -p cheaper-runtime --all-targets --features
+  cheaper-runtime/dev-seam -- -D warnings` exits 0。
+  `cargo fmt --check` clean。

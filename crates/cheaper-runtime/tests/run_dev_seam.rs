@@ -26,8 +26,8 @@ use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::model::config::ModelConfig;
 use cheaper_core::policy::process::ResolvedProcessPolicy;
 use cheaper_core::policy::schema::{
-    ExecutionPolicy, FilesystemPolicy, ModelPolicy, OutputPolicy, RetryPolicy, RuntimePolicy,
-    TierFallback, ToolsPolicy,
+    ExecutionPolicy, FilesystemPolicy, ModelPolicy, OutputPolicy, RetryPolicy, RoutePolicy,
+    RuntimePolicy, TierFallback, ToolsPolicy,
 };
 use cheaper_core::policy::workflow::{WorkflowArtifactPolicy, WorkflowPolicy};
 use cheaper_core::tools::vocabulary::ToolName;
@@ -216,6 +216,7 @@ fn policy_with(execution: ExecutionPolicy) -> RuntimePolicy {
                 interval: "30s".into(),
             },
         },
+        route: RoutePolicy::default(),
         execution,
         tools: ToolsPolicy {
             allow: vec![ToolName::Read, ToolName::Write],

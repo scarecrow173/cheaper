@@ -25,8 +25,8 @@ use cheaper_core::model::config::{ModelConfig, TierPreferences};
 use cheaper_core::model::tier::Tier;
 use cheaper_core::policy::process::ResolvedProcessPolicy;
 use cheaper_core::policy::schema::{
-    ExecutionPolicy, FilesystemPolicy, ModelPolicy, OutputPolicy, RetryPolicy, RuntimePolicy,
-    TierFallback, ToolsPolicy,
+    ExecutionPolicy, FilesystemPolicy, ModelPolicy, OutputPolicy, RetryPolicy, RoutePolicy,
+    RuntimePolicy, TierFallback, ToolsPolicy,
 };
 use cheaper_core::policy::workflow::{WorkflowArtifactPolicy, WorkflowPolicy};
 use cheaper_core::tools::vocabulary::ToolName;
@@ -246,6 +246,7 @@ fn fixture() -> E2eFixture {
                 interval: "30s".into(),
             },
         },
+        route: RoutePolicy::default(),
         execution: ExecutionPolicy {
             timeout_ms: 600_000,
             max_turns: Some(16),
