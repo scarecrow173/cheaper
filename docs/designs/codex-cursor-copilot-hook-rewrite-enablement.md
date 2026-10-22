@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "Codex/Cursor/Copilot hook rewrite enablement"
 created: "2026-10-23"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: ["scarecrow173"]
 relations:
   source:

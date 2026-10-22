@@ -4,7 +4,7 @@ type: "adr"
 status: "accepted"
 title: "Per-target hook rewrite enablement with policy-gated approval bypass"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: ["scarecrow173"]
 relations:
   source:

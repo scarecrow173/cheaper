@@ -4,7 +4,7 @@ type: "spec"
 status: "approved"
 title: "Codex/Cursor/Copilot hook rewrite enablement and approval-bypass opt-in"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: ["scarecrow173"]
 relations:
   source:
