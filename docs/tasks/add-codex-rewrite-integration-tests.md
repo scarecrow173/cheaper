@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KsKXLwLr4ZYjemKg6Hr"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add codex rewrite emit and project-layer flag rejection integration tests"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -131,15 +131,15 @@ fail-closed の end-to-end contract test を追加する。precedent は
 
 ## Done When
 
-- [ ] user flag + grant で `--target codex` firing が
+- [x] user flag + grant で `--target codex` firing が
       `permissionDecision:"allow"` + `updatedInput.command`
       (`route run --payload` 形)を emit し exit 0 の test が
       ある(R6)
-- [ ] flag 未設定・空・codex 非含有で `updatedInput` を emit
+- [x] flag 未設定・空・codex 非含有で `updatedInput` を emit
       しない test がある(R7)
-- [ ] project `.cheaper/policy.yaml` の `route` key で hook が
+- [x] project `.cheaper/policy.yaml` の `route` key で hook が
       rewrite を発行しない test がある(fail-closed、R3/R15)
-- [ ] 既存 `devin_hook_rewrite_*`・`builtin_cargo_test_*` test が
+- [x] 既存 `devin_hook_rewrite_*`・`builtin_cargo_test_*` test が
       非回帰
 
 ## Out of Scope
@@ -154,6 +154,35 @@ fail-closed の end-to-end contract test を追加する。precedent は
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run::` exits 0(新規 3 ケース + 既存 route_run contract 全 pass)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0
-- [ ] `mise exec -- cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0(T1-T3 成果を含む全 contract — fixture regen 込み)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run::` exits 0(新規 3 ケース + 既存 route_run contract 全 pass)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0
+- [x] `mise exec -- cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0(T1-T3 成果を含む全 contract — fixture regen 込み)
+
+## Done
+
+2026-10-23 実施。`route_run.rs` に codex flag-gated rewrite emit の
+end-to-end contract test 3 件を追加した。fixture は
+`reject_fx`(ROUTES_YAML + `child-run` grant)を使い、user 層
+`policy.yaml` を `route:` section 付きで上書きする最小構成
+(`devin_hook_rewrite_emits_nested_updated_input` 先例と同形)。
+
+- `codex_hook_rewrite_with_approval_bypass_emits_allow_updated_input`
+  — user policy `route.rewrite.approvalBypass: [codex]` + grant で
+  `--target codex` の `Bash`/`tool_input.command` firing が exit 0
+  + `hookSpecificOutput.{hookEventName:"PreToolUse",
+  permissionDecision:"allow",updatedInput.command}`(" route run
+  --payload " 含有)を emit。top-level `decision`/`updatedInput`
+  無し・marker 未実行を assert(R6)。
+- `codex_hook_rewrite_without_flag_renders_fallback_only` — flag
+  未設定・`[]`・`[cursor]` の 3 subcase で `updatedInput` も
+  `"permissionDecision":"allow"` も emit しない(fallback render
+  維持、R7)。
+- `codex_hook_project_route_key_fails_closed` — user 層に flag +
+  grant を正しく置いた上で `.cheaper/policy.yaml` に `route` key
+  を置くと project partial schema 違反で load 全体が失敗し、
+  `load_or_none` → `None` で route arm 不活性 + bypass 無効。
+  hook は exit 0 を維持しつつ rewrite を発行しない(R3/R15 の
+  e2e 側)。
+- 検証: `route_run::` 28 pass / `hook::` 26 pass / workspace 全
+  50 suite pass・0 failed。既存 `devin_hook_rewrite_*`・
+  `builtin_cargo_test_*` 非回帰。
