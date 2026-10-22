@@ -70,6 +70,7 @@ Directory: `docs/test-specs`
 | TSPEC-034Kr7KMznzk97mL1fbS1b | usage.jsonl run record diagnostic field contract (issue #141) | draft | [usage-jsonl-run-record-diagnostic-fields.md](./usage-jsonl-run-record-diagnostic-fields.md) |
 | TSPEC-034zQTnsUJl3pXIuYsvZIQ | Version-pinned launcher integrity and stream preservation | superseded | [version-pinned-launcher-integrity-and-stream-preservation.md](./version-pinned-launcher-integrity-and-stream-preservation.md) |
 | TSPEC-034D9bHOWe5zvPoIeMncr9 | Volume-root workspace boundary predicate behavior | draft | [volume-root-workspace-boundary-predicate-behavior.md](./volume-root-workspace-boundary-predicate-behavior.md) |
+| TSPEC-034KxD0IRkMph8hSZbhTRx | Windsurf-compat bounded evaluation coverage and registration surfacing (issue #161) | draft | [windsurf-compat-bounded-eval-and-registration-surfacing.md](./windsurf-compat-bounded-eval-and-registration-surfacing.md) |
 | TSPEC-034AJ8C35s1GpJJoxU3sey | Workflow における明示 bounded artifact read | proposed | [workflow-artifact-publication-and-consumption.md](./workflow-artifact-publication-and-consumption.md) |
 | TSPEC-034AR5JjpeSFMmwDJ2ohy3 | Workflow benchmark accounting integrity | proposed | [workflow-benchmark-accounting-integrity.md](./workflow-benchmark-accounting-integrity.md) |
 | TSPEC-034AR5IRUTHkZBxfcQJFgM | Workflow benchmark scenario determinism | proposed | [workflow-benchmark-scenario-determinism.md](./workflow-benchmark-scenario-determinism.md) |
