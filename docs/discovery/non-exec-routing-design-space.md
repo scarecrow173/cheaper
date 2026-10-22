@@ -125,9 +125,16 @@ job/worker は自由)で十分なら本 issue は close してよい」。
 meta の model/usage は `run.rs:553-566` が収穫)、`tools.allow` 内の任意
 `kind:tool` job、`when` 条件、`needs` 依存、追加 outputs を自由に持て
 る。exec 後の job 失敗は `postprocessFailures` として記録され exit
-code を変えない(R16)。ただし **command tool job は route grant の argv
-pattern に閉じる**(single-grant projection)ため、原 command 以外の
-process は(同一 grant の argv 範囲内ですら)実行できない。
+code を変えない(R16)。追加の `command` tool job(exec 以外の
+job_id)は byte-exact input check の対象外 — 同 check は
+`ctx.job_id == "exec" && ctx.job.name == "command"` に filter
+される(`workflow_run.rs:468`)。したがって non-exec `command` job
+は **grant に pin された同一 executable を、grant argv pattern に
+適合する任意の argv で実行できる**。制約は「同一 executable の
+み・`route_context` 非適用(`extra_env`・`exec_cwd`・`log_tee`・
+`accept_any_exit_code` は exec job 専用、`workflow_run.rs:516`)」
+であり、実行不能ではない。異なる executable や他 grant を使う
+実行は single-grant projection が閉じる。
 
 ## Alternatives and Comparison
 
