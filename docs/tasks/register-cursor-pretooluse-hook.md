@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KsKTKF4k3oBwHXkLXR6"
 type: "task"
-status: "todo"
+status: "done"
 title: "Register cursor preToolUse hook and extend cursor_normalize"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -183,6 +183,36 @@ plan `docs/plans/implement-per-target-hook-rewrite-enablement.md`
 
 ## Verification
 
-- [ ] `node scripts/check-apm-payload.mjs` exits 0(cursor hooks.json 変更が slim payload check に整合)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib` exits 0(cursor_normalize unit test 全 pass)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0(既存 hook contract の非回帰)
+- [x] `node scripts/check-apm-payload.mjs` exits 0(cursor hooks.json 変更が slim payload check に整合)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib` exits 0(cursor_normalize unit test 全 pass)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0(既存 hook contract の非回帰)
+
+## Done
+
+2026-10-23 実施。cursor target の rewrite 有効化に必須の受け口 —
+`preToolUse` event 登録と `cursor_normalize` の nested payload 対応
+— を整備した。emit は一切追加していない(emit contract 未検証)。
+
+- `packages/apm-hook-cursor/.apm/hooks/hooks.json` に `preToolUse`
+  flat entry を追加 — `cheaper hook pre-tool-use --target cursor`、
+  sh/powershell 両 entry・失敗時 `{"permission":"allow"}` echo・
+  `show_output: false` で beforeXxx entry と同型。`matcher` field
+  は付けず全 tool firing を受ける。旧
+  `beforeReadFile`/`beforeShellExecution` は併存維持(D4)。
+- `cursor_normalize` — top-level `file_path`/`command` 判定を先に
+  試す現行順序を維持し、nested `tool_input.command` →
+  `RoutingRequest::Shell`・`tool_input.file_path` →
+  `RoutingRequest::FileRead{range: None}` を fallback として読む。
+  `tool_name` domain 未検証のため name matching ではなく field の
+  有無で判別。source_tool は `cursor:preToolUse`。
+- `cursor_render`・`handle_hook` cursor arm は不変 — Rewrite arm は
+  `cursor_render(*fallback)` のまま emit gate を維持。
+- unit test — `cursor_normalize_reads_nested_tool_input`(nested
+  command/file_path・flat 優先・malformed None)を追加し、
+  `cursor_and_copilot_rewrite_render_fallback` に
+  `updatedInput`/`updated_input` 非 emit assert を追加。
+- 検証: `node scripts/check-apm-payload.mjs` exits 0、`cargo test
+  -p cheaper-cli --features cheaper-cli/dev-seam --lib` 90 pass、
+  `--test integration hook::` 26 pass、`cargo clippy -p cheaper-cli
+  --all-targets --features cheaper-cli/dev-seam -- -D warnings`
+  exits 0、`cargo fmt`・`biome check` clean。

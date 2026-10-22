@@ -13,6 +13,13 @@
         "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook before-shell-execution --target cursor; if ($LASTEXITCODE -ne 0) { '{\"permission\":\"allow\"}' }; exit 0",
         "show_output": false
       }
+    ],
+    "preToolUse": [
+      {
+        "command": "sh ./cheaper.sh hook pre-tool-use --target cursor || echo '{\"permission\":\"allow\"}'",
+        "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"./cheaper.ps1\" hook pre-tool-use --target cursor; if ($LASTEXITCODE -ne 0) { '{\"permission\":\"allow\"}' }; exit 0",
+        "show_output": false
+      }
     ]
   }
 }

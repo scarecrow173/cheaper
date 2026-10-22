@@ -669,6 +669,37 @@ fn cursor_normalize(input: &Value, cwd: &str) -> Option<RoutingRequest> {
             });
         }
     }
+    // `preToolUse` payload hypothesis — nested `tool_input` を field
+    // 駆動で読む。`tool_name` domain(`"Shell"`/`"Read"` 等)は未検証
+    // のため name matching ではなく field の有無で判別し、claude 型
+    // nested / cursor 固有 flat の両 shape hypothesis を吸収する
+    // (top-level 判定を先に試す順序は beforeXxx payload との誤判別
+    // 防止)。field 駆動判別は over-match し得る(read 以外の tool が
+    // `file_path` input を持つ場合に FileRead として評価される) —
+    // `tool_name` domain 確定までの既知残 risk(design §Risks)。
+    if let Some(tool_input) = payload.get("tool_input").and_then(Value::as_object) {
+        if let Some(command) = tool_input.get("command").and_then(Value::as_str) {
+            if !command.is_empty() {
+                return Some(RoutingRequest::Shell {
+                    command: command.to_string(),
+                    cwd: payload_cwd,
+                    source_tool: Some("cursor:preToolUse".to_string()),
+                });
+            }
+        }
+        if let Some(file_path) = tool_input.get("file_path").and_then(Value::as_str) {
+            if !file_path.is_empty() {
+                return Some(RoutingRequest::FileRead {
+                    path: file_path.to_string(),
+                    cwd: payload_cwd,
+                    source_tool: Some("cursor:preToolUse".to_string()),
+                    // 範囲 field は未検証のため全文評価のまま
+                    // (beforeReadFile と同じ扱い)。
+                    range: None,
+                });
+            }
+        }
+    }
     None
 }
 
@@ -832,6 +863,8 @@ pub fn fallback_allow(target: Option<HookTarget>) -> HookResponse {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use super::*;
 
     fn rewrite(command: &str, fallback: Verdict) -> Verdict {
@@ -1013,13 +1046,88 @@ mod tests {
         assert!(r.stdout.is_none());
     }
 
-    /// cursor/copilot — fallback のみ。
+    /// cursor `preToolUse` — nested `tool_input` を field 駆動で読む
+    /// (payload shape hypothesis — `tool_name` domain 未検証のため
+    /// name matching ではなく field の有無で判別)。
+    #[test]
+    fn cursor_normalize_reads_nested_tool_input() {
+        // tool_input.command → Shell(source_tool: cursor:preToolUse)。
+        let req = cursor_normalize(
+            &json!({"tool_input": {"command": "routed x"}, "cwd": "/w"}),
+            "/fallback",
+        )
+        .expect("tool_input.command normalizes");
+        match req {
+            RoutingRequest::Shell {
+                command,
+                cwd,
+                source_tool,
+            } => {
+                assert_eq!(command, "routed x");
+                assert_eq!(cwd, "/w");
+                assert_eq!(source_tool.as_deref(), Some("cursor:preToolUse"));
+            }
+            _ => panic!("expected Shell"),
+        }
+        // tool_input.file_path → FileRead(range: None)。
+        let req = cursor_normalize(&json!({"tool_input": {"file_path": "/abs/big.rs"}}), "/w")
+            .expect("tool_input.file_path normalizes");
+        match req {
+            RoutingRequest::FileRead {
+                path,
+                source_tool,
+                range,
+                ..
+            } => {
+                assert_eq!(path, "/abs/big.rs");
+                assert_eq!(source_tool.as_deref(), Some("cursor:preToolUse"));
+                assert!(range.is_none());
+            }
+            _ => panic!("expected FileRead"),
+        }
+        // top-level(beforeXxx payload)は従来 source_tool で先に評価
+        // される — nested との誤判別を防ぐため flat 判定が先。
+        let req = cursor_normalize(
+            &json!({"command": "flat", "tool_input": {"command": "nested"}}),
+            "/w",
+        )
+        .expect("flat command normalizes");
+        match req {
+            RoutingRequest::Shell {
+                command,
+                source_tool,
+                ..
+            } => {
+                assert_eq!(command, "flat");
+                assert_eq!(source_tool.as_deref(), Some("cursor:beforeShellExecution"));
+            }
+            _ => panic!("expected Shell"),
+        }
+        // malformed・field 欠落は None(fail-open — caller 側の
+        // schema-valid `{"permission":"allow"}` 経路)。
+        for input in [
+            json!({}),
+            json!(null),
+            json!({"tool_input": {}}),
+            json!({"tool_input": "x"}),
+            json!({"tool_input": {"command": ""}}),
+        ] {
+            assert!(cursor_normalize(&input, "/w").is_none(), "{input}");
+        }
+    }
+
+    /// cursor/copilot — fallback のみ。emit contract(`updated_input`/
+    /// `updatedInput`・`permission`/`permissionDecision` 併記の approval
+    /// 意味)が実機検証で確定するまでいかなる flag 状態でも emit しない
+    /// (R10/R12 — `cursor_render`/`copilot_render` は flag を受け取らず
+    /// 構造的に emit 不能)。
     #[test]
     fn cursor_and_copilot_rewrite_render_fallback() {
         let r = cursor_render(rewrite("cmd", Verdict::Allow));
         assert_eq!(r.exit, 0);
         let v: Value = serde_json::from_str(&r.stdout.unwrap()).unwrap();
         assert_eq!(v.get("permission").and_then(Value::as_str), Some("allow"));
+        assert!(v.get("updatedInput").is_none() && v.get("updated_input").is_none());
         let r = copilot_render(rewrite(
             "cmd",
             Verdict::Deny {
