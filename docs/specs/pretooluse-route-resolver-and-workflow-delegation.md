@@ -41,7 +41,8 @@ relations:
     - "../adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
     - "../adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "./codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md"
   derives-from:
     - "../discovery/pretooluse-auto-routing-to-tasks-and-workflows.md"
   derived-by:

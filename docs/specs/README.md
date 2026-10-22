@@ -28,12 +28,13 @@ Directory: `docs/specs`
 | SPEC-034DjvgZNwy9e9aLXb2alN | cheaper-usage skill hook path examples match APM deploy naming | approved | [cheaper-usage-skill-hook-path-examples.md](./cheaper-usage-skill-hook-path-examples.md) |
 | SPEC-034r05iHK8bA7g59V25ltC | cheaper V1 Worker Runtime と CLI | implemented | [cheaper-v1-worker-runtime-cli.md](./cheaper-v1-worker-runtime-cli.md) |
 | SPEC-034r05iHK8bA7gaTnVhXWI | code-writer and doc-writer built-in Workers | implemented | [code-writer-and-doc-writer-built-in-workers.md](./code-writer-and-doc-writer-built-in-workers.md) |
+| SPEC-034KrX7RnDs0gLVcMPf7vy | Codex/Cursor/Copilot hook rewrite enablement and approval-bypass opt-in | proposed | [codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md](./codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md) |
 | SPEC-034r05iHK8bA7gsvijtkou | Copilot per-target pre-read hook adapter | implemented | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | SPEC-034zIOnRXiXsUtWd4Z6edT | Core resource manifest normalization | approved | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | SPEC-034r05iHK8bA7gky93Dal0 | Cross-agent distribution verification | implemented | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
 | SPEC-034rzTJydXfLvQhTIqiDqW | Cross-agent native routing adapters over APM distribution | approved | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
 | SPEC-034r05iHK8bA7gveeDA5HC | Continuous usage measurement log for delegations | implemented | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
-| SPEC-034KoUwVbN6YjxD7CjpYkf | Deterministic route tests for ubuntu CI flake (issue #157) | proposed | [deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md](./deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md) |
+| SPEC-034KoUwVbN6YjxD7CjpYkf | Deterministic route tests for ubuntu CI flake (issue #157) | approved | [deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md](./deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md) |
 | SPEC-034r05iHK8bA7gAHzYnfP8 | Devin Local as a bundled Pi provider | implemented | [devin-local-bundled-provider.md](./devin-local-bundled-provider.md) |
 | SPEC-034DlpZKFnyWiBZZxGsXK0 | devin provider usage accounting contract | approved | [devin-provider-usage-accounting-contract.md](./devin-provider-usage-accounting-contract.md) |
 | SPEC-034D9BFJZdSSYBEuXVzBbl | Devin provider Windows credential contract | proposed | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
@@ -67,7 +68,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7g9KcsCqKj | Repair and abort hardening, telemetry consistency, and test hermeticity | implemented | [repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |
 | SPEC-034r05iHK8bA7gpcCJQya9 | Repository-owned setup contract for fresh checkouts/worktrees | implemented | [repo-owned-setup-contract-for-fresh-checkouts.md](./repo-owned-setup-contract-for-fresh-checkouts.md) |
 | SPEC-034A8kLznlxOOeccFx9SNM | ResourceManager job lifetime leases | implemented | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
-| SPEC-G1ALq0d5lyFIi0h43tZsZG | usage.jsonl run record への version・実効 policy・error 診断 field の追加 (issue #141) | proposed | [run-error-record-observability.md](./run-error-record-observability.md) |
+| SPEC-G1ALq0d5lyFIi0h43tZsZG | usage.jsonl run record への version・実効 policy・error 診断 field の追加 (issue #141) | approved | [run-error-record-observability.md](./run-error-record-observability.md) |
 | SPEC-034zSQRLxNXgJDxjmUBBB8 | Run-scoped artifact store | approved | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |
 | SPEC-034BbgvL9s41K7NflOddZ6 | Rust + Rig native runtime migration for cheaper CLI | proposed | [rust-rig-native-runtime-migration-for-cheaper-cli.md](./rust-rig-native-runtime-migration-for-cheaper-cli.md) |
 | SPEC-034r05iHK8bA7go4BQtGNS | Separate the development APM project from the distributable cheaper package | implemented | [separate-dev-apm-project-from-distributable-package.md](./separate-dev-apm-project-from-distributable-package.md) |

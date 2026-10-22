@@ -20,7 +20,7 @@ Directory: `docs/discovery`
 | DISC-034DlM8Pf1tWBtLqX1VWFc | cargo source install replaces release binary acquisition for APM consumers | resolved | [cargo-source-install-replaces-release-binary-acquisition-for-apm-consumers.md](./cargo-source-install-replaces-release-binary-acquisition-for-apm-consumers.md) |
 | DISC-034DjtZ2lFPzDHL1MgR6qu | cheaper-usage skill hook path examples diverge from APM deploy path | draft | [cheaper-usage-skill-hook-path-examples.md](./cheaper-usage-skill-hook-path-examples.md) |
 | DISC-034r05iHy2gdnp377SlYbj | cheaper V1 実装引継ぎの整理と Pi SDK 現状確認 | resolved | [cheaper-v1-pi-sdk.md](./cheaper-v1-pi-sdk.md) |
-| DISC-034KrLM3o2H1kMylQFlg2U | Codex/Cursor/Copilot rewrite 有効化 (issue #150) | active | [codex-cursor-copilot-rewrite-enablement.md](./codex-cursor-copilot-rewrite-enablement.md) |
+| DISC-034KrLM3o2H1kMylQFlg2U | Codex/Cursor/Copilot rewrite 有効化 (issue #150) | resolved | [codex-cursor-copilot-rewrite-enablement.md](./codex-cursor-copilot-rewrite-enablement.md) |
 | DISC-034zIOnoIjhMd2vKGOtgXd | Core resource manifest identity investigation | resolved | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | DISC-034r05iHy2gdnpdai9KGpW | Cross-agent hook distribution and per-agent hook contract matrix | resolved | [cross-agent-hook-distribution-and-contract-matrix.md](./cross-agent-hook-distribution-and-contract-matrix.md) |
 | DISC-034rA43JiB611pUjLPA4yR | Cross-agent native routing adapter contract re-verification | resolved | [cross-agent-native-routing-adapter-contract-re-verification.md](./cross-agent-native-routing-adapter-contract-re-verification.md) |
