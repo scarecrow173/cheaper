@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034KuDkWOmNXiBddEQ4XWK"
 type: "design"
-status: "draft"
+status: "approved"
 title: "権限・Runtime Policy・Tool 実行制限の責務ベース再設計"
 created: "2026-10-22"
 updated: "2026-10-23"

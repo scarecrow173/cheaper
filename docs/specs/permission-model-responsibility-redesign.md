@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034KuqPkTK2b4mHsykH9A5"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "権限・Runtime Policy・Tool 実行制限の責務ベース再設計"
 created: "2026-10-22"
 updated: "2026-10-22"

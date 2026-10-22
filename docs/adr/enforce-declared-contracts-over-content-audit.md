@@ -1,7 +1,7 @@
 ---
 id: "ADR-034KuqZelggTIb8Z8K9QB8"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "宣言された実行契約の強制を責務とし内容審査を分離する"
 created: "2026-10-22"
 updated: "2026-10-22"
