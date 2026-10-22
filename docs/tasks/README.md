@@ -326,7 +326,7 @@ Directory: `docs/tasks`
 | TASK-034DVH7HJKxbc1zEF7638b | T2: cli --log/--log-format flag 配線と init 呼出し | done | [wire-cli-log-flags-and-observability-init.md](./wire-cli-log-flags-and-observability-init.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034IpPwmpKldYJ5rPUuq4z | Wire evaluate_dedup into hook target call sites | done | [wire-evaluate-dedup-into-hook-target-call-sites.md](./wire-evaluate-dedup-into-hook-target-call-sites.md) |
-| TASK-034Kr8ooGb34ib95k3TT6i | Wire execution echo through RunCtx into run usage records | todo | [wire-execution-echo-into-run-usage-records.md](./wire-execution-echo-into-run-usage-records.md) |
+| TASK-034Kr8ooGb34ib95k3TT6i | Wire execution echo through RunCtx into run usage records | done | [wire-execution-echo-into-run-usage-records.md](./wire-execution-echo-into-run-usage-records.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
 | TASK-034zTWiLbk14ZhGMpiNo7M | Wire one-dispatch release publication | done | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
 | TASK-034AaXZ7nc5LQuUvG9iFY8 | 実 I/O と Pi job lease を配線する | done | [wire-resource-manager-observation.md](./wire-resource-manager-observation.md) |

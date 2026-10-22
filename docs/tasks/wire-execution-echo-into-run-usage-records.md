@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Kr8ooGb34ib95k3TT6i"
 type: "task"
-status: "todo"
+status: "done"
 title: "Wire execution echo through RunCtx into run usage records"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: []
 relations:
   source:
@@ -155,17 +155,17 @@ policy struct の成長が record shape に漏れないようにする。
 
 ## Done When
 
-- [ ] `ExecutionEcho` + `From<&ExecutionPolicy>` が `usage_log.rs` に
+- [x] `ExecutionEcho` + `From<&ExecutionPolicy>` が `usage_log.rs` に
       存在し 3 field のみ写す
-- [ ] `build_usage_record`/`record_usage` が `echo` 引数を受け、
+- [x] `build_usage_record`/`record_usage` が `echo` 引数を受け、
       `Some` のとき `execution` を `repairs` 直後に、
       `None` なら省略する
-- [ ] `RunCtx.execution_echo` field が存在する
-- [ ] run 経路の 2 呼出しが `ctx.execution_echo.as_ref()`、
+- [x] `RunCtx.execution_echo` field が存在する
+- [x] run 経路の 2 呼出しが `ctx.execution_echo.as_ref()`、
       count-tokens が `None` を渡す
-- [ ] `run.rs` で `restrict_policy` 直後に `ctx.execution_echo` が
+- [x] `run.rs` で `restrict_policy` 直後に `ctx.execution_echo` が
       設定される
-- [ ] workspace が `--all-targets` で compile し既存 test が pass
+- [x] workspace が `--all-targets` で compile し既存 test が pass
       する(signature 変更の全呼出し箇所が追随済み)
 
 ## Out of Scope
@@ -176,6 +176,22 @@ policy struct の成長が record shape に漏れないようにする。
 
 ## Verification
 
-- [ ] `mise exec -- cargo check -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0
-- [ ] `git grep -n "execution_echo" -- crates/cheaper-cli/src` が cli.rs・run.rs の両方に match する
+- [x] `mise exec -- cargo check -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0
+- [x] `git grep -n "execution_echo" -- crates/cheaper-cli/src` が cli.rs・run.rs の両方に match する
+
+## Done
+
+`ExecutionEcho`{timeout_ms, max_turns: Option, max_tool_calls} +
+`From<&ExecutionPolicy>`(3 field 固定射影)を `usage_log.rs` に追加。
+`build_usage_record`/`record_usage` に `echo` 引数(`now` 手前)を
+追加し、`Some` のとき `repairs` 直後へ
+`{timeoutMs, maxTurns(null 許容), maxToolCalls}` を挿入、`None` なら
+key 省略(`insert_execution_echo` helper に集約、success・error 両
+分岐で共有)。`RunCtx.execution_echo` field を cli.rs:311 に追加、
+run success arm(:483)と汎用 catch(:272)は
+`ctx.execution_echo.as_ref()`、count-tokens(:385)は `None`。
+`run.rs` で `restrict_policy` 直後(:236)に
+`ctx.execution_echo = Some((&effective_policy.execution).into())`。
+既存 test 12 呼出しに `None` を追加して compile 維持。check・
+usage_log:: 10 test・fmt 全て pass。
