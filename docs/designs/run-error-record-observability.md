@@ -1,10 +1,10 @@
 ---
 id: "DESIGN-034KqI29dOTRXERRPTp5gV"
 type: "design"
-status: "draft"
+status: "approved"
 title: "usage.jsonl run error record の診断 field 拡充 (issue #141)"
 created: "2026-10-23"
-updated: "2026-10-23"
+updated: "2026-10-22"
 owners: []
 relations:
   source:
@@ -227,6 +227,10 @@ record の `execution` は policy echo であり、envelope
 | `errorMessage` | `provider_error_to_cheaper`/`report_to_cheaper`(rig-adapter error.rs:85-94, 119-143) | `{errorMessage}` のみ — PROVIDER_FAILURE details contract |
 | `checkpoint` | `classified()`(run/mod.rs:226-253)→ `checkpoint_details`(:863-870) | `{path, observationsCount}` — `<userConfigDir>/checkpoints/<id>.json` への参照 |
 
+なお `PromptError::UnknownToolCall` は details 無しの PROVIDER_FAILURE
+を生成する(`prompt_error_to_cheaper`、rig-adapter error.rs:172-175)—
+この経路では `errorMessage` は載らず、診断は `error.message` 側が担う。
+
 `invalid-outputs` sidecar(`<userConfigDir>/invalid-outputs/
 run-<pid>-<nanos>.txt`、repair.rs:163-185)は `details.rawOutputPath`
 として envelope に出るが、**record には写さない** — ADR Option A の
@@ -244,6 +248,11 @@ run-<pid>-<nanos>.txt`、repair.rs:163-185)は `details.rawOutputPath`
   **載らない**。`checkpoint` は外側 details に複写済みで記録される
   (budget 枯渇の同定は可能)。`cause.code` を record に写す拡張は
   spec 外(allowlist 固定)のため採用しない。
+- **`details.checkpoint` は best-effort**: `save_budget_checkpoint`
+  (mod.rs:263-279)は失敗時に `None` を返し `details.checkpoint` 自体を
+  省略するだけなので、MAX_TURNS/MAX_TOOL_CALLS abort の record でも
+  `checkpoint` key が載らない経路がある。test は `checkpoint` の
+  無条件の存在を assert しない。
 - **echo 未供給の run record**: usage-bearing error は全て
   `restrict_policy`(`run.rs:223`)以降の `run_worker` 内で発生する
   (それ以前の worker/model/input 解決 error は `run_meta` を持たず
@@ -291,6 +300,12 @@ run-<pid>-<nanos>.txt`、repair.rs:163-185)は `details.rawOutputPath`
   別 version.json を指す test 環境でも binary 版を記録する。意図的 —
   record が問うのは「どの binary が走ったか」であり、override
   resource の版ではない。
+- **`env!("CARGO_PKG_VERSION")` の評価位置は `cheaper-cli` 固定**:
+  `cheaper-runtime` は自身で `version = "0.1.0"` を pin しており
+  (`crates/cheaper-runtime/Cargo.toml:3`)、runtime 側で `env!` を
+  評価すると workspace version ではなく "0.1.0" が入る。record
+  builder が `usage_log.rs`(cheaper-cli)にある限り正しい値になるが、
+  record 生成を runtime へ移す場合は version の供給方式を見直すこと。
 - **`message`/`errorMessage` の 300 字 cap で末尾が欠ける**:
   PROVIDER_FAILURE の `GetChatMessage HTTP <status>: <body>` は
   status が冒頭に来るため下位分類に必要な情報は冒頭側にある
@@ -324,4 +339,9 @@ run-<pid>-<nanos>.txt`、repair.rs:163-185)は `details.rawOutputPath`
   `details.reason` の非記録、fail-soft(key 省略で書き込み継続)
 - [ ] `cheaper usage` が新 field 混在 file を従来通り集計できること
   (spec AC)
+- [ ] `run_dev_seam` 系または integration test で `run::execute` →
+  `record_usage` の end-to-end を通し、`version`/`execution`/
+  `error.reason` が実際の `ctx.execution_echo` 配線経由で pin される
+  ことを確認する(fixture レベルの `build_usage_record` test のみに
+  留めない — `restrict_policy` 後に echo を置く設定順序は暗黙の依存)
 - [ ] `mise run check` が pass すること

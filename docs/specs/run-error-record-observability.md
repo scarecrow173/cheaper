@@ -1,10 +1,10 @@
 ---
 id: "SPEC-G1ALq0d5lyFIi0h43tZsZG"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "usage.jsonl run record への version・実効 policy・error 診断 field の追加 (issue #141)"
 created: "2026-10-23"
-updated: "2026-10-23"
+updated: "2026-10-22"
 owners: []
 relations:
   source:

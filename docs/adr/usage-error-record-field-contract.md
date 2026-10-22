@@ -1,10 +1,10 @@
 ---
 id: "ADR-RrljT4yH9woiGWbIny9ifG"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "usage.jsonl の run error record は固定 allowlist の診断 field で拡充する (issue #141)"
 created: "2026-10-23"
-updated: "2026-10-23"
+updated: "2026-10-22"
 owners: []
 relations:
   source:
@@ -103,7 +103,13 @@ Option A を採用する。
    `schemaErrors[].instancePath`・`errorMessage`・`checkpoint`・
    `message`・`version`・`execution`・`repairs` はいずれも
    「error.code の直下の原因分類」を record から答えるための
-   bounded な値であり、生の model/workspace 内容を含まない。
+   bounded な値であり、生の model/workspace 内容(`rawOutput` 等)は
+   含まない。ただし echo が完全にゼロではない点に注意:
+   `schemaErrors[].message` は jsonschema の `err.to_string()` 由来で
+   失格した instance 値や `instancePath` の property 名を写し得る。
+   したがって privacy の保証は「内容を一切含まない」ではなく
+   「≤5 件 × message ≤120 字(`instancePath` ≤200 字)の bounded
+   echo」に限定される。
 2. **写す元は envelope の既存 contract** — `error.details.*` と
    `meta.repairs` を選んで写すだけで、runtime 側の error 生成・
    details 内容は変えない(envelope 公開 contract 不変)。
