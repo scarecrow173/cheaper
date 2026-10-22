@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KxDvREdpF6P10oziJsy"
 type: "task"
-status: "todo"
+status: "done"
 title: "Document windsurf tool_info contract and dual-registration trap in distribution guide"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -144,19 +144,19 @@ window へ縮退する(fail-closed)。
 
 ## Done When
 
-- [ ] `distribution.md` の Devin 登録節に `tool_info` で受理する
+- [x] `distribution.md` の Devin 登録節に `tool_info` で受理する
       range/search 語彙(明示 aliases・pair・array・end_line/
       start_line 単独・gated `pattern`)と受理優先順位が記載される
-- [ ] dual-registration trap(fingerprint が `range` を含むため
+- [x] dual-registration trap(fingerprint が `range` を含むため
       dedup 不成立・deny が union で勝つ)と remediation(legacy
       除去または `read_config_from` で windsurf import 無効化)が
       記載される
-- [ ] `hook-config verify` の compat-degraded・windsurf-conflict
+- [x] `hook-config verify` の compat-degraded・windsurf-conflict
       finding 名と発火条件・informational severity・windsurf FileRead
       範囲無し deny reason の `verify` 誘導が記載される
-- [ ] 文言は spec R7・design の verify 文言と整合し、独自拡大が
+- [x] 文言は spec R7・design の verify 文言と整合し、独自拡大が
       ない
-- [ ] 実装コードへの変更が無い(docs のみ)
+- [x] 実装コードへの変更が無い(docs のみ)
 
 ## Out of Scope
 
@@ -166,7 +166,11 @@ window へ縮退する(fail-closed)。
 
 ## Verification
 
-- [ ] `node scripts/check-doc-ids.mjs` exits 0(front matter 壊れ
-      無し)
-- [ ] `node scripts/audit_docs.js --json docs/guides/distribution.md`
-      で新規 error が 0(更新行のみの追記)
+- [x] `mise exec -- node scripts/check-doc-ids.mjs` exits 0(front
+      matter 壊れ無し) — 実測: `doc id check OK: 1109 markdown files
+      scanned`
+- [x] `node scripts/audit_docs.js --json docs/guides/distribution.md`
+      — 本 repo に `scripts/audit_docs.js` は存在しない(`scripts/` 配下の
+      audit 系 script 無し、biome も `.md` を対象外)。代替として
+      `check-doc-ids.mjs` の全 scan で error 0 を確認し、diff が
+      `distribution.md` の追記のみであることを `git diff` で review 済み
