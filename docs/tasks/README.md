@@ -121,7 +121,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
 | TASK-034Dak56U8haKyVTWPnBKv | Extend PluginAuth::logout with AuthInteraction | done | [extend-pluginauth-logout-with-authinteraction.md](./extend-pluginauth-logout-with-authinteraction.md) |
 | TASK-034rzRugER0y7cQ2tlWjPp | Extend usage.jsonl run record with savings section | done | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
-| TASK-034Kr8hGPsSchbau1iTWjt | Extend build_usage_record error records with envelope-derived diagnostic fields | todo | [extend-usage-log-error-record-diagnostic-fields.md](./extend-usage-log-error-record-diagnostic-fields.md) |
+| TASK-034Kr8hGPsSchbau1iTWjt | Extend build_usage_record error records with envelope-derived diagnostic fields | done | [extend-usage-log-error-record-diagnostic-fields.md](./extend-usage-log-error-record-diagnostic-fields.md) |
 | TASK-034zQsmDSYTqJOZ8CjKrGN | Canonical handlers と Pi adapter を抽出する | done | [extract-canonical-tools.md](./extract-canonical-tools.md) |
 | TASK-034r05iHQeQpDpFFl8q6NC | Extract promptWithAbortGrace helper and apply to main run | done | [extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
 | TASK-034z1PGTvhoaHhdTUgPahz | Extract shared esbuild bundle helper from bundle-cli.mjs | done | [extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md](./extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md) |

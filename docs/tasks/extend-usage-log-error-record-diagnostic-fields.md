@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Kr8hGPsSchbau1iTWjt"
 type: "task"
-status: "todo"
+status: "done"
 title: "Extend build_usage_record error records with envelope-derived diagnostic fields"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: []
 relations:
   source:
@@ -120,16 +120,16 @@ allowlist 外(`rawOutput`/`rawOutputPath`/`exitCode`/`retryable`/
 
 ## Done When
 
-- [ ] `truncate_chars` が char 基準で存在する
-- [ ] `kind:"run"` の success・error 両分岐に `version`
+- [x] `truncate_chars` が char 基準で存在する
+- [x] `kind:"run"` の success・error 両分岐に `version`
       (`env!("CARGO_PKG_VERSION")`・`ok` 直後)と `repairs`
       (non-null のみ)が挿入される
-- [ ] `error` object が `code` に加えて allowlist 5 field を
+- [x] `error` object が `code` に加えて allowlist 5 field を
       条件付き・固定順・cap 付きで持つ
-- [ ] allowlist 外 key(`rawOutput`/`rawOutputPath`/`exitCode`/
+- [x] allowlist 外 key(`rawOutput`/`rawOutputPath`/`exitCode`/
       `retryable`/`cause`/その他 details key)が record に載らない
-- [ ] signature・呼出し箇所・既存 test が無変更で compile・pass する
-- [ ] `kind:"count"` record の shape が不変
+- [x] signature・呼出し箇所・既存 test が無変更で compile・pass する
+- [x] `kind:"count"` record の shape が不変
 
 ## Out of Scope
 
@@ -139,6 +139,24 @@ allowlist 外(`rawOutput`/`rawOutputPath`/`exitCode`/`retryable`/
 
 ## Verification
 
-- [ ] `mise exec -- cargo build -p cheaper-cli` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+- [x] `mise exec -- cargo build -p cheaper-cli` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+
+## Done
+
+`crates/cheaper-cli/src/usage_log.rs` のみ変更(signature・call site
+不変)。`truncate_chars`(char / Unicode scalar 基準・`repair.rs`
+同一規約)と `ABORT_REASONS` 語彙 const を追加。success・error 両
+`kind:"run"` 分岐で `ok` 直後に `version`
+(`env!("CARGO_PKG_VERSION")`)、`savings` の後に `repairs`
+(non-null のみ — error 分岐は既存 `!is_null` loop に `"repairs"`
+を畳み込み、success 分岐は loop 後の条件 insert)。error object は
+`code` 既存に続き `reason`(abort 語彙一致のみ)・`message`(≤300
+文字)・`schemaErrors`(object entry 先頭 5 件・`instancePath`
+≤200/`message` ≤120・欠落 key 省略・写せる entry 無しなら key
+自体省略)・`errorMessage`(≤300 文字)・`checkpoint`(`{path,
+observationsCount}` のみ・両欠落なら key 省略)を
+`error_record_object` helper で固定順に射影。`cargo build`・
+`usage_log::` filter 10 test・`clippy -D warnings`・`cargo fmt` 全て
+pass。`kind:"count"` shape 不変。
