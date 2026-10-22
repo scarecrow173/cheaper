@@ -58,9 +58,13 @@ stable-sort tie-break)に暗黙依存していること。system architecture �
 
 * Option A: test 側で determinism を確保する — sweep test は対象 file に
   `set_modified` で一意な mtime 順序を与え、infra-failure test は
-  `marker.exists()` の代わりに error の `ErrorCode::Timeout` code を
-  検証する(timeout は `proc::drive` 内・spawn 成功後にのみ生成される
-  post-spawn 証拠)。
+  `marker.exists()` の代わりに error の `code() ==
+  ErrorCode::ToolExecutionFailure` + message `"routed command did
+  not complete"` を検証する(engine が job 失敗を
+  `ToolExecutionFailure` に collapse するため `Err` の code からは
+  `Timeout` は検証できない。message は `finish` の
+  `captured() == None && outcome.error.is_some()` 分岐に固有の
+  post-admission 証拠)。
 * Option B: timing 余裕を確率的に広げる — grant `timeout` を数百 ms〜
   秒に緩めて marker 書込みが kill に先勝つことを期待する(issue 本文の
   対応案)。
@@ -87,9 +91,16 @@ production filename(`<unix-ms>-<pid>-<hex>.log`)で mtime tie がほぼ
   (`sweep_enforces_ttl_count_size_and_skips_tmp`)
 * Constraints: 本番コード変更なし。`timeout: '1ms'`・30s sleep
   fixture・sweep の TTL/count/size semantics・`.tmp` 除外検証は維持。
-  error code は `route::run::finish` が包み直す
-  `CheaperError("routed command did not complete", code=Timeout)` を
-  `downcast_ref::<CheaperError>()` 等で検証する。
+  error は `route::run::finish` が包み直す
+  `CheaperError::new(error.code /* ToolExecutionFailure */,
+  "routed command did not complete")` を
+  `downcast_ref::<CheaperError>()` で取り出し、
+  `code() == ErrorCode::ToolExecutionFailure` と message
+  `contains("routed command did not complete")` で検証する。job の
+  diagnostic code(`Timeout` 等)は engine が `outcome.error` を
+  `ToolExecutionFailure("workflow job failed")` に collapse する
+  (engine.rs:1172-1188)ため `Err` 側へ伝播しない — `Timeout`
+  code の assert は全 platform で決定的に fail するため使わない。
 
 ## Verification
 

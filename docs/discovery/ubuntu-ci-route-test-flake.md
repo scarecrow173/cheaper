@@ -90,6 +90,22 @@ race・mtime tie-break)を検証した結果、両方とも概ね正しいが、
   test は `err.downcast_ref::<CheaperError>()` で `code ==
   ErrorCode::Timeout` を deterministic に assert できる
   (`cheaper_tools`/`cheaper_core` は cheaper-cli の直接依存)。
+- **修正注記(2026-10-22)**: 上記の伝播記述は誤り。
+  `WorkflowExecutorError(Timeout)` → `outcome.error.code` の伝播は
+  **発生しない** — engine は `outer_error` が無いまま job が失敗
+  終了した場合、`outcome.error` を `CheaperError::new(
+  ErrorCode::ToolExecutionFailure, "workflow job failed")` に
+  collapse する(engine.rs:1176-1179)。`Timeout` code は per-job
+  diagnostic にのみ残り、`route::run::finish` は
+  `CheaperError::new(error.code /* ToolExecutionFailure */,
+  "routed command did not complete")` を返す(run.rs:450-463)。
+  したがって `Err` 側で deterministic に assert できるのは
+  `code() == ErrorCode::ToolExecutionFailure` + message
+  `contains("routed command did not complete")` であり、
+  `ErrorCode::Timeout` の assert は全 platform で決定的に fail
+  する。本注記は Option A 表・Tentative Conclusions の
+  `code == ErrorCode::Timeout` 記述にも同様に適用される。
+  spec/ADR/design はこの修正を反映して改訂済み。
 - つまり `marker` による spawn 証明は、同じ識別力を持つ timing
   非依存の assertion で置き換え可能。
 

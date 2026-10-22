@@ -68,12 +68,16 @@ check` を全 platform で deterministic に pass させることで、CI 失敗
 
 ### In Scope
 
-- `exec_infra_failure_returns_error` の spawn 証明 assertion を
+- `exec_infra_failure_returns_error` の実行到達証明 assertion を
   deterministic にする修正。具体的には、戻り値の error が
-  `ErrorCode::Timeout` を持つ `CheaperError` であることを検証する
-  (timeout は `proc::drive` 内でのみ発生し、`command.spawn()` 成功後に
-  しか到達しない post-spawn 証拠。timing 非依存)。`timeout: '1ms'` は
-  維持してよい。
+  `ErrorCode::ToolExecutionFailure` を持つ `CheaperError` で、かつ
+  message が `"routed command did not complete"` を含むことを検証する
+  (この message は `route::run::finish` の
+  `captured() == None && outcome.error.is_some()` 分岐に固有で、
+  workflow が exec job を失敗まで実行した post-admission 証拠。
+  timing 非依存。engine は job 失敗を `ToolExecutionFailure` に
+  collapse するため `ErrorCode::Timeout` は `Err` の code からは
+  検証できない)。`timeout: '1ms'` は維持してよい。
 - `sweep_enforces_ttl_count_size_and_skips_tmp` の (b) count sweep・
   (c) size sweep で、対象 file の mtime を `set_modified` で明示的に
   順序付ける修正((a) TTL sweep が `old.log` に使っているのと同じ
@@ -95,24 +99,30 @@ check` を全 platform で deterministic に pass させることで、CI 失敗
 - `exec_infra_failure_returns_error`:
   - `run_route` が `Err` を返すことは維持する(child は 30s sleep、
     timeout 1ms が必ず先に発火するため deterministic)。
-  - spawn 証明は error の `CheaperError.code() == ErrorCode::Timeout`
-    で行う。`marker.exists()` のような「child の side effect が
-    kill 前に完了した」ことへの timing 依存 assertion は残さない。
+  - 実行到達証明は error の `CheaperError.code() ==
+    ErrorCode::ToolExecutionFailure` と、message が `"routed
+    command did not complete"` を含むことで行う(post-admission
+    分岐証明。literal な post-spawn 識別子は test-only では error
+    code 経由で到達不能)。`marker.exists()` のような「child の
+    side effect が kill 前に完了した」ことへの timing 依存
+    assertion は残さない。
   - usage log に `"route"` record が書かれないことの検証は維持する。
 - `sweep_enforces_ttl_count_size_and_skips_tmp`:
   - count sweep・size sweep の両 block で、sweep 対象全 file に
     `File::set_modified` で一意な mtime 順序を与え、削除対象・残存
     file の assertion が `read_dir` 順に依存しないこと。
   - `.tmp` 除外・TTL sweep の既存検証を弱めない。
-- 実装はテストの意図(削除は「古い順」、infra failure は post-spawn
-  error)を維持すること — timing でたまたま pass する形ではなく、
-  assertion が検証したい invariant を直接表すこと。
+- 実装はテストの意図(削除は「古い順」、infra failure は
+  post-admission の実行到達 error)を維持すること — timing で
+  たまたま pass する形ではなく、assertion が検証したい invariant
+  を直接表すこと。
 
 ## Acceptance Criteria
 
 - [ ] `exec_infra_failure_returns_error` が error の code assertion
-  (Timeout)を持ち、`marker.exists()` への依存が無い。ubuntu CI で
-  `marker` 未作成でも fail しない形になっている。
+  (`ToolExecutionFailure`)+ `"routed command did not complete"` の
+  message assertion を持ち、`marker.exists()` への依存が無い。
+  ubuntu CI で `marker` 未作成でも fail しない形になっている。
 - [ ] `sweep_enforces_ttl_count_size_and_skips_tmp` が count/size
   sweep で `set_modified` による明示的 mtime 順序を使い、削除数・
   残存 file の assertion が一意に決まる。

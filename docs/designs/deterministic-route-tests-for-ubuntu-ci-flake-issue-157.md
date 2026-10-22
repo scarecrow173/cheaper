@@ -79,8 +79,9 @@ filesystem 列挙順への暗黙依存を排除した deterministic な assertio
 ### In Scope
 
 - `exec_infra_failure_returns_error`: `run_route` の戻り `Err` が
-  `CheaperError` で `code() == ErrorCode::Timeout` であることを検証
-  する assertion へ、`marker.exists()` を置き換える。
+  `CheaperError` で `code() == ErrorCode::ToolExecutionFailure` かつ
+  `err.to_string()` が `"routed command did not complete"` を含む
+  ことを検証する assertion へ、`marker.exists()` を置き換える。
   `timeout: '1ms'`・30s sleep fixture・`is_err()` 相当の失敗検証・
   usage log に `"route"` record が無いことの検証は維持する。
 - `sweep_enforces_ttl_count_size_and_skips_tmp`: (b) count sweep・
@@ -132,33 +133,59 @@ filesystem 列挙順への暗黙依存を排除した deterministic な assertio
 
 ## Data and Control Flow
 
-### timeout error の決定的到達経路(`ErrorCode::Timeout` が post-spawn 証拠になる理由)
+### infra failure error の決定的到達経路(`ToolExecutionFailure` + finish message が実行到達証拠になる理由)
 
 1. `command.spawn()` 成功後、`proc::monitor::drive`
    (`crates/cheaper-tools/src/tools/proc/monitor.rs`)が
    `sleep(timeout_ms)` で timeout を arm する。
 2. 発火すると `timeout_controller.abort(Timeout)` →
    `AbortReason::from`(`crates/cheaper-tools/src/operation.rs`)→
-   `wait_aborted` → cleanup → process-tree kill。
-3. tool 層の error は `tool_executor_error` が `find_cheaper_error` で
-   code を抽出し(`crates/cheaper-cli/src/workflow_run.rs:552-567`)、
-   `WorkflowExecutorError(Timeout)` になる。
-4. `outcome.error.code = Timeout` が `route::run::finish` に渡り、
-   `route_exec.captured()` が `None` のとき
-   `Err(CheaperError::new(error.code, "routed command did not
-   complete"))` を返す(run.rs:450-463)。
+   `wait_aborted` → cleanup → process-tree kill。tool 層の error
+   は `CheaperError(Timeout, "managed process execution timed
+   out")`(monitor.rs:247-251)。
+3. `tool_executor_error` が `find_cheaper_error` で code を抽出し
+   (`crates/cheaper-cli/src/workflow_run.rs:552-567`)、
+   `WorkflowExecutorError(Timeout)` として job の `Err` に載る。
+   ただしこの `"TIMEOUT"` code が残るのは per-job diagnostic まで
+   で、`run_route` の戻り `Err` からは到達できない。
+4. workflow engine は `outer_error` が無いまま 1 つでも job が
+   失敗終了すると、`outcome.error` を
+   `CheaperError::new(ErrorCode::ToolExecutionFailure, "workflow
+   job failed")` に collapse する
+   (`crates/cheaper-workflow/src/engine.rs:1172-1188`)。job 個別の
+   diagnostic code は `outcome.error` へ伝播しない。
+5. `route::run::finish` は `route_exec.captured()` が `None` かつ
+   `outcome.error` が `Some` のとき
+   `Err(CheaperError::new(error.code /* ToolExecutionFailure */,
+   "routed command did not complete"))` を返す(run.rs:450-463)。
 
 `complete()` は tool 実行が `Ok(result)` を返したときのみ呼ばれる
-(workflow_run.rs:532-536)。timeout kill は `Err` 側で返るため
+(workflow_run.rs:532-544)。timeout kill は `Err` 側で返るため
 `captured()` は `None` のままとなり、`finish` の error 分岐が
 決定的に取られる。結果、最終 `Err` は必ず `CheaperError` 型で
-`code() == ErrorCode::Timeout` — `downcast_ref` で取り出せる。
+`code() == ErrorCode::ToolExecutionFailure`・message は
+`"routed command did not complete"` — `downcast_ref` で取り出せる。
 
-timeout error は `proc::drive` 内でしか生成されず、`drive` には
-`command.spawn()` 成功後にしか入らないため、この code の検証は
-「grant 経由で子が spawn され timeout kill で落ちた」ことの timing
-非依存な証明になる — `marker.exists()` が担っていた識別力と同等
-以上。
+`"routed command did not complete"` は `captured() == None &&
+outcome.error.is_some()` 分岐(run.rs:453-457)固有の message であり、
+この分岐は workflow が exec job を実際に走らせて失敗したときにのみ
+到達する。実行前 rejection(grant 不備 `PolicyViolation` "route run
+revalidation failed" run.rs:49、grant timeout 不正
+`InvalidRuntimePolicy` run.rs:327、cwd-mismatch 等)は別 code・別
+message で返り、この分岐を通らない。したがって code + message の
+組合せは「workflow が admission を通過し exec job を失敗まで実行
+した」こと(post-admission)の timing 非依存な証明になる —
+`marker.exists()` が担っていた識別力のうち test-only で到達可能な
+部分を置き換える。なお `ErrorCode::Timeout` を生成する経路は
+`proc::drive` だけではない — workflow-deadline の `stop()`
+(engine.rs:901-903、Event::Timeout arm 1088-1092)や
+`cheaper-tools/src/scheduler.rs`(750,894)でも生成される。仮に
+`Timeout` が `outcome.error.code` へ届いたとしても post-spawn の
+一意な識別子にはならず、実際には engine の collapse により
+`Err` 側へは届かない。literal な post-spawn 識別子を error code
+経由で得るには job diagnostic code を `outcome.error` へ伝播する
+production 変更が必要で、本 issue は test-only 修正(ADR Option A)
+のため scope 外。
 
 ### `sweep_with` の順序決定機序
 
@@ -177,7 +204,7 @@ test は file 生成直後に各 path の mtime を `set_modified` で
 
 ## Decisions
 
-### D1: spawn 証明は `Err` の `CheaperError.code() == ErrorCode::Timeout` で検証する
+### D1: 実行到達証明は `Err` の `code() == ErrorCode::ToolExecutionFailure` + `"routed command did not complete"` message で検証する
 
 `run_route` の戻りから error を取り出し、次の形で assert する:
 
@@ -188,28 +215,53 @@ let err = run_route(&mut f, &token)
     .expect("route must fail: grant timeout is 1ms");
 assert_eq!(
     err.downcast_ref::<CheaperError>().map(CheaperError::code),
-    Some(ErrorCode::Timeout),
-    "timeout code は proc::drive 内・spawn 成功後にのみ生成される決定的 post-spawn 証拠",
+    Some(ErrorCode::ToolExecutionFailure),
+    "job 失敗は engine が outcome.error を ToolExecutionFailure に collapse する決定的 infra-failure code",
+);
+assert!(
+    err.to_string().contains("routed command did not complete"),
+    "captured()==None && outcome.error.is_some() 分岐固有の message — workflow が exec job を失敗まで実行した証拠: {err}",
 );
 ```
 
-- 選定理由: timeout code は `command.spawn()` 成功後の `proc::drive`
-  内でしか生成されず、POSIX kill の早さ・子の起動遅延・marker write
-  の有無に完全に独立。test が検証したい invariant「grant 経由で子が
-  spawn され、infra failure(timeout)が error として返る」を直接
-  表現する。
+- 選定理由: `ErrorCode::ToolExecutionFailure` は **あらゆる** job
+  失敗に対する決定的 code である。spawn 失敗は tool 層ですでに
+  `ToolExecutionFailure`(proc/mod.rs:361-375)を返し、timeout kill
+  等のその他の失敗も engine が `outcome.error` を
+  `ToolExecutionFailure("workflow job failed")` に collapse する
+  (engine.rs:1172-1188)ため、`run_route` の `Err` から取れる code
+  は失敗原因を問わず常に `ToolExecutionFailure`。POSIX kill の
+  早さ・子の起動遅延・marker write の有無に完全に独立。
+  `"routed command did not complete"` の message assert を併記する
+  のは、この文言が `captured() == None && outcome.error.is_some()`
+  分岐(run.rs:453-457)に固有で、workflow が admission を通過して
+  exec job を失敗まで実行したことの証明になるため — 実行前の
+  rejection(grant 不備の `PolicyViolation` run.rs:49、
+  `InvalidRuntimePolicy` run.rs:327、cwd-mismatch)は異なる
+  code/message で返る。`timeout: '1ms'` は決定的 trigger として
+  維持する(30s sleep の子は絶対に完了せず、
+  `route_exec.complete` は `Ok` のときのみ発火 —
+  workflow_run.rs:532-544)。
 - 代替案:
+  - `code() == ErrorCode::Timeout` を assert する(初版案):
+    `Timeout` は per-job diagnostic には残るが、engine の collapse
+    により `outcome.error.code` には伝播せず、`finish` も
+    `error.code`(= `ToolExecutionFailure`)で包み直すため `Err`
+    の `code()` は `Timeout` にならない — 全 platform で決定的に
+    fail する assertion になる → 不採用。`Timeout` を `Err` から
+    検証するには job diagnostic code を `outcome.error` へ伝播する
+    production 変更が必要で、ADR Option A(test-only 修正)の scope
+    外。literal な post-spawn 識別子は test-only では error code
+    経由で到達不能であり、post-admission 分岐証明(code+message)
+    で代替する。
   - grant timeout を数百 ms〜秒へ緩める(issue 本文の案):
     race の window を広げるだけで理論上の flake が残り、test も遅く
     なる → 不採用(ADR Option B)。
   - marker を poll/retry で待つ: 依然として timing 依存。timeout が
     先に発火する限り marker は永遠に来ない場合もあり、待機条件自体が
     不安定 → 不採用。
-  - stderr text・usage record 等の副次的情報で spawn を推論する:
-    code assert より識別力が低く brittle → 不採用。
-- message 文字列("routed command did not complete")の assert は
-  要求しない — code が invariant を担い、文言は実装詳細なので固定
-  しない。
+  - stderr text・usage record 等の副次的情報で実行到達を推論する:
+    code+message assert より識別力が低く brittle → 不採用。
 
 ### D2: mtime 順序付けは std の `File::set_modified` で行い、新規依存を入れない
 
@@ -256,6 +308,14 @@ assert_eq!(
   残り 128B > 100 で big も消え `removed == 2` になり、test 意図
   (合計上限に対する古い順削除 1 件)を変えてしまう。順序選択は
   assertion と連動させて決める。
+- (c) 直前の cleanup loop `for path in [&a, &b, &c, &fresh] {
+  let _ = fs::remove_file(path); }`(log_store.rs:596-598)は
+  **必ず維持する**。落とすと (b) で書いた file が dir に残り、
+  big/small に与える `now` 起点の秒単位 mtime と同秒 tie を起こす
+  (あるいは mtime 未設定なら write 時刻の自然 tie)ため、
+  (c) block の削除順が再び `read_dir` 列挙順依存になり flake が
+  再導入される。(c) の sweep 対象を {big, small} だけに限定する
+  前提条件でもある。
 - 代替案: `max_bytes` を変えて両方消える形にする等も可能だが、
   既存の `removed == 1` シナリオを維持する方が意図変更が最小。
 
@@ -276,7 +336,7 @@ assert_eq!(
 | SPEC requirement / Acceptance Criteria | 本 design の対応 |
 | --- | --- |
 | `run_route` が `Err` を返すことを維持 | D1: `.err().expect(...)` で `Err` 必須化(30s sleep vs 1ms timeout で決定的) |
-| spawn 証明を `CheaperError.code() == ErrorCode::Timeout` で行う | D1: `downcast_ref::<CheaperError>().map(CheaperError::code)` assert。`marker.exists()` 系の timing 依存 assertion は残さない |
+| infra-failure 到達証明を `code() == ErrorCode::ToolExecutionFailure` + message `contains("routed command did not complete")` で行う | D1: `downcast_ref::<CheaperError>().map(CheaperError::code)` assert + `err.to_string().contains(...)` assert。`marker.exists()` 系の timing 依存 assertion は残さない |
 | usage log に `"route"` record が無い検証を維持 | D5: 現行 assertion を変更しない |
 | (b)(c) で全対象 file に `File::set_modified` の一意 mtime 順序 | D2/D3/D4: helper 化 + 全 file へ明示 mtime |
 | `.tmp` 除外・TTL sweep の検証を弱めない | (a) block と inflight `.tmp` の最終 assert は不変(helper 化のみ) |
@@ -294,8 +354,11 @@ assert_eq!(
 ## Risks and Trade-offs
 
 - `marker.exists()` を外すと「子が実際に動作を開始した」行動証拠は
-  失われる。ただし timeout code は spawn 成功後にしか到達しないため
-  同等以上の post-spawn 証明であり、実害は無い(discovery 確認済み)。
+  失われる。error code では literal post-spawn 識別に到達できない
+  が、`"routed command did not complete"` message は
+  `captured() == None && outcome.error.is_some()` 分岐固有であり、
+  workflow が exec job を失敗まで実行した(post-admission)ことの
+  証明になるため実害は無い(discovery 修正注記で確認済み)。
 - (a) block も helper 化する refactor は本質的でないが同一 test 内の
   表現統一のため。差分を最小化したい場合は (a) の inline 記述を残す
   選択も許容するが、統一を推奨。
