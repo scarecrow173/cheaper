@@ -4,7 +4,7 @@ type: "spec"
 status: "approved"
 title: "Deterministic route tests for ubuntu CI flake (issue #157)"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -17,7 +17,8 @@ relations:
     moved: []
     generated: []
   implements: []
-  implemented-by: []
+  implemented-by:
+    - "../plans/fix-route-test-flake-via-test-side-determinism.md"
   depends-on: []
   blocks: []
   supersedes: []
@@ -30,8 +31,11 @@ relations:
     - "../discovery/ubuntu-ci-route-test-flake.md"
   derived-by:
     - "../designs/deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md"
+    - "../plans/fix-route-test-flake-via-test-side-determinism.md"
+    - "../test-specs/deterministic-route-test-assertions.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/deterministic-route-test-assertions.md"
   references: []
   defers: []
   deferred-by: []

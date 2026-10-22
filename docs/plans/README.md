@@ -30,6 +30,7 @@ Directory: `docs/plans`
 | PLAN-034DlEwsubKsxcWfA08Kb4 | devin usage accounting contract test and docs | approved | [devin-usage-accounting-contract-test-and-docs.md](./devin-usage-accounting-contract-test-and-docs.md) |
 | PLAN-034EDNoLUwAoBOtSAMRMNY | Execute post-feature structural refactoring | approved | [execute-post-feature-structural-refactoring.md](./execute-post-feature-structural-refactoring.md) |
 | PLAN-034Dz3LX6Jz18cbOR0KtFd | Execute post-migration structural cleanup | approved | [execute-post-migration-structural-cleanup.md](./execute-post-migration-structural-cleanup.md) |
+| PLAN-034foupf7ivrjlU7zVsv6M | Fix route test flake via test-side determinism (issue #157) | approved | [fix-route-test-flake-via-test-side-determinism.md](./fix-route-test-flake-via-test-side-determinism.md) |
 | PLAN-034r05iHE1Fbkp8emdVve6 | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | PLAN-034r6qeRCCYRZy0etnrPfy | inject explicit eval budget into large-fixture grep tests | completed | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | PLAN-034r05iHE1FbkoSqLEHZrV | Harden repair abort grace and provider failure normalization | completed | [harden-repair-abort-grace-and-provider-failure-normalization.md](./harden-repair-abort-grace-and-provider-failure-normalization.md) |

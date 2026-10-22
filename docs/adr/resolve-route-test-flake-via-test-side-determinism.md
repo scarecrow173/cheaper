@@ -4,7 +4,7 @@ type: "adr"
 status: "accepted"
 title: "Resolve route test flake via test-side determinism"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -31,6 +31,8 @@ relations:
     - "../discovery/ubuntu-ci-route-test-flake.md"
   derived-by:
     - "../designs/deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md"
+    - "../plans/fix-route-test-flake-via-test-side-determinism.md"
+    - "../test-specs/deterministic-route-test-assertions.md"
   verifies: []
   verified-by: []
   references: []

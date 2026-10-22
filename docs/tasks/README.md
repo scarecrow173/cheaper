@@ -206,6 +206,7 @@ Directory: `docs/tasks`
 | TASK-034FppMiRb1TxdOmzgt11q | T1: invocation-policy-layer — core load_policy への合成 invocation layer（compile-forced propagation 所有） | done | [invocation-policy-layer.md](./invocation-policy-layer.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-6uOJTepTvP210AgeeaBtkq | issue-111 文書追随・回帰 fixture・最終検証 | done | [issue-111-docs-and-final-verification.md](./issue-111-docs-and-final-verification.md) |
+| TASK-03404zg7SVQPn5JeZ0lwDD | Make exec_infra_failure_returns_error deterministic via error code and message | todo | [make-exec-infra-failure-test-deterministic.md](./make-exec-infra-failure-test-deterministic.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
 | TASK-034zXB21CtI0XLnu6QAHPe | Migrate native workflows and release guidance | done | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
@@ -241,6 +242,7 @@ Directory: `docs/tasks`
 | TASK-034BgKkC4U7NTKprsORKCH | Phase 5: switch distribution to Rust binary | done | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
 | TASK-034BgKlddxEi2ozLgZMFi3 | Phase 6: remove TypeScript Node Pi | done | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | TASK-034DlFISpHRPrXyhhlFXfa | Pin devin cache-hit usage mapping in stream tests | done | [pin-devin-cache-hit-usage-mapping-in-stream-tests.md](./pin-devin-cache-hit-usage-mapping-in-stream-tests.md) |
+| TASK-0340C4KaPSmy4CrDagevUC | Pin sweep test deletion order with explicit set_mtime timestamps | todo | [pin-sweep-test-deletion-order-with-explicit-mtimes.md](./pin-sweep-test-deletion-order-with-explicit-mtimes.md) |
 | TASK-034FpqibELWYvjxZennqEn | T3: policy-grant-command — cheaper policy grant {add,list,remove} と core write 基盤 | done | [policy-grant-command.md](./policy-grant-command.md) |
 | TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | done | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |
 | TASK-034zTWibd7OKesgJgoGxJu | Prepare one-dispatch release artifacts | done | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
@@ -313,6 +315,7 @@ Directory: `docs/tasks`
 | TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | done | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |
 | TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | done | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
+| TASK-034yW3DRPtMmttnAEru9Ns | Verify route test determinism and run mise run check | todo | [verify-route-test-determinism-and-mise-check.md](./verify-route-test-determinism-and-mise-check.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
 | TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | done | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |

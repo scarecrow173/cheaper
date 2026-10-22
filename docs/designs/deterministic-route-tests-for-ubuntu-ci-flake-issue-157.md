@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "Deterministic route tests for ubuntu CI flake (issue #157)"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: []
 relations:
   source:
@@ -33,9 +33,12 @@ relations:
     - "../specs/deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md"
     - "../adr/resolve-route-test-flake-via-test-side-determinism.md"
     - "../discovery/ubuntu-ci-route-test-flake.md"
-  derived-by: []
+  derived-by:
+    - "../plans/fix-route-test-flake-via-test-side-determinism.md"
+    - "../test-specs/deterministic-route-test-assertions.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/deterministic-route-test-assertions.md"
   references: []
   defers: []
   deferred-by: []
