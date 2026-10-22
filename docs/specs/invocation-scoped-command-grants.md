@@ -25,6 +25,7 @@ relations:
   supersedes: []
   superseded-by: []
   related:
+    - "./permission-model-responsibility-redesign.md"
     - "../specs/tool-operator-built-in-worker.md"
     - "../specs/policy-gated-command-tool.md"
     - "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
@@ -32,8 +33,7 @@ relations:
     - "../adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "./pretooluse-route-resolver-and-workflow-delegation.md"
   refines: []
-  refined-by:
-    - "./permission-model-responsibility-redesign.md"
+  refined-by: []
   derives-from:
     - "../discovery/invocation-scoped-command-grants.md"
   derived-by: []

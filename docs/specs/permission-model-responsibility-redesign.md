@@ -32,9 +32,7 @@ relations:
     - "./policy-gated-command-tool.md"
     - "./invocation-scoped-command-grants.md"
     - "./pretooluse-route-resolver-and-workflow-delegation.md"
-  refines:
-    - "./policy-gated-command-tool.md"
-    - "./invocation-scoped-command-grants.md"
+  refines: []
   refined-by: []
   derives-from:
     - "../discovery/permission-model-responsibility-redesign.md"

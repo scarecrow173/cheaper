@@ -24,13 +24,13 @@ relations:
   supersedes: []
   superseded-by: []
   related:
+    - "./enforce-declared-contracts-over-content-audit.md"
     - "worker-yaml-frontmatter-markdown.md"
     - "model-tier-model-resolver.md"
     - "workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
     - "one-shot-json-first-cli.md"
   refines: []
-  refined-by:
-    - "./enforce-declared-contracts-over-content-audit.md"
+  refined-by: []
   derives-from:
     - "../discovery/cheaper-v1-pi-sdk.md"
   derived-by: []

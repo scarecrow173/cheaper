@@ -28,11 +28,11 @@ relations:
   supersedes: []
   superseded-by: []
   related:
+    - "./enforce-declared-contracts-over-content-audit.md"
     - "agent-runtime-pi-sdk-earendil-works-pi-coding-agent.md"
     - "worker-definition-runtime-policy-runtime-invariants-capability.md"
   refines: []
-  refined-by:
-    - "./enforce-declared-contracts-over-content-audit.md"
+  refined-by: []
   derives-from:
     - "../discovery/cheaper-v1-pi-sdk.md"
   derived-by: []

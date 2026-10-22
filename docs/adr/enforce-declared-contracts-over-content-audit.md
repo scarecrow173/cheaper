@@ -25,12 +25,12 @@ relations:
   superseded-by: []
   related:
     - "../specs/permission-model-responsibility-redesign.md"
-    - "./defer-non-exec-routing-to-permission-model-redesign.md"
-    - "./opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
-  refines:
     - "./command-grant-trust-boundary-and-managed-process-reuse.md"
     - "./worker-definition-runtime-policy-runtime-invariants-capability.md"
     - "./workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
+    - "./defer-non-exec-routing-to-permission-model-redesign.md"
+    - "./opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
+  refines: []
   refined-by: []
   derives-from:
     - "../discovery/permission-model-responsibility-redesign.md"

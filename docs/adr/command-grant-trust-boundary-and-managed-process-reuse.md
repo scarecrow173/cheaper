@@ -22,6 +22,7 @@ relations:
   supersedes: []
   superseded-by: []
   related:
+    - "./enforce-declared-contracts-over-content-audit.md"
     - "../specs/policy-gated-command-tool.md"
     - "../specs/tool-operator-built-in-worker.md"
     - "../specs/invocation-scoped-command-grants.md"
@@ -31,8 +32,7 @@ relations:
     - "./invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "./pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
   refines: []
-  refined-by:
-    - "./enforce-declared-contracts-over-content-audit.md"
+  refined-by: []
   derives-from: ["../discovery/policy-gated-command-tool.md"]
   derived-by: []
   verifies: []
