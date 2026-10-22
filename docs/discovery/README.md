@@ -54,6 +54,7 @@ Directory: `docs/discovery`
 | DISC-034rBfZ3dqNmEQGXCIwiLn | Shell-read large-file detection boundary and parser scope | resolved | [shell-read-large-file-detection-boundary.md](./shell-read-large-file-detection-boundary.md) |
 | DISC-034z139D701zQBBGzr0upE | Standalone cheaper executable distribution without Node.js | resolved | [standalone-cheaper-executable-distribution-without-node-js.md](./standalone-cheaper-executable-distribution-without-node-js.md) |
 | DISC-034ESpIy7zAOucpwBxmjfd | tool-operator worker を built-in 追加する | draft | [tool-operator-worker-built-in.md](./tool-operator-worker-built-in.md) |
+| DISC-Gvis7cxcHxPQwsvoSGmuox | Ubuntu CI route test flake (mtime tie-break / 1ms timeout race) | resolved | [ubuntu-ci-route-test-flake.md](./ubuntu-ci-route-test-flake.md) |
 | DISC-034rzEbmKarhQzw41fhumg | Usage and savings telemetry for delegation reduction | resolved | [usage-and-savings-telemetry-for-delegation-reduction.md](./usage-and-savings-telemetry-for-delegation-reduction.md) |
 | DISC-034r05iHy2gdnp7GkO7QDK | V2 productization initiative briefing: worker restructure, token counting, APM delegation | resolved | [v2-productization-initiative-briefing.md](./v2-productization-initiative-briefing.md) |
 | DISC-034zIO1UQe9CI5VCzqot1c | Version-pinned launcher acquisition | resolved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |

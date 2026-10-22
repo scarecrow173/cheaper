@@ -33,6 +33,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gky93Dal0 | Cross-agent distribution verification | implemented | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
 | SPEC-034rzTJydXfLvQhTIqiDqW | Cross-agent native routing adapters over APM distribution | approved | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
 | SPEC-034r05iHK8bA7gveeDA5HC | Continuous usage measurement log for delegations | implemented | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
+| SPEC-034KoUwVbN6YjxD7CjpYkf | Deterministic route tests for ubuntu CI flake (issue #157) | proposed | [deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md](./deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md) |
 | SPEC-034r05iHK8bA7gAHzYnfP8 | Devin Local as a bundled Pi provider | implemented | [devin-local-bundled-provider.md](./devin-local-bundled-provider.md) |
 | SPEC-034DlpZKFnyWiBZZxGsXK0 | devin provider usage accounting contract | approved | [devin-provider-usage-accounting-contract.md](./devin-provider-usage-accounting-contract.md) |
 | SPEC-034D9BFJZdSSYBEuXVzBbl | Devin provider Windows credential contract | proposed | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
