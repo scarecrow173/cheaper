@@ -227,6 +227,13 @@ async fn execute_inner(
             concurrency: None,
         },
     )?;
+    // usage.jsonl `kind:"run"` record の `execution` echo 供給源 —
+    // `--timeout` narrow・policy 層 merge を通った**解決後**の値を載せる
+    // (declared 値ではない — spec Req 2)。usage-bearing error は全て
+    // `restrict_policy` 以降の `run_worker` 内で発生するため、ここで
+    // 設定すれば record 対象 run で echo が `None` になる経路は
+    // 構造的に存在しない(`Option` の fail-soft 規約は維持)。
+    ctx.execution_echo = Some((&effective_policy.execution).into());
 
     let model_config = load_model_config(&LoadModelConfigOptions {
         user_config_dir: &ucd,

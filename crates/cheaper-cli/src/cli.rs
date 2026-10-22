@@ -263,7 +263,15 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
                 ctx.run_root.as_deref(),
                 ctx.run_user_config_dir.as_deref(),
             );
-            crate::usage_log::record_usage(&env, &root, &ucd, io.stderr, quiet, &now_fn(hooks));
+            crate::usage_log::record_usage(
+                &env,
+                &root,
+                &ucd,
+                io.stderr,
+                quiet,
+                ctx.execution_echo.as_ref(),
+                &now_fn(hooks),
+            );
             env.get("error")
                 .and_then(|e| e.get("exitCode"))
                 .and_then(Value::as_i64)
@@ -305,6 +313,10 @@ pub struct RunCtx {
     pub worker_name: Option<String>,
     pub run_root: Option<String>,
     pub run_user_config_dir: Option<String>,
+    /// `restrict_policy` 解決後の実効 `execution` echo — success arm と
+    /// 汎用 catch の両方の `record_usage` が同じ値を参照する
+    /// (usage.jsonl `kind:"run"` record の `execution` field)。
+    pub execution_echo: Option<crate::usage_log::ExecutionEcho>,
 }
 
 /// dispatch 本体 — parsed command 別に command module へ委譲し、
@@ -370,6 +382,7 @@ async fn dispatch(
                 &counted.user_config_dir.to_string_lossy(),
                 io.stderr,
                 args.quiet,
+                None,
                 &now_fn(hooks),
             );
             Ok(0)
@@ -467,6 +480,7 @@ async fn dispatch(
                 &ucd,
                 io.stderr,
                 args.quiet,
+                ctx.execution_echo.as_ref(),
                 &now_fn(hooks),
             );
             Ok(out.exit_code)

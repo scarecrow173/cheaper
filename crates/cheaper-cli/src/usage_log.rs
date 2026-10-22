@@ -90,10 +90,57 @@ fn truncate_chars(s: &str, n: usize) -> String {
 /// `reason` key 自体を省略する(fail-soft)。
 const ABORT_REASONS: [&str; 4] = ["timeout", "signal", "maxTurns", "maxToolCalls"];
 
+/// `kind:"run"` record の `execution` echo — `restrict_policy` 解決後の
+/// `ExecutionPolicy` から 3 field のみ写す固定 allowlist projection。
+/// `ExecutionPolicy` の `concurrency` 等他 field は record contract
+/// に含めず、policy struct の成長が record shape に漏れないように
+/// `From` impl に射影を集約する。
+pub struct ExecutionEcho {
+    pub timeout_ms: u64,
+    /// `None` は policy 上の turn 上限なし — record では `null` として
+    /// 記録し「key 無し(=echo 未供給)」と区別する(spec Req 2)。
+    pub max_turns: Option<u64>,
+    pub max_tool_calls: u64,
+}
+
+impl From<&cheaper_core::policy::schema::ExecutionPolicy> for ExecutionEcho {
+    fn from(p: &cheaper_core::policy::schema::ExecutionPolicy) -> Self {
+        Self {
+            timeout_ms: p.timeout_ms,
+            max_turns: p.max_turns,
+            max_tool_calls: p.max_tool_calls,
+        }
+    }
+}
+
+/// `kind:"run"` record の `execution` echo を `repairs` 直後の位置へ
+/// 挿入する。値は `{timeoutMs, maxTurns, maxToolCalls}` の 3 key 常時
+/// (`maxTurns` のみ `None` → `null`)。`echo` が `None` なら key 自体を
+/// 省略する(fail-soft — record 書き込みは落とさない)。
+fn insert_execution_echo(base: &mut Map<String, Value>, echo: Option<&ExecutionEcho>) {
+    let Some(e) = echo else { return };
+    let mut exec = Map::new();
+    exec.insert("timeoutMs".to_string(), Value::from(e.timeout_ms));
+    exec.insert(
+        "maxTurns".to_string(),
+        e.max_turns.map(Value::from).unwrap_or(Value::Null),
+    );
+    exec.insert("maxToolCalls".to_string(), Value::from(e.max_tool_calls));
+    base.insert("execution".to_string(), Value::Object(exec));
+}
+
 /// `buildUsageRecord` — usage を持つ run envelope(success + meta.usage
 /// 付き error)と count-tokens の utility envelope のみ記録対象。
-/// `now` は ms epoch を返す。
-pub fn build_usage_record(env: &Value, root: &str, now: &dyn Fn() -> f64) -> Option<Value> {
+/// `now` は ms epoch を返す。`echo` は `kind:"run"` record の
+/// `execution` echo 供給源 — `None` なら `execution` key を省略する
+/// だけで record 書き込みは継続する(fail-soft)。count 分岐では
+/// 参照しない。
+pub fn build_usage_record(
+    env: &Value,
+    root: &str,
+    echo: Option<&ExecutionEcho>,
+    now: &dyn Fn() -> f64,
+) -> Option<Value> {
     if get(env, "workflow").and_then(Value::as_bool) == Some(true) {
         return None;
     }
@@ -152,6 +199,7 @@ pub fn build_usage_record(env: &Value, root: &str, now: &dyn Fn() -> f64) -> Opt
         if let Some(v) = get(&meta, "repairs").filter(|v| !v.is_null()) {
             base.insert("repairs".to_string(), v.clone());
         }
+        insert_execution_echo(&mut base, echo);
         return Some(Value::Object(base));
     }
 
@@ -179,6 +227,7 @@ pub fn build_usage_record(env: &Value, root: &str, now: &dyn Fn() -> f64) -> Opt
             base.insert(key.to_string(), v.clone());
         }
     }
+    insert_execution_echo(&mut base, echo);
     base.insert("error".to_string(), error_record_object(env));
     Some(Value::Object(base))
 }
@@ -434,16 +483,20 @@ pub fn append_usage_log(user_config_dir: &str, record: &Value) -> std::io::Resul
 
 /// `recordUsage` — best-effort。失敗しても exit code / stdout を変えず、
 /// quiet でなければ stderr に `usage-log: <msg>` を出すのみ。
+/// `echo` は run 経路の `ctx.execution_echo`(`restrict_policy` 解決後
+/// の実効値)を `build_usage_record` へ渡す — count-tokens 等の
+/// 非 run 経路は `None`。
 pub fn record_usage(
     env: &Value,
     root: &str,
     user_config_dir: &str,
     stderr: &mut dyn CliWrite,
     quiet: bool,
+    echo: Option<&ExecutionEcho>,
     now: &dyn Fn() -> f64,
 ) {
     let result = (|| -> std::io::Result<()> {
-        let Some(record) = build_usage_record(env, root, now) else {
+        let Some(record) = build_usage_record(env, root, echo, now) else {
             return Ok(());
         };
         append_usage_log(user_config_dir, &record)
