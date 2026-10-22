@@ -222,6 +222,31 @@ fn windsurf_pattern_targets_search(tool_info: &Map<String, Value>, cwd: &str) ->
     }
 }
 
+/// 範囲不達 compat firing 向けの deny reason 付記行 — windsurf
+/// `FileRead{range:None}` の `Deny` のみ(issue #161)。compat
+/// registration(legacy `.windsurf/hooks.json` 等)経由で range
+/// field が落ちた firing は全文評価 deny へ縮退し得るため、登録
+/// 状態の点検を `hook-config verify` へ誘導する。実 Windsurf の
+/// `range:None` deny にも同じ行が載るが、条件付き表現で実害は
+/// 軽微(ADR Consequences 受理済み)。
+const WINDSURF_RANGE_DROP_GUIDANCE: &str = "If this firing reached the hook through a compatibility registration (e.g. a legacy `.windsurf/hooks.json` entry under Devin CLI), range fields may not have been forwarded — run `cheaper hook-config verify` to inspect the registration state.";
+
+/// `FileRead{range:None}` の `Deny` にのみ
+/// `WINDSURF_RANGE_DROP_GUIDANCE` を reason 末尾へ付記する。
+/// `range:Some` deny・`Search`/`Shell` verdict・Allow・Rewrite
+/// fallback は従来どおり — `handle_hook` の windsurf arm で render
+/// 直前に適用し、eval/dedup 層へ target 判定を持ち込まない
+/// (dedup verdict record には mutate 前の生 verdict が persist
+/// される)。
+fn windsurf_range_deny_guidance(request: &RoutingRequest, verdict: Verdict) -> Verdict {
+    match (request, verdict) {
+        (RoutingRequest::FileRead { range: None, .. }, Verdict::Deny { reason }) => Verdict::Deny {
+            reason: format!("{reason}\n{WINDSURF_RANGE_DROP_GUIDANCE}"),
+        },
+        (_, v) => v,
+    }
+}
+
 fn windsurf_render(verdict: Verdict) -> HookResponse {
     match verdict {
         Verdict::Deny { reason } => HookResponse {
@@ -934,6 +959,9 @@ pub async fn handle_hook(
             None => ("allow", false, silent_allow()),
             Some(request) => {
                 let (verdict, _supply) = evaluate_with_routes(&request, deps).await;
+                // 範囲不達 compat firing の remediation は render 直前
+                // の firing 毎付記 — eval/dedup 層の生 verdict は不変。
+                let verdict = windsurf_range_deny_guidance(&request, verdict);
                 (verdict_name(&verdict), false, windsurf_render(verdict))
             }
         },

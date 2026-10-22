@@ -296,14 +296,16 @@ async fn windsurf_deny_stderr_exit2_and_silent_allow() {
     assert!(deny.stdout.is_empty());
     assert!(deny.stderr.contains("tokens"), "{}", deny.stderr);
     assert!(deny.stderr.contains("bulk-read"), "{}", deny.stderr);
-    // JS-format reason: 3 行 + 末尾改行。
+    // JS-format reason: 3 行 + 末尾改行(issue #161 以降は末尾へ
+    // range-drop guidance 行が追加されるため `ends_with` ではなく
+    // `contains` で pin する)。
     assert!(
         deny.stderr.starts_with("cheaper: 'big.txt' has ")
             && deny.stderr.contains(" tokens (threshold 8192).\n")
             && deny.stderr.contains(
                 "Do not read it directly. Delegate this file through the cheaper-bulk-read skill.\n"
             )
-            && deny.stderr.ends_with("workspace-relative path: big.txt\n"),
+            && deny.stderr.contains("workspace-relative path: big.txt\n"),
         "{}",
         deny.stderr
     );
@@ -451,6 +453,112 @@ async fn windsurf_pattern_gate_routes_search_preserves_fileread() {
             r.stderr.contains("'big_lines.txt' has") && !r.stderr.contains("search result"),
             "tool_info={tool_info} stderr={:?}",
             r.stderr
+        );
+    }
+}
+
+/// issue #161 — windsurf `FileRead{range:None}` の Deny にのみ、
+/// compat firing の範囲不達の可能性と `hook-config verify` 誘導を
+/// reason 末尾へ付記する。ranged deny・Search/Shell deny・Allow・
+/// 他 target の reason は不変。guidance は render 直前の firing 毎
+/// 付記で dedup verdict record には mutate 前の生 verdict が persist
+/// される(cache serve の 2 回目応答が二重付記にならない)。
+#[tokio::test(flavor = "current_thread")]
+async fn windsurf_range_deny_guidance_conditions_and_dedup() {
+    const GUIDANCE: &str = "hook-config verify";
+    let fx = Fixture::new();
+    fx.write_big("big.txt");
+    fx.write_big_lines("big_lines.txt");
+
+    // FileRead{range:None} deny → guidance 付記。2 回目(dedup
+    // cache serve)も byte 同一 — record に mutate 前 verdict が
+    // persist されていなければ guidance が二重付記されて不一致に
+    // なるため、store 非混入を兼ねて pin する。
+    let r1 = run_hook(
+        &fx,
+        &["pre-read-code", "--target", "windsurf"],
+        &windsurf_read("big.txt"),
+        &[],
+    )
+    .await;
+    let r2 = run_hook(
+        &fx,
+        &["pre-read-code", "--target", "windsurf"],
+        &windsurf_read("big.txt"),
+        &[],
+    )
+    .await;
+    assert_eq!(r1.code, 2);
+    assert!(r1.stderr.contains(GUIDANCE), "{:?}", r1.stderr);
+    assert_eq!(r1.stderr.matches(GUIDANCE).count(), 1, "{:?}", r1.stderr);
+    assert_eq!(
+        (r1.code, &r1.stdout, &r1.stderr),
+        (r2.code, &r2.stdout, &r2.stderr),
+        "dedup cache serve が mutate 前 verdict を返す証明"
+    );
+
+    // ranged deny(window 超過)・Search deny・Shell deny・Allow →
+    // guidance 不付記。
+    for (args, stdin, expect_exit) in [
+        // ranged window 超過(`{1,2000}` ≈ threshold 超)。
+        (
+            &["pre-read-code", "--target", "windsurf"][..],
+            windsurf_tool_info(
+                "{\"file_path\":\"big_lines.txt\",\"start_line\":1,\"end_line\":2000}",
+            ),
+            2,
+        ),
+        // Search 評価の deny。
+        (
+            &["pre-read-code", "--target", "windsurf"][..],
+            windsurf_tool_info("{\"file_path\":\".\",\"pattern\":\"lorem\"}"),
+            2,
+        ),
+        // Shell 評価の deny。
+        (
+            &["pre-run-command", "--target", "windsurf"][..],
+            windsurf_shell("cat big.txt"),
+            2,
+        ),
+        // Allow — silent。
+        (
+            &["pre-read-code", "--target", "windsurf"],
+            windsurf_tool_info(
+                "{\"file_path\":\"big_lines.txt\",\"start_line\":1,\"end_line\":20}",
+            ),
+            0,
+        ),
+    ] {
+        let r = run_hook(&fx, args, &stdin, &[]).await;
+        assert_eq!(r.code, expect_exit, "stdin={stdin}");
+        assert!(
+            !r.stderr.contains(GUIDANCE) && !r.stdout.contains(GUIDANCE),
+            "stdin={stdin} stderr={:?}",
+            r.stderr
+        );
+    }
+
+    // 他 target(devin/pretooluse)の `range:None` FileRead deny に
+    // guidance は載らない — canonical request 共有の dedup が効く
+    // ため先に windsurf firing 済みの `big.txt` ではなく別名を使う
+    // (cache serve でも reason 不変ではあるが独立 firing で pin)。
+    fx.write_big("other.txt");
+    for (args, stdin) in [
+        (
+            &["pre-tool-use", "--target", "devin"][..],
+            devin_payload("read", "{\"file_path\":\"other.txt\"}"),
+        ),
+        (
+            &["pre-tool-use", "--target", "pretooluse"][..],
+            tool_use_payload("Read", "{\"file_path\":\"other.txt\"}"),
+        ),
+    ] {
+        let r = run_hook(&fx, args, &stdin, &[]).await;
+        assert_eq!(r.code, 0, "stdin={stdin}");
+        assert!(
+            !r.stdout.contains(GUIDANCE) && !r.stderr.contains(GUIDANCE),
+            "stdin={stdin} stdout={:?}",
+            r.stdout
         );
     }
 }

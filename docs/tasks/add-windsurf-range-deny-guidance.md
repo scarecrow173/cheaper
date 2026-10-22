@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KxDm7X0zR41q82TJxVY"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add windsurf range-drop deny guidance and fix deny-reason assertions"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -174,17 +174,17 @@ guidance 末尾追加で破損する検証 2 箇所を更新する:
 
 ## Done When
 
-- [ ] windsurf `FileRead{range:None}` Deny の stderr に
+- [x] windsurf `FileRead{range:None}` Deny の stderr に
       `WINDSURF_RANGE_DROP_GUIDANCE` 行が含まれる
-- [ ] `range:Some` deny・`Search`/`Shell` deny・Allow・他 target
+- [x] `range:Some` deny・`Search`/`Shell` deny・Allow・他 target
       (devin/pretooluse)の reason が不変
-- [ ] dedup verdict record に mutate 前の生 verdict が persist
+- [x] dedup verdict record に mutate 前の生 verdict が persist
       される(cache serve 時の文言に guidance が混入しない)
-- [ ] `hook.rs:300` の `ends_with` assert が `contains` 系へ修正
+- [x] `hook.rs:300` の `ends_with` assert が `contains` 系へ修正
       されている
-- [ ] `cli-hook-windsurf-deny.json` snapshot が再 capture され、
+- [x] `cli-hook-windsurf-deny.json` snapshot が再 capture され、
       diff が guidance 行追加のみであることを review 済み
-- [ ] firing 経路に config/登録状態の新規 read が無い
+- [x] firing 経路に config/登録状態の新規 read が無い
 
 ## Out of Scope
 
@@ -197,6 +197,6 @@ guidance 末尾追加で破損する検証 2 箇所を更新する:
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0(guidance fixture + 修正済み assert + 既存非回帰)
-- [ ] `CHEAPER_REGRESSION_CAPTURE=1 mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test regression` で snapshot 再生成 → その後 capture 無しで同 test が exits 0
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0(guidance fixture + 修正済み assert + 既存非回帰) — 実測: 29 passed / 0 failed(新規 `windsurf_range_deny_guidance_conditions_and_dedup`)
+- [x] `CHEAPER_REGRESSION_CAPTURE=1 mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test regression` で snapshot 再生成 → その後 capture 無しで同 test が exits 0 — 実測: 両実行とも `regression_golden` 1 passed。recapture diff は `cli-hook-windsurf-deny.json` への guidance 1 行追加のみ(同時 recapture で発生した `cli-usage-empty`/`cli-usage-seeded` の field order churn は本 task 範囲外として revert 済み)
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
