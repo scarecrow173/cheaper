@@ -1,7 +1,7 @@
 ---
 id: "ADR-034KwuE0Xnp3O6EUXacFG8"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Defensive compat normalization with registration surfacing"
 created: "2026-10-23"
 updated: "2026-10-23"

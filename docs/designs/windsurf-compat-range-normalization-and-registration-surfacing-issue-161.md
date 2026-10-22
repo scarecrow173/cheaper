@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034KwO2y86CrXOmaoae1jS"
 type: "design"
-status: "draft"
+status: "approved"
 title: "Windsurf-compat range normalization and registration surfacing (issue #161)"
 created: "2026-10-23"
 updated: "2026-10-23"

@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034KwuiFzl4WvVQKdjfSnM"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "Windsurf-compat bounded evaluation coverage and Devin registration surfacing (issue #161)"
 created: "2026-10-23"
 updated: "2026-10-23"
