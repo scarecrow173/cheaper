@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Kr8oUgcvTuprTQJwuyp"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add usage.jsonl diagnostic field contract tests and end-to-end echo pin"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: []
 relations:
   source:
@@ -141,11 +141,11 @@ Notes が fixture-level のみに留めないことを要求 — `ctx.execution_
 
 ## Done When
 
-- [ ] test-spec の全 Rules に対応する assert が存在する
-- [ ] `version`/`execution`/`error.reason` が実配線経由で pin される
+- [x] test-spec の全 Rules に対応する assert が存在する
+- [x] `version`/`execution`/`error.reason` が実配線経由で pin される
       e2e test が 1 件存在する
-- [ ] `checkpoint` の無条件の存在を assert する test がない
-- [ ] `cheaper usage` が新 field 混在 file を従来どおり集計する
+- [x] `checkpoint` の無条件の存在を assert する test がない
+- [x] `cheaper usage` が新 field 混在 file を従来どおり集計する
       非回帰 test が存在する
 
 ## Out of Scope
@@ -157,6 +157,39 @@ Notes が fixture-level のみに留めないことを要求 — `ctx.execution_
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test run_dev_seam` exits 0
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test run_dev_seam` exits 0
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+
+## Done
+
+`tests/integration/usage_log.rs` に diagnostic field section を追加
+(10 test 新規・計 20 test)。`error_env`/`ok_env` envelope helper +
+`top_keys` を追加。網羅した内容:
+- `version` — success・error 両分岐で `env!("CARGO_PKG_VERSION")` +
+  `ok` 直後の位置 pin
+- `repairs` — non-null で記録・null で省略(両分岐)
+- `execution` echo — `{timeoutMs,maxTurns,maxToolCalls}` 3 key・
+  `repairs` 直後の位置・`max_turns: None` → `null` 記録・
+  `echo: None` → key 省略・`From<&ExecutionPolicy>` が 3 field のみ
+  写すこと
+- error allowlist — `code`/`reason`/`message`/`schemaErrors`/
+  `errorMessage`/`checkpoint` の固定順 + 全 field 記録
+- allowlist 外非記録 — `rawOutput`/`rawOutputPath`/`exitCode`/
+  `retryable`/`cause`/`changes`/`missing`/`grant`/`layer`
+- cap — 300/300/200/120 文字 + errors 5 件を multi-byte 入力で
+  char 基準に切り詰め
+- 条件付き省略 — abort 語彙外 reason・entry 欠落 key・両 key 欠落
+  checkpoint・PARTIAL_MUTATION 相当(cause 畳み込みで reason 無し・
+  checkpoint のみ)の構造的 edge
+- fail-soft — details 欠落・型不一致で `Some` + panic 無し
+- `cheaper usage` 非回帰 — 新 field 混在 file で
+  `read_usage_records`/`build_usage_report` が従来どおり集計
+`tests/run_dev_seam.rs` に `FIXTURE_ABORT_POLICY_ECHO`
+(fixture `policy` 節で `timeout_ms:45000`/`max_turns:9`/
+`max_tool_calls:5` を pin)と
+`run_error_record_pins_version_execution_and_reason_e2e` を追加 —
+usage-bearing ABORTED run の record で `version`・`execution`
+(解決後の実効値)・`error.reason:"signal"` を実配線経由で pin。
+`checkpoint` は存在時のみ key 集合を検査。`usage_log::` 20 test・
+`run_dev_seam` 38 test・`clippy -D warnings`・`cargo fmt` 全て pass。

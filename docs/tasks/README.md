@@ -48,7 +48,7 @@ Directory: `docs/tasks`
 | TASK-034zBJ55ACvdlADYOtaKKc | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | done | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
 | TASK-034r05iHK8bA7hdI3bUubr | Add scripted fake stream test fixture | done | [add-scripted-fake-stream-test-fixture.md](./add-scripted-fake-stream-test-fixture.md) |
 | TASK-034z1POhgJ49oVv2arDj6X | Add SEA entrypoint sea-main.ts | done | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
-| TASK-034Kr8oUgcvTuprTQJwuyp | Add usage.jsonl diagnostic field contract tests and end-to-end echo pin | todo | [add-usage-log-diagnostic-field-tests.md](./add-usage-log-diagnostic-field-tests.md) |
+| TASK-034Kr8oUgcvTuprTQJwuyp | Add usage.jsonl diagnostic field contract tests and end-to-end echo pin | done | [add-usage-log-diagnostic-field-tests.md](./add-usage-log-diagnostic-field-tests.md) |
 | TASK-034r05iHQeQpDqCTYluKr1 | Add version check and set scripts | done | [add-version-check-and-set-scripts.md](./add-version-check-and-set-scripts.md) |
 | TASK-TttCTIVey8FHby8zR3UDqb | Add worker workload profile and auto tier classifier | done | [add-worker-workload-profile-and-auto-tier-classifier.md](./add-worker-workload-profile-and-auto-tier-classifier.md) |
 | TASK-034Jg6koI5aIWEPUXfhobu | Add workflow job when condition evaluation | done | [add-workflow-when.md](./add-workflow-when.md) |
