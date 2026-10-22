@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KsL2829yYfRRGKl92t1"
 type: "task"
-status: "todo"
+status: "done"
 title: "Document route.rewrite.approvalBypass in configuration guide"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -125,15 +125,15 @@ Verification 全項目を完了条件とする。
 
 ## Done When
 
-- [ ] `route.rewrite.approvalBypass` の記法・default・値 domain・
+- [x] `route.rewrite.approvalBypass` の記法・default・値 domain・
       fail-loud が記述される
-- [ ] trust 境界(builtin/user のみ authoring 可、project 層は
+- [x] trust 境界(builtin/user のみ authoring 可、project 層は
       `route` key で load error)が `command` 先例と同型に記述
       される
-- [ ] per-target 検証状況(codex 実機確定済み・cursor/copilot
+- [x] per-target 検証状況(codex 実機確定済み・cursor/copilot
       検証 gated で現状 no-op・claude/devin flag 不要)と
       execpolicy 非迂回・hook trust が記述される
-- [ ] `mise run check` が全 green で plan を閉じる
+- [x] `mise run check` が全 green で plan を閉じる
 
 ## Out of Scope
 
@@ -145,7 +145,33 @@ Verification 全項目を完了条件とする。
 
 ## Verification
 
-- [ ] `mise run check` exits 0(CI 同等 pipeline 全 green)
-- [ ] `node scripts/check-doc-ids.mjs` exits 0(doc-id 規約)
-- [ ] `git diff docs/guides/configuration.md` に `route` section の
+- [x] `mise run check` exits 0(CI 同等 pipeline 全 green)
+- [x] `node scripts/check-doc-ids.mjs` exits 0(doc-id 規約)
+- [x] `git diff docs/guides/configuration.md` に `route` section の
       記述が含まれる(目視 supplement)
+
+## Done
+
+2026-10-23 実施。`docs/guides/configuration.md` の `policy.yaml`
+section に `route` の記述を追記し、plan を閉じた。
+
+- `policy.yaml` の完全値 sample に builtin `resources/policy.yaml`
+  と同じ `route: {rewrite: {approvalBypass: []}}` block を末尾へ
+  追記(配置も builtin と同じ retry の後)。
+- `### route.rewrite.approvalBypass（hook rewrite の approval
+  opt-in）` subsection を `command` section 記述の直後に追加 —
+  記法・default `[]`/未指定・null・空配列の等価・値 domain
+  (codex/cursor/copilot)・fail-loud 検証・builtin/user 限定の
+  trust 境界(project `route` key で load 失敗)・per-target 現状
+  表(codex 実機確定済み 0.162.1 / cursor・copilot は emit
+  contract 未検証で no-op / claude・devin は flag 不要)・
+  execpolicy 非迂回・hook trust 前提を記述。
+- companion fix: T3 で追加した cursor `preToolUse` に対し
+  `scripts/test/lib/apm-fixture.mjs` の TARGET_NATIVE_EVENTS と
+  `apm-install-targets.test.mjs` の expectedScript を更新
+  (node --test の install smoke が旧 event 集合を pin していた
+  ため 1st `mise run check` で検出 — commit 03e3576)。
+- 検証: `mise run check` exits 0 — biome・cargo fmt --check・
+  clippy -D warnings・version/doc-id・cargo test --workspace・
+  node --test scripts(43 pass)/benchmarks(12 pass)・lockfile・
+  apm payload 全 green。

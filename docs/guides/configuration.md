@@ -149,6 +149,13 @@ retry:
                         # 失敗（429/5xx/応答なし transport）への retry
                         # 回数。run-level abort は retry 対象外で、
                         # backoff 待ちは stall window の無言として計上
+
+route:
+  rewrite:
+    approvalBypass: []   # permissionDecision:"allow" 併記の rewrite
+                        # emit（親 agent の approval prompt を素通し
+                        # する応答）を許可する hook target 名
+                        # （trusted layer のみ authoring 可）
 ```
 
 `process` tool（policy 事前登録の named task を実行する
@@ -175,6 +182,44 @@ last-wins・comment/整形の非保存 — は
 `--grant` flag で run 単位の非永続 grant を注入する経路がある。
 grant・信頼境界・sandbox 限界の詳細は
 [command ガイド](./command.md) を参照。
+
+### route.rewrite.approvalBypass（hook rewrite の approval opt-in）
+
+parent-agent hook が command を route run へ rewrite する応答で、
+affirmative permission decision（`permissionDecision:"allow"`）を
+併記する emit（bypassing emit）を許可する hook target 名の配列。
+
+```yaml
+route:
+  rewrite:
+    approvalBypass: [codex]   # bypassing emit を許可する target
+```
+
+- 既定値は `[]`（bypassing emit なし）。未指定・`null`・空配列は
+  すべて `[]` と等価。値 domain は `codex`/`cursor`/`copilot` で、
+  未知の値・重複した項目・非配列・非文字列 item、および非 object
+  の `route`/`rewrite` は `InvalidRuntimePolicy` で policy load が
+  失敗する（fail-loud）。
+- `route` section は `command.grants` と同じ trust 境界を持ち、
+  builtin と user-scope の `policy.yaml` でのみ authoring できる。
+  project `.cheaper/policy.yaml` に `route` key を含めると policy
+  load が `InvalidRuntimePolicy` で失敗する — untrusted な
+  checkout が approval bypass を自己宣言できない構造保証。
+- per-target の現状:
+
+  | target | 状況 |
+  | --- | --- |
+  | `codex` | flag に列挙した場合のみ、rewrite 応答に `permissionDecision:"allow"` + `updatedInput` を emit（実機確定済み・codex-cli 0.162.1）。flag が無い場合は従来どおり fallback verdict を render し `updatedInput` は emit しない |
+  | `cursor`/`copilot` | emit contract が実機未検証のため flag に列挙しても現在は **no-op**（fallback render を維持）。「flag は許可の宣言であり、有効化は emit contract 確定後」 |
+  | `pretooluse`（claude）/`devin` | approval を温存する emit を既に持つため flag 不要・対象外 |
+
+- `codex` の bypassing emit は親 agent の approval prompt を
+  素通しするが、codex 自身の execpolicy を迂回するわけではない —
+  rewritten command も codex の policy 評価（`blocked by policy`）
+  を受ける。「policy opt-in で全検査を迂回する」機能ではない。
+- なお codex では未 review の hook は実行されないため、hook の
+  trust 確立（`--dangerously-bypass-hook-trust` 等）がこの emit
+  の前提になる。
 
 ### execution.timeout と maxTurns（run 経路）
 
