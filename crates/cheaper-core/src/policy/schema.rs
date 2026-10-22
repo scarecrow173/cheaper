@@ -92,6 +92,34 @@ pub fn resolve_concurrency_policy(
     })
 }
 
+/// `route` section の normalized 表現(trusted layer のみ authoring
+/// 可能 — `command` と同型に project partial schema は section 全体を
+/// 除外する)。yaml 表現と 1:1 の構造を保つ。
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+pub struct RoutePolicy {
+    pub rewrite: RewritePolicy,
+}
+
+/// `route.rewrite` — rewrite emit の policy gate。
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+pub struct RewritePolicy {
+    /// `permissionDecision:"allow"` 併記の rewrite emit(親 agent の
+    /// approval prompt を素通しする応答)を許可する hook target 名
+    /// (`codex`/`cursor`/`copilot`)。未指定・`null`・空配列は `[]`
+    /// 等価 = bypassing emit 無効(conservative default)。
+    #[serde(rename = "approvalBypass")]
+    pub approval_bypass: Vec<String>,
+}
+
+impl RewritePolicy {
+    /// flag 判定の単一 owner — render 層は policy path を直接たどらない。
+    /// flag は emit 有効化ではなく許可であり、emit contract が未検証の
+    /// target(cursor/copilot)は列挙されても emit されない。
+    pub fn approval_bypass_enabled(&self, target: &str) -> bool {
+        self.approval_bypass.iter().any(|t| t == target)
+    }
+}
+
 /// `RuntimePolicy` (normalized output shape).
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct RuntimePolicy {
@@ -100,6 +128,9 @@ pub struct RuntimePolicy {
     /// `command` grants(trusted layer のみ authoring 可能。project
     /// partial schema は section 全体を除外する)。
     pub command: ResolvedCommandPolicy,
+    /// `route` section(`command` と同型の trusted-layer 限定 —
+    /// project partial schema は section 全体を除外する)。
+    pub route: RoutePolicy,
     pub execution: ExecutionPolicy,
     pub tools: ToolsPolicy,
     pub filesystem: FilesystemPolicy,
@@ -232,6 +263,24 @@ fn retry_properties() -> Value {
     json!({"transientAttempts": {"type": "integer", "minimum": 0}})
 }
 
+/// `route` section の properties。`approvalBypass` は
+/// `execution.maxTurns`(`{"type": ["integer","null"]}`)の nullable
+/// 先例に倣い `["array","null"]` — 明示 `null` ≡ 未指定 ≡ `[]` を
+/// schema 層で保証する。値 domain・uniqueItems・非 object の
+/// `rewrite`/`route` は schema が fail-loud に拒否し、normalize 側で
+/// 二重に解釈しない。
+fn route_properties() -> Value {
+    json!({
+        "rewrite": object_schema(&[], json!({
+            "approvalBypass": {
+                "type": ["array", "null"],
+                "items": {"type": "string", "enum": ["codex", "cursor", "copilot"]},
+                "uniqueItems": true,
+            },
+        })),
+    })
+}
+
 const VERSION_PROPERTY: fn() -> Value = || json!({"type": "integer", "const": 1});
 
 /// `POLICY_COMPLETE_SCHEMA` verbatim.
@@ -251,6 +300,7 @@ pub fn policy_complete_schema() -> Value {
             "workflow": object_schema(&[], workflow_policy_properties()),
             "process": object_schema(&["maxConcurrent", "tasks"], process_policy_properties()),
             "command": object_schema(&["maxConcurrent", "grants"], command_policy_properties()),
+            "route": object_schema(&[], route_properties()),
             "execution": object_schema(&["timeout", "maxTurns", "maxToolCalls"], execution_properties(true)),
             "tools": object_schema(&["allow"], tools_properties()),
             "filesystem": object_schema(&["symlinks"], filesystem_properties()),
@@ -271,6 +321,7 @@ pub fn policy_partial_schema() -> Value {
             "workflow": object_schema(&[], workflow_policy_properties()),
             "process": object_schema(&[], process_policy_properties()),
             "command": object_schema(&[], command_policy_properties()),
+            "route": object_schema(&[], route_properties()),
             "execution": object_schema(&[], execution_properties(false)),
             "tools": object_schema(&[], tools_properties()),
             "filesystem": object_schema(&[], filesystem_properties()),
@@ -517,6 +568,28 @@ pub fn normalize_policy(raw: &Map<String, Value>) -> Result<RuntimePolicy, Cheap
         workflow: resolve_workflow_policy(raw.get("workflow"))?,
         process: resolve_process_policy(raw.get("process"))?,
         command: resolve_command_policy(raw.get("command"))?,
+        // `route` の passthrough 解決 — `null`/欠落 → default `[]`。
+        // 値 domain は schema が保証済みのため item は string のみ収集。
+        route: {
+            let rewrite = raw
+                .get("route")
+                .and_then(Value::as_object)
+                .and_then(|r| r.get("rewrite"))
+                .and_then(Value::as_object);
+            RoutePolicy {
+                rewrite: RewritePolicy {
+                    approval_bypass: rewrite
+                        .and_then(|r| r.get("approvalBypass"))
+                        .and_then(Value::as_array)
+                        .map(|a| {
+                            a.iter()
+                                .filter_map(|v| v.as_str().map(str::to_string))
+                                .collect()
+                        })
+                        .unwrap_or_default(),
+                },
+            }
+        },
         execution: ExecutionPolicy {
             timeout_ms,
             max_turns: get_optional_u64(execution, "maxTurns"),
@@ -712,6 +785,97 @@ mod tests {
                 validate_policy_schema(&p, PolicySchemaMode::Complete).is_err(),
                 "{bad}"
             );
+        }
+    }
+
+    #[test]
+    fn route_section_schema_and_normalize() {
+        // complete/partial で受理 — `route` は optional property。
+        let mut p = valid_policy();
+        p["route"] = json!({"rewrite": {"approvalBypass": ["codex"]}});
+        for mode in [PolicySchemaMode::Complete, PolicySchemaMode::Partial] {
+            let raw = validate_policy_schema(&p, mode).unwrap();
+            let policy = normalize_policy(&raw).unwrap();
+            assert_eq!(
+                policy.route.rewrite.approval_bypass,
+                vec!["codex".to_string()]
+            );
+            assert!(policy.route.rewrite.approval_bypass_enabled("codex"));
+            assert!(!policy.route.rewrite.approval_bypass_enabled("cursor"));
+        }
+        // domain 内の複数 target も受理される。
+        p["route"] = json!({"rewrite": {"approvalBypass": ["codex", "cursor", "copilot"]}});
+        let raw = validate_policy_schema(&p, PolicySchemaMode::Partial).unwrap();
+        let policy = normalize_policy(&raw).unwrap();
+        for t in ["codex", "cursor", "copilot"] {
+            assert!(policy.route.rewrite.approval_bypass_enabled(t), "{t}");
+        }
+        // serialize は `approvalBypass`(camelCase)— `RuntimePolicy.route`
+        // が serialize 出力へ載る(yaml 表現と 1:1)。
+        p["route"] = json!({"rewrite": {"approvalBypass": ["codex"]}});
+        let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
+        let policy = normalize_policy(&raw).unwrap();
+        assert_eq!(
+            serde_json::to_value(&policy)
+                .unwrap()
+                .pointer("/route/rewrite/approvalBypass")
+                .unwrap(),
+            &json!(["codex"])
+        );
+
+        // 未指定・`null`・空配列は `[]` 等価(default = bypass 無効)。
+        for route in [
+            json!({}),
+            json!({"rewrite": {}}),
+            json!({"rewrite": {"approvalBypass": null}}),
+            json!({"rewrite": {"approvalBypass": []}}),
+        ] {
+            let mut p = valid_policy();
+            p["route"] = route;
+            let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
+            assert!(normalize_policy(&raw)
+                .unwrap()
+                .route
+                .rewrite
+                .approval_bypass
+                .is_empty());
+        }
+        // `route` 自体の欠落も `[]`。
+        let raw = validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap();
+        assert!(normalize_policy(&raw)
+            .unwrap()
+            .route
+            .rewrite
+            .approval_bypass
+            .is_empty());
+
+        // project partial は `route` key を持つ policy を拒否
+        // (section 丸ごと除外 — `command` と同型の fail-closed)。
+        let mut p = valid_policy();
+        p["route"] = json!({"rewrite": {"approvalBypass": ["codex"]}});
+        let e = validate_policy_schema(&p, PolicySchemaMode::ProjectPartial).unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+
+        // 値 domain 外は fail-loud — 未知 target 名・非配列・非文字列
+        // item・重複・非 object の `rewrite`/`route` は
+        // `InvalidRuntimePolicy`(`null` も `route`/`rewrite` には不可)。
+        for route in [
+            json!({"rewrite": {"approvalBypass": ["windsurf"]}}),
+            json!({"rewrite": {"approvalBypass": "codex"}}),
+            json!({"rewrite": {"approvalBypass": [1]}}),
+            json!({"rewrite": {"approvalBypass": ["codex", "codex"]}}),
+            json!({"rewrite": null}),
+            json!({"rewrite": []}),
+            json!(null),
+            json!([]),
+            json!("codex"),
+        ] {
+            let mut p = valid_policy();
+            p["route"] = route.clone();
+            for mode in [PolicySchemaMode::Complete, PolicySchemaMode::Partial] {
+                let e = validate_policy_schema(&p, mode).unwrap_err();
+                assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy, "{route}");
+            }
         }
     }
 

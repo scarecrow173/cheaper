@@ -113,6 +113,7 @@ mod tests {
                     interval: "30s".into(),
                 },
             },
+            route: RoutePolicy::default(),
             execution: ExecutionPolicy {
                 timeout_ms: 1,
                 max_turns: Some(1),

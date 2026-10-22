@@ -325,6 +325,48 @@ retry: {transientAttempts: 2}
     }
 
     #[test]
+    fn route_approval_bypass_merges_and_project_route_fails() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "builtin.yaml", BUILTIN);
+        let user = tmp.path().join("user");
+        write(
+            &user,
+            "policy.yaml",
+            "version: 1\nroute:\n  rewrite:\n    approvalBypass: [codex]\n",
+        );
+        let p = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: user.to_str().unwrap(),
+            project_dir: tmp.path().join("proj").to_str().unwrap(),
+            invocation: None,
+        })
+        .unwrap();
+        // user 層の `route` merge が effective policy に反映(array は
+        // wholesale replace)。flag 判定は `approval_bypass_enabled` 経由。
+        assert_eq!(p.route.rewrite.approval_bypass, vec!["codex".to_string()]);
+        assert!(p.route.rewrite.approval_bypass_enabled("codex"));
+        assert!(!p.route.rewrite.approval_bypass_enabled("cursor"));
+
+        // project 層の `route` key は project partial schema 違反で
+        // `load_policy` 全体が失敗 — untrusted project が approval
+        // bypass を有効化できない構造保証(`command` section 除外と同型)。
+        let project = tmp.path().join("proj");
+        write(
+            &project,
+            "policy.yaml",
+            "version: 1\nroute:\n  rewrite:\n    approvalBypass: [codex]\n",
+        );
+        let e = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().join("user2").to_str().unwrap(),
+            project_dir: project.to_str().unwrap(),
+            invocation: None,
+        })
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+    }
+
+    #[test]
     fn missing_builtin_is_invalid_policy() {
         let tmp = tempfile::tempdir().unwrap();
         let e = load_policy(&LoadPolicyOptions {

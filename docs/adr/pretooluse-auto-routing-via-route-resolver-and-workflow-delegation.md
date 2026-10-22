@@ -32,6 +32,8 @@ relations:
   superseded-by: []
   related:
     - "../specs/pretooluse-route-resolver-and-workflow-delegation.md"
+    - "../specs/codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md"
+    - "./per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md"
     - "./command-grant-trust-boundary-and-managed-process-reuse.md"
     - "./dedup-concurrent-hook-firings-via-canonical-request-fingerprint-verdict-cache.md"
     - "./cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"

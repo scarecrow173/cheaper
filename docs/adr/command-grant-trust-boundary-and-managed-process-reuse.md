@@ -22,6 +22,7 @@ relations:
   supersedes: []
   superseded-by: []
   related:
+    - "./enforce-declared-contracts-over-content-audit.md"
     - "../specs/policy-gated-command-tool.md"
     - "../specs/tool-operator-built-in-worker.md"
     - "../specs/invocation-scoped-command-grants.md"

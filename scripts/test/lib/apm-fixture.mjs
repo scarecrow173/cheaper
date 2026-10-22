@@ -38,7 +38,7 @@ export const TARGET_HOOK_PACKAGE = {
 // target が期待する event key(native のみ — foreign event は登録されない)。
 export const TARGET_NATIVE_EVENTS = {
   windsurf: ["pre_read_code", "pre_run_command"],
-  cursor: ["beforeReadFile", "beforeShellExecution"],
+  cursor: ["beforeReadFile", "beforeShellExecution", "preToolUse"],
   copilot: ["preToolUse"],
   claude: ["PreToolUse"],
   codex: ["PreToolUse"],

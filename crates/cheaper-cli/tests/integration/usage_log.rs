@@ -13,7 +13,9 @@
 
 use std::path::Path;
 
-use cheaper_cli::usage_log::{append_usage_log, build_usage_record, USAGE_LOG_FILENAME};
+use cheaper_cli::usage_log::{
+    append_usage_log, build_usage_record, ExecutionEcho, USAGE_LOG_FILENAME,
+};
 use cheaper_cli::usage_report::{build_usage_report, read_usage_records, UsageFilters};
 use serde_json::{json, Value};
 
@@ -31,16 +33,16 @@ fn iso8601_timestamps() {
         "meta":{"durationMs":1},
     });
     // 2025-10-08T03:09:29.061Z = 1759892969061
-    let r = build_usage_record(&env, "/w", &fixed(1_759_892_969_061.0)).unwrap();
+    let r = build_usage_record(&env, "/w", None, &fixed(1_759_892_969_061.0)).unwrap();
     assert_eq!(r["ts"], "2025-10-08T03:09:29.061Z");
     // leap day 2024-02-29T12:00:00.000Z = 1709208000000
-    let r = build_usage_record(&env, "/w", &fixed(1_709_208_000_000.0)).unwrap();
+    let r = build_usage_record(&env, "/w", None, &fixed(1_709_208_000_000.0)).unwrap();
     assert_eq!(r["ts"], "2024-02-29T12:00:00.000Z");
     // epoch
-    let r = build_usage_record(&env, "/w", &fixed(0.0)).unwrap();
+    let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
     assert_eq!(r["ts"], "1970-01-01T00:00:00.000Z");
     // 年末境界 2023-12-31T23:59:59.999Z
-    let r = build_usage_record(&env, "/w", &fixed(1_704_067_199_999.0)).unwrap();
+    let r = build_usage_record(&env, "/w", None, &fixed(1_704_067_199_999.0)).unwrap();
     assert_eq!(r["ts"], "2023-12-31T23:59:59.999Z");
 }
 
@@ -51,7 +53,7 @@ fn count_record_shape_and_key_order() {
         "result":{"path":"a.txt","tokens":3,"bytes":9},
         "meta":{"durationMs":5},
     });
-    let r = build_usage_record(&env, "/w", &fixed(0.0)).unwrap();
+    let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
     assert_eq!(
         serde_json::to_string(&r).unwrap(),
         "{\"schemaVersion\":1,\"ts\":\"1970-01-01T00:00:00.000Z\",\"root\":\"/w\",\"durationMs\":5,\"kind\":\"count\",\"worker\":null,\"ok\":true,\"result\":{\"path\":\"a.txt\",\"tokens\":3,\"bytes\":9}}"
@@ -67,7 +69,7 @@ fn run_record_shape() {
                 "usage":{"input":1,"output":2,"cacheRead":0,"cacheWrite":0,"totalTokens":3,"costUsd":0.0},
                 "turns":1,"toolCalls":2,"savings":{"sourceTokens":9,"returnedTokens":1,"avoidedContextTokens":8,"directlyComparable":true}},
     });
-    let r = build_usage_record(&env, "/w", &fixed(0.0)).unwrap();
+    let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
     assert_eq!(r["kind"], "run");
     assert_eq!(r["worker"], "w");
     assert_eq!(r["ok"], true);
@@ -86,7 +88,7 @@ fn error_record_only_when_usage_bearing() {
                 "rejectedToolCalls":null,"repairs":null,"transientRetries":null,
                 "changes":null,"savings":null,"execution":null},
     });
-    assert!(build_usage_record(&env, "/w", &fixed(0.0)).is_none());
+    assert!(build_usage_record(&env, "/w", None, &fixed(0.0)).is_none());
 
     // usage-bearing error → kind:"run" + error.code
     let env = json!({
@@ -97,7 +99,7 @@ fn error_record_only_when_usage_bearing() {
                 "turns":1,"toolCalls":1,"rejectedToolCalls":null,"repairs":null,
                 "transientRetries":null,"changes":null,"savings":null,"execution":null},
     });
-    let r = build_usage_record(&env, "/w", &fixed(0.0)).unwrap();
+    let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
     assert_eq!(r["kind"], "run");
     assert_eq!(r["ok"], false);
     assert_eq!(r["error"]["code"], "TOOL_EXECUTION_FAILURE");
@@ -112,7 +114,7 @@ fn workflow_envelope_not_recorded() {
         "schemaVersion":1,"workflow":true,"ok":true,"worker":null,
         "result":{},"jobs":[],"meta":{"durationMs":1},
     });
-    assert!(build_usage_record(&env, "/w", &fixed(0.0)).is_none());
+    assert!(build_usage_record(&env, "/w", None, &fixed(0.0)).is_none());
 }
 
 #[test]
@@ -216,9 +218,9 @@ fn rust_written_records_satisfy_ts_reader_field_contract() {
         "result":{"path":"a.txt","tokens":3,"bytes":9},
         "meta":{"durationMs":5},
     });
-    let run = build_usage_record(&run_env, "/w", &fixed(0.0)).unwrap();
-    let err = build_usage_record(&err_env, "/w", &fixed(0.0)).unwrap();
-    let count = build_usage_record(&count_env, "/w", &fixed(0.0)).unwrap();
+    let run = build_usage_record(&run_env, "/w", None, &fixed(0.0)).unwrap();
+    let err = build_usage_record(&err_env, "/w", None, &fixed(0.0)).unwrap();
+    let count = build_usage_record(&count_env, "/w", None, &fixed(0.0)).unwrap();
 
     let is_num = |v: &Value, k: &str| v.get(k).is_some_and(Value::is_number);
     for rec in [&run, &err, &count] {
@@ -343,4 +345,360 @@ fn route_refetch_record_shape() {
     assert_eq!(r["logRef"], "rid-1");
     assert_eq!(r["bytesRead"], 4096);
     assert_eq!(r["root"], "/w");
+}
+
+// ---------------------------------------------------------------------------
+// diagnostic fields(issue #141 — TSPEC-034Kr7KMznzk97mL1fbS1b)
+// `version`/`repairs`/`execution` echo・error allowlist・cap・fail-soft。
+// ---------------------------------------------------------------------------
+
+/// usage-bearing error envelope — `error`・`meta.repairs` は test ごとに
+/// 差し替える。`meta.usage`/`meta.model` が非 null なので常に記録対象。
+fn error_env(error: Value, repairs: Value) -> Value {
+    json!({
+        "schemaVersion":1,"ok":false,"worker":"w",
+        "error":error,
+        "meta":{"durationMs":1,
+                "model":{"provider":"p","id":"m","tier":"low"},
+                "usage":{"input":1,"output":0,"cacheRead":0,"cacheWrite":0,"totalTokens":1,"costUsd":0},
+                "turns":1,"toolCalls":1,"repairs":repairs},
+    })
+}
+
+/// success run envelope — `meta.repairs` のみ差し替え。
+fn ok_env(repairs: Value) -> Value {
+    json!({
+        "schemaVersion":1,"ok":true,"worker":"w","result":{},
+        "meta":{"durationMs":7,
+                "model":{"provider":"p","id":"m","tier":"low"},
+                "usage":{"input":1,"output":2,"cacheRead":0,"cacheWrite":0,"totalTokens":3,"costUsd":0.0},
+                "turns":1,"toolCalls":2,"repairs":repairs},
+    })
+}
+
+fn top_keys(r: &Value) -> Vec<String> {
+    r.as_object().unwrap().keys().cloned().collect()
+}
+
+#[test]
+fn run_record_version_is_binary_version_right_after_ok() {
+    // success・error 両分岐で `version` が `env!("CARGO_PKG_VERSION")`
+    // (この binary の product version)かつ `ok` 直後の固定位置。
+    for env in [
+        ok_env(json!(null)),
+        error_env(json!({"code":"ABORTED","message":"x"}), json!(null)),
+    ] {
+        let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
+        assert_eq!(r["version"], env!("CARGO_PKG_VERSION"));
+        let keys = top_keys(&r);
+        let i = keys.iter().position(|k| k == "ok").unwrap();
+        assert_eq!(keys[i + 1], "version");
+    }
+}
+
+#[test]
+fn run_record_repairs_recorded_only_when_non_null() {
+    for env in [
+        ok_env(json!(2)),
+        error_env(json!({"code":"INVALID_OUTPUT","message":"x"}), json!(2)),
+    ] {
+        let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
+        assert_eq!(r["repairs"], 2);
+    }
+    for env in [
+        ok_env(json!(null)),
+        error_env(json!({"code":"INVALID_OUTPUT","message":"x"}), json!(null)),
+    ] {
+        let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
+        assert!(r.get("repairs").is_none(), "null repairs must be omitted");
+    }
+}
+
+#[test]
+fn run_record_execution_echo_shape_and_position() {
+    let echo = ExecutionEcho {
+        timeout_ms: 45_000,
+        max_turns: Some(9),
+        max_tool_calls: 5,
+    };
+    for env in [
+        ok_env(json!(1)),
+        error_env(json!({"code":"TIMEOUT","message":"x"}), json!(1)),
+    ] {
+        let r = build_usage_record(&env, "/w", Some(&echo), &fixed(0.0)).unwrap();
+        assert_eq!(
+            r["execution"],
+            json!({"timeoutMs":45000,"maxTurns":9,"maxToolCalls":5})
+        );
+        // `repairs` 直後の固定位置。
+        let keys = top_keys(&r);
+        let i = keys.iter().position(|k| k == "repairs").unwrap();
+        assert_eq!(keys[i + 1], "execution");
+    }
+    // `max_turns: None` → `null` として記録(key 有り — echo 未供給の
+    // key 欠落とは区別される)。
+    let echo = ExecutionEcho {
+        timeout_ms: 45_000,
+        max_turns: None,
+        max_tool_calls: 5,
+    };
+    let r = build_usage_record(&ok_env(json!(null)), "/w", Some(&echo), &fixed(0.0)).unwrap();
+    assert!(r["execution"].get("maxTurns").is_some_and(Value::is_null));
+    // `echo: None` → `execution` key 自体が無い(fail-soft)。
+    for env in [ok_env(json!(1)), error_env(json!({"code":"X"}), json!(1))] {
+        let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
+        assert!(r.get("execution").is_none());
+    }
+}
+
+#[test]
+fn execution_echo_from_policy_projects_only_three_fields() {
+    // `From<&ExecutionPolicy>` は 3 field 固定射影 — `concurrency` 等の
+    // 他 field は record shape に漏れない。
+    let policy = cheaper_core::policy::schema::ExecutionPolicy {
+        timeout_ms: 300_000,
+        max_turns: None,
+        max_tool_calls: 64,
+        concurrency: None,
+    };
+    let echo = ExecutionEcho::from(&policy);
+    assert_eq!(echo.timeout_ms, 300_000);
+    assert_eq!(echo.max_turns, None);
+    assert_eq!(echo.max_tool_calls, 64);
+    let r = build_usage_record(&ok_env(json!(null)), "/w", Some(&echo), &fixed(0.0)).unwrap();
+    assert_eq!(
+        r["execution"],
+        json!({"timeoutMs":300000,"maxTurns":null,"maxToolCalls":64})
+    );
+}
+
+#[test]
+fn error_record_projects_allowlist_fields_in_fixed_order() {
+    let env = error_env(
+        json!({
+            "code":"MAX_TURNS_EXCEEDED","message":"worker run aborted: maxTurns",
+            "details":{
+                "reason":"maxTurns",
+                "errors":[{"instancePath":"/a","message":"required"},{"instancePath":"/b"}],
+                "errorMessage":"GetChatMessage HTTP 500: upstream",
+                "checkpoint":{"path":"/cfg/checkpoints/x.json","observationsCount":3,"extra":"drop"},
+            },
+        }),
+        json!(2),
+    );
+    let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
+    let e = &r["error"];
+    assert_eq!(e["code"], "MAX_TURNS_EXCEEDED");
+    assert_eq!(e["reason"], "maxTurns");
+    assert_eq!(e["message"], "worker run aborted: maxTurns");
+    // entry の欠落 key はその key を省略(message 無し entry)。
+    assert_eq!(
+        e["schemaErrors"],
+        json!([{"instancePath":"/a","message":"required"},{"instancePath":"/b"}])
+    );
+    assert_eq!(e["errorMessage"], "GetChatMessage HTTP 500: upstream");
+    // checkpoint は {path, observationsCount} のみ — `extra` は漏らさない。
+    assert_eq!(
+        e["checkpoint"],
+        json!({"path":"/cfg/checkpoints/x.json","observationsCount":3})
+    );
+    // 挿入順: code → reason → message → schemaErrors → errorMessage → checkpoint。
+    let keys: Vec<&str> = e.as_object().unwrap().keys().map(String::as_str).collect();
+    assert_eq!(
+        keys,
+        [
+            "code",
+            "reason",
+            "message",
+            "schemaErrors",
+            "errorMessage",
+            "checkpoint"
+        ]
+    );
+}
+
+#[test]
+fn error_record_excludes_non_allowlist_keys() {
+    // `rawOutput`/`rawOutputPath`/`exitCode`/`retryable`/`cause` と
+    // details 残余 key(`changes`/`missing`/`grant`/`layer`)は record に
+    // 載らない(ADR Option A 固定 allowlist)。
+    let env = error_env(
+        json!({
+            "code":"INVALID_OUTPUT","message":"x","exitCode":6,"retryable":false,
+            "cause":{"code":"ABORTED","message":"inner"},
+            "details":{
+                "rawOutput":"raw model output",
+                "rawOutputPath":"/cfg/invalid-outputs/run-1.txt",
+                "changes":{"files":[]},"missing":["a"],"grant":"cmd","layer":"user",
+            },
+        }),
+        json!(null),
+    );
+    let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
+    let e = r["error"].as_object().unwrap();
+    let keys: Vec<&str> = e.keys().map(String::as_str).collect();
+    assert_eq!(keys, ["code", "message"]);
+    let serialized = serde_json::to_string(&r).unwrap();
+    for banned in [
+        "rawOutput",
+        "rawOutputPath",
+        "exitCode",
+        "retryable",
+        "cause",
+        "changes",
+        "missing",
+        "grant",
+        "layer",
+    ] {
+        assert!(
+            !serialized.contains(banned),
+            "{banned} must not leak: {serialized}"
+        );
+    }
+}
+
+#[test]
+fn error_record_caps_truncate_char_based() {
+    // multi-byte 文字を含む入力で char 基準に切り詰め(byte 境界で
+    // 文字を壊さない)。
+    let long_message = "あ".repeat(400); // 400 chars / 1200 bytes
+    let long_error_message = "x".repeat(400);
+    let long_path = "イ".repeat(250);
+    let long_entry_message = "e".repeat(150);
+    let mut errors: Vec<Value> = (0..7)
+        .map(|i| json!({"instancePath":format!("/{i}"),"message":"m"}))
+        .collect();
+    errors[0] = json!({"instancePath":long_path,"message":long_entry_message});
+    let env = error_env(
+        json!({
+            "code":"INVALID_OUTPUT","message":long_message,
+            "details":{"errors":errors,"errorMessage":long_error_message},
+        }),
+        json!(null),
+    );
+    let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
+    let e = &r["error"];
+    let m = e["message"].as_str().unwrap();
+    assert_eq!(m.chars().count(), 300);
+    assert!(m.ends_with('あ'), "char-based truncate keeps scalar intact");
+    assert_eq!(e["errorMessage"].as_str().unwrap().chars().count(), 300);
+    let se = e["schemaErrors"].as_array().unwrap();
+    assert_eq!(se.len(), 5, "errors array capped at 5");
+    assert_eq!(se[0]["instancePath"].as_str().unwrap().chars().count(), 200);
+    assert_eq!(se[0]["message"].as_str().unwrap().chars().count(), 120);
+}
+
+#[test]
+fn error_record_omits_fields_conditionally() {
+    // abort 語彙外の `details.reason`・両 key 欠落の `checkpoint` は
+    // 非記録。non-object errors entry は射影対象外。
+    let env = error_env(
+        json!({
+            "code":"TOOL_EXECUTION_FAILURE","message":"x",
+            "details":{
+                "reason":"user",
+                "errors":[{"instancePath":"/a"},{"message":"m"},"non-object",{"instancePath":"/b","message":null}],
+                "checkpoint":{"other":1},
+            },
+        }),
+        json!(null),
+    );
+    let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
+    let e = &r["error"];
+    assert!(
+        e.get("reason").is_none(),
+        "non-abort reason must be omitted"
+    );
+    assert!(e.get("checkpoint").is_none());
+    assert_eq!(
+        e["schemaErrors"],
+        json!([{"instancePath":"/a"},{"message":"m"},{"instancePath":"/b"}])
+    );
+    // PARTIAL_MUTATION 相当 — `reason` が cause 側に畳まれた record は
+    // checkpoint のみを記録する構造的 edge を pin。
+    let env = error_env(
+        json!({
+            "code":"PARTIAL_MUTATION","message":"x",
+            "cause":{"code":"MAX_TOOL_CALLS_EXCEEDED","message":"inner"},
+            "details":{"checkpoint":{"path":"/cfg/checkpoints/p.json","observationsCount":7}},
+        }),
+        json!(null),
+    );
+    let r = build_usage_record(&env, "/w", None, &fixed(0.0)).unwrap();
+    assert!(r["error"].get("reason").is_none());
+    assert_eq!(
+        r["error"]["checkpoint"],
+        json!({"path":"/cfg/checkpoints/p.json","observationsCount":7})
+    );
+}
+
+#[test]
+fn error_record_fail_soft_on_missing_or_type_mismatch() {
+    // 新 field の欠落・型不一致でも `build_usage_record` が `Some` を
+    // 返し panic しない(record 書き込み自体を落とさない)。
+    for error in [
+        json!({"code":"ABORTED"}), // message/details 欠落
+        json!({"code":"X","message":42,"details":"not-an-object"}),
+        json!({"code":"X","details":{"reason":123,"errors":"not-array","errorMessage":{},"checkpoint":"s"}}),
+        json!({"details":{"errors":[{"instancePath":5,"message":true}]}}), // code 欠落
+    ] {
+        let r = build_usage_record(&error_env(error, json!(null)), "/w", None, &fixed(0.0))
+            .expect("record must still be produced");
+        assert_eq!(r["kind"], "run");
+        assert!(r["error"].is_object());
+    }
+    // `code` 欠落は従来規約どおり `null` を記録する。
+    let r = build_usage_record(
+        &error_env(
+            json!({"details":{"errors":[{"instancePath":5,"message":true}]}}),
+            json!(null),
+        ),
+        "/w",
+        None,
+        &fixed(0.0),
+    )
+    .unwrap();
+    assert!(r["error"]["code"].is_null());
+    // 型不一致 entry の欠落 key は省略された空 object entry になる。
+    assert_eq!(r["error"]["schemaErrors"], json!([{}]));
+}
+
+// ---------------------------------------------------------------------------
+// `cheaper usage` 非回帰 — 新 field(version/execution/repairs/error.*)を
+// 持つ record が混在する file を従来どおり集計できる(reader は未知
+// field を無視する構造保証)。
+// ---------------------------------------------------------------------------
+
+/// 新 writer の error record(version/execution/repairs・error の
+/// reason/message/schemaErrors/errorMessage/checkpoint を含む形)。
+const NEW_RUN_ERR_DIAG: &str = "{\"schemaVersion\":1,\"ts\":\"2026-09-19T00:05:00.000Z\",\"root\":\"/ws\",\"durationMs\":20,\"kind\":\"run\",\"worker\":\"bulk-reader\",\"ok\":false,\"version\":\"1.0.0\",\"model\":{\"provider\":\"ollama\",\"id\":\"qwen3.5:9b\",\"tier\":\"low\"},\"usage\":{\"input\":50,\"output\":5,\"cacheRead\":0,\"cacheWrite\":0,\"totalTokens\":55,\"costUsd\":0.005},\"turns\":1,\"toolCalls\":1,\"repairs\":2,\"execution\":{\"timeoutMs\":300000,\"maxTurns\":null,\"maxToolCalls\":64},\"error\":{\"code\":\"MAX_TURNS_EXCEEDED\",\"reason\":\"maxTurns\",\"message\":\"worker run aborted: maxTurns\",\"schemaErrors\":[{\"instancePath\":\"/a\",\"message\":\"required\"}],\"errorMessage\":\"m\",\"checkpoint\":{\"path\":\"/cfg/checkpoints/x.json\",\"observationsCount\":3}}}";
+
+#[test]
+fn usage_report_aggregates_records_with_diagnostic_fields() {
+    let dir = tempfile::tempdir().unwrap();
+    write_log_lines(
+        dir.path(),
+        &[TS_RUN_OK, NEW_RUN_ERR_DIAG, TS_COUNT, OLD_RUN_MINIMAL],
+    );
+    // reader は record を全 field 保持で parse する(unknown field 無視
+    // ではなく保持 — serialize した record の round-trip)。
+    let records = read_usage_records(dir.path());
+    assert_eq!(records.len(), 4);
+    assert_eq!(records[1]["version"], "1.0.0");
+    assert_eq!(records[1]["execution"]["maxToolCalls"], 64);
+    assert_eq!(records[1]["error"]["reason"], "maxTurns");
+    // 集計は既知 field のみ — 新旧混在で従来どおりの結果。
+    let report =
+        build_usage_report(dir.path(), &UsageFilters::default(), None, None, &|| NOW_MS).unwrap();
+    let r = Value::Object(report);
+    assert_eq!(r["records"], json!(3.0));
+    assert_eq!(r["ok"], json!(2.0));
+    assert_eq!(r["errors"], json!(1.0));
+    assert_eq!(r["usage"]["input"], json!(160.0));
+    assert_eq!(r["usage"]["costUsd"], json!(0.016));
+    assert_eq!(r["turns"], json!(3.0));
+    assert_eq!(r["toolCalls"], json!(4.0));
+    assert_eq!(r["durationMs"], json!(37.0));
+    assert_eq!(r["measured"]["runs"], json!(1.0));
+    assert_eq!(r["measured"]["comparable"]["runs"], json!(1.0));
 }

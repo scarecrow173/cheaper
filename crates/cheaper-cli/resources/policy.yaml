@@ -53,3 +53,10 @@ output:
 
 retry:
   transientAttempts: 1
+
+route:
+  rewrite:
+    # permissionDecision:"allow" 併記の rewrite emit(親 agent の approval
+    # prompt を素通しする応答)を許可する hook target 名
+    # (codex/cursor/copilot)。trusted layer のみ authoring 可能。
+    approvalBypass: []

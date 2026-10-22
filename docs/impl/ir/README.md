@@ -79,6 +79,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zRDctzhtdFQ6yVmTUAg | Document launcher distribution and verify acquisition | completed | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
 | IMPL-034rArrzNyFlCc39TNLU1X | Extend usage.jsonl run record with savings section | completed | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | IMPL-034z1ST2V3s2UsM4Mi2S87 | Extract shared esbuild bundle helper | completed | [extract-shared-esbuild-bundle-helper.md](./extract-shared-esbuild-bundle-helper.md) |
+| IMPL-034Kqau86OzwuLBm22fbxx | Fix route test determinism for ubuntu CI flake issue 157 | completed | [fix-route-test-determinism-for-ubuntu-ci-flake-issue-157.md](./fix-route-test-determinism-for-ubuntu-ci-flake-issue-157.md) |
 | IMPL-034EWF6HsxdlNyPsQepBQ9 | fixture DSL and degraded-run verification coverage | completed | [fixture-dsl-and-degraded-run-verification-coverage.md](./fixture-dsl-and-degraded-run-verification-coverage.md) |
 | IMPL-034Fs3qmmPJOmrZe4uVW81 | grant docs and APM skill updates | completed | [grant-docs-and-apm-skill-updates.md](./grant-docs-and-apm-skill-updates.md) |
 | IMPL-034r05iHy2gdnpwO94elRp | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
@@ -97,6 +98,7 @@ Directory: `docs/impl/ir`
 | IMPL-034A9AU7e20SHvZ2sH66sP | Implement managed process policy | completed | [implement-managed-process-policy.md](./implement-managed-process-policy.md) |
 | IMPL-034zR9OQeNgEdCN2OMdt8I | Implement native launcher acquisition and hook routing | completed | [implement-native-launcher-acquisition-and-hook-routing.md](./implement-native-launcher-acquisition-and-hook-routing.md) |
 | IMPL-034D0FJrA2AtPRSNfjfe2v | Implement OpenAI Codex subscription provider | completed | [implement-openai-codex-subscription-provider.md](./implement-openai-codex-subscription-provider.md) |
+| IMPL-034KtIguXiJnzT9ykiH7uV | Implement per-target hook rewrite enablement and approval bypass issue 150 | completed | [implement-per-target-hook-rewrite-enablement-and-approval-bypass-issue-150.md](./implement-per-target-hook-rewrite-enablement-and-approval-bypass-issue-150.md) |
 | IMPL-034AGqZzIjQvvNqijsHb1N | Implement process lifecycle policy | completed | [implement-process-lifecycle-policy.md](./implement-process-lifecycle-policy.md) |
 | IMPL-034AGM8MC9yqj5X6IozzSu | Implement process tree lifecycle | completed | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
 | IMPL-034zQvMyE33qrrPAVVG0da | Implement workflow binding and definition contracts | completed | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
@@ -105,6 +107,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zTuWWp7bpifS4FoAiG2 | implement-workflow-loader | completed | [implement-workflow-loader.md](./implement-workflow-loader.md) |
 | IMPL-034AH5aBMIDz91t2o5olxp | Integrate process runtime disposal | completed | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
 | IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | completed | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
+| IMPL-034KvX8YRwdpwNQVlWW230 | 権限モデル再設計の実装 issue 起票 (issue #151) | completed | [file-permission-model-redesign-implementation-issues.md](./file-permission-model-redesign-implementation-issues.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | IMPL-034A6i3cxbZXoHqDxhuyjB | Migrate native workflows and release guidance | completed | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
@@ -137,6 +140,7 @@ Directory: `docs/impl/ir`
 | IMPL-034Aca4oJotR844AUJf6QR | Resource manager observation の実装記録 | completed | [resource-manager-observation.md](./resource-manager-observation.md) |
 | IMPL-o1iX554igoTSDCyr03s9Bh | Restrict orphan sweep to .tmp and split verify orphan findings | completed | [restrict-orphan-sweep-to-tmp-and-split-verify-findings.md](./restrict-orphan-sweep-to-tmp-and-split-verify-findings.md) |
 | IMPL-034zCh2EsO3oqQBXBAlfuM | Run canonical verification and close out issue 55 implementation | completed | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
+| IMPL-034KrGAahAOH1wp7c8Wcob | Implement run error record observability issue 141 | completed | [run-error-record-observability-issue-141.md](./run-error-record-observability-issue-141.md) |
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
 | IMPL-034EPz49PYz6zXgEeh5Fly | shared managed-process machinery extraction into tools proc | completed | [shared-managed-process-machinery-extraction-into-tools-proc.md](./shared-managed-process-machinery-extraction-into-tools-proc.md) |
 | IMPL-034A6gXDwnMxGVaPiuSCxb | Shared tool scheduler | completed | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |

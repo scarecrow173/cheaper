@@ -30,6 +30,8 @@ Directory: `docs/plans`
 | PLAN-034DlEwsubKsxcWfA08Kb4 | devin usage accounting contract test and docs | approved | [devin-usage-accounting-contract-test-and-docs.md](./devin-usage-accounting-contract-test-and-docs.md) |
 | PLAN-034EDNoLUwAoBOtSAMRMNY | Execute post-feature structural refactoring | approved | [execute-post-feature-structural-refactoring.md](./execute-post-feature-structural-refactoring.md) |
 | PLAN-034Dz3LX6Jz18cbOR0KtFd | Execute post-migration structural cleanup | approved | [execute-post-migration-structural-cleanup.md](./execute-post-migration-structural-cleanup.md) |
+| PLAN-034KvwX4x7oaZlaECqhHc1 | 権限モデル再設計の実装 issue 起票計画 (issue #151) | approved | [file-permission-model-redesign-implementation-issues.md](./file-permission-model-redesign-implementation-issues.md) |
+| PLAN-034foupf7ivrjlU7zVsv6M | Fix route test flake via test-side determinism (issue #157) | approved | [fix-route-test-flake-via-test-side-determinism.md](./fix-route-test-flake-via-test-side-determinism.md) |
 | PLAN-034r05iHE1Fbkp8emdVve6 | grep batchMaxBytes invariant enforcement | completed | [grep-batch-max-bytes-invariant.md](./grep-batch-max-bytes-invariant.md) |
 | PLAN-034r6qeRCCYRZy0etnrPfy | inject explicit eval budget into large-fixture grep tests | completed | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | PLAN-034r05iHE1FbkoSqLEHZrV | Harden repair abort grace and provider failure normalization | completed | [harden-repair-abort-grace-and-provider-failure-normalization.md](./harden-repair-abort-grace-and-provider-failure-normalization.md) |
@@ -55,10 +57,12 @@ Directory: `docs/plans`
 | PLAN-034CYiZ4kkOoa3oKL7PnLj | Implement OpenAI Codex subscription provider | approved | [implement-openai-codex-subscription-provider.md](./implement-openai-codex-subscription-provider.md) |
 | PLAN-034zTcqSwE6JHL46EJBnKP | OperationManager lifecycle の実装計画 | completed | [implement-operation-manager-lifecycle.md](./implement-operation-manager-lifecycle.md) |
 | PLAN-034zXjR2oE7USB76eUPCAq | Implement payload untracking migration | completed | [implement-payload-untracking-migration.md](./implement-payload-untracking-migration.md) |
+| PLAN-034KsKo6nYOBOpIpkNoviY | Codex/Cursor/Copilot hook rewrite enablement と approvalBypass opt-in の実装計画 (issue #150) | approved | [implement-per-target-hook-rewrite-enablement.md](./implement-per-target-hook-rewrite-enablement.md) |
 | PLAN-034zBjFcH4nDUr72Vc1XJ3 | Implement Pi sibling tool-call parallelism guidance and deterministic tests in runtime-pi | completed | [implement-pi-sibling-tool-call-parallelism.md](./implement-pi-sibling-tool-call-parallelism.md) |
 | PLAN-034EO1kmKwJ8MAHSHWyCws | policy-gated command tool を実装する | completed | [implement-policy-gated-command-tool.md](./implement-policy-gated-command-tool.md) |
 | PLAN-034Jcl2O612UZMGTK2IN1n | Implement PreToolUse route resolver and delegated workflow execution | completed | [implement-pretooluse-route-resolver-and-delegated-workflow.md](./implement-pretooluse-route-resolver-and-delegated-workflow.md) |
 | PLAN-034AadQgwgheMAV59FAcIZ | ResourceManager job lease を実装する | completed | [implement-resource-manager-job-leases.md](./implement-resource-manager-job-leases.md) |
+| PLAN-034Kr7PAaZlxMx7LjG34Ls | usage.jsonl run error record 診断 field 拡充の実装計画 (issue #141) | approved | [implement-run-error-record-observability.md](./implement-run-error-record-observability.md) |
 | PLAN-034zThvLa4bK934vj52jaC | Implement run-scoped artifact store | completed | [implement-run-scoped-artifact-store.md](./implement-run-scoped-artifact-store.md) |
 | PLAN-034ETMVrwmwh0Z0jq4gwtt | tool-operator built-in worker と cheaper.optionalTools 縮退機構を実装する | completed | [implement-tool-operator-built-in-worker.md](./implement-tool-operator-built-in-worker.md) |
 | PLAN-034zQHj1WyOgBNLGbDaFY8 | Implement version-pinned launcher acquisition | completed | [implement-version-pinned-launcher-acquisition.md](./implement-version-pinned-launcher-acquisition.md) |

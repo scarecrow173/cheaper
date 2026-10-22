@@ -25,6 +25,7 @@ relations:
   supersedes: []
   superseded-by: []
   related:
+    - "./permission-model-responsibility-redesign.md"
     - "../specs/tool-operator-built-in-worker.md"
     - "../specs/policy-gated-command-tool.md"
     - "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"

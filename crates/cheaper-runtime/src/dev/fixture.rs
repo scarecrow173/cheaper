@@ -58,8 +58,8 @@ use cheaper_core::model::tier::Tier;
 use cheaper_core::policy::command::ResolvedCommandPolicy;
 use cheaper_core::policy::process::{ProcessHeartbeat, ResolvedProcessPolicy};
 use cheaper_core::policy::schema::{
-    ExecutionPolicy, FilesystemPolicy, ModelPolicy, OutputPolicy, RetryPolicy, RuntimePolicy,
-    TierFallback, ToolsPolicy,
+    ExecutionPolicy, FilesystemPolicy, ModelPolicy, OutputPolicy, RetryPolicy, RoutePolicy,
+    RuntimePolicy, TierFallback, ToolsPolicy,
 };
 use cheaper_core::policy::workflow::{WorkflowArtifactPolicy, WorkflowPolicy};
 use cheaper_core::tools::vocabulary::ToolName;
@@ -786,6 +786,7 @@ pub fn default_policy() -> RuntimePolicy {
                 interval: "30s".into(),
             },
         },
+        route: RoutePolicy::default(),
         execution: ExecutionPolicy {
             timeout_ms: 60_000,
             max_turns: None,

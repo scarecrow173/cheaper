@@ -140,6 +140,7 @@ mod tests {
                     interval: "30s".to_string(),
                 },
             },
+            route: RoutePolicy::default(),
             execution: ExecutionPolicy {
                 timeout_ms: 300_000,
                 max_turns: Some(10),

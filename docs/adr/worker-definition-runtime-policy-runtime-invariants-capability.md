@@ -24,6 +24,7 @@ relations:
   supersedes: []
   superseded-by: []
   related:
+    - "./enforce-declared-contracts-over-content-audit.md"
     - "worker-yaml-frontmatter-markdown.md"
     - "model-tier-model-resolver.md"
     - "workspace-filesystem-boundary-cheaper-sandboxed-tool.md"

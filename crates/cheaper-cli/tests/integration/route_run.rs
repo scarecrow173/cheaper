@@ -6,6 +6,7 @@ use crate::common::{env_lookup, Fixture};
 use cheaper_cli::cli::CliIo;
 use cheaper_cli::route::payload::{encode, EncodeInput};
 use cheaper_cli::route::run::{execute, RouteRunOutput};
+use cheaper_core::errors::{CheaperError, ErrorCode};
 use serde_json::{json, Value};
 
 #[test]
@@ -624,10 +625,18 @@ async fn exec_infra_failure_returns_error() {
         &[],
         None,
     );
-    assert!(run_route(&mut f, &token).await.is_err());
+    let err = run_route(&mut f, &token)
+        .await
+        .err()
+        .expect("route must fail: grant timeout is 1ms");
+    assert_eq!(
+        err.downcast_ref::<CheaperError>().map(CheaperError::code),
+        Some(ErrorCode::ToolExecutionFailure),
+        "job 失敗は engine が outcome.error を ToolExecutionFailure に collapse する決定的 infra-failure code",
+    );
     assert!(
-        marker.exists(),
-        "child was spawned through the grant then killed"
+        err.to_string().contains("routed command did not complete"),
+        "captured()==None && outcome.error.is_some() 分岐固有の message — workflow が exec job を失敗まで実行した証拠: {err}",
     );
     let log = f.usage_log().unwrap_or_default();
     assert!(
@@ -1554,6 +1563,154 @@ async fn devin_hook_rewrite_emits_nested_updated_input() {
     assert!(hook
         .pointer("/hookSpecificOutput/permissionDecision")
         .is_none());
+    assert!(!marker.exists());
+}
+
+/// codex — user policy `route.rewrite.approvalBypass: [codex]` + grant
+/// で `--target codex` firing が `permissionDecision:"allow"` +
+/// `updatedInput.command`(`route run --payload` 形)を emit し exit 0
+/// (R6 — bypassing emit は flag opt-in 時のみ)。
+#[tokio::test(flavor = "current_thread")]
+async fn codex_hook_rewrite_with_approval_bypass_emits_allow_updated_input() {
+    let mut f = Fixture::new();
+    let marker = f.ws.path().join("marker.txt");
+    reject_fx(&f, ROUTES_YAML, "", &marker);
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        format!(
+            "version: 1\nroute:\n  rewrite:\n    approvalBypass: [codex]\ncommand:\n  grants:\n    child-run:\n      executable: '{}'\n      argv: ['route_run::command_fixture', '--exact', '--nocapture']\n      timeout: '600s'\n      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n",
+            std::env::current_exe()
+                .unwrap()
+                .to_string_lossy()
+                .replace('\'', "''"),
+        ),
+    )
+    .unwrap();
+    f.stdin.data = serde_json::json!({
+        "tool_name": "Bash",
+        "tool_input": {"command": format!("routed {CHILD_ARGV}")}
+    })
+    .to_string()
+    .into_bytes();
+    let (code, hook_out, _err) =
+        run_cli_raw(&mut f, &["hook", "pre-tool-use", "--target", "codex"]).await;
+    assert_eq!(code, 0, "hook out={hook_out}");
+    let hook: Value = serde_json::from_str(&hook_out).unwrap();
+    assert!(
+        hook.get("decision").is_none() && hook.get("updatedInput").is_none(),
+        "top-level fields absent: {hook}"
+    );
+    assert_eq!(
+        hook.pointer("/hookSpecificOutput/hookEventName")
+            .and_then(Value::as_str),
+        Some("PreToolUse")
+    );
+    assert_eq!(
+        hook.pointer("/hookSpecificOutput/permissionDecision")
+            .and_then(Value::as_str),
+        Some("allow")
+    );
+    let command = hook
+        .pointer("/hookSpecificOutput/updatedInput/command")
+        .and_then(Value::as_str)
+        .unwrap_or_else(|| panic!("codex bypassing emit 無し: {hook}"));
+    assert!(command.contains(" route run --payload "), "{command}");
+    assert!(!marker.exists());
+}
+
+/// codex — flag 未設定・空配列・codex 非含有のとき codex render は
+/// fallback verdict のみを返し `hookSpecificOutput` に `updatedInput`
+/// を含まない(R7 — `builtin_cargo_test_route_registered_but_no_grant`
+/// の「no-grant は rewrite しない」と対になる「flag 無しは rewrite
+/// しない」pin)。
+#[tokio::test(flavor = "current_thread")]
+async fn codex_hook_rewrite_without_flag_renders_fallback_only() {
+    for route_yaml in [
+        "",
+        "route:\n  rewrite:\n    approvalBypass: []\n",
+        "route:\n  rewrite:\n    approvalBypass: [cursor]\n",
+    ] {
+        let mut f = Fixture::new();
+        let marker = f.ws.path().join("marker.txt");
+        reject_fx(&f, ROUTES_YAML, "", &marker);
+        std::fs::write(
+            f.cfg.path().join("policy.yaml"),
+            format!(
+                "version: 1\n{route_yaml}command:\n  grants:\n    child-run:\n      executable: '{}'\n      argv: ['route_run::command_fixture', '--exact', '--nocapture']\n      timeout: '600s'\n      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n",
+                std::env::current_exe()
+                    .unwrap()
+                    .to_string_lossy()
+                    .replace('\'', "''"),
+            ),
+        )
+        .unwrap();
+        f.stdin.data = serde_json::json!({
+            "tool_name": "Bash",
+            "tool_input": {"command": format!("routed {CHILD_ARGV}")}
+        })
+        .to_string()
+        .into_bytes();
+        let (code, hook_out, _err) =
+            run_cli_raw(&mut f, &["hook", "pre-tool-use", "--target", "codex"]).await;
+        assert_eq!(code, 0, "hook out={hook_out}");
+        let hook: Value = serde_json::from_str(&hook_out).unwrap_or(Value::Null);
+        assert!(
+            hook.pointer("/hookSpecificOutput/updatedInput").is_none(),
+            "flag 無し({route_yaml:?})は rewrite emit しない: {hook_out}"
+        );
+        assert!(
+            !hook_out.contains("\"permissionDecision\":\"allow\""),
+            "bypassing emit 無し: {hook_out}"
+        );
+        assert!(!marker.exists());
+    }
+}
+
+/// codex — untrusted project 層 `.cheaper/policy.yaml` の `route` key は
+/// project partial schema 違反で `load_policy` 全体を失敗させ、
+/// `load_or_none` → `None` → route arm 不活性 + bypass 無効となる。
+/// user 層 policy に flag があっても hook は rewrite を発行しない
+/// (R3/R15 — project は flag を「消せる」が「有効化」は構造的に不能
+/// の end-to-end 側)。
+#[tokio::test(flavor = "current_thread")]
+async fn codex_hook_project_route_key_fails_closed() {
+    let mut f = Fixture::new();
+    let marker = f.ws.path().join("marker.txt");
+    reject_fx(&f, ROUTES_YAML, "", &marker);
+    // user 層には flag + grant を正しく置く — project 層の `route` key
+    // だけが load を壊す差分。
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        format!(
+            "version: 1\nroute:\n  rewrite:\n    approvalBypass: [codex]\ncommand:\n  grants:\n    child-run:\n      executable: '{}'\n      argv: ['route_run::command_fixture', '--exact', '--nocapture']\n      timeout: '600s'\n      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n",
+            std::env::current_exe()
+                .unwrap()
+                .to_string_lossy()
+                .replace('\'', "''"),
+        ),
+    )
+    .unwrap();
+    let project_dir = f.ws.path().join(".cheaper");
+    std::fs::create_dir_all(&project_dir).unwrap();
+    std::fs::write(
+        project_dir.join("policy.yaml"),
+        "version: 1\nroute:\n  rewrite:\n    approvalBypass: [codex]\n",
+    )
+    .unwrap();
+    f.stdin.data = serde_json::json!({
+        "tool_name": "Bash",
+        "tool_input": {"command": format!("routed {CHILD_ARGV}")}
+    })
+    .to_string()
+    .into_bytes();
+    let (code, hook_out, _err) =
+        run_cli_raw(&mut f, &["hook", "pre-tool-use", "--target", "codex"]).await;
+    assert_eq!(code, 0, "hook out={hook_out}");
+    let hook: Value = serde_json::from_str(&hook_out).unwrap_or(Value::Null);
+    assert!(
+        hook.pointer("/hookSpecificOutput/updatedInput").is_none(),
+        "project `route` key は load error → rewrite 不発行(fail-closed): {hook_out}"
+    );
     assert!(!marker.exists());
 }
 

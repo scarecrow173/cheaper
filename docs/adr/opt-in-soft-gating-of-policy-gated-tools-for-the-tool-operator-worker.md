@@ -30,6 +30,7 @@ relations:
     - "../test-specs/tool-operator-built-in-worker.md"
     - "../designs/tool-operator-built-in-worker.md"
     - "../plans/implement-tool-operator-built-in-worker.md"
+    - "./enforce-declared-contracts-over-content-audit.md"
   refines: []
   refined-by: []
   derives-from: ["../discovery/tool-operator-worker-built-in.md"]
