@@ -15,7 +15,10 @@ biome = "2.5.13"
 # (fresh CI runner で `cargo fmt`/`cargo clippy` が component 欠落しないように)。
 rust = { version = "1.99.0", components = "rustfmt,clippy" }
 python = "3.12"
-uv = "0.11"
+# GHSA-hq85-5cpj-mr62 (eMudhra 中間CA) の修正版は >=0.13.4。
+# 0.13 系の範囲指定では minimum_release_age=7d 下の再解決が未修正版に
+# 戻り得るため、修正版を明示 pin する。
+uv = "0.13.5"
 # apm.lock.yaml は apm 0.33.0 で生成。0.30.0-0.31.0 は Windows で path dep 解決が
 # 壊れていた(WinError 3/206)が 0.32.0 の staging path 短縮(upstream #2941)で修正済み。
 # GitHub release バイナリを backend にし pipx/uv 経由を避ける(pipx 固有の
