@@ -79,6 +79,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zRDctzhtdFQ6yVmTUAg | Document launcher distribution and verify acquisition | completed | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
 | IMPL-034rArrzNyFlCc39TNLU1X | Extend usage.jsonl run record with savings section | completed | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | IMPL-034z1ST2V3s2UsM4Mi2S87 | Extract shared esbuild bundle helper | completed | [extract-shared-esbuild-bundle-helper.md](./extract-shared-esbuild-bundle-helper.md) |
+| IMPL-034KvX8YRwdpwNQVlWW230 | 権限モデル再設計の実装 issue 起票 (issue #151) | completed | [file-permission-model-redesign-implementation-issues.md](./file-permission-model-redesign-implementation-issues.md) |
 | IMPL-034Kqau86OzwuLBm22fbxx | Fix route test determinism for ubuntu CI flake issue 157 | completed | [fix-route-test-determinism-for-ubuntu-ci-flake-issue-157.md](./fix-route-test-determinism-for-ubuntu-ci-flake-issue-157.md) |
 | IMPL-034EWF6HsxdlNyPsQepBQ9 | fixture DSL and degraded-run verification coverage | completed | [fixture-dsl-and-degraded-run-verification-coverage.md](./fixture-dsl-and-degraded-run-verification-coverage.md) |
 | IMPL-034Fs3qmmPJOmrZe4uVW81 | grant docs and APM skill updates | completed | [grant-docs-and-apm-skill-updates.md](./grant-docs-and-apm-skill-updates.md) |
@@ -107,7 +108,6 @@ Directory: `docs/impl/ir`
 | IMPL-034zTuWWp7bpifS4FoAiG2 | implement-workflow-loader | completed | [implement-workflow-loader.md](./implement-workflow-loader.md) |
 | IMPL-034AH5aBMIDz91t2o5olxp | Integrate process runtime disposal | completed | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
 | IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | completed | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
-| IMPL-034KvX8YRwdpwNQVlWW230 | 権限モデル再設計の実装 issue 起票 (issue #151) | completed | [file-permission-model-redesign-implementation-issues.md](./file-permission-model-redesign-implementation-issues.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | IMPL-034A6i3cxbZXoHqDxhuyjB | Migrate native workflows and release guidance | completed | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
@@ -164,6 +164,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
 | IMPL-034APqdMTW2hYck2FYoKv1 | Verify workflow execution integration | completed | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | IMPL-034D9oWccQJEPfXsMNRpH5 | Volume-root workspace boundary predicate の trailing separator guard | completed | [volume-root-workspace-boundary-predicate-trailing-separator-guard.md](./volume-root-workspace-boundary-predicate-trailing-separator-guard.md) |
+| IMPL-034KyCatPzZz2THKRqjLIe | Windsurf-compat range normalization and registration surfacing issue 161 | completed | [windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md](./windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md) |
 | IMPL-034IqcrVJL4pxtau4WVtRV | Wire evaluate_dedup into hook target call sites | completed | [wire-evaluate-dedup-into-hook-target-call-sites.md](./wire-evaluate-dedup-into-hook-target-call-sites.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |
 | IMPL-034zUpcuJnZnznZ79UL3Q2 | Wire one-dispatch release publication | completed | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |

@@ -22,7 +22,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/windsurf-compat-range-normalization-and-registration-surfacing.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md"
   depends-on:
     - "docs/plans/windsurf-compat-range-normalization-and-registration-surfacing.md"
     - "docs/tasks/extend-windsurf-read-range-normalization.md"
