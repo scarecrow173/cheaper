@@ -37,6 +37,23 @@ const FIXTURE_ABORT: &str = r#"{
   ]
 }"#;
 
+/// `policy` 節で実効 execution を既定と区別できる値に pin した
+/// abort fixture — usage.jsonl record の `execution` echo が
+/// fixture/builtin 既定ではなく解決後の実効値を写すことを検証する
+/// (issue #141 T3 の e2e pin)。
+const FIXTURE_ABORT_POLICY_ECHO: &str = r#"{
+  "name": "cli-usage-echo-abort",
+  "abort": {"after_ms": 10, "message": "user abort"},
+  "policy": {"timeout_ms": 45000, "max_turns": 9, "max_tool_calls": 5},
+  "sessions": [
+    {"steps": [
+      {"usage_delta": {"input": 10, "output": 1}},
+      {"turn": {}},
+      "hang_until_abort"
+    ]}
+  ]
+}"#;
+
 // ---------------------------------------------------------------------------
 // fake-stream fixture 経路
 // ---------------------------------------------------------------------------
@@ -84,6 +101,45 @@ async fn run_fake_stream_signal_abort() {
     assert_eq!(env["error"]["exitCode"], json!(8));
     assert_eq!(env["error"]["details"]["reason"], json!("signal"));
     assert_eq!(code, 8);
+}
+
+/// `run::execute` → `restrict_policy` → `ctx.execution_echo` →
+/// `record_usage` の実配線経由で usage.jsonl の `kind:"run"` error
+/// record に `version`・`execution`(解決後の実効値)・`error.reason`
+/// が載ることを pin する(issue #141 — `ctx.execution_echo` の設定
+/// 順序は compile では検出されない暗黙の依存なので e2e で固定)。
+#[tokio::test(flavor = "current_thread")]
+async fn run_error_record_pins_version_execution_and_reason_e2e() {
+    let mut f = Fixture::new()
+        .with_fake_stream(FIXTURE_ABORT_POLICY_ECHO)
+        .with_input(r#"{"files":["a.txt"]}"#);
+    let (code, env, _err) = f.run(&["run", "fixture-worker"]).await;
+    assert_eq!(env["ok"], json!(false));
+    assert_eq!(env["error"]["code"], json!("ABORTED"));
+    assert_ne!(code, 0);
+
+    let log = f.usage_log().expect("usage.jsonl must be written");
+    let rec: serde_json::Value = serde_json::from_str(log.lines().next_back().unwrap()).unwrap();
+    assert_eq!(rec["kind"], json!("run"));
+    assert_eq!(rec["ok"], json!(false));
+    // `version` — この test binary 自身の product version。
+    assert_eq!(rec["version"], json!(env!("CARGO_PKG_VERSION")));
+    // `execution` — fixture `policy` 節で narrow された解決後の値
+    // (builtin 既定の 300000/null/64 ではないことで実効 echo を区別)。
+    assert_eq!(
+        rec["execution"],
+        json!({"timeoutMs":45000,"maxTurns":9,"maxToolCalls":5})
+    );
+    // `error` — code + abort 語彙の reason(signal 側 abort 由来)。
+    assert_eq!(rec["error"]["code"], json!("ABORTED"));
+    assert_eq!(rec["error"]["reason"], json!("signal"));
+    // `checkpoint` は best-effort — 存在を無条件には assert せず、
+    // あれば {path, observationsCount} のみの射影であることだけ見る。
+    if let Some(cp) = rec["error"].get("checkpoint") {
+        for k in cp.as_object().unwrap().keys() {
+            assert!(matches!(k.as_str(), "path" | "observationsCount"));
+        }
+    }
 }
 
 #[tokio::test(flavor = "current_thread")]
