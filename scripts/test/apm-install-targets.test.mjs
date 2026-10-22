@@ -103,7 +103,7 @@ for (const target of HOOK_TARGETS) {
       const nativeEvents = TARGET_NATIVE_EVENTS[target];
       const expectedScript = {
         windsurf: /hook (pre-read-code|pre-run-command) --target windsurf/,
-        cursor: /hook (before-read-file|before-shell-execution) --target cursor/,
+        cursor: /hook (before-read-file|before-shell-execution|pre-tool-use) --target cursor/,
         copilot: /hook pre-tool-use --target copilot/,
         claude: /hook pre-tool-use --target pretooluse/,
         codex: /hook pre-tool-use --target codex/,
