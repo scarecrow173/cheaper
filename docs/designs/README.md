@@ -28,6 +28,7 @@ Directory: `docs/designs`
 | DESIGN-034DkkcOv0Sos8KzcEP3oB | cheaper-usage SKILL.md hook path section rewrite | approved | [cheaper-usage-skill-hook-path-section-rewrite.md](./cheaper-usage-skill-hook-path-section-rewrite.md) |
 | DESIGN-034r05iHy2gdnoH3XDJcXx | cheaper CLI bundle layout inside .apm/hooks/cli | superseded | [cli-bundle-layout.md](./cli-bundle-layout.md) |
 | DESIGN-034r05iHrZUE6WvDuYjZB4 | CLI contract・result/error envelope・exit code | approved | [cli-contract-envelope-exit-codes.md](./cli-contract-envelope-exit-codes.md) |
+| DESIGN-034KsaxkFcfUHzvbR5hEB1 | Codex/Cursor/Copilot hook rewrite enablement | draft | [codex-cursor-copilot-hook-rewrite-enablement.md](./codex-cursor-copilot-hook-rewrite-enablement.md) |
 | DESIGN-034r05iHy2gdnoUHGunDtE | Copilot pre-read hook adapter | approved | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | DESIGN-034zJ3dYi8Rs6I6PIyc3Vu | Core resource manifest normalization design | approved | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | DESIGN-034r05iHy2gdnoLTC43RP5 | Cross-agent distribution verification | approved | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
@@ -72,7 +73,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHrZUE6Wzyjd1NS8 | リポジトリ構成とツールチェーン | approved | [repository-structure-toolchain.md](./repository-structure-toolchain.md) |
 | DESIGN-034A8FyPKpnV3KM2HypFGu | ResourceManager job lease と atomic operation admission 設計 | approved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | DESIGN-034IPoKswcH3LaUZdnb0XT | Restrict hook-config orphan sweep to cheaper-owned temp files | approved | [restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md](./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md) |
-| DESIGN-034KqI29dOTRXERRPTp5gV | usage.jsonl run error record の診断 field 拡充 (issue #141) | draft | [run-error-record-observability.md](./run-error-record-observability.md) |
+| DESIGN-034KqI29dOTRXERRPTp5gV | usage.jsonl run error record の診断 field 拡充 (issue #141) | approved | [run-error-record-observability.md](./run-error-record-observability.md) |
 | DESIGN-034zSR05NE5hXXhkTRLMgW | Run-scoped artifact store | approved | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |
 | DESIGN-034Bbq1qY8WFBdL26tUdBw | Rust + Rig runtime migration architecture | approved | [rust-rig-runtime-migration-architecture.md](./rust-rig-runtime-migration-architecture.md) |
 | DESIGN-034z1EfqYaEBfyNvqZyFSD | SEA executable build pipeline and embedded resource resolution | approved | [sea-executable-build-pipeline-and-embedded-resource-resolution.md](./sea-executable-build-pipeline-and-embedded-resource-resolution.md) |
