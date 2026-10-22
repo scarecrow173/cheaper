@@ -28,7 +28,7 @@ Directory: `docs/specs`
 | SPEC-034DjvgZNwy9e9aLXb2alN | cheaper-usage skill hook path examples match APM deploy naming | approved | [cheaper-usage-skill-hook-path-examples.md](./cheaper-usage-skill-hook-path-examples.md) |
 | SPEC-034r05iHK8bA7g59V25ltC | cheaper V1 Worker Runtime と CLI | implemented | [cheaper-v1-worker-runtime-cli.md](./cheaper-v1-worker-runtime-cli.md) |
 | SPEC-034r05iHK8bA7gaTnVhXWI | code-writer and doc-writer built-in Workers | implemented | [code-writer-and-doc-writer-built-in-workers.md](./code-writer-and-doc-writer-built-in-workers.md) |
-| SPEC-034KrX7RnDs0gLVcMPf7vy | Codex/Cursor/Copilot hook rewrite enablement and approval-bypass opt-in | proposed | [codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md](./codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md) |
+| SPEC-034KrX7RnDs0gLVcMPf7vy | Codex/Cursor/Copilot hook rewrite enablement and approval-bypass opt-in | approved | [codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md](./codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md) |
 | SPEC-034r05iHK8bA7gsvijtkou | Copilot per-target pre-read hook adapter | implemented | [copilot-pre-read-hook-adapter.md](./copilot-pre-read-hook-adapter.md) |
 | SPEC-034zIOnRXiXsUtWd4Z6edT | Core resource manifest normalization | approved | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | SPEC-034r05iHK8bA7gky93Dal0 | Cross-agent distribution verification | implemented | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
@@ -57,6 +57,7 @@ Directory: `docs/specs`
 | SPEC-034A8u2GqFTklBoQi0i1kG | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | SPEC-034zSPnVDi6fpHVc9ELgLW | Invocation-scoped OperationManager lifecycle | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | SPEC-034zWqZR8Dmu9TXTR2qcsg | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
+| SPEC-034KuqPkTK2b4mHsykH9A5 | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 | proposed | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
 | SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |
 | SPEC-034CKp34AcjKtAYjnfjXU4 | Plugin catalog persistence and user model additions | proposed | [plugin-catalog-persistence-and-user-models.md](./plugin-catalog-persistence-and-user-models.md) |
 | SPEC-034EMbEGBOWM4CAM6YSWm6 | policy-gated dynamic command を canonical tool として提供する | approved | [policy-gated-command-tool.md](./policy-gated-command-tool.md) |

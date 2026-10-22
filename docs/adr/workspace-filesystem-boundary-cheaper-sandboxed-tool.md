@@ -31,7 +31,8 @@ relations:
     - "agent-runtime-pi-sdk-earendil-works-pi-coding-agent.md"
     - "worker-definition-runtime-policy-runtime-invariants-capability.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "./enforce-declared-contracts-over-content-audit.md"
   derives-from:
     - "../discovery/cheaper-v1-pi-sdk.md"
   derived-by: []

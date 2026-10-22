@@ -32,7 +32,8 @@ relations:
     - "../adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "./pretooluse-route-resolver-and-workflow-delegation.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "./permission-model-responsibility-redesign.md"
   derives-from:
     - "../discovery/invocation-scoped-command-grants.md"
   derived-by: []

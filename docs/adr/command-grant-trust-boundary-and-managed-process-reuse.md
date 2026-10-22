@@ -31,7 +31,8 @@ relations:
     - "./invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "./pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "./enforce-declared-contracts-over-content-audit.md"
   derives-from: ["../discovery/policy-gated-command-tool.md"]
   derived-by: []
   verifies: []

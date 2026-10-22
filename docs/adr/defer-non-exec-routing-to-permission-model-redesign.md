@@ -29,6 +29,7 @@ relations:
     - "../specs/pretooluse-route-resolver-and-workflow-delegation.md"
     - "./per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md"
     - "./invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
+    - "./enforce-declared-contracts-over-content-audit.md"
   refines: []
   refined-by: []
   derives-from:

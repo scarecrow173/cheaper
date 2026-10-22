@@ -29,7 +29,8 @@ relations:
     - "workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
     - "one-shot-json-first-cli.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "./enforce-declared-contracts-over-content-audit.md"
   derives-from:
     - "../discovery/cheaper-v1-pi-sdk.md"
   derived-by: []
