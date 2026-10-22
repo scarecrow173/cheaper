@@ -1,10 +1,10 @@
 ---
 id: "DESIGN-034KsaxkFcfUHzvbR5hEB1"
 type: "design"
-status: "draft"
+status: "approved"
 title: "Codex/Cursor/Copilot hook rewrite enablement"
 created: "2026-10-23"
-updated: "2026-10-23"
+updated: "2026-10-22"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -22,6 +22,28 @@ relations:
         path: "packages/apm-hook-cursor/.apm/hooks/hooks.json"
       - type: "file"
         path: "crates/cheaper-cli/tests/integration/route_run.rs"
+      - type: "file"
+        path: "crates/cheaper-core/tests/golden/policy_load.rs"
+      - type: "file"
+        path: "crates/cheaper-core/tests/golden/policy_schema.rs"
+      - type: "file"
+        path: "crates/cheaper-core/tests/golden/policy_restrict.rs"
+      - type: "file"
+        path: "crates/cheaper-core/tests/golden/fixtures/policy/load.json"
+      - type: "file"
+        path: "crates/cheaper-core/tests/golden/fixtures/policy/restrict.json"
+      - type: "file"
+        path: "crates/cheaper-core/tests/golden/fixtures/policy/schema.json"
+      - type: "file"
+        path: "crates/cheaper-core/src/policy/restrict.rs"
+      - type: "file"
+        path: "crates/cheaper-core/src/policy/capability.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/src/dev/fixture.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/tests/run_dev_seam.rs"
+      - type: "file"
+        path: "crates/cheaper-runtime/tests/ollama_e2e.rs"
       - type: "file"
         path: "docs/guides/configuration.md"
     deleted: []
@@ -170,10 +192,27 @@ cursor/copilot は emit contract(field 名・`permission`/`permissionDecision`
   normalized 表現。yaml 表現と 1:1 の構造を保つ(表現ドリフト
   防止):
   `RoutePolicy{rewrite: RewritePolicy{approval_bypass: Vec<String>}}`、
-  serialize は `approvalBypass`(camelCase)。
+  serialize は `approvalBypass`(camelCase)。`approvalBypass` の
+  schema type は `["array","null"]` とする(`execution.maxTurns`
+  の `{"type": ["integer","null"]}` 先例 schema.rs:196 に倣う
+  nullable 宣言) — 明示 `null` ≡ 未指定 ≡ `[]` を schema 層で
+  受理し、R2 の default 等価を loader の暗黙解釈ではなく schema
+  で保証する。
   `RewritePolicy::approval_bypass_enabled(&self, target: &str) -> bool`
   が flag 判定の単一 owner — render 層は policy path を直接
   たどらない。
+- **`RuntimePolicy` 派生 diff** — `RuntimePolicy` は `Serialize`
+  を持つため `route` field は serialize 出力へ載り、
+  `expected.policy` を保持する golden fixture
+  (`crates/cheaper-core/tests/golden/fixtures/policy/{load,restrict,schema}.json`
+  と対応 harness `policy_{load,schema,restrict}.rs`)の再生成が
+  必要。また `RuntimePolicy{…}` literal 構築 site は `route`
+  field 追記が必要:
+  `cheaper-runtime/src/dev/fixture.rs:226,758`、
+  `cheaper-core/src/policy/restrict.rs:112`、
+  `cheaper-core/src/policy/capability.rs:86`、
+  `cheaper-runtime/tests/run_dev_seam.rs:189`、
+  `cheaper-runtime/tests/ollama_e2e.rs:219`。
 - **`crates/cheaper-cli/src/route/supply.rs`** — 変更不要。
   `RouteSupply.policy` が effective `RuntimePolicy` を保持済みで、
   flag は `s.policy.route.rewrite.approval_bypass_enabled(target)`
@@ -184,6 +223,11 @@ cursor/copilot は emit contract(field 名・`permission`/`permissionDecision`
   flag 引数と bypassing emit 分岐、`hook_specific_output_rewrite`
   の `permissionDecision:"allow"` 併記 option、`cursor_normalize`
   の nested `tool_input` 対応、`handle_hook` の flag 供給。
+  加えて codex arm の `cheaper.hook` 完了 debug event
+  (targets.rs:778-783 `hook response`)へ `bypass: bool` field
+  を追加し、approval-bypass emit の発生を log で観測可能にする
+  (bypassing emit は silent exit 0 で stderr 痕跡を持たないため
+  debug event が唯一の観測面)。
 - **`packages/apm-hook-cursor/.apm/hooks/hooks.json`** — `preToolUse`
   entry 追加(登録面の変更のみ、emit 契約は別途検証)。
 - **`crates/cheaper-cli/src/hook/mod.rs`** — 変更不要。
@@ -210,7 +254,7 @@ stdin payload → cursor_normalize / pretooluse_normalize / copilot_handle
       └─ eval_cache::evaluate_dedup → Verdict                 // Rewrite 生成条件不変
   → (Verdict, Option<RouteSupply>) を handle_hook へ返す
   → handle_hook: codex arm のみ
-      bypass = supply.approval_bypass_enabled("codex")
+      bypass = supply.policy.route.rewrite.approval_bypass_enabled("codex")
       → codex_render(verdict, bypass)
 ```
 
@@ -267,13 +311,18 @@ fn codex_render(verdict: Verdict, approval_bypass: bool) -> HookResponse {
   `matcher` field は payload/tool 名 domain が未検証のため付けず
   全 tool firing を受ける(normalize 失敗 → schema-valid allow の
   fail-open で安全)。旧 2 event は併存維持 — 同一 firing の二重
-  評価は dedup が吸収する。
+  評価は allow/deny verdict で dedup が吸収する(rewrite verdict
+  は非 persist で再 eval — §Risks の dedup nuance)。
 - `cursor_normalize` は top-level `file_path`/`command`
   (beforeXxx payload)に加え、nested `tool_input.file_path` /
   `tool_input.command` も field 駆動で読む — `tool_name` の
   domain(`"Shell"`/`"Read"` 等)は未検証のため name matching
   ではなく field の有無で判別し、両方の payload shape hypothesis
-  を吸収する。source_tool は `cursor:preToolUse`。
+  を吸収する。source_tool は `cursor:preToolUse`。なお field
+  駆動判別は over-match し得る — `tool_name` domain が確定する
+  まで、read 以外の tool が `file_path` input を持つ場合にも
+  FileRead として評価され(巨大 target で deny になり得る)、
+  matcher でも tool 種別を絞れない誤判定面が残る(§Risks)。
 - deny/allow の render は現行 `cursor_respond` の flat
   `{"permission":…}` schema を再利用(preToolUse 応答 schema も
   `permission` 系 — docs 報告、実機要確認)。
@@ -333,10 +382,30 @@ fn codex_render(verdict: Verdict, approval_bypass: bool) -> HookResponse {
   構造のため、user が `approvalBypass: [cursor]` を書いても現状
   no-op — doc で「flag は許可であり有効化は emit contract 確定後」
   と明記する。誤解 cost は低い(fallback は従来挙動)。
-- **cursor 二重 firing**: `preToolUse` と beforeXxx の併存で同一
-  tool call が 2 回 hook 評価される — dedup cache が absorb し、
-  verdict は同一。登録面の複雑さは旧 event 撤去判断(検証依存)
-  で解消予定。
+- **cursor `preToolUse` 応答 schema は未検証のまま出荷**:
+  `preToolUse` 登録自体は本 change に含まれ、応答の flat
+  `{"permission":…}` shape は実機未検証(docs 報告のみ) —
+  issue の文言規則上これは spec 保証ではない。Cursor が shape
+  を拒否・解釈不能にした場合、deny/allow の通常応答も含めて
+  tool call を block し得る(matcher 無しで全 tool firing を
+  受ける登録のため影響面は rewrite に留まらない)。rewrite
+  emit 自体は引き続き検証 gated — 本 risk は登録・応答面固有
+  のもので emit gate とは別軸。
+- **cursor 二重 firing(dedup nuance)**: `preToolUse` と
+  beforeXxx の併存で同一 tool call が 2 回 hook 評価される。
+  allow/deny verdict は dedup cache が absorb して verdict は
+  同一だが、`Verdict::Rewrite` は `is_shareable`
+  (eval_cache.rs:674)で persist/serve 対象外のため、rewrite が
+  成立する command(beforeShellExecution + preToolUse の両方が
+  発火する shell tool call)は 2 回目の firing でも再 eval
+  される — verdict は同一で cost は extra eval 1 回。登録面の
+  複雑さは旧 event 撤去判断(検証依存)で解消予定。
+- **user 層 flag の trust anchor**: user 層 policy.yaml を書ける
+  主体は既に `command.grants`(任意 executable の実行許可)を
+  制御している — `approvalBypass` はこの境界を超える privilege
+  を追加しない。`CHEAPER_CONFIG_DIR` redirect で user 層を差し
+  替える経路も同一 trust class であり、flag 固有の脅威面は
+  増えない。
 - **execpolicy は迂回しない**: hook `allow` は approval prompt の
   みを素通しし codex execpolicy 評価は残る — 「policy opt-in で
   全検査を迂回する」誤解を doc で防ぐ(実機で `blocked by
@@ -399,9 +468,20 @@ fn codex_render(verdict: Verdict, approval_bypass: bool) -> HookResponse {
       の `route` key で hook が rewrite を発行しない(fail-closed)。
 - [ ] `node scripts/check-apm-payload.mjs` — cursor hooks.json
       変更が slim payload check に整合。
+- [ ] golden fixture 再生成 + `RuntimePolicy{…}` literal 追記 —
+      `RuntimePolicy.route` が serialize 出力へ載るため
+      `expected.policy` を持つ
+      `tests/golden/fixtures/policy/{load,restrict,schema}.json`
+      (harness `policy_{load,schema,restrict}.rs`)を再生成し、
+      literal 構築 site(`fixture.rs:226,758`・`restrict.rs:112`・
+      `capability.rs:86`・`run_dev_seam.rs:189`・
+      `ollama_e2e.rs:219`)へ `route` field を追記する。「既存
+      test が無変更で pass」は実行時挙動に限り、fixture・構築
+      site は変更を伴う。
 - [ ] `cargo test --workspace --features
-      cheaper-runtime/dev-seam,cheaper-cli/dev-seam` で既存 contract
-      が無変更で pass(flag 不在時の挙動は完全に不変 — R17)。
+      cheaper-runtime/dev-seam,cheaper-cli/dev-seam` で fixture
+      再生成込みの全 contract が pass(flag 不在時の実行時挙動は
+      完全に不変 — R17)。
 - [ ] `docs/guides/configuration.md` に `route` section 記法・
       trust 境界(builtin/user のみ authoring 可)・各 target の
       検証状況(codex 実機確定済み、cursor/copilot 検証 gated)を

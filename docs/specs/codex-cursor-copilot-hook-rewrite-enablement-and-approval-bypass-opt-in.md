@@ -1,10 +1,10 @@
 ---
 id: "SPEC-034KrX7RnDs0gLVcMPf7vy"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "Codex/Cursor/Copilot hook rewrite enablement and approval-bypass opt-in"
 created: "2026-10-22"
-updated: "2026-10-23"
+updated: "2026-10-22"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -278,8 +278,12 @@ copilot :435)。
   現行構造を維持 — flag は shell rewrite の render のみに効く。
 - R17: hook fail-open 規約を維持 — normalize 失敗・catch-all・
   panic は target 適合の allow へ倒す(codex/copilot silent、
-  cursor schema-valid allow)。flag 不在時の挙動は一切変わらない
-  (既存 contract test が無変更で pass する)。
+  cursor schema-valid allow)。flag 不在時の実行時挙動は一切
+  変わらない — ただし `RuntimePolicy.route` の serialize 追加に
+  伴い `expected.policy` を持つ golden fixture
+  (`policy/{load,restrict,schema}.json`)の再生成と
+  `RuntimePolicy{…}` literal 構築 site への `route` field 追記は
+  伴う(「無変更で pass」は実行時挙動に限る)。
 
 ## Acceptance Criteria
 
@@ -315,8 +319,9 @@ copilot :435)。
 - [ ] route supply load 失敗時に bypass が無効化されることが test
   で固定される(R15 — fail-open/conservative default)。
 - [ ] flag 不在時の全既存挙動(各 target の normalize・deny・
-  allow・fallback render・dedup)が既存 test 無変更で維持される
-  (R14/R16/R17)。
+  allow・fallback render・dedup)が維持される(R14/R16/R17 —
+  golden fixture の `expected.policy` 再生成と `RuntimePolicy{…}`
+  literal への `route` field 追記を伴う)。
 - [ ] user-facing doc(policy.yaml `route` section の記法・
   trust 境界・各 target の検証状況と有効化条件)が更新される。
 

@@ -1,10 +1,10 @@
 ---
 id: "ADR-034KrYGRHZuvOIx1d0S0nE"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Per-target hook rewrite enablement with policy-gated approval bypass"
 created: "2026-10-22"
-updated: "2026-10-23"
+updated: "2026-10-22"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -169,8 +169,9 @@ schema: `policy.yaml` に `route` object を追加し、
 は bypassing emit を持ちうる target 名 (`codex`/`cursor`/`copilot`)
 — 未知名・非配列・非文字列 item は `InvalidRuntimePolicy` で
 fail-loud。default `[]`。`RuntimePolicy` に `route` section の
-normalized 表現を追加し、`RouteSupply` → `eval_input` 系 →
-`handle_hook` → render へ target list を渡す。
+normalized 表現を追加し、`RouteSupply` → `handle_hook` →
+render へ target list を渡す(`eval_input`/`RouteEvalInput` は
+不変 — 供給は `evaluate_with_routes` の戻り値経由、D5/R14)。
 
 per-target list を選ぶ理由: bypass の同意は target 単位で意味を
 持ち (codex は bypass が構造必須、cursor/copilot は emit 確定
@@ -273,9 +274,11 @@ routes 宣言そのものと区別)。
     `RuntimePolicy` に normalized 表現を追加。
   - `crates/cheaper-core/src/policy/load.rs` — merge 経路は既存
     layer 規約で追加変更不要 (route は Replace merge に乗る)。
-  - `crates/cheaper-cli/src/route/supply.rs` — `RouteSupply` へ
-    `approval_bypass` (target 名 list) を載せ、`eval_input` 経由
-    で render 供給面へ。
+  - `crates/cheaper-cli/src/route/supply.rs` — 変更不要。
+    `RouteSupply.policy` が effective `RuntimePolicy` を保持
+    済みで、flag は `evaluate_with_routes` の戻り値拡張
+    (`(Verdict, Option<RouteSupply>)`) 経由で render 層へ渡る
+    (`RouteEvalInput`/`eval_input` は不変 — R14、D5)。
   - `crates/cheaper-cli/src/hook/targets.rs` — `handle_hook` が
     flag を render へ渡し、`codex_render` に bypassing emit 分岐を
     追加。cursor/copilot の render は emit 確定後に追加 (現在は
@@ -307,8 +310,13 @@ routes 宣言そのものと区別)。
   状態では flag の有無にかかわらず fallback。
 * [ ] fail-open — route supply load 失敗で bypass 無効。
 * [ ] `cargo test --workspace --features
-  cheaper-runtime/dev-seam,cheaper-cli/dev-seam` で既存 contract
-  が無変更で pass。
+  cheaper-runtime/dev-seam,cheaper-cli/dev-seam` で全 contract が
+  pass — ただし `RuntimePolicy.route` の serialize 追加に伴い
+  `expected.policy` を持つ golden fixture
+  (`policy/{load,restrict,schema}.json`、
+  `crates/cheaper-core/tests/golden/fixtures/`) の再生成と
+  `RuntimePolicy{…}` literal 構築 site への `route` field 追記を
+  伴う(無変更で pass するのは実行時挙動のみ)。
 * [ ] `node scripts/check-apm-payload.mjs` — cursor hooks.json 変更
   が slim payload check に整合。
 * [ ] 実機検証 (codex emit が実機で適用されることは本 session で
