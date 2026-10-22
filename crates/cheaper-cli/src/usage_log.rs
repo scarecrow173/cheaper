@@ -74,6 +74,22 @@ fn is_number(v: &Value) -> bool {
     v.is_number()
 }
 
+/// 先頭 `n` 文字(char / Unicode scalar 基準)に切り詰める。
+/// `cheaper-runtime` の `repair.rs` の同名 helper と同一規約 —
+/// byte 境界の中間で multi-byte 文字を壊さない(runtime 側は private
+/// のため再利用不可。KISS の local helper)。
+fn truncate_chars(s: &str, n: usize) -> String {
+    if s.chars().count() <= n {
+        return s.to_string();
+    }
+    s.chars().take(n).collect()
+}
+
+/// `RunAbortReason::as_str` の abort 語彙(runtime `abort.rs`) —
+/// `error.details.reason` が record へ載る許容値集合。語彙外の値は
+/// `reason` key 自体を省略する(fail-soft)。
+const ABORT_REASONS: [&str; 4] = ["timeout", "signal", "maxTurns", "maxToolCalls"];
+
 /// `buildUsageRecord` — usage を持つ run envelope(success + meta.usage
 /// 付き error)と count-tokens の utility envelope のみ記録対象。
 /// `now` は ms epoch を返す。
@@ -121,10 +137,20 @@ pub fn build_usage_record(env: &Value, root: &str, now: &dyn Fn() -> f64) -> Opt
         base.insert("kind".to_string(), Value::from("run"));
         base.insert("worker".to_string(), worker);
         base.insert("ok".to_string(), Value::Bool(true));
+        // `version` — run を実行した binary 自身の product version
+        // (compile-time 定数、cheaper-cli で評価)。
+        base.insert(
+            "version".to_string(),
+            Value::from(env!("CARGO_PKG_VERSION")),
+        );
         for key in ["model", "usage", "turns", "toolCalls", "savings"] {
             if let Some(v) = get(&meta, key) {
                 base.insert(key.to_string(), v.clone());
             }
+        }
+        // `repairs` — non-null のみ(error 分岐の `!is_null` 規約と同一)。
+        if let Some(v) = get(&meta, "repairs").filter(|v| !v.is_null()) {
+            base.insert("repairs".to_string(), v.clone());
         }
         return Some(Value::Object(base));
     }
@@ -138,25 +164,117 @@ pub fn build_usage_record(env: &Value, root: &str, now: &dyn Fn() -> f64) -> Opt
     base.insert("kind".to_string(), Value::from("run"));
     base.insert("worker".to_string(), worker);
     base.insert("ok".to_string(), Value::Bool(false));
+    // `version` — success 分岐と同一規約(`ok` 直後・常時)。
+    base.insert(
+        "version".to_string(),
+        Value::from(env!("CARGO_PKG_VERSION")),
+    );
     for key in ["model", "usage"] {
         if let Some(v) = get(&meta, key) {
             base.insert(key.to_string(), v.clone());
         }
     }
-    for key in ["turns", "toolCalls", "savings"] {
+    for key in ["turns", "toolCalls", "savings", "repairs"] {
         if let Some(v) = get(&meta, key).filter(|v| !v.is_null()) {
             base.insert(key.to_string(), v.clone());
         }
     }
-    let code = get(env, "error")
+    base.insert("error".to_string(), error_record_object(env));
+    Some(Value::Object(base))
+}
+
+/// error record の `error` object — 固定 allowlist projection
+/// (DESIGN-034KqI29dOTRXERRPTp5gV / ADR Option A)。挿入順は
+/// `code` → `reason` → `message` → `schemaErrors` → `errorMessage` →
+/// `checkpoint` で固定(determinism)。値が無い・型が合わない field は
+/// key 自体を省略する fail-soft。allowlist 外(`rawOutput`/
+/// `rawOutputPath`/`exitCode`/`retryable`/`cause`/その他 details
+/// key)は一切写さない。
+fn error_record_object(env: &Value) -> Value {
+    let error = get(env, "error");
+    let details = error.and_then(|e| get(e, "details"));
+    let mut obj = Map::new();
+    let code = error
         .and_then(|e| get(e, "code"))
         .cloned()
         .unwrap_or(Value::Null);
-    base.insert(
-        "error".to_string(),
-        Value::Object(Map::from_iter([("code".to_string(), code)])),
-    );
-    Some(Value::Object(base))
+    obj.insert("code".to_string(), code);
+    // `reason` — abort 語彙に一致する `details.reason` string のみ。
+    if let Some(reason) = details
+        .and_then(|d| get(d, "reason"))
+        .and_then(Value::as_str)
+        .filter(|r| ABORT_REASONS.contains(r))
+    {
+        obj.insert("reason".to_string(), Value::from(reason));
+    }
+    // `message` — `error.message` string の先頭 300 文字。
+    if let Some(message) = error
+        .and_then(|e| get(e, "message"))
+        .and_then(Value::as_str)
+    {
+        obj.insert(
+            "message".to_string(),
+            Value::from(truncate_chars(message, 300)),
+        );
+    }
+    // `schemaErrors` — `details.errors` array の object entry 先頭 5 件を
+    // `{instancePath ≤200 文字, message ≤120 文字}` で写す。
+    // 欠落 key はその key を省略し、写せる entry が無ければ key 自体を
+    // 省略する。
+    if let Some(errors) = details
+        .and_then(|d| get(d, "errors"))
+        .and_then(Value::as_array)
+    {
+        let projected: Vec<Value> = errors
+            .iter()
+            .filter_map(Value::as_object)
+            .take(5)
+            .map(|entry| {
+                let mut e = Map::new();
+                if let Some(p) = entry.get("instancePath").and_then(Value::as_str) {
+                    e.insert(
+                        "instancePath".to_string(),
+                        Value::from(truncate_chars(p, 200)),
+                    );
+                }
+                if let Some(m) = entry.get("message").and_then(Value::as_str) {
+                    e.insert("message".to_string(), Value::from(truncate_chars(m, 120)));
+                }
+                Value::Object(e)
+            })
+            .collect();
+        if !projected.is_empty() {
+            obj.insert("schemaErrors".to_string(), Value::Array(projected));
+        }
+    }
+    // `errorMessage` — `details.errorMessage` string の先頭 300 文字。
+    if let Some(m) = details
+        .and_then(|d| get(d, "errorMessage"))
+        .and_then(Value::as_str)
+    {
+        obj.insert(
+            "errorMessage".to_string(),
+            Value::from(truncate_chars(m, 300)),
+        );
+    }
+    // `checkpoint` — `details.checkpoint` object の `{path,
+    // observationsCount}` のみ写す。両 key 欠落なら `checkpoint`
+    // 自体を省略(best-effort sidecar の参照のみ)。
+    if let Some(cp) = details
+        .and_then(|d| get(d, "checkpoint"))
+        .and_then(Value::as_object)
+    {
+        let mut c = Map::new();
+        for key in ["path", "observationsCount"] {
+            if let Some(v) = cp.get(key) {
+                c.insert(key.to_string(), v.clone());
+            }
+        }
+        if !c.is_empty() {
+            obj.insert("checkpoint".to_string(), Value::Object(c));
+        }
+    }
+    Value::Object(obj)
 }
 
 /// `kind:"route"` record の入力(R34)— `route run` の計測値を
