@@ -28,7 +28,8 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/ubuntu-ci-route-test-flake.md"
-  derived-by: []
+  derived-by:
+    - "../designs/deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md"
   verifies: []
   verified-by: []
   references: []

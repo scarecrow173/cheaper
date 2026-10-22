@@ -29,6 +29,7 @@ relations:
   derived-by:
     - "../specs/deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md"
     - "../adr/resolve-route-test-flake-via-test-side-determinism.md"
+    - "../designs/deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md"
   verifies: []
   verified-by: []
   references: []
