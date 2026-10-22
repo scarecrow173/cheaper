@@ -148,6 +148,67 @@ Devin tool 評価は bounded になった（issue #107）: `read` の `offset`/`
 実体化して計測する — 巨大 file の短い範囲読みは通る。shell は Devin の
 検証済み tool `exec`（`tool_input.command`）を read-candidate 抽出で評価する。
 
+windsurf `pre_read_code` の adapter が `tool_info` から受理する field
+集合（issue #161 — Devin の native→compat 翻訳で `file_path` のみが届き、
+range/search field が転送されない compat firing への対応面）:
+
+- **明示 aliases**: `offset`/`line_offset`（開始行）・
+  `limit`/`line_limit`/`max_lines`（行数）。1-based。
+- **pair 形式**: `start_line`+`end_line`（1-based・inclusive、
+  `limit = end - start + 1`）。
+- **array 形式**: `view_range: [start, end]`（1-based・inclusive、
+  `[start, -1]` は「start 行〜EOF」の sentinel）。
+- **`end_line` 単独**: 1〜`end_line` 行。**`start_line` 単独**:
+  `start_line` 行〜EOF。
+- **search 語彙**: `pattern`（非空 string）かつ `file_path` が
+  欠落/空/非 string/dir 解決の場合のみ `Search` 評価へ正規化する。
+  `file_path` が file を指す併記・`pattern` 空/非 string は従来どおり
+  FileRead として評価される。`path`/`max_results`/`context`/`glob`/
+  `output_mode`/`case_insensitive` も Search へ写像する（`path`
+  欠落時は非空 `file_path` が search root になる）。
+- `pre_run_command` は従来どおり `command_line` のみを読む — shell
+  経由の read candidate 評価は常に全文 token 評価（compat 固有の
+  症状ではない）。
+
+受理優先順位は「明示 offset/limit aliases → `start_line`+`end_line`
+pair → `view_range` array → `end_line` 単独 → fallback（lone
+`start_line` 等）」で deterministic に解決される。無効・矛盾・非整数値は
+範囲を狭めず、full-file 評価またはより広い window へ縮退する
+（fail-closed — 矛盾 pair/array は `{start_line,None}` のような狭い
+window には落ちない）。compat 経路で `file_path` のみが届く firing は
+範囲無しの全文 FileRead として評価され、Deny の場合は reason 末尾に
+`cheaper hook-config verify` への誘導行が付く（条件付き表現 — 実
+Windsurf 環境の範囲無し deny にも同じ行が載る）。
+
+**dual-registration trap**: Devin 利用時は `cheaper hook-config sync`
+（または lifecycle sync）で native Devin registration を行うのが前提だが、
+native 登録を足しても `.windsurf/hooks.json` の legacy 登録が残り、かつ
+Devin が windsurf import を有効にしている限り、compat firing と native
+firing が併発し続ける。verdict dedup の fingerprint は canonical request
+（`range` を含む）から作られるため、range を落とす compat firing は
+native firing と別 fingerprint になり dedup されない — 同一 file の
+firing が 2 系統で独立評価され、deny 側が verdict union で勝つ。つまり
+native firing が bounded eval で allow しても、`file_path` のみの compat
+firing の全文 deny が残れば deny が立つ。`legacy-conflict:` finding の
+「共存は安全」は同一 canonical request の dedup を前提とした文言であり、
+range を落とす compat firing には適用されない。
+
+remediation は Devin 利用環境での legacy `.windsurf/hooks.json` の
+cheaper 登録除去、または `read_config_from` での windsurf import 無効化
+（`{"read_config_from": {"windsurf": false}}`）。実 Windsurf も使う
+環境では登録を残したまま import のみ無効化すれば、Windsurf 側の
+登録・発火には影響しない。
+
+`cheaper hook-config verify` はこの状態を informational finding で
+報告する: native 登録が確認できず（`ownEntry` が `absent`/`missing`）
+windsurf conflict があり import が無効化されていない場合は
+`compat-degraded:`、native entry 併存でも windsurf conflict が残る場合は
+`windsurf-conflict:`（`read_config_from` の `windsurf` が明示 `false`
+の場合は両者とも emit しない）。severity は informational で exit
+code・`clean`・blocker 判定は従来どおり。`legacy-conflict:` の文言も
+dedup の限定条件（同一 canonical request/fingerprint 一致に限る）へ
+訂正されている。
+
 #### APM lifecycle 連携（opt-in）
 
 consumer の `apm.yml` に project lifecycle script を登録すると、

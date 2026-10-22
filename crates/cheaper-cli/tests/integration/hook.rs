@@ -100,10 +100,16 @@ impl Fixture {
 
 /// `pub(crate)`: sibling `hook_eval_dedup` から再利用。
 pub(crate) fn windsurf_read(file_path: &str) -> String {
-    format!(
-        "{{\"agent_action_name\":\"pre_read_code\",\"tool_info\":{{\"file_path\":{}}}}}",
+    windsurf_tool_info(&format!(
+        "{{\"file_path\":{}}}",
         serde_json::to_string(file_path).unwrap()
-    )
+    ))
+}
+
+/// `tool_info` を任意 JSON で指定する windsurf `pre_read_code`
+/// payload — range/search 語彙の fixture 用(issue #161)。
+fn windsurf_tool_info(tool_info_json: &str) -> String {
+    format!("{{\"agent_action_name\":\"pre_read_code\",\"tool_info\":{tool_info_json}}}")
 }
 
 /// windsurf `pre_run_command` payload — shell request。
@@ -290,14 +296,16 @@ async fn windsurf_deny_stderr_exit2_and_silent_allow() {
     assert!(deny.stdout.is_empty());
     assert!(deny.stderr.contains("tokens"), "{}", deny.stderr);
     assert!(deny.stderr.contains("bulk-read"), "{}", deny.stderr);
-    // JS-format reason: 3 行 + 末尾改行。
+    // JS-format reason: 3 行 + 末尾改行(issue #161 以降は末尾へ
+    // range-drop guidance 行が追加されるため `ends_with` ではなく
+    // `contains` で pin する)。
     assert!(
         deny.stderr.starts_with("cheaper: 'big.txt' has ")
             && deny.stderr.contains(" tokens (threshold 8192).\n")
             && deny.stderr.contains(
                 "Do not read it directly. Delegate this file through the cheaper-bulk-read skill.\n"
             )
-            && deny.stderr.ends_with("workspace-relative path: big.txt\n"),
+            && deny.stderr.contains("workspace-relative path: big.txt\n"),
         "{}",
         deny.stderr
     );
@@ -311,6 +319,248 @@ async fn windsurf_deny_stderr_exit2_and_silent_allow() {
     assert_eq!(allow.code, 0);
     assert!(allow.stdout.is_empty());
     assert!(allow.stderr.is_empty());
+}
+
+/// issue #161 — windsurf `pre_read_code` の range 語彙を共有
+/// `tool_use_normalize` と parity で受理する。bounded window は
+/// threshold 内なら allow、無効・矛盾値は全文評価へ縮退して deny
+/// (過少評価しない fail-closed)。
+#[tokio::test(flavor = "current_thread")]
+async fn windsurf_ranged_read_vocabularies_bounded_eval() {
+    let fx = Fixture::new();
+    fx.write_big_lines("big_lines.txt");
+    // bounded allow 系 — 20 行 window は threshold 内。
+    for tool_info in [
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":1,\"end_line\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"view_range\":[1,20]}",
+        "{\"file_path\":\"big_lines.txt\",\"offset\":1,\"limit\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"line_offset\":1,\"line_limit\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"offset\":1,\"max_lines\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":1,\"limit\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"end_line\":20}",
+        // `[s,-1]` "to EOF" sentinel → `{s,None}`(末尾 6 行 → allow)。
+        "{\"file_path\":\"big_lines.txt\",\"view_range\":[1995,-1]}",
+        // lone `start_line` → `{s,None}`(s 行〜EOF、末尾 6 行 → allow)。
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":1995}",
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-read-code", "--target", "windsurf"],
+            &windsurf_tool_info(tool_info),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 0, "tool_info={tool_info} stderr={:?}", r.stderr);
+        assert!(r.stdout.is_empty(), "tool_info={tool_info}");
+    }
+    // 無効・矛盾値は全文評価へ縮退 → deny(全文 token 計測文言で
+    // pin し、`{s,None}` 等の狭い window 評価でないことを示す)。
+    for tool_info in [
+        // 矛盾 pair — Step C の `{1900,None}`(末尾 100 行 ≈ allow)
+        // へ落ちないことの識別 pin: 全文評価 deny が成立する。
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":1900,\"end_line\":20}",
+        "{\"file_path\":\"big_lines.txt\",\"view_range\":[1900,2]}",
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":0}",
+        "{\"file_path\":\"big_lines.txt\",\"start_line\":\"x\"}",
+        "{\"file_path\":\"big_lines.txt\",\"end_line\":\"x\"}",
+        "{\"file_path\":\"big_lines.txt\",\"view_range\":[1,\"x\"]}",
+        "{\"file_path\":\"big_lines.txt\",\"view_range\":[1,-5]}",
+        // range 無しは従来どおり全文 deny。
+        "{\"file_path\":\"big_lines.txt\"}",
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-read-code", "--target", "windsurf"],
+            &windsurf_tool_info(tool_info),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 2, "tool_info={tool_info}");
+        assert!(
+            r.stderr.contains("'big_lines.txt' has") && !r.stderr.contains("read window"),
+            "tool_info={tool_info} stderr={:?}",
+            r.stderr
+        );
+    }
+}
+
+/// issue #161 — windsurf `pre_read_code` の `pattern` 併記 payload は
+/// 2 条件 gate(`pattern` 非空 string かつ `file_path` が欠落/空/
+/// 非 string/dir 解決)を満たす場合のみ `Search` 評価へ倒す。
+/// `file_path` が file を指す併記形・`pattern` 空/非 string は
+/// FileRead(全文 eval)を維持し、過少評価・fail-open しない。
+#[tokio::test(flavor = "current_thread")]
+async fn windsurf_pattern_gate_routes_search_preserves_fileread() {
+    let fx = Fixture::new();
+    fx.write_big_lines("big_lines.txt");
+    std::fs::create_dir(fx.ws.join("sub")).unwrap();
+    fx.write("sub/small.txt", "lorem hit\n".as_bytes());
+    // `file_path` dir 解決 — `lorem` は big_lines.txt 全 2000 行へ
+    // 一致するため materialization は threshold 超過で Search 由来
+    // deny("search" 文言 — FileRead の `'<file>' has N tokens` と
+    // 区別)。`max_results` cap は file granularity(単一 file の
+    // 一致は全件実体化する over-collect 規約)なので既定値でも deny。
+    for tool_info in [
+        "{\"file_path\":\".\",\"pattern\":\"lorem\"}",
+        "{\"pattern\":\"lorem\",\"max_results\":2000}",
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-read-code", "--target", "windsurf"],
+            &windsurf_tool_info(tool_info),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 2, "tool_info={tool_info}");
+        assert!(
+            r.stderr.contains("search"),
+            "tool_info={tool_info} stderr={:?}",
+            r.stderr
+        );
+    }
+    // 少数一致の materialization・dir 解決の小さな match →
+    // Search allow(FileRead 全文 deny では到達しない経路)。
+    for tool_info in [
+        "{\"file_path\":\".\",\"pattern\":\"line 1999\"}",
+        "{\"pattern\":\"line 1999\"}",
+        "{\"file_path\":\"sub\",\"pattern\":\"lorem\"}",
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-read-code", "--target", "windsurf"],
+            &windsurf_tool_info(tool_info),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 0, "tool_info={tool_info} stderr={:?}", r.stderr);
+    }
+    // `file_path` が file 解決の併記形・`pattern` 空/非 string →
+    // FileRead 全文 eval 維持(deny は `'<file>' has N tokens` 文言)。
+    for tool_info in [
+        "{\"file_path\":\"big_lines.txt\",\"pattern\":\"lorem\"}",
+        "{\"file_path\":\"big_lines.txt\",\"pattern\":\"\"}",
+        "{\"file_path\":\"big_lines.txt\",\"pattern\":123}",
+    ] {
+        let r = run_hook(
+            &fx,
+            &["pre-read-code", "--target", "windsurf"],
+            &windsurf_tool_info(tool_info),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 2, "tool_info={tool_info}");
+        assert!(
+            r.stderr.contains("'big_lines.txt' has") && !r.stderr.contains("search result"),
+            "tool_info={tool_info} stderr={:?}",
+            r.stderr
+        );
+    }
+}
+
+/// issue #161 — windsurf `FileRead{range:None}` の Deny にのみ、
+/// compat firing の範囲不達の可能性と `hook-config verify` 誘導を
+/// reason 末尾へ付記する。ranged deny・Search/Shell deny・Allow・
+/// 他 target の reason は不変。guidance は render 直前の firing 毎
+/// 付記で dedup verdict record には mutate 前の生 verdict が persist
+/// される(cache serve の 2 回目応答が二重付記にならない)。
+#[tokio::test(flavor = "current_thread")]
+async fn windsurf_range_deny_guidance_conditions_and_dedup() {
+    const GUIDANCE: &str = "hook-config verify";
+    let fx = Fixture::new();
+    fx.write_big("big.txt");
+    fx.write_big_lines("big_lines.txt");
+
+    // FileRead{range:None} deny → guidance 付記。2 回目(dedup
+    // cache serve)も byte 同一 — record に mutate 前 verdict が
+    // persist されていなければ guidance が二重付記されて不一致に
+    // なるため、store 非混入を兼ねて pin する。
+    let r1 = run_hook(
+        &fx,
+        &["pre-read-code", "--target", "windsurf"],
+        &windsurf_read("big.txt"),
+        &[],
+    )
+    .await;
+    let r2 = run_hook(
+        &fx,
+        &["pre-read-code", "--target", "windsurf"],
+        &windsurf_read("big.txt"),
+        &[],
+    )
+    .await;
+    assert_eq!(r1.code, 2);
+    assert!(r1.stderr.contains(GUIDANCE), "{:?}", r1.stderr);
+    assert_eq!(r1.stderr.matches(GUIDANCE).count(), 1, "{:?}", r1.stderr);
+    assert_eq!(
+        (r1.code, &r1.stdout, &r1.stderr),
+        (r2.code, &r2.stdout, &r2.stderr),
+        "dedup cache serve が mutate 前 verdict を返す証明"
+    );
+
+    // ranged deny(window 超過)・Search deny・Shell deny・Allow →
+    // guidance 不付記。
+    for (args, stdin, expect_exit) in [
+        // ranged window 超過(`{1,2000}` ≈ threshold 超)。
+        (
+            &["pre-read-code", "--target", "windsurf"][..],
+            windsurf_tool_info(
+                "{\"file_path\":\"big_lines.txt\",\"start_line\":1,\"end_line\":2000}",
+            ),
+            2,
+        ),
+        // Search 評価の deny。
+        (
+            &["pre-read-code", "--target", "windsurf"][..],
+            windsurf_tool_info("{\"file_path\":\".\",\"pattern\":\"lorem\"}"),
+            2,
+        ),
+        // Shell 評価の deny。
+        (
+            &["pre-run-command", "--target", "windsurf"][..],
+            windsurf_shell("cat big.txt"),
+            2,
+        ),
+        // Allow — silent。
+        (
+            &["pre-read-code", "--target", "windsurf"],
+            windsurf_tool_info(
+                "{\"file_path\":\"big_lines.txt\",\"start_line\":1,\"end_line\":20}",
+            ),
+            0,
+        ),
+    ] {
+        let r = run_hook(&fx, args, &stdin, &[]).await;
+        assert_eq!(r.code, expect_exit, "stdin={stdin}");
+        assert!(
+            !r.stderr.contains(GUIDANCE) && !r.stdout.contains(GUIDANCE),
+            "stdin={stdin} stderr={:?}",
+            r.stderr
+        );
+    }
+
+    // 他 target(devin/pretooluse)の `range:None` FileRead deny に
+    // guidance は載らない — canonical request 共有の dedup が効く
+    // ため先に windsurf firing 済みの `big.txt` ではなく別名を使う
+    // (cache serve でも reason 不変ではあるが独立 firing で pin)。
+    fx.write_big("other.txt");
+    for (args, stdin) in [
+        (
+            &["pre-tool-use", "--target", "devin"][..],
+            devin_payload("read", "{\"file_path\":\"other.txt\"}"),
+        ),
+        (
+            &["pre-tool-use", "--target", "pretooluse"][..],
+            tool_use_payload("Read", "{\"file_path\":\"other.txt\"}"),
+        ),
+    ] {
+        let r = run_hook(&fx, args, &stdin, &[]).await;
+        assert_eq!(r.code, 0, "stdin={stdin}");
+        assert!(
+            !r.stdout.contains(GUIDANCE) && !r.stderr.contains(GUIDANCE),
+            "stdin={stdin} stdout={:?}",
+            r.stdout
+        );
+    }
 }
 
 #[tokio::test(flavor = "current_thread")]

@@ -669,20 +669,83 @@ fn run_verify(
     }
     result.insert("ownEntry".to_string(), Value::from(own_state));
 
-    // legacy conflict scan — informational(dedup により共存は安全)。
+    // legacy conflict scan — informational。dedup の安全根拠は同一
+    // canonical request(fingerprint 一致)の firing に限定される —
+    // fingerprint が `range` を含むため、range field を落とす compat
+    // 経由の firing は dedup 対象外(issue #161 の文言訂正)。
     let conflicts = legacy_conflicts(&root_dir, &config_path);
     for f in &conflicts {
         findings.push(Value::from(format!(
             "legacy-conflict: {f} contains a cheaper hook registration \
-             (safe to keep — duplicate firings are deduplicated at eval \
-             time for identical requests; remove that registration to \
-             converge on a single registration)"
+             (safe to keep — dedup only engages for identical canonical \
+             requests (matching fingerprints); firings through a \
+             compatibility path that drops range fields are not \
+             deduplicated; remove that registration to converge on a \
+             single registration)"
         )));
     }
     result.insert(
         "legacyConflicts".to_string(),
         Value::Array(conflicts.iter().map(|f| Value::from(f.clone())).collect()),
     );
+
+    // compat 縮退状態の informational finding(issue #161) —
+    // `.windsurf/hooks.json` suffix(separator `/` normalize 後の
+    // 大小文字区別比較 — `KNOWN_LEGACY_FILES` 内で windsurf 経路は
+    // これのみ)の legacy conflict があり、loaded config の
+    // `read_config_from.windsurf` が明示 JSON `false` でない
+    // (key 欠落・非 object・`false` 以外の値・config 不在は全て
+    // 「無効化なし」の保守判定)場合に emit する。severity は
+    // informational — blocker/clean/exit code は不変。
+    let windsurf_conflict = conflicts
+        .iter()
+        .any(|f| f.replace('\\', "/").ends_with(".windsurf/hooks.json"));
+    let windsurf_import_disabled = loaded.as_ref().is_some_and(|l| {
+        l.root
+            .get("read_config_from")
+            .and_then(|r| r.get("windsurf"))
+            .and_then(Value::as_bool)
+            == Some(false)
+    });
+    if windsurf_conflict && !windsurf_import_disabled {
+        if own_state == "absent" || own_state == "missing" {
+            // native 登録が確認できない + compat firing が発火し得る
+            // 状態 — `absent` は読取不能(`config-unreadable:` 併存)も
+            // 含むため「存在しない」ではなく「確認できない」と表現し、
+            // 実 Windsurf install では削除しない旨の hedge を付す。
+            findings.push(Value::from(
+                "compat-degraded: a legacy `.windsurf/hooks.json` cheaper \
+                 registration can still fire into Devin while no native \
+                 Devin registration could be confirmed — bounded evaluation \
+                 does not engage through the compat path because \
+                 range/search fields may be dropped before reaching the \
+                 hook (if this workspace uses Devin CLI: run \
+                 `cheaper hook-config sync` to register the native entry, \
+                 then remove the legacy `.windsurf/hooks.json` \
+                 registration or disable the windsurf import via \
+                 `read_config_from`; if the file serves a real Windsurf \
+                 install it is the legitimate native registration for it \
+                 — do not remove it on that account)",
+            ));
+        } else {
+            // native entry 併存でも legacy が残る限り dual-registration
+            // trap は存続する — fingerprint が `range` を含むため
+            // range-diverged firing は dedup されず verdict union で
+            // compat deny が勝つ(remediation loop の false-green を
+            // 塞ぐ surfacing)。
+            findings.push(Value::from(
+                "windsurf-conflict: the legacy `.windsurf/hooks.json` \
+                 cheaper registration still fires alongside the native \
+                 entry — compat firings are not deduplicated against \
+                 native firings because the request fingerprint includes \
+                 `range`, so a range-dropping compat deny still wins \
+                 while the windsurf import is active (remove the legacy \
+                 `.windsurf/hooks.json` registration or disable the \
+                 windsurf import via `read_config_from`; keep it only if \
+                 it serves a real Windsurf install)",
+            ));
+        }
+    }
 
     // shadow/coexistence — `.devin/hooks.v1.json` 等が config.json と
     // 同居すると precedence 規則で shadow される可能性を報告する。

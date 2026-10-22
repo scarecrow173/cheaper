@@ -58,7 +58,7 @@ Directory: `docs/designs`
 | DESIGN-034A8ubRdZsG57LdsNNTEw | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | DESIGN-034zSP4AJ6aRzdtIxTHW1Y | OperationManager の state と bounded drain | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | DESIGN-034zWr0ZeceJCJaL3ZRK3H | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
-| DESIGN-034KuDkWOmNXiBddEQ4XWK | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 | draft | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
+| DESIGN-034KuDkWOmNXiBddEQ4XWK | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 | approved | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
 | DESIGN-034r05iHrZUE6WvaQsRRsM | Pi 実行エンジン: session・制限・abort・retry・出力抽出・repair・usage | approved | [pi-execution-engine.md](./pi-execution-engine.md) |
 | DESIGN-034zAKcWuB8SuFkOePsubg | Pi sibling tool-call parallelism inside Workers | approved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DESIGN-034r05iHy2gdnoZAxhwPFa | Pi state paths under userConfigDir/pi | approved | [pi-state-paths-under-userconfigdir-pi.md](./pi-state-paths-under-userconfigdir-pi.md) |
@@ -89,6 +89,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHy2gdnoY3GBf8iz | User-facing documentation information architecture | approved | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | DESIGN-034zQkHD65kAeG9xVGSoFX | Version-pinned launcher acquisition | superseded | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | DESIGN-034D9Xs2f06fbVcxdT08le | Windows credential snapshot sync for Devin provider | approved | [windows-credential-snapshot-sync-for-devin-provider.md](./windows-credential-snapshot-sync-for-devin-provider.md) |
+| DESIGN-034KwO2y86CrXOmaoae1jS | Windsurf-compat range normalization and registration surfacing (issue #161) | draft | [windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md](./windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md) |
 | DESIGN-034r05iHrZUE6WrdtQIOmE | コアドメインモデル: Worker Definition・Resolver・Runtime Policy・tool vocabulary・error model | approved | [worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md](./worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md) |
 | DESIGN-LAY8HNBqNyjH7L5DFvTPc2 | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume の実装設計 | approved | [worker-run-nullable-maxturns-and-stall-timeout.md](./worker-run-nullable-maxturns-and-stall-timeout.md) |
 | DESIGN-EmeEdXi9TWZZW2PzZsp29y | worker schema magnitude 撤廃と INVALID_OUTPUT raw output 永続化の実装設計 | approved | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |

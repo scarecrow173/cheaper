@@ -57,7 +57,7 @@ Directory: `docs/specs`
 | SPEC-034A8u2GqFTklBoQi0i1kG | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | SPEC-034zSPnVDi6fpHVc9ELgLW | Invocation-scoped OperationManager lifecycle | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | SPEC-034zWqZR8Dmu9TXTR2qcsg | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
-| SPEC-034KuqPkTK2b4mHsykH9A5 | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 | proposed | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
+| SPEC-034KuqPkTK2b4mHsykH9A5 | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 | approved | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
 | SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |
 | SPEC-034CKp34AcjKtAYjnfjXU4 | Plugin catalog persistence and user model additions | proposed | [plugin-catalog-persistence-and-user-models.md](./plugin-catalog-persistence-and-user-models.md) |
 | SPEC-034EMbEGBOWM4CAM6YSWm6 | policy-gated dynamic command を canonical tool として提供する | approved | [policy-gated-command-tool.md](./policy-gated-command-tool.md) |
@@ -84,6 +84,7 @@ Directory: `docs/specs`
 | SPEC-034zA513QKarQrr5SQtgp7 | Verify and leverage Pi sibling tool-call parallelism inside Workers | approved | [verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md](./verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md) |
 | SPEC-034zIO2lm7gJPz6Gy4JIQP | Version-pinned launcher acquisition | superseded | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | SPEC-034D85I40UBKtNgeam655z | Volume-root workspace boundary acceptance | proposed | [volume-root-workspace-boundary-acceptance.md](./volume-root-workspace-boundary-acceptance.md) |
+| SPEC-034KwuiFzl4WvVQKdjfSnM | Windsurf-compat bounded evaluation coverage and Devin registration surfacing (issue #161) | proposed | [windsurf-compat-range-normalization-and-devin-registration-surfacing.md](./windsurf-compat-range-normalization-and-devin-registration-surfacing.md) |
 | SPEC-onzPU8E4tKg3C6Iv4s9VK0 | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume | proposed | [worker-run-nullable-maxturns-and-stall-timeout.md](./worker-run-nullable-maxturns-and-stall-timeout.md) |
 | SPEC-s8dMxk0QAbLuWaOrsuikSp | worker schema の magnitude 制約撤廃と INVALID_OUTPUT raw output の回復経路 | proposed | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |
 | SPEC-034zIKj7DJcwZFr3FvjLrP | Workflow JSON v1 を検証済み DAG へ compile する | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |

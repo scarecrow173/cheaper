@@ -24,6 +24,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpsYVkvsPX | Add e2e tests for non-execution CLI paths | done | [add-e2e-tests-for-non-execution-cli-paths.md](./add-e2e-tests-for-non-execution-cli-paths.md) |
 | TASK-034EekRVLtDbzc0slwVFX0 | T1: cheaper-core ErrorCode::from_str reverse lookup | done | [add-errorcode-from-str-reverse-lookup-in-cheaper-core.md](./add-errorcode-from-str-reverse-lookup-in-cheaper-core.md) |
 | TASK-034r05iHQeQpDpu1iPmr1q | Add fake stream hook and e2e execution tests | done | [add-fake-stream-hook-and-e2e-execution-tests.md](./add-fake-stream-hook-and-e2e-execution-tests.md) |
+| TASK-034KxDr0eOqS1QjXxMazEk | Add hook-config compat-degraded and windsurf-conflict verify findings | todo | [add-hook-config-compat-degraded-findings.md](./add-hook-config-compat-degraded-findings.md) |
 | TASK-034z52KS4mSEHAIf28JHuj | add hook contract tests and port existing adapter e2e | done | [add-hook-contract-tests-and-port-existing-adapter-e2e.md](./add-hook-contract-tests-and-port-existing-adapter-e2e.md) |
 | TASK-034Jg6xqeFUtHyZ5MxHgzu | Add hook entry route loading and eval supply | done | [add-hook-entry-route-loading.md](./add-hook-entry-route-loading.md) |
 | TASK-034IpPzy0tH0R50dS4XIN0 | Add hook_eval_dedup integration tests | done | [add-hook-eval-dedup-integration-tests.md](./add-hook-eval-dedup-integration-tests.md) |
@@ -53,6 +54,8 @@ Directory: `docs/tasks`
 | TASK-034z1POhgJ49oVv2arDj6X | Add SEA entrypoint sea-main.ts | done | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | TASK-034Kr8oUgcvTuprTQJwuyp | Add usage.jsonl diagnostic field contract tests and end-to-end echo pin | done | [add-usage-log-diagnostic-field-tests.md](./add-usage-log-diagnostic-field-tests.md) |
 | TASK-034r05iHQeQpDqCTYluKr1 | Add version check and set scripts | done | [add-version-check-and-set-scripts.md](./add-version-check-and-set-scripts.md) |
+| TASK-034KxDgCFTiXTthZajUTX1 | Add gated pattern-to-Search normalization to windsurf pre_read_code | todo | [add-windsurf-gated-pattern-search-normalization.md](./add-windsurf-gated-pattern-search-normalization.md) |
+| TASK-034KxDm7X0zR41q82TJxVY | Add windsurf range-drop deny guidance and fix deny-reason assertions | todo | [add-windsurf-range-deny-guidance.md](./add-windsurf-range-deny-guidance.md) |
 | TASK-TttCTIVey8FHby8zR3UDqb | Add worker workload profile and auto tier classifier | done | [add-worker-workload-profile-and-auto-tier-classifier.md](./add-worker-workload-profile-and-auto-tier-classifier.md) |
 | TASK-034Jg6koI5aIWEPUXfhobu | Add workflow job when condition evaluation | done | [add-workflow-when.md](./add-workflow-when.md) |
 | TASK-034AR8FLSgTI6VLWpQZrQS | Benchmark evidence 集計と workflow usage guidance | done | [aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md](./aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md) |
@@ -120,22 +123,24 @@ Directory: `docs/tasks`
 | TASK-034KsL2829yYfRRGKl92t1 | Document route.rewrite.approvalBypass in configuration guide | done | [document-approval-bypass-policy-flag.md](./document-approval-bypass-policy-flag.md) |
 | TASK-034DlFJnTT9v0YcqV9Uine | Document devin usage semantics in providers and usage guides | done | [document-devin-usage-semantics-in-providers-and-usage-guides.md](./document-devin-usage-semantics-in-providers-and-usage-guides.md) |
 | TASK-034zQTXMNDaUeqIR3aCRNf | Document launcher distribution and verify acquisition | done | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
+| TASK-034KxDvREdpF6P10oziJsy | Document windsurf tool_info contract and dual-registration trap | todo | [document-windsurf-tool-info-contract-and-registration-requirements.md](./document-windsurf-tool-info-contract-and-registration-requirements.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
 | TASK-034Dak56U8haKyVTWPnBKv | Extend PluginAuth::logout with AuthInteraction | done | [extend-pluginauth-logout-with-authinteraction.md](./extend-pluginauth-logout-with-authinteraction.md) |
 | TASK-034rzRugER0y7cQ2tlWjPp | Extend usage.jsonl run record with savings section | done | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | TASK-034Kr8hGPsSchbau1iTWjt | Extend build_usage_record error records with envelope-derived diagnostic fields | done | [extend-usage-log-error-record-diagnostic-fields.md](./extend-usage-log-error-record-diagnostic-fields.md) |
+| TASK-034KxDc5lyn6aDJbljcI3N | Extend windsurf pre_read_code ReadRange normalization parity | todo | [extend-windsurf-read-range-normalization.md](./extend-windsurf-read-range-normalization.md) |
 | TASK-034zQsmDSYTqJOZ8CjKrGN | Canonical handlers と Pi adapter を抽出する | done | [extract-canonical-tools.md](./extract-canonical-tools.md) |
 | TASK-034r05iHQeQpDpFFl8q6NC | Extract promptWithAbortGrace helper and apply to main run | done | [extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
 | TASK-034z1PGTvhoaHhdTUgPahz | Extract shared esbuild bundle helper from bundle-cli.mjs | done | [extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md](./extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md) |
-| TASK-034KvxGAbTTWEsA1RbX7cn | 起票 issue 7: 文書正直性 sweep + breaking-change migration guide | todo | [file-issue-docs-honesty-and-migration-guide.md](./file-issue-docs-honesty-and-migration-guide.md) |
-| TASK-034KvxjG6fUOLjtn1cOFTF | 起票 issue 1: exec-contract cleanup — 内容審査 7 項目の mandatory 層除去 | todo | [file-issue-exec-contract-content-audit-removal.md](./file-issue-exec-contract-content-audit-removal.md) |
-| TASK-034KvxvHeO6yOVxflkxTPO | 起票 issue 2: opt-in security.execDenyPatterns profile (A9 降格) | todo | [file-issue-opt-in-exec-deny-patterns.md](./file-issue-opt-in-exec-deny-patterns.md) |
-| TASK-034KvxwOy3rcRuUnlZu4Ej | 起票 issue 4: route/hook 審査依存整理 + grant-set 投影 + record split | todo | [file-issue-route-grant-set-and-record-split.md](./file-issue-route-grant-set-and-record-split.md) |
-| TASK-034KvxFptiaMDpvi8xe9dM | 起票 issue 5: substitute-exec route mode | todo | [file-issue-substitute-exec-route-mode.md](./file-issue-substitute-exec-route-mode.md) |
-| TASK-034KvxFX6oCd4TlEowM1kd | 起票 issue 6: trusted route flag 発行主体の再設計 (D4) | todo | [file-issue-trusted-flag-issuer-redesign.md](./file-issue-trusted-flag-issuer-redesign.md) |
-| TASK-034Kvxwfa7svHN4AuX95dA | 起票 issue 3: command.grants / process.tasks の単一 exec grant モデル統合 | todo | [file-issue-unified-exec-grant-model.md](./file-issue-unified-exec-grant-model.md) |
+| TASK-034KvxGAbTTWEsA1RbX7cn | 起票 issue 7: 文書正直性 sweep + breaking-change migration guide | done | [file-issue-docs-honesty-and-migration-guide.md](./file-issue-docs-honesty-and-migration-guide.md) |
+| TASK-034KvxjG6fUOLjtn1cOFTF | 起票 issue 1: exec-contract cleanup — 内容審査 7 項目の mandatory 層除去 | done | [file-issue-exec-contract-content-audit-removal.md](./file-issue-exec-contract-content-audit-removal.md) |
+| TASK-034KvxvHeO6yOVxflkxTPO | 起票 issue 2: opt-in security.execDenyPatterns profile (A9 降格) | done | [file-issue-opt-in-exec-deny-patterns.md](./file-issue-opt-in-exec-deny-patterns.md) |
+| TASK-034KvxwOy3rcRuUnlZu4Ej | 起票 issue 4: route/hook 審査依存整理 + grant-set 投影 + record split | done | [file-issue-route-grant-set-and-record-split.md](./file-issue-route-grant-set-and-record-split.md) |
+| TASK-034KvxFptiaMDpvi8xe9dM | 起票 issue 5: substitute-exec route mode | done | [file-issue-substitute-exec-route-mode.md](./file-issue-substitute-exec-route-mode.md) |
+| TASK-034KvxFX6oCd4TlEowM1kd | 起票 issue 6: trusted route flag 発行主体の再設計 (D4) | done | [file-issue-trusted-flag-issuer-redesign.md](./file-issue-trusted-flag-issuer-redesign.md) |
+| TASK-034Kvxwfa7svHN4AuX95dA | 起票 issue 3: command.grants / process.tasks の単一 exec grant モデル統合 | done | [file-issue-unified-exec-grant-model.md](./file-issue-unified-exec-grant-model.md) |
 | TASK-034r05iHQeQpDqhWcXGfA0 | Finalize contract matrix and consumer pointer | done | [finalize-contract-matrix-and-consumer-pointer.md](./finalize-contract-matrix-and-consumer-pointer.md) |
 | TASK-034D9bpfd4n0vQJjgXtBzj | Fix volume-root workspace boundary predicate | done | [fix-volume-root-workspace-boundary-predicate.md](./fix-volume-root-workspace-boundary-predicate.md) |
 | TASK-034EUvOR5z2gLPUgzBappw | T4: fixture DSL・dev-seam/regression/golden test 実装 | done | [fixture-dsl-and-verification.md](./fixture-dsl-and-verification.md) |
@@ -262,7 +267,7 @@ Directory: `docs/tasks`
 | TASK-034EOHIeC6KauJaRop87sk | T2: shared managed-process 機構の tools/proc 抽出 | done | [proc-extraction.md](./proc-extraction.md) |
 | TASK-034r05iHWkNF7zKMZPhFky | Provider plugin tests and resource isolation verification | done | [provider-plugin-tests-and-resource-isolation.md](./provider-plugin-tests-and-resource-isolation.md) |
 | TASK-034r05iHQeQpDpEony1i5k | Record experiment log and verify test regression | done | [record-experiment-log-and-verify-test-regression.md](./record-experiment-log-and-verify-test-regression.md) |
-| TASK-034KvxH8TvZ1HF0bfjydpk | 実装 issue URL の記録と issue #151 成果物基準の検証 | todo | [record-issue-urls-and-verify-investigation-criteria.md](./record-issue-urls-and-verify-investigation-criteria.md) |
+| TASK-034KvxH8TvZ1HF0bfjydpk | 実装 issue URL の記録と issue #151 成果物基準の検証 | done | [record-issue-urls-and-verify-investigation-criteria.md](./record-issue-urls-and-verify-investigation-criteria.md) |
 | TASK-034KsKTKF4k3oBwHXkLXR6 | Register cursor preToolUse hook and extend cursor_normalize | done | [register-cursor-pretooluse-hook.md](./register-cursor-pretooluse-hook.md) |
 | TASK-034GtBzKmwPf5z06kAahym | Register Devin hooks from APM skill | done | [register-devin-hooks-from-apm-skill.md](./register-devin-hooks-from-apm-skill.md) |
 | TASK-034EUvFhVkFFo9cY6aX6LB | T2: registry degrade path と prompt surfacing | done | [registry-degrade-and-prompt-surfacing.md](./registry-degrade-and-prompt-surfacing.md) |
