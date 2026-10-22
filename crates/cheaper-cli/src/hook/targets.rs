@@ -535,7 +535,12 @@ fn updated_input(command: &str) -> Value {
     Value::Object(inner)
 }
 
-fn hook_specific_output_rewrite(command: &str) -> HookResponse {
+/// `hookSpecificOutput` rewrite emit — `approval_bypass` 時のみ
+/// `permissionDecision:"allow"` を hookEventName と updatedInput の
+/// 間に挿入する(field 挿入順は probe 観測順、`stringify_ordered`
+/// byte 互換規約)。flag 非対称の claude(`pretooluse`)/devin は常に
+/// `false` で emit byte を現行と完全一致に保つ(D3)。
+fn hook_specific_output_rewrite(command: &str, approval_bypass: bool) -> HookResponse {
     HookResponse {
         stdout: Some(format!(
             "{}\n",
@@ -544,6 +549,9 @@ fn hook_specific_output_rewrite(command: &str) -> HookResponse {
                 Value::Object({
                     let mut inner = Map::new();
                     inner.insert("hookEventName".to_string(), Value::from("PreToolUse"));
+                    if approval_bypass {
+                        inner.insert("permissionDecision".to_string(), Value::from("allow"));
+                    }
                     inner.insert("updatedInput".to_string(), updated_input(command));
                     inner
                 }),
@@ -561,19 +569,26 @@ fn pretooluse_render(verdict: Verdict) -> HookResponse {
     match verdict {
         Verdict::Deny { reason } => hook_specific_output_deny(&reason),
         Verdict::Allow => silent_allow(),
-        Verdict::Rewrite { command, .. } => hook_specific_output_rewrite(&command),
+        Verdict::Rewrite { command, .. } => hook_specific_output_rewrite(&command, false),
     }
 }
 
-/// codex(`--target codex`)— payload shape は claude と同一だが
-/// Rewrite の approval-bypass 検証が未了のため `updatedInput` を
-/// 発行しない(R38)。Rewrite は fallback verdict を codex の応答
-/// 規約で render する — 構造的に rewrite が codex へ届かない。
-fn codex_render(verdict: Verdict) -> HookResponse {
+/// codex(`--target codex`)— `route.rewrite.approvalBypass` に
+/// `"codex"` が含まれる場合のみ `permissionDecision:"allow"` +
+/// `updatedInput` の bypassing emit を発行する(R6/D2)。flag 無し
+/// (未指定・空・codex 非含有・route supply load 失敗)では従来どおり
+/// fallback verdict を render し `updatedInput` を emit しない。
+/// `updatedInput` 単独・`"ask"` 併記は codex が無視する silent
+/// no-op(実機確認済み)のため、いかなる flag 状態でも発行しない
+/// (R7/D2)。
+fn codex_render(verdict: Verdict, approval_bypass: bool) -> HookResponse {
     match verdict {
         Verdict::Deny { reason } => hook_specific_output_deny(&reason),
         Verdict::Allow => silent_allow(),
-        Verdict::Rewrite { fallback, .. } => codex_render(*fallback),
+        Verdict::Rewrite { command, .. } if approval_bypass => {
+            hook_specific_output_rewrite(&command, true)
+        }
+        Verdict::Rewrite { fallback, .. } => codex_render(*fallback, approval_bypass),
     }
 }
 
@@ -621,7 +636,7 @@ fn devin_render(verdict: Verdict) -> HookResponse {
         // devin 応答 envelope は `hookSpecificOutput` 規約 — Rewrite
         // は `hookSpecificOutput.updatedInput.command` で input
         // rewrite を通知する(C4)。
-        Verdict::Rewrite { command, .. } => hook_specific_output_rewrite(&command),
+        Verdict::Rewrite { command, .. } => hook_specific_output_rewrite(&command, false),
     }
 }
 
@@ -706,12 +721,19 @@ fn request_cwd(request: &RoutingRequest) -> &str {
 /// 供給する(C1 — firing あたり 1 回の load に集約。per-candidate
 /// reload はしない)。load 失敗は `route: None`(route arm 不活性)
 /// へ畳み eval 自体は従来どおり走る — hook の fail-open 規約。
-async fn evaluate_with_routes(request: &RoutingRequest, deps: &HookDeps<'_>) -> Verdict {
+/// load 済み `RouteSupply` を verdict と共に返す — codex arm が
+/// `route.rewrite.approvalBypass` flag を render 層へ供給する経路
+/// (`load_or_none` → `None` は flag 未供給 = bypass 無効の
+/// conservative default)。
+async fn evaluate_with_routes(
+    request: &RoutingRequest,
+    deps: &HookDeps<'_>,
+) -> (Verdict, Option<crate::route::supply::RouteSupply>) {
     let supply =
         crate::route::supply::load_or_none(request_cwd(request), deps.env, deps.builtin_dir);
     let mut opts = deps.eval_opts();
     opts.route = supply.as_ref().map(|s| s.eval_input());
-    eval_cache::evaluate_dedup(request, &opts).await
+    (eval_cache::evaluate_dedup(request, &opts).await, supply)
 }
 
 /// target 別の normalize → evaluate → render。
@@ -723,60 +745,74 @@ pub async fn handle_hook(
     input: &Value,
     deps: &HookDeps<'_>,
 ) -> HookResponse {
-    let (verdict, response) = match target {
+    let (verdict, bypass, response) = match target {
         HookTarget::Windsurf => match windsurf_normalize(event, input, deps.cwd) {
-            None => ("allow", silent_allow()),
+            None => ("allow", false, silent_allow()),
             Some(request) => {
-                let verdict = evaluate_with_routes(&request, deps).await;
-                (verdict_name(&verdict), windsurf_render(verdict))
+                let (verdict, _supply) = evaluate_with_routes(&request, deps).await;
+                (verdict_name(&verdict), false, windsurf_render(verdict))
             }
         },
         HookTarget::Copilot => match copilot_handle(input, deps.cwd) {
-            CopilotOutcome::None => ("allow", silent_allow()),
-            CopilotOutcome::Respond(r) => ("allow", r),
+            CopilotOutcome::None => ("allow", false, silent_allow()),
+            CopilotOutcome::Respond(r) => ("allow", false, r),
             CopilotOutcome::Request(request) => {
-                let verdict = evaluate_with_routes(&request, deps).await;
-                (verdict_name(&verdict), copilot_render(verdict))
+                let (verdict, _supply) = evaluate_with_routes(&request, deps).await;
+                (verdict_name(&verdict), false, copilot_render(verdict))
             }
         },
         HookTarget::Pretooluse => match pretooluse_normalize(input, deps.cwd) {
-            None => ("allow", silent_allow()),
+            None => ("allow", false, silent_allow()),
             Some(request) => {
-                let verdict = evaluate_with_routes(&request, deps).await;
-                (verdict_name(&verdict), pretooluse_render(verdict))
+                let (verdict, _supply) = evaluate_with_routes(&request, deps).await;
+                (verdict_name(&verdict), false, pretooluse_render(verdict))
             }
         },
         HookTarget::Devin => match devin_normalize(event, input, deps) {
-            None => ("allow", silent_allow()),
+            None => ("allow", false, silent_allow()),
             Some(request) => {
-                let verdict = evaluate_with_routes(&request, deps).await;
-                (verdict_name(&verdict), devin_render(verdict))
+                let (verdict, _supply) = evaluate_with_routes(&request, deps).await;
+                (verdict_name(&verdict), false, devin_render(verdict))
             }
         },
         HookTarget::Cursor => match cursor_normalize(input, deps.cwd) {
-            None => ("allow", cursor_respond("allow", None)),
+            None => ("allow", false, cursor_respond("allow", None)),
             Some(request) => {
                 // Rust の `evaluate` は error を外部へ伝播しない
                 // (計測失敗は内部で allow)が、TS の try/catch allow
                 // 経路と同じく verdict に関わらず schema-valid JSON を
                 // 返すことは変えない。
-                let verdict = evaluate_with_routes(&request, deps).await;
-                (verdict_name(&verdict), cursor_render(verdict))
+                let (verdict, _supply) = evaluate_with_routes(&request, deps).await;
+                (verdict_name(&verdict), false, cursor_render(verdict))
             }
         },
         HookTarget::Codex => match pretooluse_normalize(input, deps.cwd) {
-            None => ("allow", silent_allow()),
+            None => ("allow", false, silent_allow()),
             Some(request) => {
-                let verdict = evaluate_with_routes(&request, deps).await;
-                (verdict_name(&verdict), codex_render(verdict))
+                let (verdict, supply) = evaluate_with_routes(&request, deps).await;
+                // bypassing emit の許可は codex arm のみで読む —
+                // `load_or_none` → `None` は flag 未供給 = bypass 無効
+                // (conservative default、R15)。
+                let bypass = supply
+                    .as_ref()
+                    .is_some_and(|s| s.policy.route.rewrite.approval_bypass_enabled("codex"));
+                (
+                    verdict_name(&verdict),
+                    bypass,
+                    codex_render(verdict, bypass),
+                )
             }
         },
     };
     // `cheaper.hook` 完了 event(design §instrumentation 配置)—
     // `verdict` 分類値 + 出力 byte 長のみ(deny reason・payload 本文は
-    // metadata-only 規約で載せない)。
+    // metadata-only 規約で載せない)。`bypass` は approval-bypass
+    // emit の観測面 — bypassing emit は silent exit 0 で stderr 痕跡を
+    // 持たないためこの field が唯一の観測経路(codex arm でのみ
+    // `true` になり得る)。
     tracing::debug!(
         verdict = verdict,
+        bypass = bypass,
         stdout.len = response.stdout.as_deref().map_or(0, str::len),
         stderr.len = response.stderr.as_deref().map_or(0, str::len),
         "hook response"
@@ -865,17 +901,22 @@ mod tests {
             .is_none());
     }
 
-    /// codex — Rewrite は `updatedInput` を発行せず fallback verdict
-    /// を render する(R38 — approval-bypass 検証前)。
+    /// codex — flag 無しの Rewrite は `updatedInput` を発行せず
+    /// fallback verdict を render する(R7 — flag は emit 有効化で
+    /// はなく許可。未指定・空・codex 非含有・supply load 失敗は全て
+    /// この経路)。
     #[test]
     fn codex_rewrite_renders_fallback_only() {
         // fallback Deny → hookSpecificOutput deny。
-        let r = codex_render(rewrite(
-            "cmd",
-            Verdict::Deny {
-                reason: "nope".into(),
-            },
-        ));
+        let r = codex_render(
+            rewrite(
+                "cmd",
+                Verdict::Deny {
+                    reason: "nope".into(),
+                },
+            ),
+            false,
+        );
         assert_eq!(r.exit, 0);
         let v: Value = serde_json::from_str(&r.stdout.unwrap()).unwrap();
         assert_eq!(
@@ -885,9 +926,75 @@ mod tests {
         );
         assert!(v.pointer("/hookSpecificOutput/updatedInput").is_none());
         // fallback Allow → silent。
-        let r = codex_render(rewrite("cmd", Verdict::Allow));
+        let r = codex_render(rewrite("cmd", Verdict::Allow), false);
         assert_eq!(r.exit, 0);
         assert!(r.stdout.is_none() && r.stderr.is_none());
+    }
+
+    /// codex — `route.rewrite.approvalBypass` に `"codex"` 含有時のみ
+    /// `hookEventName:"PreToolUse"` → `permissionDecision:"allow"` →
+    /// `updatedInput:{command}` の順(probe 観測順)で bypassing emit
+    /// を発行し exit 0(R6/D2)。
+    #[test]
+    fn codex_rewrite_with_approval_bypass_emits_allow_and_updated_input() {
+        let r = codex_render(
+            rewrite("\"/x/cheaper\" route run --payload aa", Verdict::Allow),
+            true,
+        );
+        assert_eq!(r.exit, 0);
+        assert!(r.stderr.is_none());
+        let stdout = r.stdout.unwrap();
+        // field 挿入順を byte レベルに近い精度で pin —
+        // hookEventName → permissionDecision → updatedInput。
+        let event_pos = stdout.find("\"hookEventName\"").unwrap();
+        let decision_pos = stdout.find("\"permissionDecision\"").unwrap();
+        let input_pos = stdout.find("\"updatedInput\"").unwrap();
+        assert!(
+            event_pos < decision_pos && decision_pos < input_pos,
+            "{stdout}"
+        );
+        let v: Value = serde_json::from_str(&stdout).unwrap();
+        let hso = v.get("hookSpecificOutput").unwrap();
+        assert_eq!(
+            hso.get("hookEventName").and_then(Value::as_str),
+            Some("PreToolUse")
+        );
+        assert_eq!(
+            hso.get("permissionDecision").and_then(Value::as_str),
+            Some("allow")
+        );
+        assert_eq!(
+            hso.pointer("/updatedInput/command").and_then(Value::as_str),
+            Some("\"/x/cheaper\" route run --payload aa")
+        );
+        // top-level `decision`/`updatedInput` は無い。
+        assert!(v.get("decision").is_none() && v.get("updatedInput").is_none());
+    }
+
+    /// codex 負 shape — `updatedInput` 単独・`permissionDecision:"ask"`
+    /// 併記の emit はいかなる flag 状態でも発行しない(codex が両者を
+    /// 無視する silent no-op、R7/D2)。emit され得る shape は `allow`
+    /// 併記形のみ。
+    #[test]
+    fn codex_rewrite_never_emits_unapplied_shapes() {
+        for flag in [false, true] {
+            for fallback in [Verdict::Allow, Verdict::Deny { reason: "r".into() }] {
+                let r = codex_render(rewrite("cmd", fallback), flag);
+                if let Some(stdout) = &r.stdout {
+                    let v: Value = serde_json::from_str(stdout).unwrap();
+                    let decision = v
+                        .pointer("/hookSpecificOutput/permissionDecision")
+                        .and_then(Value::as_str);
+                    // `"ask"` を emit する経路は存在しない。
+                    assert_ne!(decision, Some("ask"), "{stdout}");
+                    // `updatedInput` を `permissionDecision` 無しで
+                    // emit する経路は存在しない。
+                    if v.pointer("/hookSpecificOutput/updatedInput").is_some() {
+                        assert_eq!(decision, Some("allow"), "{stdout}");
+                    }
+                }
+            }
+        }
     }
 
     /// windsurf — Rewrite は fallback render(deny → stderr exit 2)。

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KsKPPDTLAGrCkK8k17Y"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add codex flag-gated approval-bypass rewrite emit"
 created: "2026-10-22"
 updated: "2026-10-23"
@@ -185,6 +185,40 @@ flag は render 出力のみに効く(R14)。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib` exits 0(targets.rs unit test 全 pass)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0(既存 hook contract の非回帰)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib` exits 0(targets.rs unit test 全 pass)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook::` exits 0(既存 hook contract の非回帰)
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+
+## Done
+
+2026-10-23 実施。render 層に flag 供給経路と codex bypassing emit
+分岐を追加した(`Verdict`/`RouteEvalInput`/`evaluate_route_arm`/
+dedup は不変)。
+
+- `evaluate_with_routes` が `(Verdict, Option<RouteSupply>)` を返す
+  — `load_or_none` の load 済み supply を呼び出し側へそのまま載せる
+  (`opts.route` 設定・eval は不変)。
+- `handle_hook` の codex arm のみ
+  `supply.policy.route.rewrite.approval_bypass_enabled("codex")` で
+  flag を読み `codex_render(verdict, bypass)` へ渡す。`None` →
+  `false`(conservative default)。他 arm は supply を読まない。
+- `hook_specific_output_rewrite(command, approval_bypass)` —
+  `true` のとき `hookEventName` と `updatedInput` の間に
+  `permissionDecision:"allow"` を挿入(probe 観測順)。
+  `pretooluse_render`/`devin_render` は `false` に揃え emit byte
+  不変。
+- `codex_render(verdict, approval_bypass)` — `Rewrite if
+  approval_bypass` → `hook_specific_output_rewrite(&command, true)`、
+  それ以外は fallback 再帰 render。`updatedInput` 単独・`"ask"`
+  併記はいかなる flag 状態でも発行しない。
+- `hook response` debug event に `bypass: bool` field を追加
+  (全 arm emit、codex flag-on のみ `true` になり得る)。
+- unit test — `codex_rewrite_with_approval_bypass_emits_allow_and_
+  updated_input`(field 順 byte pin)、`codex_rewrite_never_emits_
+  unapplied_shapes`(負 shape)、既存
+  `codex_rewrite_renders_fallback_only`(signature 追随)等。
+- 検証: `cargo test -p cheaper-cli --features cheaper-cli/dev-seam
+  --lib` 89 pass、`--test integration hook::` 26 pass、`cargo
+  clippy -p cheaper-cli --all-targets --features
+  cheaper-cli/dev-seam -- -D warnings` exits 0、`cargo fmt`
+  適用済み。
