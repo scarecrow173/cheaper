@@ -6,6 +6,7 @@ use crate::common::{env_lookup, Fixture};
 use cheaper_cli::cli::CliIo;
 use cheaper_cli::route::payload::{encode, EncodeInput};
 use cheaper_cli::route::run::{execute, RouteRunOutput};
+use cheaper_core::errors::{CheaperError, ErrorCode};
 use serde_json::{json, Value};
 
 #[test]
@@ -624,10 +625,18 @@ async fn exec_infra_failure_returns_error() {
         &[],
         None,
     );
-    assert!(run_route(&mut f, &token).await.is_err());
+    let err = run_route(&mut f, &token)
+        .await
+        .err()
+        .expect("route must fail: grant timeout is 1ms");
+    assert_eq!(
+        err.downcast_ref::<CheaperError>().map(CheaperError::code),
+        Some(ErrorCode::ToolExecutionFailure),
+        "job 失敗は engine が outcome.error を ToolExecutionFailure に collapse する決定的 infra-failure code",
+    );
     assert!(
-        marker.exists(),
-        "child was spawned through the grant then killed"
+        err.to_string().contains("routed command did not complete"),
+        "captured()==None && outcome.error.is_some() 分岐固有の message — workflow が exec job を失敗まで実行した証拠: {err}",
     );
     let log = f.usage_log().unwrap_or_default();
     assert!(

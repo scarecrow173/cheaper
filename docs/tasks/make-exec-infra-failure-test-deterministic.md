@@ -1,7 +1,7 @@
 ---
 id: "TASK-03404zg7SVQPn5JeZ0lwDD"
 type: "task"
-status: "todo"
+status: "done"
 title: "Make exec_infra_failure_returns_error deterministic via error code and message"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -111,16 +111,25 @@ relations:
 
 ## Done When
 
-- [ ] `run_route` の `Err` を `.err().expect(...)` で取り出し
+- [x] `run_route` の `Err` を `.err().expect(...)` で取り出し
       `code() == ErrorCode::ToolExecutionFailure` を assert する
-- [ ] `err.to_string().contains("routed command did not complete")` を
+- [x] `err.to_string().contains("routed command did not complete")` を
       assert する
-- [ ] `marker.exists()` 系の timing 依存 assertion が残っていない
-- [ ] `timeout: '1ms'`・`is_err()` 相当の失敗検証・marker/reject_fx 配線・
+- [x] `marker.exists()` 系の timing 依存 assertion が残っていない
+- [x] `timeout: '1ms'`・`is_err()` 相当の失敗検証・marker/reject_fx 配線・
       usage log assert が維持されている
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run::exec_infra_failure_returns_error -- --exact` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run::` exits 0(他 route_run test の非 regress)
-- [ ] `mise exec -- cargo fmt --check` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run::exec_infra_failure_returns_error -- --exact` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run::` exits 0(他 route_run test の非 regress)
+- [x] `mise exec -- cargo fmt --check` exits 0
+
+## Done
+
+`route_run.rs` に `use cheaper_core::errors::{CheaperError, ErrorCode};` を
+追加し、`exec_infra_failure_returns_error` の `marker.exists()` assert を
+`.err().expect(...)` + `code() == ErrorCode::ToolExecutionFailure` +
+message `"routed command did not complete"` の assert へ置き換えた。
+fixture 配線(`timeout: '1ms'`・reject_fx・marker・policy.yaml 書換え)と
+usage log assert は不変。

@@ -1,7 +1,7 @@
 ---
 id: "TASK-0340C4KaPSmy4CrDagevUC"
 type: "task"
-status: "todo"
+status: "done"
 title: "Pin sweep test deletion order with explicit set_mtime timestamps"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -122,16 +122,26 @@ sweep・(c) size sweep の対象 file に `File::set_modified` の一意な mtim
 
 ## Done When
 
-- [ ] `set_mtime` helper が `mod tests` 内にあり (a)(b)(c) 全 block で
+- [x] `set_mtime` helper が `mod tests` 内にあり (a)(b)(c) 全 block で
       mtime 付替えが helper 経由に統一されている
-- [ ] (b) で a<fresh<b<c の明示 mtime と厳密集合 assert(removed==2・
+- [x] (b) で a<fresh<b<c の明示 mtime と厳密集合 assert(removed==2・
       {a,fresh} 削除・{b,c} 残存)がある
-- [ ] (c) で big<small の明示 mtime と厳密集合 assert(removed==1・big
+- [x] (c) で big<small の明示 mtime と厳密集合 assert(removed==1・big
       削除・small 残存)があり、pre-(c) cleanup loop が維持されている
-- [ ] `.tmp` 除外・TTL assert・sweep 引数・本番 code が不変
+- [x] `.tmp` 除外・TTL assert・sweep 引数・本番 code が不変
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam route::log_store` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib` exits 0(他 unit test の非 regress)
-- [ ] `mise exec -- cargo fmt --check` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam route::log_store` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib` exits 0(他 unit test の非 regress)
+- [x] `mise exec -- cargo fmt --check` exits 0
+
+## Done
+
+`log_store.rs` の `mod tests` に `set_mtime` helper(`File::set_modified`)
+を追加し、単一の `now` 起点で (a) `now-3600s`・(b) `a=now-40s /
+fresh=now-30s / b=now-20s / c=now-10s`・(c) `big=now-20s / small=now-10s`
+の一意な mtime 順序を付与した。assertion は厳密集合へ絞り、(b) は
+`removed==2` + {a,fresh} 削除 + {b,c} 残存、(c) は `removed==1` +
+big 削除 + small 残存を検証する。pre-(c) cleanup loop・`.tmp` 除外・
+TTL assert・sweep 引数・本番 code は不変。

@@ -390,6 +390,15 @@ mod tests {
         (tmp, store)
     }
 
+    /// log file の mtime を付け替える(`File::set_modified` — 新規 dep
+    /// 不要)。
+    fn set_mtime(path: &Path, time: SystemTime) -> io::Result<()> {
+        fs::File::options()
+            .write(true)
+            .open(path)?
+            .set_modified(time)
+    }
+
     #[test]
     fn run_id_format_and_validation() {
         let id = new_run_id();
@@ -560,6 +569,9 @@ mod tests {
     fn sweep_enforces_ttl_count_size_and_skips_tmp() {
         let (_tmp, store) = store();
         fs::create_dir_all(store.dir()).unwrap();
+        // mtime は sweep の `as_secs` 切捨て key が tie しないよう、単一の
+        // `now` 起点で 1 秒以上離した値を各 file へ明示する。
+        let now = SystemTime::now();
         let write_log = |name: &str, bytes: usize| -> PathBuf {
             let path = store.dir().join(name);
             fs::write(&path, vec![b'x'; bytes]).unwrap();
@@ -572,13 +584,7 @@ mod tests {
         // (a) TTL: mtime を過去へ戻した file のみ消える。
         let fresh = write_log("fresh.log", 8);
         let old = write_log("old.log", 8);
-        let past = SystemTime::now() - Duration::from_secs(3600);
-        fs::File::options()
-            .write(true)
-            .open(&old)
-            .unwrap()
-            .set_modified(past)
-            .unwrap();
+        set_mtime(&old, now - Duration::from_secs(3600)).unwrap();
         let removed = store
             .sweep_with(Duration::from_secs(60), usize::MAX, u64::MAX)
             .unwrap();
@@ -589,18 +595,33 @@ mod tests {
         let a = write_log("a.log", 8);
         let b = write_log("b.log", 8);
         let c = write_log("c.log", 8);
+        // a < fresh < b < c の一意な mtime 順序を与え、削除集合を {a, fresh}
+        // に固定する。
+        set_mtime(&a, now - Duration::from_secs(40)).unwrap();
+        set_mtime(&fresh, now - Duration::from_secs(30)).unwrap();
+        set_mtime(&b, now - Duration::from_secs(20)).unwrap();
+        set_mtime(&c, now - Duration::from_secs(10)).unwrap();
         let removed = store.sweep_with(Duration::MAX, 2, u64::MAX).unwrap();
         assert_eq!(removed, 2); // fresh + a (mtime 昇順で古い 2 件)
-        assert!(b.exists() || c.exists());
+        assert!(!a.exists());
+        assert!(!fresh.exists());
+        assert!(b.exists());
+        assert!(c.exists());
         // (c) size: 合計が max_bytes を超える分を古い順に削る。
         for path in [&a, &b, &c, &fresh] {
             let _ = fs::remove_file(path);
         }
         let big = write_log("big.log", 128);
         let small = write_log("small.log", 8);
+        // big を small より古くし、古い順に big 1 件だけ削って合計 8B に
+        // 収まる形を固定する(逆順だと small 削除後も 128B > 100 で
+        // removed == 2 になり意図が変わる)。
+        set_mtime(&big, now - Duration::from_secs(20)).unwrap();
+        set_mtime(&small, now - Duration::from_secs(10)).unwrap();
         let removed = store.sweep_with(Duration::MAX, usize::MAX, 100).unwrap();
-        assert_eq!(removed, 1); // 古い方(small か big — mtime 順)を削除
-        assert!(big.exists() != small.exists());
+        assert_eq!(removed, 1); // 古い方(big)を削除
+        assert!(!big.exists());
+        assert!(small.exists());
         // tmp は条件を全て満たしても残る。
         assert!(store.dir().join(format!("{inflight}.log.tmp")).exists());
     }
