@@ -1,7 +1,7 @@
 ---
 id: "TASK-034yW3DRPtMmttnAEru9Ns"
 type: "task"
-status: "todo"
+status: "done"
 title: "Verify route test determinism and run mise run check"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -82,16 +82,32 @@ verification contract(`mise run check`)の pass を確認する収束 task。
 
 ## Done When
 
-- [ ] 両対象 test が連続実行で安定 pass する
-- [ ] `route_run::`・`route::log_store` filter run が pass する
-- [ ] `mise run check` が pass する
-- [ ] diff review で timing/enumeration 依存 assertion が残っていないことを
+- [x] 両対象 test が連続実行で安定 pass する
+- [x] `route_run::`・`route::log_store` filter run が pass する
+- [x] `mise run check` が pass する
+- [x] diff review で timing/enumeration 依存 assertion が残っていないことを
       確認した
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run::` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam route::log_store` exits 0
-- [ ] `mise run check` exits 0
-- [ ] Manual: diff で `marker.exists()`・readdir 順依存 assertion
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run::` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam route::log_store` exits 0
+- [x] `mise run check` exits 0
+- [x] Manual: diff で `marker.exists()`・readdir 順依存 assertion
       (disjunction / existence XOR)が残っていないことを確認(supplement)
+
+## Done
+
+`route_run::` filter で 25 test、`route::log_store` filter で 6 test が pass。
+両対象 test(`exec_infra_failure_returns_error`・
+`sweep_enforces_ttl_count_size_and_skips_tmp`)は連続 3 回の targeted run で
+flake 兆候無く安定 pass した。diff review で
+`exec_infra_failure_returns_error` から `marker.exists()` 系 assertion が
+除去され code + message assert に置き換わっていること(`marker` は
+`reject_fx` fixture 配線のみ残存)、sweep test の assertion が厳密集合
+(removed 数 + 各 file の exists/non-exists)で disjunction / existence XOR
+無し、`set_mtime` helper(:395)経由の一意 mtime 順序で readdir 順に依存
+しないことを確認した。`mise run check` は biome・`cargo fmt --check`・
+clippy・version/doc-id check・`cargo test --workspace`(全 target
+0 failed)・`node --test`・lockfile/apm-payload check の全 step を exit 0
+で完走した。
