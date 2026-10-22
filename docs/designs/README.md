@@ -33,7 +33,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHy2gdnoLTC43RP5 | Cross-agent distribution verification | approved | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
 | DESIGN-034rA79Uog7JOa7evw6rOL | Cross-agent native routing adapter architecture | approved | [cross-agent-native-routing-adapter-architecture.md](./cross-agent-native-routing-adapter-architecture.md) |
 | DESIGN-034r05iHy2gdnoXu6h71XL | Delegation usage measurement log (usage.jsonl) | approved | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
-| DESIGN-034Kp4aEcwrsOReUSPyxU9 | Deterministic route tests for ubuntu CI flake (issue #157) | draft | [deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md](./deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md) |
+| DESIGN-034Kp4aEcwrsOReUSPyxU9 | Deterministic route tests for ubuntu CI flake (issue #157) | approved | [deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md](./deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md) |
 | DESIGN-034r05iHy2gdnoPoUu7BiO | Development APM project / distributable cheaper package layout | approved | [dev-apm-project-and-distributable-package-layout.md](./dev-apm-project-and-distributable-package-layout.md) |
 | DESIGN-034r05iHy2gdnp1MdNwuw6 | Devin Local provider plugin | approved | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
 | DESIGN-034Gt74p3BYG40NTwu2kST | Devin native hooks and APM bootstrap | approved | [devin-native-hooks-and-apm-bootstrap.md](./devin-native-hooks-and-apm-bootstrap.md) |
@@ -72,6 +72,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHrZUE6Wzyjd1NS8 | リポジトリ構成とツールチェーン | approved | [repository-structure-toolchain.md](./repository-structure-toolchain.md) |
 | DESIGN-034A8FyPKpnV3KM2HypFGu | ResourceManager job lease と atomic operation admission 設計 | approved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | DESIGN-034IPoKswcH3LaUZdnb0XT | Restrict hook-config orphan sweep to cheaper-owned temp files | approved | [restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md](./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md) |
+| DESIGN-034KqI29dOTRXERRPTp5gV | usage.jsonl run error record の診断 field 拡充 (issue #141) | draft | [run-error-record-observability.md](./run-error-record-observability.md) |
 | DESIGN-034zSR05NE5hXXhkTRLMgW | Run-scoped artifact store | approved | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |
 | DESIGN-034Bbq1qY8WFBdL26tUdBw | Rust + Rig runtime migration architecture | approved | [rust-rig-runtime-migration-architecture.md](./rust-rig-runtime-migration-architecture.md) |
 | DESIGN-034z1EfqYaEBfyNvqZyFSD | SEA executable build pipeline and embedded resource resolution | approved | [sea-executable-build-pipeline-and-embedded-resource-resolution.md](./sea-executable-build-pipeline-and-embedded-resource-resolution.md) |

@@ -19,7 +19,8 @@ relations:
     moved: []
     generated: []
   implements: []
-  implemented-by: []
+  implemented-by:
+    - "../designs/run-error-record-observability.md"
   depends-on: []
   blocks: []
   supersedes: []
@@ -29,12 +30,14 @@ relations:
     - "../discovery/worker-run-failure-rate-31pct-investigation.md"
     - "../adr/execution-timeout-as-progress-reset-stall-window.md"
     - "../adr/invalid-output-raw-output-persistence.md"
+    - "../designs/run-error-record-observability.md"
   refines: []
   refined-by: []
   derives-from:
     - "../discovery/worker-run-failure-rate-31pct-investigation.md"
   derived-by:
     - "../adr/usage-error-record-field-contract.md"
+    - "../designs/run-error-record-observability.md"
 ---
 
 # usage.jsonl run record への version・実効 policy・error 診断 field の追加 (issue #141)

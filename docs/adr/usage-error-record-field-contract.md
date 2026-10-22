@@ -19,7 +19,8 @@ relations:
     moved: []
     generated: []
   implements: []
-  implemented-by: []
+  implemented-by:
+    - "../designs/run-error-record-observability.md"
   depends-on: []
   blocks: []
   supersedes: []
@@ -28,11 +29,13 @@ relations:
     - "../specs/run-error-record-observability.md"
     - "../adr/invalid-output-raw-output-persistence.md"
     - "../adr/budget-exhaustion-checkpoint-and-resume.md"
+    - "../designs/run-error-record-observability.md"
   refines: []
   refined-by: []
   derives-from:
     - "../discovery/worker-run-failure-rate-31pct-investigation.md"
-  derived-by: []
+  derived-by:
+    - "../designs/run-error-record-observability.md"
   verifies: []
   verified-by: []
   references: []

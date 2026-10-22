@@ -53,6 +53,7 @@ relations:
   derived-by:
     - "../specs/run-error-record-observability.md"
     - "../adr/usage-error-record-field-contract.md"
+    - "../designs/run-error-record-observability.md"
   verifies: []
   verified-by: []
   references: []
