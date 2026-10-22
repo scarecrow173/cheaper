@@ -308,7 +308,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqvqdt4mXS | Update README/AGENTS for dev/distribution split and run final verification | done | [update-readme-agents-and-final-verification.md](./update-readme-agents-and-final-verification.md) |
 | TASK-034r05iHQeQpDpMem6J7OE | Update README and add provider setup guide | done | [update-readme-and-add-provider-setup-guide.md](./update-readme-and-add-provider-setup-guide.md) |
 | TASK-034z2pbpAynIVRedenPgXa | Update release guide for manual SEA release workflow | done | [update-release-guide-for-manual-sea-release-workflow.md](./update-release-guide-for-manual-sea-release-workflow.md) |
-| TASK-034Kr8pszGdyClSDbgMU3Q | Update usage.jsonl run record field documentation | todo | [update-usage-jsonl-record-field-docs.md](./update-usage-jsonl-record-field-docs.md) |
+| TASK-034Kr8pszGdyClSDbgMU3Q | Update usage.jsonl run record field documentation | done | [update-usage-jsonl-record-field-docs.md](./update-usage-jsonl-record-field-docs.md) |
 | TASK-034DmVS8k50GMCHNnui6Wb | upstream doc reconciliation and final verification | done | [upstream-doc-reconciliation-and-final-verification.md](./upstream-doc-reconciliation-and-final-verification.md) |
 | TASK-034r05iHQeQpDqKGWioCow | Usage-log e2e assertions, docs, bundle regen, status sync, final verification | done | [usage-log-e2e-docs-and-final-verification.md](./usage-log-e2e-docs-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |

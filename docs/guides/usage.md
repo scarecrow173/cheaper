@@ -248,11 +248,44 @@ best-effort で append する。書き込み失敗は stdout・exit code
   hook 呼び出しは高頻度かつ infra 的な性質のため、telemetry には
   載せない設計としている。
 
-run record には加えて `turns`・`toolCalls`・`savings`（実測
-offload。`directlyComparable` flag を含む）が載る。いずれも
-optional で、古い cheaper が書いた record には存在しない
-（`savings` 内の `directlyComparable` も同様）。count record
-には `savings` はない（offload の概念がないため）。
+run record には加えて `version`（run を実行した binary の
+product version — workspace `Cargo.toml` の canonical version。
+新旧版の識別用）・`turns`・`toolCalls`・`savings`（実測
+offload。`directlyComparable` flag を含む）・`repairs`
+（INVALID_OUTPUT の repair 消費数。non-null のみ）・
+`execution`（run に適用された**実効** policy echo
+`{timeoutMs, maxTurns, maxToolCalls}` — `--timeout` narrow・
+policy 層 merge を通った解決後の値。`maxTurns` は `null`
+許容で、これは「未設定」ではなく policy 上の turn 上限なしを
+表す）が載る。なお record の `execution` は policy echo で
+あり、envelope `meta.execution`（`ExecutionMetrics` = 観測
+metrics。record には載らない）とは同名だが別概念 — 混同
+しないこと。いずれも optional で、古い cheaper が書いた
+record には存在しない（`savings` 内の `directlyComparable`
+も同様）。count record には `savings`・`execution` はない
+（offload・policy echo の概念がないため）。
+
+error record（usage-bearing failure）の `error` object は
+`code` に加えて、条件に合うものだけ以下を持つ（allowlist
+固定・この順）:
+
+- `reason` — abort 語彙（`timeout`・`signal`・`maxTurns`・
+  `maxToolCalls`）に一致する `error.details.reason` のみ。
+- `message` — `error.message` の先頭 300 文字。
+- `schemaErrors` — `error.details.errors` の先頭 5 件を
+  `{instancePath ≤200 文字, message ≤120 文字}` で写す
+  （欠落 key はその key を省略）。
+- `errorMessage` — `error.details.errorMessage` の先頭
+  300 文字（PROVIDER_FAILURE の下位分類用）。
+- `checkpoint` — `error.details.checkpoint` の
+  `{path, observationsCount}` のみ。budget 枯渇（`MAX_TURNS_`/
+  `MAX_TOOL_CALLS_EXCEEDED`）時の resume 参照。保存は
+  best-effort で、abort record でも `checkpoint` key が載ら
+  ない経路がある。
+
+allowlist 外（`rawOutput`・`rawOutputPath`・`exitCode`・
+`retryable`・`cause`・その他 details key）は durable log に
+記録されない（model 生出力・payload 参照を残さない境界）。
 
 record schema は additive-only で、新旧の record は同一
 usage.jsonl に混在しうる。旧 writer の record（上記 optional

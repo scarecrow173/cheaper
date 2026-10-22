@@ -1,10 +1,10 @@
 ---
 id: "TASK-034Kr8pszGdyClSDbgMU3Q"
 type: "task"
-status: "todo"
+status: "done"
 title: "Update usage.jsonl run record field documentation"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: []
 relations:
   source:
@@ -120,12 +120,12 @@ contract を user-facing 文書へ追随させ、`mise run check` で plan を
 
 ## Done When
 
-- [ ] `usage.md` の run record field 記述が `version`・`repairs`・
+- [x] `usage.md` の run record field 記述が `version`・`repairs`・
       `execution`・error `error` object 拡張を含む
-- [ ] `execution` の命名衝突(record = policy echo vs envelope
+- [x] `execution` の命名衝突(record = policy echo vs envelope
       `meta.execution` = metrics)が明記されている
-- [ ] `AGENTS.md` の計測ログ記述が新 field に追随している
-- [ ] `mise run check` が pass する
+- [x] `AGENTS.md` の計測ログ記述が新 field に追随している
+- [x] `mise run check` が pass する
 
 ## Out of Scope
 
@@ -135,8 +135,27 @@ contract を user-facing 文書へ追随させ、`mise run check` で plan を
 
 ## Verification
 
-- [ ] `mise run check` exits 0
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `git grep -n "execution" docs/guides/usage.md` が record の
+- [x] `mise run check` exits 0
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `git grep -n "execution" docs/guides/usage.md` が record の
       `execution`(policy echo)と envelope `meta.execution`
       (metrics)の区別を含む記述を返す
+
+## Done
+
+`docs/guides/usage.md` の「計測 log」節を拡張 — run record の
+optional field 列挙に `version`(binary product version・新旧識別
+用)・`repairs`(non-null のみ)・`execution`(実効 policy echo
+`{timeoutMs, maxTurns, maxToolCalls}`・`maxTurns` null 許容の意味)
+を追加し、record `execution`(policy echo)と envelope
+`meta.execution`(ExecutionMetrics = 観測 metrics・record 非搭載)
+の同名別概念を明記。error record の `error` object 拡張を
+allowlist 固定順の list で記述(`reason`/`message`/`schemaErrors`/
+`errorMessage`/`checkpoint`・cap・best-effort 性)と allowlist 外
+非記録境界を追記。記録対象条件・best-effort 規約・
+`schemaVersion: 1`・additive-only 混在の記述は不変。
+`AGENTS.md` の「delegation 計測ログ」段落に新 field 群
+(`version`/`repairs`/`execution` echo・error 診断 field と
+命名衝突注記)を追随。`mise run check`(biome・fmt・clippy・
+version/doc-id・workspace test・node test・lockfile/slim payload
+check)全 pass。
