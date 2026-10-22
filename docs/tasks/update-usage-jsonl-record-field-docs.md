@@ -22,7 +22,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-run-error-record-observability.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/run-error-record-observability-issue-141.md"
   depends-on:
     - "docs/plans/implement-run-error-record-observability.md"
     - "docs/tasks/add-usage-log-diagnostic-field-tests.md"

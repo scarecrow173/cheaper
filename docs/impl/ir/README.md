@@ -138,6 +138,7 @@ Directory: `docs/impl/ir`
 | IMPL-034Aca4oJotR844AUJf6QR | Resource manager observation の実装記録 | completed | [resource-manager-observation.md](./resource-manager-observation.md) |
 | IMPL-o1iX554igoTSDCyr03s9Bh | Restrict orphan sweep to .tmp and split verify orphan findings | completed | [restrict-orphan-sweep-to-tmp-and-split-verify-findings.md](./restrict-orphan-sweep-to-tmp-and-split-verify-findings.md) |
 | IMPL-034zCh2EsO3oqQBXBAlfuM | Run canonical verification and close out issue 55 implementation | completed | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
+| IMPL-034KrGAahAOH1wp7c8Wcob | Implement run error record observability issue 141 | completed | [run-error-record-observability-issue-141.md](./run-error-record-observability-issue-141.md) |
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
 | IMPL-034EPz49PYz6zXgEeh5Fly | shared managed-process machinery extraction into tools proc | completed | [shared-managed-process-machinery-extraction-into-tools-proc.md](./shared-managed-process-machinery-extraction-into-tools-proc.md) |
 | IMPL-034A6gXDwnMxGVaPiuSCxb | Shared tool scheduler | completed | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
