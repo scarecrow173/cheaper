@@ -24,6 +24,7 @@ Directory: `docs/discovery`
 | DISC-034zIOnoIjhMd2vKGOtgXd | Core resource manifest identity investigation | resolved | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | DISC-034r05iHy2gdnpdai9KGpW | Cross-agent hook distribution and per-agent hook contract matrix | resolved | [cross-agent-hook-distribution-and-contract-matrix.md](./cross-agent-hook-distribution-and-contract-matrix.md) |
 | DISC-034rA43JiB611pUjLPA4yR | Cross-agent native routing adapter contract re-verification | resolved | [cross-agent-native-routing-adapter-contract-re-verification.md](./cross-agent-native-routing-adapter-contract-re-verification.md) |
+| DISC-t3TdC7pUJUGdYgfkpkmhMU | Devin compat 経由の read/grep/exec が範囲指定を無視して全文 token 数で拒否される（#161, #107 再発） | resolved | [devin-compat-range-fields-dropped-read-code-deny.md](./devin-compat-range-fields-dropped-read-code-deny.md) |
 | DISC-gHDyRKX2Xbdm58SDpCFLLt | Devin PreToolUse rewrite runtime verification (issue #148) | resolved | [devin-pretooluse-rewrite-runtime-verification.md](./devin-pretooluse-rewrite-runtime-verification.md) |
 | DISC-034Dlp0gvInn5w4EsnfZB0 | devin provider usage accounting reports uncached input only | draft | [devin-provider-usage-accounting-reports-uncached-input-only.md](./devin-provider-usage-accounting-reports-uncached-input-only.md) |
 | DISC-034D9AL1up7opdx1NuFeir | Devin provider Windows credential isolation limitation | draft | [devin-provider-windows-credential-isolation-limitation.md](./devin-provider-windows-credential-isolation-limitation.md) |
