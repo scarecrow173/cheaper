@@ -43,6 +43,7 @@ Directory: `docs/discovery`
 | DISC-034A8tYcU3vJfWHLa6qGQ2 | Operation execution metrics | resolved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | DISC-034zSONEtz7Sfeq2UvbW3a | OperationManager の cancel と settle の境界 | resolved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | DISC-034zWqZnTAsRi8D1paYgln | Payload untracking migration | resolved | [payload-untracking-migration.md](./payload-untracking-migration.md) |
+| DISC-034KuleA9g82Ir4xWfmTYq | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 (issue #151) | active | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
 | DISC-034zzZxx7gzas0a5Anlkwi | Pi sibling tool-call parallelism inside Workers | resolved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
 | DISC-o3GbG6FWEBRFcbNBaslikh | Plugin catalog refresh persistence and user model additions | draft | [plugin-catalog-refresh-persistence-and-user-models.md](./plugin-catalog-refresh-persistence-and-user-models.md) |
 | DISC-034EM8dPyCYPdx7fqHlaBU | command tool の policy grant と信頼境界を整理する | resolved | [policy-gated-command-tool.md](./policy-gated-command-tool.md) |
