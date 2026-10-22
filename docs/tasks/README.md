@@ -13,6 +13,8 @@ Directory: `docs/tasks`
 | TASK-034z52ABwxDsaQWun7VUDu | add cheaper hook command with target adapters | done | [add-cheaper-hook-command-with-target-adapters.md](./add-cheaper-hook-command-with-target-adapters.md) |
 | TASK-034rzRuCuCgZ08BmHTCqgz | Add cheaper usage aggregation command with filters and estimated savings | done | [add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md](./add-cheaper-usage-aggregation-command-with-filters-and-estimated-savings.md) |
 | TASK-034rzWT9V9bHwEIcrmbTor | Add CLI --model flag and models command | done | [add-cli-model-flag-and-models-command.md](./add-cli-model-flag-and-models-command.md) |
+| TASK-034KsKPPDTLAGrCkK8k17Y | Add codex flag-gated approval-bypass rewrite emit | todo | [add-codex-flag-gated-rewrite-emit.md](./add-codex-flag-gated-rewrite-emit.md) |
+| TASK-034KsKXLwLr4ZYjemKg6Hr | Add codex rewrite emit and project-layer flag rejection integration tests | todo | [add-codex-rewrite-integration-tests.md](./add-codex-rewrite-integration-tests.md) |
 | TASK-034Jg6ieFXYQcEldcUVKri | Add command grant exitCodes and nonzero-exit result reporting | done | [add-command-grant-exitcodes.md](./add-command-grant-exitcodes.md) |
 | TASK-034r05iHQeQpDpSS51up2r | Add count-tokens CLI command | done | [add-count-tokens-cli.md](./add-count-tokens-cli.md) |
 | TASK-034r05iHQeQpDpSeJahHce | Add count_tokens tool to runtime-pi registry and built-in workers | done | [add-count-tokens-tool.md](./add-count-tokens-tool.md) |
@@ -43,6 +45,7 @@ Directory: `docs/tasks`
 | TASK-034Jg6ui9tEt8GFLDetq57 | Add route log store and RouteLogReader | done | [add-route-log-store.md](./add-route-log-store.md) |
 | TASK-034Jg6HVZoKBgwGDZT8ZT6 | Add route logs CLI arm | done | [add-route-logs-cli.md](./add-route-logs-cli.md) |
 | TASK-034Jg6lAjcLYbfDm0Y370r | Add route resolver payload codec and command preflight seam | done | [add-route-resolver-and-payload.md](./add-route-resolver-and-payload.md) |
+| TASK-034KsKLJ7FGv1ytMp8eLbx | Add route.rewrite.approvalBypass policy schema and normalized flag | todo | [add-route-rewrite-approval-bypass-policy-schema.md](./add-route-rewrite-approval-bypass-policy-schema.md) |
 | TASK-034Jg6GTgeZjILEwH5ZvE6 | Add route run delegated workflow execution | done | [add-route-run-delegated-exec.md](./add-route-run-delegated-exec.md) |
 | TASK-034Jg6uR3fxSVODX2EdmEz | Add route and route-refetch usage records | done | [add-route-usage-records.md](./add-route-usage-records.md) |
 | TASK-034zBJ55ACvdlADYOtaKKc | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | done | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
@@ -114,6 +117,7 @@ Directory: `docs/tasks`
 | TASK-034DmVRCxSEu4CdutLtxfM | docs and cheaper-usage skill rewrite for cargo source install | done | [docs-and-cheaper-usage-skill-rewrite-for-cargo-source-install.md](./docs-and-cheaper-usage-skill-rewrite-for-cargo-source-install.md) |
 | TASK-034r05iHWkNF7zLmXY8W9D | Update docs, regenerate bundle, and run final verification | done | [docs-status-sync-bundle-and-final-verification.md](./docs-status-sync-bundle-and-final-verification.md) |
 | TASK-034zTWjm1NjME6ZzgLXNF7 | Document and verify one-dispatch release migration | done | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
+| TASK-034KsL2829yYfRRGKl92t1 | Document route.rewrite.approvalBypass in configuration guide | todo | [document-approval-bypass-policy-flag.md](./document-approval-bypass-policy-flag.md) |
 | TASK-034DlFJnTT9v0YcqV9Uine | Document devin usage semantics in providers and usage guides | done | [document-devin-usage-semantics-in-providers-and-usage-guides.md](./document-devin-usage-semantics-in-providers-and-usage-guides.md) |
 | TASK-034zQTXMNDaUeqIR3aCRNf | Document launcher distribution and verify acquisition | done | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
@@ -251,6 +255,7 @@ Directory: `docs/tasks`
 | TASK-034EOHIeC6KauJaRop87sk | T2: shared managed-process 機構の tools/proc 抽出 | done | [proc-extraction.md](./proc-extraction.md) |
 | TASK-034r05iHWkNF7zKMZPhFky | Provider plugin tests and resource isolation verification | done | [provider-plugin-tests-and-resource-isolation.md](./provider-plugin-tests-and-resource-isolation.md) |
 | TASK-034r05iHQeQpDpEony1i5k | Record experiment log and verify test regression | done | [record-experiment-log-and-verify-test-regression.md](./record-experiment-log-and-verify-test-regression.md) |
+| TASK-034KsKTKF4k3oBwHXkLXR6 | Register cursor preToolUse hook and extend cursor_normalize | todo | [register-cursor-pretooluse-hook.md](./register-cursor-pretooluse-hook.md) |
 | TASK-034GtBzKmwPf5z06kAahym | Register Devin hooks from APM skill | done | [register-devin-hooks-from-apm-skill.md](./register-devin-hooks-from-apm-skill.md) |
 | TASK-034EUvFhVkFFo9cY6aX6LB | T2: registry degrade path と prompt surfacing | done | [registry-degrade-and-prompt-surfacing.md](./registry-degrade-and-prompt-surfacing.md) |
 | TASK-bFmQKy8wlXPsJ8TxH83XGQ | issue-113/114 regression normalize・最終検証・impl 記録 | done | [regression-and-final-verification-113-114.md](./regression-and-final-verification-113-114.md) |

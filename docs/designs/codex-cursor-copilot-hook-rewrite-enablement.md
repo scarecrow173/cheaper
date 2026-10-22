@@ -69,9 +69,16 @@ relations:
     - "docs/specs/codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md"
     - "docs/adr/per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md"
     - "docs/discovery/codex-cursor-copilot-rewrite-enablement.md"
-  derived-by: []
+  derived-by:
+    - "../plans/implement-per-target-hook-rewrite-enablement.md"
+    - "../test-specs/route-rewrite-approval-bypass-policy-flag.md"
+    - "../test-specs/codex-hook-rewrite-emit.md"
+    - "../test-specs/cursor-pretooluse-registration-and-normalize.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/route-rewrite-approval-bypass-policy-flag.md"
+    - "../test-specs/codex-hook-rewrite-emit.md"
+    - "../test-specs/cursor-pretooluse-registration-and-normalize.md"
   references:
     - "../discovery/devin-pretooluse-rewrite-runtime-verification.md"
     - "../discovery/cross-agent-native-routing-adapter-contract-re-verification.md"

@@ -17,7 +17,8 @@ relations:
     moved: []
     generated: []
   implements: []
-  implemented-by: []
+  implemented-by:
+    - "../plans/implement-per-target-hook-rewrite-enablement.md"
   depends-on:
     - "./pretooluse-route-resolver-and-workflow-delegation.md"
   blocks: []
@@ -34,9 +35,16 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/codex-cursor-copilot-rewrite-enablement.md"
-  derived-by: []
+  derived-by:
+    - "../plans/implement-per-target-hook-rewrite-enablement.md"
+    - "../test-specs/route-rewrite-approval-bypass-policy-flag.md"
+    - "../test-specs/codex-hook-rewrite-emit.md"
+    - "../test-specs/cursor-pretooluse-registration-and-normalize.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/route-rewrite-approval-bypass-policy-flag.md"
+    - "../test-specs/codex-hook-rewrite-emit.md"
+    - "../test-specs/cursor-pretooluse-registration-and-normalize.md"
   references:
     - "../discovery/devin-pretooluse-rewrite-runtime-verification.md"
     - "../discovery/cross-agent-native-routing-adapter-contract-re-verification.md"

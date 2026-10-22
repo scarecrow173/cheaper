@@ -56,6 +56,7 @@ Directory: `docs/plans`
 | PLAN-034CYiZ4kkOoa3oKL7PnLj | Implement OpenAI Codex subscription provider | approved | [implement-openai-codex-subscription-provider.md](./implement-openai-codex-subscription-provider.md) |
 | PLAN-034zTcqSwE6JHL46EJBnKP | OperationManager lifecycle の実装計画 | completed | [implement-operation-manager-lifecycle.md](./implement-operation-manager-lifecycle.md) |
 | PLAN-034zXjR2oE7USB76eUPCAq | Implement payload untracking migration | completed | [implement-payload-untracking-migration.md](./implement-payload-untracking-migration.md) |
+| PLAN-034KsKo6nYOBOpIpkNoviY | Codex/Cursor/Copilot hook rewrite enablement と approvalBypass opt-in の実装計画 (issue #150) | approved | [implement-per-target-hook-rewrite-enablement.md](./implement-per-target-hook-rewrite-enablement.md) |
 | PLAN-034zBjFcH4nDUr72Vc1XJ3 | Implement Pi sibling tool-call parallelism guidance and deterministic tests in runtime-pi | completed | [implement-pi-sibling-tool-call-parallelism.md](./implement-pi-sibling-tool-call-parallelism.md) |
 | PLAN-034EO1kmKwJ8MAHSHWyCws | policy-gated command tool を実装する | completed | [implement-policy-gated-command-tool.md](./implement-policy-gated-command-tool.md) |
 | PLAN-034Jcl2O612UZMGTK2IN1n | Implement PreToolUse route resolver and delegated workflow execution | completed | [implement-pretooluse-route-resolver-and-delegated-workflow.md](./implement-pretooluse-route-resolver-and-delegated-workflow.md) |

@@ -4,7 +4,7 @@ type: "test-spec"
 status: "draft"
 title: "PreToolUse route verdict rewrite and target rendering"
 created: "2026-10-20"
-updated: "2026-10-21"
+updated: "2026-10-23"
 owners: []
 relations:
   source: []
@@ -21,7 +21,8 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related:
+    - "docs/test-specs/codex-hook-rewrite-emit.md"
   refines: []
   refined-by: []
   derives-from: []
@@ -55,7 +56,9 @@ PreToolUse hook が対象 argv を resolve し、runnable なら
 - rewrite command は `current_exe()` で anchor し、解決不能時は
   bare `cheaper` に fallback する。
 - claude/devin target は hookSpecificOutput.updatedInput に rewrite を
-  載せ、codex を含む他 target は fallback verdict のみ render する。
+  載せ、codex を含む他 target は fallback verdict のみ render する
+  (flag 不在時の規約 — `route.rewrite.approvalBypass` opt-in 下の
+  codex bypassing emit は `codex-hook-rewrite-emit` spec が担う)。
 - fallback verdict は read-candidate 評価の生 verdict(Allow/Deny)を
   保持し、non-runnable route は従来評価へ fallthrough する。
 - HookTarget::Codex は独自 variant で apm-hook-codex が登録する。
@@ -72,7 +75,7 @@ PreToolUse hook が対象 argv を resolve し、runnable なら
 - grant pin 済み `git diff` → claude へ updatedInput.command =
   `"/path/cheaper" route run --payload eyJ...` + fallback Allow。
 - deny grant の command → fallback Deny を保持し rewrite しない。
-- codex target → 従来通り fallback verdict のみ返す。
+- codex target(flag 不在)→ 従来通り fallback verdict のみ返す。
 
 ## Guarantees
 
@@ -81,7 +84,9 @@ PreToolUse hook が対象 argv を resolve し、runnable なら
 
 ## Non-goals
 
-- windsurf/codex/cursor/copilot への rewrite 発行。
+- windsurf への rewrite 発行、cursor/copilot の rewrite emit
+  (実機検証まで発行しない)、codex の `approvalBypass` opt-in 下
+  emit(`codex-hook-rewrite-emit` spec が担う)。
 
 ## Risk
 

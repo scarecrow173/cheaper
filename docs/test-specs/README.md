@@ -14,9 +14,11 @@ Directory: `docs/test-specs`
 | TSPEC-034Jg5X0Tcrvv5lp9x578v | Builtin route resources and embedded materialize | draft | [builtin-route-resources.md](./builtin-route-resources.md) |
 | TSPEC-034zQr5gZxyNe4nWC1uHHg | Canonical Tool Runtime の adapter parity と所有境界 | proposed | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | TSPEC-034z50PbuzTYDWvQXYdvaG | cheaper hook subcommands and hooks.json executable contract | superseded | [cheaper-hook-subcommands-and-hooks-json-executable-contract.md](./cheaper-hook-subcommands-and-hooks-json-executable-contract.md) |
+| TSPEC-034KsKGUDFHh6p9yWNcOHQ | Codex hook rewrite emit under approvalBypass opt-in (issue #150) | draft | [codex-hook-rewrite-emit.md](./codex-hook-rewrite-emit.md) |
 | TSPEC-034Jg5UNPJ1sKpPwYxH8L3 | Command grant exitCodes and route context options | draft | [command-exitcodes-and-options.md](./command-exitcodes-and-options.md) |
 | TSPEC-034zQHrk9A6Zc7rrSLGeHA | Core resource manifest normalization | draft | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | TSPEC-034rAaJtM27Ibpy78mq0kP | Cross-agent adapter contract tests | approved | [cross-agent-adapter-contract-tests.md](./cross-agent-adapter-contract-tests.md) |
+| TSPEC-034KsKHl3xhvb61D3S2SL6 | Cursor preToolUse registration and normalize extension (issue #150) | draft | [cursor-pretooluse-registration-and-normalize.md](./cursor-pretooluse-registration-and-normalize.md) |
 | TSPEC-034cAvaR7bDF2BjMm2JiAA | Deterministic route test assertions (infra failure and sweep ordering) | draft | [deterministic-route-test-assertions.md](./deterministic-route-test-assertions.md) |
 | TSPEC-034DzTH1ljq4pSfIHyGwVs | dev-seam feature の build-mode contract | approved | [dev-seam-feature-build-mode-contract.md](./dev-seam-feature-build-mode-contract.md) |
 | TSPEC-034Dak4h2lD4Kk5dB1y5q8 | Devin provider Windows credential contract behavior | draft | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
@@ -49,6 +51,7 @@ Directory: `docs/test-specs`
 | TSPEC-034AaXPxCwdUwH1XaYc6Jn | Resource lease の寿命とアクセス境界 | approved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | TSPEC-034Jg5VLupBVGDPELPFf83 | Route log store and route logs CLI | draft | [route-logs.md](./route-logs.md) |
 | TSPEC-034Jg5JHetTGqIaDM2E2cr | Route declaration loading and argv resolution | draft | [route-resolution.md](./route-resolution.md) |
+| TSPEC-034KsKB8SYklsDeiJQS9ar | route.rewrite.approvalBypass policy flag contract (issue #150) | draft | [route-rewrite-approval-bypass-policy-flag.md](./route-rewrite-approval-bypass-policy-flag.md) |
 | TSPEC-034Jg5Kw1kunKPtgczOZ9L | Route run revalidation and delegated workflow execution | draft | [route-run-delegated-exec.md](./route-run-delegated-exec.md) |
 | TSPEC-034Jg5WCkcYfanmav19X1o | Route and route-refetch usage records | draft | [route-usage-records.md](./route-usage-records.md) |
 | TSPEC-034zTn31vnH33RcM6g7VYS | Run-scoped artifact boundaries | proposed | [run-scoped-artifact-boundaries.md](./run-scoped-artifact-boundaries.md) |

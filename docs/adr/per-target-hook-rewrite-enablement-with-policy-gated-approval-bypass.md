@@ -34,7 +34,11 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/codex-cursor-copilot-rewrite-enablement.md"
-  derived-by: []
+  derived-by:
+    - "../plans/implement-per-target-hook-rewrite-enablement.md"
+    - "../test-specs/route-rewrite-approval-bypass-policy-flag.md"
+    - "../test-specs/codex-hook-rewrite-emit.md"
+    - "../test-specs/cursor-pretooluse-registration-and-normalize.md"
   verifies: []
   verified-by: []
   references:
