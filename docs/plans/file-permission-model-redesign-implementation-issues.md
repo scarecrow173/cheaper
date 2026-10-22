@@ -127,14 +127,14 @@ issue の deps 記述が先行 issue の番号を引用するため、起票順�
 
 ## Implementation Sequence
 
-- [ ] 1. T1: issue 1(exec-contract cleanup)を起票 — deps なしの起点
-- [ ] 2. T2: issue 2(opt-in execDenyPatterns)を起票 — 本文 deps に issue 1 の番号を引用
-- [ ] 3. T3: issue 3(統一 exec grant 統合)を起票 — 本文 deps に issue 1 の番号を引用(T2 と独立・並列可)
-- [ ] 4. T4: issue 4(route 審査整理 + grant-set + record split)を起票 — deps に issue 1・3 を引用
-- [ ] 5. T5: issue 5(substitute-exec mode)を起票 — deps に issue 4 を引用
-- [ ] 6. T6: issue 6(trusted flag 発行主体)を起票 — deps に issue 1・4・5 を引用
-- [ ] 7. T7: issue 7(文書正直性 + migration guide)を起票 — deps に issue 1-6 を引用
-- [ ] 8. T8: 7 issue の URL を本 plan・各 task・IR へ記録、issue #151 へ分解サマリ comment、成果物基準を検証
+- [x] 1. T1: issue 1(exec-contract cleanup)を起票 — deps なしの起点
+- [x] 2. T2: issue 2(opt-in execDenyPatterns)を起票 — 本文 deps に issue 1 の番号を引用
+- [x] 3. T3: issue 3(統一 exec grant 統合)を起票 — 本文 deps に issue 1 の番号を引用(T2 と独立・並列可)
+- [x] 4. T4: issue 4(route 審査整理 + grant-set + record split)を起票 — deps に issue 1・3 を引用
+- [x] 5. T5: issue 5(substitute-exec mode)を起票 — deps に issue 4 を引用
+- [x] 6. T6: issue 6(trusted flag 発行主体)を起票 — deps に issue 1・4・5 を引用
+- [x] 7. T7: issue 7(文書正直性 + migration guide)を起票 — deps に issue 1-6 を引用
+- [x] 8. T8: 7 issue の URL を本 plan・各 task・IR へ記録、issue #151 へ分解サマリ comment、成果物基準を検証
 
 ## Dependencies and Risks
 
@@ -163,21 +163,21 @@ issue の deps 記述が先行 issue の番号を引用するため、起票順�
 
 | Issue | Title | URL |
 |-------|-------|-----|
-| 1 | exec-contract cleanup: 内容審査 7 項目を mandatory 層から除去 | (未起票) |
-| 2 | opt-in `security.execDenyPatterns` profile(A9 降格) | (未起票) |
-| 3 | command.grants / process.tasks の単一 exec grant モデル統合 | (未起票) |
-| 4 | route/hook 審査依存整理 + grant-set 投影 + record split | (未起票) |
-| 5 | substitute-exec route mode | (未起票) |
-| 6 | trusted route flag 発行主体の再設計(D4) | (未起票) |
-| 7 | 文書正直性 sweep + breaking-change migration guide | (未起票) |
+| 1 | exec-contract cleanup: 内容審査 7 項目を mandatory 層から除去 | https://github.com/scarecrow173/cheaper/issues/163 |
+| 2 | opt-in `security.execDenyPatterns` profile(A9 降格) | https://github.com/scarecrow173/cheaper/issues/164 |
+| 3 | command.grants / process.tasks の単一 exec grant モデル統合 | https://github.com/scarecrow173/cheaper/issues/165 |
+| 4 | route/hook 審査依存整理 + grant-set 投影 + record split | https://github.com/scarecrow173/cheaper/issues/166 |
+| 5 | substitute-exec route mode | https://github.com/scarecrow173/cheaper/issues/167 |
+| 6 | trusted route flag 発行主体の再設計(D4) | https://github.com/scarecrow173/cheaper/issues/168 |
+| 7 | 文書正直性 sweep + breaking-change migration guide | https://github.com/scarecrow173/cheaper/issues/169 |
 
 ## Verification
 
-- [ ] T8 が `gh issue list --repo scarecrow173/cheaper --search "権限モデル再設計" --state all --json number,title` で 7 件の起票を確認(検索語は task 本文の共通接尾辞に一致)
-- [ ] 各 issue body が `## Scope`・`## Acceptance Criteria`・`## Dependencies`・`## 参照` の 4 節を持ち、deps が design §実装 issue 分解と一致する(TSPEC-034Kvx6yD4sfTj8KFkFIF3 R2/R4/R6)
-- [ ] issue #151 の成果物基準 5 項目(現状調査表・trust モデル提案・ADR/spec 改訂・実装分割の記録・検証計画)が chain + 起票 issue で満たされることを T8 が確認
-- [ ] `node scripts/check-doc-ids.mjs` が pass
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --json --type plan` / `--type task` / `--type test-spec` で新規 error 0
+- [x] T8 が `gh issue list --repo scarecrow173/cheaper --search "権限モデル再設計" --state all --json number,title` で 7 件の起票を確認(検索語は task 本文の共通接尾辞に一致)
+- [x] 各 issue body が `## Scope`・`## Acceptance Criteria`・`## Dependencies`・`## 参照` の 4 節を持ち、deps が design §実装 issue 分解と一致する(TSPEC-034Kvx6yD4sfTj8KFkFIF3 R2/R4/R6)
+- [x] issue #151 の成果物基準 5 項目(現状調査表・trust モデル提案・ADR/spec 改訂・実装分割の記録・検証計画)が chain + 起票 issue で満たされることを T8 が確認
+- [x] `node scripts/check-doc-ids.mjs` が pass
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --json --type plan` / `--type task` / `--type test-spec` で新規 error 0
 
 ## Open Questions / Gaps
 
