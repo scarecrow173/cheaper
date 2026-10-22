@@ -61,7 +61,7 @@ Directory: `docs/discovery`
 | DISC-034zIO1UQe9CI5VCzqot1c | Version-pinned launcher acquisition | resolved | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | DISC-034D840CvSzto0OH0dO47y | Volume-root workspace boundary check double separator | draft | [volume-root-workspace-boundary-check-double-separator.md](./volume-root-workspace-boundary-check-double-separator.md) |
 | DISC-034r05iHy2gdnp9dPPZ28N | Windsurf Cascade hooks and APM hook deployment for pre-read delegation | resolved | [windsurf-cascade-hooks-and-apm-hook-deployment.md](./windsurf-cascade-hooks-and-apm-hook-deployment.md) |
-| DISC-034Kqi8LcVZaxgz7wxHfg4 | worker run 失敗率 31% の要因調査 (issue #141) | active | [worker-run-failure-rate-31pct-investigation.md](./worker-run-failure-rate-31pct-investigation.md) |
+| DISC-034Kqi8LcVZaxgz7wxHfg4 | worker run 失敗率 31% の要因調査 (issue #141) | resolved | [worker-run-failure-rate-31pct-investigation.md](./worker-run-failure-rate-31pct-investigation.md) |
 | DISC-z4FTQSzd835hAlRqSPb7QY | worker schema の magnitude 制約と INVALID_OUTPUT 回復不能性の構造分析 | resolved | [worker-schema-magnitude-constraints-and-output-recovery.md](./worker-schema-magnitude-constraints-and-output-recovery.md) |
 | DISC-034zIKizOrTom96Q19mbYE | Workflow contract compiler の責務と検証境界 | resolved | [workflow-compiler-boundaries.md](./workflow-compiler-boundaries.md) |
 | DISC-034zSVnLYkkFBYQvt56QNJ | Workflow file と compiler の接続境界を調査する | resolved | [workflow-file-interface.md](./workflow-file-interface.md) |
