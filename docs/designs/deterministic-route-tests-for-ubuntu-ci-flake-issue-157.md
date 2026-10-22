@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034Kp4aEcwrsOReUSPyxU9"
 type: "design"
-status: "draft"
+status: "approved"
 title: "Deterministic route tests for ubuntu CI flake (issue #157)"
 created: "2026-10-22"
 updated: "2026-10-22"

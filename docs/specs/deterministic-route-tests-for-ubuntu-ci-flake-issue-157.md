@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034KoUwVbN6YjxD7CjpYkf"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "Deterministic route tests for ubuntu CI flake (issue #157)"
 created: "2026-10-22"
 updated: "2026-10-22"

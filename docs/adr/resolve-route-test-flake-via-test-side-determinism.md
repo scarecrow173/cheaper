@@ -1,7 +1,7 @@
 ---
 id: "ADR-034KoUAHJ1vI8BbyJoL0Q9"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Resolve route test flake via test-side determinism"
 created: "2026-10-22"
 updated: "2026-10-22"
