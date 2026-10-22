@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "usage.jsonl run error record の診断 field 拡充 (issue #141)"
 created: "2026-10-23"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: []
 relations:
   source:
@@ -59,9 +59,12 @@ relations:
     - "../specs/run-error-record-observability.md"
     - "../adr/usage-error-record-field-contract.md"
     - "../discovery/worker-run-failure-rate-31pct-investigation.md"
-  derived-by: []
+  derived-by:
+    - "../plans/implement-run-error-record-observability.md"
+    - "../test-specs/usage-jsonl-run-record-diagnostic-fields.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/usage-jsonl-run-record-diagnostic-fields.md"
   references: []
   defers: []
   deferred-by: []

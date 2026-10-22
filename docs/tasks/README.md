@@ -48,6 +48,7 @@ Directory: `docs/tasks`
 | TASK-034zBJ55ACvdlADYOtaKKc | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | done | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
 | TASK-034r05iHK8bA7hdI3bUubr | Add scripted fake stream test fixture | done | [add-scripted-fake-stream-test-fixture.md](./add-scripted-fake-stream-test-fixture.md) |
 | TASK-034z1POhgJ49oVv2arDj6X | Add SEA entrypoint sea-main.ts | done | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
+| TASK-034Kr8oUgcvTuprTQJwuyp | Add usage.jsonl diagnostic field contract tests and end-to-end echo pin | todo | [add-usage-log-diagnostic-field-tests.md](./add-usage-log-diagnostic-field-tests.md) |
 | TASK-034r05iHQeQpDqCTYluKr1 | Add version check and set scripts | done | [add-version-check-and-set-scripts.md](./add-version-check-and-set-scripts.md) |
 | TASK-TttCTIVey8FHby8zR3UDqb | Add worker workload profile and auto tier classifier | done | [add-worker-workload-profile-and-auto-tier-classifier.md](./add-worker-workload-profile-and-auto-tier-classifier.md) |
 | TASK-034Jg6koI5aIWEPUXfhobu | Add workflow job when condition evaluation | done | [add-workflow-when.md](./add-workflow-when.md) |
@@ -120,6 +121,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
 | TASK-034Dak56U8haKyVTWPnBKv | Extend PluginAuth::logout with AuthInteraction | done | [extend-pluginauth-logout-with-authinteraction.md](./extend-pluginauth-logout-with-authinteraction.md) |
 | TASK-034rzRugER0y7cQ2tlWjPp | Extend usage.jsonl run record with savings section | done | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
+| TASK-034Kr8hGPsSchbau1iTWjt | Extend build_usage_record error records with envelope-derived diagnostic fields | todo | [extend-usage-log-error-record-diagnostic-fields.md](./extend-usage-log-error-record-diagnostic-fields.md) |
 | TASK-034zQsmDSYTqJOZ8CjKrGN | Canonical handlers と Pi adapter を抽出する | done | [extract-canonical-tools.md](./extract-canonical-tools.md) |
 | TASK-034r05iHQeQpDpFFl8q6NC | Extract promptWithAbortGrace helper and apply to main run | done | [extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
 | TASK-034z1PGTvhoaHhdTUgPahz | Extract shared esbuild bundle helper from bundle-cli.mjs | done | [extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md](./extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md) |
@@ -206,7 +208,7 @@ Directory: `docs/tasks`
 | TASK-034FppMiRb1TxdOmzgt11q | T1: invocation-policy-layer — core load_policy への合成 invocation layer（compile-forced propagation 所有） | done | [invocation-policy-layer.md](./invocation-policy-layer.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-6uOJTepTvP210AgeeaBtkq | issue-111 文書追随・回帰 fixture・最終検証 | done | [issue-111-docs-and-final-verification.md](./issue-111-docs-and-final-verification.md) |
-| TASK-03404zg7SVQPn5JeZ0lwDD | Make exec_infra_failure_returns_error deterministic via error code and message | todo | [make-exec-infra-failure-test-deterministic.md](./make-exec-infra-failure-test-deterministic.md) |
+| TASK-03404zg7SVQPn5JeZ0lwDD | Make exec_infra_failure_returns_error deterministic via error code and message | done | [make-exec-infra-failure-test-deterministic.md](./make-exec-infra-failure-test-deterministic.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
 | TASK-034zXB21CtI0XLnu6QAHPe | Migrate native workflows and release guidance | done | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
@@ -242,7 +244,7 @@ Directory: `docs/tasks`
 | TASK-034BgKkC4U7NTKprsORKCH | Phase 5: switch distribution to Rust binary | done | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
 | TASK-034BgKlddxEi2ozLgZMFi3 | Phase 6: remove TypeScript Node Pi | done | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | TASK-034DlFISpHRPrXyhhlFXfa | Pin devin cache-hit usage mapping in stream tests | done | [pin-devin-cache-hit-usage-mapping-in-stream-tests.md](./pin-devin-cache-hit-usage-mapping-in-stream-tests.md) |
-| TASK-0340C4KaPSmy4CrDagevUC | Pin sweep test deletion order with explicit set_mtime timestamps | todo | [pin-sweep-test-deletion-order-with-explicit-mtimes.md](./pin-sweep-test-deletion-order-with-explicit-mtimes.md) |
+| TASK-0340C4KaPSmy4CrDagevUC | Pin sweep test deletion order with explicit set_mtime timestamps | done | [pin-sweep-test-deletion-order-with-explicit-mtimes.md](./pin-sweep-test-deletion-order-with-explicit-mtimes.md) |
 | TASK-034FpqibELWYvjxZennqEn | T3: policy-grant-command — cheaper policy grant {add,list,remove} と core write 基盤 | done | [policy-grant-command.md](./policy-grant-command.md) |
 | TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | done | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |
 | TASK-034zTWibd7OKesgJgoGxJu | Prepare one-dispatch release artifacts | done | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
@@ -306,6 +308,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqvqdt4mXS | Update README/AGENTS for dev/distribution split and run final verification | done | [update-readme-agents-and-final-verification.md](./update-readme-agents-and-final-verification.md) |
 | TASK-034r05iHQeQpDpMem6J7OE | Update README and add provider setup guide | done | [update-readme-and-add-provider-setup-guide.md](./update-readme-and-add-provider-setup-guide.md) |
 | TASK-034z2pbpAynIVRedenPgXa | Update release guide for manual SEA release workflow | done | [update-release-guide-for-manual-sea-release-workflow.md](./update-release-guide-for-manual-sea-release-workflow.md) |
+| TASK-034Kr8pszGdyClSDbgMU3Q | Update usage.jsonl run record field documentation | todo | [update-usage-jsonl-record-field-docs.md](./update-usage-jsonl-record-field-docs.md) |
 | TASK-034DmVS8k50GMCHNnui6Wb | upstream doc reconciliation and final verification | done | [upstream-doc-reconciliation-and-final-verification.md](./upstream-doc-reconciliation-and-final-verification.md) |
 | TASK-034r05iHQeQpDqKGWioCow | Usage-log e2e assertions, docs, bundle regen, status sync, final verification | done | [usage-log-e2e-docs-and-final-verification.md](./usage-log-e2e-docs-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
@@ -315,7 +318,7 @@ Directory: `docs/tasks`
 | TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | done | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |
 | TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | done | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
-| TASK-034yW3DRPtMmttnAEru9Ns | Verify route test determinism and run mise run check | todo | [verify-route-test-determinism-and-mise-check.md](./verify-route-test-determinism-and-mise-check.md) |
+| TASK-034yW3DRPtMmttnAEru9Ns | Verify route test determinism and run mise run check | done | [verify-route-test-determinism-and-mise-check.md](./verify-route-test-determinism-and-mise-check.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
 | TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | done | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
@@ -323,6 +326,7 @@ Directory: `docs/tasks`
 | TASK-034DVH7HJKxbc1zEF7638b | T2: cli --log/--log-format flag 配線と init 呼出し | done | [wire-cli-log-flags-and-observability-init.md](./wire-cli-log-flags-and-observability-init.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
 | TASK-034IpPwmpKldYJ5rPUuq4z | Wire evaluate_dedup into hook target call sites | done | [wire-evaluate-dedup-into-hook-target-call-sites.md](./wire-evaluate-dedup-into-hook-target-call-sites.md) |
+| TASK-034Kr8ooGb34ib95k3TT6i | Wire execution echo through RunCtx into run usage records | todo | [wire-execution-echo-into-run-usage-records.md](./wire-execution-echo-into-run-usage-records.md) |
 | TASK-034rzWSt1O4qIT7hk0bnds | Wire explicit model selection and meta in runtime-pi | done | [wire-explicit-model-in-runtime.md](./wire-explicit-model-in-runtime.md) |
 | TASK-034zTWiLbk14ZhGMpiNo7M | Wire one-dispatch release publication | done | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
 | TASK-034AaXZ7nc5LQuUvG9iFY8 | 実 I/O と Pi job lease を配線する | done | [wire-resource-manager-observation.md](./wire-resource-manager-observation.md) |

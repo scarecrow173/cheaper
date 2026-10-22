@@ -4,7 +4,7 @@ type: "spec"
 status: "approved"
 title: "usage.jsonl run record への version・実効 policy・error 診断 field の追加 (issue #141)"
 created: "2026-10-23"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: []
 relations:
   source:
@@ -21,6 +21,7 @@ relations:
   implements: []
   implemented-by:
     - "../designs/run-error-record-observability.md"
+    - "../plans/implement-run-error-record-observability.md"
   depends-on: []
   blocks: []
   supersedes: []
@@ -38,6 +39,10 @@ relations:
   derived-by:
     - "../adr/usage-error-record-field-contract.md"
     - "../designs/run-error-record-observability.md"
+    - "../plans/implement-run-error-record-observability.md"
+    - "../test-specs/usage-jsonl-run-record-diagnostic-fields.md"
+  verified-by:
+    - "../test-specs/usage-jsonl-run-record-diagnostic-fields.md"
 ---
 
 # usage.jsonl run record への version・実効 policy・error 診断 field の追加 (issue #141)

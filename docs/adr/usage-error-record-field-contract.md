@@ -4,7 +4,7 @@ type: "adr"
 status: "accepted"
 title: "usage.jsonl の run error record は固定 allowlist の診断 field で拡充する (issue #141)"
 created: "2026-10-23"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: []
 relations:
   source:
@@ -36,6 +36,8 @@ relations:
     - "../discovery/worker-run-failure-rate-31pct-investigation.md"
   derived-by:
     - "../designs/run-error-record-observability.md"
+    - "../plans/implement-run-error-record-observability.md"
+    - "../test-specs/usage-jsonl-run-record-diagnostic-fields.md"
   verifies: []
   verified-by: []
   references: []
