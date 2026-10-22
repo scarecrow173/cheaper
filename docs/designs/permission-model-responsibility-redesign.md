@@ -28,6 +28,8 @@ relations:
     - "../adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
     - "../adr/per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md"
     - "../adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md"
+    - "../adr/defer-non-exec-routing-to-permission-model-redesign.md"
+    - "../adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "../specs/policy-gated-command-tool.md"
     - "../specs/invocation-scoped-command-grants.md"
     - "../specs/pretooluse-route-resolver-and-workflow-delegation.md"
@@ -37,13 +39,14 @@ relations:
     - "./workflow-resource-inference.md"
     - "./rust-rig-runtime-migration-architecture.md"
     - "./pretooluse-route-resolver-and-delegated-workflow-execution.md"
+    - "./managed-process-canonical-tool.md"
+    - "./invocation-scoped-command-grants.md"
   refines: []
   refined-by: []
   derives-from:
     - "docs/discovery/permission-model-responsibility-redesign.md"
     - "docs/specs/permission-model-responsibility-redesign.md"
     - "docs/adr/enforce-declared-contracts-over-content-audit.md"
-    - "docs/adr/defer-non-exec-routing-to-permission-model-redesign.md"
   derived-by: []
   verifies: []
   verified-by: []
@@ -424,7 +427,7 @@ operator 層への移行(issue 6 の設計論点)。
      route の trust model は grant 参照の scope(誰の宣言を route
      が使えるか)と直に交差するため、grant-set/substitute の形が
      見えてから決める。
-   - deps: 1, 4。
+   - deps: 1, 4, 5。
 7. **文書正直性 sweep + breaking-change migration guide**
    - scope: 「boundary/sandbox/protection」表現と実強制範囲の整合
      (guides・refine 対象 ADR/spec — spawn API 層の shell-free
