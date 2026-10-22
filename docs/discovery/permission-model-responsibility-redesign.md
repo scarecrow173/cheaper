@@ -4,7 +4,7 @@ type: "discovery"
 status: "active"
 title: "権限・Runtime Policy・Tool 実行制限の責務ベース再設計 (issue #151)"
 created: "2026-10-22"
-updated: "2026-10-22"
+updated: "2026-10-23"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -32,6 +32,7 @@ relations:
   derived-by:
     - "docs/specs/permission-model-responsibility-redesign.md"
     - "docs/adr/enforce-declared-contracts-over-content-audit.md"
+    - "../designs/permission-model-responsibility-redesign.md"
   verifies: []
   verified-by: []
   references: []
@@ -184,11 +185,12 @@ deny list や provenance 審査は「宣言された制約の強制」ではな�
 
 ### 分類カウント
 
-- **(1) required(実行契約/correctness)**: 31 項目 — A1,A2,A4,A5,A7,B1,B2,C1-C8,D1,D2,D5-D13,E1-E8,E11
-- **(2) operator-choosable**: 6 項目 — A3,A6,D4,D14,E9,E10,F1
+- **(1) required(実行契約/correctness)**: 36 項目 — A1,A2,A4,A5,A7,B1,B2,C1-C8,D1,D2,D5-D13,D15,E1-E8,E11
+- **(2) operator-choosable**: 7 項目 — A3,A6,D4,D14,E9,E10,F1
 - **(3) optional hardening**: 1 項目 — D3
 - **(4) unenforceable/excessive(内容審査)**: 8 項目 — A8,A9,A10,B3,B4,B5,B6,F3
 - 構造的重複(分類外): F2
+- **合計 53 項目**(分類済み 52 + F2)
 
 ### 内容審査クラスタ(再設計の中核)
 
@@ -225,8 +227,8 @@ spec で決定(C の要素)。D(grant/task 統合)は別 issue へ切り出す�
 
 - **[confirmed] 責務境界は「宣言強制 vs 内容審査」で引ける** — 8 項目の
   内容審査制限(A8,A9,A10,B3,B4,B5,B6,F3)はすべて「宣言を覆す審査」
-  であり、残り 38 項目は「宣言の強制」または「契約の正しさ」に分類できる。
-  境界は構造的に明瞭。
+  であり、残り 44 項目は「宣言の強制」または「契約の正しさ」に分類できる
+  (F2 は構造的重複で制限カウント外)。境界は構造的に明瞭。
 - **[confirmed] deny list の「保護」表現は誤称** — `command.rs` の
   deny list は deterministic deny であり containment ではない。
   `designs/policy-gated-command-tool.md` 自身が bypass surface を認めている。

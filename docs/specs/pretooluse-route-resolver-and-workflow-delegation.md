@@ -4,7 +4,7 @@ type: "spec"
 status: "proposed"
 title: "PreToolUse auto-routing: route resolution and delegated workflow execution"
 created: "2026-10-20"
-updated: "2026-10-21"
+updated: "2026-10-23"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -40,6 +40,7 @@ relations:
     - "./one-shot-workflow-engine-and-run-cli.md"
     - "../adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
     - "../adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
+    - "./permission-model-responsibility-redesign.md"
   refines: []
   refined-by:
     - "./codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md"
@@ -318,10 +319,15 @@ output capture + token 計測 + conditional worker による縮約)。
   revalidation 失敗時は原 command を実行せず cheaper error
   (code + exitCode)で終了する — routing 層内で raw command を
   fallback 実行してはならない(grant 境界の迂回になる)。
-- R15: `route run` の process exit code は原 command の exit code
-  とする(非 0 を含め透過)。route 自体の infra failure(resolve
-  再失敗・payload 不正・target 読み込み不可等)は cheaper error
-  code で返し、command の exit code と混同しない。
+- R15: `route run` の process exit code は**実行した command** の
+  exit code とする(非 0 を含め透過)— 既定 mode では原 command、
+  route が `substitute` を宣言する mode では substitute command の
+  exit code(親 agent は引き続きそれを原 command の exit として
+  解釈する — semantic substitution は trusted 層 opt-in で受容する、
+  permission-model-responsibility-redesign spec/design の決定)。
+  route 自体の infra failure(resolve 再失敗・payload 不正・target
+  読み込み不可等)は cheaper error code で返し、command の
+  exit code と混同しない。
 - R16: post-processing(output capture・token 計測・conditional
   worker 呼出・usage/log 記録)の失敗は原 command を再実行しない。
   post-processing 失敗は `postprocessFailures` として記録し、
