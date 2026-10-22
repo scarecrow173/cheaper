@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KxDr0eOqS1QjXxMazEk"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add hook-config compat-degraded and windsurf-conflict verify findings"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -180,21 +180,21 @@ exit code は不変)。
 
 ## Done When
 
-- [ ] `own_state` absent/missing + windsurf conflict + 非無効化で
+- [x] `own_state` absent/missing + windsurf conflict + 非無効化で
       `compat-degraded:` finding が emit される(informational、
       exit code 不変)
-- [ ] `own_state` present 系 + windsurf conflict + 非無効化で
+- [x] `own_state` present 系 + windsurf conflict + 非無効化で
       `windsurf-conflict:` finding が emit される(informational、
       `clean:true` ・exit 0)
-- [ ] `read_config_from.windsurf == false` で両 finding が抑止
+- [x] `read_config_from.windsurf == false` で両 finding が抑止
       される(`read_config_from` 欠落・非 object・`windsurf` が
       `false` 以外は抑止しない)
-- [ ] windsurf conflict が無い場合(`.claude` のみ等)は両 finding
+- [x] windsurf conflict が無い場合(`.claude` のみ等)は両 finding
       が emit されない
-- [ ] `legacy-conflict:` の文言が dedup 限定条件(同一 canonical
+- [x] `legacy-conflict:` の文言が dedup 限定条件(同一 canonical
       request/fingerprint 一致・range を落とす compat firing 対象外)
       へ訂正されている
-- [ ] `sync`/`remove`/`--event-stdin`・own-group 検証・capability
+- [x] `sync`/`remove`/`--event-stdin`・own-group 検証・capability
       gate・orphan sweep・他 finding 文言が不変
 
 ## Out of Scope
@@ -207,5 +207,5 @@ exit code は不変)。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook_config::` exits 0(新規 finding fixture + 既存 contract 非回帰)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook_config::` exits 0(新規 finding fixture + 既存 contract 非回帰) — 実測: 26 passed / 0 failed(新規 5 test: `hook_config_verify_compat_degraded_findings`・`hook_config_verify_windsurf_conflict_finding_informational`・`hook_config_verify_read_config_from_suppression`・`hook_config_verify_non_windsurf_conflict_emits_neither`・`hook_config_verify_legacy_conflict_wording_corrected`)
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0

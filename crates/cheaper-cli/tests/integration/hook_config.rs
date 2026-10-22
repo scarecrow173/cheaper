@@ -717,3 +717,215 @@ async fn hook_config_event_stdin_preserves_bak() {
         );
     }
 }
+
+// --- issue #161: compat-degraded / windsurf-conflict findings -----------
+
+/// `.claude/settings.json` に legacy cheaper 登録を残す conflict
+/// fixture — windsurf 以外経路(両 compat finding の非発火確認用)。
+fn write_claude_conflict(fx: &Fixture) {
+    std::fs::create_dir_all(fx.ws.path().join(".claude")).unwrap();
+    std::fs::write(
+        fx.ws.path().join(".claude").join("settings.json"),
+        "{\"hooks\":[{\"command\":\"cheaper hook pre-read-code\"}]}\n",
+    )
+    .unwrap();
+}
+
+/// `.devin/config.json` を任意 JSON(own group + `read_config_from`
+/// 等の追加 root key)で書き込む。
+fn write_config_json(fx: &Fixture, json: &str) {
+    std::fs::create_dir_all(fx.ws.path().join(".devin")).unwrap();
+    std::fs::write(config_path(fx), format!("{json}\n")).unwrap();
+}
+
+/// envelope `result.findings` を `&str` の Vec で取り出す。
+fn findings_of(env: &Value) -> Vec<String> {
+    env["result"]["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|f| f.as_str().map(str::to_string))
+        .collect()
+}
+
+/// `compat-degraded:`/`windsurf-conflict:` の有無を assert する。
+/// `Some(prefix)` で 1 件存在を、`None` で両者とも不存在を pin。
+fn assert_compat_finding(findings: &[String], expect: Option<&str>) {
+    match expect {
+        Some(prefix) => assert!(
+            findings.iter().any(|f| f.starts_with(prefix)),
+            "expected `{prefix}` finding: {findings:?}"
+        ),
+        None => {
+            assert!(
+                !findings.iter().any(|f| f.starts_with("compat-degraded:")),
+                "{findings:?}"
+            );
+            assert!(
+                !findings.iter().any(|f| f.starts_with("windsurf-conflict:")),
+                "{findings:?}"
+            );
+        }
+    }
+}
+
+/// issue #161 — `own_state` absent/missing + `.windsurf/hooks.json`
+/// conflict + windsurf import 非無効化で `compat-degraded:` を emit
+/// する。severity は informational — exit code・`clean` は既存
+/// blocker(`absent-config:`/`missing:`)由来のまま。
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_verify_compat_degraded_findings() {
+    // absent(config 不在)+ `.windsurf` conflict → compat-degraded。
+    let mut fx = fixture_with_cheaper_on_path();
+    write_legacy_conflict(&fx);
+    let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+    assert_eq!(code, 2, "{env}");
+    assert_eq!(env["result"]["clean"], false);
+    assert_eq!(env["result"]["ownEntry"], "absent");
+    let findings = findings_of(&env);
+    assert_compat_finding(&findings, Some("compat-degraded:"));
+    assert!(
+        findings.iter().any(|f| f.starts_with("legacy-conflict:")),
+        "{findings:?}"
+    );
+    assert!(
+        findings.iter().any(|f| f.contains("absent-config")),
+        "{findings:?}"
+    );
+
+    // missing(config 有り・own entry 無し)+ conflict → compat-degraded
+    // (`missing:` blocker と併存)。
+    let mut fx = fixture_with_cheaper_on_path();
+    write_config_with_groups(&fx, &[]);
+    write_legacy_conflict(&fx);
+    let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+    assert_eq!(code, 2, "{env}");
+    assert_eq!(env["result"]["clean"], false);
+    assert_eq!(env["result"]["ownEntry"], "missing");
+    let findings = findings_of(&env);
+    assert_compat_finding(&findings, Some("compat-degraded:"));
+    assert!(
+        findings.iter().any(|f| f.starts_with("missing:")),
+        "{findings:?}"
+    );
+}
+
+/// issue #161 — own entry 存在 + `.windsurf` conflict +
+/// import 非無効化で `windsurf-conflict:` を emit する。severity は
+/// informational — `clean:true`・exit 0 を維持する(remediation
+/// loop の false-green を塞ぐ存続報告)。
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_verify_windsurf_conflict_finding_informational() {
+    let mut fx = fixture_with_cheaper_on_path();
+    write_config_with_groups(&fx, &[own_entry(CANONICAL_MATCHER)]);
+    write_legacy_conflict(&fx);
+    let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+    assert_eq!(code, 0, "{env}");
+    assert_eq!(env["result"]["clean"], true, "{env}");
+    assert_eq!(env["result"]["ownEntry"], "present");
+    let findings = findings_of(&env);
+    assert_compat_finding(&findings, Some("windsurf-conflict:"));
+    // dual-registration trap の文言要点 — fingerprint が `range` を
+    // 含み compat firing は dedup 対象外。
+    let finding = findings
+        .iter()
+        .find(|f| f.starts_with("windsurf-conflict:"))
+        .unwrap();
+    assert!(finding.contains("fingerprint"), "{finding}");
+    assert!(finding.contains("`range`"), "{finding}");
+}
+
+/// issue #161 — `read_config_from.windsurf` が明示 JSON `false` の
+/// 場合のみ両 finding を抑止する(実 Windsurf 専用登録 —
+/// `legacy-conflict:` は残る)。key 欠落・非 object・`false` 以外の
+/// 値・config 不在は全て「無効化なし」の保守判定。
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_verify_read_config_from_suppression() {
+    // missing + conflict + `windsurf:false` → 両 finding 抑止。
+    let mut fx = fixture_with_cheaper_on_path();
+    write_config_json(
+        &fx,
+        "{\"hooks\":{\"PreToolUse\":[]},\"read_config_from\":{\"windsurf\":false}}",
+    );
+    write_legacy_conflict(&fx);
+    let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+    assert_eq!(code, 2, "{env}");
+    assert_eq!(env["result"]["ownEntry"], "missing");
+    let findings = findings_of(&env);
+    assert_compat_finding(&findings, None);
+    // 抑止は compat finding のみ — `legacy-conflict:` は残る。
+    assert!(
+        findings.iter().any(|f| f.starts_with("legacy-conflict:")),
+        "{findings:?}"
+    );
+
+    // `false` 以外の値(`true`・文字列)・key 欠落・非 object は
+    // 抑止しない保守判定 — compat-degraded が emit される。
+    for config in [
+        "{\"hooks\":{\"PreToolUse\":[]},\"read_config_from\":{\"windsurf\":true}}",
+        "{\"hooks\":{\"PreToolUse\":[]},\"read_config_from\":{\"windsurf\":\"no\"}}",
+        "{\"hooks\":{\"PreToolUse\":[]},\"read_config_from\":{\"claude\":false}}",
+        "{\"hooks\":{\"PreToolUse\":[]},\"read_config_from\":\"x\"}",
+        "{\"hooks\":{\"PreToolUse\":[]}}",
+    ] {
+        let mut fx = fixture_with_cheaper_on_path();
+        write_config_json(&fx, config);
+        write_legacy_conflict(&fx);
+        let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+        assert_eq!(code, 2, "config={config} {env}");
+        let findings = findings_of(&env);
+        assert_compat_finding(&findings, Some("compat-degraded:"));
+    }
+}
+
+/// issue #161 — windsurf 経路以外(`.claude/settings.json`)の
+/// conflict のみでは両 finding を emit しない。
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_verify_non_windsurf_conflict_emits_neither() {
+    // `.claude` のみ conflict + absent。
+    let mut fx = fixture_with_cheaper_on_path();
+    write_claude_conflict(&fx);
+    let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+    assert_eq!(code, 2, "{env}");
+    let findings = findings_of(&env);
+    assert_compat_finding(&findings, None);
+    assert!(
+        findings.iter().any(|f| f.starts_with("legacy-conflict:")),
+        "{findings:?}"
+    );
+
+    // `.claude` のみ conflict + present。
+    let mut fx = fixture_with_cheaper_on_path();
+    write_config_with_groups(&fx, &[own_entry(CANONICAL_MATCHER)]);
+    write_claude_conflict(&fx);
+    let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+    assert_eq!(code, 0, "{env}");
+    let findings = findings_of(&env);
+    assert_compat_finding(&findings, None);
+    assert!(
+        findings.iter().any(|f| f.starts_with("legacy-conflict:")),
+        "{findings:?}"
+    );
+}
+
+/// issue #161 — `legacy-conflict:` の dedup 文言訂正。dedup は同一
+/// canonical request(fingerprint 一致)の firing に限り発動し、
+/// range field を落とす compat 経由 firing は対象外である旨を
+/// 報告する。「identical requests」への旧言い回しは残さない。
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_verify_legacy_conflict_wording_corrected() {
+    let mut fx = fixture_with_cheaper_on_path();
+    write_config_with_groups(&fx, &[own_entry(CANONICAL_MATCHER)]);
+    write_legacy_conflict(&fx);
+    let (code, env, _err) = fx.run(&["hook-config", "verify"]).await;
+    assert_eq!(code, 0, "{env}");
+    let findings = findings_of(&env);
+    let finding = findings
+        .iter()
+        .find(|f| f.starts_with("legacy-conflict:"))
+        .unwrap_or_else(|| panic!("missing legacy-conflict finding: {findings:?}"));
+    assert!(finding.contains("canonical"), "{finding}");
+    assert!(finding.contains("fingerprint"), "{finding}");
+    assert!(finding.contains("range"), "{finding}");
+    assert!(!finding.contains("identical requests"), "{finding}");
+}
