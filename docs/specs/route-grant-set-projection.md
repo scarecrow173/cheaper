@@ -30,7 +30,8 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/route-grant-set-projection-issue-166.md"
-  derived-by: []
+  derived-by:
+    - "../designs/route-grant-set-projection.md"
   verifies: []
   verified-by: []
   references:

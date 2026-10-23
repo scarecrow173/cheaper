@@ -29,6 +29,7 @@ relations:
   derived-by:
     - "../specs/route-grant-set-projection.md"
     - "../adr/route-grant-set-projection.md"
+    - "../designs/route-grant-set-projection.md"
   verifies: []
   verified-by: []
   references:
