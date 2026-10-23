@@ -297,10 +297,16 @@ record schema は additive-only で、新旧の record は同一
 usage.jsonl に混在しうる。旧 writer の record（上記 optional
 field なし）も新しい `cheaper usage` がそのまま集計でき、
 逆に新 writer の record も旧 `cheaper usage` が既知 field
-のみ読んで集計できる（未知 field は無視される）。ただし
-`usage.costUsd` の算出元は新旧で異なる（後述）ため、混在
-file の costUsd 合計は「同じ算出式の値の和」ではない点に
-注意。
+のみ読んで集計できる（未知 field は無視される）。例として
+`kind:"route"` record の `executed`（`{grant, argv}` — 実際に
+実行された grant と env-prefix-strip 済み argv）は additive
+field で、既存 reader は無視して集計できる。ただし
+`executed.argv` は**平文の引数値**を保持する — 引数値自体に
+secret を含む command の routed 実行は usage.jsonl に値が残る
+（詳細は [parent-agent 連携ガイド](./parent-agent-integration.md)
+の route record 節）。`usage.costUsd` の算出元は新旧で異なる
+（後述）ため、混在 file の costUsd 合計は「同じ算出式の値の和」
+ではない点に注意。
 
 ## 実測 savings（actual / measured / estimated の区別）
 

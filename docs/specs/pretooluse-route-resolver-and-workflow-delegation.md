@@ -214,12 +214,26 @@ output capture + token 計測 + conditional worker による縮約)。
 
 - R1: `routes.yaml` は `{version: 1, routes: Route[]}` を持つ。
   Route の field は `{name, match:{command:[token,…]},
-  target:{kind:"workflow", path}, grant, output:{tokenThreshold?},
-  passthroughEnv:[name,…]?, trusted?}` とする。`name` は route
-  を一意に識別する ID、`match.command` は argv token prefix、
-  `target` は `kind:"workflow"` のみを許容し `path` は登録済み
-  workflow file を指す。`grant` は `command.grants` の既存 grant
-  名への参照であり、route は grant を生成しない。
+  target:{kind:"workflow", path}, grant, grants:[name,…]?,
+  output:{tokenThreshold?}, passthroughEnv:[name,…]?, trusted?}`
+  とする。`name` は route を一意に識別する ID、`match.command`
+  は argv token prefix、`target` は `kind:"workflow"` のみを
+  許容し `path` は登録済み workflow file を指す。`grant` は
+  `command.grants` の既存 grant 名への参照であり、route は
+  grant を生成しない。`grants`（issue #166）は anchor
+  `route.grant` 以外の追加 delegated grant 名の optional 配列で、
+  実効 grant set は `{route.grant} ∪ grants` とする（member は
+  宣言順に parse され、重複と `route.grant` 自身への参照は
+  除去される — 空・未指定は同等）。`grants` は builtin/user の
+  trusted 層のみが authoring でき、project 層 entry に `grants`
+  key が存在すると値の形状に関わらず route load が
+  `InvalidRuntimePolicy` で失敗する（fail-loud — project が
+  宣言できるのは従来通り単数 `grant:` anchor 参照のみ）。
+  member を呼ぶ routed workflow 内の `command` job は
+  `job_id != "exec"` で宣言する — `job_id == "exec"` の
+  `command` job は anchor grant + 元 argv の expected-input に
+  束縛され、不一致は `exec-input-mismatch`（PolicyViolation）
+  とする。
   `output.tokenThreshold` は routed workflow の conditional
   worker を起動する閾値の per-route override、`passthroughEnv`
   は hook env から passthrough を許す env 名の allowlist。
@@ -303,7 +317,14 @@ output capture + token 計測 + conditional worker による縮約)。
   rewrite-safe gate(R8)、stdin/TTY 依存(R32)を評価する。複数の
   失敗が同時に成立しうる場合、報告は固定の deterministic な優先順
   `unsafe-command → invalid-route → missing-target → no-grant →
-  stdin-unsupported → runnable` で 1 値に畳む。
+  stdin-unsupported → runnable` で 1 値に畳む。no-grant 評価は
+  anchor `grant:` の完全な実行可否（存在・`scope:"trusted" &&
+  !fixed`・executable pin・実 argv byte-match）に加え、宣言
+  `grants` member それぞれへの 存在 + 同 eligibility + pin 検査
+  を含む（issue #166 — member への元 argv 照合は行わず、member
+  job の argv は各 grant 自身の pattern が job 実行時に拘束する。
+  member 失敗は新規 viability 値を増やさず anchor 失敗と同じ
+  `no-grant` へ畳む）。
 
 ### `cheaper route run`
 
@@ -446,9 +467,15 @@ output capture + token 計測 + conditional worker による縮約)。
 
 - R34: routed 実行の結果は `<userConfigDir>/usage.jsonl` へ
   `kind:"route"` の 1 行 JSONL record として継続記録する — field
-  は `{route, commandHash, originalTokens, returnedTokens,
+  は `{route, commandHash, executed:{grant, argv},
+  originalTokens, returnedTokens,
   reductionRatio, worker:{model, usage}, durationMs:{exec, analyze,
-  total}, logRef, refetches, postprocessFailures}`。`originalTokens`
+  total}, logRef, refetches, postprocessFailures}`。`executed` は
+  additive field（issue #166）で、実際に実行された exec job の
+  `{grant, argv}`（env-prefix-strip 済み — prefix 値は含まない）
+  を記録し、宣言 identity（`route`・`commandHash`）と実行
+  attribution を分離する。`executed.argv` は平文の引数値を含む。
+  `originalTokens`
   は capture された原 output の token 数、`returnedTokens` は親へ
   返却した result の token 数、`reductionRatio` はその縮約率、
   `durationMs` は command 実行(exec)/worker 分析(analyze)/全体

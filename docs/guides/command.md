@@ -39,7 +39,7 @@ trusted policy YAML の grant spec はさらに `fixed`・`inputs`・`outputs`�
 
 **`--grant`・`policy grant add` の CLI 入口では `fixed:true`・明示 `scope` を含む spec は `InvalidRequest` で拒否される** — これらの入口は route-eligible な `!fixed` command grant のみ供給する契約で、inert/route 不可視な宣言は利用者の意図と矛盾するため（trusted YAML での直接 authoring は合法）。`fixed:false`・`inputs`/`outputs` の宣言は CLI spec でも受理される。
 
-route の `grant:` 参照が解決するのも `scope:"trusted" && !fixed` の grant のみ — `fixed`・`scope:"project"`・未知名を指す route は `Viability::NoGrant`（route ineligible、error ではなく viability 情報）として畳まれる。
+route の `grant:`（anchor）・`grants:`（追加 delegated member）参照が解決するのも `scope:"trusted" && !fixed` の grant のみ — `fixed`・`scope:"project"`・未知名を指す route は `Viability::NoGrant`（route ineligible、error ではなく viability 情報）として畳まれる。`grants` は builtin/user 層の routes.yaml でのみ宣言でき、project 層 entry に `grants` key が存在すると route load が `InvalidRuntimePolicy` で失敗する（member job の authoring 規約・anchor 束縛は [parent-agent 連携ガイド](./parent-agent-integration.md) 参照）。
 
 executable は bare name または absolute path（workspace 相対 path は拒否）。bare name は scope 構築時点の ambient PATH で解決し、realpath 済み canonical path を pin する。native magic（MZ / ELF / Mach-O）を持つ executable のみ実行可能で、shell・script shim（`.cmd`/`.bat`/`.ps1`/`.sh`）は `process` baseline の deny で拒否される。
 

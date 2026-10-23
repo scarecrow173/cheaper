@@ -4,5 +4,6 @@ routes:
     match: {command: [cargo, test]}
     target: {kind: workflow, path: routed-exec.workflow.json}
     grant: cargo-test
+    # grants: [name, …]  # optional — route.grant 以外の追加委譲 grant(builtin/user 層限定)
     output: {tokenThreshold: 8192}
     passthroughEnv: [CI]
