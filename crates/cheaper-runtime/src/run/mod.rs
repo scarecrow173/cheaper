@@ -338,6 +338,10 @@ impl<'a> RunCtx<'a> {
                         // `policy.command` — resolved policy の機械的
                         // serialize(`process` と同型。T1 は passthrough)。
                         command: Some(serde_json::to_value(&policy.command).unwrap_or_default()),
+                        // `policy.security` — resolved policy の機械的
+                        // serialize(`command`/`process` と同型。
+                        // invocation runtime の parity inner 値になる)。
+                        security: Some(serde_json::to_value(&policy.security).unwrap_or_default()),
                         root: deps.root.clone(),
                         // F5: `policy.filesystem.symlinks` — TS run.ts の
                         // `symlinkPolicy: policy.filesystem.symlinks` parity。
@@ -491,6 +495,9 @@ impl<'a> RunCtx<'a> {
                         artifacts: None,
                         process: Some(serde_json::to_value(&policy.process).unwrap_or_default()),
                         command: Some(serde_json::to_value(&policy.command).unwrap_or_default()),
+                        // `policy.security` — `command` と同型の parity
+                        // check 入力(inner.security との一致を検査)。
+                        security: Some(serde_json::to_value(&policy.security).unwrap_or_default()),
                         root: deps.root.clone(),
                         // F5: invocation runtime と同じく policy 由来。
                         symlink_policy: policy.filesystem.symlinks,

@@ -94,6 +94,7 @@ fn invocation_options(root: String, process: Option<Value>) -> InvocationToolRun
         artifacts: None,
         process,
         command: None,
+        security: None,
         root,
         symlink_policy: SymlinkPolicy::Deny,
         signal: None,
@@ -111,6 +112,7 @@ fn scope_options(root: &str, names: Vec<ToolName>) -> ToolRuntimeOptions {
         artifacts: None,
         process: None,
         command: None,
+        security: None,
         root: root.to_string(),
         symlink_policy: SymlinkPolicy::Deny,
         names,
@@ -705,6 +707,145 @@ async fn single_grant_projection_preserves_scope_parity() {
     assert!(
         err_message(&err).contains("unknown or unauthorized command grant"),
         "{err}"
+    );
+    invocation.dispose().await;
+}
+
+// ---------------------------------------------------------------------------
+// security.execDenyPatterns(issue #164)— invocation 層の
+// resolve + compile・parity check・scope 再注入の pin。
+// ---------------------------------------------------------------------------
+
+/// `InvocationToolRuntimeOptions.security` — declared executable が
+/// inner deny に match する command raw は invocation 構築の
+/// 適用点 1 で `InvalidRuntimePolicy`。inner deny は compiled 形で
+/// `inner.exec_deny` に保持される。
+#[tokio::test]
+async fn invocation_resolves_and_compiles_security() {
+    let dir = TempDir::new();
+    let mut opts = invocation_options(dir.root(), None);
+    opts.command = Some(json!({"grants": {"self": self_grant()}}));
+    opts.security = Some(json!({"execDenyPatterns": [".*"]}));
+    let err = create_invocation_tool_runtime(opts).unwrap_err();
+    let e = err
+        .downcast_ref::<CheaperError>()
+        .expect("apply point 1 は CheaperError");
+    assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+    assert!(
+        e.message().contains("denied by security.execDenyPatterns"),
+        "{e}"
+    );
+    // 非 match の security は受理 — inner.exec_deny が保持される。
+    let mut opts = invocation_options(dir.root(), None);
+    opts.command = Some(json!({"grants": {"self": self_grant()}}));
+    opts.security = Some(json!({"execDenyPatterns": ["never-match-xyz"]}));
+    let invocation = create_invocation_tool_runtime(opts).unwrap();
+    invocation.dispose().await;
+}
+
+/// `security` の scope parity check — caller 供給 raw が `inner.
+/// security` の declared-shape と不一致なら `invalid_binding(
+/// "security policy mismatch")`(`InvalidRequest` + `details.reason`)。
+#[tokio::test]
+async fn worker_scope_rejects_security_policy_mismatch() {
+    let dir = TempDir::new();
+    let mut opts = invocation_options(dir.root(), None);
+    opts.security = Some(json!({"execDenyPatterns": ["never-match-xyz"]}));
+    let invocation = create_invocation_tool_runtime(opts).unwrap();
+    // 異なる pattern 列 → declared-shape mismatch。
+    let mut scope_opts = scope_options(&dir.root(), vec![ToolName::Ls]);
+    scope_opts.security = Some(json!({"execDenyPatterns": ["other"]}));
+    let err = invocation
+        .create_worker_scope(worker("s", scope_opts))
+        .unwrap_err();
+    let e = err
+        .downcast_ref::<CheaperError>()
+        .expect("parity mismatch は CheaperError");
+    assert_eq!(e.code(), ErrorCode::InvalidRequest);
+    assert!(e.message().contains("security policy mismatch"), "{e}");
+    assert_eq!(
+        e.details().unwrap()["reason"],
+        json!("security policy mismatch")
+    );
+    // 同一 declared-shape(raw JSON 一致)は受理。
+    let mut scope_opts = scope_options(&dir.root(), vec![ToolName::Ls]);
+    scope_opts.security = Some(json!({"execDenyPatterns": ["never-match-xyz"]}));
+    invocation
+        .create_worker_scope(worker("s2", scope_opts))
+        .unwrap();
+    invocation.dispose().await;
+}
+
+/// scope 再注入 — caller が `security: None` を渡しても scope は
+/// `inner.security` を受け取る。inner deny(`deny-me`)が declared
+/// `helper` を exempt しても resolved basename で発火し scope
+/// 構築が `PolicyViolation` で失敗することで、再注入が inner 値を
+/// 運ぶことを固定する(resolved ≠ declared は symlink のみ —
+/// unix gate)。
+#[cfg(unix)]
+#[tokio::test]
+async fn worker_scope_receives_invocation_resolved_security() {
+    let dir = TempDir::new();
+    let target = dir.join("deny-me");
+    std::fs::copy(std::env::current_exe().unwrap(), &target).unwrap();
+    std::os::unix::fs::symlink(&target, dir.join("helper")).unwrap();
+    let mut opts = invocation_options(dir.root(), None);
+    opts.command = Some(json!({
+        "grants": {"helper": {"executable": "./helper"}}
+    }));
+    // declared stem `helper` には match しないが resolved `deny-me`
+    // に match する inner deny。
+    opts.security = Some(json!({"execDenyPatterns": ["deny-me"]}));
+    let invocation = create_invocation_tool_runtime(opts).unwrap();
+    // caller は `security: None`(workflow `kind: tool` job と同じ
+    // 形状)— scope 構築が適用点 2 で fail すれば inner deny が
+    // 再注入で届いたことになる。
+    let err = invocation
+        .create_worker_scope(worker(
+            "cmd",
+            scope_options(&dir.root(), vec![ToolName::Command]),
+        ))
+        .unwrap_err();
+    let e = err
+        .downcast_ref::<CheaperError>()
+        .expect("pin deny は CheaperError");
+    assert_eq!(e.code(), ErrorCode::PolicyViolation);
+    assert!(
+        e.message()
+            .contains("resolved executable is denied by security.execDenyPatterns"),
+        "{e}"
+    );
+    invocation.dispose().await;
+}
+
+/// caller 供給 `runtime.command` の declared executable が inner deny
+/// に match する場合、parity の再 resolve で `InvalidRuntimePolicy`
+/// が返る — `invalid_binding`("command policy mismatch")ではなく
+/// inner error code が維持される(`with_invocation_layer` 先例の
+/// 共有 validation 規約)。
+#[tokio::test]
+async fn worker_scope_denied_declared_keeps_inner_error_code() {
+    let dir = TempDir::new();
+    let mut opts = invocation_options(dir.root(), None);
+    opts.command = Some(json!({"grants": {"self": self_grant()}}));
+    opts.security = Some(json!({"execDenyPatterns": ["forged.*"]}));
+    let invocation = create_invocation_tool_runtime(opts).unwrap();
+    // parity 用の caller raw — declared executable `forged-tool` が
+    // inner deny `forged.*` に match。
+    let mut scope_opts = scope_options(&dir.root(), vec![ToolName::Command]);
+    scope_opts.command = Some(json!({
+        "grants": {"x": {"executable": "forged-tool"}}
+    }));
+    let err = invocation
+        .create_worker_scope(worker("cmd", scope_opts))
+        .unwrap_err();
+    let e = err
+        .downcast_ref::<CheaperError>()
+        .expect("deny error は CheaperError");
+    assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+    assert!(
+        e.message().contains("denied by security.execDenyPatterns"),
+        "{e}"
     );
     invocation.dispose().await;
 }

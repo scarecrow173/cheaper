@@ -883,6 +883,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }
@@ -994,6 +997,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }
@@ -1102,6 +1108,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }
@@ -1442,6 +1451,207 @@
                 "instancePath": "/execution/maxTurns"
               }
             ]
+          }
+        }
+      }
+    },
+    {
+      "name": "partial accepts security section",
+      "op": "validatePolicySchema",
+      "mode": "partial",
+      "input": {
+        "version": 1,
+        "security": {
+          "execDenyPatterns": ["python.*", "ssh"]
+        }
+      },
+      "expected": {
+        "ok": {
+          "policy": {
+            "version": 1,
+            "security": {
+              "execDenyPatterns": ["python.*", "ssh"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "project-partial rejects security section",
+      "op": "validatePolicySchema",
+      "mode": "project-partial",
+      "input": {
+        "version": 1,
+        "security": {
+          "execDenyPatterns": ["x"]
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "kind": "cheaper",
+          "retryable": false,
+          "exitCode": 3,
+          "details": {
+            "errors": [
+              {
+                "instancePath": ""
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "partial rejects invalid execDenyPatterns regex",
+      "op": "validatePolicySchema",
+      "mode": "partial",
+      "input": {
+        "version": 1,
+        "security": {
+          "execDenyPatterns": ["("]
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "kind": "cheaper",
+          "retryable": false,
+          "exitCode": 3,
+          "details": {
+            "pattern": "("
+          }
+        }
+      }
+    },
+    {
+      "name": "normalize rejects grant matching execDenyPatterns",
+      "op": "normalizePolicy",
+      "input": {
+        "version": 1,
+        "execution": {
+          "timeout": "2m"
+        },
+        "security": {
+          "execDenyPatterns": ["python.*"]
+        },
+        "command": {
+          "grants": {
+            "py": {
+              "executable": "python3"
+            }
+          }
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "INVALID_RUNTIME_POLICY",
+          "kind": "cheaper",
+          "retryable": false,
+          "exitCode": 3,
+          "details": {
+            "grant": "py",
+            "executable": "python3"
+          }
+        }
+      }
+    },
+    {
+      "name": "normalize carries security section",
+      "op": "normalizePolicy",
+      "input": {
+        "version": 1,
+        "execution": {
+          "timeout": "2m"
+        },
+        "security": {
+          "execDenyPatterns": ["python.*"]
+        },
+        "command": {
+          "grants": {
+            "g": {
+              "executable": "git"
+            }
+          }
+        }
+      },
+      "expected": {
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 0,
+              "maxTurns": null,
+              "timeoutMs": 120000
+            },
+            "filesystem": {
+              "denyPaths": [],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "none"
+            },
+            "output": {
+              "maxTokens": 0,
+              "repairAttempts": 0
+            },
+            "process": {
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "tasks": {},
+              "timeout": "2m"
+            },
+            "retry": {
+              "transientAttempts": 0
+            },
+            "tools": {
+              "allow": []
+            },
+            "workflow": {
+              "artifacts": {
+                "maxArtifactBytes": 8388608,
+                "maxPreviewBytes": 2048,
+                "maxReadBytes": 65536,
+                "maxTotalBytes": 33554432
+              },
+              "maxJobs": 1
+            },
+            "command": {
+              "grants": {
+                "g": {
+                  "cwd": ".",
+                  "env": {},
+                  "executable": "git",
+                  "exitCodes": [0],
+                  "killGrace": "2s",
+                  "maxOutputBytes": 65536,
+                  "timeout": "2m"
+                }
+              },
+              "heartbeat": {
+                "interval": "30s"
+              },
+              "killGrace": "2s",
+              "maxConcurrent": 1,
+              "maxOutputBytes": 65536,
+              "timeout": "2m"
+            },
+            "route": {
+              "rewrite": {
+                "approvalBypass": []
+              }
+            },
+            "security": {
+              "execDenyPatterns": ["python.*"]
+            }
           }
         }
       }

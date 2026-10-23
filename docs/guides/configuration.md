@@ -156,6 +156,11 @@ route:
                         # emit（親 agent の approval prompt を素通し
                         # する応答）を許可する hook target 名
                         # （trusted layer のみ authoring 可）
+
+security:
+  execDenyPatterns: []   # operator 宣言の executable 名 regex
+                        # deny-list（既定: 空 = deny 無し。
+                        # trusted layer のみ authoring 可）
 ```
 
 `process` tool（policy 事前登録の named task を実行する
@@ -220,6 +225,40 @@ route:
 - なお codex では未 review の hook は実行されないため、hook の
   trust 確立（`--dangerously-bypass-hook-trust` 等）がこの emit
   の前提になる。
+
+### security.execDenyPatterns（opt-in executable deny-list）
+
+`command` tool の grant executable に対する、operator 宣言の
+deterministic executable deny-list。各要素は executable 名の
+regex で、match した executable への grant を拒否する。
+
+```yaml
+security:
+  execDenyPatterns:
+    - 'pythonw?|python\d+(?:\.\d+)*[a-z]?'   # 例: interpreter 類
+```
+
+- 既定値は `[]`（deny 無し）。`security` 節の未指定・
+  `execDenyPatterns: null`・`execDenyPatterns: []` はすべて「何も
+  拒否しない」と等価。#163 で mandatory deny 層は除去済みのため、
+  宣言しない限り deny は一切効かない opt-in profile。
+- `security` section は `command.grants`・`route` と同じ trust 境界
+  を持ち、builtin と user-scope の `policy.yaml` でのみ authoring
+  できる。project `.cheaper/policy.yaml` に `security` key を含める
+  と policy load が `InvalidRuntimePolicy` で失敗し、invocation 層
+  （`--grant` 合成 policy）に `security` key を含めると
+  `InvalidRequest` + `details.layer="invocation"` で失敗する。
+- merge は配列の**丸ごと置換** — union しない。builtin が `[a]`・
+  user が `[b]` なら effective は `[b]`。builtin 値を継承するには
+  user 側に `security` を書かない。
+- match は executable basename stem（`/`・`\` 区切りの最終要素 →
+  小文字化 → `.exe`/`.com` strip）への anchored case-insensitive
+  完全一致で、declared spec の policy resolve・pin 時の resolved
+  executable・spawn 前再検証の 3 適用点に同一 predicate で効く。
+  `command.grants` にのみ適用され `process.tasks` には適用されない。
+  これは containment 機構ではなく known-bad executable への
+  fail-fast — match 規約・旧 mandatory 一覧からの migration seed・
+  残余の注意事項は [command ガイド](./command.md) を参照。
 
 ### execution.timeout と maxTurns（run 経路）
 

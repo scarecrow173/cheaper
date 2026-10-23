@@ -68,6 +68,7 @@ mod tests {
     use super::*;
     use crate::model::tier::Tier;
     use crate::policy::schema::*;
+    use crate::policy::security::SecurityPolicy;
     use crate::policy::workflow::{WorkflowArtifactPolicy, WorkflowPolicy};
     use crate::worker::parse::parse_worker_file;
     use crate::worker::validate::{validate_worker_definition, WorkerOrigin};
@@ -114,6 +115,7 @@ mod tests {
                 },
             },
             route: RoutePolicy::default(),
+            security: SecurityPolicy::default(),
             execution: ExecutionPolicy {
                 timeout_ms: 1,
                 max_turns: Some(1),

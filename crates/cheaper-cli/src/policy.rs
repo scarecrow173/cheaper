@@ -9,7 +9,10 @@
 //!   経由で executable 宣言 shape・argv pattern compile・env/cwd
 //!   規則を継承し、`version` const・`grants` の `maxProperties` により
 //!   既存 file の pre-existing corruption も捕捉する — invalid spec・
-//!   破損 file は一切書き換えない。
+//!   破損 file は一切書き換えない。`security.execDenyPatterns`
+//!   (issue #164)の deny 照合もここで発火する — declared executable
+//!   が user policy の deny に match する spec は add 時点で
+//!   `InvalidRuntimePolicy` に fail-closed する(適用点 1)。
 //! - `list` は parse + project のみ(validation・write を伴わない)。
 //! - utility command 規約: `record_usage` は dispatch 側も含め非呼出
 //!   し、success envelope の `result` に top-level `tokens` key を
@@ -242,12 +245,12 @@ fn grants_map_mut(
         .expect("existing_grants pre-check guarantees object"))
 }
 
-/// merged full object を `validate_policy_schema(Partial)` で検査し
-/// (`resolve_command_policy` 経由の executable 宣言 shape・argv
-/// pattern compile・env/cwd 規則 + `version` const・`maxProperties`
-/// を含む)、通過した場合のみ
-/// `stringify_yaml` → `atomic_write` で書き込む。失敗時は file を
-/// 一切変更しない。
+/// merged full object を `validate_policy_schema(Partial)` で検査し、
+/// 通過した場合のみ `stringify_yaml` → `atomic_write` で書き込む。
+/// 失敗時は file を一切変更しない。検査は `resolve_command_policy`
+/// 経由の executable 宣言 shape・argv pattern compile・env/cwd 規則
+/// に加え、`version` const・`maxProperties`・`security.execDenyPatterns`
+/// の declared deny 照合を含む。
 fn write_validated(policy_path: &str, policy: Map<String, Value>) -> Result<(), CheaperError> {
     let validated = validate_policy_schema(&Value::Object(policy), PolicySchemaMode::Partial)?;
     let body = stringify_yaml(&Value::Object(validated))

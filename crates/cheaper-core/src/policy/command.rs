@@ -24,6 +24,7 @@ use crate::policy::process::{
     bounded_duration, relative, str_vec, ProcessHeartbeat, DEFAULT_HEARTBEAT_INTERVAL,
     DEFAULT_KILL_GRACE, DEFAULT_MAX_OUTPUT_BYTES, DEFAULT_TIMEOUT, MAX_PROCESS_OUTPUT_BYTES,
 };
+use crate::policy::security::ExecDenyList;
 use crate::resources::normalization::{ResourceManifestDeclaration, ScopeDeclaration};
 use crate::resources::types::ResourceScope;
 
@@ -229,8 +230,15 @@ impl ArgPattern {
 /// `resolve_process_policy` と同じく `None`/`null` は `{}` に collapseし、
 /// `command` section を持たない policy は empty grants(=deny)へ
 /// normalize される(design §(l))。
+///
+/// `deny` は caller が 1 回 compile 済みの `security.execDenyPatterns`
+/// predicate(issue #164 — 適用点 1: declared basename deny)。空集合
+/// (`ExecDenyList::default()`)は常に no-op。raw `security` section
+/// は渡さない — section schema/compile の責務は `security` module に
+/// 閉じ、本 function は deny 集合への照合のみを知る。
 pub fn resolve_command_policy(
     input: Option<&Value>,
+    deny: &ExecDenyList,
 ) -> Result<ResolvedCommandPolicy, CheaperError> {
     let raw = match input {
         None | Some(Value::Null) => json!({}),
@@ -289,6 +297,19 @@ pub fn resolve_command_policy(
             .and_then(Value::as_str)
             .unwrap_or_default()
             .to_string();
+        // 適用点 1 — declared basename deny(issue #164)。deny した
+        // spec を operator が特定できるよう `details.grant`/
+        // `details.executable` を載せる(pin 段階の `details.grant`
+        // 規約と揃える)。
+        if deny.is_denied(&executable) {
+            let mut details = Map::new();
+            details.insert("grant".to_string(), json!(name));
+            details.insert("executable".to_string(), json!(executable));
+            return Err(
+                command_invalid("executable is denied by security.execDenyPatterns")
+                    .with_details(details),
+            );
+        }
         // `argv` は optional — 省略時は args 個数無制約(長さ cap のみ)。
         // pattern は resolve 時に compile 検証だけ行い、resolved grant
         // には source string を保持する。
@@ -413,7 +434,7 @@ mod tests {
 
     #[test]
     fn defaults_when_absent() {
-        let p = resolve_command_policy(None).unwrap();
+        let p = resolve_command_policy(None, &ExecDenyList::default()).unwrap();
         assert_eq!(p.max_concurrent, 1);
         assert_eq!(p.timeout, "2m");
         assert_eq!(p.max_output_bytes, 65_536);
@@ -421,19 +442,24 @@ mod tests {
         assert_eq!(p.heartbeat.interval, "30s");
         assert!(p.grants.is_empty());
         // null coalesces to the same defaults as absent.
-        let p = resolve_command_policy(Some(&Value::Null)).unwrap();
+        let p = resolve_command_policy(Some(&Value::Null), &ExecDenyList::default()).unwrap();
         assert!(p.grants.is_empty());
     }
 
     #[test]
     fn rejects_unknown_fields_and_bad_durations() {
-        let e = resolve_command_policy(Some(&json!({"bogus": 1}))).unwrap_err();
+        let e = resolve_command_policy(Some(&json!({"bogus": 1})), &ExecDenyList::default())
+            .unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
         assert!(e.message().contains("invalid command policy"));
-        let e = resolve_command_policy(Some(&json!({"timeout": "5x"}))).unwrap_err();
-        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
-        let e = resolve_command_policy(Some(&json!({"timeout": "100000000000000000000h"})))
+        let e = resolve_command_policy(Some(&json!({"timeout": "5x"})), &ExecDenyList::default())
             .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        let e = resolve_command_policy(
+            Some(&json!({"timeout": "100000000000000000000h"})),
+            &ExecDenyList::default(),
+        )
+        .unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
     }
 
@@ -452,18 +478,74 @@ mod tests {
             "git.exe",
             "cargo",
         ] {
-            let p = resolve_command_policy(Some(&json!({
-                "grants": {"g": {"executable": exe}}
-            })))
+            let p = resolve_command_policy(
+                Some(&json!({
+                    "grants": {"g": {"executable": exe}}
+                })),
+                &ExecDenyList::default(),
+            )
             .unwrap_or_else(|e| panic!("{exe}: grant resolves: {e}"));
             assert_eq!(p.grants["g"].executable, exe);
         }
-        let p = resolve_command_policy(Some(&json!({
-            "grants": {"git-read": {"executable": "git"}}
-        })))
+        let p = resolve_command_policy(
+            Some(&json!({
+                "grants": {"git-read": {"executable": "git"}}
+            })),
+            &ExecDenyList::default(),
+        )
         .unwrap();
         assert_eq!(p.grants["git-read"].cwd, ".");
         assert_eq!(p.grants["git-read"].timeout, "2m");
+    }
+
+    /// 適用点 1 — declared basename deny(issue #164)。deny に match
+    /// する declared executable を持つ grant は resolve 段階で
+    /// `InvalidRuntimePolicy` + `details.grant`/`details.executable`
+    /// に fail-closed する。既定(空 deny)では旧 builtin deny 名
+    /// も受理される(#163 後の既定挙動不変 — 既存受理 pin)。
+    #[test]
+    fn declared_executable_deny_is_opt_in_and_fail_closed() {
+        // 既定(空集合)では `python`/`ssh`/`tar` 等の旧 builtin deny 名
+        // を含む grant が受理される。
+        for exe in ["python", "python3", "ssh", "tar", "env"] {
+            let p = resolve_command_policy(
+                Some(&json!({
+                    "grants": {"g": {"executable": exe}}
+                })),
+                &ExecDenyList::default(),
+            )
+            .unwrap_or_else(|e| panic!("{exe}: accepted by default: {e}"));
+            assert_eq!(p.grants["g"].executable, exe);
+        }
+        // opt-in 宣言時のみ deny が発火 — declared stem match で
+        // resolve 段階の `InvalidRuntimePolicy`。
+        let deny = ExecDenyList::compile(&["python.*".to_string()]).unwrap();
+        let e = resolve_command_policy(
+            Some(&json!({
+                "grants": {"py": {"executable": "/usr/bin/python3"}}
+            })),
+            &deny,
+        )
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        assert_eq!(
+            e.message(),
+            "invalid command policy: executable is denied by security.execDenyPatterns"
+        );
+        assert_eq!(e.details().unwrap()["grant"], json!("py"));
+        assert_eq!(
+            e.details().unwrap()["executable"],
+            json!("/usr/bin/python3")
+        );
+        // 非 match の grant は同一 deny でも受理される。
+        let p = resolve_command_policy(
+            Some(&json!({
+                "grants": {"g": {"executable": "bash"}}
+            })),
+            &deny,
+        )
+        .unwrap();
+        assert_eq!(p.grants["g"].executable, "bash");
     }
 
     #[test]
@@ -505,24 +587,30 @@ mod tests {
         }
         // 最終要素以外の bare `*` は拒否。
         assert!(ArgPattern::compile(&["*".to_string(), "log".to_string()]).is_err());
-        let e = resolve_command_policy(Some(&json!({
-            "grants": {"g": {"executable": "git", "argv": ["a*b"]}}
-        })))
+        let e = resolve_command_policy(
+            Some(&json!({
+                "grants": {"g": {"executable": "git", "argv": ["a*b"]}}
+            })),
+            &ExecDenyList::default(),
+        )
         .unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
     }
 
     #[test]
     fn grant_overrides_fold_and_relative_cwd_checked() {
-        let p = resolve_command_policy(Some(&json!({
-            "timeout": "5m",
-            "maxOutputBytes": 1024,
-            "grants": {
-                "a": {"executable": "git", "timeout": "30s", "killGrace": "1s",
-                      "maxOutputBytes": 512, "cwd": "sub", "env": {"K": "v"}},
-                "b": {"executable": "cargo"},
-            },
-        })))
+        let p = resolve_command_policy(
+            Some(&json!({
+                "timeout": "5m",
+                "maxOutputBytes": 1024,
+                "grants": {
+                    "a": {"executable": "git", "timeout": "30s", "killGrace": "1s",
+                          "maxOutputBytes": 512, "cwd": "sub", "env": {"K": "v"}},
+                    "b": {"executable": "cargo"},
+                },
+            })),
+            &ExecDenyList::default(),
+        )
         .unwrap();
         let a = &p.grants["a"];
         assert_eq!(a.timeout, "30s");
@@ -535,9 +623,12 @@ mod tests {
         assert_eq!(b.max_output_bytes, 1024);
         // cwd escape は workspace-relative 規則で拒否。
         for cwd in ["..", "a/../b", "/abs", "c:\\x"] {
-            let e = resolve_command_policy(Some(&json!({
-                "grants": {"g": {"executable": "git", "cwd": cwd}}
-            })))
+            let e = resolve_command_policy(
+                Some(&json!({
+                    "grants": {"g": {"executable": "git", "cwd": cwd}}
+                })),
+                &ExecDenyList::default(),
+            )
             .unwrap_err();
             assert!(e.message().contains("workspace-relative"), "{cwd}");
         }
@@ -552,19 +643,25 @@ mod tests {
                 "g": {"executable": "git", "argv": ["log", "*"], "env": {"K": "v"}}
             },
         });
-        let p = resolve_command_policy(Some(&raw)).unwrap();
+        let p = resolve_command_policy(Some(&raw), &ExecDenyList::default()).unwrap();
         let serialized = serde_json::to_value(&p).unwrap();
-        let reparsed = resolve_command_policy(Some(&serialized)).unwrap();
+        let reparsed = resolve_command_policy(Some(&serialized), &ExecDenyList::default()).unwrap();
         assert_eq!(p, reparsed);
         // argv 省略 grant は serialize で key を出さない。
         assert!(serialized["grants"]["g"].get("argv").is_some());
-        let p = resolve_command_policy(Some(&json!({
-            "grants": {"g": {"executable": "git"}}
-        })))
+        let p = resolve_command_policy(
+            Some(&json!({
+                "grants": {"g": {"executable": "git"}}
+            })),
+            &ExecDenyList::default(),
+        )
         .unwrap();
         let serialized = serde_json::to_value(&p).unwrap();
         assert!(serialized["grants"]["g"].get("argv").is_none());
-        assert_eq!(p, resolve_command_policy(Some(&serialized)).unwrap());
+        assert_eq!(
+            p,
+            resolve_command_policy(Some(&serialized), &ExecDenyList::default()).unwrap()
+        );
     }
 
     /// route run の単一 grant 投影(C9)— resolved policy の
@@ -574,12 +671,15 @@ mod tests {
     /// 戻る(scope parity check が保たれる)。
     #[test]
     fn project_grant_limits_grants_to_declared_route_grant() {
-        let mut p = resolve_command_policy(Some(&json!({
-            "grants": {
-                "route-grant": {"executable": "git"},
-                "other": {"executable": "my-tool"},
-            }
-        })))
+        let mut p = resolve_command_policy(
+            Some(&json!({
+                "grants": {
+                    "route-grant": {"executable": "git"},
+                    "other": {"executable": "my-tool"},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
         .unwrap();
         assert!(p.grants.contains_key("other"));
         assert!(p.project_grant("route-grant"));
@@ -594,11 +694,17 @@ mod tests {
         // resolved → serialize → re-resolve round-trip が同一形
         // (worker scope parity check を通過する)。
         let serialized = serde_json::to_value(&p).unwrap();
-        assert_eq!(p, resolve_command_policy(Some(&serialized)).unwrap());
+        assert_eq!(
+            p,
+            resolve_command_policy(Some(&serialized), &ExecDenyList::default()).unwrap()
+        );
         // 対象不在は false で policy を変えない。
-        let mut q = resolve_command_policy(Some(&json!({
-            "grants": {"g": {"executable": "git"}}
-        })))
+        let mut q = resolve_command_policy(
+            Some(&json!({
+                "grants": {"g": {"executable": "git"}}
+            })),
+            &ExecDenyList::default(),
+        )
         .unwrap();
         assert!(!q.project_grant("absent"));
         assert!(q.grants.contains_key("g"));
@@ -606,9 +712,12 @@ mod tests {
 
     #[test]
     fn resolve_command_grant_and_resources() {
-        let p = resolve_command_policy(Some(&json!({
-            "grants": {"g": {"executable": "git"}}
-        })))
+        let p = resolve_command_policy(
+            Some(&json!({
+                "grants": {"g": {"executable": "git"}}
+            })),
+            &ExecDenyList::default(),
+        )
         .unwrap();
         let e = resolve_command_grant(&p, "nope").unwrap_err();
         assert_eq!(e.code(), ErrorCode::PolicyViolation);

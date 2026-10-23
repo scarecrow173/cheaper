@@ -9,6 +9,7 @@ use std::path::Path;
 
 use cheaper_core::policy::command::ResolvedCommandPolicy;
 use cheaper_core::policy::process::argv_shell_re;
+use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::workspace::deny_paths::PathDenylist;
 use cheaper_core::workspace::paths::SymlinkPolicy;
 use cheaper_tools::tools::command::{
@@ -73,6 +74,11 @@ pub struct CommandPolicyView<'a> {
     pub root: &'a str,
     pub symlink_policy: SymlinkPolicy,
     pub denylist: Option<&'a PathDenylist>,
+    /// `security.execDenyPatterns` の compiled deny(issue #164)—
+    /// 全 field borrowed の struct 規約に従い `&'a` で受ける
+    /// (`Copy` 維持)。`pin_command_grant`・`CommandToolOptions`
+    /// の適用点 2/3 で同一 predicate を見る。
+    pub exec_deny: &'a ExecDenyList,
 }
 
 /// resolve 結果(R11 の wire shape にそのまま載る)。
@@ -314,6 +320,7 @@ fn viability(
         input.command_policy.root,
         input.command_policy.symlink_policy,
         input.command_policy.denylist,
+        input.command_policy.exec_deny,
     ) else {
         return Viability::NoGrant;
     };
@@ -324,6 +331,7 @@ fn viability(
         pins: std::collections::BTreeMap::from([(route.grant.clone(), pinned)]),
         on_timeout: None,
         denylist: input.command_policy.denylist.cloned(),
+        exec_deny: input.command_policy.exec_deny.clone(),
         route_context: Some(RouteCommandContext {
             exec_cwd: Some(input.cwd.to_string()),
             accept_any_exit_code: true,
@@ -347,6 +355,7 @@ mod tests {
         EffectiveRoutes, InvalidRouteGroup, Route, RouteLayer, SuppressedRoute,
     };
     use cheaper_core::policy::command::resolve_command_policy;
+    use cheaper_core::policy::security::ExecDenyList;
     use serde_json::json;
 
     fn route(name: &str, command: &[&str], grant: &str, target: &str) -> Route {
@@ -362,12 +371,17 @@ mod tests {
         }
     }
 
-    fn policy_view<'a>(policy: &'a ResolvedCommandPolicy, root: &'a str) -> CommandPolicyView<'a> {
+    fn policy_view<'a>(
+        policy: &'a ResolvedCommandPolicy,
+        root: &'a str,
+        exec_deny: &'a ExecDenyList,
+    ) -> CommandPolicyView<'a> {
         CommandPolicyView {
             policy,
             root,
             symlink_policy: SymlinkPolicy::Deny,
             denylist: None,
+            exec_deny,
         }
     }
 
@@ -382,14 +396,17 @@ mod tests {
             .unwrap()
             .to_string_lossy()
             .into_owned();
-        resolve_command_policy(Some(&json!({
-            "grants": {
-                "cargo-test": {
-                    "executable": exe,
-                    "argv": ["test", "*"],
+        resolve_command_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": {
+                        "executable": exe,
+                        "argv": ["test", "*"],
+                    }
                 }
-            }
-        })))
+            })),
+            &ExecDenyList::default(),
+        )
         .unwrap()
     }
 
@@ -409,7 +426,8 @@ mod tests {
             ..Default::default()
         };
         let policy = grant_policy();
-        let view = policy_view(&policy, &root);
+        let deny = ExecDenyList::default();
+        let view = policy_view(&policy, &root, &deny);
         // self-bypass — cheaper argv[0] は match しない。
         let input = ResolveInput {
             argv: &argv(&["cheaper", "run", "w"]),
@@ -446,7 +464,8 @@ mod tests {
         std::fs::write(&target, "{}").unwrap();
         let target_str = target.to_string_lossy().into_owned();
         let policy = grant_policy();
-        let view = policy_view(&policy, &root);
+        let deny = ExecDenyList::default();
+        let view = policy_view(&policy, &root, &deny);
         let run = |routes: EffectiveRoutes, tokens: &[&str]| {
             resolve(&ResolveInput {
                 argv: &argv(tokens),
@@ -519,7 +538,8 @@ mod tests {
         std::fs::write(&target, "{}").unwrap();
         let target_str = target.to_string_lossy().into_owned();
         let policy = grant_policy();
-        let view = policy_view(&policy, &root);
+        let deny = ExecDenyList::default();
+        let view = policy_view(&policy, &root, &deny);
         let routes = EffectiveRoutes {
             routes: vec![
                 route("short", &["cargo"], "cargo-test", &target_str),
@@ -536,5 +556,49 @@ mod tests {
         });
         assert_eq!(out.route.as_deref(), Some("long"));
         assert_eq!(out.args, argv(&["-p", "x"]));
+    }
+
+    /// `security.execDenyPatterns`(issue #164)— grant の declared
+    /// 名は deny を潜るが resolved basename が match する場合、
+    /// viability は error ではなく `Viability::NoGrant` に畳まれる
+    /// (unpinnable grant と同じ分類 — routing≠authorization)。
+    /// declared ≠ resolved は symlink のみで構成できるため unix
+    /// gate(declared match は `load_policy` 段階で全体失敗し
+    /// viability へ到達しない)。
+    #[cfg(unix)]
+    #[test]
+    fn denied_resolved_grant_is_no_grant() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().to_string_lossy().into_owned();
+        let target = dir.path().join("w.json");
+        std::fs::write(&target, "{}").unwrap();
+        let target_str = target.to_string_lossy().into_owned();
+        // 実体 `deny-me` ← symlink `helper`(declared)。
+        let bin = dir.path().join("deny-me");
+        std::fs::copy(std::env::current_exe().unwrap(), &bin).unwrap();
+        let link = dir.path().join("helper");
+        std::os::unix::fs::symlink(&bin, &link).unwrap();
+        let policy = resolve_command_policy(
+            Some(&json!({
+                "grants": {"helper": {"executable": "./helper", "argv": ["*"]}}
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let deny = ExecDenyList::compile(&["deny-me".to_string()]).unwrap();
+        let view = policy_view(&policy, &root, &deny);
+        let routes = EffectiveRoutes {
+            routes: vec![route("r", &["helper"], "helper", &target_str)],
+            ..Default::default()
+        };
+        let out = resolve(&ResolveInput {
+            argv: &argv(&["helper", "x"]),
+            cwd: &root,
+            routes: &routes,
+            command_policy: &view,
+            unsafe_command: false,
+        });
+        assert!(out.matched);
+        assert_eq!(out.viability, Some(Viability::NoGrant));
     }
 }

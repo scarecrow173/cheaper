@@ -7,4 +7,5 @@ pub mod merge;
 pub mod process;
 pub mod restrict;
 pub mod schema;
+pub mod security;
 pub mod workflow;

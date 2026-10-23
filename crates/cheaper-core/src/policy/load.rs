@@ -34,6 +34,7 @@ use crate::policy::schema::{
     normalize_policy, resolve_concurrency_policy, validate_policy_schema, PolicySchemaMode,
     RuntimePolicy,
 };
+use crate::policy::security::resolve_exec_deny_list;
 use crate::policy::workflow::resolve_workflow_policy;
 
 /// `readPolicyFile`: only `ENOENT`/`ENOTDIR` skip (absent file); other
@@ -202,10 +203,17 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
         "process".to_string(),
         serde_json::to_value(&resolved_process).unwrap_or(Value::Null),
     );
+    // `security` section から compiled deny を 1 回作り、command の
+    // re-resolve へ渡す — **merged effective(invocation grant 含む)
+    // への deny 評価点**(issue #164 適用点 1 が merged map に発火)。
+    // merged-map 評価のため deny 元 layer は帰属不能 —
+    // `details.layer` は付かない(attribution gap は本 file 冒頭の
+    // accepted limitation と同構造)。
+    let exec_deny = resolve_exec_deny_list(effective.get("security"))?;
     // `command` も同型に re-embed する — user partial が `grants` のみを
     // 宣言した場合に complete schema の section required
     // (`["maxConcurrent", "grants"]`)を resolved default で満たす。
-    let resolved_command = resolve_command_policy(effective.get("command"))?;
+    let resolved_command = resolve_command_policy(effective.get("command"), &exec_deny)?;
     with_defaults.insert(
         "command".to_string(),
         serde_json::to_value(&resolved_command).unwrap_or(Value::Null),
@@ -543,5 +551,170 @@ retry: {transientAttempts: 2}
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
         assert!(e.message().contains("invalid command policy"));
         assert_eq!(layer_detail(&e), Some(&json!("invocation")));
+    }
+
+    /// `security.execDenyPatterns` の merge 意味論 — user 層の配列は
+    /// builtin の配列を**丸ごと置換**(`tools.allow` と同じ wholesale
+    /// replace — union ではない)。未指定の user 層は builtin を継承。
+    /// invocation 合成 grant も merged effective の deny 評価対象。
+    #[test]
+    fn security_exec_deny_patterns_merge_and_invocation_scope() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(
+            tmp.path(),
+            "builtin.yaml",
+            &format!("{BUILTIN}\nsecurity:\n  execDenyPatterns: [from-builtin]\n"),
+        );
+        // builtin `[from-builtin]` + user `[from-user]` → effective
+        // `[from-user]`(wholesale replace)。
+        let user = tmp.path().join("user");
+        write(
+            &user,
+            "policy.yaml",
+            "version: 1\nsecurity: {execDenyPatterns: [from-user]}\n",
+        );
+        let p = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: user.to_str().unwrap(),
+            project_dir: tmp.path().join("proj").to_str().unwrap(),
+            invocation: None,
+        })
+        .unwrap();
+        assert_eq!(p.security.exec_deny_patterns, vec!["from-user"]);
+        // user 層が `security` を持たない場合は builtin を継承。
+        let p = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().join("user2").to_str().unwrap(),
+            project_dir: tmp.path().join("proj").to_str().unwrap(),
+            invocation: None,
+        })
+        .unwrap();
+        assert_eq!(p.security.exec_deny_patterns, vec!["from-builtin"]);
+    }
+
+    /// user policy の deny + `--grant` 由来の matching executable で
+    /// `load_policy` が `InvalidRuntimePolicy`(merged re-resolve の
+    /// 適用点 1 — invocation 合成 grant を exempt しない)。
+    /// merged-map 評価のため error は `details.layer` を**持たない**
+    /// (deny 元 builtin/user と grant 元 invocation が別 layer —
+    /// attribution gap は accepted として pin)。
+    #[test]
+    fn invocation_grant_hits_user_exec_deny_without_layer_attribution() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "builtin.yaml", BUILTIN);
+        let user = tmp.path().join("user");
+        write(
+            &user,
+            "policy.yaml",
+            "version: 1\nsecurity: {execDenyPatterns: [python.*]}\n",
+        );
+        let invocation = invocation_layer(json!({
+            "run-python": {"executable": "python3"},
+        }));
+        let e = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: user.to_str().unwrap(),
+            project_dir: tmp.path().join("proj").to_str().unwrap(),
+            invocation: Some(&invocation),
+        })
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        assert!(e.message().contains("denied by security.execDenyPatterns"));
+        assert_eq!(e.details().unwrap()["grant"], json!("run-python"));
+        assert_eq!(layer_detail(&e), None); // accepted attribution gap
+                                            // 同一 deny でも非 match の invocation grant は受理される。
+        let invocation = invocation_layer(json!({
+            "git-log": {"executable": "git"},
+        }));
+        let p = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: user.to_str().unwrap(),
+            project_dir: tmp.path().join("proj").to_str().unwrap(),
+            invocation: Some(&invocation),
+        })
+        .unwrap();
+        assert!(p.command.grants.contains_key("git-log"));
+        assert_eq!(p.security.exec_deny_patterns, vec!["python.*"]);
+    }
+
+    /// invocation layer は `security` key を書けない — top-level
+    /// keys ⊆ `{version, command}` guard が `InvalidRequest` +
+    /// `details.layer="invocation"` で拒否する(既存構造 guard の
+    /// pin — `command.security` も `command` keys ⊆ `{grants}` guard
+    /// が同様に拒否)。
+    #[test]
+    fn invocation_layer_cannot_author_security() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "builtin.yaml", BUILTIN);
+        // top-level `security` key。
+        let top = json!({"version": 1, "security": {"execDenyPatterns": ["x"]}})
+            .as_object()
+            .unwrap()
+            .clone();
+        let e = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().to_str().unwrap(),
+            project_dir: tmp.path().to_str().unwrap(),
+            invocation: Some(&top),
+        })
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRequest);
+        assert_eq!(e.details().unwrap()["key"], json!("security"));
+        assert_eq!(layer_detail(&e), Some(&json!("invocation")));
+        // `command.security` も grants 以外 key として同じ制約。
+        let nested = json!({"version": 1, "command": {"security": {"execDenyPatterns": ["x"]}}})
+            .as_object()
+            .unwrap()
+            .clone();
+        let e = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().to_str().unwrap(),
+            project_dir: tmp.path().to_str().unwrap(),
+            invocation: Some(&nested),
+        })
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRequest);
+        assert_eq!(e.details().unwrap()["key"], json!("command.security"));
+        assert_eq!(layer_detail(&e), Some(&json!("invocation")));
+    }
+
+    /// invalid regex を含む `security` 節は layer 単位の schema
+    /// validate で `InvalidRuntimePolicy` に fail-closed(builtin・
+    /// user の両層 — warn-and-skip しない)。
+    #[test]
+    fn invalid_exec_deny_regex_fails_load_at_layer() {
+        let tmp = tempfile::tempdir().unwrap();
+        // builtin 層。
+        write(
+            tmp.path(),
+            "builtin.yaml",
+            &format!("{BUILTIN}\nsecurity:\n  execDenyPatterns: [\"(\"]\n"),
+        );
+        let e = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().to_str().unwrap(),
+            project_dir: tmp.path().to_str().unwrap(),
+            invocation: None,
+        })
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        assert!(e.message().contains("invalid execDenyPatterns regex"));
+        // user 層。
+        write(tmp.path(), "builtin2.yaml", BUILTIN);
+        let user = tmp.path().join("user");
+        write(
+            &user,
+            "policy.yaml",
+            "version: 1\nsecurity: {execDenyPatterns: [\"(\"]}\n",
+        );
+        let e = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin2.yaml").to_str().unwrap(),
+            user_config_dir: user.to_str().unwrap(),
+            project_dir: tmp.path().to_str().unwrap(),
+            invocation: None,
+        })
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        assert!(e.message().contains("invalid execDenyPatterns regex"));
     }
 }

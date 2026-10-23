@@ -18,6 +18,7 @@ use std::sync::{Arc, Mutex};
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::policy::command::{resolve_command_policy, ResolvedCommandPolicy};
 use cheaper_core::policy::process::{resolve_process_policy, ResolvedProcessPolicy};
+use cheaper_core::policy::security::{resolve_exec_deny_list, ExecDenyList};
 use cheaper_core::resources::predicates::claim_contains;
 use cheaper_core::resources::types::{ClaimMode, ResourceScope};
 use cheaper_core::tools::vocabulary::{is_scope_gated_tool, ToolName};
@@ -100,6 +101,12 @@ pub struct ToolRuntimeOptions {
     /// writeScope 拒否 + per-scope pin が registration 境界で効く
     /// (design §(b)/(c)/(g))。
     pub command: Option<Value>,
+    /// `Partial<SecurityPolicy>` の raw JSON(`resolve_exec_deny_list`
+    /// 入力 — `command`/`process`/`concurrency` と同じ raw JSON 規約)。
+    /// caller は `serde_json::to_value(&policy.security)` を渡し、
+    /// `create_tool_runtime` 内で compiled `ExecDenyList` 化する
+    /// (issue #164)。
+    pub security: Option<Value>,
     pub root: String,
     pub symlink_policy: SymlinkPolicy,
     pub names: Vec<ToolName>,
@@ -225,6 +232,9 @@ struct ToolCtx {
     /// grant name → pin 済み canonical executable path(per-scope pin、
     /// `names` に `Command` を含む場合のみ構築。それ以外は空)。
     command_pins: BTreeMap<String, String>,
+    /// `security.execDenyPatterns` の compiled deny(issue #164 —
+    /// scope 構築で 1 回 compile し `CommandToolOptions` へ共有)。
+    exec_deny: ExecDenyList,
     eval_spawn: EvalSpawn,
     on_timeout: Option<OnTimeout>,
     observe_access: Arc<AccessObserver<'static>>,
@@ -322,6 +332,7 @@ impl ToolCtx {
             pins: self.command_pins.clone(),
             on_timeout: self.on_timeout.clone(),
             denylist: self.denylist.clone(),
+            exec_deny: self.exec_deny.clone(),
             route_context: self.route_context.clone(),
         }
     }
@@ -1110,9 +1121,15 @@ pub fn create_tool_runtime(
             )));
         }
     }
+    // `security.execDenyPatterns` の compiled deny を scope 構築で
+    // 1 回だけ resolve + compile(issue #164) — command resolve
+    // (適用点 1)・per-scope pin(適用点 2)・`ToolCtx` 経由の spawn
+    // 前再検証(適用点 3)で同一 predicate を共有する。
+    let exec_deny =
+        resolve_exec_deny_list(options.security.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
     // `opts.command = resolveCommandPolicy(options.command)`。
-    let command =
-        resolve_command_policy(options.command.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
+    let command = resolve_command_policy(options.command.as_ref(), &exec_deny)
+        .map_err(|e| Box::new(e) as ToolError)?;
     if names.contains(&ToolName::Command) {
         // `command` の実効的な権限境界: trusted layer の grant が
         // 空なら exposure を fail-closed(process gate と同型、
@@ -1211,6 +1228,7 @@ pub fn create_tool_runtime(
             &resources.root,
             options.symlink_policy,
             options.denylist.as_ref(),
+            &exec_deny,
         )?
     } else {
         BTreeMap::new()
@@ -1306,6 +1324,7 @@ pub fn create_tool_runtime(
         process: process.clone(),
         command,
         command_pins,
+        exec_deny,
         eval_spawn,
         on_timeout: Some(on_timeout),
         observe_access: observe,

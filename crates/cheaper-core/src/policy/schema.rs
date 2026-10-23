@@ -13,6 +13,10 @@ use crate::policy::command::{
 use crate::policy::process::{
     process_policy_properties, resolve_process_policy, ResolvedProcessPolicy,
 };
+use crate::policy::security::{
+    resolve_exec_deny_list, resolve_security_policy, security_policy_properties, ExecDenyList,
+    SecurityPolicy,
+};
 use crate::policy::workflow::{
     resolve_workflow_policy, workflow_policy_properties, WorkflowPolicy,
 };
@@ -131,6 +135,11 @@ pub struct RuntimePolicy {
     /// `route` section(`command` と同型の trusted-layer 限定 —
     /// project partial schema は section 全体を除外する)。
     pub route: RoutePolicy,
+    /// `security` section(`command`/`route` と同型の trusted-layer
+    /// 限定 — project partial schema は section 全体を除外する)。
+    /// serde-native の source string 列のみ保持し、compiled deny
+    /// predicate(`ExecDenyList`)は載せない。
+    pub security: SecurityPolicy,
     pub execution: ExecutionPolicy,
     pub tools: ToolsPolicy,
     pub filesystem: FilesystemPolicy,
@@ -301,6 +310,7 @@ pub fn policy_complete_schema() -> Value {
             "process": object_schema(&["maxConcurrent", "tasks"], process_policy_properties()),
             "command": object_schema(&["maxConcurrent", "grants"], command_policy_properties()),
             "route": object_schema(&[], route_properties()),
+            "security": object_schema(&[], security_policy_properties()),
             "execution": object_schema(&["timeout", "maxTurns", "maxToolCalls"], execution_properties(true)),
             "tools": object_schema(&["allow"], tools_properties()),
             "filesystem": object_schema(&["symlinks"], filesystem_properties()),
@@ -322,6 +332,7 @@ pub fn policy_partial_schema() -> Value {
             "process": object_schema(&[], process_policy_properties()),
             "command": object_schema(&[], command_policy_properties()),
             "route": object_schema(&[], route_properties()),
+            "security": object_schema(&[], security_policy_properties()),
             "execution": object_schema(&[], execution_properties(false)),
             "tools": object_schema(&[], tools_properties()),
             "filesystem": object_schema(&[], filesystem_properties()),
@@ -426,8 +437,12 @@ pub fn validate_policy_schema(
     if let Some(process) = policy.get("process") {
         resolve_process_policy(Some(process))?;
     }
+    // `security` の compile は `command` の有無に関わらず無条件に評価
+    // する — `command` 欠落の security-only doc に含まれる invalid
+    // regex も layer 単位の検査で fail-closed に拒否する。
+    let exec_deny = resolve_exec_deny_list(policy.get("security"))?;
     if let Some(command) = policy.get("command") {
-        resolve_command_policy(Some(command))?;
+        resolve_command_policy(Some(command), &exec_deny)?;
     }
     Ok(policy)
 }
@@ -564,10 +579,15 @@ pub fn normalize_policy(raw: &Map<String, Value>) -> Result<RuntimePolicy, Cheap
         .get("retry")
         .and_then(Value::as_object)
         .unwrap_or(&empty);
+    // `security` の passthrough 解決(`route` と同型) + 1 回の
+    // compile — `resolve_command_policy` へ compiled deny を共有する
+    // (declared executable の deny 照合は resolve 段階で fail-closed)。
+    let security = resolve_security_policy(raw.get("security"))?;
+    let exec_deny = ExecDenyList::compile(&security.exec_deny_patterns)?;
     Ok(RuntimePolicy {
         workflow: resolve_workflow_policy(raw.get("workflow"))?,
         process: resolve_process_policy(raw.get("process"))?,
-        command: resolve_command_policy(raw.get("command"))?,
+        command: resolve_command_policy(raw.get("command"), &exec_deny)?,
         // `route` の passthrough 解決 — `null`/欠落 → default `[]`。
         // 値 domain は schema が保証済みのため item は string のみ収集。
         route: {
@@ -590,6 +610,7 @@ pub fn normalize_policy(raw: &Map<String, Value>) -> Result<RuntimePolicy, Cheap
                 },
             }
         },
+        security,
         execution: ExecutionPolicy {
             timeout_ms,
             max_turns: get_optional_u64(execution, "maxTurns"),
@@ -878,6 +899,168 @@ mod tests {
                 assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy, "{route}");
             }
         }
+    }
+
+    /// `security` section の schema 受理/拒否と `RuntimePolicy.
+    /// security` への normalize(issue #164 —
+    /// `route_section_schema_and_normalize` と同型)。
+    #[test]
+    fn security_section_schema_and_normalize() {
+        // complete/partial で受理 — `security` は optional property。
+        let mut p = valid_policy();
+        p["security"] = json!({"execDenyPatterns": ["python.*", "ssh"]});
+        for mode in [PolicySchemaMode::Complete, PolicySchemaMode::Partial] {
+            let raw = validate_policy_schema(&p, mode).unwrap();
+            let policy = normalize_policy(&raw).unwrap();
+            assert_eq!(
+                policy.security.exec_deny_patterns,
+                vec!["python.*".to_string(), "ssh".to_string()]
+            );
+        }
+        // serialize は `execDenyPatterns` — `RuntimePolicy.security`
+        // が serialize 出力へ載る(yaml 表現と 1:1)。
+        let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
+        let policy = normalize_policy(&raw).unwrap();
+        assert_eq!(
+            serde_json::to_value(&policy)
+                .unwrap()
+                .pointer("/security/execDenyPatterns")
+                .unwrap(),
+            &json!(["python.*", "ssh"])
+        );
+
+        // 既定形 — 未指定・`{"execDenyPatterns":null}`・
+        // `{"execDenyPatterns":[]}` は全て空集合に normalize。
+        for security in [
+            json!({}),
+            json!({"execDenyPatterns": null}),
+            json!({"execDenyPatterns": []}),
+        ] {
+            let mut p = valid_policy();
+            p["security"] = security;
+            let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
+            assert!(normalize_policy(&raw)
+                .unwrap()
+                .security
+                .exec_deny_patterns
+                .is_empty());
+        }
+        // `security` 自体の欠落も空集合。
+        let raw = validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap();
+        assert!(normalize_policy(&raw)
+            .unwrap()
+            .security
+            .exec_deny_patterns
+            .is_empty());
+
+        // project partial は `security` key を持つ policy を拒否
+        // (section 丸ごと除外 — `command`/`route` と同型の
+        // fail-closed)。
+        let mut p = valid_policy();
+        p["security"] = json!({"execDenyPatterns": ["x"]});
+        let e = validate_policy_schema(&p, PolicySchemaMode::ProjectPartial).unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+
+        // malformed shape は fail-loud — 非 object の `security`
+        // (`null` を含む — section は `object_schema` で nullable で
+        // はない)・非配列・非 string item・空 string item・129 個超・
+        // 重複 item・`security` object の未知 key は
+        // `InvalidRuntimePolicy`。
+        for security in [
+            json!(null),
+            json!([]),
+            json!("python.*"),
+            json!({"execDenyPatterns": "python.*"}),
+            json!({"execDenyPatterns": [1]}),
+            json!({"execDenyPatterns": [""]}),
+            json!({"execDenyPatterns": ["a", "a"]}),
+            json!({"execDenyPatterns": ["x"], "bogus": 1}),
+        ] {
+            let mut p = valid_policy();
+            p["security"] = security.clone();
+            for mode in [PolicySchemaMode::Complete, PolicySchemaMode::Partial] {
+                let e = validate_policy_schema(&p, mode).unwrap_err();
+                assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy, "{security}");
+            }
+        }
+        // maxItems 超過(129 個)も schema が拒否。
+        let mut p = valid_policy();
+        p["security"] = json!({
+            "execDenyPatterns": (0..129).map(|i| format!("p{i}")).collect::<Vec<_>>()
+        });
+        let e = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+    }
+
+    /// 全層 fail-closed — `command` section 欠落の security-only doc
+    /// に含まれる invalid regex も `validate_policy_schema` が
+    /// `InvalidRuntimePolicy` で拒否する(`resolve_exec_deny_list` の
+    /// 無条件評価 — design 契約)。`normalize_policy` も同 error。
+    #[test]
+    fn security_invalid_regex_fails_closed_at_all_layers() {
+        // security-only doc — `command` 欠落でも invalid regex を
+        // layer 単位で拒否する。
+        let partial = json!({
+            "version": 1,
+            "security": {"execDenyPatterns": ["("]},
+        });
+        let e = validate_policy_schema(&partial, PolicySchemaMode::Partial).unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        assert!(e.message().contains("invalid execDenyPatterns regex"));
+        // normalize 層でも同 error(validate を潜った入力への防御)。
+        let raw = validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap();
+        let mut raw = raw.clone();
+        raw.insert("security".to_string(), json!({"execDenyPatterns": ["("]}));
+        let e = normalize_policy(&raw).unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+    }
+
+    /// 適用点 1 — `security.execDenyPatterns` に match する declared
+    /// executable を持つ grant は validate/normalize の両層で
+    /// `InvalidRuntimePolicy`(issue #164)。
+    #[test]
+    fn security_deny_rejects_matching_declared_executable() {
+        let mut p = valid_policy();
+        p["security"] = json!({"execDenyPatterns": ["python.*"]});
+        p["command"] = json!({
+            "maxConcurrent": 1,
+            "grants": {"py": {"executable": "python3"}},
+        });
+        // declared stem match — schema 検査後の section resolve で
+        // fail-closed。
+        let e = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        assert!(e.message().contains("denied by security.execDenyPatterns"));
+        assert_eq!(e.details().unwrap()["grant"], json!("py"));
+        assert_eq!(e.details().unwrap()["executable"], json!("python3"));
+        // normalize 層でも同 error(grants に match する executable が
+        // 残る入力への同型評価)。
+        let mut raw = validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap();
+        raw.insert(
+            "security".to_string(),
+            json!({"execDenyPatterns": ["python.*"]}),
+        );
+        raw.insert(
+            "command".to_string(),
+            json!({"grants": {"py": {"executable": "python3"}}}),
+        );
+        let e = normalize_policy(&raw).unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        // 非 match grant + deny は受理 — `security` は normalize 出力に
+        // 載る。
+        let mut p = valid_policy();
+        p["security"] = json!({"execDenyPatterns": ["python.*"]});
+        p["command"] = json!({
+            "maxConcurrent": 1,
+            "grants": {"g": {"executable": "git"}},
+        });
+        let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
+        let policy = normalize_policy(&raw).unwrap();
+        assert_eq!(
+            policy.security.exec_deny_patterns,
+            vec!["python.*".to_string()]
+        );
+        assert_eq!(policy.command.grants["g"].executable, "git");
     }
 
     #[test]

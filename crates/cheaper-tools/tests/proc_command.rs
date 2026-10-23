@@ -27,6 +27,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::paths::{canonicalize_workspace_root, SymlinkPolicy};
 use cheaper_tools::operation::{AbortController, AbortReason, OperationState};
@@ -210,6 +211,7 @@ fn options(root: &str, command: Value, names: Vec<ToolName>) -> ToolRuntimeOptio
         artifacts: None,
         process: None,
         command: Some(command),
+        security: None,
         root: root.to_string(),
         symlink_policy: SymlinkPolicy::Deny,
         names,
@@ -427,9 +429,12 @@ fn declared_executable_names_pass_policy_resolution() {
         "powershell",
         "deploy.sh",
     ] {
-        resolve_command_policy(Some(&json!({
-            "grants": {"g": {"executable": exe}}
-        })))
+        resolve_command_policy(
+            Some(&json!({
+                "grants": {"g": {"executable": exe}}
+            })),
+            &ExecDenyList::default(),
+        )
         .unwrap_or_else(|e| panic!("{exe} should be accepted: {e}"));
     }
 }
@@ -1549,6 +1554,7 @@ async fn spawn_time_revalidation_detects_path_changes() {
 #[test]
 fn check_command_execution_shares_execute_predicate() {
     use cheaper_core::policy::command::resolve_command_policy;
+    use cheaper_core::policy::security::ExecDenyList;
     use cheaper_tools::tools::command::{check_command_execution, CommandToolOptions};
 
     let dir = TempDir::new();
@@ -1557,9 +1563,12 @@ fn check_command_execution_shares_execute_predicate() {
         .unwrap()
         .to_string_lossy()
         .into_owned();
-    let policy = resolve_command_policy(Some(&json!({
-        "grants": {"t": {"executable": exe, "argv": ["test", "*"]}}
-    })))
+    let policy = resolve_command_policy(
+        Some(&json!({
+            "grants": {"t": {"executable": exe, "argv": ["test", "*"]}}
+        })),
+        &ExecDenyList::default(),
+    )
     .unwrap();
     let options = CommandToolOptions {
         root: root.clone(),
@@ -1568,6 +1577,7 @@ fn check_command_execution_shares_execute_predicate() {
         pins: Default::default(),
         on_timeout: None,
         denylist: None,
+        exec_deny: ExecDenyList::default(),
         route_context: None,
     };
     let e = check_command_execution(&options, "t", &["test".into()])
@@ -1580,6 +1590,7 @@ fn check_command_execution_shares_execute_predicate() {
         &root,
         SymlinkPolicy::Deny,
         None,
+        &ExecDenyList::default(),
     )
     .unwrap();
     let options = CommandToolOptions {
@@ -1603,4 +1614,125 @@ fn check_command_execution_shares_execute_predicate() {
     // (resolve_command_grant の fail-closed — resolver の no-grant
     // viability が拾う分類)。
     assert!(check_command_execution(&options, "absent", &[]).is_err());
+}
+
+// ---------------------------------------------------------------------------
+// security.execDenyPatterns(issue #164)— options.security の raw JSON が
+// scope 構築の compile → 適用点 1/2/3 に届くことの統合 pin。
+// ---------------------------------------------------------------------------
+
+/// `ToolRuntimeOptions.security` の raw JSON deny — declared
+/// executable が pattern に match する grant は scope 構築の
+/// 適用点 1(resolve_command_policy)で `InvalidRuntimePolicy` に
+/// fail-closed する。空/`None` security は no-op。
+#[test]
+fn security_exec_deny_applies_at_scope_construction() {
+    let dir = TempDir::new();
+    let root = dir.root();
+    let command = command_policy(json!({"self": self_grant("inspect", None)}));
+    // `.*` deny-all — declared stem に無条件 match する opt-in。
+    let mut opts = options(&root, command.clone(), vec![ToolName::Command]);
+    opts.security = Some(json!({"execDenyPatterns": [".*"]}));
+    let err = create_tool_runtime(opts, None).unwrap_err();
+    let e = cheaper_err(&err);
+    assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+    assert!(
+        e.message().contains("denied by security.execDenyPatterns"),
+        "{e}"
+    );
+    assert_eq!(e.details().unwrap()["grant"], json!("self"));
+    // 空集合と `None` は no-op — 同じ command で runtime が構築できる。
+    let mut opts = options(&root, command.clone(), vec![ToolName::Command]);
+    opts.security = Some(json!({"execDenyPatterns": []}));
+    create_tool_runtime(opts, None).expect("empty deny is no-op");
+    create_tool_runtime(options(&root, command, vec![ToolName::Command]), None)
+        .expect("absent security is no-op");
+}
+
+/// 適用点 2 — resolved basename が deny に match する grant を含む
+/// runtime 構築は `pin_command_grants` 全体で `PolicyViolation`
+/// (blast radius pin — `safe` grant が先に pin 済みでも fail)。
+/// resolved basename ≠ declared basename は symlink のみで作れる
+/// (Windows symlink は権限依存)ため unix gate。
+#[cfg(unix)]
+#[test]
+fn security_exec_deny_pin_blast_radius() {
+    let dir = TempDir::new();
+    let root = dir.root();
+    // 実体 `deny-me` ← symlink `helper`(declared)。内容は
+    // current_exe 複製(basename のみが判定対象)。
+    let target = dir.join("deny-me");
+    std::fs::copy(std::env::current_exe().unwrap(), &target).unwrap();
+    std::os::unix::fs::symlink(&target, dir.join("helper")).unwrap();
+    let command = command_policy(json!({
+        "helper": {"executable": "./helper"},
+    }));
+    let mut opts = options(&root, command, vec![ToolName::Command]);
+    opts.security = Some(json!({"execDenyPatterns": ["deny-me"]}));
+    let err = create_tool_runtime(opts, None).unwrap_err();
+    let e = cheaper_err(&err);
+    assert_eq!(e.code(), ErrorCode::PolicyViolation);
+    assert!(
+        e.message()
+            .contains("resolved executable is denied by security.execDenyPatterns"),
+        "{e}"
+    );
+    assert_eq!(e.details().unwrap()["grant"], json!("helper"));
+}
+
+/// 適用点 3 — `CommandToolOptions.exec_deny` が `check_command_execution`
+/// (spawn 前再検証 seam)に届き、pinned executable の basename match で
+/// `PolicyViolation` + `details.grant`。
+#[test]
+fn check_command_execution_applies_exec_deny_at_verify() {
+    use cheaper_core::policy::command::resolve_command_policy;
+    use cheaper_core::policy::security::executable_stem;
+    use cheaper_tools::tools::command::{check_command_execution, CommandToolOptions};
+
+    let dir = TempDir::new();
+    let root = dir.root();
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    let policy = resolve_command_policy(
+        Some(&json!({
+            "grants": {"t": {"executable": exe, "argv": ["test", "*"]}}
+        })),
+        &ExecDenyList::default(),
+    )
+    .unwrap();
+    let pinned = cheaper_tools::tools::command::pin_command_grant(
+        "t",
+        policy.grants.get("t").unwrap(),
+        &root,
+        SymlinkPolicy::Deny,
+        None,
+        &ExecDenyList::default(),
+    )
+    .unwrap();
+    // pinned basename の stem で deny を構成 → spawn 前再検証が
+    // pin-equality 通過後に deny で fail-closed。
+    let deny = ExecDenyList::compile(&[executable_stem(&pinned)]).unwrap();
+    let options = CommandToolOptions {
+        root: root.clone(),
+        symlink_policy: SymlinkPolicy::Deny,
+        command: policy,
+        pins: std::collections::BTreeMap::from([("t".to_string(), pinned)]),
+        on_timeout: None,
+        denylist: None,
+        exec_deny: deny,
+        route_context: None,
+    };
+    let err = check_command_execution(&options, "t", &["test".into(), "--x".into()])
+        .map(|_| ())
+        .unwrap_err();
+    let e = cheaper_err(&err);
+    assert_eq!(e.code(), ErrorCode::PolicyViolation);
+    assert!(
+        e.message()
+            .contains("resolved executable is denied by security.execDenyPatterns"),
+        "{e}"
+    );
+    assert_eq!(e.details().unwrap()["grant"], json!("t"));
 }

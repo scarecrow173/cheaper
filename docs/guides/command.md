@@ -29,7 +29,63 @@ command:
 
 grant 名は `^[a-z][a-z0-9_-]{0,63}$`（task 名と同規則）。必須 key は `executable` のみ。`cwd`・`env`・`timeout`・`killGrace`・`maxOutputBytes` は optional で、lifecycle 3 項目は grant override → section default の順で畳み込まれる。`cwd`・`env` は `process` task と同規則（workspace 相対検査・env key pattern・NUL 拒否）で、子 env は sanitized minimal env + grant 宣言分のみ — 親の ambient credential は継承しない。
 
-executable は bare name または absolute path（workspace 相対 path は拒否）。bare name は scope 構築時点の ambient PATH で解決し、realpath 済み canonical path を pin する。native magic（MZ / ELF / Mach-O）を持つ executable のみ実行可能で、shell・script shim（`.cmd`/`.bat`/`.ps1`/`.sh`）は `process` baseline の deny で拒否される。加えて `command` 専用の deny list が以下を既定で拒否する: interpreter（`python`/`perl`/`ruby`/`node`/`deno`/`bun`/`php`/`java` 等、versioned name を含む）、exec wrapper / launcher（`env`/`xargs`/`find`/`sed`/`sudo`/`docker`/`ssh`/`tmux` 等 — これらへの grant は shell の grant と等価）、dynamic loader（`ld.so` 等）、Windows LOLBin（`rundll32`/`msbuild`/`msiexec` 等）、editor / pager / REPL escape（`vim`/`less`/`mysql`/`sqlite3`/`tar` 等）、追加 shell（`nu`/`xonsh` 等）。deny は basename の小文字化 + `.exe`/`.com` strip で判定し、policy resolve（declared basename、`InvalidRuntimePolicy`）・pin 時（resolved basename）・spawn 前再検証の 3 箇所で適用する。
+executable は bare name または absolute path（workspace 相対 path は拒否）。bare name は scope 構築時点の ambient PATH で解決し、realpath 済み canonical path を pin する。native magic（MZ / ELF / Mach-O）を持つ executable のみ実行可能で、shell・script shim（`.cmd`/`.bat`/`.ps1`/`.sh`）は `process` baseline の deny で拒否される。
+
+### `security.execDenyPatterns` — opt-in executable deny-list
+
+`security.execDenyPatterns`（issue #164）は operator が宣言する deterministic executable deny-list — 各要素は executable 名の regex で、match した executable への grant を拒否する。**既定は `[]`（deny 無し）**で、`security` 節の省略・`execDenyPatterns: null`・`execDenyPatterns: []` は全て同じ「何も拒否しない」を意味する。deny は #163 で mandatory 層から除去されたため、宣言しない限り何も拒否されない。
+
+match 規約は deterministic に固定される:
+
+- 照合対象は executable の **basename stem** — `/`・`\` 区切りの最終要素を取り、小文字化し、末尾の `.exe`/`.com` suffix を 1 回 strip する（`python3`・`/usr/bin/Python3.EXE`・`C:\tools\SSH.EXE` はそれぞれ `python3`・`python3`・`ssh` の stem で照合される）。
+- 各 pattern は stem への**完全一致**（内部的に `^(?:pattern)$` 相当で compile）・**case-insensitive** で評価され、複数 pattern は OR で効く。anchored なので `sh` は `bash` や `sshd` に substring match **しない** — substring を意図する場合は `.*` を明示する。
+- pattern は trusted layer（builtin policy + user-scope `<userConfigDir>/policy.yaml`）のみ authoring できる。project の `.cheaper/policy.yaml` に `security` 節を書くと schema が `InvalidRuntimePolicy` で拒否し、invocation 層（`--grant` 合成 policy）に `security` key を書くと `InvalidRequest` + `details.layer="invocation"` で拒否される。
+- layer merge は配列の**丸ごと置換**（union ではない）— builtin `[a]` + user `[b]` なら effective は `[b]`。user が `security` を書かなければ builtin 値を継承する。
+
+deny は 3 箇所に同一 predicate で適用される:
+
+1. policy resolve — grant の **declared** executable spec が match すると `InvalidRuntimePolicy`（`details.grant`・`details.executable` 付き）で policy load / `policy grant add` が失敗する。
+2. pin 時 — PATH 解決した **resolved** basename が match すると `POLICY_VIOLATION`（`details.grant` 付き）。declared 名と resolved basename が異なる shim・symlink 経路もここで捕捉される。1 grant でも match すれば `pin_command_grants` 全体が `Err` となり command-tool scope 構築が失敗する（blast radius — unpinnable grant と同規約で、deny が operator-reachable になっただけ）。
+3. spawn 前再検証 — pin 済み path の再検証（pin-equality）直後に同じ deny が再適用される。
+
+**これは containment 機構ではない** — known-bad executable への fail-fast deny であり、任意 argv を別 process 起動へ変換できる binary（plugin/extension 機構を持つ tool、将来の新 runtime）は列挙を免れ得る。`security.execDenyPatterns` に何を書いても、**`command` の executable への grant は shell 相当の信頼として扱う**こと。
+
+補足:
+
+- `.*` は schema 上許容される明示的な deny-all — これを宣言すると grant を持つ policy は全て load 失敗になるため、意図的な利用に限る（substring 意図の唯一の表現でもある）。
+- stem 正規化は unix でも `\` を区切りとして扱い `.com` suffix も strip する — `my\python.exe` や `foo.com` のような unix 上の奇名が deny に match する false-positive を生じ得る。方向は fail-closed（過剰に拒否するが漏らさない）であり、旧 builtin 由来の構造的制約として意図的に保持される。
+- `security.execDenyPatterns` は `command.grants` の executable にのみ適用される。固定 argv の `process.tasks` には適用されない。
+
+#### 旧 mandatory deny-list（#163 で除去）との対応
+
+旧版は builtin に固定の deny regex を持ち、同等の名を既定で拒否していた。#164 以降は opt-in のため、その効果を再現したい operator は以下を user `policy.yaml` の `security.execDenyPatterns` に seed として使える。旧 regex の verbatim（コメント除去・単一行）:
+
+```yaml
+security:
+  execDenyPatterns:
+    - 'pythonw?|python\d+(?:\.\d+)*[a-z]?|pypy\d*(?:\.\d+)*|perl\d*(?:\.\d+)*|ruby\d*(?:\.\d+)*|node|nodejs|deno|bun|php\d*(?:\.\d+)*|lua|luajit|lua[\d.]+|r|rscript|julia|wscript|cscript|mshta|java|javaw|groovy|tclsh|wish|expect|osascript|env|xargs|find|awk|gawk|mawk|nawk|sed|busybox|toybox|nice|nohup|setsid|timeout|watch|stdbuf|flock|taskset|sudo|doas|su|pkexec|setpriv|nsenter|unshare|chroot|docker|podman|systemd-run|ssh|scp|rsync|screen|tmux|ld\.so|ld-linux.*|ld-musl.*|dyld|rundll32|regsvr32|msbuild|dotnet|installutil|regasm|regsvcs|forfiles|pcalua|msiexec|wsl|jshell|vim|ex|nvim|less|man|mysql|psql|sqlite3|tar|nu|elvish|xonsh|oil|ion'
+```
+
+可読性のため分類別に分解した同等 seed（OR 評価のため同じ効果）:
+
+```yaml
+security:
+  execDenyPatterns:
+    # interpreters（versioned name まで）
+    - 'pythonw?|python\d+(?:\.\d+)*[a-z]?|pypy\d*(?:\.\d+)*|perl\d*(?:\.\d+)*|ruby\d*(?:\.\d+)*|node|nodejs|deno|bun|php\d*(?:\.\d+)*|lua|luajit|lua[\d.]+|r|rscript|julia|wscript|cscript|mshta|java|javaw|groovy|tclsh|wish|expect|osascript'
+    # exec wrapper / launcher（grant は shell の grant と等価）
+    - 'env|xargs|find|awk|gawk|mawk|nawk|sed|busybox|toybox|nice|nohup|setsid|timeout|watch|stdbuf|flock|taskset|sudo|doas|su|pkexec|setpriv|nsenter|unshare|chroot|docker|podman|systemd-run|ssh|scp|rsync|screen|tmux'
+    # dynamic loader
+    - 'ld\.so|ld-linux.*|ld-musl.*|dyld'
+    # Windows LOLBin + wsl
+    - 'rundll32|regsvr32|msbuild|dotnet|installutil|regasm|regsvcs|forfiles|pcalua|msiexec|wsl|jshell'
+    # editor / pager / REPL escape
+    - 'vim|ex|nvim|less|man|mysql|psql|sqlite3|tar'
+    # 追加 shell
+    - 'nu|elvish|xonsh|oil|ion'
+```
+
+**migration 注記** — 上記は旧 mandatory 挙動の近似再現であり、厳密な等価ではない。旧実装はこの regex とは別の predicate で shell・shim 名（`sh`/`bash`/`cmd`/`powershell` 等）も拒否していたが、そちらは #163 で別機構として除去済みで本一覧には含まれない。同等の shell 拒否が必要なら `sh|bash|dash|zsh|fish|cmd|powershell|pwsh` 等の pattern を operator が別途追加する。
 
 ## `--grant`（invocation-scoped grant）
 
@@ -42,7 +98,7 @@ echo '{"task": "..."}' | cheaper tool-operate \
 
 - flag 値は grant name を `name` key で内包する complete JSON object。`name` は `command.grants` の map key として取り出され、残りの key は上記「grant の宣言」と同一の spec shape（`executable` 必須、`argv`・`cwd`・`env`・lifecycle override は optional）。`--grant <v>` と `--grant=<v>` の両形を受理し、繰り返すと宣言順に複数 grant を同時注入する。値の上限は 64KiB（超過は `InvalidRequest`）。
 - `run`・`workflow run` 以外の command（`usage`・`count-tokens`・`models`・`auth`・`policy`・`workflow interface`）へ渡すと `InvalidRequest` で reject される。`workflow run` でも `run` と同一の意味論で注入され、`kind: tool` job の `command` がその grant を使える。例外として `hook` command は `parse_cli_args` に到達しない独立 parse path を持ち、`--grant` を含む未知 option を silent に無視する — run 系 command ではないため reject 契約の対象外の spec 適合 known gap（[test-spec](../test-specs/invocation-scoped-command-grants.md) 参照）。
-- 注入された grant はその run の effective grant 集合に畳み込まれ、runtime 上は user policy の grant と区別なく振る舞う。deny list・argv pattern・executable pin 等の検査は policy 由来 grant と同一経路で走る — invocation 経路は deny list を迂回しない。deny list 該当の spec は `InvalidRuntimePolicy`（`details.layer` = `"invocation"`）で reject される。
+- 注入された grant はその run の effective grant 集合に畳み込まれ、runtime 上は user policy の grant と区別なく振る舞う。`security.execDenyPatterns`・argv pattern・executable pin 等の検査は policy 由来 grant と同一経路で走る — invocation 経路は deny-list を迂回しない。deny 該当の spec は merged grant 集合の再 resolve で `InvalidRuntimePolicy`（`details.grant`・`details.executable` 付き）となる。このとき `details.layer` は付かない（accepted gap — deny 元が builtin/user・grant 元が invocation と別 layer のため merged-map 評価では帰属不能）。なお invocation 層の policy 自体に `security` key を書くことは `InvalidRequest` + `details.layer="invocation"` で拒否される（authoring 権限の問題として別経路で検出される）。
 - **非永続**: grant は in-memory の `RuntimePolicy` にのみ存在し、policy file・`usage.jsonl`・`.cheaper/` のいずれにも書き込まれない。flag 無しの後続 run では効果を持たない。
 - 同名の grant が builtin/user policy に既に存在する場合、および同一 invocation 内で複数の `--grant` が同名を指定した場合は、run 開始前に `InvalidRequest`（`details.grant` に衝突名）で失敗する — silent な上書き・last-wins は行わない。
 - `--worker-file` との併用は可。worker が `command` tool を宣言しない場合、grant は露出せず warning 付きで run は継続する（`tools.allow` 除外・executable pin 失敗は従来通り `POLICY_VIOLATION`）。
@@ -77,7 +133,7 @@ spawn・timeout・killGrace・abort・process-tree cleanup・bounded output・he
 - `filesystem.denyPaths`・workspace boundary・worker の `writeScope` は `command` の子 process の副作用を bound **しない**。cwd の検査（denylist + workspace boundary）は宣言された cwd のみに適用され、**argv 内の path operand には filesystem 検証を適用しない** — argv に対する唯一の filesystem 面の制約は grant の argv pattern である。
 - bare-name executable は **scope 構築時点の ambient PATH** で解決して canonical path へ pin する（per-scope pin — runtime 生存期間中 immutable、spawn 前に同じ検証を再適用）。pin 時点の PATH が attacker-controlled なら別 executable が pin され得るため、ambient PATH への信頼は grant 作者の責務。pin と spawn の間の PATH 変化は pin 済み path に影響しないが、pin 自体が古い PATH で行われた場合の残余 TOCTOU は accepted limitation。
 - argv pattern が bound するのは argv の *shape* であり executable の capability ではない。workspace 管理下の config で挙動が変わる executable — git の `core.hooksPath`・external diff・fsmonitor・filter driver、cargo / make / npm の build script、`git -c alias.x=!cmd` のような inline config override — は pattern 適合の argv で **repo 管理下の code を実行し得る**。そのような executable への grant は repo content を信頼することと等価。真に固定した invocation が必要なら動的 argv を持たない `process.tasks` を使う。`GIT_CONFIG_NOSYSTEM=1` のような env hardening は有効だが repo の `.git/config` は無効化しない。
-- deny list は containment 機構ではなく known-bad executable への fail-fast。任意 argv を別 process 起動へ変換できる binary（plugin/extension 機構を持つ tool、将来の新 runtime）は列挙を免れ得るため、**`command` の executable への grant は shell 相当の信頼として扱う**こと。
+- `security.execDenyPatterns`（opt-in、既定 `[]` = deny 無し）は containment 機構ではなく known-bad executable への fail-fast。任意 argv を別 process 起動へ変換できる binary（plugin/extension 機構を持つ tool、将来の新 runtime）は列挙を免れ得るため、deny-list の有無に関わらず **`command` の executable への grant は shell 相当の信頼として扱う**こと。
 - grant の `env` 値は子 env にそのまま載る。`LD_PRELOAD`・`NODE_OPTIONS` 等の injection 変数を含め得るため、env 値も trusted として扱う。
 - writeScope を宣言した worker で `command` を expose すると scope 生成が `POLICY_VIOLATION` で fail closed する（非両立）— child の副作用を resource 層が観測不能で writeScope coverage が vacuous になるため、silent hole を許さず拒否する。resource manifest を narrow した scope では registration ではなく op admission（`covers()`）で拒否される — fail する層は異なるが両者 fail-closed。
 - `process.tasks` は project policy から extend できるが `command.grants` はできない（意図的な divergence）— project は固定 argv の named task を事前認可できるが、動的 argv の executable 認可は trusted layer のみに限定される。

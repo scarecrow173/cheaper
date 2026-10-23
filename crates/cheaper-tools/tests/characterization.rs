@@ -78,6 +78,7 @@ fn options(
         artifacts: None,
         process: None,
         command: None,
+        security: None,
         root,
         symlink_policy: SymlinkPolicy::Deny,
         names,

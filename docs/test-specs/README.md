@@ -41,6 +41,7 @@ Directory: `docs/test-specs`
 | TSPEC-034CYp5Xbp8sJ8ZV199qV3 | OpenAI Codex subscription provider guarantees | draft | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
 | TSPEC-034A9yAv68yBK2XeFKEToG | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | TSPEC-034zTjObSJGccLlnwmHwVm | Operation lifecycle settlement guarantees | approved | [operation-lifecycle-settlement.md](./operation-lifecycle-settlement.md) |
+| TSPEC-034KLXPTSxUL1oOQI06HM3 | opt-in security.execDenyPatterns の検証契約 (issue #164) | draft | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
 | TSPEC-034zXB13nuorLP81dn8ro8 | Payload-free source acquisition and native verification | superseded | [payload-free-source-acquisition-and-native-verification.md](./payload-free-source-acquisition-and-native-verification.md) |
 | TSPEC-034Kvx6yD4sfTj8KFkFIF3 | 権限モデル再設計 issue 分解の成果物契約 (issue #151) | draft | [permission-model-redesign-issue-decomposition.md](./permission-model-redesign-issue-decomposition.md) |
 | TSPEC-034COkGnjlrMwzT5pEaMzV | plugin catalog persistence and user model merge guarantees | approved | [plugin-catalog-persistence-and-user-model-merge.md](./plugin-catalog-persistence-and-user-model-merge.md) |

@@ -107,6 +107,7 @@ pub fn restrict_policy(
 mod tests {
     use super::*;
     use crate::policy::schema::*;
+    use crate::policy::security::SecurityPolicy;
     use crate::policy::workflow::{WorkflowArtifactPolicy, WorkflowPolicy};
 
     fn policy() -> RuntimePolicy {
@@ -141,6 +142,7 @@ mod tests {
                 },
             },
             route: RoutePolicy::default(),
+            security: SecurityPolicy::default(),
             execution: ExecutionPolicy {
                 timeout_ms: 300_000,
                 max_turns: Some(10),

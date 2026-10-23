@@ -25,6 +25,7 @@ use cheaper_core::policy::command::{
     resolve_command_grant, ArgPattern, CommandGrant, ResolvedCommandPolicy,
 };
 use cheaper_core::policy::process::MAX_PROCESS_OUTPUT_BYTES;
+use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::resources::types::ClaimMode;
 use cheaper_core::workspace::deny_paths::PathDenylist;
 use cheaper_core::workspace::paths::SymlinkPolicy;
@@ -169,10 +170,11 @@ pub(crate) fn pin_command_grants(
     root: &str,
     symlink_policy: SymlinkPolicy,
     denylist: Option<&PathDenylist>,
+    exec_deny: &ExecDenyList,
 ) -> Result<BTreeMap<String, String>, ToolError> {
     let mut pins = BTreeMap::new();
     for (name, grant) in &policy.grants {
-        let resolved = pin_command_grant(name, grant, root, symlink_policy, denylist)?;
+        let resolved = pin_command_grant(name, grant, root, symlink_policy, denylist, exec_deny)?;
         pins.insert(name.clone(), resolved);
     }
     Ok(pins)
@@ -182,14 +184,18 @@ pub(crate) fn pin_command_grants(
 /// viability 事前評価(`check_command_execution`)が scope pin 未
 /// 構築の状態でも同一 predicate を使うための共有 seam。
 /// pin 不能の grant は `POLICY_VIOLATION` で返す。
+/// resolved executable が `security.execDenyPatterns` に match
+/// する場合も `POLICY_VIOLATION`(適用点 2 — declared spec を
+/// PATH 解決した実 basename で deny を再適用)。
 pub fn pin_command_grant(
-    _name: &str,
+    name: &str,
     grant: &CommandGrant,
     root: &str,
     symlink_policy: SymlinkPolicy,
     denylist: Option<&PathDenylist>,
+    exec_deny: &ExecDenyList,
 ) -> Result<String, ToolError> {
-    resolve_process_executable(
+    let resolved = resolve_process_executable(
         &grant.executable,
         &ProcessExecutableOptions {
             root,
@@ -198,7 +204,16 @@ pub fn pin_command_grant(
             search_path: None,
         },
         "command grant",
-    )
+    )?;
+    // 適用点 2 — resolved basename で deny を再評価(declared 名が
+    // shim/wrapper 名でも resolved 実体が deny 対象なら拒否)。
+    if exec_deny.is_denied(&resolved) {
+        return Err(grant_violation(
+            name,
+            "resolved executable is denied by security.execDenyPatterns",
+        ));
+    }
+    Ok(resolved)
 }
 
 /// pin 済み executable の spawn 前再検証(design §(b)) — pin 後の
@@ -206,8 +221,15 @@ pub fn pin_command_grant(
 /// viability(realpath → is_file → win32 ext → X_OK)を再適用し、
 /// resolved path が pin 済み canonical path と一致するかを検査する。
 /// pin 済み path は canonical のため、realpath が変わっていた場合は
-/// symlink 差替えとして reject する。
-fn verify_pinned_executable(name: &str, pinned: &str) -> Result<(), ToolError> {
+/// symlink 差替えとして reject する。pin-equality 直後に
+/// `security.execDenyPatterns` を同一 predicate で再適用する
+/// (適用点 3 — 全適用点で同一 predicate を再適用する uniform
+/// 契約)。
+fn verify_pinned_executable(
+    name: &str,
+    pinned: &str,
+    exec_deny: &ExecDenyList,
+) -> Result<(), ToolError> {
     let Some(resolved) = native_executable(pinned) else {
         return Err(grant_violation(
             name,
@@ -218,6 +240,13 @@ fn verify_pinned_executable(name: &str, pinned: &str) -> Result<(), ToolError> {
         return Err(grant_violation(
             name,
             "pinned executable path changed since pin",
+        ));
+    }
+    // 適用点 3 — spawn 前に resolved basename で deny を再適用。
+    if exec_deny.is_denied(&resolved) {
+        return Err(grant_violation(
+            name,
+            "resolved executable is denied by security.execDenyPatterns",
         ));
     }
     Ok(())
@@ -238,6 +267,11 @@ pub struct CommandToolOptions {
     /// `onTimeout(reason)`。
     pub on_timeout: Option<OnTimeout>,
     pub denylist: Option<PathDenylist>,
+    /// `security.execDenyPatterns` の compiled deny predicate
+    /// (issue #164 — opt-in)。`denylist` 先例の owned field —
+    /// 非 Option で空 `Default` が no-op を表す。適用点 3
+    /// (`verify_pinned_executable` の spawn 前再検証)で使う。
+    pub exec_deny: ExecDenyList,
     /// route scope 構築層のみが注入する route context(design
     /// §route context 注入)。`None` で従来挙動不変。
     pub route_context: Option<RouteCommandContext>,
@@ -390,7 +424,7 @@ pub fn check_command_execution(
     // (verify_pinned)。pin map 無しの経路は fail-closed。
     let executable = match options.pins.get(name) {
         Some(pinned) => {
-            verify_pinned_executable(name, pinned)?;
+            verify_pinned_executable(name, pinned, &options.exec_deny)?;
             pinned.clone()
         }
         None => {
@@ -580,7 +614,7 @@ mod tests {
     }
 
     fn policy(command: Value) -> ResolvedCommandPolicy {
-        resolve_command_policy(Some(&command)).unwrap()
+        resolve_command_policy(Some(&command), &ExecDenyList::default()).unwrap()
     }
 
     fn policy_violation(err: &ToolError) -> bool {
@@ -607,6 +641,7 @@ mod tests {
             pins: BTreeMap::new(),
             on_timeout: None,
             denylist: None,
+            exec_deny: ExecDenyList::default(),
             route_context: None,
         });
         assert!(tool.description().contains("cargo-build"));
@@ -709,7 +744,14 @@ mod tests {
         let policy = policy(json!({
             "grants": {"g": {"executable": declared}}
         }));
-        let pins = pin_command_grants(&policy, &root, SymlinkPolicy::Deny, None).unwrap();
+        let pins = pin_command_grants(
+            &policy,
+            &root,
+            SymlinkPolicy::Deny,
+            None,
+            &ExecDenyList::default(),
+        )
+        .unwrap();
         assert_eq!(
             pins.get("g").unwrap(),
             &realpath(bin.to_str().unwrap()).unwrap()
@@ -727,7 +769,14 @@ mod tests {
         let policy = policy(json!({
             "grants": {"g": {"executable": bin.to_str().unwrap()}}
         }));
-        let pins = pin_command_grants(&policy, &root, SymlinkPolicy::Deny, None).unwrap();
+        let pins = pin_command_grants(
+            &policy,
+            &root,
+            SymlinkPolicy::Deny,
+            None,
+            &ExecDenyList::default(),
+        )
+        .unwrap();
         assert_eq!(
             pins.get("g").unwrap(),
             &realpath(bin.to_str().unwrap()).unwrap()
@@ -743,13 +792,23 @@ mod tests {
         let policy = policy(json!({
             "grants": {"g": {"executable": "definitely-missing-tool-xyz"}}
         }));
-        let err = pin_command_grants(&policy, &root, SymlinkPolicy::Deny, None).unwrap_err();
+        let err = pin_command_grants(
+            &policy,
+            &root,
+            SymlinkPolicy::Deny,
+            None,
+            &ExecDenyList::default(),
+        )
+        .unwrap_err();
         assert!(policy_violation(&err));
         // declared executable の内容は policy resolve で審査されない —
         // `python3` 等の名も PATH 非依存で受理される。
-        assert!(resolve_command_policy(Some(&json!({
-            "grants": {"g": {"executable": "python3"}}
-        })))
+        assert!(resolve_command_policy(
+            Some(&json!({
+                "grants": {"g": {"executable": "python3"}}
+            })),
+            &ExecDenyList::default(),
+        )
         .is_ok());
     }
 
@@ -764,8 +823,84 @@ mod tests {
         let policy = policy(json!({
             "grants": {"self": {"executable": exe}}
         }));
-        let pins = pin_command_grants(&policy, &root, SymlinkPolicy::Deny, None).unwrap();
+        let pins = pin_command_grants(
+            &policy,
+            &root,
+            SymlinkPolicy::Deny,
+            None,
+            &ExecDenyList::default(),
+        )
+        .unwrap();
         assert_eq!(pins.get("self").unwrap(), &realpath(exe).unwrap());
+    }
+
+    /// 適用点 2(issue #164)— resolved executable の basename が
+    /// `exec_deny` に match する grant は `pin_command_grant` /
+    /// `pin_command_grants` で `PolicyViolation` +
+    /// `details.grant`(blast radius — deny grant を含む policy
+    /// 全体の pin が fail する)。
+    #[test]
+    fn pin_rejects_resolved_executable_matching_exec_deny() {
+        let dir = TempDir::new();
+        let root = dir.root();
+        let bin = dir.join(if cfg!(windows) {
+            "deny-me.exe"
+        } else {
+            "deny-me"
+        });
+        write(&bin, &executable_file_bytes());
+        set_executable(&bin);
+        // declared 名は workspace 内 absolute path — 適用点 1 は
+        // default(空)deny で素通しさせ、適用点 2 だけを検査する。
+        let deny_policy = policy(json!({
+            "grants": {
+                "safe": {"executable": "git"},
+                "denied": {"executable": bin.to_str().unwrap()},
+            }
+        }));
+        let deny = ExecDenyList::compile(&["deny-me".to_string()]).unwrap();
+        // 単一 grant — resolved basename `deny-me` が pattern match。
+        let err = pin_command_grant(
+            "denied",
+            grant(&deny_policy, "denied"),
+            &root,
+            SymlinkPolicy::Deny,
+            None,
+            &deny,
+        )
+        .unwrap_err();
+        assert!(policy_violation(&err), "{err}");
+        assert!(
+            err.to_string()
+                .contains("resolved executable is denied by security.execDenyPatterns"),
+            "{err}"
+        );
+        let e =
+            crate::tools::proc::find_cheaper_error(err.as_ref() as &dyn std::error::Error).unwrap();
+        assert_eq!(e.details().unwrap()["grant"], json!("denied"));
+        // blast radius — denied resolved grant を含む policy 全体の
+        // pin が Err(順序非依存で最初の deny で fail-closed)。
+        let err =
+            pin_command_grants(&deny_policy, &root, SymlinkPolicy::Deny, None, &deny).unwrap_err();
+        assert!(policy_violation(&err), "{err}");
+        // 既定(空)deny では両 grant とも pin を試行する(deny 非発火
+        // — `safe` は PATH 上の `git` に依存するため、ここでは
+        // `denied` grant のみを含む policy で空 deny の受理側を pin)。
+        let default_deny_policy = policy(json!({
+            "grants": {"g": {"executable": bin.to_str().unwrap()}}
+        }));
+        let pins = pin_command_grants(
+            &default_deny_policy,
+            &root,
+            SymlinkPolicy::Deny,
+            None,
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            pins.get("g").unwrap(),
+            &realpath(bin.to_str().unwrap()).unwrap()
+        );
     }
 
     #[tokio::test]
@@ -775,10 +910,12 @@ mod tests {
         // spawn 可能な executable は verify 通過。
         let exe = std::env::current_exe().unwrap();
         let pinned = realpath(exe.to_str().unwrap()).unwrap();
-        verify_pinned_executable("g", &pinned).unwrap();
+        verify_pinned_executable("g", &pinned, &ExecDenyList::default()).unwrap();
         // 存在しない path → candidate 不成立で fail-closed。
         let missing = dir.join(if cfg!(windows) { "gone.exe" } else { "gone" });
-        let err = verify_pinned_executable("g", missing.to_str().unwrap()).unwrap_err();
+        let err =
+            verify_pinned_executable("g", missing.to_str().unwrap(), &ExecDenyList::default())
+                .unwrap_err();
         assert!(policy_violation(&err));
         assert!(err.to_string().contains("no longer resolves"), "{err}");
         // workspace 内 file も `resolved == pinned` で検査通過。
@@ -786,7 +923,22 @@ mod tests {
         write(&inside, &executable_file_bytes());
         set_executable(&inside);
         let inside = realpath(inside.to_str().unwrap()).unwrap();
-        verify_pinned_executable("g", &inside).unwrap();
+        verify_pinned_executable("g", &inside, &ExecDenyList::default()).unwrap();
+        // 適用点 3 — pin-equality 通過後も resolved basename が
+        // `exec_deny` に match すれば `PolicyViolation`(同一
+        // predicate の uniform 再適用)。
+        let stem = cheaper_core::policy::security::executable_stem(&inside);
+        let deny = ExecDenyList::compile(&[stem]).unwrap();
+        let err = verify_pinned_executable("g", &inside, &deny).unwrap_err();
+        assert!(policy_violation(&err), "{err}");
+        assert!(
+            err.to_string()
+                .contains("resolved executable is denied by security.execDenyPatterns"),
+            "{err}"
+        );
+        let e =
+            crate::tools::proc::find_cheaper_error(err.as_ref() as &dyn std::error::Error).unwrap();
+        assert_eq!(e.details().unwrap()["grant"], json!("g"));
         // pin map に無い grant は execute で fail-closed
         // (verify まで到達しない)。
         let exe = std::env::current_exe().unwrap();
@@ -798,6 +950,7 @@ mod tests {
             pins: BTreeMap::new(),
             on_timeout: None,
             denylist: None,
+            exec_deny: ExecDenyList::default(),
             route_context: None,
         };
         let tool = create_command_tool(options);

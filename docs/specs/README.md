@@ -38,7 +38,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gAHzYnfP8 | Devin Local as a bundled Pi provider | implemented | [devin-local-bundled-provider.md](./devin-local-bundled-provider.md) |
 | SPEC-034DlpZKFnyWiBZZxGsXK0 | devin provider usage accounting contract | approved | [devin-provider-usage-accounting-contract.md](./devin-provider-usage-accounting-contract.md) |
 | SPEC-034D9BFJZdSSYBEuXVzBbl | Devin provider Windows credential contract | proposed | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
-| SPEC-034KI3mWcW92kMljP5xoa8 | exec-contract cleanup — 内容審査を mandatory 層から除去 | proposed | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
+| SPEC-034KI3mWcW92kMljP5xoa8 | exec-contract cleanup — 内容審査を mandatory 層から除去 | approved | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
 | SPEC-034r05iHK8bA7gqGaD6qpk | grep batchMaxBytes / decoded line payload invariant | implemented | [grep-batch-max-bytes-line-payload-invariant.md](./grep-batch-max-bytes-line-payload-invariant.md) |
 | SPEC-034r6kd649rTDnOi828voj | Stabilize environment-sensitive grep eval-budget tests | implemented | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | SPEC-034IKGkW4dQEVw6QigMFxQ | hook-config legacy conflict gate demotion to warning | approved | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |
@@ -57,6 +57,7 @@ Directory: `docs/specs`
 | SPEC-034CWHveVPBJp33jPRTCen | OpenAI Codex subscription provider | proposed | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
 | SPEC-034A8u2GqFTklBoQi0i1kG | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | SPEC-034zSPnVDi6fpHVc9ELgLW | Invocation-scoped OperationManager lifecycle | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
+| SPEC-034KLgfJ0Gka7fkRKHpfSH | opt-in security.execDenyPatterns profile — A9 の降格実装 | proposed | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
 | SPEC-034zWqZR8Dmu9TXTR2qcsg | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | SPEC-034KuqPkTK2b4mHsykH9A5 | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 | approved | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
 | SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |

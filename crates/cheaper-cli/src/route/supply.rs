@@ -16,6 +16,7 @@ use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirsOptions, EnvLook
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::policy::load::{load_policy, LoadPolicyOptions};
 use cheaper_core::policy::schema::RuntimePolicy;
+use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::workspace::deny_paths::{create_path_denylist, PathDenylist};
 use cheaper_core::workspace::paths::canonicalize_workspace_root;
 
@@ -32,6 +33,10 @@ pub struct RouteSupply {
     /// canonicalized workspace root(`ResolveInput.cwd`・policy
     /// preflight root の基準)。
     pub root: String,
+    /// `security.execDenyPatterns` の compiled deny(issue #164)—
+    /// load 済み `policy.security` から supply 構築で 1 回 compile
+    /// し、viability の `CommandPolicyView` へ供給する。
+    pub exec_deny: ExecDenyList,
 }
 
 impl RouteSupply {
@@ -43,6 +48,7 @@ impl RouteSupply {
             root: &self.root,
             symlink_policy: self.policy.filesystem.symlinks,
             denylist: Some(&self.denylist),
+            exec_deny: &self.exec_deny,
         }
     }
 
@@ -114,11 +120,16 @@ pub fn load_with_builtin(
         .map(String::as_str)
         .collect();
     let denylist = create_path_denylist(&deny);
+    // load 済み policy の `security.execDenyPatterns` を compiled
+    // deny 化(issue #164)。load 済みのため compile 失敗は到達不能
+    // 想定だが `?` で伝搬する(design 確定)。
+    let exec_deny = ExecDenyList::compile(&policy.security.exec_deny_patterns)?;
     Ok(RouteSupply {
         routes,
         policy,
         denylist,
         root,
+        exec_deny,
     })
 }
 

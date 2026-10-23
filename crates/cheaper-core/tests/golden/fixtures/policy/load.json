@@ -74,6 +74,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }
@@ -154,6 +157,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }
@@ -410,6 +416,9 @@
                 "approvalBypass": []
               }
             },
+            "security": {
+              "execDenyPatterns": []
+            },
             "retry": {
               "transientAttempts": 1
             },
@@ -530,6 +539,9 @@
                 "approvalBypass": []
               }
             },
+            "security": {
+              "execDenyPatterns": []
+            },
             "retry": {
               "transientAttempts": 1
             },
@@ -648,6 +660,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             },
             "retry": {
               "transientAttempts": 1
