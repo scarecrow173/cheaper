@@ -71,6 +71,7 @@ Directory: `docs/tasks`
 | TASK-d1Fg1OH0NcI8xj5WAkWvts | packages/: hook package 分割(4 sibling + 親 deps + 旧 hooks 削除) | done | [apm-hook-packages-split.md](./apm-hook-packages-split.md) |
 | TASK-X2PS53bel6fwygkwU5RpqZ | consumer 向け・repo 文書の新 layout 追従と falsified doc set 関連付け | done | [apm-hook-split-docs.md](./apm-hook-split-docs.md) |
 | TASK-IYUgfVARCrZwwsvW6aNfFq | check script + scripts/test 群の新 layout 追従 | done | [apm-hook-split-test-follow.md](./apm-hook-split-test-follow.md) |
+| TASK-034L7LDZKCG5pF2MsoQOyC | documentation honesty sweep — ADR + design への Refine 注記追記 (18 doc) | done | [append-refine-notes-to-adr-and-design-docs.md](./append-refine-notes-to-adr-and-design-docs.md) |
 | TASK-034zBJ64O6cfOluLvLxYIO | Append sibling tool-call parallelism section to execution-engine design doc | done | [append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md](./append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md) |
 | TASK-034r05iHQeQpDpHsFsVyxq | Apply abort grace and provider failure normalization to repair | done | [apply-abort-grace-and-provider-failure-normalization-to-repair.md](./apply-abort-grace-and-provider-failure-normalization-to-repair.md) |
 | TASK-034r05iHQeQpDqapXCLs3G | cheaper auth command (login/status/logout) | done | [auth-command.md](./auth-command.md) |
@@ -108,11 +109,14 @@ Directory: `docs/tasks`
 | TASK-034zQHzpSRfqiTLbSZYz5S | Core resource manifest tests | done | [core-resource-manifest-tests.md](./core-resource-manifest-tests.md) |
 | TASK-034zQHAqgNJHPLssPVaFPR | Core resource manifest verification | done | [core-resource-manifest-verification.md](./core-resource-manifest-verification.md) |
 | TASK-002DRbiVRuFJ5XWHvsWW6i | Correct fail-open/fail-closed contract in parent-agent guide and verify consistency | done | [correct-fail-open-fail-closed-contract-in-parent-agent-guide.md](./correct-fail-open-fail-closed-contract-in-parent-agent-guide.md) |
+| TASK-034L7LD2Gc1Num3wT45UMY | documentation honesty sweep — guides + skills の in-place 訂正 (G-1〜G-8・off-list 2 件) | done | [correct-guides-and-skills-honesty-sweep.md](./correct-guides-and-skills-honesty-sweep.md) |
+| TASK-034L7LJt4ZNXV0S6zO47ND | documentation honesty sweep — spec in-place 訂正 + test-spec annotation (12 doc) | done | [correct-specs-and-annotate-test-specs.md](./correct-specs-and-annotate-test-specs.md) |
 | TASK-034r05iHQeQpDpIa7OmcYd | Count consumed repair attempts in meta.repairs on failure | done | [count-consumed-repair-attempts-in-meta-repairs-on-failure.md](./count-consumed-repair-attempts-in-meta-repairs-on-failure.md) |
 | TASK-034DVH0SzTXtnpmsbbiKuu | T1: cheaper-observability crate 新設 | done | [create-cheaper-observability-crate.md](./create-cheaper-observability-crate.md) |
 | TASK-034r05iHQeQpDpVUAMbEeR | Create cheaper-usage skill | done | [create-cheaper-usage-skill.md](./create-cheaper-usage-skill.md) |
 | TASK-034r05iHK8bA7gD3wnFQ3l | Create empty @cheaper/core package skeleton | done | [create-empty-cheaper-core-package-skeleton.md](./create-empty-cheaper-core-package-skeleton.md) |
 | TASK-034z2paWfkTKout3vzftc8 | Create manual-dispatch release workflow with 3-platform SEA matrix | done | [create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md](./create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md) |
+| TASK-034L7LKoGPWs0X67ASTfsm | documentation honesty sweep — migration.md 新設 + README index | done | [create-migration-guide-and-index.md](./create-migration-guide-and-index.md) |
 | TASK-034r05iHQeQpDqMino3Zou | Create usage/configuration guides and CONTRIBUTING.md | done | [create-usage-configuration-guides-and-contributing.md](./create-usage-configuration-guides-and-contributing.md) |
 | TASK-034r05iHQeQpDpWN0qICDI | Create worker delegation skills | done | [create-worker-delegation-skills.md](./create-worker-delegation-skills.md) |
 | TASK-034r05iHQeQpDqNHsAnxcJ | Create workers/integration guides and reorganize providers.md | done | [create-workers-integration-guides-and-reorg-providers.md](./create-workers-integration-guides-and-reorg-providers.md) |
@@ -354,6 +358,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
 | TASK-034zXB2z3uWw5lq9IyKOqe | Verify consumer acquisition and close migration | done | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
 | TASK-034KJu8k1x8fWOfRemmi3r | 除去の grep-pin・keep-boundary・mise run check 最終検証 | done | [verify-content-audit-removal.md](./verify-content-audit-removal.md) |
+| TASK-034L7LPMgAWmjPhefil8Dn | documentation honesty sweep 最終検証 — grep 検証・doc-id・audit_docs・mise run check | done | [verify-documentation-honesty-sweep.md](./verify-documentation-honesty-sweep.md) |
 | TASK-034KLYFkg2bLCiG6WDNNpx | exec deny 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-exec-deny-patterns.md](./verify-exec-deny-patterns.md) |
 | TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
 | TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | done | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |

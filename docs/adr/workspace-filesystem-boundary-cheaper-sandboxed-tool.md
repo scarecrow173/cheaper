@@ -31,6 +31,10 @@ relations:
     - "./enforce-declared-contracts-over-content-audit.md"
     - "agent-runtime-pi-sdk-earendil-works-pi-coding-agent.md"
     - "worker-definition-runtime-policy-runtime-invariants-capability.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -134,3 +138,11 @@ Chosen option: "(3) cheaper 提供の sandboxed tool 実装", because prompt 制
 * `read`/`write`/`edit`/`ls` は Pi の tool factory（`createReadTool`/`createWriteTool`/`createEditTool`/`createLsTool`、いずれも package root export）に cheaper の boundary 付き `operations` を注入して再利用する。注入される path は `resolveToCwd` 済みの絶対パスであることを確認。
 * `grep`/`find` は cheaper 自前実装（`defineTool` + TypeBox + sandboxed walker）とする。理由: Pi grep は検索本体が `spawn(ensureTool("rg"))` で `GrepOperations` に search 差し替え点がなく、rg 子プロセスが operations 境界を迂回する。rg 未導入時の自動ダウンロードも発生する。find は `operations.glob` で fd を回避可能だが、grep と共通 walker を持つため自前で統一する。
 * boundary 強制（path canonicalize・workspace 内判定・symlink policy）はいずれの場合も cheaper 側コードが担う、という本 ADR の決定は変更しない。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 ADR は決定時点の記録として本文は保持する。
+
+- title・`:51`・`:55` — 「sandboxed tool」の命名と「`cwd` = workspace root = filesystem security boundary」は canonical tool を越える containment と読み得る → 「sandboxed tool」は canonical file tool（write/edit/ls/read/find/grep）の workspace boundary 強制を指し、spawn した子プロセスの fs 副作用には及ばない。#101 以降に追加された `command`/`process` の子プロセスは OS sandbox 無しで動作する（確定後の真実としては canonical disclaimer 項目 1・2 が governing）。決定自体（boundary 強制を cheaper 側 tool 実装に置く）は有効。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](./documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

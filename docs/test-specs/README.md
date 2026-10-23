@@ -22,6 +22,7 @@ Directory: `docs/test-specs`
 | TSPEC-034cAvaR7bDF2BjMm2JiAA | Deterministic route test assertions (infra failure and sweep ordering) | draft | [deterministic-route-test-assertions.md](./deterministic-route-test-assertions.md) |
 | TSPEC-034DzTH1ljq4pSfIHyGwVs | dev-seam feature の build-mode contract | approved | [dev-seam-feature-build-mode-contract.md](./dev-seam-feature-build-mode-contract.md) |
 | TSPEC-034Dak4h2lD4Kk5dB1y5q8 | Devin provider Windows credential contract behavior | draft | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
+| TSPEC-034L7LgKjsa5dwb8PstQX9 | documentation honesty sweep + migration guide の検証契約 (issue #169) | approved | [documentation-honesty-sweep-and-migration-guide.md](./documentation-honesty-sweep-and-migration-guide.md) |
 | TSPEC-034z1P09dg86lO9uB31cUi | Embedded builtin resource resolution across distribution forms | superseded | [embedded-builtin-resource-resolution-across-distribution-forms.md](./embedded-builtin-resource-resolution-across-distribution-forms.md) |
 | TSPEC-034KJtUqMNXjkbjsbz5YPa | exec-contract 内容審査除去の検証契約 (issue #163) | draft | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
 | TSPEC-034IM5B88Ph3dNfw748cmj | hook-config legacy conflict demotion contract | approved | [hook-config-legacy-conflict-warning-contract.md](./hook-config-legacy-conflict-warning-contract.md) |

@@ -21,7 +21,7 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: ["./managed-process-canonical-tool.md", "./managed-process-lifecycle-hardening.md", "./invocation-scoped-command-grants.md", "./pretooluse-route-resolver-and-workflow-delegation.md", "../adr/command-grant-trust-boundary-and-managed-process-reuse.md", "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md", "../adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md", "../discovery/tool-operator-worker-built-in.md", "../discovery/invocation-scoped-command-grants.md", "../designs/tool-operator-built-in-worker.md"]
+  related: ["./managed-process-canonical-tool.md", "./managed-process-lifecycle-hardening.md", "./invocation-scoped-command-grants.md", "./pretooluse-route-resolver-and-workflow-delegation.md", "../adr/command-grant-trust-boundary-and-managed-process-reuse.md", "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md", "../adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md", "../discovery/tool-operator-worker-built-in.md", "../discovery/invocation-scoped-command-grants.md", "../designs/tool-operator-built-in-worker.md", "./documentation-honesty-sweep-and-breaking-change-migration-guide.md", "../adr/documentation-honesty-sweep-and-migration-guide.md", "../guides/migration.md", "../designs/documentation-honesty-sweep-and-migration-guide.md"]
   refines: []
   refined-by: []
   derives-from: ["../discovery/policy-gated-command-tool.md"]
@@ -57,7 +57,7 @@ canonical tool vocabulary に新 tool `command` を追加する。`command` は 
 - canonical tool vocabulary への `command` 追加と、Worker / Workflow `kind: tool` job 両経路からの同一実装による実行。
 - input schema（grant selector + args 配列、例: `{name, args: string[]}`）と、`process` と同型の structured result（grant id、argv の safe representation、exitCode、state、bounded stdout/stderr、truncation info、duration）。
 - trusted layer（builtin policy + user-scope `<userConfigDir>/policy.yaml`）でのみ宣言可能な grant。builtin policy は `command.grants: {}`（空）を同梱し、user-scope が実質の authoring layer となる。project partial schema は `command` 以下の grant authoring key を全て除外し、これらを含む project policy は load 時に schema validation で拒否される。
-- executable 解決 + native-magic/shell-shim 拒否、per-token argv pattern match、shell metachar 拒否、cwd normalize + denylist + workspace boundary check、sanitized env という実行前検証。
+- executable 解決（spawn viability: realpath・is_file・win32 `.exe`/`.com`・X_OK — 内容審査なし）、per-token argv pattern match、cwd normalize + denylist + workspace boundary check、sanitized env という実行前検証。executable/argv の内容審査は行わない（issue #163 — 内容審査除去）。opt-in deny は `security.execDenyPatterns`（deterministic executable deny-list・既定 `[]`）宣言時のみ（issue #164）。
 - 既存 managed-process lifecycle の再利用（spawn / timeout / killGrace / abort / process-tree cleanup / bounded combined stdout+stderr / heartbeat / concurrency cap）。
 - global budget、resource scheduling（副作用未知のため保守的な Exclusive resource access）、usage/savings との統合。
 - trust / sandbox 限界の文書化。
@@ -75,11 +75,11 @@ canonical tool vocabulary に新 tool `command` を追加する。`command` は 
 - `command` は default deny。grant が一つも無い環境では tool registration が fail closed（POLICY_VIOLATION）し、tools.allow に `command` を含む worker/workflow でも到達できない。
 - input は grant selector + args 配列（例: `{name, args: string[]}`）。model は executable / cwd / env を直接供給しない。
 - grant は trusted layer（builtin policy + user-scope `<userConfigDir>/policy.yaml`）でのみ宣言可能とする。builtin policy は `command.grants: {}`（空）を同梱し、user-scope が実質の authoring layer となる。project partial schema は `command` 以下の grant authoring key を全て除外し、これらを含む project policy は schema validation で fail して load 全体が `InvalidRuntimePolicy` で拒否される（per-call ではなく load 時の fail-fast）。project 側の narrowing field は本 scope では提供しない — 将来の明示的な workspace trust 設計に委ねる。
-- grant の `executable` は policy load 時に canonical path へ解決して固定する。bare name は load 時点の環境 PATH に対して一度だけ解決し、この provenance（ambient PATH への信頼）は user-facing docs に明記する。ここでの pin は tool runtime 構築の boundary（scope ごとの `create_tool_runtime`）で行われ、「一度だけ」は pin 済み path がその runtime の生存期間中は固定されることを意味し、spawn 時には pin 済み path への再検証を伴う。実行には native-magic check（MZ / ELF / Mach-O）と shell / shim 拒否を通過しなければならない。さらに shell / shim / interpreter 起動による迂回を既定で禁止し、python / perl / ruby / node 等の interpreter executable は拒否対象とする（issue #101 の「任意の interpreter 起動による迂回は既定で禁止」に一致）。process task で使う denial boundary（`shell_executable_re` + `script_ext_re` + native magic + bare `node` reject）を baseline とし、interpreter executable の網羅性は design で検証して `command` 向けの deny set を必要に応じて拡張する。
-- argv は join した文字列ではなく token 配列のまま、grant の argv pattern に対して per-token で match する。shell metachar を含む token は match 前に reject する。
-- cwd の default は workspace root。指定 cwd は normalize 後に denylist と workspace boundary check を通す。この検証は宣言された cwd のみに適用し、argv 内の path operand には filesystem 検証を適用しない — argv に対する filesystem 面の唯一の制約は grant の argv pattern である（shell metachar 拒否は filesystem 検証とは別の、match 前の独立したチェック）。
+- grant の `executable` は policy load 時に canonical path へ解決して固定する。bare name は load 時点の環境 PATH に対して一度だけ解決し、この provenance（ambient PATH への信頼）は user-facing docs に明記する。ここでの pin は tool runtime 構築の boundary（scope ごとの `create_tool_runtime`）で行われ、「一度だけ」は pin 済み path がその runtime の生存期間中は固定されることを意味し、spawn 時には pin 済み path への再検証を伴う。executable の内容・名は審査しない — opt-in `security.execDenyPatterns` 宣言時のみ deterministic executable deny-list が適用される（issue #163/#164 — 旧 mandatory の native-magic/shell-shim/interpreter/bare-`node` deny は opt-in 前提へ降格）。
+- argv は join した文字列ではなく token 配列のまま、grant の argv pattern に対して per-token で match する。call-time の内容審査は行わない — metachar を含む token も pattern 適合なら executable の literal argv として渡る（spawn は shell を介さない）。token 長 ≤4096・args 個数 ≤256 は input schema 層の bound で、超過は `INVALID_INPUT`（issue #163 — metachar 拒否除去）。
+- cwd の default は workspace root。指定 cwd は normalize 後に denylist と workspace boundary check を通す。この検証は宣言された cwd のみに適用し、argv 内の path operand には filesystem 検証を適用しない — argv に対する filesystem 面の唯一の制約は grant の argv pattern である。
 - `command` の子 process は OS sandbox 無しで動作する。`filesystem.denyPaths`・workspace boundary・worker の writeScope は `command` の子 process の副作用を bound しない（grant shape には inputs/outputs が無く、writeScope coverage check は `command` では vacuous）。これらの trust / sandbox 限界は user-facing docs に必ず明記する。
-- writeScope を宣言した worker に対して `command` を fail-closed で reject するかは Deferred Design Concern とする。
+- writeScope を宣言した worker が `command`（`!fixed` grant surface）を expose すると scope 生成が `POLICY_VIOLATION`（"command is incompatible with worker writeScope" — `registry.rs:1167`）で fail closed する（design phase で確定・実装済み — workers.md:54-67 と整合。issue #169）。`process` task（`fixed` grant）側は `outputs ⊆ writeScope` の coverage tri-state が適用される（`outputs` 宣言（nonempty）は coverage 必須・`outputs: []` は coverage trivially 成立・`outputs` 未宣言は coverage 証明不能で `POLICY_VIOLATION` — workers.md:61-67 の規約）。
 - 子 process の env は sanitized minimal env + grant-declared の key/value のみ。親 process の ambient credential は継承しない。
 - spawn / timeout / killGrace / abort / process-tree cleanup / bounded combined stdout+stderr / heartbeat / concurrency cap は既存 managed-process executor を再利用する。`command` の子 process は `process` と同じ managed-subprocess tracking（`managed.track()` + `drain()` / `wait_idle`）に載せ、runtime shutdown が spawn 済み子 process を待つようにする。
 - Workflow `kind: tool` job に対する gate は tools.allow admission check と nonempty-grants fail-closed registration gate の二つとする。worker の tools 宣言 gate は worker 経路のみの gate であり、workflow job には適用しない。
@@ -91,7 +91,7 @@ canonical tool vocabulary に新 tool `command` を追加する。`command` は 
 - [ ] AC1: 既存 `process` tool の contract と test が変更なく pass する。
 - [ ] AC2: `command` は default-disabled であり、grant を持たない Worker / Workflow からは tool 自体に到達できない（tools.allow のみでは不十分）。
 - [ ] AC3: trusted layer（builtin / user-scope）の grant が許可する dynamic executable + argv が、Worker と Workflow `kind: tool` job の両経路から同一 canonical 実装で実行できる。
-- [ ] AC4: forbidden executable / argv（interpreter executable を含む）、shell injection（metachar を含む token）、cwd escape が実行前に reject され、grant authoring key を含む project policy が load 時に schema validation で拒否される test が通る。
+- [ ] AC4: argv pattern 不一致・cwd escape・grant authoring key を含む project policy が load 時に schema validation で拒否される test が通る。opt-in `security.execDenyPatterns` 宣言時のみ deny 該当 executable が拒否される（issue #163/#164 — 旧 mandatory の forbidden executable/shell injection 拒否 AC は opt-in 前提へ降格）。
 - [ ] AC5: timeout / abort / nonzero-exit / output-cap / process-tree cleanup の test が Windows / POSIX の差分を含めて検証される。
 - [ ] AC6: global budget、resource scheduling、usage/savings と統合され、未観測の child mutation が audited change として報告されない。
 - [ ] AC7: trust / sandbox 限界が guide に文書化され、`cargo fmt` / `clippy` / `cargo test` が pass する。
@@ -101,7 +101,7 @@ canonical tool vocabulary に新 tool `command` を追加する。`command` は 
 - 信頼境界は ADR `../adr/command-grant-trust-boundary-and-managed-process-reuse.md` で確定済み: pure Option A（project partial schema が `command` 以下の grant authoring key を全て除外し、含む project policy は load 時に `InvalidRuntimePolicy` で拒否）。project 側 narrowing field は本 scope では提供せず、将来の明示的 workspace trust 設計に defer する。
 - grant 宣言 shape の最終形（`{executable, argv?, cwd?, env?, timeout?, killGrace?, maxOutputBytes?}` の各 override 範囲の配分）は design phase で確定する。
 - argv pattern の match 言語（literal / glob / prefix 等の semantics）は design phase で確定する。
-- writeScope を宣言した worker に対して `command` を fail-closed で reject するかは design phase で確定する。
+- writeScope を宣言した worker に対する `command` の扱いは確定済み: fail-closed が採用・実装されている（`registry.rs:1167` — writeScope 宣言 worker が `command`（`!fixed` grant surface）を expose すると scope 生成が `POLICY_VIOLATION`。guide 反映済み workers.md:54-67。issue #169）。
 - grant executable に bare name を許すか絶対 path を要求するかは design phase で確定する。
 - `command` が `process` の pool cap（`OperationPool`）を共有するか独自の cap を持つかは design phase で確定する。
 - project policy からの `process.tasks` extend 権限の剥奪は本 spec の範囲外とし、`command` との divergence として文書化する方針を維持する（変更する場合は別 spec で扱う）。
@@ -112,3 +112,16 @@ canonical tool vocabulary に新 tool `command` を追加する。`command` は 
 - derives-from: `../discovery/policy-gated-command-tool.md`（DISC-034EM8dPyCYPdx7fqHlaBU）。touch point 調査、reusable machinery、信頼境界 Option A/B/C を内包する。
 - related: `./managed-process-canonical-tool.md`（`process` tool の contract 正本）、`./managed-process-lifecycle-hardening.md`（再利用する lifecycle 保証）、`../adr/command-grant-trust-boundary-and-managed-process-reuse.md`（grant 信頼境界と managed-process 再利用の decision）。
 - references: `../guides/managed-process.md`（managed process の認可・limit 文書）、`../adr/command-grant-trust-boundary-and-managed-process-reuse.md`（grant 信頼境界と managed-process 再利用の確定済み decision）。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の要件本文は in-place で現行の真実へ訂正済み（spec は living contract — 訂正行に issue 注釈を付す方式）。
+
+- `:60`・`:78` — executable 解決の実行前検証から native-magic/shell-shim/interpreter/bare-`node` の mandatory deny 要件を除去 → 内容審査なし・opt-in `security.execDenyPatterns` のみ（#163/#164）。
+- `:79-:80` — call-time の shell metachar 拒否を除去 → literal argv 透過 + input schema bound（#163）。
+- `:94` AC4 — 旧 mandatory 拒否 AC を opt-in 前提へ降格（#163/#164）。
+- `:82`・`:104` — writeScope × `command` の Deferred 記述を「確定済み」（`registry.rs:1167` fail-closed）へ訂正（#169）。
+
+trusted-layer grant 境界（Option A）・pin 契約・argv pattern・cwd/env 境界・lifecycle 要件は維持。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](../adr/documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](./documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

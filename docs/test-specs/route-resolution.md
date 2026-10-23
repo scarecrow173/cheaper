@@ -21,7 +21,11 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related:
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from: []
@@ -54,6 +58,7 @@ route.yaml 宣言の load・match・viability 評価。
 - builtin → user → project の順に後勝ち merge し、project 層
   `trusted: true` のみ下位層同名 route を shadow する(suppressed
   provenance を記録)。
+  > （issue #169 注記 — #168 で `Route.trusted` field は削除・merge は無条件化。project 層 route は下位層を shadow せず、同名衝突は常に project 側が負けて `suppressed` provenance へ記録される（builtin/user 層間 shadow は同一 trusted 層の宣言 override として従来どおり有効）。project 層 `trusted` key presence は load 時に `InvalidRuntimePolicy` で拒否（`{label}.trusted: not declarable in the project layer` — 値不問・strict 経路は error・hook 経路は fail-open で route arm 不活性）。builtin/user 層の `trusted:` 宣言は受理されるが inert）
 - 同一 effective route で同一長 `match.command` の重複は
   `invalid-route` diagnostic として resolve 対象から除外する。
 - `target.path` は宣言層 dir 起点の相対パスのみ許可し、絶対パス・
@@ -72,6 +77,7 @@ route.yaml 宣言の load・match・viability 評価。
   `exec_args = ["diff","--stat"]`、`args = ["--stat"]`。
 - 同名 route が user(untrusted)と project(trusted)に存在する場合、
   project 側が採用され user 側は suppressed として記録される。
+  > （issue #169 注記 — #168 で self-declared `trusted` shadowing は除去。同名衝突は常に project 側が負けて `suppressed` へ記録され、project 層 `trusted` key presence は load 時に `InvalidRuntimePolicy` で拒否される（hook 経路は fail-open で route arm 不活性））
 - project 層 `target.path: "../../etc/x.yaml"` は拒否される。
 
 ## Guarantees

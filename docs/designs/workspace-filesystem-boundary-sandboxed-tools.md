@@ -26,6 +26,10 @@ relations:
     - "worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md"
     - "pi-execution-engine.md"
     - "pi-sibling-tool-call-parallelism-inside-workers.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "./documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -109,3 +113,11 @@ ADR-034r05iHlWosDpO699OwYF のハイブリッド方針を実装レベルに落�
 - [ ] grep/find が `.git`/`node_modules`/バイナリ/1MB 超を skip し、外部プロセスを spawn しない
 - [ ] write/edit が tmp+rename で原子書き込みし journal が before/after を正確に記録
 - [ ] `meta.changes` が journal のみから生成され、差分なしファイルを除外する
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 design は決定時点の記録として本文は保持する。
+
+- `:44-56`（title/In Scope の「sandboxed tools」命名）・`:85-91` — 「shell tool が存在せず全書き込みが write/edit operations を通るため…全域 snapshot は不要」・「外部プロセス不実行: sandboxed tool 層は rg/fd 等の外部バイナリ…に依存しない」→ 「sandboxed tool」は canonical file tool（write/edit/ls/read/find/grep）の workspace boundary 強制のみを指す。#101 以降の `process`・`command` exec surface は外部プロセスを spawn し、その fs 副作用は journal・write/edit operations を通らない（全域 snapshot 不要論は file tool に限定 — canonical disclaimer 項目 1・2: spawn した子プロセスの fs 副作用は OS sandbox 無しでは強制・完全観測できない）。file tool 層の外部バイナリ非依存（rg/fd 回避）は維持。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](../adr/documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

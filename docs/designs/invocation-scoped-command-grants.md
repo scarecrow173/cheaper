@@ -26,6 +26,10 @@ relations:
     - "../designs/tool-operator-built-in-worker.md"
     - "../designs/policy-gated-command-tool.md"
     - "../designs/pretooluse-route-resolver-and-delegated-workflow-execution.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "./documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -355,3 +359,11 @@ ADR が採用した 2 面を実装する:
 - [ ] 非露出 warn: `--grant` を渡したが worker が `command` を非宣言の run（`--worker-file` worker 含む）で stderr warning + 続行、`tools.allow` 除外は `POLICY_VIOLATION` で fail の test。
 - [ ] POSIX で `policy.yaml` が `0600` で書かれ、`windows_remove_first: false` 経路の atomic rename が行われる write-mode test。
 - [ ] regression case（`extraArgs` + `config.files` seeding）の追加。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 design は決定時点の記録として本文は保持する。
+
+- `:74`・`:99`・`:173`・`:229`・`:327`・`:341` — 「deny list…の意味論は不変」・「deny list（`command.rs:346-355`）」・「deny list 該当」・「schema・deny list・argv compile・env/cwd 規則は `resolve_command_policy` 経由」・「deny list / argv compile が再検査するため fail-closed」・「deny list 該当 executable の `--grant` が load 時に reject」の deny 無条件列挙・stale コード参照 → deny 検査は opt-in `security.execDenyPatterns`（deterministic executable deny-list・既定 `[]`）宣言時のみ（#163 で builtin deny 除去・#164 で opt-in 再導入）。コード参照は `policy/exec.rs`・`security.rs` 系へ、`RuntimePolicy.command`→`RuntimePolicy.exec`・`inner.command`→`inner.exec`・`command: None`→`exec: None` へ rename 済み（#165 — file-level の `command.grants` 宣言 shape は有効のまま）。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](../adr/documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

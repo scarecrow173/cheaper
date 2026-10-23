@@ -21,7 +21,11 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related:
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -48,6 +52,7 @@ Feature: policy-defined task の strict config、cap 合成、canonical manifest
 ## Rules
 
 - Rule: raw command/shell、未知 task、不正 cwd/env/config を拒否する。
+  > （issue #169 注記 — input-level の raw command 拒否（呼出し input は `task` 名のみで任意 command/argv を model が供給する経路非存在）は維持。一方 task 宣言 `command` 配列の内容審査（argv 要素の shell 名・metachar・script ext 拒否）は #163 で除去 — 宣言要素は executable の literal argv として内容無審査で渡る）
 - Rule: legacy default と trusted→project maxConcurrent の min を維持する。
 - Rule: outputs の producer authority を超える宣言、部分集合 producer glob、writeScope の矛盾を拒否する。
 

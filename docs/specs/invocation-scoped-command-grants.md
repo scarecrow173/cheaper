@@ -32,6 +32,10 @@ relations:
     - "../adr/command-grant-trust-boundary-and-managed-process-reuse.md"
     - "../adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "./pretooluse-route-resolver-and-workflow-delegation.md"
+    - "./documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -57,17 +61,17 @@ relations:
 2. **grant-request → re-run flow**: tool-operator の output contract に machine-readable な capability-request surface を追加し、blocked / partial となった run が「どの executable の grant が不足したか」を機械可読で返す。parent agent が `result` を読み → user へ approval を求め → `--grant` 付きで re-run する loop を成立させる。
 3. **`cheaper policy` 管理 command**: `cheaper policy grant {add,list,remove}` で、繰り返し必要になる grant を user-scope `<userConfigDir>/policy.yaml` へ validation 付きで永続化・列挙・削除する。
 
-3 つの component はいずれも grant の runtime 挙動（deny list・argv pattern・executable pinning・env/cwd 規則・managed-process lifecycle）と validation を既存の `resolve_command_policy` 系統から継承し、独自の grant 検証経路を新設しない。
+3 つの component はいずれも grant の runtime 挙動（argv pattern・executable pinning・env/cwd 規則・managed-process lifecycle・`security.execDenyPatterns` 宣言時の opt-in deny 検査 — issue #164）と validation を既存の `resolve_command_policy` 系統から継承し、独自の grant 検証経路を新設しない。
 
 ## Why Now
 
-`command` tool は default deny で、grant は trusted layer（builtin + user-scope policy）でのみ authoring できる（ADR `command-grant-trust-boundary-and-managed-process-reuse`）。tool-operator worker は `command` を `cheaper.optionalTools` で opt-in 宣言し、grant が無い環境では degrade / blocked で応答する（ADR `opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker`）。
+`command` tool は default deny で、grant は trusted 供給元（builtin + user-scope policy + 合成 invocation layer `--grant` — issue #105・ADR-034FlTS3BaiV3WKz8bX1Xv 確定の第 3 源。issue #169 注記）でのみ authoring できる（ADR `command-grant-trust-boundary-and-managed-process-reuse`）。tool-operator worker は `command` を `cheaper.optionalTools` で opt-in 宣言し、grant が無い環境では degrade / blocked で応答する（ADR `opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker`）。
 
 現状この境界には 3 つの実用上の gap がある:
 
 - **grant が無い環境では run ごとに手で policy.yaml を編集するしかない**。parent agent は任意 command を自身で実行できる以上、1 run に限った grant 注入は権限拡大ではなく delegation 範囲の明示であるが、その機構が存在しない。
 - **blocked 結果は free text（`unresolved` / `nextActions`）でしか返らず**、parent agent が「何の grant を要求すればよいか」を機械的に判断して re-run を組み立てられない。
-- **恒久的に必要な grant を user policy へ安全に追加する CLI が無い**。手書き YAML は validation 無しで schema・deny list・argv pattern の誤りを実行時まで検出できない。
+- **恒久的に必要な grant を user policy へ安全に追加する CLI が無い**。手書き YAML は validation 無しで schema・argv pattern の誤り（および `security.execDenyPatterns` 宣言時は deny list 該当も — issue #164）を実行時まで検出できない。
 
 issue #105 が採用した 3 component でこれらを埋める。
 
@@ -82,7 +86,7 @@ issue #105 が採用した 3 component でこれらを埋める。
 
 - `cheaper run` および全 worker alias（`tool-operate` 等、`ParsedCli::Run` に fold される command）への repeatable `--grant <spec>` flag。複数指定で複数 grant を注入できること。`cheaper workflow run` も同一 flag を受ける（ADR で採用 — `prepare_workflow_context` が同一の `load_policy` を通るため parity が自動的に保たれる）。`workflow interface` およびその他の utility command へは適用しない。
 - `run`・worker alias・`workflow run` 以外の command（`usage`・`count-tokens`・`models`・`auth`・`policy`・`workflow interface`）への `--grant` は明示 error で reject する。`Vec<String>` の default-empty 受け皿に依存した silent drop を許さない。
-- `--grant` で注入された grant が、当該 run のみで user-policy grant と同一の runtime 挙動（deny list・argv pattern・executable pinning・env/cwd 規則・managed-process lifecycle）を持つこと。
+- `--grant` で注入された grant が、当該 run のみで user-policy grant と同一の runtime 挙動（argv pattern・executable pinning・env/cwd 規則・managed-process lifecycle・`security.execDenyPatterns` 宣言時の deny 検査 — issue #164）を持つこと。
 - `--grant` grant が一切の policy file へ永続化されないこと、および model 入力・project policy から到達不能であること。project trust boundary（`ProjectPartial` schema が `command` section を reject する既存契約）は不変。
 - invocation-sourced grant を policy-sourced grant と区別できる audit surface（run record / span / diagnostic のいずれかで観測可能であること — 要件として固定し、具体機構は ADR で確定）。
 - tool-operator output contract への machine-readable capability-request field の追加（optional top-level field。`grantRequests[]` のような `{executable, argv hint?}` を運ぶ配列を想定するが shape は ADR で確定）。`unresolved` / `nextActions` の free text は human-readable のまま維持。
@@ -90,7 +94,7 @@ issue #105 が採用した 3 component でこれらを埋める。
 - parent-facing docs の更新: 「blocked + grantRequests を読む → user approval → `--grant` 付き re-run」の loop を `cheaper-usage` SKILL、`cheaper-tool-operate` SKILL、および必要に応じて workers / usage / command guide に文書化。
 - output schema の strict-mode 適合維持（`additionalProperties: false` 下では新 field を schema に宣言必須）。
 - `cheaper policy grant add` / `list` / `remove` の追加。対象は user-scope `<userConfigDir>/policy.yaml` のみ。user-scope 解決は `--cwd` に依存しない env/home 由来の `resolve_user_config_dir`（`crates/cheaper-core/src/config/dirs.rs:37-53` — `CHEAPER_CONFIG_DIR` → `XDG_CONFIG_HOME/cheaper` → `<home>/.config/cheaper`）で足りる。project policy への grant authoring は schema 上そもそも不可能であり、この command も project policy を対象にしない。`policy` command が受け付ける flag は utility 規約の `--format` / `--quiet` / `--log` / `--log-format` のみとし、`--worker-file` / `--grant` / `--cwd` / `--input` / `--timeout` 等の run 系・他 command 系 flag は reject する。
-- `policy grant add` は write 前に `resolve_command_policy` 系統の静的検査（schema + deny list + argv compile + env/cwd 規則）を全て通し、atomic に書き込む。executable の存在確認は add 時には行わない（pin 失敗は scope 生成時に `POLICY_VIOLATION` として報告される — ADR 決定）。`list` は effective user grants を表示、`remove` は name で削除する。
+- `policy grant add` は write 前に `resolve_command_policy` 系統の静的検査（schema + argv compile + env/cwd 規則 + `security.execDenyPatterns` 宣言時の deny 照合 — issue #164）を全て通し、atomic に書き込む。executable の存在確認は add 時には行わない（pin 失敗は scope 生成時に `POLICY_VIOLATION` として報告される — ADR 決定）。`list` は effective user grants を表示、`remove` は name で削除する。
 - `ParsedCli::Policy` は utility command 規約に従う — `ParsedCli::format()` / `quiet()` accessor（`args.rs` の match arm）へ `format` / `quiet` を populate し、`command_name` は `"policy"`、成功 envelope は `utility_success_envelope` を使う。
 - error は標準 error envelope、成功は utility envelope。`cheaper policy` は utility command であり `usage.jsonl` には記録しない。success envelope の `result` に top-level `tokens` key を含めない（`usage_log` が utility envelope の `result.tokens` を count record の判定に使うため — `crates/cheaper-cli/src/usage_log.rs:100-107`）。
 - HELP 更新、引数解析の拡張、関連 test の追加。
@@ -102,7 +106,7 @@ issue #105 が採用した 3 component でこれらを埋める。
 - `--grant` flag 値の最終形式、collision 意味論、workflow への適用範囲、`grantRequests` の具体 shape、`policy grant` の UX 形状、YAML 書き込み方式、audit surface の具体機構 — いずれも ADR で確定する decision であり、本 spec は要件のみを固定する。
 - `process.tasks` への同型 invocation-scope 機構。
 - cheaper 内部での interactive confirm prompt（approval は parent agent 側の責務）。
-- `command` tool 本体の contract 変更（deny list・argv match・managed-process lifecycle の意味論は不変）。
+- `command` tool 本体の contract 変更（argv match・managed-process lifecycle の意味論は不変。deny 検査は `security.execDenyPatterns` 宣言時のみ効く opt-in 機構 — issue #164）。
 
 ## Requirements
 
@@ -112,10 +116,10 @@ issue #105 が採用した 3 component でこれらを埋める。
 - flag 値は grant name を `name` key で内包する complete JSON object（`{"name":"<name>","executable":"...",...}`）とする（ADR 決定）。CLI は `name` を取り出して `command.grants.<name>` へ畳む — 残りの key は grant spec schema（`command.grants` map value）と同一 shape であり、`name` 自体は spec schema の `additionalProperties: false` で reject されるため validation 前に必ず strip する。これにより grant validation を `resolve_command_policy` 系統へそのまま乗せられ、validation を再実装する専用 mini-format（`key=value` 等）は採用しない。
 - flag 値には parse 時のサイズ上限（64KiB）を設け、超過は `InvalidRequest` で reject する。`--grant` と `--worker-file` の併用は許可する（worker-file worker は `run` と同一の trust surface であり、grant が露出しない場合は warn-and-continue 規約で扱う）。
 - `--grant` の flag 値（grant の `env` に secret を含みうる）は invoker の process cmdline（`ps`・`/proc`・shell history）に露出する。spawn される command は `env_clear` + grant `env` のみの最小 env で起動し ambient 環境変数は子プロセスへ届かないため、secret は flag 値ではなく user policy の grant `env` 値（POSIX `0600` の `policy.yaml`）か子プロセス自身が読む credential file へ置くことを docs deliverable（command guide・policy guide・配布 SKILL）で明記する。`policy grant add <name> '<json>'` も spec を cmdline へ一時的に載せる同種の caveat を持つ。
-- 注入された grant はその run の `RuntimePolicy.command` の effective grant 集合に畳み込まれ、runtime 上は user-policy grant と区別なく振る舞う。declared-shape parity 契約（`create_worker_scope` の `PartialEq` check）を破らないことが必須。
+- 注入された grant はその run の `RuntimePolicy.exec` の effective grant 集合に畳み込まれ、runtime 上は user-policy grant と区別なく振る舞う（issue #165 — unified exec grant namespace、`schema.rs:134` の `pub exec: ResolvedExecPolicy`。file-level の `command.grants` 宣言 shape は有効のまま）。declared-shape parity 契約（`create_worker_scope` の `PartialEq` check）を破らないことが必須。
 - `--grant` の grant はいかなる policy file にも永続化しない。flag 無しの後続 run では効果を持たない。
 - grant は invoker の CLI 引数からのみ供給される。model 入力・worker prompt・project policy のいずれからも `--grant` 相当の grant を authoring できない。invocation layer は grants-only に制約する — top-level key ⊆ `{version, command}` かつ `command` key ⊆ `{grants}` 以外の入力は `InvalidRequest` + `details.layer="invocation"` で reject し、第 2 の general trusted-policy channel 化を防ぐ（ADR 決定）。
-- deny list に該当する executable を含む grant spec は `--grant` 経由でも reject される（invocation 経路が deny list を迂回しない）。error attribution は ADR の規約に従う — shared validation 由来の失敗（schema 違反・deny list 該当・argv compile 失敗・env/cwd 規則違反）は inner code（`InvalidRuntimePolicy`）を保持し `details.layer="invocation"` を付し、invocation 入力自体の構造的失敗（malformed JSON・`name` key 欠落/pattern 違反・同名重複・collision・grants 以外の key）は `InvalidRequest` + `details.layer="invocation"` とする。
+- `security.execDenyPatterns` 宣言時、deny list に該当する executable を含む grant spec は `--grant` 経由でも reject される（invocation 経路が deny を迂回しない — issue #164。deny は opt-in profile 宣言時のみ効く機構で、既定 `[]` では検査不発）。error attribution は ADR の規約に従う — shared validation 由来の失敗（schema 違反・deny list 該当・argv compile 失敗・env/cwd 規則違反）は inner code（`InvalidRuntimePolicy`）を保持し `details.layer="invocation"` を付し、invocation 入力自体の構造的失敗（malformed JSON・`name` key 欠落/pattern 違反・同名重複・collision・grants 以外の key）は `InvalidRequest` + `details.layer="invocation"` とする。
 - flag 由来 grant と builtin/user policy の同名 grant が衝突した場合、および同一 invocation 内で複数 `--grant` が同名 grant を指定した場合は、run 開始前に `InvalidRequest`（details に衝突した grant name）で失敗する（ADR 決定 — explicit error。silent な上書き・last-wins は行わない）。
 - audit surface: invocation-sourced grant が適用された run を、policy-sourced grant のみの run と区別して観測できること（ADR 決定: `grants.invocation` tracing span field + run 開始時の stderr diagnostic line の 2 面）。
 
@@ -130,12 +134,12 @@ issue #105 が採用した 3 component でこれらを埋める。
 ### `cheaper policy` 管理 command
 
 - `cheaper policy grant {add,list,remove}` を新設し、user-scope `<userConfigDir>/policy.yaml` の `command.grants` のみを対象とする。project policy は対象にしない。
-- `add` は以下を write 前に全て通す: 入力の schema validation、deny list 検査（必須）、argv pattern の compile、env/cwd 規則 — いずれも `resolve_command_policy` 系統の静的検査を再利用し、command 独自の検査を追加しない。executable の存在確認は add 時には行わない — pin は tools 層の責務で ambient PATH・workspace 依存の実行時検査であり、存在しない executable は scope 生成時に `POLICY_VIOLATION` で報告される（ADR 決定。user policy 直書きと同一の意味論）。
+- `add` は以下を write 前に全て通す: 入力の schema validation、deny list 検査（`security.execDenyPatterns` 宣言時のみ・既定 `[]` では検査不発 — issue #164）、argv pattern の compile、env/cwd 規則 — いずれも `resolve_command_policy` 系統の静的検査を再利用し、command 独自の検査を追加しない。executable の存在確認は add 時には行わない — pin は tools 層の責務で ambient PATH・workspace 依存の実行時検査であり、存在しない executable は scope 生成時に `POLICY_VIOLATION` で報告される（ADR 決定。user policy 直書きと同一の意味論）。
 - `add` / `remove` の書き込みは atomic（temp + rename 相当）で行い、既存の user policy の `command` 以外の section を破壊しない。POSIX では `0600` mode で書き込む（grant の `env` 値が secret を保持しうるため）。write path の caveat（並行 add・手編集との last-wins、serde_yml rewrite による comment/整形の喪失）は ADR で規定する。
 - `list` は effective user grants（user policy が提供する grant 集合）を表示する。
 - `remove` は grant name を指定して削除する。存在しない name の remove は `InvalidRequest` の error envelope を返す（utility command の入力検証として一貫させる）。
 - error は標準 error envelope、成功は utility success envelope を使う。`policy` は utility command であり `usage.jsonl` に記録しない。
-- `add` で deny list 該当 executable や invalid argv pattern を含む spec を渡した場合、policy file を変更せず error を返す。
+- `add` で deny list 該当 executable（`security.execDenyPatterns` 宣言時のみ — issue #164）や invalid argv pattern を含む spec を渡した場合、policy file を変更せず error を返す。
 
 ### 横断要件
 
@@ -147,10 +151,10 @@ issue #105 が採用した 3 component でこれらを埋める。
 
 - [x] AC1: grant を持たない環境で degrade / blocked した tool-operator run に対し、`--grant` 付きで re-run すると当該 command が利用可能になり run が成功（または blocked でなくなる）ことを検証する test が通る。
 - [x] AC2: `--grant` は永続化されない — flag 無しで同じ run を再度実行すると再び degrade / blocked する。policy file が一切変更されていないことを検証する。
-- [x] AC3: deny list 該当 executable を含む `--grant` spec は run 開始前に reject される（invocation 経路で deny list を迂回できない）。error は ADR の attribution 規約に従い shared validation の inner code（`InvalidRuntimePolicy`）を保持し `details.layer="invocation"` を持つ。
+- [x] AC3: `security.execDenyPatterns` 宣言時、deny list 該当 executable を含む `--grant` spec は run 開始前に reject される（invocation 経路で deny を迂回できない — issue #164。deny は opt-in profile 前提）。error は ADR の attribution 規約に従い shared validation の inner code（`InvalidRuntimePolicy`）を保持し `details.layer="invocation"` を持つ。
 - [x] AC4: flag 由来 grant と user policy の同名 grant が衝突した場合の挙動が ADR で定義した意味論どおりであり、test で固定されている。
 - [x] AC5: blocked となった tool-operator run の成功 run envelope `result` から machine-readable な grant-request field が parse でき、宣言した output schema に適合する（`additionalProperties` discipline 維持）。
-- [x] AC6: `cheaper policy grant add` が validation を通した grant を user policy へ永続化し、後続の flag 無し run がその grant で command を実行できる。invalid spec（deny list 該当・argv compile 失敗・schema 違反）は policy file を変更せず error を返す。
+- [x] AC6: `cheaper policy grant add` が validation を通した grant を user policy へ永続化し、後続の flag 無し run がその grant で command を実行できる。invalid spec（deny list 該当 — `security.execDenyPatterns` 宣言時のみ issue #164・argv compile 失敗・schema 違反）は policy file を変更せず error を返す。
 - [x] AC7: `cheaper policy grant list` が effective user grants を表示し、`remove <name>` で削除すると後続 run でその grant が効かなくなる。存在しない name の remove は `InvalidRequest` の error envelope を返す。
 - [x] AC8: `--grant` を伴う run が、audit surface（ADR で確定した機構）で invocation-sourced grant の適用を区別して観測できる。
 - [x] AC9: `cheaper policy` 系 command が `usage.jsonl` に record を残さない（utility command 規約）。
@@ -170,7 +174,7 @@ discovery の decision axis として残存した問いは、並行 ADR（`../ad
 - `--grant` flag 値の形式 → grant name を `name` key で内包する complete JSON object。CLI が `name` を strip して `command.grants.<name>` へ畳む。専用 `key=value` mini-format は validation 再実装のため却下済み。
 - invocation grant の格納先・merge 順序 → `load_policy` の user merge 直後に `invocation` layer を挿入（Partial validate + `MergeMode::Replace`）。parity 契約を自動的に満たす。入力は grants-only の key 制約付き（top-level ⊆ `{version, command}`、`command` ⊆ `{grants}`）。
 - flag vs user policy の同名 collision 意味論 → explicit error（`InvalidRequest` + `details.grant` + `details.layer="invocation"`）。intra-invocation の同名重複も同じく `InvalidRequest`。
-- `cheaper workflow run` への `--grant` 適用範囲 → 適用する。`prepare_workflow_context` が同一 `load_policy` を通るため parity は自動。`kind: tool` job は `command: None` で parity check を skip するが `inner.command`（invocation grant 込みの resolved policy）が再注入されるため grant は tool job にも届く（user grant と同じ挙動）。
+- `cheaper workflow run` への `--grant` 適用範囲 → 適用する。`prepare_workflow_context` が同一 `load_policy` を通るため parity は自動。`kind: tool` job は `exec: None` で parity check を skip するが `inner.exec`（invocation grant 込みの resolved policy）が再注入されるため grant は tool job にも届く（user grant と同じ挙動 — issue #165 rename: `workflow_run.rs:500-503`・`invocation.rs:277-286`）。
 - `grantRequests` field の shape → optional top-level `grantRequests[]`。item は `required: ["executable"]` + `argvHint?: string[]`（items に maxLength 上界）+ `name?: string`（grant `propertyNames` と同一 `pattern: ^[a-z][a-z0-9_-]{0,63}$` + maxLength）、`additionalProperties: false`、`maxItems` 上界。emit 条件は `blocked` / `partial`（gated tool 欠如由来のみ）。
 - `cheaper policy grant` の UX 形状 → `add <name> '<spec-json>'` / `list` / `remove <name>`。executable 存在確認は add 時に行わない（pin 失敗は scope 生成時の `POLICY_VIOLATION`）。
 - user policy YAML の書き込み方式 → `serde_yml::to_string` wrapper + atomic write（`windows_remove_first: false`、POSIX `0600`）。comment/整形の喪失と lost-update は accepted caveat。

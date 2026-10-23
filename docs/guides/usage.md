@@ -204,7 +204,8 @@ cheaper policy grant remove git-read
 
 - `add <name> <json>`: spec は `command.grants` の map value shape
   の JSON object（`name` key は含めない — map key として載る）。
-  書き込み前に policy load と同一の検査（schema・deny list・
+  書き込み前に policy load と同一の検査（schema・deny list
+  （opt-in — `security.execDenyPatterns` 宣言時のみ）・
   argv pattern の compile・env/cwd 規則・grant/task 名衝突）を
   通し、invalid spec は file を変更せず error を返す。`fixed:true`
   ・明示 `scope` を含む spec は CLI 入口規約として `InvalidRequest`

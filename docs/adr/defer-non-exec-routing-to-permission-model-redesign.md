@@ -32,6 +32,10 @@ relations:
     - "./enforce-declared-contracts-over-content-audit.md"
     - "./route-grant-set-projection.md"
     - "./substitute-exec-route-mode.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -247,3 +251,12 @@ non-exec routing を将来解禁する場合、認可モデルは次の形が安
 * `node scripts/check-doc-ids.mjs` は pass する。
 * issue #160 は本 ADR を根拠に close する。#151 の検討時に本書の
   Deferred design sketch を入力として参照する。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 ADR は決定時点の記録として本文は保持する。
+
+- `:175-209` — Deferred design sketch（grant-set 投影・viability 弱化・substitute retarget・exit mirror・record split の「#151 で採用する場合」の検討入力、採否未確定の体裁）→ 採否は親 design で確定済み: grant-set 投影**採用**（#166 — `project_grant` → route 宣言 `grants:[name,…]`、trusted-scoped grant のみ解決）・viability**条件付き弱化**（#166 — byte-matched mode の argv precheck は維持、set 内非 exec grant は存在 + pin のみ）・usage record `{command, executed}` split**採用**（#166）・substitute-exec mode**採用**（#167 — exit mirror は「実行した command」の exit）・workflow-declared grants**不採用**・Option E exec-less は引き続き**open**。
+- `:225-229` — 「command deny-list（`command_denied_executable_re`、`command.rs:160-189`）は grant executable 自体を恒久拒否するため、heavy-output command は routing mode に関わらず `no-grant` で unroutable のまま」→ #163/#164 で falsify 済み。builtin deny-list は除去され deny は opt-in `security.execDenyPatterns`（既定 `[]`）宣言時のみ効くため、既定ではこれらの executable も grant が宣言・pin 可能なら route-eligible である（`no-grant` は deny 該当ではなく grant 非宣言・非 eligible・pin 不能・argv 不一致の viability 結果）。`command_denied_executable_re`・`command.rs:160-189` への参照自体も機構除去済みの stale コード参照。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](./documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

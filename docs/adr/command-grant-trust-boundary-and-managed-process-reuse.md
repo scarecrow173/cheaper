@@ -31,6 +31,10 @@ relations:
     - "./opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
     - "./invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "./pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from: ["../discovery/policy-gated-command-tool.md"]
@@ -152,3 +156,11 @@ Chosen option: **Option A** — grant authoring field を project partial schema
 * derives-from: `../discovery/policy-gated-command-tool.md`（DISC-034EM8dPyCYPdx7fqHlaBU。touch point 調査、reusable machinery、Option A/B/C の比較）。
 * related: `../specs/policy-gated-command-tool.md`（製品要件の正本。信頼境界の実現方式を本 ADR へ defer）、`./managed-process-named-task-lifecycle.md`（named task 認可と shell-free lifecycle の正本）、`./managed-process-bounded-lifecycle-policy.md`（再利用する lifecycle policy の正本）。
 * references: `../guides/managed-process.md`（managed process の認可・limit と `process.tasks` project extend 許可の文書）。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 ADR は決定時点の記録として本文は保持する。
+
+- `:60`・`:69`・`:90`・`:116`・`:135` — executable 解決に native magic（MZ / ELF / Mach-O）check・shell / shim / bare-`node` 拒否・script ext・`argv_shell_re` metachar 拒否を mandatory として再利用・検証する前提の記述 → #163 で内容審査 7 項目（native magic・shell/shim・script ext・workspace-resident・bare `node`・call-time/task argv metachar）は mandatory 層から除去され、#164 で executable deny は opt-in `security.execDenyPatterns`（deterministic executable deny-list・既定 `[]`）へ降格した。trusted-layer-only の grant 境界（Option A）は**維持**され、本 ADR の核心的決定として依然 authoritative。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](./documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

@@ -106,6 +106,10 @@ relations:
     - "./policy-gated-command-tool.md"
     - "./invocation-scoped-command-grants.md"
     - "./one-shot-workflow-execution-and-cli-composition.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "./documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -1096,3 +1100,14 @@ Devin の入力書換え schema は E で公式
       `mise run check` が pass する。
 - [ ] `route resolve`/`route run`/`route logs` が hook 経由と CLI
       直接呼出の両経路で同一 contract を返すこと。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 design は決定時点の記録として本文は保持する。
+
+- `:301-310` — project route の `trusted: true` shadow 規則・`trusted` field は project 層のみ意味を持つ記述 → #168 で `Route.trusted` field は削除・merge は無条件化。trust は宣言値ではなく宣言層 provenance（builtin/user = trusted、project 層は下位層を shadow しない）。project 層 `trusted` key presence は `InvalidRuntimePolicy` 拒否（値不問）。
+- `:398-429` — viability 分類で `no-grant` が executable pin・denied executable・workspace residency・`prepare_cwd` denylist の事前 check を共有する記述 → #166 で viability は**条件付き弱化**（byte-matched mode の argv precheck は維持、grant-set member は存在 + eligibility + pin のみ）＋ `grants:[name,…]` 投影へ一般化。#167 で substitute mode の検査対象 retarget。denied executable・workspace residency・metachar の事前 check は #163 で除去（deny は opt-in `security.execDenyPatterns` 宣言時のみ）。`unsafe-command` 分類は caller 報告 flag + cwd-changing executable の 2 条件のみ。
+- `:609` — C9 single-grant 投影（resolved policy を route の grant 1 件へ投影）→ #166 の grant-set 投影へ一般化。
+- `:1034-1036` — `trusted: true` は self-declared の限界記述 → #168 で field 自体が削除・宣言層 provenance へ再設計。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](../adr/documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

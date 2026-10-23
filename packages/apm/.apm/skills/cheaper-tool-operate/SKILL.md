@@ -80,7 +80,8 @@ authorized, do **not** retry blindly. The required loop is:
    `cheaper policy grant add <name> '<json>'` and re-run without the flag.
 
 There is no interactive prompt inside cheaper — approval and review are
-your responsibility. Deny-list and argv-pattern checks are re-applied on
+your responsibility. Argv-pattern checks — and the opt-in deny-list when
+`security.execDenyPatterns` is declared — are re-applied on
 the re-run, so a malformed or denied spec fails closed. Note the `--grant`
 value transits the process command line; keep secrets out of it.
 

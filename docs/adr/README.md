@@ -38,6 +38,7 @@ Directory: `docs/adr`
 | ADR-034r05iHrZUE6W5HVbwRSz | Distribute the cheaper CLI as a committed esbuild bundle inside the APM hook bundle | superseded | [distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md](./distribute-the-cheaper-cli-as-a-committed-esbuild-bundle-inside-the-apm-hook-bun.md) |
 | ADR-034Dkj1V1OguoUSXpwCE3e | Document APM dep-name deploy rule in cheaper-usage skill | accepted | [document-apm-dep-name-deploy-rule-in-cheaper-usage-skill.md](./document-apm-dep-name-deploy-rule-in-cheaper-usage-skill.md) |
 | ADR-eb2ghgGK2Cd8w7pro1qe18 | Document bulk-reader output limits in the consumer skill rather than a runtime surface | accepted | [document-bulk-reader-output-limits-in-consumer-skill.md](./document-bulk-reader-output-limits-in-consumer-skill.md) |
+| ADR-034L6ihibvbjmSnKmSffWH | documentation honesty sweep + migration guide — claim ≤ 実強制・refine-only 訂正方式 | accepted | [documentation-honesty-sweep-and-migration-guide.md](./documentation-honesty-sweep-and-migration-guide.md) |
 | ADR-034KuqZelggTIb8Z8K9QB8 | 宣言された実行契約の強制を責務とし内容審査を分離する | accepted | [enforce-declared-contracts-over-content-audit.md](./enforce-declared-contracts-over-content-audit.md) |
 | ADR-034KI3r2xdthh6rKDFY517 | exec-contract cleanup — 内容審査を mandatory 層から除去 | accepted | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
 | ADR-gEWi2IvlRq907TdUn24dHp | Treat execution.timeout as a progress-reset stall window and raise the builtin default | accepted | [execution-timeout-as-progress-reset-stall-window.md](./execution-timeout-as-progress-reset-stall-window.md) |
@@ -87,9 +88,9 @@ Directory: `docs/adr`
 | ADR-034KoUAHJ1vI8BbyJoL0Q9 | Resolve route test flake via test-side determinism | accepted | [resolve-route-test-flake-via-test-side-determinism.md](./resolve-route-test-flake-via-test-side-determinism.md) |
 | ADR-034A8FtvtZFYBJpZ8MNu4N | 親 job lease と子 operation conflict を ResourceManager で管理する | accepted | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | ADR-034IOqXM5YpqVgFZKatIXN | Restrict hook-config orphan sweep to cheaper-owned temp files | accepted | [restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md](./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md) |
-| ADR-034KTMnPFDF25x710LFSKY | route grant-set projection — grants 宣言・viability 条件緩和・record split | proposed | [route-grant-set-projection.md](./route-grant-set-projection.md) |
+| ADR-034KTMnPFDF25x710LFSKY | route grant-set projection — grants 宣言・viability 条件緩和・record split | accepted | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | ADR-034r05iHrZUE6WdKBH2eNM | development APM project と distributable cheaper package を nested package で物理分離する | accepted | [separate-dev-apm-project-via-nested-distributable-package.md](./separate-dev-apm-project-via-nested-distributable-package.md) |
-| ADR-034KXk8h1AtwCkf2cQrb7m | substitute-exec route mode — substitute:{grant,argv}・viability retarget・実行 anchor 切替 | proposed | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
+| ADR-034KXk8h1AtwCkf2cQrb7m | substitute-exec route mode — substitute:{grant,argv}・viability retarget・実行 anchor 切替 | accepted | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | ADR-034r05iHrZUE6W82VsDbPq | Treat unmeasurable huge files as over-threshold via a core byte cap (fail-closed) | accepted | [treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md](./treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md) |
 | ADR-034LT2o68CgcOinMEs8PZ8 | trusted route flag issuer redesign — trust = 宣言層 provenance・project 層 `trusted` presence 拒否 | accepted | [trusted-route-flag-issuer-redesign.md](./trusted-route-flag-issuer-redesign.md) |
 | ADR-034r05iHlWosDpP8BzaVZ8 | TypeScript + pnpm monorepo 構成 | superseded | [typescript-pnpm-monorepo.md](./typescript-pnpm-monorepo.md) |

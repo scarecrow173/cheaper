@@ -30,6 +30,10 @@ relations:
     - "./invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "./copilot-adapter-separate-script-never-nonzero-exit.md"
     - "./apm-hook-per-target-package-split.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -376,3 +380,9 @@ routes 宣言そのものと区別)。
 - per-target package 構造: `docs/adr/apm-hook-per-target-package-split.md`
   (hook 宣言は target 別 sibling package — cursor hooks.json 変更
   の deploy 経路)。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）の周辺表現は変わったが、本 ADR の決定（per-target hook rewrite の approvalBypass trusted gating）は #163–#168 と整合を保つ。#163 の内容審査除去・#168 の `trusted` flag 再設計の影響はなく、approval bypass は trusted 層 opt-in のまま変更なし。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](./documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

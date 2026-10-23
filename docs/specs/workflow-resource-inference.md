@@ -26,6 +26,10 @@ relations:
   superseded-by: []
   related:
     - "../designs/workflow-resource-inference.md"
+    - "./documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
 
   refines: []
   refined-by: []
@@ -71,7 +75,7 @@ relations:
 6. produces と known/declared reads の overlap は producer→consumer edges。needs/$from との union は compiler の既存 DAG 検査へ通す。自己の reads/produces は edge にしない。
 7. 異なる job の produces 同士の exact/subtree overlap は needs による順序があっても INVALID_REQUEST。決定的な job pair と claim pair を error details に含める。
 8. reads/writes/produces の exclusive overlap を conflict として注釈し semantic order を発明しない。edge/conflict の理由に job id と canonical claims を載せる。
-9. process は現行 JSON kind を増やさず tool:process の将来 port source で表す。named task の inputs/outputs は明示必須（[] は可）。undeclared process は推論不可として INVALID_REQUEST。outputs は produces と writes。実 executor/config loader は #59。
+9. process は現行 JSON kind を増やさず tool:process の port source で表す。named task は `process.tasks` の loader 宣言として維持しつつ、unified `exec` grant namespace の `fixed:true` grant へ写像され、その grant の `inputs`/`outputs` が resource inference の declaration seam となる（issue #165 — unified grant schema）。`inputs`/`outputs` は明示必須（[] は可）。fixed grant の `inputs`/`outputs` 宣言を欠く task（undeclared process）は推論不可として INVALID_REQUEST。outputs は produces と writes。実 executor/config loader は #59。
 10. caller の jobs/input/metadata を変更せず、同じ job 集合の順序を変えても manifest/edges/conflicts/diagnostics の JSON が一致する。
 
 ## Acceptance Criteria
@@ -83,7 +87,7 @@ relations:
 - [x] AC6: resources 省略/{} と reads:[] の差を検証する。
 - [x] AC7: job/claim 順序と caller mutation によらず byte 一致し全 job manifest を返す。
 - [x] AC8: core normalization/predicates を再利用し boundary escape と glob producer 拒否が伝播する。
-- [x] AC9: process declaration seam は typed、inputs/outputs 欠落を拒否し outputs→inputs の edge を返す。
+- [x] AC9: process declaration seam（`fixed:true` grant の `inputs`/`outputs` — issue #165）は typed、inputs/outputs 欠落を拒否し outputs→inputs の edge を返す。
 
 ## Deferred Design Concerns
 process 実行は #59、artifact provenance は #66、dynamic discovery は issue #65 triage の既存 exclusion。既存 literal subtree symlink/hard-link/外部差替えの residual risk は core #65-A と同じ境界。
