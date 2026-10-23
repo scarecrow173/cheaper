@@ -30,6 +30,7 @@ relations:
     - "./per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md"
     - "./invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "./enforce-declared-contracts-over-content-audit.md"
+    - "./route-grant-set-projection.md"
   refines: []
   refined-by: []
   derives-from:

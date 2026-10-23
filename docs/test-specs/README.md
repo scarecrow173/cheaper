@@ -52,6 +52,7 @@ Directory: `docs/test-specs`
 | TSPEC-034zTWhBVg6DzifF8qlhAc | Release publication and native smoke | superseded | [release-publication-and-native-smoke.md](./release-publication-and-native-smoke.md) |
 | TSPEC-034z2o64UhWCtNmYIhRT20 | Release workflow manual-dispatch and artifact contract | superseded | [release-workflow-manual-dispatch-and-artifact-contract.md](./release-workflow-manual-dispatch-and-artifact-contract.md) |
 | TSPEC-034AaXPxCwdUwH1XaYc6Jn | Resource lease の寿命とアクセス境界 | approved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
+| TSPEC-034KVxaBMzQE5YtVOx4j3w | route grant-set projection の検証契約 (issue #166) | approved | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | TSPEC-034Jg5VLupBVGDPELPFf83 | Route log store and route logs CLI | draft | [route-logs.md](./route-logs.md) |
 | TSPEC-034Jg5JHetTGqIaDM2E2cr | Route declaration loading and argv resolution | draft | [route-resolution.md](./route-resolution.md) |
 | TSPEC-034KsKB8SYklsDeiJQS9ar | route.rewrite.approvalBypass policy flag contract (issue #150) | draft | [route-rewrite-approval-bypass-policy-flag.md](./route-rewrite-approval-bypass-policy-flag.md) |

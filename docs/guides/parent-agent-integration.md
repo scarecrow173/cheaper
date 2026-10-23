@@ -254,6 +254,7 @@ routes:
     match: {command: [cargo, test]}
     target: {kind: workflow, path: routed-exec.workflow.json}
     grant: cargo-test
+    # grants: [name, …]  # optional — route.grant 以外の追加委譲 grant(builtin/user 層限定)
     output: {tokenThreshold: 8192}
     passthroughEnv: [CI]
 ```
@@ -291,6 +292,36 @@ grant は repository のコードや build script を実行する権限を
 namespace — [configuration ガイド](./configuration.md)）で、
 `process` task 由来の `fixed` grant・`scope:"project"` grant・
 未知名は `no-grant` viability に畳まれる。
+
+`grant:` は anchor grant — route context（payload cwd 復元・
+passthrough/extra env・任意 exit code 受理・log tee・
+`{grant, argv}` の expected-input 束縛）は anchor が担う
+`job_id == "exec"` の `command` job にのみ適用される。anchor
+以外の delegated grant は `grants:`（builtin/user 層限定の
+optional array）で宣言する:
+
+- 実効 grant set は `{route.grant} ∪ grants`。member は宣言順に
+  parse され、重複と `route.grant` 自身への参照は除去される
+  （空・未指定は同等 — 非配列・非文字列/空文字列 member は
+  schema error）。
+- member の viability 検査は **存在 + `scope:"trusted" && !fixed`
+  （`is_route_eligible`）+ executable pin** のみで、元 command
+  の argv とは照合しない。member job の argv は各 member grant
+  自身の `argv` pattern が拘束し、照合は job 実行時に行われる。
+  member の失敗（未存在・`fixed`・`scope:"project"`・pin 不能）
+  は anchor 失敗と同じ `no-grant` viability へ畳まれる。
+- **`grants` は builtin/user 層限定** — project 層
+  （`<workspace>/.cheaper/routes.yaml`）の entry に `grants` key
+  が存在すると、値の形状に関わらず route load 全体が
+  `InvalidRuntimePolicy` で失敗する。project 層が宣言できるのは
+  従来通り単数 `grant:`（anchor 参照）のみで、untrusted project
+  route が新しい実行権限を獲得する経路は存在しない。
+- member を呼ぶ `command` job は **`job_id` を `exec` 以外に
+  する**。`job_id == "exec"` × `tool: "command"` は anchor grant
+  + 元 argv の expected-input に束縛され、不一致は
+  `exec-input-mismatch`（PolicyViolation）で job 失敗する。
+  member job は自身の grant の lifecycle（cwd・env・
+  `exitCodes`）で実行され、route context は適用されない。
 
 ### hook rewrite の承認保全と fallback
 
@@ -349,7 +380,15 @@ interactive/TTY 前提の実行には対応しない。
 route record（`kind:"route"`）と refetch record
 （`kind:"route-refetch"`）は別々に usage.jsonl へ記録する —
 集計は refetch 数を join して出す（[usage ガイド](./usage.md)
-参照）。env 値は payload transport にのみ使われ、usage record
+参照）。route record は宣言 identity（`route`・`commandHash`）
+に加えて additive field `executed:{grant,argv}` を持ち、実際に
+実行された grant と env-prefix-strip 済み argv を記録する
+（`grants` member が使われても `executed` は anchor exec job の
+実行を指す）。**`executed.argv` は平文の引数値を含む** —
+`commandHash` は一方向 hash で env-prefix 値は argv へ載らない
+が、引数値自体に secret を含む command は usage.jsonl に値が
+残る（usage.jsonl に平文 arg が記録されるのはこの field が
+初めて）。env 値は payload transport にのみ使われ、usage record
 や worker input へ serialise されない — ただし子 process
 自身が env 値を stdout/log へ print することはあり得るため、
 route log は sensitive として扱うこと。worker postprocess の

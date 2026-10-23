@@ -118,7 +118,7 @@ pub(crate) fn prepare(
     for (k, v) in prefix {
         extra_env.insert(k, Value::from(v));
     }
-    if !supply.policy.exec.project_grant(&route.grant) {
+    if !supply.policy.exec.project_grants(&route.grant_set()) {
         return Err(denied("no-grant"));
     }
     Ok(PreparedRoute {
@@ -472,6 +472,36 @@ fn finish(
                 "captured exec result has no valid exit code",
             )) as BoxError
         })?;
+    // `executed` attribution(#166)— `command::execute` が記録する
+    // `{grant, argv}` details から実際の実行 grant/argv を取る。
+    // details 欠落は command tool contract の不変条件違反のため
+    // InternalError(`exitCode` と同じ規約)。`executed.argv` は
+    // env-prefix-strip 済みの元 exec argv を指す。
+    let executed_grant = details
+        .and_then(|d| d.get("grant"))
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .ok_or_else(|| {
+            Box::new(CheaperError::new(
+                ErrorCode::InternalError,
+                "captured exec result is missing grant detail",
+            )) as BoxError
+        })?;
+    let executed_argv: Vec<String> = details
+        .and_then(|d| d.get("argv"))
+        .and_then(Value::as_array)
+        .and_then(|items| {
+            items
+                .iter()
+                .map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
+        .ok_or_else(|| {
+            Box::new(CheaperError::new(
+                ErrorCode::InternalError,
+                "captured exec result is missing argv detail",
+            )) as BoxError
+        })?;
     let stream = |key: &str| -> (String, bool) {
         let s = details.and_then(|d| d.get(key)).and_then(Value::as_object);
         (
@@ -575,6 +605,8 @@ fn finish(
         &RouteRecordInput {
             route: prepared.route.name.clone(),
             command: payload.command.clone(),
+            executed_grant,
+            executed_argv,
             original_tokens,
             returned_tokens,
             worker,
@@ -699,8 +731,24 @@ mod tests {
     }
 
     #[test]
-    fn prepare_projects_grants_to_single_route_grant() {
+    fn prepare_projects_grant_set() {
         let fx = routed_fx();
+        // route に member `other` を宣言(user 層 — trusted
+        // authoring) — `grant_set()` = {cargo-test, other} が投影に
+        // 残り、未宣言 grant は落ちる。
+        std::fs::write(
+            fx.cfg.join("routes.yaml"),
+            "version: 1\nroutes:\n  - name: cargo-test\n    match: {command: [cargo, test]}\n    target: {kind: workflow, path: routed-exec.workflow.json}\n    grant: cargo-test\n    grants: [other]\n    passthroughEnv: [CI, FOO]\n",
+        )
+        .unwrap();
+        let exe = test_exe();
+        std::fs::write(
+            fx.cfg.join("policy.yaml"),
+            format!(
+                "version: 1\ncommand:\n  grants:\n    cargo-test:\n      executable: '{exe}'\n      argv: [test, \"*\"]\n    other:\n      executable: '{exe}'\n      argv: [\"*\"]\n    undeclared:\n      executable: '{exe}'\n      argv: [\"*\"]\n"
+            ),
+        )
+        .unwrap();
         let env = env_lookup(&fx.cfg);
         let p = payload(
             &fx.ws,
@@ -709,10 +757,13 @@ mod tests {
             BTreeMap::new(),
         );
         let out = prepare(&p, &fx.ws, &env, Some(&fx.builtin)).unwrap();
-        // `project_grant` は `{route.grant} ∪ {fixed grants}` を残す
-        // — fixture は task 非宣言のため route grant のみが残る。
-        assert_eq!(out.supply.policy.exec.grants.len(), 1);
-        assert!(out.supply.policy.exec.grants.contains_key("cargo-test"));
+        // `project_grants` は `{route.grant} ∪ grants ∪ {fixed
+        // grants}` を残す — undeclared は投影から落ちる。
+        let grants = &out.supply.policy.exec.grants;
+        assert_eq!(grants.len(), 2);
+        assert!(grants.contains_key("cargo-test"));
+        assert!(grants.contains_key("other"));
+        assert!(!grants.contains_key("undeclared"));
         assert_eq!(out.route.name, "cargo-test");
         assert_eq!(out.route.grant, "cargo-test");
         assert_eq!(out.resolution.exec_args, vec!["test", "--workspace"]);
@@ -1067,6 +1118,110 @@ mod tests {
             error: None,
         };
         let err = run_finish(&ffx, Ok(outcome)).err().unwrap();
+        assert_eq!(
+            err.downcast_ref::<CheaperError>().map(CheaperError::code),
+            Some(ErrorCode::InternalError)
+        );
+    }
+
+    /// `executed` attribution(#166)— route record は宣言 identity
+    /// (`route`/`commandHash`)に加えて `captured.details.{grant,argv}`
+    /// を `executed` として記録する(additive field)。
+    #[test]
+    fn finish_record_carries_executed_attribution() {
+        let ffx = finish_fx();
+        let mut result = completed_exec_result(0);
+        ffx.route_exec.complete(&mut result);
+        let outcome = cheaper_workflow::WorkflowOutcome {
+            ok: true,
+            result: Map::new(),
+            jobs: vec![],
+            meta: cheaper_workflow::WorkflowOutcomeMeta {
+                duration_ms: 0.0,
+                execution: None,
+                output_errors: vec![],
+            },
+            error: None,
+        };
+        let out = run_finish(&ffx, Ok(outcome)).unwrap();
+        assert_eq!(out.exit_code, 0);
+        let log = std::fs::read_to_string(ffx.fx.cfg.join("usage.jsonl")).unwrap();
+        let record: Value = log
+            .lines()
+            .filter_map(|l| serde_json::from_str::<Value>(l).ok())
+            .find(|r| r["kind"] == "route")
+            .unwrap();
+        // 宣言 anchor identity は不変。
+        assert_eq!(record["route"], "cargo-test");
+        assert!(record["commandHash"].is_string());
+        // `executed` は実 exec job が記録した grant/argv。
+        assert_eq!(record["executed"]["grant"], "cargo-test");
+        assert_eq!(record["executed"]["argv"], json!(["test"]));
+    }
+
+    /// `captured.details` の `grant`/`argv` 欠落・型違反は command
+    /// tool contract の不変条件違反 — `InternalError`(#166)。
+    #[test]
+    fn finish_missing_executed_details_is_internal_error() {
+        let outcome = || cheaper_workflow::WorkflowOutcome {
+            ok: true,
+            result: Map::new(),
+            jobs: vec![],
+            meta: cheaper_workflow::WorkflowOutcomeMeta {
+                duration_ms: 0.0,
+                execution: None,
+                output_errors: vec![],
+            },
+            error: None,
+        };
+        // `grant` 欠落。
+        let ffx = finish_fx();
+        let mut result = completed_exec_result(0);
+        result
+            .details
+            .as_mut()
+            .unwrap()
+            .as_object_mut()
+            .unwrap()
+            .remove("grant");
+        ffx.route_exec.complete(&mut result);
+        let err = run_finish(&ffx, Ok(outcome())).err().unwrap();
+        assert_eq!(
+            err.downcast_ref::<CheaperError>().map(CheaperError::code),
+            Some(ErrorCode::InternalError)
+        );
+        // `grant` が非 string。
+        let ffx = finish_fx();
+        let mut result = completed_exec_result(0);
+        result.details.as_mut().unwrap()["grant"] = json!(1);
+        ffx.route_exec.complete(&mut result);
+        let err = run_finish(&ffx, Ok(outcome())).err().unwrap();
+        assert_eq!(
+            err.downcast_ref::<CheaperError>().map(CheaperError::code),
+            Some(ErrorCode::InternalError)
+        );
+        // `argv` 欠落。
+        let ffx = finish_fx();
+        let mut result = completed_exec_result(0);
+        result
+            .details
+            .as_mut()
+            .unwrap()
+            .as_object_mut()
+            .unwrap()
+            .remove("argv");
+        ffx.route_exec.complete(&mut result);
+        let err = run_finish(&ffx, Ok(outcome())).err().unwrap();
+        assert_eq!(
+            err.downcast_ref::<CheaperError>().map(CheaperError::code),
+            Some(ErrorCode::InternalError)
+        );
+        // `argv` 要素が非 string。
+        let ffx = finish_fx();
+        let mut result = completed_exec_result(0);
+        result.details.as_mut().unwrap()["argv"] = json!(["test", 1]);
+        ffx.route_exec.complete(&mut result);
+        let err = run_finish(&ffx, Ok(outcome())).err().unwrap();
         assert_eq!(
             err.downcast_ref::<CheaperError>().map(CheaperError::code),
             Some(ErrorCode::InternalError)

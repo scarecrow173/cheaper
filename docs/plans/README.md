@@ -90,6 +90,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1Fbkp7833DuTu | Repository-owned setup/check entrypoints (mise run setup / mise run check) | completed | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |
 | PLAN-034IQ9W3TwoNQIp08Cn0SS | Restrict hook-config orphan sweep to cheaper-owned temp files | approved | [restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md](./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md) |
 | PLAN-034r05iHE1FbkoTVD7CTNi | Restructure built-in writer Workers (code-writer + doc-writer) | completed | [restructure-built-in-writer-workers.md](./restructure-built-in-writer-workers.md) |
+| PLAN-034KVx51kVYoMwO8UmJ8VE | route grant-set projection — grants 宣言・viability 条件緩和・record split | approved | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | PLAN-034r05iHy2gdnpHMZZk4ZU | Scaffold monorepo and implement @cheaper/core | completed | [scaffold-monorepo-and-implement-cheaper-core.md](./scaffold-monorepo-and-implement-cheaper-core.md) |
 | PLAN-034r05iHE1FbkoWI8p70oC | Self-contained CLI bundle distribution | completed | [self-contained-cli-bundle.md](./self-contained-cli-bundle.md) |
 | PLAN-034rBrrA2j5usWH2G77b8G | Shell read-candidate extraction implementation | approved | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |

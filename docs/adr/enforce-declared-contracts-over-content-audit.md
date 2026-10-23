@@ -31,6 +31,7 @@ relations:
     - "./workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
     - "./defer-non-exec-routing-to-permission-model-redesign.md"
     - "./opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
+    - "./route-grant-set-projection.md"
   refines: []
   refined-by: []
   derives-from:

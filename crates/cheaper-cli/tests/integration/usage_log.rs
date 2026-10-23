@@ -301,6 +301,8 @@ fn route_record_shape() {
     let input = RouteRecordInput {
         route: "cargo-test".to_string(),
         command: "SECRET_TOKEN=x cargo test".to_string(),
+        executed_grant: "cargo-test".to_string(),
+        executed_argv: vec!["test".to_string(), "--workspace".to_string()],
         original_tokens: 1000.0,
         returned_tokens: 250.0,
         worker: json!({"model": {"provider":"ollama","id":"q"}, "usage": {"input":1}}),
@@ -321,7 +323,20 @@ fn route_record_shape() {
     assert_eq!(r["returnedTokens"], 250.0);
     assert_eq!(r["reductionRatio"], 0.75);
     assert_eq!(r["ok"], true);
-    // command 本文(env 値を含み得る)は載らず `commandHash` のみ。
+    // `executed` — #166 additive field、commandHash 直後の位置に
+    // 実実行 `{grant, argv}` を記録する。
+    assert_eq!(r["executed"]["grant"], "cargo-test");
+    assert_eq!(r["executed"]["argv"], json!(["test", "--workspace"]));
+    let keys: Vec<&String> = r.as_object().unwrap().keys().collect();
+    let hash_pos = keys
+        .iter()
+        .position(|k| k.as_str() == "commandHash")
+        .unwrap();
+    assert_eq!(keys[hash_pos + 1].as_str(), "executed", "keys: {keys:?}");
+    // command 本文(env 値を含み得る)は `command` には載らず
+    // `commandHash` のみ(executed.argv は実行 argv で env-prefix を
+    // 含まない — `SECRET_TOKEN=` prefix は argv ではなく env-prefix
+    // 経路に置かれるため record のどこにも出ない)。
     let text = serde_json::to_string(&r).unwrap();
     assert!(!text.contains("SECRET_TOKEN"), "{text}");
     assert!(r["commandHash"].as_str().unwrap().len() == 16);

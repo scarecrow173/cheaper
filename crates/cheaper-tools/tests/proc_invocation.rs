@@ -699,19 +699,20 @@ async fn worker_scope_rejects_command_policy_mismatch() {
     invocation.dispose().await;
 }
 
-/// 単一 grant 投影 + parity(A3/C9)— route 宣言 grant だけを残した
-/// declared policy を invocation・scope 両側へ供給すると parity
-/// check が通り、投影外 grant の `input.name` 参照は unknown
+/// grant set 投影 + parity(A3/C9・#166)— route 宣言 grant set
+/// (anchor + member)だけを残した declared policy を
+/// invocation・scope 両側へ供給すると parity check が通り、member
+/// grant は実行可能、投影外 grant の `input.name` 参照は unknown
 /// grant で失敗する。
 #[tokio::test]
-async fn single_grant_projection_preserves_scope_parity() {
+async fn grant_set_projection_preserves_scope_parity() {
     let dir = TempDir::new();
-    // route run が行う投影(D1)と同じ形: declared JSON から
-    // `project_grant` 相当に grants を 1 件へ絞った policy を
+    // route run が行う投影(D1・#166 `project_grants`)と同じ形:
+    // declared JSON から `{route.grant} ∪ grants` へ絞った policy を
     // invocation・scope 両側へ供給する。
     let projected = json!({
         "maxConcurrent": 1,
-        "grants": {"route-grant": self_grant()}
+        "grants": {"route-grant": self_grant(), "member": self_grant()}
     });
     let mut opts = invocation_options(dir.root(), None);
     opts.exec = Some(exec_doc(None, Some(projected.clone())));
@@ -721,6 +722,37 @@ async fn single_grant_projection_preserves_scope_parity() {
     let scope = invocation
         .create_worker_scope(worker("routed", scope_opts))
         .unwrap();
+    // member grant は投影内にあるため実行できる — member argv 照合は
+    // viability ではなく job 実行時の `check_exec_execution` が担う
+    // (#166 O2b:fixture は `invocation_fixture_child` 自身を spawn
+    // し exit 0 で即 return する)。
+    let ok = scope
+        .execute(
+            "command",
+            &json!({
+                "name": "member",
+                "args": ["invocation_fixture_child", "--exact", "--nocapture"]
+            }),
+            None,
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        ok.details.as_ref().and_then(|d| d.get("exitCode")),
+        Some(&json!(0)),
+        "{ok:?}"
+    );
+    // member argv pattern 外は実行時照合で失敗する
+    // (POLICY_VIOLATION — scope 経由の wrap で型は失われるため
+    // message で pin する)。
+    let err = scope
+        .execute("command", &json!({"name": "member", "args": ["x"]}), None)
+        .await
+        .unwrap_err();
+    assert!(
+        err_message(&err).contains("arguments do not match the grant argv pattern"),
+        "{err}"
+    );
     // 投影外 grant の参照は unknown grant で失敗する。
     let err = scope
         .execute("command", &json!({"name": "other", "args": []}), None)
