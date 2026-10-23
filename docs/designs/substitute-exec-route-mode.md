@@ -4,7 +4,7 @@ type: "design"
 status: "draft"
 title: "substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・実行 anchor 切替"
 created: "2026-10-23"
-updated: "2026-10-23"
+updated: "2026-10-24"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -166,7 +166,8 @@ executed}` record split)は実装済みで、本 design はその構造を
   `executed:{grant,argv}`(実測 substitute ペア)。schemaVersion
   1・新規 field なし。
 - **O6a** — stdin-unsupported 分類は typed 側を維持しつつ
-  substitute ペア(pin 解決 executable + 宣言 argv)にも適用。
+  substitute ペア(宣言 executable 名と pin 解決 executable 名の
+  union + 宣言 argv)にも適用。
 - **O7a** — 投影 set = `{route.grant} ∪ grants ∪
   {substitute.grant} ∪ {fixed}`。
 - **O8a** — Option E(exec-less route)は open 事項として残置。
@@ -196,6 +197,10 @@ executed}` record split)は実装済みで、本 design はその構造を
   `route/run.rs` の deadline lookup(:356-363)・
   `RouteExecution::new` 呼出し(:374-382)・inputs `grant`/
   `execArgs`(:385/:392)を実行ペアへ切替。
+- merge provenance 拡張 — project `trusted:true` route が下位層
+  route を置き換えた際に displaced route を `suppressed` へ
+  記録し、silent displacement を残さない(`routes.rs` merge
+  :154-166 — §(a))。
 - anchor 規約の明文化 — `expected_input`・D11 byte-match・
   lifecycle bound・exit mirror・record attribution の substitute
   mode での意味(code 変更なしの契約固定を含む)。
@@ -229,6 +234,12 @@ executed}` record split)は実装済みで、本 design はその構造を
   非検査のまま(known semantics — §(e))。
 - **member argv の route 解決時照合** — member job argv は
   宣言されていないため job 実行時遅延のまま(#166 O2a 不変)。
+- **non-runnable best match からの shorter match への
+  fall-through** — longest `match.command` の best 1 件のみを
+  viability 評価する現行 precedence は byte-matched を含む全
+  mode 共通の match 規約であり、本 design では known
+  semantics として維持する(§Risks・§Deferred Design
+  Concerns)。
 - **`project_grants`・`check_exec_execution`・`pin_exec_grant`・
   `is_route_eligible` の signature/predicate 変更** — substitute
   も同じ seam を通る(core/tools 側 code 不変)。
@@ -408,6 +419,59 @@ pub fn exec_pair<'a>(&'a self, typed_args: &'a [String]) -> (&'a str, &'a [Strin
 }
 ```
 
+- **`trusted: true` project route の置換 provenance(merge
+  :154-166)** — 現行 merge は `trusted:true` の project route が
+  下位層 route を置き換える際 `effective.insert` で silent に
+  overwrite するだけで、`suppressed` には負けた **untrusted**
+  project route しか記録されない。trusted substitute route(例:
+  `[git,push]`→dry-run)が project 層の同名宣言で無痕跡に
+  置き換わると、`route resolve`/`kind:"route"` record の双方で
+  追跡不能になる(§Risks)。`RouteLayer::Project` の置換 branch
+  で `insert` の戻り値(displaced route)を `suppressed` へ
+  記録する:
+
+```rust
+RouteLayer::Project => {
+    if effective.contains_key(&route.command) && !route.trusted {
+        suppressed.push(SuppressedRoute {
+            name: route.name,
+            command: route.command,
+        });
+    } else {
+        if !effective.contains_key(&route.command) {
+            order.push(route.command.clone());
+        }
+        // `trusted: true` による下位層置換でも負けた側を
+        // provenance へ残す — silent displacement を残さない
+        // (新規追加では insert が None を返し no-op)。
+        if let Some(displaced) = effective.insert(route.command.clone(), route) {
+            suppressed.push(SuppressedRoute {
+                name: displaced.name,
+                command: displaced.command,
+            });
+        }
+    }
+}
+```
+
+  - `SuppressedRoute` の semantics は「trust 不在で負けた
+    project route」から「**merge で負けた route**」へ拡張 —
+    doc comment(:77-78)と file header の merge 規約 comment
+    (:12-14)を追従させる。shape `{name, command}` は不変。
+  - consumer 側は一切不変: `resolve` の `suppressed()`
+    (:219-226)は `.find(is_prefix)` で displaced route 名を
+    そのまま拾い(displaced command == 勝者 command)、
+    `RouteResolution.suppressed: Option<String>`(:102)・
+    `route resolve` 出力 `suppressed` field
+    (`route_cmd.rs:126-127`)・`kind:"route"` record の
+    `suppressed`(`run.rs:617` → `usage_log.rs:359,418`)へ
+    既存経路で乗る。新規 field・shape 変更なし。
+  - 境界: builtin/user 層間の shadow(user → builtin、
+    :146-150)は同一 trusted principal の宣言 override であり
+    silent のまま。記録対象は untrusted 境界をまたぐ project
+    層の `trusted:true` 置換のみ(project 層内 dup は invalid
+    隔離済みのため displaced は常に下位層 route)。
+
 ### (b) viability — `crates/cheaper-cli/src/route/resolve.rs`
 
 `viability()`(:276-383)の no-grant 段と stdin-unsupported 段を
@@ -477,7 +541,7 @@ if check_exec_execution(&options, exec_name, exec_args).is_err() {
 - `pinned` は後段の substitute 側 interactive 分類で再利用する
   ため `pins` map へは clone を入れる(§(b-3))。
 
-**(b-2) `route.grant` の member 級降格(:349-377):** substitute
+**(b-2) `route.grant` の member 級降格(member loop :353-377):** substitute
 宣言のある route では `route.grant` を既存 member ループと同じ
 位置・同じ検査(存在 + `is_route_eligible` + `pin_exec_grant`、
 argv 照合なし)へ降格する:
@@ -540,21 +604,31 @@ if is_interactive(name, &out.exec_args) {
 }
 // substitute 側 — stdin 非接続で実際に spawn されるのは
 // substitute ペアであり、interactive な substitute は発火後に
-// grant timeout まで hang してから失敗する。pin 解決済み
-// executable 名 + 宣言 argv で同じ分類を適用する(O6a/R10)。
+// grant timeout まで hang してから失敗する。分類名は宣言
+// executable 名と pin 解決済み実体名の union — 片側だけだと
+// canonical 名ずらし(`python3`→`python3.11`・`vim`→`vim.basic`・
+// `vi`→`nvi`)や shim 名で系統的に回避される(O6a/R10)。
 if let Some(substitute) = &route.substitute {
-    if is_interactive(&command_name(&pinned), &substitute.argv) {
+    if is_interactive(&command_name(&grant.executable), &substitute.argv)
+        || is_interactive(&command_name(&pinned), &substitute.argv)
+    {
         return Viability::StdinUnsupported;
     }
 }
 ```
 
-- `pinned` は (b-1) で pin 解決済みの substitute executable
-  canonical path — `command_name`(:1324、dir prefix 剥離 +
-  `.exe`/`.bat`/`.cmd` strip)で basename 化してから
-  `INTERACTIVE_COMMANDS`/flag 判定へ掛ける。declared 名が shim/
-  symlink でも resolved 実体で分類できる(pin は既に解決済みで
-  追加コストなし)。`command_name` は :17 の既存 import で足りる。
+- 分類対象名は **宣言名と解決名の union** — `command_name(
+  &grant.executable)`(grant 宣言の `executable` basename)と
+  `command_name(&pinned)`(pin 解決済み canonical path の
+  basename)の両方へ `INTERACTIVE_COMMANDS`/flag 判定を掛け、
+  どちらかが該当すれば `StdinUnsupported`。宣言名側は version
+  suffix への canonicalize(`python3`→`python3.11`、
+  `vim`→`vim.basic`、`vi`→`nvi`)で素通しする穴を塞ぎ、解決名
+  側は declared 名が shim/symlink 名でも実体で分類する役割を
+  維持する。`grant`・`pinned` はともに (b-1) で解決済みのため
+  追加コストなし。`command_name`(`routing_policy.rs:1324` —
+  dir prefix 剥離 + `.exe`/`.bat`/`.cmd` strip)は :17 の既存
+  import で足りる。
 - `grants[]` member は screening 対象外のまま(known semantics —
   member job は自身 grant bound で動く別経路、§(e))。
 
@@ -568,8 +642,9 @@ if let Some(substitute) = &route.substitute {
 
 ### (c) projection — `crates/cheaper-core/src/policy/exec.rs` + `route/run.rs:121`
 
-`project_grants`(:118-134)は `&BTreeSet<String>` 版で既に set
-汎用 — **code 変更なし**。有効 set の構築責務は
+`project_grants`(:124-134)は `&BTreeSet<String>` 版で既に set
+汎用 — **code 変更なし**(doc comment :118-123 の set 式のみ
+substitute.grant 追記 — §Churn「comment 追随」)。有効 set の構築責務は
 `Route::grant_set()` にあり(§(a))、substitute mode の有効 set =
 `{route.grant} ∪ grants ∪ {substitute.grant}` をそのまま渡す。
 
@@ -660,17 +735,23 @@ code 変更が伴わない契約固定。親 design の「実行 grant anchor」
 実装境界として固定する。
 
 - **実行 anchor = `substitute.grant`** — `expected_input.name`・
-  deadline 導出・exec job lifecycle(`timeout`/`killGrace`/
-  `exitCodes`/`cwd`/`env`/`maxOutputBytes`)は全て実行 grant の
-  宣言値に従う。exec job の lifecycle は `command::execute` が
-  named grant(= `substitute.grant`)の宣言値を読む既存規約
-  (`tools/command/mod.rs:218-244` — `check_exec_execution` →
-  `ProcLimits{timeout, kill_grace, max_output_bytes,
-  accepted_exit_codes}` → `ProcPrepared{executable, argv, cwd,
-  env}`)。routed-exec context(`exec_cwd` = payload cwd・
-  passthrough `extra_env`・`accept_any_exit_code`・route log
-  `log_tee` — `run.rs:220-229` の `RouteExecution::context()`)
-  は exec job に mode 共通で適用される。
+  deadline 導出・exec job lifecycle のうち grant 宣言由来の
+  `timeout`/`killGrace`/`exitCodes`/`maxOutputBytes` は実行
+  grant の宣言値に従う。exec job の lifecycle は
+  `command::execute` が named grant(= `substitute.grant`)の
+  宣言値を読む既存規約(`tools/command/mod.rs:218-244` —
+  `check_exec_execution` → `ProcLimits{timeout, kill_grace,
+  max_output_bytes, accepted_exit_codes}` → `ProcPrepared
+  {executable, argv, cwd, env}`)。`cwd`/`env` は routed context
+  側が優先する 2 つの例外: `cwd` は `route_context.exec_cwd`
+  (payload cwd)が `grant.cwd` を迂回する
+  (`exec/mod.rs:284-292`)、`env` は `grant.env` へ `extra_env`
+  (passthrough allowlist + env-prefix)を override merge する
+  (`command/mod.rs:245-252`)。routed-exec context
+  (`exec_cwd` = payload cwd・passthrough `extra_env`・
+  `accept_any_exit_code`・route log `log_tee` —
+  `run.rs:220-229` の `RouteExecution::context()`)は exec job
+  に mode 共通で適用される。
 - **`grants[]` member job は従来どおり自身 grant bound** —
   `job_id != "exec"` の command job は expected_input gate を
   通らず、`route_context: None` で member grant の宣言
@@ -757,8 +838,11 @@ check)。
   (viability §(b) と scope pin 構築の両方)に同じく効き、
   deny される grant は ineligible → `NoGrant`。
 - **`trusted: true` は判別に使えない** — project 自己申告の
-  shadowing gate(`routes.rs:152-166`)であり層 provenance では
+  shadowing gate(`routes.rs:154-166`)であり層 provenance では
   ない(O3a・#166 O7a と同じ結論)。判別子は宣言層 provenance。
+  置換そのものは merge で displaced route の `suppressed`
+  provenance に記録される(§(a) — silent displacement を残さ
+  ない)。
 
 ### (g) signature 契約(変更後)
 
@@ -770,6 +854,7 @@ check)。
 | `Route::exec_pair` | `<'a>(&'a self, typed_args: &'a [String]) -> (&'a str, &'a [String])` | `routes.rs` 新設 — 実行ペア選択規則の単一 owner(viability・run 配線が共有) |
 | `KNOWN_KEYS` | `"substitute"` を `"grants"` 直後へ追加 | `routes.rs:334-343` — unknown-key fail-loud 規約内(全層共通) |
 | `validate_route` | signature 不変(`layer: RouteLayer` は :329 で既存) | project 層 entry の `substitute` key presence を形状検査より先に `schema_error` へ倒す + `{grant,argv}` required ペア parse(O1a/O3a) |
+| `load` merge / `SuppressedRoute` | signature・`{name, command}` shape 不変 — semantics を「merge 敗北 route」へ拡張 | `routes.rs:154-166` — project `trusted:true` 置換時に displaced 下位層 route を `suppressed` 記録。doc comment(:77-78)・file header(:12-14)追従 |
 
 **変更しない signature**: `resolve::resolve`/`ResolveInput`/
 `ExecPolicyView`/`Viability`/`RouteResolution`・
@@ -790,13 +875,14 @@ workflow の `grant`/`execArgs` input 語彙と mode 非依存で一致)・
 | `route/routes.rs` | :334-343 | `KNOWN_KEYS` に `"substitute"` 追加 |
 | `route/routes.rs` | :37-62 | `RouteSubstitute` struct 新設 + `Route.substitute` field(`grants` :52 直後) |
 | `route/routes.rs` | :454 直後 | `substitute` の project 層 presence 拒否(`grants` :426-431 と同型)+ `{grant,argv}` parse(nested object・required ペア・nested 未知 key・non-empty 要素) |
+| `route/routes.rs` | :154-166 | merge の `RouteLayer::Project` 置換 branch で displaced route を `suppressed` provenance へ記録(`insert` 戻り値利用) |
 | `route/routes.rs` | :506-516 | `Route` literal へ `substitute` 追加 |
 | `route/routes.rs` | :64-75 | `grant_set()` に `substitute.grant` 追加 + `exec_pair()` 新設 |
 | `route/routes.rs` | :574 以降 | unit test — substitute parse(`argv:[]` 受理・非 object/key 欠落/nested 未知 key/非 string 要素拒否)・project 層 presence 拒否 + builtin/user 受理・`grant_set` union・`exec_pair` 選択 |
 | `route/resolve.rs` | :305-348 | anchor 完全検査の対象を `route.exec_pair(&out.exec_args)` へ retarget(lookup 名・pins key・`check_exec_execution` 引数を実行ペアへ) |
-| `route/resolve.rs` | :349-377 | member ループの対象へ substitute mode のみ `route.grant` を先頭連結(ループ本体不変) |
-| `route/resolve.rs` | :378-381 | typed 側 `is_interactive` 維持 + substitute ペア(`command_name(&pinned)` + `substitute.argv`)への同分類追加 |
-| `route/resolve.rs` | :395-407,:411-422 | `route()` helper literal へ `substitute: None` + substitute viability 新規 case(retarget・route.grant 降格・stdin 両側) |
+| `route/resolve.rs` | :353-377 | member ループの対象へ substitute mode のみ `route.grant` を先頭連結(ループ本体不変) |
+| `route/resolve.rs` | :378-381 | typed 側 `is_interactive` 維持 + substitute ペアへ宣言名 `command_name(&grant.executable)` と解決名 `command_name(&pinned)` の union 分類追加(`substitute.argv` 共有) |
+| `route/resolve.rs` | :387-390,:395-407,:411-422 | test module `use crate::route::routes::{…}` へ `RouteSubstitute` import + `route()`/`route_with_grants()` helper literal へ `substitute: None` + substitute viability 新規 case(retarget・route.grant 降格・stdin 両側 union) |
 | `route/run.rs` | :356-363 | grant_timeout lookup を `exec_grant` へ(`exec_pair` 選出) |
 | `route/run.rs` | :374-382 | `RouteExecution::new` 呼出しへ `exec_grant`/`exec_argv` |
 | `route/run.rs` | :385,:392 | inputs `grant`/`execArgs` を実行ペアへ |
@@ -816,7 +902,7 @@ workflow の `grant`/`execArgs` input 語彙と mode 非依存で一致)・
 | `tools/command/mod.rs` | :218-272 | **不変** — `details.{grant,argv}` 実測記録 |
 | `hook.rs`/`hook_cmd.rs` | route 入力供給経路 | **不変** — `load_or_none` fail-open 規約・`RouteEvalInput` 構築 |
 | `tests/integration/usage_log.rs` | :298-353 | **不変** — `route_record_shape` は `executed` shape を既に pin(record assertion は route_run.rs 側で substitute 値を検証) |
-| `tests/proc_invocation.rs` | :702-749 | **不変** — set 投影 parity は `project_grants` set 汎用でカバー済み(必要なら投影 JSON に substitute 名を含める case の追加余地 — 必須ではない) |
+| `crates/cheaper-tools/tests/proc_invocation.rs` | :702-766 | **不変** — set 投影 parity は `project_grants` set 汎用でカバー済み(必要なら投影 JSON に substitute 名を含める case の追加余地 — 必須ではない) |
 
 ### (i) error 契約
 
@@ -829,7 +915,7 @@ workflow の `grant`/`execArgs` input 語彙と mode 非依存で一致)・
 | `substitute.grant` 未存在 / `scope:"project"` / `fixed` / pin 不能 / `substitute.argv` が argv pattern 不一致 / cwd prepare・pin verify 失敗 | `Viability::NoGrant`(enum — error ではない)→ `route run` は `denied("no-grant")` `PolicyViolation` | `resolve.rs` §(b-1) retarget 分岐 → `run.rs:93-97` | anchor 失敗と同一 fold — 新規 viability 値なし。`route run` 不発 → 原 command 直接実行の fail-safe |
 | substitute mode の `route.grant` 未存在 / ineligible / pin 不能 | `Viability::NoGrant` → 同上 | `resolve.rs` §(b-2) member ループ | `grants[]` member 失敗と同じ位置・同じ fold |
 | `grants[]` member 未存在 / ineligible / pin 不能 | `Viability::NoGrant` → 同上 | `resolve.rs` §(b-2)(不変) | #166 規約 |
-| substitute executable が interactive(`INTERACTIVE_COMMANDS`)または `substitute.argv` が interactive flag 含有 | `Viability::StdinUnsupported` → `route run` は `denied("stdin-unsupported")` `PolicyViolation` | `resolve.rs` §(b-3) | pin 解決済み executable 名で分類 — hang→timeout 失敗を resolve 時点へ前倒し |
+| substitute executable が interactive(`INTERACTIVE_COMMANDS`)または `substitute.argv` が interactive flag 含有 | `Viability::StdinUnsupported` → `route run` は `denied("stdin-unsupported")` `PolicyViolation` | `resolve.rs` §(b-3) | 宣言 executable 名 + pin 解決済み実体名の union で分類 — canonical 名ずらし(`python3`→`python3.11` 等)・shim 名の回避を防ぎ、hang→timeout 失敗を resolve 時点へ前倒し |
 | typed 側 interactive(原 executable/argv) | `Viability::StdinUnsupported` → 同上 | `resolve.rs` §(b-3)(不変) | 「interactive typed command は routing で置き換えない」invariant を mode 共通で維持 |
 | `project_grants` false(投影 set 内 ineligible/不在名混入 — viability 通過後の変動等) | `PolicyViolation` — `denied("no-grant")` | `run.rs:121-123` | viability との二重防御(不変) |
 | `expected_input` mismatch(`job_id=="exec" && tool=="command"` の name/args が実行ペアと不一致) | `PolicyViolation` — `reason:"exec-input-mismatch"` | `workflow_run.rs:471-484`(不変) | substitute mode では substitute ペアを要求 — `route.grant`・原 exec_args・投影外名の指定は失敗 |
@@ -853,6 +939,8 @@ builtin/user/project ─→ routes::load(層別 file — :115-131)
        → Route{grant, grants, substitute, …}
        ※ 形状不正・project 層の `substitute` presence(O3a)は
          route-load error(fail-loud — InvalidRuntimePolicy)
+  └─ load merge(:136-167): project `trusted:true` が下位層を
+       置換 → displaced route を suppressed provenance へ記録
 
 hook eval / route resolve / route run prepare
   └─ supply::load → ExecPolicyView → resolve::resolve
@@ -867,8 +955,9 @@ hook eval / route resolve / route run prepare
        │    byte-matched: grants[]                  (不変)
        └─ stdin-unsupported:
             is_interactive(原 executable, 原 exec_args)          (不変)
-            + substitute 宣言時:
-              is_interactive(command_name(pin解決 executable), substitute.argv)
+            + substitute 宣言時(宣言名 ∪ 解決名の union):
+              is_interactive(command_name(宣言 executable), substitute.argv)
+              || is_interactive(command_name(pin解決 executable), substitute.argv)
 
 route run prepare(Runnable のみ)
   └─ project_grants(route.grant_set())
@@ -917,6 +1006,11 @@ finish(): captured.details → exitCode mirror + executed{grant,argv}
   route を発火させて中途半端な投影 policy で job 失敗を起こさ
   ない(新規 viability 値なし — enum・`route resolve` 出力
   shape 不変)。
+- **match precedence 不変** — 最長 `match.command` の best 1
+  件のみが viability 評価される(`resolve.rs:237-269`)。
+  non-runnable best から shorter match への fall-through は
+  設けない(known semantics — §Risks の longer-prefix
+  hole-punch 項目と §Deferred を参照)。
 - **precheck strict 維持** — substitute argv は route 解決時点で
   確定済みの宣言値であり、anchor 完全検査と同じ完全検査(存在 +
   eligibility + pin + argv 照合 + cwd/pin verify 事前経路)が
@@ -987,12 +1081,62 @@ finish(): captured.details → exitCode mirror + executed{grant,argv}
   (substitute argv は宣言固定で半径は argv pattern bound に
   閉じている)。
 - **schema 拡大の churn 面積** — `Route` literal 3 箇所・
-  viability 分岐再編・`exec_pair` 配線・fixture・shape 記述・
-  test を一括で触る変更面が広い(破壊的 schema 変更ではない
-  が)。`route_cmd`/`supply`/`payload`/`workflow_run`/
-  `usage_log`/`usage_report`/`policy/exec.rs`/`tools` 本体は
-  不変 — 変更は route schema・viability・run 配線の 3 面に
-  閉じる。
+  viability 分岐再編・`exec_pair` 配線・merge provenance・
+  fixture・shape 記述・test を一括で触る変更面が広い(破壊的
+  schema 変更ではないが)。`route_cmd`/`supply`/`payload`/
+  `workflow_run`/`usage_log`/`usage_report`/`policy/exec.rs`/
+  `tools` 本体は不変 — 変更は route schema・viability・run
+  配線の 3 面に閉じる。
+- **longer-prefix match による substitute 迂回(known
+  semantics)** — match は最長 `match.command` 1 件のみが選ばれ
+  (`resolve.rs:246-247` — `sort_by_key` + `pop`)、viability は
+  その best にだけ評価され shorter match への fall-through は
+  ない(`resolve.rs:268` — `viability(input, best, …)` の単一
+  呼出し)。よって typed argv に prefix 一致しつつ non-runnable
+  (`NoGrant`/`MissingTarget`/`InvalidRoute`)に倒れる長い
+  route があると route arm は `None` を返し
+  (`routing_policy.rs:1474` — runnable 以外は rewrite せず
+  `None` → caller は従来評価)、typed command が直接実行
+  される。project 層は `substitute` を宣言できないが、長い
+  `match.command` を持つ通常 route(例: `[git,push,origin]` +
+  ineligible/unpinned `grant:`)を書くだけで、trusted 層の
+  `[git,push]`→dry-run substitute を「最も効いてほしい場面」で
+  silent に bypass できる(substitute 固有の hole ではなく
+  longest-match 規約 R5 の帰結 — byte-matched route でも同じ
+  非対称は既に存在する。substitute は safety 置換を担うため
+  悪化度が大きい)。**決定: 本 design はこの precedence を
+  既存 semantics として維持する** — hook arm の不発→直接実行
+  は全体の fail-open 既定挙動と同じ方向であり、shorter match
+  への fall-through は best-match 選出構造
+  (`resolve.rs:237-269`)と全 mode の precedence を変える別
+  設計なので Deferred(§Deferred Design Concerns)。provenance
+  側の穴(下記 `trusted:true` 置換)は in-scope で塞ぐ。
+- **`trusted: true` による silent displacement → provenance
+  記録で塞ぐ(in-scope)** — merge(`routes.rs:154-166`)で
+  project `trusted:true` route が下位層 route を同一
+  `match.command` で置き換えても、現行 `suppressed` は負けた
+  **untrusted** project route しか記録せず、displaced 側の
+  trusted route は無痕跡。trusted substitute route が置き換わる
+  と `route resolve`/`kind:"route"` record に手がかりが残ら
+  ない。**決定: merge を拡張して displaced route を
+  `suppressed` へ記録する**(§(a) — `SuppressedRoute` を
+  「merge 敗北 route」へ semantics 拡張、shape・consumer
+  不変)。builtin/user 層間の shadow(:146-150)は同一 trusted
+  principal の宣言 override として silent のまま維持し、
+  記録境界は untrusted と接する project 層に限定する。
+- **env-prefix/passthrough env は substitute process へ届く
+  (quirk)** — `extra_env`(payload `env` の passthrough
+  allowlist 分 + 先頭 `KEY=VALUE` prefix pair —
+  `run.rs:107-120`)は route_context 経由で「実際に spawn
+  される側」の `grant.env` へ override merge される
+  (`command/mod.rs:245-252`)。substitute mode では着地点が
+  substitute process になるため、user が typed command 宛に
+  打鍵した `FOO=1 git push` の env は dry-run substitute が
+  受け取る。byte-matched と同一機構・同一規則(「実行される
+  process へ届く」)であり substitute 固有の新規面ではないが、
+  「typed command 宛の env が別 command に届く」意味差として
+  明記する。member job は `route_context: None` で受け取らない
+  (§(e))。
 
 ### Churn 一覧(実測 — signature/field 追随)
 
@@ -1000,12 +1144,15 @@ finish(): captured.details → exitCode mirror + executed{grant,argv}
   `Route.substitute`(:52 直後)、`KNOWN_KEYS`(:334-343)、
   `validate_route` 層拒否+parse(:454 直後 — `:329` の `layer`
   param で新規 param 不要)、literal 構築(:506-516)、
-  `grant_set()`/`exec_pair()`(:64-75)、unit test(:574 以降 —
-  substitute parse/error case + project 層拒否 + builtin/user
-  受理 + `grant_set` union + `exec_pair` 選択)。
+  `grant_set()`/`exec_pair()`(:64-75)、merge の project
+  `trusted:true` 置換で displaced route を `suppressed` 記録
+  (:154-166)、unit test(:574 以降 — substitute parse/error
+  case + project 層拒否 + builtin/user 受理 + `grant_set`
+  union + `exec_pair` 選択 + trusted 置換 provenance)。
 - **viability/resolve** — `route/resolve.rs`:実行ペア完全検査
   retarget(:305-348)、member ループへ `route.grant` 連結
-  (:349-377)、stdin 段へ substitute 分類追加(:378-381)、
+  (:353-377)、stdin 段へ substitute union 分類追加(:378-381)、
+  test module `use`(:387-390)へ `RouteSubstitute` import +
   `route()`/`route_with_grants()` literal(:395-422)+ substitute
   viability 新規 case。`hook/routing_policy.rs`:`route()`
   literal(:2080-2091)のみ(評価本体 :1451-1486 は不変)。
@@ -1014,6 +1161,18 @@ finish(): captured.details → exitCode mirror + executed{grant,argv}
   (:378-379)・inputs `grant`/`execArgs`(:385/:392)の実行ペア化、
   `prepare_projects_grant_set` test(:733-770)の substitute
   投影 case・deadline 選出 test(`exec_pair` 由来 timeout)。
+- **comment 追随(code 不変・文言のみ)** — `routes.rs` の
+  `Route.grant` doc(:44-46 — 「expected_input anchor」の記述は
+  substitute mode で実行 anchor が `substitute.grant` へ移る
+  ため stale)・`Route.grants` doc(:48-51 — 有効 set 式へ
+  `∪ {substitute.grant}` を追記)・`SuppressedRoute` doc
+  (:77-78 — 「merge 敗北 route」へ拡張)・file header merge
+  規約 comment(:12-14 — displaced 記録を追記)、`run.rs` の
+  `executed` attribution comment(:475-479 — 「env-prefix-strip
+  済みの元 exec argv」は byte-matched の記述で substitute
+  mode では実測 substitute argv)、`policy/exec.rs` の
+  `project_grants` doc(:118-123 — set 式へ `substitute.grant`
+  を追記。code・predicate は不変)。
 - **fixture/docs** — `resources/routes.yaml`(:6-8 — shape
   comment)、`tests/integration/route.rs`(substitute fixture +
   viability case)、`tests/integration/route_run.rs`(substitute
@@ -1024,10 +1183,12 @@ finish(): captured.details → exitCode mirror + executed{grant,argv}
   `route_cmd.rs`・`route/payload.rs`・`route/logs.rs`・
   `workflow_run.rs`(:467-484,:521,:884,:902-945)・
   `usage_log.rs`(:332-459)・`usage_report.rs`(:503-538)・
-  `policy/exec.rs`(:111-134)・`tools/exec/mod.rs`・
+  `policy/exec.rs`(:111-134 — code 不変、doc comment のみ上記
+  「comment 追随」項)・`tools/exec/mod.rs`・
   `tools/command/mod.rs`・`hook.rs`/`hook_cmd.rs`・
   `resources/workflows/routed-exec.workflow.json`・
-  `tests/integration/usage_log.rs`・`tests/proc_invocation.rs`
+  `tests/integration/usage_log.rs`・
+  `crates/cheaper-tools/tests/proc_invocation.rs`
   — 無改訂で既存挙動が維持されることを確認する churn 境界。
 
 ## Docs 更新契約
@@ -1041,11 +1202,22 @@ finish(): captured.details → exitCode mirror + executed{grant,argv}
   は substitute 宣言の有無に関わらず required — firing gate・
   attribution anchor)。viability の retarget(原 argv 照合を行わ
   ず substitute ペアを完全検査する)・typed/substitute 両側の
-  interactive 分類・`expected_input` が substitute ペアを要求
+  interactive 分類(substitute 側は宣言 executable 名と pin
+  解決名の union)・`expected_input` が substitute ペアを要求
   する点・record `executed` が substitute ペアを記録する点を
   明記。workflow authoring 規約 — exec job input は従来どおり
   `{name: $input.grant, args: $input.execArgs}`(inputs が実行
   ペアを運ぶため builtin binding は両 mode で無変更)。
+  併せて既存記述の mode 追随を行う stale 箇所: 「実効 grant
+  set は `{route.grant} ∪ grants`」(:303)へ `{substitute.
+  grant}` を追加、「`{grant, argv}` の expected-input 束縛は
+  anchor が担う」(:296-299)と「`job_id == "exec"` … anchor
+  grant + 元 argv の expected-input に束縛」(:319-321)は
+  substitute mode では束縛対象が宣言 substitute ペアになる
+  旨を追記、「子 process の exit code をそのまま mirror —
+  元 command が非ゼロなら route run も非ゼロ」(:352-354)は
+  substitute mode では substitute command の exit を mirror
+  する旨を追記。
 - `docs/guides/configuration.md` — unified exec 参照節の
   「route の `grant:`/`grants:` 参照は trusted+`!fixed` のみ」
   に `substitute.grant` も同 predicate へ従う記述を追加し、
@@ -1113,6 +1285,18 @@ finish(): captured.details → exitCode mirror + executed{grant,argv}
   project route が substitute を必要とする実需要が確立した
   場合、typed argv への何らかの宣言拘束(authorization-of-
   intent 相当)をセットに再評価する。
+- **non-runnable best match の shorter match への
+  fall-through** — longest match で選ばれた best が
+  non-runnable(`NoGrant`/`MissingTarget`/`InvalidRoute`)の
+  とき次長 prefix match へ viability を再評価する方式は、
+  trusted substitute が ineligible な longer-prefix route で
+  迂回される hole(§Risks)を塞ぐ方向だが、`resolve` の
+  「best 1 件選出 → viability 評価」構造(`resolve.rs:237-269`)
+  を「候補列走査 + per-candidate viability」へ変更し、
+  substitute に限らず byte-matched を含む全 mode の match
+  precedence が変わる。#167 の scope を超えるため本 design
+  では採用せず、route 解決 semantics 全般の別 issue で
+  検討する。
 
 ## Verification Notes
 
@@ -1173,8 +1357,13 @@ test 計画(spec Acceptance Criteria への対応 — AC1-AC12):
       `stdin-unsupported` で不発し、interactive executable を
       pin する `substitute.grant`・interactive flag を含む
       `substitute.argv` の route も `stdin-unsupported` で不発
-      (`resolve.rs` unit — pin 解決 executable 名での分類を
-      含む)。
+      (`resolve.rs` unit)。union 分類の両側を pin する:
+      (a) 宣言 executable 名が list 内で pin 解決先が
+      canonical 名ずらしになる場合(`python3`→`python3.11`、
+      `vim`→`vim.basic`、`vi`→`nvi` 相当の fixture)でも
+      `stdin-unsupported`、(b) 宣言名が list 外でも pin 解決
+      済み実体名が list 内なら `stdin-unsupported`(shim 経路
+      維持)。
 - [ ] **member 併用(AC10)** — substitute route が `grants[]`
       member と併用でき、`input.name` が member 名の
       `job_id != "exec"` job は従来どおり動作し、投影外の grant
@@ -1192,7 +1381,8 @@ test 計画(spec Acceptance Criteria への対応 — AC1-AC12):
       exec-input・exit mirror・record 挙動に回帰がない(既存
       `resolve.rs`/`routes.rs`/`run.rs` unit・
       `route.rs`/`route_run.rs`/`usage_log.rs`/`hook.rs`/
-      `proc_invocation.rs` test 群が無改訂で pass)。
+      `proc_invocation.rs`(crates/cheaper-tools)test 群が無改訂
+      で pass)。
 - [ ] **hook 経路** — substitute 宣言 route が hook eval 経路
       (`evaluate_route_arm` :1451-1486)でも同じ resolve を通り
       runnable 時のみ rewrite され、schema error は
@@ -1203,3 +1393,26 @@ test 計画(spec Acceptance Criteria への対応 — AC1-AC12):
       route の resolve 出力に substitute echo が載らず、
       `grant` が `route.grant` anchor を指す(R11 — `route.rs`
       integration の shape assertion で pin)。
+- [ ] **match precedence interplay(review P1-1)** —
+      (a) project 層が substitute route より長い
+      `match.command` prefix を持ち `NoGrant` に倒れる route
+      (例: ineligible な `grant:` 参照)を宣言したとき、
+      longest-match の best 評価のみが行われて route arm は
+      rewrite せず typed command が直接実行される — 現行
+      semantics を pin する回帰 case(`resolve.rs` unit で
+      viability が best のみを評価すること、
+      `routing_policy.rs` route eval で `None` fallthrough を
+      確認)。(b) project `trusted:true` route が builtin/user
+      substitute route を同一 `match.command` で shadow する
+      とき、effective set は project route を採用し
+      `suppressed` provenance が displaced route 名を記録する
+      (`routes.rs` unit — merge case。`route.rs`
+      integration で resolve 出力 `suppressed` field pin)。
+- [ ] **member job 経由の `substitute.grant` 到達(AC gap)** —
+      substitute route の投影 set には `substitute.grant` が
+      含まれるため、`input.name = substitute.grant` を指定する
+      member job(`job_id != "exec"`)は expected_input gate を
+      通らず member 規約(argv pattern 照合のみ・route_context
+      無し)で到達できることを pin(`route_run.rs`
+      integration — member argv は `substitute.grant` の
+      pattern が拘束する)。
