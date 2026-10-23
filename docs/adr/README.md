@@ -39,7 +39,7 @@ Directory: `docs/adr`
 | ADR-034Dkj1V1OguoUSXpwCE3e | Document APM dep-name deploy rule in cheaper-usage skill | accepted | [document-apm-dep-name-deploy-rule-in-cheaper-usage-skill.md](./document-apm-dep-name-deploy-rule-in-cheaper-usage-skill.md) |
 | ADR-eb2ghgGK2Cd8w7pro1qe18 | Document bulk-reader output limits in the consumer skill rather than a runtime surface | accepted | [document-bulk-reader-output-limits-in-consumer-skill.md](./document-bulk-reader-output-limits-in-consumer-skill.md) |
 | ADR-034KuqZelggTIb8Z8K9QB8 | 宣言された実行契約の強制を責務とし内容審査を分離する | accepted | [enforce-declared-contracts-over-content-audit.md](./enforce-declared-contracts-over-content-audit.md) |
-| ADR-034KI3r2xdthh6rKDFY517 | exec-contract cleanup — 内容審査を mandatory 層から除去 | proposed | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
+| ADR-034KI3r2xdthh6rKDFY517 | exec-contract cleanup — 内容審査を mandatory 層から除去 | accepted | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
 | ADR-gEWi2IvlRq907TdUn24dHp | Treat execution.timeout as a progress-reset stall window and raise the builtin default | accepted | [execution-timeout-as-progress-reset-stall-window.md](./execution-timeout-as-progress-reset-stall-window.md) |
 | ADR-034zGZpjoQlppwkkOs5gur | Tool Runtime / Workflow Engine epic の package 配置と共有契約を先行固定する | accepted | [fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md](./fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md) |
 | ADR-034DyGyITd0YaATg8fkld7 | Gate dev/test seams behind a dev-seam cargo feature | accepted | [gate-dev-test-seams-behind-a-dev-seam-cargo-feature.md](./gate-dev-test-seams-behind-a-dev-seam-cargo-feature.md) |
@@ -68,6 +68,7 @@ Directory: `docs/adr`
 | ADR-034CWHw0NjYQjdE5o4kErV | OpenAI Codex subscription provider wire, OAuth, and catalog | proposed | [openai-codex-subscription-provider-wire-oauth-and-catalog.md](./openai-codex-subscription-provider-wire-oauth-and-catalog.md) |
 | ADR-034A8u7fBRIGJ7eRFYvg38 | Operation execution metrics | accepted | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | ADR-034zT6bqTxOvK1nP0ELSyR | OperationManager の cancel 要求と実 settle を分離する | accepted | [operation-manager-settlement.md](./operation-manager-settlement.md) |
+| ADR-034KLgkao8SgWWKIIsCqaB | opt-in security.execDenyPatterns profile — A9 の降格実装 | proposed | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
 | ADR-034ESBcMTWxNCMDI9obdb8 | policy-gated tool の露出を worker opt-in の optional 宣言で縮退可能にする | accepted | [opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md](./opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md) |
 | ADR-034zWr0viJFoTiUALvhE6N | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | ADR-034KrYGRHZuvOIx1d0S0nE | Per-target hook rewrite enablement with policy-gated approval bypass | accepted | [per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md](./per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md) |

@@ -44,6 +44,7 @@ Directory: `docs/discovery`
 | DISC-034CWF93eq8KVgv2S9sQPd | OpenAI Codex subscription provider support | draft | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
 | DISC-034A8tYcU3vJfWHLa6qGQ2 | Operation execution metrics | resolved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | DISC-034zSONEtz7Sfeq2UvbW3a | OperationManager の cancel と settle の境界 | resolved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
+| DISC-Fad7xt2qdtfpcCHhjMhkVy | opt-in security.execDenyPatterns profile — A9 の降格実装（#164） | resolved | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
 | DISC-034zWqZnTAsRi8D1paYgln | Payload untracking migration | resolved | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | DISC-034KuleA9g82Ir4xWfmTYq | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 (issue #151) | active | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
 | DISC-034zzZxx7gzas0a5Anlkwi | Pi sibling tool-call parallelism inside Workers | resolved | [pi-sibling-tool-call-parallelism-inside-workers.md](./pi-sibling-tool-call-parallelism-inside-workers.md) |
