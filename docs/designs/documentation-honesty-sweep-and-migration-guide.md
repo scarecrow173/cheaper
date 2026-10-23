@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034Lrgl6KUIjrLaU6BBL2U"
 type: "design"
-status: "draft"
+status: "approved"
 title: "documentation honesty sweep + migration guide — per-doc 訂正計画・refine 注記規約・migration guide 構成"
 created: "2026-10-24"
 updated: "2026-10-24"
