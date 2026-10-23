@@ -68,6 +68,7 @@ Directory: `docs/test-specs`
 | TSPEC-034zXj8LyfXfYFb1U3o2tb | 共有 operation admission と cancellation | approved | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | TSPEC-034rBrs4K5W7pe0ixjegZk | Shell-read blocking contract tests | approved | [shell-read-blocking-contract-tests.md](./shell-read-blocking-contract-tests.md) |
 | TSPEC-034z1OZC4sSkRlvZfFfIXt | Standalone executable contract parity | superseded | [standalone-executable-contract-parity.md](./standalone-executable-contract-parity.md) |
+| TSPEC-034L2MB0m2NOWZsyuTHsjA | substitute-exec route mode の検証契約 (issue #167) | approved | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | TSPEC-034DmUtUjWCThCnJulok0c | thin PATH launchers and slim APM payload contract | approved | [thin-path-launchers-and-slim-apm-payload-contract.md](./thin-path-launchers-and-slim-apm-payload-contract.md) |
 | TSPEC-034EUg38cXy0yzKhkggeIg | tool-operator built-in worker と cheaper.optionalTools 縮退機構の行為保証 | approved | [tool-operator-built-in-worker.md](./tool-operator-built-in-worker.md) |
 | TSPEC-034KQs1NIL8ahirht6QteV | unified exec grant model の検証契約 (issue #165) | approved | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
