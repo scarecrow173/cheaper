@@ -10,10 +10,9 @@
 //!   絶対パス/traversal は config error(`invalid-route`)。壊れた
 //!   route を黙って drop しない。
 //! - merge 規則: user は builtin を無条件 shadow。project は
-//!   `trusted: true` のときのみ下位層を shadow する — 置換された
-//!   displaced 下位層 route・trust 不在で負けた project route の
-//!   双方が `suppressed` provenance として記録される(静かに
-//!   無視しない)。
+//!   下位層を shadow しない(trust = 宣言層 provenance)—
+//!   `match.command` が衝突した project route は `suppressed`
+//!   provenance として記録される(静かに無視しない)。
 //! - 同一層内の同一 `match.command` 重複は `invalid` bucket へ
 //!   隔離し resolve 対象から除外する(silent last/first-wins 禁止)。
 //! - `target.path` は層起点相対パスのみ許容 — builtin は
@@ -82,9 +81,10 @@ pub struct Route {
     pub token_threshold: Option<f64>,
     /// `passthroughEnv` — hook env から capture を許す env 名。
     pub passthrough_env: Vec<String>,
-    /// `trusted` — project 層宣言のみ意味を持つ(builtin/user は
-    /// inert)。
-    pub trusted: bool,
+    /// 宣言層 provenance — trust 判定(`layer ∈ {Builtin, User}`
+    /// が trusted)#168・target.path 層起点解決・診断の単一 source。
+    /// `Route` は trust flag を持たない — trust は宣言値ではなく
+    /// 宣言主体(層)が決める(O1a)。
     pub layer: RouteLayer,
 }
 
@@ -118,10 +118,12 @@ impl Route {
     }
 }
 
-/// merge で負けた route の provenance — trust 不在で下位層 route
-/// に負けた project route、および `trusted: true` project route
-/// に置換された displaced 下位層 route(`route resolve`・
-/// `kind:"route"` record が報告)。
+/// merge で負けた route の provenance — 同一 `match.command`
+/// で下位層(builtin/user)route に負けた project route
+/// (`route resolve`・`kind:"route"` record が報告)。project
+/// 層は下位層を shadow しないため displaced 下位層 route は
+/// 発生しない(#168 — #167 の displaced 記録 arm は到達不能で
+/// 除去)。
 #[derive(Debug, Clone, PartialEq)]
 pub struct SuppressedRoute {
     pub name: String,
@@ -195,27 +197,21 @@ pub fn load(opts: &RouteLoadOptions<'_>) -> Result<EffectiveRoutes, CheaperError
                     }
                     effective.insert(route.command.clone(), route);
                 }
-                // project は `trusted: true` のときのみ下位層を
-                // shadow する。無い場合は suppressed provenance。
+                // project 層 route は下位層を shadow しない — trust は宣言値
+                // ではなく宣言層 provenance が決める(O1a)。`match.command`
+                // 衝突は常に project 側が負けて `suppressed` provenance へ
+                // 記録される(静かに無視しない — R6)。project 層の `trusted`
+                // key は load 時に層 gate で拒否済みのため、merge が flag を
+                // 読む経路は存在しない。
                 RouteLayer::Project => {
-                    if effective.contains_key(&route.command) && !route.trusted {
+                    if effective.contains_key(&route.command) {
                         suppressed.push(SuppressedRoute {
                             name: route.name,
                             command: route.command,
                         });
                     } else {
-                        if !effective.contains_key(&route.command) {
-                            order.push(route.command.clone());
-                        }
-                        // `trusted: true` による下位層置換でも負けた側を
-                        // provenance へ残す — silent displacement を残さない
-                        // (新規追加では insert が None を返し no-op)。
-                        if let Some(displaced) = effective.insert(route.command.clone(), route) {
-                            suppressed.push(SuppressedRoute {
-                                name: displaced.name,
-                                command: displaced.command,
-                            });
-                        }
+                        order.push(route.command.clone());
+                        effective.insert(route.command.clone(), route);
                     }
                 }
             }
@@ -476,8 +472,8 @@ fn validate_route(
     // `grants` は trusted 層限定(O7a)— member argv は typed
     // command と独立のため project 層への member 宣言権委譲は
     // O4c の審査迂回を route 宣言経由で再発させる。
-    // `trusted:true` は project 自己申告の shadowing gate で
-    // あり判別に使えない — 判別子は宣言層 provenance。
+    // project 層の `trusted` key 自体も本 file 後段の層 gate で
+    // 拒否される — 判別子は宣言層 provenance。
     if layer == RouteLayer::Project && entry.contains_key("grants") {
         return Err(schema_error(
             file,
@@ -515,8 +511,8 @@ fn validate_route(
     // trusted grant を宣言 argv で起動する」実実行ペアの選択権を得る
     // — `grants` member 密輸として O7a が塞いだ confused-deputy hole
     // の、さらに強い形での再発を load 時に拒否する。
-    // `trusted:true` は project 自己申告の shadowing gate であり
-    // 判別に使えない — 判別子は宣言層 provenance。
+    // project 層の `trusted` key 自体も本 file 後段の層 gate で
+    // 拒否される — 判別子は宣言層 provenance。
     if layer == RouteLayer::Project && entry.contains_key("substitute") {
         return Err(schema_error(
             file,
@@ -624,13 +620,30 @@ fn validate_route(
             })
             .collect::<Result<Vec<String>, CheaperError>>()?,
     };
-    // `trusted` — project 層のみ意味を持つ(inert でも parse は許容)。
-    let trusted = match entry.get("trusted") {
-        None => false,
-        Some(v) => v
-            .as_bool()
-            .ok_or_else(|| schema_error(file, &format!("{label}.trusted: not a boolean")))?,
-    };
+    // `trusted` は trust 申告そのもの — project 層は申告を置く
+    // こと自体ができない(O2a)。`grants`/`substitute` と同じ
+    // 判別子(宣言層 provenance)・同じ presence-first 規約で、
+    // 値の形状・値(`true`/`false`/非 bool)に関わらず拒否する。
+    // trust は `route.layer` が決め、project 自己申告の経路は
+    // load 時に閉じる。
+    if layer == RouteLayer::Project && entry.contains_key("trusted") {
+        return Err(schema_error(
+            file,
+            &format!("{label}.trusted: not declarable in the project layer"),
+        ));
+    }
+    // `trusted` — builtin/user 層のみ受理される inert bool(その層
+    // では元来意味を持たない documented 現状維持 — trust は宣言層
+    // provenance が決め、`Route` は flag を持たない)。値は保持せず
+    // bool 形状のみ検証する。
+    if let Some(v) = entry.get("trusted") {
+        if !v.is_boolean() {
+            return Err(schema_error(
+                file,
+                &format!("{label}.trusted: not a boolean"),
+            ));
+        }
+    }
     Ok(Route {
         name,
         command,
@@ -640,7 +653,6 @@ fn validate_route(
         substitute,
         token_threshold,
         passthrough_env,
-        trusted,
         layer,
     })
 }
@@ -797,13 +809,17 @@ routes:
     }
 
     #[test]
-    fn user_shadows_builtin_and_project_needs_trusted() {
+    fn user_shadows_builtin_and_project_never_shadows() {
         let (_tmp, builtin, user, project) = layer_dirs();
         write(&builtin, "routes.yaml", ROUTE_YAML);
-        // user が同一 match.command で builtin を無条件 shadow。
+        // user が同一 match.command で builtin を無条件 shadow
+        // (同一 trusted principal の宣言 override — silent、
+        // suppressed 記録なし)。
         let user_yaml = ROUTE_YAML.replace("grant: cargo-test", "grant: user-grant");
         write(&user, "routes.yaml", &user_yaml);
-        // untrusted project route は suppressed、user が勝つ。
+        // project 層 route は下位層を shadow しない(trust = 宣言層
+        // provenance)— 衝突した project route は負けて suppressed
+        // provenance へ記録され、user が勝つ。
         let project_yaml = r#"
 version: 1
 routes:
@@ -819,29 +835,7 @@ routes:
         assert_eq!(loaded.routes[0].layer, RouteLayer::User);
         assert_eq!(loaded.suppressed.len(), 1);
         assert_eq!(loaded.suppressed[0].name, "proj-test");
-        // trusted project route は shadow する。
-        write(
-            &project,
-            "routes.yaml",
-            r#"
-version: 1
-routes:
-  - name: proj-test
-    match: {command: [cargo, test]}
-    target: {kind: workflow, path: p.json}
-    grant: proj-grant
-    trusted: true
-"#,
-        );
-        let loaded = load(&opts(&builtin, &user, &project)).unwrap();
-        assert_eq!(loaded.routes[0].grant, "proj-grant");
-        assert_eq!(loaded.routes[0].layer, RouteLayer::Project);
-        // `trusted: true` 置換は displaced 下位層 route を suppressed
-        // provenance へ記録する(silent displacement を残さない)。
-        assert_eq!(loaded.suppressed.len(), 1);
-        assert_eq!(loaded.suppressed[0].name, "cargo-test");
-        assert_eq!(loaded.suppressed[0].command, vec!["cargo", "test"]);
-        // trusted でも非衝突の project route は通常有効化。
+        // 非衝突の project route は通常有効化。
         let unique = r#"
 version: 1
 routes:
@@ -1022,8 +1016,8 @@ routes:
             violation.contains("routes[0].grants: not declarable in the project layer"),
             "{violation}"
         );
-        // `trusted: true` の自己申告は判別に効かない(shadowing
-        // gate であり層 provenance ではない)。
+        // project 層の `trusted` key 自体も層 gate で拒否される —
+        // gate 発火順は schema 記述順で grants が先に報告される。
         write(
             &project,
             "routes.yaml",
@@ -1249,8 +1243,8 @@ routes:
             violation.contains("routes[0].substitute: not declarable in the project layer"),
             "{violation}"
         );
-        // `trusted: true` の自己申告は判別に効かない(shadowing
-        // gate であり層 provenance ではない)。
+        // project 層の `trusted` key 自体も層 gate で拒否される —
+        // gate 発火順は schema 記述順で substitute が先に報告される。
         write(
             &project,
             "routes.yaml",
@@ -1347,7 +1341,6 @@ routes:
             }),
             token_threshold: None,
             passthrough_env: Vec::new(),
-            trusted: false,
             layer: RouteLayer::User,
         };
         let (name, args) = route.exec_pair(&typed);
@@ -1363,21 +1356,22 @@ routes:
         assert_eq!(args, typed.as_slice());
     }
 
-    /// merge suppressed provenance(#167)— project `trusted:true`
-    /// route が下位層 route を置き換えた際 displaced route を
-    /// `suppressed` へ記録する。builtin/user 層間の shadow は同一
-    /// trusted principal の宣言 override として silent のまま。
-    /// 新規追加では insert が `None` を返し no-op。
+    /// merge suppressed provenance(#168)— project 層 route は下位層を
+    /// shadow しないため、同一 `match.command` 衝突では project 側が
+    /// 常に負けて自身が `suppressed` へ記録される(displaced 下位層
+    /// route は発生しない — #167 の displaced 記録 arm は到達不能で
+    /// 除去)。builtin/user 層間の shadow は同一 trusted principal の
+    /// 宣言 override として silent のまま(suppressed 記録なし)。
     #[test]
-    fn merge_records_displaced_lower_layer() {
+    fn merge_records_losing_project_route() {
         let (_tmp, builtin, user, project) = layer_dirs();
         // builtin/user 層間 shadow は silent(user → builtin は
         // 同一 trusted principal の宣言 override)。
         write(&builtin, "routes.yaml", ROUTE_YAML);
         let user_yaml = ROUTE_YAML.replace("grant: cargo-test", "grant: user-grant");
         write(&user, "routes.yaml", &user_yaml);
-        // project `trusted:true` が user route を置き換える →
-        // displaced user route を suppressed へ記録。
+        // 衝突する project route は user route に負けて自身が
+        // suppressed へ記録。非衝突の project route は通常有効化。
         write(
             &project,
             "routes.yaml",
@@ -1388,19 +1382,88 @@ routes:
     match: {command: [cargo, test]}
     target: {kind: workflow, path: p.json}
     grant: proj-grant
-    trusted: true
   - name: proj-new
     match: {command: [make, build]}
     target: {kind: workflow, path: p.json}
     grant: proj-grant
-    trusted: true
 "#,
         );
         let loaded = load(&opts(&builtin, &user, &project)).unwrap();
         assert_eq!(loaded.routes.len(), 2);
-        assert_eq!(loaded.routes[0].name, "proj-shadow");
+        // 勝つのは user 層 route — project route は下位層を shadow しない。
+        assert_eq!(loaded.routes[0].name, "cargo-test");
+        assert_eq!(loaded.routes[0].layer, RouteLayer::User);
+        assert_eq!(loaded.routes[1].name, "proj-new");
+        // 負けた project route 自身が suppressed へ記録される。
         assert_eq!(loaded.suppressed.len(), 1);
-        assert_eq!(loaded.suppressed[0].name, "cargo-test");
+        assert_eq!(loaded.suppressed[0].name, "proj-shadow");
         assert_eq!(loaded.suppressed[0].command, vec!["cargo", "test"]);
+    }
+
+    /// `trusted` 宣言の層制約(#168 O2a)— project 層 entry の
+    /// `trusted` key presence は bool 形状検査より先に fail-loud
+    /// `InvalidRuntimePolicy` で拒否する(presence-first —
+    /// `true`/`false`/非 bool の全形を値を見ずに拒否)。builtin/user
+    /// 層の `trusted` は受理・bool 検証・inert(値は `Route` に保持
+    /// しない — field は削除済み)。
+    #[test]
+    fn project_layer_trusted_is_rejected() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        // 値が非 bool でも presence が先に拒否される(untrusted 層の
+        // 宣言は内容を評価しない fail-closed — `grants`/`substitute`
+        // と同型)。`details.{path, reason:"schema", violation}` が
+        // file と entry を名指しする。
+        for trusted in ["trusted: true", "trusted: false", "trusted: str"] {
+            let file = write(
+                &project,
+                "routes.yaml",
+                &format!(
+                    "version: 1\nroutes:\n  - name: x\n    match: {{command: [a]}}\n    target: {{kind: workflow, path: f.json}}\n    grant: g\n    {trusted}\n"
+                ),
+            );
+            let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+            assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy, "{trusted}");
+            let details = err.details().unwrap();
+            assert_eq!(details["reason"], json!("schema"), "{trusted}");
+            assert_eq!(
+                details["path"].as_str().unwrap(),
+                file.display().to_string(),
+                "{trusted}"
+            );
+            let violation = details["violation"].as_str().unwrap();
+            assert!(
+                violation.contains("routes[0].trusted: not declarable in the project layer"),
+                "{trusted}: {violation}"
+            );
+        }
+        // builtin/user 層の `trusted: true`/`false` 宣言は受理・inert。
+        std::fs::remove_file(project.join("routes.yaml")).unwrap();
+        for dir in [&builtin, &user] {
+            for trusted in ["trusted: true", "trusted: false"] {
+                write(
+                    dir,
+                    "routes.yaml",
+                    &format!(
+                        "version: 1\nroutes:\n  - name: x\n    match: {{command: [a]}}\n    target: {{kind: workflow, path: f.json}}\n    grant: g\n    {trusted}\n"
+                    ),
+                );
+                let loaded = load(&opts(&builtin, &user, &project)).unwrap();
+                assert_eq!(loaded.routes[0].name, "x", "{trusted}");
+            }
+            // 非 bool 値は受理層の型検査規約どおり schema_error。
+            write(
+                dir,
+                "routes.yaml",
+                "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    grant: g\n    trusted: str\n",
+            );
+            let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+            assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy);
+            let violation = err.details().unwrap()["violation"].as_str().unwrap();
+            assert!(
+                violation.contains("routes[0].trusted: not a boolean"),
+                "{violation}"
+            );
+            std::fs::remove_file(dir.join("routes.yaml")).unwrap();
+        }
     }
 }

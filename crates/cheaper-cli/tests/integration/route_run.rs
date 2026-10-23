@@ -1385,73 +1385,61 @@ async fn cli_run_cwd_override_uses_foreign_root() {
 
 #[tokio::test(flavor = "current_thread")]
 async fn suppressed_project_provenance_reaches_route_record() {
-    for trusted in [false, true] {
-        let mut f = Fixture::new();
-        routed_fx(
-            &f,
-            &reference_workflow(),
-            "      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n",
-            "",
-            "FOO",
-        );
-        let project_dir = f.ws.path().join(".cheaper");
-        std::fs::create_dir_all(&project_dir).unwrap();
-        let production = std::fs::read_to_string(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/resources/workflows/routed-exec.workflow.json"
-        ))
-        .unwrap();
-        std::fs::write(project_dir.join("p.json"), production).unwrap();
-        std::fs::write(
-            project_dir.join("routes.yaml"),
-            format!(
-                "version: 1\nroutes:\n  - name: project-shadow\n    match: {{command: [routed]}}\n    target: {{kind: workflow, path: p.json}}\n    grant: child-run\n    trusted: {trusted}\n"
-            ),
-        )
-        .unwrap();
-        let (code, out, err) = f
-            .run(&[
-                "route",
-                "resolve",
-                "--argv",
-                "[\"routed\",\"route_run::command_fixture\",\"--exact\",\"--nocapture\"]",
-            ])
-            .await;
-        assert_eq!(code, 0, "trusted={trusted} out={out} err={err}");
-        let result = &out["result"];
-        if trusted {
-            assert_eq!(result["route"], "project-shadow");
-            // trusted 置換は displaced 下位層 route を suppressed
-            // provenance へ記録する(silent displacement を残さない)。
-            assert_eq!(result["suppressed"], "child-run");
-        } else {
-            assert_eq!(result["route"], "child-run");
-            assert_eq!(result["suppressed"], "project-shadow");
-        }
-        let token = payload_token(
-            &f,
-            &format!("routed {CHILD_ARGV}"),
-            &[
-                "routed",
-                "route_run::command_fixture",
-                "--exact",
-                "--nocapture",
-            ],
-            &[],
-            &[],
-            None,
-        );
-        let (code, _out, _err) = run_cli_raw(&mut f, &["route", "run", "--payload", &token]).await;
-        assert_eq!(code, 0, "trusted={trusted} route run must execute");
-        let record = route_record(&f);
-        if trusted {
-            assert_eq!(record["route"], "project-shadow");
-            assert_eq!(record["suppressed"], "child-run", "{record}");
-        } else {
-            assert_eq!(record["route"], "child-run");
-            assert_eq!(record["suppressed"], "project-shadow", "{record}");
-        }
-    }
+    // `trusted` 非宣言の project route は同一 `match.command` で
+    // builtin route に負け、負けた project route 名(`project-shadow`)
+    // が resolve 出力と `kind:"route"` record の `suppressed` へ
+    // 到達する(#168 — project 層は下位層を shadow しない)。
+    let mut f = Fixture::new();
+    routed_fx(
+        &f,
+        &reference_workflow(),
+        "      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n",
+        "",
+        "FOO",
+    );
+    let project_dir = f.ws.path().join(".cheaper");
+    std::fs::create_dir_all(&project_dir).unwrap();
+    let production = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/resources/workflows/routed-exec.workflow.json"
+    ))
+    .unwrap();
+    std::fs::write(project_dir.join("p.json"), production).unwrap();
+    std::fs::write(
+        project_dir.join("routes.yaml"),
+        "version: 1\nroutes:\n  - name: project-shadow\n    match: {command: [routed]}\n    target: {kind: workflow, path: p.json}\n    grant: child-run\n",
+    )
+    .unwrap();
+    let (code, out, err) = f
+        .run(&[
+            "route",
+            "resolve",
+            "--argv",
+            "[\"routed\",\"route_run::command_fixture\",\"--exact\",\"--nocapture\"]",
+        ])
+        .await;
+    assert_eq!(code, 0, "out={out} err={err}");
+    let result = &out["result"];
+    assert_eq!(result["route"], "child-run");
+    assert_eq!(result["suppressed"], "project-shadow");
+    let token = payload_token(
+        &f,
+        &format!("routed {CHILD_ARGV}"),
+        &[
+            "routed",
+            "route_run::command_fixture",
+            "--exact",
+            "--nocapture",
+        ],
+        &[],
+        &[],
+        None,
+    );
+    let (code, _out, _err) = run_cli_raw(&mut f, &["route", "run", "--payload", &token]).await;
+    assert_eq!(code, 0, "route run must execute");
+    let record = route_record(&f);
+    assert_eq!(record["route"], "child-run");
+    assert_eq!(record["suppressed"], "project-shadow", "{record}");
 }
 
 #[tokio::test(flavor = "current_thread")]

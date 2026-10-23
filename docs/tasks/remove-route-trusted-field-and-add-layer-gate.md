@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L59KS9oEjgDzshYZUSn"
 type: "task"
-status: "todo"
+status: "done"
 title: "route trusted field 削除・merge 無条件化・project 層 trusted presence 拒否"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -284,32 +284,32 @@ suppressed 配線)・`route/supply.rs`(:136-152
 
 ## Done When
 
-- [ ] `Route.trusted` field(doc comment ごと)が削除され、
+- [x] `Route.trusted` field(doc comment ごと)が削除され、
       `Route.layer` doc が trust・診断・target.path 層起点解決
       の単一 provenance source 旨を記している
-- [ ] merge の `RouteLayer::Project` 分岐が
+- [x] merge の `RouteLayer::Project` 分岐が
       `effective.contains_key(&route.command)` のみで分岐する
       無条件形(衝突 → `suppressed` 記録・非衝突 →
       `order.push` + `insert`)になり、`route.trusted` 読取り・
       displaced 記録 arm が除去されている
-- [ ] `validate_route` が `passthroughEnv` parse 後・`trusted`
+- [x] `validate_route` が `passthroughEnv` parse 後・`trusted`
       bool 検査前に `layer == RouteLayer::Project &&
       entry.contains_key("trusted")` → `schema_error(
       "{label}.trusted: not declarable in the project layer")`
       を返し(presence-first)、builtin/user 層では `trusted`
       を bool 形状検査のみして受理する(値は保持しない)
-- [ ] `KNOWN_KEYS` の `"trusted"` 登録が維持され、typo が
+- [x] `KNOWN_KEYS` の `"trusted"` 登録が維持され、typo が
       unknown key で拒否される規約が不変
-- [ ] 全 `Route` literal(routes.rs:643/:1350・resolve.rs:434・
+- [x] 全 `Route` literal(routes.rs:643/:1350・resolve.rs:434・
       routing_policy.rs:2090)が追随し cheaper-cli が compile
       する
-- [ ] comment 追随 6 site(routes.rs :12-16/:88/:121-124/
+- [x] comment 追随 6 site(routes.rs :12-16/:88/:121-124/
       :476-480/:518-519・resolve.rs :101-104)が全件更新され
       `trusted:true` shadow 規約の stale 記述が残っていない
-- [ ] 新規 unit test `project_layer_trusted_is_rejected` が
+- [x] 新規 unit test `project_layer_trusted_is_rejected` が
       `true`/`false`/非 bool の presence 拒否 3 形と
       builtin/user 受理・非 bool 型検査を pin する
-- [ ] `user_shadows_builtin_and_project_never_shadows`・
+- [x] `user_shadows_builtin_and_project_never_shadows`・
       `merge_records_displaced_lower_layer` rewrite・
       `resolve_project_trusted_rejected`・route_run untrusted
       arm が新 semantics を pin し、`cargo test -p
@@ -329,9 +329,16 @@ suppressed 配線)・`route/supply.rs`(:136-152
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib route::routes` が pass(routes.rs unit test — 新規含む)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route::` が pass(rewrite 後 integration)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run::` が pass(untrusted arm)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` が compile + pass(literal churn の workspace 内 compile 回復 + 全 test 緑確認)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
-- [ ] `grep -rn "trusted" crates/cheaper-cli/src/route/routes.rs` で `route.trusted`・`trusted,` literal・stale comment 記述の残存なし(`KNOWN_KEYS`・層 gate・受理 bool 検査・追従済み comment のみ残る)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib route::routes` が pass(routes.rs unit test — 新規含む) — 実測: 17 passed / 0 failed
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route::` が pass(rewrite 後 integration) — 実測: 10 passed / 0 failed
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run::` が pass(untrusted arm) — 実測: 35 passed / 0 failed
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` が compile + pass(literal churn の workspace 内 compile 回復 + 全 test 緑確認) — 実測: lib 115・integration 301・observability 17・observability_dev_seam 3・regression 1・run_dev_seam 39・workflow 18・workflow_dev_seam 5、全て 0 failed
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0 — 実測: exit 0
+- [x] `grep -rn "trusted" crates/cheaper-cli/src/route/routes.rs` で `route.trusted`・`trusted,` literal・stale comment 記述の残存なし(`KNOWN_KEYS`・層 gate・受理 bool 検査・追従済み comment のみ残る) — 実測: `route.trusted`/`.trusted` 参照は `{label}.trusted` error 文言を除き残存 0
+
+deviation: design §(a-3) verbatim の `v.is_bool()` は serde_json
+の API 名 `is_boolean()` へ修正して実装(実際の method 名 —
+`mise exec -- cargo check` で E0599 を検出し修正)。rename は
+`merge_records_displaced_lower_layer` →
+`merge_records_losing_project_route` を採用(task は rewrite +
+rename を指定、新規 semantics に合わせた命名)。

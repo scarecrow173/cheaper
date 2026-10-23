@@ -290,7 +290,7 @@ Directory: `docs/tasks`
 | TASK-034DzYbfe9r0G8Nd58FQjy | T1: js_json shim 削除 (F3) | done | [remove-js-json-shim.md](./remove-js-json-shim.md) |
 | TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |
 | TASK-034DzYfbw07gFHdsAguwHp | T4: poc-rig 削除 (F5) | done | [remove-poc-rig-crate.md](./remove-poc-rig-crate.md) |
-| TASK-034L59KS9oEjgDzshYZUSn | route trusted field 削除・merge 無条件化・project 層 trusted presence 拒否 | todo | [remove-route-trusted-field-and-add-layer-gate.md](./remove-route-trusted-field-and-add-layer-gate.md) |
+| TASK-034L59KS9oEjgDzshYZUSn | route trusted field 削除・merge 無条件化・project 層 trusted presence 拒否 | done | [remove-route-trusted-field-and-add-layer-gate.md](./remove-route-trusted-field-and-add-layer-gate.md) |
 | TASK-034KJu31OgzJMwk2vb4KJz | cheaper-tools command/proc 層の内容審査を除去 | done | [remove-tools-content-audit.md](./remove-tools-content-audit.md) |
 | TASK-034DzYC8wR9HwNbdMoF8NP | T7: provider crate rename + devin module 化 (F8) | done | [rename-provider-crate-and-modularize-devin.md](./rename-provider-crate-and-modularize-devin.md) |
 | TASK-034DzYxGyUC8loD0ruTCQN | T6: cheaper-runtime 内部再配置 (F6) | done | [reorganize-cheaper-runtime-run-module.md](./reorganize-cheaper-runtime-run-module.md) |
