@@ -38,6 +38,10 @@ relations:
     - "./dedup-concurrent-hook-firings-via-canonical-request-fingerprint-verdict-cache.md"
     - "./cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
     - "./compose-one-shot-workflows-with-injected-executors-and-invocation-owned-resource.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -730,3 +734,13 @@ opt-in 出荷か」をここで確定する。
   **#143 → #144/#145/#146 → #147 → #148 → #149 → #150**。
 * status は `proposed` — review-protocol による promotion は後続
   ゲートで行う。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 ADR は決定時点の記録として本文は保持する。
+
+- `:181-190`（D2）— route の `grant` field は `command.grants` の既存 grant 名 1 件への参照（C9 single-grant projection 前提）→ #166 で route-declared grant-set 投影（`grants:[name,…]` — trusted 層限定）へ一般化された。
+- `:280-317`（D7）・`:441`・`:450`・`:465`・`:589-591`・`:635`・`:671` — project 層 route が `trusted: true` 宣言で下位層を shadow する trust モデル・pros/cons・検証項 → #168 で `Route.trusted` field は**削除**され、route の trust は宣言値ではなく宣言層 provenance（builtin/user = trusted、project 層は下位層を shadow しない）へ再設計された。project 層 `trusted` key presence は `InvalidRuntimePolicy` で拒否（値不問）。なお #167 で `substitute:{grant,argv}` mode も追加されている。
+- D2（routing ≠ authorization）・層解決順は維持。`:709-710` の cross-chain `refines` 禁止規約は本 sweep でも継続適用する。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](./documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

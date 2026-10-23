@@ -26,6 +26,10 @@ relations:
     - "../designs/pi-execution-engine.md"
     - "./workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
     - "./pi-sibling-tool-call-parallelism-via-runtime-output-contract-guidance.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines:
     - "./worker-definition-runtime-policy-runtime-invariants-capability.md"
   refined-by: []
@@ -227,3 +231,11 @@ interface RunWorkerDeps { /* existing fields unchanged */ execution?: WorkerExec
 
 - epic issue #68（一次情報）:
   https://github.com/scarecrow173/cheaper/issues/68
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 ADR は決定時点の記録として本文は保持する。
+
+- `:185` — 「`process` は `kind: "tool", tool: "process"` の固定 executor で、policy に宣言された named task の argv を shell 解釈なしで直接 spawn する（glob 展開 / pipe / metachar なし、…）。任意 command 文字列の実行は提供しない」→ #165 で `process.tasks` は unified `exec` grant namespace の `fixed:true` grant へ loader 写像され、`tool: "process"` は alias として存続（`command` grant は `fixed:false`）。「shell 解釈なしで直接 spawn」は**維持**されるが、正確には spawn API 層の shell-free であり、metachar を含む argv は拒否されるのではなく executable の literal argv として渡る（#163 — 内容審査除去）。POSIX で shebang を持たない +X file の実行が ENOEXEC となった際に libc が `/bin/sh` で retry するのは OS/libc 既定動作（glibc `execvpe` 系。musl は retry しない残留差分あり）であり cheaper の保証対象外（canonical disclaimer 項目 3）。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](./documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

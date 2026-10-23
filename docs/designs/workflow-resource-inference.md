@@ -21,7 +21,11 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related:
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "./documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -89,3 +93,11 @@ msg_b28e978f1490: APPROVED: spec/design gate（P0/P1 なし）。
 - ResourceInferenceJob.process は将来 #59 compiler/task-config 経路、または port 直接 caller が populate。undeclared tool:process の INVALID_REQUEST は port level で行使する（現行 JSON kind/schema は不変）。
 - writeScope 無し + mutating capability tools は broad writes fallback。read-only + 明示 resources は writes=[]。
 - port 注入時は全 job に manifest が付く observable change を plan/task と contract tests に含める。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 design は決定時点の記録として本文は保持する。
+
+- `:57`・`:65`・`:89` — `ResourceInferenceJob.process` の ProcessResourceDeclaration（task/inputs/outputs）・「Process declaration は inputs/outputs 必須…undeclared process は fallback 成功にしない」・「undeclared tool:process の INVALID_REQUEST は port level で行使」→ `process` declaration の inference 経路（task inputs/outputs → produces/writes）は #165 の unified grant resource 宣言（`fixed:true` grant の `inputs`/`outputs` — `process.tasks` は loader 写像で存続）前提へ置き換わった。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](../adr/documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

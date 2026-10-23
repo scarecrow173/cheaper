@@ -71,7 +71,7 @@ Directory: `docs/tasks`
 | TASK-d1Fg1OH0NcI8xj5WAkWvts | packages/: hook package 分割(4 sibling + 親 deps + 旧 hooks 削除) | done | [apm-hook-packages-split.md](./apm-hook-packages-split.md) |
 | TASK-X2PS53bel6fwygkwU5RpqZ | consumer 向け・repo 文書の新 layout 追従と falsified doc set 関連付け | done | [apm-hook-split-docs.md](./apm-hook-split-docs.md) |
 | TASK-IYUgfVARCrZwwsvW6aNfFq | check script + scripts/test 群の新 layout 追従 | done | [apm-hook-split-test-follow.md](./apm-hook-split-test-follow.md) |
-| TASK-034L7LDZKCG5pF2MsoQOyC | documentation honesty sweep — ADR + design への Refine 注記追記 (18 doc) | todo | [append-refine-notes-to-adr-and-design-docs.md](./append-refine-notes-to-adr-and-design-docs.md) |
+| TASK-034L7LDZKCG5pF2MsoQOyC | documentation honesty sweep — ADR + design への Refine 注記追記 (18 doc) | done | [append-refine-notes-to-adr-and-design-docs.md](./append-refine-notes-to-adr-and-design-docs.md) |
 | TASK-034zBJ64O6cfOluLvLxYIO | Append sibling tool-call parallelism section to execution-engine design doc | done | [append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md](./append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md) |
 | TASK-034r05iHQeQpDpHsFsVyxq | Apply abort grace and provider failure normalization to repair | done | [apply-abort-grace-and-provider-failure-normalization-to-repair.md](./apply-abort-grace-and-provider-failure-normalization-to-repair.md) |
 | TASK-034r05iHQeQpDqapXCLs3G | cheaper auth command (login/status/logout) | done | [auth-command.md](./auth-command.md) |

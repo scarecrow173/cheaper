@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L7LDZKCG5pF2MsoQOyC"
 type: "task"
-status: "todo"
+status: "done"
 title: "documentation honesty sweep — ADR + design への Refine 注記追記 (18 doc)"
 created: "2026-10-24"
 updated: "2026-10-24"
@@ -121,7 +121,7 @@ plan `docs/plans/documentation-honesty-sweep-and-migration-guide.md`
 
 ### 1. ADR 7 件(§(c) per-doc 表 — anchor・注記内容を転記)
 
-- [ ] **ADR1** `docs/adr/command-grant-trust-boundary-and-managed-process-reuse.md`
+- [x] **ADR1** `docs/adr/command-grant-trust-boundary-and-managed-process-reuse.md`
       — anchor :60/:69/:90/:116/:135。注記: #163 で内容審査
       7 項目(native magic・shell/shim・script ext・workspace-
       resident・bare `node`・call-time/task argv metachar)が
@@ -130,20 +130,20 @@ plan `docs/plans/documentation-honesty-sweep-and-migration-guide.md`
       deny-list・既定 `[]`)へ降格。trusted-layer-only の
       grant 境界(Option A)は**維持**・本 ADR の核心的決定と
       して依然 authoritative
-- [ ] **ADR2** `docs/adr/worker-definition-runtime-policy-runtime-invariants-capability.md`
+- [x] **ADR2** `docs/adr/worker-definition-runtime-policy-runtime-invariants-capability.md`
       — anchor :96。注記: invariants の適用範囲は cheaper
       所有の canonical surface + 実行契約(file tool の
       workspace boundary・denyPaths・宣言制約・lifecycle)に
       限る。spawn 子プロセスの fs 副作用は OS sandbox 無しで
       は強制不能(disclaimer 項目 1・2)。3 層 capability
       モデルは維持
-- [ ] **ADR3** `docs/adr/workspace-filesystem-boundary-cheaper-sandboxed-tool.md`
+- [x] **ADR3** `docs/adr/workspace-filesystem-boundary-cheaper-sandboxed-tool.md`
       — anchor title・:51・:55。注記:「sandboxed tool」は
       canonical file tool の workspace boundary 強制を指し、
       spawn 子プロセスの fs 副作用には及ばない(disclaimer
       項目 1・2 が governing)。決定自体(boundary 強制を
       cheaper 側 tool 実装に置く)は有効
-- [ ] **ADR4** `docs/adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md`
+- [x] **ADR4** `docs/adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md`
       — anchor :181-190(D2)・:280-317(D7)・:441/:450/:465・
       :589-591/:635/:671。注記: #166 で C9 single-grant
       投影は route-declared grant-set 投影(`grants:[name,…]`
@@ -155,12 +155,12 @@ plan `docs/plans/documentation-honesty-sweep-and-migration-guide.md`
       拒否(値不問)。D2(routing ≠ authorization)・層解決順
       は維持。:709-710 の cross-chain `refines` 禁止規約は
       本 sweep でも継続適用
-- [ ] **ADR5** `docs/adr/per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md`
+- [x] **ADR5** `docs/adr/per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md`
       — 軽微 1-2 行注記: 決定(approvalBypass trusted
       gating)は #163–#168 と整合。#163 内容審査除去・#168
       `trusted` flag 再設計で周辺表現は変わったが approval
       bypass は trusted 層 opt-in のまま変更なし
-- [ ] **ADR6** `docs/adr/defer-non-exec-routing-to-permission-model-redesign.md`
+- [x] **ADR6** `docs/adr/defer-non-exec-routing-to-permission-model-redesign.md`
       — anchor :175-209・:225-229。注記: 採否は親 design で
       確定済み — grant-set 投影**採用**(#166)・viability
       **条件付き弱化**(#166 — byte-matched argv precheck
@@ -176,7 +176,7 @@ plan `docs/plans/documentation-honesty-sweep-and-migration-guide.md`
       route-eligible(`no-grant` は deny 該当ではなく viability
       結果)。`command_denied_executable_re`・`command.rs:
       160-189` 参照自体も機構除去済みの stale コード参照
-- [ ] **ADR7** `docs/adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md`
+- [x] **ADR7** `docs/adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md`
       — anchor :185。注記: #165 で `process.tasks` は
       unified `exec` grant namespace の `fixed:true` grant
       へ loader 写像・`tool:"process"` は alias 存続
@@ -191,17 +191,17 @@ plan `docs/plans/documentation-honesty-sweep-and-migration-guide.md`
 
 ### 2. off-list ADR 3 件(§(d-2) — 同型で file-end 注記 + backlink)
 
-- [ ] `docs/adr/managed-process-named-task-lifecycle.md`
+- [x] `docs/adr/managed-process-named-task-lifecycle.md`
       — anchor :59。注記: #163 で内容審査除去(argv
       metachar/shell は literal argv、shim は win32
       viability 制約、bare `node` は PATH 解決)・
       `execPath` fast-path 不実装
-- [ ] `docs/adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md`
+- [x] `docs/adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md`
       — anchor :62/:83/:89/:92。注記: deny は
       `security.execDenyPatterns` 宣言時のみ・
       `RuntimePolicy.command`→`.exec` rename(#165 —
       file-level `command.grants` shape は有効のまま)
-- [ ] `docs/adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md`
+- [x] `docs/adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md`
       — anchor :95。注記: mandatory 内容審査前提(native
       magic / shell / shim 拒否・`minimal_env`)の軽微訂正
       — #163 除去・#164 opt-in 降格(既存 opportunistic
@@ -209,7 +209,7 @@ plan `docs/plans/documentation-honesty-sweep-and-migration-guide.md`
 
 ### 3. design 4 件(§(d) per-doc 表 — anchor・注記内容を転記)
 
-- [ ] **D-1** `docs/designs/policy-gated-command-tool.md`
+- [x] **D-1** `docs/designs/policy-gated-command-tool.md`
       — anchor :104/:113(§(a))・:119-123(§(b))・:139-158
       (§(d))・:209(§(j))・:259/:300。注記: deny list 部分
       (native magic・shell/shim・script ext・interpreter
@@ -219,19 +219,19 @@ plan `docs/plans/documentation-honesty-sweep-and-migration-guide.md`
       pin 契約(B1/B2)・argv pattern 言語(A6)・Exclusive
       root manifest(C7)・route-context 注入・trusted-layer
       境界は引き続き authoritative
-- [ ] **D-2** `docs/designs/workflow-resource-inference.md`
+- [x] **D-2** `docs/designs/workflow-resource-inference.md`
       — anchor :57/:65/:89。注記: `process` declaration の
       inference 経路(task inputs/outputs→produces/writes)
       は #165 unified grant resource 宣言(`fixed:true`
       grant)前提へ置き換わる。**注記は `## Coordinator
       review amendments` の後に配置**(当該節が最終節)
-- [ ] **D-3** `docs/designs/rust-rig-runtime-migration-architecture.md`
+- [x] **D-3** `docs/designs/rust-rig-runtime-migration-architecture.md`
       — anchor :291-293。注記: B5(bare `node` reject)は
       #163 で除去。bare `node` は通常の PATH 解決を通り
       spawn viability(realpath・is_file・X_OK)で受理
       (`proc/executable.rs:6-8` 明記)。`execPath` fast-path
       非存在の設計背景は記録として保持
-- [ ] **D-4** `docs/designs/pretooluse-route-resolver-and-delegated-workflow-execution.md`
+- [x] **D-4** `docs/designs/pretooluse-route-resolver-and-delegated-workflow-execution.md`
       — anchor :301-310・:398-429・:609・:1034-1036。注記:
       #166 で viability は**条件付き弱化**(byte-matched
       argv precheck 維持・grant-set member は存在 +
@@ -247,19 +247,19 @@ plan `docs/plans/documentation-honesty-sweep-and-migration-guide.md`
 
 ### 4. off-list design 4 件(§(d-2) — 同型で file-end 注記 + backlink)
 
-- [ ] `docs/designs/managed-process-canonical-tool.md`
+- [x] `docs/designs/managed-process-canonical-tool.md`
       — anchor :57/:85/:88。注記: #163 で task argv の
       内容審査除去 — 宣言 `command` 配列要素は literal
       argv として無審査で渡る(metachar・shell 名を含ん
       でも拒否されない)。win32 `.cmd`/`.bat`/`.ps1` 非対応
       は CreateProcess viability 制約として残るが deny
       機構ではない
-- [ ] `docs/designs/invocation-scoped-command-grants.md`
+- [x] `docs/designs/invocation-scoped-command-grants.md`
       — anchor :74/:99/:173/:229/:327/:341。注記: deny は
       `execDenyPatterns` 宣言時のみ・code 参照は
       `policy/exec.rs`/`security.rs`・`RuntimePolicy.exec`/
       `inner.exec`/`exec: None` 系へ rename
-- [ ] `docs/designs/workspace-filesystem-boundary-sandboxed-tools.md`
+- [x] `docs/designs/workspace-filesystem-boundary-sandboxed-tools.md`
       — anchor :44-56/:85-91。注記:「sandboxed tool」は
       canonical file tool の workspace boundary 強制のみ。
       #101 以降の `process`・`command` exec surface は
@@ -267,7 +267,7 @@ plan `docs/plans/documentation-honesty-sweep-and-migration-guide.md`
       write/edit ops を通らない(全域 snapshot 不要論は
       file tool に限定 — disclaimer 項目 1・2)。file tool
       層の外部バイナリ非依存(rg/fd 回避)は維持
-- [ ] `docs/designs/overview.md`
+- [x] `docs/designs/overview.md`
       — anchor :54-67/:79-88。注記: (a)「sandboxed
       tools」・「workspace 外アクセス不許可」invariant
       は canonical file tool surface に限定 —
@@ -310,23 +310,23 @@ plan `docs/plans/documentation-honesty-sweep-and-migration-guide.md`
 
 ## Done When
 
-- [ ] 18 doc 全てに最終節直後の `## Refine 注記（issue
+- [x] 18 doc 全てに最終節直後の `## Refine 注記（issue
       #169）` 節が 1 つあり、canonical 形の必須要素
       (issue #169・anchor ごとの旧→新 bullet・governing
       link 3 件)を含む(`grep -l "Refine 注記" <18 files>`
       が 18 件)
-- [ ] 各 doc の注記内容が design §(c)/(d)/(d-2) の注記
+- [x] 各 doc の注記内容が design §(c)/(d)/(d-2) の注記
       要点どおり(ADR7 は ENOEXEC 区別・ADR6 は :225-229
       falsify・D-2 は `## Coordinator review amendments`
       の後に配置)
-- [ ] 18 doc 全ての front-matter `related` に backlink
+- [x] 18 doc 全ての front-matter `related` に backlink
       4 件があり path が §(b) 規約(adr 配下 = `../designs/
       …`・designs 配下 = `./…`)
-- [ ] 本文・既存節が無改訂(`git diff` で注記節追記 +
+- [x] 本文・既存節が無改訂(`git diff` で注記節追記 +
       `related` 行追加のみの差分 — 履歴非改竄)
-- [ ] 新規 `refines:`/`refined-by:`/`supersedes:`/
+- [x] 新規 `refines:`/`refined-by:`/`supersedes:`/
       `superseded-by:` が差分内に 0 件
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `node scripts/check-doc-ids.mjs` exits 0
 
 ## Out of Scope
 
@@ -339,10 +339,31 @@ plan `docs/plans/documentation-honesty-sweep-and-migration-guide.md`
 
 ## Verification
 
-- [ ] §1-§4 の全 doc を編集し `grep -l "Refine 注記"` が
+- [x] §1-§4 の全 doc を編集し `grep -l "Refine 注記"` が
       18 件を返す(実測を記録)
-- [ ] `git diff --stat` で 18 file の差分が注記節追記 +
+- [x] `git diff --stat` で 18 file の差分が注記節追記 +
       `related` 行のみであること(実測を記録)
-- [ ] `git diff` で `refines:`/`refined-by:`/`supersedes:`/
+- [x] `git diff` で `refines:`/`refined-by:`/`supersedes:`/
       `superseded-by:` の新規出現が 0(実測を記録)
-- [ ] `node scripts/check-doc-ids.mjs` exits 0(実測を記録)
+- [x] `node scripts/check-doc-ids.mjs` exits 0(実測を記録)
+
+## 実施記録（issue #169 sweep 実施時）
+
+- `grep -l "Refine 注記" <18 files>` → 18 件を返す（10 ADR +
+  8 design 全件）。全注記はファイル末尾・既存最終節の直後に配置
+  （D-2 `workflow-resource-inference.md` は `## Coordinator review
+  amendments` の後 — 実測で末尾節であることを確認）。
+- 各注記は canonical 形（issue #169 の前文 + anchor ごとの旧→新
+  bullet + governing link 3 件）で、design §(c)/(d)/(d-2) の注記
+  要点を転記: ADR7 は ENOEXEC/`/bin/sh` retry の OS/libc 区別を
+  含み、ADR6 は :225-229 の `no-grant`/unroutable 主張 falsify を
+  注記節内に含む（`grep -n "no-grant\|unroutable"` で注記節 hit）。
+- `related` backlink 4 件を全 18 doc へ追加（adr 配下は本 design
+  へ `../designs/…`・designs 配下は `./…` の path 規約）。うち
+  `managed-process-named-task-lifecycle.md`・`workflow-resource-
+  inference.md`・`managed-process-canonical-tool.md` は既存
+  `related: []` からの新規 populated list。
+- `git diff` で `refines:`/`refined-by:`/`supersedes:`/
+  `superseded-by:` の新規出現は 0 件。本文・既存節は無改訂
+  （注記節追記 + `related` 行追加のみ）。
+- `mise exec -- node scripts/check-doc-ids.mjs` → exits 0。

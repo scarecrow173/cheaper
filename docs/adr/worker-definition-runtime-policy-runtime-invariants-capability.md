@@ -29,6 +29,10 @@ relations:
     - "model-tier-model-resolver.md"
     - "workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
     - "one-shot-json-first-cli.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -124,3 +128,11 @@ Chosen option: "(3) 三層 capability モデル", because 責務（WHAT / HOW MU
 ## More Information
 
 * 引継ぎ §2.4, §2.5, §11, §20–§31, §43, §45
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 ADR は決定時点の記録として本文は保持する。
+
+- `:96` — 「Runtime Invariants（§31）: …filesystem access は workspace 内のみ、symlink escape 禁止、unknown tool 禁止、shell なし、network tool なし…」は spawn した子プロセスまで及ぶ印象を与える → invariants の適用範囲は cheaper 所有の canonical surface + 実行契約（file tool の workspace boundary・`filesystem.denyPaths`・宣言制約・lifecycle）に限る。`command`/`process` が spawn した子プロセスの fs 副作用は OS sandbox 無しでは強制・完全観測できない（canonical disclaimer 項目 1・2）。3 層 capability モデル（Worker / Policy / Invariants）自体は維持。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](./documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

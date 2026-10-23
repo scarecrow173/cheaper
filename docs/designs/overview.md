@@ -34,6 +34,10 @@ relations:
     - "observability-foundation-logging-and-instrumentation-wiring.md"
     - "devin-native-hooks-and-apm-bootstrap.md"
     - "bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "./documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -143,3 +147,11 @@ relations:
 ## Bounded hook evaluation + hook-config lifecycle（SPEC-034H2WAU6TQG6N9dmmmKNA / ADR-034H2WBlp8VXoEE7KVlGt5 / ADR-034H2WBNtC4We8dyC5lQZJ）
 
 - [Bounded hook request evaluation and hook-config registration lifecycle](./bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md) — `RoutingRequest::FileRead` の `range: Option<ReadRange>`（1-based offset・`limit<1` 無効→全文縮退）と `Search` variant（`path` 省略は cwd anchor、`.git` 除外・`SEARCH_SCAN_MAX_FILES=10,000`・`count_max_bytes` scan cap・`max_results`/`head_limit` は小さい方・`output_mode` 省略/Unknown は content 評価・`-i`/`--ignore-case` 正規化）による #107 の bounded 評価。`cheaper hook-config {sync|verify|remove}`（project/user scope、atomic replace、legacy-conflict gate、`--event-stdin` の APM lifecycle 写像・post-uninstall packages gate）と `install-devin-hooks.ps1` の CLI 委譲、per-dep `targets:`/`read_config_from` 移行経路。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 design は決定時点の記録として本文は保持する。
+
+- `:54-67`・`:79-88` — (a)「sandboxed tools」命名（:55/:67）と「workspace 外アクセス不許可 — `operations.ts` + `resolveWorkspacePath`」invariant 行（:82）は exec 子プロセスまで及ぶ印象を与える → これらは canonical file tool surface（write/edit/ls/read/find/grep）に限定される。`command`/`process` が spawn した子プロセスの fs 副作用は OS sandbox 無しでは強制・完全観測されない（#163–#168 確定後の真実 — canonical disclaimer 項目 1・2）。(b) `packages/{core,runtime-pi,cli}` の TS-era 構成名・`:75`「runtime-pi が…sandboxed tools と budget を wrap」は `crates/*` への Rust 移行 drift であり、rust-rig-runtime-migration chain で記録済みの別系統 — 本 sweep では最小の言及に留める。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](../adr/documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

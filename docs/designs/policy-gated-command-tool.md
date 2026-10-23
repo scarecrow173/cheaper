@@ -27,6 +27,10 @@ relations:
     - "./tool-operator-built-in-worker.md"
     - "./invocation-scoped-command-grants.md"
     - "./pretooluse-route-resolver-and-delegated-workflow-execution.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "./documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -301,3 +305,16 @@ deny list は basename を小文字化し、**`.exe` / `.com` suffix を剥が�
 - [ ] timeout/abort/nonzero/output-cap/tree-cleanup が Windows/POSIX で検証（shared `proc::run` 経由、`process` と同一実装である構造確認含む）。
 - [ ] `savings.directlyComparable` false・`meta.changes` が未観測副作用を主張しない・独自 pool `command` の cap が効くこと。
 - [ ] `mise run check`（fmt / clippy / `cargo test --workspace` dev-seam 付き / doc-id check）が pass。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 design は決定時点の記録として本文は保持する。
+
+- `:104`・`:113`（§(a)）— `argv_shell_re` metachar check・pattern 文字列自体の metachar 検査を含む token 検証 → call-time の内容審査は #163 で除去。metachar を含む token も pattern 適合なら executable の literal argv として渡る（残存 bounds: token ≤4096・args ≤256 は input schema 層の `INVALID_INPUT`）。
+- `:119-123`（§(b)）— workspace-resident executable 二段拒否・`native()` candidate 検証・`(d)` interpreter deny 適用の pin 手順 → 内容審査系（native magic・workspace-resident・interpreter deny）は #163 で除去。pin 契約（B1/B2 — load 時 1 回 + spawn 前再検証）は維持。
+- `:139-158`（§(d)）— interpreter denial 節全体（deny set 拡張・`command_denied_executable_re()`・3 適用点）→ #163 で mandatory 層から除去、#164 で opt-in `security.execDenyPatterns`（deterministic executable deny-list・既定 `[]`・basename stem 完全一致・policy resolve / pin / spawn 前再検証の 3 適用点は存続）へ降格。
+- `:209`（§(j)）・`:259`・`:300` — error 写像表・integration test・Verification の metachar/interpreter/shell/shim/workspace-resident 拒否項目 → 同上。deny 該当は `execDenyPatterns` 宣言時のみ拒否側。
+
+**supersede ではない** — pin 契約（B1/B2）・argv pattern 言語（A6）・Exclusive root manifest（C7）・route-context 注入・trusted-layer 境界は引き続き authoritative。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](../adr/documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

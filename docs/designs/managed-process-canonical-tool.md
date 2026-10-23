@@ -21,7 +21,11 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related:
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "./documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -100,3 +104,11 @@ non-goals の API を追加しない。#61 の ResourceManager は共有 ADR に
 - [x] policy、tool-runtime、runtime-pi、workflow の focused suite と pnpm lint/typecheck/build を実行する。
 - [x] cancellation は実 PID/孫 PID の生存確認を行い、output cap は実大量/binary出力で検証する。
 - [x] resource-inference.test.ts の既存 process 未宣言ケース（review時314–318行）を、policy/catalog から解決不能なら fail closed、解決可能なら canonical manifest になる契約に更新する。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 design は決定時点の記録として本文は保持する。
+
+- `:57`・`:85`・`:88` — task argv 要素への内容審査前提の記述（「各引数に NUL/newline、shell 演算子を許可しない。argv0 の shell・Windows script shim は拒否」・「Windows shim 非対応」risk・「argv のメタ文字拒否により…task も拒否」）→ #163 で task 宣言 `command` 配列の内容審査は除去 — 宣言要素は literal argv として無審査で渡る（metachar・shell 名を含んでも拒否されない）。win32 `.cmd`/`.bat`/`.ps1` 非対応は CreateProcess viability 制約として残るが deny 機構ではない（#164 — deny は opt-in `security.execDenyPatterns` 宣言時のみ）。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](../adr/documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

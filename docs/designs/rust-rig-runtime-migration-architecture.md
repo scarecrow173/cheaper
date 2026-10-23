@@ -38,6 +38,10 @@ relations:
     - "token-counter-contract.md"
     - "bounded-tool-scheduler.md"
     - "repair-abort-and-failure-normalization-hardening.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "./documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -481,3 +485,11 @@ issue 10 件は本文へ反映済み。以下の non-blocking 指摘は plan/tas
 - [ ] `cheaper auth login github-copilot`(OAuth)→ run まで成功し、credential が新 store に永続化・`<userConfigDir>/pi/` を参照しないこと
 - [ ] 同一 asset 名・SHA256SUMS・`--version` probe で Release が組め、無改修 launcher が Rust binary を取得・検証・exec できること
 - [ ] Ollama 実 provider コンテナで built-in worker 3 種が成功 envelope を返す Rust e2e が通ること
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 design は決定時点の記録として本文は保持する。
+
+- `:291-293` — 「`node` task の `process.execPath` fast-path は Rust binary に等価物が無いため **`node` 解釈は "node を PATH 解決せず明示 error"(POLICY_VIOLATION 系)に置き換え**」→ B5（bare `node` reject）は #163 で除去。bare `node` は通常の PATH 解決を通り、spawn viability（realpath・is_file・X_OK）で受理される（`proc/executable.rs:6-8` 明記）。`execPath` fast-path 非存在の設計背景は記録として保持。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](../adr/documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

@@ -21,7 +21,11 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related:
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: ["./managed-process-bounded-lifecycle-policy.md"]
   derives-from: ["../discovery/managed-process-canonical-tool.md"]
@@ -77,3 +81,11 @@ readonly 宣言だけ shared、outputs がある task は exclusive。scheduler 
 * [ ] 実 process の bounded output、非ゼロ exit、秘密 env 非継承、子孫 cancel と adapter test が通る。
 * [ ] policy/schema/load の trusted→project cap test、producer ownership test、scheduler pool/cancel/accounting test が通る。
 * [ ] focused suite、pnpm lint/typecheck/build が通り、canonical check は coordinator merge run に defer。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 ADR は決定時点の記録として本文は保持する。
+
+- `:59` — 「native executable を shell:false で spawn。`node` は process.execPath…Windows .cmd/.bat/.ps1 shim は拒否し…argv は shell/メタ構文を core config validation で拒否」→ #163 で内容審査は除去された。task 宣言の argv（metachar・shell 名を含む要素）は executable の literal argv として内容無審査で渡る。`.cmd`/`.bat`/`.ps1` 非対応は win32 の CreateProcess viability 制約（deny 機構ではない）として残り、bare `node` は通常の PATH 解決を通る。`process.execPath` fast-path は Rust 版に実装されない。deny は opt-in `security.execDenyPatterns` 宣言時のみ（#164）。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](./documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

@@ -31,6 +31,10 @@ relations:
     - "../designs/tool-operator-built-in-worker.md"
     - "../plans/implement-tool-operator-built-in-worker.md"
     - "./enforce-declared-contracts-over-content-audit.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from: ["../discovery/tool-operator-worker-built-in.md"]
@@ -175,3 +179,11 @@ Chosen option: **Option C — variant C1（worker frontmatter の `cheaper.optio
 * source: GitHub issue #102（`tool-operator` worker の責務・tools 集合・「無許可時は縮退 or blocked」要件・acceptance の正本）。
 * derives-from: `../discovery/tool-operator-worker-built-in.md`（DISC-034ESpIy7zAOucpwBxmjfd。fail-closed gate の touch point 調査と Option A–D 比較表の正本）。
 * related: `../specs/tool-operator-built-in-worker.md`（製品要件の正本 — status 意味論・AC4 の「既定挙動は ADR 決定に従う」で本決定を参照）、`../specs/policy-gated-command-tool.md`（`command` の grant / 信頼境界契約）、`../adr/command-grant-trust-boundary-and-managed-process-reuse.md`（`command` の trusted-layer grant 境界と fail-closed registration の正本 — 本 ADR の緩和が触れない層を規定する）。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 ADR は決定時点の記録として本文は保持する。
+
+- `:95` — 「executable 検証（native magic / shell / shim 拒否、`minimal_env`）は従来通り」→ #163 で native magic・shell/shim 拒否を含む mandatory 内容審査は除去され、#164 で deny は opt-in `security.execDenyPatterns`（deterministic executable deny-list・既定 `[]`）宣言時のみへ降格。`minimal_env` の env sanitize は維持。登録面を縮める本 ADR の決定（`optionalTools` 縮退）は変わらない。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](./documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)

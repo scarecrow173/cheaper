@@ -28,6 +28,10 @@ relations:
     - "../specs/invocation-scoped-command-grants.md"
     - "../test-specs/invocation-scoped-command-grants.md"
     - "../plans/implement-invocation-scoped-command-grants.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from: ["../discovery/invocation-scoped-command-grants.md"]
@@ -180,3 +184,11 @@ primary decision（invocation grant の格納先）の options 比較:
 * source: GitHub issue #105（`--grant` flag・grant-request hint・`cheaper policy grant` の 3 component 要求の正本）。
 * derives-from: `../discovery/invocation-scoped-command-grants.md`（DISC-034FlIAczzK2ruZW3HTcJi。injection point・parity 契約・validation 再利用 map・decision axis 軸1–7 の調査の正本）。
 * related: `../specs/invocation-scoped-command-grants.md`（製品要件の正本 — 機構選択を本 ADR へ defer）、`../adr/command-grant-trust-boundary-and-managed-process-reuse.md`（ADR-034EMgaatFhsXjR97kH14c。trusted-layer-only grant authoring と fail-closed registration の正本 — invocation layer はこの境界の trusted 側に位置する）、`../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md`（ADR-034ESBcMTWxNCMDI9obdb8。`cheaper.optionalTools` 縮退機構 — `grantRequests` はその blocked / degrade 結果を machine-readable 化する）、`../specs/policy-gated-command-tool.md`（`command` tool の grant・validation・deny list 契約の正本）。
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 ADR は決定時点の記録として本文は保持する。
+
+- `:62`・`:83`・`:89`・`:92` — 「`resolve_command_policy` 系統（schema 検査・deny list・`ArgPattern::compile`・env/cwd 規則）」「deny list・argv compile・env/cwd 規則の full validation」「grant spec の validation（deny / ArgPattern / cwd / env）」「shared validation … deny list 該当」の deny 無条件列挙 → deny 検査は opt-in `security.execDenyPatterns`（deterministic executable deny-list・既定 `[]`）宣言時のみ効く（#163 で builtin deny は除去・#164 で opt-in 再導入）。また `RuntimePolicy.command`・`policy.command` の表記は #165 の unified `exec` grant namespace で `RuntimePolicy.exec` へ rename された（file-level の `command.grants` 宣言 shape と invocation layer の `{"version":1,"command":{"grants":…}}` 形状は有効のまま — loader が unified `exec` へ写像）。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](./documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)
