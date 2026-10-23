@@ -38,6 +38,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gAHzYnfP8 | Devin Local as a bundled Pi provider | implemented | [devin-local-bundled-provider.md](./devin-local-bundled-provider.md) |
 | SPEC-034DlpZKFnyWiBZZxGsXK0 | devin provider usage accounting contract | approved | [devin-provider-usage-accounting-contract.md](./devin-provider-usage-accounting-contract.md) |
 | SPEC-034D9BFJZdSSYBEuXVzBbl | Devin provider Windows credential contract | proposed | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
+| SPEC-034L6i3XmfCaWRHAiw8TTT | documentation honesty sweep and breaking-change migration guide — claim ≤ 実強制の文書訂正と破壊的変更告知 | proposed | [documentation-honesty-sweep-and-breaking-change-migration-guide.md](./documentation-honesty-sweep-and-breaking-change-migration-guide.md) |
 | SPEC-034KI3mWcW92kMljP5xoa8 | exec-contract cleanup — 内容審査を mandatory 層から除去 | approved | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
 | SPEC-034r05iHK8bA7gqGaD6qpk | grep batchMaxBytes / decoded line payload invariant | implemented | [grep-batch-max-bytes-line-payload-invariant.md](./grep-batch-max-bytes-line-payload-invariant.md) |
 | SPEC-034r6kd649rTDnOi828voj | Stabilize environment-sensitive grep eval-budget tests | implemented | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
@@ -71,14 +72,14 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7g9KcsCqKj | Repair and abort hardening, telemetry consistency, and test hermeticity | implemented | [repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |
 | SPEC-034r05iHK8bA7gpcCJQya9 | Repository-owned setup contract for fresh checkouts/worktrees | implemented | [repo-owned-setup-contract-for-fresh-checkouts.md](./repo-owned-setup-contract-for-fresh-checkouts.md) |
 | SPEC-034A8kLznlxOOeccFx9SNM | ResourceManager job lifetime leases | implemented | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
-| SPEC-034KTMfXYD5ZlGZCRb8Paj | route grant-set projection — grants 宣言・viability 条件緩和・usage record split | proposed | [route-grant-set-projection.md](./route-grant-set-projection.md) |
+| SPEC-034KTMfXYD5ZlGZCRb8Paj | route grant-set projection — grants 宣言・viability 条件緩和・usage record split | approved | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | SPEC-G1ALq0d5lyFIi0h43tZsZG | usage.jsonl run record への version・実効 policy・error 診断 field の追加 (issue #141) | approved | [run-error-record-observability.md](./run-error-record-observability.md) |
 | SPEC-034zSQRLxNXgJDxjmUBBB8 | Run-scoped artifact store | approved | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |
 | SPEC-034BbgvL9s41K7NflOddZ6 | Rust + Rig native runtime migration for cheaper CLI | proposed | [rust-rig-native-runtime-migration-for-cheaper-cli.md](./rust-rig-native-runtime-migration-for-cheaper-cli.md) |
 | SPEC-034r05iHK8bA7go4BQtGNS | Separate the development APM project from the distributable cheaper package | implemented | [separate-dev-apm-project-from-distributable-package.md](./separate-dev-apm-project-from-distributable-package.md) |
 | SPEC-034rBhR3SNIRFZ1B6n26iH | Shell-read large-file blocking via canonical routing policy | approved | [shell-read-large-file-blocking.md](./shell-read-large-file-blocking.md) |
 | SPEC-034z14nGIf6fXRtTskkrk8 | Standalone executable distribution for cheaper CLI including APM bundles | superseded | [standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md](./standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md) |
-| SPEC-034KXdoK2bMG3gQtIj8l6h | substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・anchor 切替 | proposed | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
+| SPEC-034KXdoK2bMG3gQtIj8l6h | substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・anchor 切替 | approved | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | SPEC-003hd7W00xCikuCXnwHA4C | Synchronize distributed cheaper-usage skill and parent-agent integration guide | implemented | [synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md](./synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md) |
 | SPEC-034EStsweRrzPq1Og6oCzl | tool-operator built-in Worker | approved | [tool-operator-built-in-worker.md](./tool-operator-built-in-worker.md) |
 | SPEC-034LwdoInh3ie1KPlSjkJl | trusted route flag issuer redesign — 宣言層 provenance trust・project 層 `trusted` 宣言の拒否 | approved | [trusted-route-flag-issuer-redesign.md](./trusted-route-flag-issuer-redesign.md) |
