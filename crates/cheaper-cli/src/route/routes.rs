@@ -42,7 +42,14 @@ pub struct Route {
     /// `target.path` — 宣言層起点で join 済みの絶対パス。
     pub target_path: PathBuf,
     /// `command.grants` 参照名(route は grant を生成しない)。
+    /// 発火 gate・expected_input anchor・record attribution の
+    /// 単一 anchor — `grants` member は含めない。
     pub grant: String,
+    /// `grants` — route.grant 以外の追加委譲 grant 名(宣言順)。
+    /// parse 時に member 間重複と `route.grant` 自身の参照を
+    /// 冪等に除去済み — `[]` ≡ 未指定。有効 set は
+    /// `grant_set()` = {grant} ∪ grants。
+    pub grants: Vec<String>,
     /// `output.tokenThreshold`(routed workflow の conditional
     /// worker 閾値の per-route override)。
     pub token_threshold: Option<f64>,
@@ -52,6 +59,19 @@ pub struct Route {
     /// inert)。
     pub trusted: bool,
     pub layer: RouteLayer,
+}
+
+impl Route {
+    /// 有効投影 set — `{route.grant} ∪ grants`(anchor 必須を型で
+    /// 表さないため helper が規則の owner)。viability の member
+    /// 検査は `self.grants`(member のみ)を使い、`project_grants`
+    /// 投影には本 helper の全 set を渡す。
+    pub fn grant_set(&self) -> std::collections::BTreeSet<String> {
+        let mut set = std::collections::BTreeSet::new();
+        set.insert(self.grant.clone());
+        set.extend(self.grants.iter().cloned());
+        set
+    }
 }
 
 /// trust 不在のため下位層 route に負けた project route
@@ -316,6 +336,7 @@ fn validate_route(
         "match",
         "target",
         "grant",
+        "grants",
         "output",
         "passthroughEnv",
         "trusted",
@@ -397,6 +418,40 @@ fn validate_route(
         )
     })?;
     let grant = required_string(entry, "grant", file, label)?;
+    // `grants` は trusted 層限定(O7a)— member argv は typed
+    // command と独立のため project 層への member 宣言権委譲は
+    // O4c の審査迂回を route 宣言経由で再発させる。
+    // `trusted:true` は project 自己申告の shadowing gate で
+    // あり判別に使えない — 判別子は宣言層 provenance。
+    if layer == RouteLayer::Project && entry.contains_key("grants") {
+        return Err(schema_error(
+            file,
+            &format!("{label}.grants: not declarable in the project layer"),
+        ));
+    }
+    // `grants: [name, …]` — route.grant 以外の追加委譲 grant 名。
+    // member 間重複・route.grant 自身の参照は冪等に除去(順序は
+    // 意味を持たない — 宣言順の先勝ちを保持)。
+    let mut grants = Vec::new();
+    match entry.get("grants") {
+        None => {}
+        Some(v) => {
+            let items = v
+                .as_array()
+                .ok_or_else(|| schema_error(file, &format!("{label}.grants: not an array")))?;
+            for item in items {
+                let name = item.as_str().filter(|s| !s.is_empty()).ok_or_else(|| {
+                    schema_error(
+                        file,
+                        &format!("{label}.grants: member must be a non-empty string"),
+                    )
+                })?;
+                if name != grant && !grants.iter().any(|g| g == name) {
+                    grants.push(name.to_string());
+                }
+            }
+        }
+    }
     // `output: {tokenThreshold?}` — number のみ許容。
     let token_threshold = match entry.get("output") {
         None => None,
@@ -453,6 +508,7 @@ fn validate_route(
         command,
         target_path,
         grant,
+        grants,
         token_threshold,
         passthrough_env,
         trusted,
@@ -566,6 +622,7 @@ routes:
         assert_eq!(route.name, "cargo-test");
         assert_eq!(route.command, vec!["cargo", "test"]);
         assert_eq!(route.grant, "cargo-test");
+        assert!(route.grants.is_empty());
         assert_eq!(route.token_threshold, Some(8192.0));
         assert_eq!(route.passthrough_env, vec!["CI"]);
         assert_eq!(route.layer, RouteLayer::Builtin);
@@ -722,6 +779,181 @@ routes:
         assert_eq!(
             loaded.routes[0].target_path,
             project.join("w").join("f.json")
+        );
+    }
+
+    /// `grants` 宣言の parse/dedupe(#166 R1)— member のみ宣言順で
+    /// 保持し、member 間重複・`route.grant` self-ref・`grants: []`
+    /// は冪等に除去される。
+    #[test]
+    fn grants_parse_dedupe_and_empty() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        write(
+            &user,
+            "routes.yaml",
+            r#"
+version: 1
+routes:
+  - name: multi
+    match: {command: [cargo, test]}
+    target: {kind: workflow, path: a.json}
+    grant: cargo-test
+    grants: [fmt, report]
+  - name: dupes
+    match: {command: [cargo, build]}
+    target: {kind: workflow, path: b.json}
+    grant: cargo-build
+    grants: [fmt, cargo-build, fmt]
+  - name: empty
+    match: {command: [cargo, check]}
+    target: {kind: workflow, path: c.json}
+    grant: cargo-check
+    grants: []
+"#,
+        );
+        let loaded = load(&opts(&builtin, &user, &project)).unwrap();
+        let by_name = |name: &str| loaded.routes.iter().find(|r| r.name == name).unwrap();
+        assert_eq!(by_name("multi").grants, vec!["fmt", "report"]);
+        // member 間重複と route.grant self-ref は冪等に除去。
+        assert_eq!(by_name("dupes").grants, vec!["fmt"]);
+        // `grants: []` ≡ 未指定。
+        assert!(by_name("empty").grants.is_empty());
+    }
+
+    /// malformed `grants` — 非 array・非 string member・空 string
+    /// member は `InvalidRuntimePolicy` + `details.{path, reason:
+    /// "schema", violation}` で file と entry を名指しする
+    /// route-load error。`grants` typo の unknown key 拒否は不変。
+    #[test]
+    fn grants_malformed_is_schema_error() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        for (grants, expect) in [
+            ("grants: fmt", "not an array"),
+            ("grants: [1]", "member must be a non-empty string"),
+            ("grants: ['']", "member must be a non-empty string"),
+        ] {
+            let yaml = format!(
+                "version: 1\nroutes:\n  - name: x\n    match: {{command: [a]}}\n    target: {{kind: workflow, path: f.json}}\n    grant: g\n    {grants}\n"
+            );
+            let file = write(&user, "routes.yaml", &yaml);
+            let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+            assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy, "{grants}");
+            let details = err.details().unwrap();
+            assert_eq!(details["reason"], json!("schema"), "{grants}");
+            assert_eq!(
+                details["path"].as_str().unwrap(),
+                file.display().to_string(),
+                "{grants}"
+            );
+            let violation = details["violation"].as_str().unwrap();
+            assert!(
+                violation.contains("routes[0].grants") && violation.contains(expect),
+                "{grants}: {violation}"
+            );
+        }
+        // `grants` の typo は unknown key 拒否のまま(fail-loud 不変)。
+        write(
+            &user,
+            "routes.yaml",
+            "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    grant: g\n    grantss: [a]\n",
+        );
+        let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+        assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy);
+        assert!(err.details().unwrap()["violation"]
+            .as_str()
+            .unwrap()
+            .contains("unknown key: grantss"));
+    }
+
+    /// `grants` 宣言の層制約(#166 O7a)— project 層 entry の
+    /// `grants` key presence は member 形状検査より先に fail-loud
+    /// `InvalidRuntimePolicy` で拒否する。builtin/user 層は受理
+    /// され、project 層の `grant` 単数宣言は従来どおり有効。
+    #[test]
+    fn project_layer_grants_are_rejected() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        // member 形状が不正でも presence が先に拒否される
+        // (untrusted 層の宣言は内容を評価しない fail-closed)。
+        write(
+            &project,
+            "routes.yaml",
+            "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    grant: g\n    grants: not-an-array\n",
+        );
+        let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+        assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy);
+        let violation = err.details().unwrap()["violation"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        assert!(
+            violation.contains("routes[0].grants: not declarable in the project layer"),
+            "{violation}"
+        );
+        // `trusted: true` の自己申告は判別に効かない(shadowing
+        // gate であり層 provenance ではない)。
+        write(
+            &project,
+            "routes.yaml",
+            "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    grant: g\n    trusted: true\n    grants: [m]\n",
+        );
+        let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+        assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy);
+        // project 層の `grant` 単数宣言は従来どおり受理。
+        write(
+            &project,
+            "routes.yaml",
+            "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    grant: g\n",
+        );
+        let loaded = load(&opts(&builtin, &user, &project)).unwrap();
+        assert_eq!(loaded.routes[0].grant, "g");
+        assert!(loaded.routes[0].grants.is_empty());
+        // builtin/user 層の `grants` 宣言は受理される。
+        std::fs::remove_file(project.join("routes.yaml")).unwrap();
+        for dir in [&builtin, &user] {
+            write(
+                dir,
+                "routes.yaml",
+                "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    grant: g\n    grants: [m]\n",
+            );
+            let loaded = load(&opts(&builtin, &user, &project)).unwrap();
+            assert_eq!(loaded.routes[0].grants, vec!["m"]);
+            std::fs::remove_file(dir.join("routes.yaml")).unwrap();
+        }
+    }
+
+    /// `Route::grant_set()` — `{route.grant} ∪ grants` の有効 set
+    /// の単一供給点。`grants: []` なら anchor のみを返す。
+    #[test]
+    fn grant_set_unions_anchor_and_members() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        write(
+            &user,
+            "routes.yaml",
+            r#"
+version: 1
+routes:
+  - name: multi
+    match: {command: [cargo, test]}
+    target: {kind: workflow, path: a.json}
+    grant: cargo-test
+    grants: [fmt, report]
+  - name: solo
+    match: {command: [cargo, build]}
+    target: {kind: workflow, path: b.json}
+    grant: cargo-build
+"#,
+        );
+        let loaded = load(&opts(&builtin, &user, &project)).unwrap();
+        let by_name = |name: &str| loaded.routes.iter().find(|r| r.name == name).unwrap();
+        let set = by_name("multi").grant_set();
+        assert_eq!(
+            set.iter().map(String::as_str).collect::<Vec<_>>(),
+            vec!["cargo-test", "fmt", "report"]
+        );
+        let set = by_name("solo").grant_set();
+        assert_eq!(
+            set.iter().map(String::as_str).collect::<Vec<_>>(),
+            vec!["cargo-build"]
         );
     }
 }

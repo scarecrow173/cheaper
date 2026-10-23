@@ -372,6 +372,7 @@ mod tests {
             command: command.iter().map(|s| s.to_string()).collect(),
             target_path: std::path::PathBuf::from(target),
             grant: grant.to_string(),
+            grants: Vec::new(),
             token_threshold: None,
             passthrough_env: Vec::new(),
             trusted: false,

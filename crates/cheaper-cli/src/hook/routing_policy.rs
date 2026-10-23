@@ -2083,6 +2083,7 @@ mod tests {
                 command: command.iter().map(|s| s.to_string()).collect(),
                 target_path: target.to_path_buf(),
                 grant: grant.to_string(),
+                grants: Vec::new(),
                 token_threshold: None,
                 passthrough_env: Vec::new(),
                 trusted: false,
