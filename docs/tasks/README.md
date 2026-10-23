@@ -16,7 +16,7 @@ Directory: `docs/tasks`
 | TASK-034KsKPPDTLAGrCkK8k17Y | Add codex flag-gated approval-bypass rewrite emit | done | [add-codex-flag-gated-rewrite-emit.md](./add-codex-flag-gated-rewrite-emit.md) |
 | TASK-034KsKXLwLr4ZYjemKg6Hr | Add codex rewrite emit and project-layer flag rejection integration tests | done | [add-codex-rewrite-integration-tests.md](./add-codex-rewrite-integration-tests.md) |
 | TASK-034Jg6ieFXYQcEldcUVKri | Add command grant exitCodes and nonzero-exit result reporting | done | [add-command-grant-exitcodes.md](./add-command-grant-exitcodes.md) |
-| TASK-034KLYvyO70lji85Lv8jvN | cheaper-core security policy module と schema 配線・resolve signature | todo | [add-core-security-policy-and-schema-wiring.md](./add-core-security-policy-and-schema-wiring.md) |
+| TASK-034KLYvyO70lji85Lv8jvN | cheaper-core security policy module と schema 配線・resolve signature | done | [add-core-security-policy-and-schema-wiring.md](./add-core-security-policy-and-schema-wiring.md) |
 | TASK-034r05iHQeQpDpSS51up2r | Add count-tokens CLI command | done | [add-count-tokens-cli.md](./add-count-tokens-cli.md) |
 | TASK-034r05iHQeQpDpSeJahHce | Add count_tokens tool to runtime-pi registry and built-in workers | done | [add-count-tokens-tool.md](./add-count-tokens-tool.md) |
 | TASK-034zBIYG4bskj0L6ueomFK | Add deterministic sibling-parallelism pin tests to runtime-pi | done | [add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md](./add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md) |
@@ -123,7 +123,7 @@ Directory: `docs/tasks`
 | TASK-034zTWjm1NjME6ZzgLXNF7 | Document and verify one-dispatch release migration | done | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
 | TASK-034KsL2829yYfRRGKl92t1 | Document route.rewrite.approvalBypass in configuration guide | done | [document-approval-bypass-policy-flag.md](./document-approval-bypass-policy-flag.md) |
 | TASK-034DlFJnTT9v0YcqV9Uine | Document devin usage semantics in providers and usage guides | done | [document-devin-usage-semantics-in-providers-and-usage-guides.md](./document-devin-usage-semantics-in-providers-and-usage-guides.md) |
-| TASK-034KLYEMV6mRczcWiAQpy1 | security.execDenyPatterns の guides・builtin policy.yaml 整備 | todo | [document-exec-deny-patterns-profile.md](./document-exec-deny-patterns-profile.md) |
+| TASK-034KLYEMV6mRczcWiAQpy1 | security.execDenyPatterns の guides・builtin policy.yaml 整備 | done | [document-exec-deny-patterns-profile.md](./document-exec-deny-patterns-profile.md) |
 | TASK-034zQTXMNDaUeqIR3aCRNf | Document launcher distribution and verify acquisition | done | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
 | TASK-034KxDvREdpF6P10oziJsy | Document windsurf tool_info contract and dual-registration trap in distribution guide | done | [document-windsurf-tool-info-contract-and-registration-requirements.md](./document-windsurf-tool-info-contract-and-registration-requirements.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
@@ -263,8 +263,8 @@ Directory: `docs/tasks`
 | TASK-034BgKlddxEi2ozLgZMFi3 | Phase 6: remove TypeScript Node Pi | done | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | TASK-034DlFISpHRPrXyhhlFXfa | Pin devin cache-hit usage mapping in stream tests | done | [pin-devin-cache-hit-usage-mapping-in-stream-tests.md](./pin-devin-cache-hit-usage-mapping-in-stream-tests.md) |
 | TASK-0340C4KaPSmy4CrDagevUC | Pin sweep test deletion order with explicit set_mtime timestamps | done | [pin-sweep-test-deletion-order-with-explicit-mtimes.md](./pin-sweep-test-deletion-order-with-explicit-mtimes.md) |
-| TASK-034KLYAKiwETFc4o0BnVI1 | cheaper-cli/runtime への exec_deny 配管と残 test churn | todo | [plumb-exec-deny-through-cli-and-runtime.md](./plumb-exec-deny-through-cli-and-runtime.md) |
-| TASK-034KLYAfuIu8es8ZgpuQRl | cheaper-tools への exec_deny 配管と pin/verify 適用点注入 | todo | [plumb-exec-deny-through-tools.md](./plumb-exec-deny-through-tools.md) |
+| TASK-034KLYAKiwETFc4o0BnVI1 | cheaper-cli/runtime への exec_deny 配管と残 test churn | done | [plumb-exec-deny-through-cli-and-runtime.md](./plumb-exec-deny-through-cli-and-runtime.md) |
+| TASK-034KLYAfuIu8es8ZgpuQRl | cheaper-tools への exec_deny 配管と pin/verify 適用点注入 | done | [plumb-exec-deny-through-tools.md](./plumb-exec-deny-through-tools.md) |
 | TASK-034FpqibELWYvjxZennqEn | T3: policy-grant-command — cheaper policy grant {add,list,remove} と core write 基盤 | done | [policy-grant-command.md](./policy-grant-command.md) |
 | TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | done | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |
 | TASK-034zTWibd7OKesgJgoGxJu | Prepare one-dispatch release artifacts | done | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
@@ -340,7 +340,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
 | TASK-034zXB2z3uWw5lq9IyKOqe | Verify consumer acquisition and close migration | done | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
 | TASK-034KJu8k1x8fWOfRemmi3r | 除去の grep-pin・keep-boundary・mise run check 最終検証 | done | [verify-content-audit-removal.md](./verify-content-audit-removal.md) |
-| TASK-034KLYFkg2bLCiG6WDNNpx | exec deny 最終検証 — targeted tests・doc-id・audit_docs・mise run check | todo | [verify-exec-deny-patterns.md](./verify-exec-deny-patterns.md) |
+| TASK-034KLYFkg2bLCiG6WDNNpx | exec deny 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-exec-deny-patterns.md](./verify-exec-deny-patterns.md) |
 | TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
 | TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | done | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |
 | TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | done | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |

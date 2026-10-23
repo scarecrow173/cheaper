@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034KLWpEpVSlofJ7Idynh5"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "opt-in security.execDenyPatterns profile — A9 の降格実装"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -224,14 +224,14 @@ file:line 精度で固定済み — 分割するのは commit の論理境界
 
 ## Implementation Sequence
 
-- [ ] TASK-034KLYvyO70lji85Lv8jvN (T1): cheaper-core の
+- [x] TASK-034KLYvyO70lji85Lv8jvN (T1): cheaper-core の
       `policy/security.rs` 新設 + schema 配線（`mod.rs`・
       `schema.rs` 6 site・`command.rs` signature + 適用点 1・
       `load.rs:208` re-resolve・`RuntimePolicy.security`）+
       `restrict.rs`/`capability.rs` literal churn + golden
       fixture 3 件更新 + core unit test。`cargo test -p
       cheaper-core` で閉じる
-- [ ] TASK-034KLYAfuIu8es8ZgpuQRl (T2): cheaper-tools 配管 —
+- [x] TASK-034KLYAfuIu8es8ZgpuQRl (T2): cheaper-tools 配管 —
       `command/mod.rs` の 3 signature + 適用点 2/3 注入・
       `CommandToolOptions.exec_deny`、`registry.rs` の
       `ToolRuntimeOptions.security` + `ToolCtx.exec_deny`、
@@ -239,17 +239,17 @@ file:line 精度で固定済み — 分割するのは commit の論理境界
       `InvocationInner.{security,exec_deny}` + parity + 再注入、
       tools test churn + 適用点・parity・再注入の新規 test。
       `cargo test -p cheaper-tools` で閉じる
-- [ ] TASK-034KLYAKiwETFc4o0BnVI1 (T3): cheaper-cli/runtime 配管 —
+- [x] TASK-034KLYAKiwETFc4o0BnVI1 (T3): cheaper-cli/runtime 配管 —
       `CommandPolicyView.exec_deny`・`RouteSupply.exec_deny`・
       `resolve.rs` viability・`routing_policy.rs` literal・
       `run/mod.rs` 2 site・`workflow_run.rs` 2 site・
       `policy.rs` doc restate + runtime/workflow/rig-adapter の
       test literal churn。cli test target + workspace compile 回復で
       閉じる
-- [ ] TASK-034KLYEMV6mRczcWiAQpy1 (T4): docs —
+- [x] TASK-034KLYEMV6mRczcWiAQpy1 (T4): docs —
       `docs/guides/command.md`・`docs/guides/configuration.md`・
       `resources/policy.yaml`。T1 後なら T2/T3 と並列実行可能
-- [ ] TASK-034KLYFkg2bLCiG6WDNNpx (T5): 最終検証 — targeted
+- [x] TASK-034KLYFkg2bLCiG6WDNNpx (T5): 最終検証 — targeted
       cargo tests・`node scripts/check-doc-ids.mjs`・
       `audit_docs`・`mise run check`・status 更新
 
@@ -329,25 +329,25 @@ optional property のため既存 policy file は revert 後も valid。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core` で security.rs/
+- [x] `mise exec -- cargo test -p cheaper-core` で security.rs/
       schema.rs/command.rs/load.rs unit test + golden target が
       pass（T1 — single-crate では dev-seam feature 適用外のため
       flag 無し）
-- [ ] `mise exec -- cargo test -p cheaper-tools` で command/mod.rs
+- [x] `mise exec -- cargo test -p cheaper-tools` で command/mod.rs
       unit・proc_* integration・characterization・differential が
       pass（T2 — 同上 flag 無し）
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration --test regression --test run_dev_seam --test workflow --test workflow_dev_seam`
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration --test regression --test run_dev_seam --test workflow --test workflow_dev_seam`
       + `cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test contracts --test run_dev_seam`
       + `cargo test -p cheaper-workflow --test filesystem_contracts`
       + `cargo test -p cheaper-rig-adapter` が pass（T3）
-- [ ] spec Acceptance Criteria 全項目に対応する test が存在し pass
+- [x] spec Acceptance Criteria 全項目に対応する test が存在し pass
       （TSPEC の Rules — schema accept/reject・predicate 意味論・
       3 適用点・既定 no-op・invocation 対象化・merge・配管・
       viability NoGrant・serialized shape・docs）（T5）
-- [ ] `node scripts/check-doc-ids.mjs` が pass（T5）
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
+- [x] `node scripts/check-doc-ids.mjs` が pass（T5）
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
       で新規 doc の error 0（T5）
-- [ ] `mise run check` が pass（T5）
+- [x] `mise run check` が pass（T5）
 
 ## Open Questions / Gaps
 

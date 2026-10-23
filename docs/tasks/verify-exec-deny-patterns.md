@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KLYFkg2bLCiG6WDNNpx"
 type: "task"
-status: "todo"
+status: "done"
 title: "exec deny 最終検証 — targeted tests・doc-id・audit_docs・mise run check"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -159,15 +159,15 @@ Rules に対応 — 欠落があれば該当 task の責務として pin 追加�
 
 ## Done When
 
-- [ ] spec Acceptance Criteria 全項目に対応する test が存在し
+- [x] spec Acceptance Criteria 全項目に対応する test が存在し
       pass（TSPEC Rule との対応表が §1 で確認済み）
-- [ ] 配管の全経路（scope 構築・invocation parity・再注入・
+- [x] 配管の全経路（scope 構築・invocation parity・再注入・
       route viability・check_command_execution）が deny-aware
       であり、attribution gap pin が存在する
-- [ ] `mise run check` exits 0
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `audit_docs` が本 issue の新規 doc で error 0
-- [ ] 5 task + plan の status が更新されている
+- [x] `mise run check` exits 0
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `audit_docs` が本 issue の新規 doc で error 0
+- [x] 5 task + plan の status が更新されている
 
 ## Out of Scope
 
@@ -179,8 +179,81 @@ Rules に対応 — 欠落があれば該当 task の責務として pin 追加�
 
 ## Verification
 
-- [ ] 上記 §1-§3 の全項目が pass（コマンド実測を記録）
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
+- [x] 上記 §1-§3 の全項目が pass（コマンド実測を記録）
+
+      targeted cargo test（2026-10-23 実測、全 pass / 0 failed）:
+
+      - `mise exec -- cargo test -p cheaper-core` — 253 pass
+        （unit 231 + golden/他 target 22。security.rs 6・
+        schema.rs 3・command.rs 1・load.rs 4 の新規 deny test
+        を含む）
+      - `mise exec -- cargo test -p cheaper-tools` — 357 pass
+        （lib 259・characterization 10・differential 11・
+        proc_command 35・proc_degrade 9・proc_invocation 17・
+        proc_process 9・proc_runtime 7。proc_process の
+        `cleans_live_descendants_on_exit_and_failure_and_abort_and_timeout`
+        が初回 run で timeout flake → 単独再実行で pass、#164
+        非対象 file の既知 flake 扱い）
+      - `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration --test regression --test run_dev_seam --test workflow --test workflow_dev_seam`
+        — 350 pass（integration 288・regression 1・
+        run_dev_seam 38・workflow 18・workflow_dev_seam 5）
+      - `mise exec -- cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam --test contracts --test run_dev_seam`
+        — 99 pass（contracts 71・run_dev_seam 28）
+      - `mise exec -- cargo test -p cheaper-workflow --test compile_contracts --test filesystem_contracts`
+        — 89 pass（46 + 43）
+      - `mise exec -- cargo test -p cheaper-rig-adapter` —
+        21 pass
+
+      §1 対応表の pin 実測（全 pass）— schema accept/reject:
+      `security_section_schema_and_normalize`（complete/partial
+      受理・project partial 拒否・malformed 拒否）、predicate
+      意味論: `security.rs` unit 6 本（stem 正規化・anchor・
+      case-insensitive OR・empty no-op・invalid regex
+      attribution）、適用点 1: `security_deny_rejects_matching_
+      declared_executable` + `declared_executable_deny_is_opt_in_
+      and_fail_closed` + `security_exec_deny_applies_at_scope_
+      construction`、適用点 2/3: `security_exec_deny_pin_blast_
+      radius` + `check_command_execution_applies_exec_deny_at_
+      verify`、既定 no-op: `declared_executable_names_pass_
+      policy_resolution`（`python`/`ssh`/`tar`/`sh`/`bash`/
+      `cmd.exe`/`powershell` 受理）+ `empty_deny_list_is_noop`、
+      invocation 対象化 + attribution gap:
+      `invocation_grant_hits_user_exec_deny_without_layer_
+      attribution`（`InvalidRuntimePolicy`・`details.layer`
+      無し pin）+ `invocation_layer_cannot_author_security`
+      （`InvalidRequest` + `details.layer="invocation"`）、
+      merge replace: `security_exec_deny_patterns_merge_and_
+      invocation_scope`、配管: `invocation_resolves_and_
+      compiles_security`・`worker_scope_rejects_security_
+      policy_mismatch`・`worker_scope_receives_invocation_
+      resolved_security`・`worker_scope_denied_declared_keeps_
+      inner_error_code`、viability NoGrant:
+      `denied_resolved_grant_is_no_grant`（unix gate）、全層
+      fail-closed: `security_invalid_regex_fails_closed_at_
+      all_layers` + `invalid_exec_deny_regex_fails_load_at_layer`。
+      docs contract は `command.md`:34-136・
+      `configuration.md`:160-253・`resources/policy.yaml`:64
+      の `security` 節を実読確認（旧既定値・migration seed・
+      match 規約・trust boundary・非 containment 明記）。
+
+      §2 grep sanity — `security`/`exec_deny` 注入点が
+      `policy/security.rs`・`schema.rs`・`command.rs`・
+      `load.rs`・`registry.rs`・`invocation.rs`・
+      `command/mod.rs`・`route/resolve.rs`・`route/supply.rs`・
+      `run/mod.rs`・`workflow_run.rs` に全て接続（`TODO`・
+      `unimplemented!`・stub 残存なし）。
+
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+      （1132 markdown files scanned）
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
       で本 issue の新規 doc 7 件（plan・test-spec・task×5）が
-      error 0
+      error 0 — `--type plan`（98 files）・`--type test-spec`
+      （80 files）・`--type task`（359 files）各 audit とも
+      finding は warning（`blocking: false`）のみで error 0。
+      warning には本 issue 由来の reciprocal-relation drift と
+      tasks/README index の stale status（本 task で更新）を含む
+- [x] `mise run check` exits 0（biome 33 files・fmt・clippy
+      `--all-targets` + dev-seam・version 1.0.0・doc-ids・
+      `cargo test --workspace`（50 test target 全 ok / 0
+      failed）・`node --test` scripts 43 + benchmarks 12・
+      lockfile・apm payload — 全 step pass）
