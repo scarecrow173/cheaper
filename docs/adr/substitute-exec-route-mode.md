@@ -1,7 +1,7 @@
 ---
 id: "ADR-034KXk8h1AtwCkf2cQrb7m"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "substitute-exec route mode — substitute:{grant,argv}・viability retarget・実行 anchor 切替"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -301,11 +301,14 @@ exit/record の anchor 切替規約・Option E との境界。
   分類は「interactive な typed command は routing で
   置き換えない」invariant として維持（byte-matched と同じ
   発火条件を substitute mode でも保つ）。加えて
-  substitute ペア（`substitute.grant` pin 解決 executable +
-  `substitute.argv`）に同じ分類を適用する — stdin 非接続
-  で spawn されるのは substitute であり、interactive な
-  substitute は発火後に grant timeout まで hang してから
-  失敗するため、resolve 時点で `stdin-unsupported` に倒す。
+  substitute ペア（`substitute.grant` の宣言 basename・
+  pin 解決 basename の union + `substitute.argv`）に同じ
+  分類を適用する — stdin 非接続で spawn されるのは
+  substitute であり、interactive な substitute は発火後に
+  grant timeout まで hang してから失敗するため、resolve
+  時点で `stdin-unsupported` に倒す。pin 解決名のみでは
+  `python3` → `python3.11` のような canonical 名 suffix で
+  回避されるため、宣言名との union で両側を検査する。
 - **O6b substitute ペアのみへ retarget（typed 側を外す）** —
   「実行されるものだけ検査する」原則を interactive 分類へも
   適用する案。しかし typed 側を外すと「`vim` を打った

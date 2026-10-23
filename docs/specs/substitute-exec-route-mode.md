@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034KXdoK2bMG3gQtIj8l6h"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・anchor 切替"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -338,9 +338,13 @@ viability 分割）の機構をそのまま土台とする。
 - R10. stdin-unsupported 分類は、typed 側の既存評価
   （`is_interactive(原 executable, 原 exec_args)`）を
   **維持**しつつ、substitute 宣言のある route では
-  substitute ペア（`substitute.grant` の pin 解決済み
-  executable 名 + `substitute.argv`）にも同じ interactive
-  評価を適用すること。
+  substitute ペアにも同じ interactive 評価を適用すること。
+  substitute 側の executable 名判定は**宣言 basename
+  （`substitute.grant` の `executable` 宣言値）と pin 解決済み
+  basename の union** で行う — pin 解決名のみでは
+  `python3` → `python3.11` のような canonical 名 suffix で
+  回避されるため宣言名でも検査し、宣言名のみでは shim が
+  実体を偽装できるため解決名でも検査する。
   - typed 側を維持するのは「interactive な typed command
     は routing で置き換えない」不変条件の保存 — 原
     command が stdin 前提なら substitute 宣言の有無に

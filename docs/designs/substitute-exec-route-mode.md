@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034L0RxGVVTOqtaUUThowk"
 type: "design"
-status: "draft"
+status: "approved"
 title: "substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・実行 anchor 切替"
 created: "2026-10-23"
 updated: "2026-10-24"
@@ -900,7 +900,7 @@ workflow の `grant`/`execArgs` input 語彙と mode 非依存で一致)・
 | `policy/exec.rs` | :111-134 | **不変** — `is_route_eligible`・`project_grants` が set 汎用で substitute を既にカバー(comment で substitute 参照を明示済み) |
 | `tools/exec/mod.rs` | :163-211,:275-312 | **不変** — `pin_exec_grant`/`check_exec_execution` shared predicate seam |
 | `tools/command/mod.rs` | :218-272 | **不変** — `details.{grant,argv}` 実測記録 |
-| `hook.rs`/`hook_cmd.rs` | route 入力供給経路 | **不変** — `load_or_none` fail-open 規約・`RouteEvalInput` 構築 |
+| `hook/targets.rs` | :942 | **不変** — `evaluate_with_routes` の `load_or_none` fail-open 規約・`RouteEvalInput`(`routing_policy.rs:140`)構築 |
 | `tests/integration/usage_log.rs` | :298-353 | **不変** — `route_record_shape` は `executed` shape を既に pin(record assertion は route_run.rs 側で substitute 値を検証) |
 | `crates/cheaper-tools/tests/proc_invocation.rs` | :702-766 | **不変** — set 投影 parity は `project_grants` set 汎用でカバー済み(必要なら投影 JSON に substitute 名を含める case の追加余地 — 必須ではない) |
 
@@ -1149,12 +1149,22 @@ finish(): captured.details → exitCode mirror + executed{grant,argv}
   (:154-166)、unit test(:574 以降 — substitute parse/error
   case + project 層拒否 + builtin/user 受理 + `grant_set`
   union + `exec_pair` 選択 + trusted 置換 provenance)。
+  **旧 semantics を pin する既存 test 2 件を更新**:
+  `user_shadows_builtin_and_project_needs_trusted`(:710 —
+  `suppressed.is_empty()` assert が displaced user route 名を
+  返すため失敗)と `route_run.rs` の
+  `suppressed_project_provenance_reaches_route_record`
+  (:1386-1456 — trusted branch が resolve 出力・record の
+  `suppressed` 不在を assert → displaced 記録で失敗)。両者は
+  displaced-trusted provenance の新 semantics に追従させる
+  (assert 反転)。
 - **viability/resolve** — `route/resolve.rs`:実行ペア完全検査
   retarget(:305-348)、member ループへ `route.grant` 連結
   (:353-377)、stdin 段へ substitute union 分類追加(:378-381)、
   test module `use`(:387-390)へ `RouteSubstitute` import +
-  `route()`/`route_with_grants()` literal(:395-422)+ substitute
-  viability 新規 case。`hook/routing_policy.rs`:`route()`
+  `route()` literal(:395-407)へ `substitute: None` +
+  substitute viability 新規 case(`route_with_grants()` :411-422
+  は `..route()` spread のため明示不要)。`hook/routing_policy.rs`:`route()`
   literal(:2080-2091)のみ(評価本体 :1451-1486 は不変)。
 - **run/anchor 配線** — `route/run.rs`:`exec_pair` binding 新設 +
   grant_timeout lookup(:361)・`RouteExecution::new` 呼出し
@@ -1170,7 +1180,10 @@ finish(): captured.details → exitCode mirror + executed{grant,argv}
   規約 comment(:12-14 — displaced 記録を追記)、`run.rs` の
   `executed` attribution comment(:475-479 — 「env-prefix-strip
   済みの元 exec argv」は byte-matched の記述で substitute
-  mode では実測 substitute argv)、`policy/exec.rs` の
+  mode では実測 substitute argv)、`resolve.rs` の
+  `RouteResolution.suppressed` field doc(:101 — 「trust 不在で
+  負けた project route 名」は displaced 下位層 route も含む
+  merge 敗北 route 名へ拡張)、`policy/exec.rs` の
   `project_grants` doc(:118-123 — set 式へ `substitute.grant`
   を追記。code・predicate は不変)。
 - **fixture/docs** — `resources/routes.yaml`(:6-8 — shape
@@ -1185,7 +1198,8 @@ finish(): captured.details → exitCode mirror + executed{grant,argv}
   `usage_log.rs`(:332-459)・`usage_report.rs`(:503-538)・
   `policy/exec.rs`(:111-134 — code 不変、doc comment のみ上記
   「comment 追随」項)・`tools/exec/mod.rs`・
-  `tools/command/mod.rs`・`hook.rs`/`hook_cmd.rs`・
+  `tools/command/mod.rs`・`hook/targets.rs`(:942 の
+  `evaluate_with_routes`/`load_or_none` 経路)・
   `resources/workflows/routed-exec.workflow.json`・
   `tests/integration/usage_log.rs`・
   `crates/cheaper-tools/tests/proc_invocation.rs`
@@ -1316,7 +1330,8 @@ test 計画(spec Acceptance Criteria への対応 — AC1-AC12):
       `substitute` 宣言は受理される。project 層の `grant:` 単数
       宣言・byte-matched route は従来どおり有効(`routes.rs`
       unit + `route.rs` integration — `grants` の
-      `project_layer_grants_are_rejected` :873-922 と同型)。
+      `project_layer_grants_are_rejected`(`routes.rs` unit
+      :873-922)と同型)。
 - [ ] **substitute viability 失敗 fold(AC3)** —
       `substitute.argv` が `substitute.grant` argv pattern に
       不一致・`substitute.grant` 未存在・`scope:"project"`・
@@ -1382,7 +1397,12 @@ test 計画(spec Acceptance Criteria への対応 — AC1-AC12):
       `resolve.rs`/`routes.rs`/`run.rs` unit・
       `route.rs`/`route_run.rs`/`usage_log.rs`/`hook.rs`/
       `proc_invocation.rs`(crates/cheaper-tools)test 群が無改訂
-      で pass)。
+      で pass — **例外**: suppressed 旧 semantics を pin する
+      2 test(`routes.rs` unit `user_shadows_builtin_and_
+      project_needs_trusted` :710・`route_run.rs`
+      `suppressed_project_provenance_reaches_route_record`
+      :1386-1456)は merge 変更由来で assert 更新が必要
+      (churn inventory 参照)。
 - [ ] **hook 経路** — substitute 宣言 route が hook eval 経路
       (`evaluate_route_arm` :1451-1486)でも同じ resolve を通り
       runnable 時のみ rewrite され、schema error は
