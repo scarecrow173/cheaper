@@ -247,8 +247,13 @@ ExecGrant {
 - `pin_exec_grant`（仮名 — 現 `pin_command_grant` と同型）を
   unified grant へ適用。scope 構築時に `names` 含 `Command` →
   `!fixed` grant 群、`names` 含 `Process` → `fixed` grant 群を
-  ambient PATH で pin し pin 不能は構築 fail（degradable 時は
-  縮退）。**task executable が pin されるのは本 issue が初**で、
+  ambient PATH で pin し pin 不能は構築 fail（当該 grant の
+  surface tool が degradable 宣言されている場合はその tool のみ
+  縮退 — **本規則は Process と Command の両 surface に適用**。
+  現行 `registry.rs` は Command の pin 失敗を degradable 宣言の
+  有無に関わらず常に hard fail させており、Command 側への適用は
+  opt-in 宣言時のみ差分が生じる意図的 semantics 拡張 — R11-(e)
+  参照）。**task executable が pin されるのは本 issue が初**で、
   per-call `prepare.rs:127-136` の lazy resolve 経路は除去する。
 - `verify_pinned_executable`（spawn 前再検証）を両 surface で
   共有。`check_exec_execution`（仮名 — 現
@@ -331,6 +336,11 @@ ExecGrant {
      （unresolvable task は per-call error → 構築 error/degrade）。
   d) `RuntimePolicy` serialized 形状（`exec` field — 内部 wire
      + golden fixture のみ）。
+  e) `degradable`（`optionalTools`）宣言された `command` tool の
+     pin 失敗が未登録縮退へ変わる（現行は degradable 宣言の有無に
+     関わらず無条件 `POLICY_VIOLATION` — pin-fail×degradable 規則を
+     Process/Command 両 surface へ対称適用する意図的拡張。opt-in
+     宣言 worker のみ影響）。
 - `policy grant add|list|remove`・`--grant` flag・route `grant`
   用語は不変（`command.grants` authoring 面を操作し続ける）。
 
@@ -362,8 +372,9 @@ ExecGrant {
       `policy.exec` から見る（他の非 fixed grant は投影外 —
       confused-deputy 防止保存 + task 呼出し現行挙動保存）。
 - [ ] task executable が pin 不能（PATH 解決失敗・denylist）の
-      scope は構築時 `POLICY_VIOLATION`（`Process` が degradable
-      宣言されている場合は縮退）。
+      scope は構築時 `POLICY_VIOLATION`（当該 surface tool —
+      `Process` または `Command` — が degradable 宣言されている
+      場合はその tool のみ縮退。両 surface に適用）。
 - [ ] 既存契約 test（pin・env_clear・stdin null・process group・
       lifecycle・fs boundary・writeScope・deny）が回帰なく pass。
 - [ ] serialized `RuntimePolicy` の `exec` が invocation parity

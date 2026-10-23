@@ -63,16 +63,22 @@ You are a worker that ...（instruction 本文）
   opt-in key。列挙した tool は content-gate（`process.tasks` /
   `command.grants` が空）不成立時に `POLICY_VIOLATION` で scope
   構築を失敗させる代わりに **未登録へ縮退** し、run は残りの
-  tool で継続する。縮退した tool は system prompt に利用不可注記
-  として列挙され、model が呼んでも登録経路が存在しないため
-  unknown-tool として安全に失敗する。opt-in は capability を
-  縮める方向にのみ働き、権限を広げることには使えない。
-  `tools.allow` による admission 除外・grant 解決・argv
-  pattern・executable pin 等の call 経路の認可機構は一切変わらず、
-  `tools.allow` で除外された宣言 tool は opt-in worker でも
-  従来通り run 全体を `POLICY_VIOLATION` で fail させる
-  （admission と content-gate は別の層 —
-  [command ガイド](./command.md)）。検査 rule: 配列でない /
+  tool で継続する。併せて、degradable 宣言された exec surface
+  （`process` / `command`）に到達可能な grant の executable pin
+  （PATH 解決・deny 判定）が失敗した場合も、scope 構築を
+  `POLICY_VIOLATION` で fail させず当該 tool のみ未登録へ縮退
+  する — pin-fail×degradable の規則は `process` と `command` の
+  両 surface に適用される。縮退した tool は system prompt に
+  利用不可注記として列挙され、model が呼んでも登録経路が
+  存在しないため unknown-tool として安全に失敗する。opt-in は
+  capability を縮める方向にのみ働き、権限を広げることには
+  使えない。`tools.allow` による admission 除外・grant 解決・
+  argv pattern・spawn 前 executable 再検証等の call 経路の
+  認可機構は一切変わらず、`tools.allow` で除外された宣言
+  tool は opt-in worker でも従来通り run 全体を
+  `POLICY_VIOLATION` で fail させる（admission と
+  content-gate は別の層 — [command ガイド](./command.md)）。
+  検査 rule: 配列でない /
   空配列 / `tools` 未宣言の名 / vocabulary に無い名 / gated で
   ない tool / 重複 / `tools` 全体を含む宣言は全て
   `InvalidWorkerDefinition` で拒否される。opt-in worker は出力

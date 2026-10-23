@@ -45,6 +45,8 @@ relations:
       - type: "file"
         path: "crates/cheaper-tools/src/tools/process/prepare.rs"
       - type: "file"
+        path: "crates/cheaper-tools/src/tools/process/tests.rs"
+      - type: "file"
         path: "crates/cheaper-cli/src/run.rs"
       - type: "file"
         path: "crates/cheaper-cli/src/workflow_run.rs"
@@ -61,7 +63,15 @@ relations:
       - type: "file"
         path: "crates/cheaper-cli/src/route/run.rs"
       - type: "file"
+        path: "crates/cheaper-cli/src/route_cmd.rs"
+      - type: "file"
         path: "crates/cheaper-cli/src/hook/routing_policy.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/integration/policy.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/integration/route_run.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/integration/run.rs"
       - type: "file"
         path: "crates/cheaper-runtime/src/run/mod.rs"
       - type: "file"
@@ -81,6 +91,8 @@ relations:
       - type: "file"
         path: "crates/cheaper-core/tests/golden/fixtures/policy/restrict.json"
       - type: "file"
+        path: "crates/cheaper-core/tests/golden/policy_process.rs"
+      - type: "file"
         path: "crates/cheaper-tools/tests/proc_command.rs"
       - type: "file"
         path: "crates/cheaper-tools/tests/proc_process.rs"
@@ -99,6 +111,8 @@ relations:
       - type: "file"
         path: "crates/cheaper-workflow/tests/filesystem_contracts/artifacts.rs"
       - type: "file"
+        path: "crates/cheaper-workflow/tests/filesystem_contracts/resource_inference.rs"
+      - type: "file"
         path: "docs/guides/command.md"
       - type: "file"
         path: "docs/guides/managed-process.md"
@@ -110,6 +124,8 @@ relations:
         path: "docs/guides/workflow-usage.md"
       - type: "file"
         path: "docs/guides/workers.md"
+      - type: "file"
+        path: "docs/specs/unified-exec-grant-model.md"
     deleted: []
     renamed: []
     moved:
@@ -479,6 +495,20 @@ authoring できる経路。`scope:"project"` は自己弱体化として受理�
 "scope": {"type": "string", "enum": ["trusted", "project"]},
 ```
 
+**CLI 入口での `fixed`/`scope` 拒否（確定）** — schema はこれらの
+field を受理するが、`--grant`（`grant.rs::build_invocation_layer`
+:49-104 — spec を `command.grants` へ verbatim 挿入する唯一の
+合成点）と `policy grant add`（`policy.rs::parse_grant_spec`
+:189-205 — 既存 `name` key reject と同じ CLI 入口 validation）
+では `fixed:true`・明示 `scope` を含む spec を `InvalidRequest` で
+拒否する。理由: `--grant`/`policy grant` は route-eligible な
+`!fixed` command grant を供給する CLI 契約であり、`fixed:true`
+（command surface・route 双方に不可視の inert grant）や
+`scope:"project"`（route 不可視）は利用者の意図と矛盾し誤解を
+招く。schema validate は layer 非依存で CLI 由来 spec を識別
+できず、trusted YAML での直接 authoring は合法のままにするため
+拒否点は schema ではなく各 CLI 入口に置く。
+
 `process_policy_properties()`（`process.rs:60-96`）は**不変** —
 `tasks` の required `command`/`inputs`/`outputs`・shape・name
 pattern は authoring 互換の対象外。complete/partial schema の
@@ -527,7 +557,14 @@ json!({
   fail-loud に拒否 — caller は必ず `build_exec_input` を経由する。
 - defaults block は `{"maxConcurrent","timeout","maxOutputBytes",
   "killGrace","heartbeat":{"interval"}}` のみ受理（`grants`/`tasks`
-  key は unknown で reject）。
+  key は unknown で reject）。実装上の注意:
+  `exec_defaults_properties()` の `heartbeat` nested object は
+  既存 section schema と同じく
+  `{"type":"object","additionalProperties":false,"properties":
+  {"interval":…}}` を再現する必要がある（`process.rs:68-72`・
+  `command.rs:93-97` の形状 — nested `additionalProperties:false`
+  を落とすと `{"heartbeat":{"interval":…,"x":…}}` の unknown key
+  混入を受理してしまい round-trip/parity の不変条件を破る）。
 
 ### (e) `validate_policy_schema` / `load_policy` 配線
 
@@ -548,7 +585,12 @@ project_task_names)?` → `resolve_exec_policy(&exec_doc,
 個別 resolve は除去）。`project_task_names` は layer 非依存
 resolver（`validate_policy_schema`）には到達しない — provenance
 は load 経路固有の情報であり、validation の成否に影響しない
-（scope stamp は normalize 段でのみ意味を持つ）。
+（scope stamp は normalize 段でのみ意味を持つ）。なお
+`scope:"project"` stamp の行動効果は `details.task` attribution
+の診断性向上と #166 grant-set 投影 seam の基盤であり、project
+scope が何かを構造的に強化する機構ではない — route 参照の拒否は
+`is_route_eligible` が別途担う既存 predicate であり、本 mechanism
+は route guard ではない（権限を広げる方向には一切働かない）。
 
 **attribution 規約（不変）**: invocation 層の `command.grants` と
 merged `process.tasks` の衝突は、段 2 の collision check が
@@ -583,18 +625,20 @@ accepted limitation。
 | catalog | `ToolCatalog::from_resolved_policy(process)`（:1238） | `ToolCatalog::from_resolved_policy(exec)` |
 | `ToolCtx` | `process`/`command`/`command_pins`/`exec_deny`（:220-243） | `exec: ResolvedExecPolicy`・`exec_pins: BTreeMap<String,String>`・`exec_deny` へ一本化 |
 
-**pin-fail × degradable（要レビュー確定）**: 現行 command は pin
-失敗を常に hard fail させる（`:1225-1234` の `?`）。spec AC は
-「task executable が pin 不能の scope は構築時
-`POLICY_VIOLATION`（`Process` が degradable 宣言されている場合は
-縮退）」と `Process` のみ規定。本 design は surface 対称の uniform
-規則とする: `pin_exec_grants` 失敗時、失敗した grant の surface
+**pin-fail × degradable（確定 — 意図的 semantics 拡張）**: 現行
+command は pin 失敗を常に hard fail させる（`:1225-1234` の `?`）。
+本 design は surface 対称の uniform 規則とする:
+`pin_exec_grants` 失敗時、失敗した grant の surface
 （`fixed`/`!fixed`）に対応する tool が `degradable` に含まれれば
 その tool のみ `names` から除去（opt-in 縮退の既存機構を再利用）、
 含まれなければ `POLICY_VIOLATION` で構築 fail。Command 側は
-「degradable 宣言時に pin fail で縮退する」軽微な挙動差分が生じる
-（現行は常に hard fail）— opt-in tool の利用不能を fail ではなく
-縮退で表す degradable 契約の意図と整合する意図的統一として記録。
+「degradable 宣言時に pin fail で縮退する」**新規 semantics**
+であり現行の無条件 hard fail からの意図的拡張 — spec AC 本文
+（当初 `Process` のみ言及）を両 surface 適用へ改訂済み
+（`docs/specs/unified-exec-grant-model.md` R7/AC/R11）、破壊的変更
+一覧にも登録した（R11-(e)・後述 Non-Functional Constraints）。
+opt-in tool の利用不能を fail ではなく縮退で表す既存 degradable
+契約の意図と整合する統一であり、非 opt-in 経路の挙動は不変。
 
 ### (h) unified tools 層 — `crates/cheaper-tools/src/tools/exec/`（新設）
 
@@ -675,21 +719,47 @@ pub(super) fn prepare_exec_grant(
 **manifest 規則（M1/R2）**:
 
 ```rust
-/// `exec_grant_resources` — `inputs`/`outputs` 保持 grant は
-/// per-path manifest（`process_task_resources`:340-363 同等:
-/// reads=inputs・writes=outputs・produces=outputs・`**` 末尾 →
-/// Subtree）。非保持 grant は conservative root manifest
-/// （`command_grant_resources`:419-429 同等）。
+/// `exec_grant_resources` — `inputs`/`outputs` のいずれかを宣言
+/// する grant（`Some([])` 空配列も宣言と見なす）は per-path
+/// manifest（`process_task_resources`:340-363 同等: reads=inputs・
+/// writes=outputs・produces=outputs・`**` 末尾 → Subtree。
+/// `Some([])` は「何も claim しない」空 manifest を生成）。
+/// `inputs`/`outputs` が両方 `None` の grant は conservative
+/// root manifest（`command_grant_resources`:419-429 同等 —
+/// 副作用を過大に見積もる fail-safe 側の宣言）。
 pub fn exec_grant_resources(
     policy: &ResolvedExecPolicy, name: &str,
 ) -> Result<ResourceManifestDeclaration, CheaperError>;
 ```
 
+**宣言 `inputs`/`outputs` は authoritative contract（#163
+declared-contracts 哲学）** — `!fixed` grant が `inputs`/`outputs`
+を宣言した場合、op declaration と catalog `Command` arm の
+resource claim は常時 root manifest から宣言範囲へ narrowing
+される。これらの field は operator が署名する「この grant はこの
+範囲でのみ使う」という authoritative な宣言契約であり、argv
+供給で宣言外 path へ write する分岐を runtime が bound・検査する
+機構ではない（内容審査除去後の declared-contract 規約 —
+underclaim の責任は宣言者側）。
+
 **writeScope coverage の確定分岐**（M4 — `prepare.rs:96-122` 移設）:
-`options.write_scope` が `Some` かつ grant が `outputs: None` の
-場合は coverage を証明不能（副作用が resource 層へ不可視 —
-C5）として `POLICY_VIOLATION` で fail-closed。`outputs: Some` は
-manifest normalize + `claim_contains` 検査（現行同一）。
+`outputs` の tri-state を `prepare_exec_grant` で以下の通り処理する
+（`exec_grant_resources`/`exec_operation_declaration` と同一の
+tri-state 規約 — `None` と `Some([])` は意味が異なる）:
+
+- `outputs: Some(paths)`（非空）— manifest normalize +
+  `claim_contains` 検査で `outputs ⊆ writeScope` を検査
+  （現行同一）。非対応なら `POLICY_VIOLATION`。
+- `outputs: Some([])` — 空 per-path manifest = 「副作用を
+  宣言しない」契約。coverage は trivially 成立し exec 可
+  （writeScope 下で副作用を起こさない grant として受理）。
+- `outputs: None`（未宣言）— `options.write_scope` が `Some`
+  のとき coverage を証明不能（副作用が resource 層へ不可視 —
+  C5）として `POLICY_VIOLATION` で fail-closed。
+  `options.write_scope` が `None` なら coverage 検査は不要で
+  通常実行（writeScope 制約なし — manifest 側は保守的 root
+  manifest を宣言）。
+
 `!fixed` grant は構築時 gate（(g)）で既に writeScope 下に到達
 不能のため到達しない（defense として分岐自体は残さない —
 unreachable state）。
@@ -700,7 +770,8 @@ unreachable state）。
 /// ClaimMode: `outputs: Some([])` → Shared、その他 → Exclusive
 /// （`None` = undeclared = 未知副作用を保守的に Exclusive —
 /// 現行 command の常時 Exclusive と process の outputs-empty
-/// 規則を単一規則へ写す、R2）。
+/// 規則を単一規則へ写す、R2 — `Some([])`/`Some(nonempty)`/`None`
+/// の tri-state は上記 manifest/writeScope と同一規約）。
 /// pool: `fixed` → `{"process", policy.process.max_concurrent}`、
 /// `!fixed` → `{"command", policy.command.max_concurrent}`（R3/D11）。
 /// `declaration.resources` は全 grant で設定（宣言 inputs/outputs
@@ -711,6 +782,29 @@ pub fn exec_operation_declaration(
     policy: &ResolvedExecPolicy, name: &str, fixed: bool,
 ) -> Result<OperationDeclaration, CheaperError>;
 ```
+
+**lifecycle/pool の意図的非対称（確定）** — `command.grants` で
+`fixed:true` を authoring した grant は、per-grant lifecycle
+field を **command section defaults** で畳み込む（authoring origin
+= `command` — synthesis で `command` resolver の defaults が適用
+される）一方、op declaration の pool と heartbeat は `fixed` flag
+で **process block** を引く（`{"process", policy.process.
+max_concurrent}`）。「lifecycle は authoring 起源の section
+defaults、pool/heartbeat は reach surface（`fixed` = process
+surface 経由の実行）」という意図的な非対称 — pool は surface
+経路の並行性 budget であり lifecycle は宣言位置の既定値なので
+分離は一貫する（単一化すると `command` section の heartbeat 設定
+が process 到達 grant へ漏れる等、budget 意味が変わる — D11）。
+
+**scheduler 相互作用（実装時検証 flag）** — fixed grant への
+per-path `declaration.resources` 付与は新規であり、
+`scheduler.rs:227-233`（`mutations == PerResource` かつ
+`declaration.resource_scoped || resources.is_some()` のとき
+snapshot 宣言へ `ClaimMode::Shared` demotion）との相互作用で、
+PerResource mode 下の fixed grant op が従来の `Exclusive` から
+snapshot ベース `Shared` へ demote される可能性がある。
+conflict/demotion 挙動の変化は実装時に `proc_*`・scheduler test
+で確認する（意図しない並行度変化を検出する回帰観点として記録）。
 
 ### (i) disjoint surface — `tools/command`・`tools/process` thin 化
 
@@ -751,7 +845,7 @@ OUTPUT_BYTES` の re-export path（`process/mod.rs:40-45`）を全て
 
 | site | lines（現行） | 変更 |
 |------|------------|------|
-| `invocation.rs` `InvocationToolRuntimeOptions` | :62-75 | `process`/`command` field → `exec: Option<Value>` 一本（`security` 不変） |
+| `invocation.rs` `InvocationToolRuntimeOptions` | :62-82 | `process`/`command` field → `exec: Option<Value>` 一本（`security` 不変） |
 | `invocation.rs` `InvocationInner` | （`inner.process`/`inner.command`/`inner.security`/`inner.exec_deny`） | `inner.exec: ResolvedExecPolicy` + `security`/`exec_deny` 不変 |
 | `invocation.rs` parity check | :228-260 | `options.runtime.exec` `Some` → `resolve_exec_policy(Some(raw), &inner.exec_deny)` → `inner.exec` と `PartialEq`、不一致は `invalid_binding("exec policy mismatch")`。caller 供給 exec の declared executable が inner deny に match した error は `InvalidRuntimePolicy`（`security` parity と同じ inner-code 規約）。**3 check（process/command/security）→ 2 check（exec/security）へ集約** |
 | `invocation.rs` scope 再注入 | :271-304 | `exec: Some(to_value(&inner.exec))` を runtime options へ再注入（`inner.security` と同型規約） |
@@ -761,7 +855,7 @@ OUTPUT_BYTES` の re-export path（`process/mod.rs:40-45`）を全て
 | `cli/workflow_run.rs` | :241-263 | `shared.policy.{process,command,security}` → `exec`+`security` の 2 serialize |
 | `cli/workflow_run.rs` | :506-511 | `process:None`/`command:None`/`security:None` → `exec:None`/`security:None`（parity skip + 再注入 — 同型） |
 | `cli/workflow_context.rs` | :224,:315-318 | `ToolCatalog::from_resolved_policy(policy.exec.clone())` |
-| `catalog.rs` | :42-43,:57-76,:587-597 | `ToolCatalog.policy: ResolvedExecPolicy`。`Process` arm — `input.task` → `resolve_exec_grant(fixed:true)` → `exec_grant_resources`（宣言 inputs/outputs → per-path、無ければ root fallback）。`Command` arm — `input.name` → `resolve_exec_grant(fixed:false)` → 同上（宣言があれば per-path — **input 非依存の root manifest 固定から input 依存解決へ**）。未知名・surface 不一致は `resolve_exec_grant` の `POLICY_VIOLATION` を伝播（Process arm の現行規約と同型） |
+| `catalog.rs` | :8-10,:42-43,:57-76,:363-364,:489-490,:587-597 | `ToolCatalog.policy: ResolvedExecPolicy`。`Process` arm — `input.task` → `resolve_exec_grant(fixed:true)` → `exec_grant_resources`（宣言 inputs/outputs → per-path、無ければ root fallback）。未知名・surface 不一致は `resolve_exec_grant` の `POLICY_VIOLATION` を伝播（現行規約不変 — `tool:"process"` job は inference 側の `named_task` 検査で literal 名を要求済み、`resource_inference.rs:131-138`）。`Command` arm — **`input.name` が literal string で `!fixed` grant へ resolve する場合のみ** `exec_grant_resources`（宣言 inputs/outputs → per-path、無ければ同関数内で root manifest）。非 literal（`{$input}` 等の dynamic binding で非 string）・未知名・`fixed` grant 一致は全て **input 非依存の root manifest fallback** に倒す（現行 `command_grant_resources`:419-429 と同値 — error を伝播しない。根拠は Risks「catalog `Command` arm」参照） |
 
 ### (l) signature 契約（変更後）
 
@@ -817,27 +911,28 @@ re-export path を `pub use cheaper_core::policy::exec::…` 経由で維持。
 | `capability.rs` | :86-118 | test literal `RuntimePolicy{…}` — `process:`/`command:` → `exec:` 形状へ |
 | `restrict.rs` | :110-150 | 同上（`restrict_policy` 本体は `..policy.clone()` で無変更） |
 | `merge.rs` | — | **不変** — merge は authoring 層の raw map 規約（`process.*`/`command.*` の RestrictConcurrency field 一覧は不変） |
-| `registry.rs` | :19-21,:97-108,:220-338,:633-643,:878-897,:1095-1238,:1298 | (g) 表の gate/pin/catalog/`ToolCtx`/options builder/dispatch 置換 |
+| `registry.rs` | :19-21,:57-59,:66-68,:97-108,:220-338,:633-643,:878-897,:1095-1238,:1316-1332 | (g) 表の gate/pin/catalog/`ToolCtx`/options builder/dispatch 置換（`:57-59` command・`:66-68` process の tool import も `tools::exec` 経由へ rename 追随） |
 | `invocation.rs` | :11-12,:62-82,:172,:229-304,:423-436 | (k) 表の options/parity/re-inject/resolve 置換 |
 | `catalog.rs` | :8-10,:42-43,:57-76,:363-364,:489-490,:587-597 | (k) 表の policy 型・arm 解決・`from_resolved_policy` 置換 |
 | `tools/command/mod.rs` | 全 file | thin surface 化 — pin/verify/check/authorize/`RouteCommandContext`/`CheckedExec`/`grant_violation`/`CommandToolOptions` を `tools/exec` へ移設、module は schema/details/description/`command_tool_definition(ExecToolOptions)`/`execute` glue（`check_exec_execution` → `ProcPrepared` → `proc::run` + route context 合成 :516-521）を保持 |
 | `tools/process/mod.rs` | 全 file | thin surface 化 — `resolve_process_task` 参照を `resolve_exec_grant(fixed:true)` へ、`prepare` を `prepare_exec_grant` へ、`ProcessToolOptions` を `ExecToolOptions` へ。`process_operation_declaration`→`exec_operation_declaration`。re-export 群（:40-45）は path 維持 |
 | `tools/process/prepare.rs` | 全 file | `tools/exec/prepare.rs` へ移設・`prepare_exec_grant` へ汎化（`options.write_scope`/`denylist` は `ExecToolOptions` field 参照） |
 | `cli/run.rs` | :178-217 | **不変** — `build_invocation_layer` は `command.grants` authoring layer を合成し続ける（warning 文言も不変 — `--grant` は `!fixed` grant として `command` surface 到達） |
-| `cli/grant.rs` | :44-104 | **不変** — 合成 layer shape `{"version":1,"command":{"grants":{…}}}` は authoring surface（新 optional field `fixed`/`inputs`/`outputs`/`scope` は schema 経由で素通し）。module doc に unified model 参照を追記 |
-| `cli/policy.rs` | :118-172,:254-282 | code 変更不要 — `write_validated` の `validate_policy_schema(Partial)` が unified collision + deny を発火するため `policy grant add` 時点で `command.grants`×`process.tasks` 衝突が `InvalidRuntimePolicy` になる新規挙動（module doc :5-15 の検査列挙へ追記） |
+| `cli/grant.rs` | :44-104 | `build_invocation_layer` に grant spec の `fixed`/`scope` key reject を追加（`InvalidRequest` + `details.{layer:"invocation",grant}` — `--grant` は `!fixed`+`scope:"trusted"` 合成に限定。`fixed:true` は `command` surface・route 双方に不可視で `--grant` の意図と矛盾する inert grant、`scope:"project"` も route 不可視で誤解を招くため、CLI 契約として spec 挿入点で拒否）。module doc に unified model 参照を追記 |
+| `cli/policy.rs` | :118-172,:189-205,:254-282 | `write_validated` の `validate_policy_schema(Partial)` が unified collision + deny を発火するため `policy grant add` 時点で `command.grants`×`process.tasks` 衝突が `InvalidRuntimePolicy` になる新規挙動（module doc :5-15 の検査列挙へ追記）。併せて `parse_grant_spec`（:189-205 — 既存 `name` key reject と同じ CLI 入口 validation）に `fixed`/`scope` key reject を追加 — `validate_policy_schema` は layer 非依存で `policy grant add` 由来 spec を識別不能（trusted YAML の `fixed:true`/`scope` 宣言は合法 field のため schema 側で拒否不可） |
 | `cli/workflow_run.rs` | :241-263,:440-560,:506-511,:753 | (k) 表の exec options 置換。`ToolJobExecutor` の `ToolName::from_canonical("process")`/`tools.allow` admission（:458-476,:604-621）は **不変**（M5 — `tool:"process"` は canonical 名で到達） |
 | `cli/workflow_context.rs` | :224,:315-318 | `ToolCatalog::from_resolved_policy(policy.exec.clone())` |
 | `route/supply.rs` | :23,:29-53,:92-134 | `ExecPolicyView`/`exec_view()` 改名 + `policy.exec` 参照 |
-| `route/resolve.rs` | :9-16,:49-82,:291,:310-343,:357-… | `ExecPolicyView`・`argv_shell_re` import を `policy::exec` へ・eligibility 追加・`pin_exec_grant`/`check_exec_execution`/`ExecToolOptions`・test literal |
+| `route/resolve.rs` | :10-17,:49-82,:291,:310-343,:357-… | `ExecPolicyView`・`argv_shell_re` import を `policy::exec` へ・eligibility 追加・`pin_exec_grant`/`check_exec_execution`/`ExecToolOptions`・test literal |
 | `route/run.rs` | :121-123,:176,:356-364 | `policy.exec` 参照（`expected_input` 不変） |
+| `route_cmd.rs` | :96,:101 | `supply.command_view()` → `exec_view()`・`ResolveInput{command_policy}` → `exec_policy`（rename 追随のみ — resolve 呼出し構造は不変） |
 | `hook/routing_policy.rs` | :140-142,:1467,:2055-2106 | `RouteEvalInput.exec_policy` field 名・型追随 + test literal |
 | `runtime/run/mod.rs` | :335-344,:487-500 | `exec:` options field 一本化（`security` 同型維持） |
-| `runtime/dev/fixture.rs` | :58-65,:225-231,:759-800 | `RuntimePolicy` literal `exec:` 形状（`default_policy()` の 2 section literal → `exec` literal） |
-| `runtime/run_dev_seam.rs` | :177-216,:1046-1252 | `RuntimePolicy` literal `exec:` + `p.exec.grants.insert(name, fixed-grant)` への test 置換（`p.process.tasks.insert` 経路の置き換え） |
+| `runtime/dev/fixture.rs` | :58-65,:225-231,:759-817 | `RuntimePolicy` literal `exec:` 形状（`default_policy()` の 2 section literal → `exec` literal） |
+| `runtime/run_dev_seam.rs` | :178-219,:1046-1252 | `RuntimePolicy` literal `exec:` + `p.exec.grants.insert(name, fixed-grant)` への test 置換（`p.process.tasks.insert` 経路の置き換え） |
 | `workflow/` | `schema.rs`:259-291,`types.rs`:249-303,`compiler.rs`:439,`resource_inference.rs`:123-180,`engine.rs`:374 | **code 不変** — `ports.tools.get("process")`・`item.job.name=="process"`・`ProcessResourceDeclaration`・`known_process`・`tools::process::find_cheaper_error` re-export は全て M5 で維持（回帰確認のみ — `tools.get("process").resources({"task":…})` が unified catalog 経由で動く） |
 | `rig-adapter` | `tools.rs`:58,`tests/adapter.rs`:319-320,:599-642 | `tools::process::find_cheaper_error` re-export で import 不変。test literal の `ToolRuntimeOptions{process:None,command:None}` → `exec:None` |
-| `benchmarks` | `scenarios.json`:190-305,`lib/cli.mjs`:58-70 | **不変** — `processPolicy`（project `process.tasks` authoring）+ `tool:"process"` + `input.task:"emit"` は M5 で維持（無改訂で動く回帰 AC） |
+| `benchmarks` | `scenarios/scenarios.json`:190-305,`lib/cli.mjs`:58-70 | **不変** — `processPolicy`（project `process.tasks` authoring）+ `tool:"process"` + `input.task:"emit"` は M5 で維持（無改訂で動く回帰 AC） |
 
 ### (n) error 契約
 
@@ -846,8 +941,8 @@ re-export path を `pub use cheaper_core::policy::exec::…` 経由で維持。
 | `command.grants`×`process.tasks` 同名 | `InvalidRuntimePolicy` | `"invalid exec policy: grant name collides between command.grants and process.tasks"` + `details.{grant,task}`（両方に衝突名） | `build_exec_input` — `validate_policy_schema`（全 mode）・`load_policy` normalize・`policy grant add` `write_validated` で同一 failure |
 | project task 名が trusted task 名を shadow | —（error なし） | 従来 deep-merge 規約（merged spec → `scope:"project"`） | `merge_policy_layers` + 段 2 scope stamp |
 | route grant 参照が `scope=="project"`/`fixed`/不在 | `Viability::NoGrant`（enum — error ではない）→ route run では `denied("no-grant")` | eligibility predicate 不成立 | `route/resolve.rs` precheck + `project_grant` 内の eligibility 二重防御 |
-| `command` surface が `fixed` grant 名を指定 | `PolicyViolation` | `"unknown or unauthorized command grant"` + `details.grant` | `resolve_exec_grant(fixed:false)` — tool execute・catalog resources・`check_exec_execution` |
-| `process` surface が `!fixed` grant 名を指定 | `PolicyViolation` | `"unknown or unauthorized process task"` + `details.task` | `resolve_exec_grant(fixed:true)` — 同上 |
+| `command` surface が `fixed` grant 名を指定 | `PolicyViolation` | `"unknown or unauthorized command grant"` + `details.grant` | `resolve_exec_grant(fixed:false)` — tool execute・`check_exec_execution`（catalog `Command` arm は root manifest fallback で error を伝播しない — §(k)） |
+| `process` surface が `!fixed` grant 名を指定 | `PolicyViolation` | `"unknown or unauthorized process task"` + `details.task` | `resolve_exec_grant(fixed:true)` — tool execute・catalog `Process` arm resources（現行規約不変） |
 | `process` surface の extra key（`args` 等） | schema reject | `process_schema` `additionalProperties:false`（不変 — M2 「`{name}` のみ」は input schema で強制） | catalog `validateToolInput` |
 | declared deny（全 grant 一律 — task 由来含む） | `InvalidRuntimePolicy` | `"invalid exec policy: executable is denied by security.execDenyPatterns"` + `details.{grant,executable}`（fixed は `details.task` 併記） | `resolve_exec_policy` 適用点 1 — load/`validate_policy_schema`/`policy grant add` 全入口 |
 | resolved/spawn deny | `PolicyViolation` | `exec grant "{name}": resolved executable is denied by security.execDenyPatterns` + `details.grant` | `pin_exec_grant`（適用点 2）/`verify_pinned_executable`（適用点 3） |
@@ -945,7 +1040,10 @@ RuntimePolicy.exec ── to_value ──→ ToolRuntimeOptions.exec /
   変更は (a) cross-section collision fail-loud、(b) deny の task
   executable 拡大適用、(c) task executable の構築時 pin
   fail-closed 化、(d) `RuntimePolicy` serialized 形状（内部
-  wire）に限定（spec R11 — migration guide は issue 7 対象）。
+  wire）、(e) `degradable` 宣言 `Command` surface の pin 失敗が
+  縮退へ変わる（現行は無条件 hard fail — opt-in 宣言時のみ差分、
+  (g) の uniform 規則による意図的 semantics 拡張）に限定
+  （spec R11 — migration guide は issue 7 対象）。
 - **re-export path 維持** — `tools::process::find_cheaper_error`/
   `OnTimeout`/`StreamCaptureResult`/`MAX_PROCESS_OUTPUT_BYTES`・
   `tools::process::{executable,tree}`（`process/mod.rs:40-45`）は
@@ -960,6 +1058,17 @@ RuntimePolicy.exec ── to_value ──→ ToolRuntimeOptions.exec /
   `validate_policy_schema`・`policy grant add` の全入口で同一
   failure を観測できるよう段 2（`build_exec_input`）に置く。
   `details.{grant,task}` で両宣言位置を attribution（spec R4）。
+- **cross-layer collision の fail 面** — collision は merged 後の
+  単一 map で評価されるため、trusted `command.grants.x` ×
+  project `process.tasks.x` の cross-layer 同名でも
+  `InvalidRuntimePolicy` で落ちる。project layer 単体では valid
+  な policy が、project 側から見えない trusted 層の grant 名と
+  衝突して load fail し得る（silent shadow を許さない意図的な
+  fail-loud — 衝突名の明示で operator が rename 可能）。
+  `details.{grant,task}` が echo するのは衝突名のみで、trusted
+  側の宣言内容（executable 等）は漏れない — project author が
+  既に知っている自前の名のみが返るため情報露出は生じない
+  （accepted surface）。
 - **deny の task 拡大適用（意図的強化）** — opt-in
   `execDenyPatterns` を持つ operator は denied task executable で
   policy load が fail し得る。#164 の task 除外を統合で吸収する
@@ -970,21 +1079,40 @@ RuntimePolicy.exec ── to_value ──→ ToolRuntimeOptions.exec /
   （`prepare.rs:127-136`）から構築時 pin へ。unresolvable task は
   per-call error → 構築 error/degrade へ変わる回帰的強化だが、
   B1/B2 との整合・pin 機構の単一化として受容（degradable
-  宣言時は縮退 — (g) の uniform 規則。Command 側で degradable
-  宣言 + pin fail が縮退になる軽微な挙動差分を含む — 要
-  reviewer 確認）。
+  宣言時は縮退 — (g) の uniform 規則）。**確定した意図的拡張**:
+  `degradable` 宣言 tool の pin fail が縮退になる規則は
+  Command surface にも適用する（現行は degradable に関わらず
+  無条件 hard fail — `registry.rs:1225-1234`）— spec R7/AC/R11
+  に両 surface 適用として明文化済み、破壊的変更 R11-(e) として
+  登録。非 opt-in worker の挙動は不変。
 - **exec-doc 形状の二重入口** — `resolve_exec_policy` は
   serialized resolved shape と同一 input shape を受理するため、
   authoring section を direct 投入する誤用を
   `additionalProperties:false` + defaults block への
   `grants`/`tasks` 混入 reject で fail-loud に防ぐ
   （段 2 経由を構造的に強制）。
-- **catalog `Command` arm の input 依存化** — 現行は input 非依存
-  の root manifest 固定（`catalog.rs:75`）だが、宣言
-  `inputs`/`outputs` を持つ `!fixed` grant の per-path 化のため
-  `input.name` 解決へ変更。未知名は `POLICY_VIOLATION` を伝播
-  （Process arm の現行規約と同型 — resource inference で unknown
-  grant 名を持つ workflow は fail-loud 化。到達不能経路と判断）。
+- **catalog `Command` arm の条件付き input 解決** — 現行は input
+  非依存の root manifest 固定（`catalog.rs:75`）。宣言
+  `inputs`/`outputs` を持つ `!fixed` grant の per-path 化のため、
+  `input.name` が **literal string で `!fixed` grant へ resolve
+  する場合のみ** `exec_grant_resources` へ委譲し、それ以外
+  （`{$input}` 等 dynamic binding の非 string 名・未知名・`fixed`
+  grant 一致）は root manifest へ fallback する。error を伝播
+  しない選択の根拠: (a) `create_tool_catalog(None)` の空 catalog
+  上で `tool:"command"` job が root manifest を期待する現行契約
+  （`cheaper-workflow/tests/filesystem_contracts/
+  resource_inference.rs:496-586` が到達）を保存、
+  (b) workflow の `input.name` は inference 時点で binding 未解決
+  になり得る（generic path は `resources(&job.input)?` で error
+  伝播するため fail-loud は `{$input}` 使用 workflow を破壊する）、
+  (c) literal 未知名に対しても root manifest は sound な overclaim
+  であり fail-safe — 実 authorization は実行時
+  `resolve_exec_grant` が担保するため、inference 層での
+  `POLICY_VIOLATION` は false positive を生むだけ（認可境界を
+  緩めない保守側の選択）。Process arm との非対称（同 arm は
+  error 伝播）は意図的 — `tool:"process"` は inference 側
+  `named_task` 検査が literal 名を既に要求しており規約を変え
+  ない（`resource_inference.rs:131-138`）。
 - **serialized shape churn** — `RuntimePolicy` の
   `process`/`command` → `exec` で golden fixture・options
   field・`InvocationInner`・route view・catalog が一括 churn
@@ -1017,40 +1145,75 @@ RuntimePolicy.exec ── to_value ──→ ToolRuntimeOptions.exec /
   `RuntimePolicy` 出力が `{"exec":{grants,command,process}}` 形状へ
   変わる（再採取）。`policy/merge.json` は raw map merge のため
   変更不要（collision case を追加してよい）。`policy/workflow.json`
-  は `process`/`command` 参照なしで不変。
+  は `process`/`command` 参照なしで不変。driver
+  `tests/golden/policy_process.rs`（:1-3,:17,:26,:31 —
+  `resolve_process_task`/`process_task_resources`/
+  `resolve_process_policy` を呼ぶ）は
+  `resolve_exec_grant`/`exec_grant_resources`/`resolve_exec_policy`
+  の unified op へ書き換え（fixture case の op 名は維持可 —
+  driver 側で unified 呼出しへ写像）。
 - **tools** — `tools/exec/{mod,prepare}.rs` 新設。
   `registry.rs`（options/gate/pin/`ToolCtx`/builder/dispatch/
-  literal :1298）。`invocation.rs`（options/inner/parity/re-inject/
-  resolve）。`catalog.rs`（policy 型・2 arm・`from_resolved_policy`）。
-  `tools/command/mod.rs`・`tools/process/mod.rs` thin 化。
-  `tools/process/prepare.rs` → `tools/exec/prepare.rs`。
+  literal :1316-1332）。`invocation.rs`（options/inner/parity/
+  re-inject/resolve）。`catalog.rs`（policy 型・2 arm・
+  `from_resolved_policy`）。`tools/command/mod.rs`・
+  `tools/process/mod.rs` thin 化。`tools/process/prepare.rs` →
+  `tools/exec/prepare.rs`。`tools/process/tests.rs`（:15-37 の
+  `process_operation_declaration`/`resolve_process_policy` →
+  `exec_operation_declaration`/`resolve_exec_policy`、:64-75 の
+  `resolve_process_policy`/`ProcessToolOptions` →
+  `resolve_exec_policy`/`ExecToolOptions`）。
   test: `proc_command.rs`・`proc_process.rs`・`proc_invocation.rs`・
   `proc_runtime.rs`・`proc_degrade.rs`・`characterization.rs`・
   `differential.rs`（`ToolRuntimeOptions{process,command}` →
   `exec`・`ResolvedProcessPolicy`/`ResolvedCommandPolicy` literal →
   `ResolvedExecPolicy`・`resolve_command_policy` test 呼出し →
-  exec resolver 経由）。
-- **cli** — `route/resolve.rs`(:9-16,:49-82,:310-343,:357-…・
+  exec resolver 経由）。**fixture harness seam（確定）**:
+  `differential.rs::runtime_options`（:646-698）の
+  `spec.process`（authoring shape）→ `build_exec_input` →
+  `resolve_exec_policy` → `to_value` → `options.exec` 変換を
+  harness 内に追加する。`tests/fixtures/process.json`/
+  `runtime.json` は **不変** — authoring-shaped `runtime.process`
+  spec を fixture rewrite なしで受理し、synthesis 経路自体を
+  fixture 全 case で回帰させる（`options.exec` の exec-shaped
+  境界契約を壊さず、production `to_value(&policy.exec)` と同じ
+  材料を供給する選択 — fixture を exec 形状へ rewrite する案は
+  ~60 spec block の機械的 churn + authoring 経路 coverage 喪失の
+  ため不採用）。
+- **cli** — `route/resolve.rs`(:10-17,:49-82,:310-343,:357-…・
   view/test)・`route/supply.rs`(:23,:45-53,:126)・
-  `route/run.rs`(:121,:176,:356-364)・`hook/routing_policy.rs`
-  (:140-142,:1467,:2055-2106)・`workflow_run.rs`(:241-263,
-  :499-529,:753)・`workflow_context.rs`(:224,:315-318)・
-  `policy.rs`(module doc :5-15)・`grant.rs`(module doc :1-7)。
+  `route/run.rs`(:121,:176,:356-364)・`route_cmd.rs`
+  (`supply.command_view()` :96 → `exec_view()`・
+  `ResolveInput{command_policy}` :101 → `exec_policy` — rename
+  追随のみ)・`hook/routing_policy.rs`(:140-142,:1467,:2055-2106)・
+  `workflow_run.rs`(:241-263,:499-529,:753)・
+  `workflow_context.rs`(:224,:315-318)・
+  `policy.rs`(module doc :5-15 + `parse_grant_spec` :189-205 の
+  `fixed`/`scope` reject — §(m) 参照)・
+  `grant.rs`(module doc :1-7 + `build_invocation_layer` :49-104 の
+  `fixed`/`scope` reject — §(m) 参照)。
 - **runtime** — `run/mod.rs`(:337-344,:496-500)・
-  `dev/fixture.rs`(:58-65,:759-800)・`tests/run_dev_seam.rs`
-  (:177-216,:1046-1252 — `p.process.tasks.insert` →
+  `dev/fixture.rs`(:58-65,:759-817)・`tests/run_dev_seam.rs`
+  (:178-219,:1046-1252 — `p.process.tasks.insert` →
   `p.exec.grants.insert`)・`tests/ollama_e2e.rs`(:219 付近
   literal)。
 - **workflow / rig-adapter** — `cheaper-workflow` src は code
   不変（M5）。test: `tests/process.rs`(:32-,:108-)・
   `filesystem_contracts/artifacts.rs`(:69-,:102-) の
-  `ToolRuntimeOptions`/`InvocationToolRuntimeOptions` literal。
+  `ToolRuntimeOptions`/`InvocationToolRuntimeOptions` literal・
+  `filesystem_contracts/resource_inference.rs` — `Command` arm の
+  条件付き解決を pin する case 追加（literal 名 + 宣言
+  inputs/outputs を持つ `!fixed` grant → per-path、非 literal・
+  未知名・`fixed` 名 → root manifest fallback。
+  `:496-586` の既存 case は空 catalog + literal 名で fallback
+  を既に pin 済み — 回帰維持）。
   `rig-adapter/tests/adapter.rs`(:319-320) 同 literal。
 - **cli integration** — `tests/integration/policy.rs`（collision
   case 追加 — `command.grants`×`process.tasks` 同名 add が
-  `InvalidRuntimePolicy`）・`tests/integration/route_run.rs`・
-  `tests/integration/run.rs`（`--grant` 経路は authoring 不変で
-  回帰確認）。
+  `InvalidRuntimePolicy` + `parse_grant_spec` の `fixed`/`scope`
+  reject）・`tests/integration/route_run.rs`・
+  `tests/integration/run.rs`（`--grant` 経路 — `fixed:true`/`scope`
+  宣言値の reject 回帰を含む）。
 
 ## Docs 更新契約
 
@@ -1078,7 +1241,11 @@ RuntimePolicy.exec ── to_value ──→ ToolRuntimeOptions.exec /
   追加制約は入れない）。
 - `docs/guides/usage.md` — `policy grant` CLI 節に collision
   制約（`process.tasks` と同名の grant は add 時点で
-  `InvalidRuntimePolicy`）を追記。
+  `InvalidRuntimePolicy`）と、spec への `fixed`/`scope` 宣言が
+  `policy grant add`・`--grant` 両入口で `InvalidRequest` reject
+  されること（これら CLI は `!fixed`+`scope:"trusted"` の
+  command grant 供給専用 — fixed grant は YAML 直接 authoring）
+  を追記。
 - `docs/guides/workflow-usage.md` — `tool:"process"` job が
   `input.task` → `fixed` grant 名解決の compat alias として
   不変で動くこと（`tools.allow` への `process` literal・
@@ -1087,7 +1254,13 @@ RuntimePolicy.exec ── to_value ──→ ToolRuntimeOptions.exec /
   「writeScope 下では `outputs ⊆ writeScope` の fixed grant のみ
   exec 可、`!fixed`（argv 供給）grant は構築時
   `POLICY_VIOLATION`」の規則を明記（現行 process writeScope
-  記述を unified 用語へ）。
+  記述を unified 用語へ）。併せて `optionalTools` 節へ
+  「degradable 宣言された exec surface tool（`process`/`command`）
+  は、surface に到達可能な grant の executable pin 失敗時も
+  scope 構築を error にせず当該 tool のみ未登録へ縮退する」
+  ことを明記する（pin-fail×degradable の両 surface 適用 —
+  `command` は opt-in 宣言時の新規挙動、現行は無条件
+  `POLICY_VIOLATION`）。
 - `crates/cheaper-cli/resources/policy.yaml` — authoring surface
   不変のため節構成は変更しない（`process:`/`command:` 節を
   そのまま保持 — 無改訂が正しい状態）。`security` 節の comment
@@ -1153,24 +1326,33 @@ test 計画（spec Acceptance Criteria への対応）:
   の維持。
 - [ ] **`tool:"process"` workflow** — `{"kind":"tool",
   "tool":"process","input":{"task":…}}` を持つ既存 workflow が
-  `UnknownTool` なしで動く（`benchmarks/scenarios.json` の
-  `processPolicy` scenario・`cheaper-workflow/tests/process.rs`
+  `UnknownTool` なしで動く（`benchmarks/scenarios/scenarios.json`
+  の `processPolicy` scenario・`cheaper-workflow/tests/process.rs`
   回帰 — M5 AC）。
 - [ ] **deny uniform** — `execDenyPatterns` match の task
   executable が policy load で `InvalidRuntimePolicy`
   （declared）、pin・spawn 前再検証も全 grant へ効く（exec.rs +
   `proc_*` test。適用点 1-3）。
 - [ ] **task pin** — unresolvable task executable の scope が
-  構築時 `POLICY_VIOLATION`（degradable 宣言時は `Process`
-  縮退）。task pin 後の PATH 差替えが spawn 前
-  `verify_pinned_executable` で拒否される。
+  構築時 `POLICY_VIOLATION`（当該 surface tool が degradable
+  宣言時は縮退 — `Process` と `Command` の両 surface で同規則、
+  `proc_degrade.rs` で Command 側縮退も pin）。task pin 後の
+  PATH 差替えが spawn 前 `verify_pinned_executable` で拒否される。
+- [ ] **catalog `Command` arm** — literal 名 + 宣言
+  `inputs`/`outputs` を持つ `!fixed` grant で per-path manifest、
+  非 literal 名・未知名・`fixed` 名で root manifest fallback
+  （error 非伝播）を `resource_inference.rs` で pin（§(k) の
+  条件付き解決 — 既存 `:496-586` case の回帰維持）。
 - [ ] **invocation parity** — `to_value(&policy.exec)` →
   `resolve_exec_policy` → `PartialEq` が成立（`proc_invocation.rs`
   — `options.exec`→`inner.exec` round-trip）。
 - [ ] **`--grant`/`policy grant`** — invocation 合成 grant が
   `!fixed`+`scope:"trusted"` で `command` surface 到達・collision
-  規則が `policy grant add` で発火（`grant.rs`/`policy.rs`/
-  integration test 回帰）。
+  規則が `policy grant add` で発火・`fixed:true`/明示 `scope`
+  宣言 spec が `--grant`（`build_invocation_layer`）と
+  `policy grant add`（`parse_grant_spec`）の両入口で
+  `InvalidRequest` reject（`grant.rs`/`policy.rs`/integration
+  test 回帰）。
 - [ ] **既存契約 test 回帰** — pin・env_clear・stdin null・
   process group・lifecycle（timeout/kill grace/heartbeat）・
   exit code 契約・fs boundary・denylist・writeScope が全て
