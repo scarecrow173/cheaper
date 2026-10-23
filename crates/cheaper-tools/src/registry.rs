@@ -1201,10 +1201,10 @@ pub fn create_tool_runtime(
     };
     // per-scope executable pin(design §(b)/(g)) — `names` に
     // `Command` を含む場合のみ、その時点の ambient PATH で grant
-    // executable を canonical path へ pin する。pin 不能・deny 該当・
-    // workspace-resident の grant は runtime 構築自体を
-    // `POLICY_VIOLATION` で fail させる。`Command` を expose しない
-    // runtime は pin を試行せず dormant とする。
+    // executable を canonical path へ pin する。pin 不能の grant は
+    // runtime 構築自体を `POLICY_VIOLATION` で fail させる。
+    // `Command` を expose しない runtime は pin を試行せず dormant
+    // とする。
     let command_pins = if names.contains(&ToolName::Command) {
         pin_command_grants(
             &command,

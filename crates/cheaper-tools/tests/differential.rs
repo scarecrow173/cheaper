@@ -6,12 +6,11 @@
 //! (`ToolRuntimeOptions` spec)または `tool`(tool-level 実行 + cap 注入)、
 //! `ops`(call / `parallel` / effect `ready|abort-runtime|abort-scope|drain|
 //! touch`)、`expected`/`state`(scrub 済み `<ROOT>`/`<OUT>`/`<BASE>` token)。
-//! `expectRust` は設計固定ルールの divergence(bare `node` の
-//! POLICY_VIOLATION、tiktoken-rs tokenizer identity)を pin する sparse
+//! `expectRust` は設計固定ルールの divergence(tiktoken-rs tokenizer
+//! identity)を pin する sparse
 //! override(`ops`: op index → expected entry、`state`: deep-merge patch)。
 //!
-//! process fixture は `node -e` を使えない(設計固定ルール: Rust は `node`
-//! を PATH 解決しない)ため、`<NODE>` task は `src/bin/diff_fixture_child`
+//! process fixture の `<NODE>` task は `src/bin/diff_fixture_child`
 //! (libtest banner を含まない clean stdout の bin target)へ翻訳する。
 //! grep eval は `proc_runtime.rs` と同じく `CHEAPER_GREP_EVAL` marker
 //! 付き re-exec。
@@ -609,8 +608,8 @@ fn denylist_of(spec: &Value) -> Option<PathDenylist> {
 
 /// `<NODE>` task を fixture child re-exec へ翻訳する
 /// (`command[0]=="<NODE>"` → `[diff_fixture_child bin, ...payload]` +
-/// `CHEAPER_DIFF_CHILD_MODE` env 注入)。
-/// bare `node` は expectRust pin で意図的 divergence として残す。
+/// `CHEAPER_DIFF_CHILD_MODE` env 注入)。literal `node` task は ambient
+/// PATH の実 `node` へ解決されるため翻訳対象外。
 fn translate_process_spec(spec: &mut Value) {
     let Some(tasks) = spec.get_mut("tasks").and_then(Value::as_object_mut) else {
         return;

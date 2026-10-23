@@ -3,18 +3,12 @@
 //! native argv0 解決だけを所有し、shell・PATH 子 env・任意 spawn API は
 //! 提供しない。FS アクセスは `std::fs` 同期実装(walker 確立パターン)。
 //!
-//! 設計固定ルール差分: TS は `command === "node"` かつ
-//! `basename(execPath) ≈ node` の時に `process.execPath` を native 候補と
-//! して使う fast-path を持つが、Rust binary に等価物が無い。Rust 側は
-//! bare `node` を PATH 解決せず `POLICY_VIOLATION` の明示 error に
-//! 置き換える(`docs/designs/rust-rig-runtime-migration-architecture.md`
-//! §tool 移植の固定ルール)。
-
-use std::io::Read;
+//! executable の内容は審査しない — spawn viability(realpath・
+//! is_file・win32 `.exe`/`.com`・X_OK)のみを判定し、bare `node` を
+//! 含む任意名は通常の PATH 解決経路を通る。
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::nodepath;
-use cheaper_core::policy::process::is_shell_process_executable;
 use cheaper_core::workspace::deny_paths::PathDenylist;
 use cheaper_core::workspace::paths::{realpath, resolve_workspace_path, SymlinkPolicy};
 
@@ -35,9 +29,7 @@ pub struct ProcessExecutableOptions<'a> {
 fn unsupported(subject: &str) -> CheaperError {
     CheaperError::new(
         ErrorCode::PolicyViolation,
-        format!(
-            "{subject} requires a supported native executable; shell and script shims are unsupported"
-        ),
+        format!("{subject} could not be resolved to a spawnable executable"),
     )
 }
 
@@ -69,29 +61,11 @@ fn x_ok(resolved: &str) -> bool {
     }
 }
 
-/// 4-byte magic 検査(MZ/ELF/Mach-O 系)。TS は partial read を zero-fill で
-/// 判定するため、同じく zero-init buffer に読み込む。
-fn native_magic_supported(header: &[u8; 4]) -> bool {
-    let hex: String = header.iter().map(|b| format!("{b:02x}")).collect();
-    if cfg!(windows) {
-        return hex.starts_with("4d5a");
-    }
-    hex == "7f454c46"
-        || (cfg!(target_os = "macos")
-            && [
-                "feedface", "feedfacf", "cefaedfe", "cffaedfe", "cafebabe", "bebafeca", "cafebabf",
-                "bfbafeca",
-            ]
-            .contains(&hex.as_str()))
-}
-
-/// `native(candidate)`: realpath → shell/shim → isFile → win32 .exe/.com →
-/// X_OK → native magic。どれか一つでも不成立なら `None`(fail closed)。
+/// `native(candidate)`: spawn viability 判定 — realpath → isFile →
+/// win32 .exe/.com → X_OK。どれか一つでも不成立なら `None`
+/// (fail closed)。
 fn native(candidate: &str) -> Option<String> {
     let resolved = realpath(candidate).ok()?;
-    if is_shell_process_executable(&resolved) {
-        return None;
-    }
     let meta = std::fs::metadata(&resolved).ok()?;
     if !meta.is_file() {
         return None;
@@ -105,44 +79,32 @@ fn native(candidate: &str) -> Option<String> {
     if !x_ok(&resolved) {
         return None;
     }
-    // executable text を execvp/kernel の interpreter fallback へ渡さない。
-    let mut file = std::fs::File::open(&resolved).ok()?;
-    let mut header = [0u8; 4];
-    let _ = file.read(&mut header); // partial read → 残り zero-fill(TS parity)
-    if native_magic_supported(&header) {
-        Some(resolved)
-    } else {
-        None
-    }
+    Some(resolved)
 }
 
 /// pin 済み executable の spawn 前再検証用 `native()` wrapper
 /// (design §(b) — `command` grant の pin path 差替え fail-closed)。
-/// `native()` の candidate 検証(realpath → shell/shim → is_file →
-/// win32 ext → X_OK → native magic)を再適用し、resolved canonical
-/// path を返す。不成立なら `None`(fail closed)。
+/// `native()` の spawn viability 検証(realpath → is_file → win32
+/// ext → X_OK)を再適用し、resolved canonical path を返す。
+/// 不成立なら `None`(fail closed)。
 pub(crate) fn native_executable(candidate: &str) -> Option<String> {
     native(candidate)
 }
 
-/// `resolveProcessExecutable`。bare `node` は Rust 版で host Node が
-/// 存在しないため PATH 解決せず明示 `POLICY_VIOLATION` error(固定ルール)。
-/// PATH 上に実在する `node.exe` があっても解決しない。
+/// `resolveProcessExecutable`。declared executable を workspace-
+/// relative path / absolute path / ambient PATH の順で spawn viability
+/// 判定へ解決する。executable 名・内容は審査しない — 解決不能のみ
+/// `POLICY_VIOLATION`。
 ///
 /// `subject` は error message の宣言種別 label(`"process"` →
-/// `"process requires a supported native executable..."`・
-/// `"process task \"node\" is unsupported..."`)。`process` 経路は
-/// `"process"` を渡して従来 message を維持し、`command` 経路(T3)は
-/// grant 文脈の label を渡して `"process task"` を出さないようにする
-/// (design §(b))。
+/// `"process could not be resolved to a spawnable executable"`)。
+/// `process` 経路は `"process"` を渡し、`command` 経路(T3)は
+/// grant 文脈の label を渡す(design §(b))。
 pub fn resolve_process_executable(
     command: &str,
     options: &ProcessExecutableOptions<'_>,
     subject: &str,
 ) -> Result<String, ToolError> {
-    if is_shell_process_executable(command) {
-        return Err(unsupported(subject).into());
-    }
     if command.contains('/') || command.contains('\\') || nodepath::is_absolute(command) {
         let candidate = if nodepath::is_absolute(command) {
             command.to_string()
@@ -159,17 +121,6 @@ pub fn resolve_process_executable(
             Some(found) => Ok(found),
             None => Err(unsupported(subject).into()),
         };
-    }
-    // 設計固定ルール: `process.execPath` fast-path の等価物なし。`node` は
-    // PATH 解決しない(候補探索の前に明示 error)。
-    if command == "node" {
-        return Err(CheaperError::new(
-            ErrorCode::PolicyViolation,
-            format!(
-                "{subject} task \"node\" is unsupported: the Rust runtime has no Node.js host executable"
-            ),
-        )
-        .into());
     }
     let candidates: Vec<String> = if cfg!(windows) && nodepath::extname(command).is_empty() {
         vec![format!("{command}.exe"), format!("{command}.com")]
@@ -243,7 +194,9 @@ mod tests {
         }
     }
 
-    fn native_bytes() -> Vec<u8> {
+    /// 実在 executable file の fixture bytes — 内容は検査対象では
+    /// なく、file の実在性と実行 bit だけが意味を持つ。
+    fn executable_file_bytes() -> Vec<u8> {
         if cfg!(windows) {
             b"MZbinary".to_vec()
         } else {
@@ -266,56 +219,57 @@ mod tests {
     }
 
     #[test]
-    fn bare_node_is_an_explicit_policy_violation() {
+    fn bare_node_resolves_via_search_path() {
         let dir = TempDir::new();
         let root = dir.root();
-        // PATH 上に実在する node.exe があっても解決しない(固定ルール)。
+        // bare `node` は通常の PATH 解決経路を通る — `search_path` 上の
+        // 実在 file が解決される。
         let bin_dir = dir.join("bin");
         std::fs::create_dir_all(&bin_dir).unwrap();
         let node = bin_dir.join(if cfg!(windows) { "node.exe" } else { "node" });
-        write(&node, &native_bytes());
+        write(&node, &executable_file_bytes());
         set_executable(&node);
-        for search_path in [
-            Some(""),
-            Some(bin_dir.to_str().unwrap()),
-            None, // 親 PATH 継承でも拒否
-        ] {
-            let opts = ProcessExecutableOptions {
-                search_path,
-                ..options(&root)
-            };
-            let err = resolve_process_executable("node", &opts, "process").unwrap_err();
-            assert!(policy_violation(&err));
-            assert!(err.to_string().contains("\"node\""));
-        }
+        let opts = ProcessExecutableOptions {
+            search_path: Some(bin_dir.to_str().unwrap()),
+            ..options(&root)
+        };
+        let found = resolve_process_executable("node", &opts, "process").unwrap();
+        assert_eq!(found, realpath(node.to_str().unwrap()).unwrap());
+        // PATH 遮断(`Some("")`)では解決不能として通常の unsupported
+        // error。
+        let err = resolve_process_executable("node", &options(&root), "process").unwrap_err();
+        assert!(policy_violation(&err));
     }
 
     /// subject 引数は error message の宣言種別 label になる —
-    /// `command` 経路(T3)で "process task" wording を出さないための
+    /// `command` 経路(T3)で "process" wording を出さないための
     /// parameterize(design §(b))。
     #[test]
     fn error_subject_is_parameterized_by_caller() {
         let dir = TempDir::new();
         let root = dir.root();
-        let err = resolve_process_executable("node", &options(&root), "command grant").unwrap_err();
+        let err = resolve_process_executable("missing-tool", &options(&root), "command grant")
+            .unwrap_err();
         assert!(policy_violation(&err));
-        assert!(err.to_string().contains("command grant task"));
-        assert!(!err.to_string().contains("process task"));
+        assert!(err
+            .to_string()
+            .contains("command grant could not be resolved"));
+        assert!(!err.to_string().contains("process could not"));
         let err =
             resolve_process_executable("missing-tool", &options(&root), "command").unwrap_err();
         assert!(err
             .to_string()
-            .contains("command requires a supported native executable"));
+            .contains("command could not be resolved to a spawnable executable"));
     }
 
     #[test]
-    fn resolves_native_executable_from_search_path() {
+    fn resolves_executable_from_search_path() {
         let dir = TempDir::new();
         let root = dir.root();
         let bin_dir = dir.join("native");
         std::fs::create_dir_all(&bin_dir).unwrap();
         let bin = bin_dir.join(if cfg!(windows) { "tool.exe" } else { "tool" });
-        write(&bin, &native_bytes());
+        write(&bin, &executable_file_bytes());
         set_executable(&bin);
         let opts = ProcessExecutableOptions {
             search_path: Some(bin_dir.to_str().unwrap()),
@@ -331,21 +285,29 @@ mod tests {
         let root = dir.root();
         for command in ["missing-tool", "node.exe"] {
             // `"node.exe"` は literal `node` と別名として PATH 解決を試み、
-            // 見つからなければ unsupported(固定ルールは bare `node` のみ)。
+            // 見つからなければ unsupported。
             let err = resolve_process_executable(command, &options(&root), "process").unwrap_err();
             assert!(policy_violation(&err), "{command}");
         }
     }
 
     #[test]
-    fn refuses_script_shims_and_executable_text() {
+    fn script_files_resolve_by_spawn_viability() {
         let dir = TempDir::new();
         let root = dir.root();
+        // script file の内容は審査しない — unix では +X file が spawn
+        // viability で解決される。
         let shim = dir.join("pnpm.cmd");
         write(&shim, b"echo shim");
-        let err = resolve_process_executable(shim.to_str().unwrap(), &options(&root), "process")
-            .unwrap_err();
-        assert!(policy_violation(&err));
+        set_executable(&shim);
+        let resolved =
+            resolve_process_executable(shim.to_str().unwrap(), &options(&root), "process");
+        #[cfg(unix)]
+        assert_eq!(resolved.unwrap(), realpath(shim.to_str().unwrap()).unwrap());
+        // win32 では `.cmd`(非 `.exe`/`.com`)は引き続き viability で
+        // reject される(CreateProcess が直接 spawn できる拡張子の制約)。
+        #[cfg(windows)]
+        assert!(policy_violation(&resolved.unwrap_err()));
         let text = dir.join(if cfg!(windows) {
             "script.exe"
         } else {
@@ -353,13 +315,15 @@ mod tests {
         });
         write(&text, b"#!/bin/sh\necho hidden-shell\n");
         set_executable(&text);
-        let err = resolve_process_executable(text.to_str().unwrap(), &options(&root), "process")
-            .unwrap_err();
-        assert!(policy_violation(&err));
+        // unix の +X text file・win32 の `.exe` 拡張子 file 共に解決
+        // される — file 内容は判定対象外。
+        let found =
+            resolve_process_executable(text.to_str().unwrap(), &options(&root), "process").unwrap();
+        assert_eq!(found, realpath(text.to_str().unwrap()).unwrap());
     }
 
     #[test]
-    fn resolves_workspace_relative_and_absolute_native_paths() {
+    fn resolves_workspace_relative_and_absolute_executable_paths() {
         let dir = TempDir::new();
         let root = dir.root();
         let rel_name = if cfg!(windows) {
@@ -373,7 +337,7 @@ mod tests {
             "native/bin"
         });
         std::fs::create_dir_all(bin.parent().unwrap()).unwrap();
-        write(&bin, &native_bytes());
+        write(&bin, &executable_file_bytes());
         set_executable(&bin);
         // relative → workspace-validated。
         let found = resolve_process_executable(rel_name, &options(&root), "process").unwrap();
@@ -398,7 +362,7 @@ mod tests {
     }
 
     #[test]
-    fn nonexistent_or_unsupported_magic_fails_closed() {
+    fn unresolvable_fails_closed_regardless_of_content() {
         let dir = TempDir::new();
         let root = dir.root();
         let missing = dir.join(if cfg!(windows) {
@@ -409,37 +373,20 @@ mod tests {
         let err = resolve_process_executable(missing.to_str().unwrap(), &options(&root), "process")
             .unwrap_err();
         assert!(policy_violation(&err));
-        // native magic と一致しない file は reject。
+        // file の内容は判定対象外 — spawn viability を満たす file は
+        // 内容に関わらず解決される。
         let wrong = dir.join(if cfg!(windows) { "wrong.exe" } else { "wrong" });
         write(&wrong, if cfg!(windows) { b"NOPE" } else { b"NOT!" });
         set_executable(&wrong);
-        let err = resolve_process_executable(wrong.to_str().unwrap(), &options(&root), "process")
-            .unwrap_err();
-        assert!(policy_violation(&err));
-        // parity note: TS は `Buffer.alloc(4)` への partial read を
-        // zero-fill のまま hex 判定するため、Windows で先頭が "MZ" の
-        // short file は accepted("4d5a0000".startsWith("4d5a"))。
-        #[cfg(windows)]
-        {
-            let short = dir.join("short.exe");
-            write(&short, b"MZ");
-            assert!(resolve_process_executable(
-                short.to_str().unwrap(),
-                &options(&root),
-                "process"
-            )
-            .is_ok());
-        }
-        // POSIX の ELF は先頭 byte だけでは一致しない。
-        #[cfg(unix)]
-        {
-            let short = dir.join("short");
-            write(&short, &[0x7f, 0x45]);
-            set_executable(&short);
-            let err =
-                resolve_process_executable(short.to_str().unwrap(), &options(&root), "process")
-                    .unwrap_err();
-            assert!(policy_violation(&err));
-        }
+        let found = resolve_process_executable(wrong.to_str().unwrap(), &options(&root), "process")
+            .unwrap();
+        assert_eq!(found, realpath(wrong.to_str().unwrap()).unwrap());
+        // 短い file も両 platform で解決される。
+        let short = dir.join(if cfg!(windows) { "short.exe" } else { "short" });
+        write(&short, &[0x7f, 0x45]);
+        set_executable(&short);
+        let found = resolve_process_executable(short.to_str().unwrap(), &options(&root), "process")
+            .unwrap();
+        assert_eq!(found, realpath(short.to_str().unwrap()).unwrap());
     }
 }

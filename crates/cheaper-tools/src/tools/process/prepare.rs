@@ -140,7 +140,7 @@ pub(super) fn prepare(
 fn unsupported_empty_command() -> ToolError {
     CheaperError::new(
         ErrorCode::PolicyViolation,
-        "process requires a supported native executable; shell and script shims are unsupported",
+        "process could not be resolved to a spawnable executable",
     )
     .into()
 }

@@ -44,7 +44,7 @@ fn invocation_fixture_child() {
     std::thread::sleep(Duration::from_secs(30));
 }
 
-/// `task("sleep")` — command[0] は absolute native executable(test
+/// `task("sleep")` — command[0] は absolute executable path(test
 /// binary)で PATH 解決に依存しない。
 fn sleep_task() -> Value {
     let exe = std::env::current_exe()
@@ -578,9 +578,9 @@ async fn scope_dispose_removes_self_from_invocation() {
 // command scope — `inner.command` 再注入・parity・nonempty-grants gate(T4)
 // ---------------------------------------------------------------------------
 
-/// `command` grant — executable はこの test binary 自身(absolute native
-/// executable で PATH 解決に依存せず、temp workspace 外のため
-/// workspace-resident 拒否にも掛からない)。argv は literal pin —
+/// `command` grant — executable はこの test binary 自身(absolute
+/// executable path のため pin は ambient PATH 解決に依存せず
+/// deterministic)。argv は literal pin —
 /// `MODE_ENV` 未設定のため fixture test は即 return で exit 0。
 fn self_grant() -> Value {
     let exe = std::env::current_exe()

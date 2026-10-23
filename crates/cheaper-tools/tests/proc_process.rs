@@ -1,9 +1,9 @@
 //! `packages/tool-runtime/test/process.test.ts` 対応の integration test。
 //!
 //! spawn 対象: TS test は `node` + `process-child.mjs` を spawn するが、
-//! Rust 版は設計固定ルールにより `node` を PATH 解決しないため、
-//! **この test binary 自身(`current_exe`)を fixture child として再利用**
-//! する。fixture は `proc_fixture_child` test が
+//! Rust 版は **この test binary 自身(`current_exe`)を fixture child
+//! として再利用** する(環境非依存の deterministic fixture)。
+//! fixture は `proc_fixture_child` test が
 //! `CHEAPER_PROC_CHILD_MODE` env で切替える。libtest の filter 引数と
 //! fixture mode を混ぜないため、mode/flag は env、path 引数だけを
 //! argv(filters)で渡す。harness の stdout noise("running 1 test" 等)を
@@ -419,24 +419,32 @@ async fn executes_literal_argv_in_validated_cwd_with_minimal_env_and_ignored_std
         .starts_with("process inspect: completed, exitCode=0\nstdout:"));
 }
 
+/// bare `node` task は ambient PATH で実 `node` へ解決され実行される
+/// (executable 名・内容の審査は行わない — mise toolchain の node が
+/// PATH 上にある前提は `mise run check` 経路で保証される)。
 #[tokio::test]
-async fn node_task_is_an_explicit_policy_violation() {
+async fn node_task_resolves_via_path() {
     let dir = TempDir::new();
     let tool = tool_with(
         &dir.root(),
         json!({"script": {
-            "command": ["node", "worker.js"],
+            "command": ["node", "-e", "console.log('bare node')"],
             "inputs": [],
             "outputs": [],
         }}),
         json!({}),
     );
-    let err = tool
+    let result = tool
         .execute(&json!({"task": "script"}), None)
         .await
-        .unwrap_err();
-    assert_eq!(code(&err), Some(ErrorCode::PolicyViolation), "{err}");
-    assert!(err.to_string().contains("\"node\""));
+        .unwrap();
+    let details = result.details.as_ref().unwrap();
+    assert_eq!(details["state"], json!("completed"));
+    assert_eq!(details["exitCode"], json!(0));
+    assert!(details["stdout"]["text"]
+        .as_str()
+        .unwrap()
+        .contains("bare node"));
 }
 
 #[tokio::test]

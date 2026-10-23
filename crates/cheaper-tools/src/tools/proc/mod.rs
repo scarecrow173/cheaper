@@ -5,7 +5,7 @@
 //! spawn(stdin ignore/stdout-stderr pipe/env_clear/windowsHide/POSIX
 //! detached)・bounded combined capture・timeout+`onTimeout`・heartbeat
 //! stderr JSON・process tree cleanup・minimal env(Windows required env
-//! 空値遮断・SystemRoot 補完)・cwd/denylist prepare・native executable
+//! 空値遮断・SystemRoot 補完)・cwd/denylist prepare・executable
 //! 解決を集約する。task 固有 glue(manifest/writeScope coverage 検査・
 //! details identity)は `tools::process`/`tools::command` 側が組み立て、
 //! [`run`] が orchestration(timeout controller、captures、heartbeat
