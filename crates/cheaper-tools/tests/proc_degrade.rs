@@ -1,15 +1,21 @@
 //! `cheaper.optionalTools` opt-in 縮退機構(design §(e))の registration
 //! gate test — `create_tool_runtime` 直結。
 //!
-//! content-gate(nonempty `tasks`/`grants`)不成立時に `options.degradable`
-//! membership の gated tool は `POLICY_VIOLATION` ではなく未登録へ縮退
-//! し、それ以外の gate(resolve error・pin 失敗・writeScope × command)
-//! は opt-in tool に対しても hard のままであることを固定する。非
-//! opt-in worker の fail-closed 意味論は不変(後方互換・test-spec)。
+//! content-gate(nonempty `tasks`/`grants`)不成立時と pin 失敗時に
+//! `options.degradable` membership の gated tool は `POLICY_VIOLATION`
+//! ではなく未登録へ縮退し、それ以外の gate(resolve error・
+//! writeScope × command)は opt-in tool に対しても hard のままである
+//! ことを固定する。pin-fail の opt-in 縮退は両 surface 対称の
+//! uniform 規則(issue #165 R11-(e) — Command 側の現行無条件 hard
+//! fail からの意図的拡張 + task executable pin 化による Process 側の
+//! 新規規則)。非 opt-in worker の fail-closed 意味論は不変
+//! (後方互換・test-spec)。
 
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::policy::exec::build_exec_input;
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::paths::{canonicalize_workspace_root, SymlinkPolicy};
 use cheaper_tools::registry::{create_tool_runtime, ToolRuntimeOptions};
@@ -50,8 +56,7 @@ fn options(root: &str, names: Vec<ToolName>, degradable: Vec<ToolName>) -> ToolR
         write_scope: None,
         read_strictness: None,
         artifacts: None,
-        process: None,
-        command: None,
+        exec: None,
         security: None,
         root: root.to_string(),
         symlink_policy: SymlinkPolicy::Deny,
@@ -106,7 +111,7 @@ fn degraded_names(runtime: &cheaper_tools::registry::ToolRuntime) -> Vec<&str> {
         .collect()
 }
 
-/// task 1 件の process policy — tasks 非空の gate 通過側。
+/// task 1 件の process authoring section — tasks 非空の gate 通過側。
 fn process_with_task() -> Value {
     let exe = std::env::current_exe()
         .unwrap()
@@ -115,9 +120,17 @@ fn process_with_task() -> Value {
     json!({"tasks": {"self": {"command": [exe], "inputs": [], "outputs": [], "env": {}}}})
 }
 
-/// grant 1 件の command policy — grants 非空の gate 通過側。
+/// grant 1 件の command authoring section — grants 非空の gate 通過側。
 fn command_with_grant(executable: &str) -> Value {
     json!({"grants": {"self": {"executable": executable, "argv": [], "env": {}}}})
+}
+
+/// authoring 2 section → unified exec-doc(`options.exec` の raw 入力
+/// shape)への synthesis seam(project task 名なし)。
+fn exec_doc(process: Option<Value>, command: Option<Value>) -> Value {
+    Value::Object(
+        build_exec_input(process.as_ref(), command.as_ref(), &BTreeSet::new()).expect("synthesis"),
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -166,8 +179,12 @@ fn only_failed_gate_tool_degrades_in_mixed_policy() {
         vec![ToolName::Read, ToolName::Process, ToolName::Command],
         vec![ToolName::Process, ToolName::Command],
     );
-    opts.process = Some(process_with_task());
-    opts.command = Some(json!({"grants": {}}));
+    // tasks 非空 × grants 空の unified doc — fixed grant のみ存在し
+    // `!fixed` 0 件の Command gate が縮退対象になる。
+    opts.exec = Some(exec_doc(
+        Some(process_with_task()),
+        Some(json!({"grants": {}})),
+    ));
     let runtime = create_tool_runtime(opts, None).expect("process gate passes");
     assert_eq!(definition_names(&runtime), ["read", "process"]);
     assert_eq!(degraded_names(&runtime), ["command"]);
@@ -223,17 +240,87 @@ fn non_opted_empty_gates_still_fail_closed() {
     assert_eq!(code(&err), Some(ErrorCode::PolicyViolation));
 }
 
-/// opt-in しても grants 非空で `command` が登録される限り pin 失敗は
-/// hard `POLICY_VIOLATION` のまま(縮退対象は empty grants のみ)。
-#[test]
-fn pin_failure_stays_hard_even_when_opted_in() {
+/// pin 失敗は失敗 grant の surface に対応する tool が `degradable`
+/// 宣言されていれば当該 tool のみ縮退する — 両 surface 対称の
+/// uniform 規則(R11-(e) 確定の意図的拡張。Command 側は現行の無条件
+/// hard fail からの差分、Process 側は task executable が本 issue で
+/// 初めて pin 対象になった D9 由来の新規規則)。
+#[tokio::test]
+async fn pin_failure_degrades_opted_in_surface() {
     let dir = TempDir::new();
+    // Command 側 — opt-in 宣言時は pin 不能で command のみ縮退する。
     let mut opts = options(
         &dir.root(),
         vec![ToolName::Read, ToolName::Command],
         vec![ToolName::Command],
     );
-    opts.command = Some(command_with_grant("definitely-not-a-real-command-xyz"));
+    opts.exec = Some(exec_doc(
+        None,
+        Some(command_with_grant("definitely-not-a-real-command-xyz")),
+    ));
+    let runtime = create_tool_runtime(opts, None).expect("command degrades on pin failure");
+    assert_eq!(definition_names(&runtime), ["read"]);
+    assert_eq!(degraded_names(&runtime), ["command"]);
+    runtime.dispose().await;
+
+    // Process 側 — task executable の pin 不能で process のみ縮退する
+    // (fixed grant pin は本 issue が初 — 旧 lazy resolve 経路では
+    // scope 構築を fail させなかった)。
+    let mut opts = options(
+        &dir.root(),
+        vec![ToolName::Read, ToolName::Process],
+        vec![ToolName::Process],
+    );
+    opts.exec = Some(exec_doc(
+        Some(json!({"tasks": {"self": {
+            "command": ["definitely-not-a-real-command-xyz"],
+            "inputs": [], "outputs": [],
+        }}})),
+        None,
+    ));
+    let runtime = create_tool_runtime(opts, None).expect("process degrades on pin failure");
+    assert_eq!(definition_names(&runtime), ["read"]);
+    assert_eq!(degraded_names(&runtime), ["process"]);
+    runtime.dispose().await;
+}
+
+/// 非 opt-in(`degradable` 未宣言)経路の pin fail は hard
+/// `POLICY_VIOLATION` のまま不変 — 両 surface で同一文言。
+#[test]
+fn pin_failure_stays_hard_when_not_opted_in() {
+    let dir = TempDir::new();
+    let mut opts = options(
+        &dir.root(),
+        vec![ToolName::Read, ToolName::Command],
+        Vec::new(),
+    );
+    opts.exec = Some(exec_doc(
+        None,
+        Some(command_with_grant("definitely-not-a-real-command-xyz")),
+    ));
+    let err = create_tool_runtime(opts, None).unwrap_err();
+    let e = cheaper_err(&err);
+    assert_eq!(e.code(), ErrorCode::PolicyViolation);
+    assert!(
+        e.message()
+            .contains("could not be resolved to a spawnable executable"),
+        "{}",
+        e.message()
+    );
+
+    // fixed surface も同じ pin 失敗文言で fail-closed。
+    let mut opts = options(
+        &dir.root(),
+        vec![ToolName::Read, ToolName::Process],
+        Vec::new(),
+    );
+    opts.exec = Some(exec_doc(
+        Some(json!({"tasks": {"self": {
+            "command": ["definitely-not-a-real-command-xyz"],
+            "inputs": [], "outputs": [],
+        }}})),
+        None,
+    ));
     let err = create_tool_runtime(opts, None).unwrap_err();
     let e = cheaper_err(&err);
     assert_eq!(e.code(), ErrorCode::PolicyViolation);
@@ -259,7 +346,7 @@ fn write_scope_rejects_command_even_when_opted_in() {
         vec![ToolName::Read, ToolName::Command],
         vec![ToolName::Command],
     );
-    opts.command = Some(command_with_grant(&exe));
+    opts.exec = Some(exec_doc(None, Some(command_with_grant(&exe))));
     opts.write_scope = Some(vec!["files".to_string()]);
     let err = create_tool_runtime(opts, None).unwrap_err();
     let e = cheaper_err(&err);
@@ -268,19 +355,23 @@ fn write_scope_rejects_command_even_when_opted_in() {
 }
 
 /// `resolve_*_policy` の error は opt-in tool に対しても hard のまま
-/// 伝播する(縮退対象は empty tasks/grants の content-gate のみ)。
+/// 伝播する(縮退対象は empty tasks/grants の content-gate と
+/// pin-fail 縮退のみ — resolve error は両者の外)。
 #[test]
 fn resolve_policy_errors_stay_hard_even_when_opted_in() {
     let dir = TempDir::new();
     // wildcard 構造違反の grant spec は policy resolve 段階で
     // `InvalidRuntimePolicy` — degradable 宣言で soft 化されない
-    // (PATH 非依存で deterministic)。
+    // (PATH 非依存で deterministic)。exec-doc を直接注入し
+    // `resolve_exec_policy` の `ArgPattern::compile` で検査を
+    // 発火させる(authoring `build_exec_input` 内 `resolve_command_
+    // policy` でも同じ構造検査が発火する — code 同一)。
     let mut opts = options(
         &dir.root(),
         vec![ToolName::Read, ToolName::Command],
         vec![ToolName::Command],
     );
-    opts.command =
+    opts.exec =
         Some(json!({"grants": {"self": {"executable": "node", "argv": ["a*b"], "env": {}}}}));
     let err = create_tool_runtime(opts, None).unwrap_err();
     assert_eq!(code(&err), Some(ErrorCode::InvalidRuntimePolicy), "{err}");

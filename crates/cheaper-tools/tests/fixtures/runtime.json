@@ -261,6 +261,25 @@
       }
     },
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": [
+                {
+                  "mode": "exclusive",
+                  "resource": {
+                    "kind": "workspace",
+                    "path": "<ROOT>/done.txt",
+                    "scope": "exact"
+                  }
+                }
+              ]
+            },
+            {}
+          ]
+        }
+      },
       "expected": [
         {
           "ok": {
@@ -729,6 +748,18 @@
       }
     },
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": []
+            },
+            {
+              "resourceClaims": []
+            }
+          ]
+        }
+      },
       "expected": [
         {
           "ok": {
@@ -966,6 +997,25 @@
       }
     },
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": [
+                {
+                  "mode": "exclusive",
+                  "resource": {
+                    "kind": "workspace",
+                    "path": "<ROOT>/done.txt",
+                    "scope": "exact"
+                  }
+                }
+              ]
+            },
+            {}
+          ]
+        }
+      },
       "expected": [
         {
           "ok": {
@@ -1194,6 +1244,15 @@
       }
     },
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": []
+            }
+          ]
+        }
+      },
       "expected": [
         {
           "ok": {
@@ -1673,6 +1732,15 @@
       }
     },
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": []
+            }
+          ]
+        }
+      },
       "expected": [
         {
           "ok": {

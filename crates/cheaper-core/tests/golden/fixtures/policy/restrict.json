@@ -27,16 +27,6 @@
               "maxTokens": 4096,
               "repairAttempts": 1
             },
-            "process": {
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "tasks": {},
-              "timeout": "2m"
-            },
             "retry": {
               "transientAttempts": 2
             },
@@ -55,16 +45,6 @@
               },
               "maxJobs": 1
             },
-            "command": {
-              "grants": {},
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "timeout": "2m"
-            },
             "route": {
               "rewrite": {
                 "approvalBypass": []
@@ -72,6 +52,27 @@
             },
             "security": {
               "execDenyPatterns": []
+            },
+            "exec": {
+              "grants": {},
+              "command": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              },
+              "process": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              }
             }
           }
         }
@@ -141,16 +142,6 @@
               "maxTokens": 4096,
               "repairAttempts": 1
             },
-            "process": {
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "tasks": {},
-              "timeout": "2m"
-            },
             "retry": {
               "transientAttempts": 2
             },
@@ -169,16 +160,6 @@
               },
               "maxJobs": 1
             },
-            "command": {
-              "grants": {},
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "timeout": "2m"
-            },
             "route": {
               "rewrite": {
                 "approvalBypass": []
@@ -186,6 +167,27 @@
             },
             "security": {
               "execDenyPatterns": []
+            },
+            "exec": {
+              "grants": {},
+              "command": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              },
+              "process": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              }
             }
           }
         }
@@ -257,16 +259,6 @@
               "maxTokens": 4096,
               "repairAttempts": 1
             },
-            "process": {
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "tasks": {},
-              "timeout": "2m"
-            },
             "retry": {
               "transientAttempts": 2
             },
@@ -285,16 +277,6 @@
               },
               "maxJobs": 1
             },
-            "command": {
-              "grants": {},
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "timeout": "2m"
-            },
             "route": {
               "rewrite": {
                 "approvalBypass": []
@@ -302,6 +284,27 @@
             },
             "security": {
               "execDenyPatterns": []
+            },
+            "exec": {
+              "grants": {},
+              "command": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              },
+              "process": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              }
             }
           }
         }
@@ -426,16 +429,6 @@
               "maxTokens": 4096,
               "repairAttempts": 1
             },
-            "process": {
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "tasks": {},
-              "timeout": "2m"
-            },
             "retry": {
               "transientAttempts": 2
             },
@@ -454,16 +447,6 @@
               },
               "maxJobs": 1
             },
-            "command": {
-              "grants": {},
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "timeout": "2m"
-            },
             "route": {
               "rewrite": {
                 "approvalBypass": []
@@ -471,6 +454,27 @@
             },
             "security": {
               "execDenyPatterns": []
+            },
+            "exec": {
+              "grants": {},
+              "command": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              },
+              "process": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              }
             }
           }
         }
@@ -536,7 +540,7 @@
           "retryable": false
         }
       },
-      "name": "concurrency widens \u2192 violation",
+      "name": "concurrency widens → violation",
       "policy": {
         "execution": {
           "concurrency": {
@@ -597,7 +601,7 @@
           "retryable": false
         }
       },
-      "name": "serialized\u2192per-resource \u2192 violation",
+      "name": "serialized→per-resource → violation",
       "policy": {
         "execution": {
           "concurrency": {
@@ -666,16 +670,6 @@
               "maxTokens": 4096,
               "repairAttempts": 1
             },
-            "process": {
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "tasks": {},
-              "timeout": "2m"
-            },
             "retry": {
               "transientAttempts": 2
             },
@@ -694,16 +688,6 @@
               },
               "maxJobs": 1
             },
-            "command": {
-              "grants": {},
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "timeout": "2m"
-            },
             "route": {
               "rewrite": {
                 "approvalBypass": []
@@ -711,11 +695,32 @@
             },
             "security": {
               "execDenyPatterns": []
+            },
+            "exec": {
+              "grants": {},
+              "command": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              },
+              "process": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              }
             }
           }
         }
       },
-      "name": "concurrency null maxOperations \u2192 policy default",
+      "name": "concurrency null maxOperations → policy default",
       "policy": {
         "execution": {
           "concurrency": {
@@ -784,16 +789,6 @@
               "maxTokens": 4096,
               "repairAttempts": 1
             },
-            "process": {
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "tasks": {},
-              "timeout": "2m"
-            },
             "retry": {
               "transientAttempts": 2
             },
@@ -812,16 +807,6 @@
               },
               "maxJobs": 1
             },
-            "command": {
-              "grants": {},
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "timeout": "2m"
-            },
             "route": {
               "rewrite": {
                 "approvalBypass": []
@@ -829,11 +814,32 @@
             },
             "security": {
               "execDenyPatterns": []
+            },
+            "exec": {
+              "grants": {},
+              "command": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              },
+              "process": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              }
             }
           }
         }
       },
-      "name": "concurrency null mutations \u2192 policy default",
+      "name": "concurrency null mutations → policy default",
       "policy": {
         "execution": {
           "concurrency": {
@@ -902,16 +908,6 @@
               "maxTokens": 4096,
               "repairAttempts": 1
             },
-            "process": {
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "tasks": {},
-              "timeout": "2m"
-            },
             "retry": {
               "transientAttempts": 2
             },
@@ -930,16 +926,6 @@
               },
               "maxJobs": 1
             },
-            "command": {
-              "grants": {},
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "timeout": "2m"
-            },
             "route": {
               "rewrite": {
                 "approvalBypass": []
@@ -947,11 +933,32 @@
             },
             "security": {
               "execDenyPatterns": []
+            },
+            "exec": {
+              "grants": {},
+              "command": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              },
+              "process": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              }
             }
           }
         }
       },
-      "name": "concurrency null object \u2192 no-op",
+      "name": "concurrency null object → no-op",
       "policy": {
         "execution": {
           "concurrency": {
@@ -1010,7 +1017,7 @@
           "retryable": false
         }
       },
-      "name": "concurrency null maxOperations widens to default \u2192 violation",
+      "name": "concurrency null maxOperations widens to default → violation",
       "policy": {
         "execution": {
           "concurrency": {
@@ -1118,7 +1125,7 @@
       "files": {
         "w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\",\"write\"]\ncheaper:\n  model:\n    tier: \"low\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
       },
-      "name": "missing tool \u2192 violation",
+      "name": "missing tool → violation",
       "op": "checkCapabilities",
       "policy": {
         "execution": {
@@ -1171,7 +1178,7 @@
       "files": {
         "w.md": "---\nname: \"w\"\ndescription: \"d\"\ntools: [\"read\"]\ncheaper:\n  model:\n    tier: \"high\"\n  output:\n    schema:\n      inline:\n        type: \"object\"\n        required: [\"ok\"]\n        properties:\n          ok:\n            type: \"boolean\"\n---\nDo things.\n"
       },
-      "name": "tier over max \u2192 violation",
+      "name": "tier over max → violation",
       "op": "checkCapabilities",
       "policy": {
         "execution": {

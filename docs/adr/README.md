@@ -68,7 +68,7 @@ Directory: `docs/adr`
 | ADR-034CWHw0NjYQjdE5o4kErV | OpenAI Codex subscription provider wire, OAuth, and catalog | proposed | [openai-codex-subscription-provider-wire-oauth-and-catalog.md](./openai-codex-subscription-provider-wire-oauth-and-catalog.md) |
 | ADR-034A8u7fBRIGJ7eRFYvg38 | Operation execution metrics | accepted | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | ADR-034zT6bqTxOvK1nP0ELSyR | OperationManager の cancel 要求と実 settle を分離する | accepted | [operation-manager-settlement.md](./operation-manager-settlement.md) |
-| ADR-034KLgkao8SgWWKIIsCqaB | opt-in security.execDenyPatterns profile — A9 の降格実装 | proposed | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
+| ADR-034KLgkao8SgWWKIIsCqaB | opt-in security.execDenyPatterns profile — A9 の降格実装 | accepted | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
 | ADR-034ESBcMTWxNCMDI9obdb8 | policy-gated tool の露出を worker opt-in の optional 宣言で縮退可能にする | accepted | [opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md](./opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md) |
 | ADR-034zWr0viJFoTiUALvhE6N | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | ADR-034KrYGRHZuvOIx1d0S0nE | Per-target hook rewrite enablement with policy-gated approval bypass | accepted | [per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md](./per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md) |
@@ -90,6 +90,7 @@ Directory: `docs/adr`
 | ADR-034r05iHrZUE6WdKBH2eNM | development APM project と distributable cheaper package を nested package で物理分離する | accepted | [separate-dev-apm-project-via-nested-distributable-package.md](./separate-dev-apm-project-via-nested-distributable-package.md) |
 | ADR-034r05iHrZUE6W82VsDbPq | Treat unmeasurable huge files as over-threshold via a core byte cap (fail-closed) | accepted | [treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md](./treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md) |
 | ADR-034r05iHlWosDpP8BzaVZ8 | TypeScript + pnpm monorepo 構成 | superseded | [typescript-pnpm-monorepo.md](./typescript-pnpm-monorepo.md) |
+| ADR-034KOpPArDTHQ8W1c81Q0B | unified exec grant model — 単一 exec grant 実装への統合 | accepted | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
 | ADR-RrljT4yH9woiGWbIny9ifG | usage.jsonl の run error record は固定 allowlist の診断 field で拡充する (issue #141) | accepted | [usage-error-record-field-contract.md](./usage-error-record-field-contract.md) |
 | ADR-034r2eId2hXJGWDjBylKVE | usage.jsonl の記録対象 contract は実装を canonical として文書を揃える | accepted | [usage-jsonl-contract-canonical.md](./usage-jsonl-contract-canonical.md) |
 | ADR-034r05iHrZUE6WljM1ZMiX | delegation 計測は userConfigDir の usage.jsonl への best-effort append とする | accepted | [usage-jsonl-in-user-config-dir-best-effort-append.md](./usage-jsonl-in-user-config-dir-best-effort-append.md) |

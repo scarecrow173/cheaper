@@ -1,41 +1,37 @@
 //! Port of `packages/tool-runtime/src/process.ts` の task 固有 glue。
 //!
-//! named task 解決・prepare(cwd/deny/writeScope 検査)・details{task,
-//! state,exitCode,signal,stdout,stderr}・`processOperationDeclaration`
-//! (pool + access 導出)を所有し、managed-subprocess lifecycle
+//! issue #165(unified exec grant model)で thin surface 化 —
+//! 本 module は `process` surface の schema/details schema/
+//! description/identity(`{task}` details・`"process {name}"`
+//! display・`"process"` event prefix)/`{task}` input 変換のみを
+//! 所有し、grant 解決・pin/prepare・declaration 等の共通機構は
+//! [`crate::tools::exec`] へ集約した。managed-subprocess lifecycle
 //! (spawn/capture/timeout/heartbeat/cleanup/tree-kill)は shared
-//! `crate::tools::proc` へ移設済み(design §(e))。execute は
-//! `ProcLimits`/`ProcPrepared`/`ProcIdentity` を組み立てて
-//! [`crate::tools::proc::run`] を呼ぶ。
+//! [`crate::tools::proc`] が担う。
 //!
-//! T2-7 統合済み seam(T2-5 時点のローカル定義は撤去):
-//! - `AbortSignal`/`AbortController`/`AbortReason` — `crate::operation`。
-//! - result は `crate::catalog::CanonicalToolResult`。
-//! - `process_operation_declaration` は `crate::scheduler` の
-//!   `OperationDeclaration`/`OperationPool` を返す。
+//! fixed grant(`process.tasks` 由来 + `command.grants` の
+//! `fixed:true` 宣言)のみが到達可能 — `resolve_exec_grant(.., true)`
+//! の disjoint 解決で `!fixed` grant 参照は unknown task として
+//! fail-closed される(design §(i))。execute は `ProcLimits`/
+//! `ProcPrepared`/`ProcIdentity` を組み立てて
+//! [`crate::tools::proc::run`] を呼ぶ。
 
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use cheaper_core::duration::parse_duration;
-use cheaper_core::errors::CheaperError;
-/// `MAX_PROCESS_OUTPUT_BYTES` re-export(TS `export { ... }` parity)。
-pub use cheaper_core::policy::process::MAX_PROCESS_OUTPUT_BYTES;
-use cheaper_core::policy::process::{resolve_process_task, ResolvedProcessPolicy};
-use cheaper_core::workspace::deny_paths::PathDenylist;
-use cheaper_core::workspace::paths::SymlinkPolicy;
+use cheaper_core::policy::exec::resolve_exec_grant;
+/// `MAX_PROCESS_OUTPUT_BYTES` re-export(TS `export { ... }` parity —
+/// issue #165 で `policy::process` → `policy::exec` へ origin を移動)。
+pub use cheaper_core::policy::exec::MAX_PROCESS_OUTPUT_BYTES;
 use serde_json::{json, Value};
 
 use crate::catalog::CanonicalToolResult;
 use crate::operation::AbortSignal;
-use crate::scheduler::{OperationDeclaration, OperationPool};
+use crate::tools::exec::{prepare_exec_grant, ExecToolOptions, PreparedExec};
 use crate::ToolError;
 
-mod prepare;
 #[cfg(test)]
 mod tests;
-
-use prepare::prepare;
 
 // `tools::proc` へ移設した item の公開 path 維持 re-export
 // (design §(e)/(l) — registry・workflow_run・既存 test が
@@ -45,7 +41,7 @@ pub use crate::tools::proc::tree;
 pub use crate::tools::proc::{find_cheaper_error, OnTimeout, StreamCaptureResult};
 
 // ---------------------------------------------------------------------------
-// Schemas / operation declaration / tool surface
+// Schemas / tool surface
 // ---------------------------------------------------------------------------
 
 pub fn process_schema() -> Value {
@@ -97,46 +93,23 @@ pub fn process_details_schema() -> Value {
     })
 }
 
-/// `processOperationDeclaration`: task 解決 → outputs 有無で access 導出、
-/// pool は `{name:"process", maxConcurrent}`。返すのは scheduler の
-/// canonical `OperationDeclaration`(T2-5 のローカル seam 型は撤去)。
-pub fn process_operation_declaration(
-    policy: &ResolvedProcessPolicy,
-    task: &str,
-) -> Result<OperationDeclaration, CheaperError> {
-    let task = resolve_process_task(policy, task)?;
-    let mut declaration = OperationDeclaration::new(if task.outputs.is_empty() {
-        cheaper_core::resources::types::ClaimMode::Shared
-    } else {
-        cheaper_core::resources::types::ClaimMode::Exclusive
-    });
-    declaration.pool = Some(OperationPool {
-        name: "process".to_string(),
-        max_concurrent: policy.max_concurrent as i64,
-    });
-    Ok(declaration)
-}
-
-/// `Options`(TS `interface Options`)。
-pub struct ProcessToolOptions {
-    pub root: String,
-    pub symlink_policy: SymlinkPolicy,
-    pub process: ResolvedProcessPolicy,
-    /// `onTimeout(reason)`。
-    pub on_timeout: Option<OnTimeout>,
-    pub denylist: Option<PathDenylist>,
-    pub write_scope: Option<HashSet<String>>,
-}
-
 /// `createProcessTool` が返す canonical definition。
 pub struct ProcessTool {
     description: String,
-    options: ProcessToolOptions,
+    options: ExecToolOptions,
 }
 
-/// `createProcessTool`。description に task 一覧を埋め込む。
-pub fn create_process_tool(options: ProcessToolOptions) -> ProcessTool {
-    let tasks: Vec<&str> = options.process.tasks.keys().map(String::as_str).collect();
+/// `createProcessTool`。description には fixed grant 名一覧のみを
+/// 埋め込む(disjoint surface — `!fixed` grant 名は model へ露出
+/// しない、design §(i))。
+pub fn create_process_tool(options: ExecToolOptions) -> ProcessTool {
+    let tasks: Vec<&str> = options
+        .exec
+        .grants
+        .iter()
+        .filter(|(_, g)| g.fixed)
+        .map(|(name, _)| name.as_str())
+        .collect();
     ProcessTool {
         description: format!(
             "Run a policy-defined native process task: {}. No arbitrary command or shell.",
@@ -191,7 +164,7 @@ impl ProcessTool {
 /// `CanonicalExecute` seam(future)で呼ぶ。tool は `Arc` 共有 — 返り値
 /// future が env borrow を持たず `'static` で独立する。
 pub fn process_tool_definition(
-    options: ProcessToolOptions,
+    options: ExecToolOptions,
 ) -> crate::definition::CanonicalToolDefinition<'static> {
     let tool = Arc::new(create_process_tool(options));
     crate::definition::define_canonical_tool(crate::definition::CanonicalToolDefinition {
@@ -208,10 +181,10 @@ pub fn process_tool_definition(
 }
 
 // ---------------------------------------------------------------------------
-// execute(task 固有 glue → shared proc::run)
+// execute(fixed grant 解決 → prepare → shared proc::run)
 // ---------------------------------------------------------------------------
 async fn execute(
-    options: &ProcessToolOptions,
+    options: &ExecToolOptions,
     name: &str,
     outer: AbortSignal,
 ) -> Result<CanonicalToolResult, ToolError> {
@@ -220,25 +193,33 @@ async fn execute(
     if let Some(reason) = outer.reason() {
         return Err(aborted_err(reason));
     }
-    let task = resolve_process_task(&options.process, name)?;
-    let prepared = prepare(options, name, &task)?;
+    // disjoint surface — fixed grant のみ到達可能(`!fixed` 参照は
+    // "unknown or unauthorized process task" で fail-closed)。
+    let grant =
+        resolve_exec_grant(&options.exec, name, true).map_err(|e| Box::new(e) as ToolError)?;
+    let prepared: PreparedExec = prepare_exec_grant(options, name, &grant)?;
     if let Some(reason) = outer.reason() {
         return Err(aborted_err(reason));
     }
 
-    // `options.process.*` → `ProcLimits`(parse 済み ms)。
+    // per-grant override 畳み込み済みの effective limit を
+    // `ProcLimits` へ流す(`parse_duration` は policy resolve で
+    // 検証済みのため到達不能想定)。heartbeat は `process` defaults
+    // block の section-level のみ。
     let limits = ProcLimits {
-        timeout_ms: parse_duration(&options.process.timeout)?,
-        kill_grace_ms: parse_duration(&options.process.kill_grace)?,
-        max_output_bytes: options.process.max_output_bytes,
-        heartbeat_interval_ms: parse_duration(&options.process.heartbeat.interval)?,
-        accepted_exit_codes: Some(vec![0]),
+        timeout_ms: parse_duration(&grant.timeout)?,
+        kill_grace_ms: parse_duration(&grant.kill_grace)?,
+        max_output_bytes: grant.max_output_bytes,
+        heartbeat_interval_ms: parse_duration(&options.exec.process.heartbeat.interval)?,
+        accepted_exit_codes: Some(grant.exit_codes.clone()),
     };
     let prepared = ProcPrepared {
         executable: prepared.executable,
-        argv: task.command[1..].to_vec(),
+        // fixed grant の `argv` は literal argv(task の command[1..]
+        // 由来) — pattern 照合は行わない。
+        argv: grant.argv.clone().unwrap_or_default(),
         cwd: prepared.cwd,
-        env: minimal_env(&task.env),
+        env: minimal_env(&grant.env),
     };
     // `process` の identity: details `{task: name}`・display
     // `"process {name}"`・diagnostics event prefix `"process"`。

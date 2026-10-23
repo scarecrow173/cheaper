@@ -1,4 +1,8 @@
 version: 1
+# `process.tasks`・`command.grants` は resolve 時に単一 `exec` grant
+# namespace へ畳まれる(issue #165 — task は `fixed:true` grant、
+# command grant は `!fixed` grant。両 section の名衝突は
+# InvalidRuntimePolicy + details.{grant,task} で fail closed)。
 process:
   maxConcurrent: 1
   timeout: 2m
@@ -62,7 +66,8 @@ route:
     approvalBypass: []
 
 security:
-  # `command` grant executable への opt-in deterministic executable
+  # 全 exec grant（`command.grants` + `process.tasks` 由来の fixed
+  # grant）の executable への opt-in deterministic executable
   # deny-list（executable 名の regex、basename stem への anchored
   # case-insensitive 完全一致）。既定 [] = deny 無し。trusted layer
   # のみ authoring 可能（project policy は拒否）。containment 機構

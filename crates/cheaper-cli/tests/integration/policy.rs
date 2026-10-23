@@ -232,6 +232,44 @@ async fn policy_grant_add_rejects_invalid_spec_without_writing() {
     }
 }
 
+/// issue #165 — `fixed:true`・明示 `scope` を含む spec は CLI 入口で
+/// `InvalidRequest`(exit 2、file 不変)。trusted YAML への直接記述は
+/// 合法のままだが、`policy grant add` は `!fixed` command grant のみ
+/// 登録する契約(design §(c))。
+#[tokio::test(flavor = "current_thread")]
+async fn policy_grant_add_rejects_fixed_and_scope() {
+    let cfg = tempfile::tempdir().unwrap();
+    std::fs::write(policy_path(cfg.path()), "version: 1\n").unwrap();
+    let before = policy_text(cfg.path());
+
+    for spec in [
+        r#"{"executable":"git","fixed":true}"#,
+        r#"{"executable":"git","scope":"trusted"}"#,
+        r#"{"executable":"git","scope":"project"}"#,
+    ] {
+        let (code, env, _err) =
+            run_policy(cfg.path(), &["policy", "grant", "add", "bad-grant", spec]).await;
+        assert_eq!(code, 2, "{spec}: {env}");
+        assert_error(&env, ErrorCode::InvalidRequest);
+        assert_eq!(policy_text(cfg.path()), before, "{spec}");
+    }
+
+    // `fixed:false`・`inputs`/`outputs` 宣言は reject 対象外(schema 合法)。
+    let (code, env, _err) = run_policy(
+        cfg.path(),
+        &[
+            "policy",
+            "grant",
+            "add",
+            "git-log",
+            r#"{"executable":"git","fixed":false,"outputs":["out/**"]}"#,
+        ],
+    )
+    .await;
+    assert_eq!(code, 0, "{env}");
+    assert!(policy_text(cfg.path()).contains("git-log"));
+}
+
 /// 既存 grant name への add は `InvalidRequest` + `details.grant`
 /// (collision と同じ fail-loud 規約 — 置き換えは remove → add)。
 #[tokio::test(flavor = "current_thread")]

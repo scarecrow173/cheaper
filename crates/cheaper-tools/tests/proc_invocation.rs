@@ -11,10 +11,12 @@
 //! dispatch、process kill は executor task の poll が必要なため、abort
 //! 直後の `signal.aborted`/`state=running` 観測は deterministic。
 
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::time::Duration;
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::policy::exec::build_exec_input;
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::paths::{canonicalize_workspace_root, SymlinkPolicy};
 use cheaper_tools::invocation::{
@@ -89,11 +91,21 @@ impl Drop for TempDir {
     }
 }
 
+/// authoring 2 section → unified exec-doc(`options.exec` の raw 入力
+/// shape)への synthesis seam(project task 名なし)。
+fn exec_doc(process: Option<Value>, command: Option<Value>) -> Value {
+    Value::Object(
+        build_exec_input(process.as_ref(), command.as_ref(), &BTreeSet::new()).expect("synthesis"),
+    )
+}
+
+/// `process` authoring section を unified exec-doc へ畳んで
+/// `options.exec` に設定する(command 側は caller が `opts.exec` へ
+/// `exec_doc(None, Some(command))` で上書きする)。
 fn invocation_options(root: String, process: Option<Value>) -> InvocationToolRuntimeOptions {
     InvocationToolRuntimeOptions {
         artifacts: None,
-        process,
-        command: None,
+        exec: process.map(|p| exec_doc(Some(p), None)),
         security: None,
         root,
         symlink_policy: SymlinkPolicy::Deny,
@@ -110,8 +122,7 @@ fn scope_options(root: &str, names: Vec<ToolName>) -> ToolRuntimeOptions {
         write_scope: None,
         read_strictness: None,
         artifacts: None,
-        process: None,
-        command: None,
+        exec: None,
         security: None,
         root: root.to_string(),
         symlink_policy: SymlinkPolicy::Deny,
@@ -577,7 +588,7 @@ async fn scope_dispose_removes_self_from_invocation() {
 }
 
 // ---------------------------------------------------------------------------
-// command scope — `inner.command` 再注入・parity・nonempty-grants gate(T4)
+// command scope — `inner.exec` 再注入・parity・nonempty-grants gate(T4)
 // ---------------------------------------------------------------------------
 
 /// `command` grant — executable はこの test binary 自身(absolute
@@ -595,9 +606,9 @@ fn self_grant() -> Value {
     })
 }
 
-/// T4: `create_worker_scope` は `options.runtime.command` を passthrough
-/// せず `inner.command`(invocation-resolved grants)を scope options へ
-/// 再注入する。caller が `command: None` を渡す形状(workflow
+/// T4: `create_worker_scope` は `options.runtime.exec` を passthrough
+/// せず `inner.exec`(invocation-resolved unified grants)を scope
+/// options へ再注入する。caller が `exec: None` を渡す形状(workflow
 /// `kind: tool` job の `ToolJobExecutor` と同じ)でも scope は invocation
 /// の resolved grants で構築され、`command` が expose・実行可能になる
 /// — passthrough のままなら empty grants gate で `POLICY_VIOLATION` に
@@ -606,9 +617,12 @@ fn self_grant() -> Value {
 async fn worker_scope_receives_invocation_resolved_command_grants() {
     let dir = TempDir::new();
     let mut opts = invocation_options(dir.root(), None);
-    opts.command = Some(json!({"maxConcurrent": 1, "grants": {"self": self_grant()}}));
+    opts.exec = Some(exec_doc(
+        None,
+        Some(json!({"maxConcurrent": 1, "grants": {"self": self_grant()}})),
+    ));
     let invocation = create_invocation_tool_runtime(opts).unwrap();
-    // `command: None` — workflow tool job と同じ scope options 形状。
+    // `exec: None` — workflow tool job と同じ scope options 形状。
     let scope = invocation
         .create_worker_scope(worker(
             "cmd",
@@ -658,22 +672,30 @@ async fn command_scope_fails_closed_without_grants() {
     invocation.dispose().await;
 }
 
-/// T4: scope が渡す `command` raw は `inner.command` との declared-shape
+/// T4: scope が渡す `exec` raw は `inner.exec` との declared-shape
 /// parity check を通る必要がある — 異なる grant set の密輸は
-/// `command policy mismatch` で reject される。
+/// `exec policy mismatch` で reject される(3 check → exec/security
+/// 2 check への集約で文言は `exec policy mismatch`)。
 #[tokio::test]
 async fn worker_scope_rejects_command_policy_mismatch() {
     let dir = TempDir::new();
     let mut opts = invocation_options(dir.root(), None);
-    opts.command = Some(json!({"maxConcurrent": 1, "grants": {"self": self_grant()}}));
+    opts.exec = Some(exec_doc(
+        None,
+        Some(json!({"maxConcurrent": 1, "grants": {"self": self_grant()}})),
+    ));
     let invocation = create_invocation_tool_runtime(opts).unwrap();
-    // inner.command(1 grant)と declared-shape が異なる raw → mismatch。
+    // inner.exec(!fixed grant 1 件)と declared-shape が異なる raw →
+    // mismatch。
     let mut opts = scope_options(&dir.root(), vec![ToolName::Command]);
-    opts.command = Some(json!({"maxConcurrent": 1, "grants": {}}));
+    opts.exec = Some(exec_doc(
+        None,
+        Some(json!({"maxConcurrent": 1, "grants": {}})),
+    ));
     let err = invocation
         .create_worker_scope(worker("cmd", opts))
         .unwrap_err();
-    assert!(err_message(&err).contains("command policy mismatch"));
+    assert!(err_message(&err).contains("exec policy mismatch"));
     invocation.dispose().await;
 }
 
@@ -692,10 +714,10 @@ async fn single_grant_projection_preserves_scope_parity() {
         "grants": {"route-grant": self_grant()}
     });
     let mut opts = invocation_options(dir.root(), None);
-    opts.command = Some(projected.clone());
+    opts.exec = Some(exec_doc(None, Some(projected.clone())));
     let invocation = create_invocation_tool_runtime(opts).unwrap();
     let mut scope_opts = scope_options(&dir.root(), vec![ToolName::Command]);
-    scope_opts.command = Some(projected);
+    scope_opts.exec = Some(exec_doc(None, Some(projected)));
     let scope = invocation
         .create_worker_scope(worker("routed", scope_opts))
         .unwrap();
@@ -724,7 +746,10 @@ async fn single_grant_projection_preserves_scope_parity() {
 async fn invocation_resolves_and_compiles_security() {
     let dir = TempDir::new();
     let mut opts = invocation_options(dir.root(), None);
-    opts.command = Some(json!({"grants": {"self": self_grant()}}));
+    opts.exec = Some(exec_doc(
+        None,
+        Some(json!({"grants": {"self": self_grant()}})),
+    ));
     opts.security = Some(json!({"execDenyPatterns": [".*"]}));
     let err = create_invocation_tool_runtime(opts).unwrap_err();
     let e = err
@@ -737,7 +762,10 @@ async fn invocation_resolves_and_compiles_security() {
     );
     // 非 match の security は受理 — inner.exec_deny が保持される。
     let mut opts = invocation_options(dir.root(), None);
-    opts.command = Some(json!({"grants": {"self": self_grant()}}));
+    opts.exec = Some(exec_doc(
+        None,
+        Some(json!({"grants": {"self": self_grant()}})),
+    ));
     opts.security = Some(json!({"execDenyPatterns": ["never-match-xyz"]}));
     let invocation = create_invocation_tool_runtime(opts).unwrap();
     invocation.dispose().await;
@@ -790,9 +818,12 @@ async fn worker_scope_receives_invocation_resolved_security() {
     std::fs::copy(std::env::current_exe().unwrap(), &target).unwrap();
     std::os::unix::fs::symlink(&target, dir.join("helper")).unwrap();
     let mut opts = invocation_options(dir.root(), None);
-    opts.command = Some(json!({
-        "grants": {"helper": {"executable": "./helper"}}
-    }));
+    opts.exec = Some(exec_doc(
+        None,
+        Some(json!({
+            "grants": {"helper": {"executable": "./helper"}}
+        })),
+    ));
     // declared stem `helper` には match しないが resolved `deny-me`
     // に match する inner deny。
     opts.security = Some(json!({"execDenyPatterns": ["deny-me"]}));
@@ -818,24 +849,30 @@ async fn worker_scope_receives_invocation_resolved_security() {
     invocation.dispose().await;
 }
 
-/// caller 供給 `runtime.command` の declared executable が inner deny
+/// caller 供給 `runtime.exec` の declared executable が inner deny
 /// に match する場合、parity の再 resolve で `InvalidRuntimePolicy`
-/// が返る — `invalid_binding`("command policy mismatch")ではなく
+/// が返る — `invalid_binding`("exec policy mismatch")ではなく
 /// inner error code が維持される(`with_invocation_layer` 先例の
 /// 共有 validation 規約)。
 #[tokio::test]
 async fn worker_scope_denied_declared_keeps_inner_error_code() {
     let dir = TempDir::new();
     let mut opts = invocation_options(dir.root(), None);
-    opts.command = Some(json!({"grants": {"self": self_grant()}}));
+    opts.exec = Some(exec_doc(
+        None,
+        Some(json!({"grants": {"self": self_grant()}})),
+    ));
     opts.security = Some(json!({"execDenyPatterns": ["forged.*"]}));
     let invocation = create_invocation_tool_runtime(opts).unwrap();
     // parity 用の caller raw — declared executable `forged-tool` が
     // inner deny `forged.*` に match。
     let mut scope_opts = scope_options(&dir.root(), vec![ToolName::Command]);
-    scope_opts.command = Some(json!({
-        "grants": {"x": {"executable": "forged-tool"}}
-    }));
+    scope_opts.exec = Some(exec_doc(
+        None,
+        Some(json!({
+            "grants": {"x": {"executable": "forged-tool"}}
+        })),
+    ));
     let err = invocation
         .create_worker_scope(worker("cmd", scope_opts))
         .unwrap_err();

@@ -2,6 +2,7 @@
 
 pub mod capability;
 pub mod command;
+pub mod exec;
 pub mod load;
 pub mod merge;
 pub mod process;

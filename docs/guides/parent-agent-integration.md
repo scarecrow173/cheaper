@@ -286,7 +286,11 @@ cheaper policy grant add cargo-test '{"executable":"<absolute-native-cargo-path>
 
 grant は repository のコードや build script を実行する権限を
 与える — OS sandbox ではなく、`argv` allowlist で対象 executable
-と引数形を限定する仕組み。
+と引数形を限定する仕組み。route の `grant:` 参照が解決できるのは
+`scope:"trusted" && !fixed` の grant のみ（unified `exec` grant
+namespace — [configuration ガイド](./configuration.md)）で、
+`process` task 由来の `fixed` grant・`scope:"project"` grant・
+未知名は `no-grant` viability に畳まれる。
 
 ### hook rewrite の承認保全と fallback
 

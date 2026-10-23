@@ -205,11 +205,17 @@ cheaper policy grant remove git-read
 - `add <name> <json>`: spec は `command.grants` の map value shape
   の JSON object（`name` key は含めない — map key として載る）。
   書き込み前に policy load と同一の検査（schema・deny list・
-  argv pattern の compile・env/cwd 規則）を通し、invalid spec は
-  file を変更せず error を返す。executable の存在確認は add 時に
+  argv pattern の compile・env/cwd 規則・grant/task 名衝突）を
+  通し、invalid spec は file を変更せず error を返す。`fixed:true`
+  ・明示 `scope` を含む spec は CLI 入口規約として `InvalidRequest`
+  で拒否される（`policy grant` は `!fixed` command grant のみ登録
+  する契約 — `fixed:false`・`inputs`/`outputs` の宣言は受理）。
+  executable の存在確認は add 時に
   は行わない（pin は scope 構築時の runtime 検査）。既存の同名
   grant がある場合は `InvalidRequest`（置き換えは `remove` →
-  `add`）。
+  `add`）。`process.tasks` の key と衝突する name は unified
+  `exec` namespace の規約として `InvalidRuntimePolicy`
+  （`details.{grant,task}`）で拒否される。
 - `remove <name>`: 存在しない name は `InvalidRequest` の error
   envelope を返す。
 - write path は atomic（temp + rename、POSIX `0600`）。caveat:

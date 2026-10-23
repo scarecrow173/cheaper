@@ -841,16 +841,6 @@
               "maxTokens": 4096,
               "repairAttempts": 1
             },
-            "process": {
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "tasks": {},
-              "timeout": "2m"
-            },
             "retry": {
               "transientAttempts": 2
             },
@@ -869,16 +859,6 @@
               },
               "maxJobs": 1
             },
-            "command": {
-              "grants": {},
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "timeout": "2m"
-            },
             "route": {
               "rewrite": {
                 "approvalBypass": []
@@ -886,6 +866,27 @@
             },
             "security": {
               "execDenyPatterns": []
+            },
+            "exec": {
+              "grants": {},
+              "command": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              },
+              "process": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              }
             }
           }
         }
@@ -955,16 +956,6 @@
               "maxTokens": 4096,
               "repairAttempts": 1
             },
-            "process": {
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "tasks": {},
-              "timeout": "2m"
-            },
             "retry": {
               "transientAttempts": 2
             },
@@ -983,16 +974,6 @@
               },
               "maxJobs": 1
             },
-            "command": {
-              "grants": {},
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "timeout": "2m"
-            },
             "route": {
               "rewrite": {
                 "approvalBypass": []
@@ -1000,6 +981,27 @@
             },
             "security": {
               "execDenyPatterns": []
+            },
+            "exec": {
+              "grants": {},
+              "command": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              },
+              "process": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              }
             }
           }
         }
@@ -1065,16 +1067,6 @@
               "maxTokens": 4096,
               "repairAttempts": 1
             },
-            "process": {
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "tasks": {},
-              "timeout": "2m"
-            },
             "retry": {
               "transientAttempts": 2
             },
@@ -1094,16 +1086,6 @@
               },
               "maxJobs": 1
             },
-            "command": {
-              "grants": {},
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "timeout": "2m"
-            },
             "route": {
               "rewrite": {
                 "approvalBypass": []
@@ -1111,6 +1093,27 @@
             },
             "security": {
               "execDenyPatterns": []
+            },
+            "exec": {
+              "grants": {},
+              "command": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              },
+              "process": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              }
             }
           }
         }
@@ -1462,7 +1465,10 @@
       "input": {
         "version": 1,
         "security": {
-          "execDenyPatterns": ["python.*", "ssh"]
+          "execDenyPatterns": [
+            "python.*",
+            "ssh"
+          ]
         }
       },
       "expected": {
@@ -1470,7 +1476,10 @@
           "policy": {
             "version": 1,
             "security": {
-              "execDenyPatterns": ["python.*", "ssh"]
+              "execDenyPatterns": [
+                "python.*",
+                "ssh"
+              ]
             }
           }
         }
@@ -1483,7 +1492,9 @@
       "input": {
         "version": 1,
         "security": {
-          "execDenyPatterns": ["x"]
+          "execDenyPatterns": [
+            "x"
+          ]
         }
       },
       "expected": {
@@ -1509,7 +1520,9 @@
       "input": {
         "version": 1,
         "security": {
-          "execDenyPatterns": ["("]
+          "execDenyPatterns": [
+            "("
+          ]
         }
       },
       "expected": {
@@ -1533,7 +1546,9 @@
           "timeout": "2m"
         },
         "security": {
-          "execDenyPatterns": ["python.*"]
+          "execDenyPatterns": [
+            "python.*"
+          ]
         },
         "command": {
           "grants": {
@@ -1565,7 +1580,9 @@
           "timeout": "2m"
         },
         "security": {
-          "execDenyPatterns": ["python.*"]
+          "execDenyPatterns": [
+            "python.*"
+          ]
         },
         "command": {
           "grants": {
@@ -1599,16 +1616,6 @@
               "maxTokens": 0,
               "repairAttempts": 0
             },
-            "process": {
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "tasks": {},
-              "timeout": "2m"
-            },
             "retry": {
               "transientAttempts": 0
             },
@@ -1624,33 +1631,50 @@
               },
               "maxJobs": 1
             },
-            "command": {
-              "grants": {
-                "g": {
-                  "cwd": ".",
-                  "env": {},
-                  "executable": "git",
-                  "exitCodes": [0],
-                  "killGrace": "2s",
-                  "maxOutputBytes": 65536,
-                  "timeout": "2m"
-                }
-              },
-              "heartbeat": {
-                "interval": "30s"
-              },
-              "killGrace": "2s",
-              "maxConcurrent": 1,
-              "maxOutputBytes": 65536,
-              "timeout": "2m"
-            },
             "route": {
               "rewrite": {
                 "approvalBypass": []
               }
             },
             "security": {
-              "execDenyPatterns": ["python.*"]
+              "execDenyPatterns": [
+                "python.*"
+              ]
+            },
+            "exec": {
+              "grants": {
+                "g": {
+                  "executable": "git",
+                  "fixed": false,
+                  "cwd": ".",
+                  "env": {},
+                  "timeout": "2m",
+                  "killGrace": "2s",
+                  "maxOutputBytes": 65536,
+                  "exitCodes": [
+                    0
+                  ],
+                  "scope": "trusted"
+                }
+              },
+              "command": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              },
+              "process": {
+                "heartbeat": {
+                  "interval": "30s"
+                },
+                "killGrace": "2s",
+                "maxConcurrent": 1,
+                "maxOutputBytes": 65536,
+                "timeout": "2m"
+              }
             }
           }
         }

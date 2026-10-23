@@ -1,6 +1,15 @@
 {
   "cases": [
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": []
+            }
+          ]
+        }
+      },
       "expected": [
         {
           "ok": {
@@ -167,6 +176,15 @@
       }
     },
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": []
+            }
+          ]
+        }
+      },
       "expected": [
         {
           "error": {
@@ -336,6 +354,15 @@
       }
     },
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": []
+            }
+          ]
+        }
+      },
       "expected": [
         {
           "ok": {
@@ -503,6 +530,15 @@
       }
     },
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": []
+            }
+          ]
+        }
+      },
       "expected": [
         {
           "error": {
@@ -800,6 +836,15 @@
       }
     },
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": []
+            }
+          ]
+        }
+      },
       "expected": [
         {
           "ok": {
@@ -966,6 +1011,15 @@
       }
     },
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": []
+            }
+          ]
+        }
+      },
       "expected": [
         {
           "ok": {
@@ -1132,6 +1186,15 @@
       }
     },
     {
+      "expectRust": {
+        "state": {
+          "operations": [
+            {
+              "resourceClaims": []
+            }
+          ]
+        }
+      },
       "expected": [
         {
           "ok": {

@@ -22,7 +22,10 @@ fn policy_schema_cases() {
                     Err(e) => Err(cheaper_err(&e, &[])),
                 }
             }
-            "normalizePolicy" => match normalize_policy(case["input"].as_object().unwrap()) {
+            "normalizePolicy" => match normalize_policy(
+                case["input"].as_object().unwrap(),
+                &std::collections::BTreeSet::new(),
+            ) {
                 Ok(p) => Ok(serde_json::json!({
                     "policy": serde_json::to_value(&p).unwrap_or(serde_json::Value::Null)
                 })),

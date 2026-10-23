@@ -5,10 +5,11 @@
 
 mod common;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 use cheaper_core::errors::ErrorCode;
 use cheaper_core::nodepath;
+use cheaper_core::policy::exec::build_exec_input;
 use cheaper_core::resources::normalization::ScopeDeclaration as CoreScopeDeclaration;
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::paths::{realpath, SymlinkPolicy};
@@ -34,8 +35,7 @@ fn worker_scope_options(owner: &str, root: &str, names: Vec<ToolName>) -> Worker
             write_scope: None,
             read_strictness: None,
             artifacts: None,
-            process: None,
-            command: None,
+            exec: None,
             security: None,
             root: root.to_string(),
             symlink_policy: SymlinkPolicy::Deny,
@@ -94,7 +94,12 @@ async fn compiles_policy_process_producer_and_executes_materialized_jobs() {
             }
         }
     });
-    let tools = create_tool_catalog(Some(&process_policy)).expect("catalog");
+    // authoring `process` section → unified exec-doc へ synthesis
+    // し、catalog/invocation 双方へ同じ resolved shape を渡す。
+    let exec_doc = serde_json::Value::Object(
+        build_exec_input(Some(&process_policy), None, &BTreeSet::new()).expect("synthesis"),
+    );
+    let tools = create_tool_catalog(Some(&exec_doc)).expect("catalog");
     let resources = WorkspaceResourceInference {
         workspace_root: root.clone(),
         symlink_policy: SymlinkPolicy::Deny,
@@ -108,8 +113,7 @@ async fn compiles_policy_process_producer_and_executes_materialized_jobs() {
     });
     let runtime = create_invocation_tool_runtime(InvocationToolRuntimeOptions {
         artifacts: None,
-        process: Some(process_policy.clone()),
-        command: None,
+        exec: Some(exec_doc.clone()),
         security: None,
         root: root.clone(),
         symlink_policy: SymlinkPolicy::Deny,

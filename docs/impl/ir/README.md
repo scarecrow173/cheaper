@@ -150,6 +150,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |
 | IMPL-034EVH2F3b1QJYE8LSAfkT | tool-operator worker definition schemas and tool-operate alias | completed | [tool-operator-worker-definition-schemas-and-tool-operate-alias.md](./tool-operator-worker-definition-schemas-and-tool-operate-alias.md) |
 | IMPL-034z3CE24rUsOGqD0BfeqZ | track executables with git lfs | completed | [track-executables-with-git-lfs.md](./track-executables-with-git-lfs.md) |
+| IMPL-034KThYLdekX1TvTeqCQhr | Unified exec grant model issue 165 | completed | [unified-exec-grant-model-issue-165.md](./unified-exec-grant-model-issue-165.md) |
 | IMPL-034r05iHy2gdnpx0u8vJaz | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | IMPL-034z1STqpGaGE7SWSnCLo3 | Unify packageVersion on builtinDir | completed | [unify-packageversion-on-builtindir.md](./unify-packageversion-on-builtindir.md) |
 | IMPL-034zXB37yW53DP9xUVf57j | Untrack payload and validate source assets | completed | [untrack-payload-and-validate-source-assets.md](./untrack-payload-and-validate-source-assets.md) |

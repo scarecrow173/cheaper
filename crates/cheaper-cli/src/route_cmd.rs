@@ -93,12 +93,12 @@ async fn execute_resolve(
         io.env,
         hooks.builtin_dir.as_deref(),
     )?;
-    let view = supply.command_view();
+    let view = supply.exec_view();
     let resolution = resolve::resolve(&ResolveInput {
         argv: &argv_tokens,
         cwd: &supply.root,
         routes: &supply.routes,
-        command_policy: &view,
+        exec_policy: &view,
         unsafe_command,
     });
 

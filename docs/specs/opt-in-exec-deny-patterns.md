@@ -27,7 +27,8 @@ relations:
     - "../adr/opt-in-exec-deny-patterns.md"
     - "../designs/opt-in-exec-deny-patterns.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "../adr/unified-exec-grant-model.md"
   derives-from:
     - "../discovery/opt-in-exec-deny-patterns.md"
   derived-by:

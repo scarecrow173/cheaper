@@ -53,26 +53,39 @@ You are a worker that ...（instruction 本文）
   file への path（worker file からの相対 path）。
 - `cheaper.writeScope`: `targets` を指定すると、runtime が
   `targets[].path` 以外への write を禁止する（writer 系 worker の
-  標準設定）。`command` tool とは非両立で、writeScope を宣言した
-  worker が `command` を expose すると scope 生成が
-  `POLICY_VIOLATION` で fail closed する（子 process の副作用を
+  標準設定）。`command` tool（`!fixed` grant surface）とは非両立で、
+  writeScope を宣言した worker が `command` を expose すると scope
+  生成が `POLICY_VIOLATION`（"command is incompatible with worker
+  writeScope"）で fail closed する（子 process の副作用を
   resource 層が観測できず coverage が vacuous になるため。詳細は
-  [command ガイド](./command.md)）。
+  [command ガイド](./command.md)）。`process` tool の task（`fixed`
+  grant）は writeScope 下でも実行できるが、task の `outputs` 宣言が
+  `targets` を coverage することが実行時に要求される — `outputs`
+  宣言（nonempty）は `outputs ⊆ writeScope` 必須、`outputs: []` は
+  「副作用を宣言しない」契約で coverage 成立、`outputs` 未宣言は
+  coverage を証明できず `POLICY_VIOLATION` で拒否される（tri-state
+  規約 — [managed process ガイド](./managed-process.md)）。
 - `cheaper.optionalTools`: `tools` に宣言した scope-gated tool
   （現状 `process` と `command` のみ）の **真部分集合** を列挙する
   opt-in key。列挙した tool は content-gate（`process.tasks` /
   `command.grants` が空）不成立時に `POLICY_VIOLATION` で scope
   構築を失敗させる代わりに **未登録へ縮退** し、run は残りの
-  tool で継続する。縮退した tool は system prompt に利用不可注記
-  として列挙され、model が呼んでも登録経路が存在しないため
-  unknown-tool として安全に失敗する。opt-in は capability を
-  縮める方向にのみ働き、権限を広げることには使えない。
-  `tools.allow` による admission 除外・grant 解決・argv
-  pattern・executable pin 等の call 経路の認可機構は一切変わらず、
-  `tools.allow` で除外された宣言 tool は opt-in worker でも
-  従来通り run 全体を `POLICY_VIOLATION` で fail させる
-  （admission と content-gate は別の層 —
-  [command ガイド](./command.md)）。検査 rule: 配列でない /
+  tool で継続する。併せて、degradable 宣言された exec surface
+  （`process` / `command`）に到達可能な grant の executable pin
+  （PATH 解決・deny 判定）が失敗した場合も、scope 構築を
+  `POLICY_VIOLATION` で fail させず当該 tool のみ未登録へ縮退
+  する — pin-fail×degradable の規則は `process` と `command` の
+  両 surface に適用される。縮退した tool は system prompt に
+  利用不可注記として列挙され、model が呼んでも登録経路が
+  存在しないため unknown-tool として安全に失敗する。opt-in は
+  capability を縮める方向にのみ働き、権限を広げることには
+  使えない。`tools.allow` による admission 除外・grant 解決・
+  argv pattern・spawn 前 executable 再検証等の call 経路の
+  認可機構は一切変わらず、`tools.allow` で除外された宣言
+  tool は opt-in worker でも従来通り run 全体を
+  `POLICY_VIOLATION` で fail させる（admission と
+  content-gate は別の層 — [command ガイド](./command.md)）。
+  検査 rule: 配列でない /
   空配列 / `tools` 未宣言の名 / vocabulary に無い名 / gated で
   ない tool / 重複 / `tools` 全体を含む宣言は全て
   `InvalidWorkerDefinition` で拒否される。opt-in worker は出力

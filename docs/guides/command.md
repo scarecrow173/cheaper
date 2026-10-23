@@ -29,6 +29,18 @@ command:
 
 grant 名は `^[a-z][a-z0-9_-]{0,63}$`（task 名と同規則）。必須 key は `executable` のみ。`cwd`・`env`・`timeout`・`killGrace`・`maxOutputBytes` は optional で、lifecycle 3 項目は grant override → section default の順で畳み込まれる。`cwd`・`env` は `process` task と同規則（workspace 相対検査・env key pattern・NUL 拒否）で、子 env は sanitized minimal env + grant 宣言分のみ — 親の ambient credential は継承しない。
 
+`command.grants` と `process.tasks` は resolve 時に**単一 `exec` grant namespace** へ畳まれる — `command` grant は `fixed:false`（argv pattern 契約）、`process` task は `fixed:true`（argv literal）の grant として解決される。両 section の名が衝突する（`command.grants` ∩ `process.tasks` 非空）と policy load は `InvalidRuntimePolicy` + `details.{grant,task}` で fail closed する。authoring の section 分離は維持されるが、grant 名空間は共有される点に注意。
+
+trusted policy YAML の grant spec はさらに `fixed`・`inputs`・`outputs`・`scope` を宣言できる（issue #165 の schema 拡張）:
+
+- `fixed: true` — `argv` を pattern ではなく固定 argv literal として扱う（`process` task 相当の宣言を `command` section から直接 authoring する経路。lifecycle default は引き続き `command` section 由来）。
+- `inputs` / `outputs` — declared I/O から ResourceManifest へ導出する task と同規約（workspace 相対・末尾 `/**` subtree）。未宣言は保守的な root subtree claim に落ちる。
+- `scope` — `"trusted"`（既定）または `"project"`。`"project"` は自己弱体化（route 不可視の project task 相当 grant）としてのみ意味を持つ。
+
+**`--grant`・`policy grant add` の CLI 入口では `fixed:true`・明示 `scope` を含む spec は `InvalidRequest` で拒否される** — これらの入口は route-eligible な `!fixed` command grant のみ供給する契約で、inert/route 不可視な宣言は利用者の意図と矛盾するため（trusted YAML での直接 authoring は合法）。`fixed:false`・`inputs`/`outputs` の宣言は CLI spec でも受理される。
+
+route の `grant:` 参照が解決するのも `scope:"trusted" && !fixed` の grant のみ — `fixed`・`scope:"project"`・未知名を指す route は `Viability::NoGrant`（route ineligible、error ではなく viability 情報）として畳まれる。
+
 executable は bare name または absolute path（workspace 相対 path は拒否）。bare name は scope 構築時点の ambient PATH で解決し、realpath 済み canonical path を pin する。native magic（MZ / ELF / Mach-O）を持つ executable のみ実行可能で、shell・script shim（`.cmd`/`.bat`/`.ps1`/`.sh`）は `process` baseline の deny で拒否される。
 
 ### `security.execDenyPatterns` — opt-in executable deny-list
@@ -42,10 +54,10 @@ match 規約は deterministic に固定される:
 - pattern は trusted layer（builtin policy + user-scope `<userConfigDir>/policy.yaml`）のみ authoring できる。project の `.cheaper/policy.yaml` に `security` 節を書くと schema が `InvalidRuntimePolicy` で拒否し、invocation 層（`--grant` 合成 policy）に `security` key を書くと `InvalidRequest` + `details.layer="invocation"` で拒否される。
 - layer merge は配列の**丸ごと置換**（union ではない）— builtin `[a]` + user `[b]` なら effective は `[b]`。user が `security` を書かなければ builtin 値を継承する。
 
-deny は 3 箇所に同一 predicate で適用される:
+deny は 3 箇所に同一 predicate で、**全 exec grant**（`command.grants` 由来 + `process.tasks` 由来の fixed grant）へ適用される:
 
-1. policy resolve — grant の **declared** executable spec が match すると `InvalidRuntimePolicy`（`details.grant`・`details.executable` 付き）で policy load / `policy grant add` が失敗する。
-2. pin 時 — PATH 解決した **resolved** basename が match すると `POLICY_VIOLATION`（`details.grant` 付き）。declared 名と resolved basename が異なる shim・symlink 経路もここで捕捉される。1 grant でも match すれば `pin_command_grants` 全体が `Err` となり command-tool scope 構築が失敗する（blast radius — unpinnable grant と同規約で、deny が operator-reachable になっただけ）。
+1. policy resolve — grant/task の **declared** executable spec が match すると `InvalidRuntimePolicy`（`details.grant`・`details.executable` 付き — task 由来の fixed grant には `details.task` も併記）で policy load / `policy grant add` が失敗する。
+2. pin 時 — PATH 解決した **resolved** basename が match すると `POLICY_VIOLATION`（`details.grant` 付き）。declared 名と resolved basename が異なる shim・symlink 経路もここで捕捉される。1 grant でも match すればその surface の pin 全体が `Err` となり scope 構築が失敗する（blast radius — unpinnable grant と同規約で、deny が operator-reachable になっただけ）。
 3. spawn 前再検証 — pin 済み path の再検証（pin-equality）直後に同じ deny が再適用される。
 
 **これは containment 機構ではない** — known-bad executable への fail-fast deny であり、任意 argv を別 process 起動へ変換できる binary（plugin/extension 機構を持つ tool、将来の新 runtime）は列挙を免れ得る。`security.execDenyPatterns` に何を書いても、**`command` の executable への grant は shell 相当の信頼として扱う**こと。
@@ -54,7 +66,7 @@ deny は 3 箇所に同一 predicate で適用される:
 
 - `.*` は schema 上許容される明示的な deny-all — これを宣言すると grant を持つ policy は全て load 失敗になるため、意図的な利用に限る（substring 意図の唯一の表現でもある）。
 - stem 正規化は unix でも `\` を区切りとして扱い `.com` suffix も strip する — `my\python.exe` や `foo.com` のような unix 上の奇名が deny に match する false-positive を生じ得る。方向は fail-closed（過剰に拒否するが漏らさない）であり、旧 builtin 由来の構造的制約として意図的に保持される。
-- `security.execDenyPatterns` は `command.grants` の executable にのみ適用される。固定 argv の `process.tasks` には適用されない。
+- `security.execDenyPatterns` は unified `exec` namespace の全 grant — `command.grants` の executable と `process.tasks` 由来の fixed grant executable の双方に適用される（issue #165 で適用範囲が均一化された）。
 
 #### 旧 mandatory deny-list（#163 で除去）との対応
 
@@ -96,7 +108,7 @@ echo '{"task": "..."}' | cheaper tool-operate \
   --grant '{"name":"git-read","executable":"git","argv":["log","*"]}'
 ```
 
-- flag 値は grant name を `name` key で内包する complete JSON object。`name` は `command.grants` の map key として取り出され、残りの key は上記「grant の宣言」と同一の spec shape（`executable` 必須、`argv`・`cwd`・`env`・lifecycle override は optional）。`--grant <v>` と `--grant=<v>` の両形を受理し、繰り返すと宣言順に複数 grant を同時注入する。値の上限は 64KiB（超過は `InvalidRequest`）。
+- flag 値は grant name を `name` key で内包する complete JSON object。`name` は `command.grants` の map key として取り出され、残りの key は上記「grant の宣言」と同一の spec shape（`executable` 必須、`argv`・`cwd`・`env`・lifecycle override は optional）。`--grant <v>` と `--grant=<v>` の両形を受理し、繰り返すと宣言順に複数 grant を同時注入する。値の上限は 64KiB（超過は `InvalidRequest`）。`fixed:true`・明示 `scope` を含む spec は `InvalidRequest` + `details.{grant,layer:"invocation"}` で拒否される（CLI 入口規約 — 上記「grant の宣言」節参照）。
 - `run`・`workflow run` 以外の command（`usage`・`count-tokens`・`models`・`auth`・`policy`・`workflow interface`）へ渡すと `InvalidRequest` で reject される。`workflow run` でも `run` と同一の意味論で注入され、`kind: tool` job の `command` がその grant を使える。例外として `hook` command は `parse_cli_args` に到達しない独立 parse path を持ち、`--grant` を含む未知 option を silent に無視する — run 系 command ではないため reject 契約の対象外の spec 適合 known gap（[test-spec](../test-specs/invocation-scoped-command-grants.md) 参照）。
 - 注入された grant はその run の effective grant 集合に畳み込まれ、runtime 上は user policy の grant と区別なく振る舞う。`security.execDenyPatterns`・argv pattern・executable pin 等の検査は policy 由来 grant と同一経路で走る — invocation 経路は deny-list を迂回しない。deny 該当の spec は merged grant 集合の再 resolve で `InvalidRuntimePolicy`（`details.grant`・`details.executable` 付き）となる。このとき `details.layer` は付かない（accepted gap — deny 元が builtin/user・grant 元が invocation と別 layer のため merged-map 評価では帰属不能）。なお invocation 層の policy 自体に `security` key を書くことは `InvalidRequest` + `details.layer="invocation"` で拒否される（authoring 権限の問題として別経路で検出される）。
 - **非永続**: grant は in-memory の `RuntimePolicy` にのみ存在し、policy file・`usage.jsonl`・`.cheaper/` のいずれにも書き込まれない。flag 無しの後続 run では効果を持たない。

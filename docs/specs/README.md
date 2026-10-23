@@ -57,7 +57,7 @@ Directory: `docs/specs`
 | SPEC-034CWHveVPBJp33jPRTCen | OpenAI Codex subscription provider | proposed | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
 | SPEC-034A8u2GqFTklBoQi0i1kG | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | SPEC-034zSPnVDi6fpHVc9ELgLW | Invocation-scoped OperationManager lifecycle | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
-| SPEC-034KLgfJ0Gka7fkRKHpfSH | opt-in security.execDenyPatterns profile — A9 の降格実装 | proposed | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
+| SPEC-034KLgfJ0Gka7fkRKHpfSH | opt-in security.execDenyPatterns profile — A9 の降格実装 | approved | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
 | SPEC-034zWqZR8Dmu9TXTR2qcsg | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | SPEC-034KuqPkTK2b4mHsykH9A5 | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 | approved | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
 | SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |
@@ -79,6 +79,7 @@ Directory: `docs/specs`
 | SPEC-034z14nGIf6fXRtTskkrk8 | Standalone executable distribution for cheaper CLI including APM bundles | superseded | [standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md](./standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md) |
 | SPEC-003hd7W00xCikuCXnwHA4C | Synchronize distributed cheaper-usage skill and parent-agent integration guide | implemented | [synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md](./synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md) |
 | SPEC-034EStsweRrzPq1Og6oCzl | tool-operator built-in Worker | approved | [tool-operator-built-in-worker.md](./tool-operator-built-in-worker.md) |
+| SPEC-034KOpKfZpegX2MLPD0uq6 | unified exec grant model — command.grants / process.tasks の統合 | approved | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
 | SPEC-034r05iHK8bA7grnYLdwgl | Unified version and release source of truth | implemented | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | SPEC-034rzGnCaRQc5ceI95lf5i | Usage and savings telemetry aggregation | implemented | [usage-and-savings-telemetry-aggregation.md](./usage-and-savings-telemetry-aggregation.md) |
 | SPEC-034r2eqGCyFZr7j0uSfst0 | Usage log recording scope documentation contract | implemented | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |

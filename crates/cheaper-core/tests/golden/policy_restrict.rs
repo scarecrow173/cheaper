@@ -9,7 +9,8 @@ use crate::common::*;
 fn normalize_base(raw: &serde_json::Value) -> cheaper_core::policy::schema::RuntimePolicy {
     let validated =
         validate_policy_schema(raw, PolicySchemaMode::Complete).expect("fixture policy validates");
-    normalize_policy(&validated).expect("fixture policy normalizes")
+    normalize_policy(&validated, &std::collections::BTreeSet::new())
+        .expect("fixture policy normalizes")
 }
 
 #[test]

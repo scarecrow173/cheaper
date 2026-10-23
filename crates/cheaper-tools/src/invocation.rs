@@ -8,8 +8,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
-use cheaper_core::policy::command::{resolve_command_policy, ResolvedCommandPolicy};
-use cheaper_core::policy::process::{resolve_process_policy, ResolvedProcessPolicy};
+use cheaper_core::policy::exec::{resolve_exec_policy, ResolvedExecPolicy};
 use cheaper_core::policy::security::{resolve_security_policy, ExecDenyList, SecurityPolicy};
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::paths::SymlinkPolicy;
@@ -61,13 +60,11 @@ pub struct WorkerScopeOptions {
 /// `InvocationToolRuntimeOptions`。
 pub struct InvocationToolRuntimeOptions {
     pub artifacts: Option<ArtifactPorts>,
-    /// `Partial<ProcessPolicy>` の raw JSON(`resolve_process_policy` 入力)。
-    pub process: Option<Value>,
-    /// `Partial<CommandPolicy>` の raw JSON(`resolve_command_policy` 入力)。
-    /// pin は行わない(`names` を持たないため) — declared-shape の
-    /// `resolve_command_policy` のみ実行し `inner.command` に保持する
-    /// (design §(b)/(g))。scope への再注入は T4 で確定。
-    pub command: Option<Value>,
+    /// unified exec-doc の raw JSON(`resolve_exec_policy` 入力 —
+    /// issue #165)。pin は行わない(`names` を持たないため) —
+    /// declared-shape の `resolve_exec_policy` のみ実行し
+    /// `inner.exec` に保持する(design §(b)/(g)/(k))。
+    pub exec: Option<Value>,
     /// `Partial<SecurityPolicy>` の raw JSON(`resolve_security_policy`
     /// 入力 — `command` と同型の raw JSON 規約、issue #164)。
     pub security: Option<Value>,
@@ -98,11 +95,10 @@ struct InvocationInner {
     resources: ResourceManager,
     scheduler: ToolScheduler,
     artifacts: Option<ArtifactPorts>,
-    process: ResolvedProcessPolicy,
-    /// declared-shape の resolved command policy — scope parity check
-    /// の比較対象(pin 済み path は含めない、design §(g))。
-    command: ResolvedCommandPolicy,
-    /// declared-shape の security policy — `inner.command` と同型の
+    /// declared-shape の resolved unified exec policy — scope parity
+    /// check の比較対象(pin 済み path は含めない、design §(b)/(g)/(k))。
+    exec: ResolvedExecPolicy,
+    /// declared-shape の security policy — `inner.exec` と同型の
     /// parity check 比較対象(issue #164)。
     security: SecurityPolicy,
     /// `security.execDenyPatterns` の compiled 形 — scope 構築・
@@ -169,7 +165,7 @@ impl InvocationToolRuntime {
                 symlink_policy: self.inner.symlink_policy,
                 names: options.names,
                 denylist: None,
-                catalog: ToolCatalog::from_resolved_policy(self.inner.process.clone()),
+                catalog: ToolCatalog::from_resolved_policy(self.inner.exec.clone()),
             },
             None,
         )
@@ -226,24 +222,20 @@ impl InvocationToolRuntime {
         if options.runtime.symlink_policy != inner.symlink_policy {
             return Err(Box::new(invalid_binding("symlink policy mismatch")));
         }
-        if let Some(raw) = &options.runtime.process {
-            let resolved =
-                resolve_process_policy(Some(raw)).map_err(|e| Box::new(e) as ToolError)?;
-            if resolved != inner.process {
-                return Err(Box::new(invalid_binding("process policy mismatch")));
-            }
-        }
-        // `command` も `process` と同型の declared-shape parity check —
-        // `options.runtime.command` を再 resolve して `inner.command` と
+        // unified exec の declared-shape parity check —
+        // `options.runtime.exec` を再 resolve して `inner.exec` と
         // `PartialEq` 比較する。比較対象は pin 前の declared-shape で、
         // pin map は各 scope の `create_tool_runtime` が構築する
-        // (design §(b)/(g))。scope 生成後により広い grant set を
-        // 密輸できないようにする。
-        if let Some(raw) = &options.runtime.command {
-            let resolved = resolve_command_policy(Some(raw), &inner.exec_deny)
+        // (design §(b)/(g)/(k))。scope 生成後により広い grant set を
+        // 密輸できないようにする。caller 供給 exec の declared
+        // executable が inner deny に match した場合の error は
+        // `invalid_binding` ではなく `InvalidRuntimePolicy` で返る
+        // (`security` parity と同じ inner-code 規約)。
+        if let Some(raw) = &options.runtime.exec {
+            let resolved = resolve_exec_policy(Some(raw), &inner.exec_deny)
                 .map_err(|e| Box::new(e) as ToolError)?;
-            if resolved != inner.command {
-                return Err(Box::new(invalid_binding("command policy mismatch")));
+            if resolved != inner.exec {
+                return Err(Box::new(invalid_binding("exec policy mismatch")));
             }
         }
         // `security` も `command`/`process` と同型の declared-shape
@@ -271,7 +263,7 @@ impl InvocationToolRuntime {
                 .parent(lease, &options.owner_id)
                 .map_err(|e| Box::new(e) as ToolError)?;
         }
-        // `{...options, artifacts: opts.artifacts, process: opts.process,
+        // `{...options, artifacts: opts.artifacts, exec: opts.exec,
         // signal: composite, abortGraceMs: options.abortGraceMs ?? opts.abortGraceMs}`。
         let signal = match options.runtime.signal {
             Some(owner) => AbortSignal::any(&[inner.controller.signal(), owner]),
@@ -282,18 +274,14 @@ impl InvocationToolRuntime {
             write_scope: options.runtime.write_scope,
             read_strictness: options.runtime.read_strictness,
             artifacts: inner.artifacts.clone(),
-            process: Some(
-                serde_json::to_value(&inner.process)
-                    .expect("ResolvedProcessPolicy は必ず serialize 可能"),
-            ),
-            // `inner.process` と同型の再注入 — scope は常に
-            // invocation-resolved の declared-shape grants を受け取る。
-            // caller 指定の raw は上の parity check で `inner.command`
-            // との一致を検証済み、`None` もそのままでは scope へ漏れない
-            // (design §(g))。
-            command: Some(
-                serde_json::to_value(&inner.command)
-                    .expect("ResolvedCommandPolicy は必ず serialize 可能"),
+            // `inner.exec` の再注入 — scope は常に invocation-resolved
+            // の declared-shape unified exec policy を受け取る
+            // (design §(k))。caller 指定の raw は上の parity check で
+            // `inner.exec` との一致を検証済み、`None` もそのままでは
+            // scope へ漏れない。
+            exec: Some(
+                serde_json::to_value(&inner.exec)
+                    .expect("ResolvedExecPolicy は必ず serialize 可能"),
             ),
             // `inner.command` と同型の再注入 — scope は常に
             // invocation-resolved の security を受け取る(caller の
@@ -420,8 +408,6 @@ async fn dispose_inner(inner: Arc<InvocationInner>) {
 pub fn create_invocation_tool_runtime(
     options: InvocationToolRuntimeOptions,
 ) -> Result<InvocationToolRuntime, ToolError> {
-    let process =
-        resolve_process_policy(options.process.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
     // `security` は declared-shape + compiled 形の両方を保持する
     // (issue #164) — parity check が source string equality を見る
     // ため `SecurityPolicy` を、scope 構築・再 resolve で共有する
@@ -430,9 +416,9 @@ pub fn create_invocation_tool_runtime(
         resolve_security_policy(options.security.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
     let exec_deny = ExecDenyList::compile(&security.exec_deny_patterns)
         .map_err(|e| Box::new(e) as ToolError)?;
-    // `command` は declared-shape のみ resolve — pin は `names` を
-    // 持つ `create_tool_runtime` 境界の per-scope 責務(design §(b))。
-    let command = resolve_command_policy(options.command.as_ref(), &exec_deny)
+    // unified exec は declared-shape のみ resolve — pin は `names` を
+    // 持つ `create_tool_runtime` 境界の per-scope 責務(design §(b)/(k))。
+    let exec = resolve_exec_policy(options.exec.as_ref(), &exec_deny)
         .map_err(|e| Box::new(e) as ToolError)?;
     if let Some(grace) = options.abort_grace_ms {
         if !(grace.is_finite() && grace >= 0.0) {
@@ -471,8 +457,7 @@ pub fn create_invocation_tool_runtime(
         resources,
         scheduler,
         artifacts: options.artifacts,
-        process,
-        command,
+        exec,
         security,
         exec_deny,
         root: options.root,

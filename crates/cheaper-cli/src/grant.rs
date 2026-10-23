@@ -82,6 +82,26 @@ pub(crate) fn build_invocation_layer(
                 Map::from_iter([("grant".to_string(), json!(name))]),
             ));
         }
+        // CLI 入口 validation(issue #165 design §(c) 確定) —
+        // `--grant` は route-eligible な `!fixed` command grant を
+        // 供給する契約のため、`fixed:true`(両 surface 不可視の inert
+        // grant)・明示 `scope`(route 不可視になり得る)を含む spec を
+        // reject する。trusted policy YAML での直接 authoring は
+        // 合法のまま(schema は受理するため拒否点はこの入口)。
+        if spec.get("fixed") == Some(&Value::Bool(true)) {
+            return Err(invocation_invalid_request(
+                "invalid --grant value: `fixed: true` is not allowed \
+                 (CLI grants are non-fixed)",
+                Map::from_iter([("grant".to_string(), json!(name))]),
+            ));
+        }
+        if spec.contains_key("scope") {
+            return Err(invocation_invalid_request(
+                "invalid --grant value: `scope` is not allowed \
+                 (it is derived from the grant's origin layer)",
+                Map::from_iter([("grant".to_string(), json!(name))]),
+            ));
+        }
         // intra-invocation duplicate — 宣言順 push の暗黙 last-wins を
         // 許さない。
         if specs.contains_key(&name) {
@@ -200,6 +220,33 @@ mod tests {
         assert_eq!(e.code(), ErrorCode::InvalidRequest);
         assert_eq!(e.details().unwrap()["grant"], json!("self"));
         assert_eq!(layer_detail(&e), Some(&json!("invocation")));
+    }
+
+    /// issue #165 — `fixed:true`・明示 `scope` を含む spec は CLI 入口で
+    /// `InvalidRequest` + `details.{layer:"invocation",grant}`(design
+    /// §(c) 確定: `--grant` は `!fixed` command grant のみ供給する)。
+    /// `fixed:false`・`inputs`/`outputs` 宣言は受理される(schema 合法)。
+    #[test]
+    fn rejects_fixed_and_scope_specs() {
+        for raw in [
+            r#"{"name":"x","executable":"/bin/x","fixed":true}"#,
+            r#"{"name":"x","executable":"/bin/x","scope":"trusted"}"#,
+            r#"{"name":"x","executable":"/bin/x","scope":"project"}"#,
+        ] {
+            let e = build_invocation_layer(&[raw.to_string()]).unwrap_err();
+            assert_eq!(e.code(), ErrorCode::InvalidRequest, "{raw}");
+            assert_eq!(layer_detail(&e), Some(&json!("invocation")), "{raw}");
+            assert_eq!(e.details().unwrap()["grant"], json!("x"), "{raw}");
+        }
+        // `fixed:false`/`inputs`/`outputs` は reject 対象外。
+        let (layer, _) = build_invocation_layer(&[
+            r#"{"name":"x","executable":"/bin/x","fixed":false,"inputs":[],"outputs":["out/**"]}"#
+                .to_string(),
+        ])
+        .unwrap();
+        let spec = &layer.expect("accepted spec produces a layer")["command"]["grants"]["x"];
+        assert_eq!(spec["fixed"], json!(false));
+        assert_eq!(spec["outputs"], json!(["out/**"]));
     }
 
     /// 空入力 → `(None, vec![])`(layer 非生成 — load 経路に差分無し)。

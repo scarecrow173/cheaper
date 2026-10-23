@@ -15,14 +15,16 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+use std::collections::BTreeSet;
+
 use cheaper_core::errors::{CheaperError, ErrorCode};
-use cheaper_core::policy::process::{resolve_process_policy, ResolvedProcessPolicy};
+use cheaper_core::policy::exec::{build_exec_input, resolve_exec_policy, ResolvedExecPolicy};
+use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::workspace::paths::{canonicalize_workspace_root, SymlinkPolicy};
 use cheaper_tools::catalog::CanonicalToolResult;
 use cheaper_tools::operation::{AbortController, AbortReason};
-use cheaper_tools::tools::process::{
-    create_process_tool, find_cheaper_error, ProcessTool, ProcessToolOptions,
-};
+use cheaper_tools::tools::exec::{pin_exec_grants, ExecToolOptions};
+use cheaper_tools::tools::process::{create_process_tool, find_cheaper_error, ProcessTool};
 use cheaper_tools::ToolError;
 use serde_json::{json, Map, Value};
 
@@ -303,23 +305,43 @@ fn fixture_task(mode: &str, args: &[&str], outputs: &[&str]) -> Value {
     })
 }
 
-fn policy(tasks: Value, extra: Value) -> ResolvedProcessPolicy {
+/// authoring `process` section(`{tasks}` + section-level extra)→
+/// unified resolved policy への seam 変換(段 2 synthesis → 段 3
+/// resolve)。task executable の pin は `tool_with` で行う。
+fn policy(tasks: Value, extra: Value) -> ResolvedExecPolicy {
     let mut raw = Map::new();
     raw.insert("tasks".to_string(), tasks);
     if let Value::Object(map) = extra {
         raw.extend(map);
     }
-    resolve_process_policy(Some(&Value::Object(raw))).unwrap()
+    let doc = build_exec_input(Some(&Value::Object(raw)), None, &BTreeSet::new()).unwrap();
+    resolve_exec_policy(Some(&Value::Object(doc)), &ExecDenyList::default()).unwrap()
 }
 
+/// fixed grant を ambient PATH で pin した `ExecToolOptions` を構築
+/// する(D9 — task executable の pin は scope 構築責務。registry を
+/// bypass する本経路では test 側が同 seam で pin する)。
 fn tool_with(root: &str, tasks: Value, extra: Value) -> ProcessTool {
-    create_process_tool(ProcessToolOptions {
+    let exec = policy(tasks, extra);
+    let pins = pin_exec_grants(
+        &exec,
+        true,
+        root,
+        SymlinkPolicy::Deny,
+        None,
+        &ExecDenyList::default(),
+    )
+    .unwrap();
+    create_process_tool(ExecToolOptions {
         root: root.to_string(),
         symlink_policy: SymlinkPolicy::Deny,
-        process: policy(tasks, extra),
+        exec,
+        pins,
         on_timeout: None,
         denylist: None,
+        exec_deny: ExecDenyList::default(),
         write_scope: None,
+        route_context: None,
     })
 }
 
@@ -639,16 +661,29 @@ async fn touch_with_matching_write_scope_succeeds() {
     let dir = TempDir::new();
     let root = dir.root();
     let marker = dir.join("out").to_string_lossy().into_owned();
-    let tool = create_process_tool(ProcessToolOptions {
+    let exec = policy(
+        json!({"check": fixture_task("touch", &[&marker], &["out"])}),
+        json!({}),
+    );
+    let pins = pin_exec_grants(
+        &exec,
+        true,
+        &root,
+        SymlinkPolicy::Deny,
+        None,
+        &ExecDenyList::default(),
+    )
+    .unwrap();
+    let tool = create_process_tool(ExecToolOptions {
         root,
         symlink_policy: SymlinkPolicy::Deny,
-        process: policy(
-            json!({"check": fixture_task("touch", &[&marker], &["out"])}),
-            json!({}),
-        ),
+        exec,
+        pins,
         on_timeout: None,
         denylist: None,
+        exec_deny: ExecDenyList::default(),
         write_scope: Some(std::collections::HashSet::from(["out".to_string()])),
+        route_context: None,
     });
     tool.execute(&json!({"task": "check"}), None).await.unwrap();
     assert_eq!(std::fs::read_to_string(&marker).unwrap(), "generated");

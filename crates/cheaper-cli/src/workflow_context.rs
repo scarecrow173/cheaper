@@ -221,7 +221,7 @@ impl WorkflowContext {
         dirs: ConfigDirs,
         policy: RuntimePolicy,
     ) -> WorkflowContext {
-        let tools = Arc::new(ToolCatalog::from_resolved_policy(policy.process.clone()));
+        let tools = Arc::new(ToolCatalog::from_resolved_policy(policy.exec.clone()));
         let inference = CliResourceInference {
             workspace_root: root.clone(),
             symlink_policy: policy.filesystem.symlinks,
@@ -312,7 +312,7 @@ pub(crate) fn prepare_workflow_context(
         project_dir: &dirs.project_dir.to_string_lossy(),
         invocation,
     })?;
-    // `createToolCatalog({process: policy.process})` — resolved policy
+    // `createToolCatalog({exec: policy.exec})` — resolved policy
     // からの直接構築(serialize→再 resolve の二重経路を避ける —
     // `ToolCatalog::from_resolved_policy` は同一経路)。
     Ok(WorkflowContext::from_policy(root, dirs, policy))

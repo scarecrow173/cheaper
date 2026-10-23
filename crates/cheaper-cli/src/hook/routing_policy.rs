@@ -133,13 +133,13 @@ pub enum Verdict {
 }
 
 /// shell route arm の入力 — hook entry が firing 1 回に load した
-/// effective routes + command policy の参照面(A#10 — eval 内で
+/// effective routes + exec policy の参照面(A#10 — eval 内で
 /// file I/O を分散させず、純粋評価として供給する)。`None` の場合
 /// route arm は skip され従来評価のみが走る。
 #[derive(Clone, Copy)]
 pub struct RouteEvalInput<'a> {
     pub routes: &'a crate::route::routes::EffectiveRoutes,
-    pub command_policy: crate::route::resolve::CommandPolicyView<'a>,
+    pub exec_policy: crate::route::resolve::ExecPolicyView<'a>,
 }
 
 /// `EvaluateOptions` — `env` は stdin stub と同様に `CliIo.env` を
@@ -1468,7 +1468,7 @@ async fn evaluate_route_arm(
         argv: &argv,
         cwd,
         routes: route_input.routes,
-        command_policy: &route_input.command_policy,
+        exec_policy: &route_input.exec_policy,
         unsafe_command: false,
     });
     if !res.matched || res.viability != Some(crate::route::resolve::Viability::Runnable) {
@@ -2050,23 +2050,23 @@ mod tests {
 
     mod route_arm {
         use super::*;
-        use crate::route::resolve::CommandPolicyView;
+        use crate::route::resolve::ExecPolicyView;
         use crate::route::routes::{EffectiveRoutes, Route, RouteLayer};
-        use cheaper_core::policy::command::{resolve_command_policy, ResolvedCommandPolicy};
+        use cheaper_core::policy::exec::{resolve_exec_policy, ResolvedExecPolicy};
         use cheaper_core::policy::security::ExecDenyList;
         use cheaper_core::workspace::paths::SymlinkPolicy;
         use serde_json::json;
         use std::path::Path;
 
         /// grant executable は test binary 自身を pin — `cat`/`cargo`
-        /// argv[0] の route 宣言でも `check_command_execution` が受理
+        /// argv[0] の route 宣言でも `check_exec_execution` が受理
         /// する形(resolve unit test と同じ構造)。
-        fn grant_policy(argv: &[&str]) -> ResolvedCommandPolicy {
+        fn grant_policy(argv: &[&str]) -> ResolvedExecPolicy {
             let exe = std::env::current_exe()
                 .unwrap()
                 .to_string_lossy()
                 .into_owned();
-            resolve_command_policy(
+            resolve_exec_policy(
                 Some(&json!({
                     "grants": {
                         "g": { "executable": exe, "argv": argv }
@@ -2093,7 +2093,7 @@ mod tests {
         fn route_opts<'a>(
             lookup: &'a dyn Fn(&str) -> Option<String>,
             routes: &'a EffectiveRoutes,
-            policy: &'a ResolvedCommandPolicy,
+            policy: &'a ResolvedExecPolicy,
             exec_deny: &'a ExecDenyList,
             root: &'a str,
         ) -> EvaluateOptions<'a> {
@@ -2102,7 +2102,7 @@ mod tests {
                 builtin_dir: None,
                 route: Some(RouteEvalInput {
                     routes,
-                    command_policy: CommandPolicyView {
+                    exec_policy: ExecPolicyView {
                         policy,
                         root,
                         symlink_policy: SymlinkPolicy::Deny,

@@ -5,6 +5,7 @@ pub mod boundary;
 pub mod command;
 pub mod count_tokens;
 pub mod edit;
+pub mod exec;
 pub mod find;
 pub mod grep;
 pub mod grep_eval;

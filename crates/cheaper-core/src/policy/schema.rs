@@ -7,12 +7,9 @@ use crate::duration::{parse_duration, DURATION_PATTERN};
 use crate::errors::{CheaperError, ErrorCode};
 use crate::js;
 use crate::model::tier::{Tier, TIERS};
-use crate::policy::command::{
-    command_policy_properties, resolve_command_policy, ResolvedCommandPolicy,
-};
-use crate::policy::process::{
-    process_policy_properties, resolve_process_policy, ResolvedProcessPolicy,
-};
+use crate::policy::command::command_policy_properties;
+use crate::policy::exec::{build_exec_input, resolve_exec_policy, ResolvedExecPolicy};
+use crate::policy::process::process_policy_properties;
 use crate::policy::security::{
     resolve_exec_deny_list, resolve_security_policy, security_policy_properties, ExecDenyList,
     SecurityPolicy,
@@ -128,10 +125,13 @@ impl RewritePolicy {
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct RuntimePolicy {
     pub workflow: WorkflowPolicy,
-    pub process: ResolvedProcessPolicy,
-    /// `command` grants(trusted layer のみ authoring 可能。project
-    /// partial schema は section 全体を除外する)。
-    pub command: ResolvedCommandPolicy,
+    /// 統一 exec policy(issue #165) — resolved `command`/`process`
+    /// section の単一集約。serialized form は
+    /// `{"grants":{..},"command":{defaults},"process":{defaults}}`。
+    /// `command.grants`(trusted layer のみ authoring 可能 — project
+    /// partial schema は section 全体を除外)と `process.tasks` の
+    /// grant が単一 namespace に resolve される。
+    pub exec: ResolvedExecPolicy,
     /// `route` section(`command` と同型の trusted-layer 限定 —
     /// project partial schema は section 全体を除外する)。
     pub route: RoutePolicy,
@@ -433,17 +433,20 @@ pub fn validate_policy_schema(
     }
     let policy = raw.as_object().expect("schema enforces object").clone();
     // Preserve partial omissions while still rejecting duration overflow
-    // etc. before merge.
-    if let Some(process) = policy.get("process") {
-        resolve_process_policy(Some(process))?;
-    }
-    // `security` の compile は `command` の有無に関わらず無条件に評価
-    // する — `command` 欠落の security-only doc に含まれる invalid
-    // regex も layer 単位の検査で fail-closed に拒否する。
+    // etc. before merge — unified exec resolution(issue #165)が
+    // section resolver を内包するため、merged `process`/`command` の
+    // semantic 検査は `build_exec_input` + `resolve_exec_policy` で
+    // 1 度に行う。deny 適用点 1・collision 検査もここで発火する。
+    // `security` の compile は `command`/`process` の有無に関わらず
+    // 無条件に評価する — security-only doc の invalid regex も
+    // layer 単位の検査で fail-closed に拒否する。
     let exec_deny = resolve_exec_deny_list(policy.get("security"))?;
-    if let Some(command) = policy.get("command") {
-        resolve_command_policy(Some(command), &exec_deny)?;
-    }
+    let exec_doc = build_exec_input(
+        policy.get("process"),
+        policy.get("command"),
+        &std::collections::BTreeSet::new(),
+    )?;
+    resolve_exec_policy(Some(&Value::Object(exec_doc)), &exec_deny)?;
     Ok(policy)
 }
 
@@ -513,7 +516,10 @@ fn get_optional_u64(obj: &Map<String, Value>, key: &str) -> Option<u64> {
 /// makes the unvalidated-input case unreachable, so passthrough is the
 /// intended contract (same precedent as `rustDropUnknownArtifactKeys`
 /// for the workflow artifact spread).
-pub fn normalize_policy(raw: &Map<String, Value>) -> Result<RuntimePolicy, CheaperError> {
+pub fn normalize_policy(
+    raw: &Map<String, Value>,
+    project_task_names: &std::collections::BTreeSet<String>,
+) -> Result<RuntimePolicy, CheaperError> {
     let empty = Map::new();
     let execution = raw
         .get("execution")
@@ -584,10 +590,14 @@ pub fn normalize_policy(raw: &Map<String, Value>) -> Result<RuntimePolicy, Cheap
     // (declared executable の deny 照合は resolve 段階で fail-closed)。
     let security = resolve_security_policy(raw.get("security"))?;
     let exec_deny = ExecDenyList::compile(&security.exec_deny_patterns)?;
+    // 統一 exec resolution(issue #165)— merged `process`/`command`
+    // section を段 2 synthesis + 段 3 resolver で `RuntimePolicy.exec`
+    // へ畳む。`project_task_names` は project layer 宣言 task 由来の
+    // provenance(`scope:"project"`)。
+    let exec_doc = build_exec_input(raw.get("process"), raw.get("command"), project_task_names)?;
     Ok(RuntimePolicy {
         workflow: resolve_workflow_policy(raw.get("workflow"))?,
-        process: resolve_process_policy(raw.get("process"))?,
-        command: resolve_command_policy(raw.get("command"), &exec_deny)?,
+        exec: resolve_exec_policy(Some(&Value::Object(exec_doc)), &exec_deny)?,
         // `route` の passthrough 解決 — `null`/欠落 → default `[]`。
         // 値 domain は schema が保証済みのため item は string のみ収集。
         route: {
@@ -764,7 +774,7 @@ mod tests {
     #[test]
     fn normalize_policy_fills_defaults() {
         let raw = validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap();
-        let policy = normalize_policy(&raw).unwrap();
+        let policy = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap();
         assert_eq!(policy.execution.timeout_ms, 120_000);
         assert_eq!(policy.execution.max_turns, Some(10));
         assert_eq!(policy.execution.concurrency.unwrap().max_operations, 8);
@@ -781,18 +791,31 @@ mod tests {
         let mut p = valid_policy();
         p["execution"]["maxTurns"] = Value::Null;
         let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
-        assert_eq!(normalize_policy(&raw).unwrap().execution.max_turns, None);
+        assert_eq!(
+            normalize_policy(&raw, &std::collections::BTreeSet::new())
+                .unwrap()
+                .execution
+                .max_turns,
+            None
+        );
         // complete schema では maxTurns は required — 欠落は reject。
         // partial(project/user layer)では欠落可で `None` になる。
         let mut p = valid_policy();
         p["execution"].as_object_mut().unwrap().remove("maxTurns");
         assert!(validate_policy_schema(&p, PolicySchemaMode::Complete).is_err());
         let raw = validate_policy_schema(&p, PolicySchemaMode::Partial).unwrap();
-        assert_eq!(normalize_policy(&raw).unwrap().execution.max_turns, None);
+        assert_eq!(
+            normalize_policy(&raw, &std::collections::BTreeSet::new())
+                .unwrap()
+                .execution
+                .max_turns,
+            None
+        );
         // 明示整数は bounded のまま。
         assert_eq!(
             normalize_policy(
-                &validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap()
+                &validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap(),
+                &std::collections::BTreeSet::new(),
             )
             .unwrap()
             .execution
@@ -817,7 +840,7 @@ mod tests {
         p["route"] = json!({"rewrite": {"approvalBypass": ["codex"]}});
         for mode in [PolicySchemaMode::Complete, PolicySchemaMode::Partial] {
             let raw = validate_policy_schema(&p, mode).unwrap();
-            let policy = normalize_policy(&raw).unwrap();
+            let policy = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap();
             assert_eq!(
                 policy.route.rewrite.approval_bypass,
                 vec!["codex".to_string()]
@@ -828,7 +851,7 @@ mod tests {
         // domain 内の複数 target も受理される。
         p["route"] = json!({"rewrite": {"approvalBypass": ["codex", "cursor", "copilot"]}});
         let raw = validate_policy_schema(&p, PolicySchemaMode::Partial).unwrap();
-        let policy = normalize_policy(&raw).unwrap();
+        let policy = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap();
         for t in ["codex", "cursor", "copilot"] {
             assert!(policy.route.rewrite.approval_bypass_enabled(t), "{t}");
         }
@@ -836,7 +859,7 @@ mod tests {
         // が serialize 出力へ載る(yaml 表現と 1:1)。
         p["route"] = json!({"rewrite": {"approvalBypass": ["codex"]}});
         let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
-        let policy = normalize_policy(&raw).unwrap();
+        let policy = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap();
         assert_eq!(
             serde_json::to_value(&policy)
                 .unwrap()
@@ -855,7 +878,7 @@ mod tests {
             let mut p = valid_policy();
             p["route"] = route;
             let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
-            assert!(normalize_policy(&raw)
+            assert!(normalize_policy(&raw, &std::collections::BTreeSet::new())
                 .unwrap()
                 .route
                 .rewrite
@@ -864,7 +887,7 @@ mod tests {
         }
         // `route` 自体の欠落も `[]`。
         let raw = validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap();
-        assert!(normalize_policy(&raw)
+        assert!(normalize_policy(&raw, &std::collections::BTreeSet::new())
             .unwrap()
             .route
             .rewrite
@@ -911,7 +934,7 @@ mod tests {
         p["security"] = json!({"execDenyPatterns": ["python.*", "ssh"]});
         for mode in [PolicySchemaMode::Complete, PolicySchemaMode::Partial] {
             let raw = validate_policy_schema(&p, mode).unwrap();
-            let policy = normalize_policy(&raw).unwrap();
+            let policy = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap();
             assert_eq!(
                 policy.security.exec_deny_patterns,
                 vec!["python.*".to_string(), "ssh".to_string()]
@@ -920,7 +943,7 @@ mod tests {
         // serialize は `execDenyPatterns` — `RuntimePolicy.security`
         // が serialize 出力へ載る(yaml 表現と 1:1)。
         let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
-        let policy = normalize_policy(&raw).unwrap();
+        let policy = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap();
         assert_eq!(
             serde_json::to_value(&policy)
                 .unwrap()
@@ -939,7 +962,7 @@ mod tests {
             let mut p = valid_policy();
             p["security"] = security;
             let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
-            assert!(normalize_policy(&raw)
+            assert!(normalize_policy(&raw, &std::collections::BTreeSet::new())
                 .unwrap()
                 .security
                 .exec_deny_patterns
@@ -947,7 +970,7 @@ mod tests {
         }
         // `security` 自体の欠落も空集合。
         let raw = validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap();
-        assert!(normalize_policy(&raw)
+        assert!(normalize_policy(&raw, &std::collections::BTreeSet::new())
             .unwrap()
             .security
             .exec_deny_patterns
@@ -1011,7 +1034,7 @@ mod tests {
         let raw = validate_policy_schema(&valid_policy(), PolicySchemaMode::Complete).unwrap();
         let mut raw = raw.clone();
         raw.insert("security".to_string(), json!({"execDenyPatterns": ["("]}));
-        let e = normalize_policy(&raw).unwrap_err();
+        let e = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
     }
 
@@ -1044,7 +1067,7 @@ mod tests {
             "command".to_string(),
             json!({"grants": {"py": {"executable": "python3"}}}),
         );
-        let e = normalize_policy(&raw).unwrap_err();
+        let e = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
         // 非 match grant + deny は受理 — `security` は normalize 出力に
         // 載る。
@@ -1055,12 +1078,102 @@ mod tests {
             "grants": {"g": {"executable": "git"}},
         });
         let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
-        let policy = normalize_policy(&raw).unwrap();
+        let policy = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap();
         assert_eq!(
             policy.security.exec_deny_patterns,
             vec!["python.*".to_string()]
         );
-        assert_eq!(policy.command.grants["g"].executable, "git");
+        assert_eq!(policy.exec.grants["g"].executable, "git");
+    }
+
+    /// collision(issue #165)— `command.grants` × `process.tasks` の
+    /// 同名交差は `build_exec_input` で `InvalidRuntimePolicy` +
+    /// `details.{grant,task}`。`validate_policy_schema` は ∅ names で
+    /// 呼ぶため per-doc collision が全 mode で発火する(layer 非依存
+    /// pin — ProjectPartial は `command` section 自体を schema
+    /// reject するため collision に到達しないが error code は同一)。
+    #[test]
+    fn cross_section_name_collision_rejected_at_all_modes() {
+        let mut p = valid_policy();
+        p["process"] = json!({
+            "maxConcurrent": 1,
+            "tasks": {"shared": {"command": ["cc"], "inputs": [], "outputs": []}},
+        });
+        p["command"] = json!({
+            "maxConcurrent": 1,
+            "grants": {"shared": {"executable": "git"}},
+        });
+        for mode in [PolicySchemaMode::Complete, PolicySchemaMode::Partial] {
+            let e = validate_policy_schema(&p, mode).unwrap_err();
+            assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy, "{mode:?}");
+            assert_eq!(e.details().unwrap()["grant"], json!("shared"), "{mode:?}");
+            assert_eq!(e.details().unwrap()["task"], json!("shared"), "{mode:?}");
+        }
+        // ProjectPartial は `command` key を schema が拒否 —
+        // collision には到達しないが同じ `InvalidRuntimePolicy`。
+        let e = validate_policy_schema(&p, PolicySchemaMode::ProjectPartial).unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        // 別名なら受理。
+        let mut ok = valid_policy();
+        ok["process"] = json!({
+            "maxConcurrent": 1,
+            "tasks": {"t": {"command": ["cc"], "inputs": [], "outputs": []}},
+        });
+        ok["command"] = json!({
+            "maxConcurrent": 1,
+            "grants": {"g": {"executable": "git"}},
+        });
+        assert!(validate_policy_schema(&ok, PolicySchemaMode::Complete).is_ok());
+    }
+
+    /// serialized `RuntimePolicy.exec` shape(issue #165)—
+    /// `{"grants":{name:ExecGrant},"command":{defaults},
+    /// "process":{defaults}}` で top-level `process`/`command` は
+    /// 出ない。task 由来 grant は `fixed:true` + `argv`=command[1..]
+    /// + `exitCodes:[0]` + section lifecycle 畳み込み。serialized
+    ///   exec-doc は `resolve_exec_policy` へ再投入可能(round-trip)。
+    #[test]
+    fn runtime_policy_serializes_unified_exec_block() {
+        use crate::policy::exec::{resolve_exec_policy, ExecGrantScope};
+        use crate::policy::security::ExecDenyList;
+        let mut p = valid_policy();
+        p["process"] = json!({
+            "maxConcurrent": 2,
+            "timeout": "5m",
+            "tasks": {
+                "build": {"command": ["cc", "-O2", "x.c"],
+                          "inputs": ["src/**"], "outputs": ["out"]},
+            },
+        });
+        p["command"] = json!({
+            "maxConcurrent": 4,
+            "grants": {"g": {"executable": "git", "argv": ["log", "*"]}},
+        });
+        let raw = validate_policy_schema(&p, PolicySchemaMode::Complete).unwrap();
+        let policy = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap();
+        let v = serde_json::to_value(&policy).unwrap();
+        assert!(v.get("process").is_none() && v.get("command").is_none());
+        let exec = &v["exec"];
+        let build = &exec["grants"]["build"];
+        assert_eq!(build["fixed"], json!(true));
+        assert_eq!(build["executable"], json!("cc"));
+        assert_eq!(build["argv"], json!(["-O2", "x.c"]));
+        assert_eq!(build["inputs"], json!(["src/**"]));
+        assert_eq!(build["outputs"], json!(["out"]));
+        assert_eq!(build["timeout"], json!("5m")); // process section default
+        assert_eq!(build["exitCodes"], json!([0]));
+        assert_eq!(build["scope"], json!("trusted"));
+        let g = &exec["grants"]["g"];
+        assert_eq!(g["fixed"], json!(false));
+        assert_eq!(g["scope"], json!("trusted"));
+        assert!(g.get("inputs").is_none() && g.get("outputs").is_none());
+        // defaults blocks — origin section 毎に保持。
+        assert_eq!(exec["command"]["maxConcurrent"], json!(4));
+        assert_eq!(exec["process"]["timeout"], json!("5m"));
+        // serialized exec-doc → 再 resolve 冪等(invocation parity)。
+        let reparsed = resolve_exec_policy(Some(exec), &ExecDenyList::default()).unwrap();
+        assert_eq!(policy.exec, reparsed);
+        assert_eq!(policy.exec.grants["build"].scope, ExecGrantScope::Trusted);
     }
 
     #[test]
@@ -1068,21 +1181,21 @@ mod tests {
         let mut bad = valid_policy();
         bad["tools"].as_object_mut().unwrap()["allow"] = json!(["read", "bogus"]);
         let raw = validate_policy_schema(&bad, PolicySchemaMode::Complete).unwrap();
-        let e = normalize_policy(&raw).unwrap_err();
+        let e = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
         assert!(e.message().contains("unknown tool in policy"));
 
         let mut dup = valid_policy();
         dup["tools"].as_object_mut().unwrap()["allow"] = json!(["read", "Read"]);
         let raw = validate_policy_schema(&dup, PolicySchemaMode::Complete).unwrap();
-        let e = normalize_policy(&raw).unwrap_err();
+        let e = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap_err();
         assert_eq!(e.details().unwrap()["reason"], json!("tools-duplicate"));
 
         // Alias is normalized to the canonical name.
         let mut alias = valid_policy();
         alias["tools"].as_object_mut().unwrap()["allow"] = json!(["Read"]);
         let raw = validate_policy_schema(&alias, PolicySchemaMode::Complete).unwrap();
-        let policy = normalize_policy(&raw).unwrap();
+        let policy = normalize_policy(&raw, &std::collections::BTreeSet::new()).unwrap();
         assert_eq!(policy.tools.allow, vec![ToolName::Read]);
     }
 }

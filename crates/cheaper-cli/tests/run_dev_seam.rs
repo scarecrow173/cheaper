@@ -927,6 +927,46 @@ async fn run_fake_stream_grant_invalid_spec_rejected() {
     assert_eq!(code, 3, "envelope: {env}");
 }
 
+/// issue #165 — `fixed:true`・明示 `scope` を含む `--grant` spec は
+/// run 開始前に `INVALID_REQUEST`(exit 2) + `details.{grant,layer:
+/// "invocation"}` で fail する。`--grant` は route-eligible な
+/// `!fixed` command grant のみ供給する CLI 契約(design §(c) 確定)。
+/// trusted YAML での直接 authoring は合法のまま。
+#[tokio::test(flavor = "current_thread")]
+async fn run_fake_stream_grant_rejects_fixed_and_scope() {
+    let fixture = opt_in_fixture(r#"{"status":"success"}"#, None);
+    let mut f = Fixture::new()
+        .with_fake_stream(&fixture)
+        .with_input(r#"{"task": "t"}"#);
+    for grant in [
+        r#"{"name":"x","executable":"git","fixed":true}"#,
+        r#"{"name":"x","executable":"git","scope":"trusted"}"#,
+        r#"{"name":"x","executable":"git","scope":"project"}"#,
+    ] {
+        // `PipeStdin::read_all` が stdin を消費するため各 iteration で
+        // 再装填する(Fixture::run の doc comment 参照)。
+        f.stdin.data = br#"{"task":"t"}"#.to_vec();
+        let (code, env, _err) = f.run(&["run", "opt-worker", "--grant", grant]).await;
+        assert_eq!(env["ok"], json!(false), "{grant}: {env}");
+        assert_eq!(
+            env["error"]["code"],
+            json!("INVALID_REQUEST"),
+            "{grant}: {env}"
+        );
+        assert_eq!(
+            env["error"]["details"]["grant"],
+            json!("x"),
+            "{grant}: {env}"
+        );
+        assert_eq!(
+            env["error"]["details"]["layer"],
+            json!("invocation"),
+            "{grant}: {env}"
+        );
+        assert_eq!(code, 2, "{grant}: {env}");
+    }
+}
+
 /// AC4 — flag 由来 grant が builtin/user policy の同名 grant と衝突
 /// する場合、run 開始前に `INVALID_REQUEST`(exit 2) +
 /// `details.grant` + `details.layer="invocation"` で fail する。

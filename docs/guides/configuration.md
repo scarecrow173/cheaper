@@ -171,21 +171,51 @@ canonical tool）の task 定義・実行制御の詳細は
 （`maxConcurrent`・`timeout`・`killGrace`・`heartbeat.interval`・
 `maxOutputBytes`）に `grants`（実行を許可する executable の
 宣言 map）を加えた構成。grant の shape は
-`{executable, argv?, cwd?, env?, timeout?, killGrace?,
-maxOutputBytes?}` で、`executable` は bare name（ambient PATH
+`{executable, fixed?, argv?, inputs?, outputs?, cwd?, env?,
+timeout?, killGrace?, maxOutputBytes?, exitCodes?, scope?}` で、
+`executable` は bare name（ambient PATH
 解決）または absolute path、`argv` は positional pattern
 （literal は exact match、`prefix*` は prefix match、最終要素の
 bare `*` は zero-or-more の残余 token を受ける rest marker）。
+`fixed`/`inputs`/`outputs`/`scope` は issue #165 で追加された
+field — `fixed:true` は `argv` を固定 argv literal として扱い、
+`inputs`/`outputs` は declared I/O から resource manifest を
+導出し、`scope` は `"trusted"`（既定）/`"project"`（自己弱体化）
+の enum。`exitCodes` は受理 exit code の配列（未宣言は `[0]`）。
 `command.grants` は builtin と user-scope の `policy.yaml` でのみ
 authoring でき、project `.cheaper/policy.yaml` に `command` key を
 含めると policy load が `InvalidRuntimePolicy` で失敗する
 （narrowing も不可）。user policy の grants は
 `cheaper policy grant {add,list,remove}` で管理できる（validation
-付きの managed 経路。write path の caveat — read-modify-write の
-last-wins・comment/整形の非保存 — は
+付きの managed 経路 — `fixed:true`・明示 `scope` を含む spec は
+`InvalidRequest` で拒否される。write path の caveat —
+read-modify-write の last-wins・comment/整形の非保存 — は
 [usage ガイド](./usage.md) を参照）。その他に invoker が
 `--grant` flag で run 単位の非永続 grant を注入する経路がある。
 grant・信頼境界・sandbox 限界の詳細は
+[command ガイド](./command.md) を参照。
+
+### unified `exec` grant namespace（resolver model）
+
+`process`・`command` 両 section は、resolve 時に単一の `exec`
+grant namespace へ畳まれる（issue #165）。authoring shape・
+section 分離は不変だが、resolved policy では `process.tasks` が
+`fixed:true` grant（executable = `command[0]`、argv =
+`command[1..]` の literal、lifecycle 既定値は `process` section
+由来）、`command.grants` が `!fixed` grant（`argv` は positional
+pattern、lifecycle 既定値は `command` section 由来）として同じ
+`ResolvedExecPolicy.grants` map に収まる。concurrency pool も
+surface 別（`fixed` → `process.maxConcurrent`、`!fixed` →
+`command.maxConcurrent`）に保たれる。
+
+両 section の名空間は共有のため、`command.grants` の key と
+`process.tasks` の key が衝突する policy は `InvalidRuntimePolicy`
++ `details.{grant,task}`（両方に衝突名）で fail closed に拒否
+される。project policy 由来の task は `scope:"project"` の
+grant として解決され、route の `grant:` 参照が解決できるのは
+`scope:"trusted" && !fixed` の grant のみ（`fixed`・
+`scope:"project"`・未知名は `Viability::NoGrant`）。詳細は
+[managed process ガイド](./managed-process.md)・
 [command ガイド](./command.md) を参照。
 
 ### route.rewrite.approvalBypass（hook rewrite の approval opt-in）
@@ -255,8 +285,10 @@ security:
   小文字化 → `.exe`/`.com` strip）への anchored case-insensitive
   完全一致で、declared spec の policy resolve・pin 時の resolved
   executable・spawn 前再検証の 3 適用点に同一 predicate で効く。
-  `command.grants` にのみ適用され `process.tasks` には適用されない。
-  これは containment 機構ではなく known-bad executable への
+  適用対象は unified `exec` namespace の**全 grant** —
+  `command.grants` の executable と `process.tasks` 由来の fixed
+  grant executable の双方（issue #165 で均一化）。これは
+  containment 機構ではなく known-bad executable への
   fail-fast — match 規約・旧 mandatory 一覧からの migration seed・
   残余の注意事項は [command ガイド](./command.md) を参照。
 

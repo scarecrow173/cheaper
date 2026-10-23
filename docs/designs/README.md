@@ -58,7 +58,7 @@ Directory: `docs/designs`
 | DESIGN-034CXyXncBigEivCETJLBD | OpenAI Codex subscription provider design | approved | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
 | DESIGN-034A8ubRdZsG57LdsNNTEw | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | DESIGN-034zSP4AJ6aRzdtIxTHW1Y | OperationManager の state と bounded drain | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
-| DESIGN-034KLwE8GiJQ2zvQY20ob8 | opt-in security.execDenyPatterns profile — A9 の降格実装 | draft | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
+| DESIGN-034KLwE8GiJQ2zvQY20ob8 | opt-in security.execDenyPatterns profile — A9 の降格実装 | approved | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
 | DESIGN-034zWr0ZeceJCJaL3ZRK3H | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | DESIGN-034KuDkWOmNXiBddEQ4XWK | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 | approved | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
 | DESIGN-034r05iHrZUE6WvaQsRRsM | Pi 実行エンジン: session・制限・abort・retry・出力抽出・repair・usage | approved | [pi-execution-engine.md](./pi-execution-engine.md) |
@@ -85,6 +85,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHy2gdnoEfk3jERu | Token counter contract (core module, count_tokens tool, count-tokens CLI) | approved | [token-counter-contract.md](./token-counter-contract.md) |
 | DESIGN-034ETcI8q4hTRH502qnQZc | tool-operator built-in worker と cheaper.optionalTools opt-in 縮退機構の設計 | approved | [tool-operator-built-in-worker.md](./tool-operator-built-in-worker.md) |
 | DESIGN-034D8wP2Y8qWiuviJbQINn | Trailing-separator guard for workspace boundary predicate | approved | [trailing-separator-guard-for-workspace-boundary-predicate.md](./trailing-separator-guard-for-workspace-boundary-predicate.md) |
+| DESIGN-034KP4lfgfD7DdGiDV1YuT | unified exec grant model — command.grants / process.tasks の統合 | approved | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
 | DESIGN-034r05iHy2gdnoT4LG4KTu | Unified version source of truth | approved | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | DESIGN-034r2lHf6FAFVelj9LrhZh | Align usage.jsonl recording-scope docs with implemented contract | approved | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
 | DESIGN-034rzNZ2BZGTPuOwHmyqh4 | Usage savings telemetry | approved | [usage-savings-telemetry.md](./usage-savings-telemetry.md) |

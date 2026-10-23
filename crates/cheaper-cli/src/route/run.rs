@@ -11,7 +11,7 @@ use cheaper_tools::artifact::{
     ArtifactReadRequest, ArtifactReadResult, ArtifactReader, ArtifactSource,
 };
 use cheaper_tools::catalog::CanonicalToolResult;
-use cheaper_tools::tools::command::RouteCommandContext;
+use cheaper_tools::tools::exec::RouteCommandContext;
 use cheaper_tools::tools::proc::ProcTee;
 use cheaper_tools::ToolError;
 use serde_json::{json, Map, Value};
@@ -79,12 +79,12 @@ pub(crate) fn prepare(
     {
         return Err(rejected("argv-mismatch"));
     }
-    let view = supply.command_view();
+    let view = supply.exec_view();
     let resolution = resolve::resolve(&ResolveInput {
         argv: &payload.argv,
         cwd: &payload_root,
         routes: &supply.routes,
-        command_policy: &view,
+        exec_policy: &view,
         unsafe_command: false,
     });
     if !resolution.matched {
@@ -118,7 +118,7 @@ pub(crate) fn prepare(
     for (k, v) in prefix {
         extra_env.insert(k, Value::from(v));
     }
-    if !supply.policy.command.project_grant(&route.grant) {
+    if !supply.policy.exec.project_grant(&route.grant) {
         return Err(denied("no-grant"));
     }
     Ok(PreparedRoute {
@@ -356,7 +356,7 @@ pub async fn execute(
     let grant_timeout = prepared
         .supply
         .policy
-        .command
+        .exec
         .grants
         .get(&prepared.route.grant)
         .map(|g| g.timeout.clone())
@@ -709,8 +709,10 @@ mod tests {
             BTreeMap::new(),
         );
         let out = prepare(&p, &fx.ws, &env, Some(&fx.builtin)).unwrap();
-        assert_eq!(out.supply.policy.command.grants.len(), 1);
-        assert!(out.supply.policy.command.grants.contains_key("cargo-test"));
+        // `project_grant` は `{route.grant} ∪ {fixed grants}` を残す
+        // — fixture は task 非宣言のため route grant のみが残る。
+        assert_eq!(out.supply.policy.exec.grants.len(), 1);
+        assert!(out.supply.policy.exec.grants.contains_key("cargo-test"));
         assert_eq!(out.route.name, "cargo-test");
         assert_eq!(out.route.grant, "cargo-test");
         assert_eq!(out.resolution.exec_args, vec!["test", "--workspace"]);
@@ -733,7 +735,7 @@ mod tests {
         assert_eq!(out.extra_env["FOO"], Value::from("prefix"));
         assert_eq!(out.extra_env["BAR"], Value::from("1"));
         assert_eq!(out.extra_env["CI"], Value::from("1"));
-        let grant = &out.supply.policy.command.grants["cargo-test"];
+        let grant = &out.supply.policy.exec.grants["cargo-test"];
         assert_eq!(grant.env["FOO"], Value::from("grant-val"));
         assert_eq!(grant.env["KEEP"], Value::from("keep"));
     }

@@ -5,10 +5,10 @@
 //! helper の構築は不要。`get`/`list` は呼び出しごとに新しい metadata を
 //! 返す(TS `list()` が毎回 `structuredClone` するのと同じ分離)。
 
-use cheaper_core::policy::command::command_grant_resources;
-use cheaper_core::policy::process::{
-    process_task_resources, resolve_process_policy, ResolvedProcessPolicy,
+use cheaper_core::policy::exec::{
+    exec_grant_resources, resolve_exec_grant, resolve_exec_policy, ResolvedExecPolicy,
 };
+use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::resources::normalization::{ResourceManifestDeclaration, ScopeDeclaration};
 use cheaper_core::resources::types::ResourceScope;
 use cheaper_core::tools::vocabulary::ToolName;
@@ -36,11 +36,11 @@ pub struct ToolMetadata {
 pub type ResourcesDeclaration =
     Box<dyn Fn(&JsonValue) -> Result<ResourceManifestDeclaration, ToolError> + Send + Sync>;
 
-/// `ToolCatalog`。`Clone` は `ResolvedProcessPolicy` の共有(resource
+/// `ToolCatalog`。`Clone` は `ResolvedExecPolicy` の共有(resource
 /// access 層・registry・invocation が同一 catalog を共有するため)。
 #[derive(Clone)]
 pub struct ToolCatalog {
-    policy: ResolvedProcessPolicy,
+    policy: ResolvedExecPolicy,
 }
 
 impl ToolCatalog {
@@ -61,18 +61,34 @@ impl ToolCatalog {
                 // `(input as {task}).task` — schema 検証前は task 欠落が
                 // あり得る。TS は `undefined` を渡し `resolveProcessTask` が
                 // 未知 task error にする。ここでも非 string は空文字で同じ
-                // error 経路に乗せる。
+                // error 経路に乗せる。disjoint surface — fixed grant のみ
+                // 到達可能(`!fixed`・未知名は `resolve_exec_grant` の
+                // `POLICY_VIOLATION` を伝播 — 現行規約不変、design §(k))。
                 let task = input
                     .get("task")
                     .and_then(Value::as_str)
                     .unwrap_or_default();
-                process_task_resources(&policy, task).map_err(|e| Box::new(e) as ToolError)
+                resolve_exec_grant(&policy, task, true).map_err(|e| Box::new(e) as ToolError)?;
+                exec_grant_resources(&policy, task).map_err(|e| Box::new(e) as ToolError)
             }),
-            // `command` は input 非依存の保守的宣言(root subtree
-            // reads+writes、`produces` なし — design §(f))。generic
-            // `resources()` の path 規約に載せると未知 bucket に落ちて
-            // 宣言が弱まるため、専用 arm で固定 manifest を返す。
-            ToolName::Command => Box::new(|_input| Ok(command_grant_resources())),
+            // `command` — `input.name` が literal string で `!fixed`
+            // grant へ resolve する場合のみ `exec_grant_resources`
+            // (宣言 inputs/outputs → per-path、無ければ同関数内で root
+            // manifest)。非 literal・未知名・fixed grant 一致は全て
+            // input 非依存の保守的宣言(root subtree reads+writes、
+            // `produces` なし — design §(f)/(k))へ倒し、error は
+            // 伝播しない。generic `resources()` の path 規約に載せると
+            // 未知 bucket に落ちて宣言が弱まるため、専用 arm で manifest
+            // を返す。
+            ToolName::Command => Box::new(move |input| {
+                let name = input.get("name").and_then(Value::as_str);
+                match name {
+                    Some(name) if policy.grants.get(name).is_some_and(|g| !g.fixed) => {
+                        exec_grant_resources(&policy, name).map_err(|e| Box::new(e) as ToolError)
+                    }
+                    _ => Ok(conservative_root_manifest()),
+                }
+            }),
             _ => Box::new(move |input| Ok(resources(name, input))),
         };
         ToolMetadata {
@@ -582,19 +598,41 @@ fn is_unknown_absolute(value: &str) -> bool {
     bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
 }
 
-/// `createToolCatalog({process})`。`resolveProcessPolicy` の失敗は Err
-/// として伝播する(TS では constructor が同期 throw)。
-pub fn create_tool_catalog(process: Option<&Value>) -> Result<ToolCatalog, ToolError> {
-    let policy = resolve_process_policy(process).map_err(|e| Box::new(e) as ToolError)?;
+/// `createToolCatalog({exec})` — unified exec-doc(`resolve_exec_policy`
+/// 入力 shape)を resolve して catalog を構築する。standalone 経路の
+/// ため deny は空 `ExecDenyList`(`security` 供給を持たない —
+/// invocation/registry は `from_resolved_policy` で共有済み policy
+/// を注入する)。resolve 失敗は Err として伝播する(TS では
+/// constructor が同期 throw)。
+pub fn create_tool_catalog(exec: Option<&Value>) -> Result<ToolCatalog, ToolError> {
+    let policy = resolve_exec_policy(exec, &ExecDenyList::default())
+        .map_err(|e| Box::new(e) as ToolError)?;
     Ok(ToolCatalog { policy })
 }
 
 impl ToolCatalog {
     /// resolve 済み policy からの直接構築(registry/invocation が
-    /// `resolve_process_policy` 済みの値を共有する seam。serialize →
+    /// `resolve_exec_policy` 済みの値を共有する seam。serialize →
     /// 再 resolve の二重経路を避ける)。
-    pub fn from_resolved_policy(policy: ResolvedProcessPolicy) -> Self {
+    pub fn from_resolved_policy(policy: ResolvedExecPolicy) -> Self {
         Self { policy }
+    }
+}
+
+/// input 非依存の conservative root manifest — `exec_grant_resources`
+/// の `inputs`/`outputs` 両方 `None` 分岐と同値(root subtree の
+/// reads+writes、`produces` 非宣言)。`Command` arm の
+/// literal 解決不能・未知・`fixed` 一致 fallback が使う
+/// (旧 `command_grant_resources` と同値 — design §(k))。
+fn conservative_root_manifest() -> ResourceManifestDeclaration {
+    let root = || ScopeDeclaration {
+        path: ".".to_string(),
+        scope: ResourceScope::Subtree,
+    };
+    ResourceManifestDeclaration {
+        reads: Some(vec![root()]),
+        writes: Some(vec![root()]),
+        produces: None,
     }
 }
 
