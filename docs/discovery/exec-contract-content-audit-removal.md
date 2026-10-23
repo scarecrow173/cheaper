@@ -29,6 +29,7 @@ relations:
   derived-by:
     - "../specs/exec-contract-content-audit-removal.md"
     - "../adr/exec-contract-content-audit-removal.md"
+    - "../designs/exec-contract-content-audit-removal.md"
   verifies: []
   verified-by: []
   references:

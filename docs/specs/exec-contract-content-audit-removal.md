@@ -25,11 +25,13 @@ relations:
   superseded-by: []
   related:
     - "../adr/exec-contract-content-audit-removal.md"
+    - "../designs/exec-contract-content-audit-removal.md"
   refines: []
   refined-by: []
   derives-from:
     - "../discovery/exec-contract-content-audit-removal.md"
-  derived-by: []
+  derived-by:
+    - "../designs/exec-contract-content-audit-removal.md"
   verifies: []
   verified-by: []
   references:
