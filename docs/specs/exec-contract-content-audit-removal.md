@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034KI3mWcW92kMljP5xoa8"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "exec-contract cleanup — 内容審査を mandatory 層から除去"
 created: "2026-10-23"
 updated: "2026-10-23"

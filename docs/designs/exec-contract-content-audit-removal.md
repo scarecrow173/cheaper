@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034KIsSCvVMAxGDZY1dQTd"
 type: "design"
-status: "draft"
+status: "approved"
 title: "exec-contract cleanup — 内容審査を mandatory 層から除去"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -618,6 +618,11 @@ within_workspace\|is_relative_executable_path\|script_ext_re\|\
 shell_executable_re\|command_denied_executable_re\|\
 is_denied_command_executable" crates/
   ```
+
+  注: `within_workspace` は `walker.rs`/`normalization.rs` の
+  無関係な test 名(`..._under_within_workspace`)にも hit する。
+  除去対象は `command/mod.rs` の fn とその呼出しのみ —
+  test 名の残存は許容する。
 
 - [ ] 旧語彙の残存確認（spec R10 — error message・doc comment・
   test comment の正直性）:
