@@ -28,6 +28,10 @@ relations:
     - "docs/test-specs/route-grant-set-projection.md"
     - "docs/test-specs/route-resolution.md"
     - "docs/test-specs/route-run-delegated-exec.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
     - "docs/test-specs/route-usage-records.md"
   refines: []
   refined-by: []
@@ -125,6 +129,8 @@ identity を維持する。process exit は実行した command
 route を置き換えた際 displaced route を `suppressed`
 provenance へ記録する。
 
+> （issue #169 注記 — #168 で `Route.trusted` field は削除・merge は無条件化。project 層 route は下位層を shadow せず、同名衝突は常に project 側が負けて `suppressed` provenance へ記録される（`SuppressedRoute` semantics は「衝突で負けた project route」へ狭義化）。project 層 `trusted` key presence は値不問で `InvalidRuntimePolicy`（strict 経路は load error・hook 経路は fail-open で route arm 不活性）。builtin/user 層の `trusted:` key は受理されるが inert）
+
 ## Rules
 
 - Rule: **declaration schema — `substitute:{grant,argv}`**
@@ -173,6 +179,7 @@ provenance へ記録する。
     層の `grant:` 単数宣言・byte-matched route は従来どおり
     有効。`trusted: true` 宣言は判別に使わない(project 自己
     申告の shadowing gate — 判別子は宣言層 provenance)。
+    > （issue #169 注記 — project 層 `trusted` は判別以前に presence 自体が `InvalidRuntimePolicy` で拒否される（#168 — `{label}.trusted: not declarable in the project layer`、値不問・strict 経路は error・hook 経路は fail-open で route arm 不活性）。builtin/user 層の `trusted:` key は受理されるが inert — `Route.trusted` field は削除済み）
   - `load` の厳密経路(`route resolve`/`route run`)は error
     をそのまま返し、hook の `load_or_none` は `None` fold で
     route arm 不活性へ落ちる(既存 fail-open 規約)。
@@ -359,6 +366,7 @@ provenance へ記録する。
     `suppressed_project_provenance_reaches_route_record`
     (`route_run.rs` — trusted branch が resolve 出力・record
     の `suppressed` を assert するように反転)。
+  > （issue #169 注記 — #168 で merge の `trusted` 置換 arm 自体が除去・merge は無条件化。project 層 route は下位層を shadow せず同名衝突は常に project 側が負けて `suppressed` へ記録（`SuppressedRoute` semantics は「衝突で負けた project route」へ狭義化）。project 層 `trusted` key presence は load 時 `InvalidRuntimePolicy`（strict）/ fail-open（hook 経路）。上記 2 test は `project_layer_trusted_is_rejected`・`project_trusted_violation_disables_route_arm_fail_open` 系へ置換済み）
 
 - Rule: **match precedence interplay(known semantics の
   pin)**(design §Risks・Verification Notes review P1-1 —
@@ -376,6 +384,7 @@ provenance へ記録する。
     effective set は project route を採用し `suppressed`
     provenance が displaced route 名を記録する
     (`route resolve` 出力 `suppressed` field で pin)。
+    > （issue #169 注記 — #168 でこの分岐は到達不能: project 層 `trusted` key presence は load 時 `InvalidRuntimePolicy` で拒否（strict）/ fail-open（hook）。同名衝突は常に project 側が負けて `suppressed` へ記録される — project route が effective set に採用される経路は存在しない）
 
 - Rule: **Option E 構造的境界 — routed convention 不変**
   (spec R11・ADR O8a — `route_run.rs` integration)
@@ -405,6 +414,7 @@ provenance へ記録する。
     `hook.rs`/`proc_invocation.rs`(cheaper-tools)test 群が
     無改訂で pass。**例外は displaced-trusted provenance の
     2 assert 更新のみ**(上記 merge suppressed Rule)。
+    > （issue #169 注記 — #168 で当該 2 test は merge 無条件化（project 衝突敗北の `suppressed` 記録）へ再 pin 済み。「displaced-trusted provenance」の旧 semantics pin は現行 test 群の記述ではない）
   - `route_cmd` 出力 shape・`payload` schema・`workflow_run`
     gate・`usage_log`/`usage_report`・`policy/exec.rs`・
     `tools/*`・`routed-exec.workflow.json`・`hook/targets.rs`
@@ -476,6 +486,7 @@ provenance へ記録する。
   displaced builtin route 名を記録し `route resolve` 出力・
   `kind:"route"` record の `suppressed` に乗る(design §(a)
   merge 拡張)。
+  > （issue #169 注記 — 現行では project 層 `trusted` key presence は load 時拒否（strict）/ fail-open（hook）でこの宣言自体が到達不能。`trusted` 非宣言の project route は同名衝突で builtin/user に負けて `suppressed` へ記録される — project route が effective set に採用される経路は存在しない（#168））
 - Example: project 層が `[git,push,origin]` + ineligible
   `grant:` の route を宣言 → longest-match の best のみ評価
   で non-runnable、route arm は `None` fallthrough で typed
@@ -514,6 +525,7 @@ provenance へ記録する。
   silent displacement が `suppressed` provenance で追跡可能に
   なり、`route resolve`・`kind:"route"` record の両面に
   手がかりが残る。
+  > （issue #169 注記 — #168 で `suppressed` semantics は「衝突で負けた project route」へ狭義化。project `trusted:true` 宣言は load 時拒否のため displacement 経路は存在せず、追跡対象は同名衝突で負けた project route の記録となる）
 - Option E(exec-less route)の構造的境界が convention 検証で
   pin され、author 宣言 exit を信用する設計が混入しない。
 
@@ -541,6 +553,7 @@ provenance へ記録する。
   (全て不変 — substitute も同じ seam を通る)。
 - builtin/user 層間 shadow の suppressed 記録(同一 trusted
   principal の宣言 override — 記録対象は project 層置換のみ)。
+  > （issue #169 注記 — #168 で `suppressed` は「衝突で負けた project route」のみを運ぶ semantics へ狭義化。builtin/user 層間 shadow が記録対象外なのは維持）
 - 検証コマンド・実行結果の記録 — task の `## Verification`
   と impl record の責務。
 
@@ -569,6 +582,7 @@ provenance へ記録する。
   consumer 不変の pin が必要(旧 semantics pin 2 test の
   assert 更新漏れは compile でなく assertion 失敗として顕在化
   するため design Churn 一覧の site で網羅)。
+  > （issue #169 注記 — #168 で `Route.trusted` field 削除・merge 無条件化によりこの risk は現行構造では成立しない: project `trusted` 宣言は load 時拒否・同名衝突は常に project 敗北で `suppressed` 記録。`suppressed` semantics は「衝突で負けた project route」へ狭義化済み）
 - `expected_input`・deadline・inputs が `route.grant`・原
   exec_args に anchor されたままだと、exec job が宣言と異なる
   ペアを要求/実行して `exec-input-mismatch` で常に失敗するか

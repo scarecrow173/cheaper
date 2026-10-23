@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L7LJt4ZNXV0S6zO47ND"
 type: "task"
-status: "todo"
+status: "done"
 title: "documentation honesty sweep — spec in-place 訂正 + test-spec annotation (12 doc)"
 created: "2026-10-24"
 updated: "2026-10-24"
@@ -105,7 +105,7 @@ living-contract 側の訂正を適用する。
 
 ### 1. spec 6 件 — in-place 訂正(§(d)/(d-2) の訂正方向を転記)
 
-- [ ] **S-1** `docs/specs/policy-gated-command-tool.md`
+- [x] **S-1** `docs/specs/policy-gated-command-tool.md`
       — :60(executable 解説 + argv pattern + cwd/env —
       内容審査なし・opt-in deny のみ)・:78(native-magic/
       shell-shim/interpreter/bare-node deny 除去 — pin は
@@ -122,7 +122,7 @@ living-contract 側の訂正を適用する。
       (差分が大きい)。trusted boundary・pin・argv
       pattern・cwd/env 境界・lifecycle 要件は**維持**
       (:81 OS sandbox 非該当記述は既に正直 — 保持)
-- [ ] **S-2** `docs/specs/invocation-scoped-command-grants.md`
+- [x] **S-2** `docs/specs/invocation-scoped-command-grants.md`
       — :60/:85/:93/:105/:118/:133/:138(deny 参照を
       `security.execDenyPatterns` 宣言時の条件付き検査へ
       条件化 — 機構は実在・既定 `[]` では非活性・存在
@@ -139,7 +139,7 @@ living-contract 側の訂正を適用する。
       layer key・invocation layer shape への言及は**訂正
       しない**(表現 drift 境界 — rename は resolved
       struct のみ)
-- [ ] **S-3** `docs/specs/pretooluse-route-resolver-and-workflow-delegation.md`
+- [x] **S-3** `docs/specs/pretooluse-route-resolver-and-workflow-delegation.md`
       — R1/R7/R12/R15/R34 は #166–#168 で更新済みのため
       `related` backlink のみ + 残差分確認。:303-311
       (R8 rewrite-safe gate)・:306-307 の `unsafe_token`
@@ -148,7 +148,7 @@ living-contract 側の訂正を適用する。
       — **本文訂正不要**。編集時に exec 時 metachar
       拒否を残す記述が見つかった場合のみ R8 との層
       区別を 1 行補記(実施者の確認義務)
-- [ ] **S-4** `docs/specs/managed-process-canonical-tool.md`
+- [x] **S-4** `docs/specs/managed-process-canonical-tool.md`
       — :62(入力は task 名のみ — model は command/argv
       を指定できない。task の `command` 配列は
       `fixed:true` grant の literal argv として内容審査
@@ -156,14 +156,14 @@ living-contract 側の訂正を適用する。
       task・`task` 名以外の input key = `INVALID_INPUT`・
       cwd escape・undeclared output scope を拒否 — 宣言
       `command` 配列の内容審査は行わない)
-- [ ] **S-5** `docs/specs/workflow-resource-inference.md`
+- [x] **S-5** `docs/specs/workflow-resource-inference.md`
       — :74 item 9(`tool:process` declaration seam を
       unified grant の resource 宣言 — `fixed:true`
       grant の `inputs`/`outputs`・`process.tasks` は
       loader 写像で存続 — へ再配線、「undeclared
       process は INVALID_REQUEST」を fixed grant 前提で
       再記述 — issue #165)
-- [ ] **off-list** `docs/specs/cheaper-v1-worker-runtime-cli.md`
+- [x] **off-list** `docs/specs/cheaper-v1-worker-runtime-cli.md`
       — :71/:75/:105/:115 を canonical file tool surface
       (write/edit/ls/read/find/grep の workspace
       boundary・denyPaths・writeScope)へ限定し、
@@ -174,7 +174,7 @@ living-contract 側の訂正を適用する。
 
 ### 2. test-spec 6 件 — in-place annotation note(§(d-2))
 
-- [ ] **TS-1** `docs/test-specs/policy-gated-command-tool.md`
+- [x] **TS-1** `docs/test-specs/policy-gated-command-tool.md`
       — anchor :52/:53/:62/:68。注記: #163 で builtin
       deny set(interpreter/shell/exec-wrapper/loader・
       native magic・workspace-resident・metachar)が
@@ -184,20 +184,20 @@ living-contract 側の訂正を適用する。
       宣言時のみ。3 適用点構造(policy resolve・pin・
       spawn 前再検証)は opt-in deny の適用点として
       存続。`node` 例は既定では PATH 解決・受理
-- [ ] **TS-2** `docs/test-specs/invocation-scoped-command-grants.md`
+- [x] **TS-2** `docs/test-specs/invocation-scoped-command-grants.md`
       — anchor :47/:51/:59/:74/:82/:95。注記: deny
       検査は全 anchor で「`security.execDenyPatterns`
       宣言時のみ(既定 `[]` では非活性 — issue #164)」
       へ条件化。`RuntimePolicy.command`→`.exec` rename
       (#165・`schema.rs:134`)。layer ordering・
       collision・attribution 規約は維持
-- [ ] **TS-3** `docs/test-specs/managed-process-task-authorization.md`
+- [x] **TS-3** `docs/test-specs/managed-process-task-authorization.md`
       — anchor :50。注記: input-level の raw command
       拒否(呼出し input は `task` 名のみ)は維持。
       task 宣言 `command` 配列の内容審査(argv 要素の
       shell 名・metachar・script ext 拒否)は #163 で
       除去 — 宣言要素は literal argv として無審査で渡る
-- [ ] **TS-4** `docs/test-specs/route-resolution.md`
+- [x] **TS-4** `docs/test-specs/route-resolution.md`
       — anchor :52-56/:73-74。注記: #168 で
       `Route.trusted` field 削除・merge 無条件化 —
       project 層 route は下位層を **shadow せず**同名
@@ -210,7 +210,7 @@ living-contract 側の訂正を適用する。
       strict 経路は error・hook 経路は fail-open で
       route arm 不活性)。builtin/user 層の `trusted:`
       は受理されるが inert
-- [ ] **TS-5** `docs/test-specs/substitute-exec-route-mode.md`
+- [x] **TS-5** `docs/test-specs/substitute-exec-route-mode.md`
       — anchor :124-126/:174-175/:337-361/:374-378/
       :406-407/:473-478/:513-516/:542-543/:566-571。
       注記: TS-4 と同じ #168 の真実(`Route.trusted`
@@ -220,7 +220,7 @@ living-contract 側の訂正を適用する。
       `trusted:` は inert 受理)。**cluster 化** —
       同一 falsified 機構のため merge 節・Guarantees・
       Risk 各 cluster 末尾へ 1 本ずつでよい
-- [ ] **TS-6** `docs/test-specs/route-grant-set-projection.md`
+- [x] **TS-6** `docs/test-specs/route-grant-set-projection.md`
       — anchor :150-155。注記: project 層 `trusted`
       key presence は「判別に使わない」ではなく load
       時拒否(#168)・`Route.trusted` 削除・merge
@@ -264,31 +264,31 @@ living-contract 側の訂正を適用する。
 
 ## Done When
 
-- [ ] spec 6 doc が「訂正方向」列どおり in-place 訂正
+- [x] spec 6 doc が「訂正方向」列どおり in-place 訂正
       され、`（issue #16X — …）` inline 注釈が付く
       (S-1 は :82/:104 が Deferred 体裁を脱し
       `registry.rs:1167` fail-closed 記述・末尾注記
       併置。S-3 は backlink + 残差分確認済み)
-- [ ] S-2 の :115/:173 が `RuntimePolicy.exec`・
+- [x] S-2 の :115/:173 が `RuntimePolicy.exec`・
       `inner.exec`/`exec: None` へ rename され、
       `RuntimePolicy.command`・`inner.command` の残存
       がない(file-level `command.grants` shape 言及は
       残ってよい)
-- [ ] test-spec 6 doc の該当 bullet 直下に `> （issue
+- [x] test-spec 6 doc の該当 bullet 直下に `> （issue
       #169 注記 — …）` blockquote があり、file-end
       `## Refine 注記` 節が**ない**(`grep -l "issue
       #169" <6 files>` が 6 件 — placement も確認)
-- [ ] TS-5 の注記が merge 節・Guarantees・Risk の各
+- [x] TS-5 の注記が merge 節・Guarantees・Risk の各
       cluster 末尾へ集約されている
-- [ ] 12 doc 全ての front-matter `related` に backlink
+- [x] 12 doc 全ての front-matter `related` に backlink
       4 件があり path が §(b) 規約
-- [ ] 維持要件(S-1 の trusted boundary・pin・argv
+- [x] 維持要件(S-1 の trusted boundary・pin・argv
       pattern・lifecycle、S-2 の layer ordering・shape、
       spec の AC 構造)が差分で削減されていない
       (`git diff` 行単位確認)
-- [ ] 新規 `refines:`/`refined-by:`/`supersedes:`/
+- [x] 新規 `refines:`/`refined-by:`/`supersedes:`/
       `superseded-by:` が差分内に 0 件
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `node scripts/check-doc-ids.mjs` exits 0
 
 ## Out of Scope
 
@@ -303,10 +303,47 @@ living-contract 側の訂正を適用する。
 
 ## Verification
 
-- [ ] §1 の spec 6 doc を編集し `git diff` が訂正対象行
+- [x] §1 の spec 6 doc を編集し `git diff` が訂正対象行
       + `related` 行のみであること(実測を記録)
-- [ ] §2 の test-spec 6 doc を編集し `grep -l "issue
+- [x] §2 の test-spec 6 doc を編集し `grep -l "issue
       #169"` が 6 件・blockquote 配置であること(実測)
-- [ ] `git diff` で `refines:`/`refined-by:`/`supersedes:`/
+- [x] `git diff` で `refines:`/`refined-by:`/`supersedes:`/
       `superseded-by:` の新規出現が 0(実測を記録)
-- [ ] `node scripts/check-doc-ids.mjs` exits 0(実測を記録)
+- [x] `node scripts/check-doc-ids.mjs` exits 0(実測を記録)
+
+## 実施記録（issue #169 sweep 実施時）
+
+### spec 6 doc — in-place 訂正
+
+- S-1 `docs/specs/policy-gated-command-tool.md` — :60 実行前検証列挙・:78 pin 記述・:79-:80 argv 記述・:82 writeScope 決定記述・:94 AC4・:104 Deferred 記述を全て訂正方向列どおり in-place 更新。末尾に `## Refine 注記（issue #169）` を併置（design 推奨 — 差分が大きいため）。trusted boundary・pin・argv pattern・cwd/env 境界・lifecycle 要件は維持（:81 OS sandbox 非該当記述も保持）。
+- S-2 `docs/specs/invocation-scoped-command-grants.md` — deny 参照を全 anchor（:60/:70/:85/:93/:105/:118/:133/:138/AC3:150/AC6:153）で `security.execDenyPatterns` 宣言時の条件付き検査へ条件化。:64 の trusted 供給元を builtin + user-scope + 合成 invocation layer の 3 源へ訂正。:115 `RuntimePolicy.command`→`RuntimePolicy.exec`・:173 `command: None`→`exec: None`・`inner.command`→`inner.exec` へ rename。file-level `command.grants`・`command` section・invocation layer shape の言及は訂正していない（表現 drift 境界）。
+- S-3 `docs/specs/pretooluse-route-resolver-and-workflow-delegation.md` — `related` backlink のみ。残差分確認: metachar 言及は :204（複合 shell command routing gate）・:307（`unsafe_token` 分類）・:580（rewrite-safe gate AC）のいずれも routing candidacy 層（R8）で、exec 時 metachar 拒否を残す記述は無し — 本文訂正不要の判断を確認。
+- S-4 `docs/specs/managed-process-canonical-tool.md` — :62 要件・:72 AC を訂正方向列どおり in-place 更新（task 名のみ入力・`fixed:true` grant の literal argv・内容審査なし）。
+- S-5 `docs/specs/workflow-resource-inference.md` — :74 item 9 を unified grant の resource 宣言（`fixed:true` grant `inputs`/`outputs`・`process.tasks` は loader 写像で存続）へ再配線し issue #165 注釈を付記。
+- off-list `docs/specs/cheaper-v1-worker-runtime-cli.md` — :71（In Scope の filesystem boundary 記述）・:75（Runtime Invariants 列挙）へ inline 注釈で canonical file tool surface への限定を明記。:105/:115 の AC 表現は file tool 面では現行とも整合するため本文を保持し、末尾 `## Refine 注記（issue #169）` で 4 anchor 全ての scope 限定を記述（併置可の規約に基づく）。
+
+### test-spec 6 doc — in-place annotation note
+
+- TS-1 `docs/test-specs/policy-gated-command-tool.md` — 3 本（:52-53 cluster 末尾・:62・:68）。
+- TS-2 `docs/test-specs/invocation-scoped-command-grants.md` — 12 本（design anchor :47/:51/:59/:74/:82/:95 + 同一 falsified 機構の residual :64/:69/:71/:75/:103/:118）。
+- TS-3 `docs/test-specs/managed-process-task-authorization.md` — 1 本（Rule bullet — design anchor :50、実測は :54）。
+- TS-4 `docs/test-specs/route-resolution.md` — 2 本（:52-56 cluster 末尾・:73-74）。
+- TS-5 `docs/test-specs/substitute-exec-route-mode.md` — 9 本（design anchor 全 range: Feature :124-126・Rule :174-175・merge suppressed cluster :337-361・:374-378・:406-407・Example :473-478・Guarantee :513-516・Non-goal :542-543・Risk :566-571 — cluster 規約で 3 本への集約も許容されたが、全 anchor range への直下配置を選択）。
+- TS-6 `docs/test-specs/route-grant-set-projection.md` — 1 本（:150-155 cluster 末尾）。
+- 全 28 本が `> （issue #169 注記 — …）` blockquote 形。file-end `## Refine 注記` 節は test-spec には一切無し（`grep -n "^## Refine" docs/test-specs/*.md` → 0 hit）。
+
+### 検証（実測）
+
+- `grep -c "issue #169 注記" docs/test-specs/<6 files>` → 3/12/1/2/9/1（全 6 file で注記存在）。
+- `grep -n "RuntimePolicy\.command\|inner\.command\|command: None" docs/specs/*.md` → rename 残余 0 hit（file-level `command.grants` 等の有効表現を除く）。
+- `git diff -- docs/specs docs/test-specs | grep` 新規 `refines:`/`refined-by:`/`supersedes:`/`superseded-by:` 非空値 → 0 件。
+- `node scripts/check-doc-ids.mjs` → exits 0（doc id check OK: 1191 markdown files scanned）。
+- `git status --short` → 変更は対象 12 file のみ（spec 6 + test-spec 6）。
+
+### 偏差・判断記録
+
+- TS-2: design anchor 6 件に加え、同一 falsified 機構（deny 無条件列挙・#165 rename 残余）を持つ residual 6 箇所（:64/:69/:71/:75/:103/:118）へ同形注記を追加 — spec Out of Scope 既定機構（一覧外の同型 stale への軽微注記）に基づく。
+- TS-3: design anchor `:50` は drift — 実測では対象 Rule bullet は :54 に位置。claim text で特定して注記を配置。
+- TS-5: cluster 規約は「merge 節・Guarantees・Risk 各 cluster 末尾へ 1 本ずつでよい」と最小 3 本を許容したが、anchor 網羅のため全 9 range へ直下配置した（過剰側の偏差 — bookkeeping sweep の介入最小性との trade-off で網羅性を優先）。
+- S-5: design anchor は item 9 のみだが、同一 declaration seam を参照する AC9 にも `（fixed:true grant の inputs/outputs — issue #165）` の軽微な注釈を付記。
+- cheaper-v1 spec: design は :71/:75/:105/:115 の in-place 訂正を指定。:105/:115 の AC 文は file tool 面の真実として維持できるため inline 書換を最小化し、末尾注記で 4 anchor の scope 限定を一括記述（併置可の規約内の判断）。

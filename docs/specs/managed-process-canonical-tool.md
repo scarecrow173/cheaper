@@ -21,7 +21,11 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related:
+    - "./documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from: ["../discovery/managed-process-canonical-tool.md"]
@@ -59,7 +63,7 @@ Workflow author と親 Coding Agent が、予測可能な認可、出力上限�
 
 ## Requirements
 
-- 入力は task 名だけ。任意 command、追加 argv、shell executable/構文は拒否する。
+- 入力は task 名だけ（model は command/argv を指定できない）。task の `command` 配列は `fixed:true` grant の literal argv として内容審査なしに spawn される — shell executable・演算子を含む要素も executable の literal argv となる（issue #163 — 内容審査除去、issue #165 — unified grant schema `fixed` + `inputs`/`outputs` へ写像）。
 - cwd は canonical root または検証済み相対 directory。親 process の秘密 env は継承しない。
 - process は invocation-wide operation 上限と process sublimit の両方に従う。queued cancel は spawn しない。
 - cancel は管理下の、re-parent/新 session 化しない process tree を終了させてから settle する。stdout/stderr 合計の capture を byte cap 内に収め、総 bytes と truncation を返す。
@@ -69,7 +73,7 @@ Workflow author と親 Coding Agent が、予測可能な認可、出力上限�
 ## Acceptance Criteria
 
 - [x] Pi adapter と Workflow compiler/materialization → direct canonical runtime が同じ task を呼べる。
-- [x] unknown task、command 入力、shell argv、cwd escape、undeclared output scope を拒否する test が通る。
+- [x] unknown task、`task` 名以外の input key（schema `INVALID_INPUT`）、cwd escape、undeclared output scope を拒否する test が通る。`command` 配列要素の内容審査（shell argv 等）は行わない（issue #163 — 内容審査除去）。
 - [x] env 継承なし、argv literal、非ゼロ exit の failure と bounded diagnostics を実 process で確認する。
 - [x] policy-aware ResourceManifest に inputs/outputs と producer edge が現れる。
 - [x] 複数 owner の readonly process が process/maxOperations 上限を超えず、mutation は排他となる。

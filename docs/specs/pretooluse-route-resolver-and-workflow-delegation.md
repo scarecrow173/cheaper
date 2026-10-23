@@ -41,6 +41,10 @@ relations:
     - "../adr/cli-owned-devin-hook-registration-lifecycle-with-apm-integration.md"
     - "../adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md"
     - "./permission-model-responsibility-redesign.md"
+    - "./documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by:
     - "./codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md"

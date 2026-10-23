@@ -26,6 +26,10 @@ relations:
     - "docs/plans/route-grant-set-projection.md"
     - "docs/discovery/route-grant-set-projection-issue-166.md"
     - "docs/test-specs/unified-exec-grant-model.md"
+    - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by: []
   derives-from:
@@ -153,6 +157,7 @@ argv}`(captured `details.{grant,argv}` の実測 echo)を必須で載せ
     ため審査迂回にならない)。`trusted: true` 宣言は判別に
     使わない(project 自己申告の shadowing gate — 判別子は宣言
     層 provenance)。
+    > （issue #169 注記 — project 層 `trusted` key は「判別に使わない」のではなく presence 自体が load 時 `InvalidRuntimePolicy` で拒否される（#168 — `{label}.trusted: not declarable in the project layer`、値不問・strict 経路は error・hook 経路は fail-open で route arm 不活性）。`Route.trusted` field は削除・merge は無条件化。`grants` presence 拒否・宣言層制約の他の記述は維持）
 
 - Rule: **`Route::grant_set()` — 有効 set の単一 owner**
   (spec R1/R4 — `routes.rs` unit test)

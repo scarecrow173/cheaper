@@ -31,6 +31,10 @@ relations:
     - "../adr/wrapper-measured-deterministic-metadata.md"
     - "../adr/workspace-filesystem-boundary-cheaper-sandboxed-tool.md"
     - "../adr/typescript-pnpm-monorepo.md"
+    - "./documentation-honesty-sweep-and-breaking-change-migration-guide.md"
+    - "../adr/documentation-honesty-sweep-and-migration-guide.md"
+    - "../guides/migration.md"
+    - "../designs/documentation-honesty-sweep-and-migration-guide.md"
   refines: []
   refined-by:
     - "bulk-reader-built-in-worker.md"
@@ -68,11 +72,11 @@ frontier model のコストを抑えるため、巨大コンテキスト処理�
 - Process model: one-shot process、daemon/server 化しない。request → Worker resolve → validation → Policy resolve → model resolve → session 作成 → 実行 → output validation/repair → filesystem/usage 計測 → structured result → disposal → exit（§4）
 - CLI contract: `cheaper run <worker>`、エイリアス `cheaper bulk-read` / `cheaper cheap-write`。task input は JSON（stdin または `--input`）。共通制御: `--input`, `--cwd`, `--timeout`, `--format json|text`, `--quiet`, `--help`, `--version`（§5）
 - stdout/stderr 分離: stdout は最終 result envelope のみ（デフォルト JSON、TTY 自動切替なし）。stderr は warnings/diagnostics/errors/progress（§6）
-- cwd / workspace: `cwd` = workspace root = filesystem security boundary = project configuration scope。canonicalize 必須、祖先探索しない（§7）
+- cwd / workspace: `cwd` = workspace root = filesystem security boundary = project configuration scope。canonicalize 必須、祖先探索しない（§7）（issue #169 注記 — この filesystem boundary は cheaper 保有の canonical file tool（`read`/`write`/`edit`/`ls`/`find`/`grep`）面に適用される。後続 spec が追加した exec 系 tool（`command`/`process`）の spawned 子 process の filesystem 副作用はこの境界の外であり、cheaper は OS sandbox を提供しない）
 - Worker Definition: YAML frontmatter + Markdown。必須: `name`, `description`, `tools`, `cheaper.model.tier`, `cheaper.output.schema`, Markdown body（全て non-empty）（§8）。name は `^[a-z0-9][a-z0-9-]*$`、ファイル名と一致必須（§9）。portable tool vocabulary `read/grep/find/ls/write/edit` と安全な alias のみ（§10）。`tools` は capability 要求であって permission grant ではない（§11）。`cheaper:` namespace は strict（`cheaper.model`/`cheaper.output` のみ）（§12）。model tier `low/medium/high`（§13）。output schema は `file`/`inline` の exactly one、相対 path は Worker Definition ファイル基準、形式 `.json/.yaml/.yml`、remote schema 対象外（§15）。top-level 未知 field は許容し ignore（§16）
 - Worker discovery/resolution: `<cwd>/.cheaper/workers/` > `<user-config>/cheaper/workers/` > built-in の whole-file shadowing（§17）。invalid project Worker は fallback せずエラー（§18）。`--worker-file` で named resolution を完全 bypass（§19）
 - Runtime Policy: 全 Worker 共通の単一 policy。built-in（`version: 1` 必須、execution/tools/filesystem/model/output/retry 各セクション）+ user + project の partial override merge + CLI restriction（narrow のみ）（§20–§30）。merge 規則: object deep merge / scalar replace / array replace（§22）。各 source で validation、invalid は silent ignore しない（§23）
-- Runtime Invariants: policy から変更不能な制約（workspace 内 access のみ、symlink escape 禁止、shell なし、network tool なし、unknown tool 禁止、output schema validation 必須、CLI/Worker による権限拡張禁止）（§31）
+- Runtime Invariants: policy から変更不能な制約（workspace 内 access のみ — canonical file tool 面、symlink escape 禁止、shell なし、network tool なし、unknown tool 禁止、output schema validation 必須、CLI/Worker による権限拡張禁止）（§31）（issue #169 — 「workspace 内 access」「shell なし」は本 spec の tool vocabulary（canonical file tool）面の不変条件。exec 系 tool の spawned 子 process は file-tool boundary の外で動作し、cheaper は OS sandbox を提供しない）
 - Error model / exit codes: §32 の error code 分類と §33 の exit code 分類（0/2/3/4/5/6/7/8/9/70）
 - Abort: SIGINT/SIGTERM/timeout で abort。rollback せず、mutation 済みなら result/error で明示（§34）
 - Usage: provider/model/input/output/cached tokens/duration/turn count/tool count をローカルで取得（§35）
@@ -127,3 +131,12 @@ V1 成功条件（§38）を検証可能な形で:
 - 上流: DISC-034r05iHy2gdnp377SlYbj（`docs/discovery/cheaper-v1-pi-sdk.md`）
 - 関連 ADR: ADR-034r05iHfSMW9SGV4dpcy2〜0008（`docs/adr/`）— 実装技術（Pi SDK, TypeScript）は各 ADR を参照
 - 下流: SPEC-034r05iHK8bA7g6PcCiDBp, SPEC-034r05iHK8bA7g7YRKGyQr が本 spec を refines
+
+## Refine 注記（issue #169）
+
+権限モデル再設計（#163–#168）により追加された exec 系 tool（`command`/`process`）に対し、本 spec の filesystem boundary 記述を以下のとおり scope する（spec は living contract — in-place 注釈付き）。
+
+- `:75` In Scope の filesystem security boundary・`:79` Runtime Invariants の「workspace 内 access のみ」「shell なし」・`:105` AC「workspace 外への filesystem access が常に拒否される」・`:115` Security test の workspace escape 拒否 — いずれも本 spec の tool vocabulary である canonical file tool（`read`/`write`/`edit`/`ls`/`find`/`grep`）面に適用される規定であり、その範囲では現行実装とも整合する。
+- exec 系 tool（`command`/`process` grant）は `spawn` を shell 無しで直接起動し、その子 process の filesystem 副作用は file-tool boundary・`filesystem.denyPaths`・worker `writeScope` の適用対象外。cheaper は OS sandbox を提供しない。
+
+governing: [ADR-034L6ihibvbjmSnKmSffWH](../adr/documentation-honesty-sweep-and-migration-guide.md)・[SPEC-034L6i3XmfCaWRHAiw8TTT](./documentation-honesty-sweep-and-breaking-change-migration-guide.md)・[migration guide](../guides/migration.md)
