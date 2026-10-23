@@ -56,6 +56,7 @@ Directory: `docs/discovery`
 | DISC-034J7LwMEdPR5HxFkgOivZ | PreToolUse auto-routing to tasks and workflows | draft | [pretooluse-auto-routing-to-tasks-and-workflows.md](./pretooluse-auto-routing-to-tasks-and-workflows.md) |
 | DISC-034r05iHy2gdnp5sN3kF1s | Real provider smoke verification via Ollama | resolved | [real-provider-smoke-verification-via-ollama.md](./real-provider-smoke-verification-via-ollama.md) |
 | DISC-034A8jvNOxFXeSIc8tWQmE | Job lifetime lease の ownership と admission | resolved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
+| DISC-034KTzzHPIbmtD8j3iHBtg | Route grant set projection issue 166 | active | [route-grant-set-projection-issue-166.md](./route-grant-set-projection-issue-166.md) |
 | DISC-034zSQKiU63uXPcMSjjodn | Run-scoped artifact boundaries | resolved | [run-scoped-artifact-boundaries.md](./run-scoped-artifact-boundaries.md) |
 | DISC-034B9B0PiBkxUgLGfI70g8 | Rust + Rig native-runtime migration for cheaper CLI | resolved | [rust-rig-native-runtime-migration-for-cheaper-cli.md](./rust-rig-native-runtime-migration-for-cheaper-cli.md) |
 | DISC-034rBfZ3dqNmEQGXCIwiLn | Shell-read large-file detection boundary and parser scope | resolved | [shell-read-large-file-detection-boundary.md](./shell-read-large-file-detection-boundary.md) |
