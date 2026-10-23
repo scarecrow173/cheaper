@@ -29,6 +29,7 @@ relations:
   derived-by:
     - "../specs/trusted-route-flag-issuer-redesign.md"
     - "../adr/trusted-route-flag-issuer-redesign.md"
+    - "../plans/trusted-route-flag-issuer-redesign.md"
   verifies: []
   verified-by: []
   references:
