@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L2NdmhEj1VYd7riHhtL"
 type: "task"
-status: "todo"
+status: "done"
 title: "route run exec_pair 配線・投影・substitute e2e"
 created: "2026-10-24"
 updated: "2026-10-24"
@@ -257,6 +257,6 @@ let inputs = Map::from_iter([
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib route::run` が pass(run.rs unit test)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run` が pass(route_run.rs integration)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib route::run` が pass(run.rs unit test) — 実測: 21 passed / 0 failed(commit 6eaaf66)。T5 でも再実測 21 passed
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run` が pass(route_run.rs integration) — 実測: 37 passed / 0 failed(commit 6eaaf66)。T5 でも再実測 37 passed
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0 — 実測: T5 の clippy run・`mise run check` 内 clippy ともに exit 0

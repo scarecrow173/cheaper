@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L2NsdLuC7G3uiTACWd3"
 type: "task"
-status: "todo"
+status: "done"
 title: "substitute-exec route mode 最終検証 — targeted tests・doc-id・audit_docs・mise run check"
 created: "2026-10-24"
 updated: "2026-10-24"
@@ -187,20 +187,62 @@ spec(SPEC-034KXdoK2bMG3gQtIj8l6h)の Acceptance Criteria
 
 ## Done When
 
-- [ ] spec Acceptance Criteria AC1-AC12 全項目に対応する
+- [x] spec Acceptance Criteria AC1-AC12 全項目に対応する
       test が存在し pass(TSPEC Rule との対応表が §1 で確認
-      済み)
-- [ ] retarget・member 級降格・interactive union・投影境界・
+      済み) — 実測: AC1/2 = routes.rs unit
+      (`substitute_parse_and_empty_argv`・
+      `substitute_malformed_is_schema_error`・
+      `project_layer_substitute_is_rejected`)、AC3/4/9 =
+      resolve.rs unit + `route::` integration
+      (`substitute_retargets_viability_and_demotes_anchor`・
+      `substitute_interactive_union`・
+      `substitute_interactive_union_canonical_names`・
+      `resolve_substitute_retargets_viability`・
+      `resolve_project_substitute_rejected`)、AC5/6/8/10/11 =
+      route_run.rs integration(`substitute_exec_pair_runs_and_mirrors_exit`・
+      `substitute_exec_job_input_mismatch`・
+      `substitute_grant_env_reaches_child_not_anchor`・
+      `substitute_member_jobs_reach_members_and_substitute`・
+      `substitute_routed_convention_still_enforced`)、AC7 =
+      run.rs unit `exec_deadline_uses_selected_exec_grant_timeout`、
+      AC12 = `mise run check` の `cargo test --workspace` で
+      全 50 test binary 0 failed(回帰例外は suppressed 2
+      assert のみ設計どおり)
+- [x] retarget・member 級降格・interactive union・投影境界・
       実行 anchor・merge suppressed・Option E 境界の構造確認
-      が実測されている
-- [ ] `grep -rn "Route {" crates/` の literal site 全件
+      が実測されている — 実測: `check_exec_execution` が
+      `route.exec_pair(&out.exec_args)` 由来ペアのみを対象
+      (resolve.rs:319/354)・member ループは `demoted.chain(&route.grants)` で
+      存在+eligibility+pin のみ(:366-391)・union は
+      `command_name(&grant.executable)`+`command_name(&pinned)`
+      (:405-406)・`project_grants(&route.grant_set())`
+      (run.rs:121)・`expected_input`/deadline/inputs が
+      exec_pair 由来(:377-406)・merge は builtin/user 層間
+      silent のまま displaced を `suppressed` へ記録
+      (routes.rs:192-218)・`route_cmd.rs` が merge-base から
+      無差分(Option E 境界)
+- [x] `grep -rn "Route {" crates/` の literal site 全件
       `substitute` field あり・stub 残存なし・
-      `RouteResolution` に substitute field なし
-- [ ] `mise run check` exits 0
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `audit_docs` が本 issue の新規 doc で error 0
-- [ ] 5 task + plan(+ spec/ADR の status 追随)が更新されて
-      いる
+      `RouteResolution` に substitute field なし —
+      実測: literal site 全件 substitute あり(`..route(..)`
+      spread 経由含む)・`TODO`/`unimplemented!`/`todo!` 0 件・
+      `RouteResolution` field 一覧に substitute なし
+- [x] `mise run check` exits 0 — 実測: biome → fmt --check →
+      clippy `--workspace --all-targets`(dev-seam) → version →
+      doc-ids(1168 files) → `cargo test --workspace`(dev-seam)
+      50 binary 全件 0 failed → node --test(scripts 43 /
+      benchmarks 12 pass) → lockfile → apm-payload、全 stage
+      pass で exit 0
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `audit_docs` が本 issue の新規 doc で error 0 — 実測:
+      `--type all --json` で severity "error" 0 件
+      (inconsistent-reciprocal-relation warning は repo 全域の
+      既存 pattern で blocking:false)
+- [x] 5 task + plan(+ spec/ADR の status 追随)が更新されて
+      いる — 実測: task×5 = done・plan = completed。spec =
+      "approved"・ADR = "accepted" の terminal status 済みで
+      追随変更不要(#166 先例どおり README index row・
+      spec/ADR frontmatter は本 commit で変更しない)
 
 ## Out of Scope
 
@@ -212,7 +254,17 @@ spec(SPEC-034KXdoK2bMG3gQtIj8l6h)の Acceptance Criteria
 
 ## Verification
 
-- [ ] 上記 §1-§3 の全項目が pass(コマンド実測を記録)
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --json` で本 issue の新規 doc 7 件(plan・test-spec・task×5)が error 0
-- [ ] `mise run check` exits 0
+- [x] 上記 §1-§3 の全項目が pass(コマンド実測を記録) — 実測:
+      targeted test 全 pass(routes.rs unit 16・resolve.rs unit 7・
+      run.rs unit 21・integration route:: 10・route_run 37)、
+      §2 構造確認は retarget/member 降格/interactive union/投影/
+      実行 anchor/merge suppressed/grep sanity/Option E 境界の
+      全項目を file 実測で確認、§3 の status 更新は本 commit
+- [x] `node scripts/check-doc-ids.mjs` exits 0 — 実測: "doc id
+      check OK: 1168 markdown files scanned"
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --json` で本 issue の新規 doc 7 件(plan・test-spec・task×5)が error 0 — 実測: `--type all --json` exit 0、severity "error" 0 件
+- [x] `mise run check` exits 0 — 実測: biome → fmt --check →
+      clippy `--workspace --all-targets`(dev-seam) → version →
+      doc-ids → `cargo test --workspace`(dev-seam)0 failed →
+      node --test(scripts 43 / benchmarks 12 pass) → lockfile →
+      apm-payload、全 stage pass で exit 0

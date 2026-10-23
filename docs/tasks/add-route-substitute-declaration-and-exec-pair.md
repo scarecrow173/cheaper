@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L2N4rLJgtw6UXk7EuK3"
 type: "task"
-status: "todo"
+status: "done"
 title: "route substitute 宣言 schema・project 層拒否・merge suppressed・grant_set/exec_pair"
 created: "2026-10-24"
 updated: "2026-10-24"
@@ -249,6 +249,6 @@ RouteLayer::Project => {
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib route::routes` が pass(routes.rs unit test)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` が compile + pass(literal churn の workspace 内 compile 回復確認)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib route::routes` が pass(routes.rs unit test) — 実測: 16 passed / 0 failed(commit 17b7107)。T5 でも再実測 16 passed
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` が compile + pass(literal churn の workspace 内 compile 回復確認) — 実測: `mise run check` の `cargo test --workspace`(dev-seam feature 付き)が 0 failed で exit 0
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0 — 実測: T5 の clippy run・`mise run check` 内 clippy ともに exit 0

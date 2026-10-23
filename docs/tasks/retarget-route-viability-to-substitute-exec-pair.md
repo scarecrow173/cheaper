@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L2N9r4zJdpE3jtoHivQ"
 type: "task"
-status: "todo"
+status: "done"
 title: "viability 実行ペア retarget・route.grant member 降格・interactive union"
 created: "2026-10-24"
 updated: "2026-10-24"
@@ -261,6 +261,6 @@ if let Some(substitute) = &route.substitute {
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib route::resolve` が pass(resolve.rs unit test)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route::` が pass(route.rs integration)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib route::resolve` が pass(resolve.rs unit test) — 実測: 7 passed / 0 failed(commit df6dfd8)。T5 でも再実測 7 passed
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route::` が pass(route.rs integration) — 実測: 10 passed / 0 failed(commit df6dfd8)。T5 でも再実測 10 passed
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0 — 実測: T5 の clippy run・`mise run check` 内 clippy ともに exit 0

@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034L2MF3X78MvKvcSN8jmV"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・実行 anchor 切替"
 created: "2026-10-24"
 updated: "2026-10-24"

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L2Nh979kTbVrrg1v0zA"
 type: "task"
-status: "todo"
+status: "done"
 title: "substitute-exec route mode の docs 更新・comment 追随"
 created: "2026-10-24"
 updated: "2026-10-24"
@@ -249,7 +249,7 @@ design Churn 一覧「comment 追随」項の site を全件:
 
 ## Verification
 
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --type spec` で pretooluse spec を含め本 task 更新 doc が error 0
-- [ ] 記述内容が design Docs 更新契約・TSPEC Rules と照合して矛盾しないこと(doc review)
-- [ ] comment 追随 site に code 差分がないこと(`git diff` で comment のみ)
+- [x] `node scripts/check-doc-ids.mjs` exits 0 — 実測: "doc id check OK: 1168 markdown files scanned"
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --type spec` で pretooluse spec を含め本 task 更新 doc が error 0 — 実測: exit 0(error 0 件 — `related` 非相互 link の warning のみ、spec chain 側管理のため本 chain からは張らない契約どおり)
+- [x] 記述内容が design Docs 更新契約・TSPEC Rules と照合して矛盾しないこと(doc review) — 実測: 4 guide・routes.yaml・pretooluse spec・7 comment site が design の指定記述どおりに mode 追随済み
+- [x] comment 追随 site に code 差分がないこと(`git diff` で comment のみ) — 実測: `git diff` で routes.rs ×4・resolve.rs :101・run.rs :475-479・exec.rs :118-123 の全 site が comment のみの差分であることを確認
