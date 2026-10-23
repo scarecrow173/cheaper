@@ -218,11 +218,13 @@ grant として解決され、route の `grant:`（anchor）・
 いずれも `scope:"trusted" && !fixed` の grant のみ
 （`is_route_eligible` が単一 predicate — `fixed`・
 `scope:"project"`・未知名は `Viability::NoGrant`）。
-`grants`・`substitute` の宣言自体は builtin/user 層の
+`grants`・`substitute`・`trusted` の宣言自体は builtin/user 層の
 routes.yaml に限られ、project routes.yaml の entry に
-`grants`・`substitute` key が存在すると route load が
+`grants`・`substitute`・`trusted` key が存在すると route load が
 `InvalidRuntimePolicy` で失敗する（project が宣言できるのは
-単数 `grant:` anchor 参照のみ）。
+単数 `grant:` anchor 参照のみ、かつ非衝突 `match.command` で —
+`trusted` は builtin/user 層では受理されるが inert で、route の
+trust は宣言値ではなく宣言層 provenance が決める）。
 詳細は [managed process ガイド](./managed-process.md)・
 [command ガイド](./command.md)・
 [parent-agent 連携ガイド](./parent-agent-integration.md) を参照。

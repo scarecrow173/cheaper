@@ -131,7 +131,7 @@ Directory: `docs/tasks`
 | TASK-034zQTXMNDaUeqIR3aCRNf | Document launcher distribution and verify acquisition | done | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
 | TASK-034KVxDgWqxNof9qYv0dbf | route grant-set projection の docs 更新 | done | [document-route-grant-set-projection.md](./document-route-grant-set-projection.md) |
 | TASK-034L2Nh979kTbVrrg1v0zA | substitute-exec route mode の docs 更新・comment 追随 | done | [document-substitute-exec-route-mode.md](./document-substitute-exec-route-mode.md) |
-| TASK-034L59YCvXZOpmmELxVllt | trusted route flag issuer redesign の docs 更新契約 | todo | [document-trusted-route-flag-issuer-redesign.md](./document-trusted-route-flag-issuer-redesign.md) |
+| TASK-034L59YCvXZOpmmELxVllt | trusted route flag issuer redesign の docs 更新契約 | done | [document-trusted-route-flag-issuer-redesign.md](./document-trusted-route-flag-issuer-redesign.md) |
 | TASK-034KQsvyJ7l63g3i4Gjnwl | unified exec grant model の guide/reference 文書更新 | done | [document-unified-exec-grant-model.md](./document-unified-exec-grant-model.md) |
 | TASK-034KxDvREdpF6P10oziJsy | Document windsurf tool_info contract and dual-registration trap in distribution guide | done | [document-windsurf-tool-info-contract-and-registration-requirements.md](./document-windsurf-tool-info-contract-and-registration-requirements.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |

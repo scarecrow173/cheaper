@@ -6,5 +6,6 @@ routes:
     grant: cargo-test
     # grants: [name, …]  # optional — route.grant 以外の追加委譲 grant(builtin/user 層限定)
     # substitute: {grant: name, argv: [arg, …]}  # optional — substitute-exec mode(builtin/user 層限定)
+    # trusted: bool  # optional — builtin/user 層のみ受理(inert);project 層宣言は load error
     output: {tokenThreshold: 8192}
     passthroughEnv: [CI]

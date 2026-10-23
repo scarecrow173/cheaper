@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L59YCvXZOpmmELxVllt"
 type: "task"
-status: "todo"
+status: "done"
 title: "trusted route flag issuer redesign の docs 更新契約"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -174,7 +174,7 @@ update のみ)へ反映する。design の指定行と記述内容を転記す�
 
 ## Done When
 
-- [ ] parent-agent-integration.md の route 宣言層説明が
+- [x] parent-agent-integration.md の route 宣言層説明が
       「project は下位層を shadow しない(trust = 宣言層
       provenance)・project `trusted` presence は load 全体
       失敗・builtin/user `trusted:` は受理・inert・衝突
@@ -182,15 +182,15 @@ update のみ)へ反映する。design の指定行と記述内容を転記す�
       経路 fail-open の症状(debug log のみ・`route resolve`
       まで不可視)と grant `scope` 整合の 1 文が反映されて
       いる
-- [ ] configuration.md・command.md の層 gate 列挙が
+- [x] configuration.md・command.md の層 gate 列挙が
       `grants`・`substitute`・`trusted` の 3 key 拒否を記述
       している
-- [ ] resources/routes.yaml に `trusted` shape comment が
+- [x] resources/routes.yaml に `trusted` shape comment が
       存在する
-- [ ] pretooluse spec の R1 field 一覧・`trusted` 記述・R7
+- [x] pretooluse spec の R1 field 一覧・`trusted` 記述・R7
       層間 trust が宣言層 provenance trust へ追従し、本
       chain から relation が張られていない
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `node scripts/check-doc-ids.mjs` exits 0
 
 ## Out of Scope
 
@@ -212,7 +212,7 @@ update のみ)へ反映する。design の指定行と記述内容を転記す�
 
 ## Verification
 
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --type spec` で pretooluse spec を含め本 task 更新 doc が error 0
-- [ ] 記述内容が design Docs 更新契約・TSPEC Rules と照合して矛盾しないこと(doc review)
-- [ ] `git diff` で対象 file が記述/comment のみの差分であること(code・relation 差分なし)
+- [x] `node scripts/check-doc-ids.mjs` exits 0 — 実測: "doc id check OK: 1179 markdown files scanned"
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --type spec` で pretooluse spec を含め本 task 更新 doc が error 0 — 実測: exit 0(error 0 件 — `related` 非相互 link の warning のみ、spec chain 側管理の契約どおり)
+- [x] 記述内容が design Docs 更新契約・TSPEC Rules と照合して矛盾しないこと(doc review) — 実測: 3 guide・routes.yaml comment・pretooluse spec R1/R7 が design の指定記述どおり宣言層 provenance trust へ追従
+- [x] `git diff` で対象 file が記述/comment のみの差分であること(code・relation 差分なし) — 実測: frontmatter・relation 差分なし、記述/comment のみ

@@ -236,14 +236,26 @@ route は 3 層で宣言する: **builtin**（`cheaper` 組み込み、
 binary embedded）・**user**（`<userConfigDir>/routes.yaml`）・
 **project**（`<workspace>/.cheaper/routes.yaml`）。層間の衝突は
 同じ `match.command` token prefix を key に判定され（route 名
-ではない）、上位層（builtin → user → project）が勝つ。project
-層が下位を shadow するのは `trusted: true` のときのみ —
-untrusted project route の match は suppressed provenance（
-`suppressed` field）として報告され、下位の route は active
-のまま残る。`trusted: true` は
-「この workspace の宣言を信頼する」という**明示的な layer
-override** であり、ユーザー承認やセキュリティ許可の代替では
-ない。
+ではない）、builtin/user 層の route は同一 `match.command` で
+下位層を無条件に shadow する一方、**project 層 route は下位層を
+shadow しない** — route の trust は宣言値ではなく宣言層
+provenance（builtin/user 層宣言 = trusted）が決める（issue
+#168）。`match.command` が衝突した project route は
+`suppressed` provenance（`suppressed` field）として報告され、
+下位の route は active のまま残る。
+
+project routes.yaml の entry に `trusted` key が存在すると、値
+（`true`/`false`/非 bool）に関わらず route load 全体が
+`InvalidRuntimePolicy` で失敗する（破壊的変更 — 修復は当該
+key の削除 1 行）。builtin/user 層の `trusted:` は受理されるが
+inert で、route の意味を持たない。strict 経路（
+`route resolve`/`route run`）は exit 3 で失敗し、hook 経路では
+fail-open でその workspace の全層 routing が不活性化する —
+症状は debug log のみに現れ、`route resolve` を実行するまで
+可視化されない。`trusted: true` で shadow を意図していた宣言は、
+routes.yaml を `<userConfigDir>/` へ配置して user 層 route として
+宣言し直せば従来どおり動作する（user 層では `trusted: true` が
+inert 受理され、user 層 route は下位層を shadow する）。
 
 builtin declaration の例（`resources/routes.yaml` に組み込み済み）:
 
@@ -292,7 +304,13 @@ grant は repository のコードや build script を実行する権限を
 `scope:"trusted" && !fixed` の grant のみ（unified `exec` grant
 namespace — [configuration ガイド](./configuration.md)）で、
 `process` task 由来の `fixed` grant・`scope:"project"` grant・
-未知名は `no-grant` viability に畳まれる。
+未知名は `no-grant` viability に畳まれる。route の trust（宣言層
+provenance — builtin/user 層宣言 = trusted）と grant の `scope`
+（authoring 層 provenance — project task 由来は
+`scope:"project"`、trusted 層宣言は既定 `scope:"trusted"`）は
+「trust は宣言値ではなく宣言主体が決める」同一モデルの 2 面で
+あり、route 側の「誰が宣言したか」と grant 側の「誰が
+authoring したか」が同じ層境界を共有する。
 
 `grant:` は anchor grant — route context（payload cwd 復元・
 passthrough/extra env・任意 exit code 受理・log tee・実行
