@@ -937,6 +937,61 @@ async fn shell_route_arm_engages_via_firing_load() {
     );
 }
 
+/// project 層 `<workspace>/.cheaper/routes.yaml` の `trusted` key
+/// presence は file 全体を load 失敗させ(#168 O2a —
+/// presence-first)、`load_or_none`(`route/supply.rs`)が
+/// builtin/user/project 全層の route arm を不活性化する(fail-open —
+/// spec R6)。user 層に valid な `cat` route があっても
+/// `cat big.txt` は unrouted eval 経路へ落ち、control arm 同様に
+/// deny 側で処理されて dedup record が publish される(route arm
+/// 発火時の Rewrite verdict は persist されない対照 — record の
+/// 有無が route arm 不活性の観測可能な証明)。command 処理自体は
+/// 継続する(fail-closed な schema 強制と fail-open な hook 合成の
+/// 責務分離)。strict 経路(`route resolve`)の
+/// `INVALID_RUNTIME_POLICY`・exit 3 は `resolve_project_trusted_
+/// rejected`(route.rs)が pin — 本 test は hook firing 側の観測
+/// に絞る。
+#[tokio::test(flavor = "current_thread")]
+async fn project_trusted_violation_disables_route_arm_fail_open() {
+    let fx = routed_shell_fixture();
+    fx.write_big("big.txt");
+    // 違反 file は project 層に置く — user 層(f.cfg)の `trusted` は
+    // 受理・inert で違反にならないため `routed_shell_fixture` へ
+    // 追記してはいけない。
+    let project = fx.ws.join(".cheaper");
+    std::fs::create_dir_all(&project).unwrap();
+    std::fs::write(
+        project.join("routes.yaml"),
+        "version: 1\nroutes:\n  - name: proj-cat\n    match: {command: [cat]}\n    target: {kind: workflow, path: w.json}\n    grant: g\n    trusted: true\n",
+    )
+    .unwrap();
+    // project 層 route の target を実在させる — 層 gate が無い旧
+    // semantics では `trusted: true` project route が user 層 route を
+    // shadow して runnable になり(Rewrite 発火 → dedup record なし
+    // で fail する)、fail-open pin としての識別力を保つ。
+    std::fs::write(project.join("w.json"), r#"{"version":1,"jobs":{}}"#).unwrap();
+    let r = run_hook(
+        &fx,
+        &["pre-run-command", "--target", "windsurf"],
+        &windsurf_shell("cat big.txt"),
+        &[],
+    )
+    .await;
+    // route arm を通らず unrouted eval の deny 側経路で処理される —
+    // `shell_route_arm_engages_via_firing_load` の control arm と同じ
+    // 結果(全層 routing 不活性でも command 処理は継続)。
+    assert_eq!(r.code, 2);
+    assert!(
+        r.stderr.contains("blocked shell command 'cat big.txt'."),
+        "{}",
+        r.stderr
+    );
+    assert!(
+        !eval_records(&fx).is_empty(),
+        "route arm 不活性なら unrouted deny は dedup record を publish する"
+    );
+}
+
 /// C4 — routed shell request の per-target render contract。
 /// claude(pretooluse)は `hookSpecificOutput.updatedInput`、codex は
 /// fallback verdict(hookSpecificOutput deny/allow)のみ render する。

@@ -2087,7 +2087,6 @@ mod tests {
                 substitute: None,
                 token_threshold: None,
                 passthrough_env: Vec::new(),
-                trusted: false,
                 layer: RouteLayer::Builtin,
             }
         }

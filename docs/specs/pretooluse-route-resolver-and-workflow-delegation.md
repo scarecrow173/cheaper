@@ -250,10 +250,11 @@ output capture + token 計測 + conditional worker による縮約)。
   `output.tokenThreshold` は routed workflow の conditional
   worker を起動する閾値の per-route override、`passthroughEnv`
   は hook env から passthrough を許す env 名の allowlist。
-  `trusted` は project 層 route にのみ意味を持つ optional bool
-  で、同一 `match.command` を持つ下位層(user/builtin)route を
-  shadow する明示宣言とする(R7 — mechanism は
-  ADR-034J8eZHNPqARi25HLFOL6 D7)。
+  `trusted` は builtin/user 層のみ受理される inert bool で、
+  project 層 entry に `trusted` key が存在すると
+  `grants`・`substitute` と同じ presence-first 規約で route
+  load が `InvalidRuntimePolicy` で失敗する(issue #168 —
+  trust は宣言値ではなく宣言層 provenance が決める。R7)。
 - R2: `routes.yaml` の読み込みは fail-loud とする — malformed
   YAML・schema 違反(未知 key・required field 欠落・`kind` 非
   `"workflow"` 等)は「invalid policy is never silently ignored」
@@ -282,20 +283,23 @@ output capture + token 計測 + conditional worker による縮約)。
   とする。silent な last-wins / first-wins / layer 優先黙殺は禁止
   (却下済み alternative F — project が user route を黙って差し替え
   られる経路を作らない)。
-- R7: 層間 trust — project 層の route は、明示 trust 規則が無い
-  限り、同一 `match.command` に対する user/builtin 層 route を
-  shadow / 差し替えてはならない。明示 trust 規則は project
-  route 上の `trusted: true` field とする
-  (ADR-034J8eZHNPqARi25HLFOL6 D7 で確定) — `trusted: true` を
-  宣言した project route のみが同一 `match.command` の下位層
-  (user/builtin)route を shadow する。trust 不在で衝突する project route は
-  その `match.command` について有効化されず(上位層 route が
-  勝ち)、`route resolve` はその旨を viability / 診断として報告
-  する(静かに無視しない)。`trusted: true` は explicitness の
-  mechanism であり consent の mechanism ではない(project 自身が
-  宣言可能 — 実行は引き続き trusted grant の argv match が
-  要求される)。override の provenance は `route resolve` と
-  `kind:"route"` record が報告する。
+- R7: 層間 trust — project 層 route は下位層を shadow しない。
+  trust は `trusted: true` 宣言値ではなく宣言層 provenance が
+  決める(O1a — issue #168 で再設計、
+  ADR-034LT2o68CgcOinMEs8PZ8): builtin/user 層の route は同一
+  `match.command` で下位層を無条件 shadow し(user は builtin
+  を無条件 shadow する現行規約不変)、project 層 route は
+  `match.command` 衝突時に `trusted` 宣言の有無・値に関わらず
+  常に負けて有効化されない(上位層 route が勝ち)。衝突で負けた
+  project route は `suppressed` provenance として `route
+  resolve` が viability / 診断として報告し、`kind:"route"`
+  record も報告する(静かに無視しない)。project 層 entry の
+  `trusted` key presence は `grants`/`substitute` と同じ
+  presence-first 規約で `InvalidRuntimePolicy` の route-load
+  error に倒す — project 自己申告の shadow 経路は load 時に
+  閉じる(「宣言しても判定を変えられない」ではなく「申告を受理
+  しない」)。builtin/user 層の `trusted` は受理されるが inert
+  で、実行は引き続き trusted grant の argv match が要求される。
 - R8: rewrite-safe gate — 対象 command を `tokenize_shell`
   (`crates/cheaper-cli/src/hook/routing_policy.rs:1093`)で評価し、
   以下を全て満たす場合のみ routing 対象とする: (a) ちょうど 1

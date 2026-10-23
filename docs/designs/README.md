@@ -82,11 +82,12 @@ Directory: `docs/designs`
 | DESIGN-034Bbq1qY8WFBdL26tUdBw | Rust + Rig runtime migration architecture | approved | [rust-rig-runtime-migration-architecture.md](./rust-rig-runtime-migration-architecture.md) |
 | DESIGN-034z1EfqYaEBfyNvqZyFSD | SEA executable build pipeline and embedded resource resolution | approved | [sea-executable-build-pipeline-and-embedded-resource-resolution.md](./sea-executable-build-pipeline-and-embedded-resource-resolution.md) |
 | DESIGN-034rBoPPFNHXR5eSfv0hsO | Shell read-candidate extraction and shared large-read verdict | approved | [shell-read-candidate-extraction.md](./shell-read-candidate-extraction.md) |
-| DESIGN-034L0RxGVVTOqtaUUThowk | substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・実行 anchor 切替 | draft | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
+| DESIGN-034L0RxGVVTOqtaUUThowk | substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・実行 anchor 切替 | approved | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | DESIGN-0005kq1c3Wo7rdnwZR8Sp3 | Synchronize distributed cheaper-usage skill and parent-agent integration guide | approved | [synchronize-distributed-skill-and-parent-agent-guide.md](./synchronize-distributed-skill-and-parent-agent-guide.md) |
 | DESIGN-034r05iHy2gdnoEfk3jERu | Token counter contract (core module, count_tokens tool, count-tokens CLI) | approved | [token-counter-contract.md](./token-counter-contract.md) |
 | DESIGN-034ETcI8q4hTRH502qnQZc | tool-operator built-in worker と cheaper.optionalTools opt-in 縮退機構の設計 | approved | [tool-operator-built-in-worker.md](./tool-operator-built-in-worker.md) |
 | DESIGN-034D8wP2Y8qWiuviJbQINn | Trailing-separator guard for workspace boundary predicate | approved | [trailing-separator-guard-for-workspace-boundary-predicate.md](./trailing-separator-guard-for-workspace-boundary-predicate.md) |
+| DESIGN-034L4tqYwtc8q88WEIXPh9 | trusted route flag issuer redesign — `Route.trusted` 削除・merge 無条件化・project 層 `trusted` presence 拒否 | approved | [trusted-route-flag-issuer-redesign.md](./trusted-route-flag-issuer-redesign.md) |
 | DESIGN-034KP4lfgfD7DdGiDV1YuT | unified exec grant model — command.grants / process.tasks の統合 | approved | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
 | DESIGN-034r05iHy2gdnoT4LG4KTu | Unified version source of truth | approved | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | DESIGN-034r2lHf6FAFVelj9LrhZh | Align usage.jsonl recording-scope docs with implemented contract | approved | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |

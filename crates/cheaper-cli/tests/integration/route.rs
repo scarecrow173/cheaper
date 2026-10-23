@@ -282,12 +282,31 @@ async fn resolve_project_substitute_rejected() {
     assert_eq!(env["error"]["code"], "INVALID_RUNTIME_POLICY");
 }
 
-/// project `trusted: true` が下位層 route を置換した場合、displaced
-/// route は `suppressed` provenance へ記録される(#167 — silent
-/// displacement を残さない。新規追加では suppressed は空)。
+/// project 層 `trusted` key presence は `grants`/`substitute` と同じ
+/// 層 gate で fail-loud 拒否される(#168 O2a — presence-first、
+/// `InvalidRuntimePolicy` + `schema_error`、file 全体 load 失敗)。
+/// `trusted` 非宣言の project route は同一 `match.command` 衝突で
+/// 下位層 route に負け、負けた project route 名が `suppressed`
+/// provenance へ記録される(spec R4 回帰固定)。
 #[tokio::test]
-async fn resolve_project_trusted_displacement_reports_suppressed() {
+async fn resolve_project_trusted_rejected() {
     let mut f = Fixture::new();
+    let project = f.ws.path().join(".cheaper");
+    std::fs::create_dir_all(&project).unwrap();
+    std::fs::write(
+        project.join("routes.yaml"),
+        "version: 1\nroutes:\n  - name: proj\n    match: {command: [git, push]}\n    target: {kind: workflow, path: w.json}\n    grant: g\n    trusted: true\n",
+    )
+    .unwrap();
+    let (code, env, _err) = f.run(&["route", "resolve", "--command", "git push"]).await;
+    assert_eq!(code, 3, "{env}");
+    assert_eq!(env["ok"], false);
+    assert_eq!(env["error"]["code"], "INVALID_RUNTIME_POLICY");
+
+    // `trusted` 非宣言の project route が同一 `match.command` で user
+    // 層 route に負け、負けた project route 名が suppressed へ記録
+    // される(project 層は下位層を shadow しない — trust = 宣言層
+    // provenance)。
     let exe = std::env::current_exe()
         .unwrap()
         .to_string_lossy()
@@ -303,11 +322,9 @@ async fn resolve_project_trusted_displacement_reports_suppressed() {
         r#"{"version":1,"jobs":{}}"#,
     )
     .unwrap();
-    let project = f.ws.path().join(".cheaper");
-    std::fs::create_dir_all(&project).unwrap();
     std::fs::write(
         project.join("routes.yaml"),
-        "version: 1\nroutes:\n  - name: proj-push\n    match: {command: [git, push]}\n    target: {kind: workflow, path: proj-push.workflow.json}\n    grant: push-any\n    trusted: true\n",
+        "version: 1\nroutes:\n  - name: proj-push\n    match: {command: [git, push]}\n    target: {kind: workflow, path: proj-push.workflow.json}\n    grant: push-any\n",
     )
     .unwrap();
     std::fs::write(
@@ -328,9 +345,9 @@ async fn resolve_project_trusted_displacement_reports_suppressed() {
     assert_eq!(code, 0, "{env}");
     let result = &env["result"];
     assert_eq!(result["matched"], true);
-    // trusted project route が勝ち、displaced user route は
-    // suppressed へ記録される。
-    assert_eq!(result["route"], "proj-push");
-    assert_eq!(result["suppressed"], "user-push");
+    // user route が勝ち、負けた project route は suppressed へ記録
+    // される(displaced 下位層 route は発生しない — #168)。
+    assert_eq!(result["route"], "user-push");
+    assert_eq!(result["suppressed"], "proj-push");
     assert_eq!(result["viability"], "runnable");
 }
