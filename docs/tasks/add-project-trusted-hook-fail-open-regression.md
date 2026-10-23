@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L59Ty2ObpwGwNFduACU"
 type: "task"
-status: "todo"
+status: "done"
 title: "project 層 trusted 拒否の hook fail-open 回帰 test"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -137,16 +137,17 @@ firing_load` の近傍)へ test を追加:
 
 ## Done When
 
-- [ ] `tests/integration/hook.rs` に、project 層
+- [x] `tests/integration/hook.rs` に、project 層
       `<workspace>/.cheaper/routes.yaml` の `trusted` presence
       を含む load 失敗が `load_or_none` 経由で全層 route arm
       を不活性化し、routed だった command が unrouted eval
       経路(dedup record publish 側)で処理され続けることを
       pin する回帰 test が存在する
-- [ ] 違反 file が project 層に置かれている(user 層 `f.cfg`
+      (`project_trusted_violation_disables_route_arm_fail_open`)
+- [x] 違反 file が project 層に置かれている(user 層 `f.cfg`
       への `trusted` 記述ではない — user 層受理で違反になら
       ないため)
-- [ ] `cargo test -p cheaper-cli --test integration hook` が
+- [x] `cargo test -p cheaper-cli --test integration hook` が
       pass する
 
 ## Out of Scope
@@ -162,8 +163,13 @@ firing_load` の近傍)へ test を追加:
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook` が pass
-- [ ] 新規 test が T1 前の code では fail する(層 gate 不在で
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration hook` が pass — 実測: 78 passed / 0 failed(新規 `project_trusted_violation_disables_route_arm_fail_open` 含む)
+- [x] 新規 test が T1 前の code では fail する(層 gate 不在で
       route arm が発火する)ことを確認 — または test が
       fail-open 経路の pin として構造的に正しいことを
-      review で確認
+      review で確認 — 実測: 構造 review で確認。project 層 route の
+      target(`w.json`)を実在させたため、層 gate 不在の旧
+      semantics では `trusted: true` project route が user 層 `cat`
+      route を shadow して runnable → Rewrite 発火 → dedup record
+      非 persist で `!eval_records(&fx).is_empty()` が fail する
+      識別力を持つ(fixture コメントに明記)

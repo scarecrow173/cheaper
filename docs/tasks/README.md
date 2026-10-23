@@ -38,7 +38,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpySHHPmpY | Add Ollama docker-compose and document container usage in AGENTS.md | done | [add-ollama-docker-compose-and-document-container-usage-in-agents-md.md](./add-ollama-docker-compose-and-document-container-usage-in-agents-md.md) |
 | TASK-034z3zOydB4GluAraLc16E | Add POSIX and PowerShell platform launchers to hooks payload | done | [add-posix-and-powershell-platform-launchers-to-hooks-payload.md](./add-posix-and-powershell-platform-launchers-to-hooks-payload.md) |
 | TASK-034Jg6j7EASBiaIqXlc07u | Add proc full-output tee sink for route logging | done | [add-proc-output-tee.md](./add-proc-output-tee.md) |
-| TASK-034L59Ty2ObpwGwNFduACU | project 層 trusted 拒否の hook fail-open 回帰 test | todo | [add-project-trusted-hook-fail-open-regression.md](./add-project-trusted-hook-fail-open-regression.md) |
+| TASK-034L59Ty2ObpwGwNFduACU | project 層 trusted 拒否の hook fail-open 回帰 test | done | [add-project-trusted-hook-fail-open-regression.md](./add-project-trusted-hook-fail-open-regression.md) |
 | TASK-034r05iHWkNF7zJyX85ZOT | Add provider plugin contract and registration order | done | [add-provider-plugin-contract-and-registration-order.md](./add-provider-plugin-contract-and-registration-order.md) |
 | TASK-034r05iHWkNF7zFyMzc7zU | Add resolveUserConfigDir helper and Pi state path wiring | done | [add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md](./add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md) |
 | TASK-034Jg6Irzs6nV7o5ocyN2Q | Add route subcommand CLI wiring and help docs | done | [add-route-cli-wiring.md](./add-route-cli-wiring.md) |
