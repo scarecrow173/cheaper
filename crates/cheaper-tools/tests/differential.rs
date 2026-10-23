@@ -22,6 +22,7 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use cheaper_core::errors::CheaperError;
+use cheaper_core::policy::exec::build_exec_input;
 use cheaper_core::token::count::FileTooLargeError;
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::deny_paths::{create_path_denylist, PathDenylist};
@@ -657,6 +658,16 @@ fn runtime_options(spec: &Value, ctx: &CaseCtx) -> (ToolRuntimeOptions, Arc<Muta
     if let Some(p) = &mut process {
         translate_process_spec(p);
     }
+    // fixture json は authoring 層(`spec.process`)のまま不変 —
+    // `options.exec` は unified exec-doc 入力のため、段 2 synthesis
+    // で `process` section を畳み込んでから渡す(issue #165 — TS
+    // dump 側 fixture の無改訂回帰)。
+    let exec = process.map(|p| {
+        Value::Object(
+            build_exec_input(Some(&p), None, &std::collections::BTreeSet::new())
+                .expect("fixture process section synthesizes"),
+        )
+    });
     let artifacts = spec
         .get("artifacts")
         .and_then(Value::as_bool)
@@ -671,8 +682,7 @@ fn runtime_options(spec: &Value, ctx: &CaseCtx) -> (ToolRuntimeOptions, Arc<Muta
             write_scope: spec.get("writeScope").map(string_vec),
             read_strictness,
             artifacts,
-            process,
-            command: None,
+            exec,
             security: None,
             root: ctx.root.clone(),
             symlink_policy: symlink_policy(&spec["symlinkPolicy"]),

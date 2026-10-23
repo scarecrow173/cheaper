@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KQsmrlonTwNkmmLJOxg"
 type: "task"
-status: "todo"
+status: "done"
 title: "cheaper-tools tools/exec module と registry/invocation/catalog 配管"
 created: "2026-10-23"
 updated: "2026-10-23"

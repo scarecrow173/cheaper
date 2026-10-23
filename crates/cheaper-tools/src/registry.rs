@@ -16,8 +16,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
-use cheaper_core::policy::command::{resolve_command_policy, ResolvedCommandPolicy};
-use cheaper_core::policy::process::{resolve_process_policy, ResolvedProcessPolicy};
+use cheaper_core::policy::exec::{resolve_exec_policy, ResolvedExecPolicy};
 use cheaper_core::policy::security::{resolve_exec_deny_list, ExecDenyList};
 use cheaper_core::resources::predicates::claim_contains;
 use cheaper_core::resources::types::{ClaimMode, ResourceScope};
@@ -54,18 +53,17 @@ use crate::tools::boundary::{
     create_edit_operations, create_ls_operations, create_write_operations,
     BoundaryOperationsOptions,
 };
-use crate::tools::command::{
-    command_operation_declaration, command_tool_definition, pin_command_grants, CommandToolOptions,
-};
+use crate::tools::command::command_tool_definition;
 use crate::tools::count_tokens::{count_tokens_tool_definition, CountTokensToolOptions};
 use crate::tools::edit::edit_tool_definition;
+use crate::tools::exec::{
+    exec_operation_declaration, pin_exec_grants, ExecToolOptions, RouteCommandContext,
+};
 use crate::tools::find::find_tool_definition;
 use crate::tools::grep::{grep_tool_definition, GrepToolOptions};
 use crate::tools::grep_eval::EvalSpawn;
 use crate::tools::ls::ls_tool_definition;
-use crate::tools::process::{
-    process_operation_declaration, process_tool_definition, OnTimeout, ProcessToolOptions,
-};
+use crate::tools::process::{process_tool_definition, OnTimeout};
 use crate::tools::read::{read_tool_definition, ReadToolOptions};
 use crate::tools::write::write_tool_definition;
 use crate::walker::WalkOptions;
@@ -94,13 +92,14 @@ pub struct ToolRuntimeOptions {
     pub write_scope: Option<Vec<String>>,
     pub read_strictness: Option<crate::resources::ReadStrictness>,
     pub artifacts: Option<ArtifactPorts>,
-    /// `Partial<ProcessPolicy>` の raw JSON(`resolve_process_policy` 入力)。
-    pub process: Option<Value>,
-    /// `Partial<CommandPolicy>` の raw JSON(`resolve_command_policy` 入力)。
-    /// `names` に `Command` を含む runtime は nonempty-grants gate +
-    /// writeScope 拒否 + per-scope pin が registration 境界で効く
-    /// (design §(b)/(c)/(g))。
-    pub command: Option<Value>,
+    /// unified exec-doc の raw JSON(`resolve_exec_policy` 入力 —
+    /// `to_value(&policy.exec)` の機械的 serialize か、
+    /// `{grants, command, process}` 形の直接入力)。
+    /// `names` に `Command`/`Process` を含む runtime は per-surface
+    /// nonempty-grants gate + writeScope 拒否(command のみ)+
+    /// per-scope pin が registration 境界で効く
+    /// (design §(b)/(c)/(g)、issue #165)。
+    pub exec: Option<Value>,
     /// `Partial<SecurityPolicy>` の raw JSON(`resolve_exec_deny_list`
     /// 入力 — `command`/`process`/`concurrency` と同じ raw JSON 規約)。
     /// caller は `serde_json::to_value(&policy.security)` を渡し、
@@ -136,7 +135,7 @@ pub struct ToolRuntimeOptions {
     /// route scope 構築層のみが注入する route context(design
     /// §route context 注入 — `extra_env`/`exec_cwd`/
     /// `accept_any_exit_code`/`log_tee`)。`None` で従来挙動不変。
-    pub route_context: Option<crate::tools::command::RouteCommandContext>,
+    pub route_context: Option<RouteCommandContext>,
 }
 
 /// `createWorkerScope` が `createToolRuntime` へ渡す共有基盤
@@ -226,20 +225,22 @@ struct ToolCtx {
     owner_id: String,
     /// write/edit/ls の `BoundaryOperationsOptions.scope`。
     scope: ResourceScopeOptions,
-    process: ResolvedProcessPolicy,
-    /// declared-shape の resolved command policy(design §(g))。
-    command: ResolvedCommandPolicy,
+    /// unified resolved exec policy — 両 surface が同一 instance を
+    /// 共有し、disjoint は `resolve_exec_grant` の `fixed` 期待値と
+    /// scope 構築の surface 別 pin で強制される(design §(g)/(h))。
+    exec: ResolvedExecPolicy,
     /// grant name → pin 済み canonical executable path(per-scope pin、
-    /// `names` に `Command` を含む場合のみ構築。それ以外は空)。
-    command_pins: BTreeMap<String, String>,
+    /// `names` に `Command`/`Process` を含む surface の到達可能
+    /// grant 群のみ構築。それ以外は空)。
+    exec_pins: BTreeMap<String, String>,
     /// `security.execDenyPatterns` の compiled deny(issue #164 —
-    /// scope 構築で 1 回 compile し `CommandToolOptions` へ共有)。
+    /// scope 構築で 1 回 compile し `ExecToolOptions` へ共有)。
     exec_deny: ExecDenyList,
     eval_spawn: EvalSpawn,
     on_timeout: Option<OnTimeout>,
     observe_access: Arc<AccessObserver<'static>>,
     /// route scope 由来の route context(`None` で不変)。
-    route_context: Option<crate::tools::command::RouteCommandContext>,
+    route_context: Option<RouteCommandContext>,
 }
 
 impl ToolCtx {
@@ -309,30 +310,40 @@ impl ToolCtx {
         }
     }
 
-    fn process(&self) -> ProcessToolOptions {
-        ProcessToolOptions {
+    /// fixed surface の options — `write_scope` は per-call coverage
+    /// 検査のため process のみが読み、`route_context` は注入しない
+    /// (`!fixed` surface 専用 — design §(i))。
+    fn process(&self) -> ExecToolOptions {
+        ExecToolOptions {
             root: self.root.clone(),
             symlink_policy: self.symlink_policy,
-            process: self.process.clone(),
+            exec: self.exec.clone(),
+            pins: self.exec_pins.clone(),
             on_timeout: self.on_timeout.clone(),
             denylist: self.denylist.clone(),
+            exec_deny: self.exec_deny.clone(),
             write_scope: self
                 .scope
                 .write_scope
                 .clone()
                 .map(|scope| scope.into_iter().collect()),
+            route_context: None,
         }
     }
 
-    fn command(&self) -> CommandToolOptions {
-        CommandToolOptions {
+    /// `!fixed` surface の options — `route_context` は route scope
+    /// 由来で注入、`write_scope` は常に `None`(構築 gate で
+    /// writeScope × `!fixed` は到達不能 — design §(c)/(g))。
+    fn command(&self) -> ExecToolOptions {
+        ExecToolOptions {
             root: self.root.clone(),
             symlink_policy: self.symlink_policy,
-            command: self.command.clone(),
-            pins: self.command_pins.clone(),
+            exec: self.exec.clone(),
+            pins: self.exec_pins.clone(),
             on_timeout: self.on_timeout.clone(),
             denylist: self.denylist.clone(),
             exec_deny: self.exec_deny.clone(),
+            write_scope: None,
             route_context: self.route_context.clone(),
         }
     }
@@ -881,7 +892,7 @@ impl ToolRuntime {
                     .get("task")
                     .and_then(Value::as_str)
                     .unwrap_or_default();
-                process_operation_declaration(&inner.tool_ctx.process, task)
+                exec_operation_declaration(&inner.tool_ctx.exec, task, true)
                     .map_err(|e| Box::new(e) as ToolError)?
             }
             ToolName::Command => {
@@ -892,7 +903,7 @@ impl ToolRuntime {
                     .get("name")
                     .and_then(Value::as_str)
                     .unwrap_or_default();
-                command_operation_declaration(&inner.tool_ctx.command, grant)
+                exec_operation_declaration(&inner.tool_ctx.exec, grant, false)
                     .map_err(|e| Box::new(e) as ToolError)?
             }
             name => OperationDeclaration::new(if is_mutating_tool(name) {
@@ -1107,10 +1118,18 @@ pub fn create_tool_runtime(
     // capability・registered・`RuntimeInner.names`)へ届く(design §(e))。
     let mut names = options.names.clone();
     let mut degraded = Vec::new();
-    // `opts.process = resolveProcessPolicy(options.process)`。
-    let process =
-        resolve_process_policy(options.process.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
-    if names.contains(&ToolName::Process) && process.tasks.is_empty() {
+    // `security.execDenyPatterns` の compiled deny を scope 構築で
+    // 1 回だけ resolve + compile(issue #164) — unified exec resolve
+    // (適用点 1)・per-scope pin(適用点 2)・`ToolCtx` 経由の spawn
+    // 前再検証(適用点 3)で同一 predicate を共有する。
+    let exec_deny =
+        resolve_exec_deny_list(options.security.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
+    // 単一 unified exec-policy resolve — `command.grants`(`!fixed`)と
+    // `process.tasks`(`fixed`)を同一 grant namespace へ解決する
+    // (issue #165 — declared executable deny は適用点 1 で一元)。
+    let exec = resolve_exec_policy(options.exec.as_ref(), &exec_deny)
+        .map_err(|e| Box::new(e) as ToolError)?;
+    if names.contains(&ToolName::Process) && !exec.grants.values().any(|g| g.fixed) {
         if degradable.contains(&ToolName::Process) {
             names.retain(|n| *n != ToolName::Process);
             degraded.push(ToolName::Process);
@@ -1121,23 +1140,14 @@ pub fn create_tool_runtime(
             )));
         }
     }
-    // `security.execDenyPatterns` の compiled deny を scope 構築で
-    // 1 回だけ resolve + compile(issue #164) — command resolve
-    // (適用点 1)・per-scope pin(適用点 2)・`ToolCtx` 経由の spawn
-    // 前再検証(適用点 3)で同一 predicate を共有する。
-    let exec_deny =
-        resolve_exec_deny_list(options.security.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
-    // `opts.command = resolveCommandPolicy(options.command)`。
-    let command = resolve_command_policy(options.command.as_ref(), &exec_deny)
-        .map_err(|e| Box::new(e) as ToolError)?;
     if names.contains(&ToolName::Command) {
-        // `command` の実効的な権限境界: trusted layer の grant が
+        // `command` の実効的な権限境界: 到達可能な `!fixed` grant が
         // 空なら exposure を fail-closed(process gate と同型、
         // design §(g))。opt-in 時は `POLICY_VIOLATION` ではなく
         // 未登録へ縮退する(design §(e))。`Command` を含まない
         // runtime は grant が ambient PATH で解決不能でも dormant
         // として許容する。
-        if command.grants.is_empty() {
+        if !exec.grants.values().any(|g| !g.fixed) {
             if degradable.contains(&ToolName::Command) {
                 names.retain(|n| *n != ToolName::Command);
                 degraded.push(ToolName::Command);
@@ -1169,16 +1179,6 @@ pub fn create_tool_runtime(
             "degradation left no tools to register",
         )));
     }
-    // 縮退名は gate 分岐の push 順(process → command)ではなく
-    // `options.names` の宣言順に整列する — prompt 注記と
-    // `tools.degraded` span field を宣言順で stable にするため
-    // (design §(e))。
-    let degraded: Vec<ToolName> = options
-        .names
-        .iter()
-        .copied()
-        .filter(|n| degraded.contains(n))
-        .collect();
     let abort_grace_ms = options.abort_grace_ms.unwrap_or(5000.0);
     if !(abort_grace_ms.is_finite() && abort_grace_ms >= 0.0) {
         return Err(Box::new(CheaperError::new(
@@ -1216,26 +1216,59 @@ pub fn create_tool_runtime(
             (manager, "tool-runtime".to_string(), resources, scheduler)
         }
     };
-    // per-scope executable pin(design §(b)/(g)) — `names` に
-    // `Command` を含む場合のみ、その時点の ambient PATH で grant
-    // executable を canonical path へ pin する。pin 不能の grant は
-    // runtime 構築自体を `POLICY_VIOLATION` で fail させる。
-    // `Command` を expose しない runtime は pin を試行せず dormant
-    // とする。
-    let command_pins = if names.contains(&ToolName::Command) {
-        pin_command_grants(
-            &command,
+    // per-scope executable pin(design §(b)/(g)) — `names` に expose
+    // surface を含む場合のみ、その時点の ambient PATH で surface 到達
+    // 可能 grant の executable を canonical path へ pin する。
+    // `Command` → `!fixed` grant 群、`Process` → `fixed` grant 群
+    // (task executable が pin されるのは本 issue が初 — D9、per-call
+    // lazy resolve は `prepare_exec_grant` の pin 検索へ置換)。
+    // pin 不能は `POLICY_VIOLATION` — ただし失敗 grant の surface に
+    // 対応する tool が `degradable` 宣言されていれば当該 tool のみ
+    // `names` から除去する(pin-fail × degradable の両 surface 対称
+    // 規則 — opt-in 縮退の既存機構を再利用、design §(g))。
+    let mut exec_pins = BTreeMap::new();
+    for (surface, fixed) in [(ToolName::Command, false), (ToolName::Process, true)] {
+        if !names.contains(&surface) {
+            continue;
+        }
+        match pin_exec_grants(
+            &exec,
+            fixed,
             &resources.root,
             options.symlink_policy,
             options.denylist.as_ref(),
             &exec_deny,
-        )?
-    } else {
-        BTreeMap::new()
-    };
-    // `catalog`(TS `createToolCatalog({process: opts.process})` — resolved
-    // policy を直接所有させる)。
-    let catalog = ToolCatalog::from_resolved_policy(process.clone());
+        ) {
+            Ok(pins) => exec_pins.extend(pins),
+            Err(err) if degradable.contains(&surface) => {
+                let _ = err;
+                names.retain(|n| *n != surface);
+                degraded.push(surface);
+            }
+            Err(err) => return Err(err),
+        }
+    }
+    // pin-fail 縮退が全 tool を消した場合も zero-effective-names で
+    // fail-closed(content-gate 後の guard と同一文言)。
+    if names.is_empty() {
+        return Err(Box::new(CheaperError::new(
+            ErrorCode::PolicyViolation,
+            "degradation left no tools to register",
+        )));
+    }
+    // 縮退名は gate 分岐の push 順(content-gate・pin-fail)ではなく
+    // `options.names` の宣言順に整列する — prompt 注記と
+    // `tools.degraded` span field を宣言順で stable にするため
+    // (design §(e))。
+    let degraded: Vec<ToolName> = options
+        .names
+        .iter()
+        .copied()
+        .filter(|n| degraded.contains(n))
+        .collect();
+    // `catalog`(resolved unified exec policy を直接所有させる —
+    // design §(k))。
+    let catalog = ToolCatalog::from_resolved_policy(exec.clone());
     // `inherited` readStrictness(parentLease の owner 検証付き)。
     let inherited = match options.parent_lease {
         Some(lease) => Some(
@@ -1321,9 +1354,8 @@ pub fn create_tool_runtime(
         artifacts: options.artifacts.clone(),
         owner_id: owner_id.clone(),
         scope,
-        process: process.clone(),
-        command,
-        command_pins,
+        exec: exec.clone(),
+        exec_pins,
         exec_deny,
         eval_spawn,
         on_timeout: Some(on_timeout),

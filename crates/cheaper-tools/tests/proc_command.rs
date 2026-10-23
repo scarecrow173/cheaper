@@ -20,6 +20,7 @@
 //! - 独自 pool `"command"`(`command.maxConcurrent`)+ Exclusive claim の
 //!   serialize
 
+use std::collections::BTreeSet;
 use std::io::{self, BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -27,12 +28,13 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::policy::exec::build_exec_input;
 use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::paths::{canonicalize_workspace_root, SymlinkPolicy};
 use cheaper_tools::operation::{AbortController, AbortReason, OperationState};
 use cheaper_tools::registry::{create_tool_runtime, ToolCallContext, ToolRuntimeOptions};
-use cheaper_tools::tools::command::RouteCommandContext;
+use cheaper_tools::tools::exec::RouteCommandContext;
 use cheaper_tools::ToolError;
 use serde_json::{json, Map, Value};
 
@@ -202,15 +204,23 @@ impl Drop for TempDir {
     }
 }
 
+/// authoring `command` section(`{"grants":…}` + section-level)→
+/// unified exec-doc(`options.exec` の raw 入力 shape)への synthesis
+/// seam(project task 名なし)。
+fn exec_doc(command: Value) -> Value {
+    Value::Object(build_exec_input(None, Some(&command), &BTreeSet::new()).expect("synthesis"))
+}
+
 /// `ToolRuntimeOptions`(`create_tool_runtime` 直結の最小形)。
+/// `command` は authoring `command` section — unified exec-doc へ畳んで
+/// `options.exec` に設定する。
 fn options(root: &str, command: Value, names: Vec<ToolName>) -> ToolRuntimeOptions {
     ToolRuntimeOptions {
         resource_manifest: None,
         write_scope: None,
         read_strictness: None,
         artifacts: None,
-        process: None,
-        command: Some(command),
+        exec: Some(exec_doc(command)),
         security: None,
         root: root.to_string(),
         symlink_policy: SymlinkPolicy::Deny,
@@ -274,6 +284,19 @@ fn command_runtime(
     command: Value,
 ) -> Result<cheaper_tools::registry::ToolRuntime, ToolError> {
     create_tool_runtime(options(root, command, vec![ToolName::Command]), None)
+}
+
+/// unified exec-doc(`{"grants":{…}}`)を `options.exec` へ直接注入する
+/// seam — 無効値を authoring resolver(`build_exec_input` 内)で先に
+/// reject させず、`resolve_exec_policy`(runtime 構築境界)の
+/// validation へ到達させる。negative validation 系テスト用。
+fn exec_runtime(
+    root: &str,
+    grants: Value,
+) -> Result<cheaper_tools::registry::ToolRuntime, ToolError> {
+    let mut o = options(root, json!({}), vec![ToolName::Command]);
+    o.exec = Some(json!({"grants": grants}));
+    create_tool_runtime(o, None)
 }
 
 /// `err` / cause chain から `CheaperError` を探す。
@@ -404,11 +427,13 @@ fn write_scope_rejects_command() {
 
 /// declared executable 名は内容審査されず policy resolve を通る
 /// (design §(d) — interpreter・exec wrapper/loader・shell 系名を
-/// 含む任意名を受理)。`resolve_command_policy` は PATH 非依存で
-/// deterministic。pin 層の受理は workspace 内 file の case で別途 pin。
+/// 含む任意名を受理)。`resolve_exec_policy` は PATH 非依存で
+/// deterministic(exec-doc `{"grants":…}` を直接受理 — caller は必ず
+/// `build_exec_input` 経由のためここでも段 2 を通す)。
+/// pin 層の受理は workspace 内 file の case で別途 pin。
 #[test]
 fn declared_executable_names_pass_policy_resolution() {
-    use cheaper_core::policy::command::resolve_command_policy;
+    use cheaper_core::policy::exec::resolve_exec_policy;
 
     for exe in [
         "python",
@@ -429,13 +454,11 @@ fn declared_executable_names_pass_policy_resolution() {
         "powershell",
         "deploy.sh",
     ] {
-        resolve_command_policy(
-            Some(&json!({
-                "grants": {"g": {"executable": exe}}
-            })),
-            &ExecDenyList::default(),
-        )
-        .unwrap_or_else(|e| panic!("{exe} should be accepted: {e}"));
+        let doc = exec_doc(json!({
+            "grants": {"g": {"executable": exe}}
+        }));
+        resolve_exec_policy(Some(&doc), &ExecDenyList::default())
+            .unwrap_or_else(|e| panic!("{exe} should be accepted: {e}"));
     }
 }
 
@@ -855,7 +878,7 @@ fn invalid_exitcodes_rejected_at_policy_resolution() {
     let dir = TempDir::new();
     for exit_codes in [json!("0"), json!([0, "1"]), json!([0.5]), json!([-1])] {
         let grant = grant_with("inspect", None, json!({"exitCodes": exit_codes}));
-        let err = command_runtime(&dir.root(), command_policy(json!({"self": grant}))).unwrap_err();
+        let err = exec_runtime(&dir.root(), json!({"self": grant})).unwrap_err();
         let e = cheaper_err(&err);
         assert_eq!(
             e.code(),
@@ -897,7 +920,7 @@ fn cwd_escape_rejected_at_policy_resolution() {
     let dir = TempDir::new();
     for cwd in ["..", "../outside", "/tmp", "C:\\Windows"] {
         let grant = grant_with("inspect", None, json!({"cwd": cwd}));
-        let err = command_runtime(&dir.root(), command_policy(json!({"self": grant}))).unwrap_err();
+        let err = exec_runtime(&dir.root(), json!({"self": grant})).unwrap_err();
         let e = cheaper_err(&err);
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy, "cwd {cwd}");
     }
@@ -1548,14 +1571,14 @@ async fn spawn_time_revalidation_detects_path_changes() {
     }
 }
 
-/// `check_command_execution` — route resolver が使う spawn 無し
+/// `check_exec_execution` — route resolver が使う spawn 無し
 /// preflight seam(design §viability・B#3)。`command::execute` と
 /// 同一 predicate であることを、受理・拒否の双方で確認する。
 #[test]
 fn check_command_execution_shares_execute_predicate() {
-    use cheaper_core::policy::command::resolve_command_policy;
+    use cheaper_core::policy::exec::resolve_exec_policy;
     use cheaper_core::policy::security::ExecDenyList;
-    use cheaper_tools::tools::command::{check_command_execution, CommandToolOptions};
+    use cheaper_tools::tools::exec::{check_exec_execution, pin_exec_grant, ExecToolOptions};
 
     let dir = TempDir::new();
     let root = dir.root();
@@ -1563,28 +1586,30 @@ fn check_command_execution_shares_execute_predicate() {
         .unwrap()
         .to_string_lossy()
         .into_owned();
-    let policy = resolve_command_policy(
-        Some(&json!({
+    let policy = resolve_exec_policy(
+        Some(&exec_doc(json!({
             "grants": {"t": {"executable": exe, "argv": ["test", "*"]}}
-        })),
+        }))),
         &ExecDenyList::default(),
     )
     .unwrap();
-    let options = CommandToolOptions {
+    let options = ExecToolOptions {
         root: root.clone(),
         symlink_policy: SymlinkPolicy::Deny,
-        command: policy.clone(),
+        exec: policy.clone(),
         pins: Default::default(),
         on_timeout: None,
         denylist: None,
         exec_deny: ExecDenyList::default(),
+        write_scope: None,
         route_context: None,
     };
-    let e = check_command_execution(&options, "t", &["test".into()])
+    // pin map 不在は fail-closed(spawn 層へは到達しない)。
+    let e = check_exec_execution(&options, "t", &["test".into()])
         .map(|_| ())
         .unwrap_err();
     assert_eq!(cheaper_err(&e).code(), ErrorCode::PolicyViolation);
-    let pinned = cheaper_tools::tools::command::pin_command_grant(
+    let pinned = pin_exec_grant(
         "t",
         policy.grants.get("t").unwrap(),
         &root,
@@ -1593,27 +1618,27 @@ fn check_command_execution_shares_execute_predicate() {
         &ExecDenyList::default(),
     )
     .unwrap();
-    let options = CommandToolOptions {
+    let options = ExecToolOptions {
         pins: std::collections::BTreeMap::from([("t".to_string(), pinned)]),
         ..options
     };
     // 受理 — grant 名・argv pattern・executable pin 解決・cwd 全通過。
-    let checked = check_command_execution(&options, "t", &["test".into(), "--x".into()]).unwrap();
+    let checked = check_exec_execution(&options, "t", &["test".into(), "--x".into()]).unwrap();
     assert!(!checked.executable.is_empty());
     assert_eq!(checked.cwd, root);
     // argv pattern 不一致 → execute と同じ POLICY_VIOLATION。
-    let e = check_command_execution(&options, "t", &["rm".into()])
+    let e = check_exec_execution(&options, "t", &["rm".into()])
         .map(|_| ())
         .unwrap_err();
     assert_eq!(cheaper_err(&e).code(), ErrorCode::PolicyViolation);
     // metachar token も pattern(`"test","*"`)適合なら受理される —
     // argv 内容は審査対象外。
-    let checked = check_command_execution(&options, "t", &["test".into(), "a;rm".into()]).unwrap();
+    let checked = check_exec_execution(&options, "t", &["test".into(), "a;rm".into()]).unwrap();
     assert!(!checked.executable.is_empty());
     // 未宣言 grant → `unknown or unauthorized command grant`
-    // (resolve_command_grant の fail-closed — resolver の no-grant
+    // (resolve_exec_grant の fail-closed — resolver の no-grant
     // viability が拾う分類)。
-    assert!(check_command_execution(&options, "absent", &[]).is_err());
+    assert!(check_exec_execution(&options, "absent", &[]).is_err());
 }
 
 // ---------------------------------------------------------------------------
@@ -1623,7 +1648,7 @@ fn check_command_execution_shares_execute_predicate() {
 
 /// `ToolRuntimeOptions.security` の raw JSON deny — declared
 /// executable が pattern に match する grant は scope 構築の
-/// 適用点 1(resolve_command_policy)で `InvalidRuntimePolicy` に
+/// 適用点 1(`resolve_exec_policy`)で `InvalidRuntimePolicy` に
 /// fail-closed する。空/`None` security は no-op。
 #[test]
 fn security_exec_deny_applies_at_scope_construction() {
@@ -1650,7 +1675,7 @@ fn security_exec_deny_applies_at_scope_construction() {
 }
 
 /// 適用点 2 — resolved basename が deny に match する grant を含む
-/// runtime 構築は `pin_command_grants` 全体で `PolicyViolation`
+/// runtime 構築は `pin_exec_grants` 全体で `PolicyViolation`
 /// (blast radius pin — `safe` grant が先に pin 済みでも fail)。
 /// resolved basename ≠ declared basename は symlink のみで作れる
 /// (Windows symlink は権限依存)ため unix gate。
@@ -1680,14 +1705,14 @@ fn security_exec_deny_pin_blast_radius() {
     assert_eq!(e.details().unwrap()["grant"], json!("helper"));
 }
 
-/// 適用点 3 — `CommandToolOptions.exec_deny` が `check_command_execution`
+/// 適用点 3 — `ExecToolOptions.exec_deny` が `check_exec_execution`
 /// (spawn 前再検証 seam)に届き、pinned executable の basename match で
 /// `PolicyViolation` + `details.grant`。
 #[test]
 fn check_command_execution_applies_exec_deny_at_verify() {
-    use cheaper_core::policy::command::resolve_command_policy;
+    use cheaper_core::policy::exec::resolve_exec_policy;
     use cheaper_core::policy::security::executable_stem;
-    use cheaper_tools::tools::command::{check_command_execution, CommandToolOptions};
+    use cheaper_tools::tools::exec::{check_exec_execution, pin_exec_grant, ExecToolOptions};
 
     let dir = TempDir::new();
     let root = dir.root();
@@ -1695,14 +1720,14 @@ fn check_command_execution_applies_exec_deny_at_verify() {
         .unwrap()
         .to_string_lossy()
         .into_owned();
-    let policy = resolve_command_policy(
-        Some(&json!({
+    let policy = resolve_exec_policy(
+        Some(&exec_doc(json!({
             "grants": {"t": {"executable": exe, "argv": ["test", "*"]}}
-        })),
+        }))),
         &ExecDenyList::default(),
     )
     .unwrap();
-    let pinned = cheaper_tools::tools::command::pin_command_grant(
+    let pinned = pin_exec_grant(
         "t",
         policy.grants.get("t").unwrap(),
         &root,
@@ -1714,17 +1739,18 @@ fn check_command_execution_applies_exec_deny_at_verify() {
     // pinned basename の stem で deny を構成 → spawn 前再検証が
     // pin-equality 通過後に deny で fail-closed。
     let deny = ExecDenyList::compile(&[executable_stem(&pinned)]).unwrap();
-    let options = CommandToolOptions {
+    let options = ExecToolOptions {
         root: root.clone(),
         symlink_policy: SymlinkPolicy::Deny,
-        command: policy,
+        exec: policy,
         pins: std::collections::BTreeMap::from([("t".to_string(), pinned)]),
         on_timeout: None,
         denylist: None,
         exec_deny: deny,
+        write_scope: None,
         route_context: None,
     };
-    let err = check_command_execution(&options, "t", &["test".into(), "--x".into()])
+    let err = check_exec_execution(&options, "t", &["test".into(), "--x".into()])
         .map(|_| ())
         .unwrap_err();
     let e = cheaper_err(&err);
