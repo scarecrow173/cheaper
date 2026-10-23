@@ -783,7 +783,7 @@ mod tests {
         std::fs::copy(std::env::current_exe().unwrap(), &bin).unwrap();
         let link = dir.path().join("helper");
         std::os::unix::fs::symlink(&bin, &link).unwrap();
-        let policy = resolve_command_policy(
+        let policy = resolve_exec_policy(
             Some(&json!({
                 "grants": {"helper": {"executable": "./helper", "argv": ["*"]}}
             })),
