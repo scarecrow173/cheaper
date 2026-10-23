@@ -69,6 +69,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }
@@ -180,6 +183,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }
@@ -293,6 +299,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }
@@ -459,6 +468,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }
@@ -696,6 +708,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }
@@ -811,6 +826,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }
@@ -926,6 +944,9 @@
               "rewrite": {
                 "approvalBypass": []
               }
+            },
+            "security": {
+              "execDenyPatterns": []
             }
           }
         }

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KLYvyO70lji85Lv8jvN"
 type: "task"
-status: "todo"
+status: "done"
 title: "cheaper-core security policy module と schema 配線・resolve signature"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -292,27 +292,27 @@ resolve_command_policy(effective.get("command"), &exec_deny)` へ
 
 ## Done When
 
-- [ ] `policy/security.rs` が design の module contract 通りの
+- [x] `policy/security.rs` が design の module contract 通りの
       pub API（`security_policy_properties`・`SecurityPolicy`・
       `resolve_security_policy`・`resolve_exec_deny_list`・
       `ExecDenyList`・`executable_stem`）を持ち、`mod.rs` が
       `pub mod security;` を宣言する
-- [ ] `policy_complete_schema`/`policy_partial_schema` が
+- [x] `policy_complete_schema`/`policy_partial_schema` が
       `security` を optional property として受理し（required
       非含有）、project partial が `security` key を拒否する
-- [ ] `RuntimePolicy.security` が `route` 直後の field として
+- [x] `RuntimePolicy.security` が `route` 直後の field として
       normalize され、serialized 出力に
       `"security":{"execDenyPatterns":[]}` が現れる
-- [ ] `resolve_command_policy` が `deny: &ExecDenyList` を取り、
+- [x] `resolve_command_policy` が `deny: &ExecDenyList` を取り、
       grant loop で適用点 1 が `InvalidRuntimePolicy` +
       `details.grant`/`details.executable` を返す
-- [ ] `validate_policy_schema` が `resolve_exec_deny_list` を
+- [x] `validate_policy_schema` が `resolve_exec_deny_list` を
       無条件評価し（`command` 欠落の security-only doc でも
       invalid regex を拒否）、`normalize_policy`・`load.rs:208`
       が compiled deny で `resolve_command_policy` を呼ぶ
-- [ ] `restrict.rs`・`capability.rs` の `RuntimePolicy` literal
+- [x] `restrict.rs`・`capability.rs` の `RuntimePolicy` literal
       が `security: SecurityPolicy::default()` を持つ
-- [ ] schema/security/command/load の unit test が TSPEC の
+- [x] schema/security/command/load の unit test が TSPEC の
       Rules に対応して存在し、golden fixture 3 件が更新され
       `cargo test -p cheaper-core` が pass
 
@@ -331,10 +331,10 @@ resolve_command_policy(effective.get("command"), &exec_deny)` へ
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core` exits 0
+- [x] `mise exec -- cargo test -p cheaper-core` exits 0
       （unit test + golden target 全 pass — single-crate では
       dev-seam feature 適用外のため workspace feature 指定なし）
-- [ ] `mise exec -- cargo clippy -p cheaper-core --all-targets`
+- [x] `mise exec -- cargo clippy -p cheaper-core --all-targets`
       exits 0（dead import・dead code なし）
-- [ ] `grep -n "security" crates/cheaper-core/src/policy/mod.rs`
+- [x] `grep -n "security" crates/cheaper-core/src/policy/mod.rs`
       が `pub mod security;` を返す
