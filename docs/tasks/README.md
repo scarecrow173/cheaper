@@ -116,7 +116,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpVUAMbEeR | Create cheaper-usage skill | done | [create-cheaper-usage-skill.md](./create-cheaper-usage-skill.md) |
 | TASK-034r05iHK8bA7gD3wnFQ3l | Create empty @cheaper/core package skeleton | done | [create-empty-cheaper-core-package-skeleton.md](./create-empty-cheaper-core-package-skeleton.md) |
 | TASK-034z2paWfkTKout3vzftc8 | Create manual-dispatch release workflow with 3-platform SEA matrix | done | [create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md](./create-manual-dispatch-release-workflow-with-3-platform-sea-matrix.md) |
-| TASK-034L7LKoGPWs0X67ASTfsm | documentation honesty sweep — migration.md 新設 + README index | todo | [create-migration-guide-and-index.md](./create-migration-guide-and-index.md) |
+| TASK-034L7LKoGPWs0X67ASTfsm | documentation honesty sweep — migration.md 新設 + README index | done | [create-migration-guide-and-index.md](./create-migration-guide-and-index.md) |
 | TASK-034r05iHQeQpDqMino3Zou | Create usage/configuration guides and CONTRIBUTING.md | done | [create-usage-configuration-guides-and-contributing.md](./create-usage-configuration-guides-and-contributing.md) |
 | TASK-034r05iHQeQpDpWN0qICDI | Create worker delegation skills | done | [create-worker-delegation-skills.md](./create-worker-delegation-skills.md) |
 | TASK-034r05iHQeQpDqNHsAnxcJ | Create workers/integration guides and reorganize providers.md | done | [create-workers-integration-guides-and-reorg-providers.md](./create-workers-integration-guides-and-reorg-providers.md) |

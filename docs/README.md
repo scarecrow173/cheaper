@@ -24,6 +24,8 @@
   登録 task を実行する `process` canonical tool
 - [command.md](guides/command.md) — trusted grant が許可する
   executable を動的 argv で実行する `command` canonical tool
+- [migration.md](guides/migration.md) — #163–#168（exec・permission
+  model 再設計）の破壊的変更と症状別の修復・移行手順
 - [workflow-usage.md](guides/workflow-usage.md) — workflow と
   direct 呼び出しの使い分け指針（benchmark 実測に基づく）
 - [release.md](guides/release.md) — version canonical source・
