@@ -308,18 +308,24 @@ fn viability(
     // の routed scope 前提で評価する。route eligibility —
     // `scope==trusted && !fixed` の grant のみ route 対象
     // (`fixed`・`scope:"project"`・未知名は全て NoGrant —
-    // `is_route_eligible` が単一 seam、design §(j))。
+    // `is_route_eligible` が単一 seam、design §(j))。実行ペアは
+    // `exec_pair` が選ぶ: byte-matched は {route.grant, 原 exec_args}、
+    // substitute mode は {substitute.grant, substitute.argv}(O2a/R3)。
+    // substitute argv は route 解決時点で確定済みの宣言値であり member の
+    // 「job 実行時へ遅延」とは質的が異なる — 「宣言通り実行する
+    // command」への完全検査が意味を持つ。
+    let (exec_name, exec_args) = route.exec_pair(&out.exec_args);
     let Some(grant) = input
         .exec_policy
         .policy
         .grants
-        .get(&route.grant)
+        .get(exec_name)
         .filter(|g| ResolvedExecPolicy::is_route_eligible(g))
     else {
         return Viability::NoGrant;
     };
     let Ok(pinned) = cheaper_tools::tools::exec::pin_exec_grant(
-        &route.grant,
+        exec_name,
         grant,
         input.exec_policy.root,
         input.exec_policy.symlink_policy,
@@ -332,7 +338,7 @@ fn viability(
         root: input.exec_policy.root.to_string(),
         symlink_policy: input.exec_policy.symlink_policy,
         exec: input.exec_policy.policy.clone(),
-        pins: std::collections::BTreeMap::from([(route.grant.clone(), pinned)]),
+        pins: std::collections::BTreeMap::from([(exec_name.to_string(), pinned.clone())]),
         on_timeout: None,
         denylist: input.exec_policy.denylist.cloned(),
         exec_deny: input.exec_policy.exec_deny.clone(),
@@ -343,14 +349,20 @@ fn viability(
             ..RouteCommandContext::default()
         }),
     };
-    if check_exec_execution(&options, &route.grant, &out.exec_args).is_err() {
+    if check_exec_execution(&options, exec_name, exec_args).is_err() {
         return Viability::NoGrant;
     }
-    // no-grant (b) — 追加 set member: 存在 + is_route_eligible +
+    // no-grant (b) — member 級検査: 存在 + is_route_eligible +
     // pin 解決のみ(argv 照合は job 実行時の check_exec_execution へ
     // 遅延 — direct `workflow run --grant` と同じ検査位置、O2a)。
-    // 失敗は anchor 失敗と同じ NoGrant へ fold する。
-    for member in &route.grants {
+    // substitute mode では `route.grant` も member 級へ降格する(R4 —
+    // firing gate/attribution anchor/投影 member の役割は残るが実行
+    // 対象ではない。原 argv への `route.grant` argv 照合は行わない —
+    // 実行されない command の形骸化検査であり、「認可したくない
+    // command こそ置き換えたい」用途を壊す)。失敗は anchor 失敗と
+    // 同じ NoGrant へ fold する。
+    let demoted = route.substitute.is_some().then_some(&route.grant);
+    for member in demoted.into_iter().chain(&route.grants) {
         let Some(member_grant) = input
             .exec_policy
             .policy
@@ -375,9 +387,24 @@ fn viability(
             return Viability::NoGrant;
         }
     }
-    // stdin-unsupported — interactive command curated list。
+    // stdin-unsupported — interactive command curated list(typed 側
+    // invariant 維持: interactive な typed command は substitute
+    // 宣言の有無に関わらず routing で置き換えない)。
     if is_interactive(name, &out.exec_args) {
         return Viability::StdinUnsupported;
+    }
+    // substitute 側 — stdin 非接続で実際に spawn されるのは
+    // substitute ペアであり、interactive な substitute は発火後に
+    // grant timeout まで hang してから失敗する。分類名は宣言
+    // executable 名と pin 解決済み実体名の union — 片側だけだと
+    // canonical 名ずらし(`python3`→`python3.11`・`vim`→`vim.basic`・
+    // `vi`→`nvi`)や shim 名で系統的に回避される(O6a/R10)。
+    if let Some(substitute) = &route.substitute {
+        if is_interactive(&command_name(&grant.executable), &substitute.argv)
+            || is_interactive(&command_name(&pinned), &substitute.argv)
+        {
+            return Viability::StdinUnsupported;
+        }
     }
     Viability::Runnable
 }
@@ -386,7 +413,7 @@ fn viability(
 mod tests {
     use super::*;
     use crate::route::routes::{
-        EffectiveRoutes, InvalidRouteGroup, Route, RouteLayer, SuppressedRoute,
+        EffectiveRoutes, InvalidRouteGroup, Route, RouteLayer, RouteSubstitute, SuppressedRoute,
     };
     use cheaper_core::policy::exec::resolve_exec_policy;
     use cheaper_core::policy::security::ExecDenyList;
@@ -804,6 +831,440 @@ mod tests {
             unsafe_command: false,
         });
         assert!(out.matched);
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+    }
+
+    fn sub(grant: &str, args: &[&str]) -> RouteSubstitute {
+        RouteSubstitute {
+            grant: grant.to_string(),
+            argv: args.iter().map(|s| s.to_string()).collect(),
+        }
+    }
+
+    /// substitute mode の viability retarget(#167 O2a/R3-R4)—
+    /// anchor 完全検査の対象は `{substitute.grant, substitute.argv}`
+    /// であり、原 argv の `route.grant` pattern 照合は行わない
+    /// (実行されない command の形骸化検査の除去)。`route.grant` は
+    /// member 級(存在 + `is_route_eligible` + pin)へ降格し、
+    /// substitute 側・member 級 `route.grant`・`grants[]` member の
+    /// 失敗は全て `NoGrant` 一種へ fold する(新規 viability 値なし)。
+    #[test]
+    fn substitute_retargets_viability_and_demotes_anchor() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().to_string_lossy().into_owned();
+        let target = dir.path().join("w.json");
+        std::fs::write(&target, "{}").unwrap();
+        let target_str = target.to_string_lossy().into_owned();
+        let exe = std::env::current_exe()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        let deny = ExecDenyList::default();
+        let run = |policy: &ResolvedExecPolicy, r: Route, tokens: &[&str]| {
+            let view = policy_view(policy, &root, &deny);
+            resolve(&ResolveInput {
+                argv: &argv(tokens),
+                cwd: &root,
+                routes: &EffectiveRoutes {
+                    routes: vec![r],
+                    ..Default::default()
+                },
+                exec_policy: &view,
+                unsafe_command: false,
+            })
+        };
+        let policy = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": {"executable": exe, "argv": ["test", "*"]},
+                    "dry-run": {"executable": exe, "argv": ["push", "--dry-run"]},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let sub_route = |grant: &str, args: &[&str]| {
+            let mut r = route("r", &["git", "push"], "cargo-test", &target_str);
+            r.substitute = Some(sub(grant, args));
+            r
+        };
+        // retarget — 原 exec_args `["push","origin","main"]` は
+        // `route.grant` pattern `["test","*"]` に一致しないが、
+        // substitute ペア `{dry-run, [push,--dry-run]}` が健全なら
+        // Runnable(AC4 — 原 argv 照合を行わない)。
+        let out = run(
+            &policy,
+            sub_route("dry-run", &["push", "--dry-run"]),
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::Runnable));
+        // `RouteResolution` shape 不変 — `grant` は `route.grant`
+        // anchor echo で substitute echo は載らない(R11)。
+        assert_eq!(out.grant.as_deref(), Some("cargo-test"));
+        assert_eq!(out.exec_args, argv(&["push", "origin", "main"]));
+        // substitute argv が grant pattern 不一致 → NoGrant(AC3)。
+        let out = run(
+            &policy,
+            sub_route("dry-run", &["push", "--force"]),
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // substitute.grant 未存在 → NoGrant。
+        let out = run(
+            &policy,
+            sub_route("absent", &["push", "--dry-run"]),
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // substitute.grant scope:"project" → NoGrant。
+        let scoped = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": {"executable": exe, "argv": ["test", "*"]},
+                    "scoped": {"executable": exe, "argv": ["*"], "scope": "project"},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let out = run(
+            &scoped,
+            sub_route("scoped", &["push", "--dry-run"]),
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // substitute.grant fixed → NoGrant。
+        let fixed = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": {"executable": exe, "argv": ["test", "*"]},
+                    "fixed": {"executable": exe, "argv": ["*"], "fixed": true},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let out = run(
+            &fixed,
+            sub_route("fixed", &["push", "--dry-run"]),
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // substitute.grant pin 不能 → NoGrant。
+        let unpinnable = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": {"executable": exe, "argv": ["test", "*"]},
+                    "unpinnable": {"executable": "./does-not-exist-xyz", "argv": ["*"]},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let out = run(
+            &unpinnable,
+            sub_route("unpinnable", &["push", "--dry-run"]),
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // member 級降格 — `route.grant` 未存在 → NoGrant(substitute
+        // ペアは健全でも member 検査で落ちる)。
+        let out = run(
+            &policy,
+            {
+                let mut r = sub_route("dry-run", &["push", "--dry-run"]);
+                r.grant = "absent-anchor".to_string();
+                r
+            },
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // `route.grant` ineligible(scope:"project")→ NoGrant。
+        let scoped_anchor = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": {"executable": exe, "argv": ["test", "*"], "scope": "project"},
+                    "dry-run": {"executable": exe, "argv": ["push", "--dry-run"]},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let out = run(
+            &scoped_anchor,
+            sub_route("dry-run", &["push", "--dry-run"]),
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // `route.grant` pin 不能 → NoGrant(member 級 — argv 照合は
+        // 行わず存在 + eligibility + pin のみ)。
+        let unpinnable_anchor = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": {"executable": "./does-not-exist-xyz", "argv": ["test", "*"]},
+                    "dry-run": {"executable": exe, "argv": ["push", "--dry-run"]},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let out = run(
+            &unpinnable_anchor,
+            sub_route("dry-run", &["push", "--dry-run"]),
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // `grants[]` member 失敗も substitute mode で NoGrant。
+        let out = run(
+            &policy,
+            {
+                let mut r = sub_route("dry-run", &["push", "--dry-run"]);
+                r.grants = vec!["absent-member".to_string()];
+                r
+            },
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+    }
+
+    /// stdin-unsupported の両側分類(#167 O6a/R10)— typed 側は
+    /// substitute 宣言の有無に関わらず interactive なら不発
+    /// (「interactive typed command は routing で置き換えない」
+    /// invariant)。substitute 側は宣言 executable 名と pin 解決済み
+    /// 実体名の union + `substitute.argv` の interactive flag で
+    /// 分類する。
+    #[test]
+    fn substitute_interactive_union() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().to_string_lossy().into_owned();
+        let target = dir.path().join("w.json");
+        std::fs::write(&target, "{}").unwrap();
+        let target_str = target.to_string_lossy().into_owned();
+        let exe = std::env::current_exe()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        let deny = ExecDenyList::default();
+        // `native()` は win32 で `.exe`/`.com` suffix を要求するため
+        // fixture 名は platform で分ける(どちらでも command_name が
+        // dir+ext を剥がし basename は同じ)。`std::fs::copy` は +x
+        // bit を保持する(unix の X_OK 判定対応)。
+        #[cfg(windows)]
+        let (vim, docker) = ("vim.exe", "docker.exe");
+        #[cfg(not(windows))]
+        let (vim, docker) = ("vim", "docker");
+        std::fs::copy(std::env::current_exe().unwrap(), dir.path().join(vim)).unwrap();
+        std::fs::copy(std::env::current_exe().unwrap(), dir.path().join(docker)).unwrap();
+        let run = |policy: &ResolvedExecPolicy, r: Route, tokens: &[&str]| {
+            let view = policy_view(policy, &root, &deny);
+            resolve(&ResolveInput {
+                argv: &argv(tokens),
+                cwd: &root,
+                routes: &EffectiveRoutes {
+                    routes: vec![r],
+                    ..Default::default()
+                },
+                exec_policy: &view,
+                unsafe_command: false,
+            })
+        };
+        let sub_route = |grant: &str, args: &[&str]| {
+            let mut r = route("r", &["git", "push"], "cargo-test", &target_str);
+            r.substitute = Some(sub(grant, args));
+            r
+        };
+        // interactive executable を pin する substitute.grant →
+        // StdinUnsupported(宣言名側 — resolve 名も同じ basename)。
+        let policy = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": {"executable": exe, "argv": ["test", "*"]},
+                    "vi-sub": {"executable": format!("./{vim}"), "argv": ["*"]},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let out = run(
+            &policy,
+            sub_route("vi-sub", &["x"]),
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::StdinUnsupported));
+        // `substitute.argv` の interactive flag(docker + `-it`)→
+        // StdinUnsupported。非 flag argv なら substitute 側は非該当。
+        let policy = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": {"executable": exe, "argv": ["test", "*"]},
+                    "docker-sub": {"executable": format!("./{docker}"), "argv": ["*"]},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let out = run(
+            &policy,
+            sub_route("docker-sub", &["run", "-it", "img"]),
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::StdinUnsupported));
+        let out = run(
+            &policy,
+            sub_route("docker-sub", &["ps"]),
+            &["git", "push", "origin", "main"],
+        );
+        assert_eq!(out.viability, Some(Viability::Runnable));
+        // typed 側 interactive — substitute 宣言があっても
+        // `bash` typed command は不発(invariant 維持)。
+        let mut r = route("r", &["bash"], "cargo-test", &target_str);
+        r.substitute = Some(sub("docker-sub", &["ps"]));
+        let out = run(&policy, r, &["bash", "test", "-c", "x"]);
+        assert_eq!(out.viability, Some(Viability::StdinUnsupported));
+    }
+
+    /// canonical 名ずらし・shim 名の union 両側 pin(#167 AC9 —
+    /// declared ≠ resolved は symlink のみで構成できるため unix
+    /// gate、`SymlinkPolicy::WithinWorkspace` で pin 解決を通す)。
+    /// (a) 宣言名 `python3` が list 内・解決先 `python3.11` が list
+    /// 外でも宣言名側で `StdinUnsupported`、(b) 宣言名 `shim-python`
+    /// が list 外でも解決済み実体名 `python3` が list 内なら解決
+    /// 名側で `StdinUnsupported`。
+    #[cfg(unix)]
+    #[test]
+    fn substitute_interactive_union_canonical_names() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().to_string_lossy().into_owned();
+        let target = dir.path().join("w.json");
+        std::fs::write(&target, "{}").unwrap();
+        let target_str = target.to_string_lossy().into_owned();
+        let exe = std::env::current_exe()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        let deny = ExecDenyList::default();
+        // (a) 用: 宣言 `python3` → 実体 `python3.11`。
+        let real_versioned = dir.path().join("python3.11");
+        std::fs::copy(std::env::current_exe().unwrap(), &real_versioned).unwrap();
+        std::os::unix::fs::symlink(&real_versioned, dir.path().join("python3")).unwrap();
+        // (b) 用: 宣言 `shim-python` → 実体 `real-bins/python3`。
+        let real_bins = dir.path().join("real-bins");
+        std::fs::create_dir(&real_bins).unwrap();
+        std::fs::copy(std::env::current_exe().unwrap(), real_bins.join("python3")).unwrap();
+        std::os::unix::fs::symlink(real_bins.join("python3"), dir.path().join("shim-python"))
+            .unwrap();
+        // 対照用: 宣言 `mypython` → 実体 `python3-real`(どちらも
+        // list 外)。
+        let real_plain = dir.path().join("python3-real");
+        std::fs::copy(std::env::current_exe().unwrap(), &real_plain).unwrap();
+        std::os::unix::fs::symlink(&real_plain, dir.path().join("mypython")).unwrap();
+        let run = |policy: &ResolvedExecPolicy, r: Route| {
+            let view = ExecPolicyView {
+                policy,
+                root: &root,
+                symlink_policy: SymlinkPolicy::WithinWorkspace,
+                denylist: None,
+                exec_deny: &deny,
+            };
+            resolve(&ResolveInput {
+                argv: &argv(&["git", "push", "origin", "main"]),
+                cwd: &root,
+                routes: &EffectiveRoutes {
+                    routes: vec![r],
+                    ..Default::default()
+                },
+                exec_policy: &view,
+                unsafe_command: false,
+            })
+        };
+        let sub_route = |grant: &str| {
+            let mut r = route("r", &["git", "push"], "cargo-test", &target_str);
+            r.substitute = Some(sub(grant, &["x"]));
+            r
+        };
+        let policy = |name: &str, sub_exe: &str| {
+            resolve_exec_policy(
+                Some(&json!({
+                    "grants": {
+                        "cargo-test": {"executable": exe, "argv": ["test", "*"]},
+                        name: {"executable": sub_exe, "argv": ["*"]},
+                    }
+                })),
+                &ExecDenyList::default(),
+            )
+            .unwrap()
+        };
+        // (a) 宣言 `python3`(list 内)→ 解決 `python3.11`(list 外)。
+        let p = policy("versioned", "./python3");
+        assert_eq!(
+            run(&p, sub_route("versioned")).viability,
+            Some(Viability::StdinUnsupported)
+        );
+        // (b) 宣言 `shim-python`(list 外)→ 解決 `python3`(list 内)。
+        let p = policy("shimmed", "./shim-python");
+        assert_eq!(
+            run(&p, sub_route("shimmed")).viability,
+            Some(Viability::StdinUnsupported)
+        );
+        // 非 interactive 宣言+解決は Runnable(union 非該当の対照)。
+        let p = policy("plain", "./mypython");
+        assert_eq!(
+            run(&p, sub_route("plain")).viability,
+            Some(Viability::Runnable)
+        );
+    }
+
+    /// match precedence interplay(known semantics — design §Risks
+    /// review P1-1)— longest `match.command` の best 1 件のみが
+    /// viability 評価され、non-runnable best から shorter match への
+    /// fall-through はない。
+    #[test]
+    fn non_runnable_best_does_not_fall_back_to_shorter() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().to_string_lossy().into_owned();
+        let target = dir.path().join("w.json");
+        std::fs::write(&target, "{}").unwrap();
+        let target_str = target.to_string_lossy().into_owned();
+        let exe = std::env::current_exe()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        let deny = ExecDenyList::default();
+        // shorter `[git,push]` は健全な substitute route、longer
+        // `[git,push,origin]` は ineligible な `grant:` で NoGrant。
+        let mut short = route("short", &["git", "push"], "cargo-test", &target_str);
+        short.substitute = Some(sub("dry-run", &["push", "--dry-run"]));
+        let long = route(
+            "long",
+            &["git", "push", "origin"],
+            "absent-grant",
+            &target_str,
+        );
+        let routes = EffectiveRoutes {
+            routes: vec![short, long],
+            ..Default::default()
+        };
+        let policy = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": {"executable": exe, "argv": ["test", "*"]},
+                    "dry-run": {"executable": exe, "argv": ["push", "--dry-run"]},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let view = policy_view(&policy, &root, &deny);
+        let out = resolve(&ResolveInput {
+            argv: &argv(&["git", "push", "origin", "main"]),
+            cwd: &root,
+            routes: &routes,
+            exec_policy: &view,
+            unsafe_command: false,
+        });
+        // best(longer)のみ評価 — shorter substitute route へ
+        // fall-through しない。
+        assert_eq!(out.route.as_deref(), Some("long"));
         assert_eq!(out.viability, Some(Viability::NoGrant));
     }
 }

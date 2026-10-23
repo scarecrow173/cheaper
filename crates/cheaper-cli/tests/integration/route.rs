@@ -217,3 +217,120 @@ async fn resolve_quoted_metachar_reaches_runnable() {
     assert_eq!(code, 0);
     assert_eq!(env["result"]["viability"], "runnable");
 }
+
+/// substitute-exec route mode(#167)— `substitute:{grant,argv}` 宣言
+/// route は typed command で発火しつつ実行ペアを substitute 側へ
+/// retarget する。原 exec_args `[push,origin,main]` は anchor
+/// `cargo-test` の pattern `[test,*]` に一致しないが、substitute
+/// ペア `{push-dry,[push,--dry-run]}` が健全なため runnable
+/// (viability retarget)。`route resolve` 出力 shape は不変 —
+/// `grant` は `route.grant` anchor echo で substitute echo は
+/// 載らない(R11)。
+#[tokio::test]
+async fn resolve_substitute_retargets_viability() {
+    let mut f = Fixture::new();
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"");
+    std::fs::write(
+        f.cfg.path().join("routes.yaml"),
+        "version: 1\nroutes:\n  - name: push-safeguard\n    match: {command: [git, push]}\n    target: {kind: workflow, path: w.json}\n    grant: cargo-test\n    substitute: {grant: push-dry, argv: [push, --dry-run]}\n",
+    )
+    .unwrap();
+    std::fs::write(f.cfg.path().join("w.json"), r#"{"version":1,"jobs":{}}"#).unwrap();
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        format!(
+            "version: 1\ncommand:\n  grants:\n    cargo-test:\n      executable: \"{exe}\"\n      argv: [test, \"*\"]\n    push-dry:\n      executable: \"{exe}\"\n      argv: [push, --dry-run]\n"
+        ),
+    )
+    .unwrap();
+    let (code, env, _err) = f
+        .run(&["route", "resolve", "--command", "git push origin main"])
+        .await;
+    assert_eq!(code, 0, "{env}");
+    let result = &env["result"];
+    assert_eq!(result["matched"], true);
+    assert_eq!(result["route"], "push-safeguard");
+    // anchor echo — substitute echo は出力 shape に載らない(R11)。
+    assert_eq!(result["grant"], "cargo-test");
+    assert!(result.get("substitute").is_none(), "{result}");
+    // substitute ペアが健全なら runnable — 原 argv の route.grant
+    // pattern 照合は行わない。
+    assert_eq!(result["viability"], "runnable");
+    assert_eq!(result["args"], serde_json::json!(["origin", "main"]));
+}
+
+/// project 層 `substitute` 宣言は presence-first で拒否される
+/// (#167 O5 — trusted layer 境界。`grants` 層拒否と同じ規約で
+/// `InvalidRuntimePolicy` + `schema_error`)。
+#[tokio::test]
+async fn resolve_project_substitute_rejected() {
+    let mut f = Fixture::new();
+    let project = f.ws.path().join(".cheaper");
+    std::fs::create_dir_all(&project).unwrap();
+    std::fs::write(
+        project.join("routes.yaml"),
+        "version: 1\nroutes:\n  - name: proj\n    match: {command: [git, push]}\n    target: {kind: workflow, path: w.json}\n    grant: g\n    substitute: {grant: s, argv: [x]}\n",
+    )
+    .unwrap();
+    let (code, env, _err) = f.run(&["route", "resolve", "--command", "git push"]).await;
+    assert_eq!(code, 3, "{env}");
+    assert_eq!(env["ok"], false);
+    assert_eq!(env["error"]["code"], "INVALID_RUNTIME_POLICY");
+}
+
+/// project `trusted: true` が下位層 route を置換した場合、displaced
+/// route は `suppressed` provenance へ記録される(#167 — silent
+/// displacement を残さない。新規追加では suppressed は空)。
+#[tokio::test]
+async fn resolve_project_trusted_displacement_reports_suppressed() {
+    let mut f = Fixture::new();
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"");
+    std::fs::write(
+        f.cfg.path().join("routes.yaml"),
+        "version: 1\nroutes:\n  - name: user-push\n    match: {command: [git, push]}\n    target: {kind: workflow, path: user-push.workflow.json}\n    grant: push-any\n",
+    )
+    .unwrap();
+    std::fs::write(
+        f.cfg.path().join("user-push.workflow.json"),
+        r#"{"version":1,"jobs":{}}"#,
+    )
+    .unwrap();
+    let project = f.ws.path().join(".cheaper");
+    std::fs::create_dir_all(&project).unwrap();
+    std::fs::write(
+        project.join("routes.yaml"),
+        "version: 1\nroutes:\n  - name: proj-push\n    match: {command: [git, push]}\n    target: {kind: workflow, path: proj-push.workflow.json}\n    grant: push-any\n    trusted: true\n",
+    )
+    .unwrap();
+    std::fs::write(
+        project.join("proj-push.workflow.json"),
+        r#"{"version":1,"jobs":{}}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        format!(
+            "version: 1\ncommand:\n  grants:\n    push-any:\n      executable: \"{exe}\"\n      argv: [\"*\"]\n"
+        ),
+    )
+    .unwrap();
+    let (code, env, _err) = f
+        .run(&["route", "resolve", "--command", "git push origin main"])
+        .await;
+    assert_eq!(code, 0, "{env}");
+    let result = &env["result"];
+    assert_eq!(result["matched"], true);
+    // trusted project route が勝ち、displaced user route は
+    // suppressed へ記録される。
+    assert_eq!(result["route"], "proj-push");
+    assert_eq!(result["suppressed"], "user-push");
+    assert_eq!(result["viability"], "runnable");
+}
