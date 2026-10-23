@@ -26,6 +26,7 @@ relations:
   related:
     - "../adr/route-grant-set-projection.md"
     - "./pretooluse-route-resolver-and-workflow-delegation.md"
+    - "./substitute-exec-route-mode.md"
   refines: []
   refined-by: []
   derives-from:

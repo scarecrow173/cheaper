@@ -299,9 +299,12 @@ field なし）も新しい `cheaper usage` がそのまま集計でき、
 逆に新 writer の record も旧 `cheaper usage` が既知 field
 のみ読んで集計できる（未知 field は無視される）。例として
 `kind:"route"` record の `executed`（`{grant, argv}` — 実際に
-実行された grant と env-prefix-strip 済み argv）は additive
-field で、既存 reader は無視して集計できる。ただし
-`executed.argv` は**平文の引数値**を保持する — 引数値自体に
+実行された grant と argv）は additive
+field で、既存 reader は無視して集計できる。byte-matched
+route では env-prefix-strip 済みの元 exec argv、substitute
+mode（routes.yaml の `substitute` 宣言）では宣言 substitute
+ペアを記録する（`route`/`commandHash` の宣言 identity は不変）。
+ただし `executed.argv` は**平文の引数値**を保持する — 引数値自体に
 secret を含む command の routed 実行は usage.jsonl に値が残る
 （詳細は [parent-agent 連携ガイド](./parent-agent-integration.md)
 の route record 節）。`usage.costUsd` の算出元は新旧で異なる

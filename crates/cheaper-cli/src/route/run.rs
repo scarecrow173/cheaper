@@ -331,6 +331,22 @@ fn deadline_ms(grant_timeout: &str) -> Result<u64, CheaperError> {
     Ok(timeout.saturating_add(120_000))
 }
 
+/// 実行ペア grant の宣言 timeout → workflow deadline(R8 — grant
+/// timeout + 120s buffer)。lookup 名は `exec_pair` 由来の実行側で、
+/// substitute mode では `substitute.grant` の timeout に従う(firing
+/// gate/attribution anchor の `route.grant` ではない — O4a)。
+fn exec_deadline_ms(
+    policy: &cheaper_core::policy::exec::ResolvedExecPolicy,
+    exec_grant: &str,
+) -> Result<u64, CheaperError> {
+    let timeout = &policy
+        .grants
+        .get(exec_grant)
+        .ok_or_else(|| denied("no-grant"))?
+        .timeout;
+    deadline_ms(timeout)
+}
+
 pub async fn execute(
     token: &str,
     cwd: Option<&str>,
@@ -353,15 +369,13 @@ pub async fn execute(
         RouteLayer::Project => layout.dirs.project_dir.clone(),
     };
     let file_root = canonicalize_workspace_root(&file_root.to_string_lossy())?;
-    let grant_timeout = prepared
-        .supply
-        .policy
-        .exec
-        .grants
-        .get(&prepared.route.grant)
-        .map(|g| g.timeout.clone())
-        .ok_or_else(|| denied("no-grant"))?;
-    let deadline = deadline_ms(&grant_timeout)?;
+    // 実行ペア — substitute mode は {substitute.grant, substitute.argv}、
+    // byte-matched は {route.grant, resolution.exec_args}(O4a)。
+    // timeout lookup・expected_input・inputs grant/execArgs・deadline
+    // が全てこのペアに従う。`grant`/`argv`/`args`/`executable` の
+    // 原 command identity は別系統で維持する。
+    let (exec_grant, exec_argv) = prepared.route.exec_pair(&prepared.resolution.exec_args);
+    let deadline = exec_deadline_ms(&prepared.supply.policy.exec, exec_grant)?;
     let mut policy = prepared.supply.policy.clone();
     policy.execution.timeout_ms = deadline;
     let ctx = WorkflowContext::from_policy(
@@ -375,21 +389,21 @@ pub async fn execute(
         RouteLogStore::new(&layout.dirs.user_config_dir),
         prepared.extra_env.clone(),
         prepared.supply.root.clone(),
-        &prepared.route.grant,
-        &prepared.resolution.exec_args,
+        exec_grant,
+        exec_argv,
         count_cap,
         policy.workflow.artifacts.max_read_bytes,
     ));
     let run_id = route_exec.run_id().to_string();
     let inputs = Map::from_iter([
-        ("grant".to_string(), json!(prepared.route.grant)),
+        ("grant".to_string(), json!(exec_grant)),
         (
             "executable".to_string(),
             json!(prepared.resolution.executable),
         ),
         ("argv".to_string(), json!(prepared.resolution.argv)),
         ("args".to_string(), json!(prepared.resolution.args)),
-        ("execArgs".to_string(), json!(prepared.resolution.exec_args)),
+        ("execArgs".to_string(), json!(exec_argv)),
         ("cwd".to_string(), json!(prepared.supply.root)),
         (
             "tokenThreshold".to_string(),
@@ -475,8 +489,10 @@ fn finish(
     // `executed` attribution(#166)— `command::execute` が記録する
     // `{grant, argv}` details から実際の実行 grant/argv を取る。
     // details 欠落は command tool contract の不変条件違反のため
-    // InternalError(`exitCode` と同じ規約)。`executed.argv` は
-    // env-prefix-strip 済みの元 exec argv を指す。
+    // InternalError(`exitCode` と同じ規約)。`executed` は実測の
+    // 実行ペアを指す — byte-matched では env-prefix-strip 済みの
+    // 元 exec argv、substitute mode では宣言 substitute ペア
+    // (#167 — code は両 mode で不変、details echo が違うだけ)。
     let executed_grant = details
         .and_then(|d| d.get("grant"))
         .and_then(Value::as_str)
@@ -767,6 +783,74 @@ mod tests {
         assert_eq!(out.route.name, "cargo-test");
         assert_eq!(out.route.grant, "cargo-test");
         assert_eq!(out.resolution.exec_args, vec!["test", "--workspace"]);
+    }
+
+    /// substitute mode の投影(#167 O7a)— `grant_set()` が
+    /// `{route.grant} ∪ {substitute.grant}` を供給し、exec job の
+    /// `resolve_exec_grant` が substitute 名を解決できる必須条件。
+    /// 未宣言 grant は従来どおり投影から落ちる。
+    #[test]
+    fn prepare_projects_substitute_grant() {
+        let fx = fixture();
+        std::fs::write(
+            fx.cfg.join("routes.yaml"),
+            "version: 1\nroutes:\n  - name: push-safeguard\n    match: {command: [git, push]}\n    target: {kind: workflow, path: routed-exec.workflow.json}\n    grant: cargo-test\n    substitute: {grant: push-dry, argv: [push, --dry-run]}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            fx.cfg.join("routed-exec.workflow.json"),
+            r#"{"version":1,"jobs":{}}"#,
+        )
+        .unwrap();
+        let exe = test_exe();
+        std::fs::write(
+            fx.cfg.join("policy.yaml"),
+            format!(
+                "version: 1\ncommand:\n  grants:\n    cargo-test:\n      executable: '{exe}'\n      argv: [test, \"*\"]\n    push-dry:\n      executable: '{exe}'\n      argv: [push, --dry-run]\n    undeclared:\n      executable: '{exe}'\n      argv: [\"*\"]\n"
+            ),
+        )
+        .unwrap();
+        let env = env_lookup(&fx.cfg);
+        let p = payload(
+            &fx.ws,
+            "git push origin main",
+            &["git", "push", "origin", "main"],
+            BTreeMap::new(),
+        );
+        let out = prepare(&p, &fx.ws, &env, Some(&fx.builtin)).unwrap();
+        // 投影 = `{route.grant} ∪ {substitute.grant} ∪ {fixed}` —
+        // undeclared は落ちる。
+        let grants = &out.supply.policy.exec.grants;
+        assert_eq!(grants.len(), 2);
+        assert!(grants.contains_key("cargo-test"));
+        assert!(grants.contains_key("push-dry"));
+        assert!(!grants.contains_key("undeclared"));
+        // 実行ペア選択 — `exec_pair` が substitute 側を返す。
+        let (exec_grant, exec_argv) = out.route.exec_pair(&out.resolution.exec_args);
+        assert_eq!(exec_grant, "push-dry");
+        assert_eq!(exec_argv, &["push", "--dry-run"]);
+    }
+
+    /// deadline は実行ペア側 grant の宣言 timeout 由来(#167 O4a/
+    /// R8)— substitute mode では anchor `route.grant` ではなく
+    /// `substitute.grant` の timeout に従う。
+    #[test]
+    fn exec_deadline_uses_selected_exec_grant_timeout() {
+        let policy = cheaper_core::policy::exec::resolve_exec_policy(
+            Some(&serde_json::json!({
+                "grants": {
+                    "anchor": {"executable": "x", "argv": ["*"], "timeout": "5s"},
+                    "sub": {"executable": "x", "argv": ["*"], "timeout": "600s"},
+                }
+            })),
+            &cheaper_core::policy::security::ExecDenyList::default(),
+        )
+        .unwrap();
+        // 同一 policy でも lookup 名が deadline を決める —
+        // substitute.grant の 600s → 720s(120s buffer 加算)。
+        assert_eq!(exec_deadline_ms(&policy, "sub").unwrap(), 720_000);
+        assert_eq!(exec_deadline_ms(&policy, "anchor").unwrap(), 125_000);
+        assert!(exec_deadline_ms(&policy, "absent").is_err());
     }
 
     #[test]

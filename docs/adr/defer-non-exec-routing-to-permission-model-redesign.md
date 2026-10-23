@@ -31,6 +31,7 @@ relations:
     - "./invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
     - "./enforce-declared-contracts-over-content-audit.md"
     - "./route-grant-set-projection.md"
+    - "./substitute-exec-route-mode.md"
   refines: []
   refined-by: []
   derives-from:

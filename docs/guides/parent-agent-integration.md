@@ -255,6 +255,7 @@ routes:
     target: {kind: workflow, path: routed-exec.workflow.json}
     grant: cargo-test
     # grants: [name, …]  # optional — route.grant 以外の追加委譲 grant(builtin/user 層限定)
+    # substitute: {grant: name, argv: [arg, …]}  # optional — substitute-exec mode(builtin/user 層限定)
     output: {tokenThreshold: 8192}
     passthroughEnv: [CI]
 ```
@@ -294,13 +295,16 @@ namespace — [configuration ガイド](./configuration.md)）で、
 未知名は `no-grant` viability に畳まれる。
 
 `grant:` は anchor grant — route context（payload cwd 復元・
-passthrough/extra env・任意 exit code 受理・log tee・
-`{grant, argv}` の expected-input 束縛）は anchor が担う
-`job_id == "exec"` の `command` job にのみ適用される。anchor
-以外の delegated grant は `grants:`（builtin/user 層限定の
-optional array）で宣言する:
+passthrough/extra env・任意 exit code 受理・log tee・実行
+ペアの expected-input 束縛）は `job_id == "exec"` の
+`command` job にのみ適用される。byte-matched mode（
+`substitute` 未宣言）では束縛対象は `{route.grant, 元 argv}`、
+substitute mode では `{substitute.grant, substitute.argv}` に
+なる（後述）。anchor 以外の delegated grant は `grants:`（
+builtin/user 層限定の optional array）で宣言する:
 
-- 実効 grant set は `{route.grant} ∪ grants`。member は宣言順に
+- 実効 grant set は `{route.grant} ∪ grants ∪ {substitute.grant}`。
+  member は宣言順に
   parse され、重複と `route.grant` 自身への参照は除去される
   （空・未指定は同等 — 非配列・非文字列/空文字列 member は
   schema error）。
@@ -317,11 +321,76 @@ optional array）で宣言する:
   従来通り単数 `grant:`（anchor 参照）のみで、untrusted project
   route が新しい実行権限を獲得する経路は存在しない。
 - member を呼ぶ `command` job は **`job_id` を `exec` 以外に
-  する**。`job_id == "exec"` × `tool: "command"` は anchor grant
-  + 元 argv の expected-input に束縛され、不一致は
-  `exec-input-mismatch`（PolicyViolation）で job 失敗する。
+  する**。`job_id == "exec"` × `tool: "command"` は実行ペアの
+  expected-input に束縛される — byte-matched では `{route.grant,
+  元 argv}`、substitute mode では `{substitute.grant,
+  substitute.argv}`。不一致は `exec-input-mismatch`
+  （PolicyViolation）で job 失敗する。
   member job は自身の grant の lifecycle（cwd・env・
   `exitCodes`）で実行され、route context は適用されない。
+
+#### substitute-exec mode（`substitute` 宣言）
+
+`substitute: {grant, argv}` を宣言した route は、typed
+command を `match.command` prefix で発火検出しつつ、実際に
+spawn する実行対象を宣言の `{substitute.grant,
+substitute.argv}` へ差し替える **substitute-exec mode** で動作
+する。typed argv は実行対象に一切転送・補間されない（宣言
+凍結 — `argv` は executable を含まない宣言固定 args で、
+`argv: []` も合法: executable 単独起動の明示宣言）。例:
+
+```yaml
+- name: push-safeguard
+  match: {command: [git, push]}
+  target: {kind: workflow, path: push-guard.workflow.json}
+  grant: cargo-test
+  substitute: {grant: push-dry, argv: [push, --dry-run]}
+```
+
+- **`grant:` は substitute 宣言の有無に関わらず required** —
+  発火 gate・record attribution anchor の役割は残るが、
+  viability では member 級検査（存在 + `scope:"trusted" &&
+  !fixed` + executable pin、argv 照合なし）へ降格する。元
+  argv の `route.grant` argv pattern 照合は行われない（実行
+  されない command の形骸化検査の除去 — 「認可したくない
+  command こそ置き換えたい」用途を守る）。
+- **viability は substitute ペアへ retarget される** — anchor
+  完全検査（存在 + eligibility + pin + `argv` pattern 照合・
+  lifecycle 検査）は `{substitute.grant, substitute.argv}` を
+  対象に行い、失敗は `no-grant` viability へ畳まれる。
+- **interactive 分類は両側** — typed command 側は従来どおり
+  （interactive な typed command は substitute 宣言の有無に
+  関わらず routing しない）。substitute 側は宣言 executable
+  名と pin 解決済み実体名の union で interactive 判定し
+  （`python3`→`python3.11` の canonical 名ずらしや shim 名で
+  回避されない）、interactive な substitute は
+  `stdin-unsupported` で不発となる。
+- **`substitute` は trusted 層（builtin/user）限定** —
+  project 層 routes.yaml の entry に `substitute` key が存在
+  すると、値の形状に関わらず route load 全体が
+  `InvalidRuntimePolicy` で失敗する（`grants` 層拒否と同じ
+  presence-first 規約）。
+- **workflow authoring 規約は不変** — exec job input は従来
+  どおり `{name: $input.grant, args: $input.execArgs}`。inputs
+  `grant`/`execArgs` が実行ペアを運ぶため builtin
+  `routed-exec.workflow.json` の binding は両 mode で無変更。
+  `expected_input`・deadline・grant env/`exitCodes` 等の
+  lifecycle anchor も全て substitute ペア由来（`route.grant`
+  の env は子へ届かない）。
+- **record `executed` は substitute ペアを記録** —
+  `executed:{grant,argv}` に `{substitute.grant,
+  substitute.argv}` が載る。`route`/`commandHash` の宣言
+  identity は不変（record schemaVersion・field 追加なし）。
+- **意味差（semantic substitution）** — substitute command の
+  stdout/stderr・exit code がそのまま親 agent へ返るため、親
+  agent は substitute の結果を原 command の結果として解釈する。
+  宣言側が意図した差替えである trusted opt-in 機能であり、
+  substitute 宣言は trusted 層に限られるのはこのため。
+
+substitute mode でも `route run` の exit は実行された
+substitute command の exit code をそのまま mirror する —
+no-substitute の byte-matched mode は従来どおり typed argv を
+実行ペアとして扱い、挙動は一切変わらない。
 
 ### hook rewrite の承認保全と fallback
 
@@ -349,10 +418,11 @@ target 不在・cwd 不一致等の stale payload は全て fail-closed
 
 `route run --payload <token>` は実行に成功すれば**raw text**
 （stdout+stderr + route log footer）を直接 emit し、
-`--format json` でも envelope 化しない。子 process の
-exit code をそのまま mirror する — 元 command が非ゼロなら
-route run も非ゼロ。一方、payload 検証・policy 違反等の
-infrastructure error は従来の error envelope を返す。
+`--format json` でも envelope 化しない。実行された子
+process の exit code をそのまま mirror する — byte-matched
+では元 command、substitute mode では substitute command が
+非ゼロなら route run も非ゼロ。一方、payload 検証・policy
+違反等の infrastructure error は従来の error envelope を返す。
 
 ### `route logs` と log の取り扱い
 
@@ -382,9 +452,10 @@ route record（`kind:"route"`）と refetch record
 集計は refetch 数を join して出す（[usage ガイド](./usage.md)
 参照）。route record は宣言 identity（`route`・`commandHash`）
 に加えて additive field `executed:{grant,argv}` を持ち、実際に
-実行された grant と env-prefix-strip 済み argv を記録する
-（`grants` member が使われても `executed` は anchor exec job の
-実行を指す）。**`executed.argv` は平文の引数値を含む** —
+実行された grant と argv を記録する — byte-matched では
+env-prefix-strip 済みの元 exec argv、substitute mode では宣言
+substitute ペア（`grants` member job が使われても `executed`
+は `job_id == "exec"` job の実行を指す）。**`executed.argv` は平文の引数値を含む** —
 `commandHash` は一方向 hash で env-prefix 値は argv へ載らない
 が、引数値自体に secret を含む command は usage.jsonl に値が
 残る（usage.jsonl に平文 arg が記録されるのはこの field が

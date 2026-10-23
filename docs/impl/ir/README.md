@@ -149,6 +149,7 @@ Directory: `docs/impl/ir`
 | IMPL-034A6gXDwnMxGVaPiuSCxb | Shared tool scheduler | completed | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
 | IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |
+| IMPL-034L3VjzecIvExiORZFjPA | substitute-exec route mode | completed | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | IMPL-034EVH2F3b1QJYE8LSAfkT | tool-operator worker definition schemas and tool-operate alias | completed | [tool-operator-worker-definition-schemas-and-tool-operate-alias.md](./tool-operator-worker-definition-schemas-and-tool-operate-alias.md) |
 | IMPL-034z3CE24rUsOGqD0BfeqZ | track executables with git lfs | completed | [track-executables-with-git-lfs.md](./track-executables-with-git-lfs.md) |
 | IMPL-034KThYLdekX1TvTeqCQhr | Unified exec grant model issue 165 | completed | [unified-exec-grant-model-issue-165.md](./unified-exec-grant-model-issue-165.md) |

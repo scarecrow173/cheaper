@@ -89,6 +89,7 @@ Directory: `docs/adr`
 | ADR-034IOqXM5YpqVgFZKatIXN | Restrict hook-config orphan sweep to cheaper-owned temp files | accepted | [restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md](./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md) |
 | ADR-034KTMnPFDF25x710LFSKY | route grant-set projection — grants 宣言・viability 条件緩和・record split | proposed | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | ADR-034r05iHrZUE6WdKBH2eNM | development APM project と distributable cheaper package を nested package で物理分離する | accepted | [separate-dev-apm-project-via-nested-distributable-package.md](./separate-dev-apm-project-via-nested-distributable-package.md) |
+| ADR-034KXk8h1AtwCkf2cQrb7m | substitute-exec route mode — substitute:{grant,argv}・viability retarget・実行 anchor 切替 | proposed | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | ADR-034r05iHrZUE6W82VsDbPq | Treat unmeasurable huge files as over-threshold via a core byte cap (fail-closed) | accepted | [treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md](./treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md) |
 | ADR-034r05iHlWosDpP8BzaVZ8 | TypeScript + pnpm monorepo 構成 | superseded | [typescript-pnpm-monorepo.md](./typescript-pnpm-monorepo.md) |
 | ADR-034KOpPArDTHQ8W1c81Q0B | unified exec grant model — 単一 exec grant 実装への統合 | accepted | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |

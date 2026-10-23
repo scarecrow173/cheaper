@@ -213,13 +213,16 @@ surface 別（`fixed` → `process.maxConcurrent`、`!fixed` →
 + `details.{grant,task}`（両方に衝突名）で fail closed に拒否
 される。project policy 由来の task は `scope:"project"` の
 grant として解決され、route の `grant:`（anchor）・
-`grants:`（追加 delegated member）参照が解決できるのはいずれも
-`scope:"trusted" && !fixed` の grant のみ（`is_route_eligible`
-が単一 predicate — `fixed`・`scope:"project"`・未知名は
-`Viability::NoGrant`）。`grants` の宣言自体は builtin/user 層の
-routes.yaml に限られ、project routes.yaml の entry に `grants`
-key が存在すると route load が `InvalidRuntimePolicy` で失敗
-する（project が宣言できるのは単数 `grant:` anchor 参照のみ）。
+`grants:`（追加 delegated member）・`substitute.grant`
+（substitute-exec mode の実行 grant）参照が解決できるのは
+いずれも `scope:"trusted" && !fixed` の grant のみ
+（`is_route_eligible` が単一 predicate — `fixed`・
+`scope:"project"`・未知名は `Viability::NoGrant`）。
+`grants`・`substitute` の宣言自体は builtin/user 層の
+routes.yaml に限られ、project routes.yaml の entry に
+`grants`・`substitute` key が存在すると route load が
+`InvalidRuntimePolicy` で失敗する（project が宣言できるのは
+単数 `grant:` anchor 参照のみ）。
 詳細は [managed process ガイド](./managed-process.md)・
 [command ガイド](./command.md)・
 [parent-agent 連携ガイド](./parent-agent-integration.md) を参照。

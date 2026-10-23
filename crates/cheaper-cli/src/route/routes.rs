@@ -10,8 +10,10 @@
 //!   絶対パス/traversal は config error(`invalid-route`)。壊れた
 //!   route を黙って drop しない。
 //! - merge 規則: user は builtin を無条件 shadow。project は
-//!   `trusted: true` のときのみ下位層を shadow し、無い場合は
-//!   `suppressed` provenance として記録される(静かに無視しない)。
+//!   `trusted: true` のときのみ下位層を shadow する — 置換された
+//!   displaced 下位層 route・trust 不在で負けた project route の
+//!   双方が `suppressed` provenance として記録される(静かに
+//!   無視しない)。
 //! - 同一層内の同一 `match.command` 重複は `invalid` bucket へ
 //!   隔離し resolve 対象から除外する(silent last/first-wins 禁止)。
 //! - `target.path` は層起点相対パスのみ許容 — builtin は
@@ -33,6 +35,24 @@ pub enum RouteLayer {
     Project,
 }
 
+/// `substitute` — substitute-exec mode の宣言ペア(R1/O1a)。
+/// `grant` は既存 `command.grants` 参照名(route は grant を
+/// 生成しない — pin が executable を供給)、`argv` は executable
+/// を含まない実行 args 列(command tool input `args` と同形、
+/// `[]` = executable 単独起動の明示宣言)。presence が mode
+/// switch になる — `Some` で substitute mode。
+/// trusted 層(builtin/user)のみ宣言可(project 層は load 時拒否)。
+#[derive(Debug, Clone, PartialEq)]
+pub struct RouteSubstitute {
+    /// 実行 grant 名 — viability 完全検査・expected_input name・
+    /// lifecycle bound・投影 member の execution anchor。
+    /// `route.grant` と同名可(同一 grant の argv 差替)。
+    pub grant: String,
+    /// 実行 argv — grant の argv pattern が bound する宣言固定値。
+    /// typed args の転送・補間はしない(宣言凍結 — R12)。
+    pub argv: Vec<String>,
+}
+
 /// schema 検証済み・`target.path` 層起点解決済みの route 宣言。
 #[derive(Debug, Clone, PartialEq)]
 pub struct Route {
@@ -42,14 +62,21 @@ pub struct Route {
     /// `target.path` — 宣言層起点で join 済みの絶対パス。
     pub target_path: PathBuf,
     /// `command.grants` 参照名(route は grant を生成しない)。
-    /// 発火 gate・expected_input anchor・record attribution の
-    /// 単一 anchor — `grants` member は含めない。
+    /// 発火 gate・record attribution の単一 anchor — `grants`
+    /// member は含めない。実行 anchor(expected_input・viability
+    /// 完全検査対象)は byte-matched では本 grant、substitute
+    /// mode では `substitute.grant` へ移る(`exec_pair` が選ぶ)。
     pub grant: String,
     /// `grants` — route.grant 以外の追加委譲 grant 名(宣言順)。
     /// parse 時に member 間重複と `route.grant` 自身の参照を
     /// 冪等に除去済み — `[]` ≡ 未指定。有効 set は
-    /// `grant_set()` = {grant} ∪ grants。
+    /// `grant_set()` = {grant} ∪ grants ∪ {substitute.grant}。
     pub grants: Vec<String>,
+    /// `substitute` — substitute-exec mode 宣言(Option D)。
+    /// `Some` のとき実行対象は `{substitute.grant, substitute.argv}`
+    /// で、typed command は `match.command` prefix の発火契機に留まる。
+    /// firing gate・record attribution anchor は `route.grant` のまま。
+    pub substitute: Option<RouteSubstitute>,
     /// `output.tokenThreshold`(routed workflow の conditional
     /// worker 閾値の per-route override)。
     pub token_threshold: Option<f64>,
@@ -62,20 +89,39 @@ pub struct Route {
 }
 
 impl Route {
-    /// 有効投影 set — `{route.grant} ∪ grants`(anchor 必須を型で
-    /// 表さないため helper が規則の owner)。viability の member
-    /// 検査は `self.grants`(member のみ)を使い、`project_grants`
-    /// 投影には本 helper の全 set を渡す。
+    /// 有効投影 set — `{route.grant} ∪ grants ∪ {substitute.grant}`。
+    /// substitute mode でも `route.grant` は投影 member として残り
+    /// (firing gate・attribution anchor・member job からの呼出し可 —
+    /// O7a)。「投影名は全て viability 検証済み」の不変を維持する。
     pub fn grant_set(&self) -> std::collections::BTreeSet<String> {
         let mut set = std::collections::BTreeSet::new();
         set.insert(self.grant.clone());
         set.extend(self.grants.iter().cloned());
+        if let Some(substitute) = &self.substitute {
+            set.insert(substitute.grant.clone());
+        }
         set
+    }
+
+    /// 実行ペア `{grant名, argv}` — substitute mode は宣言
+    /// `{substitute.grant, substitute.argv}`、byte-matched は
+    /// `{route.grant, typed_args}`(caller は `resolution.exec_args`
+    /// を渡す)。viability 完全検査の対象・`expected_input`・inputs
+    /// `grant`/`execArgs`・deadline 導出が全てこの anchor に従う
+    /// (firing/attribution anchor の `route.grant` とは別系統 —
+    /// O2a/O4a/R6)。
+    pub fn exec_pair<'a>(&'a self, typed_args: &'a [String]) -> (&'a str, &'a [String]) {
+        match &self.substitute {
+            Some(substitute) => (substitute.grant.as_str(), substitute.argv.as_slice()),
+            None => (self.grant.as_str(), typed_args),
+        }
     }
 }
 
-/// trust 不在のため下位層 route に負けた project route
-/// (provenance — `route resolve`・`kind:"route"` record が報告)。
+/// merge で負けた route の provenance — trust 不在で下位層 route
+/// に負けた project route、および `trusted: true` project route
+/// に置換された displaced 下位層 route(`route resolve`・
+/// `kind:"route"` record が報告)。
 #[derive(Debug, Clone, PartialEq)]
 pub struct SuppressedRoute {
     pub name: String,
@@ -161,7 +207,15 @@ pub fn load(opts: &RouteLoadOptions<'_>) -> Result<EffectiveRoutes, CheaperError
                         if !effective.contains_key(&route.command) {
                             order.push(route.command.clone());
                         }
-                        effective.insert(route.command.clone(), route);
+                        // `trusted: true` による下位層置換でも負けた側を
+                        // provenance へ残す — silent displacement を残さない
+                        // (新規追加では insert が None を返し no-op)。
+                        if let Some(displaced) = effective.insert(route.command.clone(), route) {
+                            suppressed.push(SuppressedRoute {
+                                name: displaced.name,
+                                command: displaced.command,
+                            });
+                        }
                     }
                 }
             }
@@ -337,6 +391,7 @@ fn validate_route(
         "target",
         "grant",
         "grants",
+        "substitute",
         "output",
         "passthroughEnv",
         "trusted",
@@ -452,6 +507,79 @@ fn validate_route(
             }
         }
     }
+    // `substitute` は trusted 層限定(O3a)— substitute mode は typed
+    // command を一切実行せず `{substitute.grant, substitute.argv}` を
+    // 実行するため、`expected_input` byte-match が typed command へ
+    // 課していた拘束が乗り移らない。project 層が宣言できると
+    // untrusted authoring が「任意 typed prefix に対して任意の
+    // trusted grant を宣言 argv で起動する」実実行ペアの選択権を得る
+    // — `grants` member 密輸として O7a が塞いだ confused-deputy hole
+    // の、さらに強い形での再発を load 時に拒否する。
+    // `trusted:true` は project 自己申告の shadowing gate であり
+    // 判別に使えない — 判別子は宣言層 provenance。
+    if layer == RouteLayer::Project && entry.contains_key("substitute") {
+        return Err(schema_error(
+            file,
+            &format!("{label}.substitute: not declarable in the project layer"),
+        ));
+    }
+    // `substitute: {grant, argv}` — 宣言ペア。nested 未知 key は
+    // `match`/`target`/`output` と同じ fail-loud 規約で拒否する。
+    let substitute = match entry.get("substitute") {
+        None => None,
+        Some(v) => {
+            let Some(obj) = v.as_object() else {
+                return Err(schema_error(
+                    file,
+                    &format!("{label}.substitute: not an object"),
+                ));
+            };
+            for key in obj.keys() {
+                if key != "grant" && key != "argv" {
+                    return Err(schema_error(
+                        file,
+                        &format!("{label}.substitute: unknown key: {key}"),
+                    ));
+                }
+            }
+            let grant = obj
+                .get("grant")
+                .and_then(Value::as_str)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .ok_or_else(|| {
+                    schema_error(
+                        file,
+                        &format!("{label}.substitute.grant: missing or not a string"),
+                    )
+                })?;
+            let argv = obj
+                .get("argv")
+                .and_then(Value::as_array)
+                .ok_or_else(|| {
+                    schema_error(
+                        file,
+                        &format!("{label}.substitute.argv: missing or not an array"),
+                    )
+                })?
+                .iter()
+                .map(|item| {
+                    item.as_str()
+                        .filter(|s| !s.is_empty())
+                        .map(str::to_string)
+                        .ok_or_else(|| {
+                            schema_error(
+                                file,
+                                &format!(
+                                    "{label}.substitute.argv: element must be a non-empty string"
+                                ),
+                            )
+                        })
+                })
+                .collect::<Result<Vec<String>, CheaperError>>()?;
+            Some(RouteSubstitute { grant, argv })
+        }
+    };
     // `output: {tokenThreshold?}` — number のみ許容。
     let token_threshold = match entry.get("output") {
         None => None,
@@ -509,6 +637,7 @@ fn validate_route(
         target_path,
         grant,
         grants,
+        substitute,
         token_threshold,
         passthrough_env,
         trusted,
@@ -707,7 +836,11 @@ routes:
         let loaded = load(&opts(&builtin, &user, &project)).unwrap();
         assert_eq!(loaded.routes[0].grant, "proj-grant");
         assert_eq!(loaded.routes[0].layer, RouteLayer::Project);
-        assert!(loaded.suppressed.is_empty());
+        // `trusted: true` 置換は displaced 下位層 route を suppressed
+        // provenance へ記録する(silent displacement を残さない)。
+        assert_eq!(loaded.suppressed.len(), 1);
+        assert_eq!(loaded.suppressed[0].name, "cargo-test");
+        assert_eq!(loaded.suppressed[0].command, vec!["cargo", "test"]);
         // trusted でも非衝突の project route は通常有効化。
         let unique = r#"
 version: 1
@@ -955,5 +1088,319 @@ routes:
             set.iter().map(String::as_str).collect::<Vec<_>>(),
             vec!["cargo-build"]
         );
+    }
+
+    /// `substitute: {grant, argv}` 宣言の parse(#167 R1/O1a)—
+    /// `Route.substitute` が `Some(RouteSubstitute)` になり、`argv: []`
+    /// は executable 単独起動の明示宣言として受理する。`grant` 単数は
+    /// substitute の有無に関わらず required(firing gate・attribution
+    /// anchor・投影 member)。
+    #[test]
+    fn substitute_parse_and_empty_argv() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        write(
+            &user,
+            "routes.yaml",
+            r#"
+version: 1
+routes:
+  - name: sub
+    match: {command: [git, push]}
+    target: {kind: workflow, path: w.json}
+    grant: git-push
+    substitute: {grant: git-dry, argv: [push, --dry-run]}
+  - name: solo
+    match: {command: [git, fetch]}
+    target: {kind: workflow, path: w.json}
+    grant: git-fetch
+    substitute: {grant: git-fetch, argv: []}
+"#,
+        );
+        let loaded = load(&opts(&builtin, &user, &project)).unwrap();
+        let by_name = |name: &str| loaded.routes.iter().find(|r| r.name == name).unwrap();
+        assert_eq!(
+            by_name("sub").substitute,
+            Some(RouteSubstitute {
+                grant: "git-dry".to_string(),
+                argv: vec!["push".to_string(), "--dry-run".to_string()],
+            })
+        );
+        // `argv: []` は受理、`substitute.grant == route.grant` も合法。
+        assert_eq!(
+            by_name("solo").substitute,
+            Some(RouteSubstitute {
+                grant: "git-fetch".to_string(),
+                argv: Vec::new(),
+            })
+        );
+        // `grant` 単数は substitute 宣言の有無に関わらず required。
+        write(
+            &user,
+            "routes.yaml",
+            "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    substitute: {grant: g, argv: []}\n",
+        );
+        let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+        assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy);
+        assert!(err.details().unwrap()["violation"]
+            .as_str()
+            .unwrap()
+            .contains("routes[0].grant: missing or not a string"));
+    }
+
+    /// malformed `substitute` — 非 object・`grant`/`argv` 欠落・nested
+    /// 未知 key・`grant` 非 string/空・`argv` 非 array・要素非
+    /// string/空は `InvalidRuntimePolicy` + `details.{path,
+    /// reason:"schema", violation}` で file と entry を名指しする
+    /// route-load error(`match`/`target`/`output` と同じ fail-loud
+    /// 規約)。`substitute` typo の unknown key 拒否は不変。
+    #[test]
+    fn substitute_malformed_is_schema_error() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        for (sub, expect) in [
+            ("substitute: str", "substitute: not an object"),
+            (
+                "substitute: {argv: [a]}",
+                "substitute.grant: missing or not a string",
+            ),
+            (
+                "substitute: {grant: g}",
+                "substitute.argv: missing or not an array",
+            ),
+            (
+                "substitute: {grant: g, argv: [a], extra: 1}",
+                "substitute: unknown key: extra",
+            ),
+            (
+                "substitute: {grant: 1, argv: [a]}",
+                "substitute.grant: missing or not a string",
+            ),
+            (
+                "substitute: {grant: '', argv: [a]}",
+                "substitute.grant: missing or not a string",
+            ),
+            (
+                "substitute: {grant: g, argv: x}",
+                "substitute.argv: missing or not an array",
+            ),
+            (
+                "substitute: {grant: g, argv: [1]}",
+                "substitute.argv: element must be a non-empty string",
+            ),
+            (
+                "substitute: {grant: g, argv: ['']}",
+                "substitute.argv: element must be a non-empty string",
+            ),
+        ] {
+            let yaml = format!(
+                "version: 1\nroutes:\n  - name: x\n    match: {{command: [a]}}\n    target: {{kind: workflow, path: f.json}}\n    grant: g\n    {sub}\n"
+            );
+            let file = write(&user, "routes.yaml", &yaml);
+            let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+            assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy, "{sub}");
+            let details = err.details().unwrap();
+            assert_eq!(details["reason"], json!("schema"), "{sub}");
+            assert_eq!(
+                details["path"].as_str().unwrap(),
+                file.display().to_string(),
+                "{sub}"
+            );
+            let violation = details["violation"].as_str().unwrap();
+            assert!(
+                violation.contains("routes[0].substitute") && violation.contains(expect),
+                "{sub}: {violation}"
+            );
+        }
+        // `substitute` の typo は unknown key 拒否のまま(fail-loud 不変)。
+        write(
+            &user,
+            "routes.yaml",
+            "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    grant: g\n    substitut: {grant: g, argv: []}\n",
+        );
+        let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+        assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy);
+        assert!(err.details().unwrap()["violation"]
+            .as_str()
+            .unwrap()
+            .contains("unknown key: substitut"));
+    }
+
+    /// `substitute` 宣言の層制約(#167 O3a)— project 層 entry の
+    /// `substitute` key presence は形状検査より先に fail-loud
+    /// `InvalidRuntimePolicy` で拒否する。builtin/user 層は受理
+    /// され、project 層の `grant:` 単数・byte-matched route は
+    /// 従来どおり有効。
+    #[test]
+    fn project_layer_substitute_is_rejected() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        // 形状が不正でも presence が先に拒否される(untrusted 層の
+        // 宣言は内容を評価しない fail-closed — `grants` O7a と同型)。
+        write(
+            &project,
+            "routes.yaml",
+            "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    grant: g\n    substitute: not-an-object\n",
+        );
+        let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+        assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy);
+        let violation = err.details().unwrap()["violation"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        assert!(
+            violation.contains("routes[0].substitute: not declarable in the project layer"),
+            "{violation}"
+        );
+        // `trusted: true` の自己申告は判別に効かない(shadowing
+        // gate であり層 provenance ではない)。
+        write(
+            &project,
+            "routes.yaml",
+            "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    grant: g\n    trusted: true\n    substitute: {grant: g, argv: []}\n",
+        );
+        let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+        assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy);
+        // project 層の `grant:` 単数・byte-matched route は従来どおり受理。
+        write(
+            &project,
+            "routes.yaml",
+            "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    grant: g\n",
+        );
+        let loaded = load(&opts(&builtin, &user, &project)).unwrap();
+        assert_eq!(loaded.routes[0].grant, "g");
+        assert!(loaded.routes[0].substitute.is_none());
+        // builtin/user 層の `substitute` 宣言は受理される。
+        std::fs::remove_file(project.join("routes.yaml")).unwrap();
+        for dir in [&builtin, &user] {
+            write(
+                dir,
+                "routes.yaml",
+                "version: 1\nroutes:\n  - name: x\n    match: {command: [a]}\n    target: {kind: workflow, path: f.json}\n    grant: g\n    substitute: {grant: s, argv: [x]}\n",
+            );
+            let loaded = load(&opts(&builtin, &user, &project)).unwrap();
+            assert_eq!(loaded.routes[0].substitute.as_ref().unwrap().grant, "s");
+            std::fs::remove_file(dir.join("routes.yaml")).unwrap();
+        }
+    }
+
+    /// `Route::grant_set()` の substitute 拡張(#167 O7a)—
+    /// `{route.grant} ∪ grants ∪ {substitute.grant}` の union。
+    /// `substitute.grant == route.grant`・`substitute.grant ∈ grants[]`
+    /// は dedupe で単一要素になる。
+    #[test]
+    fn grant_set_includes_substitute_grant() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        write(
+            &user,
+            "routes.yaml",
+            r#"
+version: 1
+routes:
+  - name: multi
+    match: {command: [git, push]}
+    target: {kind: workflow, path: w.json}
+    grant: git-push
+    grants: [fmt]
+    substitute: {grant: git-dry, argv: [push, --dry-run]}
+  - name: same
+    match: {command: [git, fetch]}
+    target: {kind: workflow, path: w.json}
+    grant: git-fetch
+    grants: [fmt]
+    substitute: {grant: fmt, argv: []}
+"#,
+        );
+        let loaded = load(&opts(&builtin, &user, &project)).unwrap();
+        let by_name = |name: &str| loaded.routes.iter().find(|r| r.name == name).unwrap();
+        assert_eq!(
+            by_name("multi")
+                .grant_set()
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>(),
+            vec!["fmt", "git-dry", "git-push"]
+        );
+        // `substitute.grant ∈ grants[]` は dedupe。
+        assert_eq!(
+            by_name("same")
+                .grant_set()
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>(),
+            vec!["fmt", "git-fetch"]
+        );
+    }
+
+    /// `Route::exec_pair()`(#167 O2a/O4a)— substitute mode は宣言
+    /// `{substitute.grant, substitute.argv}`、byte-matched は
+    /// `{route.grant, typed_args}` を返す実行ペア選択の単一供給点。
+    #[test]
+    fn exec_pair_selects_execution_pair() {
+        let typed = vec!["push".to_string(), "origin".to_string(), "main".to_string()];
+        let mut route = Route {
+            name: "r".to_string(),
+            command: vec!["git".to_string(), "push".to_string()],
+            target_path: PathBuf::from("w.json"),
+            grant: "git-push".to_string(),
+            grants: Vec::new(),
+            substitute: Some(RouteSubstitute {
+                grant: "git-dry".to_string(),
+                argv: vec!["push".to_string(), "--dry-run".to_string()],
+            }),
+            token_threshold: None,
+            passthrough_env: Vec::new(),
+            trusted: false,
+            layer: RouteLayer::User,
+        };
+        let (name, args) = route.exec_pair(&typed);
+        assert_eq!(name, "git-dry");
+        assert_eq!(
+            args.to_vec(),
+            vec!["push".to_string(), "--dry-run".to_string()]
+        );
+        // substitute 無しは `{route.grant, typed_args}`(byte-matched 不変)。
+        route.substitute = None;
+        let (name, args) = route.exec_pair(&typed);
+        assert_eq!(name, "git-push");
+        assert_eq!(args, typed.as_slice());
+    }
+
+    /// merge suppressed provenance(#167)— project `trusted:true`
+    /// route が下位層 route を置き換えた際 displaced route を
+    /// `suppressed` へ記録する。builtin/user 層間の shadow は同一
+    /// trusted principal の宣言 override として silent のまま。
+    /// 新規追加では insert が `None` を返し no-op。
+    #[test]
+    fn merge_records_displaced_lower_layer() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        // builtin/user 層間 shadow は silent(user → builtin は
+        // 同一 trusted principal の宣言 override)。
+        write(&builtin, "routes.yaml", ROUTE_YAML);
+        let user_yaml = ROUTE_YAML.replace("grant: cargo-test", "grant: user-grant");
+        write(&user, "routes.yaml", &user_yaml);
+        // project `trusted:true` が user route を置き換える →
+        // displaced user route を suppressed へ記録。
+        write(
+            &project,
+            "routes.yaml",
+            r#"
+version: 1
+routes:
+  - name: proj-shadow
+    match: {command: [cargo, test]}
+    target: {kind: workflow, path: p.json}
+    grant: proj-grant
+    trusted: true
+  - name: proj-new
+    match: {command: [make, build]}
+    target: {kind: workflow, path: p.json}
+    grant: proj-grant
+    trusted: true
+"#,
+        );
+        let loaded = load(&opts(&builtin, &user, &project)).unwrap();
+        assert_eq!(loaded.routes.len(), 2);
+        assert_eq!(loaded.routes[0].name, "proj-shadow");
+        assert_eq!(loaded.suppressed.len(), 1);
+        assert_eq!(loaded.suppressed[0].name, "cargo-test");
+        assert_eq!(loaded.suppressed[0].command, vec!["cargo", "test"]);
     }
 }

@@ -2084,6 +2084,7 @@ mod tests {
                 target_path: target.to_path_buf(),
                 grant: grant.to_string(),
                 grants: Vec::new(),
+                substitute: None,
                 token_threshold: None,
                 passthrough_env: Vec::new(),
                 trusted: false,

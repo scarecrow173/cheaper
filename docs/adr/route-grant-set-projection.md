@@ -29,6 +29,7 @@ relations:
     - "./defer-non-exec-routing-to-permission-model-redesign.md"
     - "./enforce-declared-contracts-over-content-audit.md"
     - "../specs/pretooluse-route-resolver-and-workflow-delegation.md"
+    - "./substitute-exec-route-mode.md"
   refines: []
   refined-by: []
   derives-from:

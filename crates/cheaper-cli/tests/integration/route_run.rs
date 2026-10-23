@@ -1421,10 +1421,9 @@ async fn suppressed_project_provenance_reaches_route_record() {
         let result = &out["result"];
         if trusted {
             assert_eq!(result["route"], "project-shadow");
-            assert!(
-                result.get("suppressed").is_none(),
-                "trusted project shadow には suppressed provenance なし"
-            );
+            // trusted 置換は displaced 下位層 route を suppressed
+            // provenance へ記録する(silent displacement を残さない)。
+            assert_eq!(result["suppressed"], "child-run");
         } else {
             assert_eq!(result["route"], "child-run");
             assert_eq!(result["suppressed"], "project-shadow");
@@ -1447,7 +1446,7 @@ async fn suppressed_project_provenance_reaches_route_record() {
         let record = route_record(&f);
         if trusted {
             assert_eq!(record["route"], "project-shadow");
-            assert!(record.get("suppressed").is_none(), "{record}");
+            assert_eq!(record["suppressed"], "child-run", "{record}");
         } else {
             assert_eq!(record["route"], "child-run");
             assert_eq!(record["suppressed"], "project-shadow", "{record}");
@@ -1924,4 +1923,360 @@ async fn builtin_cargo_test_route_registered_but_no_grant() {
             .is_none(),
         "no-grant must not rewrite: {hook}"
     );
+}
+
+// ---- substitute-exec route mode(#167)----
+
+/// substitute fixture — `route.grant` は `anchor`(firing gate /
+/// attribution anchor・member 級検査のみで実行されない)、実実行は
+/// `substitute: {grant: sub-exec, argv: [child argv]}`。`anchor` に
+/// `env` を置くのは「anchor env が子へ届かない」証明のため。
+/// `sub_env` は `sub-exec` grant の `      env:` block 全体、
+/// `grants_extra` は追加 grant 宣言、`route_extra` は追加 route key。
+fn substitute_fx(
+    f: &Fixture,
+    workflow: &Value,
+    sub_env: &str,
+    grants_extra: &str,
+    route_extra: &str,
+) {
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    std::fs::write(
+        f.cfg.path().join("routes.yaml"),
+        format!(
+            "version: 1\nroutes:\n  - name: sub-run\n    match: {{command: [routed]}}\n    target: {{kind: workflow, path: sub.workflow.json}}\n    grant: anchor\n    substitute: {{grant: sub-exec, argv: ['route_run::command_fixture', '--exact', '--nocapture']}}\n{route_extra}"
+        ),
+    )
+    .unwrap();
+    std::fs::write(
+        f.cfg.path().join("sub.workflow.json"),
+        serde_json::to_string(workflow).unwrap(),
+    )
+    .unwrap();
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        format!(
+            "version: 1\ncommand:\n  grants:\n    anchor:\n      executable: '{exe}'\n      argv: ['*']\n      env:\n        FOO: anchor-val\n        KEEP: anchor-keep\n    sub-exec:\n      executable: '{exe}'\n      argv: ['route_run::command_fixture', '--exact', '--nocapture']\n      timeout: '600s'\n{sub_env}{grants_extra}"
+        ),
+    )
+    .unwrap();
+}
+
+const SUB_ARGV: &[&str] = &["route_run::command_fixture", "--exact", "--nocapture"];
+
+/// exec-input 再 anchor・exit mirror・record shape(#167 AC5/AC6/
+/// AC8)— typed command `routed anything --else` で route は発火
+/// するが exec job が実行するのは `{sub-exec, substitute.argv}`。
+/// 原 exec_args は実行対象ではなく record も `executed` に
+/// substitute ペアを auto-capture する(`route`/`commandHash` の
+/// 宣言 identity は維持・schemaVersion 不変・新規 field なし)。
+#[tokio::test(flavor = "current_thread")]
+async fn substitute_exec_pair_runs_and_mirrors_exit() {
+    let mut f = Fixture::new();
+    let marker = f.ws.path().join("sub-marker.txt");
+    substitute_fx(
+        &f,
+        &exec_only_workflow(json!({}), json!({})),
+        &format!(
+            "      env:\n        CHEAPER_ROUTE_CHILD_MODE: io\n        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n",
+            marker
+                .to_string_lossy()
+                .replace('\\', "\\\\")
+                .replace('\'', "''")
+        ),
+        "",
+        "",
+    );
+    let token = payload_token(
+        &f,
+        "routed anything --else",
+        &["routed", "anything", "--else"],
+        &[],
+        &[],
+        None,
+    );
+    let out = run_route(&mut f, &token).await.unwrap();
+    // substitute child(io mode → exit 7)をそのまま mirror。
+    assert_eq!(out.exit_code, 7);
+    assert!(out.text.contains("ROUTE-OUT-MARK"), "text: {}", out.text);
+    assert!(marker.exists(), "substitute pair spawned child");
+    let details = &out.envelope["result"]["execResult"]["details"];
+    assert_eq!(details["exitCode"], json!(7));
+    // `command::execute` details が substitute ペアを auto-capture。
+    assert_eq!(details["grant"], json!("sub-exec"), "{details}");
+    assert_eq!(details["argv"], json!(SUB_ARGV), "{details}");
+    let record = route_record(&f);
+    // 宣言 anchor attribution + substitute 実行 attribution —
+    // `route`/`commandHash` は原 identity、`executed` は substitute
+    // ペア。record shape は schemaVersion:1 不変・新規 field 無し。
+    assert_eq!(record["schemaVersion"], json!(1));
+    assert_eq!(record["kind"], json!("route"));
+    assert_eq!(record["route"], json!("sub-run"));
+    assert!(record["commandHash"].is_string(), "{record}");
+    assert_eq!(record["executed"]["grant"], json!("sub-exec"));
+    assert_eq!(record["executed"]["argv"], json!(SUB_ARGV));
+    assert_eq!(record["exitCode"], json!(7));
+    assert_eq!(record["ok"], json!(false));
+}
+
+/// `job_id == "exec"` は `{substitute.grant, substitute.argv}` の
+/// `expected_input` に束縛される(#167 AC5)— `route.grant` + 原
+/// exec_args・substitute 名 + 原 exec_args・member 名のいずれも
+/// `exec-input-mismatch` で job 失敗し(anchor 名による exec
+/// impersonation は成立しない)、captured 無しの workflow 失敗と
+/// して collapsed `ToolExecutionFailure` を返す。
+#[tokio::test(flavor = "current_thread")]
+async fn substitute_exec_job_input_mismatch() {
+    for (case, input) in [
+        // route.grant(anchor)名 + 原 exec_args — byte-matched 時代
+        // の旧 pair は substitute mode では受理されない。
+        (
+            "anchor+original-args",
+            json!({"name": "anchor", "args": ["anything", "--else"]}),
+        ),
+        // substitute 名でも原 exec_args(typed argv 由来)は不一致。
+        (
+            "substitute+original-args",
+            json!({"name": "sub-exec", "args": ["anything", "--else"]}),
+        ),
+        // member 名も exec job では名乗れない。
+        (
+            "member-name",
+            json!({"name": "fmt", "args": ["route_run::command_fixture", "--exact", "--nocapture"]}),
+        ),
+    ] {
+        let mut f = Fixture::new();
+        let marker = f.ws.path().join("sub-marker.txt");
+        let mut workflow = exec_only_workflow(json!({}), json!({}));
+        workflow["jobs"]["exec"]["input"] = input;
+        let exe = std::env::current_exe()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        substitute_fx(
+            &f,
+            &workflow,
+            &format!(
+                "      env:\n        CHEAPER_ROUTE_CHILD_MODE: io\n        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n",
+                marker
+                    .to_string_lossy()
+                    .replace('\\', "\\\\")
+                    .replace('\'', "''")
+            ),
+            &format!(
+                "    fmt:\n      executable: '{exe}'\n      argv: ['route_run::command_fixture', '--exact', '--nocapture']\n      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n"
+            ),
+            "    grants: [fmt]\n",
+        );
+        let token = payload_token(
+            &f,
+            "routed anything --else",
+            &["routed", "anything", "--else"],
+            &[],
+            &[],
+            None,
+        );
+        let err = run_route(&mut f, &token)
+            .await
+            .err()
+            .unwrap_or_else(|| panic!("{case}: route must fail on exec-input-mismatch"));
+        assert_eq!(
+            err.downcast_ref::<CheaperError>().map(CheaperError::code),
+            Some(ErrorCode::ToolExecutionFailure),
+            "{case}: exec job 失敗は outcome.error の collapse code: {err}"
+        );
+        assert!(
+            err.to_string().contains("routed command did not complete"),
+            "{case}: captured()==None && outcome.error.is_some() 分岐: {err}"
+        );
+        assert!(!marker.exists(), "{case}: mismatched job must not spawn");
+    }
+}
+
+/// lifecycle anchor(#167 AC7)— exec job は `substitute.grant` の宣言
+/// env で spawn され、`route.grant`(anchor)の env は子へ届かない
+/// (`FOO` は sub-exec 側値、`KEEP` は anchor のみの宣言のため
+/// unset)。deadline も substitute.grant timeout 由来(run.rs unit で
+/// pin 済み)。
+#[tokio::test(flavor = "current_thread")]
+async fn substitute_grant_env_reaches_child_not_anchor() {
+    let mut f = Fixture::new();
+    let dump = f.ws.path().join("env-dump.txt");
+    substitute_fx(
+        &f,
+        &exec_only_workflow(json!({}), json!({})),
+        &format!(
+            "      env:\n        CHEAPER_ROUTE_CHILD_MODE: envdump\n        CHEAPER_ROUTE_CHILD_OUT: '{}'\n        FOO: sub-val\n",
+            dump.to_string_lossy().replace('\\', "\\\\").replace('\'', "''")
+        ),
+        "",
+        "",
+    );
+    let token = payload_token(
+        &f,
+        &format!("routed {CHILD_ARGV}"),
+        &[
+            "routed",
+            "route_run::command_fixture",
+            "--exact",
+            "--nocapture",
+        ],
+        &[],
+        &[],
+        None,
+    );
+    let out = run_route(&mut f, &token).await.unwrap();
+    assert_eq!(out.exit_code, 0);
+    let dumped = std::fs::read_to_string(&dump).unwrap();
+    // substitute.grant env が適用され、anchor env は届かない。
+    assert!(dumped.contains("FOO=sub-val"), "{dumped}");
+    assert!(dumped.contains("KEEP=<unset>"), "{dumped}");
+    let record = route_record(&f);
+    assert_eq!(record["ok"], json!(true));
+    assert_eq!(record["executed"]["grant"], json!("sub-exec"));
+}
+
+/// member 併用(#167 AC10)— `grants[]` member job(job_id != "exec")
+/// は member 規約で実行でき、`input.name = substitute.grant` の
+/// member job も投影経由で到達できる(`grant_set` が substitute
+/// 名を含む)。投影外名は従来どおり job 失敗へ畳まれる。
+#[tokio::test(flavor = "current_thread")]
+async fn substitute_member_jobs_reach_members_and_substitute() {
+    let mut f = Fixture::new();
+    let fmt_marker = f.ws.path().join("fmt-marker.txt");
+    let workflow = exec_only_workflow(
+        json!({
+            "fmt-job": {
+                "kind": "tool",
+                "tool": "command",
+                "input": {"name": "fmt", "args": ["route_run::command_fixture", "--exact", "--nocapture"]}
+            },
+            "sub-job": {
+                "kind": "tool",
+                "tool": "command",
+                "input": {"name": "sub-exec", "args": ["route_run::command_fixture", "--exact", "--nocapture"]}
+            },
+            "undeclared-job": {
+                "kind": "tool",
+                "tool": "command",
+                "input": {"name": "undeclared", "args": []}
+            }
+        }),
+        json!({}),
+    );
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    substitute_fx(
+        &f,
+        &workflow,
+        "      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n",
+        &format!(
+            "    fmt:\n      executable: '{exe}'\n      argv: ['route_run::command_fixture', '--exact', '--nocapture']\n      env:\n        CHEAPER_ROUTE_CHILD_MODE: tail\n        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n    undeclared:\n      executable: '{exe}'\n      argv: ['*']\n",
+            fmt_marker
+                .to_string_lossy()
+                .replace('\\', "\\\\")
+                .replace('\'', "''")
+        ),
+        "    grants: [fmt]\n",
+    );
+    let token = payload_token(
+        &f,
+        "routed anything --else",
+        &["routed", "anything", "--else"],
+        &[],
+        &[],
+        None,
+    );
+    let out = run_route(&mut f, &token).await.unwrap();
+    // exec job は substitute ペア(ok mode → exit 0)。
+    assert_eq!(out.exit_code, 0);
+    // member job は実 spawn(fmt marker)+ substitute.grant 名の
+    // member job も member 規約で到達(失敗しない)。
+    assert!(fmt_marker.exists(), "fmt member job must run");
+    let failures = out.envelope["result"]["postprocessFailures"]
+        .as_array()
+        .unwrap();
+    assert!(
+        failures.iter().any(|s| s == "job-failed:undeclared-job"),
+        "failures: {failures:?}"
+    );
+    assert!(
+        !failures.iter().any(|s| s == "job-failed:fmt-job"),
+        "failures: {failures:?}"
+    );
+    // `input.name = substitute.grant` の member job — 投影経由で
+    // 到達できる(AC gap 項目の pin)。
+    assert!(
+        !failures.iter().any(|s| s == "job-failed:sub-job"),
+        "failures: {failures:?}"
+    );
+    let record = route_record(&f);
+    assert_eq!(record["executed"]["grant"], json!("sub-exec"));
+}
+
+/// Option E 境界(#167 AC11)— exec job 不在・`outputs.execResult`
+/// 不在の workflow は substitute 宣言の有無に関わらず routed
+/// convention 違反で `InvalidRuntimePolicy`(`validate_routed_
+/// convention` は不変 — exec-less route は別設計)。
+#[tokio::test(flavor = "current_thread")]
+async fn substitute_routed_convention_still_enforced() {
+    for (case, raw_wf) in [
+        (
+            "missing-exec-job",
+            json!({"schemaVersion": 1, "inputs": {}, "jobs": {}, "outputs": {}}),
+        ),
+        (
+            "missing-execResult",
+            json!({
+                "schemaVersion": 1,
+                "inputs": {},
+                "jobs": {"exec": {"kind": "tool", "tool": "command", "input": {}}},
+                "outputs": {}
+            }),
+        ),
+    ] {
+        let mut f = Fixture::new();
+        let marker = f.ws.path().join("sub-marker.txt");
+        substitute_fx(
+            &f,
+            &raw_wf,
+            &format!(
+                "      env:\n        CHEAPER_ROUTE_CHILD_MODE: io\n        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n",
+                marker
+                    .to_string_lossy()
+                    .replace('\\', "\\\\")
+                    .replace('\'', "''")
+            ),
+            "",
+            "",
+        );
+        let token = payload_token(
+            &f,
+            &format!("routed {CHILD_ARGV}"),
+            &[
+                "routed",
+                "route_run::command_fixture",
+                "--exact",
+                "--nocapture",
+            ],
+            &[],
+            &[],
+            None,
+        );
+        let err = run_route(&mut f, &token)
+            .await
+            .err()
+            .unwrap_or_else(|| panic!("{case}: convention violation must reject"));
+        assert_eq!(
+            err.downcast_ref::<CheaperError>().map(CheaperError::code),
+            Some(ErrorCode::InvalidRuntimePolicy),
+            "{case}: routed convention は InvalidRuntimePolicy: {err}"
+        );
+        assert!(!marker.exists(), "{case}: rejected before exec spawn");
+    }
 }

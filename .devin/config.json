@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^([Rr][Ee][Aa][Dd]|[Gg][Rr][Ee][Pp]|[Ee][Xx][Ee][Cc])$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cheaper hook pre-tool-use --target devin"
+          }
+        ]
+      }
+    ]
+  },
+  "read_config_from": {
+    "windsurf": false
+  }
+}

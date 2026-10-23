@@ -78,6 +78,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7go4BQtGNS | Separate the development APM project from the distributable cheaper package | implemented | [separate-dev-apm-project-from-distributable-package.md](./separate-dev-apm-project-from-distributable-package.md) |
 | SPEC-034rBhR3SNIRFZ1B6n26iH | Shell-read large-file blocking via canonical routing policy | approved | [shell-read-large-file-blocking.md](./shell-read-large-file-blocking.md) |
 | SPEC-034z14nGIf6fXRtTskkrk8 | Standalone executable distribution for cheaper CLI including APM bundles | superseded | [standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md](./standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md) |
+| SPEC-034KXdoK2bMG3gQtIj8l6h | substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・anchor 切替 | proposed | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | SPEC-003hd7W00xCikuCXnwHA4C | Synchronize distributed cheaper-usage skill and parent-agent integration guide | implemented | [synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md](./synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md) |
 | SPEC-034EStsweRrzPq1Og6oCzl | tool-operator built-in Worker | approved | [tool-operator-built-in-worker.md](./tool-operator-built-in-worker.md) |
 | SPEC-034KOpKfZpegX2MLPD0uq6 | unified exec grant model — command.grants / process.tasks の統合 | approved | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
