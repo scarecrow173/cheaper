@@ -782,13 +782,16 @@
       "files": {
         "builtin/policy.yaml": "version: 1\nprocess:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  tasks: {}\n\ncommand:\n  maxConcurrent: 1\n  timeout: 2m\n  maxOutputBytes: 65536\n  killGrace: 2s\n  heartbeat:\n    interval: 30s\n  grants: {}\n\nexecution:\n  # run 経路では進捗 RunEvent の観測でリセットされる stall window\n  # (workflow 経路の timeout は従来どおり全体の absolute deadline)。\n  timeout: 300s\n  # null = policy レベルの turn 上限なし(内部 runaway guard のみ)。\n  # 明示整数にすると従来どおり MAX_TURNS_EXCEEDED の policy abort 境界。\n  maxTurns: null\n  maxToolCalls: 64\n\ntools:\n  allow:\n    - read\n    - grep\n    - find\n    - ls\n    - write\n    - edit\n    - count_tokens\n    - process\n    - command\n\nfilesystem:\n  symlinks: within-workspace\n  # built-in credential pattern（core DEFAULT_DENY_PATHS）に追加する deny pattern\n  denyPaths: []\n\nmodel:\n  maxTier: medium\n  tierFallback: none\n\noutput:\n  maxTokens: 2000\n  repairAttempts: 1\n\nretry:\n  transientAttempts: 1\n"
       },
-      "name": "invocation denied executable keeps inner code",
+      "name": "invocation invalid grant spec keeps inner code",
       "opts": {
         "builtinPolicyPath": "builtin/policy.yaml",
         "invocation": {
           "command": {
             "grants": {
               "run-python": {
+                "argv": [
+                  "a*b"
+                ],
                 "executable": "python"
               }
             }

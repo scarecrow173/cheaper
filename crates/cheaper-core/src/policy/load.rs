@@ -10,7 +10,7 @@
 //! `{"version":1,"command":{"grants":{..}}}` shape — top-level keys ⊆
 //! `{version, command}` and `command` keys ⊆ `{grants}` — and merges
 //! with `MergeMode::Replace` immediately after the user layer, so the
-//! grant runtime semantics (deny list, argv pattern, executable pin,
+//! grant runtime semantics (argv pattern compile, executable pin,
 //! env/cwd rules) are identical to user-policy grants. The project
 //! layer cannot override it: `ProjectPartial` schema rejects the
 //! `command` section outright.
@@ -148,8 +148,8 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
             }
             None => {}
         }
-        // (2) Partial validate — `resolve_command_policy` が deny
-        // list・`ArgPattern::compile`・env/cwd 規則を継承する。
+        // (2) Partial validate — `resolve_command_policy` が
+        // `ArgPattern::compile`・env/cwd 規則を継承する。
         // shared validation 由来の失敗は inner code を保持し
         // `details.layer` のみ畳み込む。
         let validated = validate_policy_schema(
@@ -524,13 +524,14 @@ retry: {transientAttempts: 2}
     }
 
     #[test]
-    fn invocation_denied_executable_keeps_inner_code_with_layer() {
+    fn invocation_invalid_grant_spec_keeps_inner_code_with_layer() {
         let tmp = tempfile::tempdir().unwrap();
         write(tmp.path(), "builtin.yaml", BUILTIN);
-        // deny list 該当(interpreter)の grant — shared validation 由来の
-        // 失敗は inner code `InvalidRuntimePolicy` を保持する。
+        // wildcard 構造違反を含む grant spec — shared validation 由来の
+        // 失敗は inner code `InvalidRuntimePolicy` を保持する
+        // (PATH 非依存で deterministic)。
         let invocation = invocation_layer(json!({
-            "run-python": {"executable": "python"},
+            "run-python": {"executable": "python", "argv": ["a*b"]},
         }));
         let e = load_policy(&LoadPolicyOptions {
             builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
