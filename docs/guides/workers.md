@@ -53,11 +53,18 @@ You are a worker that ...（instruction 本文）
   file への path（worker file からの相対 path）。
 - `cheaper.writeScope`: `targets` を指定すると、runtime が
   `targets[].path` 以外への write を禁止する（writer 系 worker の
-  標準設定）。`command` tool とは非両立で、writeScope を宣言した
-  worker が `command` を expose すると scope 生成が
-  `POLICY_VIOLATION` で fail closed する（子 process の副作用を
+  標準設定）。`command` tool（`!fixed` grant surface）とは非両立で、
+  writeScope を宣言した worker が `command` を expose すると scope
+  生成が `POLICY_VIOLATION`（"command is incompatible with worker
+  writeScope"）で fail closed する（子 process の副作用を
   resource 層が観測できず coverage が vacuous になるため。詳細は
-  [command ガイド](./command.md)）。
+  [command ガイド](./command.md)）。`process` tool の task（`fixed`
+  grant）は writeScope 下でも実行できるが、task の `outputs` 宣言が
+  `targets` を coverage することが実行時に要求される — `outputs`
+  宣言（nonempty）は `outputs ⊆ writeScope` 必須、`outputs: []` は
+  「副作用を宣言しない」契約で coverage 成立、`outputs` 未宣言は
+  coverage を証明できず `POLICY_VIOLATION` で拒否される（tri-state
+  規約 — [managed process ガイド](./managed-process.md)）。
 - `cheaper.optionalTools`: `tools` に宣言した scope-gated tool
   （現状 `process` と `command` のみ）の **真部分集合** を列挙する
   opt-in key。列挙した tool は content-gate（`process.tasks` /
