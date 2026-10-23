@@ -24,7 +24,9 @@ use std::time::Duration;
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::model::config::ModelConfig;
-use cheaper_core::policy::process::ResolvedProcessPolicy;
+use cheaper_core::policy::exec::{
+    ExecDefaults, ExecGrant, ExecGrantScope, ExecHeartbeat, ResolvedExecPolicy,
+};
 use cheaper_core::policy::schema::{
     ExecutionPolicy, FilesystemPolicy, ModelPolicy, OutputPolicy, RetryPolicy, RoutePolicy,
     RuntimePolicy, TierFallback, ToolsPolicy,
@@ -197,24 +199,25 @@ fn policy_with(execution: ExecutionPolicy) -> RuntimePolicy {
                 max_read_bytes: 4096,
             },
         },
-        process: ResolvedProcessPolicy {
-            max_concurrent: 4,
-            tasks: Map::new(),
-            timeout: "2m".into(),
-            max_output_bytes: 4096,
-            kill_grace: "2s".into(),
-            heartbeat: cheaper_core::policy::process::ProcessHeartbeat {
-                interval: "30s".into(),
+        exec: ResolvedExecPolicy {
+            grants: BTreeMap::new(),
+            process: ExecDefaults {
+                max_concurrent: 4,
+                timeout: "2m".into(),
+                max_output_bytes: 4096,
+                kill_grace: "2s".into(),
+                heartbeat: ExecHeartbeat {
+                    interval: "30s".into(),
+                },
             },
-        },
-        command: cheaper_core::policy::command::ResolvedCommandPolicy {
-            max_concurrent: 4,
-            grants: std::collections::BTreeMap::new(),
-            timeout: "2m".into(),
-            max_output_bytes: 4096,
-            kill_grace: "2s".into(),
-            heartbeat: cheaper_core::policy::process::ProcessHeartbeat {
-                interval: "30s".into(),
+            command: ExecDefaults {
+                max_concurrent: 4,
+                timeout: "2m".into(),
+                max_output_bytes: 4096,
+                kill_grace: "2s".into(),
+                heartbeat: ExecHeartbeat {
+                    interval: "30s".into(),
+                },
             },
         },
         route: RoutePolicy::default(),
@@ -1154,9 +1157,24 @@ async fn degraded_run_prompt_lists_only_the_failed_gate_tool() {
         .unwrap()
         .to_string_lossy()
         .into_owned();
-    p.process.tasks.insert(
+    // 旧 `process.tasks` の `{"command":[exe],"inputs":[],"outputs":[],"cwd":".","env":{}}`
+    // 相当 — resolved 層では合成済み fixed grant を直接挿入する。
+    p.exec.grants.insert(
         "probe".to_string(),
-        json!({"command": [exe], "inputs": [], "outputs": [], "cwd": ".", "env": {}}),
+        ExecGrant {
+            executable: exe,
+            fixed: true,
+            argv: Some(vec![]),
+            inputs: Some(vec![]),
+            outputs: Some(vec![]),
+            cwd: ".".into(),
+            env: Map::new(),
+            timeout: "2m".into(),
+            kill_grace: "2s".into(),
+            max_output_bytes: 4096,
+            exit_codes: vec![0],
+            scope: ExecGrantScope::Trusted,
+        },
     );
     let mut fx = fixture(p);
     fx.worker = opt_in_worker_definition(&fx.root, true);

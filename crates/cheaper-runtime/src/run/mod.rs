@@ -334,12 +334,13 @@ impl<'a> RunCtx<'a> {
                     self.owns_invocation = true;
                     let invocation = create_invocation_tool_runtime(InvocationToolRuntimeOptions {
                         artifacts: None,
-                        process: Some(serde_json::to_value(&policy.process).unwrap_or_default()),
-                        // `policy.command` — resolved policy の機械的
-                        // serialize(`process` と同型。T1 は passthrough)。
-                        command: Some(serde_json::to_value(&policy.command).unwrap_or_default()),
+                        // `policy.exec` — resolved policy の機械的
+                        // serialize(`security` と同型。unified exec
+                        // doc `{grants,command,process}` は
+                        // `resolve_exec_policy` の入力 shape)。
+                        exec: Some(serde_json::to_value(&policy.exec).unwrap_or_default()),
                         // `policy.security` — resolved policy の機械的
-                        // serialize(`command`/`process` と同型。
+                        // serialize(`exec` と同型。
                         // invocation runtime の parity inner 値になる)。
                         security: Some(serde_json::to_value(&policy.security).unwrap_or_default()),
                         root: deps.root.clone(),
@@ -493,9 +494,12 @@ impl<'a> RunCtx<'a> {
                         write_scope,
                         read_strictness: None,
                         artifacts: None,
-                        process: Some(serde_json::to_value(&policy.process).unwrap_or_default()),
-                        command: Some(serde_json::to_value(&policy.command).unwrap_or_default()),
-                        // `policy.security` — `command` と同型の parity
+                        // `policy.exec` — unified exec doc の機械的
+                        // serialize(parity check 入力 — inner.exec と
+                        // の一致を `resolve_exec_policy` 再 resolve +
+                        // `PartialEq` で検査)。
+                        exec: Some(serde_json::to_value(&policy.exec).unwrap_or_default()),
+                        // `policy.security` — `exec` と同型の parity
                         // check 入力(inner.security との一致を検査)。
                         security: Some(serde_json::to_value(&policy.security).unwrap_or_default()),
                         root: deps.root.clone(),

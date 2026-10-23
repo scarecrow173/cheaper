@@ -23,7 +23,7 @@ use std::time::{Duration, Instant};
 use cheaper_core::errors::CheaperError;
 use cheaper_core::model::config::{ModelConfig, TierPreferences};
 use cheaper_core::model::tier::Tier;
-use cheaper_core::policy::process::ResolvedProcessPolicy;
+use cheaper_core::policy::exec::{ExecDefaults, ExecHeartbeat, ResolvedExecPolicy};
 use cheaper_core::policy::schema::{
     ExecutionPolicy, FilesystemPolicy, ModelPolicy, OutputPolicy, RetryPolicy, RoutePolicy,
     RuntimePolicy, TierFallback, ToolsPolicy,
@@ -42,7 +42,7 @@ use cheaper_runtime::run::{
     run_worker, CompletionModelFactory, RigSessionFactory, RunWorkerDeps, RunWorkerOk, SessionSpec,
 };
 use cheaper_runtime::Runtime;
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 
 // ---------------------------------------------------------------------------
 // gate
@@ -227,24 +227,25 @@ fn fixture() -> E2eFixture {
                 max_read_bytes: 4096,
             },
         },
-        process: ResolvedProcessPolicy {
-            max_concurrent: 4,
-            tasks: Map::new(),
-            timeout: "10m".into(),
-            max_output_bytes: 4096,
-            kill_grace: "2s".into(),
-            heartbeat: cheaper_core::policy::process::ProcessHeartbeat {
-                interval: "30s".into(),
+        exec: ResolvedExecPolicy {
+            grants: BTreeMap::new(),
+            process: ExecDefaults {
+                max_concurrent: 4,
+                timeout: "10m".into(),
+                max_output_bytes: 4096,
+                kill_grace: "2s".into(),
+                heartbeat: ExecHeartbeat {
+                    interval: "30s".into(),
+                },
             },
-        },
-        command: cheaper_core::policy::command::ResolvedCommandPolicy {
-            max_concurrent: 4,
-            grants: std::collections::BTreeMap::new(),
-            timeout: "10m".into(),
-            max_output_bytes: 4096,
-            kill_grace: "2s".into(),
-            heartbeat: cheaper_core::policy::process::ProcessHeartbeat {
-                interval: "30s".into(),
+            command: ExecDefaults {
+                max_concurrent: 4,
+                timeout: "10m".into(),
+                max_output_bytes: 4096,
+                kill_grace: "2s".into(),
+                heartbeat: ExecHeartbeat {
+                    interval: "30s".into(),
+                },
             },
         },
         route: RoutePolicy::default(),

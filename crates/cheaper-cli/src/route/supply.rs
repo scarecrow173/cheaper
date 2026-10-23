@@ -20,11 +20,11 @@ use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::workspace::deny_paths::{create_path_denylist, PathDenylist};
 use cheaper_core::workspace::paths::canonicalize_workspace_root;
 
-use super::resolve::CommandPolicyView;
+use super::resolve::ExecPolicyView;
 use super::routes::{self, EffectiveRoutes, RouteLoadOptions};
 
 /// resolve の入力材料 — hook eval では firing 中に owned で保持し、
-/// `RouteEvalInput`/`CommandPolicyView` はこれへの borrow として
+/// `RouteEvalInput`/`ExecPolicyView` はこれへの borrow として
 /// 構築する。
 pub struct RouteSupply {
     pub routes: EffectiveRoutes,
@@ -35,16 +35,16 @@ pub struct RouteSupply {
     pub root: String,
     /// `security.execDenyPatterns` の compiled deny(issue #164)—
     /// load 済み `policy.security` から supply 構築で 1 回 compile
-    /// し、viability の `CommandPolicyView` へ供給する。
+    /// し、viability の `ExecPolicyView` へ供給する。
     pub exec_deny: ExecDenyList,
 }
 
 impl RouteSupply {
-    /// viability 評価の参照面 — `check_command_execution` と同一
-    /// predicate の policy 環境。
-    pub fn command_view(&self) -> CommandPolicyView<'_> {
-        CommandPolicyView {
-            policy: &self.policy.command,
+    /// viability 評価の参照面 — `check_exec_execution` と同一
+    /// predicate の policy 環境(unified `policy.exec` — design §(j))。
+    pub fn exec_view(&self) -> ExecPolicyView<'_> {
+        ExecPolicyView {
+            policy: &self.policy.exec,
             root: &self.root,
             symlink_policy: self.policy.filesystem.symlinks,
             denylist: Some(&self.denylist),
@@ -56,7 +56,7 @@ impl RouteSupply {
     pub fn eval_input(&self) -> crate::hook::routing_policy::RouteEvalInput<'_> {
         crate::hook::routing_policy::RouteEvalInput {
             routes: &self.routes,
-            command_policy: self.command_view(),
+            exec_policy: self.exec_view(),
         }
     }
 }

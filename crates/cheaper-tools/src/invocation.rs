@@ -263,7 +263,7 @@ impl InvocationToolRuntime {
                 .parent(lease, &options.owner_id)
                 .map_err(|e| Box::new(e) as ToolError)?;
         }
-        // `{...options, artifacts: opts.artifacts, process: opts.process,
+        // `{...options, artifacts: opts.artifacts, exec: opts.exec,
         // signal: composite, abortGraceMs: options.abortGraceMs ?? opts.abortGraceMs}`。
         let signal = match options.runtime.signal {
             Some(owner) => AbortSignal::any(&[inner.controller.signal(), owner]),

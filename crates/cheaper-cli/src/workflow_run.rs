@@ -238,22 +238,16 @@ fn ensure_invocation(shared: &Shared) -> Result<InvocationToolRuntime, ToolError
             reader: Some(reader),
             publisher: Some(publisher),
         }),
-        // `process: effectivePolicy.process` — resolved policy を
-        // serialize して `Partial<ProcessPolicy>` raw JSON として渡す
-        // (invocation 側が `resolve_process_policy` で再 resolve する)。
-        process: Some(
-            serde_json::to_value(&shared.policy.process).map_err(|e| -> ToolError {
+        // `exec: effectivePolicy.exec` — resolved policy を
+        // serialize して unified exec-doc raw JSON として渡す
+        // (invocation 側が `resolve_exec_policy` で再 resolve し
+        // inner.exec と parity check する)。
+        exec: Some(
+            serde_json::to_value(&shared.policy.exec).map_err(|e| -> ToolError {
                 Box::new(CheaperError::new(ErrorCode::InternalError, e.to_string()))
             })?,
         ),
-        // `command` も `process` と同型に resolved policy を serialize
-        // して渡す(T1 は passthrough のみ)。
-        command: Some(
-            serde_json::to_value(&shared.policy.command).map_err(|e| -> ToolError {
-                Box::new(CheaperError::new(ErrorCode::InternalError, e.to_string()))
-            })?,
-        ),
-        // `security` も `process`/`command` と同型に resolved policy
+        // `security` も `exec` と同型に resolved policy
         // を serialize して渡す(issue #164 — invocation runtime の
         // parity inner 値)。
         security: Some(serde_json::to_value(&shared.policy.security).map_err(
@@ -503,11 +497,10 @@ impl JobExecutor for ToolJobExecutor {
                     write_scope: None,
                     read_strictness: None,
                     artifacts: None,
-                    process: None,
-                    command: None,
-                    // `command: None` と同型 — parity check を skip し、
-                    // invocation inner の security が再注入される
-                    // (issue #164)。
+                    // `exec: None` — parity check を skip し、
+                    // invocation inner の exec/security が再注入される
+                    // (issue #164/#165)。
+                    exec: None,
                     security: None,
                     root: shared.root.clone(),
                     symlink_policy: shared.policy.filesystem.symlinks,

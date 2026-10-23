@@ -7,14 +7,11 @@
 
 use std::path::Path;
 
-use cheaper_core::policy::command::ResolvedCommandPolicy;
-use cheaper_core::policy::process::argv_shell_re;
+use cheaper_core::policy::exec::{argv_shell_re, ResolvedExecPolicy};
 use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::workspace::deny_paths::PathDenylist;
 use cheaper_core::workspace::paths::SymlinkPolicy;
-use cheaper_tools::tools::command::{
-    check_command_execution, CommandToolOptions, RouteCommandContext,
-};
+use cheaper_tools::tools::exec::{check_exec_execution, ExecToolOptions, RouteCommandContext};
 
 use super::routes::EffectiveRoutes;
 use crate::hook::routing_policy::{command_name, is_env_prefix, CWD_CHANGING_COMMANDS};
@@ -54,8 +51,8 @@ pub struct ResolveInput<'a> {
     pub cwd: &'a str,
     /// `routes::load` 済みの effective route set。
     pub routes: &'a EffectiveRoutes,
-    /// effective command policy(`load_policy` resolved)の参照面。
-    pub command_policy: &'a CommandPolicyView<'a>,
+    /// effective exec policy(`load_policy` resolved)の参照面。
+    pub exec_policy: &'a ExecPolicyView<'a>,
     /// 入力 command が複数 shell segment・unsafe segment/token を
     /// 含む場合に caller が立てる flag(`route resolve --command`
     /// の tokenize 結果)。hook eval は segment 安全性を resolve
@@ -63,12 +60,13 @@ pub struct ResolveInput<'a> {
     pub unsafe_command: bool,
 }
 
-/// viability の grant-match/preflight が参照する command policy
-/// 環境 — `check_command_execution` と同一 predicate で評価する
-/// ため `CommandToolOptions` 構築に必要な面だけを束ねる。
+/// viability の grant-match/preflight が参照する exec policy
+/// 環境 — `check_exec_execution` と同一 predicate で評価する
+/// ため `ExecToolOptions` 構築に必要な面だけを束ねる
+/// (design §(j) — 旧 `CommandPolicyView`)。
 #[derive(Clone, Copy)]
-pub struct CommandPolicyView<'a> {
-    pub policy: &'a ResolvedCommandPolicy,
+pub struct ExecPolicyView<'a> {
+    pub policy: &'a ResolvedExecPolicy,
     /// pin 解決・`prepare_cwd` の workspace root(通常 resolve
     /// input の `cwd` と同じ値)。
     pub root: &'a str,
@@ -76,7 +74,7 @@ pub struct CommandPolicyView<'a> {
     pub denylist: Option<&'a PathDenylist>,
     /// `security.execDenyPatterns` の compiled deny(issue #164)—
     /// 全 field borrowed の struct 規約に従い `&'a` で受ける
-    /// (`Copy` 維持)。`pin_command_grant`・`CommandToolOptions`
+    /// (`Copy` 維持)。`pin_exec_grant`・`ExecToolOptions`
     /// の適用点 2/3 で同一 predicate を見る。
     pub exec_deny: &'a ExecDenyList,
 }
@@ -308,37 +306,47 @@ fn viability(
         return Viability::MissingTarget;
     }
     // no-grant — `command::execute` の事前 check 全通過が必須
-    // (routing≠authorization、D2)。`check_command_execution` と
+    // (routing≠authorization、D2)。`check_exec_execution` と
     // 同一 predicate で、exec_cwd=payload cwd・accept_any_exit
-    // の routed scope 前提で評価する。
-    let Some(grant) = input.command_policy.policy.grants.get(&route.grant) else {
+    // の routed scope 前提で評価する。route eligibility —
+    // `scope==trusted && !fixed` の grant のみ route 対象
+    // (`fixed`・`scope:"project"`・未知名は全て NoGrant —
+    // `is_route_eligible` が単一 seam、design §(j))。
+    let Some(grant) = input
+        .exec_policy
+        .policy
+        .grants
+        .get(&route.grant)
+        .filter(|g| ResolvedExecPolicy::is_route_eligible(g))
+    else {
         return Viability::NoGrant;
     };
-    let Ok(pinned) = cheaper_tools::tools::command::pin_command_grant(
+    let Ok(pinned) = cheaper_tools::tools::exec::pin_exec_grant(
         &route.grant,
         grant,
-        input.command_policy.root,
-        input.command_policy.symlink_policy,
-        input.command_policy.denylist,
-        input.command_policy.exec_deny,
+        input.exec_policy.root,
+        input.exec_policy.symlink_policy,
+        input.exec_policy.denylist,
+        input.exec_policy.exec_deny,
     ) else {
         return Viability::NoGrant;
     };
-    let options = CommandToolOptions {
-        root: input.command_policy.root.to_string(),
-        symlink_policy: input.command_policy.symlink_policy,
-        command: input.command_policy.policy.clone(),
+    let options = ExecToolOptions {
+        root: input.exec_policy.root.to_string(),
+        symlink_policy: input.exec_policy.symlink_policy,
+        exec: input.exec_policy.policy.clone(),
         pins: std::collections::BTreeMap::from([(route.grant.clone(), pinned)]),
         on_timeout: None,
-        denylist: input.command_policy.denylist.cloned(),
-        exec_deny: input.command_policy.exec_deny.clone(),
+        denylist: input.exec_policy.denylist.cloned(),
+        exec_deny: input.exec_policy.exec_deny.clone(),
+        write_scope: None,
         route_context: Some(RouteCommandContext {
             exec_cwd: Some(input.cwd.to_string()),
             accept_any_exit_code: true,
             ..RouteCommandContext::default()
         }),
     };
-    if check_command_execution(&options, &route.grant, &out.exec_args).is_err() {
+    if check_exec_execution(&options, &route.grant, &out.exec_args).is_err() {
         return Viability::NoGrant;
     }
     // stdin-unsupported — interactive command curated list。
@@ -354,7 +362,7 @@ mod tests {
     use crate::route::routes::{
         EffectiveRoutes, InvalidRouteGroup, Route, RouteLayer, SuppressedRoute,
     };
-    use cheaper_core::policy::command::resolve_command_policy;
+    use cheaper_core::policy::exec::resolve_exec_policy;
     use cheaper_core::policy::security::ExecDenyList;
     use serde_json::json;
 
@@ -372,11 +380,11 @@ mod tests {
     }
 
     fn policy_view<'a>(
-        policy: &'a ResolvedCommandPolicy,
+        policy: &'a ResolvedExecPolicy,
         root: &'a str,
         exec_deny: &'a ExecDenyList,
-    ) -> CommandPolicyView<'a> {
-        CommandPolicyView {
+    ) -> ExecPolicyView<'a> {
+        ExecPolicyView {
             policy,
             root,
             symlink_policy: SymlinkPolicy::Deny,
@@ -389,14 +397,16 @@ mod tests {
         tokens.iter().map(|s| s.to_string()).collect()
     }
 
-    fn grant_policy() -> ResolvedCommandPolicy {
+    fn grant_policy() -> ResolvedExecPolicy {
         // pin 解決可能な executable(test binary)で grant を宣言し、
-        // `check_command_execution` が受理する形を作る。
+        // `check_exec_execution` が受理する形を作る。exec-doc
+        // shape(`{"grants":{…}}`)を `resolve_exec_policy` へ
+        // 直接渡す。
         let exe = std::env::current_exe()
             .unwrap()
             .to_string_lossy()
             .into_owned();
-        resolve_command_policy(
+        resolve_exec_policy(
             Some(&json!({
                 "grants": {
                     "cargo-test": {
@@ -433,7 +443,7 @@ mod tests {
             argv: &argv(&["cheaper", "run", "w"]),
             cwd: &root,
             routes: &routes,
-            command_policy: &view,
+            exec_policy: &view,
             unsafe_command: false,
         };
         assert!(!resolve(&input).matched);
@@ -442,7 +452,7 @@ mod tests {
             argv: &argv(&["CI=1", "cargo", "test", "--workspace"]),
             cwd: &root,
             routes: &routes,
-            command_policy: &view,
+            exec_policy: &view,
             unsafe_command: false,
         };
         let out = resolve(&input);
@@ -471,7 +481,7 @@ mod tests {
                 argv: &argv(tokens),
                 cwd: &root,
                 routes: &routes,
-                command_policy: &view,
+                exec_policy: &view,
                 unsafe_command: false,
             })
         };
@@ -551,7 +561,7 @@ mod tests {
             argv: &argv(&["cargo", "test", "-p", "x"]),
             cwd: &root,
             routes: &routes,
-            command_policy: &view,
+            exec_policy: &view,
             unsafe_command: false,
         });
         assert_eq!(out.route.as_deref(), Some("long"));
@@ -595,7 +605,7 @@ mod tests {
             argv: &argv(&["helper", "x"]),
             cwd: &root,
             routes: &routes,
-            command_policy: &view,
+            exec_policy: &view,
             unsafe_command: false,
         });
         assert!(out.matched);
