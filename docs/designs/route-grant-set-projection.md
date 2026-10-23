@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034KUgF5QB3WuzFG6PmVvr"
 type: "design"
-status: "draft"
+status: "approved"
 title: "route grant-set projection — grants 宣言・viability 条件緩和・record split"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -968,7 +968,7 @@ finish(): captured.details → executed{grant,argv}
   `project_grants`(:118-130)、`argv_shell_re` 削除(:144-150)、
   test(:1039-1062)の set 呼出し + member case。
 - **run/projection** — `route/run.rs`:`project_grants` 呼出し
-  (:121)+ `BTreeSet` import、`details.{grant,argv}` 抽出
+  (:121)、`details.{grant,argv}` 抽出
   (:465 以降)、`RouteRecordInput` literal(:575-588)、
   `prepare_projects_grants…` test(:701-719)・`finish` test の
   `completed_exec_result`(:899-912 — `details` に grant/argv

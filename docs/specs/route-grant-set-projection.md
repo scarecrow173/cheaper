@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034KTMfXYD5ZlGZCRb8Paj"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "route grant-set projection — grants 宣言・viability 条件緩和・usage record split"
 created: "2026-10-23"
 updated: "2026-10-23"

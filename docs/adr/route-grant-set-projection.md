@@ -1,7 +1,7 @@
 ---
 id: "ADR-034KTMnPFDF25x710LFSKY"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "route grant-set projection — grants 宣言・viability 条件緩和・record split"
 created: "2026-10-23"
 updated: "2026-10-23"
