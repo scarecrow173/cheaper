@@ -21,6 +21,8 @@ relations:
       - type: "file"
         path: "crates/cheaper-core/src/policy/command.rs"
       - type: "file"
+        path: "crates/cheaper-core/src/policy/load.rs"
+      - type: "file"
         path: "crates/cheaper-tools/src/tools/command/mod.rs"
       - type: "file"
         path: "crates/cheaper-tools/src/tools/proc/executable.rs"
@@ -29,11 +31,15 @@ relations:
       - type: "file"
         path: "crates/cheaper-tools/src/registry.rs"
       - type: "file"
+        path: "crates/cheaper-cli/src/policy.rs"
+      - type: "file"
         path: "crates/cheaper-core/tests/golden/policy_process.rs"
       - type: "file"
         path: "crates/cheaper-core/tests/golden/fixtures/policy/process.json"
       - type: "file"
         path: "crates/cheaper-core/tests/golden/fixtures/policy/load.json"
+      - type: "file"
+        path: "crates/cheaper-core/tests/golden/fixtures/policy/schema.json"
       - type: "file"
         path: "crates/cheaper-tools/tests/fixtures/process.json"
       - type: "file"
@@ -42,6 +48,8 @@ relations:
         path: "crates/cheaper-tools/tests/proc_command.rs"
       - type: "file"
         path: "crates/cheaper-tools/tests/proc_degrade.rs"
+      - type: "file"
+        path: "crates/cheaper-tools/tests/proc_invocation.rs"
       - type: "file"
         path: "crates/cheaper-tools/tests/proc_process.rs"
       - type: "file"
@@ -182,7 +190,7 @@ reject する」分岐のみ。残るのは (a) spawn viability（OS が spawn
 | `ArgPattern::compile` wildcard 構造検査 | 252-271 | A6 | **残す** — bare `*` 位置・prefix `*`・複数 `*` の構文規約 |
 | `is_shell_process_executable` in `resolve_command_policy` | 372-376 | A8 | **削除** — error 同上 |
 | `is_denied_command_executable` in `resolve_command_policy` | 377-381 | A9 適用点 1 | **削除** — error `"interpreter or exec-capable executable is forbidden"` ごと除去 |
-| import 行 | 24-28 | — | `argv_shell_re`・`is_shell_process_executable` を import から外す（`bounded_duration`・`relative`・`str_vec`・`ProcessHeartbeat`・`DEFAULT_*`・`MAX_PROCESS_OUTPUT_BYTES` は残る） |
+| import 行 | 23-28 | — | `argv_shell_re`・`is_shell_process_executable` を import から外す（`bounded_duration`・`relative`・`str_vec`・`ProcessHeartbeat`・`DEFAULT_*`・`MAX_PROCESS_OUTPUT_BYTES` は残る）。`use crate::nodepath`（23 行目）も除去 — 唯一の consumer は `is_relative_executable_path` の :219-220 で dead import 化する |
 | env dup/NUL・`relative`・`resolve_command_grant`・`project_grant`・`command_grant_resources` | 各所 | A7/C9/E6 | **残す** |
 
 ### Removal Contract — `crates/cheaper-tools/src/tools/command/mod.rs`
@@ -201,9 +209,9 @@ reject する」分岐のみ。残るのは (a) spawn viability（OS が spawn
 | `verify_pinned_executable` 签名 | 254 | — | `root` 引数を**除去**（唯一の用途は `within_workspace` で dead param 化）。`check_command_execution` の call site も追随 |
 | `authorize_args` の `argv_shell_re` loop | 468-475 | A10 | **削除** — `"argument contains forbidden shell metacharacters"` error ごと除去 |
 | `authorize_args` の pattern match | 476-487 | A6 | **残す** — `grant.argv: None` なら無条件受理・`Some` なら compile + `matches` 照合のみ |
-| import 行 | 25-29 | — | `is_denied_command_executable`・`is_relative_executable_path`・`argv_shell_re` を import から外す |
+| import 行 | 24-29 | — | `is_denied_command_executable`・`is_relative_executable_path`・`argv_shell_re` を import から外す。`use cheaper_core::nodepath`（24 行目）も除去 — consumer は `within_workspace` の :168-169 と削除する `within_workspace_boundary` test（:869,878）のみで dead import 化する |
 | pin map 不在の fail-closed（`"no pinned executable"`） | 451-458 | C4 系 | **残す** |
-| module doc・各 fn doc comment | 1-17, 172-205, 248-253, 403-427, 516-518 | — | deny/residency/metachar 言及を除去後の実態へ restate |
+| module doc・各 fn doc comment・`check_command_execution` 内 comment | 1-17, 172-205, 248-253, 403-427, 447-450, 516-518 | — | deny/residency/metachar 言及を除去後の実態へ restate（:447-450 の「deny/residency の同一 predicate」は `native_executable` 再解決 + path 同一性のみの記述へ） |
 
 ### Removal Contract — `crates/cheaper-tools/src/tools/proc/executable.rs`
 
@@ -214,6 +222,7 @@ reject する」分岐のみ。残るのは (a) spawn viability（OS が spawn
 | win32 `.exe/.com` 拡張子要求 | 99-104 | spawn viability | **残す** — Windows は `.exe`/`.com` 以外を直接 CreateProcess 不能 |
 | X_OK | 105-107 | spawn viability | **残す** |
 | magic-byte read + 判定 | 108-117 | B3 | **削除** — `use std::io::Read`（13 行目）はこの読み込み専用のため import ごと除去 |
+| import 行 | 13, 17 | — | `use std::io::Read`・`use cheaper_core::policy::process::is_shell_process_executable`（17 行目 — consumer は `native()` :92 と front-door :143 で共に除去）を import から外す。`nodepath`・`PathDenylist`・`realpath`/`resolve_workspace_path`/`SymlinkPolicy` は残る |
 | `native_executable()` wrapper | 124-126 | B2 | **残す** — pin 再検証の再解決 vehicle。doc comment の「native magic」言及は訂正 |
 | front-door `is_shell_process_executable` | 143-145 | F3 | **削除** — declared `sh`/`bash`/`*.sh` は PATH・path 解決へ進む |
 | workspace-relative 解決 + denylist 検査 | 146-157 | B1/E2 | **残す** — `resolve_workspace_path`（workspace 境界）と `PathDenylist` は宣言契約 |
@@ -242,6 +251,29 @@ reject する」分岐のみ。残るのは (a) spawn viability（OS が spawn
   workspace-resident/PATH 解決しない」等の前提記述を訂正
   （test 本体の変更が伴うのは proc_command/proc_process/
   differential のみ）。
+- `crates/cheaper-cli/src/policy.rs:8-9`（module doc）・
+  `:245-247`（`write_validated` doc）— 「deny list」の言及を
+  除去後の検査内容（argv pattern compile・env/cwd 規則）へ
+  restate。
+- `crates/cheaper-core/src/policy/load.rs:13`（module doc）・
+  `:151-152`（Partial validate comment）— 同じく「deny list」
+  言及を除去後の検査内容へ restate。
+- `crates/cheaper-cli/tests/run_dev_seam.rs:359-362`・
+  `crates/cheaper-tools/tests/proc_invocation.rs:581-584`
+  （`self_grant` doc）— 「workspace-resident 拒否に掛からない」
+  「absolute native executable」等の前提記述を「pin は ambient
+  PATH 非依存で deterministic」等の除去後の趣旨へ訂正。
+- `crates/cheaper-tools/src/tools/proc/executable.rs:246-252`・
+  `crates/cheaper-tools/src/tools/command/mod.rs:628-634` の
+  `native_bytes()` test fixture — magic-byte 内容審査の除去で
+  fixture 名・前提が stale 化するため rename・restate（file
+  内容はもはや検査対象ではなく、実在性・実行 bit だけが意味を
+  持つ）。
+- `crates/cheaper-cli/src/route/resolve.rs:279-281` —
+  「grant 側は metachar を拒否するため安全性分類へ倒す」の
+  前提は本 issue で一時的に偽になるが、viability 層の審査依存
+  整理は issue 4 の scope。**本 issue では comment を修正
+  しない**（known-stale としてここに記録するのみ）。
 
 ### #164 境界（何を残し何を消すか）
 
@@ -331,6 +363,17 @@ authorize_args（pattern match のみ → argv 省略/rest marker で受理）
   OS/Rust 側の argv 制約であって cheaper の policy 層ではない。
 - `env` の NUL 規約（`process.rs:304`・`command.rs:415`）と
   `relative()` の `'\0'` 拒否は**別規約として維持** — 混同しない。
+- **declared executable 内の `\0` は縮退しない** — `\0` を含む
+  executable は realpath が失敗し、restate 後の `unsupported()`
+  message で pin 層 `POLICY_VIOLATION` のまま失敗する（spawn
+  層へは到達しない）。argv token の `\0` と異なり error 分類は
+  不変。この pin は `unpinnable_executable_fails_closed` 系の
+  fail-closed test（`\0` 入り executable spec → `POLICY_VIOLATION`
+  + restate 後 message）で観測可能。
+- **argv pattern 内の literal `\0`** — `ArgPattern::compile` は
+  wildcard 構造のみを検査するため `\0` を含む pattern 要素は
+  compile を通り、それに match した arg は上記 argv token と
+  同じく spawn 層で失敗する。
 - この分類変化を観測するのは `proc::run` 経由の tool error →
   `command::execute` → integration test（下記 Churn Plan で
   `shell_metacharacters_are_rejected` の再用途先として pin 化）。
@@ -352,6 +395,7 @@ authorize_args（pattern match のみ → argv 省略/rest marker で受理）
 | 同 `isShellProcessExecutable` op 14 件 | predicate 参照 | **削除** — predicate ごと消える |
 | `tests/golden/policy_process.rs` | import・op 分岐（L1-3, 22-24） | **更新** — `is_shell_process_executable` import・`"isShellProcessExecutable"` op arm を除去 |
 | `policy/load.json` "invocation denied executable keeps inner code" | invocation `python` grant → INVALID_RUNTIME_POLICY + `layer=invocation` | **再用途** — spec を `{"executable":"python","argv":["a*b"]}` へ変更（wildcard 構造違反で同一 code+layer を deterministic に維持）。case 名は `"invocation invalid grant spec keeps inner code"` 系へ rename。expected 不変 |
+| `policy/schema.json` "process shell task rejected pre-merge" | `mode:complete`・`op:validatePolicySchema` で `command:["sh"]` task（case は :714-774）→ INVALID_RUNTIME_POLICY | **更新** — F3 除去で `validate_policy_schema` 内の `resolve_process_policy` が受理するため golden mismatch になる。expected を `{"ok":{"policy":<validated input echo>}}` の success shape（`validatePolicySchema` op は resolved ではなく validated 入力を echo する）へ更新し、case 名は `"process shell task accepted pre-merge"` 系へ rename |
 | `tools/tests/fixtures/process.json` "bare node task is an explicit Rust error" | `expectRust` divergence pin（803-841 行目 — `POLICY_VIOLATION` patch） | **更新** — `expectRust` block を除去し base expected（実 `node` 実行 → "bare node" stdout）へ戻す。case 名は `"bare node task resolves via PATH"` 系へ rename。前提: mise toolchain の node が PATH 上にあり `cargo test` が ambient PATH を継承する（`mise run check` 経路では保証される） |
 
 ### unit test（src 内 `#[cfg(test)]`）
@@ -364,6 +408,7 @@ authorize_args（pattern match のみ → argv 省略/rest marker で受理）
 | `resolve_rejects_denied_and_shell_executables` | command.rs | **再用途** — `python3`/`python3.13t`/`env`/`ld-linux-x86-64.so.2`/`bash`/`deploy.sh` が受理される declared-name acceptance pin へ（spec AC「python/ssh/tar/.sh を含む grant が拒否されない」の resolve 層 pin） |
 | `argv_pattern_compile_and_match` | command.rs | **更新** — `bad` list から `"a|b"`・`"x;y"`・`"v$(i)"` を除去（literal token として受理されることを assert へ追加可）。`"a*b"`・`"**"`・`"*a"`・非末尾 bare `*`・resolve 経由 `a*b` の INVALID_RUNTIME_POLICY は維持 |
 | `relative_executable_path_prefilter` | command.rs | **削除** |
+| `invocation_denied_executable_keeps_inner_code_with_layer` | load.rs（:527-545） | **再用途** — `{"executable":"python"}` spec は受理されるようになり `unwrap_err` が panic するため、spec を `{"executable":"python","argv":["a*b"]}`（wildcard 構造違反 → `ArgPattern::compile` の INVALID_RUNTIME_POLICY）へ変更し、inner code 保持 + `details.layer="invocation"` + `"invalid command policy"` を PATH 非依存で deterministic に pin。rename: `invocation_invalid_grant_spec_keeps_inner_code_with_layer` 系。`load.rs:13`・`:151-152` の「deny list」comment は上記 churn 対象 |
 | `bare_node_is_an_explicit_policy_violation` | executable.rs | **再用途** — `search_path: Some(bin_dir)`（tempdir に `node`/`node.exe` を配置）で `node` が解決される positive pin へ。`Some("")`（PATH 遮断）は引き続き unsupported error（rename: `bare_node_resolves_via_search_path` 系） |
 | `error_subject_is_parameterized_by_caller` | executable.rs | **更新** — `"node"` を使った subject pin を missing executable（例 `"missing-tool"`）へ置き換えて subject 引数の文言規約のみ pin |
 | `refuses_script_shims_and_executable_text` | executable.rs | **再用途** — `pnpm.cmd`/`script`(+X) の解釈を platform 分岐で pin: unix では +X 付き shim/text は**解決される**（B3/B6 除去の positive pin）、win32 では `.cmd`/`script`（非 `.exe/.com`）が引き続き viability で reject（`.exe` 拡張子の text file は解決される） |
@@ -389,6 +434,7 @@ authorize_args（pattern match のみ → argv 省略/rest marker で受理）
 | `spawn_time_revalidation_detects_swapped_executable` | proc_command.rs | **再用途** — B3 非依存の **path 差替** pin へ再設計: cfg(unix) では pinned file を symlink へ置換し realpath 不一致 → `"path changed since pin"`。全 platform で pinned file 削除 → `"no longer resolves"`。**内容差替（同 path 非 native 化）は検出対象外**であることを positive assert（差替 file が検査を通り実行まで進むこと — 実 spawn しないなら check が通ることを pin） |
 | `check_command_execution_shares_execute_predicate` | proc_command.rs | **更新** — metachar sub-assertion（`["test","a;rm"]` → POLICY_VIOLATION）は `"test","*"` pattern に適合して受理へ転換。unknown grant・pattern mismatch・pin 不在の各 assert は維持 |
 | `pin_failure_stays_hard_even_when_opted_in` | proc_degrade.rs | **更新** — message assertion を restate 後文言へ |
+| `resolve_policy_errors_stay_hard_even_when_opted_in` | proc_degrade.rs（:272-284） | **更新** — `{"executable":"node"}` は除去後に policy resolve を通り pin へ進むため環境依存の失敗になる（`node` が PATH にあれば runtime 構築が成功し `unwrap_err` が panic、無ければ expected の `InvalidRuntimePolicy` ではなく pin の `POLICY_VIOLATION`）。spec を `{"executable":"node","argv":["a*b"]}`（wildcard 構造違反）へ変更し、`resolve_command_policy` の `InvalidRuntimePolicy` が opt-in でも hard のままであることを PATH 非依存で pin |
 | `node_task_is_an_explicit_policy_violation` | proc_process.rs | **再用途** — `["node","-e",<script>]` task が PATH 解決され実 `node` で実行される pin へ（mise toolchain の node 前提 — `mise run check` 経路では保証。rename: `node_task_resolves_via_path` 系）。代替として case 削除も可だが、B5 除去の end-to-end pin として維持を推奨 |
 
 ### dev-seam / regression / CLI integration
@@ -407,8 +453,11 @@ authorize_args（pattern match のみ → argv 省略/rest marker で受理）
   path 使用。bare `node` 非該当。
 - `benchmarks/scenarios/scenarios.json` — `{node}` →
   `process.execPath` 置換で非該当。
-- `route.rs`・`route_run.rs`・`hook.rs`・`proc_invocation.rs` —
-  grant executable は test binary 自身（非 deny・workspace 外）。
+- `route.rs`・`route_run.rs`・`hook.rs` — grant executable は
+  test binary 自身（非 deny・workspace 外）。`proc_invocation.rs`
+  の test 本体も同じ前提で不変だが、`self_grant` doc comment
+  （:581-584）の「workspace-resident 拒否」記述のみ comment
+  churn 対象（上記「message/comment churn 関連 site」参照）。
 - `resources/policy.yaml` — grants/tasks 空。
 - `route/resolve.rs` tests — `argv_shell_re` viability 分類は不変
   （`a;rm` → UnsafeCommand の assert は残る）。grant は test
@@ -535,7 +584,26 @@ task 経路: `resolve_process_policy` は task command/argv を内容
   exec 受理・route 不発）。
 - **docs 全体の正直性 sweep** — issue 7。「shell-free」
   「boundary/sandbox」表現と ENOEXEC fallback・内容差替非検出・
-  破壊的変更の migration guide。
+  破壊的変更の migration guide。sweep は少なくとも以下を列挙
+  対象に含めること: `docs/guides/` 全体（特に `command.md` の
+  deny list・metachar・workspace-resident 記述と
+  `managed-process.md` の shim・native magic・bare `node` 固定
+  ルール記述）、
+  `docs/test-specs/invocation-scoped-command-grants.md`（deny
+  list 前提の Rule・AC 記述 — invocation layer が「deny list
+  を迂回しない」とする保証は spec として書き直しが必要）、
+  および consumer 配布物の
+  `packages/apm/.apm/skills/cheaper-usage/SKILL.md:353`
+  （`policy grant add` の "deny list" 記述 — repo 内 source の
+  修正だけでは配布済み consumer へ届かない）。
+- **platform 差の明文化** — issue 7。除去後も Windows の
+  `.bat`/`.cmd`/`.ps1` は残置する `.exe`/`.com` viability rule
+  （`executable.rs:99-104` — CreateProcess が直接 spawn できる
+  拡張子の制約）で pin 時に失敗し続ける。script/shim が解決
+  されるのは unix の +X file のみであり、docs は「script が
+  実行可能になる」と platform 非依存に読める記述を避ける
+  必要がある（`refuses_script_shims_and_executable_text` の
+  platform 分岐 pin と整合させる）。
 - **deny 一覧の migration 資料化** — `command_denied_executable_re`
   の builtin 一覧を「旧既定値」として docs へ移す作業は
   #164/#169。本 issue では一覧ごと削除するのみ。
@@ -550,6 +618,23 @@ within_workspace\|is_relative_executable_path\|script_ext_re\|\
 shell_executable_re\|command_denied_executable_re\|\
 is_denied_command_executable" crates/
   ```
+
+- [ ] 旧語彙の残存確認（spec R10 — error message・doc comment・
+  test comment の正直性）:
+
+  ```bash
+  grep -rniE "deny|workspace-resident|shim|native magic" crates/
+  ```
+
+  残存 hit を全て確認し、除去した審査への言及が残らないこと。
+  許容する残存 hit は (a) `denyPaths`/`PathDenylist`/
+  `denied_declared_path` 等の denylist 機構（E2 — executable
+  deny とは別物）、(b) hook/permission 判定の `deny` verdict・
+  capability/empty-grants 由来の `denied` test 名、(c) 「shim」
+  の非該当用法（`serde_yml` shim・PATH shim・self-reshim）、
+  (d) `route/resolve.rs:279-281` の viability comment（前提は
+  issue 4 完了まで一時的に偽 — known-stale として残置し
+  comment churn 対象外）のみ。
 
 - [ ] 残置確認: `argv_shell_re` 定義（`process.rs`）と
   `route/resolve.rs` の参照、`tokenize_shell`・`resolved != pinned`・
