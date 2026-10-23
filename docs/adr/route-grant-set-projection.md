@@ -104,6 +104,14 @@ workflow 内の追加 command job が `route.grant` 以外を
 - **confused-deputy 半径の宣言境界** — route から見える exec
   面は route 宣言が唯一の出所とし、workflow 宣言の grant を
   混ぜない。
+- **宣言層 provenance が trust discriminator** — `trusted: true`
+  は project が自己申告する merge/shadowing 制御
+  （`routes.rs:134-146` — `!trusted` の project route が下位層を
+  上書きしないだけ）であり、authoring 信頼の判別には使えない。
+  anchor `route.grant` は `expected_input` byte match で typed
+  command へ拘束されるが、`grants` member の argv は typed
+  command と独立のため、「member を宣言できる層」を制約しないと
+  O4c が塞いだ審査迂回が route 宣言経由で再発する。
 - **fail-safe fold** — 宣言された委譲面が壊れている route
   （member 未存在・ineligible）は発火させず原 command 直接
   実行へ倒す（fail-open は load 経路、fail-closed は exec 面の
@@ -202,9 +210,24 @@ workflow 内の追加 command job が `route.grant` 以外を
   定義本体も `policy/exec.rs` から削除。crates 内 consumer は
   route viability のみ（`grep` 実測）。
 - **O5b `[\0\r\n]` のみ残す縮小版** — 「exec 不可能な byte」
-  だけ残す案。しかし NUL/CR/LF は tokenize 段階
-  （`tokenize_command`）で既に拒否され viability へ到達
-  しないため、縮小版は到達不能コードを残すことになる。
+  だけ残す案。当初の根拠（「tokenize 段階で既に拒否され
+  viability へ到達しない」）は実測で誤りと判明した:
+  `tokenize_shell` は `\r` を whitespace separator
+  （`routing_policy.rs:1197`）・`\n` を segment separator
+  （`:1202`）として扱うが、`\0` は `is_segment_unsafe`
+  （`:1041`）にも `is_token_unsafe`（`:1046`）にも含まれず
+  `:1241` で token 内容へ落ちる。`route resolve --argv` の
+  JSON 入力は tokenize を経由しないため、`\0` を含む arg は
+  除去後に `Runnable` まで到達し得て、`route run` →
+  `command::execute` の spawn（`std::process::Command`）で
+  `InvalidInput` となり exec job が失敗する — 到達不能
+  コードではない。不採用理由は残る: この失敗は spawn 境界の
+  bounded job error であり silent misrouting ではなく、
+  `[\0\r\n]` だけでも viability へ内容審査を再導入すれば
+  D2 違反が縮小した形で残る。`\0` を含む argv を早期に
+  `UnsafeCommand` へ倒して原 command 直接実行へ fallback
+  させたい場合も、正しい位置は routing 分類ではなく exec
+  入口の入力検査であり、本変更の対象外。
 - **O5c 現行維持** — metachar 走査を残す。authorization と
   viability が diverge したまま（quoted metachar の偽陰性が
   残り、#163 の「内容審査を route に残さない」意図に反する）。
@@ -233,9 +256,40 @@ workflow 内の追加 command job が `route.grant` 以外を
   record へ書くことになり、`usage_log` 既存テストが明示的に
   防いでいる secret 混入経路を復活させる。不採用。
 
+### O7 `grants` 宣言の layer 制約（authoring trust boundary）
+
+- **O7a `grants` は trusted 層（builtin/user）限定 — project
+  層の宣言を fail-loud route-load error で拒否** — O4c が
+  member 値側に適用した論理を宣言側にも適用する。anchor
+  `route.grant` は `expected_input` byte match で typed
+  command へ拘束されるため project 層でも従来どおり宣言可と
+  するが、`grants` member の argv は hook/typed command と
+  独立（R7 の argv-match 保護は member に届かない）— project
+  層 route が `grants: [narrow-argv-trusted-grant]` を宣言
+  できると、typed command では到達不能な grant 群を投影へ
+  密輸でき、O4c が塞いだ「project が trusted 審査を迂回して
+  exec 面を広げる」hole が route 宣言経由で再発する非対称に
+  なる。判別子は宣言層 provenance（`layer == RouteLayer::
+  Project` — `routes.rs:95-111` の per-layer load・
+  `validate_route` の `layer` param `:309` で load 時に判明）で、
+  project 層 entry の `grants` key presence を `validate_route`
+  で `schema_error`（`InvalidRuntimePolicy` — project partial
+  schema が `command`/`security`/`route` key を拒否するのと
+  同じ層制約 error class、`load.rs:388` 先例）に倒す。
+  `trusted: true` は project 自己申告で shadowing のみを
+  gate するため判別に使えない。
+- **O7b project 層でも受理し制約は文書化のみ（accept +
+  document）** — schema は全層 uniform で「member argv は
+  grant 宣言で bound されるため実害は限定的」と見なす案。
+  しかし member argv 束縛は「宣言済み grant の argv union」を
+  信頼する構造であり、untrusted 層が「どの trusted grant を
+  投影へ含めるか」を選択できること自体が confused-deputy
+  半径の宣言権を project へ渡す — 文書化は検出不能な
+  悪用を防げず、O4c の trust boundary 推論と非対称。
+
 ## Decision Outcome
 
-採用: O1a + O2a + O3a + O4a + O5a + O6a。
+採用: O1a + O2a + O3a + O4a + O5a + O6a + O7a。
 
 - routes.yaml に `grants?: [name, …]` を optional 追加し、
   `grant` は required のまま発火 gate / exec anchor /
@@ -255,6 +309,12 @@ workflow 内の追加 command job が `route.grant` 以外を
 - route record は `command`/`commandHash` 据え置き +
   `executed:{grant, argv}` additive 追加（schemaVersion 1 維持、
   `route` フィールドの attribution anchor 不変）。
+- `grants` の宣言は trusted 層（builtin/user）の routes.yaml
+  限定とし、project 層 routes.yaml の route entry が `grants`
+  key を含む場合は `validate_route` で fail-loud route-load
+  error（`InvalidRuntimePolicy`）に倒す。anchor `route.grant`
+  単数は従来どおり project 層でも宣言可 — byte-match が
+  typed command へ拘束するため審査迂回にならない。
 
 ### Consequences
 
@@ -273,11 +333,39 @@ workflow 内の追加 command job が `route.grant` 以外を
 * Good, because: `executed` が実測 `{grant, argv}` を記録
   するため、将来の substitute mode で「原 command と実
   exec の分岐」を既存 record shape で表現できる。
+* Good, because: `grants` 宣言を trusted 層へ限定することで、
+  O4c が member 値側で塞いだ審査迂回が route 宣言側でも閉じる
+  — project 層は従来どおり `route.grant`（byte-match で typed
+  command へ拘束される anchor）のみを宣言でき、exec 委譲面の
+  member 選択権は trusted authoring のみが持つ。
 * Bad, because: `grants` 宣言数だけ route 解決時の pin
   解決コストが増える（PATH 走査 × member 数 — 宣言数に
   上限を設けないため operator 責任）。member が増えるほど
   「どの member が no-grant の原因か」の診断が難しくなる
   （`route resolve` の diagnostics 改善は後続）。
+* Bad, because: member pin は viability と job scope 構築
+  （`pin_exec_grants` が投影 policy の全 `!fixed` grant を
+  pin — `registry.rs:1234-1249`）で二度評価され、viability
+  通過後に member の pin が失敗すると、その command job の
+  scope 構築が fail して routed run 全体が hard error になる
+  — workflow が当該 member を呼ばなくても同じ（新規失敗
+  domain — PATH 変動 race 等）。
+* Bad, because: routed workflow の deadline は anchor grant の
+  `timeout` のみから導出される（`route/run.rs:356-366` —
+  `policy.execution.timeout_ms`）。member がより長い `timeout`
+  を宣言していても member job は workflow deadline に黙って
+  clamp される（known semantics — max-of-set 化は本 issue では
+  行わない）。
+* Bad, because: `executed.argv` は usage.jsonl へ初めて平文の
+  arg 内容を書き込む（`commandHash` は一方向 hash）。env-prefix
+  値は prefixed argv が prepare で拒否されるため漏洩しないが、
+  arg 値自体の secret（`-m` message 等）は平文で残る — 露出は
+  usage.md / parent-agent-integration.md で明記する。
+* Bad, because: project 層 routes.yaml は `grants` を宣言
+  できなくなる — route 自身は project でも定義できるが
+  member 追加は trusted 層へ移す必要がある（層制約の既存
+  規約 — project policy が `command` section を持てないのと
+  同型の authoring 境界）。
 * Bad, because: routes.yaml schema・`Route` struct・
   fixture・`project_grant` 呼び出し側・viability 分岐・
   usage record builder・関連 test を一括で触る必要があり、
@@ -308,12 +396,15 @@ workflow 内の追加 command job が `route.grant` 以外を
 * Patterns to follow: `is_route_eligible` の単一 seam 再利用、
   `project_grant` の投影位置（viability 通過後・workflow
   context 構築前）、`check_exec_execution` の shared
-  predicate seam、`validate_route` の fail-loud schema 規約、
+  predicate seam、`validate_route` の fail-loud schema 規約
+  （層制約も `schema_error` で統一 — project partial schema の
+  section 丸ごと除外と同型の file-layer 判別）、
   `command`/`commandHash` の hash 記録規約。
 * Patterns to avoid: viability enum 値の追加・route 層への
   内容審査 regex の再導入・member の argv 事前照合・
   `grant` field の union 型化・workflow 宣言の grant 受理・
-  record schemaVersion bump。
+  project 層 `grants` 宣言の受理（O7b）・record
+  schemaVersion bump。
 * Dependencies or configuration: 新規 dep なし。#165 の
   `ResolvedExecPolicy`/`is_route_eligible`/`project_grant`・
   `pin_exec_grant`・`check_exec_execution` を前提。#167
@@ -341,6 +432,10 @@ workflow 内の追加 command job が `route.grant` 以外を
 * [ ] `expected_input.name = route.grant` で `exec-input-
       mismatch` gate が通り、追加 job が自身 grant の
       lifecycle bounds で実行される
+* [ ] project 層 routes.yaml の route entry が `grants` key を
+      含むと fail-loud route-load error で拒否され、
+      builtin/user 層の `grants` 宣言は受理される
+      （`route.grant` 単数は引き続き project 層で宣言可）
 
 ## Pros and Cons of the Options
 
@@ -438,9 +533,16 @@ workflow 内の追加 command job が `route.grant` 以外を
 
 ### O5b `[\0\r\n]` 縮小版
 
-* Good, because 定義を小さく残せる。
-* Bad, because tokenize 段階で既に拒否される到達不能コード
-  を残すことになる。
+* Good, because `\0` を含む argv を `UnsafeCommand` へ倒して
+  spawn 前に route 不発（原 command 直接実行）へ fallback
+  できる。
+* Bad, because `tokenize_shell` は `\0` を拒否しない
+  （`routing_policy.rs:1241` で token 内容へ落ちる — `\r`/
+  `\n` は separator だが `\0` は unsafe 判定対象外）ため
+  到達不能コードではなく、spawn 不可 byte の検査を viability
+  の内容審査へ再導入する — D2 違反が縮小した形で残り、
+  `\0` 失敗は spawn 境界の bounded job error として既に
+  観測可能（fail 位置を変えるだけで安全性は増さない）。
 
 ### O5c 現行維持
 
@@ -472,6 +574,29 @@ workflow 内の追加 command job が `route.grant` 以外を
 
 * Bad, because env-prefix 値の secret 混入経路を復活させ、
   既存 `usage_log` テストの防衛対象と衝突する。
+
+### O7a `grants` は trusted 層限定（採用）
+
+* Good, because O4c の審査迂回防止を宣言側へも適用し、
+  project 層 route が typed command で到達不能な trusted
+  grant を投影へ密輸する経路を構造的に閉じる。判別子は
+  load 時に判明する宣言層 provenance で、project policy が
+  `command`/`security`/`route` section を持てない既存の
+  file-layer 制約と同型。fail-loud なため誤記・悪用の双方が
+  route-load error として即座に観測される。
+* Bad, because project route が member を追加できず、
+  補助 executable を委譲したい project workflow は
+  builtin/user 層への route 宣言を要する（route 自身の
+  宣言と anchor `grant:` は project 層のまま可）。
+
+### O7b project 層受理 + 文書化のみ
+
+* Good, because schema が層 uniform で実装差分が最小。
+* Bad, because member 名の宣言権を untrusted 層へ渡し、
+  O4c の trust boundary 推論と非対称の hole を残す —
+  「member argv は grant 宣言で bound される」緩和は
+  「どの grant を投影へ含めるか」の選択権を制約しない。
+  文書化は検出不能な悪用を防げない。
 
 ## More Information
 

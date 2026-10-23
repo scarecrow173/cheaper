@@ -124,20 +124,21 @@ route の exec 委譲面を単一 `grant` から宣言 set `{route.grant} ∪ gr
 へ拡張し、viability の条件を「anchor 完全検査 + member 軽量検査」へ
 分割し、usage record に実測 `executed:{grant,argv}` を追加する。
 spec(SPEC-034KTMfXYD5ZlGZCRb8Paj・proposed — R1-R8)と
-ADR(ADR-034KTMnPFDF25x710LFSKY・proposed — O1a/O2a/O3a/O4a/O5a/O6a
-全採用)で方針は確定済みであり、discovery
+ADR(ADR-034KTMnPFDF25x710LFSKY・proposed — O1a/O2a/O3a/O4a/O5a/
+O6a/O7a 全採用)で方針は確定済みであり、discovery
 (DISC-034KTzzHPIbmtD8j3iHBtg・resolved)が全接点を実測固定している。
 前提となる unified exec grant model(#165 —
 `ExecGrant`・`is_route_eligible`・`project_grant`・
 `check_exec_execution`・`pin_exec_grant` の単一 seam)は実装済み。
 
-本 design の責務は、「routes.yaml schema 追加の parse/dedupe
-規約・viability 分割の具体形・`argv_shell_re` 除去の面積・
-`project_grant` の set 版一般化・`expected_input` anchor と member
-job の bounds 規約・record `executed` の provenance・全 error
-契約・churn inventory」を実装契約として固定すること。引用する
-file:line は全て branch `feature/issue-166-route-grant-set-projection`
-の現行 code で実測済み。
+本 design の責務は、「routes.yaml schema 追加の parse/dedupe/
+宣言層制約の規約・viability 分割の具体形・`argv_shell_re` 除去
+の面積・`project_grant` の set 版一般化・`expected_input` anchor
+と member job の bounds 規約・record `executed` の provenance・
+全 error 契約・churn inventory」を実装契約として固定すること。
+引用する file:line は全て branch
+`feature/issue-166-route-grant-set-projection` の現行 code で
+実測済み。
 
 確定済み方針(ADR Decision Outcome):
 
@@ -161,6 +162,13 @@ file:line は全て branch `feature/issue-166-route-grant-set-projection`
   `executed:{grant,argv}` を追加(`schemaVersion: 1` 不変)。
 - **O6a** — `expected_input.name = route.grant` anchor を維持。
   member を呼ぶ追加 job は自身の grant 宣言 bounds で動く。
+- **O7a** — `grants` の宣言は trusted route 層(builtin/user)
+  限定。project 層 routes.yaml の route entry が `grants` key
+  を含む場合は fail-loud route-load error で拒否する
+  (member argv は typed command と独立のため、untrusted 層へ
+  member 宣言権を渡すと O4c が塞いだ審査迂回が route 宣言
+  経由で再発する)。anchor `route.grant` 単数は従来どおり
+  project 層でも宣言可。
 
 ## Scope
 
@@ -170,6 +178,10 @@ file:line は全て branch `feature/issue-166-route-grant-set-projection`
   `Route` struct field・`KNOWN_KEYS`・`validate_route` parse +
   dedupe・`Route::grant_set()` helper
   (`crates/cheaper-cli/src/route/routes.rs`)。
+- `grants` 宣言の層制約 — trusted 層(builtin/user)限定。
+  project 層 route entry の `grants` key presence を
+  `validate_route` で fail-loud `schema_error` へ倒す(§(a) —
+  O7a)。
 - viability 分割 — unsafe-command 分岐の `argv_shell_re` 除去 +
   no-grant 段への member 検査ループ追加
   (`crates/cheaper-cli/src/route/resolve.rs`)。
@@ -233,11 +245,32 @@ pub struct Route {
 - `KNOWN_KEYS`(:314-322)に `"grants"` を `"grant"` 直後へ追加 —
   fail-loud unknown-key 規約(:323-327)を維持し、`grants` の
   typo は unknown key として route-load error になる。
-- parse 位置は `grant` の `required_string`(:399)直後 — grant
-  を先に確定させてから member を処理し、self-reference 除去を
-  parse 単位で完結させる:
+  `KNOWN_KEYS` は全層共通のため `"grants"` は全層で
+  recognized となり、層制約は unknown-key ではなく別の
+  明示判定で行う(下記)。
+- **`grants` 宣言の層制約(O7a)** — 宣言できるのは trusted
+  層(`RouteLayer::Builtin`/`RouteLayer::User`)のみ。project
+  層 file は `load` の層 table(:95-111 — `:107-110` で
+  `opts.project_dir.join("routes.yaml")` 起点相対 root)として
+  `validate_routes_doc(&doc, layer, …)`(:120)へ渡され、
+  `layer` は `:270` で `validate_route` の `:309` param へ
+  流れる — 判別に新規 param は不要。検査位置は `grants`
+  の parse 位置(`grant` の `required_string` :399 直後)と
+  同一 site で、member 形状検査より先に presence で拒否する
+  (untrusted 層の宣言は内容を評価せず fail-closed):
 
 ```rust
+// `grants` は trusted 層限定(O7a)— member argv は typed
+// command と独立のため project 層への member 宣言権委譲は
+// O4c の審査迂回を route 宣言経由で再発させる。
+// `trusted:true` は project 自己申告の shadowing gate で
+// あり判別に使えない — 判別子は宣言層 provenance。
+if layer == RouteLayer::Project && entry.contains_key("grants") {
+    return Err(schema_error(
+        file,
+        &format!("{label}.grants: not declarable in the project layer"),
+    ));
+}
 // `grants: [name, …]` — route.grant 以外の追加委譲 grant 名。
 // member 間重複・route.grant 自身の参照は冪等に除去(順序は
 // 意味を持たない — 宣言順の先勝ちを保持)。
@@ -263,11 +296,29 @@ match entry.get("grants") {
 }
 ```
 
+  error は fail-loud InvalidRequest-class の契約で、concrete
+  code は既存 routes.yaml schema 規約(`schema_error` —
+  `routes.rs:227-233` が `InvalidRuntimePolicy` を返す)と
+  同じ `InvalidRuntimePolicy` — details `{path: <file>,
+  reason: "schema", violation: "routes[i].grants: …"}` で
+  file と対象 route entry を名指し。project partial
+  schema が `command`/`security`/`route` key を拒否するのと
+  同じ file-layer authoring 制約(`policy/load.rs:381-388`
+  先例 — こちらも `InvalidRuntimePolicy`)であり、`route
+  resolve`/`route run` の `supply::load` 厳密経路は error
+  をそのまま返し、hook の `load_or_none` は `None` fold で
+  route arm 不活性へ落ちる(既存 fail-open 規約、
+  `supply.rs:138-152`)。anchor `route.grant` 単数の
+  project 宣言は従来どおり受理 — byte-match が typed
+  command へ拘束するため審査迂回にならない(R7、§(f))。
+
 - member 名の検証は non-empty string のみ — `grant` 単数が
   名前 pattern を持たず存在/eligibility を viability へ委譲
   するのと同じ規約を member にも適用する(第二の検証規則を
   作らない — R2)。未存在/project-scope/fixed 名の宣言自体は
   legal で、失敗は viability `NoGrant` へ fold される(§(b))。
+  (project 層では `grants` key 自体が load error なのでこの
+  規約が適用されるのは builtin/user 層の宣言のみ。)
 - `Route` literal 構築(:451-460)へ `grants` を追加。
 - 有効 set の供給は単一 helper へ集約(「{route.grant} ∪ grants」
   という同一規則を projection 呼出しと doc で二度書かない):
@@ -329,6 +380,18 @@ if input.unsafe_command
   flag)の 3 入口全てで viability 到達前または flag 経由で止まる。
   本除去は「tokenize を通過した argv token の内容」を審査対象
   から外すだけで、入口の structural gate は不変。
+- `\0` 含 arg の扱い変化: `tokenize_shell` は `\0` を拒否
+  しない(`routing_policy.rs:1241` で token 内容へ落ちる —
+  `\r` は whitespace separator :1197、`\n` は segment
+  separator :1202、`\0` は `is_token_unsafe`/`is_segment_unsafe`
+  対象外 :1041/:1046)。`route resolve --argv` は JSON 入力で
+  tokenize も経由しないため、`\0` 含 arg は除去後に
+  `Runnable` まで到達し得て、`route run` → spawn
+  (`std::process::Command`)の `InvalidInput` で exec job が
+  fail する — 旧 regex 適用時の `UnsafeCommand`(原 command
+  直接実行 fallback)とは fail 位置が変わるが、bounded job
+  error であり内容審査の再導入はしない(O5b 不採用 —
+  Verification Notes に test case)。
 
 **(b-2) no-grant 段(:308-351)の member 検査追加:** anchor
 `route.grant` の既存完全検査(:315-351 — lookup+eligibility →
@@ -379,6 +442,22 @@ for member in &route.grants {
   「全 member が trusted+!fixed かつ pin 可能」であることが
   保証されるため、`route run` の投影(§(c))と hook eval で同じ
   宣言面が観測される。
+- 実装注記: member 失敗を `NoGrant` へ fold する前に
+  `tracing::debug!` へ失敗 member 名を載せると、viability 値
+  上は anchor 失敗と区別不能でも debug log で帰属できる
+  (record・`route resolve` 出力 shape は不変 — O3a)。
+- 新規失敗 domain: member pin は viability と job scope 構築で
+  二度解かれる。scope 構築時の `pin_exec_grants`(`registry.rs:
+  1234-1249`)は投影 policy の **全 `!fixed` grant** を pin する
+  ため、viability 通過後(PATH 変動 race・policy 更新等)に
+  member の pin が失敗すると、その command job の
+  `create_worker_scope` が `PolicyViolation` で fail し、
+  workflow が当該 member を呼ばなくても routed run 全体が
+  hard error になる(captured=None → finish の record 書込み
+  経路へ到達しない)。 viability 事前検査が保証するのは
+  「解決時点で pin 可能」までで、scope 構築との gap は
+  `verify_pinned_executable` が spawn 前に検出する既存機構
+  と同じ race domain — 新設する pin cache は持たない(§Risks)。
 
 ### (c) projection — `crates/cheaper-core/src/policy/exec.rs`
 
@@ -431,8 +510,9 @@ if !supply.policy.exec.project_grants(&route.grant_set()) {
 }
 ```
 
-(`BTreeSet` の import が必要 — run.rs に `use std::collections::`
-系 import を追加するか `route.grant_set()` の戻り型に合わせる。)
+(run.rs 側に `BTreeSet` の import は不要 — `route.grant_set()`
+の戻り型がそのまま渡るため型推論で足りる。`exec.rs` は
+`BTreeSet` を既に import 済み(:23)。)
 
 ### (d) record split — `crates/cheaper-cli/src/usage_log.rs` + `route/run.rs`
 
@@ -516,10 +596,11 @@ let executed_argv = match details
   (`exec_args` は env-prefix strip 済み — route log と同じ
   露出面。payload.env は record field に含めない構造保証は不変)。
 - record 消費側: `usage_report.rs` の `route_bucket`(:503-538)は
-  `kind`/`ok`/`exitCode`/`originalTokens`/`returnedTokens`/
-  `logRef`/`postprocessFailures`/`refetches` のみを読み、
-  additive field は無視されるため**code 変更不要**。
-  `kind:"route"` が通常 run 集計へ混入しない既存分離も不変。
+  `kind:"route"` record の `kind`/`ok`/`originalTokens`/
+  `returnedTokens`/`postprocessFailures` のみを読み
+  (`route-refetch` record は `kind`/`bytesRead`)— additive
+  field は無視されるため**code 変更不要**。`kind:"route"` が
+  通常 run 集計へ混入しない既存分離も不変。
 
 ### (e) anchor 規約 — `expected_input` と member job bounds
 
@@ -539,6 +620,19 @@ code 変更はないが、spec R7/O6a の契約を実装境界として固定す
   passthrough capture・`accept_any_exit_code`・`log_tee` — `:521`
   の `route_exec.map(|r| r.context())` が exec job のみに付く)
   は anchor の宣言に従う。
+- **member job の authoring 規約 — `job_id != "exec"`** —
+  member grant を呼ぶ `command` job は `job_id == "exec"` で
+  宣言してはならない。byte-match gate は
+  `job_id == "exec" && job.name == "command"` の job に
+  `{name: route.grant, args: exec_args}` を要求するため、
+  member 名を指定した exec-id job は
+  `exec-input-mismatch` で失敗する(`workflow_run.rs:467-484`)。
+  builtin `routed-exec.workflow.json` の `exec` job は anchor
+  専用で、member を呼ぶ job は別 `job_id` を持つ通常 job
+  として宣言する(routed-exec convention は exec job の
+  unconditional 起動のみを要求し、追加 job の job_id には
+  制約がない — ただし `exec` との衝突だけは上記 gate が
+  防ぐ)。
 - **member job は自身の grant 宣言 bounds で動く** —
   `job_id != "exec"` の `command` job は expected_input gate を
   通らず(`route_exec` filter が None)、`route_context: None` で
@@ -547,6 +641,22 @@ code 変更はないが、spec R7/O6a の契約を実装境界として固定す
   `check_exec_execution` → member grant の `argv` pattern 照合・
   `pin`・宣言 `cwd`/`env`/`timeout`/`killGrace`/`maxOutputBytes`/
   `exitCodes`(`tools/command/mod.rs:218-244`)。
+- **interactive member は筛かれない(known semantics)** —
+  `is_interactive`/`StdinUnsupported` の screening は原
+  command の `executable`/`exec_args` のみを対象とする
+  (`resolve.rs:352-355,:164-173`)。member grant が stdin 前提の
+  executable(REPL・editor 等)を pin しても member 検査では
+  止まらず、member job は自身の grant `timeout` まで hang
+  してから fail する。route 層で member の interactive 分類を
+  追加しない(operator 責務)。
+- **member timeout は workflow deadline に clamp される
+  (known semantics)** — workflow 全体の deadline は anchor
+  grant の `timeout` のみから導出される(`run.rs:356-366` —
+  `deadline_ms(route.grant.timeout)` →
+  `policy.execution.timeout_ms`)。member がより長い
+  `timeout` を宣言していても member job は workflow
+  deadline に黙って clamp される(max-of-set 化は本 issue
+  では行わない — Deferred)。
 - **member job に routed-exec convention は付かない** —
   `exec_cwd` override・passthrough `extra_env`・
   `accept_any_exit_code`・route log `log_tee` は exec job 専用。
@@ -598,6 +708,22 @@ invocation/scope 両経路の policy 解決はこの投影 policy のみを
   byte-prefix のみ)。member 追加は「発火した routed workflow
   の内部から届く名の集合」を広げるだけであり、route 自体の
   firing surface は狭いまま。
+- **`grants` 宣言権は trusted 層限定(§(a) O7a — 層境界)**:
+  anchor `route.grant` は `expected_input` byte match で
+  typed command へ拘束されるため project 層でも宣言して
+  よい(R7 の argv-match が保護する)。しかし member の
+  argv は typed command と独立であり、project 層が
+  `grants: [narrow-argv-trusted-grant]` を宣言できると、
+  typed command では到達不能な trusted grant 群を投影へ
+  密輸できてしまう — O4c が member 値側(project-scope
+  grant の member 化)で塞いだ審査迂回が、宣言側では
+  対称に閉じていない非対称 hole だった。`trusted: true`
+  は project 自己申告で shadowing のみを gate する
+  merge 制御(`routes.rs:134-146`)なので判別には使えず、
+  判別子は宣言層 provenance(`layer == RouteLayer::
+  Project` — load 時に判明)とする。member 名の選択権を
+  untrusted 層へ渡さないことで、confused-deputy 半径の
+  宣言境界が「route 宣言 + trusted 層」まで確定する。
 
 ### (g) signature 契約(変更後)
 
@@ -605,7 +731,8 @@ invocation/scope 両経路の policy 解決はこの投影 policy のみを
 |-----------------|------------------|------|
 | `Route` | `pub grants: Vec<String>` を `grant` 直後へ追加 | `routes.rs:37-55`。member 間重複・`route.grant` 参照は parse 時除去済み |
 | `Route::grant_set` | `(&self) -> BTreeSet<String>` | `routes.rs` 新設 — `{route.grant} ∪ grants` の有効 set 規則の単一 owner |
-| `KNOWN_KEYS` | `"grants"` を `"grant"` 直後へ追加 | `routes.rs:314-322` — unknown-key fail-loud 規約内 |
+| `KNOWN_KEYS` | `"grants"` を `"grant"` 直後へ追加 | `routes.rs:314-322` — unknown-key fail-loud 規約内(全層共通) |
+| `validate_route` | signature 不変(`layer: RouteLayer` は :309 で既存) | project 層 entry の `grants` key presence を member 形状検査より先に `schema_error` へ倒す(O7a) |
 | `ResolvedExecPolicy::project_grants` | `(&mut self, names: &BTreeSet<String>) -> bool` | `exec.rs:118-130` — `project_grant(&mut self, name)` の置き換え(呼出し側は `route/run.rs:121` のみ)。全名 eligible かつ非空でのみ `{names} ∪ {fixed}` を retain |
 | `RouteRecordInput` | `executed_grant: String`・`executed_argv: Vec<String>` 追加 | `usage_log.rs:332-357` — `executed` object 組み立ては `build_route_record` が担当 |
 | `build_route_record` | signature 不変 | `:362-404` — `commandHash` 直後に `executed:{grant,argv}` を必須挿入 |
@@ -626,14 +753,14 @@ invocation/scope 両経路の policy 解決はこの投影 policy のみを
 | site | lines(現行) | 変更内容 |
 |------|------------|----------|
 | `route/routes.rs` | :314-322 | `KNOWN_KEYS` に `"grants"` 追加 |
-| `route/routes.rs` | :399 直後 | `grants` parse(配列 + non-empty string + self/member dedupe) |
+| `route/routes.rs` | :399 直後 | `grants` parse(配列 + non-empty string + self/member dedupe)+ project 層 presence 拒否(:309 の `layer` param — 新規 param 不要) |
 | `route/routes.rs` | :37-55,:451-460 | `Route.grants` field + literal 構築 |
-| `route/routes.rs` | —(新設) | `Route::grant_set()` helper + unit test(grants parse・dedupe・型不整合・unknown key) |
+| `route/routes.rs` | —(新設) | `Route::grant_set()` helper + unit test(grants parse・dedupe・型不整合・unknown key・project 層 `grants` presence 拒否 + builtin/user 受理) |
 | `route/resolve.rs` | :10 | `argv_shell_re` import 除去 |
 | `route/resolve.rs` | :282-291 | stale comment 訂正 + `argv_shell_re` 条件除去(caller flag + CWD_CHANGING のみ) |
 | `route/resolve.rs` | :351 直後 | member 検査ループ(存在 + `is_route_eligible` + `pin_exec_grant` → `NoGrant` fold) |
 | `route/resolve.rs` | :369-380,:488-494 | `Route` literal へ `grants` 追加 + `a;rm` 期待値 `Runnable` 化 + member viability case 追加 |
-| `route/run.rs` | :121-123 | `project_grant(&route.grant)` → `project_grants(&route.grant_set())` + `BTreeSet` import |
+| `route/run.rs` | :121-123 | `project_grant(&route.grant)` → `project_grants(&route.grant_set())`(import 追加不要 — 戻り型が推論で足りる) |
 | `route/run.rs` | :465 以降 | `details.{grant,argv}` 抽出(欠落・非 string は `InternalError`)|
 | `route/run.rs` | :575-588 | `RouteRecordInput` literal へ `executed_grant`/`executed_argv` |
 | `route/run.rs` | :701-719 | `prepare_projects_grants_to_single_route_grant` test を set 投影名・内容へ更新 |
@@ -659,9 +786,11 @@ invocation/scope 両経路の policy 解決はこの投影 policy のみを
 | 条件 | code / 分類 | 境界 | 備考 |
 |------|------------|------|------|
 | `grants` が非 array / 非 string member / 空 string | `InvalidRuntimePolicy` — `schema_error(file,"{label}.grants: …")` | `routes.rs::validate_route` | route-load error — `load`/`load_or_none` 経路全てで fail-loud(hook は `load_or_none` で route arm 不活性へ fold — 既存規約) |
+| project 層 route entry が `grants` key を含む | `InvalidRuntimePolicy` — `schema_error(file,"{label}.grants: not declarable in the project layer")` | `routes.rs::validate_route`(`:309` の `layer` param) | O7a — fail-loud route-load error(details `{path,reason:"schema",violation}` で file と entry を名指し)。member 形状検査より先に presence で拒否 — project partial schema の section 除外と同型の file-layer authoring 制約(`policy/load.rs:381-388` 先例)。anchor `route.grant` 単数は project 層でも受理 |
 | `grants` typo・unknown key | 同上(unknown key) | `routes.rs:323-327` | fail-loud 規約不変 |
 | member 未存在 / `scope:"project"` / `fixed` | `Viability::NoGrant`(enum — error ではない)→ `route run` は `denied("no-grant")` `PolicyViolation` | `resolve.rs` §(b-2) ループ → `run.rs:93-97` | anchor 失敗と同一 fold — 新規 viability 値なし |
 | member pin 不能(unresolvable executable・deny 衝突) | `Viability::NoGrant` → 同上 | `pin_exec_grant` | `execDenyPatterns` は member にも uniform 適用 |
+| member pin の scope 構築時再失敗(viability 通過後の PATH 変動・policy 更新等) | `PolicyViolation` — `create_worker_scope` が Err → 当該 command job 失敗 → captured=None で route-run hard error | `registry.rs:1234-1249`(`pin_exec_grants` が投影 policy の全 `!fixed` grant を pin) | workflow が当該 member を呼ばなくても発生 — 新規失敗 domain(§(b-2)) |
 | member argv 不一致 | `PolicyViolation` — `check_exec_execution`/`authorize_args` の grant_violation | member job 実行時(`command::execute`) | route 発火は止めない — 宣言 bound 外の job argv が失敗する位置は direct `workflow run --grant` と同一 |
 | `route.grant` 未存在/ineligible/pin 不能/argv mismatch | `Viability::NoGrant` | 既存 :315-351(不変) | byte-matched 不発 → 原 command 直接実行 |
 | `project_grants` false(ineligible/不在名混入) | `PolicyViolation` — `denied("no-grant")` | `run.rs:121-123` | viability 通過後の二重防御 |
@@ -676,11 +805,13 @@ invocation/scope 両経路の policy 解決はこの投影 policy のみを
 ```
 routes.yaml layers          declaration                    viability / projection / record
 ───────────────────────────────────────────────────────────────────────────────────────────
-builtin/user/project ─→ routes::load
-  └─ validate_route: KNOWN_KEYS(+grants) → grant 確定
+builtin/user/project ─→ routes::load(層別 file — :95-111)
+  └─ validate_route(layer 判別済み — :309):
+       KNOWN_KEYS(+grants) → grant 確定
        → grants parse(member dedupe・self-ref 除去)
        → Route{grant, grants:[member…], …}
-       ※ 形状不正は route-load error(fail-loud)
+       ※ 形状不正・project 層の `grants` presence(O7a)は
+         route-load error(fail-loud — InvalidRuntimePolicy)
 
 hook eval / route resolve / route run prepare
   └─ supply::load → ExecPolicyView → resolve::resolve
@@ -738,9 +869,11 @@ finish(): captured.details → executed{grant,argv}
   exec anchor のいずれにも影響しない。
 - **declared capability 境界** — confused-deputy 半径は
   `project_grants` 後の policy = 宣言 argv union + fixed に
-  閉じる。未宣言 grant 名・member の宣言 argv 外 args・
-  deny 衝突 executable は投影 policy・member 宣言・deny
-  適用点の 3 層で拒否される。
+  閉じ、宣言権は trusted 層(builtin/user)の routes.yaml に
+  限定される(O7a)。未宣言 grant 名・member の宣言 argv
+  外 args・deny 衝突 executable・project 層 `grants` 宣言は
+  投影 policy・member 宣言・deny 適用点・load 時層制約で
+  拒否される。
 - **fail-open 保存** — hook 経路の `load_or_none`・hook arm の
   unsafe segment skip(`routing_policy.rs:1461-1463`)・route
   resolve の `unsafe_command` flag 規約は不変。grants parse
@@ -782,11 +915,36 @@ finish(): captured.details → executed{grant,argv}
   env 値も exec job 専用で member job へは流れない —
   「routed exec の context は原 shell command の再現」という
   境界を越えて member job へ横流ししない決定(§e)。
+- **`grants` authoring の層境界(security)** — anchor
+  `route.grant` は `expected_input` byte match で typed
+  command へ拘束されるため project 層でも宣言してよい
+  (member job が呼ぶのは anchor の argv pattern が許す
+  executable のみ)。一方 `grants` member の job argv は
+  typed command と独立(R7 の argv-match 保護が member
+  には届かない)ため、member の宣言は exec 面を typed
+  command の外へ広げる — trusted 層(builtin/user)限定と
+  し、project 層の `grants` presence は load 時に
+  fail-loud 拒否する(§(a) O7a)。`trusted: true` は project
+  自己申告の shadowing gate(`routes.rs:134-146`)で判別
+  には使えず、判別子は宣言層 provenance。anchor は
+  project-authorable のまま、member 選択権のみ trusted
+  authoring へ閉じる非対称が正しい境界。
+- **member timeout の silent clamp** — workflow deadline
+  は anchor grant `timeout` のみ由来(`run.rs:356-366`)
+  のため、member が長い `timeout` を宣言しても
+  workflow deadline で切られる。max-of-set は set 全体の
+  timeout 宣言を発火 gate と独立に読む設計判断を要し、
+  本 issue では現行 anchor 由来 semantics を維持する
+  (Deferred — member の timeout 期待が発火側と乖離
+  する運用が出た場合に再評価)。
 - **record の機微値露出** — `executed.argv` は args 値を記録
-  する(例: `git commit -m "…"` の message)。route log が
-  stdout/stderr を平文保持する既存露出面と同等だが、
-  usage.jsonl は削除運用が異なるため parent-agent-integration
-  の記述で露出を明記する。
+  する(例: `git commit -m "…"` の message)。usage.jsonl
+  への**初めての平文 arg 内容**であり(`commandHash` は
+  一方向 hash)、route log が stdout/stderr を平文保持する
+  既存露出面と同等だが、usage.jsonl は削除運用が異なるため
+  parent-agent-integration・usage.md の記述で露出を明記
+  する(env-prefix 値は prefixed argv が prepare で拒否
+  されるため経由せず、arg 値自体の secret のみが残る)。
 - **schema 拡大の churn 面積** — `Route` literal 3 箇所・
   `project_grant` 改名・`argv_shell_re` 削除の波及を下表で
   列挙済み。`route_cmd`/`supply`/`workflow_run`/`usage_report`/
@@ -797,8 +955,10 @@ finish(): captured.details → executed{grant,argv}
 
 - **route schema** — `route/routes.rs`:`Route` struct(:37-55)、
   `KNOWN_KEYS`(:314-322)、`validate_route` grants parse(:399
-  直後)、literal 構築(:451-460)、`Route::grant_set()` 新設、
-  `:548` 以降の unit test( grants parse/dedupe/error case)。
+  直後)+ project 層 presence 拒否(:309 `layer` param)、
+  literal 構築(:451-460)、`Route::grant_set()` 新設、
+  `:548` 以降の unit test( grants parse/dedupe/error case +
+  project 層 `grants` 拒否・builtin/user 受理)。
 - **viability/resolve** — `route/resolve.rs`:import(:10)、
   comment+条件(:282-291)、member ループ(:351 直後)、
   `Route` literal(:369-380)、`:488-494` の metachar 期待値・
@@ -839,26 +999,40 @@ finish(): captured.details → executed{grant,argv}
   `{route.grant} ∪ grants` 有効 set・dedupe・`trusted && !fixed`
   eligibility・member argv は自身の grant pattern で bound・
   member job は宣言 lifecycle/cwd/env/exitCodes・route context
-  非適用)。record 節(:349-357 付近)に `executed:{grant,argv}`
-  を additive field として記述し、`executed.argv` が args 値を
-  含む露出を明記。
+  非適用)。**層制約** — `grants` を宣言できるのは
+  builtin/user 層のみで、project routes.yaml に書くと
+  route-load error になることを明記(anchor `grant:` 単数は
+  project でも可)。**workflow authoring 規約** — member を
+  呼ぶ command job は `job_id != "exec"` で宣言する
+  (`job_id=="exec" && tool=="command"` は expected_input
+  byte-match gate が `route.grant`+原 argv を要求し
+  `exec-input-mismatch` で失敗する)。record 節(:349-357 付近)
+  に `executed:{grant,argv}` を additive field として記述し、
+  `executed.argv` が **平文の arg 値** を記録する露出を明記
+  (usage.jsonl 初の cleartext arg — `commandHash` は一方向
+  hash・env-prefix 値は prefixed argv 拒否で漏洩しないが
+  arg 値自体の secret は残る)。
 - `docs/guides/configuration.md` — unified exec 参照節
   (:215-217)の「route の `grant:` 参照は trusted+`!fixed` のみ」
-  を `grants:` member も同 predicate へ拡張する記述へ更新。
+  を `grants:` member も同 predicate へ拡張する記述へ更新
+  (`grants` 宣言自体は builtin/user 層限定 — project routes.yaml
+  は持てない旨も併記)。
 - `docs/guides/command.md` — route grant 参照記述(:38-42)を
   `grants` member も同じ eligibility 規則へ従う旨へ更新。
 - `docs/guides/usage.md` — additive-only 規約節(:296-303)に
   `kind:"route"` record の `executed` を additive field の例
-  として 1 行追記(`route` record field の canonical 記述は
+  として追記し、`executed.argv` が平文 arg 値を保持する点を
+  1 文で明記(`route` record field の canonical 記述は
   parent-agent-integration 側 — DRY)。
 - `crates/cheaper-cli/resources/routes.yaml` — `grant:` 直下に
-  `# grants: [name, …]  # optional — route.grant 以外の追加委譲 grant` の shape comment を追加。
+  `# grants: [name, …]  # optional — route.grant 以外の追加委譲 grant(builtin/user 層限定)` の shape comment を追加。
 - `docs/specs/pretooluse-route-resolver-and-workflow-delegation.md`
   — refine 対象 spec として route field 一覧(R1 — :215-229
-  付近)に `grants?`・viability 記述(R12 — :299-306 付近)に
-  member 検査・record field(R34 — :447-457 付近)に `executed`
-  を追記する(content update のみ — 本 design からの `refines`
-  relation は張らず、spec chain 側の管理に委ねる)。
+  付近)に `grants?`(trusted 層限定)・viability 記述(R12 —
+  :299-306 付近)に member 検査・record field(R34 —
+  :447-457 付近)に `executed` を追記する(content update のみ
+  — 本 design からの `refines` relation は張らず、spec chain
+  側の管理に委ねる)。
 
 ## Deferred Design Concerns
 
@@ -883,6 +1057,17 @@ finish(): captured.details → executed{grant,argv}
   passthrough env・`accept_any_exit_code`・`log_tee` を member
   job へ広げる需要が出た場合は原 command 再現の意味論との
   関係を含めて別途設計(§e で「適用しない」を固定)。
+- **workflow deadline の max-of-set 化** — deadline は anchor
+  grant `timeout` のみ由来(`run.rs:356-366`)。member が
+  長い `timeout` を宣言する運用が出た場合に
+  `deadline = max(anchor, members)` への変更を検討する
+  (§e — 現行は silent clamp で known semantics)。
+- **`grants` を project 層へ開くか** — O7b(受理+文書化)は
+  O4c の審査迂回防止と非対称で不採用。project workflow が
+  member を必要とする実需要が確立した場合、anchor 相当の
+  argv-match 拘束を member にも掛ける別機構
+  (declared-member-argv の workflow 側照合等)とセットで
+  再評価する。
 
 ## Verification Notes
 
@@ -893,6 +1078,12 @@ test 計画(spec Acceptance Criteria への対応):
   `route.grant` self-ref が除去される・`grants:[]` ≡ 未指定・
   非 array/非 string/空 string で route-load error・unknown key
   拒否維持(`routes.rs` unit test。R1 AC)。
+- [ ] **宣言層制約** — project 層 routes.yaml の `grants` key
+  presence が `InvalidRuntimePolicy` route-load error で拒否
+  され(file 名・entry 名指しの details)、builtin/user 層の
+  `grants` 宣言は受理される。project 層の `route.grant` 単数
+  宣言は従来どおり有効(`routes.rs` unit + `route.rs`
+  integration。R1 AC — O7a)。
 - [ ] **member 起動** — `grants:[a,b]` 宣言 route の routed
   workflow で `input.name` が `a`・`b` の command job が実行
   でき、未宣言名 job が `PolicyViolation` で拒否される
@@ -917,6 +1108,14 @@ test 計画(spec Acceptance Criteria への対応):
   `CWD_CHANGING_COMMANDS`・`stdin-unsupported` 分類・hook arm
   の unsafe segment skip・`route run` の `rejected("unsafe-command")`
   が全て回帰無し(既存 hook/route/run test。R5/R8 AC)。
+- [ ] **spawn 不可 byte の fail 位置** — `tokenize_shell` は
+  `\0` を拒否しない(`routing_policy.rs:1241` で token 内容へ
+  落ちる)ため、`route resolve --argv '["…","a\0b"]'` の
+  `\0` 含 arg は `runnable` まで到達し得て、spawn
+  (`std::process::Command`)で `InvalidInput` → exec job fail
+  として観測されることを固定(viability 層へ `[\0\r\n]`
+  regex を残さない O5b 不採用の帰結 — bounded job error。
+  R5 関連)。
 - [ ] **record split** — `kind:"route"` record に
   `executed:{grant,argv}` が必須で載り、`commandHash` 不変・
   `schemaVersion:1`・`cheaper usage` の route bucket 集計が
@@ -926,7 +1125,9 @@ test 計画(spec Acceptance Criteria への対応):
   で `exec-input-mismatch` gate 通過・exec job が `route.grant`
   の lifecycle bounds・member job が自身 grant の宣言
   lifecycle/cwd/env/exitCodes で動く(`workflow_run`/`run.rs`
-  test。R7 AC)。
+  test。R7 AC)。member を呼ぶ job が `job_id != "exec"` で
+  動き、`job_id == "exec"` で member 名を指定すると
+  `exec-input-mismatch` になる(authoring 規約の回帰)。
 - [ ] **投影境界** — `project_grants` が `{route.grant} ∪
   grants ∪ {fixed}` を retain し、set 内 1 件 ineligible で
   false・空集合で false(`exec.rs` unit + `run.rs` prepare

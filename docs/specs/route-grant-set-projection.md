@@ -66,9 +66,11 @@ route 1 件が委譲できる grant を `{route.grant}` 単体から
    #163 で exec/policy 層から除去された内容審査の残存経路。
    route 層からも除去し、authorization への委譲構造を完成させる。
 2. **route grant-set 宣言と投影** — routes.yaml の route entry に
-   optional な `grants: [name, …]` を追加し、route run 時に
-   `{route.grant} ∪ grants ∪ {fixed grants}` を policy へ投影する
-   （現行 `project_grant` は `{route.grant} ∪ {fixed}` のみ）。
+   optional な `grants: [name, …]` を追加し（宣言は trusted 層の
+   routes.yaml 限定 — project 層は fail-loud 拒否）、route run
+   時に `{route.grant} ∪ grants ∪ {fixed grants}` を policy へ
+   投影する（現行 `project_grant` は `{route.grant} ∪ {fixed}`
+   のみ）。
 3. **viability の条件緩和** — firing gate である `route.grant` は
    現行どおり byte-matched の argv 事前検査を維持し、set の
    追加メンバー（non-exec grant）は存在確認 + pin 解決のみを
@@ -119,6 +121,10 @@ route 1 件が委譲できる grant を `{route.grant}` 単体から
 - routes.yaml route entry への `grants?: [name, …]` 追加
   （schema・validation・`Route` struct・fixture・
   `resources/routes.yaml` の shape 記述）
+- `grants` 宣言の層制約 — trusted 層（builtin/user）限定。
+  project 層 routes.yaml の `grants` key presence を
+  fail-loud route-load error で拒否（anchor `route.grant`
+  単数は project 層でも引き続き宣言可）
 - `project_grant` の set 版への一般化と、route run 時の
   `{route.grant} ∪ grants ∪ {fixed}` 投影
 - viability の条件緩和 — `route.grant` は byte-matched 完全検査、
@@ -160,6 +166,14 @@ route 1 件が委譲できる grant を `{route.grant}` 単体から
   `passthroughEnv` 等の既存宣言配列と同じく課さない。
   未知 key の拒否を含む既存の fail-loud schema 規約
   （`KNOWN_KEYS`・`validate_route`）を維持すること。
+  なお `grants` を宣言できるのは trusted 層（builtin/user）の
+  routes.yaml のみとし、project 層（`<project_dir>/routes.yaml`）
+  の route entry が `grants` key を含む場合は fail-loud な
+  route-load error で拒否すること — member は anchor と違い
+  typed command への argv-match で拘束されず、untrusted 層への
+  member 宣言権委譲は project policy が `command` section を
+  持てない既存の信頼境界（ADR O4c/O7a）と矛盾する。
+  anchor `route.grant` 単数は従来どおり project 層でも宣言可。
 - R2. set メンバーの eligibility は `is_route_eligible`
   （`scope == Trusted && !fixed`）で一律に判定すること。
   未存在・project-scope・fixed の名前はいずれも ineligible と
@@ -216,7 +230,19 @@ route 1 件が委譲できる grant を `{route.grant}` 単体から
     exitCodes）は `route.grant` の宣言値に従う。
   - set メンバーを呼ぶ追加 job は `input.name` に自身の
     grant 名を指定し、その grant の宣言 lifecycle・
-    `pin.cwd`・`passthrough_env` が適用される。
+    `cwd`/`env`/`exitCodes`・executable pin が適用される。
+    member job には routed-exec context（route の
+    `passthroughEnv` capture・`exec_cwd` override・
+    `accept_any_exit_code`・route log tee）は適用されず、
+    `route_context: None` の通常 `command` job として実行
+    される（`workflow_run.rs:467-470,521` — context は
+    `job_id == "exec" && tool == "command"` のみに付く）。
+  - member を呼ぶ `command` job は `job_id != "exec"` で宣言
+    すること — `job_id == "exec" && tool == "command"` の
+    job は expected_input byte-match gate が
+    `{name: route.grant, args: exec_args}` を要求するため、
+    member 名を指定すると `exec-input-mismatch` で失敗する
+    （workflow authoring 規約）。
   - route usage record の attribution anchor は `route` +
     `route.grant`（`executed.grant` は実測 echo）のまま。
 - R8. 次の不変条件を保持すること:
@@ -239,6 +265,11 @@ route 1 件が委譲できる grant を `{route.grant}` 単体から
       workflow 内の command job が `a`・`b` を `input.name` に
       指定して実行でき、未宣言名を指定した job は policy
       解決失敗で拒否される
+- [ ] project 層 routes.yaml の route entry が `grants` key を
+      含むと fail-loud route-load error で拒否され（該当 file
+      全体が load 失敗）、builtin/user 層の `grants` 宣言は
+      受理される。project 層の `route.grant` 単数宣言は
+      従来どおり有効
 - [ ] `route.grant` の argv pattern と hook payload argv が
       不一致のとき viability が `no-grant` となり route が
       発火せず原 command が直接実行される（byte-matched
