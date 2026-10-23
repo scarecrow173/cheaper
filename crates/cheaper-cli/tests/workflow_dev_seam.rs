@@ -163,8 +163,8 @@ fn workflow_dev_seam_command_fixture_child() {
 }
 
 /// `--grant` flag 値(JSON)— executable = この test binary 自身
-/// (workspace 外のため workspace-resident 拒否に掛からない)、argv
-/// literal pin、`env` で fixture mode + marker path を渡す。
+/// (absolute path のため pin は ambient PATH 非依存で deterministic)、
+/// argv literal pin、`env` で fixture mode + marker path を渡す。
 fn workflow_command_grant_flag(marker: &str) -> String {
     serde_json::json!({
         "name": "self",

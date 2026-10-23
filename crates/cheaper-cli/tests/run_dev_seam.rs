@@ -357,8 +357,8 @@ const FIXTURE_COMMAND_CALL: &str = r#"{
 }"#;
 
 /// `command` 用の trusted user layer `policy.yaml` — grant executable
-/// はこの test binary 自身(workspace 外のため workspace-resident 拒否
-/// に掛からず、ambient PATH 非依存で pin できる)。`argv` は literal
+/// はこの test binary 自身(absolute path のため pin は ambient PATH
+/// 非依存で deterministic)。`argv` は literal
 /// pin、`env` で fixture mode + marker path を渡す。
 fn command_user_policy(marker: &str) -> String {
     let exe = std::env::current_exe()
@@ -898,13 +898,13 @@ async fn run_fake_stream_grant_flag_is_not_persisted() {
     assert!(!f.cfg.path().join("policy.yaml").exists());
 }
 
-/// AC3 — deny list 該当 executable(`python` — interpreter)を含む
-/// `--grant` spec は run 開始前に reject される。shared validation
-/// 由来として inner code `INVALID_RUNTIME_POLICY`(exit 3)を保持し
-/// `details.layer == "invocation"` を持つ — invocation 経路は deny
-/// list を迂回しない。
+/// AC3 — wildcard 構造違反(interior `*`)を含む `--grant` spec は
+/// run 開始前に reject される。shared validation 由来として inner
+/// code `INVALID_RUNTIME_POLICY`(exit 3)を保持し
+/// `details.layer == "invocation"` を持つ — invocation 層の spec
+/// 検証は PATH 非依存で deterministic。
 #[tokio::test(flavor = "current_thread")]
-async fn run_fake_stream_grant_deny_listed_executable_rejected() {
+async fn run_fake_stream_grant_invalid_spec_rejected() {
     let fixture = opt_in_fixture(r#"{"status":"success"}"#, None);
     let mut f = Fixture::new()
         .with_fake_stream(&fixture)
@@ -914,7 +914,7 @@ async fn run_fake_stream_grant_deny_listed_executable_rejected() {
             "run",
             "opt-worker",
             "--grant",
-            r#"{"name":"x","executable":"python"}"#,
+            r#"{"name":"x","executable":"python","argv":["a*b"]}"#,
         ])
         .await;
     assert_eq!(env["ok"], json!(false), "envelope: {env}");
