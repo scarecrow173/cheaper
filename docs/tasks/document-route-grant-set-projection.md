@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KVxDgWqxNof9qYv0dbf"
 type: "task"
-status: "todo"
+status: "done"
 title: "route grant-set projection の docs 更新"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -199,7 +199,7 @@ design の指定行と記述内容を転記するだけで、意味論を再解�
 
 ## Verification
 
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --type spec --json` で pretooluse spec を含め本 task 更新 doc が error 0
-- [ ] 記述内容が design Docs 更新契約・TSPEC Rules と照合して
-      矛盾しないこと(doc review)
+- [x] `node scripts/check-doc-ids.mjs` exits 0 — 実測: "doc id check OK: 1156 markdown files scanned"
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --type spec --json` で pretooluse spec を含め本 task 更新 doc が error 0 — 実測: severity "error" 0 件(残存 warning は既存 doc 間の reciprocal-relation のみで本変更由来ではない)
+- [x] 記述内容が design Docs 更新契約・TSPEC Rules と照合して
+      矛盾しないこと(doc review) — 実測: 6 file 更新(commit 0419697)、anchor/member 分割・層制限・executed field 記述を design/TSPEC と照合済み

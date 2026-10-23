@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KVxxl3lkopkjHoRid7V"
 type: "task"
-status: "todo"
+status: "done"
 title: "viability 分割・argv_shell_re 除去・project_grants set 投影"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -235,9 +235,10 @@ verbatim rust・error 契約をそのまま実装する — 再解釈しない�
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core` exits 0
-      (exec.rs unit — single-crate では dev-seam feature 適用外)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route` exits 0(route::・route_run:: の新規 case 含む)
-- [ ] `mise exec -- cargo test -p cheaper-tools --test proc_invocation` exits 0
-- [ ] `grep -r argv_shell_re crates/` が 0 件
-- [ ] `mise exec -- cargo clippy -p cheaper-core -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-core` exits 0
+      (exec.rs unit — single-crate では dev-seam feature 適用外) —
+      実測: 244 通常 + 22 doc/additional test pass(commit 471865b 時点)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route` exits 0(route::・route_run:: の新規 case 含む) — 実測: `route::resolve_member_grants_viability` を含む integration target 全件 pass、最終 `mise run check` でも 0 failed
+- [x] `mise exec -- cargo test -p cheaper-tools --test proc_invocation` exits 0 — 実測: 17 test pass(`grant_set_projection_preserves_scope_parity` 含む、`mise run check` 内)
+- [x] `grep -r argv_shell_re crates/` が 0 件 — 実測: 0 件
+- [x] `mise exec -- cargo clippy -p cheaper-core -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0 — 実測: `mise run check` の `cargo clippy --workspace --all-targets` が exit 0

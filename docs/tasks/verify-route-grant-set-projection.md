@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KVxDMCEUdI5WtH1SJxd"
 type: "task"
-status: "todo"
+status: "done"
 title: "route grant-set projection 最終検証 — targeted tests・doc-id・audit_docs・mise run check"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -164,17 +164,25 @@ spec(SPEC-034KTMfXYD5ZlGZCRb8Paj)の Acceptance Criteria 各項目に
 
 ## Done When
 
-- [ ] spec Acceptance Criteria 全項目に対応する test が存在し
-      pass(TSPEC Rule との対応表が §1 で確認済み)
-- [ ] viability 分割・投影境界・record provenance の構造確認・
-      `\0` 含 arg の fail 位置 pin が実測されている
-- [ ] `grep -r argv_shell_re crates/` 0 件・
+- [x] spec Acceptance Criteria 全項目に対応する test が存在し
+      pass(TSPEC Rule との対応表が §1 で確認済み) — `mise run check`
+      の `cargo test --workspace` で 0 failed(`route::resolve_member_grants_viability`・
+      `route_run::exec_job_named_member_is_input_mismatch`・
+      `usage_log::route_record_shape`・
+      `proc_invocation::grant_set_projection_preserves_scope_parity` 含む)
+- [x] viability 分割・投影境界・record provenance の構造確認・
+      `\0` 含 arg の fail 位置 pin が実測されている —
+      `proc_command::metachar_args_pass_through_and_nul_degrades_to_spawn_error`
+      が spawn 時 InvalidInput への degrade を pin(viability 層へ
+      regex は再導入されていない)
+- [x] `grep -r argv_shell_re crates/` 0 件・
       `project_grant` 残件なし・`Route` literal 全件 `grants`
-      field あり・stub 残存なし
-- [ ] `mise run check` exits 0
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `audit_docs` が本 issue の新規 doc で error 0
-- [ ] 5 task + plan の status が更新されている
+      field あり・stub 残存なし — 実測済み(残存は複数形
+      `project_grants` 参照 12 件のみ)
+- [x] `mise run check` exits 0
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `audit_docs` が本 issue の新規 doc で error 0
+- [x] 5 task + plan の status が更新されている
 
 ## Out of Scope
 
@@ -186,9 +194,14 @@ spec(SPEC-034KTMfXYD5ZlGZCRb8Paj)の Acceptance Criteria 各項目に
 
 ## Verification
 
-- [ ] 上記 §1-§3 の全項目が pass(コマンド実測を記録)
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
+- [x] 上記 §1-§3 の全項目が pass(コマンド実測を記録)
+- [x] `node scripts/check-doc-ids.mjs` exits 0 — 実測: "doc id check
+      OK: 1156 markdown files scanned"
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
       で本 issue の新規 doc 7 件(plan・test-spec・task×5)が
-      error 0
-- [ ] `mise run check` exits 0
+      error 0 — 実測: severity "error" 0 件
+- [x] `mise run check` exits 0 — 実測: biome → fmt --check →
+      clippy `--all-targets`(dev-seam) → version → doc-ids →
+      `cargo test --workspace`(dev-seam)0 failed → node --test
+      (scripts 43 / benchmarks 12 pass) → lockfile → apm-payload、
+      全 stage pass で exit 0

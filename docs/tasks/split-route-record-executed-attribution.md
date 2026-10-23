@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KVxxS09XbljJlhLD9Ev"
 type: "task"
-status: "todo"
+status: "done"
 title: "route record の executed:{grant,argv} split"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -212,7 +212,7 @@ verbatim rust・error 契約をそのまま実装する — 再解釈しない�
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib usage_log` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log` exits 0(`route_record_shape` の `executed` assertion 含む)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run` exits 0(record `executed` case)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib usage_log` exits 0 — 実測: 実装時に pass(commit f5e8d54)、`mise run check` でも 0 failed
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log` exits 0(`route_record_shape` の `executed` assertion 含む) — 実測: `route_record_shape` を含む usage_log integration test 全件 pass(`mise run check` 内)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_run` exits 0(record `executed` case) — 実測: route_run target 全件 pass(`mise run check` 内、env-prefix 非混入・anchor identity 保持 case 含む)
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0 — 実測: `mise run check` の clippy `--all-targets` が exit 0

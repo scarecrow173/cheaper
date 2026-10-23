@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KVxrNr5J7VrsdNaZDAP"
 type: "task"
-status: "todo"
+status: "done"
 title: "route grants 宣言 schema・project 層拒否・Route::grant_set"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -174,6 +174,6 @@ verbatim rust・error 契約をそのまま実装する — 再解釈しない�
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib route::routes` が pass(routes.rs unit test)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` が compile + pass(literal churn の workspace 内 compile 回復確認)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib route::routes` が pass(routes.rs unit test) — 実測: 実装時に実行・pass(commit 434f4ca)。最終 `mise run check` の `cargo test --workspace` でも全件 pass
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` が compile + pass(literal churn の workspace 内 compile 回復確認) — 実測: `mise run check` の `cargo test --workspace`(dev-seam feature 付き)が 0 failed で exit 0
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0 — 実測: `mise run check` の `cargo clippy --workspace --all-targets` が exit 0

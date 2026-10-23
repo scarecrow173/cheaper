@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034KVx51kVYoMwO8UmJ8VE"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "route grant-set projection — grants 宣言・viability 条件緩和・record split"
 created: "2026-10-23"
 updated: "2026-10-23"
