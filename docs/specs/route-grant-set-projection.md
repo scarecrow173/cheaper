@@ -25,8 +25,8 @@ relations:
   superseded-by: []
   related:
     - "../adr/route-grant-set-projection.md"
-  refines:
     - "./pretooluse-route-resolver-and-workflow-delegation.md"
+  refines: []
   refined-by: []
   derives-from:
     - "../discovery/route-grant-set-projection-issue-166.md"

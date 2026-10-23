@@ -28,8 +28,8 @@ relations:
     - "../specs/route-grant-set-projection.md"
     - "./defer-non-exec-routing-to-permission-model-redesign.md"
     - "./enforce-declared-contracts-over-content-audit.md"
-  refines:
     - "../specs/pretooluse-route-resolver-and-workflow-delegation.md"
+  refines: []
   refined-by: []
   derives-from:
     - "../discovery/route-grant-set-projection-issue-166.md"
