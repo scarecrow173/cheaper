@@ -335,6 +335,13 @@ pub struct RouteRecordInput {
     /// 原 shell command 文字列 — record には `DefaultHasher` hex
     /// の `commandHash` のみ載せ、本文は残さない。
     pub command: String,
+    /// 実際に実行された grant 名(`captured.details.grant` — #166
+    /// `executed` attribution)。宣言 anchor `route`/`commandHash` と
+    /// 別軸で、実 exec job が何を実行したかを記録する。
+    pub executed_grant: String,
+    /// 実際に実行された env-prefix-strip 済み argv
+    /// (`captured.details.argv` — #166 `executed` attribution)。
+    pub executed_argv: Vec<String>,
     /// capture した原 output の token 数。
     pub original_tokens: f64,
     /// 親へ返した compact result の token 数。
@@ -378,6 +385,17 @@ pub fn build_route_record(input: &RouteRecordInput, root: &str, now: &dyn Fn() -
         "commandHash".to_string(),
         Value::from(format!("{:016x}", h.finish())),
     );
+    // `executed` — additive(#166)。`commandHash` 直後へ挿入し、
+    // 実際に実行された `{grant, argv}` を record する
+    // (`route`/`commandHash` の宣言 identity とは別軸の実行
+    // attribution — `executed.argv` は plaintext の引数値を含む)。
+    let mut executed = Map::new();
+    executed.insert(
+        "grant".to_string(),
+        Value::from(input.executed_grant.clone()),
+    );
+    executed.insert("argv".to_string(), Value::from(input.executed_argv.clone()));
+    base.insert("executed".to_string(), Value::Object(executed));
     base.insert(
         "originalTokens".to_string(),
         Value::from(input.original_tokens),

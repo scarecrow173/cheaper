@@ -348,7 +348,21 @@ async fn exit_mirrored_and_log_written() {
     assert_eq!(record["ok"], json!(false));
     assert_eq!(record["route"], json!("child-run"));
     assert_eq!(record["logRef"], json!(log_ref));
-    assert!(!record.to_string().contains(CHILD_ARGV));
+    // `command` shell 文字列本文は record に載らない —
+    // `commandHash` のみ(#166 で `executed.argv` は additive に
+    // 記録されるが、それは exec argv token であり shell 本文
+    // `"routed …"` ではない)。
+    assert!(
+        record.get("command").is_none(),
+        "command plaintext must not be recorded: {record}"
+    );
+    // `executed` — additive attribution(#166):実 exec job が実行した
+    // grant と env-prefix-strip 済み argv。
+    assert_eq!(record["executed"]["grant"], json!("child-run"));
+    assert_eq!(
+        record["executed"]["argv"],
+        json!(["route_run::command_fixture", "--exact", "--nocapture"])
+    );
     assert!(result["execResult"]["details"]["outputTokens"].is_number());
     assert_eq!(result["execResult"]["details"]["logRef"], json!(log_ref));
 }
@@ -559,6 +573,15 @@ async fn member_grant_jobs_execute_and_undeclared_denied() {
     // member job 自体は失敗しない。
     assert!(!failures.iter().any(|s| s == "job-failed:fmt-job"));
     assert!(!failures.iter().any(|s| s == "job-failed:report-job"));
+    // record attribution は anchor のまま — `executed` は member
+    // 名ではなく anchor `child-run` と exec argv を記録する。
+    let record = route_record(&f);
+    assert_eq!(record["route"], json!("member-run"));
+    assert_eq!(record["executed"]["grant"], json!("child-run"));
+    assert_eq!(
+        record["executed"]["argv"],
+        json!(["route_run::command_fixture", "--exact", "--nocapture"])
+    );
 }
 
 /// `job_id == "exec"` × `tool: "command"` は anchor grant + 元 argv の
@@ -917,6 +940,13 @@ async fn worker_parity_and_route_log_read() {
     assert!(
         !record.to_string().contains("ambient-val"),
         "record leaked ambient"
+    );
+    // `executed`(#166)— env-prefix-strip 済みの実実行 argv を記録
+    // し、`FOO=secret-pfx` 等の prefix 値は argv にも含まれない。
+    assert_eq!(record["executed"]["grant"], json!("child-run"));
+    assert_eq!(
+        record["executed"]["argv"],
+        json!(["route_run::command_fixture", "--exact", "--nocapture"])
     );
 }
 
