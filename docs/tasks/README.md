@@ -44,6 +44,7 @@ Directory: `docs/tasks`
 | TASK-034Jg6jKK9lLmnOPTaQhAW | Add route context scope options and single-grant policy projection | done | [add-route-context-scope-options.md](./add-route-context-scope-options.md) |
 | TASK-034Jg6kYud58YUAHEYOIDt | Add route declaration schema and three-layer loader | done | [add-route-declaration-loader.md](./add-route-declaration-loader.md) |
 | TASK-034Jg6wIaUwhyIQnDJRAuu | Add route fingerprint to hook dedup cache | done | [add-route-dedup-fingerprint.md](./add-route-dedup-fingerprint.md) |
+| TASK-034KVxrNr5J7VrsdNaZDAP | route grants 宣言 schema・project 層拒否・Route::grant_set | todo | [add-route-grants-declaration-and-grant-set.md](./add-route-grants-declaration-and-grant-set.md) |
 | TASK-034Jg6IVuYRxFj2Zn3JPI9 | Add route integration and compile-contract tests | done | [add-route-integration-tests.md](./add-route-integration-tests.md) |
 | TASK-034Jg6ui9tEt8GFLDetq57 | Add route log store and RouteLogReader | done | [add-route-log-store.md](./add-route-log-store.md) |
 | TASK-034Jg6HVZoKBgwGDZT8ZT6 | Add route logs CLI arm | done | [add-route-logs-cli.md](./add-route-logs-cli.md) |
@@ -126,6 +127,7 @@ Directory: `docs/tasks`
 | TASK-034DlFJnTT9v0YcqV9Uine | Document devin usage semantics in providers and usage guides | done | [document-devin-usage-semantics-in-providers-and-usage-guides.md](./document-devin-usage-semantics-in-providers-and-usage-guides.md) |
 | TASK-034KLYEMV6mRczcWiAQpy1 | security.execDenyPatterns の guides・builtin policy.yaml 整備 | done | [document-exec-deny-patterns-profile.md](./document-exec-deny-patterns-profile.md) |
 | TASK-034zQTXMNDaUeqIR3aCRNf | Document launcher distribution and verify acquisition | done | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
+| TASK-034KVxDgWqxNof9qYv0dbf | route grant-set projection の docs 更新 | todo | [document-route-grant-set-projection.md](./document-route-grant-set-projection.md) |
 | TASK-034KQsvyJ7l63g3i4Gjnwl | unified exec grant model の guide/reference 文書更新 | done | [document-unified-exec-grant-model.md](./document-unified-exec-grant-model.md) |
 | TASK-034KxDvREdpF6P10oziJsy | Document windsurf tool_info contract and dual-registration trap in distribution guide | done | [document-windsurf-tool-info-contract-and-registration-requirements.md](./document-windsurf-tool-info-contract-and-registration-requirements.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
@@ -313,6 +315,8 @@ Directory: `docs/tasks`
 | TASK-034rBt4e20Wrlc3FH3NQWd | Shell-read docs and final verification | done | [shell-read-docs-and-final-verification.md](./shell-read-docs-and-final-verification.md) |
 | TASK-034r05iHQeQpDqJ0Qc4762 | Verify skip path, document e2e in AGENTS.md, sync statuses, final verification | done | [skip-path-docs-and-final-verification.md](./skip-path-docs-and-final-verification.md) |
 | TASK-034DmVR8wrCmjvk2D3gXFq | slim payload acquisition machinery removal and check rewiring | done | [slim-payload-acquisition-machinery-removal-and-check-rewiring.md](./slim-payload-acquisition-machinery-removal-and-check-rewiring.md) |
+| TASK-034KVxxS09XbljJlhLD9Ev | route record の executed:{grant,argv} split | todo | [split-route-record-executed-attribution.md](./split-route-record-executed-attribution.md) |
+| TASK-034KVxxl3lkopkjHoRid7V | viability 分割・argv_shell_re 除去・project_grants set 投影 | todo | [split-route-viability-and-generalize-grant-projection.md](./split-route-viability-and-generalize-grant-projection.md) |
 | TASK-034r05iHQeQpDpB3QaYlPY | Start Ollama container and pull qwen3.5 quantized model | done | [start-ollama-container-and-pull-qwen3-5-quantized-model.md](./start-ollama-container-and-pull-qwen3-5-quantized-model.md) |
 | TASK-034r05iHQeQpDqlvQrRhaE | Streaming grep with batch protocol and bounded footer | done | [streaming-grep-batch-protocol-and-bounded-footer.md](./streaming-grep-batch-protocol-and-bounded-footer.md) |
 | TASK-06WDQr0NHYErusR6Cmye43 | Sync cheaper-usage SKILL.md with current CLI and hook surface | done | [sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md](./sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md) |
@@ -349,6 +353,7 @@ Directory: `docs/tasks`
 | TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | done | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |
 | TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | done | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
+| TASK-034KVxDMCEUdI5WtH1SJxd | route grant-set projection 最終検証 — targeted tests・doc-id・audit_docs・mise run check | todo | [verify-route-grant-set-projection.md](./verify-route-grant-set-projection.md) |
 | TASK-034yW3DRPtMmttnAEru9Ns | Verify route test determinism and run mise run check | done | [verify-route-test-determinism-and-mise-check.md](./verify-route-test-determinism-and-mise-check.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
 | TASK-034KQsAwXBVQJ56nGgagYT | unified exec grant model の最終検証と status/evidence 更新 | done | [verify-unified-exec-grant-model.md](./verify-unified-exec-grant-model.md) |
