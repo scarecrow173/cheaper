@@ -20,11 +20,9 @@ use serde_json::{json, Map, Value};
 use crate::duration::DURATION_PATTERN;
 use crate::errors::{CheaperError, ErrorCode};
 use crate::js::MAX_SAFE_INTEGER_U64;
-use crate::nodepath;
 use crate::policy::process::{
-    argv_shell_re, bounded_duration, is_shell_process_executable, relative, str_vec,
-    ProcessHeartbeat, DEFAULT_HEARTBEAT_INTERVAL, DEFAULT_KILL_GRACE, DEFAULT_MAX_OUTPUT_BYTES,
-    DEFAULT_TIMEOUT, MAX_PROCESS_OUTPUT_BYTES,
+    bounded_duration, relative, str_vec, ProcessHeartbeat, DEFAULT_HEARTBEAT_INTERVAL,
+    DEFAULT_KILL_GRACE, DEFAULT_MAX_OUTPUT_BYTES, DEFAULT_TIMEOUT, MAX_PROCESS_OUTPUT_BYTES,
 };
 use crate::resources::normalization::{ResourceManifestDeclaration, ScopeDeclaration};
 use crate::resources::types::ResourceScope;
@@ -150,78 +148,6 @@ pub fn command_invalid(reason: &str) -> CheaperError {
     )
 }
 
-/// `command` 専用の denied executable regex(design §(d))。basename を
-/// 小文字化し `.exe`/`.com` suffix を剥がしてから match する —
-/// interpreter(versioned name まで)・exec wrapper/launcher・dynamic
-/// loader・Windows LOLBin・editor/pager/REPL escape・追加 shell を含む。
-/// shell/shim(`sh`/`bash`/`cmd`/script ext)は process baseline の
-/// `is_shell_process_executable` が別途担う — この deny set は
-/// containment でなく known-bad への fail-fast。
-pub fn command_denied_executable_re() -> &'static regex::Regex {
-    static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    RE.get_or_init(|| {
-        regex::Regex::new(concat!(
-            "^(?:",
-            // interpreters(versioned name まで)
-            "pythonw?|python\\d+(?:\\.\\d+)*[a-z]?|",
-            "pypy\\d*(?:\\.\\d+)*|perl\\d*(?:\\.\\d+)*|ruby\\d*(?:\\.\\d+)*|",
-            "node|nodejs|deno|bun|php\\d*(?:\\.\\d+)*|",
-            "lua|luajit|lua[\\d.]+|r|rscript|julia|",
-            "wscript|cscript|mshta|java|javaw|groovy|tclsh|wish|expect|osascript|",
-            // exec wrapper / launcher — grant は shell の grant と等価
-            "env|xargs|find|awk|gawk|mawk|nawk|sed|busybox|toybox|",
-            "nice|nohup|setsid|timeout|watch|stdbuf|flock|taskset|",
-            "sudo|doas|su|pkexec|setpriv|nsenter|unshare|chroot|",
-            "docker|podman|systemd-run|ssh|scp|rsync|screen|tmux|",
-            // dynamic loader
-            "ld\\.so|ld-linux.*|ld-musl.*|dyld|",
-            // Windows LOLBin + wsl
-            "rundll32|regsvr32|msbuild|dotnet|installutil|regasm|regsvcs|",
-            "forfiles|pcalua|msiexec|wsl|jshell|",
-            // editor / pager / REPL escape
-            "vim|ex|nvim|less|man|mysql|psql|sqlite3|tar|",
-            // 追加 shell
-            "nu|elvish|xonsh|oil|ion",
-            ")$"
-        ))
-        .expect("command denied executable regex compiles")
-    })
-}
-
-/// `is_denied_command_executable` — basename 小文字化 + `.exe`/`.com`
-/// strip 後に `command_denied_executable_re` で match する。
-/// `is_shell_process_executable` と並ぶ policy-level deny wrapper で、
-/// declared basename・pin 時 resolved basename・spawn 前再検証の
-/// 3 適用点から参照される(design §(d))。
-pub fn is_denied_command_executable(executable: &str) -> bool {
-    let name = executable
-        .rsplit(['/', '\\'])
-        .next()
-        .unwrap_or("")
-        .to_lowercase();
-    let stem = name
-        .strip_suffix(".exe")
-        .or_else(|| name.strip_suffix(".com"))
-        .unwrap_or(&name);
-    command_denied_executable_re().is_match(stem)
-}
-
-/// design §(b) workspace-resident executable pre-filter: declared
-/// executable が absolute path でなく `/`・`\` separator を含む relative
-/// path なら `resolve_process_executable` の workspace-relative 解決へ
-/// 着地する — cheaper-tools の pin が委譲前に `POLICY_VIOLATION` で
-/// 拒否するための判定(realpath 後の inside-workspace 検査は tools 側)。
-pub fn is_relative_executable_path(executable: &str) -> bool {
-    let drive = {
-        let b = executable.as_bytes();
-        b.len() >= 2 && b[0].is_ascii_alphabetic() && b[1] == b':'
-    };
-    !nodepath::is_absolute(executable)
-        && !nodepath::win32_is_absolute(executable)
-        && !drive
-        && (executable.contains('/') || executable.contains('\\'))
-}
-
 /// argv pattern の positional token(design §(a))。literal exact /
 /// trailing-`*` prefix match / 末尾 bare `*` の rest marker の 3 種のみ。
 #[derive(Debug, Clone, PartialEq)]
@@ -239,16 +165,13 @@ pub struct ArgPattern {
 }
 
 impl ArgPattern {
-    /// pattern compile。metachar(`argv_shell_re`)・最終要素以外の bare
-    /// `*`・末尾以外/2 個以上の `*` を含む要素は `InvalidRuntimePolicy`
-    /// で拒否(match 不能な pattern を静的に排除)。
+    /// pattern compile。最終要素以外の bare `*`・末尾以外/2 個以上の
+    /// `*` を含む要素は `InvalidRuntimePolicy` で拒否(match 不能な
+    /// pattern を静的に排除)。token の内容は審査しない。
     pub fn compile(pattern: &[String]) -> Result<Self, CheaperError> {
         let last = pattern.len().saturating_sub(1);
         let mut tokens = Vec::with_capacity(pattern.len());
         for (i, element) in pattern.iter().enumerate() {
-            if argv_shell_re().is_match(element) {
-                return Err(command_invalid("shell syntax in argv pattern is forbidden"));
-            }
             let token = match element.matches('*').count() {
                 0 => ArgToken::Literal(element.clone()),
                 // 最終要素の bare `*` のみ zero-or-more rest marker。
@@ -366,22 +289,9 @@ pub fn resolve_command_policy(
             .and_then(Value::as_str)
             .unwrap_or_default()
             .to_string();
-        // declared basename の fail-fast(design §(d) 適用点 1) —
-        // process baseline(shell/shim/script ext)+ `command` 専用
-        // interpreter/exec-wrapper deny set の双方を検査する。
-        if is_shell_process_executable(&executable) {
-            return Err(command_invalid(
-                "shell or script shim executable is forbidden",
-            ));
-        }
-        if is_denied_command_executable(&executable) {
-            return Err(command_invalid(
-                "interpreter or exec-capable executable is forbidden",
-            ));
-        }
-        // `argv` は optional — 省略時は args 個数無制約(metachar 拒否と
-        // 長さ cap のみ)。pattern は resolve 時に compile 検証だけ行い、
-        // resolved grant には source string を保持する。
+        // `argv` は optional — 省略時は args 個数無制約(長さ cap のみ)。
+        // pattern は resolve 時に compile 検証だけ行い、resolved grant
+        // には source string を保持する。
         let argv = match grant.get("argv") {
             Some(v) if !v.is_null() => {
                 let pattern = str_vec(v);
@@ -528,144 +438,25 @@ mod tests {
     }
 
     #[test]
-    fn denied_executables_cover_interpreters_wrappers_and_versioned_names() {
+    fn resolve_accepts_declared_executable_names() {
+        // declared executable の内容は審査しない — policy resolve は
+        // PATH 非依存で受理する(pin・spawn viability は tools 層)。
         for exe in [
-            "python",
-            "pythonw",
             "python3",
-            "python3.13",
             "python3.13t",
-            "python.exe",
-            "pypy",
-            "pypy3.10",
-            "perl",
-            "perl5.38",
-            "ruby",
-            "ruby3.2",
-            "node",
-            "nodejs",
-            "node.exe",
-            "node.com",
-            "deno",
-            "bun",
-            "php",
-            "php8.3",
-            "lua",
-            "luajit",
-            "lua5.4",
-            "r",
-            "rscript",
-            "julia",
-            "wscript",
-            "cscript",
-            "mshta",
-            "java",
-            "javaw",
-            "groovy",
-            "tclsh",
-            "wish",
-            "expect",
-            "osascript",
             "env",
-            "xargs",
-            "find",
-            "awk",
-            "sed",
-            "busybox",
-            "nice",
-            "nohup",
-            "setsid",
-            "timeout",
-            "watch",
-            "stdbuf",
-            "flock",
-            "taskset",
-            "sudo",
-            "doas",
-            "su",
-            "pkexec",
-            "setpriv",
-            "nsenter",
-            "unshare",
-            "chroot",
-            "docker",
-            "podman",
-            "systemd-run",
-            "ssh",
-            "scp",
-            "rsync",
-            "screen",
-            "tmux",
-            "ld.so",
             "ld-linux-x86-64.so.2",
-            "ld-musl-x86_64.so.1",
-            "dyld",
-            "rundll32",
-            "regsvr32",
-            "msbuild",
-            "dotnet",
-            "installutil",
-            "regasm",
-            "regsvcs",
-            "forfiles",
-            "pcalua",
-            "msiexec",
-            "wsl",
-            "jshell",
-            "vim",
-            "ex",
-            "nvim",
-            "less",
-            "man",
-            "mysql",
-            "psql",
-            "sqlite3",
-            "tar",
-            "nu",
-            "elvish",
-            "xonsh",
-            "oil",
-            "ion",
-            // absolute path / dir 付きでも basename で捕捉する
-            "/usr/bin/python3",
-            "C:\\Tools\\node.exe",
+            "bash",
+            "deploy.sh",
+            "git",
+            "git.exe",
+            "cargo",
         ] {
-            assert!(is_denied_command_executable(exe), "{exe}");
-        }
-        for exe in [
-            "git", "cargo", "make", "cc", "grep", "my-tool", "pythonic", "nodes",
-        ] {
-            assert!(!is_denied_command_executable(exe), "{exe}");
-        }
-        // shell/shim は command deny set ではなく process baseline が担う。
-        assert!(!is_denied_command_executable("bash"));
-        assert!(is_shell_process_executable("bash"));
-    }
-
-    #[test]
-    fn resolve_rejects_denied_and_shell_executables() {
-        for (exe, reason) in [
-            ("python3", "interpreter or exec-capable"),
-            ("python3.13t", "interpreter or exec-capable"),
-            ("env", "interpreter or exec-capable"),
-            ("ld-linux-x86-64.so.2", "interpreter or exec-capable"),
-            ("bash", "shell or script shim"),
-            ("deploy.sh", "shell or script shim"),
-        ] {
-            let e = resolve_command_policy(Some(&json!({
+            let p = resolve_command_policy(Some(&json!({
                 "grants": {"g": {"executable": exe}}
             })))
-            .unwrap_err();
-            assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy, "{exe}");
-            assert!(e.message().contains(reason), "{exe}: {}", e.message());
-        }
-        // 正当な executable は受理される(.exe suffix 付きの非 deny 名も)。
-        for exe in ["git", "git.exe", "cargo"] {
-            let p = resolve_command_policy(Some(&json!({
-                "grants": {"git-read": {"executable": exe}}
-            })))
-            .unwrap();
-            assert_eq!(p.grants["git-read"].executable, exe);
+            .unwrap_or_else(|e| panic!("{exe}: grant resolves: {e}"));
+            assert_eq!(p.grants["g"].executable, exe);
         }
         let p = resolve_command_policy(Some(&json!({
             "grants": {"git-read": {"executable": "git"}}
@@ -701,9 +492,16 @@ mod tests {
         assert!(p.matches(&["log".to_string(), "--format=%H".to_string()]));
         assert!(!p.matches(&["log".to_string(), "--format".to_string()]));
         assert!(!p.matches(&["log".to_string(), "--stat".to_string()]));
-        // interior `*`・複数 `*`・metachar は compile 時拒否。
-        for bad in ["a*b", "**", "*a", "a|b", "x;y", "v$(i)"] {
+        // interior `*`・複数 `*`・prefix `*` は wildcard 構造違反で
+        // compile 時拒否。
+        for bad in ["a*b", "**", "*a"] {
             assert!(ArgPattern::compile(&[bad.to_string()]).is_err(), "{bad}");
+        }
+        // metachar を含む token は literal として受理される。
+        for ok in ["a|b", "x;y", "v$(i)"] {
+            let p = ArgPattern::compile(&[ok.to_string()])
+                .unwrap_or_else(|e| panic!("{ok}: literal token compiles: {e}"));
+            assert!(p.matches(&[ok.to_string()]));
         }
         // 最終要素以外の bare `*` は拒否。
         assert!(ArgPattern::compile(&["*".to_string(), "log".to_string()]).is_err());
@@ -825,20 +623,5 @@ mod tests {
             ResourceScope::Subtree
         );
         assert!(res.produces.is_none());
-    }
-
-    #[test]
-    fn relative_executable_path_prefilter() {
-        for exe in ["bin/tool", "a\\b", "./run", ".\\run", "../x"] {
-            assert!(is_relative_executable_path(exe), "{exe}");
-        }
-        let abs = if cfg!(windows) {
-            "C:\\bin\\git.exe"
-        } else {
-            "/usr/bin/git"
-        };
-        for exe in ["git", "git.exe", "my-tool", abs] {
-            assert!(!is_relative_executable_path(exe), "{exe}");
-        }
     }
 }

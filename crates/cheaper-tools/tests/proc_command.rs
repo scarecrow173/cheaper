@@ -12,10 +12,11 @@
 //! 対象(design §(a)-(g)・test-spec):
 //! - registration gate: nonempty grants・writeScope 排他・pin fail-closed・
 //!   dormant runtime
-//! - declared/pin/spawn-time の 3 適用点 deny(shell/shim・interpreter/
-//!   exec-wrapper/loader・workspace-resident)
+//! - declared/pin/spawn-time の各適用点 — declared executable 名の
+//!   policy resolve 受理、pin の PATH 解決・spawn viability、pin 済み
+//!   path の spawn 前再検証(symlink 差替・削除の fail-closed)
 //! - model input `{name,args}` のみ(schema で余剰 key `INVALID_INPUT`)
-//! - argv pattern match・metachar 拒否・cwd 境界
+//! - argv pattern match(metachar は literal argv として受理)・cwd 境界
 //! - 独自 pool `"command"`(`command.maxConcurrent`)+ Exclusive claim の
 //!   serialize
 
@@ -228,8 +229,8 @@ fn options(root: &str, command: Value, names: Vec<ToolName>) -> ToolRuntimeOptio
 
 /// この test binary を executable とする grant — `argv` は fixture test
 /// 名 + `--exact --nocapture` の literal pin、`env` で fixture mode(+
-/// mode 依存 path)を渡す。PATH 解決に依存せず、temp workspace 外のため
-/// workspace-resident 拒否にも掛からない。
+/// mode 依存 path)を渡す。absolute path 宣言のため pin は ambient PATH
+/// 解決に依存せず deterministic。
 fn self_grant(mode: &str, arg: Option<&str>) -> Value {
     let exe = std::env::current_exe()
         .unwrap()
@@ -396,16 +397,17 @@ fn write_scope_rejects_command() {
 }
 
 // ---------------------------------------------------------------------------
-// deny — declared basename / pin resolved basename / workspace-resident
+// executable 受理 — declared 名・pin resolved basename・workspace 内 file
 // ---------------------------------------------------------------------------
 
-/// declared basename の deny(design §(d) 適用点 1) — interpreter・
-/// exec wrapper/loader は policy resolve(`InvalidRuntimePolicy`)で
-/// fail-fast し、shell/shim は baseline `is_shell_process_executable`
-/// で拒否される。
+/// declared executable 名は内容審査されず policy resolve を通る
+/// (design §(d) — interpreter・exec wrapper/loader・shell 系名を
+/// 含む任意名を受理)。`resolve_command_policy` は PATH 非依存で
+/// deterministic。pin 層の受理は workspace 内 file の case で別途 pin。
 #[test]
-fn declared_denied_executables_fail_policy_resolution() {
-    let dir = TempDir::new();
+fn declared_executable_names_pass_policy_resolution() {
+    use cheaper_core::policy::command::resolve_command_policy;
+
     for exe in [
         "python",
         "python3.11",
@@ -417,133 +419,102 @@ fn declared_denied_executables_fail_policy_resolution() {
         "sudo",
         "docker",
         "ld-linux.so.2",
+        "ssh",
+        "tar",
+        "sh",
+        "bash",
+        "cmd.exe",
+        "powershell",
+        "deploy.sh",
     ] {
-        let err = command_runtime(
-            &dir.root(),
-            command_policy(json!({"g": {"executable": exe}})),
-        )
-        .unwrap_err();
-        let e = cheaper_err(&err);
-        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy, "{exe}");
-        assert!(
-            e.message().contains("interpreter or exec-capable"),
-            "{exe}: {}",
-            e.message()
-        );
-    }
-    for exe in ["sh", "bash", "cmd.exe", "powershell"] {
-        let err = command_runtime(
-            &dir.root(),
-            command_policy(json!({"g": {"executable": exe}})),
-        )
-        .unwrap_err();
-        let e = cheaper_err(&err);
-        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy, "{exe}");
-        assert!(
-            e.message().contains("shell or script shim"),
-            "{exe}: {}",
-            e.message()
-        );
+        resolve_command_policy(Some(&json!({
+            "grants": {"g": {"executable": exe}}
+        })))
+        .unwrap_or_else(|e| panic!("{exe} should be accepted: {e}"));
     }
 }
 
-/// pin 時 resolved basename の deny 再検査(design §(d) 適用点 2) —
-/// declared name が deny 外でも、symlink 解決後の basename が
-/// interpreter 名なら `POLICY_VIOLATION`。resolved basename ≠ declared
-/// basename を作れるのは symlink のみ(Windows symlink は権限依存)のため
-/// unix gate — deny check 自体の適用点は declared basename test で
-/// 両 platform 共通に固定済み。
+/// pin 時 resolved basename は審査されない — symlink 解決後の
+/// basename が任意名でも pin される。resolved basename ≠ declared
+/// basename を作れるのは symlink のみ(Windows symlink は権限依存)
+/// のため unix gate。
 #[cfg(unix)]
 #[test]
-fn pinned_resolved_basename_deny_rejects() {
+fn pin_accepts_symlink_resolved_basename() {
     let dir = TempDir::new();
-    // workspace 外の bin dir(workspace-resident 拒否を避ける)。
+    // workspace 外の bin dir。
     let bin = TempDir::new();
+    // resolved basename を `python3` とする file(内容は current_exe
+    // 複製 — 内容・basename は判定対象外)。
     let real = bin.join("python3");
     std::fs::copy(std::env::current_exe().unwrap(), &real).unwrap();
     let link = bin.join("tool");
     std::os::unix::fs::symlink(&real, &link).unwrap();
-    let err = command_runtime(
+    command_runtime(
         &dir.root(),
         command_policy(json!({
             "g": {"executable": link.to_string_lossy()}
         })),
     )
-    .unwrap_err();
-    let e = cheaper_err(&err);
-    assert_eq!(e.code(), ErrorCode::PolicyViolation);
-    assert!(
-        e.message()
-            .contains("resolved executable is interpreter or exec-capable"),
-        "{}",
-        e.message()
-    );
+    .expect("symlink-resolved executable pins successfully");
 }
 
-/// workspace-resident executable は二段で拒否 — (a) separator 付き
-/// relative declared path(委譲前 pre-filter)、(b) realpath 後の
-/// canonical path が workspace 内。両方 `POLICY_VIOLATION`。
+/// workspace 内の executable は relative・absolute どちらの
+/// declared path でも pin・runtime 構築を通る(workspace 境界の
+/// escape 検査のみが残る)。
 #[test]
-fn workspace_resident_executables_are_rejected() {
+fn workspace_executables_are_pinned() {
     let dir = TempDir::new();
     let resident = dir.join(if cfg!(windows) { "tool.exe" } else { "tool" });
     std::fs::copy(std::env::current_exe().unwrap(), &resident).unwrap();
 
-    // (a) relative declared path。
-    let err = command_runtime(
+    // (a) relative declared path — workspace 内へ解決され pin される。
+    let declared_rel = if cfg!(windows) {
+        ".\\tool.exe"
+    } else {
+        "./tool"
+    };
+    command_runtime(
         &dir.root(),
         command_policy(json!({
-            "g": {"executable": "./tool"}
+            "g": {"executable": declared_rel}
         })),
     )
-    .unwrap_err();
-    let e = cheaper_err(&err);
-    assert_eq!(e.code(), ErrorCode::PolicyViolation);
-    assert!(
-        e.message()
-            .contains("workspace-resident executables are not grantable"),
-        "{}",
-        e.message()
-    );
+    .expect("workspace-relative executable pins");
 
-    // (b) absolute declared path — realpath 後の inside-workspace 検査。
-    let err = command_runtime(
+    // (b) absolute declared path — workspace 内 file も pin される。
+    command_runtime(
         &dir.root(),
         command_policy(json!({
             "g": {"executable": resident.to_string_lossy()}
         })),
     )
-    .unwrap_err();
-    let e = cheaper_err(&err);
-    assert_eq!(e.code(), ErrorCode::PolicyViolation);
-    assert!(
-        e.message()
-            .contains("workspace-resident executables are not grantable"),
-        "{}",
-        e.message()
-    );
+    .expect("absolute workspace executable pins");
 }
 
 /// ambient PATH に存在しない executable は pin 不能 → `POLICY_VIOLATION`
-/// (fail closed)。
+/// (fail closed)。`\0` を含む declared executable も同じ — realpath
+/// 失敗で pin 層のまま縮退せず失敗する(spawn 層へは到達しない)。
 #[test]
 fn unpinnable_executable_fails_closed() {
     let dir = TempDir::new();
-    let err = command_runtime(
-        &dir.root(),
-        command_policy(json!({
-            "ghost": {"executable": "definitely-not-a-real-command-xyz"}
-        })),
-    )
-    .unwrap_err();
-    let e = cheaper_err(&err);
-    assert_eq!(e.code(), ErrorCode::PolicyViolation);
-    assert!(
-        e.message()
-            .contains("requires a supported native executable"),
-        "{}",
-        e.message()
-    );
+    for exe in ["definitely-not-a-real-command-xyz", "a\0b"] {
+        let err = command_runtime(
+            &dir.root(),
+            command_policy(json!({
+                "ghost": {"executable": exe}
+            })),
+        )
+        .unwrap_err();
+        let e = cheaper_err(&err);
+        assert_eq!(e.code(), ErrorCode::PolicyViolation, "{exe:?}");
+        assert!(
+            e.message()
+                .contains("could not be resolved to a spawnable executable"),
+            "{exe:?}: {}",
+            e.message()
+        );
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -631,7 +602,7 @@ async fn invalid_grant_name_pattern_is_invalid_input() {
 }
 
 // ---------------------------------------------------------------------------
-// authorization — unknown grant / argv pattern / metachar
+// authorization — unknown grant / argv pattern / argv passthrough
 // ---------------------------------------------------------------------------
 
 /// 未知 grant は spawn 前に `POLICY_VIOLATION "unknown or unauthorized
@@ -688,38 +659,57 @@ async fn argv_pattern_mismatch_is_policy_violation() {
     }
 }
 
-/// metachar(`|&;<>`・`` ` ``・`$(`・NUL/改行)は pattern match より先の
-/// 独立 check で全 token に適用される — rest marker `*` が適合しても
-/// `POLICY_VIOLATION`。
+/// argv token の内容は審査されない — (a) metachar(`|&;<>`・`` ` ``・
+/// `$(`・改行)は pattern 適合なら literal argv として子 process へ
+/// 届く(fixture `inspect` の sentinel args で観測)。(b) `\0` を含む
+/// token は shell-free spawn が引き受けず `TOOL_EXECUTION_FAILURE` +
+/// `spawnCode="SPAWN_ERROR"` へ縮退する(観測点 pin)。
 #[tokio::test]
-async fn shell_metacharacters_are_rejected() {
+async fn metachar_args_pass_through_and_nul_degrades_to_spawn_error() {
     let dir = TempDir::new();
     let mut grant = self_grant("inspect", None);
-    // rest marker — metachar 無しなら任意個数の args を受理する形。
+    // rest marker — 任意個数の args を受理する形。
     grant
         .as_object_mut()
         .unwrap()
         .insert("argv".to_string(), json!([FIXTURE, "*"]));
     let rt = command_runtime(&dir.root(), command_policy(json!({"self": grant}))).unwrap();
-    for bad in [
+
+    // (a) metachar token は literal のまま子 argv へ届く。
+    let metachars = [
         "a|b", "a;b", "a>b", "a<b", "a&b", "$(id)", "`id`", "a\ntail",
-    ] {
-        let err = rt
-            .execute(
-                "command",
-                &json!({"name": "self", "args": [FIXTURE, bad]}),
-                None,
-            )
-            .await
-            .unwrap_err();
-        let e = cheaper_err(&err);
-        assert_eq!(e.code(), ErrorCode::PolicyViolation, "arg {bad:?}");
-        assert!(
-            e.message().contains("forbidden shell metacharacters"),
-            "{bad:?}: {}",
-            e.message()
-        );
-    }
+    ];
+    let mut args = vec![json!(FIXTURE), json!("--exact"), json!("--nocapture")];
+    args.extend(metachars.iter().map(|t| json!(t)));
+    let result = rt
+        .execute("command", &json!({"name": "self", "args": args}), None)
+        .await
+        .unwrap();
+    let report = sentinel_json(
+        result.details.as_ref().unwrap()["stdout"]["text"]
+            .as_str()
+            .unwrap(),
+    );
+    let mut expected = vec![json!("--nocapture")];
+    expected.extend(metachars.iter().map(|t| json!(t)));
+    assert_eq!(report["args"], json!(expected));
+
+    // (b) `\0` は policy 層を通り spawn で `SPAWN_ERROR` へ縮退する。
+    let err = rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": [FIXTURE, "a\0b"]}),
+            None,
+        )
+        .await
+        .unwrap_err();
+    let e = cheaper_err(&err);
+    assert_eq!(e.code(), ErrorCode::ToolExecutionFailure, "{err}");
+    assert_eq!(
+        e.details().unwrap()["spawnCode"],
+        json!("SPAWN_ERROR"),
+        "{err}"
+    );
 }
 
 /// prefix(`--ex*`)と trailing rest(`*`)の argv pattern は適合 args で
@@ -1465,11 +1455,11 @@ async fn command_exclusive_claim_blocks_mutating_siblings() {
 // spawn-time re-verification(design §(b) 適用点 3)
 // ---------------------------------------------------------------------------
 
-/// pin 後に executable が差し替えられた場合、spawn 前再検証が
-/// `POLICY_VIOLATION` で fail-closed する(内容差替 → `native()` 再検査
-/// 不成立)。
+/// pin 後に pinned path が差し替えられた場合、spawn 前再検証が
+/// `POLICY_VIOLATION` で fail-closed する — 観測対象は path の差替
+/// (symlink retarget・削除)で、同一 path の内容差替は審査しない。
 #[tokio::test]
-async fn spawn_time_revalidation_detects_swapped_executable() {
+async fn spawn_time_revalidation_detects_path_changes() {
     let dir = TempDir::new();
     let bin = TempDir::new(); // workspace 外
     let exe = bin.join(if cfg!(windows) { "tool.exe" } else { "tool" });
@@ -1484,8 +1474,33 @@ async fn spawn_time_revalidation_detects_swapped_executable() {
         })),
     )
     .unwrap();
-    // pin 後に pinned path の内容を非 native へ差し替える。
+
+    // 同一 path の内容差替は検出対象外 — 再検証を通り spawn 層へ
+    // 進む(unix では shebang 付き text が実行されて completed に
+    // なり得る。win32 では spawn 層の `TOOL_EXECUTION_FAILURE`)。
     std::fs::write(&exe, b"#!/bin/sh\necho swapped\n").unwrap();
+    match rt
+        .execute(
+            "command",
+            &json!({"name": "self", "args": self_args()}),
+            None,
+        )
+        .await
+    {
+        Ok(result) => {
+            assert_eq!(
+                result.details.as_ref().unwrap()["state"],
+                json!("completed")
+            );
+        }
+        Err(err) => {
+            // policy 層ではなく spawn 層の失敗であることを pin。
+            assert_eq!(code(&err), Some(ErrorCode::ToolExecutionFailure), "{err}");
+        }
+    }
+
+    // pinned file の削除 → `"no longer resolves"`(全 platform)。
+    std::fs::remove_file(&exe).unwrap();
     let err = rt
         .execute(
             "command",
@@ -1497,11 +1512,35 @@ async fn spawn_time_revalidation_detects_swapped_executable() {
     let e = cheaper_err(&err);
     assert_eq!(e.code(), ErrorCode::PolicyViolation);
     assert!(
-        e.message()
-            .contains("no longer resolves to a supported native executable"),
+        e.message().contains("no longer resolves"),
         "{}",
         e.message()
     );
+
+    // pinned file を symlink へ置換 → realpath 不一致で
+    // `"path changed since pin"`(windows symlink は権限依存のため
+    // unix のみ)。
+    #[cfg(unix)]
+    {
+        let real = bin.join("real-target");
+        std::fs::copy(std::env::current_exe().unwrap(), &real).unwrap();
+        std::os::unix::fs::symlink(&real, &exe).unwrap();
+        let err = rt
+            .execute(
+                "command",
+                &json!({"name": "self", "args": self_args()}),
+                None,
+            )
+            .await
+            .unwrap_err();
+        let e = cheaper_err(&err);
+        assert_eq!(e.code(), ErrorCode::PolicyViolation);
+        assert!(
+            e.message().contains("path changed since pin"),
+            "{}",
+            e.message()
+        );
+    }
 }
 
 /// `check_command_execution` — route resolver が使う spawn 無し
@@ -1556,11 +1595,10 @@ fn check_command_execution_shares_execute_predicate() {
         .map(|_| ())
         .unwrap_err();
     assert_eq!(cheaper_err(&e).code(), ErrorCode::PolicyViolation);
-    // metachar token → 同じく POLICY_VIOLATION。
-    let e = check_command_execution(&options, "t", &["test".into(), "a;rm".into()])
-        .map(|_| ())
-        .unwrap_err();
-    assert_eq!(cheaper_err(&e).code(), ErrorCode::PolicyViolation);
+    // metachar token も pattern(`"test","*"`)適合なら受理される —
+    // argv 内容は審査対象外。
+    let checked = check_command_execution(&options, "t", &["test".into(), "a;rm".into()]).unwrap();
+    assert!(!checked.executable.is_empty());
     // 未宣言 grant → `unknown or unauthorized command grant`
     // (resolve_command_grant の fail-closed — resolver の no-grant
     // viability が拾う分類)。

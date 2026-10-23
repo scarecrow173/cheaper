@@ -502,8 +502,8 @@ fn workflow_command_fixture_child() {
 }
 
 /// `command` 用の trusted user layer `policy.yaml` — grant executable
-/// はこの test binary 自身(workspace 外のため workspace-resident 拒否
-/// に掛からず、ambient PATH 非依存で pin できる)。`argv` は literal
+/// はこの test binary 自身(absolute path のため pin は ambient PATH
+/// 非依存で deterministic)。`argv` は literal
 /// pin、`env` で fixture mode + marker path を渡す。
 fn command_user_policy(marker: &str) -> String {
     let exe = std::env::current_exe()

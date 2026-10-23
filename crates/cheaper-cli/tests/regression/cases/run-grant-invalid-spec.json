@@ -1,0 +1,21 @@
+{
+  "name": "run_grant_invalid_spec_rejected",
+  "fixture": {
+    "name": "grant_invalid_spec",
+    "files_note": "wildcard 構造違反(interior `*`)を含む `--grant` spec は run 開始前に reject — inner code INVALID_RUNTIME_POLICY 保持 + details.layer=invocation",
+    "input": { "files": ["a.txt"], "task": "t" },
+    "sessions": [
+      {
+        "steps": [
+          { "turn": {} },
+          { "finish": { "text": "{\"ok\":true}" } }
+        ]
+      }
+    ]
+  },
+  "extraArgs": [
+    "--grant",
+    "{\"name\":\"x\",\"executable\":\"python\",\"argv\":[\"a*b\"]}"
+  ],
+  "files": { "a.txt": "alpha\n" }
+}

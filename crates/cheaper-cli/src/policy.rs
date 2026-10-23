@@ -6,10 +6,10 @@
 //!   畳み込み → **merged full object** の `validate_policy_schema(Partial)`
 //!   → `stringify_yaml` → `atomic_write`(`windows_remove_first: false`、
 //!   POSIX `0600`)の順。merged object の検査は `resolve_command_policy`
-//!   経由で deny list・argv compile・env/cwd 規則を継承し、`version`
-//!   const・`grants` の `maxProperties` により既存 file の
-//!   pre-existing corruption も捕捉する — invalid spec・破損 file は
-//!   一切書き換えない。
+//!   経由で executable 宣言 shape・argv pattern compile・env/cwd
+//!   規則を継承し、`version` const・`grants` の `maxProperties` により
+//!   既存 file の pre-existing corruption も捕捉する — invalid spec・
+//!   破損 file は一切書き換えない。
 //! - `list` は parse + project のみ(validation・write を伴わない)。
 //! - utility command 規約: `record_usage` は dispatch 側も含め非呼出
 //!   し、success envelope の `result` に top-level `tokens` key を
@@ -243,8 +243,9 @@ fn grants_map_mut(
 }
 
 /// merged full object を `validate_policy_schema(Partial)` で検査し
-/// (`resolve_command_policy` 経由の deny list・argv compile・env/cwd
-/// 規則 + `version` const・`maxProperties` を含む)、通過した場合のみ
+/// (`resolve_command_policy` 経由の executable 宣言 shape・argv
+/// pattern compile・env/cwd 規則 + `version` const・`maxProperties`
+/// を含む)、通過した場合のみ
 /// `stringify_yaml` → `atomic_write` で書き込む。失敗時は file を
 /// 一切変更しない。
 fn write_validated(policy_path: &str, policy: Map<String, Value>) -> Result<(), CheaperError> {

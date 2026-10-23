@@ -697,9 +697,10 @@ mod tests {
         bad.as_object_mut().unwrap().insert(
             "process".to_string(),
             json!({"maxConcurrent": 1, "tasks": {"t": {
-                "command": ["sh"], "inputs": [], "outputs": []}}}),
+                "command": ["sh"], "inputs": [], "outputs": [],
+                "cwd": "a/../b"}}}),
         );
-        // schema passes but resolveProcessPolicy rejects shell executable.
+        // schema passes but resolveProcessPolicy rejects the cwd traversal.
         let e = validate_policy_schema(&bad, PolicySchemaMode::Complete).unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
     }

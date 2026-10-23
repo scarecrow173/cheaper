@@ -1,11 +1,11 @@
 //! `command` canonical tool の実装(policy-gated command tool design
-//! §(b)/(e)/(f)/(g))。T1 の deny-stub(`POLICY_VIOLATION
+//! §(b)/(e)/(f)/(g))。T1 の stub(`POLICY_VIOLATION
 //! "command unavailable"`)を grant 経由実行の実装へ差し替えた。
 //!
 //! model 入力は `{name, args}` のみ — executable/cwd/env は trusted
 //! policy の grant に由来し、model 入力経路には一切乗らない。
-//! execute glue は grant 解決 → argv pattern match(metachar 事前
-//! check)→ cwd prepare → pin 済み executable の spawn 前再検証 →
+//! execute glue は grant 解決 → argv pattern match → cwd prepare →
+//! pin 済み executable の spawn 前再検証 →
 //! shared `crate::tools::proc::run` の順。pin 自体は registry の
 //! `create_tool_runtime` が `names` に `Command` を含む場合のみ行う
 //! (per-scope、design §(b)/(g))— 本 module の [`pin_command_grants`]
@@ -21,12 +21,10 @@ use std::sync::Arc;
 
 use cheaper_core::duration::parse_duration;
 use cheaper_core::errors::{CheaperError, ErrorCode};
-use cheaper_core::nodepath;
 use cheaper_core::policy::command::{
-    is_denied_command_executable, is_relative_executable_path, resolve_command_grant, ArgPattern,
-    CommandGrant, ResolvedCommandPolicy,
+    resolve_command_grant, ArgPattern, CommandGrant, ResolvedCommandPolicy,
 };
-use cheaper_core::policy::process::{argv_shell_re, MAX_PROCESS_OUTPUT_BYTES};
+use cheaper_core::policy::process::MAX_PROCESS_OUTPUT_BYTES;
 use cheaper_core::resources::types::ClaimMode;
 use cheaper_core::workspace::deny_paths::PathDenylist;
 use cheaper_core::workspace::paths::SymlinkPolicy;
@@ -161,25 +159,11 @@ fn grant_violation(name: &str, reason: &str) -> ToolError {
     .into()
 }
 
-/// pin 済み canonical path が workspace root 内かの判定。
-/// `root`・`resolved` は共に realpath 済み canonical path 前提 —
-/// `nodepath::relative` が `..` segment を含むか absolute なら root 外。
-fn within_workspace(root: &str, resolved: &str) -> bool {
-    let rel = nodepath::relative(root, resolved);
-    !nodepath::is_absolute(&rel) && !rel.split(['/', '\\']).any(|s| s == "..")
-}
-
 /// `create_tool_runtime` 境界の per-scope pin(design §(b)/(g))。
 /// `names` に `Command` を含む runtime 構築時のみ registry から呼ばれ、
 /// 各 grant の declared executable を ambient PATH で解決して realpath
-/// 済み canonical path へ pin する。workspace-resident executable は
-/// 二段で拒否: (a) absolute でない separator 付き declared path は
-/// `resolve_process_executable` の workspace-relative 解決へ着地する
-/// ため委譲前に `POLICY_VIOLATION`、(b) `native()` realpath 後の
-/// canonical path が workspace root 内なら同じく `POLICY_VIOLATION`
-/// (absolute path / PATH 上の symlink が workspace 内へ着地する迂回
-/// を塞ぐ)。pin 不能・deny 該当 grant も `POLICY_VIOLATION` で runtime
-/// 構築自体を fail させる。
+/// 済み canonical path へ pin する。pin 不能の grant は
+/// `POLICY_VIOLATION` で runtime 構築自体を fail させる。
 pub(crate) fn pin_command_grants(
     policy: &ResolvedCommandPolicy,
     root: &str,
@@ -197,27 +181,15 @@ pub(crate) fn pin_command_grants(
 /// `pin_command_grants` の単一 grant 版 — `route::resolve` の
 /// viability 事前評価(`check_command_execution`)が scope pin 未
 /// 構築の状態でも同一 predicate を使うための共有 seam。
-/// workspace-resident executable は二段で拒否: (a) absolute でない
-/// separator 付き declared path は `resolve_process_executable` の
-/// workspace-relative 解決へ着地するため委譲前に
-/// `POLICY_VIOLATION`、(b) `native()` realpath 後の canonical path
-/// が workspace root 内なら同じく `POLICY_VIOLATION`。
-/// pin 不能・deny 該当 grant は `POLICY_VIOLATION` で返す。
+/// pin 不能の grant は `POLICY_VIOLATION` で返す。
 pub fn pin_command_grant(
-    name: &str,
+    _name: &str,
     grant: &CommandGrant,
     root: &str,
     symlink_policy: SymlinkPolicy,
     denylist: Option<&PathDenylist>,
 ) -> Result<String, ToolError> {
-    // (a) workspace-relative declared executable の pre-filter。
-    if is_relative_executable_path(&grant.executable) {
-        return Err(grant_violation(
-            name,
-            "workspace-resident executables are not grantable",
-        ));
-    }
-    let resolved = resolve_process_executable(
+    resolve_process_executable(
         &grant.executable,
         &ProcessExecutableOptions {
             root,
@@ -226,54 +198,26 @@ pub fn pin_command_grant(
             search_path: None,
         },
         "command grant",
-    )?;
-    // resolved basename の deny 再検査(design §(d) 適用点 2 —
-    // alias/symlink が denied executable へ解決する迂回を塞ぐ)。
-    if is_denied_command_executable(&resolved) {
-        return Err(grant_violation(
-            name,
-            "resolved executable is interpreter or exec-capable",
-        ));
-    }
-    // (b) realpath 後の workspace 内 canonical path を拒否。
-    if within_workspace(root, &resolved) {
-        return Err(grant_violation(
-            name,
-            "workspace-resident executables are not grantable",
-        ));
-    }
-    Ok(resolved)
+    )
 }
 
 /// pin 済み executable の spawn 前再検証(design §(b)) — pin 後の
-/// file 差替えに対する fail-closed。pin 時と同じ candidate 検証
-/// (realpath → shell/shim → is_file → ext → X_OK → native magic)を
-/// 再適用し、deny basename・workspace residency を再評価する。
+/// file 差替えに対する fail-closed。`native_executable` で spawn
+/// viability(realpath → is_file → win32 ext → X_OK)を再適用し、
+/// resolved path が pin 済み canonical path と一致するかを検査する。
 /// pin 済み path は canonical のため、realpath が変わっていた場合は
 /// symlink 差替えとして reject する。
-fn verify_pinned_executable(name: &str, pinned: &str, root: &str) -> Result<(), ToolError> {
+fn verify_pinned_executable(name: &str, pinned: &str) -> Result<(), ToolError> {
     let Some(resolved) = native_executable(pinned) else {
         return Err(grant_violation(
             name,
-            "pinned executable no longer resolves to a supported native executable",
+            "pinned executable no longer resolves to a spawnable executable",
         ));
     };
     if resolved != pinned {
         return Err(grant_violation(
             name,
             "pinned executable path changed since pin",
-        ));
-    }
-    if is_denied_command_executable(&resolved) {
-        return Err(grant_violation(
-            name,
-            "resolved executable is interpreter or exec-capable",
-        ));
-    }
-    if within_workspace(root, &resolved) {
-        return Err(grant_violation(
-            name,
-            "workspace-resident executables are not grantable",
         ));
     }
     Ok(())
@@ -400,10 +344,6 @@ pub fn command_tool_definition(
 // execute(grant 解決 → argv match → prepare → pin 再検証 → proc::run)
 // ---------------------------------------------------------------------------
 
-/// grant argv pattern match + metachar 検査。metachar check は全
-/// token(pattern 適合・rest 残余を問わず)に match 前の独立 check
-/// として適用する(design §(a))。pattern 不一致・metachar 含有は
-/// `POLICY_VIOLATION`。
 /// `check_command_execution` の検証済み出力 — spawn に必要な
 /// grant・cwd・executable を保持する(predicate 結果の共有
 /// transport。`command::execute` はこの 3 値をそのまま使い、
@@ -419,7 +359,7 @@ pub struct CheckedCommand {
 
 /// spawn 無しの事前 check(design §viability — B#3 共有 seam)。
 /// `command::execute` が実 spawn 前に課す全 gate を同一 predicate
-/// で評価する: grant 解決 → argv pattern/metachar → cwd
+/// で評価する: grant 解決 → argv pattern match → cwd
 /// (route context の `exec_cwd` override を含む)→ executable
 /// 検証(per-scope pin map の pin 済み path の再検証。pin 不在は
 /// `POLICY_VIOLATION` — resolver は選択 grant を `pin_command_grant`
@@ -445,12 +385,12 @@ pub fn check_command_execution(
         )?,
     };
     // executable 事前検証 — pin 済み path は scope 構築時点の
-    // canonical へ immutable に固定され、spawn 前にここで再検証
-    // する(verify_pinned)。pin map 無しの経路は fail-closed —
-    // いずれも deny/residency の同一 predicate。
+    // canonical へ immutable に固定され、spawn 前にここで
+    // `native_executable` 再解決 + path 同一性を再検証する
+    // (verify_pinned)。pin map 無しの経路は fail-closed。
     let executable = match options.pins.get(name) {
         Some(pinned) => {
-            verify_pinned_executable(name, pinned, &options.root)?;
+            verify_pinned_executable(name, pinned)?;
             pinned.clone()
         }
         None => {
@@ -464,15 +404,10 @@ pub fn check_command_execution(
     })
 }
 
+/// grant argv pattern match。`grant.argv` が `None` なら無条件受理、
+/// `Some` なら compile + `matches` 照合のみ — 不一致は
+/// `POLICY_VIOLATION`。argv token の内容は審査しない。
 fn authorize_args(name: &str, grant: &CommandGrant, args: &[String]) -> Result<(), ToolError> {
-    for token in args {
-        if argv_shell_re().is_match(token) {
-            return Err(grant_violation(
-                name,
-                "argument contains forbidden shell metacharacters",
-            ));
-        }
-    }
     if let Some(pattern) = &grant.argv {
         // pattern は policy resolve で compile 検証済み — resolved
         // grant が source string を保持するため match 時に再 compile
@@ -515,7 +450,7 @@ async fn execute(
     // 事前 check は `check_command_execution` へ集約(design
     // §viability — `route::resolve` と同一 predicate)。pin map に
     // grant が無ければ即 `POLICY_VIOLATION`、pin 済み path は
-    // spawn 前再検証を経て deny/residency の同一 predicate を通す。
+    // spawn 前再検証(`native_executable` 再解決 + path 同一性)を通す。
     let checked = check_command_execution(options, &name, &args)?;
     let grant = checked.grant;
     let cwd = checked.cwd;
@@ -625,7 +560,9 @@ mod tests {
         f.write_all(bytes).unwrap();
     }
 
-    fn native_bytes() -> Vec<u8> {
+    /// 実在 executable file の fixture bytes — 内容は検査対象では
+    /// なく、file の実在性と実行 bit だけが意味を持つ。
+    fn executable_file_bytes() -> Vec<u8> {
         if cfg!(windows) {
             b"MZbinary".to_vec()
         } else {
@@ -707,30 +644,26 @@ mod tests {
     }
 
     #[test]
-    fn authorize_args_rejects_metachar_before_pattern_match() {
+    fn authorize_args_matches_pattern_only() {
         let policy = policy(json!({
             "grants": {"git-read": {"executable": "git", "argv": ["log", "*"]}}
         }));
         let grant = grant(&policy, "git-read");
-        // pattern 適合でも metachar token は match 前の独立 check で
-        // `POLICY_VIOLATION`。
+        // metachar token は内容審査されず literal argv として受理される。
         for token in ["a|b", "x;y", "$(id)", "`id`", "a>b", "line\nfeed"] {
-            let err = authorize_args("git-read", grant, &["log".to_string(), token.to_string()])
-                .unwrap_err();
-            assert!(policy_violation(&err), "{token}");
+            authorize_args("git-read", grant, &["log".to_string(), token.to_string()])
+                .unwrap_or_else(|e| panic!("{token}: accepted: {e}"));
         }
         // pattern 不一致(超過・不足・別 token)は `POLICY_VIOLATION`。
         for args in [
             vec!["diff".to_string()],
             vec![],
-            // trailing `*` が無い pattern ではないので個数無制約では
-            // ないが、`log` 前置 token が違えば reject。
             vec!["branch".to_string(), "x".to_string()],
         ] {
             let err = authorize_args("git-read", grant, &args).unwrap_err();
             assert!(policy_violation(&err), "{args:?}");
         }
-        // rest marker の残余 token は metachar だけが制約。
+        // rest marker の残余 token は pattern 照合のみが制約。
         authorize_args(
             "git-read",
             grant,
@@ -749,42 +682,60 @@ mod tests {
         let grant = grant(&policy, "g");
         authorize_args("g", grant, &[]).unwrap();
         authorize_args("g", grant, &["status".to_string(), "--short".to_string()]).unwrap();
-        // metachar は argv 省略時も拒否。
-        let err = authorize_args("g", grant, &["a;b".to_string()]).unwrap_err();
-        assert!(policy_violation(&err));
+        // metachar token も argv 省略時は受理される。
+        authorize_args("g", grant, &["a;b".to_string()]).unwrap();
     }
 
     #[test]
-    fn pin_rejects_relative_executable_path_before_resolution() {
+    fn pin_resolves_workspace_relative_executable_path() {
         let dir = TempDir::new();
         let root = dir.root();
+        // workspace 内の実在 file への relative declared executable は
+        // `resolve_workspace_path` の workspace 境界内で解決され pin
+        // される。
+        let declared = if cfg!(windows) {
+            "bin\\tool.exe"
+        } else {
+            "bin/tool"
+        };
+        let bin = dir.join(if cfg!(windows) {
+            "bin/tool.exe"
+        } else {
+            "bin/tool"
+        });
+        std::fs::create_dir_all(bin.parent().unwrap()).unwrap();
+        write(&bin, &executable_file_bytes());
+        set_executable(&bin);
         let policy = policy(json!({
-            "grants": {"g": {"executable": "bin/tool"}}
+            "grants": {"g": {"executable": declared}}
         }));
-        let err = pin_command_grants(&policy, &root, SymlinkPolicy::Deny, None).unwrap_err();
-        assert!(policy_violation(&err));
-        assert!(err.to_string().contains("workspace-resident"), "{err}");
+        let pins = pin_command_grants(&policy, &root, SymlinkPolicy::Deny, None).unwrap();
+        assert_eq!(
+            pins.get("g").unwrap(),
+            &realpath(bin.to_str().unwrap()).unwrap()
+        );
     }
 
     #[test]
-    fn pin_rejects_absolute_path_inside_workspace() {
+    fn pin_accepts_absolute_path_inside_workspace() {
         let dir = TempDir::new();
         let root = dir.root();
-        // workspace 内に native binary を置き、absolute path grant が
-        // realpath 後の inside-workspace 検査で拒否されることを確認。
+        // workspace 内 absolute path の executable も pin される。
         let bin = dir.join(if cfg!(windows) { "tool.exe" } else { "tool" });
-        write(&bin, &native_bytes());
+        write(&bin, &executable_file_bytes());
         set_executable(&bin);
         let policy = policy(json!({
             "grants": {"g": {"executable": bin.to_str().unwrap()}}
         }));
-        let err = pin_command_grants(&policy, &root, SymlinkPolicy::Deny, None).unwrap_err();
-        assert!(policy_violation(&err));
-        assert!(err.to_string().contains("workspace-resident"), "{err}");
+        let pins = pin_command_grants(&policy, &root, SymlinkPolicy::Deny, None).unwrap();
+        assert_eq!(
+            pins.get("g").unwrap(),
+            &realpath(bin.to_str().unwrap()).unwrap()
+        );
     }
 
     #[test]
-    fn pin_fails_closed_on_unresolvable_or_denied_executable() {
+    fn pin_fails_closed_on_unresolvable_executable() {
         let dir = TempDir::new();
         let root = dir.root();
         // ambient PATH で解決不能 → resolve_process_executable の
@@ -794,13 +745,12 @@ mod tests {
         }));
         let err = pin_command_grants(&policy, &root, SymlinkPolicy::Deny, None).unwrap_err();
         assert!(policy_violation(&err));
-        // denied executable は policy resolve 段階で拒否されるため、
-        // ここでは resolved basename 再検査の対象外 — shell/shim だけ
-        // 同じく resolve で拒否されることを確認(design §(d) 適用点 1)。
+        // declared executable の内容は policy resolve で審査されない —
+        // `python3` 等の名も PATH 非依存で受理される。
         assert!(resolve_command_policy(Some(&json!({
             "grants": {"g": {"executable": "python3"}}
         })))
-        .is_err());
+        .is_ok());
     }
 
     #[test]
@@ -819,25 +769,24 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn verify_pinned_rejects_missing_swapped_or_workspace_paths() {
+    async fn verify_pinned_rejects_missing_accepts_workspace_paths() {
         let dir = TempDir::new();
         let root = dir.root();
-        // workspace 外の native binary は verify 通過。
+        // spawn 可能な executable は verify 通過。
         let exe = std::env::current_exe().unwrap();
         let pinned = realpath(exe.to_str().unwrap()).unwrap();
-        verify_pinned_executable("g", &pinned, &root).unwrap();
-        // 存在しない path → native candidate 不成立で fail-closed。
+        verify_pinned_executable("g", &pinned).unwrap();
+        // 存在しない path → candidate 不成立で fail-closed。
         let missing = dir.join(if cfg!(windows) { "gone.exe" } else { "gone" });
-        let err = verify_pinned_executable("g", missing.to_str().unwrap(), &root).unwrap_err();
+        let err = verify_pinned_executable("g", missing.to_str().unwrap()).unwrap_err();
         assert!(policy_violation(&err));
-        // workspace 内 native file → residency 検査で reject。
+        assert!(err.to_string().contains("no longer resolves"), "{err}");
+        // workspace 内 file も `resolved == pinned` で検査通過。
         let inside = dir.join(if cfg!(windows) { "in.exe" } else { "in" });
-        write(&inside, &native_bytes());
+        write(&inside, &executable_file_bytes());
         set_executable(&inside);
         let inside = realpath(inside.to_str().unwrap()).unwrap();
-        let err = verify_pinned_executable("g", &inside, &root).unwrap_err();
-        assert!(policy_violation(&err));
-        assert!(err.to_string().contains("workspace-resident"), "{err}");
+        verify_pinned_executable("g", &inside).unwrap();
         // pin map に無い grant は execute で fail-closed
         // (verify まで到達しない)。
         let exe = std::env::current_exe().unwrap();
@@ -858,24 +807,5 @@ mod tests {
             .unwrap_err();
         assert!(policy_violation(&err));
         assert!(err.to_string().contains("no pinned executable"), "{err}");
-    }
-
-    #[test]
-    fn within_workspace_boundary() {
-        let dir = TempDir::new();
-        let root = dir.root();
-        // `within_workspace` は canonical 同士の lexical 判定 —
-        // file の実在は問わない。
-        let inside = nodepath::join(&[&root, "sub", "tool"]);
-        assert!(within_workspace(&root, &inside));
-        let outside = realpath(std::env::current_exe().unwrap().to_str().unwrap()).unwrap();
-        assert!(!within_workspace(&root, &outside));
-        // sibling dir は `..` segment 経由で root 外。
-        let sibling = format!("{root}-sibling");
-        assert!(!within_workspace(&root, &sibling));
-        // `..foo` のような prefix 名は `..` segment ではなく root 内
-        // として扱う。
-        let prefix = nodepath::join(&[&root, "..tool"]);
-        assert!(within_workspace(&root, &prefix));
     }
 }

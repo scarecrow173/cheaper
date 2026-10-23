@@ -800,46 +800,6 @@
       }
     },
     {
-      "expectRust": {
-        "ops": {
-          "0": {
-            "error": {
-              "code": "POLICY_VIOLATION",
-              "details": null,
-              "exitCode": 4,
-              "kind": "cheaper",
-              "retryable": false
-            }
-          }
-        },
-        "state": {
-          "meter": {
-            "sourceTokens": 0
-          },
-          "operations": [
-            {
-              "error": {
-                "code": "POLICY_VIOLATION",
-                "message": "process task \"node\" is unsupported: the Rust runtime has no Node.js host executable",
-                "name": "CheaperError"
-              },
-              "resourceClaims": [
-                {
-                  "mode": "shared",
-                  "resource": {
-                    "kind": "workspace",
-                    "path": "<ROOT>",
-                    "scope": "subtree"
-                  }
-                }
-              ],
-              "settlement": "settled",
-              "state": "failed",
-              "toolName": "process"
-            }
-          ]
-        }
-      },
       "expected": [
         {
           "ok": {
@@ -870,7 +830,7 @@
           }
         }
       ],
-      "name": "bare node task is an explicit Rust error",
+      "name": "bare node task resolves via PATH",
       "ops": [
         {
           "input": {

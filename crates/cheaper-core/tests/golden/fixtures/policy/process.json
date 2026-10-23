@@ -182,12 +182,27 @@
     {
       "axis": "any",
       "expected": {
-        "error": {
-          "code": "INVALID_RUNTIME_POLICY",
-          "details": null,
-          "exitCode": 3,
-          "kind": "cheaper",
-          "retryable": false
+        "ok": {
+          "heartbeat": {
+            "interval": "30s"
+          },
+          "killGrace": "2s",
+          "maxConcurrent": 1,
+          "maxOutputBytes": 65536,
+          "tasks": {
+            "t": {
+              "command": [
+                "bash",
+                "-c",
+                "x"
+              ],
+              "cwd": ".",
+              "env": {},
+              "inputs": [],
+              "outputs": []
+            }
+          },
+          "timeout": "2m"
         }
       },
       "input": {
@@ -203,18 +218,31 @@
           }
         }
       },
-      "name": "invalid shell executable",
+      "name": "shell executable task is accepted",
       "op": "resolveProcessPolicy"
     },
     {
       "axis": "any",
       "expected": {
-        "error": {
-          "code": "INVALID_RUNTIME_POLICY",
-          "details": null,
-          "exitCode": 3,
-          "kind": "cheaper",
-          "retryable": false
+        "ok": {
+          "heartbeat": {
+            "interval": "30s"
+          },
+          "killGrace": "2s",
+          "maxConcurrent": 1,
+          "maxOutputBytes": 65536,
+          "tasks": {
+            "t": {
+              "command": [
+                "run.sh"
+              ],
+              "cwd": ".",
+              "env": {},
+              "inputs": [],
+              "outputs": []
+            }
+          },
+          "timeout": "2m"
         }
       },
       "input": {
@@ -228,18 +256,32 @@
           }
         }
       },
-      "name": "invalid script shim",
+      "name": "script shim task is accepted",
       "op": "resolveProcessPolicy"
     },
     {
       "axis": "any",
       "expected": {
-        "error": {
-          "code": "INVALID_RUNTIME_POLICY",
-          "details": null,
-          "exitCode": 3,
-          "kind": "cheaper",
-          "retryable": false
+        "ok": {
+          "heartbeat": {
+            "interval": "30s"
+          },
+          "killGrace": "2s",
+          "maxConcurrent": 1,
+          "maxOutputBytes": 65536,
+          "tasks": {
+            "t": {
+              "command": [
+                "echo",
+                "a|b"
+              ],
+              "cwd": ".",
+              "env": {},
+              "inputs": [],
+              "outputs": []
+            }
+          },
+          "timeout": "2m"
         }
       },
       "input": {
@@ -254,18 +296,32 @@
           }
         }
       },
-      "name": "invalid argv shell syntax",
+      "name": "argv metachar task is accepted",
       "op": "resolveProcessPolicy"
     },
     {
       "axis": "any",
       "expected": {
-        "error": {
-          "code": "INVALID_RUNTIME_POLICY",
-          "details": null,
-          "exitCode": 3,
-          "kind": "cheaper",
-          "retryable": false
+        "ok": {
+          "heartbeat": {
+            "interval": "30s"
+          },
+          "killGrace": "2s",
+          "maxConcurrent": 1,
+          "maxOutputBytes": 65536,
+          "tasks": {
+            "t": {
+              "command": [
+                "echo",
+                "$(x)"
+              ],
+              "cwd": ".",
+              "env": {},
+              "inputs": [],
+              "outputs": []
+            }
+          },
+          "timeout": "2m"
         }
       },
       "input": {
@@ -280,7 +336,7 @@
           }
         }
       },
-      "name": "invalid argv subshell",
+      "name": "argv subshell task is accepted",
       "op": "resolveProcessPolicy"
     },
     {
@@ -778,132 +834,6 @@
       },
       "name": "env case collision posix",
       "op": "resolveProcessPolicy"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": true
-      },
-      "input": "sh",
-      "name": "isShell sh",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": true
-      },
-      "input": "bash",
-      "name": "isShell bash",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": true
-      },
-      "input": "cmd.exe",
-      "name": "isShell cmd.exe",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": true
-      },
-      "input": "powershell",
-      "name": "isShell powershell",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": true
-      },
-      "input": "pwsh",
-      "name": "isShell pwsh",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": true
-      },
-      "input": "bin/zsh",
-      "name": "isShell bin/zsh",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": true
-      },
-      "input": "x.PS1",
-      "name": "isShell x.PS1",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": true
-      },
-      "input": "run.sh",
-      "name": "isShell run.sh",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": true
-      },
-      "input": "a.BAT",
-      "name": "isShell a.BAT",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": true
-      },
-      "input": "busybox",
-      "name": "isShell busybox",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": false
-      },
-      "input": "shell",
-      "name": "isShell shell",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": false
-      },
-      "input": "command",
-      "name": "isShell command",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": false
-      },
-      "input": "pwsh-tool",
-      "name": "isShell pwsh-tool",
-      "op": "isShellProcessExecutable"
-    },
-    {
-      "axis": "any",
-      "expected": {
-        "ok": false
-      },
-      "input": "a.shx",
-      "name": "isShell a.shx",
-      "op": "isShellProcessExecutable"
     },
     {
       "axis": "any",

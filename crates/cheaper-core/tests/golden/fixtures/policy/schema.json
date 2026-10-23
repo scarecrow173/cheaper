@@ -713,12 +713,54 @@
     },
     {
       "expected": {
-        "error": {
-          "code": "INVALID_RUNTIME_POLICY",
-          "details": null,
-          "exitCode": 3,
-          "kind": "cheaper",
-          "retryable": false
+        "ok": {
+          "policy": {
+            "execution": {
+              "concurrency": {
+                "maxOperations": 8,
+                "mutations": "serialized"
+              },
+              "maxToolCalls": 20,
+              "maxTurns": 10,
+              "timeout": "2m"
+            },
+            "filesystem": {
+              "denyPaths": [
+                ".env"
+              ],
+              "symlinks": "deny"
+            },
+            "model": {
+              "maxTier": "high",
+              "tierFallback": "higher"
+            },
+            "output": {
+              "maxTokens": 4096,
+              "repairAttempts": 1
+            },
+            "process": {
+              "maxConcurrent": 1,
+              "tasks": {
+                "t": {
+                  "command": [
+                    "sh"
+                  ],
+                  "inputs": [],
+                  "outputs": []
+                }
+              }
+            },
+            "retry": {
+              "transientAttempts": 2
+            },
+            "tools": {
+              "allow": [
+                "read",
+                "grep"
+              ]
+            },
+            "version": 1
+          }
         }
       },
       "input": {
@@ -769,7 +811,7 @@
         "version": 1
       },
       "mode": "complete",
-      "name": "process shell task rejected pre-merge",
+      "name": "process shell task accepted pre-merge",
       "op": "validatePolicySchema"
     },
     {

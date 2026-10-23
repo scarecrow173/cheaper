@@ -39,6 +39,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHy2gdnp1MdNwuw6 | Devin Local provider plugin | approved | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
 | DESIGN-034Gt74p3BYG40NTwu2kST | Devin native hooks and APM bootstrap | approved | [devin-native-hooks-and-apm-bootstrap.md](./devin-native-hooks-and-apm-bootstrap.md) |
 | DESIGN-034DlAaOWn3RyI3onq5uj1 | devin usage accounting contract test and docs | approved | [devin-usage-accounting-contract-test-and-docs.md](./devin-usage-accounting-contract-test-and-docs.md) |
+| DESIGN-034KIsSCvVMAxGDZY1dQTd | exec-contract cleanup — 内容審査を mandatory 層から除去 | draft | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
 | DESIGN-034r05iHy2gdnoS2PWvNo0 | grep batchMaxBytes invariant enforcement | approved | [grep-batch-max-bytes-invariant-enforcement.md](./grep-batch-max-bytes-invariant-enforcement.md) |
 | DESIGN-034r6oM1pW6bz2SSvR3rWT | grep eval-budget test stabilization via explicit budget injection | approved | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | DESIGN-034ILuADFr70oZoUROR13q | hook-config legacy conflict gate demotion to warning | approved | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |
@@ -89,7 +90,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHy2gdnoY3GBf8iz | User-facing documentation information architecture | approved | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | DESIGN-034zQkHD65kAeG9xVGSoFX | Version-pinned launcher acquisition | superseded | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | DESIGN-034D9Xs2f06fbVcxdT08le | Windows credential snapshot sync for Devin provider | approved | [windows-credential-snapshot-sync-for-devin-provider.md](./windows-credential-snapshot-sync-for-devin-provider.md) |
-| DESIGN-034KwO2y86CrXOmaoae1jS | Windsurf-compat range normalization and registration surfacing (issue #161) | draft | [windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md](./windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md) |
+| DESIGN-034KwO2y86CrXOmaoae1jS | Windsurf-compat range normalization and registration surfacing (issue #161) | approved | [windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md](./windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md) |
 | DESIGN-034r05iHrZUE6WrdtQIOmE | コアドメインモデル: Worker Definition・Resolver・Runtime Policy・tool vocabulary・error model | approved | [worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md](./worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md) |
 | DESIGN-LAY8HNBqNyjH7L5DFvTPc2 | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume の実装設計 | approved | [worker-run-nullable-maxturns-and-stall-timeout.md](./worker-run-nullable-maxturns-and-stall-timeout.md) |
 | DESIGN-EmeEdXi9TWZZW2PzZsp29y | worker schema magnitude 撤廃と INVALID_OUTPUT raw output 永続化の実装設計 | approved | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |

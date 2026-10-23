@@ -1,6 +1,5 @@
 use cheaper_core::policy::process::{
-    is_shell_process_executable, process_task_resources, resolve_process_policy,
-    resolve_process_task,
+    process_task_resources, resolve_process_policy, resolve_process_task,
 };
 
 use crate::common::*;
@@ -19,9 +18,6 @@ fn process_cases() {
                 Ok(p) => Ok(serde_json::to_value(&p).unwrap()),
                 Err(e) => Err(cheaper_err(&e, &[])),
             },
-            "isShellProcessExecutable" => Ok(serde_json::json!(is_shell_process_executable(
-                case["input"].as_str().unwrap()
-            ))),
             "resolveProcessTask" | "processTaskResources" => {
                 let policy = resolve_process_policy(opt_input(case, "policy"))
                     .unwrap_or_else(|e| panic!("{name}: fixture policy resolves: {e}"));

@@ -114,37 +114,12 @@ fn invalid(reason: &str) -> CheaperError {
     )
 }
 
-fn shell_executable_re() -> &'static regex::Regex {
-    static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    RE.get_or_init(|| {
-        regex::Regex::new(
-            "^(?:sh|bash|dash|zsh|fish|ksh|csh|tcsh|ash|cmd|powershell|pwsh|busybox)(?:\\.exe)?$",
-        )
-        .unwrap()
-    })
-}
-
-fn script_ext_re() -> &'static regex::Regex {
-    static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    RE.get_or_init(|| regex::Regex::new("\\.(?:cmd|bat|ps1|sh)$").unwrap())
-}
-
-/// argv token / pattern の shell metachar 検査 shared regex。
-/// cheaper-tools の `command` execute が cross-crate で参照するため `pub`。
+/// argv token の shell metachar 検査 shared regex。
+/// `cheaper-cli` `route/resolve.rs` の viability 分類が参照する間
+/// `pub` を維持する(issue 4 scope — exec 層からの適用点は除去済み)。
 pub fn argv_shell_re() -> &'static regex::Regex {
     static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     RE.get_or_init(|| regex::Regex::new("[\0\r\n|&;<>`]|\\$\\(").unwrap())
-}
-
-/// `isShellProcessExecutable`: the same forbidden-executable rules apply
-/// after alias realpath resolution.
-pub fn is_shell_process_executable(executable: &str) -> bool {
-    let name = executable
-        .rsplit(['/', '\\'])
-        .next()
-        .unwrap_or("")
-        .to_lowercase();
-    shell_executable_re().is_match(&name) || script_ext_re().is_match(&name)
 }
 
 /// workspace-relative path 検査。error prefix は呼出し側の section
@@ -269,15 +244,6 @@ pub fn resolve_process_policy(
         let command = str_vec(&task["command"]);
         let inputs = str_vec(&task["inputs"]);
         let outputs = str_vec(&task["outputs"]);
-        if command
-            .first()
-            .is_some_and(|c| is_shell_process_executable(c))
-        {
-            return Err(invalid("shell or script shim executable is forbidden"));
-        }
-        if command.iter().any(|arg| argv_shell_re().is_match(arg)) {
-            return Err(invalid("shell syntax in argv is forbidden"));
-        }
         let cwd = task
             .get("cwd")
             .and_then(Value::as_str)
@@ -410,27 +376,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn shell_executable_detection() {
-        for exe in [
-            "sh",
-            "bash",
-            "cmd.exe",
-            "powershell",
-            "pwsh",
-            "bin/zsh",
-            "x.PS1",
-            "run.sh",
-            "a.BAT",
-            "busybox",
-        ] {
-            assert!(is_shell_process_executable(exe), "{exe}");
-        }
-        for exe in ["shell", "command", "pwsh-tool", "a.shx"] {
-            assert!(!is_shell_process_executable(exe), "{exe}");
-        }
-    }
-
-    #[test]
     fn defaults_when_absent() {
         let p = resolve_process_policy(None).unwrap();
         assert_eq!(p.max_concurrent, 1);
@@ -454,17 +399,21 @@ mod tests {
     }
 
     #[test]
-    fn rejects_shell_executables_and_argv_syntax() {
-        let base = json!({
-            "tasks": {"t": {"command": ["bash", "-c", "x"], "inputs": [], "outputs": []}}
-        });
-        let e = resolve_process_policy(Some(&base)).unwrap_err();
-        assert!(e.message().contains("shell or script shim"));
-        let base = json!({
-            "tasks": {"t": {"command": ["echo", "a|b"], "inputs": [], "outputs": []}}
-        });
-        let e = resolve_process_policy(Some(&base)).unwrap_err();
-        assert!(e.message().contains("shell syntax in argv"));
+    fn accepts_shell_executables_and_argv_metachars() {
+        // task command/argv の内容は審査しない — declared contract
+        // (wildcard 構造・cwd/env・lifecycle)のみを強制する。
+        for command in [
+            json!(["bash", "-c", "x"]),
+            json!(["run.sh"]),
+            json!(["echo", "a|b"]),
+            json!(["echo", "$(x)"]),
+        ] {
+            let p = resolve_process_policy(Some(&json!({
+                "tasks": {"t": {"command": command, "inputs": [], "outputs": []}}
+            })))
+            .unwrap_or_else(|e| panic!("{command}: task resolves: {e}"));
+            assert_eq!(p.tasks["t"]["command"], command);
+        }
     }
 
     #[test]

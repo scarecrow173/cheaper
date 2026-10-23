@@ -38,6 +38,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gAHzYnfP8 | Devin Local as a bundled Pi provider | implemented | [devin-local-bundled-provider.md](./devin-local-bundled-provider.md) |
 | SPEC-034DlpZKFnyWiBZZxGsXK0 | devin provider usage accounting contract | approved | [devin-provider-usage-accounting-contract.md](./devin-provider-usage-accounting-contract.md) |
 | SPEC-034D9BFJZdSSYBEuXVzBbl | Devin provider Windows credential contract | proposed | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
+| SPEC-034KI3mWcW92kMljP5xoa8 | exec-contract cleanup — 内容審査を mandatory 層から除去 | proposed | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
 | SPEC-034r05iHK8bA7gqGaD6qpk | grep batchMaxBytes / decoded line payload invariant | implemented | [grep-batch-max-bytes-line-payload-invariant.md](./grep-batch-max-bytes-line-payload-invariant.md) |
 | SPEC-034r6kd649rTDnOi828voj | Stabilize environment-sensitive grep eval-budget tests | implemented | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | SPEC-034IKGkW4dQEVw6QigMFxQ | hook-config legacy conflict gate demotion to warning | approved | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |
@@ -84,7 +85,7 @@ Directory: `docs/specs`
 | SPEC-034zA513QKarQrr5SQtgp7 | Verify and leverage Pi sibling tool-call parallelism inside Workers | approved | [verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md](./verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md) |
 | SPEC-034zIO2lm7gJPz6Gy4JIQP | Version-pinned launcher acquisition | superseded | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | SPEC-034D85I40UBKtNgeam655z | Volume-root workspace boundary acceptance | proposed | [volume-root-workspace-boundary-acceptance.md](./volume-root-workspace-boundary-acceptance.md) |
-| SPEC-034KwuiFzl4WvVQKdjfSnM | Windsurf-compat bounded evaluation coverage and Devin registration surfacing (issue #161) | proposed | [windsurf-compat-range-normalization-and-devin-registration-surfacing.md](./windsurf-compat-range-normalization-and-devin-registration-surfacing.md) |
+| SPEC-034KwuiFzl4WvVQKdjfSnM | Windsurf-compat bounded evaluation coverage and Devin registration surfacing (issue #161) | approved | [windsurf-compat-range-normalization-and-devin-registration-surfacing.md](./windsurf-compat-range-normalization-and-devin-registration-surfacing.md) |
 | SPEC-onzPU8E4tKg3C6Iv4s9VK0 | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume | proposed | [worker-run-nullable-maxturns-and-stall-timeout.md](./worker-run-nullable-maxturns-and-stall-timeout.md) |
 | SPEC-s8dMxk0QAbLuWaOrsuikSp | worker schema の magnitude 制約撤廃と INVALID_OUTPUT raw output の回復経路 | proposed | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |
 | SPEC-034zIKj7DJcwZFr3FvjLrP | Workflow JSON v1 を検証済み DAG へ compile する | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |

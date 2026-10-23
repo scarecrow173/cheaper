@@ -238,7 +238,7 @@ fn pin_failure_stays_hard_even_when_opted_in() {
     assert_eq!(e.code(), ErrorCode::PolicyViolation);
     assert!(
         e.message()
-            .contains("requires a supported native executable"),
+            .contains("could not be resolved to a spawnable executable"),
         "{}",
         e.message()
     );
@@ -271,14 +271,16 @@ fn write_scope_rejects_command_even_when_opted_in() {
 #[test]
 fn resolve_policy_errors_stay_hard_even_when_opted_in() {
     let dir = TempDir::new();
-    // declared basename の interpreter は policy resolve 段階で
-    // `InvalidRuntimePolicy` — degradable 宣言で soft 化されない。
+    // wildcard 構造違反の grant spec は policy resolve 段階で
+    // `InvalidRuntimePolicy` — degradable 宣言で soft 化されない
+    // (PATH 非依存で deterministic)。
     let mut opts = options(
         &dir.root(),
         vec![ToolName::Read, ToolName::Command],
         vec![ToolName::Command],
     );
-    opts.command = Some(command_with_grant("node"));
+    opts.command =
+        Some(json!({"grants": {"self": {"executable": "node", "argv": ["a*b"], "env": {}}}}));
     let err = create_tool_runtime(opts, None).unwrap_err();
     assert_eq!(code(&err), Some(ErrorCode::InvalidRuntimePolicy), "{err}");
 }

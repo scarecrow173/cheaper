@@ -190,7 +190,7 @@ async fn policy_grant_list_on_absent_file_is_empty() {
     assert_eq!(env["result"]["grants"], json!([]));
 }
 
-/// invalid spec(deny 該当・argv compile 失敗・schema 違反)は
+/// invalid spec(duration 規則違反・argv compile 失敗・schema 違反)は
 /// `InvalidRuntimePolicy`(exit 3)で file を一切変更しない。
 /// malformed JSON・`name` key 混入・非 object spec は `InvalidRequest`
 /// (exit 2)。
@@ -203,8 +203,8 @@ async fn policy_grant_add_rejects_invalid_spec_without_writing() {
     // shared validation 由来 — `resolve_command_policy` 系統の失敗は
     // `InvalidRuntimePolicy`。
     for spec in [
-        // deny list 該当(interpreter)。
-        r#"{"executable":"python"}"#,
+        // bounded duration 規則違反(非 duration literal)。
+        r#"{"executable":"git","timeout":"5x"}"#,
         // argv pattern compile 失敗(interior wildcard)。
         r#"{"executable":"git","argv":["a*b"]}"#,
         // schema 違反(`executable` required 欠落)。
