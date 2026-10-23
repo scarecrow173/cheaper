@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034KLwE8GiJQ2zvQY20ob8"
 type: "design"
-status: "draft"
+status: "approved"
 title: "opt-in security.execDenyPatterns profile — A9 の降格実装"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -30,6 +30,8 @@ relations:
         path: "crates/cheaper-core/tests/golden/fixtures/policy/schema.json"
       - type: "file"
         path: "crates/cheaper-core/tests/golden/fixtures/policy/load.json"
+      - type: "file"
+        path: "crates/cheaper-core/tests/golden/fixtures/policy/restrict.json"
       - type: "file"
         path: "crates/cheaper-tools/src/tools/command/mod.rs"
       - type: "file"
@@ -352,7 +354,7 @@ schema/compile の責務は `security.rs` に閉じる。
 | `registry.rs` | 1208-1214 | `pin_command_grants(&command, &resources.root, symlink, denylist, &exec_deny)` |
 | `registry.rs` | 213-233,317-327 | `ToolCtx.exec_deny` field 追加、`command()` が `exec_deny: self.exec_deny.clone()` を `CommandToolOptions` へ |
 | `invocation.rs` | 390-398 | `create_invocation_tool_runtime` で `let security = resolve_security_policy(options.security.as_ref())?;` + `let exec_deny = ExecDenyList::compile(&security.exec_deny_patterns)?;` → `resolve_command_policy(options.command.as_ref(), &exec_deny)`。`InvocationInner` に `security`・`exec_deny` を保持 |
-| `invocation.rs` | 219-238 | parity check — `options.runtime.security` が `Some` なら `resolve_security_policy(Some(raw))` で再 resolve し `inner.security` と `PartialEq` 比較、不一致は `invalid_binding("security policy mismatch")`(`InvalidRequest` + `details.reason`)。`options.runtime.command` の再 resolve には `&inner.exec_deny` を使う |
+| `invocation.rs` | 219-238 | parity check — `options.runtime.security` が `Some` なら `resolve_security_policy(Some(raw))` で再 resolve し `inner.security` と `PartialEq` 比較、不一致は `invalid_binding("security policy mismatch")`(`InvalidRequest` + `details.reason`)。`options.runtime.command` の再 resolve には `&inner.exec_deny` を使う — caller 供給 command の declared executable が deny に match した場合の error は `invalid_binding` ではなく `InvalidRuntimePolicy` で返る(`with_invocation_layer` が inner code を保持する `load.rs:92-98` 先例と同型 — 共有 validation は内側 code を維持する規約) |
 | `invocation.rs` | 271-274 | scope 再注入 — `security: Some(serde_json::to_value(&inner.security).expect(...))` を `runtime_options` へ追加(`inner.command` と同型: caller の `None`/任意 raw に関わらず scope は常に invocation-resolved の security を受け取る) |
 | `run/mod.rs` | 335-354 | `InvocationToolRuntimeOptions` に `security: Some(serde_json::to_value(&policy.security).unwrap_or_default())` |
 | `run/mod.rs` | 487-524 | worker scope `ToolRuntimeOptions` に同じく `security: Some(serde_json::to_value(&policy.security).unwrap_or_default())`(parity check 入力 — `command` と同型) |
@@ -556,8 +558,19 @@ RuntimePolicy.security ── to_value ──→ ToolRuntimeOptions.security /
 - golden fixture — `policy/load.json`・`policy/schema.json` の
   normalized policy 出力に `"security":{"execDenyPatterns":[]}` key
   が出現する(期待値更新 + `security` を持つ case を追加)。
+  `policy/restrict.json` も `policy_restrict.rs:9-12,34` が
+  `normalize_base` → `serde_json::to_value(&p)` で全 `RuntimePolicy`
+  を serialize するため同 key が 7 箇所(fixture 内 `route` key 所在
+  行:70,181,294,460,697,812,927)に出現し期待値更新が必要。
   `policy/merge.json` は raw map merge のため変更不要(optional で
   array replace の pin case を追加してよい)。
+- 補遺的 churn(compiler が必ず捕捉するが記録) —
+  `CommandToolOptions` test literal `command/mod.rs:603,:794`、
+  `verify_pinned_executable` test 呼出し `command/mod.rs:778,781,789`、
+  `resolve_command_policy` test 呼出し `command/mod.rs:583,:750`、
+  `ToolCtx` literal `registry.rs:1298`。`proc_command.rs:1585` の
+  `..options` spread は `exec_deny` を自動継承(列挙不要だったが
+  差分確認対象)。
 
 ## Docs 更新契約
 
@@ -580,6 +593,20 @@ RuntimePolicy.security ── to_value ──→ ToolRuntimeOptions.security /
     `details.layer` は付かない accepted gap を含めて正直に)。
   - `:80` — 「deny list は containment 機構ではない」注意を
     opt-in profile の表現へ引き継ぐ。
+  - 新規記述 — review で確定した補足を同節へ追加する:
+    1. `.*` は schema 上許容される明示的 deny-all — grants を持つ
+       policy は全て load 失敗になるため意図利用のみ(substring
+       意図の唯一の表現でもある)。
+    2. `executable_stem` の `\` 区切り正規化は unix でも `\` を
+       分隔として扱い `.com` suffix も strip する — unix 上の
+       `my\python.exe`・`foo.com` のような奇名が deny に match
+       する false-positive(方向は fail-closed — 過剰に拒否する
+       が漏らさない)。旧 builtin 由来の規約であり structural
+       制約として明記する。
+    3. blast radius — 1 つの denied resolved grant でも
+       `pin_command_grants` 全体が `Err` となり command-tool
+       scope 全体が失敗する(unpinnable grant と同規約 —
+       既存意味論が deny で operator-reachable になるだけ)。
 - `docs/guides/configuration.md` — policy.yaml リファレンスの
   yaml block(:153-159 `route` 節の後)に `security` 節を追加し、
   `route.rewrite.approvalBypass` 小節(:186 以降)と同型の

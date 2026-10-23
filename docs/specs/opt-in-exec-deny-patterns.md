@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034KLgfJ0Gka7fkRKHpfSH"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "opt-in security.execDenyPatterns profile — A9 の降格実装"
 created: "2026-10-23"
 updated: "2026-10-23"

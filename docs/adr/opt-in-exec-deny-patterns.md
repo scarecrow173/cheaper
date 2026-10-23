@@ -1,7 +1,7 @@
 ---
 id: "ADR-034KLgkao8SgWWKIIsCqaB"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "opt-in security.execDenyPatterns profile — A9 の降格実装"
 created: "2026-10-23"
 updated: "2026-10-23"
