@@ -81,6 +81,7 @@ Directory: `docs/specs`
 | SPEC-034KXdoK2bMG3gQtIj8l6h | substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・anchor 切替 | proposed | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | SPEC-003hd7W00xCikuCXnwHA4C | Synchronize distributed cheaper-usage skill and parent-agent integration guide | implemented | [synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md](./synchronize-distributed-cheaper-usage-skill-and-parent-agent-guide.md) |
 | SPEC-034EStsweRrzPq1Og6oCzl | tool-operator built-in Worker | approved | [tool-operator-built-in-worker.md](./tool-operator-built-in-worker.md) |
+| SPEC-034LwdoInh3ie1KPlSjkJl | trusted route flag issuer redesign — 宣言層 provenance trust・project 層 `trusted` 宣言の拒否 | proposed | [trusted-route-flag-issuer-redesign.md](./trusted-route-flag-issuer-redesign.md) |
 | SPEC-034KOpKfZpegX2MLPD0uq6 | unified exec grant model — command.grants / process.tasks の統合 | approved | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
 | SPEC-034r05iHK8bA7grnYLdwgl | Unified version and release source of truth | implemented | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | SPEC-034rzGnCaRQc5ceI95lf5i | Usage and savings telemetry aggregation | implemented | [usage-and-savings-telemetry-aggregation.md](./usage-and-savings-telemetry-aggregation.md) |
