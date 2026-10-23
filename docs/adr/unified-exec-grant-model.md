@@ -33,7 +33,8 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/unified-exec-grant-model-issue-165.md"
-  derived-by: []
+  derived-by:
+    - "../designs/unified-exec-grant-model.md"
   verifies: []
   verified-by: []
   references:

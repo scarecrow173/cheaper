@@ -29,6 +29,7 @@ relations:
   derived-by:
     - "../specs/unified-exec-grant-model.md"
     - "../adr/unified-exec-grant-model.md"
+    - "../designs/unified-exec-grant-model.md"
   verifies: []
   verified-by: []
   references:
