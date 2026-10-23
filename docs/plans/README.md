@@ -28,6 +28,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHK8bA7g45xvDT4a | Devin Local provider plugin — implementation plan | completed | [devin-local-provider-plugin-implementation-plan.md](./devin-local-provider-plugin-implementation-plan.md) |
 | PLAN-034Da73SnpZLHkn4oVZu00 | Devin provider Windows credential snapshot sync | approved | [devin-provider-windows-credential-snapshot-sync.md](./devin-provider-windows-credential-snapshot-sync.md) |
 | PLAN-034DlEwsubKsxcWfA08Kb4 | devin usage accounting contract test and docs | approved | [devin-usage-accounting-contract-test-and-docs.md](./devin-usage-accounting-contract-test-and-docs.md) |
+| PLAN-034L7LkYl6qzs5eZ9mEJZL | documentation honesty sweep + migration guide — per-doc 訂正・refine 注記・migration guide 適用計画 | approved | [documentation-honesty-sweep-and-migration-guide.md](./documentation-honesty-sweep-and-migration-guide.md) |
 | PLAN-034KJtLyNUE46XjtrMOG60 | exec-contract cleanup — 内容審査を mandatory 層から除去 (issue #163) | completed | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
 | PLAN-034EDNoLUwAoBOtSAMRMNY | Execute post-feature structural refactoring | approved | [execute-post-feature-structural-refactoring.md](./execute-post-feature-structural-refactoring.md) |
 | PLAN-034Dz3LX6Jz18cbOR0KtFd | Execute post-migration structural cleanup | approved | [execute-post-migration-structural-cleanup.md](./execute-post-migration-structural-cleanup.md) |
