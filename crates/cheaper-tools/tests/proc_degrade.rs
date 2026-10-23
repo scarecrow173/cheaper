@@ -52,6 +52,7 @@ fn options(root: &str, names: Vec<ToolName>, degradable: Vec<ToolName>) -> ToolR
         artifacts: None,
         process: None,
         command: None,
+        security: None,
         root: root.to_string(),
         symlink_policy: SymlinkPolicy::Deny,
         names,

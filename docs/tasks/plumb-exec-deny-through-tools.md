@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KLYAfuIu8es8ZgpuQRl"
 type: "task"
-status: "todo"
+status: "done"
 title: "cheaper-tools への exec_deny 配管と pin/verify 適用点注入"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -248,29 +248,29 @@ basename）・適用点 3（`verify_pinned_executable` spawn 前再検証）
 
 ## Done When
 
-- [ ] `pin_command_grants`・`pin_command_grant`・
+- [x] `pin_command_grants`・`pin_command_grant`・
       `verify_pinned_executable` が `exec_deny: &ExecDenyList`
       param を持ち、適用点 2（resolved basename）・適用点 3
       （pin-equality 直後の再検証）が `grant_violation` 規約で
       `PolicyViolation` を返す
-- [ ] `pin_command_grant` の `_name` が `name` へ改名され
+- [x] `pin_command_grant` の `_name` が `name` へ改名され
       `grant_violation` が grant 名を `details.grant` に載せる
-- [ ] `CommandToolOptions.exec_deny` が非 Option の
+- [x] `CommandToolOptions.exec_deny` が非 Option の
       `ExecDenyList` field として存在し、
       `check_command_execution` が `options.exec_deny` を
       `verify_pinned_executable` へ渡す（`check_command_execution`
       の signature 不変）
-- [ ] `ToolRuntimeOptions.security`・
+- [x] `ToolRuntimeOptions.security`・
       `InvocationToolRuntimeOptions.security` が `Option<Value>`
       として存在し、`create_tool_runtime` が
       `resolve_exec_deny_list` で compiled deny を
       `resolve_command_policy`・`pin_command_grants` へ共有する
-- [ ] `InvocationInner.{security,exec_deny}` が保持され、parity
+- [x] `InvocationInner.{security,exec_deny}` が保持され、parity
       check の security 不一致が `invalid_binding("security
       policy mismatch")`、command 再 resolve が
       `&inner.exec_deny`、scope 再注入が `inner.security` を
       運ぶ
-- [ ] tools test churn + 新規 test（適用点 2/3・options deny・
+- [x] tools test churn + 新規 test（適用点 2/3・options deny・
       parity・再注入）が存在し `cargo test -p cheaper-tools` が
       pass
 
@@ -287,9 +287,9 @@ basename）・適用点 3（`verify_pinned_executable` spawn 前再検証）
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-tools` exits 0
+- [x] `mise exec -- cargo test -p cheaper-tools` exits 0
       （unit test + proc_* integration + characterization +
       differential 全 pass — single-crate では dev-seam
       feature 適用外のため flag 無し）
-- [ ] `mise exec -- cargo clippy -p cheaper-tools --all-targets`
+- [x] `mise exec -- cargo clippy -p cheaper-tools --all-targets`
       exits 0

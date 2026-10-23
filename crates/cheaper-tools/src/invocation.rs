@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::policy::command::{resolve_command_policy, ResolvedCommandPolicy};
 use cheaper_core::policy::process::{resolve_process_policy, ResolvedProcessPolicy};
+use cheaper_core::policy::security::{resolve_security_policy, ExecDenyList, SecurityPolicy};
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::workspace::paths::SymlinkPolicy;
 use serde_json::Value;
@@ -67,6 +68,9 @@ pub struct InvocationToolRuntimeOptions {
     /// `resolve_command_policy` のみ実行し `inner.command` に保持する
     /// (design §(b)/(g))。scope への再注入は T4 で確定。
     pub command: Option<Value>,
+    /// `Partial<SecurityPolicy>` の raw JSON(`resolve_security_policy`
+    /// 入力 — `command` と同型の raw JSON 規約、issue #164)。
+    pub security: Option<Value>,
     pub root: String,
     pub symlink_policy: SymlinkPolicy,
     pub signal: Option<AbortSignal>,
@@ -98,6 +102,12 @@ struct InvocationInner {
     /// declared-shape の resolved command policy — scope parity check
     /// の比較対象(pin 済み path は含めない、design §(g))。
     command: ResolvedCommandPolicy,
+    /// declared-shape の security policy — `inner.command` と同型の
+    /// parity check 比較対象(issue #164)。
+    security: SecurityPolicy,
+    /// `security.execDenyPatterns` の compiled 形 — scope 構築・
+    /// parity 再 resolve・再注入で共有する。
+    exec_deny: ExecDenyList,
     root: String,
     symlink_policy: SymlinkPolicy,
     abort_grace_ms: Option<f64>,
@@ -230,10 +240,23 @@ impl InvocationToolRuntime {
         // (design §(b)/(g))。scope 生成後により広い grant set を
         // 密輸できないようにする。
         if let Some(raw) = &options.runtime.command {
-            let resolved =
-                resolve_command_policy(Some(raw)).map_err(|e| Box::new(e) as ToolError)?;
+            let resolved = resolve_command_policy(Some(raw), &inner.exec_deny)
+                .map_err(|e| Box::new(e) as ToolError)?;
             if resolved != inner.command {
                 return Err(Box::new(invalid_binding("command policy mismatch")));
+            }
+        }
+        // `security` も `command`/`process` と同型の declared-shape
+        // parity check(issue #164)。caller 供給 command の declared
+        // executable が inner deny に match した場合の error は
+        // `invalid_binding` ではなく `InvalidRuntimePolicy` で返る
+        // (共有 validation は内側 code を維持する規約 — `load.rs`
+        // の `with_invocation_layer` 先例)。
+        if let Some(raw) = &options.runtime.security {
+            let resolved =
+                resolve_security_policy(Some(raw)).map_err(|e| Box::new(e) as ToolError)?;
+            if resolved != inner.security {
+                return Err(Box::new(invalid_binding("security policy mismatch")));
             }
         }
         if options.owner_id.is_empty() || inner.owners.lock().unwrap().contains(&options.owner_id) {
@@ -271,6 +294,13 @@ impl InvocationToolRuntime {
             command: Some(
                 serde_json::to_value(&inner.command)
                     .expect("ResolvedCommandPolicy は必ず serialize 可能"),
+            ),
+            // `inner.command` と同型の再注入 — scope は常に
+            // invocation-resolved の security を受け取る(caller の
+            // `None`/任意 raw に関わらず)。
+            security: Some(
+                serde_json::to_value(&inner.security)
+                    .expect("SecurityPolicy は必ず serialize 可能"),
             ),
             root: options.runtime.root,
             symlink_policy: options.runtime.symlink_policy,
@@ -392,10 +422,18 @@ pub fn create_invocation_tool_runtime(
 ) -> Result<InvocationToolRuntime, ToolError> {
     let process =
         resolve_process_policy(options.process.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
+    // `security` は declared-shape + compiled 形の両方を保持する
+    // (issue #164) — parity check が source string equality を見る
+    // ため `SecurityPolicy` を、scope 構築・再 resolve で共有する
+    // compiled predicate を `ExecDenyList` に持つ。
+    let security =
+        resolve_security_policy(options.security.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
+    let exec_deny = ExecDenyList::compile(&security.exec_deny_patterns)
+        .map_err(|e| Box::new(e) as ToolError)?;
     // `command` は declared-shape のみ resolve — pin は `names` を
     // 持つ `create_tool_runtime` 境界の per-scope 責務(design §(b))。
-    let command =
-        resolve_command_policy(options.command.as_ref()).map_err(|e| Box::new(e) as ToolError)?;
+    let command = resolve_command_policy(options.command.as_ref(), &exec_deny)
+        .map_err(|e| Box::new(e) as ToolError)?;
     if let Some(grace) = options.abort_grace_ms {
         if !(grace.is_finite() && grace >= 0.0) {
             return Err(Box::new(invalid_binding(
@@ -435,6 +473,8 @@ pub fn create_invocation_tool_runtime(
         artifacts: options.artifacts,
         process,
         command,
+        security,
+        exec_deny,
         root: options.root,
         symlink_policy: options.symlink_policy,
         abort_grace_ms: options.abort_grace_ms,
