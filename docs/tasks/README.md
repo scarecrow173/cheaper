@@ -109,7 +109,7 @@ Directory: `docs/tasks`
 | TASK-034zQHzpSRfqiTLbSZYz5S | Core resource manifest tests | done | [core-resource-manifest-tests.md](./core-resource-manifest-tests.md) |
 | TASK-034zQHAqgNJHPLssPVaFPR | Core resource manifest verification | done | [core-resource-manifest-verification.md](./core-resource-manifest-verification.md) |
 | TASK-002DRbiVRuFJ5XWHvsWW6i | Correct fail-open/fail-closed contract in parent-agent guide and verify consistency | done | [correct-fail-open-fail-closed-contract-in-parent-agent-guide.md](./correct-fail-open-fail-closed-contract-in-parent-agent-guide.md) |
-| TASK-034L7LD2Gc1Num3wT45UMY | documentation honesty sweep — guides + skills の in-place 訂正 (G-1〜G-8・off-list 2 件) | todo | [correct-guides-and-skills-honesty-sweep.md](./correct-guides-and-skills-honesty-sweep.md) |
+| TASK-034L7LD2Gc1Num3wT45UMY | documentation honesty sweep — guides + skills の in-place 訂正 (G-1〜G-8・off-list 2 件) | done | [correct-guides-and-skills-honesty-sweep.md](./correct-guides-and-skills-honesty-sweep.md) |
 | TASK-034L7LJt4ZNXV0S6zO47ND | documentation honesty sweep — spec in-place 訂正 + test-spec annotation (12 doc) | todo | [correct-specs-and-annotate-test-specs.md](./correct-specs-and-annotate-test-specs.md) |
 | TASK-034r05iHQeQpDpIa7OmcYd | Count consumed repair attempts in meta.repairs on failure | done | [count-consumed-repair-attempts-in-meta-repairs-on-failure.md](./count-consumed-repair-attempts-in-meta-repairs-on-failure.md) |
 | TASK-034DVH0SzTXtnpmsbbiKuu | T1: cheaper-observability crate 新設 | done | [create-cheaper-observability-crate.md](./create-cheaper-observability-crate.md) |

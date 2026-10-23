@@ -132,11 +132,13 @@ loop は: `result.grantRequests` を読む → grant spec を組み立て
 `--grant` 付きで re-run する（永続化するなら
 `cheaper policy grant add`）。approval・review は invoker の責務
 であり、cheaper 側に interactive prompt は存在しない。re-run 時に
-deny list・argv pattern の compile 等が再検査されるため、不正な
+deny list（opt-in — `security.execDenyPatterns` 宣言時のみ）・
+argv pattern の compile 等が再検査されるため、不正な
 request 由来の spec は fail-closed で拒否される。
 
 writer 系 2 worker は `writeScope: targets` で、`targets[].path`
-以外への write を runtime が強制的に禁止する。
+以外への write を runtime が強制的に禁止する（canonical file tool
+の write に限る — exec 子プロセスの fs 副作用には及ばない）。
 
 ### 入力 schema（要点）
 

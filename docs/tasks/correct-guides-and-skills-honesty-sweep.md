@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L7LD2Gc1Num3wT45UMY"
 type: "task"
-status: "todo"
+status: "done"
 title: "documentation honesty sweep — guides + skills の in-place 訂正 (G-1〜G-8・off-list 2 件)"
 created: "2026-10-24"
 updated: "2026-10-24"
@@ -77,7 +77,7 @@ shape を転記するだけで文言を再解釈しない。deny-list 命名規�
 
 ### 1. `docs/guides/command.md`
 
-- [ ] **G-1(:44)** — executable 受理形の訂正:「workspace 相対
+- [x] **G-1(:44)** — executable 受理形の訂正:「workspace 相対
       path は拒否」clause 除去(#163 以降誤り)・「native
       magic（MZ / ELF / Mach-O）を持つ executable のみ実行可能で、
       shell・script shim…は `process` baseline の deny で拒否」
@@ -91,7 +91,7 @@ shape を転記するだけで文言を再解釈しない。deny-list 命名規�
       任意 interpreter・shim 名の file も解決される。拒否する
       唯一の executable 審査は opt-in `security.execDenyPatterns`」。
       同 file :100 migration 注記との自相矛盾を解消
-- [ ] **G-2(:133)** — 「全 args token には match 前の独立
+- [x] **G-2(:133)** — 「全 args token には match 前の独立
       check として shell metachar 拒否…が適用され、token 長
       ≤4096・args 個数 ≤256。pattern 不一致・metachar 含有は
       `POLICY_VIOLATION`」→ 「args 個数 ≤256・各 token ≤4096
@@ -100,7 +100,7 @@ shape を転記するだけで文言を再解釈しない。deny-list 命名規�
       も pattern 適合なら executable の literal argv として
       渡る(spawn は shell を介さない)。pattern 不一致は
       `POLICY_VIOLATION`」
-- [ ] **G-5(:141-153)** — trust/sandbox 限界節の canonical 化:
+- [x] **G-5(:141-153)** — trust/sandbox 限界節の canonical 化:
       節冒頭を「cheaper は OS sandbox ではない。canonical
       file tool(write/edit/ls/read/find/grep)の workspace
       boundary(E1/E2)・`filesystem.denyPaths`・worker
@@ -114,12 +114,12 @@ shape を転記するだけで文言を再解釈しない。deny-list 命名規�
       ENOEXEC への libc `/bin/sh` retry は OS/libc 既定動作・
       glibc `execvpe` 系・musl は retry しない・保証対象外)を
       1 bullet として追加
-- [ ] :46-100(execDenyPatterns 節・seed・migration 注記)・
+- [x] :46-100(execDenyPatterns 節・seed・migration 注記)・
       :119-123・:148・:63 は**編集しない**(G-9 変更不要一覧)
 
 ### 2. `docs/guides/managed-process.md`
 
-- [ ] **G-3(:23)** — 「任意 command/argv の指定、shell、
+- [x] **G-3(:23)** — 「任意 command/argv の指定、shell、
       shell 演算子、script shim を拒否する。pipe、semicolon
       等は正規の引数内でも拒否」→ 「呼出し input は `task`
       のみ — model から任意 command/argv は指定できない。
@@ -129,7 +129,7 @@ shape を転記するだけで文言を再解釈しない。deny-list 命名規�
       shell を介さないため `|`・`;` は制御構文として解釈
       されない)。executable 名・argv の正当性は task 作者の
       責務」
-- [ ] **G-4(:27)** — 「Windows の `.cmd`/`.bat`/`.ps1` shim
+- [x] **G-4(:27)** — 「Windows の `.cmd`/`.bat`/`.ps1` shim
       は実行しない」「native PE/ELF/Mach-O executable のみ
       解決」→ 「executable 名・内容の審査は行わない — spawn
       viability(realpath・is_file・実行 bit)のみ判定。win32
@@ -143,7 +143,7 @@ shape を転記するだけで文言を再解釈しない。deny-list 命名規�
       `/bin/sh` で retry するのは OS/libc 既定動作であり
       cheaper の保証対象外(musl は retry しない残留差分
       あり)。** 見つからなければ `POLICY_VIOLATION`」
-- [ ] **G-6(:47-49)** — caveat 節:「OS sandbox や tracer
+- [x] **G-6(:47-49)** — caveat 節:「OS sandbox や tracer
       ではない」を canonical 項目 1・2 へ揃え(file tool の
       boundary/denyPaths/writeScope は tool surface で強制、
       `process` 子プロセスの fs 副作用は強制・完全観測
@@ -151,24 +151,24 @@ shape を転記するだけで文言を再解釈しない。deny-list 命名規�
       は保持。:27 への cross-reference(spawn viability と
       ENOEXEC の区別は executable 解決の節を参照)1 行を
       添えてよい
-- [ ] :47 前半・:49 は**編集しない**(G-9 変更不要一覧)
+- [x] :47 前半・:49 は**編集しない**(G-9 変更不要一覧)
 
 ### 3. `docs/guides/workers.md`
 
-- [ ] **G-7(:138-139)** — 「runtime が強制的に禁止する」へ
+- [x] **G-7(:138-139)** — 「runtime が強制的に禁止する」へ
       「(canonical file tool の write に限る — exec 子
       プロセスの fs 副作用には及ばない)」但書追加。
       :54-65 writeScope tri-state 記述は保持
 
 ### 4. `docs/guides/usage.md`
 
-- [ ] **off-list :207** — 「schema・deny list・argv pattern
+- [x] **off-list :207** — 「schema・deny list・argv pattern
       の compile」へ `(opt-in — security.execDenyPatterns
       宣言時のみ)` 条件付記(G-9 optional 項目の採用分)
 
 ### 5. `packages/apm/.apm/skills/cheaper-usage/SKILL.md`
 
-- [ ] **G-8(:353)** — 「`add` runs the same validation as
+- [x] **G-8(:353)** — 「`add` runs the same validation as
       policy load (deny list, argv pattern compile, env/cwd
       rules)」→ 「(opt-in deny list — `security.execDenyPatterns`
       declared のみ, argv pattern compile, env/cwd rules)」形
@@ -176,7 +176,7 @@ shape を転記するだけで文言を再解釈しない。deny-list 命名規�
 
 ### 6. `packages/apm/.apm/skills/cheaper-tool-operate/SKILL.md`
 
-- [ ] **off-list :82-85** — 「Deny-list and argv-pattern
+- [x] **off-list :82-85** — 「Deny-list and argv-pattern
       checks are re-applied on the re-run」→ 「argv-pattern
       checks — and the opt-in deny-list when
       `security.execDenyPatterns` is declared — are
@@ -220,33 +220,33 @@ shape を転記するだけで文言を再解釈しない。deny-list 命名規�
 
 ## Done When
 
-- [ ] `command.md` の :44 が 3 形態受理 + 内容審査なし +
+- [x] `command.md` の :44 が 3 形態受理 + 内容審査なし +
       opt-in `execDenyPatterns` のみ拒否の記述になり、
       「native magic（MZ」・「workspace 相対 path は拒否」
       が残存しない
-- [ ] `command.md` :133 が input schema `INVALID_INPUT`
+- [x] `command.md` :133 が input schema `INVALID_INPUT`
       bound + literal argv の記述になり、「shell metachar
       拒否」が残存しない
-- [ ] `command.md` trust/sandbox 限界節が canonical 項目
+- [x] `command.md` trust/sandbox 限界節が canonical 項目
       1・2 を含み ENOEXEC 区別 bullet がある(`grep -n
       "ENOEXEC" docs/guides/command.md` hit)
-- [ ] `managed-process.md` :23 が task 名のみ input + 宣言
+- [x] `managed-process.md` :23 が task 名のみ input + 宣言
       argv 内容審査なしの記述になり、:27 が viability 制約
       + ENOEXEC 注記を含み、「native PE/ELF/Mach-O」・
       「shell 演算子、script shim を拒否」が残存しない
       (`grep -n "ENOEXEC" docs/guides/managed-process.md` hit)
-- [ ] `managed-process.md` caveat 節が canonical 項目 1・2
+- [x] `managed-process.md` caveat 節が canonical 項目 1・2
       へ揃い :49 W1 limitation が保持されている
-- [ ] `workers.md:138-139`・`usage.md:207`・両 SKILL.md
+- [x] `workers.md:138-139`・`usage.md:207`・両 SKILL.md
       該当行に opt-in 条件付記がある
-- [ ] G-9 変更不要一覧の行(`command.md:46-100/:119-123/
+- [x] G-9 変更不要一覧の行(`command.md:46-100/:119-123/
       :148/:63`・`managed-process.md:47/:49`)が差分に含まれ
       ない、または既存記述を壊さない均質化に留まっている
       (`git diff` で確認)
-- [ ] deny-list 命名規約違反(「保護」「sandbox」
+- [x] deny-list 命名規約違反(「保護」「sandbox」
       「containment」「防御」での `execDenyPatterns` 呼称)が
       差分内にない
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `node scripts/check-doc-ids.mjs` exits 0
 
 ## Out of Scope
 
@@ -263,13 +263,37 @@ shape を転記するだけで文言を再解釈しない。deny-list 命名規�
 
 ## Verification
 
-- [ ] §1-§6 の全 checkbox を編集し `git diff` が記述/comment
+- [x] §1-§6 の全 checkbox を編集し `git diff` が記述/comment
       のみの差分であること
-- [ ] `grep -n "OS sandbox" docs/guides/command.md
+- [x] `grep -n "OS sandbox" docs/guides/command.md
       docs/guides/managed-process.md` が両 file hit・
       `grep -n "ENOEXEC"` が両 file hit(実測を記録)
-- [ ] absence-grep: `command.md` の「native magic（MZ」
+- [x] absence-grep: `command.md` の「native magic（MZ」
       「shell metachar 拒否」「workspace 相対 path は拒否」
       `managed-process.md` の「native PE/ELF/Mach-O」が
       0 hit(実測を記録)
-- [ ] `node scripts/check-doc-ids.mjs` exits 0(実測を記録)
+- [x] `node scripts/check-doc-ids.mjs` exits 0(実測を記録)
+
+## 実施記録（issue #169 sweep 実施時）
+
+- `grep -n "OS sandbox" docs/guides/command.md docs/guides/managed-process.md`
+  → command.md:143・managed-process.md:47 で両 file hit。
+- `grep -n "ENOEXEC" docs/guides/command.md docs/guides/managed-process.md`
+  → command.md:152・managed-process.md:27/:47 で両 file hit。
+- absence-grep — command.md の「native magic（MZ」・「shell metachar
+  拒否」・「workspace 相対 path は拒否」、managed-process.md の
+  「native PE/ELF/Mach-O」・「shell 演算子、script shim を拒否」は
+  いずれも 0 hit。
+- `mise exec -- node scripts/check-doc-ids.mjs` → exits 0
+  （1191 markdown files scanned）。
+- 追加編集（scope 内の同型残留 — T1 Out of Scope 但書に基づく）:
+  `docs/guides/workers.md:135` の「deny list・argv pattern の
+  compile 等が再検査」へ `(opt-in — security.execDenyPatterns
+  宣言時のみ)` 条件付記を併せて適用（usage.md:207 と同型の
+  residual で、design §(d-2) off-list 行と同一扱い）。
+- `git diff` は docs/guides/*.md・SKILL.md 2 file の記述差分のみ。
+  deny-list 命名規約違反（「保護」「sandbox」「containment」
+  「防御」での `execDenyPatterns` 呼称）なし。G-9 変更不要一覧の
+  記述（command.md :46-100/:119-123/:148/:63・managed-process.md
+  :47 前半/:49・parent-agent-integration.md・configuration.md）は
+  差分に含まれない。

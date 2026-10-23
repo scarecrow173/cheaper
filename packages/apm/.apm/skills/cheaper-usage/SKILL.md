@@ -350,7 +350,8 @@ policy. Two supply routes exist for an invoker:
   user-scope `<userConfigDir>/policy.yaml` so flag-free runs can use it.
   `<json>` is the `command.grants` map-value shape (no `name` key — the
   positional `<name>` is the map key). `add` runs the same validation as
-  policy load (deny list, argv pattern compile, env/cwd rules) and leaves
+  policy load (opt-in deny list — only when `security.execDenyPatterns`
+  is declared, argv pattern compile, env/cwd rules) and leaves
   the file untouched on failure; `policy grant list` prints
   `{grants:[{name,executable}]}`; `policy grant remove <name>` deletes it
   (`INVALID_REQUEST` if absent). Write caveats: the write is atomic and
