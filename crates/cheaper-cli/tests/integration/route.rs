@@ -128,3 +128,92 @@ async fn resolve_usage_log_not_written() {
     assert_eq!(code, 0);
     assert!(f.usage_log().is_none());
 }
+
+/// `grants` member の viability fold(#166)— member 未存在・task 由来
+/// fixed member は anchor 失敗と同じ `no-grant` へ畳まれ、全 member
+/// eligible+pinnable なら `runnable`(O3a — member 理由を区別する
+/// viability 値は増やさない)。
+#[tokio::test]
+async fn resolve_member_grants_viability() {
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"");
+    let mut f = Fixture::new();
+    // closure が `f` 全体を捕捉しないよう cfg path を先に取る。
+    let cfg = f.cfg.path().to_path_buf();
+    let write_routes = |grants: &str| {
+        std::fs::write(
+            cfg.join("routes.yaml"),
+            format!(
+                "version: 1\nroutes:\n  - name: cargo-test\n    match: {{command: [cargo, test]}}\n    target: {{kind: workflow, path: routed-exec.workflow.json}}\n    grant: cargo-test\n    grants: {grants}\n"
+            ),
+        )
+        .unwrap();
+        std::fs::write(
+            cfg.join("routed-exec.workflow.json"),
+            r#"{"version":1,"jobs":{}}"#,
+        )
+        .unwrap();
+    };
+    let write_policy = |extra: &str| {
+        std::fs::write(
+            cfg.join("policy.yaml"),
+            format!(
+                "version: 1\ncommand:\n  grants:\n    cargo-test:\n      executable: \"{exe}\"\n      argv: [test, \"*\"]\n{extra}"
+            ),
+        )
+        .unwrap();
+    };
+
+    // 全 member eligible+pinnable → runnable。
+    write_routes("[fmt, report]");
+    write_policy(&format!(
+        "    fmt:\n      executable: \"{exe}\"\n      argv: [\"*\"]\n    report:\n      executable: \"{exe}\"\n      argv: [\"*\"]\n"
+    ));
+    let (code, env, _err) = f
+        .run(&["route", "resolve", "--command", "cargo test"])
+        .await;
+    assert_eq!(code, 0);
+    assert_eq!(env["result"]["viability"], "runnable");
+
+    // member 未存在 → no-grant(anchor 失敗と同一 fold)。
+    write_routes("[missing]");
+    write_policy("");
+    let (code, env, _err) = f
+        .run(&["route", "resolve", "--command", "cargo test"])
+        .await;
+    assert_eq!(code, 0);
+    assert_eq!(env["result"]["viability"], "no-grant");
+
+    // member が task 由来 fixed grant → no-grant。
+    write_routes("[fmt]");
+    write_policy(&format!(
+        "process:\n  tasks:\n    fmt:\n      command: [\"{exe}\"]\n      inputs: []\n      outputs: []\n"
+    ));
+    let (code, env, _err) = f
+        .run(&["route", "resolve", "--command", "cargo test"])
+        .await;
+    assert_eq!(code, 0);
+    assert_eq!(env["result"]["viability"], "no-grant");
+}
+
+/// quoted metachar は route viability で `unsafe-command` に倒れない
+/// (#166 R5 — token 内容の shell-metachar 正規表現分類は除去済み。
+/// tokenize_shell は quote 内 metachar を data として扱うため grant
+/// argv 照合まで到達する)。
+#[tokio::test]
+async fn resolve_quoted_metachar_reaches_runnable() {
+    let mut f = routed_fixture();
+    let (code, env, _err) = f
+        .run(&["route", "resolve", "--command", "cargo test 'a|b'"])
+        .await;
+    assert_eq!(code, 0);
+    assert_eq!(env["result"]["viability"], "runnable");
+    let (code, env, _err) = f
+        .run(&["route", "resolve", "--argv", r#"["cargo","test","a;b"]"#])
+        .await;
+    assert_eq!(code, 0);
+    assert_eq!(env["result"]["viability"], "runnable");
+}

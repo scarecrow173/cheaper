@@ -449,6 +449,159 @@ async fn post_job_failure_keeps_exit_and_records_stage() {
     );
 }
 
+/// #166 member fixture — route は `grants: [fmt, report, strict]`
+/// (anchor `child-run` 以外の delegated grant member)を宣言し、
+/// policy は anchor + member 3 grant + route 非宣言の `undeclared`
+/// を持つ。`fmt`/`report` は `tail` mode marker で実 spawn の証跡を
+/// 残し、`strict` は argv `['allowed']` のみ許可する。
+fn member_fx(f: &Fixture, workflow: &Value) -> (std::path::PathBuf, std::path::PathBuf) {
+    let exe = std::env::current_exe()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    let fmt_marker = f.ws.path().join("fmt-marker.txt");
+    let report_marker = f.ws.path().join("report-marker.txt");
+    let esc = |p: &Path| {
+        p.to_string_lossy()
+            .replace('\\', "\\\\")
+            .replace('\'', "''")
+    };
+    std::fs::write(
+        f.cfg.path().join("routes.yaml"),
+        "version: 1\nroutes:\n  - name: member-run\n    match: {command: [routed]}\n    target: {kind: workflow, path: member.workflow.json}\n    grant: child-run\n    grants: [fmt, report, strict]\n",
+    )
+    .unwrap();
+    std::fs::write(
+        f.cfg.path().join("member.workflow.json"),
+        serde_json::to_string(workflow).unwrap(),
+    )
+    .unwrap();
+    std::fs::write(
+        f.cfg.path().join("policy.yaml"),
+        format!(
+            "version: 1\ncommand:\n  grants:\n    child-run:\n      executable: '{exe}'\n      argv: ['route_run::command_fixture', '--exact', '--nocapture']\n      timeout: '600s'\n      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n    fmt:\n      executable: '{exe}'\n      argv: ['route_run::command_fixture', '--exact', '--nocapture']\n      env:\n        CHEAPER_ROUTE_CHILD_MODE: tail\n        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n    report:\n      executable: '{exe}'\n      argv: ['route_run::command_fixture', '--exact', '--nocapture']\n      env:\n        CHEAPER_ROUTE_CHILD_MODE: tail\n        CHEAPER_ROUTE_CHILD_MARKER: '{}'\n    strict:\n      executable: '{exe}'\n      argv: ['allowed']\n    undeclared:\n      executable: '{exe}'\n      argv: ['*']\n",
+            esc(&fmt_marker),
+            esc(&report_marker)
+        ),
+    )
+    .unwrap();
+    (fmt_marker, report_marker)
+}
+
+/// `grants:[…]` 宣言 route の member 委譲(#166)— `job_id != "exec"`
+/// の `command` job は宣言 member(`fmt`/`report`)を `input.name` で
+/// 実行できる。projection 外の `undeclared` 名は job 失敗へ、member
+/// argv が grant pattern 外なら job 実行時 `check_exec_execution` が
+/// 拒否する — member argv 照合は viability ではなく job 実行時に
+/// 行われるため route 発火自体は止まらない(O2b)。失敗は
+/// `job-failed:<id>` の postprocess failure として記録される。
+#[tokio::test(flavor = "current_thread")]
+async fn member_grant_jobs_execute_and_undeclared_denied() {
+    let mut f = Fixture::new();
+    let workflow = exec_only_workflow(
+        json!({
+            "fmt-job": {
+                "kind": "tool",
+                "tool": "command",
+                "input": {"name": "fmt", "args": ["route_run::command_fixture", "--exact", "--nocapture"]}
+            },
+            "report-job": {
+                "kind": "tool",
+                "tool": "command",
+                "input": {"name": "report", "args": ["route_run::command_fixture", "--exact", "--nocapture"]}
+            },
+            "undeclared-job": {
+                "kind": "tool",
+                "tool": "command",
+                "input": {"name": "undeclared", "args": []}
+            },
+            "strict-job": {
+                "kind": "tool",
+                "tool": "command",
+                "input": {"name": "strict", "args": ["denied-arg"]}
+            }
+        }),
+        json!({}),
+    );
+    let (fmt_marker, report_marker) = member_fx(&f, &workflow);
+    let token = payload_token(
+        &f,
+        &format!("routed {CHILD_ARGV}"),
+        &[
+            "routed",
+            "route_run::command_fixture",
+            "--exact",
+            "--nocapture",
+        ],
+        &[],
+        &[],
+        None,
+    );
+    let out = run_route(&mut f, &token).await.unwrap();
+    // anchor(ok mode)exit 0 — member job 失敗は route 発火を止めず
+    // postprocess failure へ畳まれる。
+    assert_eq!(out.exit_code, 0);
+    // member grant job は実際に spawn された(marker 証跡)。
+    assert!(fmt_marker.exists(), "fmt member job must run");
+    assert!(report_marker.exists(), "report member job must run");
+    let failures = out.envelope["result"]["postprocessFailures"]
+        .as_array()
+        .unwrap();
+    // projection 外名・member argv pattern 違反は job 失敗。
+    assert!(
+        failures.iter().any(|s| s == "job-failed:undeclared-job"),
+        "failures: {failures:?}"
+    );
+    assert!(
+        failures.iter().any(|s| s == "job-failed:strict-job"),
+        "failures: {failures:?}"
+    );
+    // member job 自体は失敗しない。
+    assert!(!failures.iter().any(|s| s == "job-failed:fmt-job"));
+    assert!(!failures.iter().any(|s| s == "job-failed:report-job"));
+}
+
+/// `job_id == "exec"` × `tool: "command"` は anchor grant + 元 argv の
+/// `expected_input` に束縛される(#166 O1)— member grant 名を名乗る
+/// exec job は `exec-input-mismatch` PolicyViolation で job 失敗し、
+/// captured result 無しのため route run は workflow job 失敗の
+/// collapsed `ToolExecutionFailure` を返す(member 名による anchor
+/// impersonation は成立しない)。
+#[tokio::test(flavor = "current_thread")]
+async fn exec_job_named_member_is_input_mismatch() {
+    let mut f = Fixture::new();
+    let mut workflow = exec_only_workflow(json!({}), json!({}));
+    // exec job が anchor ではなく member grant 名を名乗る。
+    workflow["jobs"]["exec"]["input"] = json!({"name": "fmt", "args": ["x"]});
+    member_fx(&f, &workflow);
+    let token = payload_token(
+        &f,
+        &format!("routed {CHILD_ARGV}"),
+        &[
+            "routed",
+            "route_run::command_fixture",
+            "--exact",
+            "--nocapture",
+        ],
+        &[],
+        &[],
+        None,
+    );
+    let err = run_route(&mut f, &token)
+        .await
+        .err()
+        .expect("route must fail: exec job input mismatch");
+    assert_eq!(
+        err.downcast_ref::<CheaperError>().map(CheaperError::code),
+        Some(ErrorCode::ToolExecutionFailure),
+        "exec job 失敗は outcome.error の collapse code: {err}"
+    );
+    assert!(
+        err.to_string().contains("routed command did not complete"),
+        "captured()==None && outcome.error.is_some() 分岐: {err}"
+    );
+}
+
 #[tokio::test(flavor = "current_thread")]
 async fn output_schema_failure_still_mirrors_real_result() {
     let mut f = Fixture::new();

@@ -118,7 +118,7 @@ pub(crate) fn prepare(
     for (k, v) in prefix {
         extra_env.insert(k, Value::from(v));
     }
-    if !supply.policy.exec.project_grant(&route.grant) {
+    if !supply.policy.exec.project_grants(&route.grant_set()) {
         return Err(denied("no-grant"));
     }
     Ok(PreparedRoute {
@@ -699,8 +699,24 @@ mod tests {
     }
 
     #[test]
-    fn prepare_projects_grants_to_single_route_grant() {
+    fn prepare_projects_grant_set() {
         let fx = routed_fx();
+        // route に member `other` を宣言(user 層 — trusted
+        // authoring) — `grant_set()` = {cargo-test, other} が投影に
+        // 残り、未宣言 grant は落ちる。
+        std::fs::write(
+            fx.cfg.join("routes.yaml"),
+            "version: 1\nroutes:\n  - name: cargo-test\n    match: {command: [cargo, test]}\n    target: {kind: workflow, path: routed-exec.workflow.json}\n    grant: cargo-test\n    grants: [other]\n    passthroughEnv: [CI, FOO]\n",
+        )
+        .unwrap();
+        let exe = test_exe();
+        std::fs::write(
+            fx.cfg.join("policy.yaml"),
+            format!(
+                "version: 1\ncommand:\n  grants:\n    cargo-test:\n      executable: '{exe}'\n      argv: [test, \"*\"]\n    other:\n      executable: '{exe}'\n      argv: [\"*\"]\n    undeclared:\n      executable: '{exe}'\n      argv: [\"*\"]\n"
+            ),
+        )
+        .unwrap();
         let env = env_lookup(&fx.cfg);
         let p = payload(
             &fx.ws,
@@ -709,10 +725,13 @@ mod tests {
             BTreeMap::new(),
         );
         let out = prepare(&p, &fx.ws, &env, Some(&fx.builtin)).unwrap();
-        // `project_grant` は `{route.grant} ∪ {fixed grants}` を残す
-        // — fixture は task 非宣言のため route grant のみが残る。
-        assert_eq!(out.supply.policy.exec.grants.len(), 1);
-        assert!(out.supply.policy.exec.grants.contains_key("cargo-test"));
+        // `project_grants` は `{route.grant} ∪ grants ∪ {fixed
+        // grants}` を残す — undeclared は投影から落ちる。
+        let grants = &out.supply.policy.exec.grants;
+        assert_eq!(grants.len(), 2);
+        assert!(grants.contains_key("cargo-test"));
+        assert!(grants.contains_key("other"));
+        assert!(!grants.contains_key("undeclared"));
         assert_eq!(out.route.name, "cargo-test");
         assert_eq!(out.route.grant, "cargo-test");
         assert_eq!(out.resolution.exec_args, vec!["test", "--workspace"]);

@@ -7,7 +7,7 @@
 
 use std::path::Path;
 
-use cheaper_core::policy::exec::{argv_shell_re, ResolvedExecPolicy};
+use cheaper_core::policy::exec::ResolvedExecPolicy;
 use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::workspace::deny_paths::PathDenylist;
 use cheaper_core::workspace::paths::SymlinkPolicy;
@@ -280,14 +280,11 @@ fn viability(
     tied: bool,
 ) -> Viability {
     // unsafe-command — caller 報告の unsafe/複数 segment 入力、
-    // executable が cwd 変化 command、または exec_args に shell
-    // metachar(tokenize 済み argv でも grant 側は metachar を
-    // 拒否するため安全性分類へ倒す)。
+    // または executable が cwd 変化 command。tokenize 済み argv の
+    // metachar 内容は分類しない — authorization は grant argv 契約が
+    // 担い routing 層は内容審査を持たない(D2)。
     let name = out.executable.as_deref().unwrap_or_default();
-    if input.unsafe_command
-        || CWD_CHANGING_COMMANDS.contains(&name.to_lowercase().as_str())
-        || out.exec_args.iter().any(|a| argv_shell_re().is_match(a))
-    {
+    if input.unsafe_command || CWD_CHANGING_COMMANDS.contains(&name.to_lowercase().as_str()) {
         return Viability::UnsafeCommand;
     }
     // invalid-route — longest match の同 token tie(構築時重複検査
@@ -349,6 +346,35 @@ fn viability(
     if check_exec_execution(&options, &route.grant, &out.exec_args).is_err() {
         return Viability::NoGrant;
     }
+    // no-grant (b) — 追加 set member: 存在 + is_route_eligible +
+    // pin 解決のみ(argv 照合は job 実行時の check_exec_execution へ
+    // 遅延 — direct `workflow run --grant` と同じ検査位置、O2a)。
+    // 失敗は anchor 失敗と同じ NoGrant へ fold する。
+    for member in &route.grants {
+        let Some(member_grant) = input
+            .exec_policy
+            .policy
+            .grants
+            .get(member)
+            .filter(|g| ResolvedExecPolicy::is_route_eligible(g))
+        else {
+            tracing::debug!(route = %route.name, member, "route grant member ineligible");
+            return Viability::NoGrant;
+        };
+        if cheaper_tools::tools::exec::pin_exec_grant(
+            member,
+            member_grant,
+            input.exec_policy.root,
+            input.exec_policy.symlink_policy,
+            input.exec_policy.denylist,
+            input.exec_policy.exec_deny,
+        )
+        .is_err()
+        {
+            tracing::debug!(route = %route.name, member, "route grant member unpinnable");
+            return Viability::NoGrant;
+        }
+    }
     // stdin-unsupported — interactive command curated list。
     if is_interactive(name, &out.exec_args) {
         return Viability::StdinUnsupported;
@@ -377,6 +403,21 @@ mod tests {
             passthrough_env: Vec::new(),
             trusted: false,
             layer: RouteLayer::Builtin,
+        }
+    }
+
+    /// `grants` member を持つ route 宣言 — member 検査は
+    /// `route.grants`(anchor を含まない member のみ)を走査する。
+    fn route_with_grants(
+        name: &str,
+        command: &[&str],
+        grant: &str,
+        grants: &[&str],
+        target: &str,
+    ) -> Route {
+        Route {
+            grants: grants.iter().map(|s| s.to_string()).collect(),
+            ..route(name, command, grant, target)
         }
     }
 
@@ -477,22 +518,49 @@ mod tests {
         let policy = grant_policy();
         let deny = ExecDenyList::default();
         let view = policy_view(&policy, &root, &deny);
-        let run = |routes: EffectiveRoutes, tokens: &[&str]| {
+        let run = |routes: &EffectiveRoutes, tokens: &[&str]| {
             resolve(&ResolveInput {
                 argv: &argv(tokens),
                 cwd: &root,
-                routes: &routes,
+                routes,
                 exec_policy: &view,
                 unsafe_command: false,
             })
         };
-        // unsafe-command — exec_args の metachar。
+        // unsafe-command — caller 報告 flag と cwd 変化 executable
+        // の 2 条件のみ(#166 — tokenize 済み argv token の metachar
+        // 内容は分類しない、D2)。
         let routes = EffectiveRoutes {
             routes: vec![route("r", &["cargo"], "cargo-test", &target_str)],
             ..Default::default()
         };
-        let out = run(routes, &["cargo", "test", "a;rm"]);
+        let out = resolve(&ResolveInput {
+            argv: &argv(&["cargo", "test", "a;rm"]),
+            cwd: &root,
+            routes: &routes,
+            exec_policy: &view,
+            unsafe_command: true,
+        });
         assert_eq!(out.viability, Some(Viability::UnsafeCommand));
+        let routes = EffectiveRoutes {
+            routes: vec![route("r", &["cd"], "cargo-test", &target_str)],
+            ..Default::default()
+        };
+        let out = run(&routes, &["cd", "sub"]);
+        assert_eq!(out.viability, Some(Viability::UnsafeCommand));
+        // quoted 相当の metachar 含 token(`a;rm`)は unsafe でなく
+        // grant argv pattern 照合まで到達し runnable になり得る
+        // (#166 R5 — token 内容の shell-metachar 正規表現分類は
+        // viability から除去済み)。`\0` 含 arg も到達する
+        // (spawn 時の bounded job error — O5b 不採用の帰結)。
+        let routes = EffectiveRoutes {
+            routes: vec![route("r", &["cargo"], "cargo-test", &target_str)],
+            ..Default::default()
+        };
+        let out = run(&routes, &["cargo", "test", "a;rm"]);
+        assert_eq!(out.viability, Some(Viability::Runnable));
+        let out = run(&routes, &["cargo", "test", "a\0b"]);
+        assert_eq!(out.viability, Some(Viability::Runnable));
         // invalid-route — invalid group が argv prefix に match。
         let routes = EffectiveRoutes {
             routes: vec![route("r", &["cargo"], "cargo-test", &target_str)],
@@ -503,21 +571,21 @@ mod tests {
             }],
             ..Default::default()
         };
-        let out = run(routes, &["cargo", "test"]);
+        let out = run(&routes, &["cargo", "test"]);
         assert_eq!(out.viability, Some(Viability::InvalidRoute));
         // missing-target — target file 不在。
         let routes = EffectiveRoutes {
             routes: vec![route("r", &["cargo"], "cargo-test", "/nonexistent/w.json")],
             ..Default::default()
         };
-        let out = run(routes, &["cargo", "test"]);
+        let out = run(&routes, &["cargo", "test"]);
         assert_eq!(out.viability, Some(Viability::MissingTarget));
         // no-grant — grant 名が policy に無い。
         let routes = EffectiveRoutes {
             routes: vec![route("r", &["cargo"], "absent-grant", &target_str)],
             ..Default::default()
         };
-        let out = run(routes, &["cargo", "test"]);
+        let out = run(&routes, &["cargo", "test"]);
         assert_eq!(out.viability, Some(Viability::NoGrant));
         // stdin-unsupported — interactive executable(bash)。
         let routes = EffectiveRoutes {
@@ -526,7 +594,7 @@ mod tests {
         };
         // exec_args が grant pattern に適合する形で stdin-unsupported
         // を単独検証する(no-grant が優先されるため)。
-        let out = run(routes, &["bash", "test", "-c", "x"]);
+        let out = run(&routes, &["bash", "test", "-c", "x"]);
         assert_eq!(out.viability, Some(Viability::StdinUnsupported));
         // suppressed provenance — effective 無しで suppressed match。
         let routes = EffectiveRoutes {
@@ -536,9 +604,134 @@ mod tests {
             }],
             ..Default::default()
         };
-        let out = run(routes, &["cargo", "test"]);
+        let out = run(&routes, &["cargo", "test"]);
         assert!(!out.matched);
         assert_eq!(out.suppressed.as_deref(), Some("p-route"));
+    }
+
+    /// #166 member viability — `grants` member の検査は 存在 +
+    /// `is_route_eligible` + `pin_exec_grant` のみで、失敗は anchor
+    /// 失敗と同じ `NoGrant` へ fold する(O2a/O3a — member への
+    /// `check_exec_execution`・cwd prepare は呼ばない。新規
+    /// viability 値なし)。
+    #[test]
+    fn member_grants_fold_into_no_grant() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().to_string_lossy().into_owned();
+        let target = dir.path().join("w.json");
+        std::fs::write(&target, "{}").unwrap();
+        let target_str = target.to_string_lossy().into_owned();
+        let exe = std::env::current_exe()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        let deny = ExecDenyList::default();
+        let run = |policy: &ResolvedExecPolicy, members: &[&str], tokens: &[&str]| {
+            let view = policy_view(policy, &root, &deny);
+            resolve(&ResolveInput {
+                argv: &argv(tokens),
+                cwd: &root,
+                routes: &EffectiveRoutes {
+                    routes: vec![route_with_grants(
+                        "r",
+                        &["cargo", "test"],
+                        "cargo-test",
+                        members,
+                        &target_str,
+                    )],
+                    ..Default::default()
+                },
+                exec_policy: &view,
+                unsafe_command: false,
+            })
+        };
+        let anchor = json!({"executable": exe, "argv": ["test", "*"]});
+        // member 全通過 → Runnable(anchor `cargo-test` + member
+        // `fmt` ともに pin 可能な test binary を指す)。
+        let policy = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": anchor.clone(),
+                    "fmt": {"executable": exe, "argv": ["*"]},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let out = run(&policy, &["fmt"], &["cargo", "test"]);
+        assert_eq!(out.viability, Some(Viability::Runnable));
+        // member 未存在 → NoGrant。
+        let out = run(&policy, &["missing-member"], &["cargo", "test"]);
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // member scope:"project" → NoGrant。
+        let policy = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": anchor.clone(),
+                    "scoped": {"executable": exe, "argv": ["*"], "scope": "project"},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let out = run(&policy, &["scoped"], &["cargo", "test"]);
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // member fixed(task 由来)→ NoGrant。
+        let policy = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": anchor.clone(),
+                    "taskish": {"executable": exe, "argv": ["x"], "fixed": true},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let out = run(&policy, &["taskish"], &["cargo", "test"]);
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // member pin 不能(unresolvable executable)→ NoGrant。
+        let policy = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": anchor.clone(),
+                    "unpinnable": {"executable": "./does-not-exist-xyz", "argv": ["*"]},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let out = run(&policy, &["unpinnable"], &["cargo", "test"]);
+        assert_eq!(out.viability, Some(Viability::NoGrant));
+        // member 失敗は stdin-unsupported より先に fold される
+        // (member ループは stdin 分岐より前)。
+        let policy = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "cargo-test": anchor.clone(),
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let routes = EffectiveRoutes {
+            routes: vec![route_with_grants(
+                "r",
+                &["bash"],
+                "cargo-test",
+                &["missing-member"],
+                &target_str,
+            )],
+            ..Default::default()
+        };
+        let view = policy_view(&policy, &root, &deny);
+        let out = resolve(&ResolveInput {
+            argv: &argv(&["bash", "test", "-c", "x"]),
+            cwd: &root,
+            routes: &routes,
+            exec_policy: &view,
+            unsafe_command: false,
+        });
+        assert_eq!(out.viability, Some(Viability::NoGrant));
     }
 
     #[test]

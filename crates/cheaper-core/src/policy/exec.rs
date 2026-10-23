@@ -109,23 +109,27 @@ pub struct ResolvedExecPolicy {
 }
 
 impl ResolvedExecPolicy {
-    /// route 参照の eligibility — `route.grant`・将来の `grants[]`・
+    /// route 参照の eligibility — `route.grant`・`grants[]` member・
     /// `substitute.grant` 全てに同 predicate を適用する単一 seam。
     pub fn is_route_eligible(grant: &ExecGrant) -> bool {
         grant.scope == ExecGrantScope::Trusted && !grant.fixed
     }
 
-    /// route run の単一 grant 投影(O8a — 現 `project_grant`:73-79 の
-    /// 一般化)。`name` が route-eligible でなければ false。投影は
-    /// `{name} ∪ {fixed grants}` を残す — routed workflow から task
-    /// を呼べる現行挙動を保存しつつ、非 fixed の他 grant を隠す C9
-    /// confused-deputy 防止を維持する。
-    pub fn project_grant(&mut self, name: &str) -> bool {
-        match self.grants.get(name) {
-            Some(g) if Self::is_route_eligible(g) => {}
-            _ => return false,
+    /// route run の grant set 投影(#166 — 単一版の一般化)。`names`
+    /// は `{route.grant} ∪ grants` の有効 set — 1 件でも不在・
+    /// route-ineligible(非 trusted/fixed)なら false で policy を
+    /// 変更しない。投影は `{names} ∪ {fixed grants}` を残す —
+    /// routed workflow から task を呼べる挙動と C9 confused-deputy
+    /// 防止(非 fixed の他 grant を隠す)を set でも維持する。
+    pub fn project_grants(&mut self, names: &BTreeSet<String>) -> bool {
+        if names.is_empty()
+            || !names
+                .iter()
+                .all(|n| matches!(self.grants.get(n), Some(g) if Self::is_route_eligible(g)))
+        {
+            return false;
         }
-        self.grants.retain(|n, g| n == name || g.fixed);
+        self.grants.retain(|n, g| names.contains(n) || g.fixed);
         true
     }
 }
@@ -140,14 +144,6 @@ pub(crate) const DEFAULT_TIMEOUT: &str = "2m";
 pub(crate) const DEFAULT_MAX_OUTPUT_BYTES: u64 = 65_536;
 pub(crate) const DEFAULT_KILL_GRACE: &str = "2s";
 pub(crate) const DEFAULT_HEARTBEAT_INTERVAL: &str = "30s";
-
-/// argv token の shell metachar 検査 shared regex。
-/// `cheaper-cli` `route/resolve.rs` の viability 分類が参照する間
-/// `pub` を維持する(issue 4 scope — exec 層からの適用点は除去済み)。
-pub fn argv_shell_re() -> &'static regex::Regex {
-    static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    RE.get_or_init(|| regex::Regex::new("[\0\r\n|&;<>`]|\\$\\(").unwrap())
-}
 
 /// workspace-relative path 検査。error prefix は呼出し側の section
 /// label(`"process"`/`"command"`/`"exec"`)に合わせる — "path must be
@@ -1037,28 +1033,41 @@ mod tests {
 
     /// route eligibility — `Trusted && !fixed` のみ eligible。
     #[test]
-    fn route_eligibility_and_project_grant() {
+    fn route_eligibility_and_project_grants() {
         let p = merged(
             json!({"tasks": {"t": {"command": ["cc"], "inputs": [], "outputs": []}}}),
             json!({"grants": {
                 "route": {"executable": "git"},
+                "member": {"executable": "fmt"},
                 "scoped": {"executable": "x", "scope": "project"},
             }}),
         );
         assert!(ResolvedExecPolicy::is_route_eligible(&p.grants["route"]));
+        assert!(ResolvedExecPolicy::is_route_eligible(&p.grants["member"]));
         assert!(!ResolvedExecPolicy::is_route_eligible(&p.grants["t"]));
         assert!(!ResolvedExecPolicy::is_route_eligible(&p.grants["scoped"]));
-        // `project_grant` は route grant + 全 fixed grant を残す
-        // (O8a — task 経路は投影で失われない)。
+        // `project_grants` は `{route.grant} ∪ grants ∪ {fixed
+        // grants}` を残す(#166 — task 経路は投影で失われない)。
+        let mut p2 = p.clone();
+        let names = BTreeSet::from(["route".to_string(), "member".to_string()]);
+        assert!(p2.project_grants(&names));
+        assert_eq!(p2.grants.len(), 3);
+        assert!(p2.grants.contains_key("route"));
+        assert!(p2.grants.contains_key("member"));
+        assert!(p2.grants.contains_key("t")); // fixed は残る
+        assert!(!p2.grants.contains_key("scoped"));
+        // set 内 1 件でも ineligible/不在なら false で policy 不変。
         let mut p = p;
-        assert!(p.project_grant("route"));
-        assert_eq!(p.grants.len(), 2);
-        assert!(p.grants.contains_key("route"));
-        assert!(p.grants.contains_key("t")); // fixed は残る
-        assert!(!p.grants.contains_key("scoped"));
-        // fixed/project-scoped/missing は route 不可 — policy 不変。
-        assert!(!p.project_grant("t"));
-        assert!(!p.project_grant("absent"));
+        assert!(!p.project_grants(&BTreeSet::from(["route".to_string(), "t".to_string(),])));
+        assert!(!p.project_grants(&BTreeSet::from(
+            ["route".to_string(), "scoped".to_string(),]
+        )));
+        assert!(!p.project_grants(&BTreeSet::from(
+            ["route".to_string(), "absent".to_string(),]
+        )));
+        // 空集合も false(全 `!fixed` grant が落ちる fail-safe)。
+        assert!(!p.project_grants(&BTreeSet::new()));
+        assert_eq!(p.grants.len(), 4, "policy 不変");
     }
 
     /// `ArgPattern` の compile/match(command.rs から移設 — `!fixed`
