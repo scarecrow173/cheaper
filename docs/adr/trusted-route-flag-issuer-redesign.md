@@ -118,10 +118,10 @@ project に委ねているのが issue #168 の是正対象。
 
 実測の consumer 確認（本ブランチ HEAD）: `route.trusted` を
 読むのは merge gate のみ（`.trusted` の使用は `routes.rs:201`
-と parse `:632` のみ）。viability（`resolve.rs:278-348`）・
+と parse `:632` のみ）。viability（`resolve.rs:278-412`）・
 grant 解決（`is_route_eligible`/`project_grants`）・record・
 `route run` は `route.trusted` を読まない。`route.layer` は
-`run.rs:366-369` で target.path の層起点解決にのみ使われ、
+`run.rs:366-370` で target.path の層起点解決にのみ使われ、
 trust 判別とは別概念 — **trust が分岐するのは merge precedence
 の一点だけ**であり、flag の意味論を層 provenance へ畳む変更の
 blast radius は merge + schema gate に閉じる。
@@ -233,11 +233,21 @@ blast radius は merge + schema gate に閉じる。
   discipline（untrusted 層の宣言内容を評価しない）と矛盾し、
   「`trusted` は `false` か absent のみ許容」という意味論
   自体が incoherent（`false` を書く意味が存在しない）。
+- **O2e 違反 entry を `invalid` へ隔離（file は load 成功）** —
+  全件 load 失敗の blast radius を避け、非衝突 route を
+  生かす案。`invalid` bucket は schema 違反でなく同層重複
+  `match.command` の quarantine 専用であり、違反を route-load
+  error でなく観測用 field へ格下げすると「untrusted 層の
+  privileged 宣言を黙殺する」ignore 規約（O2b）と実効が
+  近づく — privileged 宣言を含む file は file 全体を疑うのが
+  `grants`/`substitute` gate の確立済み姿勢であり、blast
+  radius を惜しんで同型の原則を崩す理由にはならない。不採用。
 
 **ignore vs reject の互換性評価**: O2a は `trusted` key を含む
 project routes.yaml を**全件 load 失敗**にする — file 内の
 非衝突 route も全て不活性化し、hook 経路では fail-open で
-その workspace の project routing 全体が落ち、strict 経路
+その workspace の **builtin/user/project 全層の route arm**
+が落ち（debug log のみで可視化）、strict 経路
 （`route resolve`/`route run`）は `INVALID_RUNTIME_POLICY`。
 これは `grants`/`substitute`（NEW key — 拒否で壊れる既存
 file が存在しなかった）には無かった実質 cost。緩和材料:

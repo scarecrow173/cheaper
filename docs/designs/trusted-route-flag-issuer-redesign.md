@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034L4tqYwtc8q88WEIXPh9"
 type: "design"
-status: "draft"
+status: "approved"
 title: "trusted route flag issuer redesign — `Route.trusted` 削除・merge 無条件化・project 層 `trusted` presence 拒否"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -380,7 +380,10 @@ RouteLayer::Project => {
   `.find(|s| is_prefix(&s.command, command))`)は不変。
   losing project route は自身の `match.command` で記録される
   ため best-match route(:266)・no-match(:246)の両経路で
-  既存どおり route 名を拾う。
+  既存どおり route 名を拾う(なお :246 の no-match 経路は
+  suppressed.command == winner.command の構造上ほぼ到達
+  不能 — 新旧 semantics 共通の既存 dead path で、本変更で
+  provenance 担い手としては数えない)。
 - `RouteResolution.suppressed`(:101-104)の field doc 追従 —
   「trust 不在で負けた project route + displaced 下位層 route」
   →「同一 `match.command` で下位層に負けた project route
@@ -478,7 +481,7 @@ provenance)は同一層境界を共有する「trust は宣言値ではなく宣
 | builtin/user 層の `trusted` が非 bool | 同上(`{label}.trusted: not a boolean`) | `routes.rs::validate_route`(gate 直後) | 受理層の型検査規約不変 — 値は保持しない |
 | `trusted` typo(`trustd` 等) | 同上(unknown key) | `routes.rs:399-403` | `KNOWN_KEYS` 維持で fail-loud 規約不変 |
 | `trusted` を含む project routes.yaml 全体 | `InvalidRuntimePolicy` — file 全体 load 失敗 | `routes.rs::load` → `supply::load` | schema_error は file 単位 — file 内の非衝突 route も不活性化(破壊的変更 — §Risks) |
-| hook 経路の `trusted` presence 拒否 | `None` — route arm 不活性(fail-open) | `route/supply.rs:138-152`(不変) | `load_or_none` があらゆる load 失敗を fold する現行規約 — その workspace の project routing 全体が不活性化し command は直接実行継続 |
+| hook 経路の `trusted` presence 拒否 | `None` — route arm 不活性(fail-open) | `route/supply.rs:138-152`(不変) | `load_or_none` があらゆる load 失敗を fold する現行規約 — **builtin/user/project 全層の route arm が不活性化**し command は直接実行継続(警告は debug log のみ — `route resolve` 実行まで症状が見えない点を migration guide で明記する) |
 | `trusted` 非宣言の project route が `match.command` 衝突 | error ではない — `suppressed` provenance 記録 | `routes.rs::load` project 分岐 → `resolve.rs:221-228` | `route resolve` 出力(:126-127)・`kind:"route"` record(`run.rs:633` → `usage_log.rs:418-419`)が報告。下位層 route が勝ち・発火は不変 |
 | `trusted` 宣言 project route が下位層を shadow | **発生しない** — 宣言経路が load 時に閉じる | `routes.rs::validate_route` | 「宣言しても判定を変えられない」ではなく「申告を受理しない」(AC2 を最強形で満たす) |
 
@@ -524,7 +527,7 @@ route run execute
 
 hook 経路(supply.rs:138-152)
   └─ trusted presence 拒否を含む load 失敗 → load_or_none
-     → None(route arm 不活性 — fail-open・command 直接実行継続)
+     → None(全層の route arm 不活性 — fail-open・command 直接実行継続)
 ```
 
 ## Non-Functional Constraints
@@ -574,8 +577,11 @@ hook 経路(supply.rs:138-152)
   file 内の非衝突 route を含め**全件 load 失敗**する —
   strict 経路(`route resolve`/`route run` prepare)は
   `INVALID_RUNTIME_POLICY`(exit 3)、hook 経路は fail-open
-  でその workspace の project routing 全体が不活性化する
-  (route arm が落ちて command は直接実行 — 実行自体は継続)。
+  でその workspace の **builtin/user/project 全層の routing**
+  が不活性化する(route arm が落ちて command は直接実行 —
+  実行自体は継続するが、症状は debug log のみで
+  `route resolve` を実行するまで可視化されない —
+  migration guide で症状と診断手順を明記する)。
   **緩和材料**: (a) 対象は `trusted` を書いた file のみ =
   まさに除去対象機能の利用者 (b) #169 migration guide で告知
   でき修復は当該 key の削除 1 行 (c) 失敗方向は fail-closed —
@@ -590,7 +596,10 @@ hook 経路(supply.rs:138-152)
   workflow を `<userConfigDir>/` へ vendor して user 層 route
   を宣言する必要がある(`target.path` の層起点制約で user 層は
   project file を直接指せない — §Deferred の consent registry
-  余地は残る)。
+  余地は残る)。**なお project routes.yaml を userConfigDir へ
+  丸ごとコピーすれば `trusted: true` は user 層で inert 受理
+  されるため意図した shadowing が無改修で復活する** — 破壊的
+  変更の実害を緩和する migration 経路として guide に記す。
 - **builtin/user 層の inert `trusted` key 残留** — 受理・bool
   検証・inert の zombie key が残る(documented 現状維持 —
   その層では元来意味を持たない)。表現 drift は小さいが
@@ -816,8 +825,11 @@ test 計画(spec Acceptance Criteria・issue AC1-AC3 への対応):
 - [ ] **hook fail-open(spec AC4/R6)** — `trusted` presence
       拒否を含む load 失敗が `load_or_none`
       (`supply.rs:138-152`)で route arm 不活性へ畳まれ、
-      command 直接実行経路は継続する(hook integration test・
-      fail-open 規約回帰)。
+      command 直接実行経路は継続する。**違反 file は project 層
+      `<workspace>/.cheaper/routes.yaml` に置くこと**(既存
+      hook-route fixture は `f.cfg` = user 層で layer gate の
+      対象外となるため)(hook integration test・fail-open 規約
+      回帰)。
 - [ ] **grant `scope` seam 不変・整合文書化(issue AC3/R5)** —
       route grant 参照が `scope=="trusted" && !fixed` のみ
       解決する `is_route_eligible`(`exec.rs:114-116`)単一
