@@ -76,12 +76,13 @@ Directory: `docs/designs`
 | DESIGN-034r05iHrZUE6Wzyjd1NS8 | リポジトリ構成とツールチェーン | approved | [repository-structure-toolchain.md](./repository-structure-toolchain.md) |
 | DESIGN-034A8FyPKpnV3KM2HypFGu | ResourceManager job lease と atomic operation admission 設計 | approved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | DESIGN-034IPoKswcH3LaUZdnb0XT | Restrict hook-config orphan sweep to cheaper-owned temp files | approved | [restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md](./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md) |
-| DESIGN-034KUgF5QB3WuzFG6PmVvr | route grant-set projection — grants 宣言・viability 条件緩和・record split | draft | [route-grant-set-projection.md](./route-grant-set-projection.md) |
+| DESIGN-034KUgF5QB3WuzFG6PmVvr | route grant-set projection — grants 宣言・viability 条件緩和・record split | approved | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | DESIGN-034KqI29dOTRXERRPTp5gV | usage.jsonl run error record の診断 field 拡充 (issue #141) | approved | [run-error-record-observability.md](./run-error-record-observability.md) |
 | DESIGN-034zSR05NE5hXXhkTRLMgW | Run-scoped artifact store | approved | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |
 | DESIGN-034Bbq1qY8WFBdL26tUdBw | Rust + Rig runtime migration architecture | approved | [rust-rig-runtime-migration-architecture.md](./rust-rig-runtime-migration-architecture.md) |
 | DESIGN-034z1EfqYaEBfyNvqZyFSD | SEA executable build pipeline and embedded resource resolution | approved | [sea-executable-build-pipeline-and-embedded-resource-resolution.md](./sea-executable-build-pipeline-and-embedded-resource-resolution.md) |
 | DESIGN-034rBoPPFNHXR5eSfv0hsO | Shell read-candidate extraction and shared large-read verdict | approved | [shell-read-candidate-extraction.md](./shell-read-candidate-extraction.md) |
+| DESIGN-034L0RxGVVTOqtaUUThowk | substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・実行 anchor 切替 | draft | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | DESIGN-0005kq1c3Wo7rdnwZR8Sp3 | Synchronize distributed cheaper-usage skill and parent-agent integration guide | approved | [synchronize-distributed-skill-and-parent-agent-guide.md](./synchronize-distributed-skill-and-parent-agent-guide.md) |
 | DESIGN-034r05iHy2gdnoEfk3jERu | Token counter contract (core module, count_tokens tool, count-tokens CLI) | approved | [token-counter-contract.md](./token-counter-contract.md) |
 | DESIGN-034ETcI8q4hTRH502qnQZc | tool-operator built-in worker と cheaper.optionalTools opt-in 縮退機構の設計 | approved | [tool-operator-built-in-worker.md](./tool-operator-built-in-worker.md) |
