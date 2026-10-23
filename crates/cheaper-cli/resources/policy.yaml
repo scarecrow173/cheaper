@@ -60,3 +60,12 @@ route:
     # prompt を素通しする応答)を許可する hook target 名
     # (codex/cursor/copilot)。trusted layer のみ authoring 可能。
     approvalBypass: []
+
+security:
+  # `command` grant executable への opt-in deterministic executable
+  # deny-list（executable 名の regex、basename stem への anchored
+  # case-insensitive 完全一致）。既定 [] = deny 無し。trusted layer
+  # のみ authoring 可能（project policy は拒否）。containment 機構
+  # ではなく known-bad executable への fail-fast — 詳細は
+  # docs/guides/command.md を参照。
+  execDenyPatterns: []

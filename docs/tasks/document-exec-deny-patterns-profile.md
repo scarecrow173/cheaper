@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KLYEMV6mRczcWiAQpy1"
 type: "task"
-status: "todo"
+status: "done"
 title: "security.execDenyPatterns の guides・builtin policy.yaml 整備"
 created: "2026-10-23"
 updated: "2026-10-23"
