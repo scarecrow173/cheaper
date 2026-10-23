@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034L59uXskRD4ink3h2a13"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "trusted route flag issuer redesign — Route.trusted 削除・merge 無条件化・project 層 trusted presence 拒否"
 created: "2026-10-23"
 updated: "2026-10-23"

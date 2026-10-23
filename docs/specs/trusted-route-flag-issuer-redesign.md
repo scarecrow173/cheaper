@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034LwdoInh3ie1KPlSjkJl"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "trusted route flag issuer redesign — 宣言層 provenance trust・project 層 `trusted` 宣言の拒否"
 created: "2026-10-23"
 updated: "2026-10-23"

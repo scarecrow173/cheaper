@@ -363,7 +363,7 @@ Directory: `docs/tasks`
 | TASK-034yW3DRPtMmttnAEru9Ns | Verify route test determinism and run mise run check | done | [verify-route-test-determinism-and-mise-check.md](./verify-route-test-determinism-and-mise-check.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
 | TASK-034L2NsdLuC7G3uiTACWd3 | substitute-exec route mode 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-substitute-exec-route-mode.md](./verify-substitute-exec-route-mode.md) |
-| TASK-034L59Zaf7xiLEfPo8rlQF | trusted route flag issuer redesign 最終検証 — targeted tests・doc-id・audit_docs・mise run check | todo | [verify-trusted-route-flag-issuer-redesign.md](./verify-trusted-route-flag-issuer-redesign.md) |
+| TASK-034L59Zaf7xiLEfPo8rlQF | trusted route flag issuer redesign 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-trusted-route-flag-issuer-redesign.md](./verify-trusted-route-flag-issuer-redesign.md) |
 | TASK-034KQsAwXBVQJ56nGgagYT | unified exec grant model の最終検証と status/evidence 更新 | done | [verify-unified-exec-grant-model.md](./verify-unified-exec-grant-model.md) |
 | TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | done | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |

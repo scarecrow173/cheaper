@@ -1,7 +1,7 @@
 ---
 id: "ADR-034LT2o68CgcOinMEs8PZ8"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "trusted route flag issuer redesign — trust = 宣言層 provenance・project 層 `trusted` presence 拒否"
 created: "2026-10-23"
 updated: "2026-10-23"

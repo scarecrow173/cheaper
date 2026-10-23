@@ -91,7 +91,7 @@ Directory: `docs/adr`
 | ADR-034r05iHrZUE6WdKBH2eNM | development APM project と distributable cheaper package を nested package で物理分離する | accepted | [separate-dev-apm-project-via-nested-distributable-package.md](./separate-dev-apm-project-via-nested-distributable-package.md) |
 | ADR-034KXk8h1AtwCkf2cQrb7m | substitute-exec route mode — substitute:{grant,argv}・viability retarget・実行 anchor 切替 | proposed | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | ADR-034r05iHrZUE6W82VsDbPq | Treat unmeasurable huge files as over-threshold via a core byte cap (fail-closed) | accepted | [treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md](./treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md) |
-| ADR-034LT2o68CgcOinMEs8PZ8 | trusted route flag issuer redesign — trust = 宣言層 provenance・project 層 `trusted` presence 拒否 | proposed | [trusted-route-flag-issuer-redesign.md](./trusted-route-flag-issuer-redesign.md) |
+| ADR-034LT2o68CgcOinMEs8PZ8 | trusted route flag issuer redesign — trust = 宣言層 provenance・project 層 `trusted` presence 拒否 | accepted | [trusted-route-flag-issuer-redesign.md](./trusted-route-flag-issuer-redesign.md) |
 | ADR-034r05iHlWosDpP8BzaVZ8 | TypeScript + pnpm monorepo 構成 | superseded | [typescript-pnpm-monorepo.md](./typescript-pnpm-monorepo.md) |
 | ADR-034KOpPArDTHQ8W1c81Q0B | unified exec grant model — 単一 exec grant 実装への統合 | accepted | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
 | ADR-RrljT4yH9woiGWbIny9ifG | usage.jsonl の run error record は固定 allowlist の診断 field で拡充する (issue #141) | accepted | [usage-error-record-field-contract.md](./usage-error-record-field-contract.md) |
