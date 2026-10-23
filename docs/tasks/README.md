@@ -24,7 +24,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpsYVkvsPX | Add e2e tests for non-execution CLI paths | done | [add-e2e-tests-for-non-execution-cli-paths.md](./add-e2e-tests-for-non-execution-cli-paths.md) |
 | TASK-034EekRVLtDbzc0slwVFX0 | T1: cheaper-core ErrorCode::from_str reverse lookup | done | [add-errorcode-from-str-reverse-lookup-in-cheaper-core.md](./add-errorcode-from-str-reverse-lookup-in-cheaper-core.md) |
 | TASK-034r05iHQeQpDpu1iPmr1q | Add fake stream hook and e2e execution tests | done | [add-fake-stream-hook-and-e2e-execution-tests.md](./add-fake-stream-hook-and-e2e-execution-tests.md) |
-| TASK-034KxDr0eOqS1QjXxMazEk | Add hook-config compat-degraded and windsurf-conflict verify findings | todo | [add-hook-config-compat-degraded-findings.md](./add-hook-config-compat-degraded-findings.md) |
+| TASK-034KxDr0eOqS1QjXxMazEk | Add hook-config compat-degraded and windsurf-conflict verify findings | done | [add-hook-config-compat-degraded-findings.md](./add-hook-config-compat-degraded-findings.md) |
 | TASK-034z52KS4mSEHAIf28JHuj | add hook contract tests and port existing adapter e2e | done | [add-hook-contract-tests-and-port-existing-adapter-e2e.md](./add-hook-contract-tests-and-port-existing-adapter-e2e.md) |
 | TASK-034Jg6xqeFUtHyZ5MxHgzu | Add hook entry route loading and eval supply | done | [add-hook-entry-route-loading.md](./add-hook-entry-route-loading.md) |
 | TASK-034IpPzy0tH0R50dS4XIN0 | Add hook_eval_dedup integration tests | done | [add-hook-eval-dedup-integration-tests.md](./add-hook-eval-dedup-integration-tests.md) |
@@ -54,8 +54,8 @@ Directory: `docs/tasks`
 | TASK-034z1POhgJ49oVv2arDj6X | Add SEA entrypoint sea-main.ts | done | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | TASK-034Kr8oUgcvTuprTQJwuyp | Add usage.jsonl diagnostic field contract tests and end-to-end echo pin | done | [add-usage-log-diagnostic-field-tests.md](./add-usage-log-diagnostic-field-tests.md) |
 | TASK-034r05iHQeQpDqCTYluKr1 | Add version check and set scripts | done | [add-version-check-and-set-scripts.md](./add-version-check-and-set-scripts.md) |
-| TASK-034KxDgCFTiXTthZajUTX1 | Add gated pattern-to-Search normalization to windsurf pre_read_code | todo | [add-windsurf-gated-pattern-search-normalization.md](./add-windsurf-gated-pattern-search-normalization.md) |
-| TASK-034KxDm7X0zR41q82TJxVY | Add windsurf range-drop deny guidance and fix deny-reason assertions | todo | [add-windsurf-range-deny-guidance.md](./add-windsurf-range-deny-guidance.md) |
+| TASK-034KxDgCFTiXTthZajUTX1 | Add gated pattern-to-Search normalization to windsurf pre_read_code | done | [add-windsurf-gated-pattern-search-normalization.md](./add-windsurf-gated-pattern-search-normalization.md) |
+| TASK-034KxDm7X0zR41q82TJxVY | Add windsurf range-drop deny guidance and fix deny-reason assertions | done | [add-windsurf-range-deny-guidance.md](./add-windsurf-range-deny-guidance.md) |
 | TASK-TttCTIVey8FHby8zR3UDqb | Add worker workload profile and auto tier classifier | done | [add-worker-workload-profile-and-auto-tier-classifier.md](./add-worker-workload-profile-and-auto-tier-classifier.md) |
 | TASK-034Jg6koI5aIWEPUXfhobu | Add workflow job when condition evaluation | done | [add-workflow-when.md](./add-workflow-when.md) |
 | TASK-034AR8FLSgTI6VLWpQZrQS | Benchmark evidence 集計と workflow usage guidance | done | [aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md](./aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md) |
@@ -123,14 +123,14 @@ Directory: `docs/tasks`
 | TASK-034KsL2829yYfRRGKl92t1 | Document route.rewrite.approvalBypass in configuration guide | done | [document-approval-bypass-policy-flag.md](./document-approval-bypass-policy-flag.md) |
 | TASK-034DlFJnTT9v0YcqV9Uine | Document devin usage semantics in providers and usage guides | done | [document-devin-usage-semantics-in-providers-and-usage-guides.md](./document-devin-usage-semantics-in-providers-and-usage-guides.md) |
 | TASK-034zQTXMNDaUeqIR3aCRNf | Document launcher distribution and verify acquisition | done | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
-| TASK-034KxDvREdpF6P10oziJsy | Document windsurf tool_info contract and dual-registration trap | todo | [document-windsurf-tool-info-contract-and-registration-requirements.md](./document-windsurf-tool-info-contract-and-registration-requirements.md) |
+| TASK-034KxDvREdpF6P10oziJsy | Document windsurf tool_info contract and dual-registration trap in distribution guide | done | [document-windsurf-tool-info-contract-and-registration-requirements.md](./document-windsurf-tool-info-contract-and-registration-requirements.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
 | TASK-034Dak56U8haKyVTWPnBKv | Extend PluginAuth::logout with AuthInteraction | done | [extend-pluginauth-logout-with-authinteraction.md](./extend-pluginauth-logout-with-authinteraction.md) |
 | TASK-034rzRugER0y7cQ2tlWjPp | Extend usage.jsonl run record with savings section | done | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | TASK-034Kr8hGPsSchbau1iTWjt | Extend build_usage_record error records with envelope-derived diagnostic fields | done | [extend-usage-log-error-record-diagnostic-fields.md](./extend-usage-log-error-record-diagnostic-fields.md) |
-| TASK-034KxDc5lyn6aDJbljcI3N | Extend windsurf pre_read_code ReadRange normalization parity | todo | [extend-windsurf-read-range-normalization.md](./extend-windsurf-read-range-normalization.md) |
+| TASK-034KxDc5lyn6aDJbljcI3N | Extend windsurf pre_read_code ReadRange normalization parity | done | [extend-windsurf-read-range-normalization.md](./extend-windsurf-read-range-normalization.md) |
 | TASK-034zQsmDSYTqJOZ8CjKrGN | Canonical handlers と Pi adapter を抽出する | done | [extract-canonical-tools.md](./extract-canonical-tools.md) |
 | TASK-034r05iHQeQpDpFFl8q6NC | Extract promptWithAbortGrace helper and apply to main run | done | [extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
 | TASK-034z1PGTvhoaHhdTUgPahz | Extract shared esbuild bundle helper from bundle-cli.mjs | done | [extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md](./extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md) |
@@ -272,13 +272,16 @@ Directory: `docs/tasks`
 | TASK-034GtBzKmwPf5z06kAahym | Register Devin hooks from APM skill | done | [register-devin-hooks-from-apm-skill.md](./register-devin-hooks-from-apm-skill.md) |
 | TASK-034EUvFhVkFFo9cY6aX6LB | T2: registry degrade path と prompt surfacing | done | [registry-degrade-and-prompt-surfacing.md](./registry-degrade-and-prompt-surfacing.md) |
 | TASK-bFmQKy8wlXPsJ8TxH83XGQ | issue-113/114 regression normalize・最終検証・impl 記録 | done | [regression-and-final-verification-113-114.md](./regression-and-final-verification-113-114.md) |
+| TASK-034KJtXX2QajBjkAgOJRtm | cheaper-core policy 層の内容審査 predicate・適用点を除去 | todo | [remove-core-policy-content-audit.md](./remove-core-policy-content-audit.md) |
 | TASK-034DzYbfe9r0G8Nd58FQjy | T1: js_json shim 削除 (F3) | done | [remove-js-json-shim.md](./remove-js-json-shim.md) |
 | TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |
 | TASK-034DzYfbw07gFHdsAguwHp | T4: poc-rig 削除 (F5) | done | [remove-poc-rig-crate.md](./remove-poc-rig-crate.md) |
+| TASK-034KJu31OgzJMwk2vb4KJz | cheaper-tools command/proc 層の内容審査を除去 | todo | [remove-tools-content-audit.md](./remove-tools-content-audit.md) |
 | TASK-034DzYC8wR9HwNbdMoF8NP | T7: provider crate rename + devin module 化 (F8) | done | [rename-provider-crate-and-modularize-devin.md](./rename-provider-crate-and-modularize-devin.md) |
 | TASK-034DzYxGyUC8loD0ruTCQN | T6: cheaper-runtime 内部再配置 (F6) | done | [reorganize-cheaper-runtime-run-module.md](./reorganize-cheaper-runtime-run-module.md) |
 | TASK-034DzYs0gJRVZ5JJfKAIAn | T5: cheaper-tools 内部再配置 (F1) | done | [reorganize-cheaper-tools-modules.md](./reorganize-cheaper-tools-modules.md) |
 | TASK-034r05iHQeQpDqsCIiTDOz | Repoint bundle pipeline and CI freshness check to packages/apm | done | [repoint-bundle-pipeline-and-ci-freshness.md](./repoint-bundle-pipeline-and-ci-freshness.md) |
+| TASK-034KJu3PCBQDeImZEcznWv | cheaper-cli の test・regression・comment churn を追随 | todo | [repurpose-cli-tests-and-comment-churn.md](./repurpose-cli-tests-and-comment-churn.md) |
 | TASK-034EekSpuRWpAF5iF3T316 | T2: setup boundary abort code restore and shared reverse lookup | done | [restore-setup-boundary-abort-classification.md](./restore-setup-boundary-abort-classification.md) |
 | TASK-034IQdP0etbaZJqUzaP6sl | Restrict orphan sweep to .tmp and split verify orphan findings | done | [restrict-orphan-sweep-to-tmp-and-split-verify-findings.md](./restrict-orphan-sweep-to-tmp-and-split-verify-findings.md) |
 | TASK-034r05iHQeQpDqOOFD90gZ | Restructure README, create docs index, and run final verification | done | [restructure-readme-docs-index-and-final-verification.md](./restructure-readme-docs-index-and-final-verification.md) |
@@ -332,6 +335,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
 | TASK-034zXB2z3uWw5lq9IyKOqe | Verify consumer acquisition and close migration | done | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
+| TASK-034KJu8k1x8fWOfRemmi3r | 除去の grep-pin・keep-boundary・mise run check 最終検証 | todo | [verify-content-audit-removal.md](./verify-content-audit-removal.md) |
 | TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
 | TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | done | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |
 | TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | done | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |
