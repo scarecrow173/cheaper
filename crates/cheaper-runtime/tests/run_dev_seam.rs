@@ -29,6 +29,7 @@ use cheaper_core::policy::schema::{
     ExecutionPolicy, FilesystemPolicy, ModelPolicy, OutputPolicy, RetryPolicy, RoutePolicy,
     RuntimePolicy, TierFallback, ToolsPolicy,
 };
+use cheaper_core::policy::security::SecurityPolicy;
 use cheaper_core::policy::workflow::{WorkflowArtifactPolicy, WorkflowPolicy};
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::worker::parse::parse_worker_file;
@@ -217,6 +218,7 @@ fn policy_with(execution: ExecutionPolicy) -> RuntimePolicy {
             },
         },
         route: RoutePolicy::default(),
+        security: SecurityPolicy::default(),
         execution,
         tools: ToolsPolicy {
             allow: vec![ToolName::Read, ToolName::Write],

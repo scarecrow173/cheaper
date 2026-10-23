@@ -61,6 +61,7 @@ use cheaper_core::policy::schema::{
     ExecutionPolicy, FilesystemPolicy, ModelPolicy, OutputPolicy, RetryPolicy, RoutePolicy,
     RuntimePolicy, TierFallback, ToolsPolicy,
 };
+use cheaper_core::policy::security::SecurityPolicy;
 use cheaper_core::policy::workflow::{WorkflowArtifactPolicy, WorkflowPolicy};
 use cheaper_core::tools::vocabulary::ToolName;
 use cheaper_core::worker::parse::parse_worker_file;
@@ -787,6 +788,7 @@ pub fn default_policy() -> RuntimePolicy {
             },
         },
         route: RoutePolicy::default(),
+        security: SecurityPolicy::default(),
         execution: ExecutionPolicy {
             timeout_ms: 60_000,
             max_turns: None,

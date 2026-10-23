@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KLYAKiwETFc4o0BnVI1"
 type: "task"
-status: "todo"
+status: "done"
 title: "cheaper-cli/runtime への exec_deny 配管と残 test churn"
 created: "2026-10-23"
 updated: "2026-10-23"

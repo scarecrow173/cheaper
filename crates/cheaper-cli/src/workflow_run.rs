@@ -253,6 +253,14 @@ fn ensure_invocation(shared: &Shared) -> Result<InvocationToolRuntime, ToolError
                 Box::new(CheaperError::new(ErrorCode::InternalError, e.to_string()))
             })?,
         ),
+        // `security` も `process`/`command` と同型に resolved policy
+        // を serialize して渡す(issue #164 — invocation runtime の
+        // parity inner 値)。
+        security: Some(serde_json::to_value(&shared.policy.security).map_err(
+            |e| -> ToolError {
+                Box::new(CheaperError::new(ErrorCode::InternalError, e.to_string()))
+            },
+        )?),
         root: shared.root.clone(),
         symlink_policy: shared.policy.filesystem.symlinks,
         signal: Some(shared.controller.signal()),
@@ -497,6 +505,10 @@ impl JobExecutor for ToolJobExecutor {
                     artifacts: None,
                     process: None,
                     command: None,
+                    // `command: None` と同型 — parity check を skip し、
+                    // invocation inner の security が再注入される
+                    // (issue #164)。
+                    security: None,
                     root: shared.root.clone(),
                     symlink_policy: shared.policy.filesystem.symlinks,
                     names: vec![name],

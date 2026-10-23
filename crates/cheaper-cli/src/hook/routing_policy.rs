@@ -2053,6 +2053,7 @@ mod tests {
         use crate::route::resolve::CommandPolicyView;
         use crate::route::routes::{EffectiveRoutes, Route, RouteLayer};
         use cheaper_core::policy::command::{resolve_command_policy, ResolvedCommandPolicy};
+        use cheaper_core::policy::security::ExecDenyList;
         use cheaper_core::workspace::paths::SymlinkPolicy;
         use serde_json::json;
         use std::path::Path;
@@ -2065,11 +2066,14 @@ mod tests {
                 .unwrap()
                 .to_string_lossy()
                 .into_owned();
-            resolve_command_policy(Some(&json!({
-                "grants": {
-                    "g": { "executable": exe, "argv": argv }
-                }
-            })))
+            resolve_command_policy(
+                Some(&json!({
+                    "grants": {
+                        "g": { "executable": exe, "argv": argv }
+                    }
+                })),
+                &ExecDenyList::default(),
+            )
             .unwrap()
         }
 
@@ -2090,6 +2094,7 @@ mod tests {
             lookup: &'a dyn Fn(&str) -> Option<String>,
             routes: &'a EffectiveRoutes,
             policy: &'a ResolvedCommandPolicy,
+            exec_deny: &'a ExecDenyList,
             root: &'a str,
         ) -> EvaluateOptions<'a> {
             EvaluateOptions {
@@ -2102,6 +2107,7 @@ mod tests {
                         root,
                         symlink_policy: SymlinkPolicy::Deny,
                         denylist: None,
+                        exec_deny,
                     },
                 }),
             }
@@ -2157,7 +2163,8 @@ mod tests {
             let policy = grant_policy(&["test", "*"]);
             let pairs = [("ALLOWED", "v1"), ("SECRET", "no-transport")];
             let lookup = env_of(&pairs);
-            let opts = route_opts(&lookup, &routes, &policy, &root);
+            let deny = ExecDenyList::default();
+            let opts = route_opts(&lookup, &routes, &policy, &deny, &root);
             let verdict = evaluate(&shell("cargo test --workspace", &root), &opts).await;
             let Verdict::Rewrite { command, fallback } = verdict else {
                 panic!("expected rewrite, got {verdict:?}")
@@ -2203,7 +2210,8 @@ mod tests {
                 ("CHEAPER_COUNT_MAX_BYTES", "10"),
             ];
             let lookup = env_of(&pairs);
-            let opts = route_opts(&lookup, &routes, &policy, &root);
+            let deny = ExecDenyList::default();
+            let opts = route_opts(&lookup, &routes, &policy, &deny, &root);
             let verdict = evaluate(&shell("cat big.txt", &root), &opts).await;
             let Verdict::Rewrite { fallback, .. } = verdict else {
                 panic!("expected rewrite, got {verdict:?}")
@@ -2229,7 +2237,8 @@ mod tests {
             let policy = grant_policy(&["test", "*"]);
             let pairs: [(&str, &str); 0] = [];
             let lookup = env_of(&pairs);
-            let opts = route_opts(&lookup, &routes, &policy, &root);
+            let deny = ExecDenyList::default();
+            let opts = route_opts(&lookup, &routes, &policy, &deny, &root);
             // no-match → Allow(Rewrite ではない)。
             assert!(matches!(
                 evaluate(&shell("git status", &root), &opts).await,
@@ -2237,7 +2246,7 @@ mod tests {
             ));
             // grant argv に適合しない exec_args → no-grant → fallthrough。
             let no_grant_policy = grant_policy(&["nope", "*"]);
-            let no_grant_opts = route_opts(&lookup, &routes, &no_grant_policy, &root);
+            let no_grant_opts = route_opts(&lookup, &routes, &no_grant_policy, &deny, &root);
             assert!(matches!(
                 evaluate(&shell("cargo test --workspace", &root), &no_grant_opts).await,
                 Verdict::Allow
