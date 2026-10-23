@@ -1,7 +1,7 @@
 ---
 id: "TASK-034L7LPMgAWmjPhefil8Dn"
 type: "task"
-status: "todo"
+status: "done"
 title: "documentation honesty sweep 最終検証 — grep 検証・doc-id・audit_docs・mise run check"
 created: "2026-10-24"
 updated: "2026-10-24"
@@ -237,19 +237,19 @@ edge 0(AC4)、VN(d-2)(a)-(g) = off-list 定点検証 7 項目
 
 ## Done When
 
-- [ ] spec Acceptance Criteria AC1-AC5 + 文書のみ AC 全項目
+- [x] spec Acceptance Criteria AC1-AC5 + 文書のみ AC 全項目
       に対応する検証が存在し pass(§1 対応表)
-- [ ] design Verification Notes 全項目(VN1-VN5・
+- [x] design Verification Notes 全項目(VN1-VN5・
       (d-2)(a)-(g)・R8 末尾)が grep/`git diff` で実測
       されている(§2)
-- [ ] 注記本文・guides 訂正の意味確認(自相矛盾なし・
+- [x] 注記本文・guides 訂正の意味確認(自相矛盾なし・
       canonical 等価・命名規約遵守)が取れている(§3)
-- [ ] 差分が docs/*.md・SKILL.md のみで code・fixture・
+- [x] 差分が docs/*.md・SKILL.md のみで code・fixture・
       test 変更 0 件
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `audit_docs` が本 issue の新規 doc で error 0
-- [ ] `mise run check` exits 0
-- [ ] 5 task + plan(+ spec/ADR の status 追随)が更新され
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `audit_docs` が本 issue の新規 doc で error 0
+- [x] `mise run check` exits 0
+- [x] 5 task + plan(+ spec/ADR の status 追随)が更新され
       ている
 
 ## Out of Scope
@@ -266,13 +266,125 @@ edge 0(AC4)、VN(d-2)(a)-(g) = off-list 定点検証 7 項目
 
 ## Verification
 
-- [ ] 上記 §1-§3 の全項目が pass(コマンド実測を記録)
-- [ ] `node scripts/check-doc-ids.mjs` exits 0(実測を記録)
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js
+- [x] 上記 §1-§3 の全項目が pass(コマンド実測を記録)
+- [x] `node scripts/check-doc-ids.mjs` exits 0(実測を記録)
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js
       --type all --json` で本 issue の新規 doc が error 0
       (実測を記録)
-- [ ] `mise run check` exits 0(実測を記録)
+- [x] `mise run check` exits 0(実測を記録)
 - status 更新: T1-T5 task=`done`・plan=`completed`・
   spec=`approved`・ADR=`accepted`(#168 chain 慣行 —
   spec AC checkbox・plan task checkbox は spec chain 側
   管理のため未チェックのまま)・各 README index 追随
+
+## 実施記録（issue #169 sweep 実施時）
+
+### §1 AC ↔ 検証対応（全項目 pass）
+
+- AC1 → VN1 disclaimer 配置 pass（下記 grep 実測）。
+- AC2 → VN2 stale absence 0 件 + refine presence 確認 pass。
+- AC3 → VN3 ENOEXEC 区別が command・managed-process・migration
+  guide + ADR 注記で確認 pass。
+- AC4 → VN4 refine 反映 20 doc + backlink 4 件/doc +
+  prohibited lineage edge 新規 0 件 pass。
+- AC5 → VN5 migration.md 6 節 × 3 小節 + README index row pass。
+- AC(文書のみ) → 差分一覧が `docs/**/*.md`・`SKILL.md` のみ +
+  `check-doc-ids` pass。
+
+### §2 grep 実測（2026-10-24 実測値）
+
+- **VN1**: `grep -n "OS sandbox" docs/guides/migration.md
+  docs/guides/command.md docs/guides/managed-process.md` →
+  3 file hit。`migration.md:7-8`（前提節・canonical 項目 1-2）、
+  `command.md:143`（limitation 節）・`:154`（out of scope 節）、
+  `managed-process.md:47`（authorization boundary 節）で
+  「cheaper は OS sandbox ではない」+「spawn 子プロセスの
+  fs 副作用は強制・完全観測できない」を確認。
+- **VN2**: `command.md`/`managed-process.md`/`workers.md`/
+  `usage.md` への stale 肯定文言 grep — `native magic`・
+  マジックバイト審査・metachar/shim/interpreter 拒否・
+  workspace 相対 executable 拒否・`PE/ELF`/`Mach-O` いずれも
+  0 hit（現行記述は「拒否しない」「viability のみ判定」
+  の否定形のみ残存）。
+- **VN3**: `grep -n "ENOEXEC"` → `command.md:152`・
+  `managed-process.md:27`/`:47`・`migration.md:9` に加え、
+  ADR 注記側は `documentation-honesty-sweep-and-migration-guide.md:156`・
+  `fix-tool-runtime-…-upfront.md:239` で hit。全箇所で
+  「`/bin/sh` retry」「OS/libc 既定動作（glibc `execvpe` 系、
+  musl は retry しない残留差分あり）」「保証対象外」の
+  3 要素が揃う。
+- **VN4**: `grep -l "Refine 注記" docs/adr/*.md docs/designs/*.md`
+  → 20 file（対象 ADR 10 + design 8 + 本 sweep 自身の
+  ADR/design が注記節または format 定義本文として含有）。
+  各 refine 対象の `related` に sweep spec・sweep ADR・
+  migration guide・sweep design の backlink 4 件を確認
+  （例: `workspace-filesystem-boundary-cheaper-sandboxed-tool.md:34-37`）。
+  `git diff 9a919eb..HEAD` + 未コミット差分で
+  `^+\s*(refines|refined-by|supersedes|superseded-by):\s*\S` は
+  0 hit — prohibited lineage edge 新規追加なし。
+- **VN(d-2)**:
+  - (a) `grep -l "issue #169"` が 6 test-spec 全件を返す
+    （policy-gated-command-tool・invocation-scoped-command-grants・
+    managed-process-task-authorization・route-resolution・
+    substitute-exec-route-mode・route-grant-set-projection）。
+    配置は対象 bullet/Example 直下の blockquote。
+  - (b) `defer-non-exec-routing-…md:233`/`:260` で
+    `no-grant`/`unroutable` の falsify 訂正を確認
+    （builtin deny 除去 → opt-in `execDenyPatterns` 記述）。
+  - (c) `policy-gated-command-tool.md:82`/`:104` が
+    writeScope × `command` fail-closed「確定済み」記述
+    （`registry.rs:1167`・issue #169 注記付き）。
+  - (d) `invocation-scoped-command-grants.md:119` が
+    `RuntimePolicy.exec`・`:177` が `inner.exec`/`exec: None`。
+    `RuntimePolicy.command`/`inner.command` 残存 0。
+  - (e) `overview.md:151`・`workspace-filesystem-boundary-
+    sandboxed-tools.md:117`・`cheaper-v1-worker-runtime-cli.md
+    :75`/`:79`/`:135` で canonical file tool 限定の補正確認。
+  - (f) `cheaper-tool-operate/SKILL.md:84`（"is declared —
+    are re-applied"）・`usage.md:208`（opt-in 注記）で
+    deny-list が opt-in 条件付き記述であることを確認。
+  - (g) off-list ADR 3 件 + off-list design 4 件
+    （managed-process-canonical・invocation-scoped・
+    workspace-filesystem-boundary・overview）に
+    `## Refine 注記` 節あり — VN4a 一覧で確認。
+- **VN5**: `grep -nE "^#{1,3} " docs/guides/migration.md` →
+  `# Migration guide` + `前提` 節 + `#163`〜`#168` の 6 節、
+  各節 `変更内容`/`利用者影響`/`修復・移行手順` の 3 小節
+  （### 18 個）。`docs/README.md:27` に index row 確認。
+- **R8 文書のみ差分**: `git diff 9a919eb..HEAD` + 未コミット
+  差分 + 未追跡の和集合が全て `docs/**/*.md`・
+  `packages/apm/.apm/skills/*/SKILL.md` — code・fixture・
+  test 差分 0 件。`docs/designs/README.md` は本 design row が
+  既に `approved` で front-matter と整合（無改訂でよい）。
+
+### §3 整合確認
+
+- 注記本文が design §(c)/(d)/(d-2) の注記要点と矛盾しないこと・
+  guides 訂正後記述の自相矛盾がないこと・canonical 文言
+  3 要素（OS sandbox 否定・file tool 強制面・spawn 子 process
+  観測限界）が全配置先で意味等価であることを目視確認。
+- `execDenyPatterns` を「保護」「sandbox」「containment」
+  「防御」と呼ぶ記述は差分内に 0（deny-list 命名規約遵守）。
+- G-9 変更不要一覧（`parent-agent-integration.md`・
+  `configuration.md` 等）は差分に含まれないことを file 一覧で確認。
+
+### コマンド実測
+
+- `node scripts/check-doc-ids.mjs` → exit 0
+  （`doc id check OK: 1192 markdown files scanned`）。
+- `node .agents/skills/doc-status/scripts/audit_docs.js
+  --type all --json` → exit 0。1030 file scan・
+  findings 839 件は全て `warning`（既存 repo-wide の
+  inconsistent-reciprocal-relation 系）で `error` 0 件。
+  本 issue 関連 doc の findings は 15 件で全て warning
+  （`related`/`derives-from` の非相互 link — blocking ではない）。
+- `mise run check` → exit 0（biome・cargo fmt --check・
+  clippy --all-targets・check-version 1.0.0・
+  check-doc-ids 1192 files・`cargo test --workspace`・
+  `node --test` scripts/benchmarks・check-lockfile・
+  check-apm-payload — 全段 pass）。
+- status 更新: T1-T5 task front-matter を `done`、plan を
+  `completed`、spec を `approved`、ADR を `accepted` へ
+  昇格。`docs/tasks/README.md`・`docs/plans/README.md`・
+  `docs/specs/README.md`・`docs/adr/README.md` の index row を
+  追随（`docs/designs/README.md` は既に approved で無改訂）。

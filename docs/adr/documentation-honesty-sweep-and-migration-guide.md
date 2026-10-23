@@ -1,7 +1,7 @@
 ---
 id: "ADR-034L6ihibvbjmSnKmSffWH"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "documentation honesty sweep + migration guide — claim ≤ 実強制・refine-only 訂正方式"
 created: "2026-10-23"
 updated: "2026-10-24"

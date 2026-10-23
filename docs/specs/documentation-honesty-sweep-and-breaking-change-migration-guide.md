@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034L6i3XmfCaWRHAiw8TTT"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "documentation honesty sweep and breaking-change migration guide — claim ≤ 実強制の文書訂正と破壊的変更告知"
 created: "2026-10-24"
 updated: "2026-10-24"

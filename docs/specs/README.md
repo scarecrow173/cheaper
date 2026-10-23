@@ -38,7 +38,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gAHzYnfP8 | Devin Local as a bundled Pi provider | implemented | [devin-local-bundled-provider.md](./devin-local-bundled-provider.md) |
 | SPEC-034DlpZKFnyWiBZZxGsXK0 | devin provider usage accounting contract | approved | [devin-provider-usage-accounting-contract.md](./devin-provider-usage-accounting-contract.md) |
 | SPEC-034D9BFJZdSSYBEuXVzBbl | Devin provider Windows credential contract | proposed | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
-| SPEC-034L6i3XmfCaWRHAiw8TTT | documentation honesty sweep and breaking-change migration guide — claim ≤ 実強制の文書訂正と破壊的変更告知 | proposed | [documentation-honesty-sweep-and-breaking-change-migration-guide.md](./documentation-honesty-sweep-and-breaking-change-migration-guide.md) |
+| SPEC-034L6i3XmfCaWRHAiw8TTT | documentation honesty sweep and breaking-change migration guide — claim ≤ 実強制の文書訂正と破壊的変更告知 | approved | [documentation-honesty-sweep-and-breaking-change-migration-guide.md](./documentation-honesty-sweep-and-breaking-change-migration-guide.md) |
 | SPEC-034KI3mWcW92kMljP5xoa8 | exec-contract cleanup — 内容審査を mandatory 層から除去 | approved | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
 | SPEC-034r05iHK8bA7gqGaD6qpk | grep batchMaxBytes / decoded line payload invariant | implemented | [grep-batch-max-bytes-line-payload-invariant.md](./grep-batch-max-bytes-line-payload-invariant.md) |
 | SPEC-034r6kd649rTDnOi828voj | Stabilize environment-sensitive grep eval-budget tests | implemented | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |

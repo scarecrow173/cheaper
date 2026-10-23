@@ -358,7 +358,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
 | TASK-034zXB2z3uWw5lq9IyKOqe | Verify consumer acquisition and close migration | done | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
 | TASK-034KJu8k1x8fWOfRemmi3r | 除去の grep-pin・keep-boundary・mise run check 最終検証 | done | [verify-content-audit-removal.md](./verify-content-audit-removal.md) |
-| TASK-034L7LPMgAWmjPhefil8Dn | documentation honesty sweep 最終検証 — grep 検証・doc-id・audit_docs・mise run check | todo | [verify-documentation-honesty-sweep.md](./verify-documentation-honesty-sweep.md) |
+| TASK-034L7LPMgAWmjPhefil8Dn | documentation honesty sweep 最終検証 — grep 検証・doc-id・audit_docs・mise run check | done | [verify-documentation-honesty-sweep.md](./verify-documentation-honesty-sweep.md) |
 | TASK-034KLYFkg2bLCiG6WDNNpx | exec deny 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-exec-deny-patterns.md](./verify-exec-deny-patterns.md) |
 | TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
 | TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | done | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |

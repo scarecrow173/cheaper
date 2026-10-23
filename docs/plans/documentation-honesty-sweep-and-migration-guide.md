@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034L7LkYl6qzs5eZ9mEJZL"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "documentation honesty sweep + migration guide — per-doc 訂正・refine 注記・migration guide 適用計画"
 created: "2026-10-24"
 updated: "2026-10-24"
