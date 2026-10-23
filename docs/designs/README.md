@@ -39,7 +39,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHy2gdnp1MdNwuw6 | Devin Local provider plugin | approved | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |
 | DESIGN-034Gt74p3BYG40NTwu2kST | Devin native hooks and APM bootstrap | approved | [devin-native-hooks-and-apm-bootstrap.md](./devin-native-hooks-and-apm-bootstrap.md) |
 | DESIGN-034DlAaOWn3RyI3onq5uj1 | devin usage accounting contract test and docs | approved | [devin-usage-accounting-contract-test-and-docs.md](./devin-usage-accounting-contract-test-and-docs.md) |
-| DESIGN-034KIsSCvVMAxGDZY1dQTd | exec-contract cleanup — 内容審査を mandatory 層から除去 | draft | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
+| DESIGN-034KIsSCvVMAxGDZY1dQTd | exec-contract cleanup — 内容審査を mandatory 層から除去 | approved | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
 | DESIGN-034r05iHy2gdnoS2PWvNo0 | grep batchMaxBytes invariant enforcement | approved | [grep-batch-max-bytes-invariant-enforcement.md](./grep-batch-max-bytes-invariant-enforcement.md) |
 | DESIGN-034r6oM1pW6bz2SSvR3rWT | grep eval-budget test stabilization via explicit budget injection | approved | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | DESIGN-034ILuADFr70oZoUROR13q | hook-config legacy conflict gate demotion to warning | approved | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |
@@ -58,6 +58,7 @@ Directory: `docs/designs`
 | DESIGN-034CXyXncBigEivCETJLBD | OpenAI Codex subscription provider design | approved | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
 | DESIGN-034A8ubRdZsG57LdsNNTEw | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | DESIGN-034zSP4AJ6aRzdtIxTHW1Y | OperationManager の state と bounded drain | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
+| DESIGN-034KLwE8GiJQ2zvQY20ob8 | opt-in security.execDenyPatterns profile — A9 の降格実装 | draft | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
 | DESIGN-034zWr0ZeceJCJaL3ZRK3H | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | DESIGN-034KuDkWOmNXiBddEQ4XWK | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 | approved | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
 | DESIGN-034r05iHrZUE6WvaQsRRsM | Pi 実行エンジン: session・制限・abort・retry・出力抽出・repair・usage | approved | [pi-execution-engine.md](./pi-execution-engine.md) |

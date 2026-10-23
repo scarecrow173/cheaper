@@ -30,6 +30,7 @@ relations:
   derived-by:
     - "../specs/opt-in-exec-deny-patterns.md"
     - "../adr/opt-in-exec-deny-patterns.md"
+    - "../designs/opt-in-exec-deny-patterns.md"
   verifies: []
   verified-by: []
   references:

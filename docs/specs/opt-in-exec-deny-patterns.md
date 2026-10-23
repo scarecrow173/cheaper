@@ -25,11 +25,13 @@ relations:
   superseded-by: []
   related:
     - "../adr/opt-in-exec-deny-patterns.md"
+    - "../designs/opt-in-exec-deny-patterns.md"
   refines: []
   refined-by: []
   derives-from:
     - "../discovery/opt-in-exec-deny-patterns.md"
-  derived-by: []
+  derived-by:
+    - "../designs/opt-in-exec-deny-patterns.md"
   verifies: []
   verified-by: []
   references:
