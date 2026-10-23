@@ -44,6 +44,8 @@ relations:
   refines: []
   refined-by:
     - "./codex-cursor-copilot-hook-rewrite-enablement-and-approval-bypass-opt-in.md"
+    - "./route-grant-set-projection.md"
+    - "../adr/route-grant-set-projection.md"
   derives-from:
     - "../discovery/pretooluse-auto-routing-to-tasks-and-workflows.md"
   derived-by:
