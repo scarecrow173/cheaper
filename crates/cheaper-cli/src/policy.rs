@@ -201,6 +201,24 @@ fn parse_grant_spec(spec: &str) -> Result<Value, CheaperError> {
             None,
         ));
     }
+    // `--grant`(`grant.rs::build_invocation_layer`)と同じ CLI 入口
+    // validation(issue #165 design §(c)) — `fixed:true`/`scope` は
+    // route 不可視の grant を生むため CLI spec では reject する。
+    // trusted YAML での直接 authoring は合法(schema は受理)。
+    if value.get("fixed") == Some(&Value::Bool(true)) {
+        return Err(invalid_request(
+            "invalid grant spec: `fixed: true` is not allowed \
+             (`policy grant` registers non-fixed command grants only)",
+            None,
+        ));
+    }
+    if value.get("scope").is_some() {
+        return Err(invalid_request(
+            "invalid grant spec: `scope` is not allowed \
+             (it is derived from the grant's origin layer)",
+            None,
+        ));
+    }
     Ok(value)
 }
 
