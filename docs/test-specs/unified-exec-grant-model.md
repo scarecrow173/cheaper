@@ -1,7 +1,7 @@
 ---
 id: "TSPEC-034KQs1NIL8ahirht6QteV"
 type: "test-spec"
-status: "draft"
+status: "approved"
 title: "unified exec grant model の検証契約 (issue #165)"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -48,7 +48,7 @@ relations:
     - "crates/cheaper-core/src/policy/load.rs"
     - "crates/cheaper-tools/src/tools/command/mod.rs"
     - "crates/cheaper-tools/src/tools/process/mod.rs"
-    - "crates/cheaper-tools/src/tools/process/prepare.rs"
+    - "crates/cheaper-tools/src/tools/exec/prepare.rs"
     - "crates/cheaper-tools/src/registry.rs"
     - "crates/cheaper-tools/src/invocation.rs"
     - "crates/cheaper-tools/src/catalog.rs"

@@ -94,7 +94,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHE1FbkoWI8p70oC | Self-contained CLI bundle distribution | completed | [self-contained-cli-bundle.md](./self-contained-cli-bundle.md) |
 | PLAN-034rBrrA2j5usWH2G77b8G | Shell read-candidate extraction implementation | approved | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
 | PLAN-000004taRcf5XDevo8jYJz | distributed skill / parent-agent guide sync — implementation plan | completed | [synchronize-distributed-skill-and-parent-agent-guide.md](./synchronize-distributed-skill-and-parent-agent-guide.md) |
-| PLAN-034KQs6XKnAqahkSVke78h | unified exec grant model — command.grants / process.tasks の統合実装 | approved | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
+| PLAN-034KQs6XKnAqahkSVke78h | unified exec grant model — command.grants / process.tasks の統合実装 | completed | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
 | PLAN-034r05iHE1Fbkp9wtiAJ7A | Unified version source of truth | completed | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
 | PLAN-034r2puWPUDxxDyfTSffZR | Align usage.jsonl recording-scope docs — implementation plan | completed | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
 | PLAN-034rzPZHq5JFQ3CVZCVLJo | Usage savings telemetry — implementation plan | completed | [usage-savings-telemetry-implementation-plan.md](./usage-savings-telemetry-implementation-plan.md) |

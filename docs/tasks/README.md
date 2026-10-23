@@ -16,7 +16,7 @@ Directory: `docs/tasks`
 | TASK-034KsKPPDTLAGrCkK8k17Y | Add codex flag-gated approval-bypass rewrite emit | done | [add-codex-flag-gated-rewrite-emit.md](./add-codex-flag-gated-rewrite-emit.md) |
 | TASK-034KsKXLwLr4ZYjemKg6Hr | Add codex rewrite emit and project-layer flag rejection integration tests | done | [add-codex-rewrite-integration-tests.md](./add-codex-rewrite-integration-tests.md) |
 | TASK-034Jg6ieFXYQcEldcUVKri | Add command grant exitCodes and nonzero-exit result reporting | done | [add-command-grant-exitcodes.md](./add-command-grant-exitcodes.md) |
-| TASK-034KQsi5CcOH2MsHWhWWnC | cheaper-core policy/exec module と 3 段 resolver・schema/loader 配線 | todo | [add-core-exec-policy-module-and-loader-wiring.md](./add-core-exec-policy-module-and-loader-wiring.md) |
+| TASK-034KQsi5CcOH2MsHWhWWnC | cheaper-core policy/exec module と 3 段 resolver・schema/loader 配線 | done | [add-core-exec-policy-module-and-loader-wiring.md](./add-core-exec-policy-module-and-loader-wiring.md) |
 | TASK-034KLYvyO70lji85Lv8jvN | cheaper-core security policy module と schema 配線・resolve signature | done | [add-core-security-policy-and-schema-wiring.md](./add-core-security-policy-and-schema-wiring.md) |
 | TASK-034r05iHQeQpDpSS51up2r | Add count-tokens CLI command | done | [add-count-tokens-cli.md](./add-count-tokens-cli.md) |
 | TASK-034r05iHQeQpDpSeJahHce | Add count_tokens tool to runtime-pi registry and built-in workers | done | [add-count-tokens-tool.md](./add-count-tokens-tool.md) |
@@ -126,7 +126,7 @@ Directory: `docs/tasks`
 | TASK-034DlFJnTT9v0YcqV9Uine | Document devin usage semantics in providers and usage guides | done | [document-devin-usage-semantics-in-providers-and-usage-guides.md](./document-devin-usage-semantics-in-providers-and-usage-guides.md) |
 | TASK-034KLYEMV6mRczcWiAQpy1 | security.execDenyPatterns の guides・builtin policy.yaml 整備 | done | [document-exec-deny-patterns-profile.md](./document-exec-deny-patterns-profile.md) |
 | TASK-034zQTXMNDaUeqIR3aCRNf | Document launcher distribution and verify acquisition | done | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
-| TASK-034KQsvyJ7l63g3i4Gjnwl | unified exec grant model の guide/reference 文書更新 | todo | [document-unified-exec-grant-model.md](./document-unified-exec-grant-model.md) |
+| TASK-034KQsvyJ7l63g3i4Gjnwl | unified exec grant model の guide/reference 文書更新 | done | [document-unified-exec-grant-model.md](./document-unified-exec-grant-model.md) |
 | TASK-034KxDvREdpF6P10oziJsy | Document windsurf tool_info contract and dual-registration trap in distribution guide | done | [document-windsurf-tool-info-contract-and-registration-requirements.md](./document-windsurf-tool-info-contract-and-registration-requirements.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
@@ -267,8 +267,8 @@ Directory: `docs/tasks`
 | TASK-0340C4KaPSmy4CrDagevUC | Pin sweep test deletion order with explicit set_mtime timestamps | done | [pin-sweep-test-deletion-order-with-explicit-mtimes.md](./pin-sweep-test-deletion-order-with-explicit-mtimes.md) |
 | TASK-034KLYAKiwETFc4o0BnVI1 | cheaper-cli/runtime への exec_deny 配管と残 test churn | done | [plumb-exec-deny-through-cli-and-runtime.md](./plumb-exec-deny-through-cli-and-runtime.md) |
 | TASK-034KLYAfuIu8es8ZgpuQRl | cheaper-tools への exec_deny 配管と pin/verify 適用点注入 | done | [plumb-exec-deny-through-tools.md](./plumb-exec-deny-through-tools.md) |
-| TASK-034KQsrpnzHdeRKf5M3KiN | cheaper-cli/runtime/route/invocation/catalog の unified exec 追随と workspace 復帰 | todo | [plumb-unified-exec-through-cli-and-runtime.md](./plumb-unified-exec-through-cli-and-runtime.md) |
-| TASK-034KQsmrlonTwNkmmLJOxg | cheaper-tools tools/exec module と registry/invocation/catalog 配管 | todo | [plumb-unified-exec-through-tools.md](./plumb-unified-exec-through-tools.md) |
+| TASK-034KQsrpnzHdeRKf5M3KiN | cheaper-cli/runtime/route/invocation/catalog の unified exec 追随と workspace 復帰 | done | [plumb-unified-exec-through-cli-and-runtime.md](./plumb-unified-exec-through-cli-and-runtime.md) |
+| TASK-034KQsmrlonTwNkmmLJOxg | cheaper-tools tools/exec module と registry/invocation/catalog 配管 | done | [plumb-unified-exec-through-tools.md](./plumb-unified-exec-through-tools.md) |
 | TASK-034FpqibELWYvjxZennqEn | T3: policy-grant-command — cheaper policy grant {add,list,remove} と core write 基盤 | done | [policy-grant-command.md](./policy-grant-command.md) |
 | TASK-034z52uhywljSnrFmqDWjE | port routing-policy.js to packages/cli/src/hook/routing-policy.ts | done | [port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md](./port-routing-policy-js-to-packages-cli-src-hook-routing-policy-ts.md) |
 | TASK-034zTWibd7OKesgJgoGxJu | Prepare one-dispatch release artifacts | done | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
@@ -351,7 +351,7 @@ Directory: `docs/tasks`
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
 | TASK-034yW3DRPtMmttnAEru9Ns | Verify route test determinism and run mise run check | done | [verify-route-test-determinism-and-mise-check.md](./verify-route-test-determinism-and-mise-check.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |
-| TASK-034KQsAwXBVQJ56nGgagYT | unified exec grant model の最終検証と status/evidence 更新 | todo | [verify-unified-exec-grant-model.md](./verify-unified-exec-grant-model.md) |
+| TASK-034KQsAwXBVQJ56nGgagYT | unified exec grant model の最終検証と status/evidence 更新 | done | [verify-unified-exec-grant-model.md](./verify-unified-exec-grant-model.md) |
 | TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | done | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
 | TASK-034zTjXTqV7nvYYkf1bUH9 | Wire canonical operation ownership and abort | done | [wire-canonical-operation-ownership.md](./wire-canonical-operation-ownership.md) |

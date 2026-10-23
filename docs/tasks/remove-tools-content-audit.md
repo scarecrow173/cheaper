@@ -17,7 +17,7 @@ relations:
       - type: "file"
         path: "crates/cheaper-tools/src/tools/proc/executable.rs"
       - type: "file"
-        path: "crates/cheaper-tools/src/tools/process/prepare.rs"
+        path: "crates/cheaper-tools/src/tools/exec/prepare.rs"
       - type: "file"
         path: "crates/cheaper-tools/src/registry.rs"
       - type: "file"
@@ -62,7 +62,7 @@ relations:
     - "docs/discovery/exec-contract-content-audit-removal.md"
     - "crates/cheaper-tools/src/tools/command/mod.rs"
     - "crates/cheaper-tools/src/tools/proc/executable.rs"
-    - "crates/cheaper-tools/src/tools/process/prepare.rs"
+    - "crates/cheaper-tools/src/tools/exec/prepare.rs"
   defers: []
   deferred-by: []
 ---

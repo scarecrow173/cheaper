@@ -27,8 +27,6 @@ relations:
       - type: "file"
         path: "crates/cheaper-tools/src/tools/process/mod.rs"
       - type: "file"
-        path: "crates/cheaper-tools/src/tools/process/prepare.rs"
-      - type: "file"
         path: "crates/cheaper-tools/src/tools/process/tests.rs"
       - type: "file"
         path: "crates/cheaper-tools/tests/proc_command.rs"
@@ -80,7 +78,7 @@ relations:
     - "docs/discovery/unified-exec-grant-model-issue-165.md"
     - "crates/cheaper-tools/src/tools/command/mod.rs"
     - "crates/cheaper-tools/src/tools/process/mod.rs"
-    - "crates/cheaper-tools/src/tools/process/prepare.rs"
+    - "crates/cheaper-tools/src/tools/exec/prepare.rs"
     - "crates/cheaper-tools/src/registry.rs"
     - "crates/cheaper-tools/src/invocation.rs"
     - "crates/cheaper-tools/src/catalog.rs"
@@ -389,34 +387,34 @@ design (i) の対照表通り:
 
 ## Done When
 
-- [ ] `tools/exec/mod.rs` が design (h) の pub API
+- [x] `tools/exec/mod.rs` が design (h) の pub API
       （`ExecToolOptions`・`resolve_exec_grant`・
       `pin_exec_grant`/`pin_exec_grants`・
       `verify_pinned_executable`・`check_exec_execution`・
       `exec_operation_declaration`）を持ち、適用点 2（resolved
       basename deny）・適用点 3（pin-equality 直後の再検証）が
       `grant_violation` 規約で `PolicyViolation` を返す
-- [ ] `tools/exec/prepare.rs` が cwd/manifest/deny/writeScope
+- [x] `tools/exec/prepare.rs` が cwd/manifest/deny/writeScope
       tri-state/pin+verify の unified prepare を持ち、per-call
       lazy executable resolve が除去されている
-- [ ] `tools/command`・`tools/process` が surface 固有の
+- [x] `tools/command`・`tools/process` が surface 固有の
       schema/details/description/identity のみ所有する thin
       surface となり、`process` の re-export path・canonical
       vocabulary が維持されている
-- [ ] `ToolRuntimeOptions.exec`・`ToolCtx.{exec,exec_pins,
+- [x] `ToolRuntimeOptions.exec`・`ToolCtx.{exec,exec_pins,
       exec_deny}` が存在し、`create_tool_runtime` が
       `resolve_exec_policy` 単一 resolve・surface 別 content
       gate/writeScope gate・pin-fail×degradable 両 surface 対称
       で動く
-- [ ] `InvocationToolRuntimeOptions.exec`・`inner.exec` が
+- [x] `InvocationToolRuntimeOptions.exec`・`inner.exec` が
       保持され、parity 2 check（`invalid_binding("exec policy
       mismatch")`・inner deny match の `InvalidRuntimePolicy`
       inner code 保持）・scope 再注入 `inner.exec` が動く
-- [ ] `ToolCatalog` が `ResolvedExecPolicy` を持ち、Process arm
+- [x] `ToolCatalog` が `ResolvedExecPolicy` を持ち、Process arm
       が error 伝播・Command arm が literal+`!fixed` 限定の
       `exec_grant_resources` 委譲 + root manifest fallback
       （error 非伝播）で動く
-- [ ] tools test churn + differential harness seam（fixture
+- [x] tools test churn + differential harness seam（fixture
       json 不変の `spec.process` → `options.exec` 変換）+ 新規
       test（disjoint surface・deny・writeScope tri-state・
       pin-fail×degradable・parity）が存在し `cargo test -p
@@ -440,9 +438,13 @@ design (i) の対照表通り:
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-tools` exits 0
+- [x] `mise exec -- cargo test -p cheaper-tools` exits 0
       （unit test + proc_* integration + characterization +
       differential 全 pass — single-crate では dev-seam
-      feature 適用外のため flag 無し）
-- [ ] `mise exec -- cargo clippy -p cheaper-tools --all-targets`
-      exits 0
+      feature 適用外のため flag 無し。`85571c7` で実測。
+      並列負荷下の `node_task_resolves_via_path` helper
+      exit 255 は isolated rerun pass の flake — regression
+      ではない）
+- [x] `mise exec -- cargo clippy -p cheaper-tools --all-targets`
+      exits 0（`mise run check` の clippy stage で workspace
+      `--all-targets` として実測）

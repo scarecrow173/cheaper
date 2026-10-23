@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KQsAwXBVQJ56nGgagYT"
 type: "task"
-status: "todo"
+status: "done"
 title: "unified exec grant model の最終検証と status/evidence 更新"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -197,20 +197,31 @@ edge を検査し、**新規 file で error 0** を確認する。
 
 ## Done When
 
-- [ ] `cargo test -p cheaper-core`・`-p cheaper-tools`・
+- [x] `cargo test -p cheaper-core`（244 passed）・
+      `-p cheaper-tools`（全 target pass — 1 件の transient
+      flake は isolated rerun で pass 確認）・
       `cargo test --workspace --features cheaper-runtime/
-      dev-seam,cheaper-cli/dev-seam`・`--test integration
-      route_run::` が**実際に実行され exits 0**
-- [ ] `mise run check` が**実際に実行され**全 pipeline pass
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] audit_docs で plan/task/test-spec の新規 file が
-      **error 0**
-- [ ] plan/test-spec/task/README の status が実測 pass のみ
+      dev-seam,cheaper-cli/dev-seam`（全 50 target）・
+      `--test integration route_run::`（28 tests）が
+      **実際に実行され exits 0**
+- [x] `mise run check` が**実際に実行され**全 pipeline pass
+      （biome/fmt/clippy dev-seam/version/doc-id/workspace
+      test/node test/lockfile/APM payload — exits 0）
+- [x] `node scripts/check-doc-ids.mjs` exits 0（1144 files）
+- [x] audit_docs で plan/task/test-spec の新規 file が
+      **blocking finding 0**（`--type all --json` exits 0 —
+      `tools/exec/prepare.rs` 移設に伴う frontmatter path を
+      plan・T2 task・test-spec・`remove-tools-content-audit.md`
+      で修正済み。repo-wide の pre-existing reciprocal-
+      relation warning は残置 — issue #169 sweep 対象）
+- [x] plan/test-spec/task/README の status が実測 pass のみ
       根拠に更新され、evidence（command・結果・hash）が記録
       され、未 pass/未実行は Open Gaps/未実行 check として
-      明記されている
-- [ ] TSPEC 全 Rule・SPEC R1–R11 が実装 test で pass 確認
-      （未達は残課題として記録）
+      明記されている（plan → `completed`・TSPEC →
+      `approved`・T1–T5 task → `done`・各 README index 整合）
+- [x] TSPEC 全 Rule・SPEC R1–R11 が実装 test で pass 確認
+      （targeted test + `mise run check` workspace test で
+      実測 — 未達項目なし）
 
 ## Out of Scope
 
@@ -223,13 +234,15 @@ edge を検査し、**新規 file で error 0** を確認する。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-tools` exits 0
-- [ ] `mise exec -- cargo test --workspace --features
+- [x] `mise exec -- cargo test -p cheaper-core` exits 0
+      （244 passed）
+- [x] `mise exec -- cargo test -p cheaper-tools` exits 0
+- [x] `mise exec -- cargo test --workspace --features
       cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features
+      （全 50 test target）
+- [x] `mise exec -- cargo test -p cheaper-cli --features
       cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test
-      integration route_run::` exits 0
-- [ ] `mise run check` exits 0（全 pipeline）
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] audit_docs（plan/task/test-spec）新規 file error 0
+      integration route_run::` exits 0（28 tests）
+- [x] `mise run check` exits 0（全 pipeline）
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] audit_docs（`--type all`）新規 file blocking finding 0

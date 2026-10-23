@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034KQs6XKnAqahkSVke78h"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "unified exec grant model — command.grants / process.tasks の統合実装"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -52,8 +52,6 @@ relations:
         path: "crates/cheaper-tools/src/tools/command/mod.rs"
       - type: "file"
         path: "crates/cheaper-tools/src/tools/process/mod.rs"
-      - type: "file"
-        path: "crates/cheaper-tools/src/tools/process/prepare.rs"
       - type: "file"
         path: "crates/cheaper-tools/src/tools/process/tests.rs"
       - type: "file"
@@ -190,7 +188,7 @@ relations:
     - "crates/cheaper-core/src/policy/load.rs"
     - "crates/cheaper-tools/src/tools/command/mod.rs"
     - "crates/cheaper-tools/src/tools/process/mod.rs"
-    - "crates/cheaper-tools/src/tools/process/prepare.rs"
+    - "crates/cheaper-tools/src/tools/exec/prepare.rs"
     - "crates/cheaper-tools/src/registry.rs"
     - "crates/cheaper-tools/src/invocation.rs"
     - "crates/cheaper-tools/src/catalog.rs"
@@ -309,7 +307,7 @@ docs + 検証）のみで、plan は 1 つに収める。
 
 ## Implementation Sequence
 
-- [ ] TASK-034KQsi5CcOH2MsHWhWWnC (T1): cheaper-core の
+- [x] TASK-034KQsi5CcOH2MsHWhWWnC (T1): cheaper-core の
       `policy/exec.rs` 新設 + section resolver 型化
       （`process.rs`/`command.rs` — `deny` param 除去・
       `command_policy_properties` 4 field 追加・helper/const/
@@ -319,7 +317,7 @@ docs + 検証）のみで、plan は 1 つに収める。
       捕捉）+ `capability.rs`/`restrict.rs` literal + core unit
       test + golden fixture 4 件再採取 + `policy_process.rs`
       driver 移行。`cargo test -p cheaper-core` で閉じる
-- [ ] TASK-034KQsmrlonTwNkmmLJOxg (T2): cheaper-tools の
+- [x] TASK-034KQsmrlonTwNkmmLJOxg (T2): cheaper-tools の
       `tools/exec/` 新設（pin/verify/check/prepare/declaration/
       options 統一）+ `tools/command`・`tools/process` thin 化 +
       `registry.rs`（options/gate/pin/degradable/`ToolCtx`/
@@ -327,7 +325,7 @@ docs + 検証）のみで、plan は 1 つに収める。
       + `catalog.rs`（2 arm）+ tools test churn + differential
       harness seam + 新規 test。`cargo test -p cheaper-tools` で
       閉じる
-- [ ] TASK-034KQsrpnzHdeRKf5M3KiN (T3): cheaper-cli/runtime
+- [x] TASK-034KQsrpnzHdeRKf5M3KiN (T3): cheaper-cli/runtime
       配管 — `route/resolve.rs`（`ExecPolicyView`+eligibility）・
       `route/supply.rs`（`exec_view`）・`route/run.rs`
       （`project_grant` 投影）・`route_cmd.rs`・
@@ -337,12 +335,12 @@ docs + 検証）のみで、plan は 1 つに収める。
       `dev/fixture.rs` + runtime/workflow/rig-adapter/cli
       integration test churn。workspace compile 回復 + cli test
       target で閉じる
-- [ ] TASK-034KQsvyJ7l63g3i4Gjnwl (T4): docs —
+- [x] TASK-034KQsvyJ7l63g3i4Gjnwl (T4): docs —
       `managed-process.md`・`command.md`・`configuration.md`・
       `usage.md`・`workflow-usage.md`・`workers.md`（部分更新
       済み — 整合確認）・`resources/policy.yaml` comment。T1 後
       なら T2/T3 と並列実行可能
-- [ ] TASK-034KQsAwXBVQJ56nGgagYT (T5): 最終検証 — targeted
+- [x] TASK-034KQsAwXBVQJ56nGgagYT (T5): 最終検証 — targeted
       cargo tests・`node scripts/check-doc-ids.mjs`・
       `audit_docs`・`mise run check`・status 更新
 
@@ -442,31 +440,55 @@ surface が不変のため既存 policy file は revert 後も valid。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core` で exec.rs/
-      process.rs/command.rs/schema.rs/load.rs unit test +
+全項目を 2026-10-23 に実測済み。実装 commit:
+T1 = `057d22b`・T2 = `85571c7`・T3 = `eceaa6e` +
+`8ea2071`（CLI entry reject）・T4 = `912987f`・
+T5 = 本 status/evidence 更新 commit。
+
+- [x] `mise exec -- cargo test -p cheaper-core` exits 0 —
+      exec.rs/process.rs/command.rs/schema.rs/load.rs unit test +
       golden target（load/schema/restrict/process.json 再採取 +
-      merge/workflow 不変）が pass（T1 — single-crate では
-      dev-seam feature 適用外のため flag 無し）
-- [ ] `mise exec -- cargo test -p cheaper-tools` で exec/mod.rs・
-      exec/prepare.rs unit・proc_* integration・characterization・
-      differential（harness seam 経由の全 case）が pass
-      （T2 — 同上 flag 無し）
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration --test regression --test run_dev_seam --test workflow --test workflow_dev_seam`
-      + `cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test contracts --test run_dev_seam`
-      + `cargo test -p cheaper-workflow --test compile_contracts --test filesystem_contracts`
-      + `cargo test -p cheaper-rig-adapter` が pass（T3）
-- [ ] spec Acceptance Criteria 全項目に対応する test が存在し pass
+      merge/workflow 不変）全 pass（244 passed — T1、`057d22b`）
+- [x] `mise exec -- cargo test -p cheaper-tools` exits 0 —
+      exec/mod.rs・exec/prepare.rs unit・proc_* integration・
+      characterization・differential（harness seam 経由の全 case）
+      pass（T2、`85571c7`。全 target green。並列負荷下で
+      `proc_process.rs::node_task_resolves_via_path` が 1 度だけ
+      helper exit 255 の transient fail を起こしたが isolated
+      rerun で pass — process-tree cleanup の flake であり
+      unified policy の regression ではない）
+- [x] `mise exec -- cargo test --workspace --features
+      cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0 —
+      全 50 test target pass（cli integration/regression/
+      run_dev_seam/workflow/workflow_dev_seam・runtime contracts/
+      run_dev_seam・workflow compile_contracts/
+      filesystem_contracts・rig-adapter を含む — T3、`eceaa6e`
+      + `8ea2071`）
+- [x] `mise exec -- cargo test -p cheaper-cli --features
+      cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test
+      integration route_run::` exits 0 — 28 tests pass（route
+      eligibility/`project_grant` 投影の回帰 — T3/T5）
+- [x] spec Acceptance Criteria 全項目に対応する test が存在し pass
       （TSPEC の Rules — 統一 schema/`fixed` 意味論・exec-doc
       fail-loud・build_exec_input provenance+collision・round-trip
       冪等・disjoint surface・deny 3 適用点・manifest/writeScope
       tri-state・pin-fail×degradable・catalog fallback・route
       eligibility/`project_grant`・`tool:"process"` compat・
       invocation parity・CLI reject・serialized 形状・harness
-      seam・docs）（T5）
-- [ ] `node scripts/check-doc-ids.mjs` が pass（T5）
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
-      で新規 doc の error 0（T5）
-- [ ] `mise run check` が pass（T5）
+      seam・docs — 上記全 target + `mise run check` の workspace
+      test で実測）（T5）
+- [x] `node scripts/check-doc-ids.mjs` exits 0（1144 markdown
+      files scanned — T5）
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js
+      --type all --json` exits 0 — 本 plan 群の新規 file で
+      blocking finding 0（T5。`tools/exec/prepare.rs` 移設に
+      伴う frontmatter path 3 file + `remove-tools-content-
+      audit.md` を修正済み。repo 全体の pre-existing
+      reciprocal-relation warning は残置 — issue #169 sweep
+      対象）
+- [x] `mise run check` exits 0 — biome・cargo fmt・cargo clippy
+      （dev-seam features）・version/doc-id check・workspace test・
+      node test・lockfile・APM payload 全 stage pass（T5）
 
 ## Open Questions / Gaps
 

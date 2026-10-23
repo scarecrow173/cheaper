@@ -90,7 +90,7 @@ Directory: `docs/adr`
 | ADR-034r05iHrZUE6WdKBH2eNM | development APM project と distributable cheaper package を nested package で物理分離する | accepted | [separate-dev-apm-project-via-nested-distributable-package.md](./separate-dev-apm-project-via-nested-distributable-package.md) |
 | ADR-034r05iHrZUE6W82VsDbPq | Treat unmeasurable huge files as over-threshold via a core byte cap (fail-closed) | accepted | [treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md](./treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md) |
 | ADR-034r05iHlWosDpP8BzaVZ8 | TypeScript + pnpm monorepo 構成 | superseded | [typescript-pnpm-monorepo.md](./typescript-pnpm-monorepo.md) |
-| ADR-034KOpPArDTHQ8W1c81Q0B | unified exec grant model — 単一 exec grant 実装への統合 | proposed | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
+| ADR-034KOpPArDTHQ8W1c81Q0B | unified exec grant model — 単一 exec grant 実装への統合 | accepted | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
 | ADR-RrljT4yH9woiGWbIny9ifG | usage.jsonl の run error record は固定 allowlist の診断 field で拡充する (issue #141) | accepted | [usage-error-record-field-contract.md](./usage-error-record-field-contract.md) |
 | ADR-034r2eId2hXJGWDjBylKVE | usage.jsonl の記録対象 contract は実装を canonical として文書を揃える | accepted | [usage-jsonl-contract-canonical.md](./usage-jsonl-contract-canonical.md) |
 | ADR-034r05iHrZUE6WljM1ZMiX | delegation 計測は userConfigDir の usage.jsonl への best-effort append とする | accepted | [usage-jsonl-in-user-config-dir-best-effort-append.md](./usage-jsonl-in-user-config-dir-best-effort-append.md) |

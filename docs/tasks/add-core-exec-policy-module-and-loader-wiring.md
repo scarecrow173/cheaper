@@ -370,32 +370,32 @@ module 一覧に `pub mod exec;` を追加（alphabetic 位置）。
 
 ## Done When
 
-- [ ] `policy/exec.rs` が design の module contract 通りの pub
+- [x] `policy/exec.rs` が design の module contract 通りの pub
       API（`ExecGrantScope`・`ExecGrant`・`ExecHeartbeat`・
       `ExecDefaults`・`ResolvedExecPolicy` +
       `is_route_eligible`/`project_grant`・`resolve_exec_policy`・
       `build_exec_input`・`resolve_exec_grant`・
       `exec_grant_resources`・`exec_policy_properties`）を持ち、
       `mod.rs` が `pub mod exec;` を宣言する
-- [ ] `process.rs` が `ResolvedProcessSection` +
+- [x] `process.rs` が `ResolvedProcessSection` +
       `BTreeMap<String,ProcessTask>`、`command.rs` が
       `ResolvedCommandSection` + `BTreeMap<String,ExecGrant>` +
       `deny` param 除去 + 4 field schema 拡張を持ち、
       `ArgPattern`/shared helper/const が `exec.rs` へ移設されて
       いる
-- [ ] `RuntimePolicy.exec` が `workflow` 直後の field として
+- [x] `RuntimePolicy.exec` が `workflow` 直後の field として
       normalize され（`process`/`command` 除去）、serialized
       出力が `{"exec":{grants,command,process}}` 形状を持つ
-- [ ] `validate_policy_schema` が `build_exec_input(..,∅)` +
+- [x] `validate_policy_schema` が `build_exec_input(..,∅)` +
       `resolve_exec_policy(..,&exec_deny)` 経由で collision・
       declared deny・全 semantic 規則を全 mode で発火する
-- [ ] `load_policy` が merge 前に `project_task_names` を捕捉し、
+- [x] `load_policy` が merge 前に `project_task_names` を捕捉し、
       `normalize_policy(.., &project_task_names)` が project
       task を `fixed:true`+`scope:"project"` grant へ写像する
       （deep-merge shadow が `scope:"project"` で保存される）
-- [ ] `capability.rs`・`restrict.rs` の `RuntimePolicy` literal
+- [x] `capability.rs`・`restrict.rs` の `RuntimePolicy` literal
       が `exec:` 形状を持つ
-- [ ] exec/schema/load の unit test が TSPEC Rules に対応して
+- [x] exec/schema/load の unit test が TSPEC Rules に対応して
       存在し、golden fixture 4 件が再採取され（`merge`/
       `workflow` 不変確認）、`policy_process.rs` driver が
       unified op へ写像され `cargo test -p cheaper-core` が
@@ -421,10 +421,12 @@ module 一覧に `pub mod exec;` を追加（alphabetic 位置）。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core` exits 0
+- [x] `mise exec -- cargo test -p cheaper-core` exits 0
       （unit test + golden target 全 pass — single-crate では
-      dev-seam feature 適用外のため workspace feature 指定なし）
-- [ ] `mise exec -- cargo clippy -p cheaper-core --all-targets`
-      exits 0（dead import・dead code なし）
-- [ ] `grep -n "exec" crates/cheaper-core/src/policy/mod.rs`
-      が `pub mod exec;` を返す
+      dev-seam feature 適用外のため workspace feature 指定なし。
+      実測 244 passed — `057d22b`）
+- [x] `mise exec -- cargo clippy -p cheaper-core --all-targets`
+      exits 0（dead import・dead code なし — `mise run check`
+      の clippy stage で workspace `--all-targets` として実測）
+- [x] `grep -n "exec" crates/cheaper-core/src/policy/mod.rs`
+      が `pub mod exec;` を返す（mod.rs:5 で実測）

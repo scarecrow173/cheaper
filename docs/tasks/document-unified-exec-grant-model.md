@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KQsvyJ7l63g3i4Gjnwl"
 type: "task"
-status: "todo"
+status: "done"
 title: "unified exec grant model の guide/reference 文書更新"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -210,24 +210,24 @@ TSPEC の rule を文面 source とし、**実装と矛盾する例・文言
 
 ## Done When
 
-- [ ] `managed-process.md` が task→`fixed`/`scope:"project"`
+- [x] `managed-process.md` が task→`fixed`/`scope:"project"`
       grant 解決・`execDenyPatterns` 3 点適用・writeScope
       tri-state を正確に記述する
-- [ ] `command.md` が `!fixed` grant 解決・argv pattern 契約・
+- [x] `command.md` が `!fixed` grant 解決・argv pattern 契約・
       `fixed`/`inputs`/`outputs`/`scope` field・entry-point
       reject・route eligibility（`trusted && !fixed`）・deny
       適用を記述する
-- [ ] `configuration.md` が shared `exec` namespace・collision
+- [x] `configuration.md` が shared `exec` namespace・collision
       fail-closed（`details.{grant,task}`）・grant spec の 4
       field 追加・`execDenyPatterns` 全 grant 適用を field
       reference へ反映する
-- [ ] `usage.md`・`workflow-usage.md`・`workers.md`・
+- [x] `usage.md`・`workflow-usage.md`・`workers.md`・
       `parent-agent-integration.md` が unified grant model
       へ整合し、`tool:"process"`/`tool:"command"` canonical
       名・authoring shape を不変で維持する
-- [ ] `policy.yaml` が `exec` model 前提の comment/example を
+- [x] `policy.yaml` が `exec` model 前提の comment/example を
       持つ（schema/動作不変）
-- [ ] 全更新文書が実装語彙（T1 の型/schema/error 文言）と
+- [x] 全更新文書が実装語彙（T1 の型/schema/error 文言）と
       矛盾しない（issue #169 honesty 観点 — 検証で drift を
       0 にする）
 
@@ -242,12 +242,12 @@ TSPEC の rule を文面 source とし、**実装と矛盾する例・文言
 
 ## Verification
 
-- [ ] `node scripts/check-doc-ids.mjs` exits 0（文書 frontmatter/
+- [x] `node scripts/check-doc-ids.mjs` exits 0（文書 frontmatter/
       index の id/link 整合）
-- [ ] guide/reference 内の `process.tasks`/`command.grants`/
+- [x] guide/reference 内の `process.tasks`/`command.grants`/
       `execDenyPatterns`/`writeScope`/`tool:`/`fixed`/`scope`
       記述が T1 の実装語彙・error 文言と一致（grep で drift
       検査 — 実装未確定の語彙は design/spec の確定文言を引用）
-- [ ] 更新 file に実装と矛盾する例・文言（`process.tasks`
+- [x] 更新 file に実装と矛盾する例・文言（`process.tasks`
       独立 namespace 前提・`execDenyPatterns` の command 限定
       記述等）が残っていない

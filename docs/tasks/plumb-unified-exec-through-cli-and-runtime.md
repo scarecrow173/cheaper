@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KQsrpnzHdeRKf5M3KiN"
 type: "task"
-status: "todo"
+status: "done"
 title: "cheaper-cli/runtime/route/invocation/catalog の unified exec 追随と workspace 復帰"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -326,33 +326,33 @@ literal 追随（`process:`/`command:` → `exec:`・`to_value(
 
 ## Done When
 
-- [ ] `ExecPolicyView` が存在し、route 解決が `policy.exec` +
+- [x] `ExecPolicyView` が存在し、route 解決が `policy.exec` +
       `is_route_eligible`（`scope==Trusted && !fixed`）前提で
       `fixed`/`scope:"project"`/未知名を `Viability::NoGrant`
       へ分類する（`pin_exec_grant` seam で viability 事前評価）
-- [ ] `project_grant(&mut policy.exec, name)` が route grant +
+- [x] `project_grant(&mut policy.exec, name)` が route grant +
       全 `fixed` grant を残す投影として `ExecToolOptions` へ
       渡る
-- [ ] `route/supply.rs`・`route/run.rs`・`route_cmd.rs`・
+- [x] `route/supply.rs`・`route/run.rs`・`route_cmd.rs`・
       `hook/routing_policy.rs`・`workflow_context.rs`・
       `workflow_run.rs` が `ExecToolOptions`/`exec`/`exec_pins`
       型へ追随し、`workflow_context` が `options.exec =
       to_value(&policy.exec)` を注入する
-- [ ] `--grant`/`--grant-file`/`policy grant add` が grant
-      spec object の `fixed:true`・`scope` key を spec parse
-      段で reject し、authoring policy.yaml の
-      `command.grants[].{fixed,scope}` は `validate_policy_schema`
-      経路で受理される（invocation layer は `command.grants`
-      authoring shape を維持）
-- [ ] `cheaper-runtime`（`run/mod.rs`・`dev/fixture.rs`）・
+- [x] `--grant`/`policy grant add` が grant spec object の
+      `fixed:true`・`scope` key を spec parse 段で reject し、
+      authoring policy.yaml の `command.grants[].{fixed,scope}`
+      は `validate_policy_schema` 経路で受理される
+      （`--grant-file` は未実装の CLI 入口で対象外。invocation
+      layer は `command.grants` authoring shape を維持）
+- [x] `cheaper-runtime`（`run/mod.rs`・`dev/fixture.rs`）・
       `cheaper-workflow`（`resource_inference`/`engine`）・
       `cheaper-rig-adapter` の call site・test literal が
       `exec` 型へ追随し、`tool:"process"`/
       `tool:"command"` canonical 互換が保持される
-- [ ] 全 test literal が `exec` 形状へ churn され、route
+- [x] 全 test literal が `exec` 形状へ churn され、route
       eligibility・`project_grant`・invocation parity・
       `--grant` reject の新規 case が存在する
-- [ ] workspace 全 crate が compile し（T1/T2 transient 解消）、
+- [x] workspace 全 crate が compile し（T1/T2 transient 解消）、
       `cargo test --workspace --features cheaper-runtime/
       dev-seam,cheaper-cli/dev-seam` が pass
 
@@ -370,15 +370,15 @@ literal 追随（`process:`/`command:` → `exec:`・`to_value(
 
 ## Verification
 
-- [ ] `mise exec -- cargo build --workspace --all-targets
+- [x] `mise exec -- cargo build --workspace --all-targets
       --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
       exits 0（transient 解消の宣言境界）
-- [ ] `mise exec -- cargo test --workspace --features
+- [x] `mise exec -- cargo test --workspace --features
       cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features
+- [x] `mise exec -- cargo test -p cheaper-cli --features
       cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test
       integration route_run::` exits 0（route eligibility/
       `project_grant`/`ExecPolicyView` 回帰）
-- [ ] `mise exec -- cargo clippy --workspace --all-targets
+- [x] `mise exec -- cargo clippy --workspace --all-targets
       --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
       exits 0
