@@ -63,6 +63,7 @@ Directory: `docs/discovery`
 | DISC-034z139D701zQBBGzr0upE | Standalone cheaper executable distribution without Node.js | resolved | [standalone-cheaper-executable-distribution-without-node-js.md](./standalone-cheaper-executable-distribution-without-node-js.md) |
 | DISC-034KWGjJMiSKU5wBxcznho | substitute-exec route mode issue-167 | resolved | [substitute-exec-route-mode-issue-167.md](./substitute-exec-route-mode-issue-167.md) |
 | DISC-034ESpIy7zAOucpwBxmjfd | tool-operator worker を built-in 追加する | draft | [tool-operator-worker-built-in.md](./tool-operator-worker-built-in.md) |
+| DISC-034L44O8jYRDhvhM16gDiM | trusted route flag issuer redesign issue-168 | active | [trusted-route-flag-issuer-redesign-issue-168.md](./trusted-route-flag-issuer-redesign-issue-168.md) |
 | DISC-Gvis7cxcHxPQwsvoSGmuox | Ubuntu CI route test flake (mtime tie-break / 1ms timeout race) | resolved | [ubuntu-ci-route-test-flake.md](./ubuntu-ci-route-test-flake.md) |
 | DISC-034KNX4OP8iBFRKTREaigz | unified exec grant model — command.grants / process.tasks の統合（#165） | resolved | [unified-exec-grant-model-issue-165.md](./unified-exec-grant-model-issue-165.md) |
 | DISC-034rzEbmKarhQzw41fhumg | Usage and savings telemetry for delegation reduction | resolved | [usage-and-savings-telemetry-for-delegation-reduction.md](./usage-and-savings-telemetry-for-delegation-reduction.md) |
