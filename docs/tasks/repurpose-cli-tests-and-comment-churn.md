@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KJu3PCBQDeImZEcznWv"
 type: "task"
-status: "todo"
+status: "done"
 title: "cheaper-cli の test・regression・comment churn を追随"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -165,16 +165,16 @@ design の Churn Plan・message/comment churn 表通りに追随させる。
 
 ## Done When
 
-- [ ] `{"executable":"python"}` を使った deny 前提の case/test が
+- [x] `{"executable":"python"}` を使った deny 前提の case/test が
       残らず、再用途先が `a*b`(wildcard 構造違反)または
       `git`+`timeout:"5x"`(duration 違反)で deterministic に
       `INVALID_RUNTIME_POLICY` を pin する
-- [ ] regression file pair が `run-grant-invalid-spec.json` へ
+- [x] regression file pair が `run-grant-invalid-spec.json` へ
       rename され expected の code+layer pin が維持される
-- [ ] cheaper-cli の comment から「workspace-resident 拒否」
+- [x] cheaper-cli の comment から「workspace-resident 拒否」
       「deny list」前提の記述が消える(`route/resolve.rs:279-281`
       は known-stale として触らない)
-- [ ] cli の各 test target が pass
+- [x] cli の各 test target が pass
 
 ## Out of Scope
 
@@ -189,9 +189,25 @@ design の Churn Plan・message/comment churn 表通りに追随させる。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration --test regression --test run_dev_seam --test workflow --test workflow_dev_seam`
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration --test regression --test run_dev_seam --test workflow --test workflow_dev_seam`
       exits 0
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings`
-      exits 0
-- [ ] `grep -rn "run-grant-deny\|run_grant_deny\|deny_listed\|deny list" crates/cheaper-cli/`
+- [x] `mise exec -- cargo clippy --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
+      exits 0(`mise run check` 内で実測)
+- [x] `grep -rn "run-grant-deny\|run_grant_deny\|deny_listed\|deny list" crates/cheaper-cli/`
       が 0 hit(`denyPaths`/denylist 語彙を除く)
+
+## Verification results
+
+2026-10-23 実施(Windows / `feature/issue-163-exec-contract-cleanup`)。
+T3 commit: `44c9df7 test(cli): repurpose grant-deny cases to
+invalid-spec pins`。
+
+| Command | Result |
+|---------|--------|
+| `cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration --test regression --test run_dev_seam --test workflow --test workflow_dev_seam` | exit 0(integration 288・regression golden 1・run_dev_seam 38・workflow 18・workflow_dev_seam 5 — 全 pass) |
+| `cargo clippy --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` | exit 0(`mise run check` 内で実測) |
+| stale-name grep(`crates/cheaper-cli/`) | 0 hit |
+
+T4 の stale-vocabulary sweep で case 内 grant name `"deny-me"` の
+残存を検出し `"x"` へ rename 済み(expected には echo されず
+挙動不変 — T4 commit に含む)。

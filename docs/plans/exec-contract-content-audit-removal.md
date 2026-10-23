@@ -1,7 +1,7 @@
 ---
 id: "PLAN-034KJtLyNUE46XjtrMOG60"
 type: "plan"
-status: "approved"
+status: "completed"
 title: "exec-contract cleanup — 内容審査を mandatory 層から除去 (issue #163)"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -271,15 +271,17 @@ Rollback strategy: 全変更は git commit 単位の通常 revert で戻せる�
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
+- [x] `mise exec -- cargo test -p cheaper-core`
       で unit test(更新・再用途化済み)+ golden driver/fixture が
-      pass(T1)
-- [ ] `mise exec -- cargo test -p cheaper-tools --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
+      pass(T1 — single-crate では dev-seam feature 適用外のため
+      flag 無しで実測。lib 216・golden 22 全 pass)
+- [x] `mise exec -- cargo test -p cheaper-tools`
       で unit・proc_* integration・differential・fixture が
-      pass(T2 — workspace compile 回復)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration --test regression --test run_dev_seam --test workflow --test workflow_dev_seam`
-      が pass(T3)
-- [ ] grep 消失確認: `is_shell_process_executable`・
+      pass(T2 — 同上 flag 無し。lib 258・integration 計 93 全 pass)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration --test regression --test run_dev_seam --test workflow --test workflow_dev_seam`
+      が pass(T3 — integration 288・regression 1・run_dev_seam 38・
+      workflow 18・workflow_dev_seam 5)
+- [x] grep 消失確認: `is_shell_process_executable`・
       `native_magic_supported`・`within_workspace`・
       `is_relative_executable_path`・`script_ext_re`・
       `shell_executable_re`・`command_denied_executable_re`・
@@ -287,22 +289,33 @@ Rollback strategy: 全変更は git commit 単位の通常 revert で戻せる�
       (`within_workspace` は `walker.rs`/`normalization.rs` の
       無関係な `..._under_within_workspace` test 名 residual を
       許容)(T4)
-- [ ] 旧語彙 grep(spec R10): `deny|workspace-resident|shim|native magic`
+- [x] 旧語彙 grep(spec R10): `deny|workspace-resident|shim|native magic`
       の残存 hit が allowlist(E2 denylist 機構・hook/permission の
       `deny` verdict・capability/empty-grants 由来 `denied` test 名・
       非該当「shim」用法・`route/resolve.rs:279-281` known-stale
-      comment)内に収まること(T4)
-- [ ] keep-boundary 残置確認: `argv_shell_re` 定義・`route/resolve.rs:285`
+      comment)内に収まること(T4 — 残存 `"deny-me"` grant name は
+      `"x"` へ rename 済み)
+- [x] keep-boundary 残置確認: `argv_shell_re` 定義・`route/resolve.rs:285`
       参照・`tokenize_shell`・`resolved != pinned`・wildcard 構造
       検査・`relative()`・env NUL/dup・`PathDenylist`・`.exe/.com`・
-      X_OK が不変で残ること(T4)
-- [ ] `\0` argv が `TOOL_EXECUTION_FAILURE`+`spawnCode="SPAWN_ERROR"`
+      X_OK が不変で残ること(T4 — `route/resolve.rs` は diff 無し)
+- [x] `\0` argv が `TOOL_EXECUTION_FAILURE`+`spawnCode="SPAWN_ERROR"`
       へ縮退する観測 test・`a*b` repurpose が PATH 非依存で
-      deterministic な test が存在すること(T4)
-- [ ] `mise run check` が pass(T4)
-- [ ] `node scripts/check-doc-ids.mjs` が pass(全 task)
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
-      で新規 doc の error 0(全 task)
+      deterministic な test が存在すること(T4 — `\0` executable の
+      pin 層 `POLICY_VIOLATION` 観測は gap 検出により
+      `unpinnable_executable_fails_closed` へ追加)
+- [x] `mise run check` が pass(T4 — exit 0・50 test binary 全 pass)
+- [x] `node scripts/check-doc-ids.mjs` が pass(全 task — 1120 files)
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
+      で新規 doc の error 0(全 task — findings error 0・
+      reciprocal-relation warning のみ non-blocking)
+
+## Completion
+
+2026-10-23 に T1→T4 直列実行で完了。commit:
+`981a4f4`(T1 core)・`cce415b`(T2 tools)・`44c9df7`(T3 cli)・
+T4 status/doc + `\0` pin + `deny-me` rename は最終 commit。
+実測値は各 task の `## Verification results` を参照。
 
 ## Open Questions / Gaps
 

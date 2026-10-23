@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KJu8k1x8fWOfRemmi3r"
 type: "task"
-status: "todo"
+status: "done"
 title: "除去の grep-pin・keep-boundary・mise run check 最終検証"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -167,14 +167,14 @@ known-stale として残置し comment churn 対象外)のみ。
 
 ## Done When
 
-- [ ] name-disappearance grep が許容 residual を除き 0 hit
-- [ ] stale-vocabulary grep の残存 hit が allowlist(a)-(d) のみ
-- [ ] keep-boundary の各 site が不変で残存(removed symbol の
+- [x] name-disappearance grep が許容 residual を除き 0 hit
+- [x] stale-vocabulary grep の残存 hit が allowlist(a)-(d) のみ
+- [x] keep-boundary の各 site が不変で残存(removed symbol の
       import/call 残骸・審査の再実装が無い)
-- [ ] `\0` degradation・受理 pin・`a*b` determinism・pin-equality
+- [x] `\0` degradation・受理 pin・`a*b` determinism・pin-equality
       再設計の各 test が存在し pass
-- [ ] `mise run check` exits 0
-- [ ] 4 task + plan の status が更新されている
+- [x] `mise run check` exits 0
+- [x] 4 task + plan の status が更新されている
 
 ## Out of Scope
 
@@ -187,8 +187,28 @@ known-stale として残置し comment churn 対象外)のみ。
 
 ## Verification
 
-- [ ] 上記 §1-§5 の全項目が pass(コマンド実測を記録)
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
+- [x] 上記 §1-§5 の全項目が pass(コマンド実測を記録)
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
       で本 issue の新規 doc 6 件(plan・test-spec・task×4)が
       error 0
+
+## Verification results
+
+2026-10-23 実施(Windows / `feature/issue-163-exec-contract-cleanup`)。
+
+| Command | Result |
+|---------|--------|
+| `grep -rn "<8 removed symbols>" crates/` | 許容 residual のみ 4 hit(`*_under_within_workspace` walker/normalization test 名 — 審査 helper 無関係)。8 symbol 全消失 |
+| `grep -rniE "deny\|workspace-resident\|shim\|native magic" crates/` | 残存 hit は allowlist 相当のみ(`PathDenylist`/`denyPaths`/`SymlinkPolicy::Deny`・hook verdict・empty-grant `=deny`・PATH shim/serde_yml shim・`route/resolve.rs` known-stale viability comment)。`"deny-me"` grant name は `"x"` へ rename 済み |
+| keep-boundary site 確認 | `argv_shell_re` 定義(`policy/process.rs:120`)+ `route/resolve.rs:11,285` 使用・`tokenize_shell`(`hook/routing_policy.rs:1122`)・`resolved != pinned`(`command/mod.rs:217`)・`relative()` `\0`/traversal(`process.rs:128-149`)・env dup/NUL(`process.rs`・`command.rs:325`)・`PathDenylist`/`denied_declared_path`・win32 `.exe/.com`+X_OK(`executable.rs` `native()`)・`spawn_failure_is_async`(`spawn.rs:87`)・`env_clear`+`Stdio::null`(`spawn.rs:151-154`) — 全残存・`route/resolve.rs` diff 無し |
+| `mise run check` | exit 0(biome・fmt・clippy --all-targets・version・doc-ids・cargo test --workspace 50 binary 全 pass・node --test・lockfile・apm-payload) |
+| `node scripts/check-doc-ids.mjs` | exit 0(1120 files — `mise run check` 内で実測) |
+| `audit_docs.js --type all --json` | 959 files・findings error 0(本 issue 6 doc には reciprocal-relation warning 6 件のみ — non-blocking・作成時点からの既存) |
+
+T4 gap-fill: design §b が指定する `\0` 入り declared executable の
+pin 層 `POLICY_VIOLATION` 観測が不足していたため、
+`proc_command.rs::unpinnable_executable_fails_closed` に
+`"a\0b"` spec の fail-closed assert を追加(実測 pass — 33 tests)。
+argv `\0` の `TOOL_EXECUTION_FAILURE`+`SPAWN_ERROR` 縮退 pin は
+同 file に既存。

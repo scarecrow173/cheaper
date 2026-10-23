@@ -272,16 +272,16 @@ Directory: `docs/tasks`
 | TASK-034GtBzKmwPf5z06kAahym | Register Devin hooks from APM skill | done | [register-devin-hooks-from-apm-skill.md](./register-devin-hooks-from-apm-skill.md) |
 | TASK-034EUvFhVkFFo9cY6aX6LB | T2: registry degrade path と prompt surfacing | done | [registry-degrade-and-prompt-surfacing.md](./registry-degrade-and-prompt-surfacing.md) |
 | TASK-bFmQKy8wlXPsJ8TxH83XGQ | issue-113/114 regression normalize・最終検証・impl 記録 | done | [regression-and-final-verification-113-114.md](./regression-and-final-verification-113-114.md) |
-| TASK-034KJtXX2QajBjkAgOJRtm | cheaper-core policy 層の内容審査 predicate・適用点を除去 | todo | [remove-core-policy-content-audit.md](./remove-core-policy-content-audit.md) |
+| TASK-034KJtXX2QajBjkAgOJRtm | cheaper-core policy 層の内容審査 predicate・適用点を除去 | done | [remove-core-policy-content-audit.md](./remove-core-policy-content-audit.md) |
 | TASK-034DzYbfe9r0G8Nd58FQjy | T1: js_json shim 削除 (F3) | done | [remove-js-json-shim.md](./remove-js-json-shim.md) |
 | TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |
 | TASK-034DzYfbw07gFHdsAguwHp | T4: poc-rig 削除 (F5) | done | [remove-poc-rig-crate.md](./remove-poc-rig-crate.md) |
-| TASK-034KJu31OgzJMwk2vb4KJz | cheaper-tools command/proc 層の内容審査を除去 | todo | [remove-tools-content-audit.md](./remove-tools-content-audit.md) |
+| TASK-034KJu31OgzJMwk2vb4KJz | cheaper-tools command/proc 層の内容審査を除去 | done | [remove-tools-content-audit.md](./remove-tools-content-audit.md) |
 | TASK-034DzYC8wR9HwNbdMoF8NP | T7: provider crate rename + devin module 化 (F8) | done | [rename-provider-crate-and-modularize-devin.md](./rename-provider-crate-and-modularize-devin.md) |
 | TASK-034DzYxGyUC8loD0ruTCQN | T6: cheaper-runtime 内部再配置 (F6) | done | [reorganize-cheaper-runtime-run-module.md](./reorganize-cheaper-runtime-run-module.md) |
 | TASK-034DzYs0gJRVZ5JJfKAIAn | T5: cheaper-tools 内部再配置 (F1) | done | [reorganize-cheaper-tools-modules.md](./reorganize-cheaper-tools-modules.md) |
 | TASK-034r05iHQeQpDqsCIiTDOz | Repoint bundle pipeline and CI freshness check to packages/apm | done | [repoint-bundle-pipeline-and-ci-freshness.md](./repoint-bundle-pipeline-and-ci-freshness.md) |
-| TASK-034KJu3PCBQDeImZEcznWv | cheaper-cli の test・regression・comment churn を追随 | todo | [repurpose-cli-tests-and-comment-churn.md](./repurpose-cli-tests-and-comment-churn.md) |
+| TASK-034KJu3PCBQDeImZEcznWv | cheaper-cli の test・regression・comment churn を追随 | done | [repurpose-cli-tests-and-comment-churn.md](./repurpose-cli-tests-and-comment-churn.md) |
 | TASK-034EekSpuRWpAF5iF3T316 | T2: setup boundary abort code restore and shared reverse lookup | done | [restore-setup-boundary-abort-classification.md](./restore-setup-boundary-abort-classification.md) |
 | TASK-034IQdP0etbaZJqUzaP6sl | Restrict orphan sweep to .tmp and split verify orphan findings | done | [restrict-orphan-sweep-to-tmp-and-split-verify-findings.md](./restrict-orphan-sweep-to-tmp-and-split-verify-findings.md) |
 | TASK-034r05iHQeQpDqOOFD90gZ | Restructure README, create docs index, and run final verification | done | [restructure-readme-docs-index-and-final-verification.md](./restructure-readme-docs-index-and-final-verification.md) |
@@ -335,7 +335,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
 | TASK-034zXB2z3uWw5lq9IyKOqe | Verify consumer acquisition and close migration | done | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
-| TASK-034KJu8k1x8fWOfRemmi3r | 除去の grep-pin・keep-boundary・mise run check 最終検証 | todo | [verify-content-audit-removal.md](./verify-content-audit-removal.md) |
+| TASK-034KJu8k1x8fWOfRemmi3r | 除去の grep-pin・keep-boundary・mise run check 最終検証 | done | [verify-content-audit-removal.md](./verify-content-audit-removal.md) |
 | TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
 | TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | done | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |
 | TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | done | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KJu31OgzJMwk2vb4KJz"
 type: "task"
-status: "todo"
+status: "done"
 title: "cheaper-tools command/proc 層の内容審査を除去"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -312,22 +312,26 @@ design(DESIGN-034KIsSCvVMAxGDZY1dQTd)の行指定をそのまま実装する
 
 ## Done When
 
-- [ ] `within_workspace`・`native_magic_supported`・
+- [x] `within_workspace`・`native_magic_supported`・
       `is_denied_command_executable`・`is_relative_executable_path`・
       `is_shell_process_executable`・`argv_shell_re`・
       `std::io::Read`・`nodepath` が `crates/cheaper-tools` の
-      src/import から消失(helper・call site・import 全て)
-- [ ] `pin_command_grant` が realpath 解決と pin 取得のみを行い、
+      src/import から消失(helper・call site・import 全て —
+      `nodepath`/`io::Read` の消失範囲は §Work の指定通り
+      `command/mod.rs`・`proc/executable.rs` の審査 consumer のみ。
+      `executable.rs` は PATH 解決用に `nodepath` を残置し、
+      `grep/scan.rs`・`walker.rs` 等の無関係 consumer も残置)
+- [x] `pin_command_grant` が realpath 解決と pin 取得のみを行い、
       `verify_pinned_executable(name, pinned)` が `resolved !=
       pinned` の pin-equality のみを強制する(`root` 引数なし)
-- [ ] `native()` が spawn viability(realpath・is_file・win32
+- [x] `native()` が spawn viability(realpath・is_file・win32
       `.exe/.com`・X_OK)のみを判定し、`resolve_process_executable`
       が shim/front-door・bare `node` 固定 reject を持たない
-- [ ] `authorize_args` が argv pattern 照合のみを行う
-- [ ] `unsupported()`・`unsupported_empty_command`・pin 導入
+- [x] `authorize_args` が argv pattern 照合のみを行う
+- [x] `unsupported()`・`unsupported_empty_command`・pin 導入
       comment が restate 後文言になり、tools 側の stale 語彙が
       残らない
-- [ ] `cargo test -p cheaper-tools` が pass し workspace compile
+- [x] `cargo test -p cheaper-tools` が pass し workspace compile
       が回復する
 
 ## Out of Scope
@@ -347,11 +351,34 @@ design(DESIGN-034KIsSCvVMAxGDZY1dQTd)の行指定をそのまま実装する
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-tools --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
-      exits 0(unit・proc_* integration・differential・fixture 全 pass)
-- [ ] `mise exec -- cargo clippy -p cheaper-tools --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings`
-      exits 0(dead import・dead param なし)
-- [ ] `grep -rn "within_workspace\|native_magic_supported\|is_denied_command_executable\|is_relative_executable_path\|is_shell_process_executable" crates/cheaper-tools/src/`
-      が 0 hit
-- [ ] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
-      exits 0(T1 の compile transient が解消)
+- [x] `mise exec -- cargo test -p cheaper-tools`
+      exits 0(unit・proc_* integration・differential・fixture 全 pass —
+      single-crate では dev-seam feature は適用外のため
+      workspace feature 指定なしで実測)
+- [x] `mise exec -- cargo clippy --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
+      exits 0(dead import・dead param なし — `mise run check` 内)
+- [x] `grep -rn "within_workspace\|native_magic_supported\|is_denied_command_executable\|is_relative_executable_path\|is_shell_process_executable" crates/cheaper-tools/src/`
+      — 許容 residual のみ: `walker.rs` の `*_under_within_workspace`
+      test 名 3 件(審査 helper とは無関係の symlink walker 規約
+      test — task T4 allowlist 相当)
+- [x] `mise run check` 内の
+      `cargo clippy --workspace --all-targets` +
+      `cargo test --workspace` が exits 0(T1 の compile
+      transient が解消 — `cargo build` と同等の全 target 検証)
+
+## Verification results
+
+2026-10-23 実施(Windows / `feature/issue-163-exec-contract-cleanup`)。
+T2 commit: `cce415b refactor(tools): remove mandatory content audits
+from command/proc`。
+
+| Command | Result |
+|---------|--------|
+| `mise exec -- cargo test -p cheaper-tools` | exit 0(lib 258・characterization 10・differential 11・proc_command 33・proc_degrade 9・proc_invocation 14・proc_process 9・proc_runtime 7 — 全 pass) |
+| `cargo clippy --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` | exit 0(`mise run check` 内で実測) |
+| name-disappearance grep(`crates/cheaper-tools/src/`) | 審査 symbol 0 hit — residual は `walker.rs` の `*_under_within_workspace` test 名 3 件のみ(無関係) |
+
+T4 gap-fill として `proc_command.rs` の
+`unpinnable_executable_fails_closed` に `\0` 入り declared
+executable の pin 層 `POLICY_VIOLATION` 観測を追加済み(design
+§b 指定の観測点 — T4 commit に含む)。

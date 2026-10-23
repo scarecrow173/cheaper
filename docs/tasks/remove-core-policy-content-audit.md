@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KJtXX2QajBjkAgOJRtm"
 type: "task"
-status: "todo"
+status: "done"
 title: "cheaper-core policy 層の内容審査 predicate・適用点を除去"
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -221,21 +221,21 @@ design(DESIGN-034KIsSCvVMAxGDZY1dQTd)の行指定をそのまま実装する
 
 ## Done When
 
-- [ ] `shell_executable_re`・`script_ext_re`・
+- [x] `shell_executable_re`・`script_ext_re`・
       `is_shell_process_executable`・`command_denied_executable_re`・
       `is_denied_command_executable`・`is_relative_executable_path`
       が `crates/cheaper-core/src/` から消失(定義・caller・import
       全て)
-- [ ] `argv_shell_re` 定義が残り、doc comment が viability 参照の
+- [x] `argv_shell_re` 定義が残り、doc comment が viability 参照の
       趣旨へ訂正されている
-- [ ] `resolve_command_policy`・`resolve_process_policy` task
+- [x] `resolve_command_policy`・`resolve_process_policy` task
       loop・`ArgPattern::compile` が shell/shim・deny・metachar で
       reject せず、wildcard 構造・`relative()`・env dup/NUL・
       lifecycle 規約を維持する
-- [ ] golden 4 系(driver・process.json・load.json・schema.json)
+- [x] golden 4 系(driver・process.json・load.json・schema.json)
       が受理 expected・`a*b` 再用途化へ張り替わり
       `cargo test -p cheaper-core` が pass
-- [ ] `load.rs` unit test が `a*b` spec で inner code+
+- [x] `load.rs` unit test が `a*b` spec で inner code+
       `layer="invocation"` を PATH 非依存で pin する
 
 ## Out of Scope
@@ -251,9 +251,22 @@ design(DESIGN-034KIsSCvVMAxGDZY1dQTd)の行指定をそのまま実装する
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-core --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
-      exits 0(unit test + golden target 全 pass)
-- [ ] `mise exec -- cargo clippy -p cheaper-core --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings`
-      exits 0(dead import・dead code なし)
-- [ ] `grep -rn "is_shell_process_executable\|script_ext_re\|shell_executable_re\|command_denied_executable_re\|is_denied_command_executable\|is_relative_executable_path" crates/cheaper-core/`
+- [x] `mise exec -- cargo test -p cheaper-core`
+      exits 0(unit test + golden target 全 pass —
+      single-crate では dev-seam feature は適用外のため
+      workspace feature 指定なしで実測)
+- [x] `mise exec -- cargo clippy --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam`
+      exits 0(dead import・dead code なし — `mise run check` 内)
+- [x] `grep -rn "is_shell_process_executable\|script_ext_re\|shell_executable_re\|command_denied_executable_re\|is_denied_command_executable\|is_relative_executable_path" crates/cheaper-core/`
       が 0 hit
+
+## Verification results
+
+2026-10-23 実施(Windows / `feature/issue-163-exec-contract-cleanup`)。
+T1 commit: `981a4f4 refactor(policy): remove mandatory content audits from cheaper-core`。
+
+| Command | Result |
+|---------|--------|
+| `mise exec -- cargo test -p cheaper-core` | exit 0(lib 216・golden 22・全 pass) |
+| `cargo clippy --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` | exit 0(`mise run check` 内で実測) |
+| name-disappearance grep(`crates/cheaper-core/`) | 0 hit |
