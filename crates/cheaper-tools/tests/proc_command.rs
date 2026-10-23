@@ -493,25 +493,28 @@ fn workspace_executables_are_pinned() {
 }
 
 /// ambient PATH に存在しない executable は pin 不能 → `POLICY_VIOLATION`
-/// (fail closed)。
+/// (fail closed)。`\0` を含む declared executable も同じ — realpath
+/// 失敗で pin 層のまま縮退せず失敗する(spawn 層へは到達しない)。
 #[test]
 fn unpinnable_executable_fails_closed() {
     let dir = TempDir::new();
-    let err = command_runtime(
-        &dir.root(),
-        command_policy(json!({
-            "ghost": {"executable": "definitely-not-a-real-command-xyz"}
-        })),
-    )
-    .unwrap_err();
-    let e = cheaper_err(&err);
-    assert_eq!(e.code(), ErrorCode::PolicyViolation);
-    assert!(
-        e.message()
-            .contains("could not be resolved to a spawnable executable"),
-        "{}",
-        e.message()
-    );
+    for exe in ["definitely-not-a-real-command-xyz", "a\0b"] {
+        let err = command_runtime(
+            &dir.root(),
+            command_policy(json!({
+                "ghost": {"executable": exe}
+            })),
+        )
+        .unwrap_err();
+        let e = cheaper_err(&err);
+        assert_eq!(e.code(), ErrorCode::PolicyViolation, "{exe:?}");
+        assert!(
+            e.message()
+                .contains("could not be resolved to a spawnable executable"),
+            "{exe:?}: {}",
+            e.message()
+        );
+    }
 }
 
 // ---------------------------------------------------------------------------

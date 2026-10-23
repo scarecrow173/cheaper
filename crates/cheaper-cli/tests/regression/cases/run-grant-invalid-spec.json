@@ -15,7 +15,7 @@
   },
   "extraArgs": [
     "--grant",
-    "{\"name\":\"deny-me\",\"executable\":\"python\",\"argv\":[\"a*b\"]}"
+    "{\"name\":\"x\",\"executable\":\"python\",\"argv\":[\"a*b\"]}"
   ],
   "files": { "a.txt": "alpha\n" }
 }
