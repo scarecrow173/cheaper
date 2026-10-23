@@ -399,6 +399,7 @@ mod tests {
             target_path: std::path::PathBuf::from(target),
             grant: grant.to_string(),
             grants: Vec::new(),
+            substitute: None,
             token_threshold: None,
             passthrough_env: Vec::new(),
             trusted: false,

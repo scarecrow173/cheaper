@@ -1421,10 +1421,9 @@ async fn suppressed_project_provenance_reaches_route_record() {
         let result = &out["result"];
         if trusted {
             assert_eq!(result["route"], "project-shadow");
-            assert!(
-                result.get("suppressed").is_none(),
-                "trusted project shadow には suppressed provenance なし"
-            );
+            // trusted 置換は displaced 下位層 route を suppressed
+            // provenance へ記録する(silent displacement を残さない)。
+            assert_eq!(result["suppressed"], "child-run");
         } else {
             assert_eq!(result["route"], "child-run");
             assert_eq!(result["suppressed"], "project-shadow");
@@ -1447,7 +1446,7 @@ async fn suppressed_project_provenance_reaches_route_record() {
         let record = route_record(&f);
         if trusted {
             assert_eq!(record["route"], "project-shadow");
-            assert!(record.get("suppressed").is_none(), "{record}");
+            assert_eq!(record["suppressed"], "child-run", "{record}");
         } else {
             assert_eq!(record["route"], "child-run");
             assert_eq!(record["suppressed"], "project-shadow", "{record}");
