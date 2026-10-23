@@ -116,11 +116,13 @@ impl ResolvedExecPolicy {
     }
 
     /// route run の grant set 投影(#166 — 単一版の一般化)。`names`
-    /// は `{route.grant} ∪ grants` の有効 set — 1 件でも不在・
-    /// route-ineligible(非 trusted/fixed)なら false で policy を
-    /// 変更しない。投影は `{names} ∪ {fixed grants}` を残す —
-    /// routed workflow から task を呼べる挙動と C9 confused-deputy
-    /// 防止(非 fixed の他 grant を隠す)を set でも維持する。
+    /// は `{route.grant} ∪ grants ∪ {substitute.grant}` の有効
+    /// set(#167 — caller の `Route::grant_set()` が供給)— 1 件
+    /// でも不在・route-ineligible(非 trusted/fixed)なら false で
+    /// policy を変更しない。投影は `{names} ∪ {fixed grants}` を
+    /// 残す — routed workflow から task を呼べる挙動と C9
+    /// confused-deputy 防止(非 fixed の他 grant を隠す)を set
+    /// でも維持する。
     pub fn project_grants(&mut self, names: &BTreeSet<String>) -> bool {
         if names.is_empty()
             || !names

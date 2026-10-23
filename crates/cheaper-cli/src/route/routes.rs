@@ -10,8 +10,10 @@
 //!   絶対パス/traversal は config error(`invalid-route`)。壊れた
 //!   route を黙って drop しない。
 //! - merge 規則: user は builtin を無条件 shadow。project は
-//!   `trusted: true` のときのみ下位層を shadow し、無い場合は
-//!   `suppressed` provenance として記録される(静かに無視しない)。
+//!   `trusted: true` のときのみ下位層を shadow する — 置換された
+//!   displaced 下位層 route・trust 不在で負けた project route の
+//!   双方が `suppressed` provenance として記録される(静かに
+//!   無視しない)。
 //! - 同一層内の同一 `match.command` 重複は `invalid` bucket へ
 //!   隔離し resolve 対象から除外する(silent last/first-wins 禁止)。
 //! - `target.path` は層起点相対パスのみ許容 — builtin は
@@ -60,13 +62,15 @@ pub struct Route {
     /// `target.path` — 宣言層起点で join 済みの絶対パス。
     pub target_path: PathBuf,
     /// `command.grants` 参照名(route は grant を生成しない)。
-    /// 発火 gate・expected_input anchor・record attribution の
-    /// 単一 anchor — `grants` member は含めない。
+    /// 発火 gate・record attribution の単一 anchor — `grants`
+    /// member は含めない。実行 anchor(expected_input・viability
+    /// 完全検査対象)は byte-matched では本 grant、substitute
+    /// mode では `substitute.grant` へ移る(`exec_pair` が選ぶ)。
     pub grant: String,
     /// `grants` — route.grant 以外の追加委譲 grant 名(宣言順)。
     /// parse 時に member 間重複と `route.grant` 自身の参照を
     /// 冪等に除去済み — `[]` ≡ 未指定。有効 set は
-    /// `grant_set()` = {grant} ∪ grants。
+    /// `grant_set()` = {grant} ∪ grants ∪ {substitute.grant}。
     pub grants: Vec<String>,
     /// `substitute` — substitute-exec mode 宣言(Option D)。
     /// `Some` のとき実行対象は `{substitute.grant, substitute.argv}`
@@ -114,8 +118,10 @@ impl Route {
     }
 }
 
-/// trust 不在のため下位層 route に負けた project route
-/// (provenance — `route resolve`・`kind:"route"` record が報告)。
+/// merge で負けた route の provenance — trust 不在で下位層 route
+/// に負けた project route、および `trusted: true` project route
+/// に置換された displaced 下位層 route(`route resolve`・
+/// `kind:"route"` record が報告)。
 #[derive(Debug, Clone, PartialEq)]
 pub struct SuppressedRoute {
     pub name: String,

@@ -98,7 +98,9 @@ pub struct RouteResolution {
     /// `argv[1..]` — spawn argv / grant argv 照合の基準(C1)。
     pub exec_args: Vec<String>,
     pub viability: Option<Viability>,
-    /// trust 不在で負けた project route 名(provenance 報告)。
+    /// merge 敗北 route 名(provenance 報告)— trust 不在で負けた
+    /// project route、および `trusted: true` project route に置換
+    /// された displaced 下位層 route(#167)。
     pub suppressed: Option<String>,
     /// match した route の `passthroughEnv` 宣言 — payload encode
     /// の ambient env allowlist(`route run` の再 resolve も同じ値

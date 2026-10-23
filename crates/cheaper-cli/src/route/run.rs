@@ -489,8 +489,10 @@ fn finish(
     // `executed` attribution(#166)— `command::execute` が記録する
     // `{grant, argv}` details から実際の実行 grant/argv を取る。
     // details 欠落は command tool contract の不変条件違反のため
-    // InternalError(`exitCode` と同じ規約)。`executed.argv` は
-    // env-prefix-strip 済みの元 exec argv を指す。
+    // InternalError(`exitCode` と同じ規約)。`executed` は実測の
+    // 実行ペアを指す — byte-matched では env-prefix-strip 済みの
+    // 元 exec argv、substitute mode では宣言 substitute ペア
+    // (#167 — code は両 mode で不変、details echo が違うだけ)。
     let executed_grant = details
         .and_then(|d| d.get("grant"))
         .and_then(Value::as_str)

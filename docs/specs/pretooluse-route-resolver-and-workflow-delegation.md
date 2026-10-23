@@ -215,24 +215,37 @@ output capture + token 計測 + conditional worker による縮約)。
 - R1: `routes.yaml` は `{version: 1, routes: Route[]}` を持つ。
   Route の field は `{name, match:{command:[token,…]},
   target:{kind:"workflow", path}, grant, grants:[name,…]?,
-  output:{tokenThreshold?}, passthroughEnv:[name,…]?, trusted?}`
+  substitute?:{grant, argv}, output:{tokenThreshold?},
+  passthroughEnv:[name,…]?, trusted?}`
   とする。`name` は route を一意に識別する ID、`match.command`
   は argv token prefix、`target` は `kind:"workflow"` のみを
   許容し `path` は登録済み workflow file を指す。`grant` は
   `command.grants` の既存 grant 名への参照であり、route は
   grant を生成しない。`grants`（issue #166）は anchor
   `route.grant` 以外の追加 delegated grant 名の optional 配列で、
-  実効 grant set は `{route.grant} ∪ grants` とする（member は
+  実効 grant set は `{route.grant} ∪ grants ∪ {substitute.grant}`
+  とする（member は
   宣言順に parse され、重複と `route.grant` 自身への参照は
   除去される — 空・未指定は同等）。`grants` は builtin/user の
   trusted 層のみが authoring でき、project 層 entry に `grants`
   key が存在すると値の形状に関わらず route load が
   `InvalidRuntimePolicy` で失敗する（fail-loud — project が
   宣言できるのは従来通り単数 `grant:` anchor 参照のみ）。
+  `substitute`（issue #167）は substitute-exec mode の optional
+  宣言で、`{grant, argv}` の実行ペアが typed command の代わりに
+  spawn される（`argv` は executable を含まない宣言固定 args、
+  `argv: []` 合法、typed args の転送・補間はしない）。
+  `substitute` も builtin/user の trusted 層限定で、project 層
+  entry に `substitute` key が存在すると `grants` と同じ
+  presence-first 規約で route load が `InvalidRuntimePolicy` で
+  失敗する。`grant:` 単数は substitute 宣言の有無に関わらず
+  required（発火 gate・record attribution anchor）。
   member を呼ぶ routed workflow 内の `command` job は
   `job_id != "exec"` で宣言する — `job_id == "exec"` の
-  `command` job は anchor grant + 元 argv の expected-input に
-  束縛され、不一致は `exec-input-mismatch`（PolicyViolation）
+  `command` job は実行ペアの expected-input に束縛され
+  （byte-matched では `{route.grant, 元 argv}`、substitute
+  mode では `{substitute.grant, substitute.argv}`）、不一致は
+  `exec-input-mismatch`（PolicyViolation）
   とする。
   `output.tokenThreshold` は routed workflow の conditional
   worker を起動する閾値の per-route override、`passthroughEnv`
@@ -318,13 +331,20 @@ output capture + token 計測 + conditional worker による縮約)。
   失敗が同時に成立しうる場合、報告は固定の deterministic な優先順
   `unsafe-command → invalid-route → missing-target → no-grant →
   stdin-unsupported → runnable` で 1 値に畳む。no-grant 評価は
-  anchor `grant:` の完全な実行可否（存在・`scope:"trusted" &&
-  !fixed`・executable pin・実 argv byte-match）に加え、宣言
+  実行ペアの完全な実行可否（存在・`scope:"trusted" &&
+  !fixed`・executable pin・argv byte-match）に加え、宣言
   `grants` member それぞれへの 存在 + 同 eligibility + pin 検査
   を含む（issue #166 — member への元 argv 照合は行わず、member
   job の argv は各 grant 自身の pattern が job 実行時に拘束する。
   member 失敗は新規 viability 値を増やさず anchor 失敗と同じ
-  `no-grant` へ畳む）。
+  `no-grant` へ畳む）。実行ペアは `route.exec_pair` が選ぶ —
+  byte-matched（`substitute` 未宣言）では `{route.grant,
+  実 exec argv}`、substitute mode では `{substitute.grant,
+  substitute.argv}`（issue #167 — viability の完全検査対象が
+  substitute ペアへ retarget される）。substitute mode の
+  `route.grant` は member 級検査（存在 + eligibility + pin、
+  argv 照合なし）へ降格し、元 argv の `route.grant` pattern
+  照合は行わない。
 
 ### `cheaper route run`
 
@@ -460,7 +480,12 @@ output capture + token 計測 + conditional worker による縮約)。
   `route run` は子 process の stdin を親へ接続しないため、stdin
   読み取り・対話を要求する command は resolve が
   `stdin-unsupported` を返す(判定不能なケースでも routing 側が
-  stdin を供給しないことは構造的に保証される)。env 互換を
+  stdin を供給しないことは構造的に保証される)。substitute
+  mode では typed 側に加えて substitute ペア側も同じ判定を受ける
+  — 宣言 executable 名と pin 解決済み実体名の union +
+  `substitute.argv` の interactive flag で分類し、該当すれば
+  `stdin-unsupported` で不発とする(issue #167 — canonical 名
+  ずらし・shim 名での回避を塞ぐ)。env 互換を
   満たせない command も同様に routing しない。
 
 ### usage record `kind:"route"`
@@ -472,9 +497,13 @@ output capture + token 計測 + conditional worker による縮約)。
   reductionRatio, worker:{model, usage}, durationMs:{exec, analyze,
   total}, logRef, refetches, postprocessFailures}`。`executed` は
   additive field（issue #166）で、実際に実行された exec job の
-  `{grant, argv}`（env-prefix-strip 済み — prefix 値は含まない）
-  を記録し、宣言 identity（`route`・`commandHash`）と実行
-  attribution を分離する。`executed.argv` は平文の引数値を含む。
+  `{grant, argv}` を記録し、宣言 identity（`route`・
+  `commandHash`）と実行 attribution を分離する — byte-matched
+  では env-prefix-strip 済みの元 exec argv（prefix 値は含ま
+  ない）、substitute mode では宣言 substitute ペア（issue
+  #167 — record schema は不変、既存 details echo が substitute
+  ペアを auto-capture する）。
+  `executed.argv` は平文の引数値を含む。
   `originalTokens`
   は capture された原 output の token 数、`returnedTokens` は親へ
   返却した result の token 数、`reductionRatio` はその縮約率、
