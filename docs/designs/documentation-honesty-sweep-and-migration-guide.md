@@ -26,6 +26,8 @@ relations:
       - type: "file"
         path: "docs/guides/workers.md"
       - type: "file"
+        path: "docs/guides/usage.md"
+      - type: "file"
         path: "docs/adr/command-grant-trust-boundary-and-managed-process-reuse.md"
       - type: "file"
         path: "docs/adr/worker-definition-runtime-policy-runtime-invariants-capability.md"
@@ -40,6 +42,12 @@ relations:
       - type: "file"
         path: "docs/adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md"
       - type: "file"
+        path: "docs/adr/managed-process-named-task-lifecycle.md"
+      - type: "file"
+        path: "docs/adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
+      - type: "file"
+        path: "docs/adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
+      - type: "file"
         path: "docs/specs/policy-gated-command-tool.md"
       - type: "file"
         path: "docs/specs/invocation-scoped-command-grants.md"
@@ -50,6 +58,8 @@ relations:
       - type: "file"
         path: "docs/specs/workflow-resource-inference.md"
       - type: "file"
+        path: "docs/specs/cheaper-v1-worker-runtime-cli.md"
+      - type: "file"
         path: "docs/designs/policy-gated-command-tool.md"
       - type: "file"
         path: "docs/designs/workflow-resource-inference.md"
@@ -58,7 +68,29 @@ relations:
       - type: "file"
         path: "docs/designs/pretooluse-route-resolver-and-delegated-workflow-execution.md"
       - type: "file"
+        path: "docs/designs/managed-process-canonical-tool.md"
+      - type: "file"
+        path: "docs/designs/invocation-scoped-command-grants.md"
+      - type: "file"
+        path: "docs/designs/workspace-filesystem-boundary-sandboxed-tools.md"
+      - type: "file"
+        path: "docs/designs/overview.md"
+      - type: "file"
+        path: "docs/test-specs/policy-gated-command-tool.md"
+      - type: "file"
+        path: "docs/test-specs/invocation-scoped-command-grants.md"
+      - type: "file"
+        path: "docs/test-specs/managed-process-task-authorization.md"
+      - type: "file"
+        path: "docs/test-specs/route-resolution.md"
+      - type: "file"
+        path: "docs/test-specs/substitute-exec-route-mode.md"
+      - type: "file"
+        path: "docs/test-specs/route-grant-set-projection.md"
+      - type: "file"
         path: "packages/apm/.apm/skills/cheaper-usage/SKILL.md"
+      - type: "file"
+        path: "packages/apm/.apm/skills/cheaper-tool-operate/SKILL.md"
     deleted: []
     renamed: []
     moved: []
@@ -120,9 +152,27 @@ relations:
     - "../guides/parent-agent-integration.md"
     - "../README.md"
     - "../tasks/file-issue-docs-honesty-and-migration-guide.md"
+    - "../specs/cheaper-v1-worker-runtime-cli.md"
+    - "../adr/managed-process-named-task-lifecycle.md"
+    - "../adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md"
+    - "../adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md"
+    - "./managed-process-canonical-tool.md"
+    - "./invocation-scoped-command-grants.md"
+    - "./workspace-filesystem-boundary-sandboxed-tools.md"
+    - "./overview.md"
+    - "../test-specs/policy-gated-command-tool.md"
+    - "../test-specs/invocation-scoped-command-grants.md"
+    - "../test-specs/managed-process-task-authorization.md"
+    - "../test-specs/route-resolution.md"
+    - "../test-specs/substitute-exec-route-mode.md"
+    - "../test-specs/route-grant-set-projection.md"
+    - "../impl/ir/trusted-route-flag-issuer-redesign.md"
     - "../../packages/apm/.apm/skills/cheaper-usage/SKILL.md"
+    - "../../packages/apm/.apm/skills/cheaper-tool-operate/SKILL.md"
     - "../../crates/cheaper-tools/src/tools/proc/executable.rs"
     - "../../crates/cheaper-tools/src/tools/proc/spawn.rs"
+    - "../../crates/cheaper-tools/src/tools/exec/mod.rs"
+    - "../../crates/cheaper-core/src/policy/schema.rs"
   defers: []
   deferred-by: []
 ---
@@ -148,16 +198,19 @@ per-doc の編集契約へ分解する。
   と配置位置を一本化する。`docs/adr/cli-owned-devin-hook-registration-
   lifecycle-with-apm-integration.md:166` の `> Amend(…)` blockquote が
   「決定時点の記録を保持したまま後訂正を示す」既存先例。
-- **per-doc 訂正表** — 16 refine 対象 + guide stale 4 箇所の各々に
-  つき、実測 anchor・旧記述・新記述（または注記内容）・訂正方式
-  （in-place vs 注記追記）を固定する。全 anchor は本 branch
+- **per-doc 訂正表** — 16 refine 対象 + guide stale 4 箇所 +
+  off-list 追加分（§(d-2) — opportunistic doc 9 件・test-spec
+  6 件）の各々につき、実測 anchor・旧記述・新記述（または注記
+  内容）・訂正方式（in-place vs 注記追記 vs in-place
+  annotation）を固定する。全 anchor は本 branch
   `feature/issue-169-docs-honesty-sweep` で実測済み。
 - **migration guide の構成契約** — `docs/guides/migration.md` の
   節構成・各 issue 節の必須項目を固定する（front matter 無しの
   guide 規約 — `release.md`・`distribution.md` と同形）。
 - **front-matter backlink 規約** — commit 9d76d40 の確定規約
-  （cross-chain の意味 link は `related`）を 16 doc へ適用する
-  編集契約として明文化する。
+  （cross-chain の意味 link は `related`）を 16 対象 + off-list
+  追加の front-matter 付き doc へ適用する編集契約として明文化
+  する（§(b) の path 規約を含む）。
 
 ## Scope
 
@@ -167,6 +220,11 @@ per-doc の編集契約へ分解する。
   の設計（ADR D3・commit 9d76d40 先例の適用）。
 - 16 refine 対象 doc（ADR 7 件・spec/design 9 件）の per-doc 訂正表
   — 実測 anchor・旧記述・訂正方向・注記内容。
+- off-list 追加分の訂正（§(d-2)）— spec Out of Scope :161-167 の
+  opportunistic 機構で発見済みの同型 stale 9 件（ADR 3・spec 1・
+  design 4・skill 1）と、#168 IR が本 sweep へ明示 defer した
+  test-spec stale `trusted` window 3 file + deny 系同型 test-spec
+  3 file（test-spec は charter 内 — §(d-2) 参照）。
 - `docs/guides/` の stale 4 箇所（`command.md:44`・`:133`・
   `managed-process.md:23`・`:27`）の in-place 訂正文 shape と、
   canonical disclaimer の配置設計（`command.md` trust/sandbox 限界
@@ -180,8 +238,9 @@ per-doc の編集契約へ分解する。
 
 ### Out of Scope
 
-- **doc 編集作業そのもの** — 本 doc は設計成果物であり、16 doc ・
-  migration guide の編集は後続 plan/task が担う。
+- **doc 編集作業そのもの** — 本 doc は設計成果物であり、全対象
+  doc（16 対象 + §(d-2) 追加分）・migration guide の編集は後続
+  plan/task が担う。
 - **コード変更** — sweep で code 側の不整合（doc の記述が意図
   どおり正しく、実装がそれを満たさないケース）が見つかった場合は
   別 issue 化する。本 design の調査では発見しなかった — 実測
@@ -190,8 +249,8 @@ per-doc の編集契約へ分解する。
 - **16 対象一覧外の doc 全般の総書換え** — impl/ir・plans・tasks・
   handoff・過去 discovery の history 記録は対象外。一覧外で発見
   した mandatory 内容審査前提の記述は軽微な注記で補ってよいが、
-  一覧対象の完遂を優先する（spec Out of Scope 準拠 — 候補は
-  §(f) の opportunistic 項目のみ）。
+  一覧対象の完遂を優先する（spec Out of Scope 準拠 — 発見済み
+  候補は §(d-2) で opportunistic 追加として正式化済み）。
 - **Option E exec-less route・OS-sandbox backed mode** — 親 chain
   の open/deferred 事項のまま。
 - **release/version bump** — migration guide は「現在の main に
@@ -264,36 +323,44 @@ governing: [ADR-034L6ihibvbjmSnKmSffWH](<相対 link>)（canonical 文言・
 
 | doc 種別 | 訂正構え | 注記位置 |
 |----------|----------|----------|
-| ADR（決定記録） | 本文は保持し注記追記のみ（履歴非改竄） | ファイル末尾に `## Refine 注記` 節を 1 つ追記（既存の最終節 — `More Information`・`Verification`・`更新履歴`・`Confirmation` 等 doc ごとに異なる — の後に置き、既存節の内部構造を乱さない） |
-| design | ADR と同じ（注記追記が基本） | 同上 — `## Verification Notes` の後 = ファイル最終節 |
+| ADR（決定記録） | 本文は保持し注記追記のみ（履歴非改竄） | **汎用規則 = ファイル末尾・既存の最終節の直後**に `## Refine 注記` 節を 1 つ追記（既存の最終節 — `More Information`・`Verification`・`更新履歴`・`Confirmation` 等 doc ごとに異なる — の後に置き、既存節の内部構造を乱さない） |
+| design | ADR と同じ（注記追記が基本） | 同じ汎用規則 — 最終節名は doc ごとに異なる（多くは `## Verification Notes` だが、D-2 `workflow-resource-inference.md` のように `## Coordinator review amendments` で終わる doc はその節の**後**に置く — 「最終節の後」が規則であり特定節名の後ではない） |
 | spec（living contract） | 要件本文を **in-place** で現在の真実へ訂正。訂正行には `（issue #16X — …）` の inline 注釈を付す（route spec R1/R12/R15/R34 の #166–#168 先例）。残存差分が大きい doc は末尾へ同形の `## Refine 注記` 節を併置してよい | 要件本文中（in-place）＋ 任意の末尾節 |
+| test-spec（行為保証の記録） | Rule/Example/Guarantee 本文は保持し、**in-place annotation note** で補正（履歴非改竄 — bookkeeping sweep としての最小介入） | 該当 bullet / Example 行の直下へ `> （issue #169 注記 — <現行の真実>）` の blockquote を挿入。同一 falsified 機構を共有する連続 bullet は cluster 末尾へ 1 本に集約可（§(d-2) 参照 — file-end 節は設けない） |
 | guide・skill | 現在の真実へ **in-place** 訂正 | 該当箇所の直接書換（refine 注記節は設けない — 利用者向け単一の真実） |
 
-**front-matter backlink 規約（spec R6・ADR D3）**: 16 対象 doc
-すべてに対し、cross-chain の意味 link は `relations.related` へ
+**front-matter backlink 規約（spec R6・ADR D3）**: 16 対象 doc +
+off-list 追加分のうち front matter を持つ全 doc（ADR・design・
+spec・test-spec — guide・skill は front matter 無しのため対象外）
+に対し、cross-chain の意味 link は `relations.related` へ
 追加する（commit 9d76d40 の確定規約 — `refines`/`refined-by` は
 chain 内 lineage relation であり cross-chain edge は
-route_graph pollution を再発させる）。追加する link:
+route_graph pollution を再発させる）。追加する link（対象 doc の
+配置 dir から見た相対パスで書く）:
 
-- `../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md`
-- `../adr/documentation-honesty-sweep-and-migration-guide.md`
-- `../guides/migration.md`
-- `./documentation-honesty-sweep-and-migration-guide.md`（本 design —
-  designs/ 配下の対象 doc のみ相対パスが `./`）
+- spec: `../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md`
+- ADR: `../adr/documentation-honesty-sweep-and-migration-guide.md`
+- migration guide: `../guides/migration.md`
+- 本 design:
+  - `docs/designs/` 配下の対象 → `./documentation-honesty-sweep-and-migration-guide.md`
+  - `docs/adr/`・`docs/specs/`・`docs/test-specs/` 配下の対象 → `../designs/documentation-honesty-sweep-and-migration-guide.md`
 
-spec/ADR/既存 doc の相対パスは対象 doc の配置 dir に従う
-（`docs/adr/`・`docs/specs/`・`docs/designs/` はいずれも `docs/` 直下
-のため、adr↔spec↔design は `../<dir>/`、同 dir は `./`）。
-`refines`/`refined-by`/`supersedes`/`superseded-by` は新規に一切
-張らない。superseded status の変更も行わない。
+`docs/adr/`・`docs/specs/`・`docs/designs/`・`docs/test-specs/` は
+いずれも `docs/` 直下のため、異 dir 間は `../<dir>/<file>`、同 dir
+は `./<file>` が規則。`refines`/`refined-by`/`supersedes`/
+`superseded-by` は新規に一切張らない。superseded status の変更も
+行わない。
 
 ### (c) ADR 7 件 — per-doc 訂正表（全件「注記追記」方式）
 
 いずれも本文は決定時点の記録として保持し、§(b) 規約の末尾
 `## Refine 注記` 節 + `related` backlink を追加する。anchor は
-実測 file:line。
+実測 file:line。見出しの `ADR1`〜`ADR7` は本 doc 内の行ラベル
+（`G-`/`S-`/`D-`/`TS-` と同じ便宜名 — artifact id ではなく、
+`ADR-<数字>` 形は check-doc-ids の legacy-id 検出に抵触するため
+hyphen を付さない）。実 artifact id は各見出し括弧内。
 
-#### ADR-1 `docs/adr/command-grant-trust-boundary-and-managed-process-reuse.md`（ADR-034EMgaatFhsXjR97kH14c）
+#### ADR1 `docs/adr/command-grant-trust-boundary-and-managed-process-reuse.md`（ADR-034EMgaatFhsXjR97kH14c）
 
 | anchor | stale 記述 |
 |--------|-----------|
@@ -311,7 +378,7 @@ ext・workspace-resident・bare `node`・call-time/task argv metachar）
 既定 `[]`）へ降格。trusted-layer-only の grant 境界（Option A）は
 **維持**され本 ADR の核心的決定として依然 authoritative。
 
-#### ADR-2 `docs/adr/worker-definition-runtime-policy-runtime-invariants-capability.md`（ADR-034r05iHlWosDpJ3DpG3XW）
+#### ADR2 `docs/adr/worker-definition-runtime-policy-runtime-invariants-capability.md`（ADR-034r05iHlWosDpJ3DpG3XW）
 
 | anchor | stale 記述 |
 |--------|-----------|
@@ -323,7 +390,7 @@ surface + 実行契約**（file tool の workspace boundary・denyPaths・
 OS sandbox 無しでは強制不能（canonical disclaimer 項目 1・2）。
 3 層 capability モデル（Worker / Policy / Invariants）自体は維持。
 
-#### ADR-3 `docs/adr/workspace-filesystem-boundary-cheaper-sandboxed-tool.md`（ADR-034r05iHlWosDpO699OwYF）
+#### ADR3 `docs/adr/workspace-filesystem-boundary-cheaper-sandboxed-tool.md`（ADR-034r05iHlWosDpO699OwYF）
 
 | anchor | stale 記述 |
 |--------|-----------|
@@ -336,7 +403,7 @@ read/find/grep）の workspace boundary 強制を指し、spawn した子
 としては disclaimer 項目 1・2 が governing）。決定自体（boundary
 強制を cheaper 側 tool 実装に置く）は有効。
 
-#### ADR-4 `docs/adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md`（ADR-034J8eZHNPqARi25HLFOL6）
+#### ADR4 `docs/adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md`（ADR-034J8eZHNPqARi25HLFOL6）
 
 | anchor | stale 記述 |
 |--------|-----------|
@@ -354,7 +421,7 @@ read/find/grep）の workspace boundary 強制を指し、spawn した子
 で拒否（値不問）。D2（routing ≠ authorization）・層解決順は維持。
 :709-710 の cross-chain `refines` 禁止規約は本 sweep でも継続適用。
 
-#### ADR-5 `docs/adr/per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md`（ADR-034KrYGRHZuvOIx1d0S0nE）
+#### ADR5 `docs/adr/per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md`（ADR-034KrYGRHZuvOIx1d0S0nE）
 
 | anchor | stale 記述 |
 |--------|-----------|
@@ -365,11 +432,12 @@ approvalBypass trusted gating）は #163–#168 と整合を保つ。
 #163 の内容審査除去・#168 の `trusted` flag 再設計で周辺表現が
 変わったが、approval bypass は trusted 層 opt-in のまま変更なし。
 
-#### ADR-6 `docs/adr/defer-non-exec-routing-to-permission-model-redesign.md`（ADR-034KtTzOJGqmzmBW3SwGp5）
+#### ADR6 `docs/adr/defer-non-exec-routing-to-permission-model-redesign.md`（ADR-034KtTzOJGqmzmBW3SwGp5）
 
 | anchor | stale 記述 |
 |--------|-----------|
 | :175-209 | Deferred design sketch — grant-set 投影・viability 弱化・substitute retarget・exit mirror・record split の「#151 で採用する場合」の検討入力（採否未確定の体裁） |
+| :225-229 | 「command deny-list（`command_denied_executable_re`、`command.rs:160-189` の find/sed/awk/tar/docker/python*/node/ssh 等）は grant executable 自体を恒久拒否するため、これら heavy-output command は grant を持てず routing mode に関わらず `no-grant` で unroutable のまま」— builtin mandatory deny-list 前提の恒久 unroutable 主張 |
 
 注記内容: 採否は親 design §非 exec routing handoff で確定済み —
 grant-set 投影 **採用**（#166・`project_grant` → route 宣言
@@ -379,9 +447,17 @@ set 内非 exec grant は存在 + pin のみ）・usage record
 `{command, executed}` split **採用**（#166）・substitute-exec mode
 **採用**（#167・exit mirror は「実行した command」の exit）・
 workflow-declared grants **不採用**・Option E exec-less は引き続き
-**open**。
+**open**。:225-229 の「deny-list が python/ssh/tar 等の grant を
+恒久拒否し routing mode 不問で `no-grant` unroutable のまま」も
+#163/#164 で falsify 済み — builtin deny-list は除去され deny は
+opt-in `security.execDenyPatterns`（既定 `[]`）宣言時のみ効くため、
+既定ではこれらの executable も grant が宣言・pin 可能なら
+route-eligible である（`no-grant` は deny 該当ではなく grant
+非宣言・非 eligible・pin 不能・argv 不一致の viability 結果）。
+`command_denied_executable_re`・`command.rs:160-189` への参照
+自体も #163/#164 で機構除去済みの stale コード参照。
 
-#### ADR-7 `docs/adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md`（ADR-034zGZpjoQlppwkkOs5gur）
+#### ADR7 `docs/adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md`（ADR-034zGZpjoQlppwkkOs5gur）
 
 | anchor | stale 記述 |
 |--------|-----------|
@@ -412,6 +488,8 @@ spec は living contract として要件本文を **in-place** 訂正し、
 | :78 | 「実行には native-magic check（MZ / ELF / Mach-O）と shell / shim 拒否を通過しなければならない。さらに shell / shim / interpreter 起動による迂回を既定で禁止し、python / perl / ruby / node 等の interpreter executable は拒否対象」 | pin（load 時 1 回 + spawn 前再検証）は維持。native-magic/shell-shim/interpreter/bare-node deny 要件を除去し「executable の内容・名は審査しない — opt-in `security.execDenyPatterns` 宣言時のみ deterministic executable deny-list が適用される」へ（issue #163/#164） |
 | :79-:80 | 「shell metachar を含む token は match 前に reject」「shell metachar 拒否は … match 前の独立したチェック」 | 「call-time の内容審査は行わない — metachar を含む token も pattern 適合なら executable の literal argv として渡る（spawn は shell を介さない）。token 長 ≤4096・args 個数 ≤256 は input schema の `INVALID_INPUT`」（issue #163） |
 | :94 | AC4「forbidden executable / argv（interpreter executable を含む）、shell injection（metachar を含む token）、cwd escape が実行前に reject」 | AC を現行契約へ: 「argv pattern 不一致・cwd escape・project grant authoring が拒否される。opt-in `security.execDenyPatterns` 宣言時のみ deny 該当 executable が拒否される（issue #163/#164 — 旧 mandatory 拒否 AC は opt-in 前提へ降格）」 |
+| :82 | 「writeScope を宣言した worker に対して `command` を fail-closed で reject するかは Deferred Design Concern とする」— 未決定の体裁 | 決定・強制済みへ訂正: writeScope 宣言 worker が `command`（`!fixed` grant surface）を expose すると scope 生成が `POLICY_VIOLATION`（"command is incompatible with worker writeScope" — `registry.rs:1167`）で fail closed（workers.md:54-67 と整合 — issue #169）。`process` task（`fixed` grant）側の `outputs ⊆ writeScope` coverage tri-state も workers.md:61-67 の規約を写す |
+| :104 | Deferred Design Concerns 内の同趣 — 「writeScope を宣言した worker に対して `command` を fail-closed で reject するかは design phase で確定する」 | 同上 — deferred から「確定済み」へ移す（design phase で fail-closed が採用・実装済み — `registry.rs:1167`、guide 反映済み workers.md:54-67。issue #169 注記を付す） |
 
 末尾 `## Refine 注記` 併置可（差分が大きいため推奨）。trusted
 boundary・pin・argv pattern・cwd/env 境界・lifecycle 要件は維持
@@ -422,7 +500,7 @@ boundary・pin・argv pattern・cwd/env 境界・lifecycle 要件は維持
 | anchor | stale 記述 | 訂正方向 |
 |--------|-----------|----------|
 | :60 | 「deny list・argv pattern・executable pinning・env/cwd 規則」を `resolve_command_policy` 系統から継承 | 「deny list」を「`security.execDenyPatterns`（opt-in・既定 `[]`）宣言時の条件付き検査」へ条件化 |
-| :64/:64 周辺・:70 | 「schema・deny list・argv pattern の誤り」前提 | 同上の条件化（deny 検査は profile 宣言時のみ） |
+| :64・:70 | :64「`command` tool は default deny で、grant は trusted layer（builtin + user-scope policy）でのみ authoring できる」— 本 spec 自身が :144 で確定した合成 invocation layer（第 3 の trusted 供給元）を Why Now 節で未反映・自相矛盾。:70「手書き YAML は validation 無しで schema・deny list・argv pattern の誤りを実行時まで検出できない」前提 | :64 → trusted 供給元を「builtin + user-scope + 合成 invocation layer（`--grant`）」の 3 源へ訂正（issue #105・ADR-034FlTS3BaiV3WKz8bX1Xv — issue #169 注記付き）。:70 → deny 検査を「`execDenyPatterns` 宣言時のみ」へ条件化 |
 | :85 | 「同一の runtime 挙動（deny list・argv pattern・executable pinning…）」 | 「（argv pattern・executable pinning・`security.execDenyPatterns` 宣言時の deny 検査…）」へ |
 | :93 | 「静的検査（schema + deny list + argv compile + env/cwd 規則）」 | 「schema + argv compile + env/cwd 規則（+ `execDenyPatterns` 宣言時の deny 照合）」 |
 | :105 | 「deny list・argv match・managed-process lifecycle の意味論は不変」 | deny の意味論を opt-in 条件へ（機構は実在・既定では非活性） |
@@ -431,9 +509,17 @@ boundary・pin・argv pattern・cwd/env 境界・lifecycle 要件は維持
 | :138 | 「deny list 該当 executable や invalid argv pattern」 | 条件付記（宣言時のみ） |
 | :150 | AC3「deny list 該当 executable を含む `--grant` spec は run 開始前に reject」 | AC 書換: 「`security.execDenyPatterns` 宣言時、deny 該当 executable を含む `--grant` spec は reject（issue #164 — deny は opt-in profile 前提）」 |
 | :153 | AC6「invalid spec（deny list 該当…）」 | 同上の条件付記 |
+| :115 | 「注入された grant はその run の `RuntimePolicy.command` の effective grant 集合に畳み込まれ」 | `RuntimePolicy.exec` へ rename（issue #165 — unified exec grant namespace、`schema.rs:134` の `pub exec: ResolvedExecPolicy`。policy file 側の `command.grants` 記述 shape は有効のまま — rename は resolved struct field のみで、本 file の `command.grants`・`command` section・`command:` layer key への言及は訂正不要） |
+| :173 | 「`kind: tool` job は `command: None` で parity check を skip するが `inner.command`（invocation grant 込みの resolved policy）が再注入」 | `exec: None`（`workflow_run.rs:500-503`）・`inner.exec`（`invocation.rs:277-286` — post-#165 rename）へ。`command` section key・`command.grants` shape は file-level では有効のまま |
 
 機構自体は実在するため「deny は opt-in profile 宣言時の条件付き
-検査」への書換であり、deny の存在抹消ではない点に注意。
+検査」への書換であり、deny の存在抹消ではない点に注意。同様に
+`RuntimePolicy.command` → `.exec` は resolved struct の rename
+であって、policy file の `command` section・`command.grants`
+shape・invocation layer の `{"version":1,"command":{"grants":…}}`
+形状は #165 以降も有効（loader が unified `exec` へ写像）—
+file-level 表現の言及は訂正しない（表現 drift 回避の境界:
+resolved struct 名のみ更新）。
 
 #### S-3 `docs/specs/pretooluse-route-resolver-and-workflow-delegation.md`（SPEC-034J7SxWvGL3oSbeBpo8a3）— 確認 + 残差分の軽微訂正
 
@@ -521,6 +607,164 @@ metachar の事前 check は #163 で除去（deny は opt-in
 `Route.trusted` 削除・merge 無条件化・trust は宣言層 provenance —
 project 層 `trusted` presence は `InvalidRuntimePolicy` 拒否。
 
+### (d-2) off-list 同型 residual — opportunistic 追加 + test-spec（charter 内）
+
+spec Out of Scope（spec :161-167）の既定機構 —「16 対象一覧外の
+doc で mandatory 内容審査を前提に見える箇所は、発見した場合に
+軽微な注記で補うが一覧対象の完遂を優先する」— に基づく追加分と、
+#168 IR（`docs/impl/ir/trusted-route-flag-issuer-redesign.md` の
+residual follow-up 節 — 「既存 test-spec 内の stale `trusted`
+記述の bookkeeping sweep … #169 正直性 sweep で回収」）が本
+sweep へ明示 defer した test-spec 群。いずれも discovery §実測
+inventory の 16 対象一覧外だが同一 honesty class（mandatory 内容
+審査・builtin deny・`trusted` self-declared shadowing・canonical
+tool を越える boundary 主張・resolved rename/deferred 残余）の
+ため回収する。訂正方式は doc 種別に従う（§(b)）— ADR/design は
+file-end `## Refine 注記` 追記、spec は要件本文の in-place 訂正
+＋ inline 注釈、skill は in-place 書換、test-spec は後述の
+in-place annotation note。front matter を持つ対象（ADR/design/
+spec/test-spec）は全て `related` backlink 4 件を追加する —
+相対 path は §(b) の規約に従い、ADR/spec/test-spec から本 design
+へは `../designs/documentation-honesty-sweep-and-migration-guide.md`
+の形。
+
+#### test-spec は charter 内 — placement convention
+
+- **charter 根拠**: #168 IR が `route-resolution.md`・
+  `substitute-exec-route-mode.md`・`route-grant-set-projection.md`
+  の stale `trusted` window を「test-spec chain 側管理・#169
+  正直性 sweep で回収」と明示 defer したため、test-spec は spec
+  R5 の 16 対象一覧に載らなくても本 sweep の charter 内。deny
+  list 系 test-spec（TS-1〜TS-3）は一覧外だが同一 honesty class
+  の行為保証 contract として opportunistic 機構で併せて回収する。
+- **placement convention（本 design の判断）**: test-spec は
+  「issue 時点の行為保証を pin した記録」であり Rule/Example の
+  flat bullet 構造を持つ。file-end `## Refine 注記` 節は anchor
+  から stale bullet への読み替えを強いるため採らず、**該当
+  bullet / Example 行の直下へ `> （issue #169 注記 — <現行の
+  真実>）` の blockquote を in-place に挿入する**。連続する複数
+  bullet が同一 falsified 機構を共有する場合は cluster 末尾へ
+  1 本に集約してよい（substitute-exec-route-mode の merge
+  suppressed 群のように同一 window が散在する file で実用化）。
+  Rule/Example の本文は保持し注記で補正する（履歴非改竄 —
+  bookkeeping sweep としての最小介入）。front matter を持つため
+  `related` backlink 4 件も追加する。
+
+#### TS-1 `docs/test-specs/policy-gated-command-tool.md`
+
+| anchor | stale 記述 |
+|--------|-----------|
+| :52 | 「空 grants・pin 不能・deny 該当・workspace-resident executable は `POLICY_VIOLATION` で fail-closed」— builtin deny・workspace-resident 拒否前提 |
+| :53 | 「interpreter/shell/exec-wrapper/loader deny set は declared basename・pin 時 resolved basename・spawn 前再検証の 3 適用点で評価される」— builtin deny set の無条件適用 |
+| :62 | 「grant `node` は bare name でも interpreter deny で `POLICY_VIOLATION`。pin 済み path が deny basename に差し替わると spawn 前再検証で拒否」— interpreter/bare-node deny 前提 |
+| :68 | 「grants が空・pin 失敗・deny 該当のとき…registration gate が閉じる」guarantee — deny 該当の無条件前提 |
+
+注記内容: #163 で builtin deny set（interpreter/shell/exec-
+wrapper/loader・native magic・workspace-resident・metachar）が
+mandatory 層から除去され、#164 で deny は opt-in
+`security.execDenyPatterns`（既定 `[]`）宣言時のみ deterministic
+executable deny-list として再導入。:52/:68 の fail-closed gate は
+空 grants・pin 不能では維持、deny 該当は `execDenyPatterns`
+宣言時のみ。:53 の 3 適用点構造（policy resolve・pin・spawn 前
+再検証）は opt-in deny の適用点として存続。:62 の `node` 例は
+既定では PATH 解決され受理される。
+
+#### TS-2 `docs/test-specs/invocation-scoped-command-grants.md`
+
+| anchor | stale 記述 |
+|--------|-----------|
+| :47 | Purpose —「`command` tool の実行時認可意味論（deny list・argv pattern・executable pin・env/cwd 規則・managed-process lifecycle）は一切緩めない」— deny list 無条件列挙 |
+| :51 | Feature —「shared validation 由来の失敗（deny 該当・argv compile・schema 違反）」— deny 該当の無条件前提 |
+| :59 | Rule —「`resolve_command_policy` が走り deny list・`ArgPattern::compile`・env/cwd 規則を継承」+「typed re-resolve 後の `RuntimePolicy.command` に畳まれる」— deny 無条件 + `RuntimePolicy.command` は #165 で `RuntimePolicy.exec` へ rename |
+| :74 | Rule —「deny list の 3 適用点は既存 test が無変更 green で担保」— builtin deny 除去で対応 test 群は #163/#164 で更新済み（deny 検査は `execDenyPatterns` 宣言時のみ） |
+| :82 | Example —「`--grant '{"executable":"python",…}'`（interpreter deny 該当）は `INVALID_RUNTIME_POLICY` で fail」— `python` は既定では deny 該当でない（`execDenyPatterns` 宣言時のみ reject） |
+| :95 | Guarantees —「`RuntimePolicy.command` の effective grant 集合」「deny list・argv pattern・executable pin…完全に同一」— rename + deny 無条件の両方 |
+
+注記内容: deny 検査は全 anchor で「`security.execDenyPatterns`
+宣言時のみ（既定 `[]` では非活性 — issue #164）」へ条件化。
+`RuntimePolicy.command` は `RuntimePolicy.exec` へ rename（#165・
+`schema.rs:134`）— file-level `command.grants` shape は有効の
+まま。invocation layer の layer ordering・collision・attribution
+規約は維持。
+
+#### TS-3 `docs/test-specs/managed-process-task-authorization.md`
+
+| anchor | stale 記述 |
+|--------|-----------|
+| :50 | Rule —「raw command/shell、未知 task、不正 cwd/env/config を拒否する」— task argv 要素の shell/metachar 内容審査前提 |
+
+注記内容: input-level の raw command 拒否（呼出し input は
+`task` 名のみで任意 command/argv を model が供給する経路非存在）
+は維持。一方 task 宣言 `command` 配列の内容審査（argv 要素の
+shell 名・metachar・script ext 拒否）は #163 で除去 — 宣言要素は
+executable の literal argv として内容無審査で渡る。
+
+#### TS-4 `docs/test-specs/route-resolution.md`
+
+| anchor | stale 記述 |
+|--------|-----------|
+| :52-56 | Rule —「passthroughEnv・trusted を検証し」「project 層 `trusted: true` のみ下位層同名 route を shadow する(suppressed provenance を記録)」— self-declared `trusted` shadowing 前提 |
+| :73-74 | Example —「user(untrusted)と project(trusted)に同名 route がある場合 project 側が採用され user 側は suppressed」— project `trusted: true` が下位層を shadow する旧 merge |
+
+注記内容: #168 で `Route.trusted` field は削除・merge は無条件化
+— project 層 route は下位層を **shadow せず**、同名衝突は常に
+project 側が負けて `suppressed` provenance へ記録される
+（builtin/user 層間 shadow は同一 trusted 層の宣言 override と
+して従来どおり有効）。project 層 `trusted` key presence は
+load 時に `InvalidRuntimePolicy` で拒否（`{label}.trusted:
+not declarable in the project layer` — 値不問・strict 経路は
+error・hook 経路は fail-open で route arm 不活性）。builtin/user
+層の `trusted:` 宣言は受理されるが inert。
+
+#### TS-5 `docs/test-specs/substitute-exec-route-mode.md`
+
+| anchor | stale 記述 |
+|--------|-----------|
+| :124-126 | Feature —「merge は project `trusted:true` route が下位層 route を置き換えた際 displaced route を `suppressed` provenance へ記録する」 |
+| :174-175 | Rule —「`trusted: true` 宣言は判別に使わない(project 自己申告の shadowing gate)」— project 層 `trusted` は判別以前に presence 自体が拒否される |
+| :337-361 | Rule —「merge suppressed provenance — project `trusted:true` 置換の displaced 記録」+ 旧 semantics pin 2 test（`user_shadows_builtin_and_project_needs_trusted`・`suppressed_project_provenance_reaches_route_record`）の assert 反転記述 — #168 で merge arm 自体が除去・test も `project_layer_trusted_is_rejected`・`project_trusted_violation_disables_route_arm_fail_open` 系へ置換済み |
+| :374-378 | Rule —「project `trusted:true` route が builtin/user substitute route を同一 `match.command` で shadow するとき…」— 到達不能な分岐 |
+| :406-407 | Rule —「例外は displaced-trusted provenance の 2 assert 更新のみ」— #168 で当該 test は merge 無条件化へ再 pin 済み |
+| :473-478 | Example —「project `trusted:true` route `[git,push]` が builtin substitute route を shadow → effective set は project route」— 現行では load 時拒否または衝突敗北 |
+| :513-516 | Guarantee —「project `trusted:true` による trusted substitute route の silent displacement が `suppressed` provenance で追跡可能」 |
+| :542-543 | Non-goal —「記録対象は project 層置換のみ」— #168 で `suppressed` は「衝突で負けた project route」のみを運ぶ semantics へ狭義化 |
+| :566-571 | Risk —「merge の `suppressed` 記録を untrusted project 敗北だけに残すと project `trusted:true` が trusted substitute を silent に置き換えて追跡不能」— 旧 semantics 前提の risk |
+
+注記内容（cluster 化 — 同一 falsified 機構のため merge 節・
+Guarantees・Risk 各 cluster 末尾へ 1 本ずつでよい）: #168 で
+`Route.trusted` field は削除され、project 層 routes.yaml の
+`trusted` key presence は値不問で `InvalidRuntimePolicy`（strict
+経路は load error・hook 経路は fail-open で route arm 不活性）。
+merge は無条件化 — project 層 route は下位層を shadow せず同名
+衝突は常に project 側が負けて `suppressed` provenance へ記録
+（`SuppressedRoute` semantics は「衝突で負けた project route」へ
+狭義化）。builtin/user 層の `trusted:` key は受理されるが inert。
+
+#### TS-6 `docs/test-specs/route-grant-set-projection.md`
+
+| anchor | stale 記述 |
+|--------|-----------|
+| :150-155 | Rule —「project 層の `route.grant` 単数宣言は従来どおり有効…`trusted: true` 宣言は判別に使わない(project 自己申告の shadowing gate — 判別子は宣言層 provenance)」— provenance 判別の言及自体は #168 と整合するが、project 層 `trusted` key は「判別に使わない」のではなく presence 自体が `InvalidRuntimePolicy` で拒否される点が未反映 |
+
+注記内容: TS-4/TS-5 と同じ #168 の真実 — project 層 `trusted`
+key presence は load 時拒否・`Route.trusted` field 削除・merge
+無条件化。`grants` presence 拒否・宣言層制約の他の記述は維持。
+
+#### off-list opportunistic（spec Out of Scope 既定機構 — 一覧対象の完遂優先）
+
+| doc | anchor | stale 記述 | 訂正方式 |
+|-----|--------|-----------|----------|
+| `docs/adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md` | :95 | 「executable 検証（native magic / shell / shim 拒否、`minimal_env`）は従来通り」— mandatory 内容審査前提 | ADR → file-end `## Refine 注記` + `related` backlink（既存 opportunistic 項目を正式化） |
+| `docs/adr/managed-process-named-task-lifecycle.md` | :59 | 「native executable を shell:false で spawn。`node` は process.execPath…Windows .cmd/.bat/.ps1 shim は拒否し…argv は shell/メタ構文を core config validation で拒否」— 内容審査・shim deny・execPath fast-path 前提 | ADR → file-end 注記 + backlink。#163 で内容審査除去（argv metachar/shell は literal argv、shim は win32 viability 制約、bare `node` は PATH 解決）・`execPath` fast-path 不実装 |
+| `docs/adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md` | :62, :83, :89, :92 | 「`resolve_command_policy` 系統（schema 検査・deny list・`ArgPattern::compile`・env/cwd 規則）」「deny list・argv compile・env/cwd 規則の full validation」「grant spec の validation（deny / ArgPattern / cwd / env）」「shared validation … deny list 該当」— deny 無条件列挙 + `RuntimePolicy.command`/`policy.command` 表記（#165 rename 残余） | ADR → file-end 注記 + backlink。deny は `security.execDenyPatterns` 宣言時のみ・`RuntimePolicy.command`→`.exec` rename（file-level `command.grants` shape は有効のまま） |
+| `docs/specs/cheaper-v1-worker-runtime-cli.md` | :71, :75, :105, :115 | :71「`cwd` = workspace root = filesystem security boundary」・:75 Runtime Invariants「workspace 内 access のみ、symlink escape 禁止、shell なし」・:105 AC「workspace 外への filesystem access が常に拒否される」・:115 Security AC「workspace escape…全て拒否される」— exec 子プロセスまで及ぶ falsified normative AC | spec → in-place 訂正 + inline 注釈（+ 末尾 `## Refine 注記` 併置可）: 各 claim を canonical file tool surface（write/edit/ls/read/find/grep の workspace boundary・denyPaths・writeScope）へ限定し、`command`/`process` の spawn 子プロセスの fs 副作用は OS sandbox 無しでは強制されない旨を明記（canonical disclaimer 項目 1・2 — issue #169） |
+| `docs/designs/managed-process-canonical-tool.md` | :57, :85, :88 | :57「各引数に NUL/newline、shell 演算子（pipe・ampersand・semicolon・redirection・backtick・`$()`）を許可しない。argv0 の sh/bash/cmd/powershell 等 shell と Windows script shim は拒否」・:85「Windows shim 非対応」risk・:88「argv のメタ文字拒否により正規の引数内に pipe/semicolon 等を含める task も拒否」— task argv 内容審査前提 | design → file-end 注記 + backlink。#163 で task argv の内容審査除去 — 宣言 `command` 配列要素は literal argv として無審査で渡る（metachar・shell 名を含んでも拒否されない）。win32 `.cmd`/`.bat`/`.ps1` 非対応は CreateProcess viability 制約として残るが deny 機構ではない |
+| `docs/designs/invocation-scoped-command-grants.md` | :74, :99, :173, :229, :327, :341 | :74「deny list・argv pattern・executable pin・env/cwd 規則・managed-process lifecycle の意味論は不変」・:99「deny list（`command.rs:346-355`）」・:173「deny list 該当」・:229「schema・deny list・argv compile・env/cwd 規則は `resolve_command_policy` 経由」・:327「deny list / argv compile が再検査するため fail-closed」・:341「deny list 該当 executable の `--grant` が load 時に reject」— deny 無条件列挙 + stale コード参照（`command.rs`・`resolve_command_policy`・`inner.command`/`command: None` 表記の #165 rename 残余を含む） | design → file-end 注記 + backlink。deny は `execDenyPatterns` 宣言時のみ・code 参照は `policy/exec.rs`/`security.rs`・`RuntimePolicy.exec`/`inner.exec`/`exec: None` 系へ rename |
+| `docs/designs/workspace-filesystem-boundary-sandboxed-tools.md` | :44-56, :85-91 | title/In Scope の「sandboxed tools」命名・:85「shell tool が存在せず全書き込みが write/edit operations を通るため…全域 snapshot は不要」・:91「外部プロセス不実行: sandboxed tool 層は rg/fd 等の外部バイナリ…に依存しない」— canonical file tool を越える containment 印象・exec surface 不在前提 | design → file-end 注記 + backlink。「sandboxed tool」は canonical file tool の workspace boundary 強制のみを指す。#101 以降の `process`・`command` exec surface は外部プロセスを spawn し、その fs 副作用は journal/write/edit operations を通らない（全域 snapshot 不要論は file tool に限定 — canonical disclaimer 項目 1・2）。file tool 層の外部バイナリ非依存（rg/fd 回避）は維持 |
+| `docs/designs/overview.md` | :54-67, :79-88 | 「sandboxed tools」命名（:55/:67）・`packages/{core,runtime-pi,cli}` の TS-era 構成名・:82「workspace 外アクセス不許可 — operations.ts + resolveWorkspacePath」の invariant 行・:75「runtime-pi が…sandboxed tools と budget を wrap」— exec 子プロセスまで及ぶ印象 | design → file-end 注記 + backlink。(a) 「sandboxed tools」・「workspace 外アクセス不許可」invariant は canonical file tool surface に限定 — `command`/`process` 子プロセスの fs 副作用は OS sandbox 無しでは強制・完全観測されない（#163-168、disclaimer 項目 1・2）。(b) `packages/*`→`crates/*` の Rust 移行 drift は rust-rig-runtime-migration chain で記録済みの別系統 — 本 sweep では最小の言及に留める |
+| `packages/apm/.apm/skills/cheaper-tool-operate/SKILL.md` | :82-85 | 「Deny-list and argv-pattern checks are re-applied on the re-run, so a malformed or denied spec fails closed」— deny-list 無条件前提 | skill → in-place 書換: 「argv-pattern checks — and the opt-in deny-list when `security.execDenyPatterns` is declared — are re-applied」形へ条件付記（front matter 無し — backlink 不要） |
+| `docs/guides/usage.md` | :207 | 「書き込み前に policy load と同一の検査（schema・deny list・argv pattern の compile・env/cwd 規則・grant/task 名衝突）」— deny list 無条件列挙 | guide → in-place: 「deny list」へ `(opt-in — security.execDenyPatterns 宣言時のみ)` の軽微な条件付記（G-9 の optional 項目 — 採用・backlink 不要） |
+
 ### (e) guides — in-place 訂正（stale 4 箇所 + disclaimer 配置 + 均質化）
 
 guide・skill は利用者向け単一の真実なので in-place 訂正（refine
@@ -529,18 +773,29 @@ backlink 編集も不要。
 
 #### G-1 `docs/guides/command.md:44`
 
-旧: 「…bare name は scope 構築時点の ambient PATH で解決し、
-realpath 済み canonical path を pin する。**native magic（MZ /
-ELF / Mach-O）を持つ executable のみ実行可能で、shell・script
-shim（`.cmd`/`.bat`/`.ps1`/`.sh`）は `process` baseline の deny
-で拒否される。**」
+旧: 「executable は bare name または absolute path（**workspace
+相対 path は拒否**）。bare name は scope 構築時点の ambient
+PATH で解決し、realpath 済み canonical path を pin する。
+**native magic（MZ / ELF / Mach-O）を持つ executable のみ実行
+可能で、shell・script shim（`.cmd`/`.bat`/`.ps1`/`.sh`）は
+`process` baseline の deny で拒否される。**」
 
-新（shape）: 先頭 2 文は維持。末文を「executable の内容・名は
-審査しない — spawn viability（realpath・is_file・win32
-`.exe`/`.com`・POSIX `X_OK`）のみを判定するため、shebang
-script・任意 interpreter・shim 名の file も解決される。拒否する
-唯一の executable 審査は opt-in `security.execDenyPatterns`」へ。
-同 file :100 の migration 注記（旧 regex seed）との自相矛盾を解消。
+新（shape）: 文頭の受理形列挙を現行真実へ訂正する — 「workspace
+相対 path は拒否」の clause は #163 以降 **誤り** であり除去/
+書き換える。`resolve_process_executable` は `/`・`\` を含む
+workspace 相対 executable を `resolve_workspace_path` で
+workspace boundary 内へ解決して pin し（`proc/executable.rs:
+108-124` — test `pin_resolves_workspace_relative_executable_path`
+`exec/mod.rs:588-608` で pin 済み。denylist 該当・
+symlink escape・boundary escape のみ拒否側）、bare name は ambient
+PATH 検索、absolute path は直接 viability 判定する 3 形態受理と
+書く。PATH 解決（ambient PATH・realpath 済み canonical path の
+pin）の記述は維持。末文を「executable の内容・名は審査しない —
+spawn viability（realpath・is_file・win32 `.exe`/`.com`・POSIX
+`X_OK`）のみを判定するため、shebang script・任意 interpreter・
+shim 名の file も解決される。拒否する唯一の executable 審査は
+opt-in `security.execDenyPatterns`」へ。同 file :100 の migration
+注記（旧 regex seed）との自相矛盾を解消。
 
 #### G-2 `docs/guides/command.md:133`
 
@@ -639,10 +894,12 @@ argv pattern compile, env/cwd rules)」形。distribution 面の guide
 `managed-process.md:47` 前半・`:49`、`configuration.md`（:198-304
 unified namespace・approvalBypass・execDenyPatterns）、
 `parent-agent-integration.md`（:235-258・:296-311・:386-406）、
-`usage.md`（:301-310 record split・:343-349・:207 — deny list 検査は
-opt-in 機構として実在するため本文維持。必要なら「(opt-in)」の
-軽微な条件付記のみ可）、`packages/apm/.apm/skills/
-cheaper-tool-operate/SKILL.md`（child side effects not audited 明記）。
+`usage.md`（:301-310 record split・:343-349 — deny list 検査は
+opt-in 機構として実在するため本文維持。:207 の optional「(opt-in)」
+条件付記は採用し §(d-2) off-list 行へ移した — 本節の対象外）、
+`packages/apm/.apm/skills/
+cheaper-tool-operate/SKILL.md`（child side effects not audited 明記 —
+deny-list 無条件列挙の :82-85 は §(d-2) off-list 行で条件付記）。
 
 ### (f) migration guide — `docs/guides/migration.md` 構成契約
 
@@ -685,7 +942,7 @@ version 番号への紐付けは release 時の責務。現在の main に適用
 
 | issue | 変更内容 | 利用者影響 | 修復/移行手順 |
 |-------|----------|------------|----------------|
-| #163 | 内容審査 7 項目除去（A8 shell/shim・B6 script ext・B3 native magic・B4 workspace-resident・B5 bare `node`・A10 call-time metachar・F3 task argv） | 従来拒否されていた宣言 exec（python/ssh/tar/.sh/workspace-resident binary/bare `node`/metachar argv）が受理される — 既定では何も拒否しない挙動変化 | 拒否近似が必要なら #164 の `security.execDenyPatterns` を user `policy.yaml` へ宣言（seed は次節） |
+| #163 | 内容審査 7 項目除去（A8 shell/shim・B6 script ext・B3 native magic・B4 workspace-resident・B5 bare `node`・A10 `argv_shell_re` metachar（call-time + task 宣言 argv の両適用点を含む）・F3 process task の native/shim 検査 — 親 design :137-144） | 従来拒否されていた宣言 exec（python/ssh/tar/.sh/workspace-resident binary/bare `node`/metachar argv）が受理される — 既定では何も拒否しない挙動変化 | 拒否近似が必要なら #164 の `security.execDenyPatterns` を user `policy.yaml` へ宣言（seed は次節） |
 | #164 | builtin executable deny list 削除 → opt-in `security.execDenyPatterns`（deterministic executable deny-list・既定 `[]`） | 旧 mandatory deny は無指定では効かない | seed 例を提示: `command.md` :78 の旧 regex verbatim・:84-98 の分類別 seed・旧 shell 名 predicate（`sh|bash|…`）は別機構除去のため別途 pattern 追加が必要な旨の注記（`command.md`:100） |
 | #165 | `command.grants`/`process.tasks` → 単一 `exec` grant namespace。`process` 節・`tool:"process"` は loader 写像 + alias で存続（即死しない）。名衝突（`command.grants` ∩ `process.tasks`）は `InvalidRuntimePolicy` + `details.{grant,task}` fail closed。`--grant`/`policy grant add` CLI spec の `fixed:true`・明示 `scope` は `InvalidRequest` 拒否。project task = `scope:"project"`（route 不可視） | authoring の section 分離は維持・grant 名空間は共有 | 名衝突時は一方を rename。`fixed`/`scope` を含む CLI spec は除去（必要なら trusted YAML で直接 authoring） |
 | #166 | route `grants:[name,…]`（trusted 層限定の set 投影）・`kind:"route"` record の `{command, executed}` split | `executed.argv` は平文で記録される注意。project 層 `grants` key presence は `InvalidRuntimePolicy` で route load 全滅（record schema は additive — 旧 reader は `executed` を無視して集計可） | project routes.yaml の `grants` key 除去（新 key のため既存 file への影響は宣言時のみ）。`executed` を含む record を扱う集計系は additive field として読み替え |
@@ -714,29 +971,46 @@ version 番号への紐付けは release 時の責務。現在の main に適用
 | `docs/guides/command.md` | G-1(:44)・G-2(:133) in-place + G-5 disclaimer 配置 |
 | `docs/guides/managed-process.md` | G-3(:23)・G-4(:27) in-place + G-6 disclaimer 配置 |
 | `docs/guides/workers.md` | G-7(:138-139) 但書 |
+| `docs/guides/usage.md` | (d-2) off-list — :207 の「deny list」へ `(opt-in — security.execDenyPatterns 宣言時のみ)` 条件付記（G-9 の optional 項目を採用） |
 | `packages/apm/.apm/skills/cheaper-usage/SKILL.md` | G-8(:353) 条件付記 |
-| `docs/adr/command-grant-trust-boundary-and-managed-process-reuse.md` | ADR-1 末尾注記 + `related` backlink |
-| `docs/adr/worker-definition-runtime-policy-runtime-invariants-capability.md` | ADR-2 同上 |
-| `docs/adr/workspace-filesystem-boundary-cheaper-sandboxed-tool.md` | ADR-3 同上 |
-| `docs/adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md` | ADR-4 同上 |
-| `docs/adr/per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md` | ADR-5 同上 |
-| `docs/adr/defer-non-exec-routing-to-permission-model-redesign.md` | ADR-6 同上 |
-| `docs/adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md` | ADR-7 同上 |
-| `docs/specs/policy-gated-command-tool.md` | S-1 in-place + 末尾注記 + backlink |
-| `docs/specs/invocation-scoped-command-grants.md` | S-2 in-place + backlink |
+| `packages/apm/.apm/skills/cheaper-tool-operate/SKILL.md` | (d-2) off-list — :82-85 deny-list 条件付記 in-place |
+| `docs/adr/command-grant-trust-boundary-and-managed-process-reuse.md` | ADR1 末尾注記 + `related` backlink |
+| `docs/adr/worker-definition-runtime-policy-runtime-invariants-capability.md` | ADR2 同上 |
+| `docs/adr/workspace-filesystem-boundary-cheaper-sandboxed-tool.md` | ADR3 同上 |
+| `docs/adr/pretooluse-auto-routing-via-route-resolver-and-workflow-delegation.md` | ADR4 同上 |
+| `docs/adr/per-target-hook-rewrite-enablement-with-policy-gated-approval-bypass.md` | ADR5 同上 |
+| `docs/adr/defer-non-exec-routing-to-permission-model-redesign.md` | ADR6 同上（:175-209 + :225-229 anchor） |
+| `docs/adr/fix-tool-runtime-and-workflow-package-topology-and-shared-contracts-upfront.md` | ADR7 同上 |
+| `docs/adr/managed-process-named-task-lifecycle.md` | (d-2) off-list — :59 末尾注記 + backlink |
+| `docs/adr/invocation-scoped-command-grants-as-a-synthetic-trusted-policy-layer.md` | (d-2) off-list — :62/:83/:89/:92 末尾注記 + backlink |
+| `docs/adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md` | (d-2) off-list — :95 末尾注記 + backlink（既存 opportunistic 項目の正式化） |
+| `docs/specs/policy-gated-command-tool.md` | S-1 in-place + 末尾注記 + backlink（:60/:78/:79-:80/:94 + :82/:104 residual） |
+| `docs/specs/invocation-scoped-command-grants.md` | S-2 in-place + backlink（deny 条件化 + :115/:173 の `RuntimePolicy.exec` rename residual） |
 | `docs/specs/pretooluse-route-resolver-and-workflow-delegation.md` | S-3 backlink（残差分見つかれば軽微訂正） |
 | `docs/specs/managed-process-canonical-tool.md` | S-4 in-place + backlink |
 | `docs/specs/workflow-resource-inference.md` | S-5 in-place + backlink |
+| `docs/specs/cheaper-v1-worker-runtime-cli.md` | (d-2) off-list — :71/:75/:105/:115 in-place + backlink（boundary 主張を canonical file tool surface へ限定） |
 | `docs/designs/policy-gated-command-tool.md` | D-1 末尾注記 + backlink |
-| `docs/designs/workflow-resource-inference.md` | D-2 同上 |
+| `docs/designs/workflow-resource-inference.md` | D-2 同上（最終節は `## Coordinator review amendments` — その後に注記） |
 | `docs/designs/rust-rig-runtime-migration-architecture.md` | D-3 同上 |
 | `docs/designs/pretooluse-route-resolver-and-delegated-workflow-execution.md` | D-4 同上 |
+| `docs/designs/managed-process-canonical-tool.md` | (d-2) off-list — :57/:85/:88 末尾注記 + backlink |
+| `docs/designs/invocation-scoped-command-grants.md` | (d-2) off-list — :74/:99/:173/:229/:327/:341 末尾注記 + backlink |
+| `docs/designs/workspace-filesystem-boundary-sandboxed-tools.md` | (d-2) off-list — :44-56/:85-91 末尾注記 + backlink |
+| `docs/designs/overview.md` | (d-2) off-list — :54-67/:79-88 末尾注記 + backlink |
+| `docs/test-specs/policy-gated-command-tool.md` | TS-1 — :52/:53/:62/:68 in-place annotation note + backlink |
+| `docs/test-specs/invocation-scoped-command-grants.md` | TS-2 — :47/:51/:59/:74/:82/:95 同上 |
+| `docs/test-specs/managed-process-task-authorization.md` | TS-3 — :50 同上 |
+| `docs/test-specs/route-resolution.md` | TS-4 — :52-56/:73-74 同上（#168 IR deferral — charter 内） |
+| `docs/test-specs/substitute-exec-route-mode.md` | TS-5 — :124-126/:174-175/:337-361/:374-378/:406-407/:473-478/:513-516/:542-543/:566-571 同上（cluster 化 — charter 内） |
+| `docs/test-specs/route-grant-set-projection.md` | TS-6 — :150-155 同上（charter 内） |
 
-**opportunistic（一覧外・発見済み — 軽微注記は許容、完遂優先）**:
-`docs/adr/opt-in-soft-gating-of-policy-gated-tools-for-the-tool-operator-worker.md:95`
-（「executable 検証（native magic / shell / shim 拒否、
-`minimal_env`）は従来通り」— 軽微な注記で補ってよい。一覧対象の
-完遂を優先する spec Out of Scope 規約に従う）。
+**opportunistic → 正式化**: 従来 opportunistic 扱いだった
+`opt-in-soft-gating` ADR :95 を含む off-list 追加分は §(d-2) で
+per-doc anchor・訂正方向・配置まで固定済み（spec Out of Scope
+:161-167 の既定機構に基づく正式な訂正対象 — 一覧対象の完遂優先
+規約は維持）。以後に発見される一覧外残留は spec Deferred と同じく
+継続 sweep 対象。
 
 **status 整合確認（編集無し・確認のみ）**: `docs/specs/README.md`
 （SPEC-034L6i3XmfCaWRHAiw8TTT = proposed）・`docs/adr/README.md`
@@ -746,13 +1020,17 @@ resolved）は既に front-matter status と整合 — 実測済み。
 
 ## Data and Control Flow
 
-- 訂正の制御順序: (1) guides in-place（G-1〜G-8 — 利用者向け単一の
-  真実を先に正す）→ (2) spec in-place（S-1〜S-5）→ (3) ADR/design
-  注記追記（ADR-1〜7・D-1〜4）→ (4) migration.md 新設 →
+- 訂正の制御順序: (1) guides in-place（G-1〜G-8 + (d-2) の
+  usage.md/skill 条件付記 — 利用者向け単一の真実を先に正す）→
+  (2) spec in-place（S-1〜S-5 + (d-2) の cheaper-v1 spec）→
+  (3) ADR/design 注記追記（ADR1〜7・D-1〜4 + (d-2) off-list の
+  ADR/design）→ (3.5) test-spec in-place annotation（TS-1〜TS-6 —
+  §(d-2) の配置規約）→ (4) migration.md 新設 →
   (5) `docs/README.md` + `docs/designs/README.md` index →
   (6) `node scripts/check-doc-ids.mjs` + grep 検証。順序は依存を
   持たない便宜上のものであり、commit 分割は「guides 訂正」・
-  「refine 注記 sweep」・「migration guide + index」の 3 塊が自然
+  「refine 注記 sweep（off-list・test-spec 含む）」・
+  「migration guide + index」の 3 塊が自然
   （Conventional Commits — `docs(guides):`/`docs(adr,spec,design):`/
   `docs(guides):` 系）。
 - 訂正の参照方向: 全ての注記・訂正は ADR-034L6ihibvbjmSnKmSffWH
@@ -774,8 +1052,9 @@ resolved）は既に front-matter status と整合 — 実測済み。
 - **claim ≤ 実強制** — 訂正後の文言が実装強制範囲を超えない
   こと。実装接点（`proc/executable.rs:6-8` の「内容は審査しない」
   明記・`security.rs` の stem match・`routes.rs` 層 gate）と照合済み。
-- **履歴非改竄** — ADR/design の本文は保持し注記で補正。
-  supersede・superseded status 変更なし。
+- **履歴非改竄** — ADR/design/test-spec の本文・Rule/Example は
+  保持し注記（file-end 節または in-place annotation — §(b)）で
+  補正。supersede・superseded status 変更なし。
 - **graph lineage 保護** — 新規 `refines`/`refined-by`/
   `supersedes`/`superseded-by` edge ゼロ。cross-chain link は
   `related` のみ（9d76d40・ADR-034J8eZHNPqARi25HLFOL6:709-710）。
@@ -788,18 +1067,20 @@ resolved）は既に front-matter status と整合 — 実測済み。
 
 ## Risks and Trade-offs
 
-- **注記品質のばらつき** — 16 doc へ注記を書く作業者の判断幅が
-  残る（ADR Consequences も同認識）。対策: §(c)/(d) の per-doc
-  表で anchor・訂正方向・注記要点まで固定し、注記節の canonical
-  形を §(b) で定義。
+- **注記品質のばらつき** — 16 + off-list/test-spec 追加分の doc
+  へ注記を書く作業者の判断幅が残る（ADR Consequences も同認識）。
+  対策: §(c)/(d)/(d-2) の per-doc 表で anchor・訂正方向・注記
+  要点まで固定し、注記節の canonical 形・test-spec の in-place
+  annotation 規約を §(b) で定義。
 - **in-place 訂正の過剰書換** — spec 要件本文を現行真実へ書き
   換える際、維持すべき要件（trusted boundary・pin・argv pattern・
   lifecycle）まで消すリスク。対策: per-doc 表で「維持する項目」を
   明示（S-1 の trusted boundary 等）。
-- **一覧外 stale の残存** — `opt-in-soft-gating` ADR :95 のような
-  一覧外残留は本 slice で全捕捉できない。対策: 発見済みの 1 件は
-  opportunistic 注記を許容、以後は継続 sweep 対象として spec の
-  Deferred Design Concerns 通り管理。
+- **一覧外 stale の残存** — §(d-2) で発見済み 9 件 + test-spec
+  6 件を正式化したが、本 slice でも一覧外残留を全捕捉はできない。
+  対策: 以後の発見分は継続 sweep 対象として spec の Deferred
+  Design Concerns 通り管理（新規発見の処理経路は §(d-2) と同じ
+  per-doc anchor 表への追記）。
 - **code 側不整合の発見** — 編集中に「doc が正しく実装が誤り」
   を見つける可能性。本 sweep は doc を正しても code を正さない
   ため、flag → follow-up issue 化の機構を §Data and Control Flow
@@ -812,8 +1093,9 @@ resolved）は既に front-matter status と整合 — 実測済み。
 ## Deferred Design Concerns
 
 - 16 対象一覧外の stale 表現の補正 | 一覧外 doc で mandatory 内容
-  審査前提の記述が残り得る（発見済み: `opt-in-soft-gating` ADR
-  :95） | 発見次第の軽微注記 or 継続 sweep 対象 | 範囲を広げると
+  審査前提の記述が残り得る（発見済み分は §(d-2) で正式化済み —
+  `opt-in-soft-gating` ADR :95・off-list 8 件・test-spec 6 件） |
+  以後の発見次第の軽微注記 or 継続 sweep 対象 | 範囲を広げると
   本 slice が完遂しない — spec Deferred と同一
 - OS-sandbox backed mode | 真の containment 需要が発生した場合 |
   「提供しない」を正直に文書化しておくことで誤期待を防ぐ | 親
@@ -835,7 +1117,8 @@ spec ACs への対応（grep で検証可能な形）:
       所定節に canonical 項目 1-2 の文言）
 - [ ] **issue AC2 / spec AC2** — 訂正後の grep 検証:
       `docs/guides/command.md` に「native magic（MZ」・
-      「shell metachar 拒否」が**残っていない**、
+      「shell metachar 拒否」・「workspace 相対 path は拒否」
+      が**残っていない**（G-1 — absence-grep）、
       `docs/guides/managed-process.md` に「native PE/ELF/Mach-O」・
       「shell 演算子、script shim を拒否」が残っていない、16
       対象 doc それぞれに `## Refine 注記` 節または in-place
@@ -846,12 +1129,51 @@ spec ACs への対応（grep で検証可能な形）:
       「ENOEXEC」・「`/bin/sh`」・「OS/libc 既定動作」・
       「保証対象外」の区別記述がある（`grep -n "ENOEXEC"`
       で両 guide hit）
-- [ ] **issue AC4 / spec AC4** — 16 対象 doc すべてに refine
-      反映（注記節または in-place 訂正）があり、それぞれの
-      front-matter `related` に本 chain doc への backlink 追加。
-      かつ新規 `refines:`/`refined-by:`/`supersedes:`/
-      `superseded-by:` が 16 doc 差分内に存在しない
-      （`git diff` + grep で確認）
+- [ ] **issue AC4 / spec AC4** — 16 対象 doc + off-list 追加の
+      front-matter 付き doc（ADR/design/spec/test-spec — §(d-2)
+      一覧）すべてに refine 反映（注記節・in-place 訂正・または
+      test-spec の in-place annotation blockquote）があり、
+      それぞれの front-matter `related` に本 chain doc への
+      backlink 追加（ADR/spec/test-spec から本 design へは
+      `../designs/documentation-honesty-sweep-and-migration-guide.md`
+      形 — §(b) path 規約）。かつ新規 `refines:`/`refined-by:`/
+      `supersedes:`/`superseded-by:` が全対象 doc の差分内に
+      存在しない（`git diff` + grep で確認）
+- [ ] **§(d-2) 追加 scope の grep 検証** —
+      (a) 6 test-spec file すべてに `issue #169` 注記 blockquote
+      または節がある（`grep -l "issue #169"
+      docs/test-specs/{policy-gated-command-tool,invocation-scoped-command-grants,managed-process-task-authorization,route-resolution,substitute-exec-route-mode,route-grant-set-projection}.md`
+      が 6 件を返す）。
+      (b) `docs/adr/defer-non-exec-routing-to-permission-model-redesign.md`
+      の末尾注記が :225-229 の deny-list 恒久 unroutable 主張を
+      訂正している（`grep -n "no-grant\|unroutable" <file>` で
+      注記節内に hit）。
+      (c) `docs/specs/policy-gated-command-tool.md` の :82・:104
+      が writeScope+command fail-closed を「決定済み」として記述
+      し Deferred 体裁を脱している（`grep -n "Deferred" <file>`
+      で当該行に残存しない）。
+      (d) `docs/specs/invocation-scoped-command-grants.md` の
+      :115・:173 が `RuntimePolicy.exec`・`inner.exec`/`exec: None`
+      へ rename 済み（`grep -n "RuntimePolicy.command\|
+      inner.command" <file>` が残存しない — file-level
+      `command.grants` shape の言及は残ってよい）。
+      (e) `docs/designs/overview.md`・`docs/designs/workspace-
+      filesystem-boundary-sandboxed-tools.md`・
+      `docs/specs/cheaper-v1-worker-runtime-cli.md` の boundary/
+      「sandboxed」主張が注記または in-place 訂正で canonical
+      file tool surface へ限定されている（`grep -n "Refine 注記\|
+      issue #169"` で各 file に hit）。
+      (f) `packages/apm/.apm/skills/cheaper-tool-operate/SKILL.md`
+      :82-85 および `docs/guides/usage.md` :207 の deny-list 言及が
+      opt-in 条件付き（`grep -n "execDenyPatterns" <file>` で
+      当該箇所に条件付記）。
+      (g) `docs/adr/managed-process-named-task-lifecycle.md`・
+      `docs/adr/invocation-scoped-command-grants-as-a-synthetic-
+      trusted-policy-layer.md`・`docs/adr/opt-in-soft-gating-of-
+      policy-gated-tools-for-the-tool-operator-worker.md`・
+      `docs/designs/managed-process-canonical-tool.md`・
+      `docs/designs/invocation-scoped-command-grants.md` に
+      `## Refine 注記` 節がある。
 - [ ] **issue AC5 / spec AC5** — `docs/guides/migration.md` が
       存在し、`#163`〜`#168` の 6 節すべてと各節の
       「変更内容/利用者影響/修復」小節を持つ。`docs/README.md`
