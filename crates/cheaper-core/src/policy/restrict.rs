@@ -121,24 +121,25 @@ mod tests {
                     max_read_bytes: 1,
                 },
             },
-            process: crate::policy::process::ResolvedProcessPolicy {
-                max_concurrent: 1,
-                tasks: Map::new(),
-                timeout: "2m".to_string(),
-                max_output_bytes: 65536,
-                kill_grace: "2s".to_string(),
-                heartbeat: crate::policy::process::ProcessHeartbeat {
-                    interval: "30s".to_string(),
-                },
-            },
-            command: crate::policy::command::ResolvedCommandPolicy {
-                max_concurrent: 1,
+            exec: crate::policy::exec::ResolvedExecPolicy {
                 grants: std::collections::BTreeMap::new(),
-                timeout: "2m".to_string(),
-                max_output_bytes: 65536,
-                kill_grace: "2s".to_string(),
-                heartbeat: crate::policy::process::ProcessHeartbeat {
-                    interval: "30s".to_string(),
+                command: crate::policy::exec::ExecDefaults {
+                    max_concurrent: 1,
+                    timeout: "2m".to_string(),
+                    max_output_bytes: 65536,
+                    kill_grace: "2s".to_string(),
+                    heartbeat: crate::policy::exec::ExecHeartbeat {
+                        interval: "30s".to_string(),
+                    },
+                },
+                process: crate::policy::exec::ExecDefaults {
+                    max_concurrent: 1,
+                    timeout: "2m".to_string(),
+                    max_output_bytes: 65536,
+                    kill_grace: "2s".to_string(),
+                    heartbeat: crate::policy::exec::ExecHeartbeat {
+                        interval: "30s".to_string(),
+                    },
                 },
             },
             route: RoutePolicy::default(),

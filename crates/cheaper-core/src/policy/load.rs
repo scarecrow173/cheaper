@@ -203,17 +203,18 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
         "process".to_string(),
         serde_json::to_value(&resolved_process).unwrap_or(Value::Null),
     );
-    // `security` section から compiled deny を 1 回作り、command の
-    // re-resolve へ渡す — **merged effective(invocation grant 含む)
-    // への deny 評価点**(issue #164 適用点 1 が merged map に発火)。
-    // merged-map 評価のため deny 元 layer は帰属不能 —
-    // `details.layer` は付かない(attribution gap は本 file 冒頭の
-    // accepted limitation と同構造)。
-    let exec_deny = resolve_exec_deny_list(effective.get("security"))?;
+    // `security` section の compiled deny — merged effective
+    // (invocation grant 含む)への deny 評価は complete validation +
+    // `normalize_policy` 内の `resolve_exec_policy`(適用点 1)へ
+    // 一本化済み(issue #165)。merged-map 評価のため deny 元 layer は
+    // 帰属不能 — `details.layer` は付かない(attribution gap は本
+    // file 冒頭の accepted limitation と同構造)。compile 自体は
+    // merged security の invalid regex fail-closed として維持する。
+    let _exec_deny = resolve_exec_deny_list(effective.get("security"))?;
     // `command` も同型に re-embed する — user partial が `grants` のみを
     // 宣言した場合に complete schema の section required
     // (`["maxConcurrent", "grants"]`)を resolved default で満たす。
-    let resolved_command = resolve_command_policy(effective.get("command"), &exec_deny)?;
+    let resolved_command = resolve_command_policy(effective.get("command"))?;
     with_defaults.insert(
         "command".to_string(),
         serde_json::to_value(&resolved_command).unwrap_or(Value::Null),
@@ -235,15 +236,28 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
     effective = with_defaults;
 
     let project_path = nodepath_join(opts.project_dir, "policy.yaml");
+    let mut project_task_names = std::collections::BTreeSet::new();
     if let Some(project) = read_policy_yaml(&project_path, false)? {
         tracing::debug!(policy.layer = "project", "policy layer merged");
         // Option A の信頼境界: project partial schema は `command` section
         // 全体を除外し、含む project policy は schema validation で
         // `InvalidRuntimePolicy` に落ちる(grant authoring は trusted
         // layer のみ)。
+        let validated_project =
+            validate_policy_schema(&Value::Object(project), PolicySchemaMode::ProjectPartial)?;
+        // task provenance(issue #165)— project 層宣言 task の名集合を
+        // merge 前に捕捉し、`normalize_policy` へ渡して
+        // `scope:"project"` を畳む。
+        project_task_names = validated_project
+            .get("process")
+            .and_then(Value::as_object)
+            .and_then(|p| p.get("tasks"))
+            .and_then(Value::as_object)
+            .map(|tasks| tasks.keys().cloned().collect())
+            .unwrap_or_default();
         effective = merge_policy_layers(
             &effective,
-            &validate_policy_schema(&Value::Object(project), PolicySchemaMode::ProjectPartial)?,
+            &validated_project,
             MergeMode::RestrictConcurrency,
         )
         .map_err(|e| {
@@ -255,7 +269,7 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
     }
 
     let completed = validate_policy_schema(&Value::Object(effective), PolicySchemaMode::Complete)?;
-    let policy = normalize_policy(&completed)?;
+    let policy = normalize_policy(&completed, &project_task_names)?;
     tracing::debug!("policy resolved");
     Ok(policy)
 }
@@ -299,8 +313,8 @@ retry: {transientAttempts: 2}
         assert_eq!(p.execution.timeout_ms, 300_000);
         assert_eq!(p.execution.concurrency.unwrap().max_operations, 8);
         assert_eq!(p.workflow.max_jobs, 1);
-        assert_eq!(p.process.max_concurrent, 1);
-        assert_eq!(p.process.timeout, "2m");
+        assert_eq!(p.exec.process.max_concurrent, 1);
+        assert_eq!(p.exec.process.timeout, "2m");
     }
 
     #[test]
@@ -329,7 +343,7 @@ retry: {transientAttempts: 2}
         .unwrap();
         assert_eq!(p.execution.timeout_ms, 600_000);
         assert_eq!(p.execution.concurrency.unwrap().max_operations, 4);
-        assert_eq!(p.process.timeout, "2m"); // 10m clamped to default 2m
+        assert_eq!(p.exec.process.timeout, "2m"); // 10m clamped to default 2m
     }
 
     #[test]
@@ -437,9 +451,9 @@ retry: {transientAttempts: 2}
         })
         .unwrap();
         // user grant はそのまま残り、invocation grant が追加される。
-        assert_eq!(p.command.grants["git-log"].executable, "git");
+        assert_eq!(p.exec.grants["git-log"].executable, "git");
         assert_eq!(
-            p.command.grants["cargo-fmt"].argv,
+            p.exec.grants["cargo-fmt"].argv,
             Some(vec!["fmt".to_string()])
         );
     }
@@ -466,7 +480,7 @@ retry: {transientAttempts: 2}
         .unwrap();
         // project partial は `command` section を schema reject するため
         // invocation grant を override 不能 — trusted boundary の不変条件。
-        assert!(p.command.grants.contains_key("git-log"));
+        assert!(p.exec.grants.contains_key("git-log"));
         assert_eq!(p.execution.concurrency.unwrap().max_operations, 2);
     }
 
@@ -549,7 +563,7 @@ retry: {transientAttempts: 2}
         })
         .unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
-        assert!(e.message().contains("invalid command policy"));
+        assert!(e.message().contains("invalid exec policy"));
         assert_eq!(layer_detail(&e), Some(&json!("invocation")));
     }
 
@@ -633,7 +647,7 @@ retry: {transientAttempts: 2}
             invocation: Some(&invocation),
         })
         .unwrap();
-        assert!(p.command.grants.contains_key("git-log"));
+        assert!(p.exec.grants.contains_key("git-log"));
         assert_eq!(p.security.exec_deny_patterns, vec!["python.*"]);
     }
 
@@ -716,5 +730,122 @@ retry: {transientAttempts: 2}
         .unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
         assert!(e.message().contains("invalid execDenyPatterns regex"));
+    }
+
+    const BUILTIN_TASKS: &str = "\
+version: 1
+execution: {timeout: 5m, maxTurns: 20, maxToolCalls: 40}
+tools: {allow: [read, process]}
+filesystem: {symlinks: deny, denyPaths: []}
+model: {maxTier: high, tierFallback: higher}
+output: {maxTokens: 8192, repairAttempts: 1}
+retry: {transientAttempts: 2}
+process:
+  maxConcurrent: 1
+  tasks:
+    build: {command: [cc], inputs: [src/**], outputs: [out]}
+    keep: {command: [lint], inputs: [], outputs: []}
+";
+
+    /// `project_task_names` provenance(issue #165)— project 層宣言
+    /// task は `scope:"project"` の `fixed:true` grant へ写像され、
+    /// trusted 層のみの task は `scope:"trusted"` のまま。
+    /// project 名集合は merge 前に捕捉する(merge 後では導出不能)。
+    #[test]
+    fn project_declared_tasks_get_project_scope() {
+        use crate::policy::exec::ExecGrantScope;
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "builtin.yaml", BUILTIN_TASKS);
+        let project = tmp.path().join("proj");
+        write(
+            &project,
+            "policy.yaml",
+            "version: 1\nprocess:\n  tasks:\n    ptask: {command: [make], inputs: [], outputs: []}\n",
+        );
+        let p = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().join("user").to_str().unwrap(),
+            project_dir: project.to_str().unwrap(),
+            invocation: None,
+        })
+        .unwrap();
+        let ptask = &p.exec.grants["ptask"];
+        assert!(ptask.fixed);
+        assert_eq!(ptask.scope, ExecGrantScope::Project);
+        assert_eq!(ptask.executable, "make");
+        // trusted 層 task は provenance 不変。
+        let build = &p.exec.grants["build"];
+        assert!(build.fixed);
+        assert_eq!(build.scope, ExecGrantScope::Trusted);
+    }
+
+    /// deep-merge shadow — project task 名が trusted task を同名で
+    /// shadow した場合、merged spec は project の field で上書き
+    /// されつつ `scope:"project"` が保存される(A3 不変式を弱めない
+    /// — route 参照不能な scope でのみ上書きが効く pin)。
+    #[test]
+    fn project_task_shadowing_preserves_project_scope() {
+        use crate::policy::exec::ExecGrantScope;
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "builtin.yaml", BUILTIN_TASKS);
+        let project = tmp.path().join("proj");
+        write(
+            &project,
+            "policy.yaml",
+            "version: 1\nprocess:\n  tasks:\n    build: {command: [make, all], inputs: [], outputs: [bin]}\n",
+        );
+        let p = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().join("user").to_str().unwrap(),
+            project_dir: project.to_str().unwrap(),
+            invocation: None,
+        })
+        .unwrap();
+        let build = &p.exec.grants["build"];
+        // merged spec は project 宣言で shadow(command/inputs/outputs
+        // が project 値)。
+        assert_eq!(build.executable, "make");
+        assert_eq!(build.argv, Some(vec!["all".to_string()]));
+        assert_eq!(build.outputs, Some(vec!["bin".to_string()]));
+        // provenance は project 名集合由来で `scope:"project"`。
+        assert_eq!(build.scope, ExecGrantScope::Project);
+        // shadow されない trusted task は不変。
+        assert_eq!(p.exec.grants["keep"].scope, ExecGrantScope::Trusted);
+    }
+
+    /// merged collision — builtin `command.grants` と project
+    /// `process.tasks` の同名交差は merged-map 評価(`normalize_policy`
+    /// 内の `build_exec_input`)で `InvalidRuntimePolicy` へ。
+    /// project layer 単体の validate では `command` が見えないため
+    /// collision を検出できず、merged で発火 — `details.layer` は
+    /// 帰属不能で付かない(accepted attribution gap pin)。
+    #[test]
+    fn merged_collision_fires_without_layer_attribution() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(
+            tmp.path(),
+            "builtin.yaml",
+            &format!(
+                "{BUILTIN}\ncommand:\n  maxConcurrent: 1\n  grants:\n    shared:\n      executable: git\n"
+            ),
+        );
+        let project = tmp.path().join("proj");
+        write(
+            &project,
+            "policy.yaml",
+            "version: 1\nprocess:\n  tasks:\n    shared: {command: [cc], inputs: [], outputs: []}\n",
+        );
+        let e = load_policy(&LoadPolicyOptions {
+            builtin_policy_path: tmp.path().join("builtin.yaml").to_str().unwrap(),
+            user_config_dir: tmp.path().join("user").to_str().unwrap(),
+            project_dir: project.to_str().unwrap(),
+            invocation: None,
+        })
+        .unwrap_err();
+        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        assert!(e.message().contains("collides"));
+        assert_eq!(e.details().unwrap()["grant"], json!("shared"));
+        assert_eq!(e.details().unwrap()["task"], json!("shared"));
+        assert_eq!(layer_detail(&e), None); // merged-map 評価 — layer 帰属不能
     }
 }

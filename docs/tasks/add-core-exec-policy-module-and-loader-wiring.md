@@ -1,7 +1,7 @@
 ---
 id: "TASK-034KQsi5CcOH2MsHWhWWnC"
 type: "task"
-status: "todo"
+status: "done"
 title: "cheaper-core policy/exec module と 3 段 resolver・schema/loader 配線"
 created: "2026-10-23"
 updated: "2026-10-23"

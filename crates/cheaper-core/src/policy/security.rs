@@ -47,7 +47,7 @@ pub fn security_policy_properties() -> Value {
 /// `security` section の normalized 表現(trusted layer のみ authoring
 /// 可能 — `command`/`route` と同型に project partial schema は
 /// section 全体を除外する)。serde-native: pattern の **source string**
-/// を保持し、compiled regex は載せない(`CommandGrant.argv` と同じ規約
+/// を保持し、compiled regex は載せない(`ExecGrant.argv` と同じ規約
 /// — invocation parity check が declared-shape equality を見るため)。
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
 pub struct SecurityPolicy {
@@ -263,7 +263,7 @@ mod tests {
             vec!["python.*".to_string(), "ssh".to_string()]
         );
         // serde-native round-trip — parity check は declared-shape
-        // equality を見る(`CommandGrant.argv` と同じ規約)。
+        // equality を見る(`ExecGrant.argv` と同じ規約)。
         let serialized = serde_json::to_value(&p).unwrap();
         assert_eq!(p, resolve_security_policy(Some(&serialized)).unwrap());
     }

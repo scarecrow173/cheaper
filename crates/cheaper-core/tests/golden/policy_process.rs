@@ -1,8 +1,26 @@
-use cheaper_core::policy::process::{
-    process_task_resources, resolve_process_policy, resolve_process_task,
+use std::collections::BTreeSet;
+
+use cheaper_core::policy::exec::{
+    build_exec_input, exec_grant_resources, resolve_exec_grant, resolve_exec_policy,
 };
+use cheaper_core::policy::security::ExecDenyList;
 
 use crate::common::*;
+
+/// 統一 exec model(issue #165)— fixture の `input`/`policy` field は
+/// `process` authoring section 形のまま維持し、driver が
+/// `build_exec_input` + `resolve_exec_policy` 経路へ変換する。
+/// `resolveProcessTask`/`processTaskResources` は fixed surface の
+/// `resolve_exec_grant`/`exec_grant_resources` へ写像する。
+fn exec_policy_from_process_section(
+    input: Option<&serde_json::Value>,
+) -> Result<cheaper_core::policy::exec::ResolvedExecPolicy, cheaper_core::errors::CheaperError> {
+    let doc = build_exec_input(input, None, &BTreeSet::new())?;
+    resolve_exec_policy(
+        Some(&serde_json::Value::Object(doc)),
+        &ExecDenyList::default(),
+    )
+}
 
 #[test]
 fn process_cases() {
@@ -14,21 +32,23 @@ fn process_cases() {
         }
         let op = case["op"].as_str().unwrap();
         let produced = match op {
-            "resolveProcessPolicy" => match resolve_process_policy(opt_input(case, "input")) {
-                Ok(p) => Ok(serde_json::to_value(&p).unwrap()),
-                Err(e) => Err(cheaper_err(&e, &[])),
-            },
+            "resolveProcessPolicy" => {
+                match exec_policy_from_process_section(opt_input(case, "input")) {
+                    Ok(p) => Ok(serde_json::to_value(&p).unwrap()),
+                    Err(e) => Err(cheaper_err(&e, &[])),
+                }
+            }
             "resolveProcessTask" | "processTaskResources" => {
-                let policy = resolve_process_policy(opt_input(case, "policy"))
+                let policy = exec_policy_from_process_section(opt_input(case, "policy"))
                     .unwrap_or_else(|e| panic!("{name}: fixture policy resolves: {e}"));
                 let task_name = case["input"].as_str().unwrap();
                 if op == "resolveProcessTask" {
-                    match resolve_process_task(&policy, task_name) {
+                    match resolve_exec_grant(&policy, task_name, true) {
                         Ok(t) => Ok(serde_json::to_value(&t).unwrap()),
                         Err(e) => Err(cheaper_err(&e, &[])),
                     }
                 } else {
-                    match process_task_resources(&policy, task_name) {
+                    match exec_grant_resources(&policy, task_name) {
                         Ok(m) => Ok(serde_json::json!({
                             "reads": scopes(m.reads),
                             "writes": scopes(m.writes),

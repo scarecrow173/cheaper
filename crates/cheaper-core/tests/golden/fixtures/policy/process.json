@@ -4,14 +4,25 @@
       "axis": "any",
       "expected": {
         "ok": {
-          "heartbeat": {
-            "interval": "30s"
+          "grants": {},
+          "command": {
+            "maxConcurrent": 1,
+            "timeout": "2m",
+            "maxOutputBytes": 65536,
+            "killGrace": "2s",
+            "heartbeat": {
+              "interval": "30s"
+            }
           },
-          "killGrace": "2s",
-          "maxConcurrent": 1,
-          "maxOutputBytes": 65536,
-          "tasks": {},
-          "timeout": "2m"
+          "process": {
+            "heartbeat": {
+              "interval": "30s"
+            },
+            "killGrace": "2s",
+            "maxConcurrent": 1,
+            "maxOutputBytes": 65536,
+            "timeout": "2m"
+          }
         }
       },
       "input": null,
@@ -22,14 +33,25 @@
       "axis": "any",
       "expected": {
         "ok": {
-          "heartbeat": {
-            "interval": "30s"
+          "grants": {},
+          "command": {
+            "maxConcurrent": 1,
+            "timeout": "2m",
+            "maxOutputBytes": 65536,
+            "killGrace": "2s",
+            "heartbeat": {
+              "interval": "30s"
+            }
           },
-          "killGrace": "2s",
-          "maxConcurrent": 1,
-          "maxOutputBytes": 65536,
-          "tasks": {},
-          "timeout": "2m"
+          "process": {
+            "heartbeat": {
+              "interval": "30s"
+            },
+            "killGrace": "2s",
+            "maxConcurrent": 1,
+            "maxOutputBytes": 65536,
+            "timeout": "2m"
+          }
         }
       },
       "input": {},
@@ -40,39 +62,64 @@
       "axis": "any",
       "expected": {
         "ok": {
-          "heartbeat": {
-            "interval": "10s"
-          },
-          "killGrace": "1s",
-          "maxConcurrent": 3,
-          "maxOutputBytes": 1024,
-          "tasks": {
+          "grants": {
             "a": {
-              "command": [
-                "aa"
-              ],
+              "executable": "aa",
+              "fixed": true,
+              "argv": [],
+              "inputs": [],
+              "outputs": [],
               "cwd": "sub",
               "env": {
                 "K": "v"
               },
-              "inputs": [],
-              "outputs": []
+              "timeout": "90s",
+              "killGrace": "1s",
+              "maxOutputBytes": 1024,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             },
             "b": {
-              "command": [
-                "bb"
-              ],
-              "cwd": ".",
-              "env": {},
+              "executable": "bb",
+              "fixed": true,
+              "argv": [],
               "inputs": [
                 "i"
               ],
               "outputs": [
                 "o"
-              ]
+              ],
+              "cwd": ".",
+              "env": {},
+              "timeout": "90s",
+              "killGrace": "1s",
+              "maxOutputBytes": 1024,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             }
           },
-          "timeout": "90s"
+          "command": {
+            "maxConcurrent": 1,
+            "timeout": "2m",
+            "maxOutputBytes": 65536,
+            "killGrace": "2s",
+            "heartbeat": {
+              "interval": "30s"
+            }
+          },
+          "process": {
+            "heartbeat": {
+              "interval": "10s"
+            },
+            "killGrace": "1s",
+            "maxConcurrent": 3,
+            "maxOutputBytes": 1024,
+            "timeout": "90s"
+          }
         }
       },
       "input": {
@@ -183,26 +230,45 @@
       "axis": "any",
       "expected": {
         "ok": {
-          "heartbeat": {
-            "interval": "30s"
-          },
-          "killGrace": "2s",
-          "maxConcurrent": 1,
-          "maxOutputBytes": 65536,
-          "tasks": {
+          "grants": {
             "t": {
-              "command": [
-                "bash",
+              "executable": "bash",
+              "fixed": true,
+              "argv": [
                 "-c",
                 "x"
               ],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {},
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             }
           },
-          "timeout": "2m"
+          "command": {
+            "maxConcurrent": 1,
+            "timeout": "2m",
+            "maxOutputBytes": 65536,
+            "killGrace": "2s",
+            "heartbeat": {
+              "interval": "30s"
+            }
+          },
+          "process": {
+            "heartbeat": {
+              "interval": "30s"
+            },
+            "killGrace": "2s",
+            "maxConcurrent": 1,
+            "maxOutputBytes": 65536,
+            "timeout": "2m"
+          }
         }
       },
       "input": {
@@ -225,24 +291,42 @@
       "axis": "any",
       "expected": {
         "ok": {
-          "heartbeat": {
-            "interval": "30s"
-          },
-          "killGrace": "2s",
-          "maxConcurrent": 1,
-          "maxOutputBytes": 65536,
-          "tasks": {
+          "grants": {
             "t": {
-              "command": [
-                "run.sh"
-              ],
+              "executable": "run.sh",
+              "fixed": true,
+              "argv": [],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {},
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             }
           },
-          "timeout": "2m"
+          "command": {
+            "maxConcurrent": 1,
+            "timeout": "2m",
+            "maxOutputBytes": 65536,
+            "killGrace": "2s",
+            "heartbeat": {
+              "interval": "30s"
+            }
+          },
+          "process": {
+            "heartbeat": {
+              "interval": "30s"
+            },
+            "killGrace": "2s",
+            "maxConcurrent": 1,
+            "maxOutputBytes": 65536,
+            "timeout": "2m"
+          }
         }
       },
       "input": {
@@ -263,25 +347,44 @@
       "axis": "any",
       "expected": {
         "ok": {
-          "heartbeat": {
-            "interval": "30s"
-          },
-          "killGrace": "2s",
-          "maxConcurrent": 1,
-          "maxOutputBytes": 65536,
-          "tasks": {
+          "grants": {
             "t": {
-              "command": [
-                "echo",
+              "executable": "echo",
+              "fixed": true,
+              "argv": [
                 "a|b"
               ],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {},
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             }
           },
-          "timeout": "2m"
+          "command": {
+            "maxConcurrent": 1,
+            "timeout": "2m",
+            "maxOutputBytes": 65536,
+            "killGrace": "2s",
+            "heartbeat": {
+              "interval": "30s"
+            }
+          },
+          "process": {
+            "heartbeat": {
+              "interval": "30s"
+            },
+            "killGrace": "2s",
+            "maxConcurrent": 1,
+            "maxOutputBytes": 65536,
+            "timeout": "2m"
+          }
         }
       },
       "input": {
@@ -303,25 +406,44 @@
       "axis": "any",
       "expected": {
         "ok": {
-          "heartbeat": {
-            "interval": "30s"
-          },
-          "killGrace": "2s",
-          "maxConcurrent": 1,
-          "maxOutputBytes": 65536,
-          "tasks": {
+          "grants": {
             "t": {
-              "command": [
-                "echo",
+              "executable": "echo",
+              "fixed": true,
+              "argv": [
                 "$(x)"
               ],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {},
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             }
           },
-          "timeout": "2m"
+          "command": {
+            "maxConcurrent": 1,
+            "timeout": "2m",
+            "maxOutputBytes": 65536,
+            "killGrace": "2s",
+            "heartbeat": {
+              "interval": "30s"
+            }
+          },
+          "process": {
+            "heartbeat": {
+              "interval": "30s"
+            },
+            "killGrace": "2s",
+            "maxConcurrent": 1,
+            "maxOutputBytes": 65536,
+            "timeout": "2m"
+          }
         }
       },
       "input": {
@@ -470,28 +592,46 @@
       "axis": "any",
       "expected": {
         "ok": {
-          "heartbeat": {
-            "interval": "30s"
-          },
-          "killGrace": "2s",
-          "maxConcurrent": 1,
-          "maxOutputBytes": 65536,
-          "tasks": {
+          "grants": {
             "t": {
-              "command": [
-                "cc"
-              ],
+              "executable": "cc",
+              "fixed": true,
+              "argv": [],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {
                 "A": "2",
                 "C": "3",
                 "b": "1"
               },
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             }
           },
-          "timeout": "2m"
+          "command": {
+            "maxConcurrent": 1,
+            "timeout": "2m",
+            "maxOutputBytes": 65536,
+            "killGrace": "2s",
+            "heartbeat": {
+              "interval": "30s"
+            }
+          },
+          "process": {
+            "heartbeat": {
+              "interval": "30s"
+            },
+            "killGrace": "2s",
+            "maxConcurrent": 1,
+            "maxOutputBytes": 65536,
+            "timeout": "2m"
+          }
         }
       },
       "input": {
@@ -517,69 +657,122 @@
       "axis": "any",
       "expected": {
         "ok": {
-          "heartbeat": {
-            "interval": "30s"
-          },
-          "killGrace": "2s",
-          "maxConcurrent": 1,
-          "maxOutputBytes": 65536,
-          "tasks": {
+          "grants": {
             "a-2": {
-              "command": [
-                "cc"
-              ],
+              "executable": "cc",
+              "fixed": true,
+              "argv": [],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {},
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             },
             "a0": {
-              "command": [
-                "cc"
-              ],
+              "executable": "cc",
+              "fixed": true,
+              "argv": [],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {},
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             },
             "a_1": {
-              "command": [
-                "cc"
-              ],
+              "executable": "cc",
+              "fixed": true,
+              "argv": [],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {},
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             },
             "b": {
-              "command": [
-                "cc"
-              ],
+              "executable": "cc",
+              "fixed": true,
+              "argv": [],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {},
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             },
             "z_1": {
-              "command": [
-                "cc"
-              ],
+              "executable": "cc",
+              "fixed": true,
+              "argv": [],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {},
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             },
             "za": {
-              "command": [
-                "cc"
-              ],
+              "executable": "cc",
+              "fixed": true,
+              "argv": [],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {},
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             }
           },
-          "timeout": "2m"
+          "command": {
+            "maxConcurrent": 1,
+            "timeout": "2m",
+            "maxOutputBytes": 65536,
+            "killGrace": "2s",
+            "heartbeat": {
+              "interval": "30s"
+            }
+          },
+          "process": {
+            "heartbeat": {
+              "interval": "30s"
+            },
+            "killGrace": "2s",
+            "maxConcurrent": 1,
+            "maxOutputBytes": 65536,
+            "timeout": "2m"
+          }
         }
       },
       "input": {
@@ -635,17 +828,13 @@
       "axis": "any",
       "expected": {
         "ok": {
-          "heartbeat": {
-            "interval": "30s"
-          },
-          "killGrace": "2s",
-          "maxConcurrent": 1,
-          "maxOutputBytes": 65536,
-          "tasks": {
+          "grants": {
             "t": {
-              "command": [
-                "cc"
-              ],
+              "executable": "cc",
+              "fixed": true,
+              "argv": [],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {
                 "Z1": "b",
@@ -653,11 +842,33 @@
                 "Z_2": "c",
                 "_A": "d"
               },
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             }
           },
-          "timeout": "2m"
+          "command": {
+            "maxConcurrent": 1,
+            "timeout": "2m",
+            "maxOutputBytes": 65536,
+            "killGrace": "2s",
+            "heartbeat": {
+              "interval": "30s"
+            }
+          },
+          "process": {
+            "heartbeat": {
+              "interval": "30s"
+            },
+            "killGrace": "2s",
+            "maxConcurrent": 1,
+            "maxOutputBytes": 65536,
+            "timeout": "2m"
+          }
         }
       },
       "input": {
@@ -794,27 +1005,45 @@
       "axis": "posix",
       "expected": {
         "ok": {
-          "heartbeat": {
-            "interval": "30s"
-          },
-          "killGrace": "2s",
-          "maxConcurrent": 1,
-          "maxOutputBytes": 65536,
-          "tasks": {
+          "grants": {
             "t": {
-              "command": [
-                "cc"
-              ],
+              "executable": "cc",
+              "fixed": true,
+              "argv": [],
+              "inputs": [],
+              "outputs": [],
               "cwd": ".",
               "env": {
                 "PATH": "b",
                 "Path": "a"
               },
-              "inputs": [],
-              "outputs": []
+              "timeout": "2m",
+              "killGrace": "2s",
+              "maxOutputBytes": 65536,
+              "exitCodes": [
+                0
+              ],
+              "scope": "trusted"
             }
           },
-          "timeout": "2m"
+          "command": {
+            "maxConcurrent": 1,
+            "timeout": "2m",
+            "maxOutputBytes": 65536,
+            "killGrace": "2s",
+            "heartbeat": {
+              "interval": "30s"
+            }
+          },
+          "process": {
+            "heartbeat": {
+              "interval": "30s"
+            },
+            "killGrace": "2s",
+            "maxConcurrent": 1,
+            "maxOutputBytes": 65536,
+            "timeout": "2m"
+          }
         }
       },
       "input": {
@@ -839,17 +1068,24 @@
       "axis": "any",
       "expected": {
         "ok": {
-          "command": [
-            "make"
-          ],
-          "cwd": ".",
-          "env": {},
+          "executable": "make",
+          "fixed": true,
+          "argv": [],
           "inputs": [
             "src/**"
           ],
           "outputs": [
             "out.txt"
-          ]
+          ],
+          "cwd": ".",
+          "env": {},
+          "timeout": "2m",
+          "killGrace": "2s",
+          "maxOutputBytes": 65536,
+          "exitCodes": [
+            0
+          ],
+          "scope": "trusted"
         }
       },
       "input": "build",

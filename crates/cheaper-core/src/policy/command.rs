@@ -1,16 +1,21 @@
-//! `command` policy section(design `policy-gated-command-tool` §(a)/(b)/(d))。
+//! `command` policy section(design `policy-gated-command-tool` §(a)/(b)/(d)
+//! + 統一 exec grant model: issue #165 の段 1 resolver)。
 //!
-//! trusted layer(builtin + user-scope `policy.yaml`)のみが authoring
-//! できる grant 集合を resolve する。`ResolvedCommandPolicy` は
-//! `ResolvedProcessPolicy` と同じ serialize 規約(`{maxConcurrent, grants,
-//! timeout, maxOutputBytes, killGrace, heartbeat:{interval}}`)で、
-//! resolved grant は effective な `timeout`/`killGrace`/`maxOutputBytes`
-//! (grant override ?? section default)を畳み込む。
+//! trusted layer(builtin + user-scope `policy.yaml` + invocation
+//! `command.grants`)のみが authoring できる grant 集合を resolve する。
+//! `ResolvedCommandSection` は `ResolvedProcessSection` と同じ serialize
+//! 規約(`{maxConcurrent, grants, timeout, maxOutputBytes, killGrace,
+//! heartbeat:{interval}}`)を維持し、grant は `policy::exec::ExecGrant`
+//! (`fixed`/`scope`/`inputs`/`outputs` の既定値畳み込み済み)として
+//! 保持する — synthesis(`build_exec_input`)の入力となる中間段。
 //!
 //! serde-native 維持: resolved grant の `argv` は pattern の **source
 //! string** を保持し、`ArgPattern` は match 時に compile する —
 //! invocation parity check(`to_value` → 再 resolve → `PartialEq`)が
 //! declared-shape の equality を見るため。
+//!
+//! deny 照合(適用点 1)は `resolve_exec_policy` へ一本化 — 本 resolver
+//! は deny 引数を取らない(authoring 境界 validation のみ担う)。
 
 use std::collections::BTreeMap;
 
@@ -20,71 +25,38 @@ use serde_json::{json, Map, Value};
 use crate::duration::DURATION_PATTERN;
 use crate::errors::{CheaperError, ErrorCode};
 use crate::js::MAX_SAFE_INTEGER_U64;
-use crate::policy::process::{
-    bounded_duration, relative, str_vec, ProcessHeartbeat, DEFAULT_HEARTBEAT_INTERVAL,
-    DEFAULT_KILL_GRACE, DEFAULT_MAX_OUTPUT_BYTES, DEFAULT_TIMEOUT, MAX_PROCESS_OUTPUT_BYTES,
+use crate::policy::exec::{
+    bounded_duration, relative, resolve_env, str_vec, ArgPattern, ExecGrant, ExecGrantScope,
+    ExecHeartbeat, DEFAULT_HEARTBEAT_INTERVAL, DEFAULT_KILL_GRACE, DEFAULT_MAX_OUTPUT_BYTES,
+    DEFAULT_TIMEOUT, MAX_PROCESS_OUTPUT_BYTES,
 };
-use crate::policy::security::ExecDenyList;
-use crate::resources::normalization::{ResourceManifestDeclaration, ScopeDeclaration};
-use crate::resources::types::ResourceScope;
 
-/// `CommandGrant`(resolved shape: `cwd`/`env`/lifecycle override は
-/// `resolveCommandPolicy` が必ず populate する)。`argv` は未指定
-/// (args 個数無制約)と空指定を区別するため `Option`。
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CommandGrant {
-    pub executable: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub argv: Option<Vec<String>>,
-    pub cwd: String,
-    pub env: Map<String, Value>,
-    pub timeout: String,
-    pub kill_grace: String,
-    pub max_output_bytes: u64,
-    /// 完了扱いにする exit code 集合(default `[0]`)。route scope
-    /// では scope option の `accept_any_exit_code` がこの集合を
-    /// 上書きする — ここは declared grant の値のみを保持する。
-    pub exit_codes: Vec<i64>,
-}
-
-/// `ResolvedCommandPolicy`(lifecycle defaults applied)。`grants` は
-/// grant name → resolved grant の map。pin 済み canonical path は載せない
+/// `ResolvedCommandSection`(旧 `ResolvedCommandPolicy`)— `command`
+/// section の resolved 中間段。`grants` は grant name → resolved
+/// `ExecGrant` の map。pin 済み canonical path は載せない
 /// (declared-shape equality が parity check の比較対象 — design §(b))。
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ResolvedCommandPolicy {
+pub struct ResolvedCommandSection {
     pub max_concurrent: u64,
-    pub grants: BTreeMap<String, CommandGrant>,
+    pub grants: BTreeMap<String, ExecGrant>,
     pub timeout: String,
     pub max_output_bytes: u64,
     pub kill_grace: String,
-    pub heartbeat: ProcessHeartbeat,
-}
-
-impl ResolvedCommandPolicy {
-    /// route run の単一 grant 投影(design C9)— `grants` を対象
-    /// grant 1 件へ限定し、routed workflow(project 層由来でも
-    /// 可)が他の user grant を `input.name` で呼ぶ confused
-    /// deputy を構造的に防ぐ。Shared/invocation 構築**前**の
-    /// resolved policy に適用するため worker scope の parity
-    /// check は保たれる。対象 grant が無ければ false(呼出し側が
-    /// route 宣言不整合として扱う)。
-    pub fn project_grant(&mut self, name: &str) -> bool {
-        let Some(grant) = self.grants.get(name).cloned() else {
-            return false;
-        };
-        self.grants = BTreeMap::from([(name.to_string(), grant)]);
-        true
-    }
+    pub heartbeat: ExecHeartbeat,
 }
 
 /// `command_policy_properties` — `command` section の JSON schema
-/// properties(design §(a))。complete schema 側の section required key は
-/// `["maxConcurrent", "grants"]`(`process` の `["maxConcurrent", "tasks"]`
-/// を mirror)。
+/// properties(design §(a) + issue #165 の `fixed`/`inputs`/`outputs`/
+/// `scope` 拡張 — trusted authoring は grant の 2 意味化 flag・
+/// provenance・resource 宣言を書ける。CLI 経路(`--grant`/`policy grant
+/// add`)は別層の entry validation で `fixed`/`scope` を拒否する)。
+/// complete schema 側の section required key は
+/// `["maxConcurrent", "grants"]`(`process` の `["maxConcurrent",
+/// "tasks"]` を mirror)。
 pub fn command_policy_properties() -> Value {
     let bounded_string = json!({"type": "string", "minLength": 1, "maxLength": 4096});
+    let paths = json!({"type": "array", "maxItems": 256, "items": bounded_string});
     json!({
         "maxConcurrent": {"type": "integer", "minimum": 1, "maximum": MAX_SAFE_INTEGER_U64},
         "timeout": {"type": "string", "pattern": DURATION_PATTERN},
@@ -105,7 +77,10 @@ pub fn command_policy_properties() -> Value {
                 "required": ["executable"],
                 "properties": {
                     "executable": bounded_string,
+                    "fixed": {"type": "boolean"},
                     "argv": {"type": "array", "maxItems": 256, "items": bounded_string},
+                    "inputs": paths,
+                    "outputs": paths,
                     "cwd": bounded_string,
                     "env": {
                         "type": "object",
@@ -121,6 +96,7 @@ pub fn command_policy_properties() -> Value {
                         "maxItems": 64,
                         "items": {"type": "integer", "minimum": 0, "maximum": 4294967295u64},
                     },
+                    "scope": {"type": "string", "enum": ["trusted", "project"]},
                 },
             },
         },
@@ -149,97 +125,19 @@ pub fn command_invalid(reason: &str) -> CheaperError {
     )
 }
 
-/// argv pattern の positional token(design §(a))。literal exact /
-/// trailing-`*` prefix match / 末尾 bare `*` の rest marker の 3 種のみ。
-#[derive(Debug, Clone, PartialEq)]
-enum ArgToken {
-    Literal(String),
-    Prefix(String),
-    Rest,
-}
-
-/// `ArgPattern` — grant `argv` の compiled positional pattern。resolved
-/// grant には source string を保持し、match 時に `compile` する。
-#[derive(Debug, Clone, PartialEq)]
-pub struct ArgPattern {
-    tokens: Vec<ArgToken>,
-}
-
-impl ArgPattern {
-    /// pattern compile。最終要素以外の bare `*`・末尾以外/2 個以上の
-    /// `*` を含む要素は `InvalidRuntimePolicy` で拒否(match 不能な
-    /// pattern を静的に排除)。token の内容は審査しない。
-    pub fn compile(pattern: &[String]) -> Result<Self, CheaperError> {
-        let last = pattern.len().saturating_sub(1);
-        let mut tokens = Vec::with_capacity(pattern.len());
-        for (i, element) in pattern.iter().enumerate() {
-            let token = match element.matches('*').count() {
-                0 => ArgToken::Literal(element.clone()),
-                // 最終要素の bare `*` のみ zero-or-more rest marker。
-                1 if element == "*" && i == last => ArgToken::Rest,
-                1 if element == "*" => {
-                    return Err(command_invalid(
-                        "argv pattern rest marker is only allowed as the last element",
-                    ));
-                }
-                // 末尾に `*` を 1 個だけ持ち prefix が非空 → prefix match。
-                1 if element.ends_with('*') => {
-                    ArgToken::Prefix(element[..element.len() - 1].to_string())
-                }
-                _ => {
-                    return Err(command_invalid(
-                        "argv pattern wildcard is only allowed as a trailing \
-                         rest marker or a single trailing prefix match",
-                    ));
-                }
-            };
-            tokens.push(token);
-        }
-        Ok(Self { tokens })
-    }
-
-    /// positional 全体 match。`Rest` を持たない pattern は arg 個数の
-    /// 完全一致を要求し(fail-closed)、`Rest` 付きは fixed 要素以降の
-    /// 残余 token を zero-or-more で受ける。
-    pub fn matches(&self, args: &[String]) -> bool {
-        let (fixed, rest) = match self.tokens.last() {
-            Some(ArgToken::Rest) => (&self.tokens[..self.tokens.len() - 1], true),
-            _ => (&self.tokens[..], false),
-        };
-        if rest {
-            // args が pattern(trailing `*` を除く)より短い場合は reject。
-            if args.len() < fixed.len() {
-                return false;
-            }
-        } else if args.len() != fixed.len() {
-            return false;
-        }
-        fixed
-            .iter()
-            .zip(args.iter())
-            .all(|(token, arg)| match token {
-                ArgToken::Literal(literal) => arg == literal,
-                ArgToken::Prefix(prefix) => arg.starts_with(prefix.as_str()),
-                ArgToken::Rest => unreachable!("rest marker is trailing-only"),
-            })
-    }
-}
-
 /// `resolveCommandPolicy`: raw `command` section(`Option<&Value>`)を
 /// boundary validation + lifecycle defaults で resolve する。
 /// `resolve_process_policy` と同じく `None`/`null` は `{}` に collapseし、
 /// `command` section を持たない policy は empty grants(=deny)へ
 /// normalize される(design §(l))。
 ///
-/// `deny` は caller が 1 回 compile 済みの `security.execDenyPatterns`
-/// predicate(issue #164 — 適用点 1: declared basename deny)。空集合
-/// (`ExecDenyList::default()`)は常に no-op。raw `security` section
-/// は渡さない — section schema/compile の責務は `security` module に
-/// 閉じ、本 function は deny 集合への照合のみを知る。
+/// issue #165 — deny 照合(適用点 1)は `resolve_exec_policy` へ一本化
+/// したため `deny` 引数を持たない。`fixed`/`scope`/`inputs`/`outputs`
+/// の既定値(`fixed:false`・`scope:"trusted"`・未宣言)はここで
+/// 畳み込み、grant は `ExecGrant` として保持する。
 pub fn resolve_command_policy(
     input: Option<&Value>,
-    deny: &ExecDenyList,
-) -> Result<ResolvedCommandPolicy, CheaperError> {
+) -> Result<ResolvedCommandSection, CheaperError> {
     let raw = match input {
         None | Some(Value::Null) => json!({}),
         Some(v) => v.clone(),
@@ -297,26 +195,21 @@ pub fn resolve_command_policy(
             .and_then(Value::as_str)
             .unwrap_or_default()
             .to_string();
-        // 適用点 1 — declared basename deny(issue #164)。deny した
-        // spec を operator が特定できるよう `details.grant`/
-        // `details.executable` を載せる(pin 段階の `details.grant`
-        // 規約と揃える)。
-        if deny.is_denied(&executable) {
-            let mut details = Map::new();
-            details.insert("grant".to_string(), json!(name));
-            details.insert("executable".to_string(), json!(executable));
-            return Err(
-                command_invalid("executable is denied by security.execDenyPatterns")
-                    .with_details(details),
-            );
-        }
-        // `argv` は optional — 省略時は args 個数無制約(長さ cap のみ)。
-        // pattern は resolve 時に compile 検証だけ行い、resolved grant
-        // には source string を保持する。
+        let fixed = grant.get("fixed").and_then(Value::as_bool).unwrap_or(false);
+        let scope = match grant.get("scope").and_then(Value::as_str) {
+            Some("project") => ExecGrantScope::Project,
+            _ => ExecGrantScope::Trusted,
+        };
+        // `argv` は optional — `!fixed` は pattern(省略 = args 個数
+        // 無制約)で構造 compile 検査、`fixed` は literal 扱いで
+        // compile しない(exec stage の `resolve_exec_policy` が同
+        // 規則で再評価する — serialized shape 経由で冪等)。
         let argv = match grant.get("argv") {
             Some(v) if !v.is_null() => {
                 let pattern = str_vec(v);
-                ArgPattern::compile(&pattern)?;
+                if !fixed {
+                    ArgPattern::compile(&pattern)?;
+                }
                 Some(pattern)
             }
             _ => None,
@@ -327,28 +220,20 @@ pub fn resolve_command_policy(
             .unwrap_or(".")
             .to_string();
         relative(&cwd, "command")?;
+        // `inputs`/`outputs` は宣言時のみ `relative` 検査(未宣言は
+        // `None` — 保守的 manifest に落ちる)。
+        let inputs = grant.get("inputs").filter(|v| !v.is_null()).map(str_vec);
+        let outputs = grant.get("outputs").filter(|v| !v.is_null()).map(str_vec);
+        for value in inputs.iter().flatten().chain(outputs.iter().flatten()) {
+            relative(value, "command")?;
+        }
         // `env` は `process` task と同一規則(NUL 拒否・Windows case
         // 重複拒否。key pattern は schema が担保)。
-        let mut env = Map::new();
-        let mut seen = std::collections::HashSet::new();
-        let mut env_entries: Vec<(&String, &Value)> = grant
-            .get("env")
-            .and_then(Value::as_object)
-            .map(|e| e.iter().collect())
-            .unwrap_or_default();
-        env_entries.sort_by(|(a, _), (b, _)| crate::js::locale_compare(a, b));
-        for (key, value) in env_entries {
-            let identity = if cfg!(windows) {
-                key.to_uppercase()
-            } else {
-                (*key).clone()
-            };
-            if !seen.insert(identity) || value.as_str().is_none_or(|v| v.contains('\0')) {
-                return Err(command_invalid("invalid or duplicate environment variable"));
-            }
-            env.insert(key.clone(), value.clone());
-        }
-        // per-grant override ?? section default の畳み込み。
+        let env = resolve_env(grant.get("env"), command_invalid)?;
+        // per-grant override ?? section default の畳み込み(origin =
+        // `command` section — `fixed:true` を `command.grants` に書いて
+        // も lifecycle は command defaults から畳む design §(b) の
+        // 意図的非対称)。
         let grant_timeout = match grant.get("timeout").and_then(Value::as_str) {
             Some(v) => bounded_duration(v, "timeout", "command")?,
             None => timeout.clone(),
@@ -370,19 +255,23 @@ pub fn resolve_command_policy(
             .unwrap_or_else(|| vec![0]);
         grants.insert(
             name.clone(),
-            CommandGrant {
+            ExecGrant {
                 executable,
+                fixed,
                 argv,
+                inputs,
+                outputs,
                 cwd,
                 env,
                 timeout: grant_timeout,
                 kill_grace: grant_kill_grace,
                 max_output_bytes: grant_max_output_bytes,
                 exit_codes,
+                scope,
             },
         );
     }
-    Ok(ResolvedCommandPolicy {
+    Ok(ResolvedCommandSection {
         max_concurrent: raw_obj
             .get("maxConcurrent")
             .and_then(crate::js::safe_u64)
@@ -391,41 +280,8 @@ pub fn resolve_command_policy(
         timeout,
         max_output_bytes,
         kill_grace,
-        heartbeat: ProcessHeartbeat { interval },
+        heartbeat: ExecHeartbeat { interval },
     })
-}
-
-/// `resolveCommandGrant`(`policy.grants[name]` の `Object.hasOwn` 相当)。
-/// 未知 grant は `POLICY_VIOLATION`(task resolve の "unknown or
-/// unauthorized process task" に準じた error shape)。
-pub fn resolve_command_grant(
-    policy: &ResolvedCommandPolicy,
-    name: &str,
-) -> Result<CommandGrant, CheaperError> {
-    policy.grants.get(name).cloned().ok_or_else(|| {
-        let mut details = Map::new();
-        details.insert("grant".to_string(), json!(name));
-        CheaperError::new(
-            ErrorCode::PolicyViolation,
-            "unknown or unauthorized command grant",
-        )
-        .with_details(details)
-    })
-}
-
-/// `command` の保守的 resource manifest(design §(f)) — workspace root
-/// subtree の reads+writes を宣言する単一所有者。`produces` は宣言しない
-/// (duplicate-producer 検出との衝突回避 + ownership semantics 不充足)。
-pub fn command_grant_resources() -> ResourceManifestDeclaration {
-    let root = || ScopeDeclaration {
-        path: ".".to_string(),
-        scope: ResourceScope::Subtree,
-    };
-    ResourceManifestDeclaration {
-        reads: Some(vec![root()]),
-        writes: Some(vec![root()]),
-        produces: None,
-    }
 }
 
 #[cfg(test)]
@@ -434,7 +290,7 @@ mod tests {
 
     #[test]
     fn defaults_when_absent() {
-        let p = resolve_command_policy(None, &ExecDenyList::default()).unwrap();
+        let p = resolve_command_policy(None).unwrap();
         assert_eq!(p.max_concurrent, 1);
         assert_eq!(p.timeout, "2m");
         assert_eq!(p.max_output_bytes, 65_536);
@@ -442,24 +298,19 @@ mod tests {
         assert_eq!(p.heartbeat.interval, "30s");
         assert!(p.grants.is_empty());
         // null coalesces to the same defaults as absent.
-        let p = resolve_command_policy(Some(&Value::Null), &ExecDenyList::default()).unwrap();
+        let p = resolve_command_policy(Some(&Value::Null)).unwrap();
         assert!(p.grants.is_empty());
     }
 
     #[test]
     fn rejects_unknown_fields_and_bad_durations() {
-        let e = resolve_command_policy(Some(&json!({"bogus": 1})), &ExecDenyList::default())
-            .unwrap_err();
+        let e = resolve_command_policy(Some(&json!({"bogus": 1}))).unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
         assert!(e.message().contains("invalid command policy"));
-        let e = resolve_command_policy(Some(&json!({"timeout": "5x"})), &ExecDenyList::default())
-            .unwrap_err();
+        let e = resolve_command_policy(Some(&json!({"timeout": "5x"}))).unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
-        let e = resolve_command_policy(
-            Some(&json!({"timeout": "100000000000000000000h"})),
-            &ExecDenyList::default(),
-        )
-        .unwrap_err();
+        let e = resolve_command_policy(Some(&json!({"timeout": "100000000000000000000h"})))
+            .unwrap_err();
         assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
     }
 
@@ -478,139 +329,77 @@ mod tests {
             "git.exe",
             "cargo",
         ] {
-            let p = resolve_command_policy(
-                Some(&json!({
-                    "grants": {"g": {"executable": exe}}
-                })),
-                &ExecDenyList::default(),
-            )
+            let p = resolve_command_policy(Some(&json!({
+                "grants": {"g": {"executable": exe}}
+            })))
             .unwrap_or_else(|e| panic!("{exe}: grant resolves: {e}"));
             assert_eq!(p.grants["g"].executable, exe);
         }
-        let p = resolve_command_policy(
-            Some(&json!({
-                "grants": {"git-read": {"executable": "git"}}
-            })),
-            &ExecDenyList::default(),
-        )
+        let p = resolve_command_policy(Some(&json!({
+            "grants": {"git-read": {"executable": "git"}}
+        })))
         .unwrap();
         assert_eq!(p.grants["git-read"].cwd, ".");
         assert_eq!(p.grants["git-read"].timeout, "2m");
+        // `fixed`/`scope` 既定値畳み込み — authoring 省略で
+        // `fixed:false`・`scope:"trusted"`、宣言は保守的 manifest の
+        // `None`(undeclared)。
+        let g = &p.grants["git-read"];
+        assert!(!g.fixed);
+        assert_eq!(g.scope, ExecGrantScope::Trusted);
+        assert!(g.inputs.is_none());
+        assert!(g.outputs.is_none());
     }
 
-    /// 適用点 1 — declared basename deny(issue #164)。deny に match
-    /// する declared executable を持つ grant は resolve 段階で
-    /// `InvalidRuntimePolicy` + `details.grant`/`details.executable`
-    /// に fail-closed する。既定(空 deny)では旧 builtin deny 名
-    /// も受理される(#163 後の既定挙動不変 — 既存受理 pin)。
+    /// `fixed`/`scope`/`inputs`/`outputs` の新規 field を trusted
+    /// authoring が受理し、`fixed` grant は command section defaults
+    /// で lifecycle を畳む(design §(b) の意図的非対称)。
     #[test]
-    fn declared_executable_deny_is_opt_in_and_fail_closed() {
-        // 既定(空集合)では `python`/`ssh`/`tar` 等の旧 builtin deny 名
-        // を含む grant が受理される。
-        for exe in ["python", "python3", "ssh", "tar", "env"] {
-            let p = resolve_command_policy(
-                Some(&json!({
-                    "grants": {"g": {"executable": exe}}
-                })),
-                &ExecDenyList::default(),
-            )
-            .unwrap_or_else(|e| panic!("{exe}: accepted by default: {e}"));
-            assert_eq!(p.grants["g"].executable, exe);
-        }
-        // opt-in 宣言時のみ deny が発火 — declared stem match で
-        // resolve 段階の `InvalidRuntimePolicy`。
-        let deny = ExecDenyList::compile(&["python.*".to_string()]).unwrap();
-        let e = resolve_command_policy(
-            Some(&json!({
-                "grants": {"py": {"executable": "/usr/bin/python3"}}
-            })),
-            &deny,
-        )
-        .unwrap_err();
-        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
-        assert_eq!(
-            e.message(),
-            "invalid command policy: executable is denied by security.execDenyPatterns"
-        );
-        assert_eq!(e.details().unwrap()["grant"], json!("py"));
-        assert_eq!(
-            e.details().unwrap()["executable"],
-            json!("/usr/bin/python3")
-        );
-        // 非 match の grant は同一 deny でも受理される。
-        let p = resolve_command_policy(
-            Some(&json!({
-                "grants": {"g": {"executable": "bash"}}
-            })),
-            &deny,
-        )
+    fn accepts_fixed_scope_and_resource_fields() {
+        let p = resolve_command_policy(Some(&json!({
+            "grants": {
+                "fix": {"executable": "cc", "fixed": true,
+                        "argv": ["--version"], "inputs": ["src/**"],
+                        "outputs": [], "scope": "project"},
+            }
+        })))
         .unwrap();
-        assert_eq!(p.grants["g"].executable, "bash");
-    }
-
-    #[test]
-    fn argv_pattern_compile_and_match() {
-        // literal 完全一致 — 超過 args は既定拒否(fail-closed)。
-        let p = ArgPattern::compile(&["log".to_string()]).unwrap();
-        assert!(p.matches(&["log".to_string()]));
-        assert!(!p.matches(&["log".to_string(), "--oneline".to_string()]));
-        assert!(!p.matches(&[]));
-        // trailing rest marker は zero-or-more の残余を受ける。
-        let p = ArgPattern::compile(&["log".to_string(), "*".to_string()]).unwrap();
-        assert!(p.matches(&["log".to_string()]));
-        assert!(p.matches(&[
-            "log".to_string(),
-            "--oneline".to_string(),
-            "HEAD~3".to_string()
-        ]));
-        assert!(!p.matches(&["diff".to_string()]));
-        assert!(!p.matches(&[]));
-        // bare `*` 単体は unconstrained 相当。
-        let p = ArgPattern::compile(&["*".to_string()]).unwrap();
-        assert!(p.matches(&[]));
-        assert!(p.matches(&["a".to_string(), "b".to_string()]));
-        // trailing `*` の prefix match。
-        let p = ArgPattern::compile(&["log".to_string(), "--format=*".to_string()]).unwrap();
-        assert!(p.matches(&["log".to_string(), "--format=%H".to_string()]));
-        assert!(!p.matches(&["log".to_string(), "--format".to_string()]));
-        assert!(!p.matches(&["log".to_string(), "--stat".to_string()]));
-        // interior `*`・複数 `*`・prefix `*` は wildcard 構造違反で
-        // compile 時拒否。
-        for bad in ["a*b", "**", "*a"] {
-            assert!(ArgPattern::compile(&[bad.to_string()]).is_err(), "{bad}");
-        }
-        // metachar を含む token は literal として受理される。
-        for ok in ["a|b", "x;y", "v$(i)"] {
-            let p = ArgPattern::compile(&[ok.to_string()])
-                .unwrap_or_else(|e| panic!("{ok}: literal token compiles: {e}"));
-            assert!(p.matches(&[ok.to_string()]));
-        }
-        // 最終要素以外の bare `*` は拒否。
-        assert!(ArgPattern::compile(&["*".to_string(), "log".to_string()]).is_err());
-        let e = resolve_command_policy(
-            Some(&json!({
-                "grants": {"g": {"executable": "git", "argv": ["a*b"]}}
-            })),
-            &ExecDenyList::default(),
-        )
-        .unwrap_err();
-        assert_eq!(e.code(), ErrorCode::InvalidRuntimePolicy);
+        let g = &p.grants["fix"];
+        assert!(g.fixed);
+        assert_eq!(g.scope, ExecGrantScope::Project);
+        assert_eq!(g.argv, Some(vec!["--version".to_string()]));
+        assert_eq!(g.inputs, Some(vec!["src/**".to_string()]));
+        assert_eq!(g.outputs, Some(vec![]));
+        // wildcard 構造違反でも `fixed` なら argv は literal —
+        // compile しない(`resolve_exec_policy` と同じ規則)。
+        let p = resolve_command_policy(Some(&json!({
+            "grants": {"fix": {"executable": "cc", "fixed": true, "argv": ["a*b"]}}
+        })))
+        .unwrap();
+        assert_eq!(p.grants["fix"].argv, Some(vec!["a*b".to_string()]));
+        // `!fixed` は pattern — `a*b` は構造違反で拒否。
+        assert!(resolve_command_policy(Some(&json!({
+            "grants": {"g": {"executable": "cc", "argv": ["a*b"]}}
+        })))
+        .is_err());
+        // inputs/outputs の traversal は authoring 境界で拒否。
+        assert!(resolve_command_policy(Some(&json!({
+            "grants": {"fix": {"executable": "cc", "fixed": true, "outputs": ["../x"]}}
+        })))
+        .is_err());
     }
 
     #[test]
     fn grant_overrides_fold_and_relative_cwd_checked() {
-        let p = resolve_command_policy(
-            Some(&json!({
-                "timeout": "5m",
-                "maxOutputBytes": 1024,
-                "grants": {
-                    "a": {"executable": "git", "timeout": "30s", "killGrace": "1s",
-                          "maxOutputBytes": 512, "cwd": "sub", "env": {"K": "v"}},
-                    "b": {"executable": "cargo"},
-                },
-            })),
-            &ExecDenyList::default(),
-        )
+        let p = resolve_command_policy(Some(&json!({
+            "timeout": "5m",
+            "maxOutputBytes": 1024,
+            "grants": {
+                "a": {"executable": "git", "timeout": "30s", "killGrace": "1s",
+                      "maxOutputBytes": 512, "cwd": "sub", "env": {"K": "v"}},
+                "b": {"executable": "cargo"},
+            },
+        })))
         .unwrap();
         let a = &p.grants["a"];
         assert_eq!(a.timeout, "30s");
@@ -623,114 +412,36 @@ mod tests {
         assert_eq!(b.max_output_bytes, 1024);
         // cwd escape は workspace-relative 規則で拒否。
         for cwd in ["..", "a/../b", "/abs", "c:\\x"] {
-            let e = resolve_command_policy(
-                Some(&json!({
-                    "grants": {"g": {"executable": "git", "cwd": cwd}}
-                })),
-                &ExecDenyList::default(),
-            )
+            let e = resolve_command_policy(Some(&json!({
+                "grants": {"g": {"executable": "git", "cwd": cwd}}
+            })))
             .unwrap_err();
             assert!(e.message().contains("workspace-relative"), "{cwd}");
         }
     }
 
     #[test]
-    fn resolved_policy_is_serde_native_for_parity() {
+    fn resolved_section_is_serde_native_for_parity() {
         // `to_value` → 再 resolve → `PartialEq`(invocation parity check と
-        // 同じ経路)。argv は source string のまま往復する。
+        // 同じ経路)。argv は source string のまま往復し、`fixed`/
+        // `scope`/`inputs`/`outputs` も serialized 形で冪等。
         let raw = json!({
             "grants": {
                 "g": {"executable": "git", "argv": ["log", "*"], "env": {"K": "v"}}
             },
         });
-        let p = resolve_command_policy(Some(&raw), &ExecDenyList::default()).unwrap();
+        let p = resolve_command_policy(Some(&raw)).unwrap();
         let serialized = serde_json::to_value(&p).unwrap();
-        let reparsed = resolve_command_policy(Some(&serialized), &ExecDenyList::default()).unwrap();
+        let reparsed = resolve_command_policy(Some(&serialized)).unwrap();
         assert_eq!(p, reparsed);
         // argv 省略 grant は serialize で key を出さない。
         assert!(serialized["grants"]["g"].get("argv").is_some());
-        let p = resolve_command_policy(
-            Some(&json!({
-                "grants": {"g": {"executable": "git"}}
-            })),
-            &ExecDenyList::default(),
-        )
+        let p = resolve_command_policy(Some(&json!({
+            "grants": {"g": {"executable": "git"}}
+        })))
         .unwrap();
         let serialized = serde_json::to_value(&p).unwrap();
         assert!(serialized["grants"]["g"].get("argv").is_none());
-        assert_eq!(
-            p,
-            resolve_command_policy(Some(&serialized), &ExecDenyList::default()).unwrap()
-        );
-    }
-
-    /// route run の単一 grant 投影(C9)— resolved policy の
-    /// `grants` map が対象 1 件へ縮退し、投影外 grant は
-    /// `resolve_command_grant` で unknown 扱いになる。
-    /// resolved JSON への serialize は再 resolve で同一形に
-    /// 戻る(scope parity check が保たれる)。
-    #[test]
-    fn project_grant_limits_grants_to_declared_route_grant() {
-        let mut p = resolve_command_policy(
-            Some(&json!({
-                "grants": {
-                    "route-grant": {"executable": "git"},
-                    "other": {"executable": "my-tool"},
-                }
-            })),
-            &ExecDenyList::default(),
-        )
-        .unwrap();
-        assert!(p.grants.contains_key("other"));
-        assert!(p.project_grant("route-grant"));
-        assert_eq!(p.grants.len(), 1);
-        assert!(p.grants.contains_key("route-grant"));
-        // 投影外 grant は unknown grant 扱い。
-        assert!(resolve_command_grant(&p, "other").is_err());
-        assert_eq!(
-            resolve_command_grant(&p, "route-grant").unwrap().executable,
-            "git"
-        );
-        // resolved → serialize → re-resolve round-trip が同一形
-        // (worker scope parity check を通過する)。
-        let serialized = serde_json::to_value(&p).unwrap();
-        assert_eq!(
-            p,
-            resolve_command_policy(Some(&serialized), &ExecDenyList::default()).unwrap()
-        );
-        // 対象不在は false で policy を変えない。
-        let mut q = resolve_command_policy(
-            Some(&json!({
-                "grants": {"g": {"executable": "git"}}
-            })),
-            &ExecDenyList::default(),
-        )
-        .unwrap();
-        assert!(!q.project_grant("absent"));
-        assert!(q.grants.contains_key("g"));
-    }
-
-    #[test]
-    fn resolve_command_grant_and_resources() {
-        let p = resolve_command_policy(
-            Some(&json!({
-                "grants": {"g": {"executable": "git"}}
-            })),
-            &ExecDenyList::default(),
-        )
-        .unwrap();
-        let e = resolve_command_grant(&p, "nope").unwrap_err();
-        assert_eq!(e.code(), ErrorCode::PolicyViolation);
-        let g = resolve_command_grant(&p, "g").unwrap();
-        assert_eq!(g.executable, "git");
-        // root-subtree reads+writes、produces は宣言しない。
-        let res = command_grant_resources();
-        assert_eq!(res.reads.as_ref().unwrap()[0].path, ".");
-        assert_eq!(res.reads.as_ref().unwrap()[0].scope, ResourceScope::Subtree);
-        assert_eq!(
-            res.writes.as_ref().unwrap()[0].scope,
-            ResourceScope::Subtree
-        );
-        assert!(res.produces.is_none());
+        assert_eq!(p, resolve_command_policy(Some(&serialized)).unwrap());
     }
 }

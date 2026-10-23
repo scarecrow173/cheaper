@@ -63,8 +63,6 @@ pub fn check_capabilities(
 
 #[cfg(test)]
 mod tests {
-    use serde_json::Map as JsonMap;
-
     use super::*;
     use crate::model::tier::Tier;
     use crate::policy::schema::*;
@@ -94,24 +92,25 @@ mod tests {
                     max_read_bytes: 1,
                 },
             },
-            process: crate::policy::process::ResolvedProcessPolicy {
-                max_concurrent: 1,
-                tasks: JsonMap::new(),
-                timeout: "2m".into(),
-                max_output_bytes: 1,
-                kill_grace: "2s".into(),
-                heartbeat: crate::policy::process::ProcessHeartbeat {
-                    interval: "30s".into(),
-                },
-            },
-            command: crate::policy::command::ResolvedCommandPolicy {
-                max_concurrent: 1,
+            exec: crate::policy::exec::ResolvedExecPolicy {
                 grants: std::collections::BTreeMap::new(),
-                timeout: "2m".into(),
-                max_output_bytes: 1,
-                kill_grace: "2s".into(),
-                heartbeat: crate::policy::process::ProcessHeartbeat {
-                    interval: "30s".into(),
+                command: crate::policy::exec::ExecDefaults {
+                    max_concurrent: 1,
+                    timeout: "2m".into(),
+                    max_output_bytes: 1,
+                    kill_grace: "2s".into(),
+                    heartbeat: crate::policy::exec::ExecHeartbeat {
+                        interval: "30s".into(),
+                    },
+                },
+                process: crate::policy::exec::ExecDefaults {
+                    max_concurrent: 1,
+                    timeout: "2m".into(),
+                    max_output_bytes: 1,
+                    kill_grace: "2s".into(),
+                    heartbeat: crate::policy::exec::ExecHeartbeat {
+                        interval: "30s".into(),
+                    },
                 },
             },
             route: RoutePolicy::default(),
