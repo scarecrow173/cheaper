@@ -77,6 +77,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z57kKSICF9N4av5oZ0f | docs for executable hook invocation | completed | [docs-for-executable-hook-invocation.md](./docs-for-executable-hook-invocation.md) |
 | IMPL-034zUCrFChJvE5zTGpzwnI | Document and verify one-dispatch release migration | completed | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
 | IMPL-034zRDctzhtdFQ6yVmTUAg | Document launcher distribution and verify acquisition | completed | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
+| IMPL-034L8CAW785uSRtJvzJh15 | documentation honesty sweep and migration guide | completed | [documentation-honesty-sweep-and-migration-guide.md](./documentation-honesty-sweep-and-migration-guide.md) |
 | IMPL-034KKIy3KVgaEjtuv3WTrb | Exec-contract content-audit removal issue 163 | completed | [exec-contract-content-audit-removal-issue-163.md](./exec-contract-content-audit-removal-issue-163.md) |
 | IMPL-034rArrzNyFlCc39TNLU1X | Extend usage.jsonl run record with savings section | completed | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
 | IMPL-034z1ST2V3s2UsM4Mi2S87 | Extract shared esbuild bundle helper | completed | [extract-shared-esbuild-bundle-helper.md](./extract-shared-esbuild-bundle-helper.md) |
