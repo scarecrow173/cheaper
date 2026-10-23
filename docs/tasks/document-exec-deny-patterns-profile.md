@@ -188,23 +188,23 @@ T1 の semantics 確定後に着手すれば T2/T3 と並列実行可能
 
 ## Done When
 
-- [ ] `command.md` の stale deny 記述（旧 mandatory deny list・
+- [x] `command.md` の stale deny 記述（旧 mandatory deny list・
       native magic）が `security.execDenyPatterns` の意味論・
       match 規約・旧既定値 verbatim 一覧・migration seed 例
       （verbatim 1 要素版 + 分類別分解）へ書き換わり、shell/
       shim 名が旧 deny 一覧に含まれない旨が migration 注記に
       ある
-- [ ] `--grant` bullet の deny 言及が opt-in 前提（merged
+- [x] `--grant` bullet の deny 言及が opt-in 前提（merged
       re-resolve の `InvalidRuntimePolicy`・`details.layer`
       無しの accepted gap）に restate されている
-- [ ] `command.md` に `.*` deny-all 注意・`\` 区切り正規化の
+- [x] `command.md` に `.*` deny-all 注意・`\` 区切り正規化の
       false-positive・blast radius の新規記述が存在する
-- [ ] `configuration.md` が `security` 節 yaml + `###
+- [x] `configuration.md` が `security` 節 yaml + `###
       security.execDenyPatterns` 小節（既定・等価形・trust
       boundary・error code・merge replace）を持つ
-- [ ] `resources/policy.yaml` が `security:` 節
+- [x] `resources/policy.yaml` が `security:` 節
       （`execDenyPatterns: []` + comment）を持つ
-- [ ] 表現が「deterministic executable deny-list」で一貫し、
+- [x] 表現が「deterministic executable deny-list」で一貫し、
       「保護」「sandbox」「containment」表現を謳わない
       （非 containment は正直に明記）
 
@@ -218,9 +218,9 @@ T1 の semantics 確定後に着手すれば T2/T3 と並列実行可能
 
 ## Verification
 
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
+- [x] `node scripts/check-doc-ids.mjs` exits 0
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --json`
       で変更 doc の error 0
-- [ ] doc review — design Docs 更新契約の各項目（旧既定値・
+- [x] doc review — design Docs 更新契約の各項目（旧既定値・
       migration seed・match 規約・trust boundary・非
       containment・3 補足）が記述されていること

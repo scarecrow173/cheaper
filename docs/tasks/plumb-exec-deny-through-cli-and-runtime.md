@@ -225,24 +225,24 @@ options 配管表・call site 配線をそのまま実装する。
 
 ## Done When
 
-- [ ] `CommandPolicyView.exec_deny`（`&'a`・`Copy` 維持）が
+- [x] `CommandPolicyView.exec_deny`（`&'a`・`Copy` 維持）が
       `RouteSupply.exec_deny`（`load_with_builtin` で compiled）
       から供給され、viability の `pin_command_grant`・
       `CommandToolOptions` が deny-aware になる
-- [ ] denied resolved-stem grant の viability が
+- [x] denied resolved-stem grant の viability が
       `Viability::NoGrant` になる unit test が存在する
-- [ ] `run/mod.rs`・`workflow_run.rs` の
+- [x] `run/mod.rs`・`workflow_run.rs` の
       `InvocationToolRuntimeOptions`/`ToolRuntimeOptions`
       literal が `security` を運び（invocation 系は policy
       由来値、`kind: tool` scope は `None` + inner 再注入）
-- [ ] `hook/routing_policy.rs`・`route/resolve.rs` の test
+- [x] `hook/routing_policy.rs`・`route/resolve.rs` の test
       literal が signature 追随し、hook eval 経路が同一 deny
       を見る
-- [ ] `policy.rs` の doc が deny 照合を含む検査内容を正直に
+- [x] `policy.rs` の doc が deny 照合を含む検査内容を正直に
       記述する
-- [ ] runtime/workflow/rig-adapter の `RuntimePolicy`・options
+- [x] runtime/workflow/rig-adapter の `RuntimePolicy`・options
       literal churn が完了し、workspace が compile 回復する
-- [ ] cli test target（integration・run_dev_seam・workflow・
+- [x] cli test target（integration・run_dev_seam・workflow・
       workflow_dev_seam）+ workflow/rig-adapter test が pass
 
 ## Out of Scope
@@ -259,8 +259,8 @@ options 配管表・call site 配線をそのまま実装する。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration --test regression --test run_dev_seam --test workflow --test workflow_dev_seam` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test contracts --test run_dev_seam` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-workflow --test compile_contracts --test filesystem_contracts` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-rig-adapter` exits 0
-- [ ] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0（workspace compile 回復）
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration --test regression --test run_dev_seam --test workflow --test workflow_dev_seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-runtime --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test contracts --test run_dev_seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-workflow --test compile_contracts --test filesystem_contracts` exits 0
+- [x] `mise exec -- cargo test -p cheaper-rig-adapter` exits 0
+- [x] `mise exec -- cargo build --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0（workspace compile 回復）

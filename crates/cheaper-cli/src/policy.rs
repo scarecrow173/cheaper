@@ -245,12 +245,12 @@ fn grants_map_mut(
         .expect("existing_grants pre-check guarantees object"))
 }
 
-/// merged full object を `validate_policy_schema(Partial)` で検査し
-/// (`resolve_command_policy` 経由の executable 宣言 shape・argv
-/// pattern compile・env/cwd 規則 + `version` const・`maxProperties`
-/// + `security.execDenyPatterns` の declared deny 照合を含む)、
+/// merged full object を `validate_policy_schema(Partial)` で検査し、
 /// 通過した場合のみ `stringify_yaml` → `atomic_write` で書き込む。
-/// 失敗時は file を一切変更しない。
+/// 失敗時は file を一切変更しない。検査は `resolve_command_policy`
+/// 経由の executable 宣言 shape・argv pattern compile・env/cwd 規則
+/// に加え、`version` const・`maxProperties`・`security.execDenyPatterns`
+/// の declared deny 照合を含む。
 fn write_validated(policy_path: &str, policy: Map<String, Value>) -> Result<(), CheaperError> {
     let validated = validate_policy_schema(&Value::Object(policy), PolicySchemaMode::Partial)?;
     let body = stringify_yaml(&Value::Object(validated))
