@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034KOpKfZpegX2MLPD0uq6"
 type: "spec"
-status: "proposed"
+status: "approved"
 title: "unified exec grant model — command.grants / process.tasks の統合"
 created: "2026-10-23"
 updated: "2026-10-23"

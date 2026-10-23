@@ -1,7 +1,7 @@
 ---
 id: "ADR-034KOpPArDTHQ8W1c81Q0B"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "unified exec grant model — 単一 exec grant 実装への統合"
 created: "2026-10-23"
 updated: "2026-10-23"

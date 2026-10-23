@@ -1,7 +1,7 @@
 ---
 id: "DESIGN-034KP4lfgfD7DdGiDV1YuT"
 type: "design"
-status: "draft"
+status: "approved"
 title: "unified exec grant model — command.grants / process.tasks の統合"
 created: "2026-10-23"
 updated: "2026-10-23"
