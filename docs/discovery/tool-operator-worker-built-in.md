@@ -1,7 +1,7 @@
 ---
 id: "DISC-034ESpIy7zAOucpwBxmjfd"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "tool-operator worker を built-in 追加する"
 created: "2026-10-12"
 updated: "2026-10-14"

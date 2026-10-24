@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034CWHveVPBJp33jPRTCen"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "OpenAI Codex subscription provider"
 created: "2026-10-09"
 updated: "2026-10-09"

@@ -1,7 +1,7 @@
 ---
 id: "SPEC-s8dMxk0QAbLuWaOrsuikSp"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "worker schema の magnitude 制約撤廃と INVALID_OUTPUT raw output の回復経路"
 created: "2026-10-17"
 updated: "2026-10-17"

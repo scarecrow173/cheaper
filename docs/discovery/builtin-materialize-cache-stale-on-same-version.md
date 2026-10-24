@@ -1,7 +1,7 @@
 ---
 id: "DISC-ar7NQWbsDe0TtIFAlAsUdv"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "builtin materialize cache の stale 化(同一 version の embedded 変更)"
 created: "2026-10-17"
 updated: "2026-10-17"

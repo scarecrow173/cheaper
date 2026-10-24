@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034CKp34AcjKtAYjnfjXU4"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Plugin catalog persistence and user model additions"
 created: "2026-10-09"
 updated: "2026-10-09"

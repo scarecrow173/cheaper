@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034BbgvL9s41K7NflOddZ6"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Rust + Rig native runtime migration for cheaper CLI"
 created: "2026-10-06"
 updated: "2026-10-06"

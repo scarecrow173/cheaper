@@ -1,7 +1,7 @@
 ---
 id: "SPEC-2w4XxXeDF0glTfgrBVJnWb"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "APM hook 宣言を per-target サブパッケージへ分離"
 created: "2026-10-18"
 updated: "2026-10-18"

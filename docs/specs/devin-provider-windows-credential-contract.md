@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034D9BFJZdSSYBEuXVzBbl"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Devin provider Windows credential contract"
 created: "2026-10-09"
 updated: "2026-10-09"

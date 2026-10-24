@@ -1,7 +1,7 @@
 ---
 id: "DISC-034Dlp0gvInn5w4EsnfZB0"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "devin provider usage accounting reports uncached input only"
 created: "2026-10-10"
 updated: "2026-10-10"

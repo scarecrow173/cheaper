@@ -1,7 +1,7 @@
 ---
 id: "ADR-zHFZ3QOA0Q6lEoWmS5gzIQ"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "INVALID_OUTPUT の raw output を file へ保存し details に参照を返す"
 created: "2026-10-17"
 updated: "2026-10-17"

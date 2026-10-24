@@ -1,7 +1,7 @@
 ---
 id: "DISC-034FRguX1hjhDZ7ZMEBnbm"
 type: "discovery"
-status: "active"
+status: "resolved"
 title: "Bounded hook read request contract"
 created: "2026-10-14"
 updated: "2026-10-21"

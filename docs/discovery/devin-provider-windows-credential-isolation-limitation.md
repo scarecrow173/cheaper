@@ -1,7 +1,7 @@
 ---
 id: "DISC-034D9AL1up7opdx1NuFeir"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "Devin provider Windows credential isolation limitation"
 created: "2026-10-09"
 updated: "2026-10-09"

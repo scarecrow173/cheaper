@@ -1,7 +1,7 @@
 ---
 id: "DISC-034KuleA9g82Ir4xWfmTYq"
 type: "discovery"
-status: "active"
+status: "resolved"
 title: "権限・Runtime Policy・Tool 実行制限の責務ベース再設計 (issue #151)"
 created: "2026-10-22"
 updated: "2026-10-23"

@@ -1,7 +1,7 @@
 ---
 id: "ADR-034CWHw0NjYQjdE5o4kErV"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "OpenAI Codex subscription provider wire, OAuth, and catalog"
 created: "2026-10-09"
 updated: "2026-10-09"
