@@ -527,4 +527,4 @@ chain(issue #164)由来の未分類・未処理の follow-up はない。下記�
   (単独再実行 + `mise run check` 内の再実行では pass)。#164
   非対象 file・deny 経路非依存の既知 flake であり、本 issue
   由来の regression ではない — 別途 flake 調査 issue の候補
-  (起票は所有者判断)。
+  (起票は所有者判断 — issue #180 として起票済み)。

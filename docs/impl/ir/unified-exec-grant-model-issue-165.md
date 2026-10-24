@@ -849,4 +849,4 @@ chain(issue #165)由来の未分類・未処理の follow-up はない。下記�
   pass)。process-tree cleanup の既知 flake であり unified
   policy 非依存・本 issue 由来の regression ではない —
   `followup-terminal` 候補(別途 flake 調査 issue の起票は
-  所有者判断)。
+  所有者判断 — issue #180 として起票済み)。
