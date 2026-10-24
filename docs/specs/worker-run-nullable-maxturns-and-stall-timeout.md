@@ -1,7 +1,7 @@
 ---
 id: "SPEC-onzPU8E4tKg3C6Iv4s9VK0"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume"
 created: "2026-10-17"
 updated: "2026-10-17"

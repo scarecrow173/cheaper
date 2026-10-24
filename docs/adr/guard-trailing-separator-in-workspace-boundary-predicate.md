@@ -1,7 +1,7 @@
 ---
 id: "ADR-034D85IukRi32huPbZDbCT"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "Guard trailing separator in workspace boundary predicate"
 created: "2026-10-09"
 updated: "2026-10-09"

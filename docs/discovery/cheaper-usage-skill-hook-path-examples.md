@@ -1,7 +1,7 @@
 ---
 id: "DISC-034DjtZ2lFPzDHL1MgR6qu"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "cheaper-usage skill hook path examples diverge from APM deploy path"
 created: "2026-10-10"
 updated: "2026-10-10"

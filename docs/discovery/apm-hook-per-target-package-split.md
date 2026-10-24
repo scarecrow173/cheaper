@@ -1,7 +1,7 @@
 ---
 id: "DISC-1mk9ud9KQV9qy4ZC0sxDJa"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "APM hook 宣言を per-target サブパッケージへ分離(イベント名 casing 警告と cross-target 死骸エントリの解消)"
 created: "2026-10-18"
 updated: "2026-10-18"

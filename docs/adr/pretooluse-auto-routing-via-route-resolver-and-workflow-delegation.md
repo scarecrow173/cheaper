@@ -1,7 +1,7 @@
 ---
 id: "ADR-034J8eZHNPqARi25HLFOL6"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "PreToolUse auto-routing via route resolver and workflow delegation"
 created: "2026-10-20"
 updated: "2026-10-21"

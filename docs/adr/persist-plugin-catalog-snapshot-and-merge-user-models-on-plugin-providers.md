@@ -1,7 +1,7 @@
 ---
 id: "ADR-034CKnwOWyYssJ1VZR9spo"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "plugin live catalog は providers/<id>/catalog.json に永続化し user models[] は plugin provider で additive merge にする"
 created: "2026-10-09"
 updated: "2026-10-09"

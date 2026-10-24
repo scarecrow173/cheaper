@@ -1,7 +1,7 @@
 ---
 id: "DISC-034Aqz6hU4LHgqL2xB5dJS"
 type: "discovery"
-status: "active"
+status: "resolved"
 title: "One-shot workflow execution boundaries"
 created: "2026-10-05"
 updated: "2026-10-05"

@@ -1,7 +1,7 @@
 ---
 id: "DISC-034D840CvSzto0OH0dO47y"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "Volume-root workspace boundary check double separator"
 created: "2026-10-09"
 updated: "2026-10-09"

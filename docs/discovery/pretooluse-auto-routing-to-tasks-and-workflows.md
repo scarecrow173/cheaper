@@ -1,7 +1,7 @@
 ---
 id: "DISC-034J7LwMEdPR5HxFkgOivZ"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "PreToolUse auto-routing to tasks and workflows"
 created: "2026-10-20"
 updated: "2026-10-20"

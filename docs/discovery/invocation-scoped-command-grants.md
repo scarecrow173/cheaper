@@ -1,7 +1,7 @@
 ---
 id: "DISC-034FlIAczzK2ruZW3HTcJi"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "invocation-scoped command grant と grant-request フローを整理する"
 created: "2026-10-13"
 updated: "2026-10-14"

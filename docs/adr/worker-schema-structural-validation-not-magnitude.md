@@ -1,7 +1,7 @@
 ---
 id: "ADR-BTZgr7PG9GhlAGhdhbirlM"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "worker JSON Schema は構造を検証し magnitude を検証しない"
 created: "2026-10-17"
 updated: "2026-10-17"

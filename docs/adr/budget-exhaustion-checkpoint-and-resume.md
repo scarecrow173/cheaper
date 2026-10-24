@@ -1,7 +1,7 @@
 ---
 id: "ADR-dQUWgKzTTSsUBIhYYpNAtC"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "turn/tool 予算枯渇時に checkpoint を保存し resume 可能にする"
 created: "2026-10-17"
 updated: "2026-10-17"

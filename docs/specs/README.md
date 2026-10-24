@@ -8,7 +8,7 @@ Directory: `docs/specs`
 | --- | --- | --- | --- |
 | SPEC-034EdS8ly2SqcS7cJ8hvfJ | Restore recorded abort code classification at setup boundaries | implemented | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
 | SPEC-034r05iHK8bA7gexEML9oZ | APM delegation skills and pre-read delegation hook | implemented | [apm-delegation-skills-and-read-hook.md](./apm-delegation-skills-and-read-hook.md) |
-| SPEC-2w4XxXeDF0glTfgrBVJnWb | APM hook 宣言を per-target サブパッケージへ分離 | proposed | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |
+| SPEC-2w4XxXeDF0glTfgrBVJnWb | APM hook 宣言を per-target サブパッケージへ分離 | implemented | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |
 | SPEC-034r05iHK8bA7gffRgD3Fp | Self-contained cheaper CLI distribution inside the APM hook bundle | superseded | [apm-self-contained-cli-distribution.md](./apm-self-contained-cli-distribution.md) |
 | SPEC-WdXXEoaAmbOafvuIpM6FFT | Keep interactive auth prompts inside the injected CLI I/O boundary | implemented | [auth-io-boundary.md](./auth-io-boundary.md) |
 | SPEC-034r05iHK8bA7ghSWRbNU8 | cheaper auth command for provider login without a pi installation | implemented | [auth-login-command.md](./auth-login-command.md) |
@@ -37,7 +37,7 @@ Directory: `docs/specs`
 | SPEC-034KoUwVbN6YjxD7CjpYkf | Deterministic route tests for ubuntu CI flake (issue #157) | approved | [deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md](./deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md) |
 | SPEC-034r05iHK8bA7gAHzYnfP8 | Devin Local as a bundled Pi provider | implemented | [devin-local-bundled-provider.md](./devin-local-bundled-provider.md) |
 | SPEC-034DlpZKFnyWiBZZxGsXK0 | devin provider usage accounting contract | approved | [devin-provider-usage-accounting-contract.md](./devin-provider-usage-accounting-contract.md) |
-| SPEC-034D9BFJZdSSYBEuXVzBbl | Devin provider Windows credential contract | proposed | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
+| SPEC-034D9BFJZdSSYBEuXVzBbl | Devin provider Windows credential contract | implemented | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
 | SPEC-034L6i3XmfCaWRHAiw8TTT | documentation honesty sweep and breaking-change migration guide — claim ≤ 実強制の文書訂正と破壊的変更告知 | approved | [documentation-honesty-sweep-and-breaking-change-migration-guide.md](./documentation-honesty-sweep-and-breaking-change-migration-guide.md) |
 | SPEC-034KI3mWcW92kMljP5xoa8 | exec-contract cleanup — 内容審査を mandatory 層から除去 | approved | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
 | SPEC-034r05iHK8bA7gqGaD6qpk | grep batchMaxBytes / decoded line payload invariant | implemented | [grep-batch-max-bytes-line-payload-invariant.md](./grep-batch-max-bytes-line-payload-invariant.md) |
@@ -55,18 +55,18 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7guAnTdpdi | Real-provider E2E for built-in workers via Ollama container | implemented | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | SPEC-034zSQV3zqlEncx2GoLKSR | One-dispatch release workflow | superseded | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
 | SPEC-034AqzLDP7xm2lCmDoyKzg | One-shot workflow engine and run CLI | approved | [one-shot-workflow-engine-and-run-cli.md](./one-shot-workflow-engine-and-run-cli.md) |
-| SPEC-034CWHveVPBJp33jPRTCen | OpenAI Codex subscription provider | proposed | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
+| SPEC-034CWHveVPBJp33jPRTCen | OpenAI Codex subscription provider | implemented | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
 | SPEC-034A8u2GqFTklBoQi0i1kG | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | SPEC-034zSPnVDi6fpHVc9ELgLW | Invocation-scoped OperationManager lifecycle | approved | [operation-manager-lifecycle.md](./operation-manager-lifecycle.md) |
 | SPEC-034KLgfJ0Gka7fkRKHpfSH | opt-in security.execDenyPatterns profile — A9 の降格実装 | approved | [opt-in-exec-deny-patterns.md](./opt-in-exec-deny-patterns.md) |
 | SPEC-034zWqZR8Dmu9TXTR2qcsg | Payload untracking migration | superseded | [payload-untracking-migration.md](./payload-untracking-migration.md) |
 | SPEC-034KuqPkTK2b4mHsykH9A5 | 権限・Runtime Policy・Tool 実行制限の責務ベース再設計 | approved | [permission-model-responsibility-redesign.md](./permission-model-responsibility-redesign.md) |
 | SPEC-034r05iHK8bA7gxlRVZtAv | Pi auth and model state under the Cheaper config directory | implemented | [pi-state-under-cheaper-config-dir.md](./pi-state-under-cheaper-config-dir.md) |
-| SPEC-034CKp34AcjKtAYjnfjXU4 | Plugin catalog persistence and user model additions | proposed | [plugin-catalog-persistence-and-user-models.md](./plugin-catalog-persistence-and-user-models.md) |
+| SPEC-034CKp34AcjKtAYjnfjXU4 | Plugin catalog persistence and user model additions | implemented | [plugin-catalog-persistence-and-user-models.md](./plugin-catalog-persistence-and-user-models.md) |
 | SPEC-034EMbEGBOWM4CAM6YSWm6 | policy-gated dynamic command を canonical tool として提供する | approved | [policy-gated-command-tool.md](./policy-gated-command-tool.md) |
 | SPEC-034EDjYmUWLJ96Zqy7XOEw | Post-feature structural refactoring scope | approved | [post-feature-structural-refactoring-scope.md](./post-feature-structural-refactoring-scope.md) |
 | SPEC-034DyDAOW1my2ihNQIVNfN | Post-migration structural cleanup scope | approved | [post-migration-structural-cleanup-scope.md](./post-migration-structural-cleanup-scope.md) |
-| SPEC-034J7SxWvGL3oSbeBpo8a3 | PreToolUse auto-routing: route resolution and delegated workflow execution | proposed | [pretooluse-route-resolver-and-workflow-delegation.md](./pretooluse-route-resolver-and-workflow-delegation.md) |
+| SPEC-034J7SxWvGL3oSbeBpo8a3 | PreToolUse auto-routing: route resolution and delegated workflow execution | implemented | [pretooluse-route-resolver-and-workflow-delegation.md](./pretooluse-route-resolver-and-workflow-delegation.md) |
 | SPEC-034r2qodmutbif9L0DLskN | Correct provider and auth documentation to match runtime capabilities | implemented | [provider-auth-docs-runtime-sync.md](./provider-auth-docs-runtime-sync.md) |
 | SPEC-034r05iHK8bA7gz3bFqgXr | Provider-only registration layer without Pi extensions | implemented | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
 | SPEC-034r05iHK8bA7g9KcsCqKj | Repair and abort hardening, telemetry consistency, and test hermeticity | implemented | [repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |
@@ -75,7 +75,7 @@ Directory: `docs/specs`
 | SPEC-034KTMfXYD5ZlGZCRb8Paj | route grant-set projection — grants 宣言・viability 条件緩和・usage record split | approved | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | SPEC-G1ALq0d5lyFIi0h43tZsZG | usage.jsonl run record への version・実効 policy・error 診断 field の追加 (issue #141) | approved | [run-error-record-observability.md](./run-error-record-observability.md) |
 | SPEC-034zSQRLxNXgJDxjmUBBB8 | Run-scoped artifact store | approved | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |
-| SPEC-034BbgvL9s41K7NflOddZ6 | Rust + Rig native runtime migration for cheaper CLI | proposed | [rust-rig-native-runtime-migration-for-cheaper-cli.md](./rust-rig-native-runtime-migration-for-cheaper-cli.md) |
+| SPEC-034BbgvL9s41K7NflOddZ6 | Rust + Rig native runtime migration for cheaper CLI | implemented | [rust-rig-native-runtime-migration-for-cheaper-cli.md](./rust-rig-native-runtime-migration-for-cheaper-cli.md) |
 | SPEC-034r05iHK8bA7go4BQtGNS | Separate the development APM project from the distributable cheaper package | implemented | [separate-dev-apm-project-from-distributable-package.md](./separate-dev-apm-project-from-distributable-package.md) |
 | SPEC-034rBhR3SNIRFZ1B6n26iH | Shell-read large-file blocking via canonical routing policy | approved | [shell-read-large-file-blocking.md](./shell-read-large-file-blocking.md) |
 | SPEC-034z14nGIf6fXRtTskkrk8 | Standalone executable distribution for cheaper CLI including APM bundles | superseded | [standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md](./standalone-executable-distribution-for-cheaper-cli-including-apm-bundles.md) |
@@ -90,10 +90,10 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7gw94zcNpw | User-facing documentation information architecture | implemented | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
 | SPEC-034zA513QKarQrr5SQtgp7 | Verify and leverage Pi sibling tool-call parallelism inside Workers | approved | [verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md](./verify-and-leverage-pi-sibling-tool-call-parallelism-inside-workers.md) |
 | SPEC-034zIO2lm7gJPz6Gy4JIQP | Version-pinned launcher acquisition | superseded | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
-| SPEC-034D85I40UBKtNgeam655z | Volume-root workspace boundary acceptance | proposed | [volume-root-workspace-boundary-acceptance.md](./volume-root-workspace-boundary-acceptance.md) |
+| SPEC-034D85I40UBKtNgeam655z | Volume-root workspace boundary acceptance | implemented | [volume-root-workspace-boundary-acceptance.md](./volume-root-workspace-boundary-acceptance.md) |
 | SPEC-034KwuiFzl4WvVQKdjfSnM | Windsurf-compat bounded evaluation coverage and Devin registration surfacing (issue #161) | approved | [windsurf-compat-range-normalization-and-devin-registration-surfacing.md](./windsurf-compat-range-normalization-and-devin-registration-surfacing.md) |
-| SPEC-onzPU8E4tKg3C6Iv4s9VK0 | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume | proposed | [worker-run-nullable-maxturns-and-stall-timeout.md](./worker-run-nullable-maxturns-and-stall-timeout.md) |
-| SPEC-s8dMxk0QAbLuWaOrsuikSp | worker schema の magnitude 制約撤廃と INVALID_OUTPUT raw output の回復経路 | proposed | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |
+| SPEC-onzPU8E4tKg3C6Iv4s9VK0 | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume | implemented | [worker-run-nullable-maxturns-and-stall-timeout.md](./worker-run-nullable-maxturns-and-stall-timeout.md) |
+| SPEC-s8dMxk0QAbLuWaOrsuikSp | worker schema の magnitude 制約撤廃と INVALID_OUTPUT raw output の回復経路 | implemented | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |
 | SPEC-034zIKj7DJcwZFr3FvjLrP | Workflow JSON v1 を検証済み DAG へ compile する | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
 | SPEC-034zSVZlWjFAMpwmhsLTkx | 明示 workflow loader と公開 interface command の契約 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | SPEC-034AQOi1TPvVMDkNrhfTM5 | Benchmark workflow orchestration overhead | approved | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |

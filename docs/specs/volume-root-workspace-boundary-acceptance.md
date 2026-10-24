@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034D85I40UBKtNgeam655z"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "Volume-root workspace boundary acceptance"
 created: "2026-10-09"
 updated: "2026-10-09"

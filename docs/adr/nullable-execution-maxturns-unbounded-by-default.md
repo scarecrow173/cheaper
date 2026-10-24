@@ -1,7 +1,7 @@
 ---
 id: "ADR-i7la5qAvghCKzWea1fkZky"
 type: "adr"
-status: "proposed"
+status: "accepted"
 title: "execution.maxTurns を nullable にし既定を上限なしとする"
 created: "2026-10-17"
 updated: "2026-10-17"

@@ -1,7 +1,7 @@
 ---
 id: "DISC-o3GbG6FWEBRFcbNBaslikh"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "Plugin catalog refresh persistence and user model additions"
 created: "2026-10-09"
 updated: "2026-10-09"

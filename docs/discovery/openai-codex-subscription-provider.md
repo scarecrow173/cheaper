@@ -1,7 +1,7 @@
 ---
 id: "DISC-034CWF93eq8KVgv2S9sQPd"
 type: "discovery"
-status: "draft"
+status: "resolved"
 title: "OpenAI Codex subscription provider support"
 created: "2026-10-09"
 updated: "2026-10-09"

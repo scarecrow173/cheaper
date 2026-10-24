@@ -1,7 +1,7 @@
 ---
 id: "SPEC-034J7SxWvGL3oSbeBpo8a3"
 type: "spec"
-status: "proposed"
+status: "implemented"
 title: "PreToolUse auto-routing: route resolution and delegated workflow execution"
 created: "2026-10-20"
 updated: "2026-10-23"
