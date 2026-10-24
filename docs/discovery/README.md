@@ -55,6 +55,7 @@ Directory: `docs/discovery`
 | DISC-034DxZdeAdWoFG3UuTyh5c | Post-migration structural inventory and cleanup policy | resolved | [post-migration-structural-inventory-and-cleanup-policy.md](./post-migration-structural-inventory-and-cleanup-policy.md) |
 | DISC-034r05iHy2gdnp6g5GTWKG | Post-smoke code review findings on abort, repair, and timeout semantics | resolved | [post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md](./post-smoke-code-review-findings-on-abort-repair-and-timeout-semantics.md) |
 | DISC-034J7LwMEdPR5HxFkgOivZ | PreToolUse auto-routing to tasks and workflows | resolved | [pretooluse-auto-routing-to-tasks-and-workflows.md](./pretooluse-auto-routing-to-tasks-and-workflows.md) |
+| DISC-034LFaxMQ43rlWH4Tn8KS5 | proc_process.rs process-tree test flake under parallel load (issue #180) | resolved | [proc-process-test-flake-under-parallel-load.md](./proc-process-test-flake-under-parallel-load.md) |
 | DISC-034r05iHy2gdnp5sN3kF1s | Real provider smoke verification via Ollama | resolved | [real-provider-smoke-verification-via-ollama.md](./real-provider-smoke-verification-via-ollama.md) |
 | DISC-034A8jvNOxFXeSIc8tWQmE | Job lifetime lease の ownership と admission | resolved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | DISC-034KTzzHPIbmtD8j3iHBtg | route grant-set 投影 + viability 整理 + record split（#166） | resolved | [route-grant-set-projection-issue-166.md](./route-grant-set-projection-issue-166.md) |

@@ -19,6 +19,7 @@ Directory: `docs/test-specs`
 | TSPEC-034zQHrk9A6Zc7rrSLGeHA | Core resource manifest normalization | draft | [core-resource-manifest-normalization.md](./core-resource-manifest-normalization.md) |
 | TSPEC-034rAaJtM27Ibpy78mq0kP | Cross-agent adapter contract tests | approved | [cross-agent-adapter-contract-tests.md](./cross-agent-adapter-contract-tests.md) |
 | TSPEC-034KsKHl3xhvb61D3S2SL6 | Cursor preToolUse registration and normalize extension (issue #150) | draft | [cursor-pretooluse-registration-and-normalize.md](./cursor-pretooluse-registration-and-normalize.md) |
+| TSPEC-034LIvllLcelrOMU0brubs | Deterministic proc_process test assertions for parallel-load flake | draft | [deterministic-proc-process-test-assertions-for-parallel-load-flake.md](./deterministic-proc-process-test-assertions-for-parallel-load-flake.md) |
 | TSPEC-034cAvaR7bDF2BjMm2JiAA | Deterministic route test assertions (infra failure and sweep ordering) | draft | [deterministic-route-test-assertions.md](./deterministic-route-test-assertions.md) |
 | TSPEC-034DzTH1ljq4pSfIHyGwVs | dev-seam feature の build-mode contract | approved | [dev-seam-feature-build-mode-contract.md](./dev-seam-feature-build-mode-contract.md) |
 | TSPEC-034Dak4h2lD4Kk5dB1y5q8 | Devin provider Windows credential contract behavior | draft | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
