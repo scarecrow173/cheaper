@@ -4,11 +4,13 @@ type: "discovery"
 status: "resolved"
 title: "Usage report analysis audit — route/error breakdown and --since scope (issue #184)"
 created: "2026-10-25"
-updated: "2026-10-25"
+updated: "2026-10-26"
 owners: ["scarecrow173"]
 relations:
   source:
     - "https://github.com/scarecrow173/cheaper/issues/184"
+    - "https://github.com/scarecrow173/cheaper/issues/192"
+    - "https://github.com/scarecrow173/cheaper/issues/185"
     - "crates/cheaper-cli/src/usage_report.rs"
     - "crates/cheaper-cli/src/usage_log.rs"
     - "crates/cheaper-cli/src/args.rs"
@@ -349,6 +351,43 @@ filter surface)と採択空間を固定する。要件化は
   text section layout の細部 — 実装着手前に検討(高確度で必要)
 
 ## Sources and Relations
+
+### 2026-10-26: #192 impact addendum（改訂レビュー・承認済み）
+
+dispatch override: 既存 chain の限定改訂を委譲指示に従って実施する。
+新しい discovery/ADR は作らず、既存 O2 の採択は変更しない。
+以下は追加の比較根拠と推奨であり、architecture decision ではない。
+提案した限定改訂は独立 review と Judge 判定を経て承認済み
+（plan の approval checkpoint）。実装の検証完了は意味しない。
+
+- 根拠: 同日 `mise exec -- gh issue view <number> --json
+  number,title,body,url` を 184・192・185 それぞれに read-only で実行した。
+  [#184](https://github.com/scarecrow173/cheaper/issues/184) は既存 Usage の
+  read-side 分析、[#192](https://github.com/scarecrow173/cheaper/issues/192)
+  は個別実行・判断の正本 History と相関 ID を要求する。#192 §3 の
+  **適用可能な新規 Usage record への executionId 連携は必須**であり、
+  #184 の「writer 無変更」を #192 にまで延長する解釈はできない。
+  #192 の refetch は独自 executionId と元 Route への参照を持つ。
+  [#185](https://github.com/scarecrow173/cheaper/issues/185) は実行・設定変更・
+  新規 log を伴わない診断であり、#184 との並行可能性も明記する。
+- 現行 `build_usage_report` は usage.jsonl のみを読み kind 別に集計する
+  (`crates/cheaper-cli/src/usage_report.rs:544-556`)。既存 fixture harness
+  (`crates/cheaper-cli/tests/integration/usage_report.rs:26-79`) で未知 optional ID の許容を
+  検証でき、History writer/store を必要としない。
+
+| option | 効果・trade-off |
+| --- | --- |
+| #184 を無改訂で継続 | 最小作業だが、ID と logRef の混同、失敗母数を全実行へ拡張する誤読が残る |
+| scoped contract amendment | writer/schema は変えず consumer tolerance と責務だけ明文化できる。改訂レビューは必要 |
+| #192 を先行 | 相関調査が先に使える一方、既知 `--since` bug の修正を独立要件に対して待たせる |
+| combined PR | 同時検証は可能だが read-side 分析と広域の History/ID writer 変更が混在し、review/rollback 範囲が拡大する |
+
+推奨: hard implementation dependency は見当たらず、scoped amendment 後も
+別 PR を維持し、**#184 → #192 → #185** の順を提案する（必須依存順ではない）。
+#184 は recorded run を失敗率の母数とし、History を読まず、未知 optional
+ID は無視する。ID 発行・伝搬・History store・必須 Usage ID 連携は #192、
+副作用なし診断は #185 の責務として downstream spec/design/plan に反映する
+提案。ID 表現/store 形式はここでは選ばない。
 
 - issue: <https://github.com/scarecrow173/cheaper/issues/184>
 - 監査対象: `crates/cheaper-cli/src/usage_report.rs`(全行)・

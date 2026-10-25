@@ -9,6 +9,7 @@ owners: ["scarecrow173"]
 relations:
   source:
     - "https://github.com/scarecrow173/cheaper/issues/184"
+    - "https://github.com/scarecrow173/cheaper/issues/192"
     - "../discovery/usage-analysis-audit-issue-184.md"
   changes:
     added: []
@@ -56,6 +57,10 @@ relations:
 # Usage analysis scope — Route/Error breakdowns and period filtering (issue #184)
 
 ## What Should Be Built
+
+2026-10-26 改訂: #192 との責務境界を明確化した amendment は独立 review と
+Judge 判定を経て承認済み（記録は plan の approval checkpoint）。
+先行版の承認と既存 ADR の O2 採択を維持する。実装の検証完了は意味しない。
 
 issue #184 の成果物は次の 5 点。現行監査の根拠は
 `docs/discovery/usage-analysis-audit-issue-184.md`、方式採択は
@@ -151,6 +156,29 @@ issue #184 の成果物は次の 5 点。現行監査の根拠は
   (route record の `worker` は analyze worker の object で意味が
   違う — route 軸は `--route` のみで絞る)。
 - usage 集計結果を残す永続化・外部送信。
+
+### #192 Execution History との互換性境界
+
+- #184 自体は Usage writer/schema を変更しない。将来
+  `executionId`・`parentExecutionId`・`traceId` が optional field として
+  入っても、read 側は受理して無視し、既存 aggregate/group/filter/dedup
+  の結果を変えない。ID の有無を record の有効性条件としない。
+  同一 trace の別 run はそれぞれ計数し、ID による統合/重複排除をしない。
+- 失敗割合の母数は filter 後の **記録された run**（`shareOfRuns`）と
+  その失敗 run（`shareOfFailures`）であり、全実行数ではない。History に
+  将来記録される usage 発生前の失敗・skip はいずれの母数にも加えない。
+- History は不要・非参照であり、History record は集計入力ではない。
+  window 外 Route owner を History で補完せず、window 内 refetch は
+  既定の `logRef` join/orphan 規則に従う。
+- [#192](https://github.com/scarecrow173/cheaper/issues/192) が ID の
+  発行・伝搬・History store と、**適用可能な新規 Usage record への
+  executionId 追加および History 実行イベントとの一致（必須）**を所有する。
+  `parentExecutionId`/`traceId` の適用・整合も #192 の契約であり、
+  #184 の optional consumer tolerance はその必須要件を弱めない。
+  旧 record の読取互換性を維持し、ID 表現や store 形式はここでは決めない。
+- `usage --execution-id` は #192 の optional candidate に留め、
+  #184 の flag・受入条件には追加しない。hard dependency はなく別 PR とし、
+  提案順は #184 → #192 → #185（副作用なし診断）である。
 
 ## Requirements
 
@@ -327,6 +355,13 @@ route record は `--route` scoped な `result.route` の executions 等
 には含めず、診断用 `unkeyedRecords` だけに表示する。
 
 ## Acceptance Criteria
+
+- [ ] optional 相関 ID の有無で aggregate/group/filter/refetch 出力が同一。
+      同一 trace の別 run は両方計数され、refetch の独立 executionId は
+      `logRef` join を妨げない。
+- [ ] History 不在でも report が成立し、History 相当の外部情報があっても
+      window 外 Route owner を補完せず orphan のまま。History record は
+      入力とせず、usage 発生前の失敗/skip で recorded-run 母数を変えない。
 
 - [ ] `cheaper usage --since <期間>` で route/route-refetch 集計が
   window 内 record のみを反映する(fixture で期間内外を混ぜた

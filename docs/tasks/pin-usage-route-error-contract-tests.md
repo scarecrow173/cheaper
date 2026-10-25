@@ -144,6 +144,31 @@ spec「出力 contract」節と design §7 test outline の全 pinned test を�
    usage_log)への追加を原則とし、新 module が必要な場合のみ宣言
    する。
 
+## #192 consumer tolerance 追加（2026-10-26、改訂レビュー・承認済み）
+
+T1 の既存 Usage fixture/harness を用いて次を pin する（test-spec の同名
+Rules が詳細契約）。新しい History schema/writer や ID generator は作らない。
+
+- `usage_optional_ids_preserve_report`: optional executionId/
+  parentExecutionId/traceId の有無で aggregate/group/filter/refetch と
+  JSON/text 出力が同一（flag 無し、route/error group、既存 filter を含む）。
+- `usage_same_trace_distinct_runs_counted`: 同一 trace の別 run は両方計数。
+  success/failure 各 1 の recorded-run 母数と失敗割合を固定。
+- `usage_refetch_distinct_execution_id_joins_log_ref`: 元 Route と別 ID の
+  refetch が window 内の logRef で join し、kind 間件数は統合しない。
+- `usage_window_orphan_not_backfilled_from_history`: window 外 owner は
+  対応 History 相当の外部情報があっても orphan のまま。
+- `usage_report_history_independent`: History 不在で report 成功、
+  外部情報の追加でも不変。History records は集計入力ではない。
+
+後半 2 test は既存 temp directory 内に必要なら inert な無関係の sentinel
+を置き、将来の History file path/schema を仮定しない。これは #192 の ID
+妥当性/発行/伝搬/必須 Usage 連携 test ではなく consumer tolerance だけ。
+T1 で pin し T2/T3 の集計で関連保証を満たし、T4 の CLI/text 完成後に
+全組合せを green にする。既存挙動で既に満たす tolerance test は T1 から
+green でよい。新契約全体の expected-red window は T4 まで維持し、
+6 task の直列順・新規依存なし・T5 Usage-only 計測を変更しない。
+
 ## Classification
 
 - `normal-plan-task`
@@ -175,6 +200,10 @@ spec「出力 contract」節と design §7 test outline の全 pinned test を�
 format 実装(T4)、`docs/guides/usage.md`(T4)。
 
 ## Done When
+
+- [ ] consumer tolerance 5 test が追加され、T1 時点の green/expected-red と
+      その理由を記録。History schema/writer・ID validation/mint/linkage
+      を実装・要求していない
 
 - [ ] `UsageGroupBy` enum・`UsageFilters.route`・`build_usage_report`
       の `group_by` 引数が compile-only seam として追加され、src/

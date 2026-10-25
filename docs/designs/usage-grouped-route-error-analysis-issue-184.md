@@ -9,6 +9,7 @@ owners: ["scarecrow173"]
 relations:
   source:
     - "https://github.com/scarecrow173/cheaper/issues/184"
+    - "https://github.com/scarecrow173/cheaper/issues/192"
     - "crates/cheaper-cli/src/usage_report.rs"
     - "crates/cheaper-cli/src/args.rs"
     - "crates/cheaper-cli/src/text_format.rs"
@@ -67,6 +68,10 @@ metadata: {}
 # Usage grouped route/error analysis — --group-by・--route・per-route/byError sections (issue #184)
 
 ## Context
+
+2026-10-26: #192 境界の amendment は独立 review と Judge 判定を経て承認済み
+（記録は plan の approval checkpoint）。先行版の承認と ADR の O2 は維持する。
+実装の検証完了は意味しない。
 
 `docs/specs/usage-analysis-scope-issue-184.md`(SPEC-034M0QMBJ1LQRGDdB2wnKl)
 と `docs/adr/grouped-route-and-error-analysis-in-cheaper-usage.md`
@@ -564,6 +569,27 @@ byError は無 scoped のまま — spec Req 5)。
 
 ### 6. Backward compatibility
 
+#### #192 consumer tolerance（writer/history 非依存）
+
+- 将来の optional `executionId`/`parentExecutionId`/`traceId` は未知 field
+  として受理して無視する。aggregate/group/filter/dedup の key にせず、
+  同一 trace の別 run も両方計数する。run/route/refetch の cardinality は
+  kind ごとに独立のまま、親子/trace を用いて統合しない。
+- refetch が元 Route と異なる executionId を持っても、join は window 内
+  の既存 `logRef` owner map のみを使う。first-wins と orphan 判定を維持し、
+  window 外 owner を History から backfill しない。
+- `build_usage_report` は History を探索/読取しない。History が無くても
+  成立し、その event/skip/usage 前 failure を run 母数へ足さない。
+  失敗率は recorded run に関する値であって全実行の失敗率ではない。
+- `execution` は実効 policy echo
+  `{timeoutMs,maxTurns,maxToolCalls}` であり `executionId` ではない。
+  未知 optional ID や caller 提供 trace は相関ヒントでしかなく、
+  grant/trust/実行権限など security policy の証明には決して使わない。
+- ID 発行・伝搬・History store・適用可能な新規 Usage record の必須 ID
+  連携は [#192](https://github.com/scarecrow173/cheaper/issues/192) が所有する。
+  この read-side 設計では ID generator/形式/store を導入・選択しない。
+  `usage --execution-id` も #192 の optional candidate であり実装しない。
+
 - **`--since` が `result.route` に効くようになる意味論変更** — 既存
   field の値が変わる(filter が従来無視されていた bug fix)。field
   shape・key 順は不変。guide に「`--since` は route bucket にも適用さ
@@ -587,6 +613,14 @@ byError は無 scoped のまま — spec Req 5)。
   1 route に帰属する。
 
 ### 7. Test outline — `tests/integration/usage_report.rs`
+
+#192 境界の consumer tolerance は test-spec「#192 consumer tolerance」の
+5 test (`usage_optional_ids_preserve_report`・
+`usage_same_trace_distinct_runs_counted`・
+`usage_refetch_distinct_execution_id_joins_log_ref`・
+`usage_window_orphan_not_backfilled_from_history`・
+`usage_report_history_independent`) を追加する。既存 harness の Usage fixture
+のみを操作し、History schema/writer や ID 発行/妥当性/連携を検証しない。
 
 既存の `write_log`/`run_record`/`count_record`/`now`/`f64_at` helper に
 `route_record()`・`refetch_record()`・`run_error_record(code)` fixture

@@ -9,6 +9,7 @@ owners: []
 relations:
   source:
     - "https://github.com/scarecrow173/cheaper/issues/184"
+    - "https://github.com/scarecrow173/cheaper/issues/192"
   changes:
     added: []
     modified: []
@@ -81,6 +82,43 @@ orphan/unkeyed の window-wide 診断には効かない。group key・出力に
 error detail)を出さない。
 
 ## Rules
+
+### #192 consumer tolerance（`tests/integration/usage_report.rs`）
+
+2026-10-26 追加分は独立 review・承認済み（plan の approval checkpoint）。
+test-spec 自体は従来規約どおり draft を維持する。#184 は writer/schema を変更せず、
+optional `executionId`/`parentExecutionId`/`traceId` を受理して無視する。
+以下は consumer tolerance fixture であって、#192 の ID 妥当性・発行・伝搬・
+Usage/History 連携の検証ではない。
+
+- `usage_optional_ids_preserve_report`: 同じ run/route/refetch fixture に
+  上記 3 field を付けた版と欠損版を用意する。flag 無しと
+  `--group-by route`/`error`、既存 `--since`/`--worker`/`--provider`/
+  `--model` および `--route` の適用範囲を代表する組合せで、aggregate・
+  group・filter・refetch を含む JSON 結果と text 出力がそれぞれ同一。
+  ID の有無を gate/filter/dedup に使わない。
+- `usage_same_trace_distinct_runs_counted`: 同じ traceId・異なる
+  executionId の run 2 件（success と usage-bearing failure 各 1）を
+  両方計数し、`records:2`、該当 code の `shareOfRuns:0.5`/
+  `shareOfFailures:1`。History の usage 前 failure/skip は入力でなく、
+  全実行数を母数とする assertion は追加しない。
+- `usage_refetch_distinct_execution_id_joins_log_ref`: window 内 Route と
+  refetch に別々の executionId、同じ非空 logRef を付け、join と
+  refetch count/bytes が ID 欠損版と同一。kind 別件数は混ぜない。
+- `usage_window_orphan_not_backfilled_from_history`: Route owner を
+  window 外、同じ logRef を持つ refetch を内側に置く。対応 History が
+  存在するという状況を模した inert 外部情報があっても、
+  `orphanRefetches` に残り、`byRoute` に owner を復活させない。
+- `usage_report_history_independent`: Usage fixture のみで report が成功し、
+  History 相当の無関係な外部ファイルを追加しても JSON/text・失敗率母数は
+  不変。History event/record は Usage JSONL へ投入しない。
+
+全 test は既存 `write_log`/`report`/`run_usage`/`CliIo` と temp directory
+harness を再利用する。後半 2 test の外部情報には、必要なら無関係な
+sentinel ファイルと opaque な内容を置く（同じ logRef の文字列を含めても
+History record として parse しない）。**将来の History filename/schema を
+仮定しない**。この fixture は History を認識する test ではなく、
+Usage のみを読む境界の保証であり、実 History writer/store は追加しない。
 
 ### Route window と `--since` 適用(`tests/integration/usage_report.rs`)
 
@@ -326,6 +364,10 @@ error detail)を出さない。
 
 ## Guarantees
 
+- optional 相関 ID による aggregate/group/filter/dedup の変化がなく、
+  独立 refetch ID でも window-bound logRef join を維持する。
+  History 不在で成立し、History 情報で orphan/失敗率を補完しない。
+
 - `tests/integration/usage_report.rs`・`args.rs`・`usage_log.rs` の
   pin test が、`--since` の route 適用・scoping・join/orphan/
   unkeyed・`byRoute`/`byError` emit 規則・share 分母・canonical
@@ -341,6 +383,10 @@ error detail)を出さない。
   がない。
 
 ## Non-goals
+
+- #192 の ID 表現・発行・伝搬・妥当性・History store および適用可能な
+  新規 Usage record の必須 ID 連携。その acceptance は #192 が所有し、
+  本 consumer tolerance test は代替しない。
 
 - usage.jsonl writer・record schema の正しさ — read 側のみの変更
   であり、writer 契約は既存 chain(usage telemetry/error record

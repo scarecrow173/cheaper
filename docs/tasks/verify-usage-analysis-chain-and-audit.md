@@ -80,6 +80,24 @@ doc-index 一貫性 review。plan Verification の全 checkbox をここで
      こと(window-wide diagnostics・first-wins・canonical formatter・
      caller 追従・allowlist・golden 無変更・memory evidence)。
 
+## #192 consumer tolerance gate（2026-10-26、改訂レビュー・承認済み）
+
+- `usage_optional_ids_preserve_report`・
+  `usage_same_trace_distinct_runs_counted`・
+  `usage_refetch_distinct_execution_id_joins_log_ref`・
+  `usage_window_orphan_not_backfilled_from_history`・
+  `usage_report_history_independent` の 5 test が全て green。
+  test-spec の定義に沿って、ID 有無の aggregate/group/filter/refetch parity、
+  同一 trace の distinct run 計数、独立 refetch ID の logRef join、
+  window 外 owner の orphan 維持、History 不在/非入力を確認する。
+- fixture は既存 Usage harness と必要なら inert な無関係の sentinel のみ。
+  将来の History schema/store/filename を仮定しない。#192 が所有する ID
+  妥当性/発行/伝搬/必須 Usage ID 連携の検証をこの task へ持ち込まない。
+- 最終 diff で writer/schema 無変更、History 非参照、recorded-run 母数を
+  確認し、T5 は Usage-only メモリ計測のまま、新規依存なし、
+  T1 → T2 → T3 → T4 → T5 → T6 の直列依存と T1〜T4 expected-red の
+  履歴を維持していることを確認する。
+
 ## Classification
 
 - `normal-plan-task`
@@ -100,6 +118,8 @@ doc-index 一貫性 review。plan Verification の全 checkbox をここで
   戻して修正する)
 
 ## Done When
+
+- [ ] 上記 consumer tolerance 5 test と責務境界の audit 結果を記録
 
 - [ ] plan Verification の全 checkbox が検証済み
 - [ ] focused test 3 モジュールと `mise run check` が green
