@@ -9,6 +9,7 @@ Directory: `docs/discovery`
 | DISC-1mk9ud9KQV9qy4ZC0sxDJa | APM hook 宣言を per-target サブパッケージへ分離(イベント名 casing 警告と cross-target 死骸エントリの解消) | resolved | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |
 | DISC-034r05iHy2gdnp9k0MK7uO | Self-contained cheaper CLI distribution inside the APM hook bundle | resolved | [apm-self-contained-cli-distribution.md](./apm-self-contained-cli-distribution.md) |
 | DISC-Hsh18eGWIzyBCzpfoRxUb3 | auto-tier-classification-effective-cost | resolved | [auto-tier-classification-effective-cost.md](./auto-tier-classification-effective-cost.md) |
+| DISC-qgvOWFM6MtYgrq3viqbssW | Benchmark harness audit and redesign space (issue #183) | resolved | [benchmark-harness-audit-issue-183.md](./benchmark-harness-audit-issue-183.md) |
 | DISC-034FRguX1hjhDZ7ZMEBnbm | Bounded hook read request contract | resolved | [bounded-hook-read-request-contract.md](./bounded-hook-read-request-contract.md) |
 | DISC-034zWckRcYKm7QivslioOd | ToolScheduler の admission と ownership 境界 | resolved | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
 | DISC-ar7NQWbsDe0TtIFAlAsUdv | builtin materialize cache の stale 化(同一 version の embedded 変更) | resolved | [builtin-materialize-cache-stale-on-same-version.md](./builtin-materialize-cache-stale-on-same-version.md) |
