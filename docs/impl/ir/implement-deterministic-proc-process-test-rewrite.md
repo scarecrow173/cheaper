@@ -234,6 +234,38 @@ budget 値・分類表まで確定済みのため Experiment Log は未作成)�
     read・`emitted_pids` 内部・unix `/proc/<pid>/stat`・touch marker
     照合・`.terminated` 内容確認)
 
+### Post-merge verification(TASK-034LIwoKlNw7BOwWV21TuC、2026-10-25、Windows local)
+
+- `mise exec -- cargo test -p cheaper-tools --test proc_process`:
+  9 passed / 0 failed(31.90s)
+- `mise run check` × **3 連続** 全 exit 0 — proc_process leg は
+  run1 33.09s / run2 36.54s / run3 32.06s で 9 passed/0 failed、
+  全 run で `test result: FAILED` 0 件。spec AC どおり smoke
+  signal(~1 件/日 rate への証明ではない)。
+- `mise exec -- cargo clippy -p cheaper-tools --all-targets --
+  -D warnings`: pass
+- forced-classification(一時変更 → revert 済み、詳細は task doc
+  Notes):
+  - `"60s"`→`"1ms"` + emit dir を `hidden.d` へ redirect →
+    exit-tree が Timeout + emitted `{}` で emit floor へ入り
+    `dump_failure`(mode/what/budget/poll/elapsed・emitted set・
+    `source()` chain・`cheaper code: TIMEOUT`・details JSON)+
+    `diag_fail` panic `[exit-tree] 60s-armed timeout requires at
+    least one emit: timed out after 5s (poll 20ms); elapsed
+    255.3µs` を確認。floor が mode identity(`mode !=
+    "deep-stubborn"`)で key されることを実証。
+  - deep-stubborn のみ `"2s"`→`"1ms"` + emit redirect → 0-emit
+    Timeout が受理され全 4 mode pass(32.13s)。
+  - `"60s"`→`"1ms"` 単独(redirect 無し)でも pass(28.49s)—
+    kill 配送 > entry-emit latency のため 60s-armed mode は emit
+    ≥1 で解決する設計判断と整合(0-emit Timeout = broken
+    fixture/plumbing)。
+  - revert 後 `cleans_live_descendants` 再実行: 1 passed/0
+    failed(31.65s)、diff 無し。
+- POSIX locus: 実 POSIX 実行は CI `gh workflow run ci`(PR
+  branch、ubuntu-latest)を確認 locus とする — local POSIX env
+  無し、linux 向け compile smoke は上記どおり pass 済み。
+
 ## Risks
 
 - **早期 `Timeout` 受理の mask 可能性**(design Risks): 60s-armed mode の
@@ -261,5 +293,7 @@ follow-up はない。
   (`"process tree helper failed"`/`"managed process cleanup failed"` 系)
   を示した時点で再検討する運用。
 - 3 連続 `mise run check` による flake 非再現確認は後続 task
-  `verify-proc-process-determinism-and-mise-check` の責務(本 task の
-  scope 外)。
+  `verify-proc-process-determinism-and-mise-check`
+  (TASK-034LIwoKlNw7BOwWV21TuC)で実施済み — 3/3 連続 exit 0、
+  forced-classification・POSIX locus を含む証跡は上記
+  「Post-merge verification」および同 task doc の Notes に記録。
