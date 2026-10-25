@@ -1,7 +1,7 @@
 ---
 id: "TASK-IoIMnYeXx4TFTREaOLTquP"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement benchmark record/aggregate schema v2 — claim invariants, median/p95, armExpect, immutable store, comparisons, estimated layer"
 created: "2026-10-25"
 updated: "2026-10-25"
@@ -24,6 +24,8 @@ relations:
     modified:
       - type: "file"
         path: "crates/cheaper-bench/src/cli.rs"
+      - type: "file"
+        path: "crates/cheaper-bench/src/lib.rs"
       - type: "file"
         path: "crates/cheaper-bench/src/measure.rs"
     deleted: []
@@ -180,34 +182,52 @@ comparisons/reduction・estimated layer・immutable result store を実装
 
 ## Done When
 
-- [ ] record/aggregate の schema v2 型が design §3.1-§3.3 どおりに定義
+- [x] record/aggregate の schema v2 型が design §3.1-§3.3 どおりに定義
       され、`environment` block に `node` field を持たない
-- [ ] validation が design §3.4 の 6 invariant を fail-fast で強制する
+      (`record.rs` — emit 実測の environment key は
+      `os/osRelease/arch/cpuCount/ambientRustc/harnessProfile`)
+- [x] validation が design §3.4 の 6 invariant を fail-fast で強制する
       (v1 reject・parentUsage status/理由・usage.source scripted・
       environment.node/ambientRustc/profile・comparisons claim enum +
-      claim 別形状・数値 parent-usage field 不存在)
-- [ ] armExpect 照合が宣言 key のみ等値比較で、mismatch は
+      claim 別形状・数値 parent-usage field 不存在)—
+      `record::validate_result` + `tests/schema.rs` 18 test
+- [x] armExpect 照合が宣言 key のみ等値比較で、mismatch は
       `success:false` 記録(即時 abort なし)+ run 終了時に mismatch
-      scenario が exit≠0 で報告される
-- [ ] median/p95/stableValue が v1 parity algorithm(補間しない
+      scenario が exit≠0 で報告される(`cli.rs` run 終端の failure
+      集約 — record は書いた上で非 0 exit)
+- [x] median/p95/stableValue が v1 parity algorithm(補間しない
       nearest-rank)で実装され、`tests/aggregate.rs` が boundary
-      case を固定する
-- [ ] comparisons が manifest 宣言から駆動され、delta が median/p95
+      case を固定する(12 test)
+- [x] comparisons が manifest 宣言から駆動され、delta が median/p95
       双方・`reduction` が `reductionBytes`/`reductionRatio` を emit
-      する
-- [ ] `--pricing` 有無で estimated entry の emit が変わり、pricing
+      する(sample emit で measured entry の両 delta + reduction
+      block を確認)
+- [x] `--pricing` 有無で estimated entry の emit が変わり、pricing
       file の load が fail-fast(malformed・必須 key 欠落・非数値・
       未知 key)する
-- [ ] `benchmarks/results/<runId>.json` への `create_new` 非上書き
-      書込み・v1 file の reject が動作する
-- [ ] `cargo test -p cheaper-bench` が pass(tests/schema.rs +
-      tests/aggregate.rs を含む)
+- [x] `benchmarks/results/<runId>.json` への `create_new` 非上書き
+      書込み・v1 file の reject が動作する(`report.rs` —
+      `tests/schema.rs` で二重書込み拒否 + v1 load reject を pin)
+- [x] `cargo test -p cheaper-bench` が pass(tests/schema.rs +
+      tests/aggregate.rs を含む — 99 test 全 pass)
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-bench` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-bench --test schema` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-bench --test aggregate` exits 0
-- [ ] `mise exec -- cargo fmt --all -- --check` exits 0
-- [ ] `mise exec -- cargo clippy -p cheaper-bench --all-targets -- -D warnings` exits 0
-- [ ] Manual: `grep -rn "serde_json::to_string\|to_string_pretty" crates/cheaper-bench/src/` が byte 計測経路に hit しない(byte 計測は `cheaper_core::json::stringify` 経由 — supplement)
+- [x] `mise exec -- cargo test -p cheaper-bench` exits 0
+      (40 lib + 12 aggregate + 11 fixture + 18 manifest + 18 schema)
+- [x] `mise exec -- cargo test -p cheaper-bench --test schema` exits 0
+      (18 passed)
+- [x] `mise exec -- cargo test -p cheaper-bench --test aggregate` exits 0
+      (12 passed)
+- [x] `mise exec -- cargo fmt --all -- --check` exits 0
+- [x] `mise exec -- cargo clippy -p cheaper-bench --all-targets -- -D warnings` exits 0
+- [x] Manual: `grep -rn "serde_json::to_string\|to_string_pretty" crates/cheaper-bench/src/` が byte 計測経路に hit しない(byte 計測は `cheaper_core::json::stringify` 経由 — supplement)
+      — hit は file 書出し・stdin payload 構築のみで、byte 計測の
+      唯一経路 `measure::json_bytes` は `stringify().len()`
+- [x] `mise run check` exits 0(canonical verification contract 全体)
+- [x] Manual: sample emit(`--scenario single-simple-tool-call
+      --warmups 0 --repetitions 1 --output <temp>`)の result JSON が
+      §3.1 の全必須 key・`environment.node` 不在・claim 別 null/value
+      規則・`metrics.usage.source:"scripted"`・非 envelope arm の
+      `envelopeOk:null` を満たすことを目視確認。
+      `benchmarks/results/**` は git status/diff で変更無しを確認

@@ -23,7 +23,14 @@
 //! - `measure` — 観測 parser/計測(§3.3 — utility envelope・route
 //!   trailer・hook JSON・usage.jsonl・armExpect 照合)
 //! - `arms` — arm 実装語彙(§2.3 — 13 impl)の dispatch + spawn/観測
+//! - `record` — result schema v2 run-level 採取・observation record
+//!   投影・§3.4 invariant validation
+//! - `aggregate` — median/p95(v1 parity)・stableValue・successRate・
+//!   comparisons・reduction・estimated layer(§4)
+//! - `report` — result JSON 組立て + `create_new` 非上書き書込み
+//!   (`benchmarks/results/<runId>.json` — §3.5)
 
+pub mod aggregate;
 pub mod arms;
 pub mod child;
 pub mod cli;
@@ -31,5 +38,7 @@ pub mod env;
 pub mod fixture;
 pub mod manifest;
 pub mod measure;
+pub mod record;
+pub mod report;
 pub mod spawn;
 pub mod workspace;

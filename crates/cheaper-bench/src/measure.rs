@@ -190,8 +190,10 @@ impl Observation {
         }
     }
 
-    /// record への JSON 投影(T3 record.rs が正式 schema へ束縛する
-    /// までの暫定写像 — field 名は §3.3 と一致させる)。
+    /// record への JSON 投影(観測 local 形 — run-level field
+    /// `runId`/`parentUsage`/`fixtureRevision`/`environment` は
+    /// `record::observation_record` が挿入する。field 名は §3.3 と
+    /// 一致。`evaluate_expect` の照合対象もこの形)。
     pub fn to_json(&self) -> Value {
         let mut record = Map::new();
         record.insert("schemaVersion".to_string(), json!(2));

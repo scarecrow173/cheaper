@@ -1,8 +1,6 @@
 //! CLI surface(design §1.3)— arg parse・binary 解決・preflight
-//! dev-seam probe・scenario×arm×(warmups+reps) run ループ。
-//!
-//! T2 scope: arm dispatch・観測生成・`--output` への observation 出力
-//! まで(record schema v2/aggregate/report は T3 が接続する)。
+//! dev-seam probe・scenario×arm×(warmups+reps) run ループ・
+//! record→aggregate→report の配線(T3)。
 //!
 //! ```text
 //! mise exec -- cargo build --release -p cheaper-cli --features dev-seam
@@ -18,11 +16,14 @@ use cheaper_core::errors::CheaperError;
 use serde_json::{json, Map, Value};
 use tempfile::TempDir;
 
+use crate::aggregate;
 use crate::arms::{self, ArmContext};
 use crate::env;
 use crate::fixture::bench_error;
 use crate::manifest::Manifest;
 use crate::measure::{self, Observation};
+use crate::record;
+use crate::report;
 use crate::spawn::{self, SpawnOptions};
 use crate::workspace;
 
@@ -221,46 +222,16 @@ fn repository_revision(repo_root: &Path) -> Option<String> {
     (!revision.is_empty()).then_some(revision)
 }
 
-/// `--output` 書き出し — T3 record schema までの暫定 container。
-/// observation record 自体は `Observation::to_json` が §3.3 名で
-/// 投影済み(T3 が正式 record へ束縛するまでの観測面)。
-fn write_report(
-    path: &Path,
-    manifest: &Manifest,
-    binary: &Path,
-    repository_revision: Option<&str>,
-    observations: &[Observation],
-) -> Result<(), CheaperError> {
-    let mut report = Map::new();
-    report.insert("schemaVersion".to_string(), json!(2));
-    report.insert(
-        "fixtureRevision".to_string(),
-        json!(manifest.fixture_revision),
-    );
-    report.insert(
-        "repositoryRevision".to_string(),
-        repository_revision.map_or(Value::Null, |r| json!(r)),
-    );
-    report.insert("binary".to_string(), json!(binary.to_string_lossy()));
-    report.insert(
-        "observations".to_string(),
-        Value::Array(observations.iter().map(Observation::to_json).collect()),
-    );
-    let mut text = serde_json::to_string_pretty(&Value::Object(report))
-        .map_err(|e| bench_error(format!("report serialize failed: {e}")))?;
-    text.push('\n');
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() {
-            std::fs::create_dir_all(parent).map_err(|e| {
-                bench_error(format!(
-                    "output dir create failed {}: {e}",
-                    parent.display()
-                ))
-            })?;
-        }
-    }
-    std::fs::write(path, &text)
-        .map_err(|e| bench_error(format!("output write failed {}: {e}", path.display())))
+/// ambient passthrough の記録 — `CHEAPER_LOG*` allowlist のうち ambient
+/// env に実際に存在した名(PATH/SystemRoot/TEMP/TMP は baseline 要件で
+/// 測定条件に関わらないため対象外。§3.1 `conditions` — log 有効 arm の
+/// overhead 解釈に使う観測 fact)。
+fn ambient_passthrough() -> Vec<String> {
+    ["CHEAPER_LOG", "CHEAPER_LOG_FORMAT"]
+        .iter()
+        .filter(|name| std::env::var_os(name).is_some())
+        .map(|name| (*name).to_string())
+        .collect()
 }
 
 /// observation 1 行の進行表示(stderr — stdout は `--output` 無しでも
@@ -296,12 +267,25 @@ fn run_inner(argv: &[String]) -> Result<(), CheaperError> {
     let options = parse_args(argv)?;
     let root = repo_root();
     let manifest = Manifest::load(&root.join(DEFAULT_MANIFEST))?;
+    // §4.3 — pricing file は計測開始前に load する(malformed・必須
+    // key 欠落・非数値・未知 key は run 前に fail-fast)。
+    let pricing = options
+        .pricing
+        .as_deref()
+        .map(aggregate::Pricing::load)
+        .transpose()?;
     let binary = resolve_binary(options.binary.as_deref())?;
     let fixture_child = arms::fixture_child_exe()?;
     preflight_probe(&binary)?;
+    // run-level 採取値は計測前に確定する — `ambientRustc` 必須 field
+    // の採取不能を run 完了後ではなく開始前に検出する(§3.2/§3.4)。
+    let environment = record::capture_environment()?;
+    let run_id = uuid::Uuid::new_v4().to_string();
+    let measured_binary = record::measured_binary_block(&binary, &root, "passed");
     let revision = repository_revision(&root);
     eprintln!(
-        "cheaper-bench: binary={} revision={} scenarios={} warmups={} repetitions={}",
+        "cheaper-bench: runId={} binary={} revision={} scenarios={} warmups={} repetitions={}",
+        run_id,
         binary.display(),
         revision.as_deref().unwrap_or("<unavailable>"),
         if options.scenarios.is_empty() {
@@ -312,14 +296,23 @@ fn run_inner(argv: &[String]) -> Result<(), CheaperError> {
         options.warmups,
         options.repetitions,
     );
+    let mut selected_scenarios: Vec<String> = Vec::new();
     let mut observations: Vec<Observation> = Vec::new();
     for scenario in &manifest.scenarios {
         if !options.scenarios.is_empty() && !options.scenarios.iter().any(|s| s == &scenario.id) {
             continue;
         }
+        selected_scenarios.push(scenario.id.clone());
         for arm in &scenario.arms {
             for index in 0..(options.warmups + options.repetitions) {
                 let warmup = index < options.warmups;
+                // repetition は v1 parity の phase 内 1-based —
+                // warmup obs は 1..=warmups、計測 obs は 1..=repetitions。
+                let repetition = if warmup {
+                    index + 1
+                } else {
+                    index - options.warmups + 1
+                };
                 // observation 毎に fresh ws/cfgDir(§2.4 — usage.jsonl・
                 // route-logs・hook-eval・fixture file の全副作用を
                 // observation 単位でリセット)。
@@ -338,26 +331,61 @@ fn run_inner(argv: &[String]) -> Result<(), CheaperError> {
                     fixture_child_exe: &fixture_child,
                     repo_root: &root,
                 };
-                let observation = arms::run_observation(&ctx, arm, index, warmup)?;
+                let observation = arms::run_observation(&ctx, arm, repetition, warmup)?;
                 log_observation(&observation);
                 observations.push(observation);
             }
         }
     }
-    if let Some(output) = &options.output {
-        write_report(
-            output,
-            &manifest,
-            &binary,
-            revision.as_deref(),
-            &observations,
-        )?;
-        eprintln!(
-            "cheaper-bench: wrote {} observations to {}",
-            observations.len(),
-            output.display()
-        );
-    }
+    // observation → schema v2 record → aggregate → result 組立て →
+    // §3.4 invariant validate → create_new 書込み(§3.5 — 既定
+    // `benchmarks/results/<runId>.json`、`--output` 明示も非上書き)。
+    let run_ctx = record::RunContext {
+        run_id,
+        fixture_revision: manifest.fixture_revision.clone(),
+        environment,
+    };
+    let records: Vec<Value> = observations
+        .iter()
+        .map(|obs| record::observation_record(obs, &run_ctx))
+        .collect();
+    let aggregated = aggregate::aggregate(&records, &manifest.scenarios, pricing.as_ref())?;
+    let mut conditions = Map::new();
+    conditions.insert("warmupCount".to_string(), json!(options.warmups));
+    conditions.insert("repetitionCount".to_string(), json!(options.repetitions));
+    conditions.insert("selectedScenarios".to_string(), json!(selected_scenarios));
+    conditions.insert(
+        "ambientPassthrough".to_string(),
+        json!(ambient_passthrough()),
+    );
+    let created_at = record::created_at_iso8601();
+    let result = report::assemble_result(
+        &report::RunMeta {
+            run_id: &run_ctx.run_id,
+            created_at: &created_at,
+            fixture_revision: &run_ctx.fixture_revision,
+            repository_revision: revision.as_deref(),
+            conditions,
+            measured_binary,
+            environment: run_ctx.environment.clone(),
+            pricing: pricing.as_ref().map(aggregate::Pricing::to_json),
+        },
+        records,
+        aggregated,
+    );
+    // emit 前 invariant — violation は harness 側の不具合として
+    // fail(record は書かない。§3.4 fail-fast)。
+    record::validate_result(&result)?;
+    let output = options
+        .output
+        .clone()
+        .unwrap_or_else(|| report::default_result_path(&root, &run_ctx.run_id));
+    report::write_result(&output, &result)?;
+    eprintln!(
+        "cheaper-bench: wrote {} observations to {}",
+        observations.len(),
+        output.display()
+    );
     // §3.3 — `armExpect` 不一致・fallback 失敗を持つ observation は
     // `success:false` で記録された上で、run 終了時に scenario 単位で
     // 失敗報告する(deterministic fixture の回帰 anchor — mismatch を
