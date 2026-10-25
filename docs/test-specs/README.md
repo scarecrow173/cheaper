@@ -39,6 +39,7 @@ Directory: `docs/test-specs`
 | TSPEC-034rzVr1S8qFdi1JqWSN9Z | model exclude and explicit selection guards | approved | [model-exclude-and-explicit-selection.md](./model-exclude-and-explicit-selection.md) |
 | TSPEC-034rzVqBmfD2pkA9f82Eoa | model tier classification pipeline | approved | [model-tier-classification-pipeline.md](./model-tier-classification-pipeline.md) |
 | TSPEC-034GtADUaoOPo8wHPI3Liu | Native tool name normalization and Devin hook contract | approved | [native-tool-name-normalization-and-devin-hook-contract.md](./native-tool-name-normalization-and-devin-hook-contract.md) |
+| TSPEC-034LSvGcYkAp0ImKqx2Alh | Node dev-tooling boundary declaration accuracy (issue #182) | draft | [node-dev-tooling-boundary-declaration-accuracy.md](./node-dev-tooling-boundary-declaration-accuracy.md) |
 | TSPEC-034DWcP8v4SUuuui8hvhnT | Observability foundation contract | approved | [observability-foundation-contract.md](./observability-foundation-contract.md) |
 | TSPEC-034CYp5Xbp8sJ8ZV199qV3 | OpenAI Codex subscription provider guarantees | draft | [openai-codex-subscription-provider.md](./openai-codex-subscription-provider.md) |
 | TSPEC-034A9yAv68yBK2XeFKEToG | Operation execution metrics | approved | [operation-execution-metrics.md](./operation-execution-metrics.md) |

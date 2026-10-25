@@ -148,6 +148,7 @@ Directory: `docs/tasks`
 | TASK-034zQsmDSYTqJOZ8CjKrGN | Canonical handlers と Pi adapter を抽出する | done | [extract-canonical-tools.md](./extract-canonical-tools.md) |
 | TASK-034r05iHQeQpDpFFl8q6NC | Extract promptWithAbortGrace helper and apply to main run | done | [extract-promptwithabortgrace-helper-and-apply-to-main-run.md](./extract-promptwithabortgrace-helper-and-apply-to-main-run.md) |
 | TASK-034z1PGTvhoaHhdTUgPahz | Extract shared esbuild bundle helper from bundle-cli.mjs | done | [extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md](./extract-shared-esbuild-bundle-helper-from-bundle-cli-mjs.md) |
+| TASK-034LSvTlOcJm8dAlxd1fqP | File deferred Node-tooling follow-up issues (F1/F5) | todo | [file-deferred-node-tooling-follow-up-issues.md](./file-deferred-node-tooling-follow-up-issues.md) |
 | TASK-034KvxGAbTTWEsA1RbX7cn | 起票 issue 7: 文書正直性 sweep + breaking-change migration guide | done | [file-issue-docs-honesty-and-migration-guide.md](./file-issue-docs-honesty-and-migration-guide.md) |
 | TASK-034KvxjG6fUOLjtn1cOFTF | 起票 issue 1: exec-contract cleanup — 内容審査 7 項目の mandatory 層除去 | done | [file-issue-exec-contract-content-audit-removal.md](./file-issue-exec-contract-content-audit-removal.md) |
 | TASK-034KvxvHeO6yOVxflkxTPO | 起票 issue 2: opt-in security.execDenyPatterns profile (A9 降格) | done | [file-issue-opt-in-exec-deny-patterns.md](./file-issue-opt-in-exec-deny-patterns.md) |
@@ -349,6 +350,7 @@ Directory: `docs/tasks`
 | TASK-nG7Lngq2AuUQEzF33IkneZ | Update user guides for auto tier classification | done | [update-guides-for-auto-tier-classification.md](./update-guides-for-auto-tier-classification.md) |
 | TASK-034rzWTSt6UWHtrOMOegau | Update guides for pricing catalog | done | [update-guides-for-pricing-catalog.md](./update-guides-for-pricing-catalog.md) |
 | TASK-034r05iHQeQpDpZOlmNJoM | Update indexes and verify delegation layer | done | [update-indexes-and-verify-delegation-layer.md](./update-indexes-and-verify-delegation-layer.md) |
+| TASK-034LSvSfFCNY9T3y1exy8S | Update Node boundary docs and stale script comments | todo | [update-node-boundary-docs-and-stale-comments.md](./update-node-boundary-docs-and-stale-comments.md) |
 | TASK-034r05iHQeQpDqvqdt4mXS | Update README/AGENTS for dev/distribution split and run final verification | done | [update-readme-agents-and-final-verification.md](./update-readme-agents-and-final-verification.md) |
 | TASK-034r05iHQeQpDpMem6J7OE | Update README and add provider setup guide | done | [update-readme-and-add-provider-setup-guide.md](./update-readme-and-add-provider-setup-guide.md) |
 | TASK-034z2pbpAynIVRedenPgXa | Update release guide for manual SEA release workflow | done | [update-release-guide-for-manual-sea-release-workflow.md](./update-release-guide-for-manual-sea-release-workflow.md) |
@@ -364,6 +366,7 @@ Directory: `docs/tasks`
 | TASK-034r2qodyDJxqrVcytvrso | Verify guide consistency and run doc audit | done | [verify-guide-consistency-and-run-doc-audit.md](./verify-guide-consistency-and-run-doc-audit.md) |
 | TASK-034z52LkJfYTGEpl69G239 | verify launcher deploy and switch hooks.json to executable invocations | done | [verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md](./verify-launcher-deploy-and-switch-hooks-json-to-executable-invocations.md) |
 | TASK-034z3zQE9PpSPE6CLsbpTP | Verify launchers and APM payload assembly locally | done | [verify-launchers-and-apm-payload-assembly-locally.md](./verify-launchers-and-apm-payload-assembly-locally.md) |
+| TASK-034LSvYSW97wwisapzR9Uo | Verify Node boundary docs and run check pipeline | todo | [verify-node-boundary-docs-and-check-pipeline.md](./verify-node-boundary-docs-and-check-pipeline.md) |
 | TASK-034LIwoKlNw7BOwWV21TuC | Verify proc_process determinism and run mise run check | done | [verify-proc-process-determinism-and-mise-check.md](./verify-proc-process-determinism-and-mise-check.md) |
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
 | TASK-034KVxDMCEUdI5WtH1SJxd | route grant-set projection 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-route-grant-set-projection.md](./verify-route-grant-set-projection.md) |

@@ -33,6 +33,8 @@ relations:
     - "docs/specs/cargo-source-install-distribution-for-apm-consumers.md"
     - "docs/designs/cargo-source-install-distribution-and-thin-path-launchers.md"
     - "docs/plans/cargo-source-install-distribution-and-thin-path-launchers.md"
+    - "docs/adr/keep-node-js-as-the-pinned-dev-tooling-runtime.md"
+    - "docs/discovery/node-dev-tooling-inventory-issue-182.md"
   refines: []
   refined-by: []
   derives-from:

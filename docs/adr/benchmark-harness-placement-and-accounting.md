@@ -24,6 +24,9 @@ relations:
   superseded-by: []
   related:
     - "docs/specs/workflow-orchestration-benchmark.md"
+    - "docs/adr/keep-node-js-as-the-pinned-dev-tooling-runtime.md"
+    - "docs/discovery/node-dev-tooling-inventory-issue-182.md"
+    - "docs/specs/node-dev-tooling-scope-issue-182.md"
   refines: []
   refined-by: []
   derives-from:

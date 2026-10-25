@@ -39,6 +39,9 @@ relations:
     - "devin-local-provider-via-cli-delegated-auth-and-isolated-data-dir.md"
     - "usage-jsonl-in-user-config-dir-best-effort-append.md"
     - "version-pinned-launcher-acquisition.md"
+    - "keep-node-js-as-the-pinned-dev-tooling-runtime.md"
+    - "../discovery/node-dev-tooling-inventory-issue-182.md"
+    - "../specs/node-dev-tooling-scope-issue-182.md"
   refines: []
   refined-by: []
   derives-from:
