@@ -121,8 +121,8 @@ install する。
 - `scripts/` — version・lockfile・payload 等 check の Node 製 repo tooling
 - `benchmarks/` — scenario manifest（`scenarios/`、manifest v2）と
   計測結果（`results/`）・README の言語中立資産。harness 本体は
-  `crates/cheaper-bench`（旧 Node harness の `.mjs` file は check
-  pipeline から外れた未参照の残存 file で、T6 で削除予定）
+  `crates/cheaper-bench`（旧 Node harness の `.mjs` file は
+  削除済み）
 - `apm.yml`（root） — development-only の APM project。root の
   `apm install` は cheaper 自身の skill/hook を deploy しない
   （ADR-034r05iHrZUE6WdKBH2eNM）

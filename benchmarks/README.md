@@ -9,9 +9,8 @@ binary を subprocess として spawn する。設計の正本は
 (以下 design §N 参照)。
 
 旧 Node harness(`benchmarks/run.mjs`・`lib/*.mjs`・
-`fixtures/fake-worker-stream.mjs`・`test/*.mjs`)は **deprecated** —
-manifest v2 + Rust harness への移行(issue #183)で check pipeline
-から外れており、file 自体は T6 で削除予定の未参照 file として残る。
+`fixtures/fake-worker-stream.mjs`・`test/*.mjs`)は manifest v2 +
+Rust harness への移行(issue #183)で **削除済み**。
 v1 時代の計測 artifact
 ([`results/e45d35b7-2fa6-416b-946a-70ca844b9c80.json`](./results/e45d35b7-2fa6-416b-946a-70ca844b9c80.json)、
 TS CLI 時代の記録)は `benchmarks/results/` に不変で残るが、

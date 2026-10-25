@@ -1,7 +1,7 @@
 ---
 id: "TASK-6DBO0a5MUlapTYav2YJtS0"
 type: "task"
-status: "todo"
+status: "done"
 title: "Remove legacy Node benchmark harness — benchmarks/*.mjs, lib, fixtures, test suite"
 created: "2026-10-25"
 updated: "2026-10-25"
@@ -135,27 +135,58 @@ file 削除の順を崩さない(逆順だと check が存在しない dir を
 
 ## Done When
 
-- [ ] 上記 12 file が削除され、空 dir(`lib`/`fixtures`/`test`)が
+- [x] 上記 12 file が削除され、空 dir(`lib`/`fixtures`/`test`)が
       残っていない
-- [ ] `benchmarks/` 配下に tracked `.mjs` file が 1 件も残っていない
+- [x] `benchmarks/` 配下に tracked `.mjs` file が 1 件も残っていない
       (`git ls-files` で確認)
-- [ ] `git grep` で `{node}`・`process.execPath`・`node:fs`・
+- [x] `git grep` で `{node}`・`process.execPath`・`node:fs`・
       `environment.node` が `benchmarks/`(`benchmarks/results/`
       除外 — immutable v1 artifact が旧計測 command を literal で
       含むため到達不能)・`crates/cheaper-bench/` に存在しない
-- [ ] `mise.toml`・`biome.jsonc`・`.pre-commit-config.yaml`・doc 群に
+      (残存 hit は v1→v2 境界を記述する prose/doc comment の
+      意図的言及のみ — Notes 参照)
+- [x] `mise.toml`・`biome.jsonc`・`.pre-commit-config.yaml`・doc 群に
       `.mjs` harness への生参照が残っていない
-- [ ] `benchmarks/results/` の v1 JSON に diff が無い(immutable)
-- [ ] `mise run check` が全 pass する(pipeline に node --test
+- [x] `benchmarks/results/` の v1 JSON に diff が無い(immutable)
+- [x] `mise run check` が全 pass する(pipeline に node --test
       benchmarks/test/ が無い状態で)
 
 ## Verification
 
-- [ ] `mise run check` exits 0
-- [ ] `git ls-files -- 'benchmarks/**/*.mjs'` が 0 件(content grep は
+- [x] `mise run check` exits 0
+- [x] `git ls-files -- 'benchmarks/**/*.mjs'` が 0 件(content grep は
       `benchmarks/results/README.md` 等の prose 言及に hit するため、
       file 削除の証明は tracked file 列挙で行う)
-- [ ] `git grep -n '{node}\|process\.execPath\|node:fs\|environment\.node' -- benchmarks/ ':(exclude)benchmarks/results/**' crates/cheaper-bench/` が 0 件(`benchmarks/results/` の immutable v1 artifact は `node:fs` 等を含む旧計測記録のため除外)
-- [ ] `git grep -n 'benchmarks/test\|benchmarks/lib\|fake-worker-stream' -- mise.toml biome.jsonc .pre-commit-config.yaml AGENTS.md CONTRIBUTING.md docs/` が 0 件(または意図的な言及のみ — `benchmarks/test/` の history 記述等は除く)
-- [ ] `git diff -- benchmarks/results/` が v1 JSON に差分を持たない
-- [ ] Manual: `biome check` exits 0(dead glob 除去後・`.mjs` 対象消滅で lint が変質しないこと — supplement)
+- [x] `git grep -n '{node}\|process\.execPath\|node:fs\|environment\.node' -- benchmarks/ ':(exclude)benchmarks/results/**' crates/cheaper-bench/` — 8 hit 全てが意図的言及の expected set(`benchmarks/README.md` ×3 の v1→v2 移行 prose・`crates/cheaper-bench/` ×5 の「v1 の X を置換/削除」旨の doc comment。live 参照・scenarios.json への `{node}` 残存は 0)
+- [x] `git grep -n 'benchmarks/test\|benchmarks/lib\|fake-worker-stream' -- mise.toml biome.jsonc .pre-commit-config.yaml AGENTS.md CONTRIBUTING.md docs/` — config file の hit は `mise.toml:63` の justification comment(旧 harness を pipeline に配線しない旨の T2 書換済み記述)のみ。biome.jsonc・.pre-commit-config.yaml・AGENTS.md・CONTRIBUTING.md は 0 hit。docs/ の hit は ADR・design・plan・task・spec の history 記述で許容
+- [x] `git diff -- benchmarks/results/` が v1 JSON に差分を持たない
+      (staged・unstaged ともに `benchmarks/results/`・
+      `benchmarks/scenarios/` へ diff 無し)
+- [x] Manual: `biome check` exits 0(dead glob 除去後・`.mjs` 対象消滅で lint が変質しないこと — supplement。`mise run check` 先頭 step で "Checked 21 files ... No fixes applied" を確認)
+
+## Notes
+
+- 削除は `git rm` で実施 — 12 file 全て index から除去済みで
+  working tree 差分は orchestrator commit 待ち。`benchmarks/` の
+  残存は `README.md`・`scenarios/`・`results/` のみ。
+- `benchmarks/README.md`(:11-13)と `CONTRIBUTING.md`(:122-125)の
+  「T6 で削除予定の未参照 file として残る」記述は本 task で
+  「削除済み」へ更新した — file 残存を示す記述が T6 後に誤りと
+  なるため(両 file とも削除対象外の維持資産で、記述の時制更新のみ)。
+- crates/cheaper-bench の module doc comment に残る旧 `.mjs` path
+  言及(`benchmarks/lib/aggregate.mjs` parity 等)は port 由来の
+  provenance 記述であり design §5 の port mapping 表記と一致 —
+  dangling reference ではなく意図的保持として変更しない。
+- `.pre-commit-config.yaml` の biome mirror files pattern
+  (`^(scripts|benchmarks|packages)/.*\.(mjs|json)$`)は残存
+  `benchmarks/scenarios/*.json` に合致するため変更不要
+  (task doc 記載どおり)。`biome.jsonc` の `benchmarks/**/*.json`
+  include + `!benchmarks/results` exclude も同様に live。
+- `mise run check` pipeline 確認: `node --test` は
+  `scripts/test/` のみで `benchmarks/test/` 行は存在しない
+  (T2 で除去済み)。全 step green — biome(21 files)・fmt・
+  clippy・check-version・check-doc-ids(1225 files)・
+  `cargo test --workspace --features …/dev-seam`(cheaper-bench
+  unit 40 + tests/{aggregate,fixture,manifest,schema} 他全 pass)・
+  `node --test scripts/test/`(43 pass)・check-lockfile・
+  check-apm-payload。
