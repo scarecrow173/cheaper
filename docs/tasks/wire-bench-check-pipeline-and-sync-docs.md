@@ -34,7 +34,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-rust-native-benchmark-harness-issue-183.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/rust-native-benchmark-harness-issue-183.md"
   depends-on:
     - "docs/plans/implement-rust-native-benchmark-harness-issue-183.md"
     - "docs/tasks/implement-bench-record-schema-v2-and-aggregation.md"

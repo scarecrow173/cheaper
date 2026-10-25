@@ -22,7 +22,8 @@ relations:
         path: "benchmarks/results/251d949f-d6d6-4c02-ae61-e4b96a402901.json"
   implements:
     - "docs/plans/implement-rust-native-benchmark-harness-issue-183.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/rust-native-benchmark-harness-issue-183.md"
   depends-on:
     - "docs/plans/implement-rust-native-benchmark-harness-issue-183.md"
     - "docs/tasks/wire-bench-check-pipeline-and-sync-docs.md"

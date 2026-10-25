@@ -9,16 +9,7 @@ owners: ["scarecrow173"]
 relations:
   source:
     - "https://github.com/scarecrow173/cheaper/issues/183"
-    - "benchmarks/run.mjs"
-    - "benchmarks/lib/run-scenario.mjs"
-    - "benchmarks/lib/cli.mjs"
-    - "benchmarks/lib/aggregate.mjs"
-    - "benchmarks/lib/measurements.mjs"
-    - "benchmarks/lib/result-schema.mjs"
-    - "benchmarks/lib/scenarios.mjs"
-    - "benchmarks/fixtures/fake-worker-stream.mjs"
     - "benchmarks/scenarios/scenarios.json"
-    - "benchmarks/test/scenario-manifest.test.mjs"
     - "benchmarks/results/e45d35b7-2fa6-416b-946a-70ca844b9c80.json"
     - "crates/cheaper-cli/src/fake_stream.rs"
     - "crates/cheaper-runtime/src/dev/fixture.rs"

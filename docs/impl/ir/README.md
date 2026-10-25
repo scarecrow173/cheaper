@@ -148,6 +148,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zCh2EsO3oqQBXBAlfuM | Run canonical verification and close out issue 55 implementation | completed | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
 | IMPL-034KrGAahAOH1wp7c8Wcob | Implement run error record observability issue 141 | completed | [run-error-record-observability-issue-141.md](./run-error-record-observability-issue-141.md) |
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
+| IMPL-xRnq2HWCVlE0nqjLTLYWWb | Rust-native benchmark harness — cheaper-bench (issue #183) | completed | [rust-native-benchmark-harness-issue-183.md](./rust-native-benchmark-harness-issue-183.md) |
 | IMPL-034EPz49PYz6zXgEeh5Fly | shared managed-process machinery extraction into tools proc | completed | [shared-managed-process-machinery-extraction-into-tools-proc.md](./shared-managed-process-machinery-extraction-into-tools-proc.md) |
 | IMPL-034A6gXDwnMxGVaPiuSCxb | Shared tool scheduler | completed | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
