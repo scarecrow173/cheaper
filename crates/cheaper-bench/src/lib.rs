@@ -20,11 +20,16 @@
 //!   (`json!` 組立て + `RunFixture::parse` round-trip、§2.5)+ emit
 //!   child の seeded 高エントロピ byte 生成器(§1.4)
 //! - `child` — `--fixture-child <mode>` 自己再実行 mode(§1.4)
+//! - `measure` — 観測 parser/計測(§3.3 — utility envelope・route
+//!   trailer・hook JSON・usage.jsonl・armExpect 照合)
+//! - `arms` — arm 実装語彙(§2.3 — 13 impl)の dispatch + spawn/観測
 
+pub mod arms;
 pub mod child;
 pub mod cli;
 pub mod env;
 pub mod fixture;
 pub mod manifest;
+pub mod measure;
 pub mod spawn;
 pub mod workspace;

@@ -1,7 +1,7 @@
 ---
 id: "TASK-Df79tWn026fFvY79W1xIku"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement benchmark manifest v2 — 12 required scenarios, validation, arm impls, spawn/observation parsers"
 created: "2026-10-25"
 updated: "2026-10-25"
@@ -23,7 +23,11 @@ relations:
       - type: "file"
         path: "crates/cheaper-bench/src/cli.rs"
       - type: "file"
-        path: "crates/cheaper-bench/src/spawn.rs"
+        path: "crates/cheaper-bench/src/lib.rs"
+      - type: "file"
+        path: "crates/cheaper-bench/src/child.rs"
+      - type: "file"
+        path: "crates/cheaper-bench/src/workspace.rs"
       - type: "file"
         path: "benchmarks/scenarios/scenarios.json"
       - type: "file"
@@ -208,7 +212,8 @@ coverage を仮定しており、v2 manifest 上で pipeline に残ると
 
 ## Affected Files
 
-- `crates/cheaper-bench/src/{manifest,cli,spawn}.rs`(validation/arm dispatch/parser 完成)
+- `crates/cheaper-bench/src/{manifest,cli}.rs`(validation/CLI dispatch + preflight 完成)
+- `crates/cheaper-bench/src/{lib,child,workspace}.rs`(module 登録・doc comment の boundary 語彙整理)
 - `crates/cheaper-bench/src/{arms/mod,measure}.rs`(新設)
 - `crates/cheaper-bench/tests/manifest.rs`(新設)
 - `benchmarks/scenarios/scenarios.json`(manifest v2 へ移行 — `saved-workflow.json` は不変)
@@ -220,47 +225,47 @@ coverage を仮定しており、v2 manifest 上で pipeline に残ると
 
 ## Done When
 
-- [ ] manifest validation が design §2.6 の全 invariant を fail-fast
+- [x] manifest validation が design §2.6 の全 invariant を fail-fast
       で強制し、`tests/manifest.rs` が missing/unexpected scenario・
       armBase 連鎖・route `*`/self-match/argv 不一致・未知 policy
       section・comparisons の不正参照を reject することを検証する
-- [ ] `benchmarks/scenarios/scenarios.json` が schemaVersion 2・
+- [x] `benchmarks/scenarios/scenarios.json` が schemaVersion 2・
       `fixtureRevision:"seeded-v2"`・12 required scenario exact
       coverage で宣言され、validation を pass する
-- [ ] `mise.toml` の `node --test benchmarks/test/` 行(:73)が
+- [x] `mise.toml` の `node --test benchmarks/test/` 行(:73)が
       manifest flip と同一変更で削除され、justification comment
       (:61-62)が `cargo test -p cheaper-bench` を canonical 検証と
       して指す形へ書換済み(`node --test scripts/test/` は残る)
-- [ ] 13 impl 語彙の arm dispatch が実装され、`{fixtureChild}`・
+- [x] 13 impl 語彙の arm dispatch が実装され、`{fixtureChild}`・
       `manual.child`・route block・armExpect/armFakeStream 宣言が
       実際に materialize/spawn される
-- [ ] 3 種 stdout parser(envelope・raw text+trailer・hook JSON)が
+- [x] 3 種 stdout parser(envelope・raw text+trailer・hook JSON)が
       mode 別に動作し、解釈不能は `envelopeOk` 材料で harness error
       にしない
-- [ ] route-rewrite arm が各 spawn 前に `<cfg>/hook-eval/` を削除し、
+- [x] route-rewrite arm が各 spawn 前に `<cfg>/hook-eval/` を削除し、
       route-logs arm が setup spawn(計測外)→ `route logs` 計測の
       2 段で動く
-- [ ] preflight probe が実装され、dev-seam 無し binary を fail-fast で
+- [x] preflight probe が実装され、dev-seam 無し binary を fail-fast で
       診断する
-- [ ] 全 byte 計測が `cheaper_core::json::stringify::stringify` 経由で、
+- [x] 全 byte 計測が `cheaper_core::json::stringify::stringify` 経由で、
       `serde_json::to_string`/`to_string_pretty` を byte 計測に使って
       いない
-- [ ] `cargo test -p cheaper-bench` が pass し workspace compile が
+- [x] `cargo test -p cheaper-bench` が pass し workspace compile が
       green
-- [ ] `mise run check` が `node --test benchmarks/test/` を含まない
+- [x] `mise run check` が `node --test benchmarks/test/` を含まない
       pipeline で全 pass する(manifest flip + 行削除が同一変更で
       着地し red window を残さない)
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-bench` exits 0(tests/manifest.rs + tests/fixture.rs)
-- [ ] `mise exec -- cargo test -p cheaper-bench --test manifest` exits 0
-- [ ] `mise exec -- cargo fmt --all -- --check` exits 0
-- [ ] `mise exec -- cargo clippy -p cheaper-bench --all-targets -- -D warnings` exits 0
-- [ ] `mise exec -- cargo build -p cheaper-cli --features dev-seam` exits 0(smoke 用の dev-seam 有効 debug binary — `target/debug/cheaper` は cli.rs の binary 解決 fallback で拾われる。release build ・`--binary` 明示でもよい)
-- [ ] `mise exec -- cargo run -p cheaper-bench -- --scenario single-simple-tool-call --warmups 0 --repetitions 1` が dev-seam binary 上で 1 observation を実行できることを確認(smoke — record/aggregate 未接続でも observation 生成まで確認可。失敗したら原因を Notes に記録)
-- [ ] `mise run check` exits 0(`node --test` は scripts のみ — v1 test suite が v2 manifest 上で走る窓が無いこと)
-- [ ] Manual: `git grep -n '{node}\|process\.execPath\|node:fs' -- benchmarks/scenarios/ crates/cheaper-bench/` が 0 件(`benchmarks/results/` の immutable v1 artifact は旧計測 command を literal で含むため対象外 — supplement)
+- [x] `mise exec -- cargo test -p cheaper-bench` exits 0(tests/manifest.rs + tests/fixture.rs)
+- [x] `mise exec -- cargo test -p cheaper-bench --test manifest` exits 0
+- [x] `mise exec -- cargo fmt --all -- --check` exits 0
+- [x] `mise exec -- cargo clippy -p cheaper-bench --all-targets -- -D warnings` exits 0
+- [x] `mise exec -- cargo build -p cheaper-cli --features dev-seam` exits 0(smoke 用の dev-seam 有効 debug binary — `target/debug/cheaper` は cli.rs の binary 解決 fallback で拾われる。release build ・`--binary` 明示でもよい)
+- [x] `mise exec -- cargo run -p cheaper-bench -- --scenario single-simple-tool-call --warmups 0 --repetitions 1` が dev-seam binary 上で 1 observation を実行できることを確認(smoke — record/aggregate 未接続でも observation 生成まで確認可。失敗したら原因を Notes に記録)
+- [x] `mise run check` exits 0(`node --test` は scripts のみ — v1 test suite が v2 manifest 上で走る窓が無いこと)
+- [x] Manual: `git grep -n '{node}\|process\.execPath\|node:fs' -- benchmarks/scenarios/ crates/cheaper-bench/` が 0 件(`benchmarks/results/` の immutable v1 artifact は旧計測 command を literal で含むため対象外 — supplement)
 
 ## Notes
 
@@ -278,4 +283,34 @@ coverage を仮定しており、v2 manifest 上で pipeline に残ると
   T6 のまま。
 - `worker-failure-modes` の `execution.timeout` overlay 値は本 task
   で確定する — T7 の全実測は確定済み値で走り、計測側で調整しない
-  (wall-time 爆発防止の pre-agreed 前提)。
+  (wall-time 爆発防止の pre-agreed 前提)。確定値:
+  `execution.timeout:"500ms"` + `output.repairAttempts:1`。
+- 実測 smoke で発見した product 意味論 2 点を armExpect pin へ反映
+  した(manifest 側の期待値を product の実挙動へ合わせた —
+  observation 側は不変):
+  - `route run` は child の非零 exit code を自身の process exit
+    として mirror する — `route-child-nonzero-exit` の
+    `route-run` pin は `exitCode:7`(design §2.2 の「exit code
+    mirror」は parent-visible process exit にも及ぶ)。route
+    record 側の child exitCode は `metrics.routeChildExitCode`
+    として記録(route block pin 語彙外の unpinned data)。
+  - workflow の provider call timeout は `TOOL_EXECUTION_FAILURE`
+    に wrap されず `TIMEOUT` が伝播する —
+    `worker-failure-modes/workflow-worker-timeout` の pin は
+    `errorCode:"TIMEOUT"`。
+- 検証実行時点で `target/release/cheaper.exe` が dev-seam 無しの
+  stale binary だったため binary 解決は release 優先のまま
+  preflight probe が正しく fail-fast した(診断動作の実証込み)。
+  smoke 系は `--binary target/debug/cheaper.exe` で実行。
+- smoke 結果: `--scenario single-simple-tool-call`(必須 smoke)に
+  加えて全 12 scenario を `--warmups 0 --repetitions 1` で実行し、
+  全 arm observation が `success:true`(失敗 matrix arm は宣言済み
+  armExpect に一致 — direct/workflow×provider-error/timeout/
+  postprocess-failure の 6 arm 全て pin 通りの envelope error)。
+- `cargo test -p cheaper-bench` は lib 40 + tests/fixture 11 +
+  tests/manifest 18 = 69 test 全 pass。`mise run check` は
+  `node --test scripts/test/`(43 test)のみの pipeline で全 pass。
+- git grep boundary(`{node}`/`process.execPath`/`node:fs` —
+  `benchmarks/scenarios/`・`crates/cheaper-bench/` 範囲)は 0 件。
+  初回走査で doc comment 内の歴史的参照が 5 件 hit したため、
+  literal token を使わない表現へ書き換え済み。

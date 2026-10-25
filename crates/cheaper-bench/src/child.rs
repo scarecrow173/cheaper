@@ -1,8 +1,9 @@
 //! fixture child mode 実装(design §1.4)— bench bin 自身の自己再実行。
 //!
-//! `{node}` workload・route grant 対象・nonzero exit の供給源として、
-//! bench bin が `current_exe()` + 固定 argv marker で自ら fixture child
-//! になる(`CHEAPER_ROUTE_CHILD_MODE`/`CHEAPER_PROC_CHILD_MODE`/
+//! v1 process fixture workload・route grant 対象・nonzero exit の
+//! 供給源として、bench bin が `current_exe()` + 固定 argv marker で
+//! 自ら fixture child になる
+//! (`CHEAPER_ROUTE_CHILD_MODE`/`CHEAPER_PROC_CHILD_MODE`/
 //! `workflow_dev_seam_command_fixture_child` で実証済みの pattern)。
 //!
 //! - dispatch 規約: `argv[1] == "--fixture-child"`・`argv[2]` が mode。

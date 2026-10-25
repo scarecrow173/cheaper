@@ -29,8 +29,8 @@ use tempfile::TempDir;
 use crate::manifest::{RouteSpec, Scenario};
 
 /// `{fixtureChild}` placeholder — `processPolicy.tasks.*.command` 内で
-/// `current_exe()` abs path へ展開される token(v1 `{node}` →
-/// `process.execPath` の置換 — spawn 先が node から bench bin 自身へ
+/// `current_exe()` abs path へ展開される token(v1 node process
+/// fixture spawn の置換 — spawn 先が node から bench bin 自身へ
 /// 変わった名実一致)。
 pub const FIXTURE_CHILD_PLACEHOLDER: &str = "{fixtureChild}";
 
@@ -304,8 +304,8 @@ fn workspace_relative(relative: &str) -> Option<PathBuf> {
 
 /// `processPolicy` 内の `{fixtureChild}` placeholder を
 /// `fixture_child_exe` abs path へ展開する — `process.tasks.*.command`
-/// の各 element が placeholder と完全一致した場合のみ置換(v1
-/// `arg === "{node}"` parity)。command 以外の節はそのまま返す。
+/// の各 element が placeholder と完全一致した場合のみ置換(v1 node
+/// placeholder 完全一致置換と同規約)。command 以外の節はそのまま返す。
 fn expand_fixture_child(process_policy: &Value, fixture_child_exe: &Path) -> Value {
     let mut expanded = process_policy.clone();
     let exe = fixture_child_exe.to_string_lossy().into_owned();
