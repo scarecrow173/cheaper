@@ -219,7 +219,9 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7hbds7QpLZ | Implement tool registry mapping vocabulary to Pi tools | done | [implement-tool-registry-mapping-vocabulary-to-pi-tools.md](./implement-tool-registry-mapping-vocabulary-to-pi-tools.md) |
 | TASK-034r05iHK8bA7gGxgfMRs7 | Implement tool vocabulary and alias normalization | done | [implement-tool-vocabulary-and-alias-normalization.md](./implement-tool-vocabulary-and-alias-normalization.md) |
 | TASK-034r05iHK8bA7hi27rKIih | Implement usage aggregation from message end events | done | [implement-usage-aggregation-from-message-end-events.md](./implement-usage-aggregation-from-message-end-events.md) |
+| TASK-034MbTk4xoYlrywa6aUQja | Implement usage byError aggregation and canonical execution value keys (issue #184 T3) | todo | [implement-usage-by-error-aggregation.md](./implement-usage-by-error-aggregation.md) |
 | TASK-034r05iHQeQpDqJKnzydzW | Implement usage-log writer and CLI wiring with unit tests | done | [implement-usage-log-writer-and-cli-wiring.md](./implement-usage-log-writer-and-cli-wiring.md) |
+| TASK-034MbTdI8lEI1dRpWvsRQQ | Implement usage route window, --route scoping, logRef join, orphan/unkeyed diagnostics, and byRoute rows (issue #184 T2) | todo | [implement-usage-route-window-and-by-route.md](./implement-usage-route-window-and-by-route.md) |
 | TASK-034r05iHK8bA7gLHezkOrX | Implement worker definition validation | done | [implement-worker-definition-validation.md](./implement-worker-definition-validation.md) |
 | TASK-034r05iHK8bA7gJlZFs4r8 | Implement worker frontmatter parser | done | [implement-worker-frontmatter-parser.md](./implement-worker-frontmatter-parser.md) |
 | TASK-034r05iHK8bA7gN2lJtm5b | Implement worker resolver with origin precedence | done | [implement-worker-resolver-with-origin-precedence.md](./implement-worker-resolver-with-origin-precedence.md) |
@@ -244,6 +246,7 @@ Directory: `docs/tasks`
 | TASK-6uOJTepTvP210AgeeaBtkq | issue-111 文書追随・回帰 fixture・最終検証 | done | [issue-111-docs-and-final-verification.md](./issue-111-docs-and-final-verification.md) |
 | TASK-03404zg7SVQPn5JeZ0lwDD | Make exec_infra_failure_returns_error deterministic via error code and message | done | [make-exec-infra-failure-test-deterministic.md](./make-exec-infra-failure-test-deterministic.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
+| TASK-034MbTvAS8BfQZNoBH12OQ | Measure representative large usage.jsonl peak memory and record evidence (issue #184 T5) | todo | [measure-usage-jsonl-peak-memory.md](./measure-usage-jsonl-peak-memory.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
 | TASK-034zXB21CtI0XLnu6QAHPe | Migrate native workflows and release guidance | done | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
 | TASK-034r05iHQeQpDqrbmtswfZ | Move .apm primitives to nested distributable package and make root apm.yml dev-only | done | [move-apm-primitives-to-distributable-package.md](./move-apm-primitives-to-distributable-package.md) |
@@ -279,6 +282,7 @@ Directory: `docs/tasks`
 | TASK-034BgKlddxEi2ozLgZMFi3 | Phase 6: remove TypeScript Node Pi | done | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | TASK-034DlFISpHRPrXyhhlFXfa | Pin devin cache-hit usage mapping in stream tests | done | [pin-devin-cache-hit-usage-mapping-in-stream-tests.md](./pin-devin-cache-hit-usage-mapping-in-stream-tests.md) |
 | TASK-0340C4KaPSmy4CrDagevUC | Pin sweep test deletion order with explicit set_mtime timestamps | done | [pin-sweep-test-deletion-order-with-explicit-mtimes.md](./pin-sweep-test-deletion-order-with-explicit-mtimes.md) |
+| TASK-034MbSQgdIQfx2nMRZ0RCz | Pin usage route/error contract tests — compile seam, fixture builders, args/report/caller tests (issue #184 T1) | todo | [pin-usage-route-error-contract-tests.md](./pin-usage-route-error-contract-tests.md) |
 | TASK-034KLYAKiwETFc4o0BnVI1 | cheaper-cli/runtime への exec_deny 配管と残 test churn | done | [plumb-exec-deny-through-cli-and-runtime.md](./plumb-exec-deny-through-cli-and-runtime.md) |
 | TASK-034KLYAfuIu8es8ZgpuQRl | cheaper-tools への exec_deny 配管と pin/verify 適用点注入 | done | [plumb-exec-deny-through-tools.md](./plumb-exec-deny-through-tools.md) |
 | TASK-034KQsrpnzHdeRKf5M3KiN | cheaper-cli/runtime/route/invocation/catalog の unified exec 追随と workspace 復帰 | done | [plumb-unified-exec-through-cli-and-runtime.md](./plumb-unified-exec-through-cli-and-runtime.md) |
@@ -381,6 +385,7 @@ Directory: `docs/tasks`
 | TASK-034L2NsdLuC7G3uiTACWd3 | substitute-exec route mode 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-substitute-exec-route-mode.md](./verify-substitute-exec-route-mode.md) |
 | TASK-034L59Zaf7xiLEfPo8rlQF | trusted route flag issuer redesign 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-trusted-route-flag-issuer-redesign.md](./verify-trusted-route-flag-issuer-redesign.md) |
 | TASK-034KQsAwXBVQJ56nGgagYT | unified exec grant model の最終検証と status/evidence 更新 | done | [verify-unified-exec-grant-model.md](./verify-unified-exec-grant-model.md) |
+| TASK-034MbTCpfWxoiFfeKTaOMs | Run focused and canonical verification, doc-status audit, and final scope/privacy review (issue #184 T6) | todo | [verify-usage-analysis-chain-and-audit.md](./verify-usage-analysis-chain-and-audit.md) |
 | TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | done | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
 | TASK-oxOS7kvPXiqJ0LEOT1edeB | Wire cheaper-bench into check pipeline and sync docs — mise.toml, AGENTS/CONTRIBUTING, benchmarks docs, biome glob, #182 addendum, workflow-usage placeholder | done | [wire-bench-check-pipeline-and-sync-docs.md](./wire-bench-check-pipeline-and-sync-docs.md) |
@@ -394,6 +399,7 @@ Directory: `docs/tasks`
 | TASK-034AaXZ7nc5LQuUvG9iFY8 | 実 I/O と Pi job lease を配線する | done | [wire-resource-manager-observation.md](./wire-resource-manager-observation.md) |
 | TASK-034L2NdmhEj1VYd7riHhtL | route run exec_pair 配線・投影・substitute e2e | done | [wire-route-run-substitute-exec-pair.md](./wire-route-run-substitute-exec-pair.md) |
 | TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |
+| TASK-034MbTqck0r2tjYDCYQUM7 | Wire usage --group-by/--route flags, help, text sections, and usage guide (issue #184 T4) | todo | [wire-usage-group-by-flags-text-and-guide.md](./wire-usage-group-by-flags-text-and-guide.md) |
 | TASK-034AJcULdYBQSjyy18XSVw | Canonical artifact read/publisher を配線する | done | [wire-workflow-artifact-tools.md](./wire-workflow-artifact-tools.md) |
 | TASK-034zTsqC9tEk1qHUgWFefU | wire-workflow-interface | done | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | TASK-034AJcZY4VW7Wfwx1AOzvh | Workflow Worker permission と lease lifetime を配線する | done | [wire-workflow-worker-leases.md](./wire-workflow-worker-leases.md) |

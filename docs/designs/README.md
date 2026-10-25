@@ -94,6 +94,7 @@ Directory: `docs/designs`
 | DESIGN-034L4tqYwtc8q88WEIXPh9 | trusted route flag issuer redesign — `Route.trusted` 削除・merge 無条件化・project 層 `trusted` presence 拒否 | approved | [trusted-route-flag-issuer-redesign.md](./trusted-route-flag-issuer-redesign.md) |
 | DESIGN-034KP4lfgfD7DdGiDV1YuT | unified exec grant model — command.grants / process.tasks の統合 | approved | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
 | DESIGN-034r05iHy2gdnoT4LG4KTu | Unified version source of truth | approved | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
+| DESIGN-034M1By0TmSs1tD6TIDBdK | Usage grouped route/error analysis — --group-by・--route・per-route/byError sections (issue #184) | approved | [usage-grouped-route-error-analysis-issue-184.md](./usage-grouped-route-error-analysis-issue-184.md) |
 | DESIGN-034r2lHf6FAFVelj9LrhZh | Align usage.jsonl recording-scope docs with implemented contract | approved | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
 | DESIGN-034rzNZ2BZGTPuOwHmyqh4 | Usage savings telemetry | approved | [usage-savings-telemetry.md](./usage-savings-telemetry.md) |
 | DESIGN-034r05iHy2gdnoY3GBf8iz | User-facing documentation information architecture | approved | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |
