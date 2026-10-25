@@ -798,6 +798,12 @@ pub(crate) struct CompiledRun<'ctx, 'b, 'io> {
     pub(crate) effective_policy: &'b RuntimePolicy,
     pub(crate) invocation_grants: Vec<String>,
     pub(crate) route_exec: Option<Arc<crate::route::run::RouteExecution>>,
+    // `io` は `#[cfg(feature = "dev-seam")]` 配下の env 採取
+    // (execute_compiled 内の NODE_ENV/CHEAPER_TEST_FAKE_STREAM capture)
+    // でのみ読まれる — 非 seam build では未使用になるため cfg 付きで
+    // dead_code を許容する(cheaper-bench の default-feature dep edge が
+    // 非 seam 側 compile を初めて通す — issue #183)。
+    #[cfg_attr(not(feature = "dev-seam"), allow(dead_code))]
     pub(crate) io: &'b CliIo<'io>,
     pub(crate) hooks: &'b CliHooks,
 }

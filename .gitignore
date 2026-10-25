@@ -2,7 +2,7 @@
 logs
 *.log
 
-# Node tooling (scripts/, benchmarks/, doc-suite skills)
+# Node tooling (scripts/, doc-suite skills)
 node_modules/
 .nyc_output
 coverage/

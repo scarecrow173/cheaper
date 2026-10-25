@@ -12,7 +12,6 @@ relations:
     - "crates/cheaper-cli/src/main.rs"
     - "crates/cheaper-runtime/src/run/mod.rs"
     - "crates/cheaper-runtime/src/auth/store.rs"
-    - "benchmarks/run.mjs"
     - "docs/guides/configuration.md"
     - ".gitignore"
   changes:

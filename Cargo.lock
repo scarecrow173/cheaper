@@ -824,6 +824,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cheaper-bench"
+version = "0.1.0"
+dependencies = [
+ "cheaper-cli",
+ "cheaper-core",
+ "cheaper-runtime",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "uuid",
+]
+
+[[package]]
 name = "cheaper-cli"
 version = "1.0.0"
 dependencies = [

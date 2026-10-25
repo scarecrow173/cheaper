@@ -91,6 +91,7 @@ Directory: `docs/adr`
 | ADR-034A8FtvtZFYBJpZ8MNu4N | 親 job lease と子 operation conflict を ResourceManager で管理する | accepted | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | ADR-034IOqXM5YpqVgFZKatIXN | Restrict hook-config orphan sweep to cheaper-owned temp files | accepted | [restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md](./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md) |
 | ADR-034KTMnPFDF25x710LFSKY | route grant-set projection — grants 宣言・viability 条件緩和・record split | accepted | [route-grant-set-projection.md](./route-grant-set-projection.md) |
+| ADR-tBRMKuj5yPFMYM57an5HpS | Rust-native benchmark harness for Worker/Workflow/Route measurement | accepted | [rust-native-benchmark-harness.md](./rust-native-benchmark-harness.md) |
 | ADR-034r05iHrZUE6WdKBH2eNM | development APM project と distributable cheaper package を nested package で物理分離する | accepted | [separate-dev-apm-project-via-nested-distributable-package.md](./separate-dev-apm-project-via-nested-distributable-package.md) |
 | ADR-034KXk8h1AtwCkf2cQrb7m | substitute-exec route mode — substitute:{grant,argv}・viability retarget・実行 anchor 切替 | accepted | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | ADR-034r05iHrZUE6W82VsDbPq | Treat unmeasurable huge files as over-threshold via a core byte cap (fail-closed) | accepted | [treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md](./treat-unmeasurable-huge-files-as-over-threshold-via-a-core-byte-cap-fail-closed.md) |

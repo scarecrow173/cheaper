@@ -24,10 +24,12 @@ mise run check   # CI と同等の検証（lint / fmt / clippy / test / lockfile
 → `node scripts/check-version.mjs`（version 宣言の一致）→
 `node scripts/check-doc-ids.mjs` → `cargo test --workspace --features
 cheaper-runtime/dev-seam,cheaper-cli/dev-seam` →
-`node --test scripts/test/` → `node --test benchmarks/test/` →
+`node --test scripts/test/` →
 `node scripts/check-lockfile.mjs`（committed Cargo.lock の整合 +
 drift 検査）→ `node scripts/check-apm-payload.mjs`（slim APM
-payload 契約）。consumer は `cargo install --git … --locked` で
+payload 契約）。benchmark harness（`crates/cheaper-bench`）の検証は
+`cargo test --workspace` 内の `cargo test -p cheaper-bench` が担う。
+consumer は `cargo install --git … --locked` で
 install するため、lockfile を再生成する変更は commit 済み
 `Cargo.lock` に反映してからマージする。version は root `Cargo.toml` の
 `[workspace.package].version` が canonical で、bump は
@@ -49,12 +51,21 @@ cargo fmt --all -- --check          # rustfmt
 cargo clippy --workspace --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings
 biome check                         # repo 内 JS/JSON の lint
 node --test scripts/test/           # repo tooling（check/launcher/payload）の test
-node --test benchmarks/test/        # benchmark harness の test
+cargo test -p cheaper-bench         # benchmark harness の unit test
+                                    # （`cargo test --workspace` に含まれる。
+                                    # 実測 run は benchmarks/README.md 参照）
 ```
 
+flag 無しの `cargo test --workspace` も、cheaper-bench の
+`cheaper-runtime/dev-seam` dep edge 経由で runtime の dev-seam 依存
+test target を新たに compile する（`cheaper-cli` 側の seam 依存
+target は引き続き flag 必須 — 意図的な非対称。
+`crates/cheaper-bench/Cargo.toml` の comment 参照）。
+
 product の実行経路は Rust binary（`cheaper-cli` crate）のみ。Node.js は
-`scripts/`・`benchmarks/` 等の repo tooling に限定され、product・
-distribution への依存はない。
+`scripts/` 等の repo tooling に限定され、product・distribution への
+依存はない（benchmark harness は Rust crate `crates/cheaper-bench` へ
+移行済み — `benchmarks/` に残るのは言語中立資産のみ）。
 
 ### 実 provider 検証
 
@@ -97,6 +108,9 @@ install する。
 - `crates/cheaper-workflow` — workflow schema・compiler・DAG engine
 - `crates/cheaper-observability` — tracing subscriber・sink wiring・
   log activation（`--log` / `CHEAPER_LOG`）の observability 基盤
+- `crates/cheaper-bench` — Rust-native benchmark harness（publish=false
+  の dev-only crate — `cargo run -p cheaper-bench` で手動実行。手順は
+  `benchmarks/README.md`）
 - `packages/apm` — distributable APM package（consumer へ deploy
   される skills。CLI 本体は cargo install）。hook 宣言は
   `packages/apm-hook-*/` 5 package（windsurf / cursor / copilot /
@@ -105,7 +119,10 @@ install する。
   変更する際は該当 sibling package の `hooks.json` を編集し、
   `node scripts/check-apm-payload.mjs` で wiring を検証する
 - `scripts/` — version・lockfile・payload 等 check の Node 製 repo tooling
-- `benchmarks/` — benchmark harness（Node 製 repo tooling）
+- `benchmarks/` — scenario manifest（`scenarios/`、manifest v2）と
+  計測結果（`results/`）・README の言語中立資産。harness 本体は
+  `crates/cheaper-bench`（旧 Node harness の `.mjs` file は
+  削除済み）
 - `apm.yml`（root） — development-only の APM project。root の
   `apm install` は cheaper 自身の skill/hook を deploy しない
   （ADR-034r05iHrZUE6WdKBH2eNM）

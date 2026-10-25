@@ -14,6 +14,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7ghSWRbNU8 | cheaper auth command for provider login without a pi installation | implemented | [auth-login-command.md](./auth-login-command.md) |
 | SPEC-034r05iHK8bA7gmLlq6ikw | Auth tests do not launch the OS default browser | implemented | [auth-tests-do-not-launch-os-browser.md](./auth-tests-do-not-launch-os-browser.md) |
 | SPEC-H9CuNdGONsV6HEHetvRCxh | Worker workload と effectiveCost による自動 tier 分類 | implemented | [auto-tier-classification.md](./auto-tier-classification.md) |
+| SPEC-hLFwwZHikKoZ5cMu7GM8oG | Benchmark redesign scope — Worker/Workflow/Route harness (issue #183) | approved | [benchmark-redesign-scope-issue-183.md](./benchmark-redesign-scope-issue-183.md) |
 | SPEC-034H2WAU6TQG6N9dmmmKNA | Bounded native hook evaluation and managed Devin registration | implemented | [bounded-native-hook-evaluation-and-managed-devin-registration.md](./bounded-native-hook-evaluation-and-managed-devin-registration.md) |
 | SPEC-034zWd1FiG9tv3X6uaAMep | ToolScheduler の bounded operation scheduling | approved | [bounded-tool-scheduler.md](./bounded-tool-scheduler.md) |
 | SPEC-Ihed47KqbjDSmZt2jp7L7M | builtin materialize cache に embedded content fingerprint を混入 | approved | [builtin-materialize-content-fingerprint.md](./builtin-materialize-content-fingerprint.md) |

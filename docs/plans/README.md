@@ -67,6 +67,7 @@ Directory: `docs/plans`
 | PLAN-034AadQgwgheMAV59FAcIZ | ResourceManager job lease を実装する | completed | [implement-resource-manager-job-leases.md](./implement-resource-manager-job-leases.md) |
 | PLAN-034Kr7PAaZlxMx7LjG34Ls | usage.jsonl run error record 診断 field 拡充の実装計画 (issue #141) | approved | [implement-run-error-record-observability.md](./implement-run-error-record-observability.md) |
 | PLAN-034zThvLa4bK934vj52jaC | Implement run-scoped artifact store | completed | [implement-run-scoped-artifact-store.md](./implement-run-scoped-artifact-store.md) |
+| PLAN-pxStSqvAk1Qr5rSUgRMp5w | Rust-native benchmark harness redesign を実装する (issue #183) | approved | [implement-rust-native-benchmark-harness-issue-183.md](./implement-rust-native-benchmark-harness-issue-183.md) |
 | PLAN-034ETMVrwmwh0Z0jq4gwtt | tool-operator built-in worker と cheaper.optionalTools 縮退機構を実装する | completed | [implement-tool-operator-built-in-worker.md](./implement-tool-operator-built-in-worker.md) |
 | PLAN-034zQHj1WyOgBNLGbDaFY8 | Implement version-pinned launcher acquisition | completed | [implement-version-pinned-launcher-acquisition.md](./implement-version-pinned-launcher-acquisition.md) |
 | PLAN-034zQ9Pet2QAuh0FP3ku3u | Workflow contract compiler を実装する | completed | [implement-workflow-contract-compiler.md](./implement-workflow-contract-compiler.md) |

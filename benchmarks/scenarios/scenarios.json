@@ -1,5 +1,6 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "fixtureRevision": "seeded-v2",
   "scenarios": [
     {
       "id": "single-simple-tool-call",
@@ -53,7 +54,14 @@
         "path": "README.md",
         "toolCallPath": "README.md",
         "tasks": ["Read README.md and summarize its contents"]
-      }
+      },
+      "comparisons": [
+        {
+          "left": "workflow",
+          "right": "direct-worker-tool-call",
+          "reduction": { "left": "retainedBytes", "right": "retainedBytes" }
+        }
+      ]
     },
     {
       "id": "independent-fanout-worker-fanin",
@@ -63,8 +71,8 @@
       "responseProfiles": ["compact"],
       "responseDelayMs": 0,
       "files": {
-        "left.txt": "seeded left partition\\n",
-        "right.txt": "seeded right partition\\n"
+        "left.txt": "seeded left partition\n",
+        "right.txt": "seeded right partition\n"
       },
       "workflow": {
         "schemaVersion": 1,
@@ -119,7 +127,14 @@
         "kind": "direct-worker-sequence",
         "readPaths": ["left.txt", "right.txt"],
         "tasks": ["Combine the independent tool results"]
-      }
+      },
+      "comparisons": [
+        {
+          "left": "workflow",
+          "right": "direct-worker-sequence",
+          "reduction": { "left": "retainedBytes", "right": "retainedBytes" }
+        }
+      ]
     },
     {
       "id": "tool-to-worker-chain",
@@ -178,21 +193,25 @@
         "kind": "direct-worker-sequence",
         "readPath": "source.txt",
         "tasks": ["Analyze the material read by the prior tool call"]
-      }
+      },
+      "comparisons": [
+        {
+          "left": "workflow",
+          "right": "direct-worker-sequence",
+          "reduction": { "left": "retainedBytes", "right": "retainedBytes" }
+        }
+      ]
     },
     {
       "id": "process-and-analysis",
       "title": "Process and analysis workflow",
       "arms": ["workflow", "direct-worker-sequence"],
-      "files": {
-        "emit.mjs": "process.stdout.write('process fixture output\\n');\n"
-      },
       "processPolicy": {
         "maxConcurrent": 1,
         "tasks": {
           "emit": {
-            "command": ["{node}", "emit.mjs"],
-            "inputs": ["emit.mjs"],
+            "command": ["{fixtureChild}", "--fixture-child", "emit"],
+            "inputs": [],
             "outputs": []
           }
         }
@@ -245,24 +264,29 @@
       },
       "manual": {
         "kind": "direct-worker-sequence",
-        "processScript": "emit.mjs",
+        "child": { "mode": "emit" },
         "tasks": ["Analyze process output"]
-      }
+      },
+      "comparisons": [
+        {
+          "left": "workflow",
+          "right": "direct-worker-sequence",
+          "reduction": { "left": "retainedBytes", "right": "retainedBytes" }
+        }
+      ]
     },
     {
       "id": "large-intermediate-process-analysis",
       "title": "Large intermediate process output and analysis",
       "arms": ["workflow", "direct-worker-sequence"],
-      "files": {
-        "emit.mjs": "process.stdout.write('L'.repeat(32768));\n"
-      },
       "processPolicy": {
         "maxConcurrent": 1,
         "tasks": {
           "emit": {
-            "command": ["{node}", "emit.mjs"],
-            "inputs": ["emit.mjs"],
-            "outputs": []
+            "command": ["{fixtureChild}", "--fixture-child", "emit"],
+            "inputs": [],
+            "outputs": [],
+            "env": { "CHEAPER_BENCH_CHILD_BYTES": "32768" }
           }
         }
       },
@@ -314,9 +338,16 @@
       },
       "manual": {
         "kind": "direct-worker-sequence",
-        "processScript": "emit.mjs",
+        "child": { "mode": "emit", "bytes": 32768 },
         "tasks": ["Analyze the large process output"]
-      }
+      },
+      "comparisons": [
+        {
+          "left": "workflow",
+          "right": "direct-worker-sequence",
+          "reduction": { "left": "retainedBytes", "right": "retainedBytes" }
+        }
+      ]
     },
     {
       "id": "dynamic-vs-saved-workflow",
@@ -351,7 +382,17 @@
       "manual": {
         "kind": "direct-worker-sequence",
         "tasks": ["Analyze the reusable saved workflow fixture"]
-      }
+      },
+      "comparisons": [
+        {
+          "left": "dynamic-workflow",
+          "right": "saved-workflow",
+          "reduction": {
+            "left": "definitionGenerationMs",
+            "right": "definitionGenerationMs"
+          }
+        }
+      ]
     },
     {
       "id": "definition-vs-compact-interface",
@@ -386,6 +427,307 @@
       },
       "manual": {
         "kind": "interface-discovery"
+      },
+      "comparisons": [
+        {
+          "left": "full-definition",
+          "right": "compact-interface",
+          "reduction": {
+            "left": "definitionReadBytes",
+            "right": "parentVisibleInterfaceBytes"
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-resolve-and-rewrite",
+      "title": "Route resolve dry-run versus hook rewrite verdict",
+      "arms": ["route-resolve", "route-rewrite"],
+      "route": {
+        "name": "bench-route",
+        "match": { "command": ["benchrun"] },
+        "command": "benchrun --fixture-child emit",
+        "grant": "bench-child",
+        "childMode": "emit",
+        "childBytes": 512,
+        "passthroughEnv": []
+      },
+      "armExpect": {
+        "route-resolve": {
+          "envelopeOk": true,
+          "resolve": {
+            "matched": true,
+            "route": "bench-route",
+            "viability": "runnable",
+            "executable": "benchrun"
+          }
+        },
+        "route-rewrite": {
+          "exitCode": 0,
+          "route": { "rewritten": true }
+        }
+      },
+      "comparisons": [
+        {
+          "left": "route-resolve",
+          "right": "route-rewrite",
+          "reduction": { "left": "wallTimeMs", "right": "wallTimeMs" }
+        }
+      ]
+    },
+    {
+      "id": "route-routed-exec",
+      "title": "Routed exec versus direct child spawn",
+      "arms": ["route-run", "direct-child-exec"],
+      "route": {
+        "name": "bench-route",
+        "match": { "command": ["benchrun"] },
+        "command": "benchrun --fixture-child emit",
+        "grant": "bench-child",
+        "childMode": "emit",
+        "childBytes": 1024,
+        "passthroughEnv": []
+      },
+      "armExpect": {
+        "route-run": {
+          "exitCode": 0,
+          "route": { "condenseFired": false, "truncated": false }
+        },
+        "direct-child-exec": {
+          "exitCode": 0,
+          "route": { "childOutputBytes": 1024 }
+        }
+      },
+      "comparisons": [
+        {
+          "left": "route-run",
+          "right": "direct-child-exec",
+          "reduction": { "left": "childOutputBytes", "right": "childOutputBytes" }
+        }
+      ]
+    },
+    {
+      "id": "route-condense-and-refetch",
+      "title": "Route output condense and log refetch",
+      "arms": ["route-run", "route-logs", "direct-child-exec"],
+      "route": {
+        "name": "bench-route",
+        "match": { "command": ["benchrun"] },
+        "command": "benchrun --fixture-child emit",
+        "grant": "bench-child",
+        "childMode": "emit",
+        "childBytes": 16384,
+        "tokenThreshold": 1,
+        "maxOutputBytes": 4096,
+        "passthroughEnv": []
+      },
+      "fakeStream": {
+        "fixture": {
+          "name": "condense-session",
+          "sessions": [
+            {
+              "steps": [{ "finish": { "text": "{\"summary\":\"seeded condense summary\"}" } }]
+            }
+          ]
+        }
+      },
+      "armExpect": {
+        "route-run": {
+          "exitCode": 0,
+          "route": { "condenseFired": true, "truncated": true }
+        },
+        "route-logs": {
+          "envelopeOk": true,
+          "exitCode": 0,
+          "route": { "condenseFired": true, "truncated": true },
+          "metrics": { "logRefetches": 1 }
+        },
+        "direct-child-exec": {
+          "exitCode": 0,
+          "route": { "childOutputBytes": 16384 }
+        }
+      },
+      "comparisons": [
+        {
+          "left": "route-run",
+          "right": "route-logs",
+          "reduction": { "left": "originalTokens", "right": "logRefetchBytes" }
+        }
+      ]
+    },
+    {
+      "id": "worker-failure-modes",
+      "title": "Worker failure mode matrix (provider error, timeout, postprocess failure)",
+      "arms": [
+        "direct-provider-error",
+        "workflow-provider-error",
+        "direct-worker-timeout",
+        "workflow-worker-timeout",
+        "direct-postprocess-failure",
+        "workflow-postprocess-failure"
+      ],
+      "armBase": {
+        "direct-provider-error": "direct-worker-tool-call",
+        "workflow-provider-error": "workflow",
+        "direct-worker-timeout": "direct-worker-tool-call",
+        "workflow-worker-timeout": "workflow",
+        "direct-postprocess-failure": "direct-worker-tool-call",
+        "workflow-postprocess-failure": "workflow"
+      },
+      "policy": {
+        "execution": { "timeout": "500ms" },
+        "output": { "repairAttempts": 1 }
+      },
+      "workflow": {
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+          "analyze": {
+            "kind": "worker",
+            "worker": "bulk-reader",
+            "input": {
+              "task": "Analyze the failure fixture"
+            }
+          }
+        },
+        "outputs": {
+          "summary": {
+            "schema": {
+              "type": "string"
+            },
+            "value": {
+              "$from": "analyze",
+              "path": "/summary"
+            }
+          }
+        }
+      },
+      "manual": {
+        "kind": "direct-worker-sequence",
+        "tasks": ["Analyze the failure fixture"]
+      },
+      "armFakeStream": {
+        "direct-provider-error": {
+          "fixture": {
+            "name": "provider-error",
+            "sessions": [
+              {
+                "steps": [
+                  {
+                    "error": {
+                      "status": 500,
+                      "retryable": false,
+                      "message": "seeded provider error"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "workflow-provider-error": {
+          "fixture": {
+            "name": "provider-error",
+            "sessions": [
+              {
+                "steps": [
+                  {
+                    "error": {
+                      "status": 500,
+                      "retryable": false,
+                      "message": "seeded provider error"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "direct-worker-timeout": {
+          "fixture": {
+            "name": "hang-session",
+            "sessions": [{ "steps": ["hang"] }]
+          }
+        },
+        "workflow-worker-timeout": {
+          "fixture": {
+            "name": "hang-session",
+            "sessions": [{ "steps": ["hang"] }]
+          }
+        },
+        "direct-postprocess-failure": {
+          "fixture": {
+            "name": "schema-violations",
+            "sessions": [
+              { "steps": [{ "finish": { "text": "not valid worker output" } }] },
+              { "steps": [{ "finish": { "text": "still not valid worker output" } }] }
+            ]
+          }
+        },
+        "workflow-postprocess-failure": {
+          "fixture": {
+            "name": "schema-violations",
+            "sessions": [
+              { "steps": [{ "finish": { "text": "not valid worker output" } }] },
+              { "steps": [{ "finish": { "text": "still not valid worker output" } }] }
+            ]
+          }
+        }
+      },
+      "armExpect": {
+        "direct-provider-error": {
+          "envelopeOk": false,
+          "errorCode": "PROVIDER_FAILURE"
+        },
+        "workflow-provider-error": {
+          "envelopeOk": false,
+          "errorCode": "TOOL_EXECUTION_FAILURE"
+        },
+        "direct-worker-timeout": {
+          "envelopeOk": false,
+          "errorCode": "TIMEOUT"
+        },
+        "workflow-worker-timeout": {
+          "envelopeOk": false,
+          "errorCode": "TIMEOUT"
+        },
+        "direct-postprocess-failure": {
+          "envelopeOk": false,
+          "errorCode": "INVALID_OUTPUT"
+        },
+        "workflow-postprocess-failure": {
+          "envelopeOk": false,
+          "errorCode": "TOOL_EXECUTION_FAILURE"
+        }
+      },
+      "comparisons": [
+        {
+          "left": "direct-provider-error",
+          "right": "workflow-provider-error",
+          "reduction": { "left": "wallTimeMs", "right": "wallTimeMs" }
+        }
+      ]
+    },
+    {
+      "id": "route-child-nonzero-exit",
+      "title": "Route child nonzero exit mirror",
+      "arms": ["route-run", "direct-child-exec"],
+      "route": {
+        "name": "bench-route",
+        "match": { "command": ["benchrun"] },
+        "command": "benchrun --fixture-child fail",
+        "grant": "bench-child",
+        "childMode": "fail",
+        "passthroughEnv": []
+      },
+      "armExpect": {
+        "route-run": {
+          "exitCode": 7,
+          "route": { "condenseFired": false }
+        },
+        "direct-child-exec": {
+          "exitCode": 7
+        }
       }
     }
   ]

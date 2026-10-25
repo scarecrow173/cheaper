@@ -58,8 +58,11 @@ run = [
 
 # Canonical verification contract: CI と同等の検証。
 # セットアップ済み checkout を対象とし、setup には依存しない。
-# benchmarks/test は benchmark harness 自体の node:test であり runtime
-# 依存を持たないため check に配線する(benchmark 実測 run.mjs は手動のまま)。
+# benchmark harness の検証は `cargo test --workspace` 内の
+# `cargo test -p cheaper-bench`(Rust-native harness — issue #183)が
+# canonical に担う。旧 Node harness(`benchmarks/test/*.mjs`)は
+# schemaVersion 1 manifest を前提とするため manifest v2 以降は pipeline
+# に配線しない(benchmark 実測 run は引き続き手動)。
 [tasks.check]
 description = "Verify the checkout: lint, fmt, clippy, test, lockfile and slim payload checks"
 run = [
@@ -70,7 +73,6 @@ run = [
   "node scripts/check-doc-ids.mjs",
   "cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam",
   "node --test scripts/test/",
-  "node --test benchmarks/test/",
   "node scripts/check-lockfile.mjs",
   "node scripts/check-apm-payload.mjs",
 ]

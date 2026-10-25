@@ -340,3 +340,42 @@ apm-packages` は同一 maintainer 所有)。**F2 は issue #183 との結合が
   こと(除去提案をしていないことの確認)。
 - 本 design の file 登録: `docs/designs/README.md` index への行追加と、
   `audit_docs.js --type design` で本 file に findings が無いこと。
+
+## Addendum(2026-10-25 — issue #183 実施済み)
+
+§5 F2(benchmark harness の Rust 化)は issue #183
+(`docs/designs/benchmark-harness-redesign-issue-183.md`)へ absorb
+され実施済み(harness = `crates/cheaper-bench`、manifest v2・
+result schema v2 — check pipeline 整合は manifest v2 flip と同一
+change で着地済み)。本契約への影響を日付付きで記録する:
+
+- **§1.1 row 4(`node --test benchmarks/test/`)は migrated** —
+  `mise.toml [tasks.check]` から行が削除され、benchmark harness の
+  unit test coverage(manifest・fixture・schema・aggregate)は
+  `cargo test --workspace` 内の `cargo test -p cheaper-bench` が
+  担う。required node entrypoint は 6→5 件に縮小。
+- **§1.2 row 8(`node benchmarks/run.mjs`)も migrated** — 手動
+  計測 entrypoint は `cargo run -p cheaper-bench` へ置換。
+  `{node}` workload scenario は `{fixtureChild}`(bench bin の
+  自己再実行)へ、`environment.node` field は schema v2 で削除
+  (再混入は validation が reject)。旧 `.mjs` file 群
+  (`run.mjs`・`lib/`・`fixtures/`・`test/`)は pipeline から外れた
+  未参照 file で、file 削除は #183 の T6 が担う。
+- **§4 trigger T2 は発火済み** — 「改修機会に Rust 化(F2)を
+  畳み込むか」の判断は畳み込み採用で確定。F2 acceptance sketch
+  (計測意味論の維持・record schema 変更の version 化・
+  `node --test benchmarks/test/` の cargo test 系への置換)は
+  manifest v2・result schema v2・`cargo test -p cheaper-bench`
+  で充足された。
+- **§2.2 `benchmarks/` row** — 「harness 全体の構造変更は issue
+  #183 に委ねる」前提が解消し、`benchmarks/` に残るのは
+  言語中立資産(`scenarios/` manifest v2・`results/`・README)のみ。
+  領域 policy 自体(新規 node 結合「可」)は不変だが、live な
+  `.mjs` entrypoint は存在しない(`biome.jsonc` の
+  `benchmarks/**/*.mjs` glob も除去済み — `benchmarks/**/*.json`
+  include は残存 scenarios 対象で維持)。
+- **§1.4「unit-test coverage/failure 意味論」invariant** —
+  `node --test` suite は scripts 側のみに縮小したが、benchmark
+  coverage は `crates/cheaper-bench/tests/` の Rust test へ移管
+  されており、無音の coverage 低下(削減・skip 化)には該当しない
+  — row 4 の保存契約は Rust 側 4 test target が継承する。

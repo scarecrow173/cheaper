@@ -166,6 +166,8 @@ Directory: `docs/tasks`
 | TASK-034FpqpiEJPjTB70PuT2jp | T4: grant-requests-contract — tool-operator output schema の grantRequests と prompt contract | done | [grant-requests-contract.md](./grant-requests-contract.md) |
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
 | TASK-034r05iHQeQpDqeuofmk64 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [hook-fast-path-and-fail-closed-file-too-large-block.md](./hook-fast-path-and-fail-closed-file-too-large-block.md) |
+| TASK-Df79tWn026fFvY79W1xIku | Implement benchmark manifest v2 — 12 required scenarios, validation, arm impls, spawn/observation parsers | done | [implement-bench-manifest-v2-scenarios-and-observation.md](./implement-bench-manifest-v2-scenarios-and-observation.md) |
+| TASK-IoIMnYeXx4TFTREaOLTquP | Implement benchmark record/aggregate schema v2 — claim invariants, median/p95, armExpect, immutable store, comparisons, estimated layer | done | [implement-bench-record-schema-v2-and-aggregation.md](./implement-bench-record-schema-v2-and-aggregation.md) |
 | TASK-034r05iHK8bA7h4BqSHmqd | Implement boundary-checked tool operations with atomic writes | done | [implement-boundary-checked-tool-operations-with-atomic-writes.md](./implement-boundary-checked-tool-operations-with-atomic-writes.md) |
 | TASK-034zTn9hnvGsV4G8kGiHvT | Implement bounded artifact store | done | [implement-bounded-artifact-store.md](./implement-bounded-artifact-store.md) |
 | TASK-034z3zP5mtHjiKzurDeCDM | Implement build-apm-bundle.mjs assembling executables into hooks tree | done | [implement-build-apm-bundle-mjs-assembling-executables-into-hooks-tree.md](./implement-build-apm-bundle-mjs-assembling-executables-into-hooks-tree.md) |
@@ -295,6 +297,7 @@ Directory: `docs/tasks`
 | TASK-034KJtXX2QajBjkAgOJRtm | cheaper-core policy 層の内容審査 predicate・適用点を除去 | done | [remove-core-policy-content-audit.md](./remove-core-policy-content-audit.md) |
 | TASK-034DzYbfe9r0G8Nd58FQjy | T1: js_json shim 削除 (F3) | done | [remove-js-json-shim.md](./remove-js-json-shim.md) |
 | TASK-034z52W87FtawtD6bYW6RR | remove legacy js hook adapters and run final verification | done | [remove-legacy-js-hook-adapters-and-run-final-verification.md](./remove-legacy-js-hook-adapters-and-run-final-verification.md) |
+| TASK-6DBO0a5MUlapTYav2YJtS0 | Remove legacy Node benchmark harness — benchmarks/*.mjs, lib, fixtures, test suite | done | [remove-legacy-node-benchmark-harness.md](./remove-legacy-node-benchmark-harness.md) |
 | TASK-034DzYfbw07gFHdsAguwHp | T4: poc-rig 削除 (F5) | done | [remove-poc-rig-crate.md](./remove-poc-rig-crate.md) |
 | TASK-034L59KS9oEjgDzshYZUSn | route trusted field 削除・merge 無条件化・project 層 trusted presence 拒否 | done | [remove-route-trusted-field-and-add-layer-gate.md](./remove-route-trusted-field-and-add-layer-gate.md) |
 | TASK-034KJu31OgzJMwk2vb4KJz | cheaper-tools command/proc 層の内容審査を除去 | done | [remove-tools-content-audit.md](./remove-tools-content-audit.md) |
@@ -311,11 +314,13 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpDygNnvfq | Run bulk-read and cheap-write smoke against Ollama | done | [run-bulk-read-and-cheap-write-smoke-against-ollama.md](./run-bulk-read-and-cheap-write-smoke-against-ollama.md) |
 | TASK-034zBJcexygQMw7L8WTUYL | Run canonical verification and close out issue #55 implementation | done | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
 | TASK-034r05iHQeQpDpyBKGfmKB | Run document status audit | done | [run-document-status-audit.md](./run-document-status-audit.md) |
+| TASK-b6CX0aXZBAJ6ElAqC0uXxe | Run full 12-scenario benchmark measurement and update workflow-usage.md with Rust-era values | done | [run-full-benchmark-measurement-and-update-workflow-usage.md](./run-full-benchmark-measurement-and-update-workflow-usage.md) |
 | TASK-034r05iHQeQpDpwgKKyE0K | Run full build test and lint verification | done | [run-full-build-test-and-lint-verification.md](./run-full-build-test-and-lint-verification.md) |
 | TASK-nOwbfXxas6V704CAtb76b7 | cheaper run --resume <path> による checkpoint 再開 | done | [run-resume-cli.md](./run-resume-cli.md) |
 | TASK-lLkjLAEBHJc2S02t4gVnRW | run 経路の timeout を進捗リセット型 stall window へ変更 | done | [run-stall-timeout-progress-window.md](./run-stall-timeout-progress-window.md) |
 | TASK-034EOHPDg1Gg2LSKLw8WRT | T4: runtime/CLI plumbing と builtin policy 配線 | done | [runtime-cli-plumbing.md](./runtime-cli-plumbing.md) |
 | TASK-034r05iHQeQpDq84iLFgT3 | Runtime-pi scope and deny enforcement in sandboxed tools | done | [runtime-scope-and-deny-enforcement.md](./runtime-scope-and-deny-enforcement.md) |
+| TASK-7pwH1mAayBeUw0g24iMXvR | Scaffold cheaper-bench crate — lib+bin, fixture-child dispatch, RunFixture round-trip, workspace/policy materialization | done | [scaffold-cheaper-bench-crate-and-fixture-child.md](./scaffold-cheaper-bench-crate-and-fixture-child.md) |
 | TASK-034r05iHK8bA7hmVmOU1eX | Scaffold cheaper CLI package with bin entry | done | [scaffold-cheaper-cli-package-with-bin-entry.md](./scaffold-cheaper-cli-package-with-bin-entry.md) |
 | TASK-034r05iHK8bA7gC9ZdvYF9 | Scaffold pnpm monorepo root configuration | done | [scaffold-pnpm-monorepo-root-configuration.md](./scaffold-pnpm-monorepo-root-configuration.md) |
 | TASK-034r05iHK8bA7h2hF1efor | Scaffold runtime-pi package with Pi import smoke test | done | [scaffold-runtime-pi-package-with-pi-import-smoke-test.md](./scaffold-runtime-pi-package-with-pi-import-smoke-test.md) |
@@ -358,6 +363,7 @@ Directory: `docs/tasks`
 | TASK-034DmVS8k50GMCHNnui6Wb | upstream doc reconciliation and final verification | done | [upstream-doc-reconciliation-and-final-verification.md](./upstream-doc-reconciliation-and-final-verification.md) |
 | TASK-034r05iHQeQpDqKGWioCow | Usage-log e2e assertions, docs, bundle regen, status sync, final verification | done | [usage-log-e2e-docs-and-final-verification.md](./usage-log-e2e-docs-and-final-verification.md) |
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
+| TASK-32FiZMrj2twoTPHLYB0QgC | Verify cheaper-bench smoke run on real binary — subset scenarios, schema v2 artifact, preflight probe | done | [verify-bench-smoke-run-on-real-binary.md](./verify-bench-smoke-run-on-real-binary.md) |
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
 | TASK-034zXB2z3uWw5lq9IyKOqe | Verify consumer acquisition and close migration | done | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
 | TASK-034KJu8k1x8fWOfRemmi3r | 除去の grep-pin・keep-boundary・mise run check 最終検証 | done | [verify-content-audit-removal.md](./verify-content-audit-removal.md) |
@@ -377,6 +383,7 @@ Directory: `docs/tasks`
 | TASK-034KQsAwXBVQJ56nGgagYT | unified exec grant model の最終検証と status/evidence 更新 | done | [verify-unified-exec-grant-model.md](./verify-unified-exec-grant-model.md) |
 | TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | done | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
+| TASK-oxOS7kvPXiqJ0LEOT1edeB | Wire cheaper-bench into check pipeline and sync docs — mise.toml, AGENTS/CONTRIBUTING, benchmarks docs, biome glob, #182 addendum, workflow-usage placeholder | done | [wire-bench-check-pipeline-and-sync-docs.md](./wire-bench-check-pipeline-and-sync-docs.md) |
 | TASK-034zTjXTqV7nvYYkf1bUH9 | Wire canonical operation ownership and abort | done | [wire-canonical-operation-ownership.md](./wire-canonical-operation-ownership.md) |
 | TASK-034DVH7HJKxbc1zEF7638b | T2: cli --log/--log-format flag 配線と init 呼出し | done | [wire-cli-log-flags-and-observability-init.md](./wire-cli-log-flags-and-observability-init.md) |
 | TASK-034r05iHWkNF7zGlMzs17M | Wire env into createModelRuntime callers and update e2e isolation | done | [wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md](./wire-env-into-createmodelruntime-callers-and-update-e2e-isolation.md) |
