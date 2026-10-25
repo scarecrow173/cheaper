@@ -846,9 +846,9 @@ async fn worker_scope_rejects_security_policy_mismatch() {
 #[tokio::test]
 async fn worker_scope_receives_invocation_resolved_security() {
     let dir = TempDir::new();
-    let target = dir.join("deny-me");
+    let target = dir.0.join("deny-me");
     std::fs::copy(std::env::current_exe().unwrap(), &target).unwrap();
-    std::os::unix::fs::symlink(&target, dir.join("helper")).unwrap();
+    std::os::unix::fs::symlink(&target, dir.0.join("helper")).unwrap();
     let mut opts = invocation_options(dir.root(), None);
     opts.exec = Some(exec_doc(
         None,
