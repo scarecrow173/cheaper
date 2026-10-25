@@ -18,6 +18,8 @@ relations:
     generated:
       - type: "file"
         path: "benchmarks/results/"
+      - type: "file"
+        path: "benchmarks/results/251d949f-d6d6-4c02-ae61-e4b96a402901.json"
   implements:
     - "docs/plans/implement-rust-native-benchmark-harness-issue-183.md"
   implemented-by: []
@@ -130,35 +132,59 @@ placeholder のまま)、`benchmarks/` の `.mjs` 系(T6 で削除)、crate 本�
 
 ## Done When
 
-- [ ] dev-seam 有効 release binary の明示 build が成功し、preflight
+- [x] dev-seam 有効 release binary の明示 build が成功し、preflight
       probe が `devSeamProbe:"passed"` を記録する
-- [ ] 6 scenario の smoke run(`--warmups 1 --repetitions 3`)が完走し、
+- [x] 6 scenario の smoke run(`--warmups 1 --repetitions 3`)が完走し、
       `benchmarks/results/<runId>.json` が非上書き保存される
-- [ ] artifact が `schemaVersion:2`・`fixtureRevision:"seeded-v2"`・
+      (`251d949f-d6d6-4c02-ae61-e4b96a402901.json`・84 observations)
+- [x] artifact が `schemaVersion:2`・`fixtureRevision:"seeded-v2"`・
       `measuredBinary`・`environment`(node field 無し)を持ち、v2
-      validation を pass する
-- [ ] `worker-failure-modes` の失敗系 arm が `armExpect` どおり観測され、
+      validation を pass する(emit 前 `validate_result` 通過 + 事後
+      grep で schemaVersion×85・fixtureRevision×85・`"node"`×0・
+      `source:"scripted"`×44 を確認)
+- [x] `worker-failure-modes` の失敗系 arm が `armExpect` どおり観測され、
       `route-condense-and-refetch` が `condenseFired:true`・
       `truncated:true`・refetch を観測する
-- [ ] `route-resolve-and-rewrite` で hook-JSON parse 由来の rewritten
+- [x] `route-resolve-and-rewrite` で hook-JSON parse 由来の rewritten
       command が観測され、`route-child-nonzero-exit` で child exit
       code が mirror され `armExpect` どおり記録される
-- [ ] dev-seam 無し binary を `--binary` で指した run が preflight
+- [x] dev-seam 無し binary を `--binary` で指した run が preflight
       probe で fail-fast する(診断 + build 手順の出力)
 - [ ] smoke artifact が `benchmarks/results/` へ commit 済み(既存 v1
-      file に diff 無し)
+      file に diff 無し)— artifact は生成・検証済みだが、実装
+      delegate の constraint で commit は orchestrator 側へ委譲
+      (verification gate 自体は全 pass)
 
 ## Verification
 
-- [ ] `mise exec -- cargo build --release -p cheaper-cli --features dev-seam` exits 0
-- [ ] `mise exec -- cargo run --release -p cheaper-bench -- --scenario single-simple-tool-call --scenario route-resolve-and-rewrite --scenario route-routed-exec --scenario route-condense-and-refetch --scenario route-child-nonzero-exit --scenario worker-failure-modes --warmups 1 --repetitions 3` exits 0(全 armExpect 一致なら)
-- [ ] `git status --porcelain benchmarks/results/` が新規 `<runId>.json` のみを示し、既存 v1 JSON に差分無し
-- [ ] `mise run check` exits 0(smoke 後も pipeline green)
-- [ ] Manual: `--binary <dev-seam 無し build>` で preflight probe が
-      fail-fast することを確認(supplement)
+- [x] `mise exec -- cargo build --release -p cheaper-cli --features dev-seam` exits 0
+- [x] `mise exec -- cargo run --release -p cheaper-bench -- --scenario single-simple-tool-call --scenario route-resolve-and-rewrite --scenario route-routed-exec --scenario route-condense-and-refetch --scenario route-child-nonzero-exit --scenario worker-failure-modes --warmups 1 --repetitions 3` exits 0(全 armExpect 一致なら)— exits 0・84/84 observations `success:true`・失敗系 arm は期待どおりの exit/errorCode で `success:true` 記録
+- [x] `git status --porcelain benchmarks/results/` が新規 `<runId>.json` のみを示し、既存 v1 JSON に差分無し
+- [x] `mise run check` exits 0(smoke 後も pipeline green)— biome/fmt/clippy/version/doc-id/`cargo test --workspace`/`node --test`(43 pass)/lockfile/apm-payload 全 pass
+- [x] Manual: `--binary <dev-seam 無し build>` で preflight probe が
+      fail-fast することを確認(supplement)— dev-seam 無し debug
+      build(`cargo build -p cheaper-cli`)を `--binary target/debug/cheaper.exe`
+      で指し、probe が `MODEL_TIER_UNAVAILABLE` を観測して
+      「dev-seam build では無い」診断 + `cargo build -p cheaper-cli
+      --features dev-seam` 手順付きで exit 2 fail-fast(result file
+      は生成されない)
 
 ## Notes
 
+- 2026-10-25 実測結果: runId `251d949f-d6d6-4c02-ae61-e4b96a402901`
+  (dev-seam release build・Windows・`rustc 1.99.0`)で 6 scenario・
+  84 observation が全て `success:true`・exit 0 で完走。失敗系 arm
+  は期待形を観測(provider error exit 5/6・timeout exit 7・
+  postprocess exit 6・各 errorCode pin)、route arm は
+  `condenseFired`/`truncated`/`logRefetches:1`/`routeChildExitCode:7`
+  mirror を記録。`measuredBinary.devSeamProbe:"passed"`。smoke
+  artifact の commit のみ orchestrator 側へ委譲(delegate scope 外)。
+- 任意項目 7(mismatch 動作)も実施済み: `route-routed-exec` の
+  `direct-child-exec` armExpect `exitCode` を一時的に 99 へ改変して
+  run → 観測 obs は `success:false`・`exit=0 observed vs expected 99`
+  mismatch detail 付きで記録され、run 終了時 exit 2 で報告(result
+  file は `--output` 指定の temp path へ)。確認後 manifest は revert
+  済み(`git checkout` で復元・diff 無し)。
 - rep 数は gate 用の最小値(`--warmups 1 --repetitions 3`)— 正式な
   median/p95 は T7 の `--warmups 2 --repetitions 15` run が出す。
 - smoke で 12 scenario 全件を回さないのは意図的: T6 の削除 gate を
