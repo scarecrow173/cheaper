@@ -1,9 +1,10 @@
 // Committed-state lockfile contract — issue #85 / ADR-034Dmb3kNAO4Ub6FxuQCtC。
 // consumer は `cargo install --git … --locked cheaper-cli` で install する
 // ため、committed Cargo.lock が manifests と整合していることが配布契約の
-// 一部になる。check pipeline の最後尾に置き、先行する build/test が
-// lockfile を再生成してしまった場合の committed-state drift を検出する
-// (working-tree のみの check では cargo が書き直した後では no-op になる)。
+// 一部になる。check pipeline で check-apm-payload の直前に置き、
+// 先行する build/test が lockfile を再生成してしまった場合の
+// committed-state drift を検出する(working-tree のみの check では
+// cargo が書き直した後では no-op になる)。
 //
 //   1. cargo metadata --locked … committed lockfile が manifest と不整合
 //      なら失敗する(lockfile の再解決を要求しない)。

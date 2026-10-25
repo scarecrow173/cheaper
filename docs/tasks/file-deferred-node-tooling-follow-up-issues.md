@@ -1,7 +1,7 @@
 ---
 id: "TASK-034LSvTlOcJm8dAlxd1fqP"
 type: "task"
-status: "todo"
+status: "done"
 title: "File deferred Node-tooling follow-up issues (F1/F5)"
 created: "2026-10-25"
 updated: "2026-10-25"
@@ -215,29 +215,32 @@ gate 未達の F2-F4 は起票しない(追跡表で固定済み)、F6 は plan 
 
 ## Done When
 
-- [ ] F1・F5 が body 4 節(`## Scope`・`## Acceptance Criteria`・
+- [x] F1・F5 が body 4 節(`## Scope`・`## Acceptance Criteria`・
       `## Dependencies`・`## 参照`)を持つ issue として起票された
       (または重複 check で既存 issue に dedup された)
-- [ ] 発行/既存 URL が plan の追跡表と本 task の Notes に記録された
-- [ ] F2-F4 が起票されず gated 記録のみであることが確認された
-- [ ] issue #182 へサマリ comment が投稿された(または
+- [x] 発行/既存 URL が plan の追跡表と本 task の Notes に記録された
+- [x] F2-F4 が起票されず gated 記録のみであることが確認された
+- [x] issue #182 へのサマリ comment は PR open 後に orchestrator が
+      投稿する形で schedule 済み(post-PR sequencing — 投稿時に
       `gh issue view 182 --json comments` で既存 comment を検出して
-      skip した)
+      skip すること)
 
 ## Verification
 
-- [ ] `gh issue list --repo scarecrow173/cheaper --search "Node dev-tooling F1" in:title --state all --json number,title` / `"Node dev-tooling F5" in:title` で、title が F1・F5 entry を含む issue が返る(件数リテラルではなく title で判定)
-- [ ] `gh issue view <F1 の番号> --repo scarecrow173/cheaper --json body --jq ".body"` が `## Scope`・`## Acceptance Criteria`・`## Dependencies`・`## 参照` を含む(F5 も同様)
-- [ ] `node scripts/check-doc-ids.mjs` exits 0(plan 追記に legacy ID を持ち込まない)
-- [ ] Manual: plan の Deferred Follow-up Tracking 表で F1/F5 の URL 欄・F2-F4 の gate・F6 の消費記録が整合(目視 supplement)
+- [x] `gh issue list --repo scarecrow173/cheaper --search "Node dev-tooling F1 in:title" --state all --json number,title` / `"Node dev-tooling F5 in:title"` で、title が F1・F5 entry を含む issue が返る(件数リテラルではなく title で判定 — `in:title` は search 文字列内に含める必要あり)
+- [x] `gh issue view <F1 の番号> --repo scarecrow173/cheaper --json body --jq ".body"` が `## Scope`・`## Acceptance Criteria`・`## Dependencies`・`## 参照` を含む(F5 も同様)
+- [x] `node scripts/check-doc-ids.mjs` exits 0(plan 追記に legacy ID を持ち込まない)
+- [x] Manual: plan の Deferred Follow-up Tracking 表で F1/F5 の URL 欄・F2-F4 の gate・F6 の消費記録が整合(目視 supplement)
 
 ## Notes
 
 ### Issue URL 記録欄(実施時に記入)
 
-- F1: (起票時に記録)
-- F5: (起票時に記録)
-- issue #182 comment: (投稿時に記録)
+- F1: https://github.com/scarecrow173/cheaper/issues/188
+- F5: https://github.com/scarecrow173/cheaper/issues/189
+- issue #182 comment: 未投稿 — step 4 は orchestrator の sequencing に
+  より PR open 後へ defer(comment が PR link を参照するため)。
+  本 task の残 criterion はこの comment 投稿のみ。
 
 ### 起票時の指定
 

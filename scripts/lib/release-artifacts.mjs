@@ -1,5 +1,5 @@
 // Version declaration helpers shared by check-version.mjs /
-// set-version.mjs / check-apm-payload.mjs。release artifact・checksum・
+// set-version.mjs。release artifact・checksum・
 // bundle helper は issue #85(cargo source install + slim APM payload)で
 // 撤去済み — executable の staging/acquisition は存在しない。
 import { readFileSync } from "node:fs";

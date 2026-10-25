@@ -280,11 +280,11 @@ design §5 F-plan の disposition(T2 が URL 欄を埋める):
 
 | ID | 候補 issue | disposition | gate / 根拠 | issue URL |
 | --- | --- | --- | --- | --- |
-| F1 | `cargo test` ambient `node` 結合の fixture binary repoint | **本 PR で起票** | 独立・小規模衛生 | (T2 が記録) |
+| F1 | `cargo test` ambient `node` 結合の fixture binary repoint | **本 PR で起票** | 独立・小規模衛生 | https://github.com/scarecrow173/cheaper/issues/188 |
 | F2 | benchmark harness の Rust 化 | 起票しない(gated) | issue #183 結合前提 — redesign 機会に畳み込む | — |
 | F3 | `gen-glob-tables.cjs` codegen oracle 再設計 | 起票しない(gated) | trigger T3 発火時のみ | — |
 | F4 | check-*.mjs・`node --test` 系の Rust/native 化(Option C repo 側) | 起票しない(gated) | trigger T1 発火後 — upstream deploy script が残る間 removal payoff なし | — |
-| F5 | brainstorming skill の node 依存 drop/replace | **本 PR で起票** | 独立・third-party(`obra/superpowers`)非依存 unblock path — transitive dep で `scarecrow173/apm-packages`(同一 maintainer 所有)側の宣言変更 + dep bump が主 lever | (T2 が記録) |
+| F5 | brainstorming skill の node 依存 drop/replace | **本 PR で起票** | 独立・third-party(`obra/superpowers`)非依存 unblock path — transitive dep で `scarecrow173/apm-packages`(同一 maintainer 所有)側の宣言変更 + dep bump が主 lever | https://github.com/scarecrow173/cheaper/issues/189 |
 | F6 | stale deploy drift note + stale comment 修正 | **本 plan で消費** | comment 半分は T1 で実施。drift 半分は upstream(`scarecrow173/apm-packages`)所有の lock-pinned stale copy と実測確認済み(`apm install` 再実行でも解消せず、2026-10-25) — cheaper repo の issue 対象ではなく upstream 側対応事項として記録 | — |
 
 ## Task Breakdown

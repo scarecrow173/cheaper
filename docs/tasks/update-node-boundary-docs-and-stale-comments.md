@@ -1,7 +1,7 @@
 ---
 id: "TASK-034LSvSfFCNY9T3y1exy8S"
 type: "task"
-status: "todo"
+status: "done"
 title: "Update Node boundary docs and stale script comments"
 created: "2026-10-25"
 updated: "2026-10-25"
@@ -144,33 +144,44 @@ boundary contract へ揃え、発見済みの stale comment 2 件を実態へ整
 
 ## Done When
 
-- [ ] AGENTS.md の Node 段落が replacement 文案どおりに更新され、
+- [x] AGENTS.md の Node 段落が replacement 文案どおりに更新され、
       `gen-glob-tables.cjs`・design/discovery への参照・「新規 ambient
       結合は原則不可」「node 行除去不可」の記述を含む
-- [ ] AGENTS.md:27 の toolchain 列挙から `python` が除かれた
-      (mise.toml:19-21 の python 非含有 note と整合)
-- [ ] `scripts/check-lockfile.mjs` の header が「最後尾」を名乗らず、
+      (AGENTS.md:81-100 — 文案を verbatim で転記)
+- [x] AGENTS.md:27 の toolchain 列挙から `python` が除かれた
+      (mise.toml:19-21 の python 非含有 note と整合 —
+      「node・rust・apm・prek・git-lfs 等」へ修正、`grep "python"
+      AGENTS.md` は file 全体で 0 件)
+- [x] `scripts/check-lockfile.mjs` の header が「最後尾」を名乗らず、
       `check-apm-payload` 直前の実位置を述べ、drift 検出根拠が残る
-- [ ] `scripts/lib/release-artifacts.mjs` の header が
-      `check-version.mjs`・`set-version.mjs` のみを名指す
-- [ ] 実施時に `apm.lock.yaml` `local_deployed_file_hashes` と
+      (:4-7「check pipeline で check-apm-payload の直前に置き」+
+      先行 build/test の lockfile 再生成捕捉根拠を維持)
+- [x] `scripts/lib/release-artifacts.mjs` の header が
+      `check-version.mjs`・`set-version.mjs` のみを名指す(:1-2)
+- [x] 実施時に `apm.lock.yaml` `local_deployed_file_hashes` と
       deployed file の sha256 を再確認し、観測が変化した場合のみ
-      Notes を更新した(現行記録は 2026-10-25 実測値 — 一致を再確認
-      すれば追記不要)
-- [ ] `git diff` が doc/comment のみで実行 code 差分を持たない
+      Notes を更新した(2026-10-25 再確認 — deployed file sha256
+      `b0edb6bc…a74da2` が lock 記録値と一致し観測不変のため
+      drift observation 本文は追記なし。再確認の証跡は
+      Verification evidence に記録)
+- [x] `git diff` が doc/comment のみで実行 code 差分を持たない
+      (script 2 file の差分は全行 `//` comment、AGENTS.md は
+      markdown 本文のみ)
 
 ## Verification
 
-- [ ] `grep -n "最後尾" scripts/check-lockfile.mjs` が出力 0 件
-- [ ] `grep -n "check-apm-payload" scripts/lib/release-artifacts.mjs` が出力 0 件
-- [ ] `grep -n "gen-glob-tables.cjs" AGENTS.md` が match を返し、
+- [x] `grep -n "最後尾" scripts/check-lockfile.mjs` が出力 0 件
+- [x] `grep -n "check-apm-payload" scripts/lib/release-artifacts.mjs` が出力 0 件
+- [x] `grep -n "gen-glob-tables.cjs" AGENTS.md` が match を返し(:83)、
       `grep -n "python" AGENTS.md` が toolchain 列挙(:27 付近)で
-      hit しない
-- [ ] `grep -rn "release-artifacts" scripts/check-version.mjs scripts/set-version.mjs` が両 file の import を返す(実 importer の実態照合)
-- [ ] `git diff -- scripts/check-lockfile.mjs scripts/lib/release-artifacts.mjs` の差分が comment 行のみ
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] Manual: AGENTS.md 段落が boundary contract の要約として design §2
-      と矛盾しない(目視 supplement)
+      hit しない(file 全体で 0 件)
+- [x] `grep -rn "release-artifacts" scripts/check-version.mjs scripts/set-version.mjs` が両 file の import を返す(check-version.mjs:23・set-version.mjs:23 — 実 importer の実態照合)
+- [x] `git diff -- scripts/check-lockfile.mjs scripts/lib/release-artifacts.mjs` の差分が comment 行のみ
+- [x] `mise exec -- node scripts/check-doc-ids.mjs` exits 0(1211 markdown files scanned)
+- [x] Manual: AGENTS.md 段落が boundary contract の要約として design §2
+      と矛盾しない(目視 supplement — §2.1 pinned dev-tool/product
+      node-free・§2.2 領域別表・§3 ambient 3 site/removal gate と
+      照合済み)
 
 ## Notes
 
@@ -189,3 +200,58 @@ boundary contract へ揃え、発見済みの stale comment 2 件を実態へ整
   参照済みで正しい。drift は cosmetic であり実 node 依存ではない。
 - 本 task では deploy 物を編集しない(upstream 所有)。観測は plan の
   Deferred Follow-up Tracking(F6 行)と本 Notes に記録する。
+
+### Verification evidence(2026-10-25、Windows local、branch `chore/node-deps-inventory-issue-182`)
+
+- Drift observation 再確認(上記観測は不変 — 追記不要と判断):
+  - `sha256sum .agents/skills/cheaper-usage/SKILL.md` →
+    `b0edb6bc2a1ba200358c23163ab6a772b5acd75290a03505e05ebd56dda74da2`。
+    `apm.lock.yaml` `local_deployed_file_hashes` の
+    `.agents/skills/cheaper-usage/SKILL.md: sha256:b0edb6bc…a74da2`
+    と一致。
+  - `.agents/skills/cheaper-usage/SKILL.md:43` は依然
+    `node .windsurf/hooks/cheaper/cli/bin/cheaper.mjs` を参照。
+    repo source `packages/apm/.apm/skills/cheaper-usage/SKILL.md` は
+    `:80` で現行 hook path
+    `.windsurf/hooks/apm-hook-windsurf/cheaper.sh` を参照済み。
+  - 結論: lock-pinned な upstream stale copy という観測は変化なし。
+    deploy 物は編集しない。
+- File 変更:
+  - `AGENTS.md` — Node 段落を本 doc Work §1 の replacement 文案へ
+    verbatim 置換(現 :81-100)+ :27 toolchain 列挙から `python` 除去。
+  - `scripts/check-lockfile.mjs:4-7` — header の位置 claim を
+    「check-apm-payload の直前」(相対位置、序数なし)へ修正。drift
+    検出根拠行は維持。実行 code 非接触。
+  - `scripts/lib/release-artifacts.mjs:1-2` — header の shared-by
+    列挙から `check-apm-payload.mjs` を除去(実 importer =
+    check-version/set-version のみ)。実行 code 非接触。
+- 実態照合の裏付け:
+  - `mise.toml:19-21` に python 非含有の明記あり(toolchain 列挙の
+    `python` は stale であった)。
+  - `mise.toml:63-76` の check pipeline は 10 step で
+    `check-lockfile.mjs`(:74)は 9 番目、最後尾は
+    `check-apm-payload.mjs`(:75)。
+  - `grep -rn "release-artifacts" scripts/` → importer は
+    `check-version.mjs:23`・`set-version.mjs:23` のみ。
+- Verification 結果(全 pass):
+  - `grep -n "最後尾" scripts/check-lockfile.mjs` → 0 件。
+  - `grep -n "check-apm-payload" scripts/lib/release-artifacts.mjs`
+    → 0 件。
+  - `grep -n "gen-glob-tables.cjs" AGENTS.md` → :83 で match。
+    `grep -n "python" AGENTS.md` → file 全体で 0 件。
+  - `grep -rn "release-artifacts" scripts/check-version.mjs
+    scripts/set-version.mjs` → 両 file の import 行を返す。
+  - `git diff -- scripts/check-lockfile.mjs
+    scripts/lib/release-artifacts.mjs` → 差分は全行 `//` comment
+    のみ(実行 code 差分なし)。
+  - `mise exec -- node scripts/check-doc-ids.mjs` → exit 0
+    (`doc id check OK: 1211 markdown files scanned`)。
+  - Manual 照合: AGENTS.md 新段落は design §2.1(pinned mise
+    dev-tool・product node-free)・§2.2 領域別表(src/payload/CI
+    不可・tests 原則不可・codegen 条件付き可・deploy dir repo
+    管理外・node 行 removal gate)・§3(ambient 3 site・裸
+    `cargo test` の fail/skip)と矛盾なし。参照先
+    `docs/designs/node-dev-tooling-boundary-contract-issue-182.md`・
+    `docs/discovery/node-dev-tooling-inventory-issue-182.md`・
+    `crates/cheaper-tools/gen-glob-tables.cjs`・ADR-034LRjX5iYZHrubmKgKAL1
+    の実在を確認済み。
