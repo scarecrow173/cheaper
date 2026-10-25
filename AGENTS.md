@@ -33,8 +33,10 @@ mise 管理 toolchain（node・rust・apm・prek・git-lfs 等）を復元する
 repo の `.git/config` に登録する（既存履歴の checkout 用。global
 `~/.gitconfig` は変更しない）。
 `mise run check` は `biome check` → `cargo fmt --check` → `cargo clippy` →
-version/doc-id check → `cargo test --workspace` → `node --test`（scripts・
-benchmarks）→ committed lockfile check（`node scripts/check-lockfile.mjs`）→
+version/doc-id check → `cargo test --workspace` → `node --test`（scripts のみ
+— benchmark harness の検証は `cargo test --workspace` 内の
+`cargo test -p cheaper-bench` が担う）→ committed lockfile check
+（`node scripts/check-lockfile.mjs`）→
 slim payload check（`node scripts/check-apm-payload.mjs`）の Rust pipeline。
 setup/check 内の build・clippy・test 系 cargo コマンドは
 `--features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` を付けて実行する
@@ -80,11 +82,13 @@ foreign/dead registration を解消）。worker 定義・schema・policy は
 
 Node.js は pinned mise dev-tool（`mise.toml` `[tools] node = "26"` +
 `mise.lock`）として repo tooling のためだけに toolchain に残る —
-`scripts/`・`benchmarks/`・`crates/cheaper-tools/gen-glob-tables.cjs`
+`scripts/`・`crates/cheaper-tools/gen-glob-tables.cjs`
 （glob table codegen の regex oracle）・deploy 済み doc-suite skills
-（`.agents/skills/`・`.claude/skills/`、upstream 所有）。product・
-distribution・hook 実行経路に Node 依存はない（runtime は Rust
-workspace = `crates/`、agent runtime は Rig）。
+（`.agents/skills/`・`.claude/skills/`、upstream 所有）。benchmark
+harness は Rust crate `crates/cheaper-bench` へ移行済みで、
+`benchmarks/` に残るのは scenario manifest・計測結果・README の
+言語中立資産のみ。product・distribution・hook 実行経路に Node 依存は
+ない（runtime は Rust workspace = `crates/`、agent runtime は Rig）。
 
 新規の Node 結合は repo tooling 領域に限る（product path・配布
 payload・CI の直接 node 呼出しは不可。`crates/*/tests` からの新規

@@ -1,7 +1,7 @@
 ---
 id: "TASK-oxOS7kvPXiqJ0LEOT1edeB"
 type: "task"
-status: "todo"
+status: "done"
 title: "Wire cheaper-bench into check pipeline and sync docs — mise.toml, AGENTS/CONTRIBUTING, benchmarks docs, biome glob, #182 addendum, workflow-usage placeholder"
 created: "2026-10-25"
 updated: "2026-10-25"
@@ -166,51 +166,66 @@ crate の dep edge が担う。
 
 ## Done When
 
-- [ ] `mise.toml` の pipeline 整合(`node --test benchmarks/test/` 行
+- [x] `mise.toml` の pipeline 整合(`node --test benchmarks/test/` 行
       削除・justification comment が cheaper-bench 参照)が T2 で
       着地済みであることを確認(本 task は変更しない —
       `node --test scripts/test/` は残る)
-- [ ] `AGENTS.md`・`CONTRIBUTING.md` が `node --test`(scripts のみ)・
+- [x] `AGENTS.md`・`CONTRIBUTING.md` が `node --test`(scripts のみ)・
       `benchmarks/` = 言語中立資産 + `crates/cheaper-bench` 参照へ整合
       (CONTRIBUTING の crate list への cheaper-bench 行追加・flag
       無し `cargo test --workspace` の dev-seam 非対称注記を含む)
-- [ ] `.gitignore` の Node tooling comment から `benchmarks/` が
+- [x] `.gitignore` の Node tooling comment から `benchmarks/` が
       除かれている
-- [ ] `benchmarks/README.md` が 2 段手順・fixture child/seam・schema
+- [x] `benchmarks/README.md` が 2 段手順・fixture child/seam・schema
       v2・`{fixtureChild}`・Route/失敗 scenario・claim 境界・
       baseline 同等性 migration note・`NODE_ENV=test` vestige を含む
-- [ ] `benchmarks/results/README.md` が schemaVersion 2・v1 file
+- [x] `benchmarks/results/README.md` が schemaVersion 2・v1 file
       不変・混在不可の方針を述べる
-- [ ] `biome.jsonc` から `"benchmarks/**/*.mjs"` dead glob が除かれ、
+- [x] `biome.jsonc` から `"benchmarks/**/*.mjs"` dead glob が除かれ、
       `"benchmarks/**/*.json"`・`!benchmarks/results` が残る
-- [ ] #182 design に日付付き addendum(§1.1 row 4 migrated・§5 F2
+- [x] #182 design に日付付き addendum(§1.1 row 4 migrated・§5 F2
       absorb 済み)がある
-- [ ] `docs/guides/workflow-usage.md` が旧 TS 値を legacy 区別し、
+- [x] `docs/guides/workflow-usage.md` が旧 TS 値を legacy 区別し、
       Rust-era 実測値の掲載枠を placeholder で持つ(実測値なし)
-- [ ] `.pre-commit-config.yaml` の確認結果が Notes に記録済み
-- [ ] `mise run check` が `node --test benchmarks/test/` を含まない
+- [x] `.pre-commit-config.yaml` の確認結果が Notes に記録済み
+- [x] `mise run check` が `node --test benchmarks/test/` を含まない
       pipeline で全 pass する
 
 ## Verification
 
-- [ ] `mise run check` exits 0(node --test は scripts のみの pipeline)
-- [ ] `node scripts/check-doc-ids.mjs` exits 0
-- [ ] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type plan --json` で本 plan file の findings 0
-- [ ] Manual: `grep -n "benchmarks/test" mise.toml` が 0 件(T2 の
-      pipeline 整合が維持されている — supplement)
-- [ ] Manual: `grep -n "benchmarks" .gitignore` が 0 件(supplement)
-- [ ] Manual: `grep -n "benchmarks" AGENTS.md CONTRIBUTING.md` の記述が
+- [x] `mise run check` exits 0(node --test は scripts のみの pipeline
+      — `node --test scripts/test/` 43 pass・`cargo test
+      -p cheaper-bench` は workspace test 内で全 pass)
+- [x] `node scripts/check-doc-ids.mjs` exits 0(1225 files scanned)
+- [x] `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type plan --json` で本 plan file の findings 0
+      — `docs/plans/README.md` index の title mismatch warning 1 件は
+      既存(pre-existing・`file:"README.md"`・blocking:false)で
+      本 task の file scope 外
+- [x] Manual: `grep -n "benchmarks/test" mise.toml` — pipeline 行は
+      0 件。hit は T2 が着地した justification comment(:63 —
+      旧 suite `benchmarks/test/*.mjs` を pipeline に配線しない旨
+      の prose 参照)のみで、pipeline 整合は維持されている
+- [x] Manual: `grep -n "benchmarks" .gitignore` が 0 件(supplement)
+- [x] Manual: `grep -n "benchmarks" AGENTS.md CONTRIBUTING.md` の記述が
       「harness は `crates/cheaper-bench`・`benchmarks/` は言語中立
       資産」と整合(supplement)
-- [ ] Manual: `biome check` が dead glob 除去後も pass
-      (`"benchmarks/**/*.json"` 対象の scenarios が lint 対象に残る
-      こと — supplement)
+- [x] Manual: `biome check` が dead glob 除去後も pass(21 files
+      checked — `"benchmarks/**/*.json"` 対象の scenarios が lint
+      対象に残ることを確認 — supplement)
 
 ## Notes
 
-- `.pre-commit-config.yaml` の確認結果(変更不要の結論と根拠)を
-  本節へ記録する。
+- `.pre-commit-config.yaml` は**変更不要**(確認済み): biome mirror
+  の files pattern(:35 `^(scripts|benchmarks|packages)/.*\.(mjs|json)$`)
+  は残存 `benchmarks/**/*.json`(scenarios)に合致し続け、:36 の
+  exclude が `benchmarks/results/` を除外する。biome.jsonc から
+  `benchmarks/**/*.mjs` glob を除去したため deprecated `.mjs` file
+  が stage されると hook が明示渡しで "No files were processed"
+  exit 1 になり得るが、当該 file は T6 で削除予定の未参照 file で
+  編集対象外(削除 commit は pre-commit 既定の ACMR filter で
+  hook へ渡らない)のため現状維持とした。
 - `mise.toml` の pipeline 行削除は T2 の manifest v2 flip と同一
   変更で着地済み — 本 task が残存 doc-sync を担う。確認として
-  `grep -n "benchmarks/test" mise.toml` が 0 件であることを
-  Verification で再確認する。
+  `grep -n "benchmarks/test" mise.toml` を再確認したところ、pipeline
+  行の hit は 0 件で、justification comment 内の旧 suite への
+  prose 言及(:63)1 件のみであった。

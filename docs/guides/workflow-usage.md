@@ -6,7 +6,20 @@ title: "Workflow の使い分け"
 
 ## 測定範囲
 
-この指針は `benchmarks/results/e45d35b7-2fa6-416b-946a-70ca844b9c80.json` の seeded run に基づく（測定 source revision `b3213f8c089c07d521e834df282c0c778b729054`）。各 arm は warm-up 2 回の後に 15 回測定し、fake Worker stream を使った。OS は Windows 10.0.26200、x64、Node v26.10.0、CPU 16 個。壁時計時間はこの環境での CLI 起動を含む測定で、親 agent の実 token usage は接続されていない。
+以下の数値は **TS 時代測定（legacy）** — TS CLI 時代の旧 Node
+harness による seeded run
+（`benchmarks/results/e45d35b7-2fa6-416b-946a-70ca844b9c80.json`、
+測定 source revision `b3213f8c089c07d521e834df282c0c778b729054`）
+に基づく参考記録で、削除せず保持する。各 arm は warm-up 2 回の後に
+15 回測定し、fake Worker stream を使った。OS は Windows 10.0.26200、
+x64、Node v26.10.0、CPU 16 個。壁時計時間はこの環境での CLI 起動を
+含む測定で、親 agent の実 token usage は接続されていない。
+
+現行の Rust-native harness（`crates/cheaper-bench`・manifest/result
+schema v2）では計測経路が変わる（fixture child 化・
+`direct-filesystem` の in-process 化等）ため、v1 artifact の値と
+v2 の値は直接比較しない（`benchmarks/README.md`「baseline 同等性」
+参照）。
 
 `direct-worker-sequence` は再現可能な script が direct CLI を順番に起動する比較 arm であり、実際の親 agent の turn 数や token usage ではない。親 token の削減量はこの結果から算出しない。
 
@@ -34,6 +47,10 @@ title: "Workflow の使い分け"
 
 この fixture では compact interface payload は private definition より 272 bytes（約 77.5%）小さかった。interface CLI の起動には時間がかかるため、byte 削減を token 節約や wall-time 短縮と読み替えない。workflow を選ぶ根拠は、親が DAG の詳細を読む必要を減らすこと、構造化された fan-in を保持すること、または中間結果を親 context に展開しないことにある。ここで示した byte 差はこの小さな fixture に限る。
 
+## Rust-era 測定（掲載枠 — 計測 pending）
+
+現行 harness（`crates/cheaper-bench`・result schema v2）による実測値は、**必須 12 scenario 全 arm を計測対象 binary で実行した新規 run artifact（`benchmarks/results/<runId>.json`）からのみ採用**する方針で、現時点では計測 pending。掲載時はこの節を新 run artifact の集計値で置き換える。legacy の TS 時代測定（上表）は参考値として保持し、直接比較には使わない。
+
 ## 選択基準
 
 - **1 回の単純な read / grep / process:** direct invocation を選ぶ。測定した tool-only workflow は Node filesystem read と比べて CLI 起動分の wall time が大きかった。
@@ -49,4 +66,4 @@ title: "Workflow の使い分け"
 
 ## 再測定
 
-`benchmarks/README.md` の手順で再実行できる。scheduler、prompt、model、CLI が変わった後は、同じ seed・反復数で `benchmarks/results/` に新しい UUID artifact を作り、古い結果を上書きせず比較する。canonical `mise run check` と merge 判定は coordinator が実行する。
+`benchmarks/README.md` の手順（`cargo build -p cheaper-cli --features dev-seam` → `cargo run -p cheaper-bench`）で再実行できる。scheduler、prompt、model、CLI が変わった後は、同じ seed・反復数で `benchmarks/results/` に新しい UUID artifact を作り、古い結果を上書きせず比較する。canonical `mise run check` と merge 判定は coordinator が実行する。
