@@ -25,6 +25,7 @@ relations:
   superseded-by: []
   related:
     - "../adr/resolve-route-test-flake-via-test-side-determinism.md"
+    - "../discovery/proc-process-test-flake-under-parallel-load.md"
   refines: []
   refined-by: []
   derives-from:

@@ -34,6 +34,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHy2gdnoLTC43RP5 | Cross-agent distribution verification | approved | [cross-agent-distribution-verification.md](./cross-agent-distribution-verification.md) |
 | DESIGN-034rA79Uog7JOa7evw6rOL | Cross-agent native routing adapter architecture | approved | [cross-agent-native-routing-adapter-architecture.md](./cross-agent-native-routing-adapter-architecture.md) |
 | DESIGN-034r05iHy2gdnoXu6h71XL | Delegation usage measurement log (usage.jsonl) | approved | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
+| DESIGN-034LGDPeqMOtv5azFEm4Ei | Deterministic proc_process tests for parallel-load flake (issue #180) | approved | [deterministic-proc-process-tests-issue-180.md](./deterministic-proc-process-tests-issue-180.md) |
 | DESIGN-034Kp4aEcwrsOReUSPyxU9 | Deterministic route tests for ubuntu CI flake (issue #157) | approved | [deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md](./deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md) |
 | DESIGN-034r05iHy2gdnoPoUu7BiO | Development APM project / distributable cheaper package layout | approved | [dev-apm-project-and-distributable-package-layout.md](./dev-apm-project-and-distributable-package-layout.md) |
 | DESIGN-034r05iHy2gdnp1MdNwuw6 | Devin Local provider plugin | approved | [devin-local-provider-plugin.md](./devin-local-provider-plugin.md) |

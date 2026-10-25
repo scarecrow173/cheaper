@@ -846,10 +846,15 @@ async fn worker_scope_rejects_security_policy_mismatch() {
 #[tokio::test]
 async fn worker_scope_receives_invocation_resolved_security() {
     let dir = TempDir::new();
-    let target = dir.join("deny-me");
+    let target = dir.0.join("deny-me");
     std::fs::copy(std::env::current_exe().unwrap(), &target).unwrap();
-    std::os::unix::fs::symlink(&target, dir.join("helper")).unwrap();
+    std::os::unix::fs::symlink(&target, dir.0.join("helper")).unwrap();
+    // resolved ≠ declared を作るには grant executable の symlink を
+    // 辿る必要があるため、この test は workspace 内 symlink を許容する
+    // `WithinWorkspace` policy で実行する(Deny では pin 解決が
+    // `symlink-denied` で fail し適用点 2 へ到達しない)。
     let mut opts = invocation_options(dir.root(), None);
+    opts.symlink_policy = SymlinkPolicy::WithinWorkspace;
     opts.exec = Some(exec_doc(
         None,
         Some(json!({
@@ -863,11 +868,10 @@ async fn worker_scope_receives_invocation_resolved_security() {
     // caller は `security: None`(workflow `kind: tool` job と同じ
     // 形状)— scope 構築が適用点 2 で fail すれば inner deny が
     // 再注入で届いたことになる。
+    let mut scope_opts = scope_options(&dir.root(), vec![ToolName::Command]);
+    scope_opts.symlink_policy = SymlinkPolicy::WithinWorkspace;
     let err = invocation
-        .create_worker_scope(worker(
-            "cmd",
-            scope_options(&dir.root(), vec![ToolName::Command]),
-        ))
+        .create_worker_scope(worker("cmd", scope_opts))
         .unwrap_err();
     let e = err
         .downcast_ref::<CheaperError>()

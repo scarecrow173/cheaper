@@ -22,7 +22,8 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related:
+    - "proc-process-test-flake-under-parallel-load.md"
   refines: []
   refined-by: []
   derives-from: []

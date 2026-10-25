@@ -25,6 +25,8 @@ relations:
   superseded-by: []
   related:
     - "../specs/deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md"
+    - "../discovery/proc-process-test-flake-under-parallel-load.md"
+    - "resolve-proc-process-test-flake-at-the-test-boundary.md"
   refines: []
   refined-by: []
   derives-from:

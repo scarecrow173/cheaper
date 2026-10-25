@@ -26,7 +26,8 @@ relations:
   blocks: []
   supersedes: []
   superseded-by: []
-  related: []
+  related:
+    - "deterministic-proc-process-tests-issue-180.md"
   refines: []
   refined-by: []
   derives-from:
