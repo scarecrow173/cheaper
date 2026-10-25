@@ -1,7 +1,7 @@
 ---
 id: "TASK-034LIwmO9NxUouuOoCwC0g"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement deterministic proc_process test rewrite"
 created: "2026-10-25"
 updated: "2026-10-25"
@@ -20,7 +20,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/fix-proc-process-test-flake-via-test-side-determinism-issue-180.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/implement-deterministic-proc-process-test-rewrite.md"
   depends-on:
     - "docs/plans/fix-proc-process-test-flake-via-test-side-determinism-issue-180.md"
   blocks:

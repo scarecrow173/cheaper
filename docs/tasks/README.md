@@ -198,7 +198,7 @@ Directory: `docs/tasks`
 | TASK-034zTjT0KVd4s2TRC4Ux1B | Implement operation manager state lifecycle | done | [implement-operation-manager-state.md](./implement-operation-manager-state.md) |
 | TASK-034r05iHK8bA7hgqNrs11u | Implement output repair session | done | [implement-output-repair-session.md](./implement-output-repair-session.md) |
 | TASK-034r05iHK8bA7he1WXwcBs | Implement Pi session creation with maxTokens injection | done | [implement-pi-session-creation-with-maxtokens-injection.md](./implement-pi-session-creation-with-maxtokens-injection.md) |
-| TASK-034LIwmO9NxUouuOoCwC0g | Implement deterministic proc_process test rewrite | todo | [implement-pids-d-emit-protocol-and-test-helper-layer.md](./implement-pids-d-emit-protocol-and-test-helper-layer.md) |
+| TASK-034LIwmO9NxUouuOoCwC0g | Implement deterministic proc_process test rewrite | done | [implement-pids-d-emit-protocol-and-test-helper-layer.md](./implement-pids-d-emit-protocol-and-test-helper-layer.md) |
 | TASK-034r05iHQeQpDpYxJZR1PT | Implement pre_read_code hook and e2e test | done | [implement-pre-read-code-hook.md](./implement-pre-read-code-hook.md) |
 | TASK-034AGiBmLrlXnGsS5oLlL8 | Implement process lifecycle policy | done | [implement-process-lifecycle-policy.md](./implement-process-lifecycle-policy.md) |
 | TASK-034AGiFXd7uNwKAYJMW2TP | Implement process tree lifecycle | done | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
