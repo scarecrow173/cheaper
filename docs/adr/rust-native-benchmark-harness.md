@@ -35,6 +35,8 @@ relations:
     - "../specs/benchmark-redesign-scope-issue-183.md"
   derived-by:
     - "../designs/benchmark-harness-redesign-issue-183.md"
+    - "../plans/implement-rust-native-benchmark-harness-issue-183.md"
+    - "../test-specs/cheaper-bench-harness-contract-issue-183.md"
   verifies: []
   verified-by: []
   references:

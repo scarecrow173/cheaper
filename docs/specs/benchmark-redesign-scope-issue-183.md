@@ -20,6 +20,7 @@ relations:
   implements: []
   implemented-by:
     - "../adr/rust-native-benchmark-harness.md"
+    - "../plans/implement-rust-native-benchmark-harness-issue-183.md"
   depends-on: []
   blocks: []
   supersedes: []
@@ -34,8 +35,11 @@ relations:
   derived-by:
     - "../adr/rust-native-benchmark-harness.md"
     - "../designs/benchmark-harness-redesign-issue-183.md"
+    - "../plans/implement-rust-native-benchmark-harness-issue-183.md"
+    - "../test-specs/cheaper-bench-harness-contract-issue-183.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/cheaper-bench-harness-contract-issue-183.md"
   references:
     - "../discovery/node-dev-tooling-inventory-issue-182.md"
     - "../adr/keep-node-js-as-the-pinned-dev-tooling-runtime.md"

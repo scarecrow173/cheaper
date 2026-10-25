@@ -31,9 +31,12 @@ relations:
     - "../specs/benchmark-redesign-scope-issue-183.md"
     - "../adr/rust-native-benchmark-harness.md"
     - "../discovery/benchmark-harness-audit-issue-183.md"
-  derived-by: []
+  derived-by:
+    - "../plans/implement-rust-native-benchmark-harness-issue-183.md"
+    - "../test-specs/cheaper-bench-harness-contract-issue-183.md"
   verifies: []
-  verified-by: []
+  verified-by:
+    - "../test-specs/cheaper-bench-harness-contract-issue-183.md"
   references:
     - "../designs/node-dev-tooling-boundary-contract-issue-182.md"
     - "../adr/keep-node-js-as-the-pinned-dev-tooling-runtime.md"
