@@ -192,11 +192,22 @@ merged task(emit protocol + helper 層 + 4 test 変換)の着地済み変更に
   `/proc/<pid>/stat`・touch marker・`.terminated` 内容確認)のみ。
 - POSIX locus: `allows_sigterm_exit_within_grace_before_force_kill`
   および unix `live_pids`/`kill_emitted` leg は `#[cfg(unix)]`。
-  実 POSIX 実行の確認 locus は **CI `gh workflow run ci`(PR
-  branch、ubuntu-latest)** — local に POSIX env が無く、
-  `cargo check --target x86_64-unknown-linux-gnu` の compile
-  smoke は既 pass(IR Validation 記録済み)。CI dispatch は本
-  task では行わず locus のみ記録。
+  実 POSIX 実行は **local POSIX env (WSL2 Ubuntu + rust 1.99.0 +
+  node 26)** で実施済み — `cargo test -p cheaper-tools --test
+  proc_process --test proc_invocation` が **proc_process 10/10・
+  proc_invocation 18/18 pass**(unix `allows_sigterm`・
+  `live_pids`/`kill_emitted` leg 含む、2026-10-25)。
+  `cargo check --target x86_64-unknown-linux-gnu` compile smoke
+  も pass(IR Validation 記録済み)。
+- CI `gh workflow run ci` は 3 回 dispatch したが unix 既存 flake
+  で完走せず: (a) `proc_invocation` unix コンパイルエラー(本 PR
+  で修正済み)、(b) `resources::tests::abort_landing_...` lib
+  test hang(run 40149087832 / 40153767045 両方で 60 分超 stall、
+  本差分とは無関係の src/ unittest)、(c) `route_run::exec_infra_
+  failure_returns_error` は main 2026-10-22 run で既 fail。
+  これらは issue #187 として filed 済み。`hook_config` ETXTBSY
+  flake(WSL 全件 run で 1 回観測、単体 rerun pass)も同 issue
+  に記録。
 - 再発時運用の整合確認: spec AC(「diagnostics が tool 側帰属を
   示した場合は判断記録を docs へ追記し tool 側 follow-up
   issue 化」)・design Deferred Design Concerns(re-engagement
