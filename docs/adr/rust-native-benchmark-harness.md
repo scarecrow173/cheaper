@@ -26,13 +26,15 @@ relations:
   superseded-by: []
   related:
     - "../specs/benchmark-redesign-scope-issue-183.md"
+    - "../designs/benchmark-harness-redesign-issue-183.md"
   refines:
     - "./benchmark-harness-placement-and-accounting.md"
   refined-by: []
   derives-from:
     - "../discovery/benchmark-harness-audit-issue-183.md"
     - "../specs/benchmark-redesign-scope-issue-183.md"
-  derived-by: []
+  derived-by:
+    - "../designs/benchmark-harness-redesign-issue-183.md"
   verifies: []
   verified-by: []
   references:

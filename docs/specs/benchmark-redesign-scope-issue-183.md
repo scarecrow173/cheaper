@@ -26,12 +26,14 @@ relations:
   superseded-by: []
   related:
     - "../adr/rust-native-benchmark-harness.md"
+    - "../designs/benchmark-harness-redesign-issue-183.md"
   refines: []
   refined-by: []
   derives-from:
     - "../discovery/benchmark-harness-audit-issue-183.md"
   derived-by:
     - "../adr/rust-native-benchmark-harness.md"
+    - "../designs/benchmark-harness-redesign-issue-183.md"
   verifies: []
   verified-by: []
   references:
