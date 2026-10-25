@@ -1,7 +1,7 @@
 ---
 id: "TASK-32FiZMrj2twoTPHLYB0QgC"
 type: "task"
-status: "todo"
+status: "done"
 title: "Verify cheaper-bench smoke run on real binary — subset scenarios, schema v2 artifact, preflight probe"
 created: "2026-10-25"
 updated: "2026-10-25"
@@ -150,7 +150,7 @@ placeholder のまま)、`benchmarks/` の `.mjs` 系(T6 で削除)、crate 本�
       code が mirror され `armExpect` どおり記録される
 - [x] dev-seam 無し binary を `--binary` で指した run が preflight
       probe で fail-fast する(診断 + build 手順の出力)
-- [ ] smoke artifact が `benchmarks/results/` へ commit 済み(既存 v1
+- [x] smoke artifact が `benchmarks/results/` へ commit 済み(既存 v1
       file に diff 無し)— artifact は生成・検証済みだが、実装
       delegate の constraint で commit は orchestrator 側へ委譲
       (verification gate 自体は全 pass)
