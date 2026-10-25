@@ -1,0 +1,53 @@
+[package]
+name = "cheaper-bench"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+description = "Rust-native benchmark harness (issue #183): scenario manifest v2 runner + fixture child. Dev tool only — not part of the product distribution (workspace member only, never cargo-installed)."
+
+# `[lib]` holds every harness responsibility so `tests/` exercises the lib
+# API directly; `[[bin]]` is the thin process entry (fixture-child dispatch +
+# CLI parse + run loop). design §1.1.
+[lib]
+name = "cheaper_bench"
+path = "src/lib.rs"
+
+[[bin]]
+name = "cheaper-bench"
+path = "src/main.rs"
+
+[dependencies]
+cheaper-core = { path = "../cheaper-core" }
+# `route::payload::{encode, EncodeInput}` (feature-ungated pub API) mints
+# `route run --payload` tokens on the harness side.
+#
+# DO NOT add `dev-seam` to this edge. Feature unification would enable the
+# seam on the product `cheaper` bin itself whenever it shares a cargo
+# invocation with cheaper-bench (`cargo build --workspace`,
+# `cargo test --workspace --features …`), silently giving the *measured*
+# binary the fixture seam (ADR prohibition — design §1.2 / Risks "feature
+# unification の罠"). The measured binary's dev-seam is granted only by an
+# explicit build: `cargo build --features dev-seam -p cheaper-cli`.
+cheaper-cli = { path = "../cheaper-cli" }
+# `dev::fixture::RunFixture` lives behind `#[cfg(feature = "dev-seam")]`, so
+# the crate that names the type must enable it on its own edge — this is what
+# makes flag-free `cargo run`/`cargo test -p cheaper-bench` work. It compiles
+# the seam for the *bench* lib build only, never the measured `cheaper` bin.
+#
+# Consequence of feature unification: because this edge declares `dev-seam`,
+# a flag-free `cargo test --workspace` now also compiles cheaper-runtime's
+# dev-seam-gated test targets (run_dev_seam / run_fixture_test). That
+# asymmetry is intentional and documented here so it is not rediscovered as
+# a surprise — the `cheaper-cli` edge stays default-only, so seam-gated CLI
+# targets still require the explicit `--features dev-seam` flag on that
+# package: `cargo test --features dev-seam -p cheaper-cli`.
+cheaper-runtime = { path = "../cheaper-runtime", features = ["dev-seam"] }
+serde.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+uuid.workspace = true
+
+# No crate-local features (ADR): the harness has nothing to gate — spawn
+# measurement only ever runs via `cargo run -p cheaper-bench`, and `cargo
+# test -p cheaper-bench` covers pure functions only. No async runtime
+# (tokio): the runner is sequential `std::process::Command` blocking spawn.

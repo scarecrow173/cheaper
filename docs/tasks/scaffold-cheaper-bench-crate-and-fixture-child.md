@@ -1,7 +1,7 @@
 ---
 id: "TASK-7pwH1mAayBeUw0g24iMXvR"
 type: "task"
-status: "todo"
+status: "done"
 title: "Scaffold cheaper-bench crate — lib+bin, fixture-child dispatch, RunFixture round-trip, workspace/policy materialization"
 created: "2026-10-25"
 updated: "2026-10-25"
@@ -36,6 +36,8 @@ relations:
     modified:
       - type: "file"
         path: "Cargo.lock"
+      - type: "file"
+        path: "crates/cheaper-cli/src/workflow_run.rs"
     deleted: []
     renamed: []
     moved: []
@@ -248,42 +250,42 @@ self-contained な中間状態を作る。
 
 ## Done When
 
-- [ ] `crates/cheaper-bench` が lib + bin + `publish = false` で新設
+- [x] `crates/cheaper-bench` が lib + bin + `publish = false` で新設
       され、dep edge が design §1.2 どおり(`cheaper-runtime` +
       `dev-seam`・`cheaper-cli` default feature + 禁止 comment・
       `cheaper-core`・serde/serde_json/tempfile/uuid、async runtime・
       独自 feature なし)
-- [ ] `main.rs` が `argv[1] == "--fixture-child"` を最初に判定し
+- [x] `main.rs` が `argv[1] == "--fixture-child"` を最初に判定し
       `child::dispatch` → `process::exit(code)` で抜ける
-- [ ] child mode `emit`(seeded 高エントロピ bytes・
+- [x] child mode `emit`(seeded 高エントロピ bytes・
       `CHEAPER_BENCH_CHILD_BYTES`)/`fail`(marker +
       `CHEAPER_BENCH_CHILD_EXIT`)が動作し、`sleep`/`envdump` が
       予約語彙として宣言されている
-- [ ] fixture 生成が profile 駆動・`{fixture:{…}}` passthrough 両経路で
+- [x] fixture 生成が profile 駆動・`{fixture:{…}}` passthrough 両経路で
       `RunFixture::parse` round-trip を必ず通り、無効入力が生成時
       fail-fast する
-- [ ] workspace.rs が files・models.yaml・`<cfg>/policy.yaml` section
+- [x] workspace.rs が files・models.yaml・`<cfg>/policy.yaml` section
       merge・`{fixtureChild}` placeholder 展開・route block の
       routes.yaml/grant/routed-exec copy を生成できる(observation 毎
       fresh 生成の粒度)
-- [ ] policy.yaml section merge の spawn-free unit test があり、
+- [x] policy.yaml section merge の spawn-free unit test があり、
       `workflowMaxJobs`・`policy` overlay section・`command.grants`
       が共存 merge されることを pin している
-- [ ] spawn.rs が stdout/stderr capture・wall-time・exit code を返し、
+- [x] spawn.rs が stdout/stderr capture・wall-time・exit code を返し、
       exit≠0 で throw しない
-- [ ] `cargo test -p cheaper-bench` が pass(tests/fixture.rs を含む)し
+- [x] `cargo test -p cheaper-bench` が pass(tests/fixture.rs を含む)し
       `cargo build --workspace` が compile する
-- [ ] `Cargo.lock` が cheaper-bench entry を含み commit 済み
+- [x] `Cargo.lock` が cheaper-bench entry を含み commit 済み
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-bench` exits 0
-- [ ] `mise exec -- cargo build -p cheaper-bench` exits 0(fixture child
+- [x] `mise exec -- cargo test -p cheaper-bench` exits 0
+- [x] `mise exec -- cargo build -p cheaper-bench` exits 0(fixture child
       として `cheaper-bench --fixture-child emit` が byte 出力を返す
       ことを手動で 1 回確認)
-- [ ] `mise exec -- cargo fmt --all -- --check` exits 0
-- [ ] `mise exec -- cargo clippy -p cheaper-bench --all-targets -- -D warnings` exits 0(未接続 arm/skeleton の dead code 残存なし)
-- [ ] `node scripts/check-lockfile.mjs` exits 0(Cargo.lock が commit 済みで drift なし)
-- [ ] Manual: `grep -n "dev-seam" crates/cheaper-bench/Cargo.toml` が
+- [x] `mise exec -- cargo fmt --all -- --check` exits 0
+- [x] `mise exec -- cargo clippy -p cheaper-bench --all-targets -- -D warnings` exits 0(未接続 arm/skeleton の dead code 残存なし)
+- [x] `node scripts/check-lockfile.mjs` exits 0(Cargo.lock が commit 済みで drift なし)
+- [x] Manual: `grep -n "dev-seam" crates/cheaper-bench/Cargo.toml` が
       `cheaper-runtime` edge のみを返す(`cheaper-cli` edge に
       dev-seam が無いこと — supplement)
