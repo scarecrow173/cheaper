@@ -24,7 +24,7 @@ Git LFS の既存履歴は保持する。consumer の前提・install 手順は
 `docs/guides/distribution.md` を参照する。
 
 `mise install` は `mise.toml` と整合する `mise.lock` の固定バージョンとchecksumに従って
-mise 管理 toolchain（node・rust・python・apm・prek・git-lfs 等）を復元する。
+mise 管理 toolchain（node・rust・apm・prek・git-lfs 等）を復元する。
 `mise run setup` はその toolchain を使って
 `apm install` → `cargo fetch` → `cargo build --workspace --all-targets` を復元し、
 `prek install` で pre-commit hook を有効化し（定義は
@@ -78,9 +78,26 @@ foreign/dead registration を解消）。worker 定義・schema・policy は
 `crates/cheaper-cli/resources/` から Rust binary へ embedded されるため、
 `cli/` payload は配布しない（issue #85）。
 
-Node.js は repo tooling（`scripts/`・`benchmarks/`・doc-suite skills）のためだけに
-toolchain に残る。product・distribution・hook 実行経路に Node 依存はない
-（runtime は Rust workspace = `crates/`、agent runtime は Rig）。
+Node.js は pinned mise dev-tool（`mise.toml` `[tools] node = "26"` +
+`mise.lock`）として repo tooling のためだけに toolchain に残る —
+`scripts/`・`benchmarks/`・`crates/cheaper-tools/gen-glob-tables.cjs`
+（glob table codegen の regex oracle）・deploy 済み doc-suite skills
+（`.agents/skills/`・`.claude/skills/`、upstream 所有）。product・
+distribution・hook 実行経路に Node 依存はない（runtime は Rust
+workspace = `crates/`、agent runtime は Rig）。
+
+新規の Node 結合は repo tooling 領域に限る（product path・配布
+payload・CI の直接 node 呼出しは不可。`crates/*/tests` からの新規
+ambient `node` 結合は原則不可 — 例外条件は design §2.2/§3 参照）。
+既存の ambient 結合は 3 site 残っており（design §3 参照）、
+`mise exec` を介さない裸 `cargo test` は node 不在環境で
+fail/skip し得る。`mise.toml` の `node` 行除去は required
+entrypoint 全 node-free + design §1 維持 entry の移行完了まで不可。
+領域別 policy・非退行契約・revisit trigger の観測点は
+`docs/designs/node-dev-tooling-boundary-contract-issue-182.md`、
+全使用箇所の inventory は
+`docs/discovery/node-dev-tooling-inventory-issue-182.md` を参照
+（issue #182、ADR-034LRjX5iYZHrubmKgKAL1）。
 
 ### CLI integration test の配置
 

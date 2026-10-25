@@ -52,6 +52,7 @@ Directory: `docs/designs`
 | DESIGN-034Au1ncZwENCfsEQyf0cD | managed process lifecycle hardening | approved | [managed-process-lifecycle-hardening.md](./managed-process-lifecycle-hardening.md) |
 | DESIGN-034rzP2XX0QSo5LRQDfr9B | model pricing catalog and curated exceptions | approved | [model-pricing-catalog-and-curated-exceptions.md](./model-pricing-catalog-and-curated-exceptions.md) |
 | DESIGN-034r05iHrZUE6Wu1cMdeJ1 | Model Resolver | approved | [model-resolver.md](./model-resolver.md) |
+| DESIGN-BSEuqAM7QQUmRoTUGOMxbH | Node dev-tooling boundary contract — keep-Node operationalization (issue #182) | approved | [node-dev-tooling-boundary-contract-issue-182.md](./node-dev-tooling-boundary-contract-issue-182.md) |
 | DESIGN-034DV9ypzmxdAobGSJ6Cm6 | Observability foundation logging and instrumentation wiring | approved | [observability-foundation-logging-and-instrumentation-wiring.md](./observability-foundation-logging-and-instrumentation-wiring.md) |
 | DESIGN-034r05iHrZUE6WBzjS90b8 | Ollama real-provider smoke verification setup | approved | [ollama-real-provider-smoke-verification-setup.md](./ollama-real-provider-smoke-verification-setup.md) |
 | DESIGN-034r05iHy2gdnoWvkDigEM | Real-provider worker E2E via Ollama | approved | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |

@@ -26,6 +26,8 @@ relations:
   superseded-by: []
   related:
     - "../specs/repo-owned-setup-contract-for-fresh-checkouts.md"
+    - "./keep-node-js-as-the-pinned-dev-tooling-runtime.md"
+    - "../discovery/node-dev-tooling-inventory-issue-182.md"
   refines: []
   refined-by: []
   derives-from:

@@ -38,6 +38,7 @@ Directory: `docs/discovery`
 | DISC-034A8pIq50dPYXsDhld9st | managed process の認可と lifecycle を整理する | resolved | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
 | DISC-034Aq1bAPGiJ8GsKHAeKAL | managed process lifecycle hardening | resolved | [managed-process-lifecycle-hardening.md](./managed-process-lifecycle-hardening.md) |
 | DISC-034rzGKaCRO8vRQUpNJvWd | model-pricing-catalog-and-curated-exceptions | resolved | [model-pricing-catalog-and-curated-exceptions.md](./model-pricing-catalog-and-curated-exceptions.md) |
+| DISC-034LRjLlw4UAOWypGTWGJu | Node.js dev-tooling inventory (issue #182) | resolved | [node-dev-tooling-inventory-issue-182.md](./node-dev-tooling-inventory-issue-182.md) |
 | DISC-034KtQqavnAfVl6CqAVaN3 | non-exec routing 設計検討 (issue #160) | resolved | [non-exec-routing-design-space.md](./non-exec-routing-design-space.md) |
 | DISC-034DUx01YRjOAf4gTaftO7 | Observability foundation for logging and profiling | resolved | [observability-foundation-logging-and-profiling.md](./observability-foundation-logging-and-profiling.md) |
 | DISC-034zSP8CzaOAsOOhj0ZpcW | One-dispatch release workflow | resolved | [one-dispatch-release-workflow.md](./one-dispatch-release-workflow.md) |
