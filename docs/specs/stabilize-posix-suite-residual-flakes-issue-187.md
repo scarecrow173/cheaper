@@ -18,7 +18,8 @@ relations:
     moved: []
     generated: []
   implements: []
-  implemented-by: []
+  implemented-by:
+    - "../plans/stabilize-issue-187-posix-suite-residual-flakes.md"
   depends-on: []
   blocks: []
   supersedes: []
@@ -28,10 +29,12 @@ relations:
   refined-by: []
   derives-from:
     - "../discovery/posix-suite-residual-flakes-issue-187.md"
-  derived-by: []
+  derived-by:
+    - "../designs/issue-187-posix-suite-residual-flake-stabilization.md"
   verifies: []
   verified-by: []
   references:
+    - "../adr/prefer-deterministic-test-boundary-diagnosis-for-residual-suite-flakes.md"
     - "deterministic-route-tests-for-ubuntu-ci-flake-issue-157.md"
     - "deterministic-proc-process-tests-issue-180.md"
     - "../adr/resolve-route-test-flake-via-test-side-determinism.md"
@@ -75,9 +78,15 @@ diagnostic とともに終了し、CI stall が最初の契約違反を隠さな
   (run `40149087832`) and `55741984401e5c84d59fd53bada6b197925f9e2c`
   (run `40153767045`) already contain the post-registration `signal.reason()` recheck,
   waiter removal, response, and deferred-pump path; `865765f6` is their ancestor.
-  Do not attribute these stalls to a missing recheck. Design deterministic phase
-  synchronization and a bounded watchdog with useful phase/lock diagnostics,
-  preserving rejection, original abort reason, and future manager usability.
+  Do not attribute these stalls to a missing recheck. Add a private
+  `#[cfg(test)]`, instance-scoped one-shot phase hook immediately after the real
+  successful pre-check and before request enqueue. The worker waits on a bounded
+  test-owned channel at that point; the test observes the phase, aborts, then
+  releases it to traverse the real enqueue/listener-registration/recheck code.
+  This proves abort landed after the actual pre-check and before enqueue; it
+  does not claim second-lock contention. The hook is shared only by clones of
+  that manager and absent from production builds/public API. Preserve rejection,
+  original abort reason, and future manager usability.
   Change runtime only if new causal evidence identifies a production invariant violation.
 - `cheaper-cli` integration test
   `route_run::exec_infra_failure_returns_error`: 報告 run と current test revision の前後を
@@ -87,15 +96,21 @@ diagnostic とともに終了し、CI stall が最初の契約違反を隠さな
   route code change を追加しない。
 - `cheaper-cli` integration test
   `hook_config::hook_config_sync_warns_on_legacy_conflict`: `ETXTBSY` が capability check の
-  `Command::output` による unique temp PATH shim execution で生じたことを記録し、bounded
-  diagnostic を設計する。failure-time exact path/file metadata/timestamps と child stdout/stderr
-  を取得する。原因未局在の間は retry、skip、assertion weakening を導入しない。
+  `Command::output` による unique temp PATH shim execution で生じたことを記録する。
+  `Command::output()` の `Err(io::Error)` は spawn/exec failure であり、`ErrorKind`、
+  `raw_os_error`、message、exact executable path、bounded file metadata/timestamps を記録する。
+  この branch に child process、exit status、stdout/stderr は存在しない。`Ok(Output)` は
+  child 起動後の outcome で、exit status と bounded stdout/stderr を別 branch で記録する。
+  原因未局在の間は retry、skip、assertion weakening を導入しない。
 - `cheaper-tools::tests::proc_command::abort_kills_and_preserves_reason`: Windows の
   `!alive(pid)` failure は `wait_for(|| !alive(pid))` が true を返した後の assert で起き、
   `alive` が exit status を無視して `tasklist` output の substring で PID を検出するため、
   dead→alive という非単調 oracle の可能性がある。process termination と abort-reason
-  assertions を保ち、既存依存で安定 process-handle wait が可能か調べる。共通原因の証拠が
-  出るまで独立症状として扱う。
+  assertions を保つ。PID file 検出後、abort より前に test-local Win32 `OpenProcess`
+  (`SYNCHRONIZE | PROCESS_TERMINATE`) handle を開き、abort 前は未 signal と確認する。abort 後は同じ process
+  object を `WaitForSingleObject` の bounded wait で観測する。`tasklist` は supplemental
+  diagnostic のみで sole oracle にしない。test-local FFI を使い dependency/public API を
+  増やさない。共通原因の証拠が出るまで独立症状として扱う。
 - 対応 POSIX host と Windows で focused regression coverage および意味のある full-suite
   verification を行う。
 
@@ -122,40 +137,57 @@ diagnostic とともに終了し、CI stall が最初の契約違反を隠さな
   owner-boundary 修正後に pass する。
 - 影響を受ける wait/failure path は定義済み budget 内に終了し、失敗した operation、
   child/listener、elapsed budget を特定できる状態を出す。test を無期限 pending にしない。
+- `Command::output` の `Err(io::Error)` と `Ok(Output)` を分ける。`Err` に対して存在しない
+  child/status/output を記録せず、`Ok` を spawn error と誤分類しない。
 - retry、sleep、長い timeout、環境 workaround を、診断済み原因の修正または明示的 defer
   の代替にしない。
 - Windows liveness 報告は discovery と verification で独立に追跡する。診断によりこの
   修正外と判断する場合は、報告を黙って落とさず、根拠のある disposition を記録する。
-- briefing 時点で新しい architecture decision は確認できない。条件が一致する場合、
-  #157/#180 の承認済み test-boundary decision を適用する。implementation design で新しい
-  cross-cutting decision が必要になった場合は、その決定を実装する前に ADR に記録する。
+- [ADR](../adr/prefer-deterministic-test-boundary-diagnosis-for-residual-suite-flakes.md) は
+  deterministic test-boundary synchronization/oracles、bounded diagnostics、因果証拠がない
+  production behavior changes の defer を記録する。ADR は accepted であり、既存
+  #157/#180 decisions を維持する。implementation approval は別 gate とする。
 
 ## Acceptance Criteria
 
-- [ ] #187 discovery record に failure ごとの reproduction evidence、confirmed cause または
+- [x] #187 discovery record に failure ごとの reproduction evidence、confirmed cause または
   明示的に未解決の選択肢、選定した owner boundary が記録され、証拠なしに4件を一原因と
   表現していない。
 - [ ] resources abort-window の focused regression が listener 登録 window で abort が
-  着地したときの rejection と、期待結果が得られない場合の bounded / diagnostic failure
-  の両方を検証する。
+  着地したときの rejection と original abort reason、subsequent manager usability を検証する。
+  private instance-scoped test hook は real pre-check 直後・enqueue 前に one-shot pause し、
+  test-owned bounded channel で abort/release を同期する。request future は Tokio timeout、
+  outer watchdog は phase/result wait と `JoinHandle::is_finished()` wait を budget 内に行う。
+  `join()` は終了確認後だけ呼び、watchdog expiry 時に unbounded join しない。この test は
+  pre-check/enqueue gap を保証し、second-lock contention は主張しない。
 - [x] route-run report の CI revision が現 #157 correction より前か後かを照合し、current
   test が child marker timing に依存せず `ToolExecutionFailure` と
   `routed command did not complete` を検証することを確認する。現行 test がこの契約を満たす
   場合は #187 code change を重ねず、historical symptom が既存 correction で覆われる根拠を
   記録する。historical failing SHA `51f2f4c` は fix `9de23f8` の祖先と確認済み。
 - [ ] hook-config regression が legacy-conflict warning assertion を維持し、以前
-  `ETXTBSY` が報告された concurrency で実行できる。bounded diagnostic は exact executable
-  path、file metadata/timestamps、child output を取得する。原因が再現不能なら条件と証拠を
-  記録した supported disposition を independent review で受け、speculative retry を使わない。
-- [ ] Windows process-liveness verification が、再現可能な条件で abort reason と child
-  termination の両方を示すか、bounded diagnostics に基づく証拠付き disposition を
-  independent review で受ける。process oracle の dead→alive observation は記録済みだが、
-  runtime cleanup failure は未証明である。retry/skip/assertion weakening を採らない。
+  `ETXTBSY` が報告された concurrency で実行できる。`Command::output` の `Err(io::Error)` は
+  `ErrorKind`/`raw_os_error`/message と exact executable path/file metadata/timestamps を記録し、
+  存在しない child/status/stdout/stderr は出さない。`Ok(Output)` は status/stdout/stderr を別に
+  記録する。原因が再現不能なら条件と証拠を記録した supported disposition を independent
+  review で受け、speculative retry を使わない。
+- [ ] Windows process-liveness verification が、PID file observation 後・abort 前に開いた
+  process handle の identity と bounded termination wait により abort reason と child
+  termination を示す。`pending.await` 自体も有限 outer watchdog で囲み、timeout 診断に operation,
+  phase, elapsed time, allowed budget, PID を含める。期限切れ時は `pending` を再 await/join せず
+  abort handle を non-blocking に abort し、別 budget の fixture cleanup として同じ process
+  handle に `TerminateProcess` と bounded wait を適用する。handle は success/error/timeout の
+  全経路で RAII により close する。test-local Win32 API を使い、新 dependency は追加しない。
+  `tasklist` は supplemental diagnostic のみ。handle oracle が実装できない理由が出た場合は
+  evidence 付き alternative/disposition を independent review で承認する。runtime cleanup failure
+  は未証明で、retry/skip/assertion weakening は採らない。
 - [ ] 影響する test は有効なままで意図した behavior を assertion する。acceptance が
   retry、timeout 延長、coverage skip のみを根拠としない。
-- [ ] 影響 test が通常の parallel POSIX workspace suite と関係する Windows checks を pass
-  する。host、command、結果を記録する。POSIX full CI job と、間欠 failure を評価する
-  Windows `mise run check` 連続3回以上を含める。
+- [ ] POSIX full verification は provisioned Ubuntu CI で `mise install` → `mise run setup` →
+  `mise run check` を実行し、host、各 command、result を記録する。WSL は Node unavailable の
+  ため canonical full-check host とせず、fake pass に置き換えない。
+- [ ] Windows は対応 host で `mise install` 後に `mise run check` を連続3回以上実行し、各 run
+  の開始/終了、command、result を記録する。単回 focused pass を反復 gate の代替にしない。
 
 ## Deferred Design Concerns
 
@@ -175,6 +207,16 @@ diagnostic とともに終了し、CI stall が最初の契約違反を隠さな
 - Approval: the user delegated approval to the assigned agent once blockers
   were gone. This approves the spec as design input, not implementation or
   product-code changes.
+- Design round 1 Judge: confirmed P1 on the resources handshake proof; the
+  design and ADR were corrected before independent round-2 review.
+- Design round 2: Reviewer A and Reviewer B completed; Validator ledger
+  `0 confirmed / 0 rejected / 0 unverified`; final Judge `ACCEPT`, with no
+  confirmed P0/P1. The accepted design requires a phase hook after the actual
+  successful pre-check and before enqueue; it does not claim second-lock
+  contention. Hook `ETXTBSY` and Windows liveness causes remain unresolved.
+- Design approval: user-delegated approval authority exercised after blockers
+  were cleared. This approves the design and ADR as implementation inputs;
+  implementation/code approval remains a separate gate.
 
 ## Sources and Relations
 
@@ -185,4 +227,5 @@ diagnostic とともに終了し、CI stall が最初の契約違反を隠さな
 ADR は、因果条件が一致する場合に再利用する既存 decision である。完了した bounded
 diagnostic probes は current focused pass とコード上の契約を確認したが、歴史的 resources
 stall、`ETXTBSY`、Windows liveness failure の root cause は再現・確定していない。この spec
-は `draft` であり、planning 前に independent review が必要。
+は `approved` である。ADR は accepted、design は approved である。
+Implementation/code approval は別 gate である。

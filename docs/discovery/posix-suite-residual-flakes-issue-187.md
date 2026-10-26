@@ -29,6 +29,8 @@ relations:
   derives-from: []
   derived-by:
     - "../specs/stabilize-posix-suite-residual-flakes-issue-187.md"
+    - "../adr/prefer-deterministic-test-boundary-diagnosis-for-residual-suite-flakes.md"
+    - "../designs/issue-187-posix-suite-residual-flake-stabilization.md"
   verifies: []
   verified-by: []
   references:
@@ -174,9 +176,10 @@ briefing や因果分析の完了を意味しない。
 
 - [x] spec-doc needed: residual suite failure の deterministic な owner-boundary 修正と
   cross-platform acceptance criteria を定義する。
-- [ ] adr-doc needed: briefing 時点では新 ADR は不要。現時点の修正 class は #157/#180
-  の承認済み test-boundary decisions の適用範囲にある。診断または design が新しい
-  cross-cutting decision を必要とすると判明した場合のみ ADR を追加する。
+- [x] adr-doc needed: deterministic phase synchronization、安定した process identity による
+  test oracle、bounded diagnostic と supported disposition を選ぶ cross-cutting test policy
+  を ADR に記録する。既存 #157/#180 の route-specific decisions は維持し、重複しない。
+  ADR は independent review を経て accepted。設計判断であり、実装承認ではない。
 
 ## Sources and Relations
 
@@ -188,10 +191,12 @@ briefing や因果分析の完了を意味しない。
   合意済み context であり、#187 の原因が一致する証拠ではない。
 - [Issue #180 test-boundary ADR](../adr/resolve-proc-process-test-flake-at-the-test-boundary.md)
   と [issue #157 test-determinism ADR](../adr/resolve-route-test-flake-via-test-side-determinism.md)
-  が既存の修正 class を規定する。新しい architecture decision はまだない。
+  が既存の修正 class を規定する。新しい #187 cross-cutting decision は
+  [accepted ADR](../adr/prefer-deterministic-test-boundary-diagnosis-for-residual-suite-flakes.md)
+  に記録した。
 - 完了した diagnostic probe は現 checkout の bounded focused pass と既存コードの証拠を
   追加したが、歴史的 resources stall、ETXTBSY、Windows liveness failure は再現・帰属
   されていない。resources historical heads の ancestry/recheck evidence は旧 missing-guard
   説を排除するが、stall の機構を特定しない。route chronology は #157 ancestry で閉じた。
   ETXTBSY と Windows liveness は bounded diagnostic capture と supported disposition を
-  設計し、因果証拠のない workaround を避ける。
+  求める approved design に含まれるが、因果原因は未確定のままである。
