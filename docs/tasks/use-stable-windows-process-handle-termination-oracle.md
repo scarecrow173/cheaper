@@ -1,8 +1,8 @@
 ---
 id: "TASK-034MysZSBcJfqWheFs2n1r"
 type: "task"
-status: "done"
-title: "Use stable Windows process handle termination oracle"
+status: "in-progress"
+title: "Stabilize process-command test oracles"
 created: "2026-10-26"
 updated: "2026-10-26"
 owners: ["scarecrow173"]
@@ -31,12 +31,13 @@ relations:
   verifies: []
   verified-by:
     - "docs/test-specs/windows-process-handle-termination-oracle.md"
+    - "docs/test-specs/policy-gated-command-tool.md"
   references: []
   defers: []
   deferred-by: []
 ---
 
-# Use stable Windows process handle termination oracle
+# Stabilize process-command test oracles
 
 ## Work
 
@@ -50,6 +51,15 @@ at 20 seconds. If the pending watchdog expires, do not await/join again; abort
 and perform separate fixture cleanup using `TerminateProcess` and a same-handle
 wait capped at 5 seconds. Use RAII to close the handle on all paths. `tasklist`
 may provide supplemental diagnostics only.
+
+Canonical Ubuntu CI run `40311338267` on SHA `16f922a` exposed a separate
+Unix-only failure in
+`security_exec_deny_pin_blast_radius`: its in-workspace helper symlink exists
+only to make the resolved executable basename differ from the declared name,
+but the shared fixture defaults to `SymlinkPolicy::Deny`. Set only this test's
+fixture policy to `WithinWorkspace`, since both symlink and target are inside
+the temporary workspace. Preserve the resolved-basename `PolicyViolation`
+assertion and make no production policy change.
 
 ## Classification
 
@@ -76,8 +86,11 @@ may provide supplemental diagnostics only.
 - [x] The abort-result watchdog is bounded to 20 seconds; normal termination wait uses the same handle and is bounded to 20 seconds.
 - [x] Watchdog expiry never triggers a second await/join; fixture cleanup is separate, same-handle, and bounded to 5 seconds with API result/error diagnostics.
 - [x] RAII closes the handle on success, assertions, timeout, and fixture-cleanup failures; the original abort-reason assertion remains.
+- [x] The Unix-only deny fixture permits only its in-workspace helper symlink, reaches resolved-basename denial, and preserves the original policy assertion.
 
 ## Verification
 
 - [x] `mise exec -- cargo test -p cheaper-tools --test proc_command abort_kills_and_preserves_reason` exits 0 on Windows.
 - [x] `mise exec -- cargo fmt --check` exits 0.
+- [x] WSL baseline on SHA `16f922a`: `security_exec_deny_pin_blast_radius` failed 0/1 with `workspace escape: symlink-denied`.
+- [x] WSL green after fixture-only change: the same exact command passed 1/1 with `WithinWorkspace`; production code and denial assertion are unchanged.

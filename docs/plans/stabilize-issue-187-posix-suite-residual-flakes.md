@@ -38,6 +38,7 @@ relations:
     - "../test-specs/resources-abort-window-phase-synchronization.md"
     - "../test-specs/hook-capability-diagnostic-error-shape.md"
     - "../test-specs/windows-process-handle-termination-oracle.md"
+    - "../test-specs/policy-gated-command-tool.md"
   references: []
   defers: []
   deferred-by: []
@@ -77,7 +78,7 @@ Issue #188 Node cleanup and issue #162 host-environment work are out of scope.
 | `crates/cheaper-tools/src/resources.rs` | Add private instance-scoped `#[cfg(test)]` one-shot phase hook and deterministic regression at successful pre-check / before enqueue; bound phase, release, request, result, and worker completion waits | Resources |
 | `crates/cheaper-cli/src/hook_config.rs` | Separate `Command::output` `Err(io::Error)` evidence from `Ok(Output)` diagnostics at the capability-check owner | Hook diagnostics |
 | `crates/cheaper-cli/tests/integration/hook_config.rs` | Preserve legacy-conflict warning assertion and exercise bounded failure-only diagnostic shape under the reported concurrent condition where available | Hook diagnostics |
-| `crates/cheaper-tools/tests/proc_command.rs` | Replace PID-substring liveness oracle with same-handle bounded Windows termination observation, watchdog fixture cleanup, and RAII handle ownership | Windows process |
+| `crates/cheaper-tools/tests/proc_command.rs` | Replace PID-substring liveness oracle with same-handle bounded Windows termination observation and correct the Unix-only in-workspace symlink fixture used to reach resolved-basename exec-deny validation | Process command tests |
 | `docs/discovery/posix-suite-residual-flakes-issue-187.md` | Record evidence and disposition for each symptom without claiming unresolved root causes | Evidence / final disposition |
 | `docs/impl/ir/stabilize-issue-187-posix-suite-residual-flakes.md` | Record actual changes, attempts, bounded reproduction results, and final supported disposition | Final serialized closeout |
 
@@ -94,9 +95,10 @@ Issue #188 Node cleanup and issue #162 host-environment work are out of scope.
 9. **Windows process test (red):** add assertions using a test-local `SYNCHRONIZE | PROCESS_TERMINATE` process handle opened before abort; use the same handle to prove the child is initially live and retain the abort-reason/termination contract. The red result must be a bounded behavior/assertion failure, not a missing symbol or compile error.
 10. **Windows watchdog and cleanup implementation:** bound pending result to 20 seconds with operation, phase, elapsed time, allowed budget, and PID diagnostics. On expiry never await/join pending again; abort it and use separate maximum 5-second same-handle `TerminateProcess` fixture cleanup. Use RAII for all handle paths.
 11. **Windows green run:** on Windows run the focused test and confirm the normal termination wait on the same handle is also bounded to 20 seconds; timeout fixture cleanup remains a separate maximum 5 seconds, and all assertions and handle cleanup pass.
-12. **Serialized integration:** verify current route test remains on the #157 contract and make no route code edit. Review all three slices for scope, bounded waits, preserved assertions, and evidence wording; update discovery with exact observed attempts and explicit unresolved dispositions.
-13. **Serialized platform verification:** on provisioned Ubuntu POSIX CI run `mise install`, `mise run setup`, `mise run check`; on Windows run `mise install` then `mise run check` three consecutive times. Record host, start/end, command, and each result. Focused passes do not substitute for these gates.
-14. **Closeout:** create implementation record with impl-doc, record commit evidence, and re-project graph before exit audit. Do not self-approve any downstream gate.
+12. **POSIX exec-deny fixture correction (scope refinement from canonical CI run `40311338267`):** `security_exec_deny_pin_blast_radius` intentionally uses an in-workspace symlink so the resolved executable basename differs from the declared basename. Keep the deny contract and assertion unchanged; set only this fixture to `WithinWorkspace` because its target is inside the fixture root. Record the exact CI baseline failure and WSL focused red/green reproduction. Do not change production symlink policy or deny behavior.
+13. **Serialized integration:** verify current route test remains on the #157 contract and make no route code edit. Review all slices for scope, bounded waits, preserved assertions, and evidence wording; update discovery with exact observed attempts and explicit unresolved dispositions.
+14. **Serialized platform verification:** on provisioned Ubuntu POSIX CI run `mise install`, `mise run setup`, `mise run check`; on Windows run `mise install` then `mise run check` three consecutive times. Record host, start/end, command, and each result. Focused passes do not substitute for these gates.
+15. **Closeout:** create implementation record with impl-doc, record commit evidence, and re-project graph before exit audit. Do not self-approve any downstream gate.
 
 ## Dependency Graph
 
@@ -104,7 +106,7 @@ Issue #188 Node cleanup and issue #162 host-environment work are out of scope.
 | --- | --- | --- |
 | Resources test and implementation | Plan approval; resources test-spec; then resources task | Cross-slice integration review |
 | Hook diagnostic test and implementation | Plan approval; hook test-spec; then hook task | Cross-slice integration review |
-| Windows process test and implementation | Plan approval; Windows test-spec; then Windows task | Cross-slice integration review |
+| Windows process test and POSIX fixture correction | Plan approval; Windows oracle test-spec and existing resolved-basename deny test-spec; then process-command task | Cross-slice integration review |
 | Cross-slice review and evidence/disposition update | All three implementation slices | Ubuntu and Windows full verification |
 | Ubuntu canonical verification | Cross-slice review; provisioned Ubuntu POSIX CI | Completion |
 | Windows three-run canonical verification | Cross-slice review; Windows host | Completion |

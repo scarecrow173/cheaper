@@ -1815,6 +1815,9 @@ fn security_exec_deny_pin_blast_radius() {
         "helper": {"executable": "./helper"},
     }));
     let mut opts = options(&root, command, vec![ToolName::Command]);
+    // The symlink is the intended way to make the resolved basename differ
+    // from the declared basename. Its target remains inside this workspace.
+    opts.symlink_policy = SymlinkPolicy::WithinWorkspace;
     opts.security = Some(json!({"execDenyPatterns": ["deny-me"]}));
     let err = create_tool_runtime(opts, None).unwrap_err();
     let e = cheaper_err(&err);

@@ -1,8 +1,8 @@
 ---
 id: "IMPL-034MyAvYhFVOfkiKM4JOO3"
 type: "impl"
-status: "completed"
-title: "Implement stable Windows process handle termination oracle"
+status: "in-progress"
+title: "Implement stable process-command test oracles"
 created: "2026-10-26"
 updated: "2026-10-26"
 owners: []
@@ -38,15 +38,17 @@ metadata:
     rejected: []
 ---
 
-# Implement stable Windows process handle termination oracle
+# Implement stable process-command test oracles
 
 ## Summary
 
 In progress. The Windows process test now captures one test-local process
 handle before abort and uses it for the pre-abort liveness check, normal
 termination wait, and separate watchdog fixture cleanup. The test retains the
-exact abort-reason assertion. The task remains open for coordinator review and
-commit.
+exact abort-reason assertion. Canonical Ubuntu CI run `40311338267` on SHA
+`16f922a` then exposed a separate
+Unix-only deny fixture mismatch, now corrected in this task. The task remains
+open for scoped review and updated POSIX verification.
 
 ## Context
 
@@ -73,6 +75,12 @@ deterministic test-boundary ADR.
   through the shared helper but is no longer this test's oracle. Non-Windows
   hosts retain the existing PID liveness behavior.
 - No dependency or production API was added.
+- Canonical Ubuntu CI run `40311338267` on SHA `16f922a` exposed
+  `security_exec_deny_pin_blast_radius` failing
+  before the resolved-basename deny matcher: the test used an in-workspace
+  helper symlink while shared options set `SymlinkPolicy::Deny`. The target was
+  inside the fixture workspace. Changed only this Unix-gated fixture to
+  `WithinWorkspace`; the deny assertion and production policy remain unchanged.
 
 ### Decisions During Implementation
 
@@ -104,6 +112,21 @@ deterministic test-boundary ADR.
 - The task's feature-qualified cargo command was attempted and rejected before
   compilation: `cheaper-tools` does not contain features
   `cheaper-cli/dev-seam` or `cheaper-runtime/dev-seam`.
+- WSL Ubuntu baseline on SHA `16f922a`, exact command
+  `cargo test -p cheaper-tools --test proc_command security_exec_deny_pin_blast_radius -- --exact`:
+  0 passed, 1 failed; `cheaper_err` observed `workspace escape: symlink-denied`.
+- The same WSL command after the fixture-only `WithinWorkspace` change: 1 passed,
+  0 failed. The resolved target remains inside the temporary workspace, and
+  the existing resolved-basename `PolicyViolation` assertion passes.
+- Canonical Ubuntu workflow `40311338267` on SHA `16f922a` independently failed
+  the same Unix-only test (36 passed, 1 failed in `proc_command`) with
+  `workspace escape: symlink-denied`; workflow exit code was 101. It is not a
+  passing POSIX gate. A new canonical run is required on the corrected head.
+- The fix is guarded by `#[cfg(unix)]`; Windows compiles the existing Windows
+  process-handle branch and does not compile this POSIX-only fixture branch.
+  The three Windows canonical runs were completed on SHA `16f922a` before this
+  Unix-only test fixture change; they are evidence for the unchanged Windows
+  code path, not a claim that the later SHA received three full runs.
 - `mise exec -- cargo fmt --check` reported formatting differences in the
   concurrently owned `crates/cheaper-cli/tests/integration/hook_config.rs` as
   well as the initial formatting in this file during concurrent authoring. The
@@ -116,5 +139,5 @@ deterministic test-boundary ADR.
 
 ## Follow-ups
 
-- Independent A/B review, Validator, and Judge accepted this implementation
-  slice with no confirmed P0/P1. The coordinator commit is in progress.
+- Obtain targeted independent review for the POSIX fixture scope refinement,
+  then run canonical POSIX CI on the updated head and synchronize final evidence.
