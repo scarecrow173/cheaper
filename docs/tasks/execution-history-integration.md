@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MGHEHt20HR6lWIBQJYF"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Document and verify execution History integration"
 created: "2026-10-27"
 updated: "2026-10-27"
@@ -76,10 +76,10 @@ Close cross-surface integration gaps after all owner slices land: update user do
 
 - [x] User guide explains commands, privacy projection, retention, read-only queries, and best-effort semantics accurately.
 - [x] Cross-surface tests prove no raw sensitive fields, unchanged #184 semantics, no writes from read-only utilities, and Worker Usage acknowledgement behavior.
-- [x] Canonical Windows check and independent implementation review are complete; the final implementation record describes actual outcomes and Ubuntu/POSIX remains an explicit remote CI gate.
+- [x] Canonical Windows check, independent implementation review, and Ubuntu/POSIX CI are complete; the implementation record describes actual outcomes.
 
 ## Verification
 
 - [x] Final `mise run check` exited 0 on Windows after all slices were integrated.
 - [x] Task and implementation-record graph relations are synchronized and implementation-record audit reports no findings.
-- [ ] `workflow_dispatch` on the actual expected PR head completes Ubuntu/POSIX verification successfully.
+- [x] `workflow_dispatch` on PR #196 expected head `dc12a5153ed68a3a0166696b575a83fbeb5f7097` completed successfully: [run 40385078264](https://github.com/scarecrow173/cheaper/actions/runs/40385078264).

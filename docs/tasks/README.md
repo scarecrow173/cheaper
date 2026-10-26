@@ -141,7 +141,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034MGHAM3LVWSPo5RwaMkv | Propagate explicit execution correlation and project identities | done | [execution-history-carrier-catalog.md](./execution-history-carrier-catalog.md) |
 | TASK-034MGH8FHwescRINQne4sz | Create bounded execution History core | done | [execution-history-core.md](./execution-history-core.md) |
-| TASK-034MGHEHt20HR6lWIBQJYF | Document and verify execution History integration | in-progress | [execution-history-integration.md](./execution-history-integration.md) |
+| TASK-034MGHEHt20HR6lWIBQJYF | Document and verify execution History integration | done | [execution-history-integration.md](./execution-history-integration.md) |
 | TASK-034MGHz9sAMkZkvZW0WFgZ | Add read-only History CLI and bounded queries | done | [execution-history-query-cli.md](./execution-history-query-cli.md) |
 | TASK-034MGHBRUesH1Zj3pJiqH7 | Record Route and refetch lifecycle evidence | done | [execution-history-route.md](./execution-history-route.md) |
 | TASK-034MGHzYDxo5gnB4UShW7P | Wire standalone Worker and Usage correlation | done | [execution-history-worker-usage.md](./execution-history-worker-usage.md) |

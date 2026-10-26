@@ -143,7 +143,7 @@ Issue #192 の全 owner slice を統合し、per-execution History、既存 Usag
 - Windows で `mise run check` は exit 0。Rust pipeline の全テスト、format、clippy、lockfile、payload および document checks が pass した。
 - CLI integration は 368 passed / 3 ignored、Workflow は 19/19、History Store は 17/17、Route focused は 10 passed / 3 ignored。
 - Hook benchmark は local storage 上の 1,000 decisions で p50 added latency 1.263 ms、p95 1.559 ms。`cargo fmt --check` と `cargo clippy` も pass した。
-- 独立 final Judge は `ACCEPT`。non-blocking note は Ubuntu CI が pending であることのみで、これは Windows の今回の結果や POSIX 実行結果とは混同しない。
+- 独立 final Judge は `ACCEPT`。Ubuntu workflow_dispatch run 40385078264 は expected head `dc12a5153ed68a3a0166696b575a83fbeb5f7097` で setup と `mise run check` が成功した。
 
 ### Corrections during verification
 
@@ -152,7 +152,7 @@ Issue #192 の全 owner slice を統合し、per-execution History、既存 Usag
 
 ### Worktree paths observed after `git status`
 
-以下は final integration 時点の `git status --short --untracked-files=all` で実際に変更または追加として観測できた Issue #192 の実装・検証・guide paths だけを列挙したもの。既存の task/index/IR の編集はこの IR の ownership には含めず、IR README row は追加していない。
+以下は final integration 時点の `git status --short --untracked-files=all` で実際に変更または追加として観測できた Issue #192 の実装・検証・guide paths だけを列挙したもの。既存の task/index/IR の編集はこの IR の ownership には含めず、IR README row は別途 managed index に反映した。
 
 - `crates/cheaper-cli/Cargo.toml`
 - `crates/cheaper-cli/src/cli.rs`
@@ -181,8 +181,8 @@ Issue #192 の全 owner slice を統合し、per-execution History、既存 Usag
 
 ## Risks
 
-Canonical verification was run on Windows. Ubuntu CI is pending, and this IR makes no claim that POSIX behavior was tested. History retention and persistence remain intentionally best-effort; a missing History record or Usage reference must not be interpreted as a changed product outcome.
+Canonical verification passed on Windows and Ubuntu CI. History retention and persistence remain intentionally best-effort; a missing History record or Usage reference must not be interpreted as a changed product outcome.
 
 ## Follow-ups
 
-Coordinator owns task/index status synchronization, generated IR README maintenance, commit handling, and the pending Ubuntu CI gate. No additional dependency or code change is opened by this record.
+Coordinator synchronized task/index status and recorded the Ubuntu CI result. No additional dependency or code change is opened by this record.
