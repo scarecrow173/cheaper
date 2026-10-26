@@ -7,6 +7,15 @@ use cheaper_cli::history::schema::{ExecutionEvent, ExecutionKind, ExecutionStatu
 use cheaper_cli::history::store::HistoryStore;
 use serde_json::{json, Value};
 
+const RUN_USAGE_FIXTURE: &str = r#"{
+  "name": "history-run-usage",
+  "sessions": [{"steps": [
+    {"usage_delta": {"input": 2, "output": 1}},
+    {"turn": {}},
+    {"finish": {"text": "```json\n{\"ok\":true}\n```"}}
+  ]}]
+}"#;
+
 fn write_started(
     config_dir: &std::path::Path,
     worker_id: &str,
@@ -184,6 +193,93 @@ async fn history_queries_filter_page_trace_and_show_without_writes() {
         .count();
     assert_eq!(execution_dirs, 2);
     assert!(fixture.usage_log().is_none());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn history_records_standalone_worker_resolution_failure_with_inherited_hints() {
+    let mut fixture = Fixture::new();
+    let trace_id = "123e4567-e89b-42d3-a456-426614174000";
+    let parent_id = "123e4567-e89b-42d3-a456-426614174001";
+    fixture
+        .env_map
+        .insert("CHEAPER_TRACE_ID".into(), trace_id.into());
+    fixture
+        .env_map
+        .insert("CHEAPER_PARENT_EXECUTION_ID".into(), parent_id.into());
+
+    let (code, failure, _) = fixture
+        .run(&["run", "unknown-worker", "--format", "json"])
+        .await;
+    assert_eq!(code, 3, "{failure:#}");
+    assert_eq!(failure["error"]["code"], "WORKER_NOT_FOUND");
+
+    let (code, listing, _) = fixture.run(&["history", "list", "--format", "json"]).await;
+    assert_eq!(code, 0, "{listing:#}");
+    let records = result(&listing)["records"].as_array().unwrap();
+    assert_eq!(records.len(), 1);
+    let event = &records[0]["event"];
+    assert_eq!(event["kind"], "worker");
+    assert_eq!(event["event"], "started");
+    assert_eq!(event["traceId"], trace_id);
+    assert_eq!(event["parentExecutionHintId"], parent_id);
+    assert_eq!(event["contextProvenance"], "inherited-unverified");
+    let execution_id = event["executionId"].as_str().unwrap();
+    let (code, detail, _) = fixture
+        .run(&["history", "show", execution_id, "--format", "json"])
+        .await;
+    assert_eq!(code, 0, "{detail:#}");
+    assert_eq!(result(&detail)["record"]["terminal"]["status"], "failed");
+    assert_eq!(
+        result(&detail)["record"]["terminal"]["errorCode"],
+        "WORKER_NOT_FOUND"
+    );
+    assert!(fixture.usage_log().is_none());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn standalone_run_and_usage_share_one_execution_identity() {
+    let mut fixture = Fixture::new()
+        .with_fake_stream(RUN_USAGE_FIXTURE)
+        .with_input(r#"{"files":["a.txt"]}"#);
+    let inherited_trace = "123e4567-e89b-42d3-a456-426614174002";
+    let inherited_parent = "123e4567-e89b-42d3-a456-426614174003";
+    fixture
+        .env_map
+        .insert("CHEAPER_TRACE_ID".into(), inherited_trace.into());
+    fixture.env_map.insert(
+        "CHEAPER_PARENT_EXECUTION_ID".into(),
+        inherited_parent.into(),
+    );
+    let (code, output, stderr) = fixture.run(&["run", "fixture-worker"]).await;
+    assert_eq!(code, 0, "{output:#}\n{stderr}");
+
+    let usage = fixture.usage_log().expect("run Usage row");
+    let rows: Vec<Value> = usage
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert_eq!(rows.len(), 1, "usage log: {usage}");
+    assert_eq!(rows[0]["kind"], "run");
+    let execution_id = rows[0]["executionId"].as_str().expect("executionId");
+    let trace_id = rows[0]["traceId"].as_str().expect("traceId");
+
+    let (code, listing, _) = fixture.run(&["history", "list", "--format", "json"]).await;
+    assert_eq!(code, 0, "{listing:#}");
+    let records = result(&listing)["records"].as_array().unwrap();
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0]["event"]["executionId"], execution_id);
+    assert_eq!(records[0]["event"]["traceId"], trace_id);
+    assert_eq!(trace_id, inherited_trace);
+    assert_eq!(
+        records[0]["event"]["parentExecutionHintId"],
+        inherited_parent
+    );
+    assert_eq!(
+        records[0]["event"]["contextProvenance"],
+        "inherited-unverified"
+    );
+    assert_eq!(records[0]["status"], "completed");
+    assert!(rows[0].get("parentExecutionId").is_none());
 }
 
 #[tokio::test(flavor = "current_thread")]

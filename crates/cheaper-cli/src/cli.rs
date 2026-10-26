@@ -484,13 +484,16 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
                 ctx.run_root.as_deref(),
                 ctx.run_user_config_dir.as_deref(),
             );
-            crate::usage_log::record_usage(
+            crate::usage_log::record_usage_with_context(
                 &env,
                 &root,
                 &ucd,
                 io.stderr,
                 quiet,
-                ctx.execution_echo.as_ref(),
+                crate::usage_log::UsageRecordContext {
+                    execution_echo: ctx.execution_echo.as_ref(),
+                    correlation: ctx.execution_correlation.as_ref(),
+                },
                 &now_fn(hooks),
             );
             env.get("error")
@@ -538,6 +541,9 @@ pub struct RunCtx {
     /// 汎用 catch の両方の `record_usage` が同じ値を参照する
     /// (usage.jsonl `kind:"run"` record の `execution` field)。
     pub execution_echo: Option<crate::usage_log::ExecutionEcho>,
+    /// Standalone Worker execution identity for additive Usage correlation.
+    /// Kept separate from the effective policy echo.
+    pub execution_correlation: Option<crate::usage_log::UsageCorrelation>,
 }
 
 /// dispatch 本体 — parsed command 別に command module へ委譲し、
@@ -703,13 +709,16 @@ async fn dispatch(
                 ctx.run_root.as_deref(),
                 ctx.run_user_config_dir.as_deref(),
             );
-            crate::usage_log::record_usage(
+            crate::usage_log::record_usage_with_context(
                 &out.envelope,
                 &root,
                 &ucd,
                 io.stderr,
                 args.quiet,
-                ctx.execution_echo.as_ref(),
+                crate::usage_log::UsageRecordContext {
+                    execution_echo: ctx.execution_echo.as_ref(),
+                    correlation: ctx.execution_correlation.as_ref(),
+                },
                 &now_fn(hooks),
             );
             Ok(out.exit_code)

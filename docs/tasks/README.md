@@ -144,7 +144,7 @@ Directory: `docs/tasks`
 | TASK-034MGHEHt20HR6lWIBQJYF | Document and verify execution History integration | todo | [execution-history-integration.md](./execution-history-integration.md) |
 | TASK-034MGHz9sAMkZkvZW0WFgZ | Add read-only History CLI and bounded queries | done | [execution-history-query-cli.md](./execution-history-query-cli.md) |
 | TASK-034MGHBRUesH1Zj3pJiqH7 | Record Route and refetch lifecycle evidence | todo | [execution-history-route.md](./execution-history-route.md) |
-| TASK-034MGHzYDxo5gnB4UShW7P | Wire standalone Worker and Usage correlation | todo | [execution-history-worker-usage.md](./execution-history-worker-usage.md) |
+| TASK-034MGHzYDxo5gnB4UShW7P | Wire standalone Worker and Usage correlation | done | [execution-history-worker-usage.md](./execution-history-worker-usage.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
 | TASK-034Dak56U8haKyVTWPnBKv | Extend PluginAuth::logout with AuthInteraction | done | [extend-pluginauth-logout-with-authinteraction.md](./extend-pluginauth-logout-with-authinteraction.md) |
@@ -172,7 +172,7 @@ Directory: `docs/tasks`
 | TASK-034FpqpiEJPjTB70PuT2jp | T4: grant-requests-contract — tool-operator output schema の grantRequests と prompt contract | done | [grant-requests-contract.md](./grant-requests-contract.md) |
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
 | TASK-034r05iHQeQpDqeuofmk64 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [hook-fast-path-and-fail-closed-file-too-large-block.md](./hook-fast-path-and-fail-closed-file-too-large-block.md) |
-| TASK-034MGHDFIrWUJA0skPjUkQ | Record typed Hook decision evidence | todo | [hook-history-evidence.md](./hook-history-evidence.md) |
+| TASK-034MGHDFIrWUJA0skPjUkQ | Record typed Hook decision evidence | in-progress | [hook-history-evidence.md](./hook-history-evidence.md) |
 | TASK-Df79tWn026fFvY79W1xIku | Implement benchmark manifest v2 — 12 required scenarios, validation, arm impls, spawn/observation parsers | done | [implement-bench-manifest-v2-scenarios-and-observation.md](./implement-bench-manifest-v2-scenarios-and-observation.md) |
 | TASK-IoIMnYeXx4TFTREaOLTquP | Implement benchmark record/aggregate schema v2 — claim invariants, median/p95, armExpect, immutable store, comparisons, estimated layer | done | [implement-bench-record-schema-v2-and-aggregation.md](./implement-bench-record-schema-v2-and-aggregation.md) |
 | TASK-034r05iHK8bA7h4BqSHmqd | Implement boundary-checked tool operations with atomic writes | done | [implement-boundary-checked-tool-operations-with-atomic-writes.md](./implement-boundary-checked-tool-operations-with-atomic-writes.md) |
