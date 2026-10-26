@@ -40,7 +40,7 @@ use crate::args::UsageCliArgs;
 use crate::cli::{BoxError, CliHooks, CliIo, CommandOut};
 use crate::envelope::utility_success_envelope;
 use crate::pricing::load_pricing_snapshot;
-use crate::usage_log::USAGE_LOG_FILENAME;
+use crate::usage_log::{ABORT_REASONS, USAGE_LOG_FILENAME};
 
 /// snapshot の updatedAt がこの期間より古い pricing は stale とみなす
 /// (TS `PRICING_STALE_MS` = 30 日)。
@@ -756,10 +756,8 @@ fn build_route_report(
 fn execution_key(value: &Value) -> Option<String> {
     match value {
         Value::Null => Some("null".to_string()),
-        Value::Bool(value) => Some(value.to_string()),
         Value::Number(value) => value.as_f64().map(format_number),
-        Value::String(value) => Some(value.clone()),
-        Value::Array(_) | Value::Object(_) => None,
+        Value::Bool(_) | Value::String(_) | Value::Array(_) | Value::Object(_) => None,
     }
 }
 
@@ -801,6 +799,7 @@ fn build_by_error(records: &[Value]) -> Vec<Map<String, Value>> {
         if let Some(reason) = get(record, "error")
             .and_then(|error| error.get("reason"))
             .and_then(Value::as_str)
+            .filter(|reason| ABORT_REASONS.contains(reason))
         {
             *agg.reasons.entry(reason.to_string()).or_default() += 1.0;
         }

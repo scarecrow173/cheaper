@@ -194,18 +194,25 @@ Usage のみを読む境界の保証であり、実 History writer/store は追�
 - `execution_number_keys_use_js_canonical_format`: `execution` echo
   の distinct value key — Number は
   `cheaper_core::json::number::format_number` 経由で `3` と `3.0`
-  が同じ `"3"` key に集約、Null→`"null"`、Bool→`"true"`/`"false"`、
-  String→その文字列、array/object → その subfield entry を skip。
+  が同じ `"3"` key に集約、Null→`"null"`、Bool/String/array/object
+  は writer contract 外の値としてその subfield entry を skip。
   `execution` は常に 3 subfield を持つ(空でも `{}`)。
 - `workers`/`models`/`reasons` の inner map は key 昇順。該当
   field(`worker` 文字列・`model.provider` + `model.id` の両方
-  文字列・`error.reason` 文字列)を持たない record は当該内訳に
-  のみ含めず、`count` 本体には入る。
+  文字列・`error.reason` が abort 語彙 `timeout|signal|maxTurns|
+  maxToolCalls` のいずれか)を持たない record は当該内訳にのみ
+  含めず、`count` 本体には入る。未知 reason 文字列は出力せず、保存済み
+  JSONL に任意 error detail が混入しても privacy allowlist を維持する。
+- `execution` inner map は `null` と JSON number のみ含める。数値は
+  canonical JavaScript number key、`null` は `"null"` key とする。
+  boolean/string/array/object は writer が生成しない型のため skip し、
+  arbitrary string の出力・集計を許さない。
 - error 0 件でも `--group-by error` 指定済みなら `byError: []` を
   emit する。
 - `argv_and_error_detail_not_leaked`: `error.message`・
   `schemaErrors`・`checkpoint`・`errorMessage`・`root`/path 系・
-  `executed.argv`・平文 command を集計 key・出力に出さない —
+  `executed.argv`・平文 command・allowlist 外 `error.reason`・不正な
+  `execution` string value を集計 key・出力に出さない —
   secret 文字列を含む fixture record を置き、report 文字列化に
   現れないことを pin する(spec Req 4 allowlist)。
 
@@ -290,6 +297,8 @@ Usage のみを読む境界の保証であり、実 History writer/store は追�
   を無条件に描画(JSON の空 array emit 規約と同一)。空の inner
   map(workers/models/reasons)は detail 行を省略し、`execution`
   の 3 subfield が全て空なら行自体を省略する。
+- `format_text_preserves_equals_in_execution_keys`: count-detail text は
+  map key を加工せず表示し、key `a=b` を `a=b:1` として保持する。
 - `nonfinite_aggregates_serialize_as_null`: 非有限 aggregate 値は
   JSON `null` になり、JSON/text ともに `NaN`/`Infinity` 表記を
   出さない(既存 JS number 意味論 `num()`/`plus`/`or_zero`/

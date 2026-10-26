@@ -627,11 +627,11 @@ fn group_by_error_emits_code_rows() {
     let mut z = run_error_record("X");
     z.insert("worker".into(), json!("z"));
     z.insert("model".into(), json!({"provider":"z","id":"m"}));
-    z.insert("error".into(), json!({"code":"X","reason":"z"}));
+    z.insert("error".into(), json!({"code":"X","reason":"signal"}));
     let mut a = run_error_record("X");
     a.insert("worker".into(), json!("a"));
     a.insert("model".into(), json!({"provider":"a","id":"m"}));
-    a.insert("error".into(), json!({"code":"X","reason":"a"}));
+    a.insert("error".into(), json!({"code":"X","reason":"timeout"}));
     let mut invalid = run_error_record("X");
     invalid.insert("worker".into(), json!(5));
     invalid.insert("model".into(), json!({"provider":"bad","id":null}));
@@ -646,7 +646,7 @@ fn group_by_error_emits_code_rows() {
     for (key, expected) in [
         ("workers", vec!["a", "z"]),
         ("models", vec!["a/m", "z/m"]),
-        ("reasons", vec!["a", "z"]),
+        ("reasons", vec!["signal", "timeout"]),
     ] {
         assert_eq!(keys(&r["byError"][0][key]), expected);
     }
@@ -711,12 +711,41 @@ fn execution_number_keys_use_js_canonical_format() {
     let r = error_report(&records);
     for key in ["timeoutMs", "maxTurns", "maxToolCalls"] {
         let map = &r["byError"][0]["execution"][key];
-        assert_eq!(
-            map,
-            &json!({"3":2.0,"false":1.0,"null":1.0,"string":1.0,"true":1.0})
-        );
-        assert_eq!(keys(map), ["3", "false", "null", "string", "true"]);
+        assert_eq!(map, &json!({"3":2.0,"null":1.0}));
+        assert_eq!(keys(map), ["3", "null"]);
     }
+}
+
+#[test]
+fn error_grouping_rejects_untrusted_reason_and_execution_values() {
+    let mut unsafe_record = run_error_record("X");
+    unsafe_record.insert(
+        "error".into(),
+        json!({"code":"X","reason":"token=do-not-display"}),
+    );
+    unsafe_record.insert(
+        "execution".into(),
+        json!({"timeoutMs":"private=value","maxTurns":true,"maxToolCalls":null}),
+    );
+    let mut valid_record = run_error_record("X");
+    valid_record.insert("error".into(), json!({"code":"X","reason":"timeout"}));
+    valid_record.insert(
+        "execution".into(),
+        json!({"timeoutMs":3.0,"maxTurns":null,"maxToolCalls":8}),
+    );
+
+    let report = error_report(&[unsafe_record.into(), valid_record.into()]);
+    let error = &report["byError"][0];
+    assert_eq!(error["reasons"], json!({"timeout":1.0}));
+    assert_eq!(error["execution"]["timeoutMs"], json!({"3":1.0}));
+    assert_eq!(error["execution"]["maxTurns"], json!({"null":1.0}));
+    assert_eq!(
+        error["execution"]["maxToolCalls"],
+        json!({"8":1.0,"null":1.0})
+    );
+    let rendered = report.to_string();
+    assert!(!rendered.contains("do-not-display"));
+    assert!(!rendered.contains("private=value"));
 }
 
 #[test]
@@ -964,6 +993,24 @@ fn format_text_parity() {
                 .contains(header)
         );
     }
+}
+
+#[test]
+fn format_text_preserves_equals_in_execution_keys() {
+    let report = json!({
+        "route": {},
+        "byError": [{
+            "code": "X", "count": 1, "shareOfRuns": 1, "shareOfFailures": 1,
+            "durationMs": 1, "workers": {}, "models": {}, "reasons": {},
+            "execution": {"timeoutMs": {"a=b": 1}, "maxTurns": {}, "maxToolCalls": {}}
+        }]
+    });
+    let text = cheaper_cli::text_format::format_usage_report(&report);
+    assert!(
+        text.lines()
+            .any(|line| line == "    execution: timeoutMs={a=b:1} maxTurns={} maxToolCalls={}"),
+        "{text}"
+    );
 }
 
 // #192 consumer tolerance: ID の形式/生成/伝搬をここでは規定しない。

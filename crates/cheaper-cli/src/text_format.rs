@@ -49,7 +49,15 @@ fn count_map(value: Option<&Value>) -> String {
 }
 
 fn count_detail(value: Option<&Value>) -> String {
-    format!("{{{}}}", count_map(value).replace('=', ":"))
+    let Some(map) = value.and_then(Value::as_object) else {
+        return "{}".to_string();
+    };
+    let entries = map
+        .iter()
+        .map(|(key, count)| format!("{key}:{}", num(Some(count))))
+        .collect::<Vec<_>>()
+        .join(" ");
+    format!("{{{entries}}}")
 }
 
 fn usage_text(m: &Value) -> String {

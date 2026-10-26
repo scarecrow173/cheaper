@@ -78,14 +78,16 @@ module doc-comment への `build_by_error` 追記は本 task で行う。
    - per-record fold: `count += 1`・`duration_ms += or_zero(r
      .durationMs)`・`r.worker` が文字列 → `workers[worker] += 1`・
      `model.provider` と `model.id` が両方文字列 → `models["{p}/
-     {id}"] += 1`・`error.reason` が文字列 → `reasons[reason] += 1`・
-     `execution` が object → 3 subfield 固定で存在する各値を
-     canonical key 化して `exec_*[key] += 1`。
+     {id}"] += 1`・`error.reason` が abort 語彙
+     (`timeout|signal|maxTurns|maxToolCalls`)のいずれかと完全一致
+     → `reasons[reason] += 1`(未知 reason は skip)・`execution` が
+     object → 3 subfield 固定で存在する数値/`null` のみ canonical
+     key 化して `exec_*[key] += 1`。boolean/string/array/object は
+     writer contract 外の値として skip。
    - canonical key: Null→`"null"` / Number→
      `cheaper_core::json::number::format_number` による canonical
-     JavaScript number text(`3` と `3.0` が `"3"` に集約)/
-     Bool→`"true"`|`"false"` / String→その文字列 / その他
-     (array/object)→ その subfield entry を skip。
+     JavaScript number text(`3` と `3.0` が `"3"` に集約)。その他の
+     型(boolean/string/array/object)はその subfield entry を skip。
    - 内訳 map は `BTreeMap` で key 昇順を構造保証する。
 2. emit: `count` 降順・同数 `code` 昇順に sort してから rows を
    組み立てる(sort は emit 直前)。row は spec 固定 field 順
@@ -106,6 +108,7 @@ module doc-comment への `build_by_error` 追記は本 task で行う。
 4. T1 の error 系 pin test を green にする。対象:
    `group_by_error_emits_code_rows`・`empty_error_code_is_preserved`・
    `execution_number_keys_use_js_canonical_format`・
+   `error_grouping_rejects_untrusted_reason_and_execution_values`・
    `nonfinite_aggregates_serialize_as_null`・
    `failure_only_log_emits_by_error_rows`・
    `empty_log_emits_empty_grouped_sections`(`byRoute:[]` 半分は

@@ -142,7 +142,7 @@ verification へ渡せる状態を作る。
      (expected route|error)`・`args.route → filters.route`
      handoff・`--route`+`--group-by error` 合法組合せ・
      `--group-by` last-wins をそれぞれ pin)。
-   - `format_text_parity`。
+   - `format_text_parity`・`format_text_preserves_equals_in_execution_keys`。
 
 ## Classification
 
@@ -206,4 +206,4 @@ usage_log.rs`(T1 の caller 追従で完了済み)、writer/record schema
 - [x] `mise exec -- cargo fmt --all -- --check` exits 0
 - [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
 - [x] regression golden 61/61 pass、golden directory に diff なし
-- [x] `format_text_parity` pass。独立レビューで execution key 内の `=` が text 表現で改変される P2 を確認し、非 blocking follow-up として記録。
+- [x] `format_text_parity` と `format_text_preserves_equals_in_execution_keys` pass。PR review で指摘された execution key 内 `=` の改変を direct map formatting で修正。

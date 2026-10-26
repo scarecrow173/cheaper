@@ -13,6 +13,26 @@ relations:
     added: []
     modified:
       - type: "file"
+        path: "crates/cheaper-cli/src/text_format.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/src/usage_log.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/src/usage_report.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/integration/usage_report.rs"
+      - type: "file"
+        path: "docs/designs/usage-grouped-route-error-analysis-issue-184.md"
+      - type: "file"
+        path: "docs/specs/usage-analysis-scope-issue-184.md"
+      - type: "file"
+        path: "docs/test-specs/usage-route-error-analysis-contract-issue-184.md"
+      - type: "file"
+        path: "docs/tasks/implement-usage-by-error-aggregation.md"
+      - type: "file"
+        path: "docs/tasks/wire-usage-group-by-flags-text-and-guide.md"
+      - type: "file"
+        path: "docs/impl/ir/wire-usage-group-by-flags-text-and-guide-issue-184-t4.md"
+      - type: "file"
         path: "docs/plans/implement-usage-route-error-analysis-issue-184.md"
       - type: "file"
         path: "docs/tasks/verify-usage-analysis-chain-and-audit.md"
@@ -138,7 +158,7 @@ doc-index 一貫性 review。plan Verification の全 checkbox をここで
 
 ## Verification
 
-- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` exits 0 — 65 passed
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` exits 0 — 67 passed after PR review fixes
 - [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration args::` exits 0 — 47 passed
 - [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0 — 21 passed
 - [x] `mise run check` exits 0 — Node tests 41 passed / 2 skipped; all remaining stages passed
@@ -146,11 +166,14 @@ doc-index 一貫性 review。plan Verification の全 checkbox をここで
 
 ## 結果記録 (2026-10-26)
 
-- Focused filters: `usage_report::` 65/65、`args::` 47/47、
+- PR review follow-up: allowlist 外 `error.reason` を無視し、`execution`
+  echo の boolean/string/array/object を writer contract 外として skip。
+  `count_detail()` は map key を直接描画し、`=` を保持する。
+- Focused filters: `usage_report::` 67/67、`args::` 47/47、
   `usage_log::` 21/21。#192 consumer tolerance 5 test と
   `argv_and_error_detail_not_leaked` を含む。
 - `mise run check`: Biome、fmt、workspace clippy、version/doc-id
-  check（1243 Markdown files）、workspace tests、Node tests、lockfile、
+  check（1244 Markdown files）、workspace tests、Node tests、lockfile、
   APM slim payload の全段 exit 0。Node suite は 41 pass / 2 platform
   skip / 0 fail。Rust regression golden 61/61。
 - `audit_docs.js --type all --json`: exit 0、1076 files、841 findings
@@ -164,5 +187,5 @@ doc-index 一貫性 review。plan Verification の全 checkbox をここで
   path/平文 command を出力しないことを test と目視で確認。
   flag 無し JSON regression golden は変更なし。3 document index と
   guide/design doc-sync は成果物・監査と照合済み。
-- 既知の非 blocking follow-up: text `count_detail()` の `=` 置換が
-  execution key の内容も変更し得る P2。T4 review で非 blocking と判定済み。
+- PR review の全指摘を本ブランチで解消。未知 reason と不正 execution
+  primitive の漏出防止、および text map key preservation の回帰テストを追加。

@@ -390,17 +390,19 @@ for r in errors:
     agg.duration_ms += or_zero(r.durationMs)
     r.worker が文字列 → agg.workers[worker] += 1
     r.model.provider と r.model.id が両方文字列 → agg.models["{p}/{id}"] += 1
-    r.error.reason が文字列 → agg.reasons[reason] += 1
+    r.error.reason が abort 語彙(timeout|signal|maxTurns|maxToolCalls)の
+        いずれかと完全一致 → agg.reasons[reason] += 1
+        それ以外(未知文字列/非文字列)は skip
     r.execution が object → 3 subfield 固定で、存在する各値 v について
         key(v) → agg.exec_*[key] += 1
         key(v): Null→"null" / Number→canonical JavaScript number text /
-                Bool→"true"|"false" / String→その文字列 /
-                その他(array/object) → その subfield entry を skip
+                Bool/String/Array/Object → その subfield entry を skip
         Number の正規化には公開 API
         `cheaper_core::json::number::format_number(f64)` を使う。
         これにより `3` と `3.0` は同じ key `"3"` になる(writer は
         number|null のみ書く — usage_log.rs:230 insert_execution_echo。
-        それ以外の型は defensive skip)
+        reader も保存済み JSONL の不正/手編集値から output contract を守る
+        ため、writer で生成不能な値を skip)
 ```
 
 emit: `count` 降順・同数は `code` 昇順に sort してから rows を組み立てる
@@ -559,6 +561,8 @@ byError は無 scoped のまま — spec Req 5)。
   空の inner map(workers/models/reasons)はその detail 行を省略し、
   `execution` は 3 subfield 全て空のとき行自体を省略する(text parity
   は「同じ集計結果が見える」こと — 空 map の表示は値を増やさない)。
+  execution detail は map key を直接 `{key:count}` へ整形し、キー中の
+  `=` などを置換して JSON と異なる値を表示しない。
 - detection shim(`utility_text` :195-205)は**変更不要** —
   `result.records` number + `result.measured` object の検出条件は新
   field で変わらず、引き続き `format_usage_report` へ分岐する。
@@ -635,7 +639,8 @@ caller(`report()` helper・各 test)の更新は機械的追従
 | `group_by_route_emits_per_route_rows` | 2 route 名 × 成否・token・durations・postprocess・join 済み refetch の各値と、route 名昇順・weighted `reductionRatio` を固定(AC:「--group-by route で route 名別に…出る」) |
 | `group_by_error_emits_code_rows` | 複数 code + `error` 欠損/null code/非文字列 code の `"unknown"` 畳み込み、count 降順・code 昇順、`shareOfRuns`/`shareOfFailures`、workers/models/reasons/execution distinct-value maps(AC:「--group-by error で code 別件数/比率と worker/provider/model 別内訳」) |
 | `empty_error_code_is_preserved` | `error.code:""` は仕様どおり空文字列 key として維持し、欠損/null/非文字列の `"unknown"` へ誤統合しない |
-| `execution_number_keys_use_js_canonical_format` | `execution.timeoutMs:3` と `3.0` が同じ `"3"` key に集約され、null/boolean/string の key 表現も固定される。数値 key は `cheaper_core::json::number::format_number` を通る |
+| `execution_number_keys_use_js_canonical_format` | `execution.timeoutMs:3` と `3.0` が同じ `"3"` key に集約され、`null` は `"null"`、boolean/string/array/object は除外される。数値 key は `cheaper_core::json::number::format_number` を通る |
+| `error_grouping_rejects_untrusted_reason_and_execution_values` | 4 語彙外の reason text と execution の任意文字列/boolean を aggregate・出力せず、既知 reason と数値/null だけを集計する |
 | `nonfinite_aggregates_serialize_as_null` | 非有限 aggregate 値は JSON `null` になり、JSON/text report で `NaN`/`Infinity` 表記を出さない |
 | `route_filter_scopes_route_sections_only` | `--route X` で `result.route` が X のみ・`byRoute` が X のみ・run 集計(records/usage)が無影響・`--group-by error` の `byError` が無影響(AC:「--route で route 集計が限定される」) |
 | `route_group_ignores_worker_filter` | `--group-by route --worker W` の run 集計は worker W に絞るが、route bucket と byRoute は `--worker` によらず route window 全体を集計する(spec Out of Scope: route record への worker filter 非適用) |
@@ -652,6 +657,7 @@ caller(`report()` helper・各 test)の更新は機械的追従
 | `args_usage_only_guard_messages` | `count-tokens --route x` と `run --group-by route` の各失敗について `integration/args.rs` で exact guard message を固定する |
 | `usage_log_report_callers` | `integration/usage_log.rs` 内の usage report builder 全 caller を inventory し、新しい group/route 引数を正しく渡して各 caller の既存出力契約を保つ |
 | `format_text_parity` | `--format text` で route section が常時出る + `--group-by` で byRoute/byError section が同じ値で出る + `usage_command_format_text_writes_report` snapshot 更新(AC:「text/JSON parity」) |
+| `format_text_preserves_equals_in_execution_keys` | map key の `=` を text rendering が変更しない |
 | `argv_and_error_detail_not_leaked` | `executed.argv` に secret 文字列・`error.message`/`schemaErrors` を含む record を置き、report 文字列化にそれらが現れない(AC:「sensitive な argv/prompt/error detail を漏出させない」) |
 | `existing_contract_unchanged` | 既存 test 群(filter・aggregate・null fail-hard・estimated・golden)が無変更で green — flag 無し出力の shape/値不変(AC:「既存フィルタの後方互換・golden 無変更」) |
 

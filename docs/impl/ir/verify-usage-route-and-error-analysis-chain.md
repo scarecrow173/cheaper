@@ -12,6 +12,26 @@ relations:
     added: []
     modified:
       - type: "file"
+        path: "crates/cheaper-cli/src/text_format.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/src/usage_log.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/src/usage_report.rs"
+      - type: "file"
+        path: "crates/cheaper-cli/tests/integration/usage_report.rs"
+      - type: "file"
+        path: "docs/designs/usage-grouped-route-error-analysis-issue-184.md"
+      - type: "file"
+        path: "docs/specs/usage-analysis-scope-issue-184.md"
+      - type: "file"
+        path: "docs/test-specs/usage-route-error-analysis-contract-issue-184.md"
+      - type: "file"
+        path: "docs/tasks/implement-usage-by-error-aggregation.md"
+      - type: "file"
+        path: "docs/tasks/wire-usage-group-by-flags-text-and-guide.md"
+      - type: "file"
+        path: "docs/impl/ir/wire-usage-group-by-flags-text-and-guide-issue-184-t4.md"
+      - type: "file"
         path: "docs/plans/implement-usage-route-error-analysis-issue-184.md"
       - type: "file"
         path: "docs/tasks/verify-usage-analysis-chain-and-audit.md"
@@ -51,27 +71,29 @@ metadata:
 
 ## Summary
 
-T6 の focused tests、canonical `mise run check`、doc-status と IR
-監査を実行し、#184 の最終 scope/privacy/doc-index review を完了した。
+T6 の closeout 後に PR review 指摘を修正し、focused tests、canonical
+`mise run check`、doc-status と IR 監査を再実行した。
 
 ## Context
 
-承認済み plan の T6 と、usage route/error contract test-spec を検証した。
-実装差分は追加せず、検証結果を task・plan・本 IR に記録した。
+承認済み plan の T6 と usage route/error contract test-spec を検証した。
+PR review で明確になった malformed JSONL の read-side privacy/shape guard
+と text/JSON parity を修正して文書化した。
 
 ## Implementation
 
 ### Changes
 
-T6 task を done にし、全 Verification checkbox を証跡付きで更新した。
-Plan の実装状態・Verification matrix・handoff 文面を T1-T6 完了後の状態に
-同期した。Implementation Record の index は generator が更新した。
+T6 task と plan の検証記録を PR review 後の状態へ更新した。read-side
+`error.reason` は abort allowlist に限定し、`execution` echo は number/null
+だけを許容する。Text count detail は map key を直接描画して `=` を保持する。
+不正 reason/execution 値と `a=b` text key の回帰 test を追加した。
 
 ### Decisions During Implementation
 
-コード実装や挙動変更は行わなかった。T4 の独立レビューで指摘された
-text execution key 内 `=` の変換 P2 は既存の非 blocking follow-up として
-保持し、T6 の scope 外で修正しなかった。
+T4 review の non-blocking `=` 表示指摘は PR review で受入条件との不一致が
+再確認されたため、本 PR 内に修正した。writer が生成しない arbitrary reason
+string と execution primitive は不正な保存入力として read-side で無視する。
 
 ## Related Experiments
 
@@ -88,20 +110,20 @@ text execution key 内 `=` の変換 P2 は既存の非 blocking follow-up と�
 
 | Check | Result |
 | --- | --- |
-| `usage_report::` | 65 passed, 0 failed |
+| `usage_report::` | 67 passed, 0 failed after PR review fixes |
 | `args::` | 47 passed, 0 failed |
 | `usage_log::` | 21 passed, 0 failed |
-| `mise run check` | exit 0; Node 41 passed / 2 skipped / 0 failed; all other stages passed |
+| `mise run check` | exit 0; doc ID scan 1244 Markdown files; Node 41 passed / 2 skipped / 0 failed; all other stages passed |
 | `audit_docs.js --type all --json` | exit 0; 1076 files, 841 non-blocking warnings, 0 blocking; no findings in #184 artifacts |
 | `audit_impl_record.js --json` | 186 files, 0 findings |
 
 ## Risks
 
-Known non-blocking risk remains: `text_format.rs::count_detail()` replaces `=`
-with `:` in rendered map text and can alter an allowed execution key containing
-`=`. Independent T4 review classified this P2 as non-blocking.
+None remaining from the PR review. Invalid `error.reason` and `execution`
+primitive values from persisted JSONL are omitted at read time; valid writer
+records are unchanged. Text detail rendering preserves keys verbatim.
 
 ## Follow-ups
 
-T6 is complete. Continue through graph follow-up triage and exit audit. Address
-the text key formatting P2 in a separate scoped follow-up if prioritized.
+T6 and PR review follow-up are complete. All three PR review findings are
+addressed on this branch; canonical verification and doc-status pass.

@@ -242,7 +242,7 @@ sentinel を置く（実 History writer を作らない）。詳細な fixture �
 は維持し、新規依存は追加しない。T5 メモリ計測は Usage JSONL のみで、
 History store の容量/性能測定へ拡張しない。
 
-- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` exits 0 (65 passed).
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` exits 0 (67 passed after PR review fixes).
 - [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration args::` exits 0 (47 passed).
 - [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0 (21 passed).
 - [x] `mise run check` exits 0.

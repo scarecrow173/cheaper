@@ -319,11 +319,16 @@ green のまま。無条件 emit の新 field を将来追加する場合は gol
   - `workers`/`models` — `worker` 文字列 / `model.provider` +
     `model.id` 結合 key 別の件数。該当 field 欠損・非文字列の
     record は当該内訳にのみ含めない(`count` 本体には入る)。
-  - `reasons` — `error.reason`(record には abort 語彙のみ載る)の
-    値別件数。
+  - `reasons` — `error.reason` が abort 語彙
+    (`timeout`/`signal`/`maxTurns`/`maxToolCalls`)のいずれかと完全一致
+    する場合のみ値別件数へ含める。それ以外の型・文字列は無視する。
+    JSONL は外部編集可能な保存入力のため、writer の射影だけに privacy
+    境界を委ねない。
   - `execution` — `execution` echo を持つ record のみ計数し、3
-    subfield 固定で **distinct 値 → 件数** の map を出す(`null`
-    値は key `"null"`)。
+    subfield 固定で **distinct 数値または `null` → 件数** の map を出す。
+    数値は canonical JavaScript number text で key 化し、`null` は key
+    `"null"` とする。boolean/string/array/object は不正な echo 値として
+    無視する(writer contract は数値/`null` のみ)。
 - error 0 件でも flag 指定済みなら `byError: []` を emit する。
 
 ### 計測不能(unmeasurable)の定義

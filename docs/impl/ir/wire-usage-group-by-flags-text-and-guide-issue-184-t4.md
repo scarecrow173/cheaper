@@ -93,10 +93,10 @@ flag-gated in JSON, while route summary lines are always present in text.
 
 - Kept the report JSON regression golden unchanged; the text format receives
   the specified additive route lines.
-- Independent review found a P2 text rendering edge case: `count_detail()`
-  replaces `=` throughout an execution key with `:`. An allowed string key
-  containing `=` is therefore altered in text output. Both reviewers confirmed
-  the scenario; it is non-blocking and left for follow-up under review-protocol.
+- Independent T4 review found that `count_detail()` replaced `=` throughout
+  an execution key with `:`. PR review confirmed the text/JSON parity failure;
+  the PR follow-up now formats each map key directly and includes a regression
+  test for an `a=b` key.
 
 ## Related Experiments
 
@@ -121,8 +121,9 @@ flag-gated in JSON, while route summary lines are always present in text.
 
 ## Risks
 
-- Text output modifies `=` within allowed execution string keys, as described
-  above. Current contract tests pass; this affects only those uncommon keys.
+- Resolved during PR review follow-up: text detail rendering preserves map keys
+  containing `=`. Arbitrary execution strings are separately rejected at the
+  read boundary because the writer contract only emits number/null values.
 
 ## Follow-ups
 
