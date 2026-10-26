@@ -9,8 +9,38 @@ owners: ["scarecrow173"]
 relations:
   source: []
   changes:
-    added: []
-    modified: []
+    added:
+      - { type: file, path: crates/cheaper-runtime/src/catalog/history_identity.rs }
+    modified:
+      - { type: file, path: crates/cheaper-cli/src/route/resolve.rs }
+      - { type: file, path: crates/cheaper-cli/src/workflow_run.rs }
+      - { type: file, path: crates/cheaper-runtime/src/catalog/mod.rs }
+      - { type: file, path: crates/cheaper-runtime/src/run/boundary.rs }
+      - { type: file, path: crates/cheaper-runtime/src/run/mod.rs }
+      - { type: file, path: crates/cheaper-runtime/tests/ollama_e2e.rs }
+      - { type: file, path: crates/cheaper-runtime/tests/run_dev_seam.rs }
+      - { type: file, path: crates/cheaper-runtime/tests/run_fixture_test.rs }
+      - { type: file, path: crates/cheaper-tools/src/invocation.rs }
+      - { type: file, path: crates/cheaper-tools/src/registry.rs }
+      - { type: file, path: crates/cheaper-tools/src/tools/command/mod.rs }
+      - { type: file, path: crates/cheaper-tools/src/tools/exec/mod.rs }
+      - { type: file, path: crates/cheaper-tools/src/tools/proc/mod.rs }
+      - { type: file, path: crates/cheaper-tools/src/tools/proc/spawn.rs }
+      - { type: file, path: crates/cheaper-tools/src/tools/proc/tests.rs }
+      - { type: file, path: crates/cheaper-tools/src/tools/process/mod.rs }
+      - { type: file, path: crates/cheaper-tools/src/tools/process/tests.rs }
+      - { type: file, path: crates/cheaper-tools/tests/characterization.rs }
+      - { type: file, path: crates/cheaper-tools/tests/differential.rs }
+      - { type: file, path: crates/cheaper-tools/tests/proc_command.rs }
+      - { type: file, path: crates/cheaper-tools/tests/proc_degrade.rs }
+      - { type: file, path: crates/cheaper-tools/tests/proc_invocation.rs }
+      - { type: file, path: crates/cheaper-tools/tests/proc_process.rs }
+      - { type: file, path: crates/cheaper-tools/tests/proc_runtime.rs }
+      - { type: file, path: crates/cheaper-workflow/tests/filesystem_contracts/artifacts.rs }
+      - { type: file, path: crates/cheaper-workflow/tests/process.rs }
+      - { type: file, path: crates/cheaper-rig-adapter/tests/adapter.rs }
+      - { type: file, path: docs/tasks/execution-history-carrier-catalog.md }
+      - { type: file, path: docs/impl/ir/README.md }
     deleted: []
     renamed: []
     moved: []

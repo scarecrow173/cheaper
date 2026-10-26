@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MGHAM3LVWSPo5RwaMkv"
 type: "task"
-status: "completed"
+status: "done"
 title: "Propagate explicit execution correlation and project identities"
 created: "2026-10-27"
 updated: "2026-10-27"
@@ -62,6 +62,7 @@ Propagate explicit optional correlation values through runtime and tools options
 - `crates/cheaper-cli/src/route/resolve.rs` receives only the required `execution_correlation: None` options default; preserve its pure no-write behavior.
 - `crates/cheaper-tools/src/invocation.rs`, `registry.rs`, `tools/exec/mod.rs`, `tools/proc/`, `command/`, `process/`
 - Existing `RunWorkerDeps`, `ToolRuntimeOptions`, and `ExecToolOptions` test literal sites under `crates/cheaper-runtime/tests/`, `crates/cheaper-tools/src/`, `crates/cheaper-tools/tests/`, and `crates/cheaper-workflow/tests/`; add only `None` defaults to preserve existing behavior.
+- `crates/cheaper-rig-adapter/tests/adapter.rs`; add the optional carrier's `None` default to preserve the existing adapter fixture behavior.
 
 ## Done When
 

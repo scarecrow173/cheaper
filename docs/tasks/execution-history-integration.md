@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MGHEHt20HR6lWIBQJYF"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Document and verify execution History integration"
 created: "2026-10-27"
 updated: "2026-10-27"
@@ -9,15 +9,23 @@ owners: ["scarecrow173"]
 relations:
   source: []
   changes:
-    added: []
-    modified: []
+    added:
+      - { type: file, path: docs/impl/ir/close-execution-history-integration.md }
+    modified:
+      - { type: file, path: docs/guides/usage.md }
+      - { type: file, path: crates/cheaper-cli/tests/integration/history.rs }
+      - { type: file, path: crates/cheaper-cli/tests/integration/hook_history.rs }
+      - { type: file, path: crates/cheaper-cli/tests/integration/route_history.rs }
+      - { type: file, path: crates/cheaper-cli/tests/workflow.rs }
+      - { type: file, path: crates/cheaper-workflow/tests/engine.rs }
     deleted: []
     renamed: []
     moved: []
     generated: []
   implements:
     - "docs/plans/implement-execution-history-for-issue-192.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/close-execution-history-integration.md"
   depends-on:
     - "docs/plans/implement-execution-history-for-issue-192.md"
     - "docs/tasks/execution-history-query-cli.md"
@@ -66,10 +74,12 @@ Close cross-surface integration gaps after all owner slices land: update user do
 
 ## Done When
 
-- [ ] User guide explains commands, privacy projection, retention, and best-effort semantics accurately.
-- [ ] Cross-surface tests prove no raw sensitive fields, unchanged #184 semantics, and no writes from read-only utilities.
-- [ ] Canonical check and independent implementation review are complete; implementation record describes actual outcomes.
+- [x] User guide explains commands, privacy projection, retention, read-only queries, and best-effort semantics accurately.
+- [x] Cross-surface tests prove no raw sensitive fields, unchanged #184 semantics, no writes from read-only utilities, and Worker Usage acknowledgement behavior.
+- [x] Canonical Windows check and independent implementation review are complete; the final implementation record describes actual outcomes and Ubuntu/POSIX remains an explicit remote CI gate.
 
 ## Verification
 
-- [ ] `mise run check` exits 0 after all slices are integrated.
+- [x] Final `mise run check` exited 0 on Windows after all slices were integrated.
+- [x] Task and implementation-record graph relations are synchronized and implementation-record audit reports no findings.
+- [ ] `workflow_dispatch` on the actual expected PR head completes Ubuntu/POSIX verification successfully.

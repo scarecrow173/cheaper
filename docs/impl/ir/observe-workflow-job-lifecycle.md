@@ -14,6 +14,7 @@ relations:
       - { type: file, path: crates/cheaper-cli/src/workflow_run.rs }
       - { type: file, path: crates/cheaper-workflow/src/engine.rs }
       - { type: file, path: crates/cheaper-workflow/tests/engine.rs }
+      - { type: file, path: crates/cheaper-cli/tests/workflow.rs }
     deleted: []
     renamed: []
     moved: []
@@ -55,7 +56,7 @@ Follow the approved plan and Workflow Job lifecycle TSPEC. The engine must not d
 
 ### Changes
 
-Added a History-neutral engine observer with Started and terminal callbacks at actual dispatch/finish boundaries. CLI adapter records Workflow parent, distinct Job IDs, Job worker identity/metrics, and decision-only skipped/blocked/admission failures. Observer errors are isolated from workflow execution.
+Added a History-neutral engine observer with Started and terminal callbacks at actual dispatch/finish boundaries. CLI adapter records Workflow parent, distinct Job IDs, Job worker identity/metrics, and decision-only skipped/blocked/admission failures. The engine also carries only resolved provider/model identity observed by a Job executor, including typed metadata retained across output-schema failures; pre-resolution failures remain identity-free. Standalone Workflow History now starts after workspace/config resolution but before grant/policy/workflow loading and compilation; it terminalizes every returned result while preserving command outcome. The routed Workflow child lifecycle remains observer-owned. Observer persistence errors are isolated from workflow execution.
 
 ### Decisions During Implementation
 
@@ -73,11 +74,11 @@ None.
 
 ## Validation
 
-Initial guarded list confirmed 5 `job_history::` tests; focused engine suite passed 5/5 after adding `start_paused = true` to the timeout fixture. CLI adapter guarded list confirmed 2 tests; focused adapter suite passed 2/2. Scoped rustfmt and `git diff --check` passed.
+Final verification: `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib workflow_run::history_tests` passed 3/3; the same features with `--test workflow` passed 19/19. `mise exec -- cargo test -p cheaper-workflow --test engine job_history::` passed 7/7, including the output-schema failure identity regression; `mise exec -- cargo test -p cheaper-workflow --lib resolved_model_identity_tests` passed 2/2. Scoped rustfmt and `git diff --check` passed. Earlier smaller runs remain historical diagnostics, not the final counts.
 
 ## Risks
 
-Verified on Windows. Full canonical workspace check remains for final integration.
+Verified on Windows. Full canonical workspace check and Ubuntu/POSIX CI remain final integration gates.
 
 ## Follow-ups
 

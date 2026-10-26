@@ -56,6 +56,12 @@ changing native verdict behavior or claiming unobserved execution.
 - A meaningful Hook/Route evaluator result writes one decision record with
   finite reason/outcome fields, typed measurements, Route viability, and both
   evaluator and final native verdict where they differ.
+- New Hook records use separate `evaluatorVerdict` and `nativeVerdict`, optional
+  `fallbackReason`, and finite `hookCacheProvenance`; generic `verdict` is not
+  duplicated on those records. Search reasons come only from observed typed
+  branches (`search.no_candidate`, `search.below_threshold`,
+  `search.threshold_exceeded_delegate_advised`, `search.scan_limited`, or
+  `search.measurement_unavailable`).
 - Hook Deny/delegation advice is not a Worker start; Rewrite emission and an
   eventual Route run are separate records. Unsupported Rewrite records the
   fallback Deny without claiming the external host executed it.
@@ -78,6 +84,9 @@ changing native verdict behavior or claiming unobserved execution.
 - Given supported Rewrite and unsupported Rewrite outcomes, when native targets
   render the response, then evaluator Rewrite and fallback Deny remain
   separate while native output stays unchanged.
+- Given each observed Search outcome, when evidence is recorded, then only the
+  matching finite reason and actually measured bounded metrics are persisted;
+  raw query/error text is absent.
 - Given concurrent cache followers for one evaluation, when evidence is
   returned, then only the leader creates History and all callers observe the
   same verdict contract.

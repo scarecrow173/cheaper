@@ -115,6 +115,20 @@ The observer is a callback at the transition owner, not reconstructed from final
 
 `hook::routing_policy` returns a typed `HookDecisionEvidence` before `hook::targets` renders `HookResponse`. It has finite evaluator reason/outcome enums, optional typed measurements (`fileBytes`, threshold, measured tokens/null and measurement provenance), optional typed Route evaluation (`matched`, existing viability, finite no-match/no-grant/no-pin/not-runnable/rewrite/fallback reason), canonical evaluator verdict, and final native verdict. It contains no path, free-form reason, or payload. Target-specific native formatting consumes this object and must retain existing stdout/stderr/exit byte contracts.
 
+The persisted schema uses `evaluatorVerdict` and `nativeVerdict` together for newly written `hook-decision` events; generic `verdict` remains for non-Hook decisions and is not duplicated on new Hook events. Native verdict is the finite target outcome `allow`, `deny`, or `rewrite`. `fallbackReason` is an optional `ReasonCode` and is set only when a finite evaluator Rewrite was rendered as a non-Rewrite native fallback. `hookCacheProvenance` uses `leader-evaluated`, `cache-hit`, `fallback`, or `bypass`. These fields are optional additive fields in this branch's initial schema v1: new readers accept older events with the fields absent; older binaries are not expected to read events emitted after this feature is introduced.
+
+Hook Search reasons are projected only from observed evaluator branches, with no policy behavior change or raw error storage:
+
+| Authoritative Search branch | History `reasonCode` | Other persisted evidence |
+| --- | --- | --- |
+| No candidates, out of scope, or empty materialized result | `search.no_candidate` | Evaluator verdict only |
+| Measured bytes or tokens below configured threshold | `search.below_threshold` | Available bounded byte/token measurement and threshold |
+| Measured tokens exceed configured threshold and delegation is advised | `search.threshold_exceeded_delegate_advised` | Evaluator verdict, measured tokens, threshold |
+| Search scan cap reached | `search.scan_limited` | Only metrics actually measured before the cap |
+| Tokenization, timeout, or scan failure with fail-open result | `search.measurement_unavailable` | Null measurement only when source explicitly reports no measurement |
+
+If the evaluator does not provide enough typed evidence to distinguish a row, omit `reasonCode`; never infer from a free-form error or command/query content. Cache hits/followers retain `cache-hit` in in-process evidence but do not write duplicate History records. A leader-written record keeps `leader-evaluated`; fallback and bypass records retain their corresponding provenance.
+
 The resolver-facing result must retain detail before the current `Option<Verdict>` fallthrough: an unselected route arm returns a typed reason and viability to the Hook decision owner, while existing route execution/resolution API wire values remain unchanged. A fallthrough read evaluation may yield its own typed evidence; persist only meaningful decisions. The pure evidence result is reusable by side-effect-free route diagnostics such as the later #185 utility; persistence is performed only by the authoritative Hook command owner.
 
 `HookEvalCache` stores and returns the typed evidence together with provenance (`leader-evaluated`, `cache-hit`, `fallback`, `bypass`). Only the leader that computed and published a deduplicated result writes the decision record; cache hits/followers do not create duplicate records. A cache bypass/fallback writes only if it produced a meaningful typed result. Cache identity excludes raw path/input from persisted data; cache storage keeps only existing cache state and typed decision projection. Unsupported Rewrite records evaluator Rewrite and native fallback Deny as separate fields.
@@ -128,10 +142,10 @@ The CLI creates a plain correlation carrier (canonical trace UUID and current ex
 | Slice owner | Primary paths | Responsibility |
 | --- | --- | --- |
 | Store and query | `crates/cheaper-cli/src/history/`, `args.rs`, `cli.rs`, `text_format.rs` | Schema, publication, terminal first-writer, retention, bounded reads, cursor codec, history CLI |
-| Standalone Worker and Usage IDs | `crates/cheaper-cli/src/run.rs`, `cli.rs`, `usage_log.rs` | Start before resolution, terminal on result, applicable Usage linkage |
-| Workflow and Jobs | `crates/cheaper-workflow/src/engine.rs`, `crates/cheaper-cli/src/workflow_run.rs` | History-neutral lifecycle observer, Job UUID map, skip/blocked terminal-only decisions, Workflow parent relation |
-| Route and Hook decisions | `crates/cheaper-cli/src/route/`, `hook/routing_policy.rs`, `hook/targets.rs`, `hook/eval_cache.rs` | Typed Route/Hook evidence, target-native verdict projection, route run/refetch guards, cache dedup semantics |
-| Managed child propagation | `crates/cheaper-tools/src/tools/proc/`, `command/`, `process/`, runtime-to-tool context adapter | Explicit carriers after `env_clear`, no CLI History dependency in tools/runtime |
+| Standalone Worker and Usage IDs | `crates/cheaper-cli/src/run.rs`, `cli.rs`, `usage_log.rs` | Start before resolution, terminal on result, applicable Usage linkage; supply current execution correlation to managed tools |
+| Workflow and Jobs | `crates/cheaper-workflow/src/engine.rs`, `crates/cheaper-cli/src/workflow_run.rs` | History-neutral lifecycle observer, shared Job UUID map, skip/blocked terminal-only decisions, Workflow parent relation, reuse the issued Job UUID as the child carrier |
+| Route and Hook decisions | `crates/cheaper-cli/src/route/`, `hook/routing_policy.rs`, `hook/targets.rs`, `hook/eval_cache.rs` | Typed Route/Hook evidence, target-native verdict projection, route run/refetch guards, cache dedup semantics; pass actual Route identity into routed Workflow context |
+| Managed child propagation | `crates/cheaper-runtime/src/run/boundary.rs`, `run/mod.rs`, `crates/cheaper-tools/src/invocation.rs`, `registry.rs`, `tools/exec/`, `tools/proc/`, `command/`, `process/` | Explicit typed carriers after `env_clear`, no CLI History dependency in tools/runtime |
 | Catalog identity projection | `crates/cheaper-runtime/src/catalog/` and CLI History projection adapter | Validated resolved provider/model identity only; omit invalid history identity without rejecting catalog/model execution |
 | User docs and evidence | `docs/guides/`, focused integration tests, `docs/designs/` | Usage, privacy, lifecycle and cross-platform contract tests |
 

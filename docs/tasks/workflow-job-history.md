@@ -58,14 +58,17 @@ Add a History-neutral Workflow engine observer and CLI adapter that records auth
 ## Affected Files
 
 - `crates/cheaper-cli/src/workflow_run.rs`, `crates/cheaper-workflow/src/engine.rs`
-- `crates/cheaper-workflow/tests/engine.rs`
+- `crates/cheaper-workflow/tests/engine.rs`, `crates/cheaper-cli/tests/workflow.rs`
 
 ## Done When
 
-- [ ] Job lifecycle evidence covers success/failure/cancel/timeout/skipped/blocked using engine transitions.
-- [ ] Each Job gets a distinct ID linked to its actual parent Workflow ID; observer failure does not change outcomes.
-- [ ] Internal Job Worker work is not mislabeled as standalone `kind:run`.
+- [x] Job lifecycle evidence covers success/failure/cancel/timeout/skipped/blocked using engine transitions.
+- [x] Each Job gets a distinct ID linked to its actual parent Workflow ID; observer failure does not change outcomes.
+- [x] Internal Job Worker work is not mislabeled as standalone `kind:run`; resolved provider/model identity is copied only from observed executor metadata.
 
 ## Verification
 
-- [ ] `mise exec -- cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -p cheaper-workflow --test engine job_history:: -- --list` lists named tests; then the same command without `-- --list` exits 0.
+- [x] `mise exec -- cargo test -p cheaper-workflow --test engine job_history::` exits 0 (7 passed), including output-schema failure identity retention.
+- [x] `mise exec -- cargo test -p cheaper-workflow --lib resolved_model_identity_tests` exits 0 (2 passed).
+- [x] CLI adapter unit tests passed 3/3 and `--test workflow` passed 19/19 with dev-seam features.
+- [x] Standalone Workflow missing/malformed definition tests verify one started/terminal pair and preserved command failure.

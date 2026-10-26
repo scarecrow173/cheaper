@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MGHBRUesH1Zj3pJiqH7"
 type: "task"
-status: "todo"
+status: "done"
 title: "Record Route and refetch lifecycle evidence"
 created: "2026-10-27"
 updated: "2026-10-27"
@@ -58,15 +58,16 @@ Wire authoritative Route run and refetch lifecycle records, typed pure resolutio
 
 ## Affected Files
 
-- `crates/cheaper-cli/src/route/run.rs`, `route/logs.rs`, `route/resolve.rs`
-- `crates/cheaper-cli/tests/integration/route_history.rs`
+- `crates/cheaper-cli/src/route/run.rs`, `route/logs.rs`, `workflow_run.rs`
+- `crates/cheaper-cli/tests/integration/route_history.rs` (registered in `tests/integration/main.rs`)
 
 ## Done When
 
-- [ ] Route runs and refetches receive distinct authoritative IDs and retain current runId/logRef contracts.
-- [ ] Refetch joins only by logRef; pure resolve/check utilities and `route_cmd.rs` do not write History or Usage.
-- [ ] Best-effort persistence cannot alter Route outcomes.
+- [x] Route runs and refetches receive distinct authoritative IDs and retain current runId/logRef contracts.
+- [x] Routed Workflow/Job child IDs use the actual Route identity as their parent; pure Route resolver/check paths remain unrecorded and read-only.
+- [x] Refetch joins only by logRef; pure resolve/check utilities and `route_cmd.rs` do not write History or Usage.
+- [x] Best-effort persistence cannot alter Route outcomes.
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_history::` exits 0 with registered tests.
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_history::` exits 0 with 7 passing tests.

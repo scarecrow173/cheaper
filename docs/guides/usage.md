@@ -457,3 +457,57 @@ parentEquivalent - comparable run の実 worker costUsd 合計`。
 `cacheRead`・`cacheWrite`・entry の `updatedAt` は省略可。不正な
 entry は skip され、file 全体が不正・不在の場合は bundled
 snapshot へ fall back する。価格単位は USD / 1M tokens 固定。
+
+## Execution History
+
+`cheaper history` は `<userConfigDir>/history/` に保持された実行単位の記録を
+読みます。既定の表示形式は `text` です。`list` と `trace` は 1 ページ
+50 件を表示し、`--limit` は 1〜500 件、`--cursor` は次ページ用の不透明な
+cursor を指定します。
+
+```bash
+cheaper history list
+cheaper history list --since 2h --kind route --status failed --limit 100
+cheaper history list --worker bulk-reader --format json
+cheaper history list --cursor <opaque-cursor> --format json
+cheaper history show <execution-uuid>
+cheaper history show <execution-uuid> --format json
+cheaper history trace <trace-uuid> --limit 50 --format text
+cheaper history trace <trace-uuid> --cursor <opaque-cursor> --format json
+```
+
+`list` は `--since <Nm|Nh>`、`--worker <id>`、`--kind <kind>`、
+`--status <status>` で絞れます。kind は `worker`、`workflow`、`job`、
+`route`、`hook-decision`、`route-decision`、`route-refetch`、status は
+`running`、`completed`、`failed`、`cancelled`、`timeout`、`skipped`、
+`blocked` です。`show` は 1 つの execution ID を読み、`trace` は trace ID に
+一致する記録をページ表示します。`list` と `trace`
+の JSON には `records`、`scanComplete`、`nextCursor` が含まれます。
+予算内に走査できない場合は `scanComplete: false` と `nextCursor: null`
+を返し、text 表示にも不完全な走査であることを示します。`show` の JSON
+には `recordState` があり、terminal が未到着の記録や破損・未検出を区別します。
+
+History の query は read-only です。`list`・`show`・`trace` は保存先を作成せず、
+retention sweep、Usage 追記、provider 呼び出し、実行処理を行いません。
+保存先が無い場合は空の結果を返します。
+
+History は allowlist のみを保存します。execution/trace/parent ID、分類済みの
+kind・event・status・reason・error code、検証済みの worker/provider/model/
+workflow/job/route ID、duration や token・turn・tool call・exit code などの
+有界な数値、既存 `logRef` と Usage record 参照が対象です。prompt、stdin や
+input JSON、tool の引数・出力、raw argv/env、API key、credential、生の error
+本文は保存しません。親 ID が外部プロセスから渡された場合は未検証の hint として
+区別し、親子関係を推測で確定しません。
+
+History の書き込みは best-effort です。開始・判断・terminal の書き込みに失敗しても
+製品処理の結果は変わらず、その記録が欠落したり terminal が無い記録になったりする
+場合があります。History の有無から Usage record を作成・補完することはなく、
+過去の Usage record を History に backfill しません。両方の記録は独立しています。
+
+保持ポリシーは 30 日・10,000 execution directory・論理 event file 合計 128 MiB
+を目標とし、各 event は 8 KiB 以下です。これらは hard quota ではなく、並行書き込み
+により一時的に超えることがあります。list/trace の走査は最大 20,000 directory、
+event data 128 MiB、500 ms のいずれかまでです。writer の retention sweep も最大
+20,000 entry、128 MiB、500 ms のいずれかで打ち切り、容量を確認できないときは
+History の新規書き込みを省略します。`show` は指定 ID の directory にある既知の
+event file を最大 3 個まで読み、それぞれ 8 KiB を上限にします。

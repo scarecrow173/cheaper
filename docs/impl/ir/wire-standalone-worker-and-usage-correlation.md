@@ -61,14 +61,21 @@ paths remain outside the lifecycle.
 
 ### Changes
 
-`run.rs` now writes a Worker `started` event before resolution and attempts a
-terminal event for every returned result. Both writes are best-effort. The
-same local execution and trace IDs are passed to managed children as explicit
+`run.rs` writes a Worker `started` event before resolution and prepares a
+terminal for every returned result. The terminal carries resolved provider /
+model and bounded turns / tool-call metrics from success metadata or the
+public `WorkerRunError::run_meta()` projection; pre-usage failures do not gain
+unresolved values. `cli.rs` finalizes that terminal only after the existing
+Usage recorder reports a successful append, attaching `usageRecordRef` with
+the same execution ID only on success. Append failure and pre-usage failure
+omit the reference, and both persistence paths remain best-effort. The same
+local execution and trace IDs are passed to managed children as explicit
 correlation hints. `cli.rs` carries an independent typed `UsageCorrelation`
 beside `ExecutionEcho`, and `usage_log.rs` projects its optional IDs only onto
-existing `kind:"run"` rows. Count rows are unchanged. Added integration
-coverage for pre-resolution failure lifecycle, inherited unverified hints,
-and a successful run whose History and Usage IDs match.
+existing `kind:"run"` rows. Count rows are unchanged. Integration coverage
+pins successful and usage-bearing failed rows, append failure with unchanged
+command result, pre-usage failure without a fabricated reference, and
+inherited unverified hints.
 
 ### Decisions During Implementation
 
@@ -76,7 +83,8 @@ Kept History identity separate from the effective execution-policy echo so
 Usage correlation cannot change the existing policy projection. Preserved the
 old `record_usage` call for count-tokens and added a context-aware path for
 Worker success and error recording. Error status is derived from the public
-`CheaperError` source chain; no private Worker error type is exposed.
+`CheaperError` source chain; metadata is read through the public typed
+`WorkerRunError` projection without widening private runtime boundaries.
 Inherited parent values remain `parentExecutionHintId` in History and are not
 projected as a verified Usage `parentExecutionId`.
 
@@ -95,7 +103,7 @@ None.
 
 Passed:
 
-- `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration history::` — 17 passed, including 2 new standalone Worker cases.
+- `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration history::` — 28 passed, 0 failed, 3 ignored; includes Worker/Usage linkage, route History, and Hook History cases.
 - `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration standalone_run_and_usage_share_one_execution_identity` — 1 passed after final inherited-hint ownership assertion.
 - `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib execution_correlation_tests` — 2 passed.
 - `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration run::` — 40 passed.
