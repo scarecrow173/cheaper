@@ -73,7 +73,7 @@ fn assert_diagnostic_path(message: &str, label: &str, path: &std::path::Path) {
         (message, display.as_str())
     };
     if display.len() <= 512 {
-        assert!(message.contains(&display), "{message}");
+        assert!(message.contains(display), "{message}");
         return;
     }
 

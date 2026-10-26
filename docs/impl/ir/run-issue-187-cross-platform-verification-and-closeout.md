@@ -60,7 +60,21 @@ unless new direct evidence proves otherwise.
 
 ## Validation
 
-- Pending: three canonical Windows runs and canonical Ubuntu POSIX CI.
+- `mise install` passed on the Windows host for SHA `2de497f`.
+- `mise run setup` passed on the Windows host for SHA `2de497f`; APM emitted a
+  non-fatal warning that private policy repo `scarecrow173/.github-private` was
+  unavailable. Workspace build, hook install, and local Git LFS setup completed.
+- First `mise run check` on SHA `1f45fb4` passed Biome/fmt but failed Clippy on
+  the test-only hook type alias; not counted toward the required three runs.
+- First `mise run check` on SHA `2de497f` passed Biome/fmt but failed Clippy on
+  an unnecessary borrow in the long-path assertion; not counted. Targeted full
+  workspace Clippy then passed after removing the borrow.
+- Ubuntu run `40310673489` targeted SHA `1f45fb4`; it was cancelled after the
+  known Clippy failure. Ubuntu run `40310922367` targeted SHA `2de497f`; it was
+  cancelled after the second known Clippy failure. Neither is POSIX verification
+  evidence. A fresh run must target the corrected immutable head.
+- Pending: three consecutive Windows canonical checks and canonical Ubuntu
+  POSIX CI on the corrected immutable head.
 
 ## Risks
 
