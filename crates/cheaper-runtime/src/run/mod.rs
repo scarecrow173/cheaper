@@ -532,6 +532,7 @@ impl<'a> RunCtx<'a> {
                             .map(|c| serde_json::to_value(c).unwrap_or_default()),
                         eval_spawn: None,
                         route_context: None,
+                        execution_correlation: deps.execution_correlation.clone(),
                     },
                 })
                 .map_err(|e| self.fail(tool_boundary_error("worker tool scope", e)))?

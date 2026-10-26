@@ -7,7 +7,76 @@ use serde_json::{json, Map};
 
 use super::minimal_env;
 use super::monitor::{StreamCapture, StreamCaptureResult};
-use super::spawn::{display, spawn_code, spawn_failure_is_async};
+use super::spawn::{build_command, display, spawn_code, spawn_failure_is_async};
+use super::{ExecutionCorrelationCarrier, ProcPrepared};
+
+#[test]
+fn managed_spawn_sets_only_explicit_history_carrier_values_after_env_clear() {
+    let trace_id = "11111111-1111-4111-8111-111111111111";
+    let parent_id = "22222222-2222-4222-8222-222222222222";
+    let prepared = ProcPrepared {
+        executable: "fixture-child".to_string(),
+        argv: Vec::new(),
+        cwd: ".".to_string(),
+        env: vec![("ONLY_THIS".to_string(), "yes".to_string())],
+        correlation: Some(ExecutionCorrelationCarrier {
+            trace_id: Some(trace_id.to_string()),
+            parent_execution_id: Some(parent_id.to_string()),
+        }),
+    };
+
+    let command = build_command(&prepared);
+    let env: std::collections::BTreeMap<String, Option<String>> = command
+        .as_std()
+        .get_envs()
+        .map(|(key, value)| {
+            (
+                key.to_string_lossy().into_owned(),
+                value.map(|value| value.to_string_lossy().into_owned()),
+            )
+        })
+        .collect();
+
+    assert_eq!(env.get("ONLY_THIS").and_then(Option::as_deref), Some("yes"));
+    assert_eq!(
+        env.get("CHEAPER_TRACE_ID").and_then(Option::as_deref),
+        Some(trace_id)
+    );
+    assert_eq!(
+        env.get("CHEAPER_PARENT_EXECUTION_ID")
+            .and_then(Option::as_deref),
+        Some(parent_id)
+    );
+    assert!(!env.contains_key("PATH"));
+}
+
+#[test]
+fn managed_spawn_does_not_synthesize_missing_history_carriers() {
+    let prepared = ProcPrepared {
+        executable: "fixture-child".to_string(),
+        argv: Vec::new(),
+        cwd: ".".to_string(),
+        env: Vec::new(),
+        correlation: Some(ExecutionCorrelationCarrier {
+            trace_id: Some("11111111-1111-4111-8111-111111111111".to_string()),
+            parent_execution_id: None,
+        }),
+    };
+
+    let env: std::collections::BTreeMap<String, Option<String>> = build_command(&prepared)
+        .as_std()
+        .get_envs()
+        .map(|(key, value)| {
+            (
+                key.to_string_lossy().into_owned(),
+                value.map(|value| value.to_string_lossy().into_owned()),
+            )
+        })
+        .collect();
+
+    assert!(env.contains_key("CHEAPER_TRACE_ID"));
+    assert!(!env.contains_key("CHEAPER_PARENT_EXECUTION_ID"));
+}
 
 #[test]
 fn capture_finish_decodes_within_byte_cap() {

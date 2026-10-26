@@ -14,6 +14,7 @@
 
 pub mod bundled;
 mod compose;
+mod history_identity;
 pub mod persisted;
 pub mod schema;
 mod store;
@@ -23,6 +24,7 @@ pub use bundled::{
     bundled_generated_at_ms, bundled_models, BuiltinProviderMeta, EnvAuth, OAuthSupport,
     BUILTIN_PROVIDERS,
 };
+pub use history_identity::CatalogHistoryIdentity;
 pub use schema::{
     load_models_json, ModelCostJson, ModelCostOverrideJson, ModelCostTierJson, ModelDefinitionJson,
     ModelInput, ModelOverrideJson, ModelsJsonFile, ProviderConfigJson, ThinkingLevelMap,

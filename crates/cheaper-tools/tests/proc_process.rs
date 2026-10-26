@@ -464,6 +464,7 @@ fn tool_options(root: &str, tasks: Value, extra: Value) -> ExecToolOptions {
         exec_deny: ExecDenyList::default(),
         write_scope: None,
         route_context: None,
+        execution_correlation: None,
     }
 }
 
@@ -1334,6 +1335,7 @@ async fn touch_with_matching_write_scope_succeeds() {
         exec_deny: ExecDenyList::default(),
         write_scope: Some(std::collections::HashSet::from(["out".to_string()])),
         route_context: None,
+        execution_correlation: None,
     });
     tool.execute(&json!({"task": "check"}), None).await.unwrap();
     assert_eq!(std::fs::read_to_string(&marker).unwrap(), "generated");

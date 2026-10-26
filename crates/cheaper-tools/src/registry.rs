@@ -63,6 +63,7 @@ use crate::tools::find::find_tool_definition;
 use crate::tools::grep::{grep_tool_definition, GrepToolOptions};
 use crate::tools::grep_eval::EvalSpawn;
 use crate::tools::ls::ls_tool_definition;
+use crate::tools::proc::ExecutionCorrelationCarrier;
 use crate::tools::process::{process_tool_definition, OnTimeout};
 use crate::tools::read::{read_tool_definition, ReadToolOptions};
 use crate::tools::write::write_tool_definition;
@@ -136,6 +137,8 @@ pub struct ToolRuntimeOptions {
     /// §route context 注入 — `extra_env`/`exec_cwd`/
     /// `accept_any_exit_code`/`log_tee`)。`None` で従来挙動不変。
     pub route_context: Option<RouteCommandContext>,
+    /// この scope の managed child に渡す明示的な未検証 hint。
+    pub execution_correlation: Option<ExecutionCorrelationCarrier>,
 }
 
 /// `createWorkerScope` が `createToolRuntime` へ渡す共有基盤
@@ -241,6 +244,7 @@ struct ToolCtx {
     observe_access: Arc<AccessObserver<'static>>,
     /// route scope 由来の route context(`None` で不変)。
     route_context: Option<RouteCommandContext>,
+    execution_correlation: Option<ExecutionCorrelationCarrier>,
 }
 
 impl ToolCtx {
@@ -328,6 +332,7 @@ impl ToolCtx {
                 .clone()
                 .map(|scope| scope.into_iter().collect()),
             route_context: None,
+            execution_correlation: self.execution_correlation.clone(),
         }
     }
 
@@ -345,6 +350,7 @@ impl ToolCtx {
             exec_deny: self.exec_deny.clone(),
             write_scope: None,
             route_context: self.route_context.clone(),
+            execution_correlation: self.execution_correlation.clone(),
         }
     }
 }
@@ -1361,6 +1367,7 @@ pub fn create_tool_runtime(
         on_timeout: Some(on_timeout),
         observe_access: observe,
         route_context: options.route_context.clone(),
+        execution_correlation: options.execution_correlation.clone(),
     });
     // `registered` — `opts.names.map(definitions)` + `compileSchema` pair
     // (縮退後の有効 names のみ)。

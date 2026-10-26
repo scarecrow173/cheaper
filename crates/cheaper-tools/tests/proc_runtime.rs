@@ -107,6 +107,7 @@ fn options(
         concurrency: None,
         eval_spawn: Some(fixture_eval_spawn()),
         route_context: None,
+        execution_correlation: None,
     }
 }
 

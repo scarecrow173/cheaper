@@ -72,6 +72,7 @@ fn options(root: &str, names: Vec<ToolName>, degradable: Vec<ToolName>) -> ToolR
         concurrency: None,
         eval_spawn: None,
         route_context: None,
+        execution_correlation: None,
     }
 }
 

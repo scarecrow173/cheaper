@@ -220,6 +220,7 @@ async fn execute(
         argv: grant.argv.clone().unwrap_or_default(),
         cwd: prepared.cwd,
         env: minimal_env(&grant.env),
+        correlation: options.execution_correlation.clone(),
     };
     // `process` の identity: details `{task: name}`・display
     // `"process {name}"`・diagnostics event prefix `"process"`。

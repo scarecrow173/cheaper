@@ -155,6 +155,16 @@ pub(super) fn build_command(prepared: &ProcPrepared) -> Command {
     for (key, value) in &prepared.env {
         command.env(key, value);
     }
+    // 相関値は偽装可能な明示 hint であり、policy/authorization に使わない。
+    // env_clear 後、実行 owner が値を渡した場合だけ設定する。
+    if let Some(correlation) = &prepared.correlation {
+        if let Some(trace_id) = &correlation.trace_id {
+            command.env("CHEAPER_TRACE_ID", trace_id);
+        }
+        if let Some(parent_execution_id) = &correlation.parent_execution_id {
+            command.env("CHEAPER_PARENT_EXECUTION_ID", parent_execution_id);
+        }
+    }
     #[cfg(windows)]
     {
         // `creation_flags` は tokio::process::Command の inherent method。

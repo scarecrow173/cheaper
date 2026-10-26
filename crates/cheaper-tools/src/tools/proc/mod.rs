@@ -135,13 +135,23 @@ pub struct ProcLimits {
     pub accepted_exit_codes: Option<Vec<i64>>,
 }
 
-/// 解決済みの spawn 入力。`env` は `env_clear` 後に設定する最小 env
-/// (`minimal_env` 等で構築済み)。
+/// managed child に渡す明示的な相関 hint。受信側では未検証として扱う。
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ExecutionCorrelationCarrier {
+    /// trace hint。
+    pub trace_id: Option<String>,
+    /// parent hint。実際の包含関係や権限の根拠にはならない。
+    pub parent_execution_id: Option<String>,
+}
+
+/// 解決済み spawn 入力。`env` は宣言済み最小 env で、correlation は
+/// managed spawn boundary まで別の options として保持する。
 pub struct ProcPrepared {
     pub executable: String,
     pub argv: Vec<String>,
     pub cwd: String,
     pub env: Vec<(String, String)>,
+    pub correlation: Option<ExecutionCorrelationCarrier>,
 }
 
 /// details・display text・diagnostic へ差し込む呼出し側 identity。

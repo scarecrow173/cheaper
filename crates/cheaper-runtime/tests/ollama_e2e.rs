@@ -312,6 +312,7 @@ async fn run(fx: &E2eFixture, worker: &WorkerDefinition, input: Value) -> RunWor
         operation_clock: None,
         invocation_grants: &[],
         resume: None,
+        execution_correlation: None,
     };
     let started = Instant::now();
     let outcome = run_worker(&deps).await;

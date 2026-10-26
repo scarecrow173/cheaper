@@ -90,6 +90,7 @@ fn exec_options(root: String, process: Value) -> ExecToolOptions {
         exec_deny: ExecDenyList::default(),
         write_scope: None,
         route_context: None,
+        execution_correlation: None,
     }
 }
 
@@ -198,6 +199,7 @@ async fn prepare_rejects_undeclared_outputs_under_write_scope() {
         exec_deny: ExecDenyList::default(),
         write_scope: Some(HashSet::from(["allowed".to_string()])),
         route_context: None,
+        execution_correlation: None,
     });
     let err = tool
         .execute(&json!({"task": "check"}), None)
@@ -226,6 +228,7 @@ async fn prepare_rejects_undeclared_outputs_under_write_scope() {
         exec_deny: ExecDenyList::default(),
         write_scope: Some(HashSet::from(["allowed".to_string()])),
         route_context: None,
+        execution_correlation: None,
     });
     let err = tool
         .execute(&json!({"task": "check"}), None)
@@ -277,6 +280,7 @@ async fn spawn_errno_failure_reports_libuv_style_code() {
         exec_deny: ExecDenyList::default(),
         write_scope: None,
         route_context: None,
+        execution_correlation: None,
     });
     let err = tool
         .execute(&json!({"task": "check"}), None)

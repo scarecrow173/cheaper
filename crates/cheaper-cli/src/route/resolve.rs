@@ -345,6 +345,7 @@ fn viability(
         denylist: input.exec_policy.denylist.cloned(),
         exec_deny: input.exec_policy.exec_deny.clone(),
         write_scope: None,
+        execution_correlation: None,
         route_context: Some(RouteCommandContext {
             exec_cwd: Some(input.cwd.to_string()),
             accept_any_exit_code: true,

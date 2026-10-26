@@ -236,6 +236,7 @@ fn options(root: &str, command: Value, names: Vec<ToolName>) -> ToolRuntimeOptio
         concurrency: None,
         eval_spawn: None,
         route_context: None,
+        execution_correlation: None,
     }
 }
 
@@ -1725,6 +1726,7 @@ fn check_command_execution_shares_execute_predicate() {
         exec_deny: ExecDenyList::default(),
         write_scope: None,
         route_context: None,
+        execution_correlation: None,
     };
     // pin map 不在は fail-closed(spawn 層へは到達しない)。
     let e = check_exec_execution(&options, "t", &["test".into()])
@@ -1874,6 +1876,7 @@ fn check_command_execution_applies_exec_deny_at_verify() {
         exec_deny: deny,
         write_scope: None,
         route_context: None,
+        execution_correlation: None,
     };
     let err = check_exec_execution(&options, "t", &["test".into(), "--x".into()])
         .map(|_| ())

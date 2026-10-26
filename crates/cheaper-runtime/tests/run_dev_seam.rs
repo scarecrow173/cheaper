@@ -290,6 +290,7 @@ fn deps<'a>(fx: &'a Fixture, factory: &'a FakeSessionFactory) -> RunWorkerDeps<'
         operation_clock: None,
         invocation_grants: &[],
         resume: None,
+        execution_correlation: None,
     }
 }
 
