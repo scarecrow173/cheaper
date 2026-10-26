@@ -32,6 +32,7 @@ relations:
     - "cargo-source-install-distribution-and-thin-path-launchers.md"
     - "post-migration-structural-cleanup-reorganization.md"
     - "observability-foundation-logging-and-instrumentation-wiring.md"
+    - "execution-history-issue-192.md"
     - "devin-native-hooks-and-apm-bootstrap.md"
     - "bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md"
     - "../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md"
@@ -139,6 +140,10 @@ relations:
 ## Observability foundation（SPEC-034DUFyMl47o924O1KW8Ya）
 
 - [Observability foundation logging and instrumentation wiring](./observability-foundation-logging-and-instrumentation-wiring.md) — `cheaper-observability` crate（activation 解釈・file+stderr dual sink・format 選択）の公開面、`--log`/`--log-format` activation 配線、hook 経路の stderr sink 抑制、daily rolling + 世代 retention、全 crate の `cheaper.*` span/field 規約と instrumentation 配置、log 無効時 overhead 計測方法を定義。
+
+## Execution History（Issue #192）
+
+- [Execution History storage, identity, and query design](./execution-history-issue-192.md) — accepted spec/ADR に基づき、per-execution immutable storage、ID/provenance、Worker/Workflow/Job/Route/Hook event ownership、Usage linkage、read-only bounded query と retention を実装境界へ写像する。
 
 ## Devin native hook bootstrap（SPEC-034GssA0IjLKSiDdIHpAC8 / ADR-034GssAufIiId3hgh4jrSQ）
 
