@@ -711,6 +711,7 @@ fn runtime_options(spec: &Value, ctx: &CaseCtx) -> (ToolRuntimeOptions, Arc<Muta
             concurrency: spec.get("concurrency").cloned(),
             eval_spawn: Some(fixture_eval_spawn()),
             route_context: None,
+            execution_correlation: None,
         },
         journal,
     )

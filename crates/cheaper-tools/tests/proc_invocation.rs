@@ -138,6 +138,7 @@ fn scope_options(root: &str, names: Vec<ToolName>) -> ToolRuntimeOptions {
         concurrency: None,
         eval_spawn: None,
         route_context: None,
+        execution_correlation: None,
     }
 }
 

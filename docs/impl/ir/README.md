@@ -23,6 +23,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpmfo09FGX | Add Ollama docker-compose and AGENTS.md container usage | completed | [add-ollama-docker-compose-and-agents-md-container-usage.md](./add-ollama-docker-compose-and-agents-md-container-usage.md) |
 | IMPL-034z3CD7wXV3MNmCy9JnHs | add platform launchers to hooks payload | completed | [add-platform-launchers-to-hooks-payload.md](./add-platform-launchers-to-hooks-payload.md) |
 | IMPL-034JimbubuiHpBv6IpimHs | Add proc full-output tee sink for route logging | completed | [add-proc-full-output-tee-sink-for-route-logging.md](./add-proc-full-output-tee-sink-for-route-logging.md) |
+| IMPL-034MHsQwuzT8Ysc0cdXxZW | Add read-only History CLI and bounded queries | completed | [add-read-only-history-cli-and-bounded-queries.md](./add-read-only-history-cli-and-bounded-queries.md) |
 | IMPL-034JjbLxN5vUbJ45QnDJdH | Add route and route-refetch usage records | completed | [add-route-and-route-refetch-usage-records.md](./add-route-and-route-refetch-usage-records.md) |
 | IMPL-034Jm123U9YXuFo4LBNbtz | Add route CLI wiring | completed | [add-route-cli-wiring.md](./add-route-cli-wiring.md) |
 | IMPL-034JiCcdU6kUQ9Hj4Sd44J | Add route context scope options and single-grant projection | completed | [add-route-context-scope-options-and-single-grant-projection.md](./add-route-context-scope-options-and-single-grant-projection.md) |
@@ -54,6 +55,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zQtPhC1tLOPNry0QTLE | Canonical tool extraction | completed | [canonical-tool-extraction.md](./canonical-tool-extraction.md) |
 | IMPL-03426dknEI5DskvoOZUHs | Cargo source install distribution and thin PATH launchers | completed | [cargo-source-install-distribution-and-thin-path-launchers.md](./cargo-source-install-distribution-and-thin-path-launchers.md) |
 | IMPL-034Dl4CmoLtZTP6cs7v1Q8 | cheaper-usage SKILL.md hook path section rewrite | completed | [cheaper-usage-skill-md-hook-path-section-rewrite.md](./cheaper-usage-skill-md-hook-path-section-rewrite.md) |
+| IMPL-034MLMZ6JF1p7PeYMeOIDd | Close execution history integration | completed | [close-execution-history-integration.md](./close-execution-history-integration.md) |
 | IMPL-034r05iHy2gdnpkXDh47a6 | Code review fixes (post-merge) | completed | [code-review-fixes.md](./code-review-fixes.md) |
 | IMPL-034EOYv2cBtPBDWY0EMSiv | command core policy vocabulary and propagation | completed | [command-core-policy-vocabulary-and-propagation.md](./command-core-policy-vocabulary-and-propagation.md) |
 | IMPL-034EvP2s9FEfHuZw09PT5J | command runtime cli plumbing and builtin policy wiring | completed | [command-runtime-cli-plumbing-and-builtin-policy-wiring.md](./command-runtime-cli-plumbing-and-builtin-policy-wiring.md) |
@@ -65,6 +67,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zQU77PE0beEruVCSGYz | Core resource manifest implementation | completed | [core-resource-manifest-implementation.md](./core-resource-manifest-implementation.md) |
 | IMPL-034zQKrvQjUkhvZoLktZcb | Core resource manifest tests | completed | [core-resource-manifest-tests.md](./core-resource-manifest-tests.md) |
 | IMPL-034zR3fwmlg2mtdTgJxi2v | Core resource manifest verification | completed | [core-resource-manifest-verification.md](./core-resource-manifest-verification.md) |
+| IMPL-034MGQ2A2LscE3yZbiOkGB | Create bounded execution History core | completed | [create-bounded-execution-history-core.md](./create-bounded-execution-history-core.md) |
 | IMPL-034z2rYkK5IZuxqTMYHtAs | create manual dispatch release workflow | completed | [create-manual-dispatch-release-workflow.md](./create-manual-dispatch-release-workflow.md) |
 | IMPL-034rALLKuPPgsnclaaPRYT | Cross-agent native routing adapters over APM distribution | completed | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
 | IMPL-034r05iHy2gdnpARFuxZVi | Delegation usage measurement log (PLAN-034r05iHE1Fbkpd5tkg6Gs) | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
@@ -122,6 +125,7 @@ Directory: `docs/impl/ir`
 | IMPL-034A6i3cxbZXoHqDxhuyjB | Migrate native workflows and release guidance | completed | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
 | IMPL-034GtH0PU9VrkGZfPEk4FR | Normalize tools and add Devin hook capability | completed | [normalize-tools-and-add-devin-hook-capability.md](./normalize-tools-and-add-devin-hook-capability.md) |
 | IMPL-034EcqaOLmLoT2kL3ztbwk | Observability foundation | completed | [observability-foundation.md](./observability-foundation.md) |
+| IMPL-034MHsRcZJcZ9DZ3fO6rvi | Observe Workflow Job lifecycle | completed | [observe-workflow-job-lifecycle.md](./observe-workflow-job-lifecycle.md) |
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | IMPL-034A9TTHbXQNav6LxGvo49 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | IMPL-034zTprBbdY0tsPiphc2wE | Operation manager state lifecycle | completed | [operation-manager-state-lifecycle.md](./operation-manager-state-lifecycle.md) |
@@ -141,8 +145,10 @@ Directory: `docs/impl/ir`
 | IMPL-034z57iY91Zc8YChIAuBty | port routing policy to cli hook module | completed | [port-routing-policy-to-cli-hook-module.md](./port-routing-policy-to-cli-hook-module.md) |
 | IMPL-034DE3wewvurwfdPB2HrG6 | Rust 移行後の構造整理 | completed | [post-migration-structural-cleanup.md](./post-migration-structural-cleanup.md) |
 | IMPL-034zU5o0mgVqx5ZwBdxc0L | Prepare one-dispatch release artifacts | completed | [prepare-one-dispatch-release-artifacts.md](./prepare-one-dispatch-release-artifacts.md) |
+| IMPL-034MHTsREMda1OP0dJWNbt | Propagate explicit execution correlation and project identities | completed | [propagate-explicit-execution-correlation-and-project-identities.md](./propagate-explicit-execution-correlation-and-project-identities.md) |
 | IMPL-034r2qodykm6M1ReYSbIkc | provider/auth guide runtime sync (PLAN-034r2qodyxvN3g3xktwPOF) | completed | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | IMPL-034r05iHy2gdnpELwCtyPv | Provider-only registration layer (PLAN-034r05iHK8bA7g2BMsfjFu) | completed | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
+| IMPL-034MHTtoBvDNoO1W2QnjdC | Record typed Hook decision evidence | completed | [record-typed-hook-decision-evidence.md](./record-typed-hook-decision-evidence.md) |
 | IMPL-034Gu2UGm6tPXaR2rvwH0U | Register Devin hooks from APM skill | completed | [register-devin-hooks-from-apm-skill.md](./register-devin-hooks-from-apm-skill.md) |
 | IMPL-034E5b824duUI8BjKw5jx1 | registry degrade path and prompt surfacing | completed | [registry-degrade-path-and-prompt-surfacing.md](./registry-degrade-path-and-prompt-surfacing.md) |
 | IMPL-034MCFBcPwAhqtiC177bnN | Remove ambient Node from cheaper-tools fixtures | completed | [remove-ambient-node-from-cheaper-tools-fixtures.md](./remove-ambient-node-from-cheaper-tools-fixtures.md) |
@@ -190,6 +196,8 @@ Directory: `docs/impl/ir`
 | IMPL-034IqcrVJL4pxtau4WVtRV | Wire evaluate_dedup into hook target call sites | completed | [wire-evaluate-dedup-into-hook-target-call-sites.md](./wire-evaluate-dedup-into-hook-target-call-sites.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |
 | IMPL-034zUpcuJnZnznZ79UL3Q2 | Wire one-dispatch release publication | completed | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
+| IMPL-034MJrFxQn7LGWrgkx4ECq | Wire Route and refetch execution history | completed | [wire-route-and-refetch-execution-history.md](./wire-route-and-refetch-execution-history.md) |
+| IMPL-034MIWwhe522nQ1s8Qz4UQ | Wire standalone Worker and Usage correlation | completed | [wire-standalone-worker-and-usage-correlation.md](./wire-standalone-worker-and-usage-correlation.md) |
 | IMPL-034MpqYmnpqh3br76LERKo | Wire usage group by flags text and guide issue 184 T4 | completed | [wire-usage-group-by-flags-text-and-guide-issue-184-t4.md](./wire-usage-group-by-flags-text-and-guide-issue-184-t4.md) |
 | IMPL-034zTIoMYLPhPUbedvunjx | wire-workflow-interface | completed | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | IMPL-UAM3loJyQptDIIrWiEJ3me | issue-111: nullable maxTurns・stall timeout・budget 枯渇 checkpoint/resume の実装 | completed | [worker-run-nullable-maxturns-stall-timeout-and-resume.md](./worker-run-nullable-maxturns-stall-timeout-and-resume.md) |

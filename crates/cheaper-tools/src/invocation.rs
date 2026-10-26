@@ -304,6 +304,7 @@ impl InvocationToolRuntime {
             concurrency: options.runtime.concurrency,
             eval_spawn: options.runtime.eval_spawn,
             route_context: options.runtime.route_context,
+            execution_correlation: options.runtime.execution_correlation,
         };
         let scope = create_tool_runtime(
             runtime_options,

@@ -43,6 +43,7 @@ Directory: `docs/designs`
 | DESIGN-034DlAaOWn3RyI3onq5uj1 | devin usage accounting contract test and docs | approved | [devin-usage-accounting-contract-test-and-docs.md](./devin-usage-accounting-contract-test-and-docs.md) |
 | DESIGN-034Lrgl6KUIjrLaU6BBL2U | documentation honesty sweep + migration guide — per-doc 訂正計画・refine 注記規約・migration guide 構成 | approved | [documentation-honesty-sweep-and-migration-guide.md](./documentation-honesty-sweep-and-migration-guide.md) |
 | DESIGN-034KIsSCvVMAxGDZY1dQTd | exec-contract cleanup — 内容審査を mandatory 層から除去 | approved | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
+| DESIGN-034MFy7WDFzWfi8i74Cd6J | Execution History storage, identity, and query design (Issue 192) | approved | [execution-history-issue-192.md](./execution-history-issue-192.md) |
 | DESIGN-034r05iHy2gdnoS2PWvNo0 | grep batchMaxBytes invariant enforcement | approved | [grep-batch-max-bytes-invariant-enforcement.md](./grep-batch-max-bytes-invariant-enforcement.md) |
 | DESIGN-034r6oM1pW6bz2SSvR3rWT | grep eval-budget test stabilization via explicit budget injection | approved | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | DESIGN-034ILuADFr70oZoUROR13q | hook-config legacy conflict gate demotion to warning | approved | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |

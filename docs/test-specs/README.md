@@ -28,12 +28,17 @@ Directory: `docs/test-specs`
 | TSPEC-034L7LgKjsa5dwb8PstQX9 | documentation honesty sweep + migration guide の検証契約 (issue #169) | approved | [documentation-honesty-sweep-and-migration-guide.md](./documentation-honesty-sweep-and-migration-guide.md) |
 | TSPEC-034z1P09dg86lO9uB31cUi | Embedded builtin resource resolution across distribution forms | superseded | [embedded-builtin-resource-resolution-across-distribution-forms.md](./embedded-builtin-resource-resolution-across-distribution-forms.md) |
 | TSPEC-034KJtUqMNXjkbjsbz5YPa | exec-contract 内容審査除去の検証契約 (issue #163) | draft | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
+| TSPEC-034MGCuNnSmgxjF4fq9Cea | Execution History bounded read-only queries | proposed | [execution-history-bounded-queries.md](./execution-history-bounded-queries.md) |
+| TSPEC-034MGCFe4bqwpXhKCEYgRA | Execution correlation and privacy projection | proposed | [execution-history-correlation-and-privacy.md](./execution-history-correlation-and-privacy.md) |
+| TSPEC-034MGCxlMYuOemMCKIx9RZ | Execution identities and Usage ownership | proposed | [execution-history-identity-and-usage-ownership.md](./execution-history-identity-and-usage-ownership.md) |
+| TSPEC-034MGCscrFncKerl6vu8Iw | Execution History bounded storage lifecycle | proposed | [execution-history-storage-lifecycle.md](./execution-history-storage-lifecycle.md) |
 | TSPEC-034MyrGbD5n5Bu9SnpiKXF | Hook capability diagnostic error shape | draft | [hook-capability-diagnostic-error-shape.md](./hook-capability-diagnostic-error-shape.md) |
 | TSPEC-034IM5B88Ph3dNfw748cmj | hook-config legacy conflict demotion contract | approved | [hook-config-legacy-conflict-warning-contract.md](./hook-config-legacy-conflict-warning-contract.md) |
 | TSPEC-034IQa6tpizWQ1s8A9Dvh0 | hook-config orphan sweep ownership contract | proposed | [hook-config-orphan-sweep-ownership-contract.md](./hook-config-orphan-sweep-ownership-contract.md) |
 | TSPEC-034Jg5WcioU9vlqfkgBjPR | Hook dedup cache route fingerprint and Rewrite exclusion | draft | [hook-dedup-route-fingerprint.md](./hook-dedup-route-fingerprint.md) |
 | TSPEC-034IpNMbAuIAGTxh12swmj | Hook eval dedup verdict cache contract | draft | [hook-eval-dedup-verdict-cache-contract.md](./hook-eval-dedup-verdict-cache-contract.md) |
 | TSPEC-034Jg5XonLxlwll8pJ15V0 | Hook to route run end-to-end delegation | draft | [hook-route-e2e.md](./hook-route-e2e.md) |
+| TSPEC-034MGCCC9F0R4NwYCGFOlk | Hook and Route decision evidence | proposed | [hook-route-history-decision-evidence.md](./hook-route-history-decision-evidence.md) |
 | TSPEC-034Jg5K8URUPa2X0HSK0mN | PreToolUse route verdict rewrite and target rendering | draft | [hook-route-rewrite.md](./hook-route-rewrite.md) |
 | TSPEC-034FoDgwSnThCuTO5aNUYj | invocation-scoped command grant（--grant）・grantRequests・cheaper policy grant の行為保証 | approved | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |
 | TSPEC-034AGg47u5fWQqP0pEJfI9 | Managed process bounded lifecycle guarantees | approved | [managed-process-bounded-lifecycle-guarantees.md](./managed-process-bounded-lifecycle-guarantees.md) |
@@ -92,6 +97,7 @@ Directory: `docs/test-specs`
 | TSPEC-034zQvKPjNkXAEgbZlzdcQ | Workflow compiler の契約保証 | proposed | [workflow-compiler-contract-guarantees.md](./workflow-compiler-contract-guarantees.md) |
 | TSPEC-034AJ8stqUyJWIgj6oaOzt | Workflow の policy・schema・literal scope 境界 | proposed | [workflow-execution-contract-boundaries.md](./workflow-execution-contract-boundaries.md) |
 | TSPEC-034AJ8RBszSVnXlZydfnyU | Workflow verification evidence と dependency direction | proposed | [workflow-execution-verification-boundaries.md](./workflow-execution-verification-boundaries.md) |
+| TSPEC-034MGCzUAhlbOn8zU2Mnal | Workflow Job History lifecycle | proposed | [workflow-job-history-lifecycle.md](./workflow-job-history-lifecycle.md) |
 | TSPEC-034zTsc3i9wPmxIsvuuyva | workflow-loader-contract | proposed | [workflow-loader-contract.md](./workflow-loader-contract.md) |
 | TSPEC-034AJ8xcmAsWo69hx3u1vW | One-shot DAG の依存・capacity・terminal 保証 | proposed | [workflow-one-shot-scheduling-and-cancellation.md](./workflow-one-shot-scheduling-and-cancellation.md) |
 | TSPEC-034zTsgOgsTzuFTcEztxzd | workflow-public-interface | proposed | [workflow-public-interface.md](./workflow-public-interface.md) |

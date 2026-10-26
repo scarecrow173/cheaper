@@ -87,6 +87,7 @@ fn scope_options(owner: &str, root: &str) -> WorkerScopeOptions {
             concurrency: None,
             eval_spawn: None,
             route_context: None,
+            execution_correlation: None,
         },
     }
 }

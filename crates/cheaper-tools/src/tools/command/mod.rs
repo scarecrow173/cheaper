@@ -255,6 +255,7 @@ async fn execute(
         argv: args.clone(),
         cwd,
         env: minimal_env(&declared_env),
+        correlation: options.execution_correlation.clone(),
     };
     // `command` の identity: details `{grant: name, argv: args}`・
     // display `"command {name}"`・diagnostics event prefix `"command"`。

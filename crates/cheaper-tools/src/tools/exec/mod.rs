@@ -40,7 +40,9 @@ use crate::scheduler::{OperationDeclaration, OperationPool};
 use crate::tools::proc::executable::{
     native_executable, resolve_process_executable, ProcessExecutableOptions,
 };
-use crate::tools::proc::{prepare_cwd, prepare_exec_cwd, OnTimeout, ProcTee};
+use crate::tools::proc::{
+    prepare_cwd, prepare_exec_cwd, ExecutionCorrelationCarrier, OnTimeout, ProcTee,
+};
 use crate::ToolError;
 
 pub(crate) mod prepare;
@@ -80,6 +82,8 @@ pub struct ExecToolOptions {
     /// surface のみ**が読む(design §route context 注入)。`None` で
     /// 従来挙動不変。
     pub route_context: Option<RouteCommandContext>,
+    /// managed child に渡す明示 hint。認可判断には使わない。
+    pub execution_correlation: Option<ExecutionCorrelationCarrier>,
 }
 
 /// route scope の command tool 注入 context(design §route context
@@ -479,6 +483,7 @@ mod tests {
             exec_deny: ExecDenyList::default(),
             write_scope: None,
             route_context: None,
+            execution_correlation: None,
         }
     }
 

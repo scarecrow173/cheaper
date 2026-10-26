@@ -37,8 +37,10 @@ use cheaper_core::worker::validate::{validate_worker_input, WorkerDefinition};
 #[cfg(feature = "dev-seam")]
 use cheaper_runtime::dev::fixture::RunFixture;
 use cheaper_runtime::run::{run_worker, RunWorkerDeps};
+use cheaper_runtime::WorkerRunError;
 #[cfg(feature = "dev-seam")]
 use cheaper_tools::operation::AbortReason;
+use cheaper_tools::tools::proc::ExecutionCorrelationCarrier;
 use serde_json::Value;
 use tracing::Instrument;
 
@@ -47,8 +49,18 @@ use crate::cli::{emit_catalog_warnings, now, BoxError, CliHooks, CliIo, CommandO
 use crate::envelope::success_envelope;
 #[cfg(feature = "dev-seam")]
 use crate::fake_stream::load_test_stream;
+use crate::history::identity::ExecutionIdentity;
+use crate::history::schema::{ExecutionEvent, ExecutionKind, ExecutionStatus, HistoryEvent};
+use crate::history::store::HistoryStore;
 use crate::input::read_task_input;
 use crate::signal::SignalRelay;
+
+struct StandaloneExecutionContext {
+    builtin_dir: std::path::PathBuf,
+    root: String,
+    dirs: ConfigDirs,
+    identity: ExecutionIdentity,
+}
 
 // ---------------------------------------------------------------------------
 // worker 解決
@@ -113,6 +125,104 @@ async fn execute_inner(
     ctx.run_root = Some(root.clone());
     ctx.run_user_config_dir = Some(dirs.user_config_dir.to_string_lossy().into_owned());
 
+    // The standalone Worker boundary starts after config-dir selection but
+    // before worker/model/input/policy resolution. History writes are always
+    // best-effort and do not affect the command result.
+    let trace_hint = (io.env)("CHEAPER_TRACE_ID");
+    let parent_hint = (io.env)("CHEAPER_PARENT_EXECUTION_ID");
+    let identity = ExecutionIdentity::from_inherited(trace_hint.as_deref(), parent_hint.as_deref());
+    let store = HistoryStore::new(&dirs.user_config_dir);
+    let started = HistoryEvent::new(
+        &identity,
+        ExecutionKind::Worker,
+        ExecutionEvent::Started,
+        ExecutionStatus::Running,
+    );
+    let _ = store.write_started(&started);
+    ctx.execution_correlation = Some(crate::usage_log::UsageCorrelation {
+        execution_id: Some(identity.execution_id().to_string()),
+        parent_execution_id: identity.parent_execution_id().map(|id| id.to_string()),
+        trace_id: Some(identity.trace_id().to_string()),
+    });
+
+    let execution = StandaloneExecutionContext {
+        builtin_dir,
+        root,
+        dirs,
+        identity: identity.clone(),
+    };
+    let result = execute_started(args, io, hooks, started_at, ctx, &execution).await;
+    let (status, error_code) = match &result {
+        Ok(_) => (ExecutionStatus::Completed, None),
+        Err(error) => {
+            let code = history_error_code(error.as_ref());
+            let status = match code {
+                Some(cheaper_core::errors::ErrorCode::Timeout) => ExecutionStatus::Timeout,
+                Some(cheaper_core::errors::ErrorCode::Aborted) => ExecutionStatus::Cancelled,
+                _ => ExecutionStatus::Failed,
+            };
+            (status, code)
+        }
+    };
+    let mut terminal = HistoryEvent::new(
+        &identity,
+        ExecutionKind::Worker,
+        ExecutionEvent::Terminal,
+        status,
+    )
+    .with_worker_id(ctx.worker_name.as_deref().unwrap_or_default())
+    .with_duration_ms(Some((now(hooks) - started_at).max(0.0)))
+    .with_error_code(error_code);
+    match &result {
+        Ok(out) => {
+            if let Some(meta) = out.envelope.get("meta") {
+                terminal = terminal
+                    .with_turns(meta.get("turns").and_then(Value::as_f64))
+                    .with_tool_calls(meta.get("toolCalls").and_then(Value::as_f64));
+                if let Some(model) = meta.get("model") {
+                    if let Some(provider) = model.get("provider").and_then(Value::as_str) {
+                        terminal = terminal.with_provider_id(provider);
+                    }
+                    if let Some(model_id) = model.get("id").and_then(Value::as_str) {
+                        terminal = terminal.with_model_id(model_id);
+                    }
+                }
+            }
+        }
+        Err(error) => {
+            if let Some(meta) = error
+                .downcast_ref::<WorkerRunError>()
+                .and_then(WorkerRunError::run_meta)
+            {
+                terminal = terminal
+                    .with_turns(meta.turns.map(|value| value as f64))
+                    .with_tool_calls(meta.tool_calls.map(|value| value as f64));
+                if let Some(model) = meta.model.as_ref() {
+                    terminal = terminal
+                        .with_provider_id(&model.provider)
+                        .with_model_id(&model.id);
+                }
+            }
+        }
+    }
+    ctx.pending_worker_history_terminal = Some(terminal);
+    result
+}
+
+async fn execute_started(
+    args: &RunCliArgs,
+    io: &mut CliIo<'_>,
+    hooks: &CliHooks,
+    started_at: f64,
+    ctx: &mut RunCtx,
+    execution: &StandaloneExecutionContext,
+) -> Result<CommandOut, BoxError> {
+    let StandaloneExecutionContext {
+        builtin_dir,
+        root,
+        dirs,
+        identity,
+    } = execution;
     // fake-stream seam(`NODE_ENV === "test"` + `CHEAPER_TEST_FAKE_STREAM`
     // のみ有効 — `fake_stream::load_test_stream`)。worker fallback に
     // 使うため resolution 前に load する(TS は modelConfig 後に load
@@ -125,8 +235,8 @@ async fn execute_inner(
 
     let worker = resolve_run_worker(
         args,
-        &dirs,
-        &root,
+        dirs,
+        root,
         #[cfg(feature = "dev-seam")]
         fixture.as_ref(),
     )?;
@@ -308,6 +418,10 @@ async fn execute_inner(
         explicit_model: explicit_model.as_deref(),
         signal: Some(&signal),
         abort_grace_ms,
+        execution_correlation: Some(ExecutionCorrelationCarrier {
+            trace_id: Some(identity.trace_id().to_string()),
+            parent_execution_id: Some(identity.execution_id().to_string()),
+        }),
         execution: None,
         operation_clock: None,
         invocation_grants: &grant_names,
@@ -332,4 +446,13 @@ async fn execute_inner(
             ok.meta.model.provider, ok.meta.model.id, ok.meta.model.tier
         )),
     })
+}
+
+fn history_error_code(
+    error: &(dyn std::error::Error + 'static),
+) -> Option<cheaper_core::errors::ErrorCode> {
+    if let Some(error) = error.downcast_ref::<cheaper_core::errors::CheaperError>() {
+        return Some(error.code());
+    }
+    error.source().and_then(history_error_code)
 }

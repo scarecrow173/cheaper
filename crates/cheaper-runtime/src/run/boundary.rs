@@ -12,6 +12,7 @@ use cheaper_core::worker::validate::WorkerDefinition;
 use cheaper_tools::invocation::InvocationToolRuntime;
 use cheaper_tools::operation::{AbortSignal, Clock};
 use cheaper_tools::resources::ResourceLease;
+use cheaper_tools::tools::proc::ExecutionCorrelationCarrier;
 use serde_json::{Map, Value};
 use tracing::Instrument;
 
@@ -78,6 +79,8 @@ pub struct RunWorkerDeps<'a> {
     /// `cheaper run --resume` 由来の前回 checkpoint(issue #111)—
     /// 観測注入・連鎖 resume 累積に使う。session/budget は新規。
     pub resume: Option<&'a ResumeCheckpoint>,
+    /// managed child tools に渡す明示的な未検証 trace/current-execution 値。
+    pub execution_correlation: Option<ExecutionCorrelationCarrier>,
 }
 
 /// `runWorker` 成功結果。

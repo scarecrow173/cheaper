@@ -103,6 +103,19 @@ pub struct ExecutionEcho {
     pub max_tool_calls: u64,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct UsageCorrelation {
+    pub execution_id: Option<String>,
+    pub parent_execution_id: Option<String>,
+    pub trace_id: Option<String>,
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct UsageRecordContext<'a> {
+    pub execution_echo: Option<&'a ExecutionEcho>,
+    pub correlation: Option<&'a UsageCorrelation>,
+}
+
 impl From<&cheaper_core::policy::schema::ExecutionPolicy> for ExecutionEcho {
     fn from(p: &cheaper_core::policy::schema::ExecutionPolicy) -> Self {
         Self {
@@ -139,6 +152,16 @@ pub fn build_usage_record(
     env: &Value,
     root: &str,
     echo: Option<&ExecutionEcho>,
+    now: &dyn Fn() -> f64,
+) -> Option<Value> {
+    build_usage_record_with_correlation(env, root, echo, None, now)
+}
+
+pub fn build_usage_record_with_correlation(
+    env: &Value,
+    root: &str,
+    echo: Option<&ExecutionEcho>,
+    correlation: Option<&UsageCorrelation>,
     now: &dyn Fn() -> f64,
 ) -> Option<Value> {
     if get(env, "workflow").and_then(Value::as_bool) == Some(true) {
@@ -200,6 +223,7 @@ pub fn build_usage_record(
             base.insert("repairs".to_string(), v.clone());
         }
         insert_execution_echo(&mut base, echo);
+        insert_usage_correlation(&mut base, correlation);
         return Some(Value::Object(base));
     }
 
@@ -228,8 +252,24 @@ pub fn build_usage_record(
         }
     }
     insert_execution_echo(&mut base, echo);
+    insert_usage_correlation(&mut base, correlation);
     base.insert("error".to_string(), error_record_object(env));
     Some(Value::Object(base))
+}
+
+fn insert_usage_correlation(base: &mut Map<String, Value>, correlation: Option<&UsageCorrelation>) {
+    let Some(correlation) = correlation else {
+        return;
+    };
+    for (key, value) in [
+        ("executionId", &correlation.execution_id),
+        ("parentExecutionId", &correlation.parent_execution_id),
+        ("traceId", &correlation.trace_id),
+    ] {
+        if let Some(value) = value {
+            base.insert(key.to_string(), Value::from(value.clone()));
+        }
+    }
 }
 
 /// error record の `error` object — 固定 allowlist projection
@@ -367,6 +407,15 @@ pub struct RouteRecordInput {
 /// `embedded_fingerprint` と同じ `DefaultHasher` hex 規約(同一
 /// toolchain 内のみ安定 — design C14f)。
 pub fn build_route_record(input: &RouteRecordInput, root: &str, now: &dyn Fn() -> f64) -> Value {
+    build_route_record_with_correlation(input, None, root, now)
+}
+
+pub fn build_route_record_with_correlation(
+    input: &RouteRecordInput,
+    correlation: Option<&UsageCorrelation>,
+    root: &str,
+    now: &dyn Fn() -> f64,
+) -> Value {
     use std::hash::{DefaultHasher, Hash, Hasher};
     let mut h = DefaultHasher::new();
     input.command.hash(&mut h);
@@ -418,6 +467,7 @@ pub fn build_route_record(input: &RouteRecordInput, root: &str, now: &dyn Fn() -
     if let Some(suppressed) = &input.suppressed {
         base.insert("suppressed".to_string(), Value::from(suppressed.clone()));
     }
+    insert_usage_correlation(&mut base, correlation);
     Value::Object(base)
 }
 
@@ -431,6 +481,16 @@ pub fn build_route_refetch_record(
     root: &str,
     now: &dyn Fn() -> f64,
 ) -> Value {
+    build_route_refetch_record_with_correlation(log_ref, bytes_read, None, root, now)
+}
+
+pub fn build_route_refetch_record_with_correlation(
+    log_ref: &str,
+    bytes_read: u64,
+    correlation: Option<&UsageCorrelation>,
+    root: &str,
+    now: &dyn Fn() -> f64,
+) -> Value {
     let mut base = Map::new();
     base.insert("schemaVersion".to_string(), Value::from(1));
     base.insert("ts".to_string(), Value::from(iso8601(now())));
@@ -438,6 +498,7 @@ pub fn build_route_refetch_record(
     base.insert("kind".to_string(), Value::from("route-refetch"));
     base.insert("logRef".to_string(), Value::from(log_ref));
     base.insert("bytesRead".to_string(), Value::from(bytes_read));
+    insert_usage_correlation(&mut base, correlation);
     Value::Object(base)
 }
 
@@ -451,7 +512,19 @@ pub fn record_route(
     quiet: bool,
     now: &dyn Fn() -> f64,
 ) -> bool {
-    let record = build_route_record(input, root, now);
+    record_route_with_correlation(input, None, root, user_config_dir, stderr, quiet, now)
+}
+
+pub fn record_route_with_correlation(
+    input: &RouteRecordInput,
+    correlation: Option<&UsageCorrelation>,
+    root: &str,
+    user_config_dir: &str,
+    stderr: &mut dyn CliWrite,
+    quiet: bool,
+    now: &dyn Fn() -> f64,
+) -> bool {
+    let record = build_route_record_with_correlation(input, correlation, root, now);
     match append_usage_log(user_config_dir, &record) {
         Ok(()) => true,
         Err(e) => {
@@ -474,7 +547,31 @@ pub fn record_route_refetch(
     quiet: bool,
     now: &dyn Fn() -> f64,
 ) {
-    let record = build_route_refetch_record(log_ref, bytes_read, root, now);
+    record_route_refetch_with_correlation(
+        log_ref,
+        bytes_read,
+        None,
+        root,
+        user_config_dir,
+        stderr,
+        quiet,
+        now,
+    );
+}
+
+#[allow(clippy::too_many_arguments)] // Mirrors the existing refetch recorder while adding optional correlation.
+pub fn record_route_refetch_with_correlation(
+    log_ref: &str,
+    bytes_read: u64,
+    correlation: Option<&UsageCorrelation>,
+    root: &str,
+    user_config_dir: &str,
+    stderr: &mut dyn CliWrite,
+    quiet: bool,
+    now: &dyn Fn() -> f64,
+) {
+    let record =
+        build_route_refetch_record_with_correlation(log_ref, bytes_read, correlation, root, now);
     if let Err(e) = append_usage_log(user_config_dir, &record) {
         if !quiet {
             stderr.write_str(&format!("usage-log: {e}\n"));
@@ -513,15 +610,136 @@ pub fn record_usage(
     echo: Option<&ExecutionEcho>,
     now: &dyn Fn() -> f64,
 ) {
-    let result = (|| -> std::io::Result<()> {
-        let Some(record) = build_usage_record(env, root, echo, now) else {
-            return Ok(());
+    record_usage_with_context(
+        env,
+        root,
+        user_config_dir,
+        stderr,
+        quiet,
+        UsageRecordContext {
+            execution_echo: echo,
+            correlation: None,
+        },
+        now,
+    );
+}
+
+pub fn record_usage_with_context(
+    env: &Value,
+    root: &str,
+    user_config_dir: &str,
+    stderr: &mut dyn CliWrite,
+    quiet: bool,
+    context: UsageRecordContext<'_>,
+    now: &dyn Fn() -> f64,
+) -> bool {
+    let result = (|| -> std::io::Result<bool> {
+        let Some(record) = build_usage_record_with_correlation(
+            env,
+            root,
+            context.execution_echo,
+            context.correlation,
+            now,
+        ) else {
+            return Ok(false);
         };
-        append_usage_log(user_config_dir, &record)
+        append_usage_log(user_config_dir, &record).map(|()| true)
     })();
-    if let Err(e) = result {
-        if !quiet {
-            stderr.write_str(&format!("usage-log: {e}\n"));
+    match result {
+        Ok(appended) => appended,
+        Err(error) => {
+            if !quiet {
+                stderr.write_str(&format!("usage-log: {error}\n"));
+            }
+            false
         }
+    }
+}
+
+#[cfg(test)]
+mod execution_correlation_tests {
+    use serde_json::json;
+
+    use super::{build_usage_record, build_usage_record_with_correlation, UsageCorrelation};
+
+    fn now() -> f64 {
+        1_798_000_000_000.0
+    }
+
+    #[test]
+    fn run_usage_correlation_is_additive_and_keeps_one_row() {
+        let envelope = json!({
+            "ok": true,
+            "worker": "bulk-reader",
+            "meta": {
+                "durationMs": 12,
+                "model": {"provider": "openai", "id": "gpt-test"},
+                "usage": {"input": 2, "output": 3},
+                "turns": 1,
+                "toolCalls": 0,
+                "savings": {"directlyComparable": true}
+            }
+        });
+        let legacy = build_usage_record(&envelope, "root", None, &now).unwrap();
+        let correlated = build_usage_record_with_correlation(
+            &envelope,
+            "root",
+            None,
+            Some(&UsageCorrelation {
+                execution_id: Some("123e4567-e89b-42d3-a456-426614174000".into()),
+                parent_execution_id: Some("123e4567-e89b-42d3-a456-426614174001".into()),
+                trace_id: Some("123e4567-e89b-42d3-a456-426614174002".into()),
+            }),
+            &now,
+        )
+        .unwrap();
+
+        assert_eq!(correlated["kind"], "run");
+        assert_eq!(
+            correlated["executionId"],
+            "123e4567-e89b-42d3-a456-426614174000"
+        );
+        assert_eq!(
+            correlated["parentExecutionId"],
+            "123e4567-e89b-42d3-a456-426614174001"
+        );
+        assert_eq!(
+            correlated["traceId"],
+            "123e4567-e89b-42d3-a456-426614174002"
+        );
+        let mut expected = legacy.as_object().unwrap().clone();
+        expected.insert("executionId".into(), correlated["executionId"].clone());
+        expected.insert(
+            "parentExecutionId".into(),
+            correlated["parentExecutionId"].clone(),
+        );
+        expected.insert("traceId".into(), correlated["traceId"].clone());
+        assert_eq!(correlated, serde_json::Value::Object(expected));
+    }
+
+    #[test]
+    fn count_usage_remains_uncorrelated_even_when_context_is_supplied() {
+        let envelope = json!({
+            "ok": true,
+            "worker": null,
+            "result": {"path": "a.txt", "tokens": 4, "bytes": 7}
+        });
+        let record = build_usage_record_with_correlation(
+            &envelope,
+            "root",
+            None,
+            Some(&UsageCorrelation {
+                execution_id: Some("123e4567-e89b-42d3-a456-426614174000".into()),
+                parent_execution_id: None,
+                trace_id: Some("123e4567-e89b-42d3-a456-426614174002".into()),
+            }),
+            &now,
+        )
+        .unwrap();
+
+        assert_eq!(record["kind"], "count");
+        assert!(record.get("executionId").is_none());
+        assert!(record.get("parentExecutionId").is_none());
+        assert!(record.get("traceId").is_none());
     }
 }

@@ -139,6 +139,12 @@ Directory: `docs/tasks`
 | TASK-034KQsvyJ7l63g3i4Gjnwl | unified exec grant model の guide/reference 文書更新 | done | [document-unified-exec-grant-model.md](./document-unified-exec-grant-model.md) |
 | TASK-034KxDvREdpF6P10oziJsy | Document windsurf tool_info contract and dual-registration trap in distribution guide | done | [document-windsurf-tool-info-contract-and-registration-requirements.md](./document-windsurf-tool-info-contract-and-registration-requirements.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
+| TASK-034MGHAM3LVWSPo5RwaMkv | Propagate explicit execution correlation and project identities | done | [execution-history-carrier-catalog.md](./execution-history-carrier-catalog.md) |
+| TASK-034MGH8FHwescRINQne4sz | Create bounded execution History core | done | [execution-history-core.md](./execution-history-core.md) |
+| TASK-034MGHEHt20HR6lWIBQJYF | Document and verify execution History integration | done | [execution-history-integration.md](./execution-history-integration.md) |
+| TASK-034MGHz9sAMkZkvZW0WFgZ | Add read-only History CLI and bounded queries | done | [execution-history-query-cli.md](./execution-history-query-cli.md) |
+| TASK-034MGHBRUesH1Zj3pJiqH7 | Record Route and refetch lifecycle evidence | done | [execution-history-route.md](./execution-history-route.md) |
+| TASK-034MGHzYDxo5gnB4UShW7P | Wire standalone Worker and Usage correlation | done | [execution-history-worker-usage.md](./execution-history-worker-usage.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
 | TASK-034r05iHK8bA7hmgmuZSIA | Export runtime-pi public API and run full verification | done | [export-runtime-pi-public-api-and-run-full-verification.md](./export-runtime-pi-public-api-and-run-full-verification.md) |
 | TASK-034Dak56U8haKyVTWPnBKv | Extend PluginAuth::logout with AuthInteraction | done | [extend-pluginauth-logout-with-authinteraction.md](./extend-pluginauth-logout-with-authinteraction.md) |
@@ -166,6 +172,7 @@ Directory: `docs/tasks`
 | TASK-034FpqpiEJPjTB70PuT2jp | T4: grant-requests-contract — tool-operator output schema の grantRequests と prompt contract | done | [grant-requests-contract.md](./grant-requests-contract.md) |
 | TASK-034r05iHQeQpDqAVvmTPpC | grep batch invariant final verification | done | [grep-batch-invariant-final-verification.md](./grep-batch-invariant-final-verification.md) |
 | TASK-034r05iHQeQpDqeuofmk64 | Hook fast-path and fail-closed FILE_TOO_LARGE block | done | [hook-fast-path-and-fail-closed-file-too-large-block.md](./hook-fast-path-and-fail-closed-file-too-large-block.md) |
+| TASK-034MGHDFIrWUJA0skPjUkQ | Record typed Hook decision evidence | done | [hook-history-evidence.md](./hook-history-evidence.md) |
 | TASK-Df79tWn026fFvY79W1xIku | Implement benchmark manifest v2 — 12 required scenarios, validation, arm impls, spawn/observation parsers | done | [implement-bench-manifest-v2-scenarios-and-observation.md](./implement-bench-manifest-v2-scenarios-and-observation.md) |
 | TASK-IoIMnYeXx4TFTREaOLTquP | Implement benchmark record/aggregate schema v2 — claim invariants, median/p95, armExpect, immutable store, comparisons, estimated layer | done | [implement-bench-record-schema-v2-and-aggregation.md](./implement-bench-record-schema-v2-and-aggregation.md) |
 | TASK-034r05iHK8bA7h4BqSHmqd | Implement boundary-checked tool operations with atomic writes | done | [implement-boundary-checked-tool-operations-with-atomic-writes.md](./implement-boundary-checked-tool-operations-with-atomic-writes.md) |
@@ -412,5 +419,6 @@ Directory: `docs/tasks`
 | TASK-034AJcZY4VW7Wfwx1AOzvh | Workflow Worker permission と lease lifetime を配線する | done | [wire-workflow-worker-leases.md](./wire-workflow-worker-leases.md) |
 | TASK-Qv0y8UiqVlBjROUfcjHGA6 | worker prose の maxFindings null semantics 明記 | done | [worker-prose-maxfindings-null.md](./worker-prose-maxfindings-null.md) |
 | TASK-u2PMRboiXvyOu5ebYhDvVE | worker schema magnitude 制約の撤廃と maxFindings nullable 化 | done | [worker-schema-magnitude-removal.md](./worker-schema-magnitude-removal.md) |
+| TASK-034MGHCIrNt0wvnqKvOLTP | Observe Workflow Job lifecycle | done | [workflow-job-history.md](./workflow-job-history.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |
 | TASK-034r05iHQeQpDqac6FjqrJ | Writer writeScope declaration and e2e verification | done | [writer-write-scope-and-e2e-verification.md](./writer-write-scope-and-e2e-verification.md) |

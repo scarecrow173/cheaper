@@ -20,6 +20,10 @@ use cheaper_tools::resources::{prepared, LeaseKind, LeasePreparation, ResourceRe
 use cheaper_tools::ToolError;
 use serde_json::{json, Map, Value};
 
+use cheaper_workflow::engine::{
+    run_workflow_with_observer, WorkflowJobObserver, WorkflowJobObserverError,
+    WorkflowJobTerminalStatus, WorkflowJobTransition,
+};
 use cheaper_workflow::{
     run_workflow, JobExecutor, JobLeaseRequest, JobStatus, WorkflowEnginePorts,
     WorkflowExecutionContext, WorkflowExecutorError, WorkflowExecutorResult, WorkflowRunOptions,
@@ -55,6 +59,406 @@ fn options<'a>(
 
 fn outcome_serialized(outcome: &cheaper_workflow::WorkflowOutcome) -> String {
     serde_json::to_string(outcome).unwrap()
+}
+
+mod job_history {
+    use super::*;
+    use cheaper_workflow::JobKind;
+
+    #[derive(Default)]
+    struct RecordingObserver {
+        transitions: Vec<WorkflowJobTransition>,
+        fail: bool,
+    }
+
+    impl WorkflowJobObserver for RecordingObserver {
+        fn observe(
+            &mut self,
+            transition: WorkflowJobTransition,
+        ) -> Result<(), WorkflowJobObserverError> {
+            self.transitions.push(transition);
+            if self.fail {
+                Err(WorkflowJobObserverError)
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn successful_worker_emits_one_start_and_terminal_with_job_metrics() {
+        let mut raw = definition();
+        raw["jobs"]["summarize"] = json!({
+            "kind": "worker", "worker": "bulk-reader", "input": { "task": "summarize" }
+        });
+        let fixtures = FixtureSet::new();
+        let workflow = fixtures.compiler().compile(&raw, None).await.unwrap();
+        let mut h = common::default_harness();
+        h.ports.worker = Arc::new(FnExecutor(|_: WorkflowExecutionContext| async {
+            Ok(WorkflowExecutorResult {
+                result: json!({ "content": [] }),
+                meta: Some(Map::from_iter([
+                    ("turns".to_string(), json!(2)),
+                    ("toolCalls".to_string(), json!(3)),
+                    (
+                        "requestedModel".to_string(),
+                        json!({"provider": "requested-provider", "id": "requested-model"}),
+                    ),
+                    (
+                        "model".to_string(),
+                        json!({"provider": "resolved-provider", "id": "resolved-model-v2"}),
+                    ),
+                ])),
+            })
+        }));
+        let mut observer = RecordingObserver::default();
+
+        let outcome = run_workflow_with_observer(options(&workflow, h.ports), &mut observer)
+            .await
+            .unwrap();
+
+        assert!(outcome.ok);
+        assert_eq!(observer.transitions.len(), 2);
+        let (started, terminal) = match (&observer.transitions[0], &observer.transitions[1]) {
+            (
+                WorkflowJobTransition::Started { job: started },
+                WorkflowJobTransition::Terminal {
+                    job: terminal,
+                    status,
+                    error_code,
+                    duration_ms,
+                    turns,
+                    tool_calls,
+                },
+            ) => (
+                started,
+                (
+                    terminal,
+                    *status,
+                    error_code,
+                    duration_ms,
+                    turns,
+                    tool_calls,
+                ),
+            ),
+            other => panic!("expected start then terminal, got {other:?}"),
+        };
+        assert_eq!(started.job_id, "summarize");
+        assert_eq!(started.kind, JobKind::Worker);
+        assert_eq!(started.name, "bulk-reader");
+        assert_eq!(terminal.0.job_id, started.job_id);
+        assert_eq!(terminal.1, WorkflowJobTerminalStatus::Completed);
+        assert_eq!(terminal.2, &None);
+        assert!(terminal.3.is_some());
+        assert_eq!(terminal.4, &Some(2.0));
+        assert_eq!(terminal.5, &Some(3.0));
+        assert_eq!(
+            terminal
+                .0
+                .resolved_model
+                .as_ref()
+                .map(|model| (model.provider_id.as_str(), model.model_id.as_str())),
+            Some(("resolved-provider", "resolved-model-v2"))
+        );
+    }
+
+    #[tokio::test]
+    async fn worker_failure_projects_only_resolved_model_identity() {
+        let mut raw = definition();
+        raw["jobs"]["resolved"] = json!(
+            { "kind": "worker", "worker": "bulk-reader", "input": { "task": "resolved" } }
+        );
+        raw["jobs"]["unresolved"] = json!(
+            { "kind": "worker", "worker": "bulk-reader", "input": { "task": "unresolved" } }
+        );
+        let fixtures = FixtureSet::new();
+        let workflow = fixtures.compiler().compile(&raw, None).await.unwrap();
+        let mut h = common::default_harness();
+        h.ports.worker = Arc::new(FnExecutor(|ctx: WorkflowExecutionContext| async move {
+            let meta = if ctx.job_id == "resolved" {
+                Map::from_iter([(
+                    "model".to_string(),
+                    json!({ "provider": "resolved-provider", "id": "resolved-model-v2" }),
+                )])
+            } else {
+                Map::from_iter([(
+                    "requestedModel".to_string(),
+                    json!({ "provider": "requested-provider", "id": "requested-model" }),
+                )])
+            };
+            Err(Box::new(
+                WorkflowExecutorError::new(ErrorCode::ToolExecutionFailure, "worker failed", meta)
+                    .unwrap(),
+            ) as ToolError)
+        }));
+        let mut observer = RecordingObserver::default();
+
+        let outcome = run_workflow_with_observer(options(&workflow, h.ports), &mut observer)
+            .await
+            .unwrap();
+
+        assert!(!outcome.ok);
+        let terminal_model = |job_id: &str| {
+            observer
+                .transitions
+                .iter()
+                .find_map(|transition| match transition {
+                    WorkflowJobTransition::Terminal { job, .. } if job.job_id == job_id => {
+                        job.resolved_model.as_ref()
+                    }
+                    _ => None,
+                })
+        };
+        let resolved =
+            terminal_model("resolved").expect("executor supplied resolved model metadata");
+        assert_eq!(resolved.provider_id, "resolved-provider");
+        assert_eq!(resolved.model_id, "resolved-model-v2");
+        assert!(terminal_model("unresolved").is_none());
+    }
+
+    #[tokio::test]
+    async fn worker_output_validation_failure_retains_resolved_model_identity() {
+        let mut raw = definition();
+        raw["jobs"]["invalid-output"] = json!(
+            { "kind": "worker", "worker": "bulk-reader", "input": { "task": "invalid" } }
+        );
+        let mut fixtures = FixtureSet::new();
+        fixtures.worker_mut().output_schema = Arc::new(
+            cheaper_core::worker::schema::compile_schema(
+                json!({
+                    "type": "object",
+                    "required": ["content"],
+                    "additionalProperties": false,
+                    "properties": { "content": { "type": "array" } }
+                })
+                .as_object()
+                .unwrap()
+                .clone(),
+                cheaper_core::worker::schema::SchemaKind::Output,
+            )
+            .unwrap(),
+        );
+        let workflow = fixtures.compiler().compile(&raw, None).await.unwrap();
+        let mut h = common::default_harness();
+        h.ports.worker = Arc::new(FnExecutor(|_: WorkflowExecutionContext| async {
+            Ok(WorkflowExecutorResult {
+                result: json!({ "unexpected": true }),
+                meta: Some(Map::from_iter([(
+                    "model".to_string(),
+                    json!({ "provider": "resolved-provider", "id": "resolved-model-v2" }),
+                )])),
+            })
+        }));
+        let mut observer = RecordingObserver::default();
+
+        let outcome = run_workflow_with_observer(options(&workflow, h.ports), &mut observer)
+            .await
+            .unwrap();
+
+        assert!(!outcome.ok);
+        let terminal = observer
+            .transitions
+            .iter()
+            .find_map(|transition| match transition {
+                WorkflowJobTransition::Terminal { job, status, .. } => Some((job, status)),
+                _ => None,
+            });
+        let (job, status) = terminal.expect("worker emits terminal transition");
+        assert_eq!(*status, WorkflowJobTerminalStatus::Failed);
+        let model = job
+            .resolved_model
+            .as_ref()
+            .expect("resolved identity survives output validation failure");
+        assert_eq!(model.provider_id, "resolved-provider");
+        assert_eq!(model.model_id, "resolved-model-v2");
+    }
+
+    #[tokio::test]
+    async fn failure_blocked_and_condition_skip_emit_authoritative_transitions() {
+        let mut raw = definition();
+        raw["jobs"]["a"] = json!({ "kind": "tool", "tool": "grep", "input": {} });
+        raw["jobs"]["b"] = json!({
+            "kind": "tool", "tool": "grep", "needs": ["a"], "input": {}
+        });
+        raw["jobs"]["skip"] = json!({
+            "kind": "tool", "tool": "grep",
+            "when": {
+                "left": { "$literal": 1 }, "op": "eq", "right": { "$literal": 2 }
+            },
+            "input": {}
+        });
+        let fixtures = FixtureSet::new();
+        let workflow = fixtures.compiler().compile(&raw, None).await.unwrap();
+        let mut h = common::default_harness();
+        h.ports.tool = Arc::new(FnExecutor(|ctx: WorkflowExecutionContext| async move {
+            if ctx.job_id == "a" {
+                return Err(Box::new(CheaperError::new(
+                    ErrorCode::ToolExecutionFailure,
+                    "expected fixture failure",
+                )) as ToolError);
+            }
+            Ok(tool_result(&ctx.job_id))
+        }));
+        let mut observer = RecordingObserver::default();
+
+        let outcome = run_workflow_with_observer(options(&workflow, h.ports), &mut observer)
+            .await
+            .unwrap();
+
+        assert!(!outcome.ok);
+        let transitions_for = |id: &str| {
+            observer
+                .transitions
+                .iter()
+                .filter(|transition| match transition {
+                    WorkflowJobTransition::Started { job }
+                    | WorkflowJobTransition::Terminal { job, .. } => job.job_id == id,
+                })
+                .collect::<Vec<_>>()
+        };
+        assert!(matches!(
+            transitions_for("a").as_slice(),
+            [
+                WorkflowJobTransition::Started { .. },
+                WorkflowJobTransition::Terminal {
+                    status: WorkflowJobTerminalStatus::Failed,
+                    ..
+                }
+            ]
+        ));
+        assert!(matches!(
+            transitions_for("b").as_slice(),
+            [WorkflowJobTransition::Terminal {
+                job,
+                status: WorkflowJobTerminalStatus::Blocked,
+                error_code: Some(code),
+                ..
+            }] if job.dependency_ids == vec!["a".to_string()] && code == "DEPENDENCY_FAILED"
+        ));
+        assert!(matches!(
+            transitions_for("skip").as_slice(),
+            [WorkflowJobTransition::Terminal {
+                status: WorkflowJobTerminalStatus::Skipped,
+                error_code: Some(code),
+                ..
+            }] if code == "CONDITION_SKIPPED"
+        ));
+    }
+
+    #[tokio::test]
+    async fn admission_failure_emits_terminal_without_started_transition() {
+        let workflow = independent(&["a"]).await;
+        let mut h = common::default_harness();
+        let error: ToolError = Box::new(CheaperError::new(
+            ErrorCode::InvalidInput,
+            "lease admission failed",
+        ));
+        let error = Arc::new(Mutex::new(Some(error)));
+        let shared_error = Arc::clone(&error);
+        h.ports.acquire_job_lease = Arc::new(move |_request: JobLeaseRequest| {
+            let error = Arc::clone(&shared_error);
+            Box::pin(async move { Err(error.lock().unwrap().take().unwrap()) })
+        });
+        let mut observer = RecordingObserver::default();
+
+        let outcome = run_workflow_with_observer(options(&workflow, h.ports), &mut observer)
+            .await
+            .unwrap();
+
+        assert!(!outcome.ok);
+        assert!(matches!(
+            observer.transitions.as_slice(),
+            [WorkflowJobTransition::Terminal {
+                status: WorkflowJobTerminalStatus::Failed,
+                error_code: Some(code),
+                ..
+            }] if code == "INVALID_INPUT"
+        ));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn preabort_and_timeout_emit_cancelled_and_timeout_terminals() {
+        let workflow = independent(&["a"]).await;
+
+        let mut h = common::default_harness();
+        let outer = AbortController::new();
+        outer.abort(AbortReason::msg("stop before admission"));
+        let mut observer = RecordingObserver::default();
+        let outcome = run_workflow_with_observer(
+            WorkflowRunOptions {
+                workflow: &workflow,
+                ports: h.ports.clone(),
+                max_jobs: 1.0,
+                timeout_ms: 10_000.0,
+                signal: Some(outer.signal()),
+                abort_grace_ms: None,
+                now: None,
+            },
+            &mut observer,
+        )
+        .await
+        .unwrap();
+        assert!(!outcome.ok);
+        assert!(matches!(
+            observer.transitions.as_slice(),
+            [WorkflowJobTransition::Terminal {
+                status: WorkflowJobTerminalStatus::Cancelled,
+                ..
+            }]
+        ));
+
+        h.ports.tool = Arc::new(FnExecutor(|_: WorkflowExecutionContext| async {
+            std::future::pending::<Result<WorkflowExecutorResult, ToolError>>().await
+        }));
+        let done = tokio::spawn({
+            let workflow = Arc::clone(&workflow);
+            let ports = h.ports.clone();
+            async move {
+                let mut run = options(&workflow, ports);
+                run.timeout_ms = 10.0;
+                run.abort_grace_ms = Some(0.0);
+                let mut observer = RecordingObserver::default();
+                let outcome = run_workflow_with_observer(run, &mut observer)
+                    .await
+                    .unwrap();
+                (outcome, observer)
+            }
+        });
+        flush().await;
+        advance(10).await;
+        let (outcome, observer) = done.await.unwrap();
+        assert!(!outcome.ok);
+        assert!(matches!(
+            observer.transitions.as_slice(),
+            [
+                WorkflowJobTransition::Started { .. },
+                WorkflowJobTransition::Terminal {
+                    status: WorkflowJobTerminalStatus::Timeout,
+                    error_code: Some(code),
+                    ..
+                }
+            ] if code == "TIMEOUT"
+        ));
+    }
+
+    #[tokio::test]
+    async fn observer_errors_do_not_change_workflow_outcome() {
+        let workflow = independent(&["a"]).await;
+        let mut observer = RecordingObserver {
+            fail: true,
+            ..RecordingObserver::default()
+        };
+
+        let outcome = run_workflow_with_observer(
+            options(&workflow, common::default_harness().ports),
+            &mut observer,
+        )
+        .await
+        .unwrap();
+
+        assert!(outcome.ok);
+        assert_eq!(observer.transitions.len(), 2);
+    }
 }
 
 // ---- one-shot scheduling and public projection ----

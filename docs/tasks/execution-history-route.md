@@ -1,0 +1,73 @@
+---
+id: "TASK-034MGHBRUesH1Zj3pJiqH7"
+type: "task"
+status: "done"
+title: "Record Route and refetch lifecycle evidence"
+created: "2026-10-27"
+updated: "2026-10-27"
+owners: ["scarecrow173"]
+relations:
+  source: []
+  changes:
+    added: []
+    modified: []
+    deleted: []
+    renamed: []
+    moved: []
+    generated: []
+  implements:
+    - "docs/plans/implement-execution-history-for-issue-192.md"
+  implemented-by: []
+  depends-on:
+    - "docs/plans/implement-execution-history-for-issue-192.md"
+    - "TASK-034MGH8FHwescRINQne4sz"
+  blocks: []
+  supersedes: []
+  superseded-by: []
+  related: []
+  refines: []
+  refined-by: []
+  derives-from: []
+  derived-by: []
+  verifies: []
+  verified-by:
+    - "TSPEC-034MGCxlMYuOemMCKIx9RZ"
+    - "TSPEC-034MGCCC9F0R4NwYCGFOlk"
+  references: []
+  defers: []
+  deferred-by: []
+---
+
+# Record Route and refetch lifecycle evidence
+
+## Work
+
+Wire authoritative Route run and refetch lifecycle records, typed pure resolution evidence, and logRef correlation. Inspection utilities remain write-free; preserve existing runId/logRef semantics.
+
+## Classification
+
+- `normal-plan-task`
+
+## Upstream Documents
+
+- `docs/plans/implement-execution-history-for-issue-192.md`
+
+## Dependencies
+
+- `docs/tasks/execution-history-core.md` (`TASK-034MGH8FHwescRINQne4sz`)
+
+## Affected Files
+
+- `crates/cheaper-cli/src/route/run.rs`, `route/logs.rs`, `workflow_run.rs`
+- `crates/cheaper-cli/tests/integration/route_history.rs` (registered in `tests/integration/main.rs`)
+
+## Done When
+
+- [x] Route runs and refetches receive distinct authoritative IDs and retain current runId/logRef contracts.
+- [x] Routed Workflow/Job child IDs use the actual Route identity as their parent; pure Route resolver/check paths remain unrecorded and read-only.
+- [x] Refetch joins only by logRef; pure resolve/check utilities and `route_cmd.rs` do not write History or Usage.
+- [x] Best-effort persistence cannot alter Route outcomes.
+
+## Verification
+
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_history::` exits 0 with 7 passing tests.

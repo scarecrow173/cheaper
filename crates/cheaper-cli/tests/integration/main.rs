@@ -5,14 +5,17 @@ mod cli;
 #[path = "../common/mod.rs"]
 mod common;
 mod envelope;
+mod history;
 mod hook;
 mod hook_config;
 mod hook_eval_dedup;
+mod hook_history;
 mod input;
 mod models;
 mod policy;
 mod pricing;
 mod route;
+mod route_history;
 mod route_logs;
 mod route_run;
 mod run;

@@ -369,6 +369,53 @@ fn route_refetch_record_shape() {
     assert_eq!(r["root"], "/w");
 }
 
+#[test]
+fn route_and_refetch_records_accept_additive_execution_correlation() {
+    use cheaper_cli::usage_log::{
+        build_route_record_with_correlation, build_route_refetch_record_with_correlation,
+        RouteRecordInput, UsageCorrelation,
+    };
+    let input = RouteRecordInput {
+        route: "cargo-test".to_string(),
+        command: "cargo test".to_string(),
+        executed_grant: "cargo-test".to_string(),
+        executed_argv: vec!["test".to_string()],
+        original_tokens: 10.0,
+        returned_tokens: 5.0,
+        worker: json!({}),
+        duration_ms: json!({"exec": 1, "analyze": 1, "total": 2}),
+        log_ref: "rid-1".to_string(),
+        refetches: 0.0,
+        postprocess_failures: 0.0,
+        suppressed: None,
+        exit_code: 0,
+        ok: true,
+    };
+    let correlation = UsageCorrelation {
+        execution_id: Some("route-execution".to_string()),
+        parent_execution_id: Some("workflow-execution".to_string()),
+        trace_id: Some("trace-root".to_string()),
+    };
+
+    let route = build_route_record_with_correlation(&input, Some(&correlation), "/w", &fixed(0.0));
+    assert_eq!(route["executionId"], "route-execution");
+    assert_eq!(route["parentExecutionId"], "workflow-execution");
+    assert_eq!(route["traceId"], "trace-root");
+
+    let refetch = build_route_refetch_record_with_correlation(
+        "rid-1",
+        4096,
+        Some(&correlation),
+        "/w",
+        &fixed(0.0),
+    );
+    assert_eq!(refetch["kind"], "route-refetch");
+    assert_eq!(refetch["logRef"], "rid-1");
+    assert_eq!(refetch["executionId"], "route-execution");
+    assert_eq!(refetch["parentExecutionId"], "workflow-execution");
+    assert_eq!(refetch["traceId"], "trace-root");
+}
+
 // ---------------------------------------------------------------------------
 // diagnostic fields(issue #141 — TSPEC-034Kr7KMznzk97mL1fbS1b)
 // `version`/`repairs`/`execution` echo・error allowlist・cap・fail-soft。

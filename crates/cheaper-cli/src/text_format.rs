@@ -214,6 +214,53 @@ fn model_row_text(m: &Value) -> String {
     ) + &price
 }
 
+fn history_page_text(result: &Value) -> String {
+    let records = get(result, "records").cloned().unwrap_or(Value::Null);
+    let scan_complete = get(result, "scanComplete").and_then(Value::as_bool) == Some(true);
+    let mut lines = vec!["ok history".to_string()];
+    if let Some(trace_id) = get(result, "traceId").and_then(Value::as_str) {
+        lines.push(format!("traceId: {trace_id}"));
+    }
+    lines.push(format!(
+        "records: {}",
+        records.as_array().map_or(0, Vec::len)
+    ));
+    lines.push(format!(
+        "scan: {}",
+        if scan_complete {
+            "complete"
+        } else {
+            "incomplete"
+        }
+    ));
+    lines.push("records:".to_string());
+    lines.push(pretty(&records));
+    lines.push(format!(
+        "nextCursor: {}",
+        get(result, "nextCursor")
+            .and_then(Value::as_str)
+            .unwrap_or("null")
+    ));
+    if !scan_complete {
+        lines.push("incomplete scan; narrow filters or restart query".to_string());
+    }
+    format!("{}\n", lines.join("\n"))
+}
+
+fn history_show_text(result: &Value) -> String {
+    let state = get(result, "recordState")
+        .and_then(Value::as_str)
+        .unwrap_or("corrupt");
+    let mut lines = vec!["ok history".to_string(), format!("recordState: {state}")];
+    if state == "not-found" {
+        lines.push("not found".to_string());
+    } else {
+        lines.push("record:".to_string());
+        lines.push(pretty(get(result, "record").unwrap_or(&Value::Null)));
+    }
+    format!("{}\n", lines.join("\n"))
+}
+
 fn utility_text(env: &Value) -> String {
     let r = get(env, "result").cloned().unwrap_or(Value::Null);
     // `cheaper usage --format text`: TS の cli.ts は formatText を通さず
@@ -225,6 +272,12 @@ fn utility_text(env: &Value) -> String {
         && get(&r, "measured").is_some_and(Value::is_object)
     {
         return format_usage_report(&r);
+    }
+    if get(&r, "records").is_some_and(Value::is_array) && get(&r, "scanComplete").is_some() {
+        return history_page_text(&r);
+    }
+    if get(&r, "recordState").is_some_and(Value::is_string) {
+        return history_show_text(&r);
     }
     let meta = get(env, "meta").cloned().unwrap_or(Value::Null);
     let duration = num(get(&meta, "durationMs"));

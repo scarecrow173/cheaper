@@ -36,16 +36,20 @@ use cheaper_core::fs_util::{atomic_write, AtomicWriteOptions};
 use cheaper_core::token::count::DEFAULT_COUNT_MAX_BYTES;
 
 use super::routing_policy::{
-    evaluate, fingerprint_targets, threshold, EvaluateOptions, FingerprintContext, ResolvedKind,
-    ResolvedTarget, RoutingRequest, SearchOutputMode, Verdict, MEASURE_ENV_KEYS, MEASURE_TIMEOUT,
+    evaluate_with_evidence, HookDecisionEvidence, HookEvaluation, RoutingRequest,
+};
+use super::routing_policy::{
+    fingerprint_targets, threshold, EvaluateOptions, FingerprintContext, ResolvedKind,
+    ResolvedTarget, SearchOutputMode, Verdict, MEASURE_ENV_KEYS, MEASURE_TIMEOUT,
 };
 use crate::count::count_max_bytes;
+use crate::history::schema::HookCacheProvenance;
 
 /// `<userConfigDir>` 配下の dedup store dir 名。
 const STORE_DIR_NAME: &str = "hook-eval";
 
 /// fingerprint 構成の format version tag(構成変更時の混同防止)。
-const FINGERPRINT_TAG: &str = "hook-eval-v1";
+const FINGERPRINT_TAG: &str = "hook-eval-v2";
 
 /// 協調の blocking fs I/O(`spawn_blocking` の await)に掛ける上界 —
 /// `MEASURE_TIMEOUT` と同値(DRY)。`spawn_blocking` から timeout で
@@ -97,10 +101,30 @@ impl DedupLimits {
 /// hit / leader 評価 / follower 共有を行い、適用外・あらゆる失敗では
 /// 通常 `evaluate` へ縮退する。
 pub async fn evaluate_dedup(request: &RoutingRequest, opts: &EvaluateOptions<'_>) -> Verdict {
-    evaluate_dedup_with(request, opts, &DedupLimits::PRODUCTION, || {
-        evaluate(request, opts)
+    evaluate_dedup_with_evidence(request, opts, &DedupLimits::PRODUCTION, || {
+        evaluate_with_evidence(request, opts)
     })
     .await
+    .evaluation
+    .verdict
+}
+
+/// Hook owner variant that retains the typed policy evidence and dedup
+/// provenance for its single History decision write.
+pub async fn evaluate_dedup_evidence(
+    request: &RoutingRequest,
+    opts: &EvaluateOptions<'_>,
+) -> DedupEvaluation {
+    evaluate_dedup_with_evidence(request, opts, &DedupLimits::PRODUCTION, || {
+        evaluate_with_evidence(request, opts)
+    })
+    .await
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct DedupEvaluation {
+    pub evaluation: HookEvaluation,
+    pub provenance: HookCacheProvenance,
 }
 
 /// 計測呼出しを差し替え可能にした内部実装(integration test seam)。
@@ -118,6 +142,27 @@ pub async fn evaluate_dedup_with<F, Fut>(
 where
     F: Fn() -> Fut,
     Fut: std::future::Future<Output = Verdict>,
+{
+    evaluate_dedup_with_evidence(request, opts, limits, || {
+        let future = eval_fn();
+        async move { HookEvaluation::from_verdict(future.await) }
+    })
+    .await
+    .evaluation
+    .verdict
+}
+
+/// Typed variant of the dedup test seam and production path.
+#[doc(hidden)]
+pub async fn evaluate_dedup_with_evidence<F, Fut>(
+    request: &RoutingRequest,
+    opts: &EvaluateOptions<'_>,
+    limits: &DedupLimits,
+    eval_fn: F,
+) -> DedupEvaluation
+where
+    F: Fn() -> Fut,
+    Fut: std::future::Future<Output = HookEvaluation>,
 {
     // `EnvLookup`(&dyn Fn)は非 Send — fingerprint・store root が読む
     // env(`MEASURE_ENV_KEYS` ∪ `CHEAPER_READ_TOKEN_THRESHOLD`)を async
@@ -142,7 +187,10 @@ where
         // process cwd 依存の解釈になり file 名衝突・意図しない書き込み
         // 先を招くため協調を bypass する(fail-open)。
         tracing::debug!(dedup = "bypass", "hook eval dedup");
-        return eval_fn().await;
+        return DedupEvaluation {
+            evaluation: eval_fn().await,
+            provenance: HookCacheProvenance::Bypass,
+        };
     }
     let builtin_dir = opts.builtin_dir.cloned();
     let variant = variant_inputs(request);
@@ -174,13 +222,19 @@ where
         Ok(Ok(PrepareOutcome::Ready(prepared))) => prepared,
         Ok(Ok(PrepareOutcome::Bypass)) => {
             tracing::debug!(dedup = "bypass", "hook eval dedup");
-            return eval_fn().await;
+            return DedupEvaluation {
+                evaluation: eval_fn().await,
+                provenance: HookCacheProvenance::Bypass,
+            };
         }
         // create_dir_all 失敗・JoinError・`DEDUP_IO_BOUND` 超過 —
         // 全て直接評価へ畳む。
         _ => {
             tracing::debug!(dedup = "fallback", "hook eval dedup");
-            return eval_fn().await;
+            return DedupEvaluation {
+                evaluation: eval_fn().await,
+                provenance: HookCacheProvenance::Fallback,
+            };
         }
     };
 
@@ -195,7 +249,10 @@ where
             fingerprint = %prepared.fingerprint,
             "hook eval dedup"
         );
-        return eval_fn().await;
+        return DedupEvaluation {
+            evaluation: eval_fn().await,
+            provenance: HookCacheProvenance::Bypass,
+        };
     }
 
     // phase B + follower bounded poll: 1 tick 分の fs 操作(record
@@ -218,13 +275,16 @@ where
             _ => TickOutcome::Fallback,
         };
         match outcome {
-            TickOutcome::Serve(verdict) => {
+            TickOutcome::Serve(evaluation) => {
                 tracing::debug!(
                     dedup = if waited { "follower" } else { "hit" },
                     fingerprint = %prepared.fingerprint,
                     "hook eval dedup"
                 );
-                return verdict;
+                return DedupEvaluation {
+                    evaluation,
+                    provenance: HookCacheProvenance::CacheHit,
+                };
             }
             TickOutcome::Acquired(token) => {
                 // leader: 評価 → verdict publish(atomic_write 完了) →
@@ -237,8 +297,8 @@ where
                     fingerprint = %prepared.fingerprint,
                     "hook eval dedup"
                 );
-                let verdict = eval_fn().await;
-                let body = verdict_record_body(&prepared.fingerprint, &verdict);
+                let evaluation = eval_fn().await;
+                let body = evaluation_record_body(&prepared.fingerprint, &evaluation);
                 let store_dir = prepared.store_dir.clone();
                 let fp = prepared.fingerprint.clone();
                 // publish も `DEDUP_IO_BOUND` で囲む — timeout・JoinError
@@ -257,7 +317,10 @@ where
                     }),
                 )
                 .await;
-                return verdict;
+                return DedupEvaluation {
+                    evaluation,
+                    provenance: HookCacheProvenance::LeaderEvaluated,
+                };
             }
             TickOutcome::Wait => {
                 waited = true;
@@ -270,7 +333,10 @@ where
                         fingerprint = %prepared.fingerprint,
                         "hook eval dedup"
                     );
-                    return eval_fn().await;
+                    return DedupEvaluation {
+                        evaluation: eval_fn().await,
+                        provenance: HookCacheProvenance::Fallback,
+                    };
                 }
                 tokio::time::sleep(
                     limits
@@ -285,7 +351,10 @@ where
                     fingerprint = %prepared.fingerprint,
                     "hook eval dedup"
                 );
-                return eval_fn().await;
+                return DedupEvaluation {
+                    evaluation: eval_fn().await,
+                    provenance: HookCacheProvenance::Fallback,
+                };
             }
         }
     }
@@ -396,6 +465,8 @@ struct VerdictRecord {
     schema_version: u32,
     fingerprint: String,
     verdict: Verdict,
+    #[serde(default)]
+    evidence: Option<HookDecisionEvidence>,
 }
 
 /// lock file(`<fp>.lock`)の owner token payload — `(pid, createdAt,
@@ -646,7 +717,7 @@ fn prepare_dedup(
 /// `Some(age) && age <= verdict_ttl` を全て満たす record のみ serve。
 /// 不存在・parse 失敗・未知 version・fingerprint 不一致・TTL 超過・
 /// 未来 mtime(`None` — clock skew・fs timestamp 異常)は全て absent。
-fn read_fresh_verdict(store_dir: &Path, fp: &str, ttl: Duration) -> Option<Verdict> {
+fn read_fresh_evaluation(store_dir: &Path, fp: &str, ttl: Duration) -> Option<HookEvaluation> {
     let path = store_dir.join(format!("{fp}.json"));
     let md = std::fs::metadata(&path).ok()?;
     if !md.is_file() {
@@ -663,7 +734,21 @@ fn read_fresh_verdict(store_dir: &Path, fp: &str, ttl: Duration) -> Option<Verdi
     // shareable でない verdict は serve しない(防御的 gate —
     // publish 側が既に書き込まないが、手作業・version 差で混入した
     // record を後続 firing へ返さない)。
-    is_shareable(&record.verdict).then_some(record.verdict)
+    if !is_shareable(&record.verdict) {
+        return None;
+    }
+    Some(match record.evidence {
+        Some(evidence) => HookEvaluation {
+            verdict: record.verdict,
+            evidence,
+        },
+        None => HookEvaluation::from_verdict(record.verdict),
+    })
+}
+
+#[cfg(test)]
+fn read_fresh_verdict(store_dir: &Path, fp: &str, ttl: Duration) -> Option<Verdict> {
+    read_fresh_evaluation(store_dir, fp, ttl).map(|evaluation| evaluation.verdict)
 }
 
 /// dedup cache で persist/serve してよい verdict の gate。
@@ -683,8 +768,13 @@ fn is_shareable(verdict: &Verdict) -> bool {
 /// `{"schemaVersion":1,"createdAt":<epoch ms>,"fingerprint":<16hex>,
 /// "verdict":<Verdict serde>}` — `createdAt` は観察用 field
 /// (freshness 判定には使わない)。
+#[cfg(test)]
 fn verdict_record_body(fp: &str, verdict: &Verdict) -> Option<String> {
-    if !is_shareable(verdict) {
+    evaluation_record_body(fp, &HookEvaluation::from_verdict(verdict.clone()))
+}
+
+fn evaluation_record_body(fp: &str, evaluation: &HookEvaluation) -> Option<String> {
+    if !is_shareable(&evaluation.verdict) {
         return None;
     }
     let mut map = serde_json::Map::new();
@@ -694,7 +784,14 @@ fn verdict_record_body(fp: &str, verdict: &Verdict) -> Option<String> {
         serde_json::Value::from(epoch_millis()),
     );
     map.insert("fingerprint".to_string(), serde_json::Value::from(fp));
-    map.insert("verdict".to_string(), serde_json::to_value(verdict).ok()?);
+    map.insert(
+        "verdict".to_string(),
+        serde_json::to_value(&evaluation.verdict).ok()?,
+    );
+    map.insert(
+        "evidence".to_string(),
+        serde_json::to_value(&evaluation.evidence).ok()?,
+    );
     serde_json::to_string(&serde_json::Value::Object(map)).ok()
 }
 
@@ -858,7 +955,7 @@ fn acquire_or_wait(lock_path: &Path) -> TickOutcome {
 /// 1 poll tick 分の fs 操作(`spawn_blocking` から呼ばれる)。
 enum TickOutcome {
     /// fresh+valid な record を serve。
-    Serve(Verdict),
+    Serve(HookEvaluation),
     /// lock を取得した(新規・takeover 問わず)— caller は leader。
     Acquired(LockToken),
     /// 協調継続中 — `poll_interval` sleep して次 tick。
@@ -873,8 +970,8 @@ enum TickOutcome {
 /// fresh → 次 tick、(5) lock が file でない → 協調不能。poll 中の
 /// fs error は「verdict 未着」として継続する。
 fn poll_tick(store_dir: &Path, fp: &str, limits: &DedupLimits) -> TickOutcome {
-    if let Some(verdict) = read_fresh_verdict(store_dir, fp, limits.verdict_ttl) {
-        return TickOutcome::Serve(verdict);
+    if let Some(evaluation) = read_fresh_evaluation(store_dir, fp, limits.verdict_ttl) {
+        return TickOutcome::Serve(evaluation);
     }
     let lock_path = store_dir.join(format!("{fp}.lock"));
     match lock_state(&lock_path, limits.lock_stale) {

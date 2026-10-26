@@ -51,6 +51,7 @@ fn worker_scope_options(owner: &str, root: &str, names: Vec<ToolName>) -> Worker
             concurrency: None,
             eval_spawn: None,
             route_context: None,
+            execution_correlation: None,
         },
     }
 }

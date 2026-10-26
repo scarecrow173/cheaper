@@ -42,6 +42,7 @@ Directory: `docs/specs`
 | SPEC-034D9BFJZdSSYBEuXVzBbl | Devin provider Windows credential contract | implemented | [devin-provider-windows-credential-contract.md](./devin-provider-windows-credential-contract.md) |
 | SPEC-034L6i3XmfCaWRHAiw8TTT | documentation honesty sweep and breaking-change migration guide — claim ≤ 実強制の文書訂正と破壊的変更告知 | approved | [documentation-honesty-sweep-and-breaking-change-migration-guide.md](./documentation-honesty-sweep-and-breaking-change-migration-guide.md) |
 | SPEC-034KI3mWcW92kMljP5xoa8 | exec-contract cleanup — 内容審査を mandatory 層から除去 | approved | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
+| SPEC-034MEaZYrURZ1MPlywunIi | Execution History for Issue 192 | approved | [execution-history-issue-192.md](./execution-history-issue-192.md) |
 | SPEC-034r05iHK8bA7gqGaD6qpk | grep batchMaxBytes / decoded line payload invariant | implemented | [grep-batch-max-bytes-line-payload-invariant.md](./grep-batch-max-bytes-line-payload-invariant.md) |
 | SPEC-034r6kd649rTDnOi828voj | Stabilize environment-sensitive grep eval-budget tests | implemented | [grep-eval-budget-test-stability.md](./grep-eval-budget-test-stability.md) |
 | SPEC-034IKGkW4dQEVw6QigMFxQ | hook-config legacy conflict gate demotion to warning | approved | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |

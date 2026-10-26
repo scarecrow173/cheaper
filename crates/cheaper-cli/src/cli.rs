@@ -18,20 +18,27 @@ use std::error::Error;
 use std::io;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirsOptions, EnvLookup};
+use cheaper_core::config::dirs::{
+    resolve_config_dirs, resolve_user_config_dir, ConfigDirsOptions, EnvLookup,
+    UserConfigDirOptions,
+};
 use cheaper_core::errors::{CheaperError, ErrorCode, NodeIoError};
 use cheaper_core::token::count::FileTooLargeError;
 use cheaper_core::workspace::paths::{canonicalize_workspace_root, WorkspaceEscapeError};
-use serde_json::Value;
+use serde_json::{Map, Value};
 use tracing::Instrument;
 
-use crate::args::{parse_cli_args, CliFormat, ParsedCli};
+use crate::args::{parse_cli_args, CliFormat, HistoryAction, HistoryCliArgs, ParsedCli};
 use crate::count::count_workspace_file_tokens;
 use crate::embedded;
 use crate::envelope::{envelope_json, error_envelope, utility_success_envelope};
+use crate::history::query::{HistoryCursor, HistoryFilter, HistoryPage, HistoryQuery, RecordState};
+use crate::history::schema::{ExecutionKind, ExecutionStatus, HistoryEvent, RecordedAt};
+use crate::history::store::HistoryStore;
 use crate::text_format::format_text;
+use uuid::Uuid;
 
 /// 全 command 経路の error 畳み込み型(`Box<dyn Error + Send + Sync>`)。
 pub type BoxError = Box<dyn Error + Send + Sync + 'static>;
@@ -145,6 +152,220 @@ fn resolved_user_config_dir(
             .into_owned()
         })
         .unwrap_or_default()
+}
+
+fn history_limit(value: Option<&str>) -> Result<usize, CheaperError> {
+    let Some(value) = value else {
+        return Ok(50);
+    };
+    if !value.is_ascii() || value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(crate::errors::invalid_request(
+            format!("invalid --limit: {value} (expected 1..500)"),
+            None,
+        ));
+    }
+    value
+        .parse::<usize>()
+        .ok()
+        .filter(|limit| (1..=500).contains(limit))
+        .ok_or_else(|| {
+            crate::errors::invalid_request(
+                format!("invalid --limit: {value} (expected 1..500)"),
+                None,
+            )
+        })
+}
+
+fn history_since(value: &str) -> Result<RecordedAt, CheaperError> {
+    let invalid = || {
+        crate::errors::invalid_request(format!("invalid --since: {value} (expected <Nm|Nh>)"), None)
+    };
+    if !value.is_ascii() || value.len() < 2 {
+        return Err(invalid());
+    }
+    let (amount, unit) = value.split_at(value.len() - 1);
+    if amount.is_empty() || !amount.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(invalid());
+    }
+    let amount = amount.parse::<u64>().map_err(|_| invalid())?;
+    let seconds_per_unit = match unit {
+        "m" => 60,
+        "h" => 60 * 60,
+        _ => return Err(invalid()),
+    };
+    let seconds = amount.checked_mul(seconds_per_unit).ok_or_else(invalid)?;
+    let since = SystemTime::now()
+        .checked_sub(Duration::from_secs(seconds))
+        .unwrap_or(UNIX_EPOCH);
+    Ok(RecordedAt::from_system_time(since))
+}
+
+fn history_kind(value: &str) -> Result<ExecutionKind, CheaperError> {
+    match value {
+        "worker" => Ok(ExecutionKind::Worker),
+        "workflow" => Ok(ExecutionKind::Workflow),
+        "job" => Ok(ExecutionKind::Job),
+        "route" => Ok(ExecutionKind::Route),
+        "hook-decision" => Ok(ExecutionKind::HookDecision),
+        "route-decision" => Ok(ExecutionKind::RouteDecision),
+        "route-refetch" => Ok(ExecutionKind::RouteRefetch),
+        _ => Err(crate::errors::invalid_request(
+            format!("invalid --kind: {value}"),
+            None,
+        )),
+    }
+}
+
+fn history_status(value: &str) -> Result<ExecutionStatus, CheaperError> {
+    match value {
+        "running" => Ok(ExecutionStatus::Running),
+        "completed" => Ok(ExecutionStatus::Completed),
+        "failed" => Ok(ExecutionStatus::Failed),
+        "cancelled" => Ok(ExecutionStatus::Cancelled),
+        "timeout" => Ok(ExecutionStatus::Timeout),
+        "skipped" => Ok(ExecutionStatus::Skipped),
+        "blocked" => Ok(ExecutionStatus::Blocked),
+        _ => Err(crate::errors::invalid_request(
+            format!("invalid --status: {value}"),
+            None,
+        )),
+    }
+}
+
+fn validate_history_uuid(value: &str, label: &str) -> Result<(), CheaperError> {
+    let valid = Uuid::parse_str(value)
+        .is_ok_and(|id| id.get_version_num() == 4 && id.hyphenated().to_string() == value);
+    if valid {
+        Ok(())
+    } else {
+        Err(crate::errors::invalid_request(
+            format!("invalid {label}: expected a canonical UUIDv4"),
+            None,
+        ))
+    }
+}
+
+fn history_cursor(value: Option<&str>) -> Result<Option<HistoryCursor>, CheaperError> {
+    value
+        .map(|value| {
+            HistoryCursor::decode(value)
+                .ok_or_else(|| crate::errors::invalid_request("invalid --cursor", None))
+        })
+        .transpose()
+}
+
+fn history_filter(
+    since: Option<&str>,
+    worker: Option<&str>,
+    kind: Option<&str>,
+    status: Option<&str>,
+) -> Result<HistoryFilter, CheaperError> {
+    let mut filter = HistoryFilter {
+        kind: kind.map(history_kind).transpose()?,
+        status: status.map(history_status).transpose()?,
+        ..HistoryFilter::default()
+    };
+    if let Some(worker) = worker {
+        filter = filter.with_worker_id(worker).ok_or_else(|| {
+            crate::errors::invalid_request(format!("invalid --worker: {worker}"), None)
+        })?;
+    }
+    filter.since = since.map(history_since).transpose()?;
+    Ok(filter)
+}
+
+fn history_page_value(
+    page: HistoryPage,
+    trace_id: Option<&str>,
+) -> Result<Map<String, Value>, BoxError> {
+    let mut object = serde_json::to_value(page)?
+        .as_object()
+        .cloned()
+        .expect("serialized HistoryPage is an object");
+    if let Some(trace_id) = trace_id {
+        object.insert("traceId".to_string(), Value::String(trace_id.to_owned()));
+    }
+    Ok(object)
+}
+
+fn record_state_name(state: RecordState) -> &'static str {
+    match state {
+        RecordState::Complete => "complete",
+        RecordState::Incomplete => "incomplete",
+        RecordState::Corrupt => "corrupt",
+        RecordState::NotFound => "not-found",
+    }
+}
+
+fn execute_history(args: &HistoryCliArgs, io: &CliIo<'_>) -> Result<Map<String, Value>, BoxError> {
+    match &args.action {
+        HistoryAction::List {
+            since,
+            worker,
+            kind,
+            status,
+            limit,
+            cursor,
+        } => {
+            let filter = history_filter(
+                since.as_deref(),
+                worker.as_deref(),
+                kind.as_deref(),
+                status.as_deref(),
+            )?;
+            let limit = history_limit(limit.as_deref())?;
+            let cursor = history_cursor(cursor.as_deref())?;
+            let config_dir = resolve_user_config_dir(UserConfigDirOptions {
+                env: Some(io.env),
+                homedir: None,
+            });
+            let store = HistoryStore::new(config_dir);
+            let page = HistoryQuery::new(&store).list(&filter, limit, cursor.as_ref());
+            history_page_value(page, None)
+        }
+        HistoryAction::Show { execution_id } => {
+            validate_history_uuid(execution_id, "<execution-uuid>")?;
+            let config_dir = resolve_user_config_dir(UserConfigDirOptions {
+                env: Some(io.env),
+                homedir: None,
+            });
+            let store = HistoryStore::new(config_dir);
+            let detail = HistoryQuery::new(&store).show(execution_id);
+            let state = record_state_name(detail.state);
+            let record = if detail.state == RecordState::NotFound {
+                Value::Null
+            } else {
+                serde_json::json!({
+                    "started": detail.started,
+                    "decision": detail.decision,
+                    "terminal": detail.terminal,
+                })
+            };
+            Ok(serde_json::json!({
+                "record": record,
+                "recordState": state,
+            })
+            .as_object()
+            .cloned()
+            .expect("History show result is an object"))
+        }
+        HistoryAction::Trace {
+            trace_id,
+            limit,
+            cursor,
+        } => {
+            validate_history_uuid(trace_id, "<trace-uuid>")?;
+            let limit = history_limit(limit.as_deref())?;
+            let cursor = history_cursor(cursor.as_deref())?;
+            let config_dir = resolve_user_config_dir(UserConfigDirOptions {
+                env: Some(io.env),
+                homedir: None,
+            });
+            let store = HistoryStore::new(config_dir);
+            let page = HistoryQuery::new(&store).trace(trace_id, limit, cursor.as_ref());
+            history_page_value(page, Some(trace_id))
+        }
+    }
 }
 
 /// command module の戻り値 — envelope + exit code + optional stderr
@@ -263,15 +484,19 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
                 ctx.run_root.as_deref(),
                 ctx.run_user_config_dir.as_deref(),
             );
-            crate::usage_log::record_usage(
+            let usage_appended = crate::usage_log::record_usage_with_context(
                 &env,
                 &root,
                 &ucd,
                 io.stderr,
                 quiet,
-                ctx.execution_echo.as_ref(),
+                crate::usage_log::UsageRecordContext {
+                    execution_echo: ctx.execution_echo.as_ref(),
+                    correlation: ctx.execution_correlation.as_ref(),
+                },
                 &now_fn(hooks),
             );
+            finalize_worker_history(&mut ctx, usage_appended);
             env.get("error")
                 .and_then(|e| e.get("exitCode"))
                 .and_then(Value::as_i64)
@@ -317,6 +542,25 @@ pub struct RunCtx {
     /// 汎用 catch の両方の `record_usage` が同じ値を参照する
     /// (usage.jsonl `kind:"run"` record の `execution` field)。
     pub execution_echo: Option<crate::usage_log::ExecutionEcho>,
+    /// Standalone Worker execution identity for additive Usage correlation.
+    /// Kept separate from the effective policy echo.
+    pub execution_correlation: Option<crate::usage_log::UsageCorrelation>,
+    /// Standalone Worker terminal is finalized after Usage append so a
+    /// Usage reference is only attached when the row was actually written.
+    pub pending_worker_history_terminal: Option<HistoryEvent>,
+}
+
+fn finalize_worker_history(ctx: &mut RunCtx, usage_appended: bool) {
+    let Some(mut terminal) = ctx.pending_worker_history_terminal.take() else {
+        return;
+    };
+    if usage_appended {
+        let execution_id = terminal.execution_id().to_owned();
+        terminal = terminal.with_usage_record_ref(&execution_id);
+    }
+    if let Some(user_config_dir) = ctx.run_user_config_dir.as_deref() {
+        let _ = HistoryStore::new(user_config_dir).write_terminal(&terminal);
+    }
 }
 
 /// dispatch 本体 — parsed command 別に command module へ委譲し、
@@ -393,6 +637,14 @@ async fn dispatch(
                 crate::usage_report::execute_usage(&args, io, hooks, &builtin, started_at).await?;
             write_output(io, &out.envelope, args.format);
             Ok(out.exit_code)
+        }
+        ParsedCli::History(args) => {
+            // 読み取り専用 utility command。lazy HistoryStore を使って
+            // bounded query を行い、Usage を記録しない。
+            let result = execute_history(&args, io)?;
+            let envelope = utility_success_envelope(result, now(hooks) - started_at);
+            write_output(io, &envelope, args.format);
+            Ok(0)
         }
         ParsedCli::Models(args) => {
             let out = crate::models::execute(&args, io, hooks, started_at).await?;
@@ -474,15 +726,19 @@ async fn dispatch(
                 ctx.run_root.as_deref(),
                 ctx.run_user_config_dir.as_deref(),
             );
-            crate::usage_log::record_usage(
+            let usage_appended = crate::usage_log::record_usage_with_context(
                 &out.envelope,
                 &root,
                 &ucd,
                 io.stderr,
                 args.quiet,
-                ctx.execution_echo.as_ref(),
+                crate::usage_log::UsageRecordContext {
+                    execution_echo: ctx.execution_echo.as_ref(),
+                    correlation: ctx.execution_correlation.as_ref(),
+                },
                 &now_fn(hooks),
             );
+            finalize_worker_history(ctx, usage_appended);
             Ok(out.exit_code)
         }
     }
@@ -502,6 +758,7 @@ fn command_name(parsed: &ParsedCli) -> &'static str {
         ParsedCli::Auth(_) => "auth",
         ParsedCli::Models(_) => "models",
         ParsedCli::Usage(_) => "usage",
+        ParsedCli::History(_) => "history",
         ParsedCli::Policy(_) => "policy",
         ParsedCli::HookConfig(_) => "hook-config",
         ParsedCli::Route(_) => "route",
@@ -565,6 +822,9 @@ Commands:
   doc-write              Alias for: run doc-writer
   tool-operate           Alias for: run tool-operator
   count-tokens <path>    Count canonical tokens of a workspace file
+  history list           List retained execution history
+  history show <uuid>    Show one execution record
+  history trace <uuid>   List records in a trace
   workflow interface <path> Show the public workflow inputs and outputs
   workflow run <path>       Run a one-shot workflow
   usage                  Aggregate usage.jsonl (worker cost / measured savings)
@@ -603,6 +863,11 @@ Options:
   --compare-model <p/id> usage: estimate savings vs this model
   --group-by <route|error>  usage: emit per-route / per-error-code sections
   --route <name>            usage: scope route aggregation to this route
+  --since <Nm|Nh>           history list: only records within the period
+  --kind <kind>             history list: filter by execution kind
+  --status <status>         history list: filter by execution status
+  --limit <1..500>          history list/trace page size (default: 50)
+  --cursor <opaque>         history list/trace continuation cursor
   --command <string>     route resolve: shell command to match
   --argv <json-array>    route resolve: argv array (exclusive with --command)
   --payload <token>      route run: opaque route payload
@@ -611,7 +876,7 @@ Options:
   --log <level>          Enable logs to .cheaper/logs + stderr
                          (off|error|warn|info|debug|trace; env CHEAPER_LOG)
   --log-format <fmt>     Log format: text|json (env CHEAPER_LOG_FORMAT)
-  --format <json|text>   Output format (default: json)
+  --format <json|text>   Output format (default: json; history: text)
                          route run always emits raw result text
   --quiet                Suppress stderr diagnostics
   --help                 Show this help
