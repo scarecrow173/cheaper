@@ -37,6 +37,7 @@ use cheaper_core::worker::validate::{validate_worker_input, WorkerDefinition};
 #[cfg(feature = "dev-seam")]
 use cheaper_runtime::dev::fixture::RunFixture;
 use cheaper_runtime::run::{run_worker, RunWorkerDeps};
+use cheaper_runtime::WorkerRunError;
 #[cfg(feature = "dev-seam")]
 use cheaper_tools::operation::AbortReason;
 use cheaper_tools::tools::proc::ExecutionCorrelationCarrier;
@@ -172,22 +173,39 @@ async fn execute_inner(
     .with_worker_id(ctx.worker_name.as_deref().unwrap_or_default())
     .with_duration_ms(Some((now(hooks) - started_at).max(0.0)))
     .with_error_code(error_code);
-    if let Ok(out) = &result {
-        if let Some(meta) = out.envelope.get("meta") {
-            terminal = terminal
-                .with_turns(meta.get("turns").and_then(Value::as_f64))
-                .with_tool_calls(meta.get("toolCalls").and_then(Value::as_f64));
-            if let Some(model) = meta.get("model") {
-                if let Some(provider) = model.get("provider").and_then(Value::as_str) {
-                    terminal = terminal.with_provider_id(provider);
+    match &result {
+        Ok(out) => {
+            if let Some(meta) = out.envelope.get("meta") {
+                terminal = terminal
+                    .with_turns(meta.get("turns").and_then(Value::as_f64))
+                    .with_tool_calls(meta.get("toolCalls").and_then(Value::as_f64));
+                if let Some(model) = meta.get("model") {
+                    if let Some(provider) = model.get("provider").and_then(Value::as_str) {
+                        terminal = terminal.with_provider_id(provider);
+                    }
+                    if let Some(model_id) = model.get("id").and_then(Value::as_str) {
+                        terminal = terminal.with_model_id(model_id);
+                    }
                 }
-                if let Some(model_id) = model.get("id").and_then(Value::as_str) {
-                    terminal = terminal.with_model_id(model_id);
+            }
+        }
+        Err(error) => {
+            if let Some(meta) = error
+                .downcast_ref::<WorkerRunError>()
+                .and_then(WorkerRunError::run_meta)
+            {
+                terminal = terminal
+                    .with_turns(meta.turns.map(|value| value as f64))
+                    .with_tool_calls(meta.tool_calls.map(|value| value as f64));
+                if let Some(model) = meta.model.as_ref() {
+                    terminal = terminal
+                        .with_provider_id(&model.provider)
+                        .with_model_id(&model.id);
                 }
             }
         }
     }
-    let _ = store.write_terminal(&terminal);
+    ctx.pending_worker_history_terminal = Some(terminal);
     result
 }
 

@@ -29,6 +29,7 @@ use cheaper_core::workspace::paths::canonicalize_workspace_root;
 
 use crate::count::count_workspace_file_tokens;
 use crate::embedded;
+use crate::history::schema::{DecisionVerdict, ReasonCode, RouteViability, ValidatedIdentifier};
 
 /// `DEFAULT_THRESHOLD` (8192)。
 pub const DEFAULT_THRESHOLD: f64 = 8192.0;
@@ -112,7 +113,7 @@ pub enum RoutingRequest {
 /// `{"decision":"allow"}`、`Deny{reason}` →
 /// `{"decision":"deny","reason":"…"}`、`Rewrite{command,fallback}`
 /// → `{"decision":"rewrite","command":"…","fallback":{…}}`)。
-#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "decision", rename_all = "lowercase")]
 pub enum Verdict {
     Allow,
@@ -130,6 +131,125 @@ pub enum Verdict {
         command: String,
         fallback: Box<Verdict>,
     },
+}
+
+/// Typed, privacy-bounded evidence from the Hook policy evaluator. The
+/// evaluator owns the observed reason and measurements; target adapters add
+/// only the final native verdict and cache provenance before persistence.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct HookDecisionEvidence {
+    pub reason_code: Option<ReasonCode>,
+    pub evaluator_verdict: DecisionVerdict,
+    pub file_bytes: Option<f64>,
+    pub threshold: Option<f64>,
+    /// `Some(None)` means a measurement was not performed or unavailable.
+    pub measured_tokens: Option<Option<f64>>,
+    pub route_matched: Option<bool>,
+    pub route_viability: Option<RouteViability>,
+    pub route_id: Option<ValidatedIdentifier>,
+    pub fallback_reason: Option<ReasonCode>,
+    pub fallback_verdict: Option<DecisionVerdict>,
+}
+
+/// The canonical evaluator result consumed by the target renderer. Keeping
+/// these together prevents History from re-running policy or inferring typed
+/// evidence from user-facing reason text.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct HookEvaluation {
+    pub verdict: Verdict,
+    pub evidence: HookDecisionEvidence,
+}
+
+impl HookEvaluation {
+    fn new(verdict: Verdict, reason_code: Option<ReasonCode>) -> Self {
+        let evaluator_verdict = decision_verdict(&verdict);
+        Self {
+            verdict,
+            evidence: HookDecisionEvidence {
+                reason_code,
+                evaluator_verdict,
+                file_bytes: None,
+                threshold: None,
+                measured_tokens: None,
+                route_matched: None,
+                route_viability: None,
+                route_id: None,
+                fallback_reason: None,
+                fallback_verdict: None,
+            },
+        }
+    }
+
+    /// Compatibility adapter for callers that supply only an existing
+    /// `Verdict` (including the dedup test seam).
+    pub(crate) fn from_verdict(verdict: Verdict) -> Self {
+        Self::new(verdict, None)
+    }
+
+    fn with_measurements(
+        mut self,
+        file_bytes: Option<f64>,
+        threshold: Option<f64>,
+        measured_tokens: Option<Option<f64>>,
+    ) -> Self {
+        self.evidence.file_bytes = file_bytes;
+        self.evidence.threshold = threshold;
+        self.evidence.measured_tokens = measured_tokens;
+        self
+    }
+
+    fn with_route(
+        mut self,
+        resolution: &crate::route::resolve::RouteResolution,
+        reason_code: Option<ReasonCode>,
+    ) -> Self {
+        if let Some(reason_code) = reason_code {
+            self.evidence.reason_code = Some(reason_code);
+        }
+        self.evidence.route_matched = Some(resolution.matched);
+        self.evidence.route_viability = resolution.viability.map(history_route_viability);
+        self.evidence.route_id = resolution
+            .route
+            .as_deref()
+            .and_then(ValidatedIdentifier::new);
+        self
+    }
+
+    fn with_fallback(mut self, fallback: &Self) -> Self {
+        self.evidence.fallback_verdict = Some(fallback.evidence.evaluator_verdict);
+        self.evidence.fallback_reason = fallback.evidence.reason_code;
+        self.evidence.file_bytes = fallback.evidence.file_bytes;
+        self.evidence.threshold = fallback.evidence.threshold;
+        self.evidence.measured_tokens = fallback.evidence.measured_tokens;
+        self
+    }
+
+    pub fn is_meaningful(&self) -> bool {
+        self.evidence.reason_code.is_some()
+            || self.evidence.route_matched.is_some()
+            || self.evidence.file_bytes.is_some()
+            || self.evidence.threshold.is_some()
+            || self.evidence.measured_tokens.is_some()
+    }
+}
+
+fn decision_verdict(verdict: &Verdict) -> DecisionVerdict {
+    match verdict {
+        Verdict::Allow => DecisionVerdict::Allow,
+        Verdict::Deny { .. } => DecisionVerdict::DenyDelegationAdvised,
+        Verdict::Rewrite { .. } => DecisionVerdict::RewriteEmitted,
+    }
+}
+
+fn history_route_viability(value: crate::route::resolve::Viability) -> RouteViability {
+    match value {
+        crate::route::resolve::Viability::Runnable => RouteViability::Runnable,
+        crate::route::resolve::Viability::NoGrant => RouteViability::NoGrant,
+        crate::route::resolve::Viability::MissingTarget => RouteViability::MissingTarget,
+        crate::route::resolve::Viability::InvalidRoute => RouteViability::InvalidRoute,
+        crate::route::resolve::Viability::UnsafeCommand => RouteViability::UnsafeCommand,
+        crate::route::resolve::Viability::StdinUnsupported => RouteViability::StdinUnsupported,
+    }
 }
 
 /// shell route arm の入力 — hook entry が firing 1 回に load した
@@ -533,8 +653,9 @@ pub(crate) fn fingerprint_targets(request: &RoutingRequest) -> FingerprintContex
 }
 
 /// `evaluateFileRead` — measured verdict が唯一の fail-closed。
-/// 全ての infrastructure 失敗は allow へ倒す。
-async fn evaluate_file_read(path: &str, cwd: &str, opts: &EvaluateOptions<'_>) -> Verdict {
+/// 全ての infrastructure 失敗は allow へ倒す。History reason は
+/// 分岐で観測した source fact から作り、render 用の英文から推定しない。
+async fn evaluate_file_read(path: &str, cwd: &str, opts: &EvaluateOptions<'_>) -> HookEvaluation {
     let (cwd, resolution) = resolve_target(path, cwd);
     let (resolved, rel_posix, len) = match resolution {
         Resolution::File {
@@ -543,42 +664,66 @@ async fn evaluate_file_read(path: &str, cwd: &str, opts: &EvaluateOptions<'_>) -
             len,
         } => (resolved, rel_posix, len),
         // workspace 外・root・非 file・missing は従来どおり allow。
-        _ => return Verdict::Allow,
+        _ => {
+            return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::ReadOutOfScope));
+        }
     };
     // Fast path (DESIGN-0017): tokens <= bytes が常に成り立つため、
     // byte size が threshold に収まる file は計測を skip できる
     // (builtin dir 解決・policy/tokenizer 初期化も走らない)。
     let limit = threshold(opts.env);
     if (len as f64) <= limit {
-        return Verdict::Allow;
+        return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::ReadByteFastPath))
+            .with_measurements(Some(len as f64), Some(limit), Some(None));
     }
 
     match measure_tokens(&resolved, &cwd, opts).await {
-        Measured::Failed => Verdict::Allow,
-        Measured::FileTooLarge { bytes, max_bytes } => Verdict::Deny {
-            reason: format!(
+        Measured::Failed => HookEvaluation::new(
+            Verdict::Allow,
+            Some(ReasonCode::ReadMeasurementFailedFailOpen),
+        )
+        .with_measurements(Some(len as f64), Some(limit), Some(None)),
+        Measured::FileTooLarge { bytes, max_bytes } => HookEvaluation::new(
+            Verdict::Deny {
+                reason: format!(
                 "cheaper: '{rel_posix}' is {bytes} bytes (exceeds the {max_bytes}-byte measurement cap).\n\
                  Do not read it directly. Delegate this file through the cheaper-bulk-read skill.\n\
                  workspace-relative path: {rel_posix}"
-            ),
-        },
+                ),
+            },
+            Some(ReasonCode::ReadMeasurementLimited),
+        )
+        .with_measurements(Some(bytes as f64), Some(limit), Some(None)),
         Measured::Tokens(tokens) => {
             if tokens <= limit {
-                return Verdict::Allow;
+                return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::ReadBelowThreshold))
+                    .with_measurements(
+                        Some(len as f64),
+                        Some(limit),
+                        Some(Some(tokens)),
+                    );
             }
             // Non-executable guidance only: file path を埋め込んだ
             // shell command は出さない(quoting が敵対的 filename で
             // 壊れる)。skill 側が JSON/stdin を組み立てるので
             // workspace-relative path のみ渡す。
-            Verdict::Deny {
-                reason: format!(
+            HookEvaluation::new(
+                Verdict::Deny {
+                    reason: format!(
                     "cheaper: '{rel_posix}' has {} tokens (threshold {}).\n\
                      Do not read it directly. Delegate this file through the cheaper-bulk-read skill.\n\
                      workspace-relative path: {rel_posix}",
                     format_number(tokens),
                     format_number(limit),
-                ),
-            }
+                    ),
+                },
+                Some(ReasonCode::ReadThresholdExceededDelegateAdvised),
+            )
+            .with_measurements(
+                Some(len as f64),
+                Some(limit),
+                Some(Some(tokens)),
+            )
         }
     }
 }
@@ -644,7 +789,7 @@ async fn evaluate_ranged_read(
     cwd: &str,
     range: ReadRange,
     opts: &EvaluateOptions<'_>,
-) -> Verdict {
+) -> HookEvaluation {
     let (_cwd, resolution) = resolve_target(path, cwd);
     let (resolved, rel_posix, len) = match resolution {
         Resolution::File {
@@ -652,12 +797,15 @@ async fn evaluate_ranged_read(
             rel_posix,
             len,
         } => (resolved, rel_posix, len),
-        _ => return Verdict::Allow,
+        _ => {
+            return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::ReadOutOfScope));
+        }
     };
     let limit = threshold(opts.env);
     // File 全体が byte fast path に収まるなら window も当然収まる。
     if (len as f64) <= limit {
-        return Verdict::Allow;
+        return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::ReadByteFastPath))
+            .with_measurements(Some(len as f64), Some(limit), Some(None));
     }
     let max_bytes = crate::count::count_max_bytes(opts.env)
         .unwrap_or(cheaper_core::token::count::DEFAULT_COUNT_MAX_BYTES);
@@ -671,15 +819,25 @@ async fn evaluate_ranged_read(
             // 数が bytes を超えることはないため、window の byte が
             // threshold を超える場合のみ tokenizer を回す。
             if window.is_empty() {
-                return Verdict::Allow;
+                return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::ReadNoCandidate))
+                    .with_measurements(Some(len as f64), Some(limit), Some(None));
             }
             if (window.len() as f64) <= limit {
-                return Verdict::Allow;
+                return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::ReadByteFastPath))
+                    .with_measurements(Some(len as f64), Some(limit), Some(None));
             }
             match cheaper_core::token::count::count_text_tokens(&window) {
-                Ok(tokens) if (tokens as f64) <= limit => Verdict::Allow,
-                Ok(tokens) => Verdict::Deny {
-                    reason: format!(
+                Ok(tokens) if (tokens as f64) <= limit => {
+                    HookEvaluation::new(Verdict::Allow, Some(ReasonCode::ReadBelowThreshold))
+                        .with_measurements(
+                            Some(len as f64),
+                            Some(limit),
+                            Some(Some(tokens as f64)),
+                        )
+                }
+                Ok(tokens) => HookEvaluation::new(
+                    Verdict::Deny {
+                        reason: format!(
                         "cheaper: '{rel_posix}' read window (offset {}, limit {}) has {} tokens (threshold {}).\n\
                          Narrow the read range (offset/limit) or delegate through the cheaper-bulk-read skill.\n\
                          workspace-relative path: {rel_posix}",
@@ -690,21 +848,40 @@ async fn evaluate_ranged_read(
                             .unwrap_or_else(|| "to-end".to_string()),
                         format_number(tokens as f64),
                         format_number(limit),
-                    ),
-                },
+                        ),
+                    },
+                    Some(ReasonCode::ReadThresholdExceededDelegateAdvised),
+                )
+                .with_measurements(
+                    Some(len as f64),
+                    Some(limit),
+                    Some(Some(tokens as f64)),
+                ),
                 // SpecialToken 等の計測失敗 → fail-open。
-                Err(_) => Verdict::Allow,
+                Err(_) => HookEvaluation::new(
+                    Verdict::Allow,
+                    Some(ReasonCode::ReadMeasurementFailedFailOpen),
+                )
+                .with_measurements(Some(len as f64), Some(limit), Some(None)),
             }
         }
-        Ok(Ok(RangedScan::ByteCapExceeded { scanned, max_bytes })) => Verdict::Deny {
-            reason: format!(
+        Ok(Ok(RangedScan::ByteCapExceeded { scanned, max_bytes })) => HookEvaluation::new(
+            Verdict::Deny {
+                reason: format!(
                 "cheaper: '{rel_posix}' read window scan exceeds the {max_bytes}-byte measurement cap (scanned {scanned} bytes before the window could be collected).\n\
                  Narrow the read range (offset/limit) or delegate through the cheaper-bulk-read skill.\n\
                  workspace-relative path: {rel_posix}"
-            ),
-        },
+                ),
+            },
+            Some(ReasonCode::ReadMeasurementLimited),
+        )
+        .with_measurements(Some(len as f64), Some(limit), Some(None)),
         // IO error・JoinError・timeout → fail-open。
-        _ => Verdict::Allow,
+        _ => HookEvaluation::new(
+            Verdict::Allow,
+            Some(ReasonCode::ReadMeasurementFailedFailOpen),
+        )
+        .with_measurements(Some(len as f64), Some(limit), Some(None)),
     }
 }
 
@@ -972,7 +1149,7 @@ async fn evaluate_search(
     cwd: &str,
     query: SearchQuery,
     opts: &EvaluateOptions<'_>,
-) -> Verdict {
+) -> HookEvaluation {
     let (_cwd, resolution) = resolve_target(path, cwd);
     let (resolved, rel_posix, is_dir) = match resolution {
         Resolution::File {
@@ -987,7 +1164,9 @@ async fn evaluate_search(
         // Search では workspace root 自体も走査対象とする
         // (FileRead では `rel` 空 → allow の既存規則を保つ)。
         Resolution::WorkspaceRoot { resolved } => (resolved, ".".to_string(), true),
-        Resolution::OutOfScope => return Verdict::Allow,
+        Resolution::OutOfScope => {
+            return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::SearchNoCandidate));
+        }
     };
     let limit = threshold(opts.env);
     let max_bytes = crate::count::count_max_bytes(opts.env)
@@ -1004,30 +1183,54 @@ async fn evaluate_search(
     });
     match tokio::time::timeout(MEASURE_TIMEOUT, scan).await {
         Ok(Ok(SearchScan::Materialized(text))) => {
-            if text.is_empty() || (text.len() as f64) <= limit {
-                return Verdict::Allow;
+            if text.is_empty() {
+                return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::SearchNoCandidate))
+                    .with_measurements(None, Some(limit), Some(None));
+            }
+            if (text.len() as f64) <= limit {
+                return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::SearchBelowThreshold))
+                    .with_measurements(None, Some(limit), Some(None));
             }
             match cheaper_core::token::count::count_text_tokens(&text) {
-                Ok(tokens) if (tokens as f64) <= limit => Verdict::Allow,
-                Ok(tokens) => Verdict::Deny {
-                    reason: format!(
+                Ok(tokens) if (tokens as f64) <= limit => {
+                    HookEvaluation::new(Verdict::Allow, Some(ReasonCode::SearchBelowThreshold))
+                        .with_measurements(None, Some(limit), Some(Some(tokens as f64)))
+                }
+                Ok(tokens) => HookEvaluation::new(
+                    Verdict::Deny {
+                        reason: format!(
                         "cheaper: search result has {} tokens (threshold {}).\n\
                          Narrow the search (path, glob, max_results) or delegate through the cheaper-bulk-read skill.",
                         format_number(tokens as f64),
                         format_number(limit),
-                    ),
-                },
-                Err(_) => Verdict::Allow,
+                        ),
+                    },
+                    Some(ReasonCode::SearchThresholdExceededDelegateAdvised),
+                )
+                .with_measurements(None, Some(limit), Some(Some(tokens as f64))),
+                Err(_) => HookEvaluation::new(
+                    Verdict::Allow,
+                    Some(ReasonCode::SearchMeasurementUnavailable),
+                )
+                .with_measurements(None, Some(limit), Some(None)),
             }
         }
-        Ok(Ok(SearchScan::CapExceeded { files, scanned_bytes })) => Verdict::Deny {
-            reason: format!(
+        Ok(Ok(SearchScan::CapExceeded { files, scanned_bytes })) => HookEvaluation::new(
+            Verdict::Deny {
+                reason: format!(
                 "cheaper: search scope exceeds the measurement cap ({files} files scanned, {scanned_bytes} bytes).\n\
                  Narrow the search (path, glob, max_results) or delegate through the cheaper-bulk-read skill."
-            ),
-        },
+                ),
+            },
+            Some(ReasonCode::SearchScanLimited),
+        )
+        .with_measurements(None, Some(limit), Some(None)),
         // compile/IO/timeout → 評価不能 → fail-open。
-        _ => Verdict::Allow,
+        _ => HookEvaluation::new(
+            Verdict::Allow,
+            Some(ReasonCode::SearchMeasurementUnavailable),
+        )
+        .with_measurements(None, Some(limit), Some(None)),
     }
 }
 
@@ -1435,11 +1638,66 @@ fn collapse_command(command: &str) -> String {
 
 /// `evaluateShell` — 先頭で route arm を試し、不成立なら従来の
 /// read-candidate 評価を行う(design §hook eval への Rewrite arm)。
-async fn evaluate_shell(command: &str, cwd: &str, opts: &EvaluateOptions<'_>) -> Verdict {
-    if let Some(rewrite) = evaluate_route_arm(command, cwd, opts).await {
-        return rewrite;
+async fn evaluate_shell(command: &str, cwd: &str, opts: &EvaluateOptions<'_>) -> HookEvaluation {
+    let Some(route_evaluation) = evaluate_route_arm(command, cwd, opts).await else {
+        return evaluate_read_candidates(command, cwd, opts).await;
+    };
+
+    // Keep the legacy fallback verdict untouched. Typed route evidence records
+    // why the route arm did or did not produce a Rewrite.
+    let fallback = evaluate_read_candidates(command, cwd, opts).await;
+    let reason_code = route_reason_code(
+        &route_evaluation.resolution,
+        route_evaluation.rewrite.is_some(),
+    );
+    match route_evaluation.rewrite {
+        Some(rewrite_command) => HookEvaluation::new(
+            Verdict::Rewrite {
+                command: rewrite_command,
+                fallback: Box::new(fallback.verdict.clone()),
+            },
+            Some(ReasonCode::RouteRewriteEmitted),
+        )
+        .with_route(&route_evaluation.resolution, reason_code)
+        .with_fallback(&fallback),
+        None => {
+            let mut evaluation = fallback
+                .clone()
+                .with_route(&route_evaluation.resolution, reason_code);
+            evaluation.evidence.fallback_reason = fallback.evidence.reason_code;
+            evaluation.evidence.fallback_verdict = Some(fallback.evidence.evaluator_verdict);
+            evaluation
+        }
     }
-    evaluate_read_candidates(command, cwd, opts).await
+}
+
+struct RouteArmEvaluation {
+    resolution: crate::route::resolve::RouteResolution,
+    rewrite: Option<String>,
+}
+
+fn route_reason_code(
+    resolution: &crate::route::resolve::RouteResolution,
+    rewrite_emitted: bool,
+) -> Option<ReasonCode> {
+    if rewrite_emitted {
+        return Some(ReasonCode::RouteRewriteEmitted);
+    }
+    if !resolution.matched {
+        return Some(ReasonCode::RouteNoMatch);
+    }
+    match resolution.viability {
+        Some(crate::route::resolve::Viability::NoGrant) => Some(ReasonCode::RouteNoGrant),
+        Some(crate::route::resolve::Viability::MissingTarget) => Some(ReasonCode::RouteNoPin),
+        // The resolver marked the route runnable, but building its rewrite
+        // failed. Preserve route identity/viability and fallback evidence
+        // without claiming the route itself was not runnable.
+        Some(crate::route::resolve::Viability::Runnable) => None,
+        Some(crate::route::resolve::Viability::InvalidRoute)
+        | Some(crate::route::resolve::Viability::UnsafeCommand)
+        | Some(crate::route::resolve::Viability::StdinUnsupported)
+        | None => Some(ReasonCode::RouteNotRunnable),
+    }
 }
 
 /// route arm — 単一 safe segment かつ routes/policy が供給されて
@@ -1452,7 +1710,7 @@ async fn evaluate_route_arm(
     command: &str,
     cwd: &str,
     opts: &EvaluateOptions<'_>,
-) -> Option<Verdict> {
+) -> Option<RouteArmEvaluation> {
     let route_input = opts.route?;
     let segments = tokenize_shell(command)?;
     let [segment] = segments.as_slice() else {
@@ -1471,17 +1729,15 @@ async fn evaluate_route_arm(
         exec_policy: &route_input.exec_policy,
         unsafe_command: false,
     });
-    if !res.matched || res.viability != Some(crate::route::resolve::Viability::Runnable) {
-        return None;
-    }
-    let rewrite_command = build_rewrite_command(command, cwd, &res, opts.env)?;
-    // fallback は routing 層を通さなかった場合の生 verdict —
-    // rewrite 失敗時・non-rewrite target の render が採用する
-    // (C6 — deny を素通しさせない)。
-    let fallback = evaluate_read_candidates(command, cwd, opts).await;
-    Some(Verdict::Rewrite {
-        command: rewrite_command,
-        fallback: Box::new(fallback),
+    let rewrite =
+        if res.matched && res.viability == Some(crate::route::resolve::Viability::Runnable) {
+            build_rewrite_command(command, cwd, &res, opts.env)
+        } else {
+            None
+        };
+    Some(RouteArmEvaluation {
+        resolution: res,
+        rewrite,
     })
 }
 
@@ -1527,31 +1783,71 @@ fn build_rewrite_command(
 
 /// 従来の `evaluateShell` 本体 — read candidate を file-read
 /// policy で順に評価し、最初の deny で止める。
-async fn evaluate_read_candidates(command: &str, cwd: &str, opts: &EvaluateOptions<'_>) -> Verdict {
+async fn evaluate_read_candidates(
+    command: &str,
+    cwd: &str,
+    opts: &EvaluateOptions<'_>,
+) -> HookEvaluation {
+    let mut first_allow = None;
     for candidate in extract_read_candidates(command) {
-        let verdict = evaluate_file_read(&candidate, cwd, opts).await;
-        if let Verdict::Deny { reason } = verdict {
-            return Verdict::Deny {
-                reason: format!(
-                    "cheaper: blocked shell command '{}'.\n{reason}",
-                    collapse_command(command)
-                ),
+        let evaluation = evaluate_file_read(&candidate, cwd, opts).await;
+        if let Verdict::Deny { reason } = &evaluation.verdict {
+            return HookEvaluation {
+                verdict: Verdict::Deny {
+                    reason: format!(
+                        "cheaper: blocked shell command '{}'.\n{reason}",
+                        collapse_command(command)
+                    ),
+                },
+                evidence: evaluation.evidence,
             };
         }
+        if first_allow.is_none() {
+            first_allow = Some(evaluation);
+        }
     }
-    Verdict::Allow
+    first_allow
+        .unwrap_or_else(|| HookEvaluation::new(Verdict::Allow, Some(ReasonCode::ShellNoCandidate)))
 }
 
 /// `evaluate` — TS 版は `unknown` を受けて shape を runtime validate
 /// するが、Rust 版は typed request を受けるため malformed request は
 /// adapter の normalize(None → allow)で表現され、ここには到達しない。
 pub async fn evaluate(request: &RoutingRequest, opts: &EvaluateOptions<'_>) -> Verdict {
+    evaluate_with_evidence(request, opts).await.verdict
+}
+
+/// Typed evaluator boundary used by Hook History. The existing [`evaluate`]
+/// API remains a Verdict-only compatibility wrapper for other callers.
+///
+/// Reason projection follows these evaluator branches (the status/measurement
+/// fields below come from the same branch, never from rendered prose):
+///
+/// | Source branch | Reason code | Measurement evidence |
+/// | --- | --- | --- |
+/// | File resolution outside a workspace file | `read.out_of_scope` | none |
+/// | File/range byte fast path | `read.byte_fast_path` | bytes, threshold, null tokens |
+/// | Empty ranged window | `read.no_candidate` | bytes, threshold, null tokens |
+/// | Measured file at/below threshold | `read.below_threshold` | bytes, threshold, measured tokens |
+/// | File token threshold exceeded | `read.threshold_exceeded_delegate_advised` | bytes, threshold, measured tokens |
+/// | File cap/measurement failure | corresponding `read.*` reason | bytes, threshold, null tokens |
+/// | Empty pattern, out of scope, or materialized empty result | `search.no_candidate` | threshold only when scanning started |
+/// | Materialized result bytes at/below threshold | `search.below_threshold` | threshold, null tokens |
+/// | Tokenized result at/below threshold | `search.below_threshold` | threshold, measured tokens |
+/// | Tokenized result above threshold | `search.threshold_exceeded_delegate_advised` | threshold, measured tokens |
+/// | `SearchScan::CapExceeded` | `search.scan_limited` | threshold, null tokens |
+/// | Scan failure/timeout or tokenizer failure (fail-open) | `search.measurement_unavailable` | threshold, null tokens |
+/// | Route resolver no-match/viability/rewrite | corresponding `route.*` reason | typed viability and validated route ID |
+pub async fn evaluate_with_evidence(
+    request: &RoutingRequest,
+    opts: &EvaluateOptions<'_>,
+) -> HookEvaluation {
     match request {
         RoutingRequest::FileRead {
             path, cwd, range, ..
         } => {
             if path.is_empty() {
-                return Verdict::Allow;
+                return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::ReadNoCandidate));
             }
             match range {
                 // `offset == 1 && limit None` は全文と同値だが、
@@ -1573,7 +1869,7 @@ pub async fn evaluate(request: &RoutingRequest, opts: &EvaluateOptions<'_>) -> V
             ..
         } => {
             if pattern.is_empty() {
-                return Verdict::Allow;
+                return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::SearchNoCandidate));
             }
             let query = SearchQuery {
                 pattern: pattern.clone(),
@@ -1587,7 +1883,7 @@ pub async fn evaluate(request: &RoutingRequest, opts: &EvaluateOptions<'_>) -> V
         }
         RoutingRequest::Shell { command, cwd, .. } => {
             if command.is_empty() {
-                return Verdict::Allow;
+                return HookEvaluation::new(Verdict::Allow, Some(ReasonCode::ShellNoCandidate));
             }
             evaluate_shell(command, cwd, opts).await
         }

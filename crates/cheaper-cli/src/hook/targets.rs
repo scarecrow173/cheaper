@@ -9,6 +9,7 @@
 use std::path::PathBuf;
 
 use cheaper_core::config::dirs::EnvLookup;
+use cheaper_core::config::dirs::{resolve_user_config_dir, UserConfigDirOptions};
 use cheaper_core::json::stringify::stringify;
 use cheaper_core::nodepath;
 use serde_json::{Map, Value};
@@ -17,6 +18,12 @@ use super::eval_cache;
 use super::routing_policy::{
     EvaluateOptions, ReadRange, RoutingRequest, SearchOutputMode, Verdict,
 };
+use crate::history::identity::ExecutionIdentity;
+use crate::history::schema::{
+    DecisionVerdict, ExecutionEvent, ExecutionKind, ExecutionStatus, HistoryEvent,
+    HookCacheProvenance, HookNativeVerdict, ReasonCode, ValidatedIdentifier,
+};
+use crate::history::store::HistoryStore;
 
 /// `HookTarget` — `HOOK_TARGETS` の 6 値。
 /// `Pretooluse` は claude 専用、`Codex` は codex 専用 — payload
@@ -937,12 +944,78 @@ fn request_cwd(request: &RoutingRequest) -> &str {
 async fn evaluate_with_routes(
     request: &RoutingRequest,
     deps: &HookDeps<'_>,
-) -> (Verdict, Option<crate::route::supply::RouteSupply>) {
+) -> (
+    eval_cache::DedupEvaluation,
+    Option<crate::route::supply::RouteSupply>,
+) {
     let supply =
         crate::route::supply::load_or_none(request_cwd(request), deps.env, deps.builtin_dir);
     let mut opts = deps.eval_opts();
     opts.route = supply.as_ref().map(|s| s.eval_input());
-    (eval_cache::evaluate_dedup(request, &opts).await, supply)
+    (
+        eval_cache::evaluate_dedup_evidence(request, &opts).await,
+        supply,
+    )
+}
+
+fn history_native_verdict(verdict: &Verdict, supports_rewrite: bool) -> HookNativeVerdict {
+    match verdict {
+        Verdict::Allow => HookNativeVerdict::Allow,
+        Verdict::Deny { .. } => HookNativeVerdict::Deny,
+        Verdict::Rewrite { .. } if supports_rewrite => HookNativeVerdict::Rewrite,
+        Verdict::Rewrite { fallback, .. } => history_native_verdict(fallback, false),
+    }
+}
+
+fn persist_hook_decision(
+    deps: &HookDeps<'_>,
+    evaluation: &eval_cache::DedupEvaluation,
+    native_verdict: HookNativeVerdict,
+) {
+    if evaluation.provenance == HookCacheProvenance::CacheHit
+        || !evaluation.evaluation.is_meaningful()
+    {
+        return;
+    }
+
+    let evidence = &evaluation.evaluation.evidence;
+    let fallback_reason = (evidence.evaluator_verdict == DecisionVerdict::RewriteEmitted
+        && native_verdict == HookNativeVerdict::Deny
+        && evidence.fallback_verdict == Some(DecisionVerdict::DenyDelegationAdvised))
+    .then_some(ReasonCode::RouteRewriteUnsupportedFallbackDeny);
+    let trace_hint = (deps.env)("CHEAPER_TRACE_ID");
+    let parent_hint = (deps.env)("CHEAPER_PARENT_EXECUTION_ID");
+    let identity = ExecutionIdentity::from_inherited(trace_hint.as_deref(), parent_hint.as_deref());
+    let event = HistoryEvent::new(
+        &identity,
+        ExecutionKind::HookDecision,
+        ExecutionEvent::Decision,
+        ExecutionStatus::Completed,
+    )
+    .with_reason_code(evidence.reason_code)
+    .with_hook_evidence(
+        Some(evidence.evaluator_verdict),
+        Some(native_verdict),
+        fallback_reason,
+        Some(evaluation.provenance),
+    )
+    .with_viability(evidence.route_viability)
+    .with_route_id(
+        evidence
+            .route_id
+            .as_ref()
+            .map(ValidatedIdentifier::as_str)
+            .unwrap_or_default(),
+    )
+    .with_file_bytes(evidence.file_bytes)
+    .with_threshold(evidence.threshold)
+    .with_measured_tokens(evidence.measured_tokens);
+
+    let config_dir = resolve_user_config_dir(UserConfigDirOptions {
+        env: Some(deps.env),
+        homedir: None,
+    });
+    let _ = HistoryStore::new(config_dir).write_decision(&event);
 }
 
 /// target 別の normalize → evaluate → render。
@@ -958,10 +1031,12 @@ pub async fn handle_hook(
         HookTarget::Windsurf => match windsurf_normalize(event, input, deps.cwd) {
             None => ("allow", false, silent_allow()),
             Some(request) => {
-                let (verdict, _supply) = evaluate_with_routes(&request, deps).await;
+                let (evaluation, _supply) = evaluate_with_routes(&request, deps).await;
                 // 範囲不達 compat firing の remediation は render 直前
                 // の firing 毎付記 — eval/dedup 層の生 verdict は不変。
-                let verdict = windsurf_range_deny_guidance(&request, verdict);
+                let verdict =
+                    windsurf_range_deny_guidance(&request, evaluation.evaluation.verdict.clone());
+                persist_hook_decision(deps, &evaluation, history_native_verdict(&verdict, false));
                 (verdict_name(&verdict), false, windsurf_render(verdict))
             }
         },
@@ -969,21 +1044,27 @@ pub async fn handle_hook(
             CopilotOutcome::None => ("allow", false, silent_allow()),
             CopilotOutcome::Respond(r) => ("allow", false, r),
             CopilotOutcome::Request(request) => {
-                let (verdict, _supply) = evaluate_with_routes(&request, deps).await;
+                let (evaluation, _supply) = evaluate_with_routes(&request, deps).await;
+                let verdict = evaluation.evaluation.verdict.clone();
+                persist_hook_decision(deps, &evaluation, history_native_verdict(&verdict, false));
                 (verdict_name(&verdict), false, copilot_render(verdict))
             }
         },
         HookTarget::Pretooluse => match pretooluse_normalize(input, deps.cwd) {
             None => ("allow", false, silent_allow()),
             Some(request) => {
-                let (verdict, _supply) = evaluate_with_routes(&request, deps).await;
+                let (evaluation, _supply) = evaluate_with_routes(&request, deps).await;
+                let verdict = evaluation.evaluation.verdict.clone();
+                persist_hook_decision(deps, &evaluation, history_native_verdict(&verdict, true));
                 (verdict_name(&verdict), false, pretooluse_render(verdict))
             }
         },
         HookTarget::Devin => match devin_normalize(event, input, deps) {
             None => ("allow", false, silent_allow()),
             Some(request) => {
-                let (verdict, _supply) = evaluate_with_routes(&request, deps).await;
+                let (evaluation, _supply) = evaluate_with_routes(&request, deps).await;
+                let verdict = evaluation.evaluation.verdict.clone();
+                persist_hook_decision(deps, &evaluation, history_native_verdict(&verdict, true));
                 (verdict_name(&verdict), false, devin_render(verdict))
             }
         },
@@ -994,20 +1075,24 @@ pub async fn handle_hook(
                 // (計測失敗は内部で allow)が、TS の try/catch allow
                 // 経路と同じく verdict に関わらず schema-valid JSON を
                 // 返すことは変えない。
-                let (verdict, _supply) = evaluate_with_routes(&request, deps).await;
+                let (evaluation, _supply) = evaluate_with_routes(&request, deps).await;
+                let verdict = evaluation.evaluation.verdict.clone();
+                persist_hook_decision(deps, &evaluation, history_native_verdict(&verdict, false));
                 (verdict_name(&verdict), false, cursor_render(verdict))
             }
         },
         HookTarget::Codex => match pretooluse_normalize(input, deps.cwd) {
             None => ("allow", false, silent_allow()),
             Some(request) => {
-                let (verdict, supply) = evaluate_with_routes(&request, deps).await;
+                let (evaluation, supply) = evaluate_with_routes(&request, deps).await;
                 // bypassing emit の許可は codex arm のみで読む —
                 // `load_or_none` → `None` は flag 未供給 = bypass 無効
                 // (conservative default、R15)。
                 let bypass = supply
                     .as_ref()
                     .is_some_and(|s| s.policy.route.rewrite.approval_bypass_enabled("codex"));
+                let verdict = evaluation.evaluation.verdict.clone();
+                persist_hook_decision(deps, &evaluation, history_native_verdict(&verdict, bypass));
                 (
                     verdict_name(&verdict),
                     bypass,

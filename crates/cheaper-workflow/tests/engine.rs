@@ -100,6 +100,14 @@ mod job_history {
                 meta: Some(Map::from_iter([
                     ("turns".to_string(), json!(2)),
                     ("toolCalls".to_string(), json!(3)),
+                    (
+                        "requestedModel".to_string(),
+                        json!({"provider": "requested-provider", "id": "requested-model"}),
+                    ),
+                    (
+                        "model".to_string(),
+                        json!({"provider": "resolved-provider", "id": "resolved-model-v2"}),
+                    ),
                 ])),
             })
         }));
@@ -144,6 +152,125 @@ mod job_history {
         assert!(terminal.3.is_some());
         assert_eq!(terminal.4, &Some(2.0));
         assert_eq!(terminal.5, &Some(3.0));
+        assert_eq!(
+            terminal
+                .0
+                .resolved_model
+                .as_ref()
+                .map(|model| (model.provider_id.as_str(), model.model_id.as_str())),
+            Some(("resolved-provider", "resolved-model-v2"))
+        );
+    }
+
+    #[tokio::test]
+    async fn worker_failure_projects_only_resolved_model_identity() {
+        let mut raw = definition();
+        raw["jobs"]["resolved"] = json!(
+            { "kind": "worker", "worker": "bulk-reader", "input": { "task": "resolved" } }
+        );
+        raw["jobs"]["unresolved"] = json!(
+            { "kind": "worker", "worker": "bulk-reader", "input": { "task": "unresolved" } }
+        );
+        let fixtures = FixtureSet::new();
+        let workflow = fixtures.compiler().compile(&raw, None).await.unwrap();
+        let mut h = common::default_harness();
+        h.ports.worker = Arc::new(FnExecutor(|ctx: WorkflowExecutionContext| async move {
+            let meta = if ctx.job_id == "resolved" {
+                Map::from_iter([(
+                    "model".to_string(),
+                    json!({ "provider": "resolved-provider", "id": "resolved-model-v2" }),
+                )])
+            } else {
+                Map::from_iter([(
+                    "requestedModel".to_string(),
+                    json!({ "provider": "requested-provider", "id": "requested-model" }),
+                )])
+            };
+            Err(Box::new(
+                WorkflowExecutorError::new(ErrorCode::ToolExecutionFailure, "worker failed", meta)
+                    .unwrap(),
+            ) as ToolError)
+        }));
+        let mut observer = RecordingObserver::default();
+
+        let outcome = run_workflow_with_observer(options(&workflow, h.ports), &mut observer)
+            .await
+            .unwrap();
+
+        assert!(!outcome.ok);
+        let terminal_model = |job_id: &str| {
+            observer
+                .transitions
+                .iter()
+                .find_map(|transition| match transition {
+                    WorkflowJobTransition::Terminal { job, .. } if job.job_id == job_id => {
+                        job.resolved_model.as_ref()
+                    }
+                    _ => None,
+                })
+        };
+        let resolved =
+            terminal_model("resolved").expect("executor supplied resolved model metadata");
+        assert_eq!(resolved.provider_id, "resolved-provider");
+        assert_eq!(resolved.model_id, "resolved-model-v2");
+        assert!(terminal_model("unresolved").is_none());
+    }
+
+    #[tokio::test]
+    async fn worker_output_validation_failure_retains_resolved_model_identity() {
+        let mut raw = definition();
+        raw["jobs"]["invalid-output"] = json!(
+            { "kind": "worker", "worker": "bulk-reader", "input": { "task": "invalid" } }
+        );
+        let mut fixtures = FixtureSet::new();
+        fixtures.worker_mut().output_schema = Arc::new(
+            cheaper_core::worker::schema::compile_schema(
+                json!({
+                    "type": "object",
+                    "required": ["content"],
+                    "additionalProperties": false,
+                    "properties": { "content": { "type": "array" } }
+                })
+                .as_object()
+                .unwrap()
+                .clone(),
+                cheaper_core::worker::schema::SchemaKind::Output,
+            )
+            .unwrap(),
+        );
+        let workflow = fixtures.compiler().compile(&raw, None).await.unwrap();
+        let mut h = common::default_harness();
+        h.ports.worker = Arc::new(FnExecutor(|_: WorkflowExecutionContext| async {
+            Ok(WorkflowExecutorResult {
+                result: json!({ "unexpected": true }),
+                meta: Some(Map::from_iter([(
+                    "model".to_string(),
+                    json!({ "provider": "resolved-provider", "id": "resolved-model-v2" }),
+                )])),
+            })
+        }));
+        let mut observer = RecordingObserver::default();
+
+        let outcome = run_workflow_with_observer(options(&workflow, h.ports), &mut observer)
+            .await
+            .unwrap();
+
+        assert!(!outcome.ok);
+        let terminal = observer
+            .transitions
+            .iter()
+            .find_map(|transition| match transition {
+                WorkflowJobTransition::Terminal { job, status, .. } => Some((job, status)),
+                _ => None,
+            });
+        let (job, status) = terminal.expect("worker emits terminal transition");
+        assert_eq!(*status, WorkflowJobTerminalStatus::Failed);
+        let model = job
+            .resolved_model
+            .as_ref()
+            .expect("resolved identity survives output validation failure");
+        assert_eq!(model.provider_id, "resolved-provider");
+        assert_eq!(model.model_id, "resolved-model-v2");
     }
 
     #[tokio::test]

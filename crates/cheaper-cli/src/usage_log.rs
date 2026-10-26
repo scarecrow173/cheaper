@@ -407,6 +407,15 @@ pub struct RouteRecordInput {
 /// `embedded_fingerprint` と同じ `DefaultHasher` hex 規約(同一
 /// toolchain 内のみ安定 — design C14f)。
 pub fn build_route_record(input: &RouteRecordInput, root: &str, now: &dyn Fn() -> f64) -> Value {
+    build_route_record_with_correlation(input, None, root, now)
+}
+
+pub fn build_route_record_with_correlation(
+    input: &RouteRecordInput,
+    correlation: Option<&UsageCorrelation>,
+    root: &str,
+    now: &dyn Fn() -> f64,
+) -> Value {
     use std::hash::{DefaultHasher, Hash, Hasher};
     let mut h = DefaultHasher::new();
     input.command.hash(&mut h);
@@ -458,6 +467,7 @@ pub fn build_route_record(input: &RouteRecordInput, root: &str, now: &dyn Fn() -
     if let Some(suppressed) = &input.suppressed {
         base.insert("suppressed".to_string(), Value::from(suppressed.clone()));
     }
+    insert_usage_correlation(&mut base, correlation);
     Value::Object(base)
 }
 
@@ -471,6 +481,16 @@ pub fn build_route_refetch_record(
     root: &str,
     now: &dyn Fn() -> f64,
 ) -> Value {
+    build_route_refetch_record_with_correlation(log_ref, bytes_read, None, root, now)
+}
+
+pub fn build_route_refetch_record_with_correlation(
+    log_ref: &str,
+    bytes_read: u64,
+    correlation: Option<&UsageCorrelation>,
+    root: &str,
+    now: &dyn Fn() -> f64,
+) -> Value {
     let mut base = Map::new();
     base.insert("schemaVersion".to_string(), Value::from(1));
     base.insert("ts".to_string(), Value::from(iso8601(now())));
@@ -478,6 +498,7 @@ pub fn build_route_refetch_record(
     base.insert("kind".to_string(), Value::from("route-refetch"));
     base.insert("logRef".to_string(), Value::from(log_ref));
     base.insert("bytesRead".to_string(), Value::from(bytes_read));
+    insert_usage_correlation(&mut base, correlation);
     Value::Object(base)
 }
 
@@ -491,7 +512,19 @@ pub fn record_route(
     quiet: bool,
     now: &dyn Fn() -> f64,
 ) -> bool {
-    let record = build_route_record(input, root, now);
+    record_route_with_correlation(input, None, root, user_config_dir, stderr, quiet, now)
+}
+
+pub fn record_route_with_correlation(
+    input: &RouteRecordInput,
+    correlation: Option<&UsageCorrelation>,
+    root: &str,
+    user_config_dir: &str,
+    stderr: &mut dyn CliWrite,
+    quiet: bool,
+    now: &dyn Fn() -> f64,
+) -> bool {
+    let record = build_route_record_with_correlation(input, correlation, root, now);
     match append_usage_log(user_config_dir, &record) {
         Ok(()) => true,
         Err(e) => {
@@ -514,7 +547,31 @@ pub fn record_route_refetch(
     quiet: bool,
     now: &dyn Fn() -> f64,
 ) {
-    let record = build_route_refetch_record(log_ref, bytes_read, root, now);
+    record_route_refetch_with_correlation(
+        log_ref,
+        bytes_read,
+        None,
+        root,
+        user_config_dir,
+        stderr,
+        quiet,
+        now,
+    );
+}
+
+#[allow(clippy::too_many_arguments)] // Mirrors the existing refetch recorder while adding optional correlation.
+pub fn record_route_refetch_with_correlation(
+    log_ref: &str,
+    bytes_read: u64,
+    correlation: Option<&UsageCorrelation>,
+    root: &str,
+    user_config_dir: &str,
+    stderr: &mut dyn CliWrite,
+    quiet: bool,
+    now: &dyn Fn() -> f64,
+) {
+    let record =
+        build_route_refetch_record_with_correlation(log_ref, bytes_read, correlation, root, now);
     if let Err(e) = append_usage_log(user_config_dir, &record) {
         if !quiet {
             stderr.write_str(&format!("usage-log: {e}\n"));
@@ -575,8 +632,8 @@ pub fn record_usage_with_context(
     quiet: bool,
     context: UsageRecordContext<'_>,
     now: &dyn Fn() -> f64,
-) {
-    let result = (|| -> std::io::Result<()> {
+) -> bool {
+    let result = (|| -> std::io::Result<bool> {
         let Some(record) = build_usage_record_with_correlation(
             env,
             root,
@@ -584,13 +641,17 @@ pub fn record_usage_with_context(
             context.correlation,
             now,
         ) else {
-            return Ok(());
+            return Ok(false);
         };
-        append_usage_log(user_config_dir, &record)
+        append_usage_log(user_config_dir, &record).map(|()| true)
     })();
-    if let Err(e) = result {
-        if !quiet {
-            stderr.write_str(&format!("usage-log: {e}\n"));
+    match result {
+        Ok(appended) => appended,
+        Err(error) => {
+            if !quiet {
+                stderr.write_str(&format!("usage-log: {error}\n"));
+            }
+            false
         }
     }
 }

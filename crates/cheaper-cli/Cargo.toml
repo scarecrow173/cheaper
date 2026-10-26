@@ -69,3 +69,7 @@ required-features = ["dev-seam"]
 [[test]]
 name = "workflow_dev_seam"
 required-features = ["dev-seam"]
+
+[[bench]]
+name = "history_hook"
+harness = false

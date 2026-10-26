@@ -35,7 +35,7 @@ use crate::count::count_workspace_file_tokens;
 use crate::embedded;
 use crate::envelope::{envelope_json, error_envelope, utility_success_envelope};
 use crate::history::query::{HistoryCursor, HistoryFilter, HistoryPage, HistoryQuery, RecordState};
-use crate::history::schema::{ExecutionKind, ExecutionStatus, RecordedAt};
+use crate::history::schema::{ExecutionKind, ExecutionStatus, HistoryEvent, RecordedAt};
 use crate::history::store::HistoryStore;
 use crate::text_format::format_text;
 use uuid::Uuid;
@@ -484,7 +484,7 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
                 ctx.run_root.as_deref(),
                 ctx.run_user_config_dir.as_deref(),
             );
-            crate::usage_log::record_usage_with_context(
+            let usage_appended = crate::usage_log::record_usage_with_context(
                 &env,
                 &root,
                 &ucd,
@@ -496,6 +496,7 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
                 },
                 &now_fn(hooks),
             );
+            finalize_worker_history(&mut ctx, usage_appended);
             env.get("error")
                 .and_then(|e| e.get("exitCode"))
                 .and_then(Value::as_i64)
@@ -544,6 +545,22 @@ pub struct RunCtx {
     /// Standalone Worker execution identity for additive Usage correlation.
     /// Kept separate from the effective policy echo.
     pub execution_correlation: Option<crate::usage_log::UsageCorrelation>,
+    /// Standalone Worker terminal is finalized after Usage append so a
+    /// Usage reference is only attached when the row was actually written.
+    pub pending_worker_history_terminal: Option<HistoryEvent>,
+}
+
+fn finalize_worker_history(ctx: &mut RunCtx, usage_appended: bool) {
+    let Some(mut terminal) = ctx.pending_worker_history_terminal.take() else {
+        return;
+    };
+    if usage_appended {
+        let execution_id = terminal.execution_id().to_owned();
+        terminal = terminal.with_usage_record_ref(&execution_id);
+    }
+    if let Some(user_config_dir) = ctx.run_user_config_dir.as_deref() {
+        let _ = HistoryStore::new(user_config_dir).write_terminal(&terminal);
+    }
 }
 
 /// dispatch 本体 — parsed command 別に command module へ委譲し、
@@ -709,7 +726,7 @@ async fn dispatch(
                 ctx.run_root.as_deref(),
                 ctx.run_user_config_dir.as_deref(),
             );
-            crate::usage_log::record_usage_with_context(
+            let usage_appended = crate::usage_log::record_usage_with_context(
                 &out.envelope,
                 &root,
                 &ucd,
@@ -721,6 +738,7 @@ async fn dispatch(
                 },
                 &now_fn(hooks),
             );
+            finalize_worker_history(ctx, usage_appended);
             Ok(out.exit_code)
         }
     }

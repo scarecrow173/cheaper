@@ -332,6 +332,7 @@ fn read_scope(root: &str) -> cheaper_tools::registry::ToolRuntime {
             concurrency: None,
             eval_spawn: None,
             route_context: None,
+            execution_correlation: None,
         },
         None,
     )

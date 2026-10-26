@@ -24,8 +24,14 @@ use super::supply::{self, RouteSupply};
 use crate::cli::{now, BoxError, CliHooks, CliIo};
 use crate::envelope::utility_success_envelope;
 use crate::errors::invalid_request;
+use crate::history::identity::ExecutionIdentity;
+use crate::history::schema::{
+    DecisionVerdict, ExecutionEvent, ExecutionKind, ExecutionStatus, HistoryEvent, ReasonCode,
+    RouteViability,
+};
+use crate::history::store::HistoryStore;
 use crate::hook::routing_policy::tokenize_shell;
-use crate::usage_log::{record_route, RouteRecordInput};
+use crate::usage_log::{record_route_with_correlation, RouteRecordInput, UsageCorrelation};
 use crate::workflow_context::WorkflowContext;
 
 pub(crate) struct PreparedRoute {
@@ -356,13 +362,141 @@ pub async fn execute(
     started_at: f64,
 ) -> Result<RouteRunOutput, BoxError> {
     let payload = payload::decode(token)?;
-    let prepared = prepare(
+    let prepared = match prepare(
         &payload,
         cwd.unwrap_or(&io.cwd),
         io.env,
         hooks.builtin_dir.as_deref(),
-    )?;
+    ) {
+        Ok(prepared) => prepared,
+        Err(error) => {
+            record_route_decision(cwd, io, hooks, &error);
+            return Err(error.into());
+        }
+    };
     let layout = crate::compose::resolve_workspace_layout(cwd, io, hooks)?;
+    let identity = ExecutionIdentity::from_inherited(
+        (io.env)("CHEAPER_TRACE_ID").as_deref(),
+        (io.env)("CHEAPER_PARENT_EXECUTION_ID").as_deref(),
+    );
+    let history = HistoryStore::new(&layout.dirs.user_config_dir);
+    let started = HistoryEvent::new(
+        &identity,
+        ExecutionKind::Route,
+        ExecutionEvent::Started,
+        ExecutionStatus::Running,
+    )
+    .with_route_id(&prepared.route.name);
+    let route_id = prepared.route.name.clone();
+    let history_started = history.write_started(&started);
+    let result = execute_prepared(
+        payload,
+        prepared,
+        identity.clone(),
+        layout,
+        io,
+        hooks,
+        quiet,
+        started_at,
+    )
+    .await;
+    if history_started {
+        let (status, error_code, exit_code) = match &result {
+            Ok(output) if output.exit_code == 0 => {
+                (ExecutionStatus::Completed, None, Some(output.exit_code))
+            }
+            Ok(output) => (ExecutionStatus::Failed, None, Some(output.exit_code)),
+            Err(error) => {
+                let code = error.downcast_ref::<CheaperError>().map(CheaperError::code);
+                let status = match code {
+                    Some(ErrorCode::Timeout) => ExecutionStatus::Timeout,
+                    Some(ErrorCode::Aborted) => ExecutionStatus::Cancelled,
+                    _ => ExecutionStatus::Failed,
+                };
+                (status, code, None)
+            }
+        };
+        let mut terminal = HistoryEvent::new(
+            &identity,
+            ExecutionKind::Route,
+            ExecutionEvent::Terminal,
+            status,
+        )
+        .with_route_id(&route_id)
+        .with_error_code(error_code)
+        .with_exit_code(exit_code.map(f64::from))
+        .with_duration_ms(Some((now(hooks) - started_at).max(0.0)));
+        if let Ok(output) = &result {
+            if let Some(log_ref) = output
+                .envelope
+                .get("result")
+                .and_then(|result| result.get("logRef"))
+                .and_then(Value::as_str)
+            {
+                terminal = terminal.with_log_ref(log_ref);
+            }
+        }
+        let _ = history.write_terminal(&terminal);
+    }
+    result
+}
+
+fn record_route_decision(
+    cwd: Option<&str>,
+    io: &CliIo<'_>,
+    hooks: &CliHooks,
+    error: &CheaperError,
+) {
+    let Some(reason) = error
+        .details()
+        .and_then(|details| details.get("reason"))
+        .and_then(Value::as_str)
+    else {
+        return;
+    };
+    let (reason_code, viability) = match reason {
+        "no-match" => (ReasonCode::RouteNoMatch, None),
+        "no-grant" => (ReasonCode::RouteNoGrant, Some(RouteViability::NoGrant)),
+        "missing-target" | "no-pin" => {
+            (ReasonCode::RouteNoPin, Some(RouteViability::MissingTarget))
+        }
+        "unsafe-command" => (
+            ReasonCode::RouteNotRunnable,
+            Some(RouteViability::UnsafeCommand),
+        ),
+        "not-runnable" => (ReasonCode::RouteNotRunnable, None),
+        _ => return,
+    };
+    let Ok(layout) = crate::compose::resolve_workspace_layout(cwd, io, hooks) else {
+        return;
+    };
+    let identity = ExecutionIdentity::from_inherited(
+        (io.env)("CHEAPER_TRACE_ID").as_deref(),
+        (io.env)("CHEAPER_PARENT_EXECUTION_ID").as_deref(),
+    );
+    let event = HistoryEvent::new(
+        &identity,
+        ExecutionKind::RouteDecision,
+        ExecutionEvent::Decision,
+        ExecutionStatus::Skipped,
+    )
+    .with_reason_code(Some(reason_code))
+    .with_verdict(Some(DecisionVerdict::NotRouted))
+    .with_viability(viability);
+    let _ = HistoryStore::new(&layout.dirs.user_config_dir).write_decision(&event);
+}
+
+#[allow(clippy::too_many_arguments)] // CLI executor inputs are independent borrowed runtime boundaries.
+async fn execute_prepared(
+    payload: RoutePayload,
+    prepared: PreparedRoute,
+    identity: ExecutionIdentity,
+    layout: crate::compose::WorkspaceLayout,
+    io: &mut CliIo<'_>,
+    hooks: &CliHooks,
+    quiet: bool,
+    started_at: f64,
+) -> Result<RouteRunOutput, BoxError> {
     let file_root = match prepared.route.layer {
         RouteLayer::Builtin => layout.builtin_dir.join("workflows"),
         RouteLayer::User => layout.dirs.user_config_dir.clone(),
@@ -412,6 +546,7 @@ pub async fn execute(
         ("runId".to_string(), json!(run_id)),
     ]);
     let outcome = crate::workflow_run::execute_routed(crate::workflow_run::RoutedRun {
+        route_identity: &identity,
         ctx: &ctx,
         file_root: &file_root,
         workflow_path: &prepared.route.target_path.to_string_lossy(),
@@ -427,6 +562,7 @@ pub async fn execute(
         FinishArgs {
             prepared: &prepared,
             route_exec: &route_exec,
+            identity: &identity,
             payload: &payload,
             user_config_dir: &layout.dirs.user_config_dir.to_string_lossy(),
             hooks,
@@ -440,6 +576,7 @@ pub async fn execute(
 struct FinishArgs<'a> {
     prepared: &'a PreparedRoute,
     route_exec: &'a Arc<RouteExecution>,
+    identity: &'a ExecutionIdentity,
     payload: &'a RoutePayload,
     user_config_dir: &'a str,
     hooks: &'a CliHooks,
@@ -455,6 +592,7 @@ fn finish(
     let FinishArgs {
         prepared,
         route_exec,
+        identity,
         payload,
         user_config_dir,
         hooks,
@@ -617,7 +755,12 @@ fn finish(
         "analyze": analyze_ms,
         "total": now(hooks) - started_at,
     });
-    let recorded = record_route(
+    let correlation = UsageCorrelation {
+        execution_id: Some(identity.execution_id().to_string()),
+        parent_execution_id: identity.parent_execution_id().map(|id| id.to_string()),
+        trace_id: Some(identity.trace_id().to_string()),
+    };
+    let recorded = record_route_with_correlation(
         &RouteRecordInput {
             route: prepared.route.name.clone(),
             command: payload.command.clone(),
@@ -634,6 +777,7 @@ fn finish(
             exit_code,
             ok: exit_code == 0 && failures.is_empty(),
         },
+        Some(&correlation),
         &prepared.supply.root,
         user_config_dir,
         io.stderr,
@@ -1092,11 +1236,13 @@ mod tests {
             cwd: ffx.fx.ws.clone(),
         };
         let hooks = CliHooks::default();
+        let identity = ExecutionIdentity::root();
         finish(
             outcome,
             FinishArgs {
                 prepared: &ffx.prepared,
                 route_exec: &ffx.route_exec,
+                identity: &identity,
                 payload: &ffx.payload,
                 user_config_dir: &ucd,
                 hooks: &hooks,

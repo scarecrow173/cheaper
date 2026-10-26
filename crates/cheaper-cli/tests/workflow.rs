@@ -20,6 +20,7 @@ mod common;
 use common::{ambient_env, Fixture};
 
 use cheaper_cli::cli::{run_cli, CliIo};
+use cheaper_cli::history::store::{STARTED_FILE, TERMINAL_FILE};
 use serde_json::{json, Value};
 
 // ---------------------------------------------------------------------------
@@ -182,6 +183,7 @@ async fn workflow_run_tool_artifact_metadata() {
         env["result"]["reference"]["preview"],
         json!("PRIVATE_ARTIFACT_BODY")
     );
+    assert_workflow_job_has_parent_workflow(&f, "publish");
 }
 
 /// TS test: "collects independent success and hides private results in
@@ -220,6 +222,91 @@ async fn workflow_run_partial_failure_tool_jobs() {
     // workflow error は `error` field に出る。
     assert!(env["error"]["code"].is_string());
     assert!(env["error"]["exitCode"].is_number());
+}
+
+fn history_events(f: &Fixture, file_name: &str) -> Vec<Value> {
+    let history_dir = f.cfg.path().join("history");
+    std::fs::read_dir(&history_dir)
+        .unwrap()
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_dir()))
+        .filter_map(|entry| std::fs::read(entry.path().join(file_name)).ok())
+        .filter_map(|bytes| serde_json::from_slice(&bytes).ok())
+        .collect()
+}
+
+fn assert_workflow_history_lifecycle(f: &Fixture) {
+    let workflow_started = history_events(f, STARTED_FILE)
+        .into_iter()
+        .filter(|event| event["kind"] == json!("workflow"))
+        .collect::<Vec<_>>();
+    let workflow_terminal = history_events(f, TERMINAL_FILE)
+        .into_iter()
+        .filter(|event| event["kind"] == json!("workflow"))
+        .collect::<Vec<_>>();
+    assert_eq!(workflow_started.len(), 1, "expected one Workflow start");
+    assert_eq!(workflow_terminal.len(), 1, "expected one Workflow terminal");
+
+    let started = &workflow_started[0];
+    let terminal = &workflow_terminal[0];
+    assert_eq!(started["kind"], json!("workflow"));
+    assert_eq!(started["event"], json!("started"));
+    assert_eq!(started["status"], json!("running"));
+    assert_eq!(terminal["kind"], json!("workflow"));
+    assert_eq!(terminal["event"], json!("terminal"));
+    assert_eq!(terminal["status"], json!("failed"));
+    assert_eq!(started["executionId"], terminal["executionId"]);
+}
+
+fn assert_workflow_job_has_parent_workflow(f: &Fixture, job_id: &str) {
+    let workflow_started = history_events(f, STARTED_FILE)
+        .into_iter()
+        .filter(|event| event["kind"] == json!("workflow"))
+        .collect::<Vec<_>>();
+    let workflow_terminal = history_events(f, TERMINAL_FILE)
+        .into_iter()
+        .filter(|event| event["kind"] == json!("workflow"))
+        .collect::<Vec<_>>();
+    let job_started = history_events(f, STARTED_FILE)
+        .into_iter()
+        .find(|event| event["kind"] == json!("job") && event["jobId"] == json!(job_id))
+        .unwrap();
+    let job_terminal = history_events(f, TERMINAL_FILE)
+        .into_iter()
+        .find(|event| event["kind"] == json!("job") && event["jobId"] == json!(job_id))
+        .unwrap();
+
+    assert_eq!(
+        workflow_started.len(),
+        1,
+        "standalone Workflow start is unique"
+    );
+    assert_eq!(
+        workflow_terminal.len(),
+        1,
+        "standalone Workflow terminal is unique"
+    );
+    let workflow_id = &workflow_started[0]["executionId"];
+    assert_eq!(workflow_id, &workflow_terminal[0]["executionId"]);
+    assert_eq!(job_started["parentExecutionId"], *workflow_id);
+    assert_eq!(job_terminal["parentExecutionId"], *workflow_id);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_run_missing_and_malformed_files_record_started_and_terminal_history() {
+    let mut missing = Fixture::new();
+    let (missing_code, missing_env, _) = missing.run(&["workflow", "run", "missing.json"]).await;
+    assert_ne!(missing_code, 0);
+    assert_eq!(missing_env["ok"], json!(false));
+    assert_workflow_history_lifecycle(&missing);
+
+    let mut malformed = Fixture::new();
+    std::fs::write(malformed.ws.path().join("malformed.json"), "{ not json").unwrap();
+    let (malformed_code, malformed_env, _) =
+        malformed.run(&["workflow", "run", "malformed.json"]).await;
+    assert_ne!(malformed_code, 0);
+    assert_eq!(malformed_env["ok"], json!(false));
+    assert_workflow_history_lifecycle(&malformed);
 }
 
 // ---------------------------------------------------------------------------

@@ -27,6 +27,37 @@ use cheaper_tools::ToolError;
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 use serde_json::{Map, Value};
+
+#[cfg(test)]
+mod resolved_model_identity_tests {
+    use super::{observed_model_identity, WorkflowJobModelIdentity};
+    use serde_json::json;
+
+    #[test]
+    fn observes_only_executor_resolved_model_identity() {
+        let metadata = json!({
+            "requestedModel": { "provider": "requested-provider", "id": "requested-model" },
+            "model": { "provider": "resolved-provider", "id": "resolved-model-v2" }
+        });
+        let identity = observed_model_identity(metadata.as_object().unwrap()).unwrap();
+        assert_eq!(
+            identity,
+            WorkflowJobModelIdentity {
+                provider_id: "resolved-provider".to_string(),
+                model_id: "resolved-model-v2".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn omits_identity_before_worker_model_resolution() {
+        let metadata = json!({
+            "requestedModel": { "provider": "requested-provider", "id": "requested-model" },
+            "execution": { "turns": 0 }
+        });
+        assert!(observed_model_identity(metadata.as_object().unwrap()).is_none());
+    }
+}
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use tracing::Instrument;
@@ -144,6 +175,28 @@ pub struct WorkflowJobObservation {
     pub kind: JobKind,
     pub name: String,
     pub dependency_ids: Vec<String>,
+    /// executor の metadata で確認した解決済み Worker catalog identity。
+    /// Started transition と解決前の failure では含まない。
+    pub resolved_model: Option<WorkflowJobModelIdentity>,
+}
+
+/// worker executor が catalog model を解決した後に公開する最小の
+/// provider/model identity。request input は identity として解釈しない。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkflowJobModelIdentity {
+    pub provider_id: String,
+    pub model_id: String,
+}
+
+/// `WorkerRunMeta.model` は executor が解決済み catalog model から生成する。
+/// lifecycle observer 用には provider/model ID だけを残し、workflow input や
+/// requested model など他の metadata は参照しない。
+fn observed_model_identity(meta: &Map<String, Value>) -> Option<WorkflowJobModelIdentity> {
+    let model = meta.get("model")?.as_object()?;
+    Some(WorkflowJobModelIdentity {
+        provider_id: model.get("provider")?.as_str()?.to_string(),
+        model_id: model.get("id")?.as_str()?.to_string(),
+    })
 }
 
 /// Terminal state exposed to lifecycle observers. `Blocked` distinguishes a
@@ -498,6 +551,7 @@ struct JobExecution {
     lease: Option<ResourceLease>,
     prepared_at: Option<f64>,
     outcome: Option<WorkflowJobOutcome>,
+    resolved_model: Option<WorkflowJobModelIdentity>,
 }
 
 enum Event {
@@ -645,6 +699,7 @@ impl<'x, 'o> RunState<'x, 'o> {
             kind: job.job.kind,
             name: job.job.name.clone(),
             dependency_ids: job.dependency_ids.clone(),
+            resolved_model: None,
         }
     }
 
@@ -704,6 +759,7 @@ impl<'x, 'o> RunState<'x, 'o> {
         };
         let turns = meta.get("turns").and_then(Value::as_f64);
         let tool_calls = meta.get("toolCalls").and_then(Value::as_f64);
+        let resolved_model = self.jobs[index].resolved_model.clone();
         let execution = (self.ports.execution_metrics)(Some(self.jobs[index].id.as_str()));
         self.jobs[index].outcome = Some(WorkflowJobOutcome {
             id: self.jobs[index].id.clone(),
@@ -729,8 +785,10 @@ impl<'x, 'o> RunState<'x, 'o> {
         if self.terminal == self.jobs.len() {
             self.finished = true;
         }
+        let mut job = self.job_observation(index);
+        job.resolved_model = resolved_model;
         self.observe(WorkflowJobTransition::Terminal {
-            job: self.job_observation(index),
+            job,
             status: observer_status,
             error_code,
             duration_ms,
@@ -932,6 +990,10 @@ impl<'x, 'o> RunState<'x, 'o> {
         match result {
             Ok(value) => {
                 if self.jobs[index].outcome.is_none() {
+                    if self.jobs[index].job.kind == JobKind::Worker {
+                        self.jobs[index].resolved_model =
+                            value.meta.as_ref().and_then(observed_model_identity);
+                    }
                     if let Some(outer) = self.outer_error.as_ref() {
                         self.finish_job(
                             index,
@@ -967,6 +1029,9 @@ impl<'x, 'o> RunState<'x, 'o> {
                     .downcast_ref::<WorkflowExecutorError>()
                     .map(|w| w.meta().clone())
                     .unwrap_or_default();
+                if self.jobs[index].job.kind == JobKind::Worker {
+                    self.jobs[index].resolved_model = observed_model_identity(&meta);
+                }
                 let diag = match &self.outer_error {
                     Some(outer) => diagnostic_of(outer),
                     None => diagnostic(&error, ErrorCode::ToolExecutionFailure),
@@ -1139,6 +1204,7 @@ async fn run_workflow_inner<'a, 'o>(
             lease: None,
             prepared_at: None,
             outcome: None,
+            resolved_model: None,
         })
         .collect();
     let index_of: HashMap<String, usize> = jobs

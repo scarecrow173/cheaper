@@ -69,6 +69,14 @@ pub enum ReasonCode {
     ReadOutOfScope,
     #[serde(rename = "search.no_candidate")]
     SearchNoCandidate,
+    #[serde(rename = "search.below_threshold")]
+    SearchBelowThreshold,
+    #[serde(rename = "search.threshold_exceeded_delegate_advised")]
+    SearchThresholdExceededDelegateAdvised,
+    #[serde(rename = "search.scan_limited")]
+    SearchScanLimited,
+    #[serde(rename = "search.measurement_unavailable")]
+    SearchMeasurementUnavailable,
     #[serde(rename = "shell.no_candidate")]
     ShellNoCandidate,
     #[serde(rename = "route.no_match")]
@@ -97,6 +105,23 @@ pub enum DecisionVerdict {
     RewriteEmitted,
     NotRouted,
     Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum HookNativeVerdict {
+    Allow,
+    Deny,
+    Rewrite,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum HookCacheProvenance {
+    LeaderEvaluated,
+    CacheHit,
+    Fallback,
+    Bypass,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -248,6 +273,14 @@ pub struct HistoryEvent {
     #[serde(skip_serializing_if = "Option::is_none")]
     verdict: Option<DecisionVerdict>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    evaluator_verdict: Option<DecisionVerdict>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    native_verdict: Option<HookNativeVerdict>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    fallback_reason: Option<ReasonCode>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    hook_cache_provenance: Option<HookCacheProvenance>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     viability: Option<RouteViability>,
     #[serde(skip_serializing_if = "Option::is_none")]
     error_code: Option<ErrorCode>,
@@ -315,6 +348,10 @@ impl HistoryEvent {
             status,
             reason_code: None,
             verdict: None,
+            evaluator_verdict: None,
+            native_verdict: None,
+            fallback_reason: None,
+            hook_cache_provenance: None,
             viability: None,
             error_code: None,
             worker_id: None,
@@ -343,6 +380,20 @@ impl HistoryEvent {
 
     pub fn with_verdict(mut self, value: Option<DecisionVerdict>) -> Self {
         self.verdict = value;
+        self
+    }
+
+    pub fn with_hook_evidence(
+        mut self,
+        evaluator_verdict: Option<DecisionVerdict>,
+        native_verdict: Option<HookNativeVerdict>,
+        fallback_reason: Option<ReasonCode>,
+        cache_provenance: Option<HookCacheProvenance>,
+    ) -> Self {
+        self.evaluator_verdict = evaluator_verdict;
+        self.native_verdict = native_verdict;
+        self.fallback_reason = fallback_reason;
+        self.hook_cache_provenance = cache_provenance;
         self
     }
 
@@ -544,6 +595,25 @@ impl HistoryEvent {
             && self
                 .measured_tokens
                 .is_none_or(|value| value.is_none_or(|n| n <= MAX_TOKEN_METRIC))
+            && match (self.evaluator_verdict, self.native_verdict) {
+                (Some(_), Some(_)) => {
+                    self.kind == ExecutionKind::HookDecision
+                        && self.event == ExecutionEvent::Decision
+                        && self.verdict.is_none()
+                }
+                (None, None) => true,
+                _ => false,
+            }
+            && self.fallback_reason.is_none_or(|reason| {
+                self.kind == ExecutionKind::HookDecision
+                    && self.evaluator_verdict == Some(DecisionVerdict::RewriteEmitted)
+                    && self
+                        .native_verdict
+                        .is_some_and(|native| native != HookNativeVerdict::Rewrite)
+                    && reason == ReasonCode::RouteRewriteUnsupportedFallbackDeny
+                    && self.native_verdict == Some(HookNativeVerdict::Deny)
+            })
+            && (self.hook_cache_provenance.is_none() || self.kind == ExecutionKind::HookDecision)
     }
 
     pub fn to_bounded_json(&self) -> Option<Vec<u8>> {
@@ -655,7 +725,10 @@ mod tests {
 
     use crate::history::identity::ExecutionIdentity;
 
-    use super::{ExecutionEvent, ExecutionKind, ExecutionStatus, HistoryEvent, ReasonCode};
+    use super::{
+        ExecutionEvent, ExecutionKind, ExecutionStatus, HistoryEvent, HookCacheProvenance,
+        HookNativeVerdict, ReasonCode,
+    };
 
     #[test]
     fn history_schema_validates_projected_ids_and_preserves_official_catalog_ids() {
@@ -744,5 +817,120 @@ mod tests {
         let raw = br#"{"schemaVersion":1,"recordedAt":"2026-10-27T00:00:00.000Z","executionId":"6ba7b810-9dad-41d1-80b4-00c04fd430c8","traceId":"6ba7b810-9dad-41d1-80b4-00c04fd430c8","kind":"worker","event":"started","status":"running","argv":"secret"}"#;
 
         assert!(HistoryEvent::from_bounded_json(raw).is_none());
+    }
+
+    #[test]
+    fn history_hook_evidence_round_trips_distinct_evaluator_native_and_cache_fields() {
+        let identity = ExecutionIdentity::root();
+        let event = HistoryEvent::new(
+            &identity,
+            ExecutionKind::HookDecision,
+            ExecutionEvent::Decision,
+            ExecutionStatus::Failed,
+        )
+        .with_hook_evidence(
+            Some(super::DecisionVerdict::RewriteEmitted),
+            Some(HookNativeVerdict::Deny),
+            Some(ReasonCode::RouteRewriteUnsupportedFallbackDeny),
+            Some(HookCacheProvenance::LeaderEvaluated),
+        );
+
+        let bytes = event.to_bounded_json().unwrap();
+        assert!(bytes.len() <= super::MAX_EVENT_BYTES);
+        let json: Value = serde_json::from_slice(&bytes).unwrap();
+        assert!(json.get("verdict").is_none());
+        assert_eq!(json["evaluatorVerdict"], "rewrite-emitted");
+        assert_eq!(json["nativeVerdict"], "deny");
+        assert_eq!(
+            json["fallbackReason"],
+            "route.rewrite_unsupported_fallback_deny"
+        );
+        assert_eq!(json["hookCacheProvenance"], "leader-evaluated");
+
+        let decoded = HistoryEvent::from_bounded_json(&bytes).unwrap();
+        assert_eq!(decoded, event);
+        assert!(decoded.is_valid());
+    }
+
+    #[test]
+    fn history_hook_evidence_rejects_invalid_enums_and_duplicate_generic_verdict() {
+        let identity = ExecutionIdentity::root();
+        let bytes = HistoryEvent::new(
+            &identity,
+            ExecutionKind::HookDecision,
+            ExecutionEvent::Decision,
+            ExecutionStatus::Completed,
+        )
+        .with_hook_evidence(
+            Some(super::DecisionVerdict::Allow),
+            Some(HookNativeVerdict::Allow),
+            None,
+            Some(HookCacheProvenance::Bypass),
+        )
+        .to_bounded_json()
+        .unwrap();
+
+        let mut json: Value = serde_json::from_slice(&bytes).unwrap();
+        json["nativeVerdict"] = Value::String("maybe".into());
+        assert!(HistoryEvent::from_bounded_json(&serde_json::to_vec(&json).unwrap()).is_none());
+
+        json["nativeVerdict"] = Value::String("allow".into());
+        json["hookCacheProvenance"] = Value::String("untrusted-source".into());
+        assert!(HistoryEvent::from_bounded_json(&serde_json::to_vec(&json).unwrap()).is_none());
+
+        json["hookCacheProvenance"] = Value::String("bypass".into());
+        json["verdict"] = Value::String("allow".into());
+        assert!(HistoryEvent::from_bounded_json(&serde_json::to_vec(&json).unwrap()).is_none());
+    }
+
+    #[test]
+    fn history_hook_search_reasons_use_finite_wire_codes() {
+        let reasons = [
+            (ReasonCode::SearchNoCandidate, "search.no_candidate"),
+            (ReasonCode::SearchBelowThreshold, "search.below_threshold"),
+            (
+                ReasonCode::SearchThresholdExceededDelegateAdvised,
+                "search.threshold_exceeded_delegate_advised",
+            ),
+            (ReasonCode::SearchScanLimited, "search.scan_limited"),
+            (
+                ReasonCode::SearchMeasurementUnavailable,
+                "search.measurement_unavailable",
+            ),
+        ];
+
+        for (reason, expected) in reasons {
+            let json: Value = serde_json::from_slice(
+                &HistoryEvent::new(
+                    &ExecutionIdentity::root(),
+                    ExecutionKind::HookDecision,
+                    ExecutionEvent::Decision,
+                    ExecutionStatus::Completed,
+                )
+                .with_reason_code(Some(reason))
+                .with_hook_evidence(
+                    Some(super::DecisionVerdict::Allow),
+                    Some(HookNativeVerdict::Allow),
+                    None,
+                    Some(HookCacheProvenance::Bypass),
+                )
+                .to_bounded_json()
+                .unwrap(),
+            )
+            .unwrap();
+            assert_eq!(json["reasonCode"], expected);
+        }
+    }
+
+    #[test]
+    fn history_schema_accepts_legacy_hook_verdict_without_new_optional_fields() {
+        let raw = br#"{"schemaVersion":1,"recordedAt":"2026-10-27T00:00:00.000Z","executionId":"6ba7b810-9dad-41d1-80b4-00c04fd430c8","traceId":"6ba7b810-9dad-41d1-80b4-00c04fd430c8","kind":"hook-decision","event":"decision","status":"completed","verdict":"rewrite-emitted"}"#;
+
+        let decoded = HistoryEvent::from_bounded_json(raw).unwrap();
+        assert!(decoded.is_valid());
+        let json: Value = serde_json::from_slice(&decoded.to_bounded_json().unwrap()).unwrap();
+        assert_eq!(json["verdict"], "rewrite-emitted");
+        assert!(json.get("evaluatorVerdict").is_none());
+        assert!(json.get("nativeVerdict").is_none());
     }
 }

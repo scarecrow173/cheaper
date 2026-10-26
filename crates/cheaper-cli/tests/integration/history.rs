@@ -233,6 +233,9 @@ async fn history_records_standalone_worker_resolution_failure_with_inherited_hin
         result(&detail)["record"]["terminal"]["errorCode"],
         "WORKER_NOT_FOUND"
     );
+    assert!(result(&detail)["record"]["terminal"]
+        .get("usageRecordRef")
+        .is_none());
     assert!(fixture.usage_log().is_none());
 }
 
@@ -353,4 +356,97 @@ async fn history_rejects_bad_cursor_and_grammar_before_store_access() {
         assert!(!history_dir.exists(), "args={args:?}");
         assert!(fixture.usage_log().is_none(), "args={args:?}");
     }
+}
+
+const HISTORY_USAGE_SUCCESS_FIXTURE: &str = r#"{
+  "name": "history-usage-success",
+  "sessions": [{"steps": [
+    {"usage_delta": {"input": 1000, "output": 2000}},
+    {"turn": {}},
+    {"finish": {"text": "```json\n{\"ok\":true}\n```"}}
+  ]}]
+}"#;
+
+const HISTORY_USAGE_FAILURE_FIXTURE: &str = r#"{
+  "name": "history-usage-failure",
+  "abort": {"after_ms": 10, "message": "user abort"},
+  "sessions": [{"steps": [
+    {"usage_delta": {"input": 10, "output": 1}},
+    {"turn": {}},
+    "hang_until_abort"
+  ]}]
+}"#;
+
+fn terminal_for_usage_record(fixture: &Fixture, record: &Value) -> Value {
+    let execution_id = record["executionId"].as_str().unwrap();
+    let terminal_path = fixture
+        .cfg
+        .path()
+        .join("history")
+        .join(execution_id)
+        .join("terminal.json");
+    serde_json::from_slice(&std::fs::read(terminal_path).unwrap()).unwrap()
+}
+
+fn last_usage_record(fixture: &Fixture) -> Option<Value> {
+    fixture
+        .usage_log()?
+        .lines()
+        .filter_map(|line| serde_json::from_str(line).ok())
+        .next_back()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn standalone_worker_history_links_only_successfully_appended_usage() {
+    let mut success = Fixture::new()
+        .with_fake_stream(HISTORY_USAGE_SUCCESS_FIXTURE)
+        .with_input(r#"{"files":["a.txt"]}"#);
+    let (code, _, _) = success.run(&["run", "fixture-worker"]).await;
+    assert_eq!(code, 0);
+    let usage = last_usage_record(&success).expect("successful run usage row");
+    let terminal = terminal_for_usage_record(&success, &usage);
+    assert_eq!(usage["kind"], "run");
+    assert_eq!(
+        terminal["usageRecordRef"]["executionId"],
+        usage["executionId"]
+    );
+    assert_eq!(terminal["providerId"], usage["model"]["provider"]);
+    assert_eq!(terminal["modelId"], usage["model"]["id"]);
+
+    let mut failure = Fixture::new()
+        .with_fake_stream(HISTORY_USAGE_FAILURE_FIXTURE)
+        .with_input(r#"{"files":["a.txt"]}"#);
+    let (code, envelope, _) = failure.run(&["run", "fixture-worker"]).await;
+    assert_eq!(envelope["error"]["code"], "ABORTED");
+    assert_ne!(code, 0);
+    let usage = last_usage_record(&failure).expect("usage-bearing failure row");
+    let terminal = terminal_for_usage_record(&failure, &usage);
+    assert_eq!(
+        terminal["usageRecordRef"]["executionId"],
+        usage["executionId"]
+    );
+    assert_eq!(terminal["providerId"], usage["model"]["provider"]);
+    assert_eq!(terminal["modelId"], usage["model"]["id"]);
+    assert_eq!(terminal["turns"], envelope["meta"]["turns"]);
+    assert_eq!(terminal["toolCalls"], envelope["meta"]["toolCalls"]);
+
+    let mut append_failure = Fixture::new()
+        .with_fake_stream(HISTORY_USAGE_SUCCESS_FIXTURE)
+        .with_input(r#"{"files":["a.txt"]}"#);
+    std::fs::create_dir_all(append_failure.cfg.path().join("usage.jsonl")).unwrap();
+    let (code, _, _) = append_failure.run(&["run", "fixture-worker"]).await;
+    assert_eq!(
+        code, 0,
+        "Usage persistence failure preserves command result"
+    );
+    assert!(last_usage_record(&append_failure).is_none());
+    let execution_dir = std::fs::read_dir(append_failure.cfg.path().join("history"))
+        .unwrap()
+        .filter_map(Result::ok)
+        .find(|entry| entry.file_type().unwrap().is_dir())
+        .unwrap();
+    let terminal: Value =
+        serde_json::from_slice(&std::fs::read(execution_dir.path().join("terminal.json")).unwrap())
+            .unwrap();
+    assert!(terminal.get("usageRecordRef").is_none());
 }
