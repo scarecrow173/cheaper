@@ -12,6 +12,8 @@
 //!   global/per-route 集計を行う(`--route` はこの route-scope のみ)。
 //! - `aggregate` — totals + measured(savings 持ちのみ) +
 //!   comparable(`directlyComparable === true` のみ)集計。
+//! - `build_by_error` — filter 済み run records の error code と
+//!   allowlist dimension を集計する。
 //! - `build_usage_report` — `--compare-model` の estimated 算出:
 //!   `resolve_pricing`(runtime catalog cost → user `pricing.json` →
 //!   bundled snapshot)で comparison model の価格を解決し、stale
@@ -27,6 +29,7 @@ use std::{collections::BTreeMap, collections::HashMap};
 use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirsOptions};
 use cheaper_core::duration::parse_duration;
 use cheaper_core::errors::{CheaperError, ErrorCode};
+use cheaper_core::json::number::format_number;
 use cheaper_core::model::classify::ModelInfo;
 use cheaper_core::model::model_ref::{parse_model_ref, ModelRef};
 use cheaper_core::model::pricing::{resolve_pricing, ModelCost, ModelPricing, PricingSource};
@@ -566,6 +569,18 @@ struct RouteReport {
     by_route: Vec<Map<String, Value>>,
 }
 
+#[derive(Default)]
+struct ErrorAgg {
+    count: f64,
+    duration_ms: f64,
+    workers: BTreeMap<String, f64>,
+    models: BTreeMap<String, f64>,
+    reasons: BTreeMap<String, f64>,
+    exec_timeout_ms: BTreeMap<String, f64>,
+    exec_max_turns: BTreeMap<String, f64>,
+    exec_max_tool_calls: BTreeMap<String, f64>,
+}
+
 fn is_number(value: Option<&Value>) -> bool {
     value.is_some_and(Value::is_number)
 }
@@ -738,6 +753,117 @@ fn build_route_report(
     RouteReport { bucket, by_route }
 }
 
+fn execution_key(value: &Value) -> Option<String> {
+    match value {
+        Value::Null => Some("null".to_string()),
+        Value::Bool(value) => Some(value.to_string()),
+        Value::Number(value) => value.as_f64().map(format_number),
+        Value::String(value) => Some(value.clone()),
+        Value::Array(_) | Value::Object(_) => None,
+    }
+}
+
+fn number_map(values: BTreeMap<String, f64>) -> Map<String, Value> {
+    values
+        .into_iter()
+        .map(|(key, value)| (key, num(value)))
+        .collect()
+}
+
+fn build_by_error(records: &[Value]) -> Vec<Map<String, Value>> {
+    let mut groups: BTreeMap<String, ErrorAgg> = BTreeMap::new();
+    let mut error_count = 0.0;
+    for record in records {
+        if truthy(get(record, "ok")) {
+            continue;
+        }
+        error_count += 1.0;
+        let code = get(record, "error")
+            .and_then(|error| error.get("code"))
+            .and_then(Value::as_str)
+            .unwrap_or("unknown");
+        let agg = groups.entry(code.to_string()).or_default();
+        agg.count += 1.0;
+        agg.duration_ms += or_zero(get(record, "durationMs"));
+        if let Some(worker) = str_field(record, "worker") {
+            *agg.workers.entry(worker.to_string()).or_default() += 1.0;
+        }
+        if let (Some(provider), Some(id)) = (
+            get(record, "model")
+                .and_then(|model| model.get("provider"))
+                .and_then(Value::as_str),
+            get(record, "model")
+                .and_then(|model| model.get("id"))
+                .and_then(Value::as_str),
+        ) {
+            *agg.models.entry(format!("{provider}/{id}")).or_default() += 1.0;
+        }
+        if let Some(reason) = get(record, "error")
+            .and_then(|error| error.get("reason"))
+            .and_then(Value::as_str)
+        {
+            *agg.reasons.entry(reason.to_string()).or_default() += 1.0;
+        }
+        if let Some(execution) = get(record, "execution").and_then(Value::as_object) {
+            for (field, target) in [
+                ("timeoutMs", &mut agg.exec_timeout_ms),
+                ("maxTurns", &mut agg.exec_max_turns),
+                ("maxToolCalls", &mut agg.exec_max_tool_calls),
+            ] {
+                if let Some(key) = execution.get(field).and_then(execution_key) {
+                    *target.entry(key).or_default() += 1.0;
+                }
+            }
+        }
+    }
+
+    let mut rows = groups.into_iter().collect::<Vec<_>>();
+    rows.sort_by(|(left_code, left), (right_code, right)| {
+        right
+            .count
+            .total_cmp(&left.count)
+            .then_with(|| left_code.cmp(right_code))
+    });
+    rows.into_iter()
+        .map(|(code, agg)| {
+            let execution = Map::from_iter([
+                (
+                    "timeoutMs".to_string(),
+                    Value::Object(number_map(agg.exec_timeout_ms)),
+                ),
+                (
+                    "maxTurns".to_string(),
+                    Value::Object(number_map(agg.exec_max_turns)),
+                ),
+                (
+                    "maxToolCalls".to_string(),
+                    Value::Object(number_map(agg.exec_max_tool_calls)),
+                ),
+            ]);
+            Map::from_iter([
+                ("code".to_string(), Value::from(code)),
+                ("count".to_string(), num(agg.count)),
+                (
+                    "shareOfRuns".to_string(),
+                    num(agg.count / records.len() as f64),
+                ),
+                ("shareOfFailures".to_string(), num(agg.count / error_count)),
+                (
+                    "workers".to_string(),
+                    Value::Object(number_map(agg.workers)),
+                ),
+                ("models".to_string(), Value::Object(number_map(agg.models))),
+                ("durationMs".to_string(), num(agg.duration_ms)),
+                (
+                    "reasons".to_string(),
+                    Value::Object(number_map(agg.reasons)),
+                ),
+                ("execution".to_string(), Value::Object(execution)),
+            ])
+        })
+        .collect()
+}
+
 /// `buildUsageReport`。usage.jsonl → route window/scope + run filter → 集計 →(compare-model +
 /// pricing が揃い、直接比較可能な run があるときのみ)estimated。
 /// 戻り値は `UsageReport` object(`Map`、TS literal 順)で、caller が
@@ -765,6 +891,17 @@ pub fn build_usage_report(
         report.insert(
             "byRoute".to_string(),
             Value::Array(routes.by_route.into_iter().map(Value::Object).collect()),
+        );
+    }
+    if _group_by == Some(UsageGroupBy::Error) {
+        report.insert(
+            "byError".to_string(),
+            Value::Array(
+                build_by_error(&records)
+                    .into_iter()
+                    .map(Value::Object)
+                    .collect(),
+            ),
         );
     }
 

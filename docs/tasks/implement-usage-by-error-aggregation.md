@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MbTk4xoYlrywa6aUQja"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement usage byError aggregation and canonical execution value keys (issue #184 T3)"
 created: "2026-10-25"
 updated: "2026-10-26"
@@ -22,7 +22,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-usage-route-error-analysis-issue-184.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/implement-usage-byerror-aggregation-issue-184-t3.md"
   depends-on:
     - "docs/plans/implement-usage-route-error-analysis-issue-184.md"
     - "docs/tasks/pin-usage-route-error-contract-tests.md"
@@ -147,22 +148,29 @@ module doc-comment への `build_by_error` 追記は本 task で行う。
 
 ## Done When
 
-- [ ] `build_by_error` が `!truthy(ok)` run subset を `error.code`
+- [x] `build_by_error` が `!truthy(ok)` run subset を `error.code`
       別に集計し、spec 固定 field 順・`count` 降順/`code` 昇順
       sort・share 分母規約・canonical execution key・`"unknown"`
       畳み込み・`""` 保持を実装する
-- [ ] `byError` rows が `route` 直後・`estimated` の前へ emit され、
+- [x] `byError` rows が `route` 直後・`estimated` の前へ emit され、
       error 0 件でも `byError: []` が出る
-- [ ] privacy allowlist 外の field(`error.message`・`schemaErrors`・
+- [x] privacy allowlist 外の field(`error.message`・`schemaErrors`・
       `checkpoint`・`errorMessage`・`executed.argv` 等)が集計 key・
       出力に使われない
-- [ ] T1 の error 系 pin test が全て green
-- [ ] flag 無し出力の shape/値が不変(既存 regression golden 無変更
+- [x] T1 の error 系 pin test が全て green
+- [x] flag 無し出力の shape/値が不変(既存 regression golden 無変更
       で green)
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration -- group_by_error_emits_code_rows empty_error_code_is_preserved execution_number_keys_use_js_canonical_format nonfinite_aggregates_serialize_as_null failure_only_log_emits_by_error_rows empty_log_emits_empty_grouped_sections fake_run_error_records_aggregate argv_and_error_detail_not_leaked` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` で既存 test が全て pass し、残る失敗が T4 所有の pin test のみであること(失敗名を本 task へ記録)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
-- [ ] `mise exec -- cargo fmt --all -- --check` exits 0
+- [x] T3 所有 pins 8件と `usage_same_trace_distinct_runs_counted` を個別実行し、
+      全て 1 passed / 0 failed
+- [x] module 全体は 60 passed / 5 failed。残りは T4 所有の
+      `invalid_group_by_value_rejected_at_dispatch`,
+      `route_filter_leaves_by_error_unscoped`,
+      `route_flag_scopes_route_at_dispatch`,
+      `group_by_last_wins_emits_by_error_only`, `format_text_parity`
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+- [x] `mise exec -- cargo fmt --all -- --check` exits 0
+- [x] regression golden 61/61 pass、regression directory に diff なし
+- [x] independent cooperative/adversarial review: NO CANDIDATES

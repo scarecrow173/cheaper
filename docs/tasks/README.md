@@ -219,7 +219,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7hbds7QpLZ | Implement tool registry mapping vocabulary to Pi tools | done | [implement-tool-registry-mapping-vocabulary-to-pi-tools.md](./implement-tool-registry-mapping-vocabulary-to-pi-tools.md) |
 | TASK-034r05iHK8bA7gGxgfMRs7 | Implement tool vocabulary and alias normalization | done | [implement-tool-vocabulary-and-alias-normalization.md](./implement-tool-vocabulary-and-alias-normalization.md) |
 | TASK-034r05iHK8bA7hi27rKIih | Implement usage aggregation from message end events | done | [implement-usage-aggregation-from-message-end-events.md](./implement-usage-aggregation-from-message-end-events.md) |
-| TASK-034MbTk4xoYlrywa6aUQja | Implement usage byError aggregation and canonical execution value keys (issue #184 T3) | todo | [implement-usage-by-error-aggregation.md](./implement-usage-by-error-aggregation.md) |
+| TASK-034MbTk4xoYlrywa6aUQja | Implement usage byError aggregation and canonical execution value keys (issue #184 T3) | done | [implement-usage-by-error-aggregation.md](./implement-usage-by-error-aggregation.md) |
 | TASK-034r05iHQeQpDqJKnzydzW | Implement usage-log writer and CLI wiring with unit tests | done | [implement-usage-log-writer-and-cli-wiring.md](./implement-usage-log-writer-and-cli-wiring.md) |
 | TASK-034MbTdI8lEI1dRpWvsRQQ | Implement usage route window, --route scoping, logRef join, orphan/unkeyed diagnostics, and byRoute rows (issue #184 T2) | done | [implement-usage-route-window-and-by-route.md](./implement-usage-route-window-and-by-route.md) |
 | TASK-034r05iHK8bA7gLHezkOrX | Implement worker definition validation | done | [implement-worker-definition-validation.md](./implement-worker-definition-validation.md) |
