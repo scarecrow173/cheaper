@@ -176,6 +176,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z3CEPSQBJaEVBVxxzmL | verify launchers and apm payload | completed | [verify-launchers-and-apm-payload.md](./verify-launchers-and-apm-payload.md) |
 | IMPL-034z2rZiB6WUNTje88kRt1 | verify release workflow | completed | [verify-release-workflow.md](./verify-release-workflow.md) |
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
+| IMPL-034MpJiRnTxGKRzkCAn04f | Verify usage route and error analysis chain | completed | [verify-usage-route-and-error-analysis-chain.md](./verify-usage-route-and-error-analysis-chain.md) |
 | IMPL-034APqdMTW2hYck2FYoKv1 | Verify workflow execution integration | completed | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | IMPL-034D9oWccQJEPfXsMNRpH5 | Volume-root workspace boundary predicate の trailing separator guard | completed | [volume-root-workspace-boundary-predicate-trailing-separator-guard.md](./volume-root-workspace-boundary-predicate-trailing-separator-guard.md) |
 | IMPL-034KyCatPzZz2THKRqjLIe | Windsurf-compat range normalization and registration surfacing issue 161 | completed | [windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md](./windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md) |

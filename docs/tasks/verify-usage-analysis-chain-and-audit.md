@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MbTCpfWxoiFfeKTaOMs"
 type: "task"
-status: "todo"
+status: "done"
 title: "Run focused and canonical verification, doc-status audit, and final scope/privacy review (issue #184 T6)"
 created: "2026-10-25"
 updated: "2026-10-26"
@@ -11,14 +11,21 @@ relations:
     - "https://github.com/scarecrow173/cheaper/issues/184"
   changes:
     added: []
-    modified: []
+    modified:
+      - type: "file"
+        path: "docs/plans/implement-usage-route-error-analysis-issue-184.md"
+      - type: "file"
+        path: "docs/tasks/verify-usage-analysis-chain-and-audit.md"
+      - type: "file"
+        path: "docs/impl/ir/verify-usage-route-and-error-analysis-chain.md"
     deleted: []
     renamed: []
     moved: []
     generated: []
   implements:
     - "docs/plans/implement-usage-route-error-analysis-issue-184.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/verify-usage-route-and-error-analysis-chain.md"
   depends-on:
     - "docs/plans/implement-usage-route-error-analysis-issue-184.md"
     - "docs/tasks/wire-usage-group-by-flags-text-and-guide.md"
@@ -119,19 +126,43 @@ doc-index 一貫性 review。plan Verification の全 checkbox をここで
 
 ## Done When
 
-- [ ] 上記 consumer tolerance 5 test と責務境界の audit 結果を記録
+- [x] 上記 consumer tolerance 5 test が green。writer/schema 無変更、
+      History 非参照、recorded-run 母数、window-bound logRef join を確認
 
-- [ ] plan Verification の全 checkbox が検証済み
-- [ ] focused test 3 モジュールと `mise run check` が green
-- [ ] doc-status audit が issue #184 artifacts に新規 blocking
+- [x] plan Verification の全 checkbox が検証済み
+- [x] focused test 3 モジュールと `mise run check` が green
+- [x] doc-status audit が issue #184 artifacts に新規 blocking
       finding を報告しない
-- [ ] 最終 diff で scope 逸脱・privacy 漏出・golden 変化・
+- [x] 最終 diff で scope 逸脱・privacy 漏出・golden 変化・
       doc-index 不整合がないことを確認し、結果を本 task に記録
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration args::` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0
-- [ ] `mise run check` exits 0
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --type all --json` が issue #184 artifacts に新規 blocking finding を報告しない
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` exits 0 — 65 passed
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration args::` exits 0 — 47 passed
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0 — 21 passed
+- [x] `mise run check` exits 0 — Node tests 41 passed / 2 skipped; all remaining stages passed
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --type all --json` が issue #184 artifacts に新規 blocking finding を報告しない。既存全体 warning はあるが本 issue の成果物に blocking finding なし
+
+## 結果記録 (2026-10-26)
+
+- Focused filters: `usage_report::` 65/65、`args::` 47/47、
+  `usage_log::` 21/21。#192 consumer tolerance 5 test と
+  `argv_and_error_detail_not_leaked` を含む。
+- `mise run check`: Biome、fmt、workspace clippy、version/doc-id
+  check（1243 Markdown files）、workspace tests、Node tests、lockfile、
+  APM slim payload の全段 exit 0。Node suite は 41 pass / 2 platform
+  skip / 0 fail。Rust regression golden 61/61。
+- `audit_docs.js --type all --json`: exit 0、1076 files、841 findings
+  は全て non-blocking warning、blocking 0。#184 の plan/test-spec/tasks
+  artifacts に findings 0。Implementation Record audit も 186 files、
+  findings 0。
+- 最終 scope/privacy review: usage writer/schema は変更なし、streaming
+  化・duration suffix `d`/`w`・History 連携・外部 History 読込なし。
+  route records は既存記録だけを集計し、failure denominator は
+  recorded runs のまま。出力 key は allowlist 由来で、argv・error detail・
+  path/平文 command を出力しないことを test と目視で確認。
+  flag 無し JSON regression golden は変更なし。3 document index と
+  guide/design doc-sync は成果物・監査と照合済み。
+- 既知の非 blocking follow-up: text `count_detail()` の `=` 置換が
+  execution key の内容も変更し得る P2。T4 review で非 blocking と判定済み。

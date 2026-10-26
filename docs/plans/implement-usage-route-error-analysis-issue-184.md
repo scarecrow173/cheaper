@@ -95,8 +95,7 @@ relations:
 
 2026-10-26 改訂: #192 境界を追加した amendment は独立 review と Judge 判定を
 経て承認済み（下記 approval checkpoint）。先行 spec/design/plan の承認と
-ADR の O2 採択は維持する。test-spec と T1-T6 は作成済みだが T1 は未着手で、
-本 closeout は実装・検証完了を意味しない。
+ADR の O2 採択は維持する。T1-T6 の実装・検証と文書 closeout が完了した。
 
 Implement issue #184's route-window filtering, per-route and per-error usage
 reports, CLI flags, and text/JSON output while preserving existing run filters,
@@ -243,13 +242,13 @@ sentinel を置く（実 History writer を作らない）。詳細な fixture �
 は維持し、新規依存は追加しない。T5 メモリ計測は Usage JSONL のみで、
 History store の容量/性能測定へ拡張しない。
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` exits 0.
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration args::` exits 0.
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0.
-- [ ] `mise run check` exits 0.
-- [ ] A bounded representative large JSONL measurement records input dimensions and peak memory using a reproducible command; evidence is checked in as `docs/impl/exp/usage-jsonl-peak-memory-measurement.jsonl` (`experiment_event.v1` note convention, per `docs/impl/exp/README.md`).
-- [ ] `node .agents/skills/doc-status/scripts/audit_docs.js --type all --json` reports no new blocking findings for the issue #184 artifacts.
-- [ ] 上記 consumer tolerance 5 test が green で、writer/schema 無変更、
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` exits 0 (65 passed).
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration args::` exits 0 (47 passed).
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0 (21 passed).
+- [x] `mise run check` exits 0.
+- [x] A bounded representative large JSONL measurement records input dimensions and peak memory using a reproducible command; evidence is checked in as `docs/impl/exp/usage-jsonl-peak-memory-measurement.jsonl` (`experiment_event.v1` note convention, per `docs/impl/exp/README.md`).
+- [x] `node .agents/skills/doc-status/scripts/audit_docs.js --type all --json` reports no new blocking findings for the issue #184 artifacts.
+- [x] 上記 consumer tolerance 5 test が green で、writer/schema 無変更、
       History 非参照、recorded-run 母数、window-bound logRef join を確認。
 
 ## Open Questions / Gaps
@@ -267,9 +266,9 @@ History store の容量/性能測定へ拡張しない。
 
 ## Self-Review
 
-- [ ] Every spec requirement maps to a task.
-- [ ] No placeholders remain.
-- [ ] File paths, relations, status values, and terminology are consistent.
+- [x] Every spec requirement maps to a task.
+- [x] No placeholders remain.
+- [x] File paths, relations, status values, and terminology are consistent.
 
 ## Implementation Handoff
 
@@ -279,9 +278,8 @@ History store の容量/性能測定へ拡張しない。
   aggregation share the `build_usage_report` tail and one test file, so T3
   follows T2; formatting/docs (T4) follows both; measurement (T5) is a
   bounded slice sequenced after T4; verification (T6) gates the chain.
-- User approval required before dispatch: 現改訂の review/approval は取得済み。本 closeout は T1 dispatch 前で停止する。
-- If approved: discover available implementation and delegation capabilities in the current environment, then execute task-by-task with review checkpoints.
-- If declined or unavailable: execute inline using the same dependency graph and verification matrix.
+- T1-T6 は承認済み plan の直列順で実行済み。T6 focused/canonical verification と
+  doc-status audit は成功し、implementation-verified へ routing する。
 
 ## Review Handoff
 
