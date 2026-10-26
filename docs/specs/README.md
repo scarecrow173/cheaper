@@ -72,6 +72,7 @@ Directory: `docs/specs`
 | SPEC-034J7SxWvGL3oSbeBpo8a3 | PreToolUse auto-routing: route resolution and delegated workflow execution | implemented | [pretooluse-route-resolver-and-workflow-delegation.md](./pretooluse-route-resolver-and-workflow-delegation.md) |
 | SPEC-034r2qodmutbif9L0DLskN | Correct provider and auth documentation to match runtime capabilities | implemented | [provider-auth-docs-runtime-sync.md](./provider-auth-docs-runtime-sync.md) |
 | SPEC-034r05iHK8bA7gz3bFqgXr | Provider-only registration layer without Pi extensions | implemented | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
+| SPEC-034MBouypEDoaGeJu56EWi | Remove ambient Node coupling from Rust test fixtures (issue #188) | approved | [remove-ambient-node-test-coupling-issue-188.md](./remove-ambient-node-test-coupling-issue-188.md) |
 | SPEC-034r05iHK8bA7g9KcsCqKj | Repair and abort hardening, telemetry consistency, and test hermeticity | implemented | [repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |
 | SPEC-034r05iHK8bA7gpcCJQya9 | Repository-owned setup contract for fresh checkouts/worktrees | implemented | [repo-owned-setup-contract-for-fresh-checkouts.md](./repo-owned-setup-contract-for-fresh-checkouts.md) |
 | SPEC-034A8kLznlxOOeccFx9SNM | ResourceManager job lifetime leases | implemented | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |

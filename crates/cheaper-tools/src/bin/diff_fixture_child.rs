@@ -19,6 +19,7 @@ fn main() {
     let mode = std::env::var("CHEAPER_DIFF_CHILD_MODE").unwrap_or_default();
     let args: Vec<String> = std::env::args().skip(1).collect();
     match mode.as_str() {
+        "bare" => println!("bare node"),
         "hi" => println!("hello process"),
         "fail" => {
             println!("before failure");

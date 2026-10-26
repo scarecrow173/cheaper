@@ -92,11 +92,14 @@ harness は Rust crate `crates/cheaper-bench` へ移行済みで、
 
 新規の Node 結合は repo tooling 領域に限る（product path・配布
 payload・CI の直接 node 呼出しは不可。`crates/*/tests` からの新規
-ambient `node` 結合は原則不可 — 例外条件は design §2.2/§3 参照）。
-既存の ambient 結合は 3 site 残っており（design §3 参照）、
-`mise exec` を介さない裸 `cargo test` は node 不在環境で
-fail/skip し得る。`mise.toml` の `node` 行除去は required
-entrypoint 全 node-free + design §1 維持 entry の移行完了まで不可。
+ambient `node` 結合は不可 — 例外条件は design §2.2/§3 参照）。
+issue #188 (2026-10-26) で従来の Rust test 3 site の ambient Node 結合を
+除去した。`proc_process` は child PATH による bare fixture lookup→pin→spawn
+を維持し、differential は既知の literal Node case を Rust fixture に翻訳し
+golden と JSON を保ち、workflow は test binary fixture child を実行するため
+Node 不在時も skip しない。対象 test は明示的 Node-free WSL PATH で成功済み。
+`mise.toml` の `node` 行除去は repo tooling の required entrypoint 全
+node-free + design §1 の維持 entry 移行完了まで不可。
 領域別 policy・非退行契約・revisit trigger の観測点は
 `docs/designs/node-dev-tooling-boundary-contract-issue-182.md`、
 全使用箇所の inventory は

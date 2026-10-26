@@ -1,7 +1,7 @@
 //! Port of `packages/workflow/test/process.test.ts`。
 //!
-//! `node` executable が無い環境では skip する(TS 側は実 `node` を
-//! spawn する policy task)。
+//! workflow producer fixture はこの test binary を子プロセスとして再実行し、
+//! ambient executable に依存せず declared output を生成する。
 
 mod common;
 
@@ -55,41 +55,36 @@ fn worker_scope_options(owner: &str, root: &str, names: Vec<ToolName>) -> Worker
     }
 }
 
-/// Rust runtime 固定ルール: bare `node` は `process.execPath` 相当の
-/// host が無いため明示 `POLICY_VIOLATION`。PATH 上の実 `node` の
-/// absolute path に解決して task command へ入れる。
-fn resolve_node() -> Option<String> {
-    let output = std::process::Command::new(if cfg!(windows) { "where" } else { "which" })
-        .arg("node")
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
+const WORKFLOW_FIXTURE_ENV: &str = "CHEAPER_WORKFLOW_PROCESS_FIXTURE";
+
+/// `process` task から同じ integration test binary を再実行する fixture。
+/// 通常の test harness 実行では marker が無いため何もしない。
+#[test]
+fn workflow_fixture_child() {
+    match std::env::var(WORKFLOW_FIXTURE_ENV) {
+        Err(std::env::VarError::NotPresent) => return,
+        Ok(mode) => assert_eq!(mode, "generate", "unknown workflow fixture mode"),
+        Err(error) => panic!("invalid workflow fixture marker: {error}"),
     }
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let path = stdout.lines().next()?.trim().to_string();
-    (nodepath::is_absolute(&path) && std::fs::metadata(&path).is_ok()).then_some(path)
+
+    std::fs::write("out.txt", "generated").expect("write declared workflow output");
 }
 
 #[tokio::test]
 async fn compiles_policy_process_producer_and_executes_materialized_jobs() {
-    let Some(node) = resolve_node() else {
-        eprintln!("skipping: node executable not found");
-        return;
-    };
     let dir = tempfile::tempdir().expect("tempdir");
     let root = realpath(&dir.path().to_string_lossy()).expect("realpath");
-    std::fs::write(
-        nodepath::join(&[&root, "child.mjs"]),
-        "import {writeFileSync} from \"node:fs\"; writeFileSync(\"out.txt\", \"generated\");",
-    )
-    .expect("child.mjs");
+    let fixture_exe = std::env::current_exe()
+        .expect("current test executable")
+        .to_string_lossy()
+        .into_owned();
     let process_policy = json!({
         "maxConcurrent": 1,
         "tasks": {
             "generate": {
-                "command": [node, "child.mjs"],
-                "inputs": ["child.mjs"],
+                "command": [fixture_exe, "--exact", "workflow_fixture_child", "--nocapture", "--", "out.txt"],
+                "env": {"CHEAPER_WORKFLOW_PROCESS_FIXTURE": "generate"},
+                "inputs": [],
                 "outputs": ["out.txt"]
             }
         }

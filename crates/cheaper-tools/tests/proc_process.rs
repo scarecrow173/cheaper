@@ -40,6 +40,8 @@ const ARG_ENV: &str = "CHEAPER_PROC_CHILD_ARG";
 const SENTINEL: &str = "@@";
 /// fixture → test の emit channel。pids.d dir を渡す唯一の経路。
 const PID_DIR_ENV: &str = "CHEAPER_PROC_PID_DIR";
+const PATH_REEXEC_ENV: &str = "CHEAPER_NODE_PATH_REEXEC";
+const DIFF_CHILD_BIN: &str = env!("CARGO_BIN_EXE_diff_fixture_child");
 
 /// emit 観測対象の全 key(deep mode の 3 段 + tree/stubborn/graceful の subset)。
 const ALL_KEYS: &[&str] = &["parent", "child", "grandchild"];
@@ -956,46 +958,63 @@ async fn executes_literal_argv_in_validated_cwd_with_minimal_env_and_ignored_std
         .starts_with("process inspect: completed, exitCode=0\nstdout:"));
 }
 
-/// bare `node` task は ambient PATH で実 `node` へ解決され実行される
-/// (executable 名・内容の審査は行わない — mise toolchain の node が
-/// PATH 上にある前提は `mise run check` 経路で保証される)。
-/// Err 経路は `diag_fail` で error chain/details/mode/elapsed を採取する
-/// (R4 — exit 255 再発時に tool 側帰属か node 起因かを判別するため)。
+/// PATH を fixture binary のディレクトリだけにした nested test process
+/// で bare-name → grant pin → spawn を検証する。親 test process の PATH
+/// は変更しない。
 #[tokio::test]
 async fn node_task_resolves_via_path() {
+    let fixture_dir = Path::new(DIFF_CHILD_BIN)
+        .parent()
+        .expect("diff fixture binary has a parent directory");
+    match std::env::var(PATH_REEXEC_ENV) {
+        Ok(marker) => {
+            assert_eq!(marker, "1", "invalid controlled-PATH re-exec marker");
+            assert_eq!(
+                std::env::var_os("PATH").as_deref(),
+                Some(fixture_dir.as_os_str()),
+                "re-executed test must use only the fixture binary directory on PATH",
+            );
+        }
+        Err(std::env::VarError::NotPresent) => {
+            let output = std::process::Command::new(
+                std::env::current_exe().expect("current test executable"),
+            )
+            .args(["--exact", "node_task_resolves_via_path", "--nocapture"])
+            .env(PATH_REEXEC_ENV, "1")
+            .env("PATH", fixture_dir)
+            .output()
+            .expect("re-execute node_task_resolves_via_path with controlled PATH");
+            assert!(
+                output.status.success(),
+                "controlled-PATH child failed: status={}\nstdout:\n{}\nstderr:\n{}",
+                output.status,
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr),
+            );
+            return;
+        }
+        Err(error) => panic!("invalid controlled-PATH re-exec marker: {error}"),
+    }
+
     let dir = TempDir::new();
     let tool = tool_with(
         &dir.root(),
         json!({"script": {
-            "command": ["node", "-e", "console.log('bare node')"],
+            "command": ["diff_fixture_child"],
             "inputs": [],
             "outputs": [],
+            "env": {"CHEAPER_DIFF_CHILD_MODE": "bare"},
         }}),
         json!({}),
     );
-    let result = tool.execute(&json!({"task": "script"}), None).await;
-    let details = match result {
-        Ok(result) => result.details.expect("process result details"),
-        Err(err) => {
-            let ctx = WaitCtx {
-                mode: "node",
-                what: "node task resolution".to_string(),
-                budget: Duration::ZERO,
-                poll: FILE_POLL,
-                started: Instant::now(),
-                pids_dir: None,
-                keys: &[],
-            };
-            dump_failure(Some(&err), &ctx);
-            diag_fail(&ctx);
-        }
-    };
+    let result = tool
+        .execute(&json!({"task": "script"}), None)
+        .await
+        .expect("bare diff_fixture_child resolves, pins, and spawns");
+    let details = result.details.expect("process result details");
     assert_eq!(details["state"], json!("completed"));
     assert_eq!(details["exitCode"], json!(0));
-    assert!(details["stdout"]["text"]
-        .as_str()
-        .unwrap()
-        .contains("bare node"));
+    assert_eq!(details["stdout"]["text"], json!("bare node\n"));
 }
 
 #[tokio::test]

@@ -4,7 +4,7 @@ type: "discovery"
 status: "resolved"
 title: "Node.js dev-tooling inventory (issue #182)"
 created: "2026-10-25"
-updated: "2026-10-25"
+updated: "2026-10-26"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -51,6 +51,11 @@ relations:
 ---
 
 # Node.js dev-tooling inventory (issue #182)
+
+> Snapshot note: the site counts, usage table, and H3 finding below record the
+> inventory observed on 2026-10-25. The current disposition as of 2026-10-26 is
+> recorded after section D; issue #188 removed ambient Node from those Rust
+> test paths while leaving the frozen fixture corpus unchanged.
 
 ## Exploration Goal
 
@@ -99,7 +104,7 @@ phase-6-remove-typescript-node-pi.md` §Deferred 判断の補足)、全使用箇
 | A. toolchain 宣言(mise.toml `[tools] node`) | 1 | required(以下全ての供給源) | repo |
 | B. `mise run check` の node entrypoint | 6 | required | repo |
 | C. 手動 repo tooling(set-version・benchmark harness・glob table codegen) | 3 + 付随 lib/fixture | optional-manual | repo |
-| D. Rust test 内の ambient `node` 依存 | 3 site + dormant fixture 宣言 | 2 required / 1 silent-skip | repo |
+| D. Rust test 内の ambient `node` 依存 (2026-10-25 snapshot) | 3 site + dormant fixture 宣言 | 2 required / 1 silent-skip at snapshot time | repo |
 | E. APM deploy 済み doc-suite `.js`/`.cjs` script | 42 `.js` + 1 `.cjs` / 14 skill(≈86 deployed copies) | agent 実行時 required・upstream 所有 | upstream |
 | F. node 非依存と確認済みの隣接領域 | (一覧は後述) | — | — |
 
@@ -142,6 +147,19 @@ phase-6-remove-typescript-node-pi.md` §Deferred 判断の補足)、全使用箇
   invoke されない dormant 宣言だが、将来 `task:"node"` を呼ぶ op の
   追加や task validation の eager 化があれば latent coupling になる。
 
+**Current disposition (2026-10-26):** issue #188 completed F1. The dedicated
+`node_task_resolves_via_path` test now resolves a bare Rust fixture executable
+through a controlled child PATH, pins it, and spawns it. Differential process
+and runtime tests translate the known literal Node fixture command to the
+absolute Rust fixture binary; this translation preserves output but is not
+the PATH proof. The workflow process test re-executes its own test binary and
+does not skip when Node is absent. All three tests passed under an explicit
+Node-free WSL PATH. The six runtime JSON declarations remain historical frozen
+inputs and are intercepted by the test translator, so they no longer create
+ambient Node coupling. The Node tool pin remains for repository tooling and
+deployed upstream doc-suite scripts; this update does not claim the broader
+Node removal gate is complete.
+
 ### E. APM deploy 済み doc-suite `.js`/`.cjs`(upstream 所有・agent 実行時)
 
 | # | 場所 | 用途 | 呼出し元 | required? | 移行性 | 備考 |
@@ -176,7 +194,7 @@ CI (jdx/mise-action --locked)
          ├─ cargo fmt --check / cargo clippy         (native)
          ├─ node scripts/check-version.mjs           [B2]
          ├─ node scripts/check-doc-ids.mjs           [B3]
-         ├─ cargo test --workspace                   → ambient node ×3 [D]
+         ├─ cargo test --workspace                   → Rust fixture coverage (F1 complete) [D]
          ├─ node --test scripts/test/                [B6]
          ├─ node --test benchmarks/test/             [B7]
          ├─ node scripts/check-lockfile.mjs          [B4]
@@ -228,7 +246,7 @@ manual: node crates/cheaper-tools/gen-glob-tables.cjs <out>  [C10]
 - **H2(confirmed)**: required entrypoint(`mise run check`)の node 面は
   check-* 4 script + 2 node:test スイートの 6 件に集約される。
   いずれも小〜中規模で、Rust(xtask/cargo test)への移植は技術的に容易。
-- **H3(confirmed)**: `cargo test` には ambient `node` への暗黙結合が
+- **H3(confirmed as of 2026-10-25)**: `cargo test` には ambient `node` への暗黙結合が
   3 site ある(proc_process 必須・process.json golden 必須・
   workflow process silent-skip)。`mise run check` 経路では mise が
   node を供給するため現行では整合している。

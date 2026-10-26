@@ -7,6 +7,7 @@ Directory: `docs/test-specs`
 | ID | Title | Status | File |
 | --- | --- | --- | --- |
 | TSPEC-034EeitmhHjX9tjAWLQ7gk | Setup-boundary abort classification contract | approved | [abort-classification-at-setup-boundary.md](./abort-classification-at-setup-boundary.md) |
+| TSPEC-034MCAP6oUmUL9GA7GfisH | Ambient Node free Rust test contracts | draft | [ambient-node-free-rust-test-contract-issue-188.md](./ambient-node-free-rust-test-contract-issue-188.md) |
 | TSPEC-034GtAElEShJ9SxImZE2ot | APM-distributed Devin registration preservation | approved | [apm-distributed-devin-registration-preservation.md](./apm-distributed-devin-registration-preservation.md) |
 | TSPEC-034z3yKWLolrImpMY8UMhZ | APM executable payload layout and launcher dispatch contract | superseded | [apm-executable-payload-layout-and-launcher-dispatch-contract.md](./apm-executable-payload-layout-and-launcher-dispatch-contract.md) |
 | TSPEC-CcB52hP0U8aHcOIhg0D0ge | auto tier classification by effectiveCost percentile | approved | [auto-tier-classification.md](./auto-tier-classification.md) |
