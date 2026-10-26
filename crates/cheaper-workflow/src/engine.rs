@@ -136,6 +136,56 @@ pub trait JobExecutor: Send + Sync {
     ) -> BoxFuture<'static, Result<WorkflowExecutorResult, ToolError>>;
 }
 
+/// Job identity and dependency context exposed at the engine lifecycle boundary.
+/// This intentionally contains only workflow-level values, not CLI History types.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkflowJobObservation {
+    pub job_id: String,
+    pub kind: JobKind,
+    pub name: String,
+    pub dependency_ids: Vec<String>,
+}
+
+/// Terminal state exposed to lifecycle observers. `Blocked` distinguishes a
+/// dependency failure from a condition-based `Skipped` job.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WorkflowJobTerminalStatus {
+    Completed,
+    Failed,
+    Cancelled,
+    Timeout,
+    Skipped,
+    Blocked,
+}
+
+/// Authoritative lifecycle transition emitted by the engine state machine.
+#[derive(Debug, Clone, PartialEq)]
+pub enum WorkflowJobTransition {
+    Started {
+        job: WorkflowJobObservation,
+    },
+    Terminal {
+        job: WorkflowJobObservation,
+        status: WorkflowJobTerminalStatus,
+        error_code: Option<String>,
+        duration_ms: Option<f64>,
+        turns: Option<f64>,
+        tool_calls: Option<f64>,
+    },
+}
+
+/// Observer failure is reported to the engine and deliberately ignored there.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct WorkflowJobObserverError;
+
+/// Synchronous, best-effort sink for engine-owned Job transitions.
+pub trait WorkflowJobObserver: Send {
+    fn observe(
+        &mut self,
+        transition: WorkflowJobTransition,
+    ) -> Result<(), WorkflowJobObserverError>;
+}
+
 /// `WorkflowEnginePorts`。`acquireJobLease`/`abort`/
 /// `executionMetrics`/`releaseJobLease` は callback として保持する。
 #[derive(Clone)]
@@ -439,6 +489,7 @@ fn spawn_deadline(
 struct JobExecution {
     id: String,
     job: CompiledJob,
+    dependency_ids: Vec<String>,
     phase: JobStatus,
     remaining: usize,
     children: Vec<usize>,
@@ -563,9 +614,10 @@ fn diagnostic_of(error: &CheaperError) -> WorkflowDiagnostic {
 /// `runWorkflow` の event-loop 状態 — children/remaining/status/
 /// outer_error/timers を所有し、pump/admit/execute/on_* /stop を method
 /// として提供する(TS の closure 捕捉 state に相当)。
-struct RunState<'x> {
+struct RunState<'x, 'o> {
     workflow: &'x CompiledWorkflow,
     ports: &'x WorkflowEnginePorts,
+    observer: Option<&'o mut dyn WorkflowJobObserver>,
     jobs: Vec<JobExecution>,
     results: HashMap<String, Value>,
     /// `CONDITION_SKIPPED` で終了した job id — `$from` の null
@@ -585,7 +637,35 @@ struct RunState<'x> {
     grace_cancel: CancellationToken,
 }
 
-impl<'x> RunState<'x> {
+impl<'x, 'o> RunState<'x, 'o> {
+    fn job_observation(&self, index: usize) -> WorkflowJobObservation {
+        let job = &self.jobs[index];
+        WorkflowJobObservation {
+            job_id: job.id.clone(),
+            kind: job.job.kind,
+            name: job.job.name.clone(),
+            dependency_ids: job.dependency_ids.clone(),
+        }
+    }
+
+    fn observe(&mut self, transition: WorkflowJobTransition) {
+        let job_id = match &transition {
+            WorkflowJobTransition::Started { job }
+            | WorkflowJobTransition::Terminal { job, .. } => job.job_id.clone(),
+        };
+        if self
+            .observer
+            .as_deref_mut()
+            .is_some_and(|observer| observer.observe(transition).is_err())
+        {
+            tracing::debug!(
+                target: "cheaper.workflow",
+                message = "workflow job observer failed; ignoring observation error",
+                job.id = %job_id,
+            );
+        }
+    }
+
     fn finish_job(
         &mut self,
         index: usize,
@@ -607,6 +687,23 @@ impl<'x> RunState<'x> {
             .as_ref()
             .is_some_and(|e| e.code == "CONDITION_SKIPPED");
         let prepared_at = self.jobs[index].prepared_at;
+        let duration_ms = prepared_at.map(|at| ((self.now)() - at).max(0.0));
+        let error_code = error.as_ref().map(|diagnostic| diagnostic.code.clone());
+        let observer_status = if error_code.as_deref() == Some("TIMEOUT") {
+            WorkflowJobTerminalStatus::Timeout
+        } else if error_code.as_deref() == Some("DEPENDENCY_FAILED") {
+            WorkflowJobTerminalStatus::Blocked
+        } else {
+            match status {
+                JobStatus::Succeeded => WorkflowJobTerminalStatus::Completed,
+                JobStatus::Failed => WorkflowJobTerminalStatus::Failed,
+                JobStatus::Skipped => WorkflowJobTerminalStatus::Skipped,
+                JobStatus::Cancelled => WorkflowJobTerminalStatus::Cancelled,
+                _ => unreachable!("finish_job requires a terminal status"),
+            }
+        };
+        let turns = meta.get("turns").and_then(Value::as_f64);
+        let tool_calls = meta.get("toolCalls").and_then(Value::as_f64);
         let execution = (self.ports.execution_metrics)(Some(self.jobs[index].id.as_str()));
         self.jobs[index].outcome = Some(WorkflowJobOutcome {
             id: self.jobs[index].id.clone(),
@@ -614,7 +711,7 @@ impl<'x> RunState<'x> {
             status,
             meta: JobOutcomeMeta {
                 extra: meta,
-                duration_ms: prepared_at.map(|at| ((self.now)() - at).max(0.0)),
+                duration_ms,
                 execution,
             },
             error,
@@ -632,6 +729,14 @@ impl<'x> RunState<'x> {
         if self.terminal == self.jobs.len() {
             self.finished = true;
         }
+        self.observe(WorkflowJobTransition::Terminal {
+            job: self.job_observation(index),
+            status: observer_status,
+            error_code,
+            duration_ms,
+            turns,
+            tool_calls,
+        });
         // `schedule()` — Rust 側は event 処理後に loop が必ず
         // `pump()` を呼ぶため flag は持たない。
     }
@@ -684,6 +789,9 @@ impl<'x> RunState<'x> {
     fn execute(&mut self, index: usize) {
         self.jobs[index].phase = JobStatus::Running;
         self.running += 1;
+        self.observe(WorkflowJobTransition::Started {
+            job: self.job_observation(index),
+        });
         // job 実行境界の node event(design §instrumentation 配置) —
         // `cheaper.workflow` span 内で id/name の分類値のみ記録する。
         tracing::debug!(
@@ -958,13 +1066,30 @@ impl<'x> RunState<'x> {
 pub async fn run_workflow(
     options: WorkflowRunOptions<'_>,
 ) -> Result<WorkflowOutcome, CheaperError> {
-    let run_id = uuid::Uuid::new_v4().to_string();
-    let span = tracing::info_span!("cheaper.workflow", run.id = %run_id);
-    run_workflow_inner(options).instrument(span).await
+    run_workflow_with_optional_observer(options, None).await
 }
 
-async fn run_workflow_inner(
+/// Runs a workflow with a synchronous observer for authoritative Job
+/// transitions. Observer errors are ignored and cannot affect execution.
+pub async fn run_workflow_with_observer(
     options: WorkflowRunOptions<'_>,
+    observer: &mut dyn WorkflowJobObserver,
+) -> Result<WorkflowOutcome, CheaperError> {
+    run_workflow_with_optional_observer(options, Some(observer)).await
+}
+
+async fn run_workflow_with_optional_observer<'a, 'o>(
+    options: WorkflowRunOptions<'a>,
+    observer: Option<&'o mut dyn WorkflowJobObserver>,
+) -> Result<WorkflowOutcome, CheaperError> {
+    let run_id = uuid::Uuid::new_v4().to_string();
+    let span = tracing::info_span!("cheaper.workflow", run.id = %run_id);
+    run_workflow_inner(options, observer).instrument(span).await
+}
+
+async fn run_workflow_inner<'a, 'o>(
+    options: WorkflowRunOptions<'a>,
+    observer: Option<&'o mut dyn WorkflowJobObserver>,
 ) -> Result<WorkflowOutcome, CheaperError> {
     let WorkflowRunOptions {
         workflow,
@@ -1005,6 +1130,7 @@ async fn run_workflow_inner(
                 .find(|(k, _)| k == id)
                 .map(|(_, v)| v.clone())
                 .expect("job id from keys"),
+            dependency_ids: Vec::new(),
             phase: JobStatus::Pending,
             remaining: 0,
             children: Vec::new(),
@@ -1025,11 +1151,13 @@ async fn run_workflow_inner(
         let child = index_of[edge.to.as_str()];
         jobs[parent].children.push(child);
         jobs[child].remaining += 1;
+        jobs[child].dependency_ids.push(edge.from.clone());
     }
     let (tx, mut rx) = mpsc::unbounded_channel::<Event>();
     let mut state = RunState {
         workflow,
         ports: &ports,
+        observer,
         jobs,
         results: HashMap::new(),
         condition_skipped: HashSet::new(),

@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034MHsQwuzT8Ysc0cdXxZW"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Add read-only History CLI and bounded queries"
 created: "2026-10-27"
 updated: "2026-10-27"
@@ -10,7 +10,12 @@ relations:
   source: []
   changes:
     added: []
-    modified: []
+    modified:
+      - { type: file, path: crates/cheaper-cli/src/args.rs }
+      - { type: file, path: crates/cheaper-cli/src/cli.rs }
+      - { type: file, path: crates/cheaper-cli/src/text_format.rs }
+      - { type: file, path: crates/cheaper-cli/tests/integration/main.rs }
+      - { type: file, path: crates/cheaper-cli/tests/integration/history.rs }
     deleted: []
     renamed: []
     moved: []
@@ -52,7 +57,7 @@ Follow the approved plan, the execution-history design, and bounded query TSPEC.
 
 ### Changes
 
-Pending implementation. The existing core query API is consumed without editing its owner files.
+Added History list/show/trace grammar, validated filters/limit/cursor, read-only dispatch, and JSON/text projections through the core query API. Cursor decoding occurs before file access; incomplete query responses omit continuation cursors. Registered four integration tests.
 
 ### Decisions During Implementation
 
@@ -62,20 +67,20 @@ CLI task ownership excludes `src/history/query.rs`; that file is owned by the co
 
 ### Adopted
 
-<!-- Record adopted experiment logs and why they were adopted. -->
+No experiment log; the existing bounded History API supported the approved design directly.
 
 ### Rejected
 
-<!-- Record rejected experiment logs and why they were rejected. -->
+None.
 
 ## Validation
 
-Task graph confirms the History CLI task is dependency-ready after the completed core task. Source verification is pending.
+Initial RED confirmed `history` was an unknown command. The required `history:: -- --list` listed 4 named tests. The final focused History integration run passed 4 tests, 0 failed, exit 0, including missing-store `show` no-write. Owned five files passed rustfmt and `git diff --check`. Whole-repo `cargo fmt --all --check` also reported changes in unowned Workflow files; those were left untouched.
 
 ## Risks
 
-CLI grammar, formatting, and integration verification remain pending.
+This slice was verified on Windows; full canonical check remains for final integration.
 
 ## Follow-ups
 
-After focused CLI tests pass, close this task and proceed with other dependency-ready owners.
+Task complete. The final independent branch review will cover cross-surface behavior and the full canonical verification.

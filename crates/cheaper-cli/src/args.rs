@@ -256,6 +256,33 @@ pub struct UsageCliArgs {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct HistoryCliArgs {
+    pub action: HistoryAction,
+    pub format: CliFormat,
+    pub quiet: bool,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum HistoryAction {
+    List {
+        since: Option<String>,
+        worker: Option<String>,
+        kind: Option<String>,
+        status: Option<String>,
+        limit: Option<String>,
+        cursor: Option<String>,
+    },
+    Show {
+        execution_id: String,
+    },
+    Trace {
+        trace_id: String,
+        limit: Option<String>,
+        cursor: Option<String>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum ParsedCli {
     Help,
     Version,
@@ -266,6 +293,7 @@ pub enum ParsedCli {
     Auth(AuthCliArgs),
     Models(ModelsCliArgs),
     Usage(UsageCliArgs),
+    History(HistoryCliArgs),
     Policy(PolicyCliArgs),
     /// `hook-config` — `hook` が早期 dispatch されるため別 top-level
     /// command として分離する(ADR-034H2WBNtC4We8dyC5lQZJ)。
@@ -283,6 +311,7 @@ impl ParsedCli {
             Self::Run(a) => Some(a.format),
             Self::CountTokens(a) => Some(a.format),
             Self::Usage(a) => Some(a.format),
+            Self::History(a) => Some(a.format),
             Self::WorkflowInterface(a) => Some(a.format),
             Self::WorkflowRun(a) => Some(a.format),
             Self::Auth(a) => Some(a.format),
@@ -299,6 +328,7 @@ impl ParsedCli {
             Self::Run(a) => Some(a.quiet),
             Self::CountTokens(a) => Some(a.quiet),
             Self::Usage(a) => Some(a.quiet),
+            Self::History(a) => Some(a.quiet),
             Self::WorkflowInterface(a) => Some(a.quiet),
             Self::WorkflowRun(a) => Some(a.quiet),
             Self::Auth(a) => Some(a.quiet),
@@ -359,6 +389,10 @@ const STRING_OPTIONS: &[&str] = &[
     "compare-model",
     "group-by",
     "route",
+    "kind",
+    "status",
+    "limit",
+    "cursor",
     "format",
     // repeatable — last-wins 規約からの deliberate deviation
     // (`set_string` の `"grant"` arm 参照)。
@@ -405,6 +439,10 @@ struct Values {
     compare_model: Option<String>,
     group_by: Option<String>,
     route: Option<String>,
+    kind: Option<String>,
+    status: Option<String>,
+    limit: Option<String>,
+    cursor: Option<String>,
     format: String,
     /// repeatable `--grant` の宣言順蓄積。`Vec` は default-empty の
     /// 受け皿なので、値を消費しない非 run command arm は
@@ -444,6 +482,10 @@ impl Default for Values {
             compare_model: None,
             group_by: None,
             route: None,
+            kind: None,
+            status: None,
+            limit: None,
+            cursor: None,
             format: "json".to_string(),
             grants: Vec::new(),
             resume: None,
@@ -479,6 +521,10 @@ impl Values {
             "compare-model" => self.compare_model = Some(value),
             "group-by" => self.group_by = Some(value),
             "route" => self.route = Some(value),
+            "kind" => self.kind = Some(value),
+            "status" => self.status = Some(value),
+            "limit" => self.limit = Some(value),
+            "cursor" => self.cursor = Some(value),
             "format" => self.format = value,
             // `--grant` は repeatable — 本 file の冒頭に文書化された
             // last-wins 規約からの deliberate deviation(Node `parseArgs`
@@ -699,7 +745,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
 
     let Some(command) = positionals.first() else {
         return Err(invalid_request(
-            "command required: run | bulk-read | code-write | doc-write | tool-operate | count-tokens | usage | models | auth | workflow | policy | hook-config | route",
+            "command required: run | bulk-read | code-write | doc-write | tool-operate | count-tokens | usage | history | models | auth | workflow | policy | hook-config | route",
             None,
         ));
     };
@@ -762,6 +808,82 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
             path: positionals[2].clone(),
             cwd: values.cwd.clone(),
             format,
+            quiet,
+        }));
+    }
+
+    if command == "history" {
+        let action = positionals.get(1).map(String::as_str);
+        let valid_shape = match action {
+            Some("list") => positionals.len() == 2,
+            Some("show" | "trace") => positionals.len() == 3 && !positionals[2].is_empty(),
+            _ => false,
+        };
+        if !valid_shape {
+            return Err(invalid_request(
+                "history requires list | show <execution-uuid> | trace <trace-uuid>",
+                None,
+            ));
+        }
+        let allowed: &[&str] = match action {
+            Some("list") => &[
+                "since",
+                "worker",
+                "kind",
+                "status",
+                "limit",
+                "cursor",
+                "format",
+                "quiet",
+                "log",
+                "log-format",
+            ],
+            Some("show") => &["format", "quiet", "log", "log-format"],
+            Some("trace") => &["limit", "cursor", "format", "quiet", "log", "log-format"],
+            _ => unreachable!("valid history action checked above"),
+        };
+        for token in &option_tokens {
+            if !allowed.contains(&token.name.as_str()) {
+                return Err(invalid_request(
+                    format!(
+                        "--{} is not valid for `history {}`",
+                        token.name,
+                        action.unwrap()
+                    ),
+                    None,
+                ));
+            }
+        }
+        if !values.grants.is_empty() {
+            return Err(reject_grant_flag());
+        }
+        let history_format = if option_tokens.iter().any(|token| token.name == "format") {
+            format
+        } else {
+            CliFormat::Text
+        };
+        let action = match action {
+            Some("list") => HistoryAction::List {
+                since: values.since.clone(),
+                worker: values.worker.clone(),
+                kind: values.kind.clone(),
+                status: values.status.clone(),
+                limit: values.limit.clone(),
+                cursor: values.cursor.clone(),
+            },
+            Some("show") => HistoryAction::Show {
+                execution_id: positionals[2].clone(),
+            },
+            Some("trace") => HistoryAction::Trace {
+                trace_id: positionals[2].clone(),
+                limit: values.limit.clone(),
+                cursor: values.cursor.clone(),
+            },
+            _ => unreachable!("valid history action checked above"),
+        };
+        return Ok(ParsedCli::History(HistoryCliArgs {
+            action,
+            format: history_format,
             quiet,
         }));
     }
@@ -923,6 +1045,16 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         if !values.grants.is_empty() {
             return Err(reject_grant_flag());
         }
+        if values.kind.is_some()
+            || values.status.is_some()
+            || values.limit.is_some()
+            || values.cursor.is_some()
+        {
+            return Err(invalid_request(
+                "--kind/--status/--limit/--cursor are only valid for `history`",
+                None,
+            ));
+        }
         if values.timeout.is_some() || values.input != "-" {
             return Err(invalid_request(
                 "--timeout/--input are only valid for worker runs",
@@ -955,6 +1087,17 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
             format,
             quiet,
         }));
+    }
+
+    if values.kind.is_some()
+        || values.status.is_some()
+        || values.limit.is_some()
+        || values.cursor.is_some()
+    {
+        return Err(invalid_request(
+            "--kind/--status/--limit/--cursor are only valid for `history`",
+            None,
+        ));
     }
 
     if usage_only_option_used {

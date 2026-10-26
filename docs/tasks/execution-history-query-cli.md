@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MGHz9sAMkZkvZW0WFgZ"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Add read-only History CLI and bounded queries"
 created: "2026-10-27"
 updated: "2026-10-27"

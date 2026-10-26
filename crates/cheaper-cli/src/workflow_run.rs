@@ -20,9 +20,11 @@
 
 #[cfg(feature = "dev-seam")]
 use std::collections::BTreeMap;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 use cheaper_core::duration::parse_duration;
 use cheaper_core::errors::{CheaperError, ErrorCode};
@@ -46,9 +48,13 @@ use cheaper_tools::registry::{ToolCallContext, ToolRuntimeOptions};
 use cheaper_tools::resources::ResourceLease;
 use cheaper_tools::tools::process::find_cheaper_error;
 use cheaper_tools::ToolError;
+use cheaper_workflow::engine::{
+    run_workflow_with_observer, WorkflowJobObservation, WorkflowJobObserver,
+    WorkflowJobObserverError, WorkflowJobTerminalStatus, WorkflowJobTransition,
+};
 use cheaper_workflow::{
-    project_artifact_metadata, run_workflow, ArtifactProjectionOptions, ArtifactStoreOptions,
-    CompiledWorkflow, JobExecutor, JobKind, JobLeaseRequest, RunArtifactStore, WorkflowEnginePorts,
+    project_artifact_metadata, ArtifactProjectionOptions, ArtifactStoreOptions, CompiledWorkflow,
+    JobExecutor, JobKind, JobLeaseRequest, RunArtifactStore, WorkflowEnginePorts,
     WorkflowExecutionContext, WorkflowExecutorError, WorkflowExecutorResult, WorkflowOutcome,
     WorkflowRunOptions,
 };
@@ -64,6 +70,11 @@ use crate::compose::production_session_factory;
 use crate::envelope::{utility_success_envelope, workflow_envelope};
 #[cfg(feature = "dev-seam")]
 use crate::fake_stream::load_test_stream;
+use crate::history::identity::ExecutionIdentity;
+use crate::history::schema::{
+    ExecutionEvent, ExecutionKind, ExecutionStatus, HistoryEvent, ReasonCode,
+};
+use crate::history::store::HistoryStore;
 use crate::input::read_task_input;
 use crate::workflow_context::{prepare_workflow_context, SharedToolError, WorkflowContext};
 
@@ -842,16 +853,23 @@ pub(crate) async fn execute_compiled(
         Some(f) => f,
         None => Arc::new(system_now),
     };
-    let outcome = run_workflow(WorkflowRunOptions {
-        workflow: run.workflow,
-        ports,
-        max_jobs: run.effective_policy.workflow.max_jobs as f64,
-        timeout_ms: run.effective_policy.execution.timeout_ms as f64,
-        signal: Some(controller.signal()),
-        abort_grace_ms: None,
-        now: Some(now_clock),
-    })
+    let workflow_history_started_at = Instant::now();
+    let mut history = WorkflowHistoryObserver::new(&shared.user_config_dir);
+    history.start_workflow();
+    let outcome = run_workflow_with_observer(
+        WorkflowRunOptions {
+            workflow: run.workflow,
+            ports,
+            max_jobs: run.effective_policy.workflow.max_jobs as f64,
+            timeout_ms: run.effective_policy.execution.timeout_ms as f64,
+            signal: Some(controller.signal()),
+            abort_grace_ms: None,
+            now: Some(now_clock),
+        },
+        &mut history,
+    )
     .await;
+    history.finish_workflow(&outcome, workflow_history_started_at.elapsed());
     // `finally` — listener/task/store/invocation の解放を outcome 評価
     // より先に行う。
     drop(relay);
@@ -867,6 +885,191 @@ pub(crate) async fn execute_compiled(
         rt.dispose().await;
     }
     Ok((shared, outcome))
+}
+
+/// Bridges engine-owned Workflow/Job lifecycle transitions to the CLI History
+/// store. The workflow engine only sees its neutral observer contract.
+struct WorkflowHistoryObserver {
+    store: HistoryStore,
+    workflow_identity: ExecutionIdentity,
+    workflow_started: bool,
+    job_identities: HashMap<String, ExecutionIdentity>,
+    started_jobs: HashSet<String>,
+}
+
+impl WorkflowHistoryObserver {
+    fn new(user_config_dir: &str) -> Self {
+        Self {
+            store: HistoryStore::new(user_config_dir),
+            workflow_identity: ExecutionIdentity::from_process_environment(),
+            workflow_started: false,
+            job_identities: HashMap::new(),
+            started_jobs: HashSet::new(),
+        }
+    }
+
+    fn start_workflow(&mut self) {
+        let event = HistoryEvent::new(
+            &self.workflow_identity,
+            ExecutionKind::Workflow,
+            ExecutionEvent::Started,
+            ExecutionStatus::Running,
+        );
+        self.workflow_started = self.store.write_started(&event);
+    }
+
+    fn finish_workflow(
+        &self,
+        outcome: &Result<WorkflowOutcome, CheaperError>,
+        elapsed: std::time::Duration,
+    ) {
+        if !self.workflow_started {
+            return;
+        }
+        let (status, error_code) = match outcome {
+            Ok(outcome) if outcome.ok => (ExecutionStatus::Completed, None),
+            Ok(outcome) => {
+                let code = outcome.error.as_ref().map(|error| error.code);
+                (workflow_history_status(code), code)
+            }
+            Err(error) => {
+                let code = error.code();
+                (workflow_history_status(Some(code)), Some(code))
+            }
+        };
+        let terminal = HistoryEvent::new(
+            &self.workflow_identity,
+            ExecutionKind::Workflow,
+            ExecutionEvent::Terminal,
+            status,
+        )
+        .with_duration_ms(Some(elapsed.as_secs_f64() * 1000.0))
+        .with_error_code(error_code);
+        let _ = self.store.write_terminal(&terminal);
+    }
+
+    fn job_identity(&mut self, job_id: &str) -> ExecutionIdentity {
+        if !self.job_identities.contains_key(job_id) {
+            self.job_identities.insert(
+                job_id.to_owned(),
+                ExecutionIdentity::child_of(&self.workflow_identity),
+            );
+        }
+        self.job_identities
+            .get(job_id)
+            .expect("job identity inserted")
+            .clone()
+    }
+
+    fn job_event(
+        &self,
+        identity: &ExecutionIdentity,
+        job: &WorkflowJobObservation,
+        event: ExecutionEvent,
+        status: ExecutionStatus,
+        error_code: Option<&str>,
+        duration_ms: Option<f64>,
+        turns: Option<f64>,
+        tool_calls: Option<f64>,
+    ) -> HistoryEvent {
+        let mut history_event = HistoryEvent::new(identity, ExecutionKind::Job, event, status)
+            .with_job_id(&job.job_id)
+            .with_dependency_ids(&job.dependency_ids)
+            .with_duration_ms(duration_ms)
+            .with_turns(turns)
+            .with_tool_calls(tool_calls)
+            .with_error_code(error_code.and_then(ErrorCode::from_str));
+        if job.kind == JobKind::Worker {
+            history_event = history_event.with_worker_id(&job.name);
+        }
+        history_event
+    }
+}
+
+impl WorkflowJobObserver for WorkflowHistoryObserver {
+    fn observe(
+        &mut self,
+        transition: WorkflowJobTransition,
+    ) -> Result<(), WorkflowJobObserverError> {
+        let stored = match transition {
+            WorkflowJobTransition::Started { job } => {
+                let identity = self.job_identity(&job.job_id);
+                self.started_jobs.insert(job.job_id.clone());
+                let event = self.job_event(
+                    &identity,
+                    &job,
+                    ExecutionEvent::Started,
+                    ExecutionStatus::Running,
+                    None,
+                    None,
+                    None,
+                    None,
+                );
+                self.store.write_started(&event)
+            }
+            WorkflowJobTransition::Terminal {
+                job,
+                status,
+                error_code,
+                duration_ms,
+                turns,
+                tool_calls,
+            } => {
+                let identity = self.job_identity(&job.job_id);
+                let is_started = self.started_jobs.contains(&job.job_id);
+                let (reason_code, status) = map_job_terminal(status);
+                let mut event = self.job_event(
+                    &identity,
+                    &job,
+                    if is_started {
+                        ExecutionEvent::Terminal
+                    } else {
+                        ExecutionEvent::Decision
+                    },
+                    status,
+                    error_code.as_deref(),
+                    duration_ms,
+                    turns,
+                    tool_calls,
+                );
+                if let Some(reason) = reason_code {
+                    event = event.with_reason_code(Some(reason));
+                }
+                if is_started {
+                    self.store.write_terminal(&event)
+                } else {
+                    self.store.write_decision(&event)
+                }
+            }
+        };
+        if stored {
+            Ok(())
+        } else {
+            Err(WorkflowJobObserverError)
+        }
+    }
+}
+
+fn map_job_terminal(status: WorkflowJobTerminalStatus) -> (Option<ReasonCode>, ExecutionStatus) {
+    match status {
+        WorkflowJobTerminalStatus::Completed => (None, ExecutionStatus::Completed),
+        WorkflowJobTerminalStatus::Failed => (None, ExecutionStatus::Failed),
+        WorkflowJobTerminalStatus::Cancelled => (None, ExecutionStatus::Cancelled),
+        WorkflowJobTerminalStatus::Timeout => (None, ExecutionStatus::Timeout),
+        WorkflowJobTerminalStatus::Skipped => (None, ExecutionStatus::Skipped),
+        WorkflowJobTerminalStatus::Blocked => (
+            Some(ReasonCode::WorkflowJobDependencyFailed),
+            ExecutionStatus::Blocked,
+        ),
+    }
+}
+
+fn workflow_history_status(error_code: Option<ErrorCode>) -> ExecutionStatus {
+    match error_code {
+        Some(ErrorCode::Timeout) => ExecutionStatus::Timeout,
+        Some(ErrorCode::Aborted) => ExecutionStatus::Cancelled,
+        Some(_) | None => ExecutionStatus::Failed,
+    }
 }
 
 pub(crate) struct RoutedRun<'ctx, 'b, 'io> {
@@ -903,6 +1106,138 @@ pub(crate) async fn execute_routed(
     })
     .await?;
     Ok(outcome)
+}
+
+#[cfg(test)]
+mod history_tests {
+    use super::{map_job_terminal, WorkflowHistoryObserver};
+    use crate::history::identity::ExecutionIdentity;
+    use crate::history::schema::{ExecutionEvent, ExecutionKind, ExecutionStatus};
+    use crate::history::store::{HistoryStore, DECISION_FILE, STARTED_FILE, TERMINAL_FILE};
+    use cheaper_workflow::engine::{
+        WorkflowJobObservation, WorkflowJobObserver, WorkflowJobTerminalStatus,
+        WorkflowJobTransition,
+    };
+    use cheaper_workflow::JobKind;
+    use serde_json::json;
+    use uuid::Uuid;
+
+    #[test]
+    fn workflow_job_history_uses_unique_child_ids_and_parent_for_jobs_and_decisions() {
+        let temp = tempfile::tempdir().unwrap();
+        let store = HistoryStore::new(temp.path());
+        let mut observer = WorkflowHistoryObserver {
+            store: store.clone(),
+            workflow_identity: ExecutionIdentity::root(),
+            workflow_started: false,
+            job_identities: Default::default(),
+            started_jobs: Default::default(),
+        };
+        observer.start_workflow();
+        assert!(observer.workflow_started);
+        let workflow_id = observer.workflow_identity.execution_id().to_string();
+        let running = WorkflowJobObservation {
+            job_id: "worker-step".to_string(),
+            kind: JobKind::Worker,
+            name: "bulk-reader".to_string(),
+            dependency_ids: vec!["prepare".to_string()],
+        };
+        let blocked = WorkflowJobObservation {
+            job_id: "blocked-step".to_string(),
+            kind: JobKind::Tool,
+            name: "grep".to_string(),
+            dependency_ids: vec!["worker-step".to_string()],
+        };
+        observer
+            .observe(WorkflowJobTransition::Started {
+                job: running.clone(),
+            })
+            .unwrap();
+        observer
+            .observe(WorkflowJobTransition::Terminal {
+                job: running.clone(),
+                status: WorkflowJobTerminalStatus::Completed,
+                error_code: None,
+                duration_ms: Some(17.0),
+                turns: Some(2.0),
+                tool_calls: Some(3.0),
+            })
+            .unwrap();
+        observer
+            .observe(WorkflowJobTransition::Terminal {
+                job: blocked.clone(),
+                status: WorkflowJobTerminalStatus::Blocked,
+                error_code: Some("DEPENDENCY_FAILED".to_string()),
+                duration_ms: None,
+                turns: None,
+                tool_calls: None,
+            })
+            .unwrap();
+
+        let worker_id = observer.job_identities[&running.job_id]
+            .execution_id()
+            .to_string();
+        let blocked_id = observer.job_identities[&blocked.job_id]
+            .execution_id()
+            .to_string();
+        assert_ne!(worker_id, running.job_id);
+        assert_ne!(blocked_id, blocked.job_id);
+        assert_ne!(worker_id, blocked_id);
+
+        let workflow = store
+            .read_event(observer.workflow_identity.execution_id(), STARTED_FILE)
+            .unwrap();
+        assert_eq!(workflow.kind(), ExecutionKind::Workflow);
+        assert_eq!(workflow.status(), ExecutionStatus::Running);
+
+        let worker_uuid = Uuid::parse_str(&worker_id).unwrap();
+        let worker_started = store.read_event(worker_uuid, STARTED_FILE).unwrap();
+        let worker_terminal = store.read_event(worker_uuid, TERMINAL_FILE).unwrap();
+        assert_eq!(worker_started.kind(), ExecutionKind::Job);
+        assert_eq!(worker_started.event(), ExecutionEvent::Started);
+        assert_eq!(worker_started.worker_id(), Some("bulk-reader"));
+        assert_eq!(worker_terminal.kind(), ExecutionKind::Job);
+        assert_eq!(worker_terminal.event(), ExecutionEvent::Terminal);
+        assert_eq!(worker_terminal.status(), ExecutionStatus::Completed);
+        assert_eq!(worker_terminal.worker_id(), Some("bulk-reader"));
+        let worker_json = serde_json::to_value(&worker_terminal).unwrap();
+        assert_eq!(worker_json["parentExecutionId"], json!(workflow_id));
+        assert_eq!(worker_json["jobId"], json!(running.job_id));
+        assert_eq!(worker_json["dependencyIds"], json!(["prepare"]));
+        assert_eq!(worker_json["durationMs"], json!(17));
+        assert_eq!(worker_json["turns"], json!(2));
+        assert_eq!(worker_json["toolCalls"], json!(3));
+
+        let blocked_uuid = Uuid::parse_str(&blocked_id).unwrap();
+        assert!(store.read_event(blocked_uuid, STARTED_FILE).is_none());
+        let blocked_decision = store.read_event(blocked_uuid, DECISION_FILE).unwrap();
+        assert_eq!(blocked_decision.kind(), ExecutionKind::Job);
+        assert_eq!(blocked_decision.event(), ExecutionEvent::Decision);
+        assert_eq!(blocked_decision.status(), ExecutionStatus::Blocked);
+        let blocked_json = serde_json::to_value(blocked_decision).unwrap();
+        assert_eq!(blocked_json["parentExecutionId"], json!(workflow_id));
+        assert_eq!(blocked_json["jobId"], json!(blocked.job_id));
+        assert_eq!(
+            blocked_json["reasonCode"],
+            json!("workflow.job_dependency_failed")
+        );
+    }
+
+    #[test]
+    fn workflow_job_terminal_status_maps_to_history_status() {
+        assert_eq!(
+            map_job_terminal(WorkflowJobTerminalStatus::Timeout).1,
+            ExecutionStatus::Timeout
+        );
+        assert_eq!(
+            map_job_terminal(WorkflowJobTerminalStatus::Cancelled).1,
+            ExecutionStatus::Cancelled
+        );
+        assert_eq!(
+            map_job_terminal(WorkflowJobTerminalStatus::Skipped).1,
+            ExecutionStatus::Skipped
+        );
+    }
 }
 
 fn validate_routed_convention(raw: &Value) -> Result<(), CheaperError> {

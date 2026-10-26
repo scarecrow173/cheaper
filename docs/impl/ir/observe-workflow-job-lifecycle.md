@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034MHsRcZJcZ9DZ3fO6rvi"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Observe Workflow Job lifecycle"
 created: "2026-10-27"
 updated: "2026-10-27"
@@ -10,7 +10,10 @@ relations:
   source: []
   changes:
     added: []
-    modified: []
+    modified:
+      - { type: file, path: crates/cheaper-cli/src/workflow_run.rs }
+      - { type: file, path: crates/cheaper-workflow/src/engine.rs }
+      - { type: file, path: crates/cheaper-workflow/tests/engine.rs }
     deleted: []
     renamed: []
     moved: []
@@ -52,7 +55,7 @@ Follow the approved plan and Workflow Job lifecycle TSPEC. The engine must not d
 
 ### Changes
 
-Pending implementation. No source changes are recorded at task start.
+Added a History-neutral engine observer with Started and terminal callbacks at actual dispatch/finish boundaries. CLI adapter records Workflow parent, distinct Job IDs, Job worker identity/metrics, and decision-only skipped/blocked/admission failures. Observer errors are isolated from workflow execution.
 
 ### Decisions During Implementation
 
@@ -62,20 +65,20 @@ Use a History-neutral observer interface at the engine boundary and adapt it in 
 
 ### Adopted
 
-<!-- Record adopted experiment logs and why they were adopted. -->
+No experiment log; the accepted design specified the observer boundary.
 
 ### Rejected
 
-<!-- Record rejected experiment logs and why they were rejected. -->
+None.
 
 ## Validation
 
-Task graph confirms the Workflow lifecycle task is dependency-ready after the completed core task. Source verification is pending.
+Initial guarded list confirmed 5 `job_history::` tests; focused engine suite passed 5/5 after adding `start_paused = true` to the timeout fixture. CLI adapter guarded list confirmed 2 tests; focused adapter suite passed 2/2. Scoped rustfmt and `git diff --check` passed.
 
 ## Risks
 
-Lifecycle transition wiring and focused verification remain pending.
+Verified on Windows. Full canonical workspace check remains for final integration.
 
 ## Follow-ups
 
-After named lifecycle tests pass, close this task and proceed with remaining dependency-ready owners.
+Task complete. Final independent branch review will cover cross-surface behavior and canonical verification.

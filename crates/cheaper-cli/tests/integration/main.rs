@@ -5,6 +5,7 @@ mod cli;
 #[path = "../common/mod.rs"]
 mod common;
 mod envelope;
+mod history;
 mod hook;
 mod hook_config;
 mod hook_eval_dedup;
