@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MytbiiYw7vec0nRA4xx"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Run issue 187 cross-platform verification and closeout"
 created: "2026-10-26"
 updated: "2026-10-26"
