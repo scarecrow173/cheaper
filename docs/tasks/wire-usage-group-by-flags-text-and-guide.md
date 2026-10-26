@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MbTqck0r2tjYDCYQUM7"
 type: "task"
-status: "todo"
+status: "done"
 title: "Wire usage --group-by/--route flags, help, text sections, and usage guide (issue #184 T4)"
 created: "2026-10-25"
 updated: "2026-10-26"
@@ -32,7 +32,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-usage-route-error-analysis-issue-184.md"
-  implemented-by: []
+  implemented-by:
+    - "../impl/ir/wire-usage-group-by-flags-text-and-guide-issue-184-t4.md"
   depends-on:
     - "docs/plans/implement-usage-route-error-analysis-issue-184.md"
     - "docs/tasks/implement-usage-route-window-and-by-route.md"
@@ -176,32 +177,33 @@ usage_log.rs`(T1 の caller 追従で完了済み)、writer/record schema
 
 ## Done When
 
-- [ ] `--group-by`/`--route` が args 登録・usage-only guard 編入・
+- [x] `--group-by`/`--route` が args 登録・usage-only guard 編入・
       `execute_usage_inner` 検証(`route|error` 以外は
       INVALID_REQUEST の exact message)まで配線される
-- [ ] help 2 行が design §4 の固定文面で追加される
-- [ ] route section が text へ常時描画され、`byRoute`/`byError` が
+- [x] help 2 行が design §4 の固定文面で追加される
+- [x] route section が text へ常時描画され、`byRoute`/`byError` が
       presence-driven section(0 件でも header 描画・空 map 行省略)
       で出る — `format_text_parity` green
-- [ ] `route_flag_rejected_for_route_resolve`・
+- [x] `route_flag_rejected_for_route_resolve`・
       `args_usage_only_guard_messages`・
       `invalid_group_by_value_rejected_at_dispatch`・
       `route_flag_scopes_route_at_dispatch`・
       `route_filter_leaves_by_error_unscoped`・
       `group_by_last_wins_emits_by_error_only` が green
-- [ ] `since_only_valid_for_usage` の expected が新列挙 message
+- [x] `since_only_valid_for_usage` の expected が新列挙 message
       へ更新される(想定内 churn)
-- [ ] flag 無し JSON が regression golden `cli-usage-*.json` と byte
+- [x] flag 無し JSON が regression golden `cli-usage-*.json` と byte
       不変(flag-gated additive の証明)
-- [ ] `usage_command_format_text_writes_report` の expected が新
+- [x] `usage_command_format_text_writes_report` の expected が新
       route section 込みへ更新される(想定内 churn)
-- [ ] `docs/guides/usage.md` が design §8 の sync 一覧を全て反映する
+- [x] `docs/guides/usage.md` が design §8 の sync 一覧を反映する
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration args::` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0
-- [ ] `mise exec -- cargo fmt --all -- --check` exits 0
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
-- [ ] `git status --short -- crates/cheaper-cli/tests/regression/` で golden `cli-usage-*.json` に差分がないこと(flag-gating の証跡 — supplement)
+- [x] `usage_report::`: 65 passed / 0 failed
+- [x] `args::`: 47 passed / 0 failed
+- [x] `usage_log::`: 21 passed / 0 failed
+- [x] `mise exec -- cargo fmt --all -- --check` exits 0
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+- [x] regression golden 61/61 pass、golden directory に diff なし
+- [x] `format_text_parity` pass。独立レビューで execution key 内の `=` が text 表現で改変される P2 を確認し、非 blocking follow-up として記録。

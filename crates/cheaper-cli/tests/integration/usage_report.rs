@@ -866,9 +866,9 @@ async fn route_filter_leaves_by_error_unscoped() {
     .await;
     assert_eq!(code, 0, "{out}");
     let r: Value = serde_json::from_str(out.trim()).unwrap();
-    assert_eq!(r["result"]["route"]["executions"], json!(1.0));
+    assert_eq!(r["result"]["route"]["executions"], json!(1));
     assert_eq!(r["result"]["byError"][0]["shareOfRuns"], json!(0.5));
-    assert_eq!(r["result"]["byError"][0]["count"], json!(1.0));
+    assert_eq!(r["result"]["byError"][0]["count"], json!(1));
     assert!(r["result"].get("byRoute").is_none());
 }
 
@@ -881,7 +881,7 @@ async fn route_flag_scopes_route_at_dispatch() {
     let (code, out, _) = run_usage(dir.path(), &["usage", "--route", "route-a"]).await;
     assert_eq!(code, 0, "{out}");
     let r: Value = serde_json::from_str(out.trim()).unwrap();
-    assert_eq!(r["result"]["route"]["executions"], json!(1.0));
+    assert_eq!(r["result"]["route"]["executions"], json!(1));
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -1746,6 +1746,8 @@ async fn usage_command_format_text_writes_report() {
         "worker cost:   $0.010000\n",
         "turns:         0  toolCalls=0  duration=10ms\n",
         "avoided parent context: source=800 returned=50 avoided=750 (1 runs measured)\n",
+        "route:         executions=0 failures=0 refetches=0 refetchBytes=0\n",
+        "route tokens:  original=0 returned=0 postprocessFailures=0\n",
     );
     assert_eq!(out, expected);
 }

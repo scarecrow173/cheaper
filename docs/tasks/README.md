@@ -399,7 +399,7 @@ Directory: `docs/tasks`
 | TASK-034AaXZ7nc5LQuUvG9iFY8 | 実 I/O と Pi job lease を配線する | done | [wire-resource-manager-observation.md](./wire-resource-manager-observation.md) |
 | TASK-034L2NdmhEj1VYd7riHhtL | route run exec_pair 配線・投影・substitute e2e | done | [wire-route-run-substitute-exec-pair.md](./wire-route-run-substitute-exec-pair.md) |
 | TASK-034zQsn7wlUeItssN6W1io | Invocation scope と Worker 所有を接続する | done | [wire-tool-runtime-lifetime.md](./wire-tool-runtime-lifetime.md) |
-| TASK-034MbTqck0r2tjYDCYQUM7 | Wire usage --group-by/--route flags, help, text sections, and usage guide (issue #184 T4) | todo | [wire-usage-group-by-flags-text-and-guide.md](./wire-usage-group-by-flags-text-and-guide.md) |
+| TASK-034MbTqck0r2tjYDCYQUM7 | Wire usage --group-by/--route flags, help, text sections, and usage guide (issue #184 T4) | done | [wire-usage-group-by-flags-text-and-guide.md](./wire-usage-group-by-flags-text-and-guide.md) |
 | TASK-034AJcULdYBQSjyy18XSVw | Canonical artifact read/publisher を配線する | done | [wire-workflow-artifact-tools.md](./wire-workflow-artifact-tools.md) |
 | TASK-034zTsqC9tEk1qHUgWFefU | wire-workflow-interface | done | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | TASK-034AJcZY4VW7Wfwx1AOzvh | Workflow Worker permission と lease lifetime を配線する | done | [wire-workflow-worker-leases.md](./wire-workflow-worker-leases.md) |

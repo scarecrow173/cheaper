@@ -181,6 +181,7 @@ Directory: `docs/impl/ir`
 | IMPL-034IqcrVJL4pxtau4WVtRV | Wire evaluate_dedup into hook target call sites | completed | [wire-evaluate-dedup-into-hook-target-call-sites.md](./wire-evaluate-dedup-into-hook-target-call-sites.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |
 | IMPL-034zUpcuJnZnznZ79UL3Q2 | Wire one-dispatch release publication | completed | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
+| IMPL-034MpqYmnpqh3br76LERKo | Wire usage group by flags text and guide issue 184 T4 | completed | [wire-usage-group-by-flags-text-and-guide-issue-184-t4.md](./wire-usage-group-by-flags-text-and-guide-issue-184-t4.md) |
 | IMPL-034zTIoMYLPhPUbedvunjx | wire-workflow-interface | completed | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | IMPL-UAM3loJyQptDIIrWiEJ3me | issue-111: nullable maxTurns・stall timeout・budget 枯渇 checkpoint/resume の実装 | completed | [worker-run-nullable-maxturns-stall-timeout-and-resume.md](./worker-run-nullable-maxturns-stall-timeout-and-resume.md) |
 | IMPL-Dc1ijUuRtOtwRZigVnv16d | worker schema の構造検証原則と INVALID_OUTPUT raw output 永続化 | completed | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |

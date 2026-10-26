@@ -601,6 +601,8 @@ Options:
   --since <duration>     usage: only records within the period (e.g. 24h)
   --worker <name>        usage: filter by worker name
   --compare-model <p/id> usage: estimate savings vs this model
+  --group-by <route|error>  usage: emit per-route / per-error-code sections
+  --route <name>            usage: scope route aggregation to this route
   --command <string>     route resolve: shell command to match
   --argv <json-array>    route resolve: argv array (exclusive with --command)
   --payload <token>      route run: opaque route payload

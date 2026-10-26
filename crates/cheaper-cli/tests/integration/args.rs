@@ -380,7 +380,7 @@ fn since_only_valid_for_usage() {
     let e = err(&["run", "w", "--since", "1h"]);
     assert_eq!(
         e.message(),
-        "--since/--compare-model are only valid for `usage`"
+        "--since/--compare-model/--group-by/--route are only valid for `usage`"
     );
 }
 

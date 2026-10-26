@@ -23,7 +23,7 @@ relations:
   implements:
     - "docs/plans/implement-usage-route-error-analysis-issue-184.md"
   implemented-by:
-    - "docs/impl/ir/implement-usage-byerror-aggregation-issue-184-t3.md"
+    - "../impl/ir/implement-usage-byerror-aggregation-issue-184-t3.md"
   depends-on:
     - "docs/plans/implement-usage-route-error-analysis-issue-184.md"
     - "docs/tasks/pin-usage-route-error-contract-tests.md"

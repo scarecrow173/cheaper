@@ -871,7 +871,7 @@ fn build_by_error(records: &[Value]) -> Vec<Map<String, Value>> {
 pub fn build_usage_report(
     user_config_dir: &Path,
     filters: &UsageFilters,
-    _group_by: Option<UsageGroupBy>,
+    group_by: Option<UsageGroupBy>,
     compare_model: Option<&str>,
     compare_catalog_model: Option<ModelInfo>,
     now: &dyn Fn() -> f64,
@@ -881,19 +881,19 @@ pub fn build_usage_report(
     let routes = build_route_report(
         &window,
         filters.route.as_deref(),
-        _group_by == Some(UsageGroupBy::Route),
+        group_by == Some(UsageGroupBy::Route),
     );
     let records = filter_run_records(all, filters, now);
     let agg = aggregate(&records)?;
     let mut report = report_map(records.len(), &agg);
     report.insert("route".to_string(), Value::Object(routes.bucket));
-    if _group_by == Some(UsageGroupBy::Route) {
+    if group_by == Some(UsageGroupBy::Route) {
         report.insert(
             "byRoute".to_string(),
             Value::Array(routes.by_route.into_iter().map(Value::Object).collect()),
         );
     }
-    if _group_by == Some(UsageGroupBy::Error) {
+    if group_by == Some(UsageGroupBy::Error) {
         report.insert(
             "byError".to_string(),
             Value::Array(
@@ -1034,6 +1034,18 @@ async fn execute_usage_inner(
             })? as f64),
             None => None,
         };
+    let group_by = match args.group_by.as_deref() {
+        Some("route") => Some(UsageGroupBy::Route),
+        Some("error") => Some(UsageGroupBy::Error),
+        Some(value) => {
+            return Err(invalid_request(
+                format!("invalid --group-by: {value} (expected route|error)"),
+                "groupBy",
+                value,
+            ));
+        }
+        None => None,
+    };
     if let Some(m) = &args.model {
         if parse_model_ref(m).is_none() {
             return Err(invalid_request(
@@ -1071,7 +1083,7 @@ async fn execute_usage_inner(
         worker: args.worker.clone(),
         provider: args.provider.clone(),
         model: args.model.clone(),
-        route: None,
+        route: args.route.clone(),
     };
     // `Date.now` は整数 ms — `cli::system_now` の truncating clock
     // を共有する(端数 ms を残すと envelope parity が崩れる)。
@@ -1079,7 +1091,7 @@ async fn execute_usage_inner(
     let report = build_usage_report(
         &dirs.user_config_dir,
         &filters,
-        None,
+        group_by,
         args.compare_model.as_deref(),
         compare_catalog_model,
         &now_fn,

@@ -247,6 +247,10 @@ pub struct UsageCliArgs {
     pub model: Option<String>,
     /// `<provider>/<id>` 形式。estimated 算出の comparison model。
     pub compare_model: Option<String>,
+    /// `--group-by` の未検証値。validation は usage dispatch が担う。
+    pub group_by: Option<String>,
+    /// route aggregation のみを絞る route 名。
+    pub route: Option<String>,
     pub format: CliFormat,
     pub quiet: bool,
 }
@@ -353,6 +357,8 @@ const STRING_OPTIONS: &[&str] = &[
     "since",
     "worker",
     "compare-model",
+    "group-by",
+    "route",
     "format",
     // repeatable — last-wins 規約からの deliberate deviation
     // (`set_string` の `"grant"` arm 参照)。
@@ -397,6 +403,8 @@ struct Values {
     since: Option<String>,
     worker: Option<String>,
     compare_model: Option<String>,
+    group_by: Option<String>,
+    route: Option<String>,
     format: String,
     /// repeatable `--grant` の宣言順蓄積。`Vec` は default-empty の
     /// 受け皿なので、値を消費しない非 run command arm は
@@ -434,6 +442,8 @@ impl Default for Values {
             since: None,
             worker: None,
             compare_model: None,
+            group_by: None,
+            route: None,
             format: "json".to_string(),
             grants: Vec::new(),
             resume: None,
@@ -467,6 +477,8 @@ impl Values {
             "since" => self.since = Some(value),
             "worker" => self.worker = Some(value),
             "compare-model" => self.compare_model = Some(value),
+            "group-by" => self.group_by = Some(value),
+            "route" => self.route = Some(value),
             "format" => self.format = value,
             // `--grant` は repeatable — 本 file の冒頭に文書化された
             // last-wins 規約からの deliberate deviation(Node `parseArgs`
@@ -756,7 +768,10 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
 
     // --model/--provider/--worker は run/models と意味を共有するため
     // usage 専用には含めない(TS コメント通り)。
-    let usage_only_option_used = values.since.is_some() || values.compare_model.is_some();
+    let usage_only_option_used = values.since.is_some()
+        || values.compare_model.is_some()
+        || values.group_by.is_some()
+        || values.route.is_some();
     // `route resolve` 専用 option — `route` arm 以外で値を持つ
     // 場合は reject する(field 検査規約。`workflow`/`hook-config`/
     // `policy` の allowlist 走査が先に発火するため、この guard は
@@ -935,6 +950,8 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
             provider: values.provider.clone(),
             model: values.model.clone(),
             compare_model: values.compare_model.clone(),
+            group_by: values.group_by.clone(),
+            route: values.route.clone(),
             format,
             quiet,
         }));
@@ -942,7 +959,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
 
     if usage_only_option_used {
         return Err(invalid_request(
-            "--since/--compare-model are only valid for `usage`",
+            "--since/--compare-model/--group-by/--route are only valid for `usage`",
             None,
         ));
     }
