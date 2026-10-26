@@ -97,7 +97,7 @@ Directory: `docs/impl/ir`
 | IMPL-034rAiKtIOGy4Ja8gzLN0C | Implement classification pipeline and explicit resolver | completed | [implement-classification-pipeline-and-explicit-resolver.md](./implement-classification-pipeline-and-explicit-resolver.md) |
 | IMPL-034IpXmCLMAEep0qsWBOkZ | Implement dedup helpers and eval_cache module | completed | [implement-dedup-helpers-and-eval-cache-module.md](./implement-dedup-helpers-and-eval-cache-module.md) |
 | IMPL-034LKRxcfODmOipPN5bAKx | Implement deterministic proc_process test rewrite | completed | [implement-deterministic-proc-process-test-rewrite.md](./implement-deterministic-proc-process-test-rewrite.md) |
-| IMPL-034MyAvIcswWUdbS5yKM0n | Implement hook capability error diagnostics | in-progress | [implement-hook-capability-error-diagnostics.md](./implement-hook-capability-error-diagnostics.md) |
+| IMPL-034MyAvIcswWUdbS5yKM0n | Implement hook capability error diagnostics | completed | [implement-hook-capability-error-diagnostics.md](./implement-hook-capability-error-diagnostics.md) |
 | IMPL-034ALJN6e40bNeMK86YJ6Y | Implement injected workflow engine | completed | [implement-injected-workflow-engine.md](./implement-injected-workflow-engine.md) |
 | IMPL-034A9Jn7YGuSj9pYwoT7f1 | Implement managed process executor | completed | [implement-managed-process-executor.md](./implement-managed-process-executor.md) |
 | IMPL-034A9AU7e20SHvZ2sH66sP | Implement managed process policy | completed | [implement-managed-process-policy.md](./implement-managed-process-policy.md) |
@@ -106,8 +106,8 @@ Directory: `docs/impl/ir`
 | IMPL-034KtIguXiJnzT9ykiH7uV | Implement per-target hook rewrite enablement and approval bypass issue 150 | completed | [implement-per-target-hook-rewrite-enablement-and-approval-bypass-issue-150.md](./implement-per-target-hook-rewrite-enablement-and-approval-bypass-issue-150.md) |
 | IMPL-034AGqZzIjQvvNqijsHb1N | Implement process lifecycle policy | completed | [implement-process-lifecycle-policy.md](./implement-process-lifecycle-policy.md) |
 | IMPL-034AGM8MC9yqj5X6IozzSu | Implement process tree lifecycle | completed | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
-| IMPL-034MyAvsjlrMD8xqio3RpN | Implement resources abort window phase synchronization | in-progress | [implement-resources-abort-window-phase-synchronization.md](./implement-resources-abort-window-phase-synchronization.md) |
-| IMPL-034MyAvYhFVOfkiKM4JOO3 | Implement stable Windows process handle termination oracle | in-progress | [implement-stable-windows-process-handle-termination-oracle.md](./implement-stable-windows-process-handle-termination-oracle.md) |
+| IMPL-034MyAvsjlrMD8xqio3RpN | Implement resources abort window phase synchronization | completed | [implement-resources-abort-window-phase-synchronization.md](./implement-resources-abort-window-phase-synchronization.md) |
+| IMPL-034MyAvYhFVOfkiKM4JOO3 | Implement stable process-command test oracles | completed | [implement-stable-windows-process-handle-termination-oracle.md](./implement-stable-windows-process-handle-termination-oracle.md) |
 | IMPL-034MphdOSZ5smrEZgDgPfh | Implement usage byError aggregation issue 184 T3 | completed | [implement-usage-byerror-aggregation-issue-184-t3.md](./implement-usage-byerror-aggregation-issue-184-t3.md) |
 | IMPL-034Mp9JnWzYzVnWA3PkOnh | Implement usage route window and byRoute aggregation issue 184 T2 | completed | [implement-usage-route-window-and-byroute-aggregation-issue-184-t2.md](./implement-usage-route-window-and-byroute-aggregation-issue-184-t2.md) |
 | IMPL-034zQvMyE33qrrPAVVG0da | Implement workflow binding and definition contracts | completed | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
@@ -145,6 +145,8 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpELwCtyPv | Provider-only registration layer (PLAN-034r05iHK8bA7g2BMsfjFu) | completed | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
 | IMPL-034Gu2UGm6tPXaR2rvwH0U | Register Devin hooks from APM skill | completed | [register-devin-hooks-from-apm-skill.md](./register-devin-hooks-from-apm-skill.md) |
 | IMPL-034E5b824duUI8BjKw5jx1 | registry degrade path and prompt surfacing | completed | [registry-degrade-path-and-prompt-surfacing.md](./registry-degrade-path-and-prompt-surfacing.md) |
+| IMPL-034MCFBcPwAhqtiC177bnN | Remove ambient Node from cheaper-tools fixtures | completed | [remove-ambient-node-from-cheaper-tools-fixtures.md](./remove-ambient-node-from-cheaper-tools-fixtures.md) |
+| IMPL-034MCFKrUMUf5W5lyv1eWt | Remove ambient Node from workflow fixture | completed | [remove-ambient-node-from-workflow-fixture.md](./remove-ambient-node-from-workflow-fixture.md) |
 | IMPL-034z57lgR0CQbaWKMcKP6v | remove legacy js adapters and final verify | completed | [remove-legacy-js-adapters-and-final-verify.md](./remove-legacy-js-adapters-and-final-verify.md) |
 | IMPL-034r05iHy2gdnpr4JOT5qQ | Repair abort grace and provider failure normalization | completed | [repair-abort-grace-and-provider-failure-normalization.md](./repair-abort-grace-and-provider-failure-normalization.md) |
 | IMPL-034r05iHy2gdnpv1ZWjBbz | Repository-owned setup/check entrypoints (PLAN-034r05iHE1Fbkp7833DuTu) | completed | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |
@@ -154,6 +156,7 @@ Directory: `docs/impl/ir`
 | IMPL-034KWrmkyelp896hjwVsq9 | route grant-set projection | completed | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | IMPL-034zCh2EsO3oqQBXBAlfuM | Run canonical verification and close out issue 55 implementation | completed | [run-canonical-verification-and-close-out-issue-55-implementation.md](./run-canonical-verification-and-close-out-issue-55-implementation.md) |
 | IMPL-034KrGAahAOH1wp7c8Wcob | Implement run error record observability issue 141 | completed | [run-error-record-observability-issue-141.md](./run-error-record-observability-issue-141.md) |
+| IMPL-034MyXn5zz5WT1tcl9CQvd | Run issue 187 cross-platform verification and closeout | completed | [run-issue-187-cross-platform-verification-and-closeout.md](./run-issue-187-cross-platform-verification-and-closeout.md) |
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
 | IMPL-xRnq2HWCVlE0nqjLTLYWWb | Rust-native benchmark harness — cheaper-bench (issue #183) | completed | [rust-native-benchmark-harness-issue-183.md](./rust-native-benchmark-harness-issue-183.md) |
 | IMPL-034EPz49PYz6zXgEeh5Fly | shared managed-process machinery extraction into tools proc | completed | [shared-managed-process-machinery-extraction-into-tools-proc.md](./shared-managed-process-machinery-extraction-into-tools-proc.md) |
@@ -161,6 +164,7 @@ Directory: `docs/impl/ir`
 | IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
 | IMPL-034r05iHy2gdnpngzmKvJT | Start Ollama container and pull model | completed | [start-ollama-container-and-pull-model.md](./start-ollama-container-and-pull-model.md) |
 | IMPL-034L3VjzecIvExiORZFjPA | substitute-exec route mode | completed | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
+| IMPL-034MCWkH7NVRe2ZeOyrzXk | Synchronize Node boundary records after issue 188 | completed | [synchronize-node-boundary-records-after-issue-188.md](./synchronize-node-boundary-records-after-issue-188.md) |
 | IMPL-034EVH2F3b1QJYE8LSAfkT | tool-operator worker definition schemas and tool-operate alias | completed | [tool-operator-worker-definition-schemas-and-tool-operate-alias.md](./tool-operator-worker-definition-schemas-and-tool-operate-alias.md) |
 | IMPL-034z3CE24rUsOGqD0BfeqZ | track executables with git lfs | completed | [track-executables-with-git-lfs.md](./track-executables-with-git-lfs.md) |
 | IMPL-034L5TOfRVoVwpS83OAebe | trusted route flag issuer redesign | completed | [trusted-route-flag-issuer-redesign.md](./trusted-route-flag-issuer-redesign.md) |

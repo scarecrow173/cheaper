@@ -4,7 +4,7 @@ type: "adr"
 status: "accepted"
 title: "Keep Node.js as the pinned dev-tooling runtime"
 created: "2026-10-25"
-updated: "2026-10-25"
+updated: "2026-10-26"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -37,7 +37,10 @@ relations:
     - "../discovery/node-dev-tooling-inventory-issue-182.md"
     - "../specs/node-dev-tooling-scope-issue-182.md"
   derived-by:
+    - "../plans/remove-ambient-node-from-rust-tests-issue-188.md"
+    - "../specs/remove-ambient-node-test-coupling-issue-188.md"
     - "../designs/node-dev-tooling-boundary-contract-issue-182.md"
+    - "../designs/remove-ambient-node-from-rust-tests-issue-188.md"
     - "../plans/operationalize-node-dev-tooling-boundary-issue-182.md"
     - "../test-specs/node-dev-tooling-boundary-declaration-accuracy.md"
   verifies: []
@@ -257,6 +260,10 @@ setup`/`mise run check` のみ。
 * [ ] `mise.toml` に `node` pin が残り、`mise.lock` と整合している
   こと(除去提案をしていないことの確認)。
 
+The option comparison below records the decision-time findings from
+2026-10-25. Subsequent implementation evidence is appended under
+`Implementation follow-up` at the end of this ADR.
+
 ## Pros and Cons of the Options
 
 ### Option A: Node.js を pin した dev-tooling runtime として維持 — 採用
@@ -318,3 +325,18 @@ setup`/`mise run check` のみ。
   (canonical check contract)・
   `distribute-cli-via-cargo-source-install-and-thin-path-launchers.md`
   (product 配布の node-free 化)。
+
+## Implementation follow-up (2026-10-26)
+
+Issue #188 completed follow-up F1: the three Rust test sites identified in the
+original inventory no longer depend on ambient Node. The dedicated
+`node_task_resolves_via_path` test preserves bare-name PATH resolution, grant
+pinning, and spawn with a controlled Rust fixture executable; differential
+fixtures use the explicit Rust child mode while preserving frozen JSON and
+golden output; the workflow process test executes its fixture child without a
+silent skip. The three tests passed under an explicit Node-free WSL PATH.
+
+This implementation does not change the accepted decision. Node remains
+pinned for repository tooling and upstream deployed doc-suite scripts. The
+separate upstream T1 and glob-codegen T3 work remains outstanding, so this note
+does not claim that the broader Node removal gate is complete.

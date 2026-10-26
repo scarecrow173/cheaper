@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "Node dev-tooling boundary contract — keep-Node operationalization (issue #182)"
 created: "2026-10-25"
-updated: "2026-10-25"
+updated: "2026-10-26"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -26,13 +26,15 @@ relations:
     - "../specs/node-dev-tooling-scope-issue-182.md"
     - "../adr/keep-node-js-as-the-pinned-dev-tooling-runtime.md"
   refines: []
-  refined-by: []
+  refined-by:
+    - "docs/specs/remove-ambient-node-test-coupling-issue-188.md"
   derives-from:
     - "../specs/node-dev-tooling-scope-issue-182.md"
     - "../adr/keep-node-js-as-the-pinned-dev-tooling-runtime.md"
     - "../discovery/node-dev-tooling-inventory-issue-182.md"
   derived-by:
     - "../plans/operationalize-node-dev-tooling-boundary-issue-182.md"
+    - "remove-ambient-node-from-rust-tests-issue-188.md"
     - "../test-specs/node-dev-tooling-boundary-declaration-accuracy.md"
   verifies: []
   verified-by:
@@ -63,8 +65,9 @@ decision-as-record(コード変更を伴わない決定)だが、「維持」を
    各 entry が今日検出している失敗(保存契約)の固定。
 2. **境界 policy** — product runtime の node-free 維持と、repo 内のどの
    領域が新規 node 結合を導入してよいかの明文化。
-3. **環境結合 policy** — `cargo test` の ambient `node` 依存 3 site の
-   required/skip 契約と、`mise run check` が node 存在を保証する仕組み。
+3. **環境結合 policy** — Rust test 3 site の process/tool contract と、
+   issue #188 による Node-free fixture coverage。mise が repository tooling
+   用 Node を供給する運用も記録する。
 4. **Revisit trigger の観測点** — ADR が挙げる見直し条件を、機械的に
    確認可能な観測手順へ落とす。
 5. **Follow-up issue 計画** — 本決定が先送りする implementation 候補と
@@ -75,21 +78,29 @@ decision-as-record(コード変更を伴わない決定)だが、「維持」を
 本 doc の記述対象は dev-tooling のみで、product runtime への変更は
 一切伴わない。
 
+**Implementation update (2026-10-26):** Follow-up F1 was completed under issue
+#188. The three Rust test sites no longer depend on ambient Node; the Node pin
+remains required by repository tooling described in §1.1–§1.2 and by upstream
+deployed doc-suite skills. This dated status update does not change the accepted
+keep-Node decision or the separate T1/T3 removal gates.
+
 ## Scope
 
 ### In Scope
 
-- 現行 Node entry point 集合(check 6 件 + manual 3 件 + ambient 3 site)
-  と保存契約の宣言的固定。
+- 現行 Node entry point 集合(check 6 件 + manual 3 件)と Rust test 3 site
+  の Node-free fixture coverage の宣言的固定。
 - 新規 node 結合の導入可否を領域ごとに定める境界 policy。
-- ambient `node` 結合 3 site の required-fail / silent-skip 意図契約。
+- issue #188 で移行した Rust test 3 site の required contract と
+  bare-name PATH proof の責務分担。
 - revisit trigger ごとの観測点(コマンド・diff 対象)の手順化。
 - 先送り implementation issue 候補の scope・受入 sketch・順序制約。
 
 ### Out of Scope
 
 - 実装変更そのもの(Option A は現行実装をそのまま維持する決定であり、
-  本 design も file 変更を要求しない)。
+  本 design 作成時点では file 変更を要求しなかった。F1 は issue #188 の
+  独立 follow-up として実装済み)。
 - upstream 所有 script(`.agents/skills/`・`.claude/skills/` の deploy 物)
   の移行 — `scarecrow173/apm-packages`・`obra/superpowers` 側の決定事項。
 - `mise.toml` の `node` pin 除去 — required entrypoint が全て node-free
@@ -126,22 +137,27 @@ ADR-034r05iHrZUE6WeDAi63F3 の canonical task が所有する)。
 | 8 | `node benchmarks/run.mjs`(+`benchmarks/lib/`・`fixtures/`・`scenarios/`) | workflow arm vs scripted direct arm の計測 harness(手動、`mise run check` 非配線) | workflow vs direct の orchestration overhead 計測。`scenarios.json` の `{node}` → `process.execPath` 置換で emit.mjs を spawn する scenario(scenarios.json:194・263)は「計測対象 workload としての node」を含む。結果 record の `environment.node` field を保持(`environmentSnapshot()` が record に emit する field であり、`result-schema.mjs` の `validateBenchmarkRecord` では未宣言・未検証) |
 | 9 | `node crates/cheaper-tools/gen-glob-tables.cjs <out-path>` | `crates/cheaper-tools/src/glob/tables.rs` の glob POSIX class Unicode range table 再生成 | Node bundled ICU の `/^[\p{...}]$/u` regex を全 code point に試行する oracle。generated output に `process.version` を埋め込み node-version-sensitive な再現性を追跡(tables.rs header は `Node v26.10.0` を記録) |
 
-### 1.3 ambient 結合 — Rust test 内の暗黙 `node` 依存 3 site
+### 1.3 Rust test 内の process contract — issue #188 で Node-free 化
 
-詳細な環境結合 policy は §3。非退行として、現在の失敗意味論を維持する:
+issue #188 (2026-10-26) で以下の 3 site から ambient Node 依存を除去した。
+テストは従来の process / differential / workflow contract を維持し、Node
+不在でも実行される。詳細な実施記録は
+`docs/designs/remove-ambient-node-from-rust-tests-issue-188.md` を参照する。
 
-- `crates/cheaper-tools/tests/proc_process.rs:965`
-  `node_task_resolves_via_path` — node 不在時 **fail**(required)。
-- `crates/cheaper-tools/tests/fixtures/process.json`
-  `"bare node task resolves via PATH"`(case 名 :878・literal `node`
-  command 行 :949)— node 不在時 diverge → **fail**(required)。
-- `crates/cheaper-workflow/tests/process.rs:74`
-  `compiles_policy_process_producer_and_executes_materialized_jobs` —
-  node 不在時 **silent skip**(optional、coverage 低下)。
-- `crates/cheaper-tools/tests/fixtures/runtime.json` の dormant `"node"`
-  task 宣言 6 件(約 :398・633・918・1158・1361・1842)— 今日 invoke
-  されないが、将来 `task:"node"` op 追加や task validation eager 化で
-  latent coupling になり得る点を認識しておく。
+- `crates/cheaper-tools/tests/proc_process.rs::node_task_resolves_via_path`:
+  test binary を再実行し、fixture binary directory のみを持つ child PATH
+  で bare `diff_fixture_child` を resolve → grant pin → spawn する。
+  process-global PATH は変更しない。
+- `process.json` の既存 literal `node` case と `runtime.json` の 6 個の
+  literal `node` declarations は frozen JSON を変更せず、test 専用
+  translator が absolute `diff_fixture_child` + explicit `bare` mode へ
+  変換する。期待出力 `bare node\n` を保つが、この differential translation
+  自体は PATH lookup を検証しない。
+- `cheaper-workflow/tests/process.rs` は `current_exe` を exact filter で
+  再実行し、explicit marker 下で `out.txt` を生成する。workflow/resource
+  assertions は維持され、Node 不在時も silent skip しない。
+- acceptance evidence は明示的 Node-free PATH 下の三つの test 成功と、
+  frozen fixture JSON が基準 revision と byte-identical であること。
 
 ### 1.4 維持すべき invariant の一覧
 
@@ -212,15 +228,15 @@ ADR-034r05iHrZUE6WeDAi63F3 の canonical task が所有する)。
 - 人間側の enforcement は review 時の本 §2.2 参照と、§1 の非退行表に
   対する差分確認で行う。
 
-## 3. 環境結合 policy — `cargo test` の ambient `node` 契約
+## 3. 環境結合 policy — `cargo test` の Node-free fixture 契約
 
 ### 3.1 site ごとの意図契約
 
-| site | 契約 | 意図の根拠 |
+| site | Node-free 実装 | 保存する contract |
 | --- | --- | --- |
-| `proc_process.rs:965` `node_task_resolves_via_path` | **required-fail**(node 不在時 fail) | 「bare 名 → ambient PATH 解決 → spawn 成功」という **process tool の product contract** を実 spawn で検証する。node 不在で skip すると contract 検証が無音で抜けるため required が正しい。mise 供給前提はコメントで明示済み(:959-963) |
-| `process.json:878` `"bare node task resolves via PATH"` | **required-fail**(不在時 diverge → fail) | 同一 contract の differential golden(期待 stdout `"bare node\n"`・exitCode 0)。literal `node` は `<NODE>` 翻訳対象外であり、golden の意味論は実 `node` を要求する |
-| `cheaper-workflow/tests/process.rs` `resolve_node()`(:61-72)+ `compiles_policy_process_producer_and_executes_materialized_jobs`(:74-、skip 部 :76-79) | **silent-skip**(不在時 `eprintln!` で skip、coverage 低下) | workflow compile+execute e2e において child script の言語は検証対象ではなく materialize→execute の手段。`node` を使うのは Rust runtime が bare `node` を `POLICY_VIOLATION` とする固定ルール下で PATH 上の実 node を絶対パス解決して task command へ埋める都合上の選択であり、**検証すべき不変条件は node に依存しない**ため optional が正しい。skip が coverage 低下として見えにくい弱点は既知(§5 F1 の対象) |
+| `proc_process.rs` `node_task_resolves_via_path` | Exact test re-execution sets PATH only on the child process to the Rust fixture binary directory. | Real bare filename → PATH resolution → grant pin → spawn remains covered; assert exit 0 and exact `bare node\n`. No process-global PATH mutation. |
+| `process.json` literal bare-Node case + six `runtime.json` declarations | Differential translator maps only the known literal Node command to the absolute fixture binary and explicit mode. | Keep frozen JSON byte-identical and preserve all golden outputs. This absolute-path translation does not claim to test PATH resolution. |
+| `cheaper-workflow/tests/process.rs` producer/consumer test | Exact-filter re-execution of the test binary writes the declared output under a marker. | Compile/materialize/execute/output/resource assertions run without Node and without silent skip. |
 
 ### 3.2 `mise run check` による node 存在保証
 
@@ -228,20 +244,16 @@ ADR-034r05iHrZUE6WeDAi63F3 の canonical task が所有する)。
   mise.toml + mise.lock から toolchain を復元し、`mise run` が `[tools]`
   を PATH へ解決するため、`mise run check` 経路では mise 管理の
   node(lock 上は 26.12.1)が ambient PATH に必ず存在する。
-- したがって canonical 検証経路(`mise run check`・CI)では required
-  2 site が意図どおり実 `node` で実行され、silent-skip site も常に
-  実行される。skip による coverage 低下は canonical 経路では発生しない。
-- **mise env 外(裸 `cargo test`)では required 2 site が fail、
-  silent-skip 1 site が skip となる — これは documented known
-  limitation** であり、canonical 経路外の実行をサポート対象としない
-  (mise 前提の開発経路は ADR Consequences が明示済み)。直接 `cargo
-  test` を回す場合は `mise exec -- cargo test …` を使う。
+- Node remains in mise for repository tooling. The three Rust test sites above
+  no longer consume that ambient Node entry, so both `mise run check` and bare
+  Cargo test runs execute their Rust fixture coverage rather than relying on
+  Node availability or silently skipping a site.
 
 ### 3.3 新規 ambient 結合の扱い
 
-`cargo test` から ambient `node` への新規結合は追加しない(§2.2)。
-既存 3 site の contract を変える場合(例: silent-skip → required、
-fixture binary 化)は §5 F1 の衛生 issue で行い、本 policy doc を更新する。
+`cargo test` から ambient `node` への新規結合は追加しない(§2.2)。issue
+#188 で既存 3 site は fixture binary 化済み(F1 complete)。contract を変える
+場合は本 policy と test spec を更新し、Node-free acceptance を維持する。
 
 ## 4. Revisit triggers と観測点
 
@@ -285,14 +297,14 @@ ADR の revisit 条件を、発火を機械的に確認可能な観測点へ落�
 
 | ID | 候補 issue | scope(1 行) | acceptance sketch | ordering |
 | --- | --- | --- | --- | --- |
-| F1 | `cargo test` ambient `node` 結合の fixture binary repoint | proc_process `node_task_resolves_via_path`・`process.json` bare-node case・workflow `process.rs` を fixture child binary / PATH 制御へ repoint し test suite の toolchain 独立性を上げる衛生改善 | node 不在 PATH の裸 `cargo test` で ambient 依存 site が fail しない(fixture 経路で検証が継続する)。`process.json` golden は翻訳機構に統合 | 独立。いつでも可。#183・他 trigger と無関係の小規模衛生 issue |
+| F1 (完了: 2026-10-26, issue #188) | `cargo test` の ambient `node` 結合を fixture binary に置換 | proc_process は controlled child PATH で bare fixture name を resolve/pin/spawn。`process.json` と six `runtime.json` declarations は test translator で fixture child に変換。workflow test は test binary child を実行 | Node-free WSL PATH で三つの対象 test が通過し、frozen process/runtime JSON は基準 revision と byte-identical。differential absolute-path translation を PATH proof と誤認せず、bare lookup proof は proc_process が所有 | 独立の hygiene issueとして完了。Node pin と他 follow-up は変更しない |
 | F2 | benchmark harness の Rust 化 | `run.mjs`+`lib/*.mjs`+`test/`+fake-stream fixture を Rust harness へ移行し `{node}` workload scenario・`environment.node` field を再設計 | workflow vs direct の計測意味論が維持され、結果 record schema の変更が version/比較可能性として明示される。`node --test benchmarks/test/` が cargo test 系へ置換される | **issue #183 への結合が前提** — benchmark redesign が scenario/計測面を変える際に畳み込む。#183 単独で node 化 workload を残す判断なら F2 は後送り継続。required entrypoints 6→5 に減るだけで removal payoff なし(ADR Option B 却下と同根拠)のため #183 なしでは起票しない |
 | F3 | `gen-glob-tables.cjs` codegen oracle の再設計 | Node bundled ICU `\p{...}` regex oracle への依存を除去し、`tables.rs` の別生成経路(Rust 側 oracle 実装 or 検証付き固定 snapshot)を設計 | `node` 不在で tables.rs を再生成可能、または「再生成不要の固定 artifact」として contract 化される。POSIX class semantics の drift 検出手段を持つ | trigger T3 発火時のみ。それまでは manual entrypoint 維持(単純移植不可 — oracle の再エンジニアリングが前提) |
-| F4 | check-*.mjs・`node --test` 系・release script の Rust/native 移行(Option C repo 側) | `check-version`/`check-doc-ids`/`check-lockfile`/`check-apm-payload`/`set-version` + `scripts/lib/release-artifacts.mjs` → xtask/mise 行、`scripts/test`・`benchmarks/test` → cargo integration test、ambient → fixture(F1 未実施の場合のみ) | `mise run check` pipeline の node step が 0 件で全 pass に加え、release 経路(`set-version` による bump + `check-version` 自己検証)が node なしで動くこと — pipeline 0 件は下限でしかなく、removal gate は §1.1+§1.2 の維持 entry 全体(benchmarks 側は F2・codegen は F3 を含む)の移行完了を要求する。§1.4 の各 invariant(version drift・lockfile・launcher byte/wiring・doc-id・test coverage)が parity 維持される | **trigger T1 発火後** — upstream deploy script が残る間は removal payoff を得られないため実施しない。T1 達成時はこれが node 除去の最後のピース |
+| F4 | check-*.mjs・`node --test` 系・release script の Rust/native 移行(Option C repo 側) | `check-version`/`check-doc-ids`/`check-lockfile`/`check-apm-payload`/`set-version` + `scripts/lib/release-artifacts.mjs` → xtask/mise 行、`scripts/test`・`benchmarks/test` → cargo integration test。ambient fixture 化は issue #188 の F1 で完了し、この follow-up の対象外 | `mise run check` pipeline の node step が 0 件で全 pass に加え、release 経路(`set-version` による bump + `check-version` 自己検証)が node なしで動くこと — pipeline 0 件は下限でしかなく、removal gate は §1.1+§1.2 の維持 entry 全体(benchmarks 側は F2・codegen は F3 を含む)の移行完了を要求する。§1.4 の各 invariant(version drift・lockfile・launcher byte/wiring・doc-id・test coverage)が parity 維持される | **trigger T1 発火後** — upstream deploy script が残る間は removal payoff を得られないため実施しない。T1 達成時はこれが node 除去の最後のピース |
 | F5 | brainstorming skill の node 依存 drop/replace | transitive dep として到達する brainstorming(`apm.lock.yaml`: `repo_url: obra/superpowers`・`is_virtual: true`・`depth: 2`・`resolved_by: scarecrow173/apm-packages` — root `apm.yml` に `obra/superpowers` の direct 宣言は無い)の `helper.js`/`server.cjs` node 依存を除去、または node-free な skill へ置換する。実 lever は (a) maintainer 所有の upstream `scarecrow173/apm-packages` の package 宣言で brainstorming を drop/replace し本 repo 側で apm dep bump、(b) apm の exclusion/override 機構で transitive skill を除外(存在する場合 — 未確認のため前提としない)、(c) 親 dep 自体の drop(同 package の他 skill も失う) | `apm.lock.yaml` deployed_files に brainstorming の `.js`/`.cjs` が出ない。skill を落とす場合は doc workflow への影響が案内される | 独立。`scarecrow173/apm-packages` は同一 maintainer 所有のため third-party(`obra/superpowers`)の対応を待たない — T1 の unblock path の一部を単独で前進させる小規模 issue |
 | F6 | stale deploy drift の運用 note + stale comment 修正 | `.agents/skills/cheaper-usage/SKILL.md` の旧 `node .windsurf/hooks/cheaper/cli/bin/cheaper.mjs` 参照が repo source より古い件を `apm install` 再実行で解消する旨を記録し、併せて発見済みの comment-level mismatch 2 件を修正する — `scripts/check-lockfile.mjs` header の「check pipeline の最後尾」claim(実際は 10 step 中 9 番目)と `scripts/lib/release-artifacts.mjs` header の「check-apm-payload との共有」claim(同 file は import していない) | `apm install` 後に該当参照が消え、deploy drift が実依存でないことが確認できる。両 header comment が実態と一致する | trivial。即時可(他と無関係) |
 
-順序サマリ: **F6・F1 は独立**(いつでも)。**F5** は third-party
+順序サマリ: **F1 は完了**、**F6** は引き続き独立。**F5** は third-party
 upstream(`obra/superpowers`)非依存の unblock path(`scarecrow173/
 apm-packages` は同一 maintainer 所有)。**F2 は issue #183 との結合が
 前提**。**F3・F4 は trigger T3・T1 の発火が前提**で、発火までは
@@ -313,15 +325,13 @@ apm-packages` は同一 maintainer 所有)。**F2 は issue #183 との結合が
 - **2 runtime 併存の認知コスト**: 「Node は repo tooling に限定」の境界は
   AGENTS.md・CONTRIBUTING.md・本 §2.2 で明文化して緩和。新規 ambient
   結合の禁止により結合面が広がるリスクを抑える。
-- **mise env 外での cargo test**: required 2 site の fail は known
-  limitation として受容済みだが、canonical 経路を知らない contributor
-  が誤診し得る。軽減は §3.2 の記述と F1 の repoint。
-- **silent-skip の不可視性**: workflow `process.rs` の skip は fail では
-  ないため mise env 外実行で coverage が静かに落ちる。canonical 経路では
-  発生しないが、F1 で恒久解消する。
-- **dormant coupling**: `runtime.json` の未使用 `"node"` task 宣言は
-  latent coupling として監視対象に留める(§1.3)。今は除去せず、
-  F1 の際に併せて整理するかを判断する。
+- **fixture translator の対象範囲**: differential test は既知の literal
+  `node -e console.log('bare node')` case を明示的に変換する。新しい literal
+  Node command は自動的に任意の JS として実行せず、必要な case ごとに
+  fixture mode と期待出力を追加する。
+- **bare-name proof の責務**: differential fixtures は absolute fixture
+  path を使う。PATH lookup/pin/spawn の保証は proc_process の isolated
+  child PATH test が担うため、この test を削除・弱化しない。
 
 ## Verification Notes
 

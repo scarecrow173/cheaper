@@ -76,6 +76,7 @@ Directory: `docs/designs`
 | DESIGN-034JbqoCWm85pKC033fgfd | PreToolUse route resolver and delegated workflow execution | approved | [pretooluse-route-resolver-and-delegated-workflow-execution.md](./pretooluse-route-resolver-and-delegated-workflow-execution.md) |
 | DESIGN-034r2qodyo7KRfBsGRJQty | provider/auth guide runtime sync design | approved | [provider-auth-guide-runtime-sync.md](./provider-auth-guide-runtime-sync.md) |
 | DESIGN-034r05iHy2gdnp0zOYnFNU | Provider-only registration layer | approved | [provider-only-registration-layer.md](./provider-only-registration-layer.md) |
+| DESIGN-034MB9MsJSa0KMiqf3O8Tc | Remove ambient Node from Rust test fixtures (issue #188) | approved | [remove-ambient-node-from-rust-tests-issue-188.md](./remove-ambient-node-from-rust-tests-issue-188.md) |
 | DESIGN-034r05iHy2gdnoCKJhKNGD | Repair abort and failure normalization hardening | approved | [repair-abort-and-failure-normalization-hardening.md](./repair-abort-and-failure-normalization-hardening.md) |
 | DESIGN-034r05iHy2gdnoRcfSVFq3 | Repository-owned setup/check entrypoints via mise TOML tasks | approved | [repo-owned-setup-check-entrypoints.md](./repo-owned-setup-check-entrypoints.md) |
 | DESIGN-034r05iHrZUE6Wzyjd1NS8 | リポジトリ構成とツールチェーン | approved | [repository-structure-toolchain.md](./repository-structure-toolchain.md) |
