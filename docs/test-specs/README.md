@@ -27,6 +27,7 @@ Directory: `docs/test-specs`
 | TSPEC-034L7LgKjsa5dwb8PstQX9 | documentation honesty sweep + migration guide の検証契約 (issue #169) | approved | [documentation-honesty-sweep-and-migration-guide.md](./documentation-honesty-sweep-and-migration-guide.md) |
 | TSPEC-034z1P09dg86lO9uB31cUi | Embedded builtin resource resolution across distribution forms | superseded | [embedded-builtin-resource-resolution-across-distribution-forms.md](./embedded-builtin-resource-resolution-across-distribution-forms.md) |
 | TSPEC-034KJtUqMNXjkbjsbz5YPa | exec-contract 内容審査除去の検証契約 (issue #163) | draft | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
+| TSPEC-034MyrGbD5n5Bu9SnpiKXF | Hook capability diagnostic error shape | draft | [hook-capability-diagnostic-error-shape.md](./hook-capability-diagnostic-error-shape.md) |
 | TSPEC-034IM5B88Ph3dNfw748cmj | hook-config legacy conflict demotion contract | approved | [hook-config-legacy-conflict-warning-contract.md](./hook-config-legacy-conflict-warning-contract.md) |
 | TSPEC-034IQa6tpizWQ1s8A9Dvh0 | hook-config orphan sweep ownership contract | proposed | [hook-config-orphan-sweep-ownership-contract.md](./hook-config-orphan-sweep-ownership-contract.md) |
 | TSPEC-034Jg5WcioU9vlqfkgBjPR | Hook dedup cache route fingerprint and Rewrite exclusion | draft | [hook-dedup-route-fingerprint.md](./hook-dedup-route-fingerprint.md) |
@@ -56,6 +57,7 @@ Directory: `docs/test-specs`
 | TSPEC-034zTWhBVg6DzifF8qlhAc | Release publication and native smoke | superseded | [release-publication-and-native-smoke.md](./release-publication-and-native-smoke.md) |
 | TSPEC-034z2o64UhWCtNmYIhRT20 | Release workflow manual-dispatch and artifact contract | superseded | [release-workflow-manual-dispatch-and-artifact-contract.md](./release-workflow-manual-dispatch-and-artifact-contract.md) |
 | TSPEC-034AaXPxCwdUwH1XaYc6Jn | Resource lease の寿命とアクセス境界 | approved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
+| TSPEC-034MyrFZfBl5JY3ODaXNme | Resources abort window phase synchronization | draft | [resources-abort-window-phase-synchronization.md](./resources-abort-window-phase-synchronization.md) |
 | TSPEC-034KVxaBMzQE5YtVOx4j3w | route grant-set projection の検証契約 (issue #166) | approved | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | TSPEC-034Jg5VLupBVGDPELPFf83 | Route log store and route logs CLI | draft | [route-logs.md](./route-logs.md) |
 | TSPEC-034Jg5JHetTGqIaDM2E2cr | Route declaration loading and argv resolution | draft | [route-resolution.md](./route-resolution.md) |
@@ -81,6 +83,7 @@ Directory: `docs/test-specs`
 | TSPEC-034MbSDd2gRpJFzX5FgSQq | cheaper usage route/error grouped analysis contract — --since route window, byRoute/byError sections, scoping and privacy invariants (issue #184) | draft | [usage-route-error-analysis-contract-issue-184.md](./usage-route-error-analysis-contract-issue-184.md) |
 | TSPEC-034zQTnsUJl3pXIuYsvZIQ | Version-pinned launcher integrity and stream preservation | superseded | [version-pinned-launcher-integrity-and-stream-preservation.md](./version-pinned-launcher-integrity-and-stream-preservation.md) |
 | TSPEC-034D9bHOWe5zvPoIeMncr9 | Volume-root workspace boundary predicate behavior | draft | [volume-root-workspace-boundary-predicate-behavior.md](./volume-root-workspace-boundary-predicate-behavior.md) |
+| TSPEC-034MyrGo0H4WXaTySC7fbI | Windows process handle termination oracle | draft | [windows-process-handle-termination-oracle.md](./windows-process-handle-termination-oracle.md) |
 | TSPEC-034KxD0IRkMph8hSZbhTRx | Windsurf-compat bounded evaluation coverage and registration surfacing (issue #161) | draft | [windsurf-compat-bounded-eval-and-registration-surfacing.md](./windsurf-compat-bounded-eval-and-registration-surfacing.md) |
 | TSPEC-034AJ8C35s1GpJJoxU3sey | Workflow における明示 bounded artifact read | proposed | [workflow-artifact-publication-and-consumption.md](./workflow-artifact-publication-and-consumption.md) |
 | TSPEC-034AR5JjpeSFMmwDJ2ohy3 | Workflow benchmark accounting integrity | proposed | [workflow-benchmark-accounting-integrity.md](./workflow-benchmark-accounting-integrity.md) |

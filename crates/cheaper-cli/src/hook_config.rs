@@ -48,6 +48,11 @@ const KNOWN_LEGACY_FILES: &[&str] = &[
     ".claude/settings.local.json",
 ];
 
+const CAPABILITY_DIAGNOSTIC_TEXT_LIMIT: usize = 192;
+const CAPABILITY_DIAGNOSTIC_PATH_LIMIT: usize = 512;
+const CAPABILITY_DIAGNOSTIC_STREAM_LIMIT: usize = 96;
+const CAPABILITY_DIAGNOSTIC_LIMIT: usize = 2_048;
+
 /// own entry の canonical JSON shape。
 fn canonical_entry() -> Value {
     let mut entry = Map::new();
@@ -61,6 +66,87 @@ fn canonical_entry() -> Value {
 
 fn invalid_request(message: impl Into<String>) -> CheaperError {
     crate::errors::invalid_request(message.into(), None)
+}
+
+fn bounded_diagnostic_text(value: &str, limit: usize) -> String {
+    if value.len() <= limit {
+        return value.to_string();
+    }
+    const MARKER: &str = "…[truncated]";
+    if limit <= MARKER.len() {
+        let mut end = limit;
+        while !MARKER.is_char_boundary(end) {
+            end -= 1;
+        }
+        return MARKER[..end].to_string();
+    }
+    let mut end = limit - MARKER.len();
+    while !value.is_char_boundary(end) {
+        end -= 1;
+    }
+    format!("{}{MARKER}", &value[..end])
+}
+
+fn bounded_executable_path(path: &Path) -> String {
+    let display = path.display().to_string();
+    if display.len() <= CAPABILITY_DIAGNOSTIC_PATH_LIMIT {
+        return display;
+    }
+
+    // Preserve both ends of long paths and a stable digest so truncation is
+    // explicit and two paths sharing a prefix remain distinguishable.
+    let mut digest = 0xcbf29ce484222325u64;
+    for byte in display.as_bytes() {
+        digest ^= u64::from(*byte);
+        digest = digest.wrapping_mul(0x100000001b3);
+    }
+    let half = CAPABILITY_DIAGNOSTIC_PATH_LIMIT / 2 - 40;
+    let mut start_end = half;
+    while !display.is_char_boundary(start_end) {
+        start_end -= 1;
+    }
+    let mut end_start = display.len() - half;
+    while !display.is_char_boundary(end_start) {
+        end_start += 1;
+    }
+    format!(
+        "{}…[truncated bytes={} fnv1a64={digest:016x}]…{}",
+        &display[..start_end],
+        display.len(),
+        &display[end_start..]
+    )
+}
+
+fn timestamp_ms(time: std::io::Result<std::time::SystemTime>) -> Option<u128> {
+    time.ok()?
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .map(|duration| duration.as_millis())
+}
+
+fn executable_diagnostic(label: &str, path: &Path) -> String {
+    let display = bounded_executable_path(path);
+    match std::fs::metadata(path) {
+        Ok(metadata) => format!(
+            "{label}={display} metadata={{len={}, modifiedMs={:?}, accessedMs={:?}, createdMs={:?}}}",
+            metadata.len(),
+            timestamp_ms(metadata.modified()),
+            timestamp_ms(metadata.accessed()),
+            timestamp_ms(metadata.created())
+        ),
+        Err(error) => format!("{label}={display} metadataError={}", bounded_diagnostic_text(&error.to_string(), 128)),
+    }
+}
+
+fn capability_source_executable_diagnostic() -> String {
+    std::env::current_exe()
+        .map(|path| executable_diagnostic("sourceExecutable", &path))
+        .unwrap_or_else(|error| {
+            format!(
+                "sourceExecutable=<unavailable> metadataError={}",
+                bounded_diagnostic_text(&error.to_string(), 128)
+            )
+        })
 }
 
 // ---------------------------------------------------------------------------
@@ -414,16 +500,39 @@ fn check_capability(io: &CliIo<'_>) -> Result<(), CheaperError> {
         .args(["hook", "targets", "--json"])
         .output()
         .map_err(|e| {
-            invalid_request(format!(
-                "failed to run `{} hook targets --json`: {e}",
-                exe.display()
+            let diagnostic = format!(
+                "failed to spawn `cheaper hook targets --json`: error_kind={:?}, raw_os_error={:?}, message={}; {}; {}",
+                e.kind(),
+                e.raw_os_error(),
+                bounded_diagnostic_text(&e.to_string(), CAPABILITY_DIAGNOSTIC_TEXT_LIMIT),
+                capability_source_executable_diagnostic(),
+                executable_diagnostic("pathExecutable", &exe)
+            );
+            invalid_request(bounded_diagnostic_text(
+                &diagnostic,
+                CAPABILITY_DIAGNOSTIC_LIMIT,
             ))
         })?;
     if !out.status.success() {
-        return Err(invalid_request(format!(
-            "`{} hook targets --json` exited with {}",
-            exe.display(),
-            out.status
+        let stdout = bounded_diagnostic_text(
+            &String::from_utf8_lossy(&out.stdout),
+            CAPABILITY_DIAGNOSTIC_STREAM_LIMIT,
+        );
+        let stderr = bounded_diagnostic_text(
+            &String::from_utf8_lossy(&out.stderr),
+            CAPABILITY_DIAGNOSTIC_STREAM_LIMIT,
+        );
+        let diagnostic = format!(
+            "`cheaper hook targets --json` returned nonzero status={}; {}; {}; stdout={:?}; stderr={:?}",
+            out.status,
+            capability_source_executable_diagnostic(),
+            executable_diagnostic("pathExecutable", &exe),
+            stdout,
+            stderr
+        );
+        return Err(invalid_request(bounded_diagnostic_text(
+            &diagnostic,
+            CAPABILITY_DIAGNOSTIC_LIMIT,
         )));
     }
     let parsed: Value = serde_json::from_slice(&out.stdout).map_err(|e| {
@@ -1166,4 +1275,35 @@ pub async fn execute(
         exit_code,
         model_line: None,
     })
+}
+
+#[cfg(test)]
+mod diagnostic_path_tests {
+    use super::{bounded_executable_path, CAPABILITY_DIAGNOSTIC_PATH_LIMIT};
+    use std::path::Path;
+
+    #[test]
+    fn long_executable_path_is_bounded_and_identifiable() {
+        let path_text = format!(
+            "{}{}{}",
+            "a".repeat(300),
+            std::path::MAIN_SEPARATOR,
+            "z".repeat(300)
+        );
+        let path = bounded_executable_path(Path::new(&path_text));
+
+        assert!(path.len() <= CAPABILITY_DIAGNOSTIC_PATH_LIMIT, "{path}");
+        assert!(path.starts_with(&"a".repeat(32)), "{path}");
+        assert!(path.ends_with(&"z".repeat(32)), "{path}");
+        assert!(path.contains("truncated bytes=601 fnv1a64="), "{path}");
+    }
+
+    #[test]
+    fn diagnostic_text_limit_includes_truncation_marker() {
+        for value in ["x".repeat(80), "é".repeat(80)] {
+            let bounded = super::bounded_diagnostic_text(&value, 32);
+            assert!(bounded.len() <= 32, "{bounded}");
+            assert!(bounded.ends_with("…[truncated]"), "{bounded}");
+        }
+    }
 }

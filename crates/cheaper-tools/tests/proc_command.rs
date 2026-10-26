@@ -370,6 +370,78 @@ fn alive(pid: u32) -> bool {
     }
 }
 
+#[cfg(windows)]
+mod windows_process_handle {
+    use std::ffi::c_void;
+    use std::io;
+
+    type Handle = *mut c_void;
+    const SYNCHRONIZE: u32 = 0x0010_0000;
+    const PROCESS_TERMINATE: u32 = 0x0001;
+    const WAIT_OBJECT_0: u32 = 0;
+    const WAIT_TIMEOUT: u32 = 258;
+    const WAIT_FAILED: u32 = u32::MAX;
+
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn OpenProcess(desired_access: u32, inherit_handle: i32, process_id: u32) -> Handle;
+        fn WaitForSingleObject(handle: Handle, milliseconds: u32) -> u32;
+        fn TerminateProcess(handle: Handle, exit_code: u32) -> i32;
+        fn CloseHandle(handle: Handle) -> i32;
+        fn GetLastError() -> u32;
+    }
+
+    pub struct ProcessHandle(Handle);
+
+    impl ProcessHandle {
+        pub fn open(pid: u32) -> io::Result<Self> {
+            // SAFETY: OpenProcess receives a PID from the fixture, requests only
+            // synchronization/termination rights, and returns an owned handle.
+            let handle = unsafe { OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE, 0, pid) };
+            if handle.is_null() {
+                // SAFETY: GetLastError is thread-local and called immediately
+                // after the failed Win32 API call.
+                return Err(io::Error::from_raw_os_error(
+                    unsafe { GetLastError() } as i32
+                ));
+            }
+            Ok(Self(handle))
+        }
+
+        pub fn wait(&self, milliseconds: u32) -> u32 {
+            // SAFETY: this guard owns a valid process handle until Drop.
+            unsafe { WaitForSingleObject(self.0, milliseconds) }
+        }
+
+        pub fn terminate(&self, exit_code: u32) -> Result<(), u32> {
+            // SAFETY: this guard owns a valid process handle with PROCESS_TERMINATE.
+            if unsafe { TerminateProcess(self.0, exit_code) } != 0 {
+                Ok(())
+            } else {
+                // SAFETY: GetLastError is thread-local and called immediately
+                // after the failed Win32 API call.
+                Err(unsafe { GetLastError() })
+            }
+        }
+
+        pub fn last_error() -> u32 {
+            // SAFETY: used immediately after a failed WaitForSingleObject call.
+            unsafe { GetLastError() }
+        }
+
+        pub const WAIT_OBJECT_0: u32 = WAIT_OBJECT_0;
+        pub const WAIT_TIMEOUT: u32 = WAIT_TIMEOUT;
+        pub const WAIT_FAILED: u32 = WAIT_FAILED;
+    }
+
+    impl Drop for ProcessHandle {
+        fn drop(&mut self) {
+            // SAFETY: this guard uniquely owns the handle and closes it once.
+            let _ = unsafe { CloseHandle(self.0) };
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // registration gate — nonempty grants / dormant runtime / writeScope
 // ---------------------------------------------------------------------------
@@ -1013,7 +1085,7 @@ async fn abort_kills_and_preserves_reason() {
     )
     .unwrap();
     let call = AbortController::new();
-    let pending = tokio::spawn({
+    let mut pending = tokio::spawn({
         let rt = rt.clone();
         let signal = call.signal();
         async move {
@@ -1033,19 +1105,69 @@ async fn abort_kills_and_preserves_reason() {
         "pid",
     )
     .await;
-    call.abort(AbortReason::from(CheaperError::new(
-        ErrorCode::Aborted,
-        "stop managed command",
-    )));
-    let err = pending.await.unwrap().unwrap_err();
-    assert_eq!(err.to_string(), "stop managed command");
     let pid: u32 = std::fs::read_to_string(&pid_path)
         .unwrap()
         .trim()
         .parse()
         .unwrap();
-    wait_for(|| !alive(pid), Duration::from_secs(20), "pid gone").await;
-    assert!(!alive(pid));
+    #[cfg(windows)]
+    let process_handle = {
+        let handle = windows_process_handle::ProcessHandle::open(pid)
+            .unwrap_or_else(|error| panic!("OpenProcess failed for fixture PID {pid}: {error}"));
+        let initial = handle.wait(0);
+        assert_eq!(
+            initial,
+            windows_process_handle::ProcessHandle::WAIT_TIMEOUT,
+            "fixture PID {pid} was not live on the captured process handle before abort (wait result={initial})"
+        );
+        handle
+    };
+    let abort_started = Instant::now();
+    call.abort(AbortReason::from(CheaperError::new(
+        ErrorCode::Aborted,
+        "stop managed command",
+    )));
+    let err = match tokio::time::timeout(Duration::from_secs(20), &mut pending).await {
+        Ok(result) => result.unwrap().unwrap_err(),
+        Err(_) => {
+            let elapsed = abort_started.elapsed();
+            #[cfg(windows)]
+            {
+                pending.abort();
+                let terminate_result = process_handle.terminate(1);
+                let cleanup_wait = process_handle.wait(5_000);
+                let cleanup_wait_error = (cleanup_wait
+                    == windows_process_handle::ProcessHandle::WAIT_FAILED)
+                    .then(windows_process_handle::ProcessHandle::last_error);
+                panic!(
+                    "operation=command phase=await-abort-result elapsed={elapsed:?} allowed_budget=20s pid={pid}; fixture cleanup separate: TerminateProcess={terminate_result:?}, WaitForSingleObject(5s)={cleanup_wait}, wait_error={cleanup_wait_error:?}"
+                );
+            }
+            #[cfg(not(windows))]
+            {
+                pending.abort();
+                panic!("operation=command phase=await-abort-result elapsed={elapsed:?} allowed_budget=20s pid={pid}");
+            }
+        }
+    };
+    assert_eq!(err.to_string(), "stop managed command");
+    #[cfg(windows)]
+    {
+        let wait = process_handle.wait(20_000);
+        let wait_error = (wait == windows_process_handle::ProcessHandle::WAIT_FAILED)
+            .then(windows_process_handle::ProcessHandle::last_error);
+        assert_eq!(
+            wait,
+            windows_process_handle::ProcessHandle::WAIT_OBJECT_0,
+            "operation=command phase=await-process-termination elapsed={:?} allowed_budget=20s pid={pid}; WaitForSingleObject={wait}, error={wait_error:?}",
+            abort_started.elapsed()
+        );
+    }
+    #[cfg(not(windows))]
+    {
+        wait_for(|| !alive(pid), Duration::from_secs(20), "pid gone").await;
+        assert!(!alive(pid));
+    }
 }
 
 /// grant `maxOutputBytes` の combined capture cap — `bytes` は実長、
@@ -1693,6 +1815,9 @@ fn security_exec_deny_pin_blast_radius() {
         "helper": {"executable": "./helper"},
     }));
     let mut opts = options(&root, command, vec![ToolName::Command]);
+    // The symlink is the intended way to make the resolved basename differ
+    // from the declared basename. Its target remains inside this workspace.
+    opts.symlink_policy = SymlinkPolicy::WithinWorkspace;
     opts.security = Some(json!({"execDenyPatterns": ["deny-me"]}));
     let err = create_tool_runtime(opts, None).unwrap_err();
     let e = cheaper_err(&err);

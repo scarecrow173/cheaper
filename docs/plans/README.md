@@ -99,6 +99,7 @@ Directory: `docs/plans`
 | PLAN-034r05iHy2gdnpHMZZk4ZU | Scaffold monorepo and implement @cheaper/core | completed | [scaffold-monorepo-and-implement-cheaper-core.md](./scaffold-monorepo-and-implement-cheaper-core.md) |
 | PLAN-034r05iHE1FbkoWI8p70oC | Self-contained CLI bundle distribution | completed | [self-contained-cli-bundle.md](./self-contained-cli-bundle.md) |
 | PLAN-034rBrrA2j5usWH2G77b8G | Shell read-candidate extraction implementation | approved | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
+| PLAN-034My32omcNgMPYj4q0kUz | Stabilize issue 187 POSIX suite residual flakes | approved | [stabilize-issue-187-posix-suite-residual-flakes.md](./stabilize-issue-187-posix-suite-residual-flakes.md) |
 | PLAN-034L2MF3X78MvKvcSN8jmV | substitute-exec route mode — substitute:{grant,argv} 宣言・viability retarget・実行 anchor 切替 | completed | [substitute-exec-route-mode.md](./substitute-exec-route-mode.md) |
 | PLAN-000004taRcf5XDevo8jYJz | distributed skill / parent-agent guide sync — implementation plan | completed | [synchronize-distributed-skill-and-parent-agent-guide.md](./synchronize-distributed-skill-and-parent-agent-guide.md) |
 | PLAN-034L59uXskRD4ink3h2a13 | trusted route flag issuer redesign — Route.trusted 削除・merge 無条件化・project 層 trusted presence 拒否 | completed | [trusted-route-flag-issuer-redesign.md](./trusted-route-flag-issuer-redesign.md) |

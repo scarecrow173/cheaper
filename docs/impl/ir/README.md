@@ -97,6 +97,7 @@ Directory: `docs/impl/ir`
 | IMPL-034rAiKtIOGy4Ja8gzLN0C | Implement classification pipeline and explicit resolver | completed | [implement-classification-pipeline-and-explicit-resolver.md](./implement-classification-pipeline-and-explicit-resolver.md) |
 | IMPL-034IpXmCLMAEep0qsWBOkZ | Implement dedup helpers and eval_cache module | completed | [implement-dedup-helpers-and-eval-cache-module.md](./implement-dedup-helpers-and-eval-cache-module.md) |
 | IMPL-034LKRxcfODmOipPN5bAKx | Implement deterministic proc_process test rewrite | completed | [implement-deterministic-proc-process-test-rewrite.md](./implement-deterministic-proc-process-test-rewrite.md) |
+| IMPL-034MyAvIcswWUdbS5yKM0n | Implement hook capability error diagnostics | in-progress | [implement-hook-capability-error-diagnostics.md](./implement-hook-capability-error-diagnostics.md) |
 | IMPL-034ALJN6e40bNeMK86YJ6Y | Implement injected workflow engine | completed | [implement-injected-workflow-engine.md](./implement-injected-workflow-engine.md) |
 | IMPL-034A9Jn7YGuSj9pYwoT7f1 | Implement managed process executor | completed | [implement-managed-process-executor.md](./implement-managed-process-executor.md) |
 | IMPL-034A9AU7e20SHvZ2sH66sP | Implement managed process policy | completed | [implement-managed-process-policy.md](./implement-managed-process-policy.md) |
@@ -105,6 +106,8 @@ Directory: `docs/impl/ir`
 | IMPL-034KtIguXiJnzT9ykiH7uV | Implement per-target hook rewrite enablement and approval bypass issue 150 | completed | [implement-per-target-hook-rewrite-enablement-and-approval-bypass-issue-150.md](./implement-per-target-hook-rewrite-enablement-and-approval-bypass-issue-150.md) |
 | IMPL-034AGqZzIjQvvNqijsHb1N | Implement process lifecycle policy | completed | [implement-process-lifecycle-policy.md](./implement-process-lifecycle-policy.md) |
 | IMPL-034AGM8MC9yqj5X6IozzSu | Implement process tree lifecycle | completed | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
+| IMPL-034MyAvsjlrMD8xqio3RpN | Implement resources abort window phase synchronization | in-progress | [implement-resources-abort-window-phase-synchronization.md](./implement-resources-abort-window-phase-synchronization.md) |
+| IMPL-034MyAvYhFVOfkiKM4JOO3 | Implement stable Windows process handle termination oracle | in-progress | [implement-stable-windows-process-handle-termination-oracle.md](./implement-stable-windows-process-handle-termination-oracle.md) |
 | IMPL-034MphdOSZ5smrEZgDgPfh | Implement usage byError aggregation issue 184 T3 | completed | [implement-usage-byerror-aggregation-issue-184-t3.md](./implement-usage-byerror-aggregation-issue-184-t3.md) |
 | IMPL-034Mp9JnWzYzVnWA3PkOnh | Implement usage route window and byRoute aggregation issue 184 T2 | completed | [implement-usage-route-window-and-byroute-aggregation-issue-184-t2.md](./implement-usage-route-window-and-byroute-aggregation-issue-184-t2.md) |
 | IMPL-034zQvMyE33qrrPAVVG0da | Implement workflow binding and definition contracts | completed | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |

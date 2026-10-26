@@ -513,15 +513,24 @@ fn panic_payload_error(payload: Box<dyn std::any::Any + Send>) -> crate::ToolErr
 /// `Clone` は同一内部 state を共有する。
 pub struct ResourceManager {
     inner: Arc<Mutex<Inner>>,
+    /// Test-only one-shot checkpoint between the successful signal pre-check
+    /// and enqueue. Clones share it because they are the same manager instance.
+    #[cfg(test)]
+    request_phase_hook: SharedRequestPhaseHook,
     /// canonical realpath(実在しない injected root は入力のまま)。
     pub root: String,
     pub symlink_policy: SymlinkPolicy,
 }
 
+#[cfg(test)]
+type SharedRequestPhaseHook = Arc<Mutex<Option<Box<dyn FnOnce() + Send + 'static>>>>;
+
 impl Clone for ResourceManager {
     fn clone(&self) -> Self {
         Self {
             inner: Arc::clone(&self.inner),
+            #[cfg(test)]
+            request_phase_hook: Arc::clone(&self.request_phase_hook),
             root: self.root.clone(),
             symlink_policy: self.symlink_policy,
         }
@@ -532,6 +541,8 @@ impl ResourceManager {
     pub fn new(root: &str, symlink_policy: SymlinkPolicy) -> Self {
         Self {
             inner: Arc::new(Mutex::new(Inner::default())),
+            #[cfg(test)]
+            request_phase_hook: Arc::new(Mutex::new(None)),
             // 実在 root の identity を同期に確定。injected fake-root の
             // 従来 admission は維持する。
             root: realpath(root).unwrap_or_else(|_| root.to_string()),
@@ -541,6 +552,11 @@ impl ResourceManager {
 
     fn lock(&self) -> MutexGuard<'_, Inner> {
         lock_inner(&self.inner)
+    }
+
+    #[cfg(test)]
+    fn set_request_phase_hook(&self, hook: impl FnOnce() + Send + 'static) {
+        *self.request_phase_hook.lock().unwrap() = Some(Box::new(hook));
     }
 
     /// `inner` lock 内で `f` を実行し、積まれた deferred callback
@@ -573,6 +589,10 @@ impl ResourceManager {
             if let Some(reason) = signal.reason() {
                 return Err(reason);
             }
+        }
+        #[cfg(test)]
+        if let Some(hook) = self.request_phase_hook.lock().unwrap().take() {
+            hook();
         }
         let (tx, rx) = oneshot::channel::<Result<T, AbortReason>>();
         let ResourceRequest {
@@ -1287,17 +1307,18 @@ mod tests {
         });
     }
 
-    /// `signal` が `on_abort` 登録前に abort される窓(pre-check 通過後、
-    /// listener 登録前)に落ちても request が hang しない回帰テスト。
-    /// `manager.inner` を保持して request の queue push を塞ぎ、その間に
-    /// abort することで窓を deterministically に再現する — listener は
-    /// post-drain drop されるので、登録後の `signal.reason()` 再確認が
-    /// 無ければ waiter が残ったまま `rx.await` が永久に resolve しない。
-    /// request 側の blocking lock を test executor と分離するため、
-    /// `std::thread` 上の current_thread runtime で駆動する(rt-multi-
-    /// thread feature は workspace で無効)。
+    /// pre-check 通過後・enqueue 前に abort する schedule gap を実際の
+    /// one-shot checkpoint で固定し、real enqueue/listener/recheck 経路を
+    /// 通ることを bounded に検証する。request 側の blocking lock を test
+    /// executor と分離するため std::thread 上の current_thread runtime で
+    /// 駆動する(rt-multi-thread feature は workspace で無効)。
     #[test]
     fn abort_landing_before_listener_registration_still_rejects() {
+        const PHASE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
+        const REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+        const WORKER_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
+        const RESULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(13);
+
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -1314,39 +1335,104 @@ mod tests {
         let controller = AbortController::new();
         let signal = controller.signal();
         let manager2 = manager.clone();
-        let (tx, rx) = std::sync::mpsc::channel();
+        let held_for_worker = held;
+        let (phase_tx, phase_rx) = std::sync::mpsc::sync_channel(1);
+        let (release_tx, release_rx) = std::sync::mpsc::sync_channel(1);
+        manager.set_request_phase_hook(move || {
+            phase_tx
+                .send(())
+                .expect("test must observe the successful-pre-check phase");
+            release_rx
+                .recv_timeout(PHASE_TIMEOUT)
+                .expect("test must release the one-shot phase hook within budget");
+        });
+        let (result_tx, result_rx) = std::sync::mpsc::sync_channel(1);
         let worker = std::thread::spawn(move || {
             let rt = tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()
                 .unwrap();
-            let result = rt.block_on(manager2.request(ResourceRequest {
-                signal: Some(signal),
-                ..request_options(
-                    "b",
-                    LeaseKind::Job,
-                    prep(&["/workspace/a"], ClaimMode::Exclusive),
-                    lease_start(),
+            let result = rt.block_on(async {
+                tokio::time::timeout(
+                    REQUEST_TIMEOUT,
+                    manager2.request(ResourceRequest {
+                        signal: Some(signal),
+                        ..request_options(
+                            "b",
+                            LeaseKind::Job,
+                            prep(&["/workspace/a"], ClaimMode::Exclusive),
+                            lease_start(),
+                        )
+                    }),
                 )
-            }));
-            let _ = tx.send(result);
+                .await
+            });
+            let later = match &result {
+                Ok(Err(_)) => {
+                    manager2.release(held_for_worker);
+                    Some(rt.block_on(async {
+                        tokio::time::timeout(
+                            REQUEST_TIMEOUT,
+                            manager2.request(request_options(
+                                "c",
+                                LeaseKind::Job,
+                                prep(&["/workspace/b"], ClaimMode::Exclusive),
+                                lease_start(),
+                            )),
+                        )
+                        .await
+                    }))
+                }
+                _ => None,
+            };
+            let _ = result_tx.send((result, later));
         });
-        // request の enqueue(`self.lock()`)を塞いで abort を窓に落とす。
-        // `signal.reason()` の pre-check は enqueue より前なので、
-        // block 中の abort は確実に pre-check 通過後に landing する。
-        {
-            let guard = manager.inner.lock().unwrap();
-            std::thread::sleep(std::time::Duration::from_millis(50));
-            controller.abort(AbortReason::msg("abort in registration gap"));
-            drop(guard);
-        }
-        let error = rx
-            .recv_timeout(std::time::Duration::from_secs(10))
-            .expect("request must resolve — dead listener must not hang")
-            .unwrap_err();
+        let phase_started = std::time::Instant::now();
+        phase_rx.recv_timeout(PHASE_TIMEOUT).unwrap_or_else(|error| {
+            panic!(
+                "phase=post-precheck-pre-enqueue elapsed={:?} allowed_budget={PHASE_TIMEOUT:?}: {error}",
+                phase_started.elapsed()
+            )
+        });
+        controller.abort(AbortReason::msg("abort in registration gap"));
+        release_tx
+            .send(())
+            .expect("worker must be waiting at the phase checkpoint");
+        let result_started = std::time::Instant::now();
+        let (result, later) = result_rx.recv_timeout(RESULT_TIMEOUT).unwrap_or_else(|error| {
+            panic!(
+                "phase=request-and-manager-reuse-result elapsed={:?} allowed_budget={RESULT_TIMEOUT:?}: {error}",
+                result_started.elapsed()
+            )
+        });
+        let error = match result {
+            Ok(Err(error)) => error,
+            Err(error) => panic!(
+                "phase=abort-request elapsed>={REQUEST_TIMEOUT:?} allowed_budget={REQUEST_TIMEOUT:?}: {error}"
+            ),
+            Ok(Ok(_)) => panic!("phase=abort-request expected rejection but request was admitted"),
+        };
         assert_eq!(error.message(), "abort in registration gap");
-        worker.join().unwrap();
-        rt.block_on(async { manager.release(held) });
+
+        let worker_started = std::time::Instant::now();
+        let worker_deadline = worker_started + WORKER_TIMEOUT;
+        while !worker.is_finished() && std::time::Instant::now() < worker_deadline {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        assert!(
+            worker.is_finished(),
+            "phase=worker-completion elapsed={:?} allowed_budget={WORKER_TIMEOUT:?}",
+            worker_started.elapsed()
+        );
+        worker.join().expect("completed worker must join cleanly");
+
+        let later = later
+            .expect("manager reuse request must be attempted after abort rejection")
+            .expect("manager must remain usable after abort rejection")
+            .expect("later independent request must be admitted");
+        rt.block_on(async {
+            manager.release(later);
+        });
     }
 
     /// `start`/`can_start` callback は `Inner` mutex の外で実行されるため
