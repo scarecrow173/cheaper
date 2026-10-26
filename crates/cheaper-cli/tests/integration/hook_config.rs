@@ -43,6 +43,115 @@ fn fixture_with_cheaper_on_path() -> Fixture {
     fx
 }
 
+fn replace_path_executable(fx: &Fixture, contents: &[u8], _executable: bool) -> PathBuf {
+    let name = if cfg!(windows) {
+        "cheaper.exe"
+    } else {
+        "cheaper"
+    };
+    let path = fx.ws.path().join("bin").join(name);
+    std::fs::write(&path, contents).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = if _executable { 0o755 } else { 0o644 };
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(mode)).unwrap();
+    }
+    path
+}
+
+fn assert_diagnostic_path(message: &str, label: &str, path: &std::path::Path) {
+    let display = path.display().to_string();
+    assert!(message.contains(&format!("{label}=")), "{message}");
+    let normalized_message;
+    let normalized_display;
+    let (message, display) = if cfg!(windows) {
+        normalized_message = message.to_ascii_lowercase();
+        normalized_display = display.to_ascii_lowercase();
+        (normalized_message.as_str(), normalized_display.as_str())
+    } else {
+        (message, display.as_str())
+    };
+    if display.len() <= 512 {
+        assert!(message.contains(&display), "{message}");
+        return;
+    }
+
+    let prefix: String = display.chars().take(16).collect();
+    let suffix: String = display
+        .chars()
+        .rev()
+        .take(16)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
+    assert!(message.contains(&prefix), "{message}");
+    assert!(message.contains(&suffix), "{message}");
+    assert!(
+        message.contains(&format!("truncated bytes={} fnv1a64=", display.len())),
+        "{message}"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_capability_spawn_error_reports_only_io_error_evidence() {
+    let fx = fixture_with_cheaper_on_path();
+    let copied = replace_path_executable(&fx, b"not an executable image", cfg!(windows));
+    let source = PathBuf::from(env!("CARGO_BIN_EXE_cheaper"));
+    let output = std::process::Command::new(&source)
+        .args(["hook-config", "sync"])
+        .current_dir(fx.ws.path())
+        .envs(&fx.env_map)
+        .output()
+        .expect("CLI subprocess should start");
+    let env: Value = serde_json::from_slice(&output.stdout).expect("CLI should emit JSON envelope");
+    assert_eq!(output.status.code(), Some(2), "{env}");
+    let message = env["error"]["message"].as_str().unwrap();
+    assert!(message.contains("error_kind="), "{message}");
+    assert!(message.contains("raw_os_error=Some("), "{message}");
+    assert!(message.contains("message="), "{message}");
+    assert_diagnostic_path(message, "sourceExecutable", &source);
+    assert_diagnostic_path(message, "pathExecutable", &copied);
+    assert!(message.contains("modifiedMs="), "{message}");
+    assert!(message.contains("accessedMs="), "{message}");
+    assert!(message.contains("createdMs="), "{message}");
+    assert!(message.contains("len="), "{message}");
+    assert!(!message.contains("status="), "{message}");
+    assert!(!message.contains("stdout="), "{message}");
+    assert!(!message.contains("stderr="), "{message}");
+    assert!(!message.contains("child="), "{message}");
+}
+
+#[cfg(unix)]
+#[tokio::test(flavor = "current_thread")]
+async fn hook_config_capability_nonzero_status_reports_bounded_captured_output() {
+    let mut fx = fixture_with_cheaper_on_path();
+    let stdout = "x".repeat(8_192);
+    let stderr = "y".repeat(8_192);
+    let script = format!(
+        "#!/bin/sh\nprintf '%s' '{}'; printf '%s' '{}' >&2; exit 7\n",
+        stdout, stderr
+    );
+    let copied = replace_path_executable(&fx, script.as_bytes(), true);
+
+    let (code, env, _err) = fx.run(&["hook-config", "sync"]).await;
+    assert_eq!(code, 2, "{env}");
+    let message = env["error"]["message"].as_str().unwrap();
+    assert!(message.contains("status=exit status: 7"), "{message}");
+    assert!(message.contains("pathExecutable="), "{message}");
+    assert!(message.contains(&copied.display().to_string()), "{message}");
+    assert!(message.contains("stdout="), "{message}");
+    assert!(message.contains("stderr="), "{message}");
+    assert!(message.contains("[truncated]"), "{message}");
+    assert!(
+        message.len() < 2_048,
+        "diagnostic was not bounded: {}",
+        message.len()
+    );
+    assert!(!message.contains("ErrorKind"), "{message}");
+}
+
 fn config_path(fx: &Fixture) -> PathBuf {
     fx.ws.path().join(".devin").join("config.json")
 }

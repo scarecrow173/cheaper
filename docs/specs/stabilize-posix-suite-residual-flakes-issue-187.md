@@ -98,7 +98,9 @@ diagnostic とともに終了し、CI stall が最初の契約違反を隠さな
   `hook_config::hook_config_sync_warns_on_legacy_conflict`: `ETXTBSY` が capability check の
   `Command::output` による unique temp PATH shim execution で生じたことを記録する。
   `Command::output()` の `Err(io::Error)` は spawn/exec failure であり、`ErrorKind`、
-  `raw_os_error`、message、exact executable path、bounded file metadata/timestamps を記録する。
+  `raw_os_error`、message、source/copy executable paths、bounded file metadata/timestamps を記録する。
+  path は診断上限内では全文を記録する。上限を超える場合は切り詰めを明示し、先頭・末尾、
+  元の byte 長、暗号用途ではない安定識別値を残す。
   この branch に child process、exit status、stdout/stderr は存在しない。`Ok(Output)` は
   child 起動後の outcome で、exit status と bounded stdout/stderr を別 branch で記録する。
   原因未局在の間は retry、skip、assertion weakening を導入しない。
@@ -167,7 +169,9 @@ diagnostic とともに終了し、CI stall が最初の契約違反を隠さな
   記録する。historical failing SHA `51f2f4c` は fix `9de23f8` の祖先と確認済み。
 - [ ] hook-config regression が legacy-conflict warning assertion を維持し、以前
   `ETXTBSY` が報告された concurrency で実行できる。`Command::output` の `Err(io::Error)` は
-  `ErrorKind`/`raw_os_error`/message と exact executable path/file metadata/timestamps を記録し、
+  `ErrorKind`/`raw_os_error`/message と source/copy executable paths/file metadata/timestamps を記録する。
+  path は診断上限内では全文を記録する。上限を超える場合は切り詰めを明示し、先頭・末尾、
+  元の byte 長、暗号用途ではない安定識別値を残す。
   存在しない child/status/stdout/stderr は出さない。`Ok(Output)` は status/stdout/stderr を別に
   記録する。原因が再現不能なら条件と証拠を記録した supported disposition を independent
   review で受け、speculative retry を使わない。

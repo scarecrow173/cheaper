@@ -53,6 +53,9 @@ Feature: capability diagnostics describe only the observed command result
 
 - Rule: `Err(io::Error)` reports `ErrorKind`, raw OS code, message, source path,
   copied executable path, and bounded metadata/timestamps for the executable.
+  Paths are complete within their bound; longer paths explicitly mark
+  truncation and retain leading/trailing text, original byte length, and a
+  stable non-cryptographic identifier.
 - Rule: an `Err(io::Error)` diagnostic does not report a child, exit status,
   stdout, or stderr because no `Output` exists.
 - Rule: `Ok(Output)` reports its status and bounded stdout/stderr separately;

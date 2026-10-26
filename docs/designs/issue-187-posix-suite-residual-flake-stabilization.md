@@ -160,9 +160,12 @@ and compiles out of production builds.
    assertion.
 2. Branch explicitly on `Command::output()`:
    - `Err(io::Error)` means spawn/exec did not produce a child. Record
-     `ErrorKind`, `raw_os_error`, bounded display message, exact source and
-     copied executable paths, and bounded metadata/timestamps sampled around
-     invocation. Do not report child PID/status/stdout/stderr for this branch.
+     `ErrorKind`, `raw_os_error`, bounded display message, source and copied
+     executable paths, and bounded metadata/timestamps sampled around
+     invocation. Keep paths whole within the diagnostic path bound; for longer
+     paths, mark truncation and retain leading/trailing text, original byte
+     length, and a stable non-cryptographic identifier. Do not report child
+     PID/status/stdout/stderr for this branch.
    - `Ok(Output)` means a child was spawned. Record its `ExitStatus` and bounded
      stdout/stderr separately. A nonzero status is not an `io::Error` spawn
      failure.
@@ -260,7 +263,8 @@ and compiles out of production builds.
   future, result wait, and worker-finished polling; join happens only after
   `is_finished()`. Assert original reason and subsequent manager usability.
 - [ ] Hook diagnostics distinguish `Err(io::Error)` fields (`ErrorKind`, raw OS
-  code, message, exact path, metadata/timestamps; no child/status/output) from
+  code, message, source/copy paths whole within their diagnostic bound (explicit
+  truncation identity beyond it), metadata/timestamps; no child/status/output) from
   `Ok(Output)` status and bounded stdout/stderr. Retain the legacy warning
   assertion.
 - [ ] Windows opens a `PROCESS_SYNCHRONIZE | PROCESS_TERMINATE` handle before
