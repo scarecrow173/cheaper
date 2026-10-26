@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MysZhQHVTITiwnle4wH"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Synchronize resources abort-window regression"
 created: "2026-10-26"
 updated: "2026-10-26"
@@ -82,14 +82,14 @@ attempt; never commit the mutation.
 
 ## Done When
 
-- [ ] Phase hook is private, `#[cfg(test)]`, one-shot, and scoped to one manager instance.
-- [ ] The worker signals only after the real pre-check succeeds and before enqueue; test resumes through real enqueue/listener/recheck logic.
-- [ ] Every test wait is bounded; on timeout diagnostics name the phase and budget, and join occurs only after `is_finished()`.
-- [ ] Original abort reason and subsequent manager usability remain asserted; no second-lock contention is claimed.
-- [ ] Controlled mutation check (if baseline passes) is bounded, fails at the behavioral abort-result assertion, and is fully restored before the green run; it is not described as historical stall reproduction.
-- [ ] Record exact focused run outcome in this task's Implementation Record; a passing current invariant is not described as reproduction of the historical stall.
+- [x] Phase hook is private, `#[cfg(test)]`, one-shot, and scoped to one manager instance.
+- [x] The worker signals only after the real pre-check succeeds and before enqueue; test resumes through real enqueue/listener/recheck logic.
+- [x] Every test wait is bounded; on timeout diagnostics name the phase and budget, and join occurs only after `is_finished()`.
+- [x] Original abort reason and subsequent manager usability remain asserted; no second-lock contention is claimed.
+- [x] Controlled mutation check (baseline passes) is bounded, fails at the behavioral abort-result assertion, and is fully restored before the green run; it is not described as historical stall reproduction.
+- [x] Record exact focused run outcome in this task's Implementation Record; a passing current invariant is not described as reproduction of the historical stall.
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-tools --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib abort_landing_before_listener_registration_still_rejects` exits 0 and exercises the phase-controlled test.
-- [ ] `mise exec -- cargo fmt --check` exits 0.
+- [x] `mise exec -- cargo test -p cheaper-tools --lib abort_landing_before_listener_registration_still_rejects` exits 0 and exercises the phase-controlled test.
+- [x] `mise exec -- rustfmt --check --edition 2021 crates/cheaper-tools/src/resources.rs` exits 0.
