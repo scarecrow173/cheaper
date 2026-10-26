@@ -30,6 +30,9 @@ relations:
     - "../discovery/posix-suite-residual-flakes-issue-187.md"
   derived-by:
     - "../plans/stabilize-issue-187-posix-suite-residual-flakes.md"
+    - "../test-specs/resources-abort-window-phase-synchronization.md"
+    - "../test-specs/hook-capability-diagnostic-error-shape.md"
+    - "../test-specs/windows-process-handle-termination-oracle.md"
   verifies: []
   verified-by: []
   references:

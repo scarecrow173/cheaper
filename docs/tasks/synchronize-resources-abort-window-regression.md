@@ -1,0 +1,95 @@
+---
+id: "TASK-034MysZhQHVTITiwnle4wH"
+type: "task"
+status: "in-progress"
+title: "Synchronize resources abort-window regression"
+created: "2026-10-26"
+updated: "2026-10-26"
+owners: ["scarecrow173"]
+relations:
+  source: []
+  changes:
+    added: []
+    modified: []
+    deleted: []
+    renamed: []
+    moved: []
+    generated: []
+  implements:
+    - "docs/plans/stabilize-issue-187-posix-suite-residual-flakes.md"
+  implemented-by: []
+  depends-on:
+    - "docs/plans/stabilize-issue-187-posix-suite-residual-flakes.md"
+  blocks: []
+  supersedes: []
+  superseded-by: []
+  related: []
+  refines: []
+  refined-by: []
+  derives-from: []
+  derived-by: []
+  verifies: []
+  verified-by:
+    - "docs/test-specs/resources-abort-window-phase-synchronization.md"
+  references: []
+  defers: []
+  deferred-by: []
+---
+
+# Synchronize resources abort-window regression
+
+## Work
+
+In `crates/cheaper-tools/src/resources.rs`, add a private instance-scoped
+`#[cfg(test)]` one-shot phase seam immediately after the actual successful
+pre-check and before enqueue. Use it to test the existing abort path under a
+controlled schedule: pause at the phase, abort, release, and continue through
+real enqueue/listener/recheck code. Bound phase/release/request/result/worker
+completion waits, join only after `is_finished()`, preserve the exact abort
+reason and later manager usability, and avoid claiming second-lock contention.
+
+The regression must compile against the seam and fail on a bounded behavior or
+phase assertion if the real transition does not satisfy the test contract; a
+missing-symbol compile error is not red evidence. If the current runtime
+contract passes once deterministically scheduled, record that the historical
+stall did not reproduce and do not infer a production bug.
+
+For a meaningful detector check, first run against the current runtime. If it
+passes, temporarily bypass only the existing post-registration abort recheck
+as an uncommitted local mutation, run the focused test and require a bounded
+abort-result behavior failure, then restore the recheck and rerun green. Record
+this mutation check separately from the historical stall reproduction
+attempt; never commit the mutation.
+
+## Classification
+
+- `normal-plan-task`
+
+## Upstream Documents
+
+- `docs/plans/stabilize-issue-187-posix-suite-residual-flakes.md`
+- `docs/specs/stabilize-posix-suite-residual-flakes-issue-187.md`
+- `docs/designs/issue-187-posix-suite-residual-flake-stabilization.md`
+- `docs/adr/prefer-deterministic-test-boundary-diagnosis-for-residual-suite-flakes.md`
+
+## Dependencies
+
+- Requires the approved plan and linked test-spec; no other code task is a prerequisite.
+
+## Affected Files
+
+- `crates/cheaper-tools/src/resources.rs`
+
+## Done When
+
+- [ ] Phase hook is private, `#[cfg(test)]`, one-shot, and scoped to one manager instance.
+- [ ] The worker signals only after the real pre-check succeeds and before enqueue; test resumes through real enqueue/listener/recheck logic.
+- [ ] Every test wait is bounded; on timeout diagnostics name the phase and budget, and join occurs only after `is_finished()`.
+- [ ] Original abort reason and subsequent manager usability remain asserted; no second-lock contention is claimed.
+- [ ] Controlled mutation check (if baseline passes) is bounded, fails at the behavioral abort-result assertion, and is fully restored before the green run; it is not described as historical stall reproduction.
+- [ ] Record exact focused run outcome in this task's Implementation Record; a passing current invariant is not described as reproduction of the historical stall.
+
+## Verification
+
+- [ ] `mise exec -- cargo test -p cheaper-tools --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --lib abort_landing_before_listener_registration_still_rejects` exits 0 and exercises the phase-controlled test.
+- [ ] `mise exec -- cargo fmt --check` exits 0.

@@ -320,6 +320,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpyBKGfmKB | Run document status audit | done | [run-document-status-audit.md](./run-document-status-audit.md) |
 | TASK-b6CX0aXZBAJ6ElAqC0uXxe | Run full 12-scenario benchmark measurement and update workflow-usage.md with Rust-era values | done | [run-full-benchmark-measurement-and-update-workflow-usage.md](./run-full-benchmark-measurement-and-update-workflow-usage.md) |
 | TASK-034r05iHQeQpDpwgKKyE0K | Run full build test and lint verification | done | [run-full-build-test-and-lint-verification.md](./run-full-build-test-and-lint-verification.md) |
+| TASK-034MytbiiYw7vec0nRA4xx | Run issue 187 cross-platform verification and closeout | todo | [run-issue-187-cross-platform-verification-and-closeout.md](./run-issue-187-cross-platform-verification-and-closeout.md) |
 | TASK-nOwbfXxas6V704CAtb76b7 | cheaper run --resume <path> による checkpoint 再開 | done | [run-resume-cli.md](./run-resume-cli.md) |
 | TASK-lLkjLAEBHJc2S02t4gVnRW | run 経路の timeout を進捗リセット型 stall window へ変更 | done | [run-stall-timeout-progress-window.md](./run-stall-timeout-progress-window.md) |
 | TASK-034EOHPDg1Gg2LSKLw8WRT | T4: runtime/CLI plumbing と builtin policy 配線 | done | [runtime-cli-plumbing.md](./runtime-cli-plumbing.md) |
@@ -328,6 +329,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7hmVmOU1eX | Scaffold cheaper CLI package with bin entry | done | [scaffold-cheaper-cli-package-with-bin-entry.md](./scaffold-cheaper-cli-package-with-bin-entry.md) |
 | TASK-034r05iHK8bA7gC9ZdvYF9 | Scaffold pnpm monorepo root configuration | done | [scaffold-pnpm-monorepo-root-configuration.md](./scaffold-pnpm-monorepo-root-configuration.md) |
 | TASK-034r05iHK8bA7h2hF1efor | Scaffold runtime-pi package with Pi import smoke test | done | [scaffold-runtime-pi-package-with-pi-import-smoke-test.md](./scaffold-runtime-pi-package-with-pi-import-smoke-test.md) |
+| TASK-034MysZAmZ6pNgfgX08O8Q | Separate hook capability error diagnostics | in-progress | [separate-hook-capability-error-diagnostics.md](./separate-hook-capability-error-diagnostics.md) |
 | TASK-034r05iHQeQpDqj5TapRlr | Shared limits, line framer, and path-only walker/find | done | [shared-limits-line-framer-and-path-only-walker-find.md](./shared-limits-line-framer-and-path-only-walker-find.md) |
 | TASK-034rAcEwRUaAkZ0KOCmc9J | Shared routing policy module and Windsurf adapter refactor | done | [shared-routing-policy-module-and-windsurf-adapter-refactor.md](./shared-routing-policy-module-and-windsurf-adapter-refactor.md) |
 | TASK-034zXj9La05SfBh0LjDsHA | Invocation 共有 ToolScheduler を導入する | done | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
@@ -342,6 +344,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDqlvQrRhaE | Streaming grep with batch protocol and bounded footer | done | [streaming-grep-batch-protocol-and-bounded-footer.md](./streaming-grep-batch-protocol-and-bounded-footer.md) |
 | TASK-06WDQr0NHYErusR6Cmye43 | Sync cheaper-usage SKILL.md with current CLI and hook surface | done | [sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md](./sync-cheaper-usage-skill-md-with-current-cli-and-hook-surface.md) |
 | TASK-034r2qodyq0oWVUNGquMgr | Sync providers.md guide with runtime auth surface | done | [sync-providers-guide-with-runtime-auth-surface.md](./sync-providers-guide-with-runtime-auth-surface.md) |
+| TASK-034MysZhQHVTITiwnle4wH | Synchronize resources abort-window regression | in-progress | [synchronize-resources-abort-window-regression.md](./synchronize-resources-abort-window-regression.md) |
 | TASK-034DmVQG3C2W8kElIVtwPN | thin launchers rename rewrite and hooks.json references | done | [thin-launchers-rename-rewrite-and-hooks-json-references.md](./thin-launchers-rename-rewrite-and-hooks-json-references.md) |
 | TASK-034r05iHQeQpDpUao5Hjj3 | Token counter CLI/tool parity tests and full verification | done | [token-counter-parity-and-verification.md](./token-counter-parity-and-verification.md) |
 | TASK-034EUvKoVCWZdud4HyTGSK | T3: tool-operator worker 定義・schema・tool-operate alias | done | [tool-operator-worker-and-alias.md](./tool-operator-worker-and-alias.md) |
@@ -366,6 +369,7 @@ Directory: `docs/tasks`
 | TASK-034Kr8pszGdyClSDbgMU3Q | Update usage.jsonl run record field documentation | done | [update-usage-jsonl-record-field-docs.md](./update-usage-jsonl-record-field-docs.md) |
 | TASK-034DmVS8k50GMCHNnui6Wb | upstream doc reconciliation and final verification | done | [upstream-doc-reconciliation-and-final-verification.md](./upstream-doc-reconciliation-and-final-verification.md) |
 | TASK-034r05iHQeQpDqKGWioCow | Usage-log e2e assertions, docs, bundle regen, status sync, final verification | done | [usage-log-e2e-docs-and-final-verification.md](./usage-log-e2e-docs-and-final-verification.md) |
+| TASK-034MysZSBcJfqWheFs2n1r | Use stable Windows process handle termination oracle | in-progress | [use-stable-windows-process-handle-termination-oracle.md](./use-stable-windows-process-handle-termination-oracle.md) |
 | TASK-034r05iHWkNF7zNyXgVkrI | Vendor Devin protocol modules and CLI/credentials adapters | done | [vendor-devin-protocol-modules-and-cli-credentials-adapters.md](./vendor-devin-protocol-modules-and-cli-credentials-adapters.md) |
 | TASK-32FiZMrj2twoTPHLYB0QgC | Verify cheaper-bench smoke run on real binary — subset scenarios, schema v2 artifact, preflight probe | done | [verify-bench-smoke-run-on-real-binary.md](./verify-bench-smoke-run-on-real-binary.md) |
 | TASK-034r05iHQeQpDq2OwMGpOI | Verify CLI bundle distribution | done | [verify-cli-bundle-distribution.md](./verify-cli-bundle-distribution.md) |
@@ -385,7 +389,7 @@ Directory: `docs/tasks`
 | TASK-034L2NsdLuC7G3uiTACWd3 | substitute-exec route mode 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-substitute-exec-route-mode.md](./verify-substitute-exec-route-mode.md) |
 | TASK-034L59Zaf7xiLEfPo8rlQF | trusted route flag issuer redesign 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-trusted-route-flag-issuer-redesign.md](./verify-trusted-route-flag-issuer-redesign.md) |
 | TASK-034KQsAwXBVQJ56nGgagYT | unified exec grant model の最終検証と status/evidence 更新 | done | [verify-unified-exec-grant-model.md](./verify-unified-exec-grant-model.md) |
-| TASK-034MbTCpfWxoiFfeKTaOMs | Run focused and canonical verification, doc-status audit, and final scope/privacy review (issue #184 T6) | todo | [verify-usage-analysis-chain-and-audit.md](./verify-usage-analysis-chain-and-audit.md) |
+| TASK-034MbTCpfWxoiFfeKTaOMs | Run focused and canonical verification, doc-status audit, and final scope/privacy review (issue #184 T6) | done | [verify-usage-analysis-chain-and-audit.md](./verify-usage-analysis-chain-and-audit.md) |
 | TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | done | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
 | TASK-oxOS7kvPXiqJ0LEOT1edeB | Wire cheaper-bench into check pipeline and sync docs — mise.toml, AGENTS/CONTRIBUTING, benchmarks docs, biome glob, #182 addendum, workflow-usage placeholder | done | [wire-bench-check-pipeline-and-sync-docs.md](./wire-bench-check-pipeline-and-sync-docs.md) |
