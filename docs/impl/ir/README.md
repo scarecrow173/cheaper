@@ -115,6 +115,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | completed | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
+| IMPL-034MpAHqkHvEuevjW9HP58 | Measure usage JSONL peak memory issue 184 T5 | completed | [measure-usage-jsonl-peak-memory-issue-184-t5.md](./measure-usage-jsonl-peak-memory-issue-184-t5.md) |
 | IMPL-034A6i3cxbZXoHqDxhuyjB | Migrate native workflows and release guidance | completed | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
 | IMPL-034GtH0PU9VrkGZfPEk4FR | Normalize tools and add Devin hook capability | completed | [normalize-tools-and-add-devin-hook-capability.md](./normalize-tools-and-add-devin-hook-capability.md) |
 | IMPL-034EcqaOLmLoT2kL3ztbwk | Observability foundation | completed | [observability-foundation.md](./observability-foundation.md) |

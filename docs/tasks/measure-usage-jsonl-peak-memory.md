@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MbTvAS8BfQZNoBH12OQ"
 type: "task"
-status: "todo"
+status: "done"
 title: "Measure representative large usage.jsonl peak memory and record evidence (issue #184 T5)"
 created: "2026-10-25"
 updated: "2026-10-26"
@@ -124,26 +124,26 @@ bounded で代表的な大規模 usage.jsonl fixture で実測し証跡を残す
 
 ## Done When
 
-- [ ] bounded 代表 JSONL(件数・byte・record mix を記録)が生成
+- [x] bounded 代表 JSONL(件数・byte・record mix を記録)が生成
       され、規模の anchor となった実 `usage.jsonl` の特定
       (または fallback 前提)と生成手順が再現可能な形で note
       本文へ inline 記録されている
-- [ ] 再現可能 command で peak memory が計測され、command・環境・
+- [x] 再現可能 command で peak memory が計測され、command・環境・
       fixture 寸法・結果が
       `docs/impl/exp/usage-jsonl-peak-memory-measurement.jsonl`
       (`experiment_event.v1`)に記録されている
-- [ ] 保存先が `benchmarks/results/` でなく `docs/impl/exp/` の
+- [x] 保存先が `benchmarks/results/` でなく `docs/impl/exp/` の
       measurement note である理由(harness 専用 store との
       区別)が note または本 task に記録されている
-- [ ] 「streaming は deferred のまま維持」または「design 差し戻し」
+- [x] 「streaming は deferred のまま維持」または「design 差し戻し」
       の判定が実測根拠つきで記録されている
 
 ## Verification
 
-- [ ] artifact に記録した再現 command を再実行すると同一 fixture
+- [x] artifact に記録した再現 command を再実行すると同一 fixture
       で peak memory が再計測できる(再現性チェック — command は
       artifact 本文に記載)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` exits 0(本 task が product 動作を変えないこと)
-- [ ] `git status --short` で artifact が check-in 対象として tracked
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` exits 0(65 passed)
+- [x] `git status --short` で artifact が check-in 対象として tracked
       され、計測用一時 fixture(非 commit 対象の生成物)が diff に
       残っていないこと(supplement)

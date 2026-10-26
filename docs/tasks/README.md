@@ -246,7 +246,7 @@ Directory: `docs/tasks`
 | TASK-6uOJTepTvP210AgeeaBtkq | issue-111 文書追随・回帰 fixture・最終検証 | done | [issue-111-docs-and-final-verification.md](./issue-111-docs-and-final-verification.md) |
 | TASK-03404zg7SVQPn5JeZ0lwDD | Make exec_infra_failure_returns_error deterministic via error code and message | done | [make-exec-infra-failure-test-deterministic.md](./make-exec-infra-failure-test-deterministic.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
-| TASK-034MbTvAS8BfQZNoBH12OQ | Measure representative large usage.jsonl peak memory and record evidence (issue #184 T5) | todo | [measure-usage-jsonl-peak-memory.md](./measure-usage-jsonl-peak-memory.md) |
+| TASK-034MbTvAS8BfQZNoBH12OQ | Measure representative large usage.jsonl peak memory and record evidence (issue #184 T5) | done | [measure-usage-jsonl-peak-memory.md](./measure-usage-jsonl-peak-memory.md) |
 | TASK-034r05iHQeQpDpMK3ZMC7C | Migrate cheap-writer to code-writer | done | [migrate-cheap-writer-to-code-writer.md](./migrate-cheap-writer-to-code-writer.md) |
 | TASK-034zXB21CtI0XLnu6QAHPe | Migrate native workflows and release guidance | done | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
 | TASK-034r05iHQeQpDqrbmtswfZ | Move .apm primitives to nested distributable package and make root apm.yml dev-only | done | [move-apm-primitives-to-distributable-package.md](./move-apm-primitives-to-distributable-package.md) |
