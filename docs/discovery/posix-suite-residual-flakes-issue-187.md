@@ -156,6 +156,40 @@ briefing や因果分析の完了を意味しない。
 - 修正境界は原因を再現した後、各 test または runtime owner から個別に選ぶ。
   3つの報告を共通 abstraction や単一の本番 fix の根拠にしない。
 
+## Final Verification and Disposition
+
+- Canonical Ubuntu workflow `40311338267` on code SHA `16f922a` failed
+  `security_exec_deny_pin_blast_radius` (36 passed, 1 failed in
+  `proc_command`) with `workspace escape: symlink-denied`. The test deliberately
+  uses an in-workspace helper symlink so the resolved executable basename
+  differs from the declared name; its shared fixture had retained the default
+  `SymlinkPolicy::Deny`. The failure occurred during fixture setup before the
+  intended resolved-basename denial assertion.
+- WSL2 baseline on SHA `16f922a`: exact command
+  `cargo test -p cheaper-tools --test proc_command security_exec_deny_pin_blast_radius -- --exact`
+  failed 0/1 with `workspace escape: symlink-denied`. After setting only that
+  fixture to `WithinWorkspace`, the same command passed 1/1. The target remains
+  inside the temporary workspace; production symlink policy and the original
+  resolved-basename `PolicyViolation` assertion are unchanged.
+- Canonical Ubuntu workflow `40314463285` passed on code SHA
+  `660cf138541bb77c0318885ad9b50ffb2dbe7dde`; its `mise install`, `mise run
+  setup`, and `mise run check` stages succeeded.
+- Windows host `DESKTOP-NH00KUI` (mise 2026.10.1, Rust/Cargo 1.99) ran
+  `mise install`, `mise run setup`, then three consecutive `mise run check`
+  commands on SHA `16f922a994afe8c41205bdf40eb02759f0f4d670`. Session `74340`
+  completed all pipeline stages without an error marker, but the wrapper did
+  not retain its numeric exit code. Sessions `56212` and `87696` retained
+  explicit exit code 0. The later code change is confined to `#[cfg(unix)]`,
+  so the Windows code path is unchanged; these results are not represented as
+  runs on SHA `660cf13`.
+- The implementation review and POSIX fixture scope-refinement review found no
+  confirmed P0/P1 blockers; the latter Judge found no confirmed P0/P1/P2.
+  ETXTBSY did not recur in bounded runs and no concurrent writer was injected;
+  the resources historical stall mechanism and Windows liveness cause remain
+  unknown. The reported route symptom remains covered by #157 and was not
+  changed here. These are supported dispositions, not claims that the historical
+  failures were reproduced or root-caused.
+
 ## Open Questions
 
 - resources の既存 guard 下で起きた stall は、どの worker/listener phase・wait budget・

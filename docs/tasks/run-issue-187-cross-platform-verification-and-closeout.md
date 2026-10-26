@@ -71,21 +71,21 @@ supported dispositions. Do not report non-recurrence as root-cause resolution.
 ## Affected Files
 
 - `docs/discovery/posix-suite-residual-flakes-issue-187.md`
-- `docs/impl/ir/stabilize-issue-187-cross-platform-verification-and-closeout.md`
-- `docs/impl/ir/` one record per upstream implementation task
+- `docs/impl/ir/run-issue-187-cross-platform-verification-and-closeout.md`
+- `docs/impl/ir/implement-stable-windows-process-handle-termination-oracle.md`
 
 ## Done When
 
-- [ ] Current route test remains on the #157 contract; no additional #187 route code is introduced.
-- [ ] Bounded reproduction attempts and exact unresolved causes/dispositions are recorded; independent review finds no confirmed blocking P0/P1.
-- [ ] Provisioned Ubuntu POSIX run passes `mise install`, `mise run setup`, and `mise run check`, with host/command/results recorded.
-- [ ] Windows run passes `mise install` followed by `mise run check` three consecutive times, with each run recorded.
-- [ ] Per-task IRs are complete and `node .agents/skills/impl-doc/scripts/audit_impl_record.js --json` reports no blocking finding for these records.
-- [ ] Focused document audit and graph exit audit are eligible for terminal routing; no unclassified follow-up blocker remains.
+- [x] Current route test remains on the #157 contract; no additional #187 route code is introduced.
+- [x] Bounded reproduction attempts and exact unresolved causes/dispositions are recorded; independent review finds no confirmed blocking P0/P1.
+- [x] Provisioned Ubuntu POSIX run passes `mise install`, `mise run setup`, and `mise run check`, with host/command/results recorded.
+- [x] Windows run passes `mise install` followed by `mise run check` three consecutive times, with each run recorded; run 1's numeric exit code was not retained, while its full pipeline completed without an error marker.
+- [x] Per-task IRs are complete and the focused implementation-record audit reports no blocking finding.
+- [ ] Graph exit audit is eligible for terminal routing. The current router returns `followup-triage-to-briefing-repair` (`briefing-not-pass`) despite all four plan tasks being done; supporting gate evidence is awaiting separate read-only diagnosis.
 
 ## Verification
 
-- [ ] Ubuntu host: `mise install` exits 0; `mise run setup` exits 0; `mise run check` exits 0.
-- [ ] Windows host: `mise install` exits 0 and three sequential `mise run check` runs all exit 0.
-- [ ] `node .agents/skills/impl-doc/scripts/audit_impl_record.js --json` exits 0 with no blocking finding for the #187 implementation records.
-- [ ] `node .agents/skills/doc-status/scripts/doc_status.js audit --type all --json` exits 0 with no blocking #187 document finding.
+- [x] Ubuntu workflow `40314463285`, code SHA `660cf138541bb77c0318885ad9b50ffb2dbe7dde`: `mise install`, `mise run setup`, and `mise run check` succeeded.
+- [x] Windows: three sequential `mise run check` runs on SHA `16f922a994afe8c41205bdf40eb02759f0f4d670`; runs 2 and 3 have explicit exit 0, run 1's numeric exit was not retained despite full successful pipeline output. The intervening Unix-only fixture change is not compiled on Windows.
+- [x] Focused implementation-record audit reports no findings; full doc-status audit reports zero blocking findings (existing non-blocking global warnings remain).
+- [ ] Graph route reaches exit-audit after the briefing gate finding is diagnosed and appropriately handled.

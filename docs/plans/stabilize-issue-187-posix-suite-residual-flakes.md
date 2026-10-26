@@ -136,13 +136,13 @@ The graph planning-flow requires a plan approval yield before it creates test-sp
 - [ ] Windows process: `mise exec -- cargo test -p cheaper-tools --test proc_command abort_kills_and_preserves_reason` passes on Windows; pending watchdog is 20 seconds and reports operation/phase/elapsed/allowed budget/PID; normal termination wait is at most 20 seconds on the same handle; fixture cleanup is separate and at most 5 seconds with API result/error code; RAII closes handle.
 - [ ] Route disposition: inspect `crates/cheaper-cli/tests/integration/route_run.rs` and its history to confirm `ToolExecutionFailure` plus `routed command did not complete`; no new #187 route code is introduced.
 - [ ] Review: independently review the implementation and supported dispositions; no unresolved confirmed P0/P1 remains and no retry, skip, weakened assertion, or timeout-only mitigation is present.
-- [ ] Ubuntu POSIX gate: on provisioned Ubuntu run `mise install`, `mise run setup`, then `mise run check`; all commands pass and host/command/result evidence is recorded.
-- [ ] Windows gate: run `mise install`, then `mise run check` three consecutive times on Windows; all three pass and each host/run/order/command/result is recorded.
-- [ ] Closeout: `docs/impl/ir/stabilize-issue-187-posix-suite-residual-flakes.md` records actual changes, attempts, supported dispositions, commits and platform evidence; `node .agents/skills/doc-status/scripts/doc_status.js audit --type plan --dir docs/plans --json` has no blocking finding for this plan; the graph exit audit returns an eligible terminal route with no unresolved task or unclassified follow-up blocker.
+- [x] Ubuntu POSIX gate: canonical workflow `40314463285` passed `mise install`, `mise run setup`, and `mise run check` on code SHA `660cf138541bb77c0318885ad9b50ffb2dbe7dde`.
+- [x] Windows gate: three consecutive `mise run check` runs followed `mise install`/`mise run setup` on SHA `16f922a994afe8c41205bdf40eb02759f0f4d670`; run 1/session `74340` completed all stages without an error marker but its numeric exit code was not retained, while sessions `56212` and `87696` retained exit code 0. The only later code change is a `#[cfg(unix)]` fixture correction.
+- [ ] Closeout: `docs/impl/ir/run-issue-187-cross-platform-verification-and-closeout.md` records actual changes, attempts, supported dispositions, commits, and platform evidence. Focused implementation-record audit is clean and doc-status reports zero blocking findings; graph router currently selects a briefing repair edge and its focused gate evidence is under separate read-only diagnosis.
 
 ## Open Questions / Gaps
 
-The exact historical owner/cause for the resources stall, `ETXTBSY` writer or operation, and the Windows dead-to-alive `tasklist` observation is unknown. If a bounded diagnostic attempt does not reproduce a symptom, record its exact conditions and observed data, then obtain independent review of a supported disposition before implementation approval. The required provisioned Ubuntu and Windows full-check hosts are external prerequisites. No #162 environment work is implied by this plan.
+The exact historical owner/cause for the resources stall, `ETXTBSY` writer or operation, and the Windows dead-to-alive `tasklist` observation remains unknown after bounded diagnostics. The required Ubuntu and Windows full-check gates have completed; see the closeout IR for run evidence. No #162 environment work is implied by this plan.
 
 ## Self-Review
 
@@ -165,6 +165,15 @@ The exact historical owner/cause for the resources stall, `ETXTBSY` writer or op
   The bounded-path contract clarification and implementation slices are
   accepted. Canonical Ubuntu POSIX and three-run Windows checks remain required
   before #187 closeout; the historical `ETXTBSY` cause remains unknown.
+- POSIX scope-refinement review: independent A/B, Validator, and Judge accepted
+  the fixture-only `WithinWorkspace` correction with no confirmed P0/P1/P2
+  blocker; canonical Ubuntu workflow `40314463285` then passed on SHA
+  `660cf138541bb77c0318885ad9b50ffb2dbe7dde`.
+- Final Windows verification: three sequential checks completed on SHA
+  `16f922a994afe8c41205bdf40eb02759f0f4d670`. Runs 2 and 3 have explicit exit
+  code 0; run 1 completed the full pipeline with no error marker but its numeric
+  exit code was not retained. The intervening Unix-only fixture change does
+  not compile on Windows.
 - Approval: user-delegated approval authority was applied by the parent
   coordinator on 2026-10-26 based on the independent Judge decision. This
   approves the plan for test-spec/task generation and implementation handoff;

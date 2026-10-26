@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034MyAvYhFVOfkiKM4JOO3"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Implement stable process-command test oracles"
 created: "2026-10-26"
 updated: "2026-10-26"
@@ -46,9 +46,11 @@ In progress. The Windows process test now captures one test-local process
 handle before abort and uses it for the pre-abort liveness check, normal
 termination wait, and separate watchdog fixture cleanup. The test retains the
 exact abort-reason assertion. Canonical Ubuntu CI run `40311338267` on SHA
-`16f922a` then exposed a separate
-Unix-only deny fixture mismatch, now corrected in this task. The task remains
-open for scoped review and updated POSIX verification.
+`16f922a` then exposed a separate Unix-only deny fixture mismatch, now
+corrected. The scope refinement passed independent A/B, Validator, and Judge
+review with no confirmed P0/P1/P2 blocker. Final canonical Ubuntu CI passed on
+the corrected head. The three Windows canonical runs remain valid for the
+unchanged Windows code path; the first run's numeric exit code was not retained.
 
 ## Context
 
@@ -121,7 +123,9 @@ deterministic test-boundary ADR.
 - Canonical Ubuntu workflow `40311338267` on SHA `16f922a` independently failed
   the same Unix-only test (36 passed, 1 failed in `proc_command`) with
   `workspace escape: symlink-denied`; workflow exit code was 101. It is not a
-  passing POSIX gate. A new canonical run is required on the corrected head.
+  passing POSIX gate; the corrected head's passing run is recorded below.
+- Final POSIX canonical workflow `40314463285` passed on code SHA
+  `660cf138541bb77c0318885ad9b50ffb2dbe7dde`.
 - The fix is guarded by `#[cfg(unix)]`; Windows compiles the existing Windows
   process-handle branch and does not compile this POSIX-only fixture branch.
   The three Windows canonical runs were completed on SHA `16f922a` before this
@@ -139,5 +143,5 @@ deterministic test-boundary ADR.
 
 ## Follow-ups
 
-- Obtain targeted independent review for the POSIX fixture scope refinement,
-  then run canonical POSIX CI on the updated head and synchronize final evidence.
+- No additional task-local follow-up remains. The original Windows timeout
+  branch was not exercised by the bounded successful test.

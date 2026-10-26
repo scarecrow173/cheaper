@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MysZSBcJfqWheFs2n1r"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Stabilize process-command test oracles"
 created: "2026-10-26"
 updated: "2026-10-26"
@@ -94,3 +94,4 @@ assertion and make no production policy change.
 - [x] `mise exec -- cargo fmt --check` exits 0.
 - [x] WSL baseline on SHA `16f922a`: `security_exec_deny_pin_blast_radius` failed 0/1 with `workspace escape: symlink-denied`.
 - [x] WSL green after fixture-only change: the same exact command passed 1/1 with `WithinWorkspace`; production code and denial assertion are unchanged.
+- [x] Final canonical Ubuntu workflow `40314463285` passed on corrected code SHA `660cf138541bb77c0318885ad9b50ffb2dbe7dde`. The Unix-only fixture correction is guarded by `#[cfg(unix)]`; the three Windows canonical runs remain valid evidence for the unchanged Windows code path on `16f922a994afe8c41205bdf40eb02759f0f4d670` (run 1 numeric exit not retained; runs 2 and 3 explicit exit 0).
