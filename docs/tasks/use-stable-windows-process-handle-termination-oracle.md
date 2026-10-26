@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MysZSBcJfqWheFs2n1r"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Use stable Windows process handle termination oracle"
 created: "2026-10-26"
 updated: "2026-10-26"
@@ -72,12 +72,12 @@ may provide supplemental diagnostics only.
 
 ## Done When
 
-- [ ] A process handle is opened before abort with the required rights and is verified live before use.
-- [ ] The abort-result watchdog is bounded to 20 seconds; normal termination wait uses the same handle and is bounded to 20 seconds.
-- [ ] Watchdog expiry never triggers a second await/join; fixture cleanup is separate, same-handle, and bounded to 5 seconds with API result/error diagnostics.
-- [ ] RAII closes the handle on success, assertions, timeout, and fixture-cleanup failures; the original abort-reason assertion remains.
+- [x] A process handle is opened before abort with the required rights and is verified live before use.
+- [x] The abort-result watchdog is bounded to 20 seconds; normal termination wait uses the same handle and is bounded to 20 seconds.
+- [x] Watchdog expiry never triggers a second await/join; fixture cleanup is separate, same-handle, and bounded to 5 seconds with API result/error diagnostics.
+- [x] RAII closes the handle on success, assertions, timeout, and fixture-cleanup failures; the original abort-reason assertion remains.
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-tools --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test proc_command abort_kills_and_preserves_reason` exits 0 on Windows.
-- [ ] `mise exec -- cargo fmt --check` exits 0.
+- [x] `mise exec -- cargo test -p cheaper-tools --test proc_command abort_kills_and_preserves_reason` exits 0 on Windows.
+- [x] `mise exec -- cargo fmt --check` exits 0.
