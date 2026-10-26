@@ -38,6 +38,28 @@ fn to_fixed(v: f64, digits: usize) -> String {
     format!("{v:.digits$}")
 }
 
+fn count_map(value: Option<&Value>) -> String {
+    let Some(map) = value.and_then(Value::as_object) else {
+        return String::new();
+    };
+    map.iter()
+        .map(|(key, count)| format!("{key}={}", num(Some(count))))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn count_detail(value: Option<&Value>) -> String {
+    let Some(map) = value.and_then(Value::as_object) else {
+        return "{}".to_string();
+    };
+    let entries = map
+        .iter()
+        .map(|(key, count)| format!("{key}:{}", num(Some(count))))
+        .collect::<Vec<_>>()
+        .join(" ");
+    format!("{{{entries}}}")
+}
+
 fn usage_text(m: &Value) -> String {
     let usage = get(m, "usage").cloned().unwrap_or(Value::Null);
     format!(
@@ -341,6 +363,7 @@ fn workflow_text(env: &Value) -> String {
 pub fn format_usage_report(r: &Value) -> String {
     let usage = get(r, "usage").cloned().unwrap_or(Value::Null);
     let measured = get(r, "measured").cloned().unwrap_or(Value::Null);
+    let route = get(r, "route").cloned().unwrap_or(Value::Null);
     let mut lines = vec![
         "ok".to_string(),
         format!(
@@ -378,6 +401,92 @@ pub fn format_usage_report(r: &Value) -> String {
             num(get(&measured, "runs")),
         ),
     ];
+    lines.push(format!(
+        "route:         executions={} failures={} refetches={} refetchBytes={}",
+        num(get(&route, "executions")),
+        num(get(&route, "failures")),
+        num(get(&route, "refetches")),
+        num(get(&route, "refetchBytes")),
+    ));
+    lines.push(format!(
+        "route tokens:  original={} returned={} postprocessFailures={}",
+        num(get(&route, "originalTokens")),
+        num(get(&route, "returnedTokens")),
+        num(get(&route, "postprocessFailures")),
+    ));
+    if let Some(orphan) = get(&route, "orphanRefetches") {
+        lines.push(format!(
+            "route scope:   orphanRefetches={} orphanRefetchBytes={} unkeyedRecords={}",
+            num(get(orphan, "count")),
+            num(get(orphan, "bytes")),
+            num(get(&route, "unkeyedRecords")),
+        ));
+    }
+    if let Some(rows) = get(r, "byRoute").and_then(Value::as_array) {
+        lines.push("byRoute:".to_string());
+        for row in rows {
+            lines.push(format!(
+                "  {}: executions={} ok={} failed={} tokens={}->{} reduction={} postprocessFailures={}",
+                get(row, "route").and_then(Value::as_str).unwrap_or(""),
+                num(get(row, "executions")),
+                num(get(row, "succeeded")),
+                num(get(row, "failed")),
+                num(get(row, "originalTokens")),
+                num(get(row, "returnedTokens")),
+                num(get(row, "reductionRatio")),
+                num(get(row, "postprocessFailures")),
+            ));
+            let durations = get(row, "durationsMs");
+            let unmeasurable = get(row, "unmeasurable");
+            lines.push(format!(
+                "    refetches={} bytes={} exec/analyze/total={}/{}/{}ms unmeasurable={}/{}",
+                num(get(row, "refetches").and_then(|v| get(v, "count"))),
+                num(get(row, "refetches").and_then(|v| get(v, "bytes"))),
+                num(durations.and_then(|v| v.get("exec"))),
+                num(durations.and_then(|v| v.get("analyze"))),
+                num(durations.and_then(|v| v.get("total"))),
+                num(unmeasurable.and_then(|v| v.get("tokens"))),
+                num(unmeasurable.and_then(|v| v.get("durations"))),
+            ));
+        }
+    }
+    if let Some(rows) = get(r, "byError").and_then(Value::as_array) {
+        lines.push("byError:".to_string());
+        for row in rows {
+            lines.push(format!(
+                "  {}: count={} shareOfRuns={} shareOfFailures={} durationMs={}",
+                get(row, "code").and_then(Value::as_str).unwrap_or(""),
+                num(get(row, "count")),
+                num(get(row, "shareOfRuns")),
+                num(get(row, "shareOfFailures")),
+                num(get(row, "durationMs")),
+            ));
+            for dimension in ["workers", "models", "reasons"] {
+                let values = get(row, dimension).and_then(Value::as_object);
+                if values.is_some_and(|values| !values.is_empty()) {
+                    lines.push(format!(
+                        "    {dimension}: {}",
+                        count_map(get(row, dimension))
+                    ));
+                }
+            }
+            if let Some(execution) = get(row, "execution") {
+                let dimensions = ["timeoutMs", "maxTurns", "maxToolCalls"];
+                if dimensions.iter().any(|key| {
+                    get(execution, key)
+                        .and_then(Value::as_object)
+                        .is_some_and(|map| !map.is_empty())
+                }) {
+                    lines.push(format!(
+                        "    execution: timeoutMs={} maxTurns={} maxToolCalls={}",
+                        count_detail(get(execution, "timeoutMs")),
+                        count_detail(get(execution, "maxTurns")),
+                        count_detail(get(execution, "maxToolCalls")),
+                    ));
+                }
+            }
+        }
+    }
     if let Some(e) = get(r, "estimated").filter(|v| !v.is_null()) {
         let pct = match get(e, "estimatedSavingsPercent").and_then(Value::as_f64) {
             Some(p) => format!(" ({}%)", to_fixed(p, 1)),

@@ -88,7 +88,7 @@ fn truncate_chars(s: &str, n: usize) -> String {
 /// `RunAbortReason::as_str` の abort 語彙(runtime `abort.rs`) —
 /// `error.details.reason` が record へ載る許容値集合。語彙外の値は
 /// `reason` key 自体を省略する(fail-soft)。
-const ABORT_REASONS: [&str; 4] = ["timeout", "signal", "maxTurns", "maxToolCalls"];
+pub(crate) const ABORT_REASONS: [&str; 4] = ["timeout", "signal", "maxTurns", "maxToolCalls"];
 
 /// `kind:"run"` record の `execution` echo — `restrict_policy` 解決後の
 /// `ExecutionPolicy` から 3 field のみ写す固定 allowlist projection。

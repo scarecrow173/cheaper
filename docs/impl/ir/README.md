@@ -105,6 +105,8 @@ Directory: `docs/impl/ir`
 | IMPL-034KtIguXiJnzT9ykiH7uV | Implement per-target hook rewrite enablement and approval bypass issue 150 | completed | [implement-per-target-hook-rewrite-enablement-and-approval-bypass-issue-150.md](./implement-per-target-hook-rewrite-enablement-and-approval-bypass-issue-150.md) |
 | IMPL-034AGqZzIjQvvNqijsHb1N | Implement process lifecycle policy | completed | [implement-process-lifecycle-policy.md](./implement-process-lifecycle-policy.md) |
 | IMPL-034AGM8MC9yqj5X6IozzSu | Implement process tree lifecycle | completed | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
+| IMPL-034MphdOSZ5smrEZgDgPfh | Implement usage byError aggregation issue 184 T3 | completed | [implement-usage-byerror-aggregation-issue-184-t3.md](./implement-usage-byerror-aggregation-issue-184-t3.md) |
+| IMPL-034Mp9JnWzYzVnWA3PkOnh | Implement usage route window and byRoute aggregation issue 184 T2 | completed | [implement-usage-route-window-and-byroute-aggregation-issue-184-t2.md](./implement-usage-route-window-and-byroute-aggregation-issue-184-t2.md) |
 | IMPL-034zQvMyE33qrrPAVVG0da | Implement workflow binding and definition contracts | completed | [implement-workflow-binding-and-definition-contracts.md](./implement-workflow-binding-and-definition-contracts.md) |
 | IMPL-034zQvN42aaLRbRi0R2fI4 | Implement workflow compilation and public hooks | completed | [implement-workflow-compilation-and-public-hooks.md](./implement-workflow-compilation-and-public-hooks.md) |
 | IMPL-034AJmHjccYgHI8SdxXrpS | Implement workflow execution contracts | completed | [implement-workflow-execution-contracts.md](./implement-workflow-execution-contracts.md) |
@@ -113,6 +115,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | completed | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
+| IMPL-034MpAHqkHvEuevjW9HP58 | Measure usage JSONL peak memory issue 184 T5 | completed | [measure-usage-jsonl-peak-memory-issue-184-t5.md](./measure-usage-jsonl-peak-memory-issue-184-t5.md) |
 | IMPL-034A6i3cxbZXoHqDxhuyjB | Migrate native workflows and release guidance | completed | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
 | IMPL-034GtH0PU9VrkGZfPEk4FR | Normalize tools and add Devin hook capability | completed | [normalize-tools-and-add-devin-hook-capability.md](./normalize-tools-and-add-devin-hook-capability.md) |
 | IMPL-034EcqaOLmLoT2kL3ztbwk | Observability foundation | completed | [observability-foundation.md](./observability-foundation.md) |
@@ -130,6 +133,7 @@ Directory: `docs/impl/ir`
 | IMPL-tCVQX1QfT8lGHPsrMuqvEZ | Phase 5: switch distribution to Rust binary | completed | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
 | IMPL-TXm8SCjDLk10XvQdp1sPnY | Phase 6: remove TypeScript Node Pi | completed | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | IMPL-034r05iHy2gdnpDWUS1IzV | Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg) | completed | [pi-state-under-userconfigdir-pi.md](./pi-state-under-userconfigdir-pi.md) |
+| IMPL-034MeFMKLoLlMXEH8Ujgfi | Pin usage route error contract tests issue 184 T1 | completed | [pin-usage-route-error-contract-tests-issue-184-t1.md](./pin-usage-route-error-contract-tests-issue-184-t1.md) |
 | IMPL-034CSeJIDJx6Es0oHOERBj | Plugin catalog snapshot persistence and user-models merge | completed | [plugin-catalog-snapshot-persistence-and-user-models-merge.md](./plugin-catalog-snapshot-persistence-and-user-models-merge.md) |
 | IMPL-034z57iY91Zc8YChIAuBty | port routing policy to cli hook module | completed | [port-routing-policy-to-cli-hook-module.md](./port-routing-policy-to-cli-hook-module.md) |
 | IMPL-034DE3wewvurwfdPB2HrG6 | Rust 移行後の構造整理 | completed | [post-migration-structural-cleanup.md](./post-migration-structural-cleanup.md) |
@@ -172,12 +176,14 @@ Directory: `docs/impl/ir`
 | IMPL-034z3CEPSQBJaEVBVxxzmL | verify launchers and apm payload | completed | [verify-launchers-and-apm-payload.md](./verify-launchers-and-apm-payload.md) |
 | IMPL-034z2rZiB6WUNTje88kRt1 | verify release workflow | completed | [verify-release-workflow.md](./verify-release-workflow.md) |
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
+| IMPL-034MpJiRnTxGKRzkCAn04f | Verify usage route and error analysis chain | completed | [verify-usage-route-and-error-analysis-chain.md](./verify-usage-route-and-error-analysis-chain.md) |
 | IMPL-034APqdMTW2hYck2FYoKv1 | Verify workflow execution integration | completed | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | IMPL-034D9oWccQJEPfXsMNRpH5 | Volume-root workspace boundary predicate の trailing separator guard | completed | [volume-root-workspace-boundary-predicate-trailing-separator-guard.md](./volume-root-workspace-boundary-predicate-trailing-separator-guard.md) |
 | IMPL-034KyCatPzZz2THKRqjLIe | Windsurf-compat range normalization and registration surfacing issue 161 | completed | [windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md](./windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md) |
 | IMPL-034IqcrVJL4pxtau4WVtRV | Wire evaluate_dedup into hook target call sites | completed | [wire-evaluate-dedup-into-hook-target-call-sites.md](./wire-evaluate-dedup-into-hook-target-call-sites.md) |
 | IMPL-034rAiLq0ZN6b8HGh62TPA | Wire explicit model selection in runtime-pi | completed | [wire-explicit-model-selection-in-runtime-pi.md](./wire-explicit-model-selection-in-runtime-pi.md) |
 | IMPL-034zUpcuJnZnznZ79UL3Q2 | Wire one-dispatch release publication | completed | [wire-one-dispatch-release-publication.md](./wire-one-dispatch-release-publication.md) |
+| IMPL-034MpqYmnpqh3br76LERKo | Wire usage group by flags text and guide issue 184 T4 | completed | [wire-usage-group-by-flags-text-and-guide-issue-184-t4.md](./wire-usage-group-by-flags-text-and-guide-issue-184-t4.md) |
 | IMPL-034zTIoMYLPhPUbedvunjx | wire-workflow-interface | completed | [wire-workflow-interface.md](./wire-workflow-interface.md) |
 | IMPL-UAM3loJyQptDIIrWiEJ3me | issue-111: nullable maxTurns・stall timeout・budget 枯渇 checkpoint/resume の実装 | completed | [worker-run-nullable-maxturns-stall-timeout-and-resume.md](./worker-run-nullable-maxturns-stall-timeout-and-resume.md) |
 | IMPL-Dc1ijUuRtOtwRZigVnv16d | worker schema の構造検証原則と INVALID_OUTPUT raw output 永続化 | completed | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |

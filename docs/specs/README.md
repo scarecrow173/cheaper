@@ -88,6 +88,7 @@ Directory: `docs/specs`
 | SPEC-034LwdoInh3ie1KPlSjkJl | trusted route flag issuer redesign — 宣言層 provenance trust・project 層 `trusted` 宣言の拒否 | approved | [trusted-route-flag-issuer-redesign.md](./trusted-route-flag-issuer-redesign.md) |
 | SPEC-034KOpKfZpegX2MLPD0uq6 | unified exec grant model — command.grants / process.tasks の統合 | approved | [unified-exec-grant-model.md](./unified-exec-grant-model.md) |
 | SPEC-034r05iHK8bA7grnYLdwgl | Unified version and release source of truth | implemented | [unified-version-source-of-truth.md](./unified-version-source-of-truth.md) |
+| SPEC-034M0QMBJ1LQRGDdB2wnKl | Usage analysis scope — Route/Error breakdowns and period filtering (issue #184) | approved | [usage-analysis-scope-issue-184.md](./usage-analysis-scope-issue-184.md) |
 | SPEC-034rzGnCaRQc5ceI95lf5i | Usage and savings telemetry aggregation | implemented | [usage-and-savings-telemetry-aggregation.md](./usage-and-savings-telemetry-aggregation.md) |
 | SPEC-034r2eqGCyFZr7j0uSfst0 | Usage log recording scope documentation contract | implemented | [usage-log-recording-scope-docs.md](./usage-log-recording-scope-docs.md) |
 | SPEC-034r05iHK8bA7gw94zcNpw | User-facing documentation information architecture | implemented | [user-facing-docs-information-architecture.md](./user-facing-docs-information-architecture.md) |

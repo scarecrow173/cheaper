@@ -369,14 +369,44 @@ cheaper usage --worker bulk-reader              # worker filter
 cheaper usage --provider ollama                 # provider filter
 cheaper usage --model ollama/qwen3.5:9b         # model filter
 cheaper usage --compare-model openai/gpt-5      # estimated 算出
+cheaper usage --group-by route                   # route 別 section
+cheaper usage --group-by error                   # worker failure code 別 section
+cheaper usage --route code-writer                # route bucket を指定 route に限定
+cheaper usage --since 168h --group-by route      # 7 日分の route 集計
 cheaper usage --format text                     # 人間向け表示
 ```
 
-集計対象は `kind:"run"` record のみ。usage.jsonl が無い・破損行
-が混じっていてもエラーにならない（破損行は skip、file 不在は
-0 件集計）。`result` には `records`（件数・ok/errors 内訳）・
-`usage` 合計・`turns`/`toolCalls`/`durationMs` 合計・`measured`
-（savings を持つ record のみを母数とする実測 offload）が入る。
+`--group-by` は単値 option で、値は `route` または `error`。
+`route,error` など複合値・未知値は `INVALID_REQUEST` になる。
+`--route` は route-scope だけを絞り、run totals と `byError` には
+影響しない。`--since` は run totals に加えて route/refetch bucket にも
+適用される。duration は `24h` / `168h` のような時間単位で指定する。
+
+`result.records`・`ok`/`errors`・`usage`・`turns`/`toolCalls`/
+`durationMs` は filter 後の recorded `kind:"run"` のみを集計する。
+`result.route` は `kind:"route"` と `kind:"route-refetch"` の独立
+bucket で、run の worker/provider/model filter は適用しない。
+usage.jsonl が無い・破損行が混じる場合もエラーにならない（破損行は
+skip、file 不在は 0 件集計）。
+
+`--group-by route` は `byRoute` を追加し、各 route の executions・
+成功/失敗・token reduction・joined refetch・duration・計測不能数を返す。
+`--route <name>` を併用すると `result.route` と各 row をその route に
+絞る。`route.orphanRefetches` と `route.unkeyedRecords` は route window
+全体の診断値なので route filter の影響を受けない。
+refetch record は同じ window 内の route record の非空 `logRef` で join
+する。`--group-by error` は失敗した recorded run を `error.code` 別に
+まとめ、欠損/不正 code は `unknown`、空文字 code は空文字の bucket にする。
+
+割合の母数は異なる。`byError[].shareOfRuns` は filter 後の recorded run
+総数、`shareOfFailures` はそのうちの失敗 run 数を使う。
+`measured` は `savings` を持つ run の実測 offload、`comparable` は
+`directlyComparable: true` の run、`estimated` は比較モデルの価格と
+comparable 母数に基づく推定値である。route/History の記録を失敗率へ
+混ぜず、全 execution の成功率とは解釈しない。
+
+`--format text` は route section を常時表示し、grouping を指定した場合は
+`byRoute` または `byError` section も表示する。
 
 ### estimated savings
 

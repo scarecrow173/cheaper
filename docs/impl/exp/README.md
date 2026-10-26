@@ -12,3 +12,4 @@ Directory: `docs/impl/exp`
 | [openai-codex-subscription-e2e.jsonl](./openai-codex-subscription-e2e.jsonl) |
 | [pi-sdk-probe-and-test-stream-seam.jsonl](./pi-sdk-probe-and-test-stream-seam.jsonl) |
 | [rig-poc-go-no-go-conditions-measurement.jsonl](./rig-poc-go-no-go-conditions-measurement.jsonl) |
+| [usage-jsonl-peak-memory-measurement.jsonl](./usage-jsonl-peak-memory-measurement.jsonl) |

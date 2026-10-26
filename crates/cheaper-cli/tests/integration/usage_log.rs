@@ -173,8 +173,15 @@ fn ts_writer_shape_records_parse_and_aggregate() {
     );
     let records = read_usage_records(dir.path());
     assert_eq!(records.len(), 5);
-    let report =
-        build_usage_report(dir.path(), &UsageFilters::default(), None, None, &|| NOW_MS).unwrap();
+    let report = build_usage_report(
+        dir.path(),
+        &UsageFilters::default(),
+        None,
+        None,
+        None,
+        &|| NOW_MS,
+    )
+    .unwrap();
     let r = Value::Object(report);
     // count record は run 集計から外れる → run 4 件(ok 3 + error 1)。
     // report の数値は f64 系(Number::Float)なので float literal で比較。
@@ -703,8 +710,15 @@ fn usage_report_aggregates_records_with_diagnostic_fields() {
     assert_eq!(records[1]["execution"]["maxToolCalls"], 64);
     assert_eq!(records[1]["error"]["reason"], "maxTurns");
     // 集計は既知 field のみ — 新旧混在で従来どおりの結果。
-    let report =
-        build_usage_report(dir.path(), &UsageFilters::default(), None, None, &|| NOW_MS).unwrap();
+    let report = build_usage_report(
+        dir.path(),
+        &UsageFilters::default(),
+        None,
+        None,
+        None,
+        &|| NOW_MS,
+    )
+    .unwrap();
     let r = Value::Object(report);
     assert_eq!(r["records"], json!(3.0));
     assert_eq!(r["ok"], json!(2.0));
@@ -716,4 +730,32 @@ fn usage_report_aggregates_records_with_diagnostic_fields() {
     assert_eq!(r["durationMs"], json!(37.0));
     assert_eq!(r["measured"]["runs"], json!(1.0));
     assert_eq!(r["measured"]["comparable"]["runs"], json!(1.0));
+}
+
+#[test]
+fn usage_log_report_callers() {
+    // この module の既存 report caller 2 種（旧TS、新diagnostic record）。
+    let dir = tempfile::tempdir().unwrap();
+    for error_line in [TS_RUN_ERR, NEW_RUN_ERR_DIAG] {
+        write_log_lines(
+            dir.path(),
+            &[TS_RUN_OK, error_line, TS_COUNT, OLD_RUN_MINIMAL],
+        );
+        let report = build_usage_report(
+            dir.path(),
+            &UsageFilters::default(),
+            None,
+            None,
+            None,
+            &|| NOW_MS,
+        )
+        .unwrap();
+        assert_eq!(report["records"], json!(3.0));
+        assert_eq!(report["ok"], json!(2.0));
+        assert_eq!(report["errors"], json!(1.0));
+        assert_eq!(report["usage"]["input"], json!(160.0));
+        assert_eq!(report["measured"]["runs"], json!(1.0));
+        assert!(!report.contains_key("byRoute"));
+        assert!(!report.contains_key("byError"));
+    }
 }
