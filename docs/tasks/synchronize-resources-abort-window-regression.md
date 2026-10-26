@@ -93,3 +93,7 @@ attempt; never commit the mutation.
 
 - [x] `mise exec -- cargo test -p cheaper-tools --lib abort_landing_before_listener_registration_still_rejects` exits 0 and exercises the phase-controlled test.
 - [x] `mise exec -- rustfmt --check --edition 2021 crates/cheaper-tools/src/resources.rs` exits 0.
+
+## Final Verification Follow-up
+
+- The first canonical Windows `mise run check` exposed a test-only Clippy type-complexity warning. A cfg(test) alias fixes it; focused package Clippy and full formatting checks pass. Canonical checks will be repeated on the corrected commit.

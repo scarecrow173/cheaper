@@ -516,11 +516,14 @@ pub struct ResourceManager {
     /// Test-only one-shot checkpoint between the successful signal pre-check
     /// and enqueue. Clones share it because they are the same manager instance.
     #[cfg(test)]
-    request_phase_hook: Arc<Mutex<Option<Box<dyn FnOnce() + Send + 'static>>>>,
+    request_phase_hook: SharedRequestPhaseHook,
     /// canonical realpath(実在しない injected root は入力のまま)。
     pub root: String,
     pub symlink_policy: SymlinkPolicy,
 }
+
+#[cfg(test)]
+type SharedRequestPhaseHook = Arc<Mutex<Option<Box<dyn FnOnce() + Send + 'static>>>>;
 
 impl Clone for ResourceManager {
     fn clone(&self) -> Self {

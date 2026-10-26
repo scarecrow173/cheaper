@@ -95,6 +95,8 @@ claimed as the historical issue cause or a new cross-runtime contract.
 - Independent review found the outer result channel budget (8 seconds) could expire before two sequential 5-second request budgets and worker completion. Raised it to 13 seconds and added elapsed/allowed-budget phase diagnostics.
 - `RESULT_TIMEOUT` is 13 seconds (two 5-second request budgets); the worker has a separate 3-second completion budget, so total post-release ceiling is 16 seconds. The focused test passed after the change (1 passed).
 - Follow-up review found that an inner request timeout would report only a static `expect`; it now reports `phase=abort-request` and the 5-second elapsed/allowed budget. The focused test passed after this change (1 passed).
+- First canonical Windows `mise run check` on pre-alias SHA `1f45fb4` passed Biome and fmt but failed Clippy on `clippy::type_complexity` for the test-only hook field. Replaced the nested field spelling with a cfg(test) alias; focused `cargo clippy -p cheaper-tools --all-targets -- -D warnings` and full `cargo fmt --check` pass afterward.
+- The initial Ubuntu workflow run `40310673489` targeted pre-alias SHA `1f45fb4` and was cancelled after the known lint failure. It is not POSIX verification evidence; a new run will target the corrected immutable commit.
 - Inspected final source to confirm no mutation bypass remains. Full workspace verification has not run.
 
 ## Risks
