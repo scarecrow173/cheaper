@@ -282,7 +282,7 @@ Directory: `docs/tasks`
 | TASK-034BgKlddxEi2ozLgZMFi3 | Phase 6: remove TypeScript Node Pi | done | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | TASK-034DlFISpHRPrXyhhlFXfa | Pin devin cache-hit usage mapping in stream tests | done | [pin-devin-cache-hit-usage-mapping-in-stream-tests.md](./pin-devin-cache-hit-usage-mapping-in-stream-tests.md) |
 | TASK-0340C4KaPSmy4CrDagevUC | Pin sweep test deletion order with explicit set_mtime timestamps | done | [pin-sweep-test-deletion-order-with-explicit-mtimes.md](./pin-sweep-test-deletion-order-with-explicit-mtimes.md) |
-| TASK-034MbSQgdIQfx2nMRZ0RCz | Pin usage route/error contract tests — compile seam, fixture builders, args/report/caller tests (issue #184 T1) | todo | [pin-usage-route-error-contract-tests.md](./pin-usage-route-error-contract-tests.md) |
+| TASK-034MbSQgdIQfx2nMRZ0RCz | Pin usage route/error contract tests — compile seam, fixture builders, args/report/caller tests (issue #184 T1) | done | [pin-usage-route-error-contract-tests.md](./pin-usage-route-error-contract-tests.md) |
 | TASK-034KLYAKiwETFc4o0BnVI1 | cheaper-cli/runtime への exec_deny 配管と残 test churn | done | [plumb-exec-deny-through-cli-and-runtime.md](./plumb-exec-deny-through-cli-and-runtime.md) |
 | TASK-034KLYAfuIu8es8ZgpuQRl | cheaper-tools への exec_deny 配管と pin/verify 適用点注入 | done | [plumb-exec-deny-through-tools.md](./plumb-exec-deny-through-tools.md) |
 | TASK-034KQsrpnzHdeRKf5M3KiN | cheaper-cli/runtime/route/invocation/catalog の unified exec 追随と workspace 復帰 | done | [plumb-unified-exec-through-cli-and-runtime.md](./plumb-unified-exec-through-cli-and-runtime.md) |

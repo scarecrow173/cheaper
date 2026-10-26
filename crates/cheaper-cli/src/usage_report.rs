@@ -39,6 +39,13 @@ use crate::usage_log::USAGE_LOG_FILENAME;
 /// (TS `PRICING_STALE_MS` = 30 日)。
 pub const PRICING_STALE_MS: f64 = 30.0 * 24.0 * 3_600_000.0;
 
+/// Usage の grouped section 選択（T1 は compile seam のみ）。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UsageGroupBy {
+    Route,
+    Error,
+}
+
 /// `UsageFilters`。`since_ms` は `ts >= now - sinceMs` の record のみ対象。
 #[derive(Debug, Clone, Default)]
 pub struct UsageFilters {
@@ -47,6 +54,7 @@ pub struct UsageFilters {
     pub provider: Option<String>,
     /// `<provider>/<id>` 形式(未検証でも可 — 不正なら filter 不適用)。
     pub model: Option<String>,
+    pub route: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -544,6 +552,7 @@ fn route_bucket(records: &[Value]) -> Map<String, Value> {
 pub fn build_usage_report(
     user_config_dir: &Path,
     filters: &UsageFilters,
+    _group_by: Option<UsageGroupBy>,
     compare_model: Option<&str>,
     compare_catalog_model: Option<ModelInfo>,
     now: &dyn Fn() -> f64,
@@ -721,6 +730,7 @@ async fn execute_usage_inner(
         worker: args.worker.clone(),
         provider: args.provider.clone(),
         model: args.model.clone(),
+        route: None,
     };
     // `Date.now` は整数 ms — `cli::system_now` の truncating clock
     // を共有する(端数 ms を残すと envelope parity が崩れる)。
@@ -728,6 +738,7 @@ async fn execute_usage_inner(
     let report = build_usage_report(
         &dirs.user_config_dir,
         &filters,
+        None,
         args.compare_model.as_deref(),
         compare_catalog_model,
         &now_fn,

@@ -384,6 +384,27 @@ fn since_only_valid_for_usage() {
     );
 }
 
+#[test]
+fn route_flag_rejected_for_route_resolve() {
+    assert_eq!(
+        err(&["route", "resolve", "--route", "x"]).message(),
+        "--route is not valid for `route resolve`"
+    );
+}
+
+#[test]
+fn args_usage_only_guard_messages() {
+    for argv in [
+        vec!["count-tokens", "--route", "x"],
+        vec!["run", "w", "--group-by", "route"],
+    ] {
+        assert_eq!(
+            err(&argv).message(),
+            "--since/--compare-model/--group-by/--route are only valid for `usage`"
+        );
+    }
+}
+
 // --- workflow ----------------------------------------------------------------
 
 #[test]

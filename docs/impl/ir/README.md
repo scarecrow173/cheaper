@@ -130,6 +130,7 @@ Directory: `docs/impl/ir`
 | IMPL-tCVQX1QfT8lGHPsrMuqvEZ | Phase 5: switch distribution to Rust binary | completed | [phase-5-switch-distribution-to-rust-binary.md](./phase-5-switch-distribution-to-rust-binary.md) |
 | IMPL-TXm8SCjDLk10XvQdp1sPnY | Phase 6: remove TypeScript Node Pi | completed | [phase-6-remove-typescript-node-pi.md](./phase-6-remove-typescript-node-pi.md) |
 | IMPL-034r05iHy2gdnpDWUS1IzV | Pi state paths under userConfigDir/pi (PLAN-034r05iHK8bA7g23Opaicg) | completed | [pi-state-under-userconfigdir-pi.md](./pi-state-under-userconfigdir-pi.md) |
+| IMPL-034MeFMKLoLlMXEH8Ujgfi | Pin usage route error contract tests issue 184 T1 | completed | [pin-usage-route-error-contract-tests-issue-184-t1.md](./pin-usage-route-error-contract-tests-issue-184-t1.md) |
 | IMPL-034CSeJIDJx6Es0oHOERBj | Plugin catalog snapshot persistence and user-models merge | completed | [plugin-catalog-snapshot-persistence-and-user-models-merge.md](./plugin-catalog-snapshot-persistence-and-user-models-merge.md) |
 | IMPL-034z57iY91Zc8YChIAuBty | port routing policy to cli hook module | completed | [port-routing-policy-to-cli-hook-module.md](./port-routing-policy-to-cli-hook-module.md) |
 | IMPL-034DE3wewvurwfdPB2HrG6 | Rust 移行後の構造整理 | completed | [post-migration-structural-cleanup.md](./post-migration-structural-cleanup.md) |

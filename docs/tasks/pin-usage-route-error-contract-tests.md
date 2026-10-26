@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MbSQgdIQfx2nMRZ0RCz"
 type: "task"
-status: "todo"
+status: "done"
 title: "Pin usage route/error contract tests — compile seam, fixture builders, args/report/caller tests (issue #184 T1)"
 created: "2026-10-25"
 updated: "2026-10-26"
@@ -201,26 +201,155 @@ format 実装(T4)、`docs/guides/usage.md`(T4)。
 
 ## Done When
 
-- [ ] consumer tolerance 5 test が追加され、T1 時点の green/expected-red と
+- [x] consumer tolerance 5 test が追加され、T1 時点の green/expected-red と
       その理由を記録。History schema/writer・ID validation/mint/linkage
       を実装・要求していない
 
-- [ ] `UsageGroupBy` enum・`UsageFilters.route`・`build_usage_report`
+- [x] `UsageGroupBy` enum・`UsageFilters.route`・`build_usage_report`
       の `group_by` 引数が compile-only seam として追加され、src/
       test の全既存 caller が `group_by: None` へ追従している
-- [ ] fixture builder 3 種と design §7 表の pin test が追加され、
+- [x] fixture builder 3 種と design §7 表の pin test が追加され、
       未実装動作を要求する test が期待どおり red になる(失敗名と
       理由を本 task に記録する)
-- [ ] `usage_log_report_callers` と既存 test 群(filter・
+- [x] `usage_log_report_callers` と既存 test 群(filter・
       aggregate・estimated・regression golden `cli-usage-*.json`)
       が無変更で green のまま
-- [ ] `route_window`/`build_route_report`/`build_by_error`・args
+- [x] `route_window`/`build_route_report`/`build_by_error`・args
       登録・text format の実装が本 task に含まれない
 
 ## Verification
 
-- [ ] `mise exec -- cargo build -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0(`usage_log_report_callers` green)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` の出力で新規 pin test 名が FAILED として列挙され、既存 test が全て pass する(expected red — 失敗名と理由を本 task へ記録。`invalid_group_by_value_rejected_at_dispatch`・`route_flag_scopes_route_at_dispatch`・`group_by_last_wins_emits_by_error_only` は `Unknown option '--group-by'`/`'--route'` の parse error、残りは未実装集計・emit の assertion failure)
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration args::` の出力で新規 pin(`route_flag_rejected_for_route_resolve`・`args_usage_only_guard_messages`)が `Unknown option '--route'`/`'--group-by'` の parse error で FAILED として列挙され、既存 test(`since_only_valid_for_usage` を含む)が全て pass する(expected red — 失敗名と理由を本 task へ記録)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0(未使用 seam 引数の warning なし)
+- [x] `mise exec -- cargo build -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` exits 0
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` exits 0(`usage_log_report_callers` green)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` の出力で新規 pin test 名が FAILED として列挙され、既存 test が全て pass する(expected red — 失敗名と理由を本 task へ記録。`invalid_group_by_value_rejected_at_dispatch`・`route_flag_scopes_route_at_dispatch`・`group_by_last_wins_emits_by_error_only` は `Unknown option '--group-by'`/`'--route'` の parse error、残りは未実装集計・emit の assertion failure)
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration args::` の出力で新規 pin(`route_flag_rejected_for_route_resolve`・`args_usage_only_guard_messages`)が `Unknown option '--route'`/`'--group-by'` の parse error で FAILED として列挙され、既存 test(`since_only_valid_for_usage` を含む)が全て pass する(expected red — 失敗名と理由を本 task へ記録)
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0(未使用 seam 引数の warning なし)
+
+## T1 implementation evidence
+
+Implementation Record:
+`docs/impl/ir/pin-usage-route-error-contract-tests-issue-184-t1.md`。
+上の check は **T1 の expected-red 観測を含む完了条件を確認した**印であり、
+新規契約の green・`mise run check` green を意味しない。
+T2/T3/T4 の本体、CLI flag 登録、writer、History/ID 実装、Cargo/dependency、
+既存 assertion と regression golden は変更していない。
+
+### Routing / status
+
+- 開始 HEAD `a3144f7`、branch `feature/usage-analysis-issue-184`、clean。
+- 最初の route command は script の所在を `implementation-flow/scripts`
+  と誤認し exit 1（MODULE_NOT_FOUND）。下記の正しい所在で再実行:
+  `mise exec -- node .agents/skills/doc-driven-dev-graph/scripts/route_graph.js
+  --current task-graph --focus docs/plans/implement-usage-route-error-analysis-issue-184.md
+  --task-dir docs/tasks --cwd . --json` → exit 0。
+  `edgeId: task-graph-to-implementation` / `condition: tasks-runnable` /
+  `next: implementation`、issues/blockers は空、runnable は T1 のみ。
+- Task は `in-progress`。この子エージェントの tool surface に built-in
+  reviewer dispatch が無いため、独立レビューを親へ依頼する。
+  自己点検を独立レビューとは扱わず、レビューゲートと最終 commit/closeout
+  は親に引き継ぐ。T2 は開始しない。
+
+### Actual verification
+
+以下は全て `mise exec --` 経由、build/clippy/test は
+`--features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` 付き。
+
+| command (`mise exec --` に続く部分) | exit | actual result |
+| --- | --- | --- |
+| `cargo fmt --all` | 0 | format 実施 |
+| `cargo fmt --all --check` | 0 | format check |
+| `cargo build -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam` | 0 | build 成功 |
+| `cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` | 0 | warning なし |
+| `cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_log::` | 0 | 21 passed / 0 failed / 0 ignored / 315 filtered（既存20 + 新規1） |
+| `cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` | 101 | 36 passed / 29 failed / 0 ignored / 271 filtered（既存34全pass、新規2pass・29 expected-red） |
+| `cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration args::` | 101 | 45 passed / 2 failed / 0 ignored / 289 filtered（既存45全pass、新規2 expected-red） |
+| `cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test regression usage` | 0 | 0 tests / 1 filtered — 証明には使用しない |
+| `cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test regression -- --nocapture` | 0 | `regression_golden` 1 passed、cases=61 pass=61 fail=0 |
+
+`CHEAPER_REGRESSION_CAPTURE` 未設定を確認して replay し、
+`git diff --exit-code -- crates/cheaper-cli/tests/regression` も exit 0。
+golden は再生成していない。`usage_command_format_text_writes_report` と
+`since_only_valid_for_usage` の既存 assertion もこの T1 では変更せず pass。
+`mise run check` / workspace 全体の test は実行していない。
+
+文書・差分検証:
+
+- `mise exec -- node .agents/skills/impl-doc/scripts/audit_impl_record.js
+  --json`: exit 0、181 files / findings 0。
+- `mise exec -- node .agents/skills/doc-status/scripts/audit_docs.js --type
+  task --json`: exit 0、401 files / 143 non-blocking warnings /
+  blocking 0。本 T1 への findings は 0（他 task の reciprocal relation 警告）。
+- `mise exec -- node scripts/check-doc-ids.mjs`: exit 0、
+  `doc id check OK: 1238 markdown files scanned`。
+- `git diff --check`: exit 0。
+- `git diff --quiet -- Cargo.toml Cargo.lock crates/cheaper-cli/Cargo.toml`:
+  exit 0。
+
+### Exact expected-red list (31 tests)
+
+`usage_report::` の 29 件は下記。Null は absent section/row に対する
+`Value` indexing の観測値であり、期待値を捏造して green にしていない。
+owner は後続で green にする責任 task（T3 の一部は先行 T2 も必要）。
+
+| owner | test | 最初の失敗 assertion / 原因 |
+| --- | --- | --- |
+| T2 | `route_bucket_applies_since` | executions 2 != 1、旧 bucket が window 外 route を含む |
+| T2 | `route_window_invalid_timestamps` | executions 5 != 1、不正/欠損 ts の window 除外が未実装 |
+| T2 | `group_by_route_emits_per_route_rows` | byRoute Null != 期待2 rows、emit 未実装 |
+| T2 | `route_filter_scopes_route_sections_only` | executions 2 != 1、route filter 未使用 |
+| T2 | `route_group_ignores_worker_filter` | byRoute[0].executions Null != 1、emit 未実装（run filter は通過） |
+| T2 | `route_filter_without_group_by` | executions 2 != 1、standalone route filter 未実装 |
+| T2 | `unkeyed_route_records_counted` | unkeyedRecords Null != 2、window-wide 診断未実装 |
+| T2 | `orphan_and_joined_refetches` | orphanRefetches Null != {count:4,bytes:36}、join/orphan 未実装 |
+| T2 | `unmeasurable_metric_families` | unmeasurable Null != {tokens:1,durations:1}、family 集計未実装 |
+| T2 | `no_double_counting` | byRoute[0].refetches Null != {count:1,bytes:9}、run 母数/既存 snapshot 非混入 assertion は pass |
+| T2 | `refetch_only_log` | orphanRefetches Null != {count:1,bytes:9}、global の既存計数 assertion は pass |
+| T2 | `fake_records_aggregate` | byRoute[0].route Null != "invented"、reader の malformed/未知kind/非object除外 assertion は pass |
+| T2 | `legacy_records_use_defaults` | byRoute[0].originalTokens Null != 0、row/default/unmeasurable 未実装 |
+| T2 | `usage_refetch_distinct_execution_id_joins_log_ref` | byRoute[0].refetches Null != {count:1,bytes:9}、kind別件数 assertion は pass |
+| T2 | `usage_window_orphan_not_backfilled_from_history` | executions 1 != 0、window 外 owner を除外しない（sentinel 前後の同一性は pass） |
+| T3 | `group_by_error_emits_code_rows` | byError.as_array() の `expect("byError emitted")`、emit 未実装 |
+| T3 | `empty_error_code_is_preserved` | byError[0].code Null != "unknown"、unknown/空文字の別 bucket 未実装 |
+| T3 | `execution_number_keys_use_js_canonical_format` | timeoutMs Null != 期待 distinct-value map、canonical echo 集計未実装 |
+| T3 | `nonfinite_aggregates_serialize_as_null` | grouped route row の is_object false、先行T2とT3の非有限契約が未実装 |
+| T3 | `failure_only_log_emits_by_error_rows` | byError[0].count Null != 2、error rows 未実装 |
+| T3 | `empty_log_emits_empty_grouped_sections` | byRoute Null != []、先行T2の empty emit と T3 の byError emit が未実装 |
+| T3 | `fake_run_error_records_aggregate` | byError.as_array() が None、fake run error rows 未実装 |
+| T3 | `argv_and_error_detail_not_leaked` | grouped section の is_array false、先行T2/T3の emit が未実装（漏出を観測した失敗ではない） |
+| T3 | `usage_same_trace_distinct_runs_counted` | byError[0].count Null != 1、既存の records=2/ok=1/errors=1 は pass、share=1/2・1 は T3 待ち |
+| T4 | `invalid_group_by_value_rejected_at_dispatch` | error.message が Unknown option '--group-by'、期待 invalid --group-by: bogus (expected route\|error) ではない |
+| T4 | `route_filter_leaves_by_error_unscoped` | exit 2 != 0、Unknown option '--route'（flag 未登録） |
+| T4 | `route_flag_scopes_route_at_dispatch` | exit 2 != 0、Unknown option '--route'（flag 未登録） |
+| T4 | `group_by_last_wins_emits_by_error_only` | exit 2 != 0、Unknown option '--group-by'（flag 未登録） |
+| T4 | `format_text_parity` | route executions=1 等の常時 route 行が無い（formatter 未実装） |
+
+`args::` の残り 2 件（T4 所有）:
+
+| test | actual / expected |
+| --- | --- |
+| `route_flag_rejected_for_route_resolve` | `invalid arguments: Unknown option '--route'...` / `` --route is not valid for `route resolve` `` |
+| `args_usage_only_guard_messages` | 最初の count-tokens case が `invalid arguments: Unknown option '--route'...` / `` --since/--compare-model/--group-by/--route are only valid for `usage` ``（次の run --group-by case は最初の panic により未到達） |
+
+### Consumer tolerance 5 件の状態
+
+- green: `usage_optional_ids_preserve_report` — ID無し/有りの JSON/text が
+  flag 無し・route/error group selector・既存filterの組合せで同一。
+  この同一性 test 単体は section emit を保証しない。emit は別 pin が red。
+- green: `usage_report_history_independent` — History 不在で成功し、無関係の
+  inert sentinel の追加でも不変。recorded-run 数2/error数1を維持。
+- expected-red / T3: `usage_same_trace_distinct_runs_counted`（上表）。
+- expected-red / T2: `usage_refetch_distinct_execution_id_joins_log_ref`（上表）。
+- expected-red / T2: `usage_window_orphan_not_backfilled_from_history`（上表）。
+
+fixture は optional opaque ID を付けるだけで形式妥当性を要求せず、
+sentinel は将来の History path/schema を仮定しない。
+
+### Review handoff
+
+- 自己点検: production diff は enum/filter/signature/`None` caller のみ。
+  新規34 tests（report31/args2/log1）は既存 module 内、
+  `#[ignore]`・無効化・期待値の実装への迎合は無し。
+- [x] 独立レビューで blocking issue candidate を検証し、refetch join fixture の
+      parentExecutionId を owner と不一致に修正。route-filter の assertion
+      強化候補は本 test の明示した route/run 分離範囲外の P2 として記録。
+- [x] レビュー承認後の `test(usage): ...` logical commit と status 完了
