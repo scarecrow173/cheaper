@@ -27,6 +27,7 @@ relations:
   derives-from:
     - "../specs/stabilize-posix-suite-residual-flakes-issue-187.md"
     - "../discovery/posix-suite-residual-flakes-issue-187.md"
+    - "../adr/prefer-deterministic-test-boundary-diagnosis-for-residual-suite-flakes.md"
   derived-by:
     - "../plans/stabilize-issue-187-posix-suite-residual-flakes.md"
   verifies: []

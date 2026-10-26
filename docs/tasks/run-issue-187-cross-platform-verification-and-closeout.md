@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MytbiiYw7vec0nRA4xx"
 type: "task"
-status: "in-progress"
+status: "done"
 title: "Run issue 187 cross-platform verification and closeout"
 created: "2026-10-26"
 updated: "2026-10-26"
@@ -81,11 +81,11 @@ supported dispositions. Do not report non-recurrence as root-cause resolution.
 - [x] Provisioned Ubuntu POSIX run passes `mise install`, `mise run setup`, and `mise run check`, with host/command/results recorded.
 - [x] Windows run passes `mise install` followed by `mise run check` three consecutive times, with each run recorded; run 1's numeric exit code was not retained, while its full pipeline completed without an error marker.
 - [x] Per-task IRs are complete and the focused implementation-record audit reports no blocking finding.
-- [ ] Graph exit audit is eligible for terminal routing. The current router returns `followup-triage-to-briefing-repair` (`briefing-not-pass`) despite all four plan tasks being done; supporting gate evidence is awaiting separate read-only diagnosis.
+- [x] Graph followup route and exit audit reach terminal completion after required document lineage is complete.
 
 ## Verification
 
 - [x] Ubuntu workflow `40314463285`, code SHA `660cf138541bb77c0318885ad9b50ffb2dbe7dde`: `mise install`, `mise run setup`, and `mise run check` succeeded.
 - [x] Windows: three sequential `mise run check` runs on SHA `16f922a994afe8c41205bdf40eb02759f0f4d670`; runs 2 and 3 have explicit exit 0, run 1's numeric exit was not retained despite full successful pipeline output. The intervening Unix-only fixture change is not compiled on Windows.
 - [x] Focused implementation-record audit reports no findings; full doc-status audit reports zero blocking findings (existing non-blocking global warnings remain).
-- [ ] Graph route reaches exit-audit after the briefing gate finding is diagnosed and appropriately handled.
+- [x] Graph route `followup-triage-terminal` reaches `exit-audit`; `exit-audit-to-complete` returns no blockers after the all-document audit.

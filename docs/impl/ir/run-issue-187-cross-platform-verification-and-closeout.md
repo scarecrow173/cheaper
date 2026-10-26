@@ -1,7 +1,7 @@
 ---
 id: "IMPL-034MyXn5zz5WT1tcl9CQvd"
 type: "impl"
-status: "in-progress"
+status: "completed"
 title: "Run issue 187 cross-platform verification and closeout"
 created: "2026-10-26"
 updated: "2026-10-26"
@@ -45,9 +45,9 @@ metadata:
 Platform verification gates and final evidence synchronization are complete. Historical
 failure causes remain unresolved where bounded evidence did not establish them;
 the stabilized test contracts and discovered Unix fixture mismatch are recorded
-separately. The graph router still selects a briefing repair edge at
-followup-triage; its focused gate evidence is awaiting separate read-only
-diagnosis, so graph exit is not claimed complete.
+separately. A final lineage audit found the design omitted its accepted ADR
+from `relations.derives-from`; that factual relation and reciprocal ADR link
+were added before final graph routing.
 
 ## Context
 
@@ -123,13 +123,23 @@ for this documentation checkpoint.
   `660cf138541bb77c0318885ad9b50ffb2dbe7dde` for POSIX and
   `16f922a994afe8c41205bdf40eb02759f0f4d670` for Windows; the only intervening
   code change is the Unix-only fixture correction described above.
-- Focused route command:
-  `node .agents/skills/doc-driven-dev-graph/scripts/route_graph.js --current followup-triage --signal followup-terminal --focus docs/plans/stabilize-issue-187-posix-suite-residual-flakes.md --json`.
-  It returned `followup-triage-to-briefing-repair` / `briefing-not-pass`, with
-  no task-graph issues; all four plan tasks are `done`. The requested
-  followup-terminal signal did not override the earlier gate-repair edge. The
-  focused gate's supporting artifact IDs/statuses remain under separate
-  read-only diagnosis; no unrelated briefing repair is included here.
+- Initial focused route after the task was marked done returned
+  `followup-triage-to-briefing-repair` / `briefing-not-pass`. Read-only gate
+  diagnosis found the #187 design's `relations.derives-from` omitted the
+  accepted #187 ADR, producing the ADR considered-options/status and design-ADR
+  lineage gate failures. Added the design-to-ADR relation and reciprocal ADR
+  `derived-by` link; no test-spec relation was changed.
+- Final followup route:
+  `node .agents/skills/doc-driven-dev-graph/scripts/route_graph.js --current followup-triage --signal implementation-verified --signal followup-terminal --focus docs/plans/stabilize-issue-187-posix-suite-residual-flakes.md --json`
+  returned `followup-triage-terminal` to `exit-audit`, with no blockers and all
+  four tasks completed.
+- Required all-document audit:
+  `node .agents/skills/doc-status/scripts/doc_status.js audit --type all --json`
+  returned 0 blocking findings across 1,012 documents (845 total findings,
+  all non-blocking; no findings matched the #187 document paths).
+- Final exit route:
+  `node .agents/skills/doc-driven-dev-graph/scripts/route_graph.js --current exit-audit --signal implementation-verified --signal followup-terminal --signal exit-audit-pass --focus docs/plans/stabilize-issue-187-posix-suite-residual-flakes.md --json`
+  returned `exit-audit-to-complete`, no blockers, and no task-graph issues.
 
 ## Risks
 
@@ -142,6 +152,6 @@ for this documentation checkpoint.
 - Update issue #187 discovery evidence and this record after each bounded gate.
 - No further code change is justified by the bounded evidence. Preserve the
   historical unresolved causes in any issue closeout; do not state that the
-  original symptoms were all reproduced or root-caused. Do not mark graph exit
-  complete until the briefing gate route finding is resolved or explicitly
-  classified by the canonical router protocol.
+  original symptoms were all reproduced or root-caused. Graph exit reached
+  `complete` after the approved design-to-ADR lineage was corrected and the
+  required all-document audit passed without blockers.

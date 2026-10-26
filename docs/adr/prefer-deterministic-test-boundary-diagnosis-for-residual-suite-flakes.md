@@ -29,6 +29,7 @@ relations:
   derives-from:
     - "../discovery/posix-suite-residual-flakes-issue-187.md"
   derived-by:
+    - "../designs/issue-187-posix-suite-residual-flake-stabilization.md"
     - "../plans/stabilize-issue-187-posix-suite-residual-flakes.md"
     - "../test-specs/resources-abort-window-phase-synchronization.md"
     - "../test-specs/hook-capability-diagnostic-error-shape.md"

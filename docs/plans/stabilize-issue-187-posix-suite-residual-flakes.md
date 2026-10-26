@@ -138,7 +138,7 @@ The graph planning-flow requires a plan approval yield before it creates test-sp
 - [ ] Review: independently review the implementation and supported dispositions; no unresolved confirmed P0/P1 remains and no retry, skip, weakened assertion, or timeout-only mitigation is present.
 - [x] Ubuntu POSIX gate: canonical workflow `40314463285` passed `mise install`, `mise run setup`, and `mise run check` on code SHA `660cf138541bb77c0318885ad9b50ffb2dbe7dde`.
 - [x] Windows gate: three consecutive `mise run check` runs followed `mise install`/`mise run setup` on SHA `16f922a994afe8c41205bdf40eb02759f0f4d670`; run 1/session `74340` completed all stages without an error marker but its numeric exit code was not retained, while sessions `56212` and `87696` retained exit code 0. The only later code change is a `#[cfg(unix)]` fixture correction.
-- [ ] Closeout: `docs/impl/ir/run-issue-187-cross-platform-verification-and-closeout.md` records actual changes, attempts, supported dispositions, commits, and platform evidence. Focused implementation-record audit is clean and doc-status reports zero blocking findings; graph router currently selects a briefing repair edge and its focused gate evidence is under separate read-only diagnosis.
+- [x] Closeout: `docs/impl/ir/run-issue-187-cross-platform-verification-and-closeout.md` records actual changes, attempts, supported dispositions, commits, and platform evidence. The focused implementation-record audit is clean, all-document audit reports zero blocking findings, and graph routing reaches `complete`.
 
 ## Open Questions / Gaps
 
