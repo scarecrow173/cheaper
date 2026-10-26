@@ -31,6 +31,7 @@ Directory: `docs/discovery`
 | DISC-034D9AL1up7opdx1NuFeir | Devin provider Windows credential isolation limitation | resolved | [devin-provider-windows-credential-isolation-limitation.md](./devin-provider-windows-credential-isolation-limitation.md) |
 | DISC-034L67agpaqLudLiaNI822 | documentation honesty sweep and breaking-change migration guide issue-169 | resolved | [documentation-honesty-sweep-and-breaking-change-migration-guide-issue-169.md](./documentation-honesty-sweep-and-breaking-change-migration-guide-issue-169.md) |
 | DISC-JLHFz6x4ZuhzYZrpfrG2QV | exec-contract cleanup — 内容審査 7 項目を mandatory 層から除去（#163） | resolved | [exec-contract-content-audit-removal.md](./exec-contract-content-audit-removal.md) |
+| DISC-034MEa1cEgBDoAonnW1YkV | Execution History for Issue 192 | resolved | [execution-history-issue-192.md](./execution-history-issue-192.md) |
 | DISC-034IKBmCjJBeLD5qG9DoUM | hook-config legacy conflict gate demotion to warning | resolved | [hook-config-legacy-conflict-gate-demotion-to-warning.md](./hook-config-legacy-conflict-gate-demotion-to-warning.md) |
 | DISC-034IO86RVnmQ8AU5Lac8bw | hook-config sweep_orphans の .bak sweep が cheaper 非生成 file を削除する | resolved | [hook-config-sweep-orphans-deletes-foreign-bak-files.md](./hook-config-sweep-orphans-deletes-foreign-bak-files.md) |
 | DISC-034IdYnTDqD7Ao1nG3aoY9 | Hook duplicate firing dedup via canonical request fingerprint | resolved | [hook-duplicate-firing-dedup-via-canonical-request-fingerprint.md](./hook-duplicate-firing-dedup-via-canonical-request-fingerprint.md) |
