@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MbTdI8lEI1dRpWvsRQQ"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement usage route window, --route scoping, logRef join, orphan/unkeyed diagnostics, and byRoute rows (issue #184 T2)"
 created: "2026-10-25"
 updated: "2026-10-26"
@@ -22,7 +22,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-usage-route-error-analysis-issue-184.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/implement-usage-route-window-and-byroute-aggregation-issue-184.md"
   depends-on:
     - "docs/plans/implement-usage-route-error-analysis-issue-184.md"
     - "docs/tasks/pin-usage-route-error-contract-tests.md"
@@ -165,22 +166,45 @@ T4 の CLI/text・guide は本 task に含めない。
 
 ## Done When
 
-- [ ] `route_window` が kind 分離の専用経路として route/refetch を
+- [x] `route_window` が kind 分離の専用経路として route/refetch を
       `--since` のみで絞る(run filter を拡張しない)
-- [ ] `build_route_report` が global bucket(7 key 同順 + flag 時の
+- [x] `build_route_report` が global bucket(7 key 同順 + flag 時の
       orphan/unkeyed 末尾追加)・`byRoute` rows(昇順・固定 field
       順・`[]` emit)・`logRef` join(first-wins)・orphan/unkeyed
       の window-wide 計数を実装する
-- [ ] `route_bucket` が `build_route_report` に置き換わり、
+- [x] `route_bucket` が `build_route_report` に置き換わり、
       `build_usage_report` が design §3 の順序で route-scope →
       run filter → aggregate を組み立てる
-- [ ] T1 の route-scope pin test が全て green
-- [ ] flag 無し出力の shape/値が不変(既存 regression golden 無変更
+- [x] T1 の route-scope pin test が全て green
+- [x] flag 無し出力の shape/値が不変(既存 regression golden 無変更
       で green)
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration -- route_bucket_applies_since route_window_invalid_timestamps group_by_route_emits_per_route_rows route_filter_scopes_route_sections_only route_group_ignores_worker_filter route_filter_without_group_by unkeyed_route_records_counted orphan_and_joined_refetches unmeasurable_metric_families no_double_counting refetch_only_log fake_records_aggregate legacy_records_use_defaults` exits 0
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::` で既存 test が全て pass し、残る失敗が T3/T4 所有の pin test のみであること(失敗名を本 task へ記録)
-- [ ] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
-- [ ] `mise exec -- cargo fmt --all -- --check` exits 0
+- [x] T2 所有 pins 13件と #192 join/window tolerance 2件を
+      module filter 別に個別実行し、全て 1 passed / 0 failed
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration usage_report::`
+      で既存/T2 test が green、残り14失敗が T3/T4 pin のみであることを確認
+- [x] `mise exec -- cargo clippy -p cheaper-cli --all-targets --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam -- -D warnings` exits 0
+- [x] `mise exec -- cargo fmt --all -- --check` exits 0
+- [x] regression golden 61/61 pass、`crates/cheaper-cli/tests/regression`
+      に diff がない
+
+## T2 implementation evidence
+
+- route/window pins 13件と T1 の #192 join/window pins 2件を個別実行し、
+  全て成功。format と clippy は warning-free。
+- module report は 51 passed / 14 failed / 0 ignored。残りは T3 所有9件
+  (`group_by_error_emits_code_rows`, `empty_error_code_is_preserved`,
+  `execution_number_keys_use_js_canonical_format`,
+  `nonfinite_aggregates_serialize_as_null`,
+  `failure_only_log_emits_by_error_rows`,
+  `empty_log_emits_empty_grouped_sections`,
+  `fake_run_error_records_aggregate`, `argv_and_error_detail_not_leaked`,
+  `usage_same_trace_distinct_runs_counted`) と T4 所有5件
+  (`invalid_group_by_value_rejected_at_dispatch`,
+  `route_filter_leaves_by_error_unscoped`,
+  `route_flag_scopes_route_at_dispatch`,
+  `group_by_last_wins_emits_by_error_only`, `format_text_parity`)。
+- regression golden: 61/61 pass。capture 未設定時に golden diff なし。
+- 独立 cooperative/adversarial review とも NO CANDIDATES。

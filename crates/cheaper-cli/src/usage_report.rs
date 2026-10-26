@@ -7,6 +7,9 @@
 //! - `read_usage_records` — per-line JSON parse(破損行 skip、file 不在 → 空)。
 //! - `filter_run_records` — `kind:"run"` のみ + `--since`/`--worker`/
 //!   `--provider`/`--model` filter。
+//! - `route_window` / `build_route_report` — `kind:"route"` と
+//!   `"route-refetch"` を `--since` のみで window 化し、logRef join と
+//!   global/per-route 集計を行う(`--route` はこの route-scope のみ)。
 //! - `aggregate` — totals + measured(savings 持ちのみ) +
 //!   comparable(`directlyComparable === true` のみ)集計。
 //! - `build_usage_report` — `--compare-model` の estimated 算出:
@@ -19,6 +22,7 @@
 //!   report → utility envelope)。
 
 use std::path::Path;
+use std::{collections::BTreeMap, collections::HashMap};
 
 use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirsOptions};
 use cheaper_core::duration::parse_duration;
@@ -503,49 +507,238 @@ fn estimate(
     ])))
 }
 
-/// `kind:"route"`/`"route-refetch"` の独立 bucket — run/count の
-/// filter(`--since`/`--worker` 等)には従属せず、全 record から
-/// kind 別に集計する。route record は `truthy(ok)` の error 集計
-/// へ誤分類しないよう `aggregate`/`filter_run_records` とは分離
-/// する。
-fn route_bucket(records: &[Value]) -> Map<String, Value> {
-    let mut executions = 0.0;
-    let mut refetches = 0.0;
-    let mut refetch_bytes = 0.0;
-    let mut original_tokens = 0.0;
-    let mut returned_tokens = 0.0;
-    let mut failures = 0.0;
-    let mut postprocess_failures = 0.0;
-    for r in records {
-        match str_field(r, "kind") {
-            Some("route") => {
-                executions += 1.0;
-                original_tokens += or_zero(get(r, "originalTokens"));
-                returned_tokens += or_zero(get(r, "returnedTokens"));
-                postprocess_failures += or_zero(get(r, "postprocessFailures"));
-                if !truthy(get(r, "ok")) {
-                    failures += 1.0;
-                }
+struct RouteWindow<'a> {
+    routes: Vec<&'a Value>,
+    refetches: Vec<&'a Value>,
+}
+
+fn route_window<'a>(
+    records: &'a [Value],
+    since_ms: Option<f64>,
+    now: &dyn Fn() -> f64,
+) -> RouteWindow<'a> {
+    let cutoff = since_ms.map(|duration| now() - duration);
+    let mut window = RouteWindow {
+        routes: Vec::new(),
+        refetches: Vec::new(),
+    };
+    for record in records {
+        let kind = str_field(record, "kind");
+        if !matches!(kind, Some("route" | "route-refetch")) {
+            continue;
+        }
+        if let Some(cutoff) = cutoff {
+            let in_window = get(record, "ts")
+                .and_then(Value::as_str)
+                .and_then(date_parse)
+                .is_some_and(|timestamp| timestamp >= cutoff);
+            if !in_window {
+                continue;
             }
-            Some("route-refetch") => {
-                refetches += 1.0;
-                refetch_bytes += or_zero(get(r, "bytesRead"));
-            }
-            _ => {}
+        }
+        match kind {
+            Some("route") => window.routes.push(record),
+            Some("route-refetch") => window.refetches.push(record),
+            _ => unreachable!("route kind was checked above"),
         }
     }
-    Map::from_iter([
+    window
+}
+
+#[derive(Default)]
+struct RouteAgg {
+    executions: f64,
+    succeeded: f64,
+    failed: f64,
+    original_tokens: f64,
+    returned_tokens: f64,
+    duration_exec: f64,
+    duration_analyze: f64,
+    duration_total: f64,
+    postprocess_failures: f64,
+    unmeasurable_tokens: f64,
+    unmeasurable_durations: f64,
+}
+
+#[derive(Default)]
+struct RouteReport {
+    bucket: Map<String, Value>,
+    by_route: Vec<Map<String, Value>>,
+}
+
+fn is_number(value: Option<&Value>) -> bool {
+    value.is_some_and(Value::is_number)
+}
+
+fn build_route_report(
+    window: &RouteWindow<'_>,
+    route_name: Option<&str>,
+    group_by_route: bool,
+) -> RouteReport {
+    let mut owners: HashMap<&str, &str> = HashMap::new();
+    for record in &window.routes {
+        let (Some(route), Some(log_ref)) =
+            (str_field(record, "route"), str_field(record, "logRef"))
+        else {
+            continue;
+        };
+        if !log_ref.is_empty() {
+            owners.entry(log_ref).or_insert(route);
+        }
+    }
+
+    let mut joined: BTreeMap<&str, (f64, f64)> = BTreeMap::new();
+    let (mut orphan_count, mut orphan_bytes, mut all_refetches, mut all_refetch_bytes) =
+        (0.0, 0.0, 0.0, 0.0);
+    for record in &window.refetches {
+        let bytes = or_zero(get(record, "bytesRead"));
+        all_refetches += 1.0;
+        all_refetch_bytes += bytes;
+        let owner = str_field(record, "logRef")
+            .filter(|log_ref| !log_ref.is_empty())
+            .and_then(|log_ref| owners.get(log_ref).copied());
+        if let Some(route) = owner {
+            let entry = joined.entry(route).or_default();
+            entry.0 += 1.0;
+            entry.1 += bytes;
+        } else {
+            orphan_count += 1.0;
+            orphan_bytes += bytes;
+        }
+    }
+
+    let scoped_routes =
+        window.routes.iter().copied().filter(|record| {
+            route_name.is_none_or(|name| str_field(record, "route") == Some(name))
+        });
+    let mut groups: BTreeMap<&str, RouteAgg> = BTreeMap::new();
+    let mut executions = 0.0;
+    let mut failures = 0.0;
+    let mut original_tokens = 0.0;
+    let mut returned_tokens = 0.0;
+    let mut postprocess_failures = 0.0;
+    let unkeyed_records = window
+        .routes
+        .iter()
+        .filter(|record| str_field(record, "route").is_none())
+        .count() as f64;
+    for record in scoped_routes {
+        executions += 1.0;
+        let failed = !truthy(get(record, "ok"));
+        failures += f64::from(failed);
+        original_tokens += or_zero(get(record, "originalTokens"));
+        returned_tokens += or_zero(get(record, "returnedTokens"));
+        postprocess_failures += or_zero(get(record, "postprocessFailures"));
+
+        let Some(route) = str_field(record, "route") else {
+            continue;
+        };
+        let agg = groups.entry(route).or_default();
+        agg.executions += 1.0;
+        if failed {
+            agg.failed += 1.0;
+        } else {
+            agg.succeeded += 1.0;
+        }
+        let tokens_measurable =
+            is_number(get(record, "originalTokens")) && is_number(get(record, "returnedTokens"));
+        if !tokens_measurable {
+            agg.unmeasurable_tokens += 1.0;
+        }
+        agg.original_tokens += or_zero(get(record, "originalTokens"));
+        agg.returned_tokens += or_zero(get(record, "returnedTokens"));
+        agg.postprocess_failures += or_zero(get(record, "postprocessFailures"));
+
+        let duration = get(record, "durationMs");
+        let duration_values = [
+            duration.and_then(|value| value.get("exec")),
+            duration.and_then(|value| value.get("analyze")),
+            duration.and_then(|value| value.get("total")),
+        ];
+        if !duration_values.into_iter().all(is_number) {
+            agg.unmeasurable_durations += 1.0;
+        }
+        agg.duration_exec += or_zero(duration_values[0]);
+        agg.duration_analyze += or_zero(duration_values[1]);
+        agg.duration_total += or_zero(duration_values[2]);
+    }
+
+    let scoped_refetches = match route_name {
+        Some(name) => joined.get(name).copied().unwrap_or_default(),
+        None => (all_refetches, all_refetch_bytes),
+    };
+    let mut bucket = Map::from_iter([
         ("executions".to_string(), num(executions)),
         ("failures".to_string(), num(failures)),
-        ("refetches".to_string(), num(refetches)),
-        ("refetchBytes".to_string(), num(refetch_bytes)),
+        ("refetches".to_string(), num(scoped_refetches.0)),
+        ("refetchBytes".to_string(), num(scoped_refetches.1)),
         ("originalTokens".to_string(), num(original_tokens)),
         ("returnedTokens".to_string(), num(returned_tokens)),
         ("postprocessFailures".to_string(), num(postprocess_failures)),
-    ])
+    ]);
+    if group_by_route {
+        bucket.insert(
+            "orphanRefetches".to_string(),
+            Value::Object(Map::from_iter([
+                ("count".to_string(), num(orphan_count)),
+                ("bytes".to_string(), num(orphan_bytes)),
+            ])),
+        );
+        bucket.insert("unkeyedRecords".to_string(), num(unkeyed_records));
+    }
+
+    let by_route = groups
+        .into_iter()
+        .map(|(route, agg)| {
+            let refetch = joined.get(route).copied().unwrap_or_default();
+            Map::from_iter([
+                ("route".to_string(), Value::from(route)),
+                ("executions".to_string(), num(agg.executions)),
+                ("succeeded".to_string(), num(agg.succeeded)),
+                ("failed".to_string(), num(agg.failed)),
+                ("originalTokens".to_string(), num(agg.original_tokens)),
+                ("returnedTokens".to_string(), num(agg.returned_tokens)),
+                (
+                    "reductionRatio".to_string(),
+                    num(if agg.original_tokens > 0.0 {
+                        1.0 - agg.returned_tokens / agg.original_tokens
+                    } else {
+                        0.0
+                    }),
+                ),
+                (
+                    "refetches".to_string(),
+                    Value::Object(Map::from_iter([
+                        ("count".to_string(), num(refetch.0)),
+                        ("bytes".to_string(), num(refetch.1)),
+                    ])),
+                ),
+                (
+                    "durationsMs".to_string(),
+                    Value::Object(Map::from_iter([
+                        ("exec".to_string(), num(agg.duration_exec)),
+                        ("analyze".to_string(), num(agg.duration_analyze)),
+                        ("total".to_string(), num(agg.duration_total)),
+                    ])),
+                ),
+                (
+                    "postprocessFailures".to_string(),
+                    num(agg.postprocess_failures),
+                ),
+                (
+                    "unmeasurable".to_string(),
+                    Value::Object(Map::from_iter([
+                        ("tokens".to_string(), num(agg.unmeasurable_tokens)),
+                        ("durations".to_string(), num(agg.unmeasurable_durations)),
+                    ])),
+                ),
+            ])
+        })
+        .collect();
+    RouteReport { bucket, by_route }
 }
 
-/// `buildUsageReport`。usage.jsonl → filter → 集計 →(compare-model +
+/// `buildUsageReport`。usage.jsonl → route window/scope + run filter → 集計 →(compare-model +
 /// pricing が揃い、直接比較可能な run があるときのみ)estimated。
 /// 戻り値は `UsageReport` object(`Map`、TS literal 順)で、caller が
 /// utility envelope の `result` に埋める。
@@ -558,11 +751,22 @@ pub fn build_usage_report(
     now: &dyn Fn() -> f64,
 ) -> Result<Map<String, Value>, CheaperError> {
     let all = read_usage_records(user_config_dir);
-    let routes = route_bucket(&all);
+    let window = route_window(&all, filters.since_ms, now);
+    let routes = build_route_report(
+        &window,
+        filters.route.as_deref(),
+        _group_by == Some(UsageGroupBy::Route),
+    );
     let records = filter_run_records(all, filters, now);
     let agg = aggregate(&records)?;
     let mut report = report_map(records.len(), &agg);
-    report.insert("route".to_string(), Value::Object(routes));
+    report.insert("route".to_string(), Value::Object(routes.bucket));
+    if _group_by == Some(UsageGroupBy::Route) {
+        report.insert(
+            "byRoute".to_string(),
+            Value::Array(routes.by_route.into_iter().map(Value::Object).collect()),
+        );
+    }
 
     let Some(cm) = compare_model else {
         return Ok(report);
