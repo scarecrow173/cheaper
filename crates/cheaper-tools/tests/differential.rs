@@ -607,10 +607,10 @@ fn denylist_of(spec: &Value) -> Option<PathDenylist> {
         .then(|| create_path_denylist(&list.iter().map(String::as_str).collect::<Vec<_>>()))
 }
 
-/// `<NODE>` task を fixture child re-exec へ翻訳する
-/// (`command[0]=="<NODE>"` → `[diff_fixture_child bin, ...payload]` +
-/// `CHEAPER_DIFF_CHILD_MODE` env 注入)。literal `node` task は ambient
-/// PATH の実 `node` へ解決されるため翻訳対象外。
+/// frozen fixture の既知 Node 宣言を fixture child へ翻訳する。
+/// `<NODE> -e` script は script ごとの mode、literal `node -e
+/// console.log('bare node')` は `bare` mode に限定する。すべて絶対 bin
+/// path を使うため、この差分 fixture は PATH 解決契約を検証しない。
 fn translate_process_spec(spec: &mut Value) {
     let Some(tasks) = spec.get_mut("tasks").and_then(Value::as_object_mut) else {
         return;
@@ -619,15 +619,24 @@ fn translate_process_spec(spec: &mut Value) {
         let Some(cmd) = task.get("command").and_then(Value::as_array) else {
             continue;
         };
-        if cmd.first().and_then(Value::as_str) != Some("<NODE>") {
-            continue;
-        }
-        let script = cmd
-            .get(2)
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string();
-        let mode = script_mode(&script);
+        let mode = match cmd.first().and_then(Value::as_str) {
+            Some("<NODE>") => {
+                let script = cmd
+                    .get(2)
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_string();
+                script_mode(&script)
+            }
+            Some("node")
+                if cmd.get(1).and_then(Value::as_str) == Some("-e")
+                    && cmd.get(2).and_then(Value::as_str) == Some("console.log('bare node')") =>
+            {
+                "bare"
+            }
+            Some("node") => panic!("unsupported literal Node fixture command: {cmd:?}"),
+            _ => continue,
+        };
         // bin target へ翻訳(payload args は argv[1..] — `node -e` の
         // `process.argv.slice(1)` 相当)。
         let mut command = vec![json!(CHILD_BIN)];
