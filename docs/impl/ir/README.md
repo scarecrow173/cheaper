@@ -23,6 +23,7 @@ Directory: `docs/impl/ir`
 | IMPL-034r05iHy2gdnpmfo09FGX | Add Ollama docker-compose and AGENTS.md container usage | completed | [add-ollama-docker-compose-and-agents-md-container-usage.md](./add-ollama-docker-compose-and-agents-md-container-usage.md) |
 | IMPL-034z3CD7wXV3MNmCy9JnHs | add platform launchers to hooks payload | completed | [add-platform-launchers-to-hooks-payload.md](./add-platform-launchers-to-hooks-payload.md) |
 | IMPL-034JimbubuiHpBv6IpimHs | Add proc full-output tee sink for route logging | completed | [add-proc-full-output-tee-sink-for-route-logging.md](./add-proc-full-output-tee-sink-for-route-logging.md) |
+| IMPL-034MHsQwuzT8Ysc0cdXxZW | Add read-only History CLI and bounded queries | in-progress | [add-read-only-history-cli-and-bounded-queries.md](./add-read-only-history-cli-and-bounded-queries.md) |
 | IMPL-034JjbLxN5vUbJ45QnDJdH | Add route and route-refetch usage records | completed | [add-route-and-route-refetch-usage-records.md](./add-route-and-route-refetch-usage-records.md) |
 | IMPL-034Jm123U9YXuFo4LBNbtz | Add route CLI wiring | completed | [add-route-cli-wiring.md](./add-route-cli-wiring.md) |
 | IMPL-034JiCcdU6kUQ9Hj4Sd44J | Add route context scope options and single-grant projection | completed | [add-route-context-scope-options-and-single-grant-projection.md](./add-route-context-scope-options-and-single-grant-projection.md) |
@@ -65,6 +66,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zQU77PE0beEruVCSGYz | Core resource manifest implementation | completed | [core-resource-manifest-implementation.md](./core-resource-manifest-implementation.md) |
 | IMPL-034zQKrvQjUkhvZoLktZcb | Core resource manifest tests | completed | [core-resource-manifest-tests.md](./core-resource-manifest-tests.md) |
 | IMPL-034zR3fwmlg2mtdTgJxi2v | Core resource manifest verification | completed | [core-resource-manifest-verification.md](./core-resource-manifest-verification.md) |
+| IMPL-034MGQ2A2LscE3yZbiOkGB | Create bounded execution History core | completed | [create-bounded-execution-history-core.md](./create-bounded-execution-history-core.md) |
 | IMPL-034z2rYkK5IZuxqTMYHtAs | create manual dispatch release workflow | completed | [create-manual-dispatch-release-workflow.md](./create-manual-dispatch-release-workflow.md) |
 | IMPL-034rALLKuPPgsnclaaPRYT | Cross-agent native routing adapters over APM distribution | completed | [cross-agent-native-routing-adapters-over-apm-distribution.md](./cross-agent-native-routing-adapters-over-apm-distribution.md) |
 | IMPL-034r05iHy2gdnpARFuxZVi | Delegation usage measurement log (PLAN-034r05iHE1Fbkpd5tkg6Gs) | completed | [delegation-usage-measurement-log.md](./delegation-usage-measurement-log.md) |
@@ -122,6 +124,7 @@ Directory: `docs/impl/ir`
 | IMPL-034A6i3cxbZXoHqDxhuyjB | Migrate native workflows and release guidance | completed | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |
 | IMPL-034GtH0PU9VrkGZfPEk4FR | Normalize tools and add Devin hook capability | completed | [normalize-tools-and-add-devin-hook-capability.md](./normalize-tools-and-add-devin-hook-capability.md) |
 | IMPL-034EcqaOLmLoT2kL3ztbwk | Observability foundation | completed | [observability-foundation.md](./observability-foundation.md) |
+| IMPL-034MHsRcZJcZ9DZ3fO6rvi | Observe Workflow Job lifecycle | in-progress | [observe-workflow-job-lifecycle.md](./observe-workflow-job-lifecycle.md) |
 | IMPL-034r05iHy2gdnpA8pNjTuA | Real-provider worker E2E via Ollama (PLAN-034r05iHE1FbkpcKKUUZ58) | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | IMPL-034A9TTHbXQNav6LxGvo49 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |
 | IMPL-034zTprBbdY0tsPiphc2wE | Operation manager state lifecycle | completed | [operation-manager-state-lifecycle.md](./operation-manager-state-lifecycle.md) |

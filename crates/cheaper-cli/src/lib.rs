@@ -35,6 +35,7 @@ pub mod errors;
 #[cfg(feature = "dev-seam")]
 pub mod fake_stream;
 pub mod grant;
+pub mod history;
 pub mod hook;
 pub mod hook_config;
 pub mod input;

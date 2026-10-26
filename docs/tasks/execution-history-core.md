@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MGH8FHwescRINQne4sz"
 type: "task"
-status: "todo"
+status: "done"
 title: "Create bounded execution History core"
 created: "2026-10-27"
 updated: "2026-10-27"

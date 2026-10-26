@@ -140,9 +140,9 @@ Directory: `docs/tasks`
 | TASK-034KxDvREdpF6P10oziJsy | Document windsurf tool_info contract and dual-registration trap in distribution guide | done | [document-windsurf-tool-info-contract-and-registration-requirements.md](./document-windsurf-tool-info-contract-and-registration-requirements.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034MGHAM3LVWSPo5RwaMkv | Propagate explicit execution correlation and project identities | todo | [execution-history-carrier-catalog.md](./execution-history-carrier-catalog.md) |
-| TASK-034MGH8FHwescRINQne4sz | Create bounded execution History core | todo | [execution-history-core.md](./execution-history-core.md) |
+| TASK-034MGH8FHwescRINQne4sz | Create bounded execution History core | done | [execution-history-core.md](./execution-history-core.md) |
 | TASK-034MGHEHt20HR6lWIBQJYF | Document and verify execution History integration | todo | [execution-history-integration.md](./execution-history-integration.md) |
-| TASK-034MGHz9sAMkZkvZW0WFgZ | Add read-only History CLI and bounded queries | todo | [execution-history-query-cli.md](./execution-history-query-cli.md) |
+| TASK-034MGHz9sAMkZkvZW0WFgZ | Add read-only History CLI and bounded queries | in-progress | [execution-history-query-cli.md](./execution-history-query-cli.md) |
 | TASK-034MGHBRUesH1Zj3pJiqH7 | Record Route and refetch lifecycle evidence | todo | [execution-history-route.md](./execution-history-route.md) |
 | TASK-034MGHzYDxo5gnB4UShW7P | Wire standalone Worker and Usage correlation | todo | [execution-history-worker-usage.md](./execution-history-worker-usage.md) |
 | TASK-034r05iHK8bA7h0AqAB1Yr | Export core public API and run full verification | done | [export-core-public-api-and-run-full-verification.md](./export-core-public-api-and-run-full-verification.md) |
@@ -419,6 +419,6 @@ Directory: `docs/tasks`
 | TASK-034AJcZY4VW7Wfwx1AOzvh | Workflow Worker permission と lease lifetime を配線する | done | [wire-workflow-worker-leases.md](./wire-workflow-worker-leases.md) |
 | TASK-Qv0y8UiqVlBjROUfcjHGA6 | worker prose の maxFindings null semantics 明記 | done | [worker-prose-maxfindings-null.md](./worker-prose-maxfindings-null.md) |
 | TASK-u2PMRboiXvyOu5ebYhDvVE | worker schema magnitude 制約の撤廃と maxFindings nullable 化 | done | [worker-schema-magnitude-removal.md](./worker-schema-magnitude-removal.md) |
-| TASK-034MGHCIrNt0wvnqKvOLTP | Observe Workflow Job lifecycle | todo | [workflow-job-history.md](./workflow-job-history.md) |
+| TASK-034MGHCIrNt0wvnqKvOLTP | Observe Workflow Job lifecycle | in-progress | [workflow-job-history.md](./workflow-job-history.md) |
 | TASK-034r05iHQeQpDpxbAAiNB9 | Write implementation record and experiment log | done | [write-implementation-record-and-experiment-log.md](./write-implementation-record-and-experiment-log.md) |
 | TASK-034r05iHQeQpDqac6FjqrJ | Writer writeScope declaration and e2e verification | done | [writer-write-scope-and-e2e-verification.md](./writer-write-scope-and-e2e-verification.md) |

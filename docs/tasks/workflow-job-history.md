@@ -1,7 +1,7 @@
 ---
 id: "TASK-034MGHCIrNt0wvnqKvOLTP"
 type: "task"
-status: "todo"
+status: "in-progress"
 title: "Observe Workflow Job lifecycle"
 created: "2026-10-27"
 updated: "2026-10-27"

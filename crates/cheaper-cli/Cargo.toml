@@ -38,6 +38,7 @@ include_dir = "0.7"
 rpassword = "7"
 # route rewrite payload の base64url codec(B2)。workspace 共有依存。
 base64.workspace = true
+uuid.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
