@@ -16,6 +16,9 @@ Commands:
   doc-write              Alias for: run doc-writer
   tool-operate           Alias for: run tool-operator
   count-tokens <path>    Count canonical tokens of a workspace file
+  history list           List retained execution history
+  history show <uuid>    Show one execution record
+  history trace <uuid>   List records in a trace
   workflow interface <path> Show the public workflow inputs and outputs
   workflow run <path>       Run a one-shot workflow
   usage                  Aggregate usage.jsonl (worker cost / measured savings)
@@ -24,9 +27,16 @@ Commands:
   auth login <provider>  Sign in to a provider (OAuth; e.g. openai-codex)
   auth logout <provider> Remove a provider credential
   hook <event>           Agent hook entry (internal; --target <agent>)
+  hook-config sync       Register the managed Devin hook entry (project or --scope user)
+  hook-config verify     Inspect the managed Devin hook registration (read-only)
+  hook-config remove     Remove the managed Devin hook entry
   policy grant add <name> <json>  Add a command grant to user policy
   policy grant list          List command grants in user policy
   policy grant remove <name> Remove a command grant from user policy
+  route resolve         Dry-run route matching (--command or --argv)
+  route check           Inspect every configured route (read-only diagnostics)
+  route run             Execute a validated route payload (--payload)
+  route logs <id>       Read a bounded page from a route log
 ```
 
 `bulk-read` / `code-write` / `doc-write` / `tool-operate` は
@@ -41,7 +51,7 @@ Commands:
 
 | Option | 意味 |
 | --- | --- |
-| `--input <file\|->` | task input JSON の読み元。`-`（既定）は stdin |
+| `--input <file\|->` | task input JSON の読み元。`run` 系では `-`（既定）が stdin。`workflow run` の既定は空 inputs `{}` で、stdin から読むには `-` を明示する |
 | `--worker-file <path>` | 明示的な worker file を実行する（`run` のみ） |
 | `--grant <json>` | その invocation のみ有効な command grant を注入する（repeatable。`run`・`workflow run` のみ。詳細は [command ガイド](./command.md)） |
 | `--cwd <path>` | workspace root（既定: カレントディレクトリ） |
@@ -50,15 +60,16 @@ Commands:
 | `--model <provider>/<id>` | `run` では tier 解決を bypass する model 直接指定、`usage` では model filter |
 | `--provider <id>` | `models` の出力・`usage` の集計を provider で絞る |
 | `--tier <low\|medium\|high>` | `models` の出力を effective tier で絞る |
-| `--worker <name>` | `usage` では worker filter、`models` では auto tier 分類をその worker の workload profile で計算する |
-| `--format <json\|text>` | stdout の形式（既定: `json`） |
+| `--worker <name>` | `usage`・`history list` では worker filter、`models` では auto tier 分類をその worker の workload profile で計算する |
+| `--format <json\|text>` | stdout の形式（既定: `json`。`history` では `text`） |
 | `--quiet` | stderr の diagnostics を抑制する |
 | `--log <level>` | `.cheaper/logs` + stderr への logging を有効化（`off`/`error`/`warn`/`info`/`debug`/`trace`、env `CHEAPER_LOG`） |
 | `--log-format <text\|json>` | ログ出力形式（env `CHEAPER_LOG_FORMAT`） |
 | `--help` / `--version` | help / version 表示 |
 
 `--method`・`--type` は `auth login` 専用（下記参照）。
-`--since`・`--compare-model` は `usage` 専用（後述）。
+`--compare-model`・`--group-by`・`--route` は `usage` 専用（後述）。
+`--since` は `usage` と `history list` で使えるが語彙が異なる — `usage` は `<値><ms|s|m|h>`、`history list` は `<N>m` / `<N>h` のみ（後述）。`--kind`・`--status`・`--limit`・`--cursor` は `history` 専用、`--command`・`--argv`・`--payload`・`--offset`・`--max-bytes` は `route` 専用。
 
 ## stdin / stdout 契約
 
@@ -68,6 +79,8 @@ Commands:
   `{"schemaVersion":1,"ok":true,"worker":"...","result":{...},
   "meta":{...}}`、失敗時は `{"ok":false,"error":{"code":...,`
   `"message":...,"exitCode":...,"retryable":...},"meta":{...}}`。
+  `workflow run` は `workflow: true` と `jobs` 配列を持つ別 envelope
+  を返す（`worker` は `null`。[workflow ガイド](./workflow-usage.md)）。
 - `meta` には `durationMs`・`model`（`provider`・`id`・`tier`・
   `selection`（`"tier"` | `"explicit"`）・`tierSource`
   （`"explicit-override"` | `"curated-exception"` | `"auto"` |
@@ -234,23 +247,29 @@ cheaper policy grant remove git-read
 
 ## 計測 log
 
-`run`（worker alias 含む）と `count-tokens` の実行結果は、
-記録対象に限り `<userConfigDir>/usage.jsonl` へ計測 record
-（worker・model・usage・duration・success/error）を
-best-effort で append する。書き込み失敗は stdout・exit code
-に影響しない（ADR-034r05iHrZUE6WljM1ZMiX）。
+`run`（worker alias 含む）・`count-tokens`・`route run`・
+`route logs` の実行結果は、記録対象に限り
+`<userConfigDir>/usage.jsonl` へ計測 record（worker・model・
+usage・duration・success/error）を best-effort で append する。
+書き込み失敗は stdout・exit code に影響しない
+（ADR-034r05iHrZUE6WljM1ZMiX）。
 
 記録対象は以下に限られる:
 
 - `run`: 成功した run と、error envelope が `meta.model` と
   `meta.usage` を持つ失敗（usage-bearing failure）。worker・
   model 解決前の input/config error など usage を持たない失敗は
-  記録されない。
+  記録されない。record kind は `run`。
 - `count-tokens`: token count が成功し `tokens` を返した実行。
   `FILE_TOO_LARGE`・file not found・workspace escape 等の失敗は
-  記録されない。
-- `auth`・`usage`・`policy`・`--help`・`--version` 等の utility
-  command は記録対象外。
+  記録されない。record kind は `count`。
+- `route run`: route 経由で実際に実行されたジョブ。record kind
+  は `route`（`result.route` bucket で集計される）。
+- `route logs`: route log の refetch 実行。record kind は
+  `route-refetch`。
+- `auth`・`usage`・`history`・`policy`・`route resolve`・
+  `route check`・`workflow`・`--help`・`--version` 等の utility /
+  read-only command は記録対象外。
 - `hook`（agent hook 経路）は token 計測を行っても記録対象外。
   hook 呼び出しは高頻度かつ infra 的な性質のため、telemetry には
   載せない設計としている。
@@ -481,7 +500,8 @@ cheaper history trace <trace-uuid> --cursor <opaque-cursor> --format json
 `route`、`hook-decision`、`route-decision`、`route-refetch`、status は
 `running`、`completed`、`failed`、`cancelled`、`timeout`、`skipped`、
 `blocked` です。`show` は 1 つの execution ID を読み、`trace` は trace ID に
-一致する記録をページ表示します。`list` と `trace`
+一致する記録をページ表示します。`show`・`trace` の ID 引数は canonical
+UUIDv4（小文字・ハイフン区切り）が必要です。`list` と `trace`
 の JSON には `records`、`scanComplete`、`nextCursor` が含まれます。
 予算内に走査できない場合は `scanComplete: false` と `nextCursor: null`
 を返し、text 表示にも不完全な走査であることを示します。`show` の JSON
@@ -511,3 +531,39 @@ event data 128 MiB、500 ms のいずれかまでです。writer の retention s
 20,000 entry、128 MiB、500 ms のいずれかで打ち切り、容量を確認できないときは
 History の新規書き込みを省略します。`show` は指定 ID の directory にある既知の
 event file を最大 3 個まで読み、それぞれ 8 KiB を上限にします。
+
+## route
+
+route は routes.yaml の宣言に基づき、一致した command を managed
+process / workflow 実行へ転送する仕組みです。宣言 schema・grant
+要件・層別規約は [configuration ガイド](./configuration.md) を参照してください。
+
+```bash
+cheaper route resolve --command 'cargo test'
+cheaper route resolve --argv '["cargo","test"]'
+cheaper route check
+cheaper route check --command 'cargo test'
+cheaper route run --payload '<token>'
+cheaper route logs <id>
+cheaper route logs <id> --offset 65536 --max-bytes 8192
+```
+
+- `route resolve` は 1 つの command 入力に対する route 照合を dry-run
+  します。`--command`（shell 文字列）と `--argv`（JSON 配列）は相互排他で
+  どちらか 1 つが必須です。
+- `route check` は全 configured route の診断を read-only に報告します
+  （builtin/user/project 層の load・merge 状態、policy/grant readiness、
+  workflow/worker/schema、静的 renderer capability）。sample は
+  `--command` または `--argv` で 0 個または 1 個だけ指定できます。
+  route・workflow・worker・hook・host integration は一切実行しません。
+  exit class は 0=info、1=warning、2=input error、3=error diagnostic、
+  70=internal failure。host registration/approval/execution は実機検証を
+  行わないため常に `unverified` です。詳細は
+  [parent-agent 連携ガイド](./parent-agent-integration.md) を参照。
+- `route run` は hook rewrite が発行する opaque な route payload を実行します
+  （`--payload <token>` 必須）。出力は常に実行結果の raw text で、
+  `--format` の対象外です。
+- `route logs <id>` は route log を byte window で読みます
+  （`--offset` 既定 0、`--max-bytes` は policy 上限で制限）。成功した
+  読み取りは独立した refetch 実行として `kind:"route-refetch"` record を
+  usage.jsonl に記録します。

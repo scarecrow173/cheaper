@@ -229,7 +229,12 @@ fn run_rejects_models_only_options() {
     let e = err(&["run", "w", "--provider", "openai"]);
     assert_eq!(
         e.message(),
-        "--provider/--worker are only valid for `models` or `usage`"
+        "--provider is only valid for `models` or `usage`"
+    );
+    let e = err(&["run", "w", "--worker", "bulk-reader"]);
+    assert_eq!(
+        e.message(),
+        "--worker is only valid for `models`, `usage`, or `history list`"
     );
     let e = err(&["run", "w", "--tier", "low"]);
     assert_eq!(e.message(), "--tier is only valid for `models`");
@@ -376,11 +381,11 @@ fn usage_filters() {
 }
 
 #[test]
-fn since_only_valid_for_usage() {
+fn since_only_valid_for_usage_and_history() {
     let e = err(&["run", "w", "--since", "1h"]);
     assert_eq!(
         e.message(),
-        "--since/--compare-model/--group-by/--route are only valid for `usage`"
+        "--since is only valid for `usage` and `history list`"
     );
 }
 
@@ -400,7 +405,7 @@ fn args_usage_only_guard_messages() {
     ] {
         assert_eq!(
             err(&argv).message(),
-            "--since/--compare-model/--group-by/--route are only valid for `usage`"
+            "--compare-model/--group-by/--route are only valid for `usage`"
         );
     }
 }

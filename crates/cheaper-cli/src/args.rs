@@ -899,11 +899,9 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
     }
 
     // --model/--provider/--worker は run/models と意味を共有するため
-    // usage 専用には含めない(TS コメント通り)。
-    let usage_only_option_used = values.since.is_some()
-        || values.compare_model.is_some()
-        || values.group_by.is_some()
-        || values.route.is_some();
+    // usage 専用には含めない(TS コメント通り)。`--since` は
+    // `history list` とも意味を共有するため、usage 系 guard は
+    // option 名ごとに個別の reject を持たせる(下記参照)。
     // `route` 専用 option — `route` arm 以外で値を持つ
     // 場合は reject する(field 検査規約。`workflow`/`hook-config`/
     // `policy` の allowlist 走査が先に発火するため、この guard は
@@ -1134,9 +1132,15 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         ));
     }
 
-    if usage_only_option_used {
+    if values.since.is_some() {
         return Err(invalid_request(
-            "--since/--compare-model/--group-by/--route are only valid for `usage`",
+            "--since is only valid for `usage` and `history list`",
+            None,
+        ));
+    }
+    if values.compare_model.is_some() || values.group_by.is_some() || values.route.is_some() {
+        return Err(invalid_request(
+            "--compare-model/--group-by/--route are only valid for `usage`",
             None,
         ));
     }
@@ -1191,9 +1195,15 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 None,
             ));
         }
-        if values.provider.is_some() || values.worker.is_some() {
+        if values.provider.is_some() {
             return Err(invalid_request(
-                "--provider/--worker are only valid for `models` or `usage`",
+                "--provider is only valid for `models` or `usage`",
+                None,
+            ));
+        }
+        if values.worker.is_some() {
+            return Err(invalid_request(
+                "--worker is only valid for `models`, `usage`, or `history list`",
                 None,
             ));
         }
@@ -1380,9 +1390,15 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 None,
             ));
         }
-        if values.provider.is_some() || values.worker.is_some() {
+        if values.provider.is_some() {
             return Err(invalid_request(
-                "--provider/--worker are only valid for `models` or `usage`",
+                "--provider is only valid for `models` or `usage`",
+                None,
+            ));
+        }
+        if values.worker.is_some() {
+            return Err(invalid_request(
+                "--worker is only valid for `models`, `usage`, or `history list`",
                 None,
             ));
         }
@@ -1565,9 +1581,15 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
             None,
         ));
     }
-    if values.provider.is_some() || values.worker.is_some() {
+    if values.provider.is_some() {
         return Err(invalid_request(
-            "--provider/--worker are only valid for `models` or `usage`",
+            "--provider is only valid for `models` or `usage`",
+            None,
+        ));
+    }
+    if values.worker.is_some() {
+        return Err(invalid_request(
+            "--worker is only valid for `models`, `usage`, or `history list`",
             None,
         ));
     }

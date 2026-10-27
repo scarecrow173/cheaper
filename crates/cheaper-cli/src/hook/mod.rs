@@ -8,7 +8,7 @@
 //! exit も deny と解釈するため、この command は windsurf deny の
 //! exit 2 を除き非 0 を返さない。
 //!
-//! - `targets.rs` — 5 target (windsurf/copilot/pretooluse/cursor/devin)
+//! - `targets.rs` — 6 target (windsurf/copilot/pretooluse/cursor/devin/codex)
 //!   の normalize + render(byte 互換 JSON 出力が contract)
 //! - `routing_policy.rs` — threshold・byte fast path・30s 計測
 //!   timeout・shell tokenizer / `extract_read_candidates`

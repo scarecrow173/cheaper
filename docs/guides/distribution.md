@@ -49,9 +49,9 @@ cheaper models      # model catalog 解決の smoke
 ### APM package の install
 
 CLI とは別に、parent agent へ skills / hooks を deploy する APM
-package は従来どおり `apm install` で install する（apm ≥0.28 推奨 —
+package は従来どおり `apm install` で install する（apm ≥0.32 推奨 —
 hook package は transitive `path:` dep と per-dep `targets:` を使う。
-0.22 以降で動作する）:
+0.30/0.31 は Windows で `path:` dep 解決が壊れる）:
 
 ```yaml
 # consumer の apm.yml
@@ -66,7 +66,7 @@ apm install --target windsurf
 
 issue #118 で hook 宣言は per-target sibling package（`apm-hook-*`）へ
 分離された。`packages/apm`（skills）が `dependencies.apm` の transitive
-`path:` dep として 4 package を引き込むため、consumer の dep 宣言は
+`path:` dep として 5 package を引き込むため、consumer の dep 宣言は
 変わらず 1 本でよい。
 
 deploy される hook bundle は `<hooks_root>/<pkg>/` に `cheaper.sh` /
@@ -119,6 +119,7 @@ cheaper hook-config verify              # 登録状態の読み取り専用レ�
 cheaper hook-config sync                # canonical entry を冪等に upsert
 cheaper hook-config remove              # own entry のみ除去（非破壊）
 cheaper hook-config sync --scope user   # user scope（~/.config/devin 等）
+cheaper hook-config sync --project-root <path>  # project scope の対象 root を明示（既定: cwd）
 cheaper hook-config --event-stdin       # APM lifecycle payload を stdin から実行
 ```
 
@@ -292,7 +293,9 @@ launcher からも解決される。
 
 root の `apm.yml` は development-only project であり、cheaper 自身の
 skill/hook は deploy されない。consumer へ配布する APM package は
-`packages/apm/`（`apm.yml` + `.apm/` primitives）に分離されている。
+`packages/apm/`（skills、`apm.yml` + `.apm/` primitives）と target 別の
+5 hook package（`packages/apm-hook-*/`）に分離されている
+（[APM package の install](#apm-package-の-install)参照）。
 
 `mise run check` は slim payload 契約（`scripts/check-apm-payload.mjs`）
 と committed lockfile 契約（`scripts/check-lockfile.mjs`）を検証する
