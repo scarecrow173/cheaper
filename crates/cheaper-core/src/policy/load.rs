@@ -99,94 +99,305 @@ fn with_invocation_layer(e: CheaperError) -> CheaperError {
     e.with_details(details)
 }
 
+/// document 入力 API が report する per-layer 状態。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PolicyLayerStatus {
+    Absent,
+    Loaded,
+    Failed,
+}
+
+/// document 入力 API が report する layer 状態集合。
+/// `RoutePolicyReport.layers` の `absent|loaded|failed` に対応する。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PolicyLayerStatuses {
+    pub builtin: PolicyLayerStatus,
+    pub user: PolicyLayerStatus,
+    pub project: PolicyLayerStatus,
+}
+
+impl PolicyLayerStatuses {
+    fn from_documents(opts: &LoadPolicyDocuments<'_>) -> Self {
+        Self {
+            builtin: policy_document_status(opts.builtin, validate_builtin_document),
+            user: policy_document_status(opts.user, validate_user_document),
+            project: policy_document_status(opts.project, validate_project_document),
+        }
+    }
+
+    fn fail(&mut self, layer: PolicyDocumentLayer) {
+        match layer {
+            PolicyDocumentLayer::Builtin => self.builtin = PolicyLayerStatus::Failed,
+            PolicyDocumentLayer::User => self.user = PolicyLayerStatus::Failed,
+            PolicyDocumentLayer::Project => self.project = PolicyLayerStatus::Failed,
+            PolicyDocumentLayer::Invocation | PolicyDocumentLayer::Merged => {}
+        }
+    }
+}
+
+fn policy_document_status(
+    document: Option<&Map<String, Value>>,
+    validate: impl Fn(&Map<String, Value>) -> Result<Map<String, Value>, CheaperError>,
+) -> PolicyLayerStatus {
+    match document {
+        None => PolicyLayerStatus::Absent,
+        Some(document) if validate(document).is_ok() => PolicyLayerStatus::Loaded,
+        Some(_) => PolicyLayerStatus::Failed,
+    }
+}
+
+/// document pipeline の失敗 attribution。`Merged` は
+/// post-merge validation・typed default resolution・denylist・final
+/// validation/normalize の pseudo-layer (`policy:effective`) を表す。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PolicyDocumentLayer {
+    Builtin,
+    User,
+    Invocation,
+    Project,
+    Merged,
+}
+
+/// `load_policy_documents` options。各 layer は既に YAML object と
+/// して parse 済みの document を渡す。`builtin` の `None` は required
+/// layer absent として failure report へ写す。`invocation` は既存
+/// `load_policy` の trusted grants-only layer と同じ構造制約を持つ。
+pub struct LoadPolicyDocuments<'a> {
+    pub builtin: Option<&'a Map<String, Value>>,
+    pub user: Option<&'a Map<String, Value>>,
+    pub invocation: Option<&'a Map<String, Value>>,
+    pub project: Option<&'a Map<String, Value>>,
+}
+
+/// document 入力 API の成功結果。`layers` は merge が成功/失敗したか
+/// ではなく、各 input document が存在し自身の validation を通ったかを
+/// 表す。
+#[derive(Debug)]
+pub struct PolicyDocumentLoad {
+    pub policy: RuntimePolicy,
+    pub layers: PolicyLayerStatuses,
+}
+
+/// document 入力 API の失敗結果。`layers` は失敗時点でも全入力 layer
+/// の状態を保持し、`layer` は per-layer と `Merged` pseudo-layer を
+/// 区別する。`error` は既存 `load_policy` と同じ `CheaperError` を
+/// 保持する。
+#[derive(Debug)]
+pub struct PolicyDocumentLoadError {
+    pub layer: PolicyDocumentLayer,
+    pub layers: PolicyLayerStatuses,
+    pub error: Box<CheaperError>,
+}
+
+impl PolicyDocumentLoadError {
+    fn new(layer: PolicyDocumentLayer, layers: PolicyLayerStatuses, error: CheaperError) -> Self {
+        Self {
+            layer,
+            layers,
+            error: Box::new(error),
+        }
+    }
+
+    pub fn into_error(self) -> CheaperError {
+        *self.error
+    }
+}
+
+impl std::fmt::Display for PolicyDocumentLoadError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.error.fmt(f)
+    }
+}
+
+impl std::error::Error for PolicyDocumentLoadError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(self.error.as_ref())
+    }
+}
+
 /// `loadPolicy` — 引継ぎ §23 load order. An invalid policy is never
 /// silently ignored.
 pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, CheaperError> {
     let builtin_raw =
         read_policy_yaml(opts.builtin_policy_path, true)?.expect("required policy file");
-    let mut effective =
-        validate_policy_schema(&Value::Object(builtin_raw), PolicySchemaMode::Complete)?;
+    let mut effective = validate_builtin_document(&builtin_raw)?;
 
     let user_path = nodepath_join(opts.user_config_dir, "policy.yaml");
     if let Some(user) = read_policy_yaml(&user_path, false)? {
-        tracing::debug!(policy.layer = "user", "policy layer merged");
-        effective = merge_policy_layers(
-            &effective,
-            &validate_policy_schema(&Value::Object(user), PolicySchemaMode::Partial)?,
-            MergeMode::Replace,
-        )
-        .expect("replace-mode merge cannot fail");
+        effective = merge_user_document(&effective, &user)?;
     }
     if let Some(invocation) = opts.invocation {
-        // (1) grants-only key 制約 — schema ではなく merge 前検査。
-        // Partial schema だけでは `execution`/`tools`/`model` 等他
-        // section が素通りするため、合成 layer を「grant 供給のみ」へ
-        // 縛る構造的 guard として先に検査する。
-        for key in invocation.keys() {
-            if key != "version" && key != "command" {
-                return Err(invocation_invalid_request(
-                    format!("invocation layer may only declare command.grants: {key}"),
-                    json!({"key": key}),
-                ));
-            }
+        effective = merge_invocation_document(&effective, invocation)?;
+    }
+    effective = resolve_policy_defaults(&effective)?;
+
+    let project_path = nodepath_join(opts.project_dir, "policy.yaml");
+    let mut project_task_names = std::collections::BTreeSet::new();
+    if let Some(project) = read_policy_yaml(&project_path, false)? {
+        let (merged, names) = merge_project_document(&effective, &project)?;
+        effective = merged;
+        project_task_names = names;
+    }
+
+    complete_policy(effective, &project_task_names)
+}
+
+/// filesystem path を持たない document 入力 API — `load_policy` と
+/// 同一 validation/merge/normalize pipeline を使い、per-layer 状態と
+/// `Merged` pseudo-layer attribution を diagnostics へ返す。
+pub fn load_policy_documents(
+    opts: &LoadPolicyDocuments<'_>,
+) -> Result<PolicyDocumentLoad, PolicyDocumentLoadError> {
+    let mut layers = PolicyLayerStatuses::from_documents(opts);
+    let Some(builtin) = opts.builtin else {
+        let error = CheaperError::new(
+            ErrorCode::InvalidRuntimePolicy,
+            "required builtin policy document is absent",
+        );
+        return Err(PolicyDocumentLoadError::new(
+            PolicyDocumentLayer::Builtin,
+            layers,
+            error,
+        ));
+    };
+    let mut effective = validate_builtin_document(builtin).map_err(|error| {
+        layers.fail(PolicyDocumentLayer::Builtin);
+        PolicyDocumentLoadError::new(PolicyDocumentLayer::Builtin, layers, error)
+    })?;
+    if let Some(user) = opts.user {
+        effective = merge_user_document(&effective, user).map_err(|error| {
+            layers.fail(PolicyDocumentLayer::User);
+            PolicyDocumentLoadError::new(PolicyDocumentLayer::User, layers, error)
+        })?;
+    }
+    if let Some(invocation) = opts.invocation {
+        effective = merge_invocation_document(&effective, invocation).map_err(|error| {
+            PolicyDocumentLoadError::new(PolicyDocumentLayer::Invocation, layers, error)
+        })?;
+    }
+    effective = resolve_policy_defaults(&effective).map_err(|error| {
+        PolicyDocumentLoadError::new(PolicyDocumentLayer::Merged, layers, error)
+    })?;
+    let mut project_task_names = std::collections::BTreeSet::new();
+    if let Some(project) = opts.project {
+        let (merged, names) = merge_project_document(&effective, project).map_err(|error| {
+            layers.fail(PolicyDocumentLayer::Project);
+            PolicyDocumentLoadError::new(PolicyDocumentLayer::Project, layers, error)
+        })?;
+        effective = merged;
+        project_task_names = names;
+    }
+    let policy = complete_policy(effective, &project_task_names).map_err(|error| {
+        PolicyDocumentLoadError::new(PolicyDocumentLayer::Merged, layers, error)
+    })?;
+    Ok(PolicyDocumentLoad { policy, layers })
+}
+
+fn validate_builtin_document(
+    builtin_raw: &Map<String, Value>,
+) -> Result<Map<String, Value>, CheaperError> {
+    validate_policy_schema(
+        &Value::Object(builtin_raw.clone()),
+        PolicySchemaMode::Complete,
+    )
+}
+
+fn validate_user_document(user: &Map<String, Value>) -> Result<Map<String, Value>, CheaperError> {
+    validate_policy_schema(&Value::Object(user.clone()), PolicySchemaMode::Partial)
+}
+
+fn merge_user_document(
+    effective: &Map<String, Value>,
+    user: &Map<String, Value>,
+) -> Result<Map<String, Value>, CheaperError> {
+    tracing::debug!(policy.layer = "user", "policy layer merged");
+    Ok(merge_policy_layers(
+        effective,
+        &validate_user_document(user)?,
+        MergeMode::Replace,
+    )
+    .expect("replace-mode merge cannot fail"))
+}
+
+fn merge_invocation_document(
+    effective: &Map<String, Value>,
+    invocation: &Map<String, Value>,
+) -> Result<Map<String, Value>, CheaperError> {
+    // (1) grants-only key 制約 — schema ではなく merge 前検査。
+    // Partial schema だけでは `execution`/`tools`/`model` 等他
+    // section が素通りするため、合成 layer を「grant 供給のみ」へ
+    // 縛る構造的 guard として先に検査する。
+    for key in invocation.keys() {
+        if key != "version" && key != "command" {
+            return Err(invocation_invalid_request(
+                format!("invocation layer may only declare command.grants: {key}"),
+                json!({"key": key}),
+            ));
         }
-        match invocation.get("command").map(Value::as_object) {
-            Some(None) => {
-                return Err(invocation_invalid_request(
-                    "invocation layer may only declare command.grants",
-                    json!({"key": "command"}),
-                ));
-            }
-            Some(Some(command)) => {
-                for key in command.keys() {
-                    if key != "grants" {
-                        return Err(invocation_invalid_request(
-                            format!("invocation layer may only declare command.grants: {key}"),
-                            json!({"key": format!("command.{key}")}),
-                        ));
-                    }
+    }
+    match invocation.get("command").map(Value::as_object) {
+        Some(None) => {
+            return Err(invocation_invalid_request(
+                "invocation layer may only declare command.grants",
+                json!({"key": "command"}),
+            ));
+        }
+        Some(Some(command)) => {
+            for key in command.keys() {
+                if key != "grants" {
+                    return Err(invocation_invalid_request(
+                        format!("invocation layer may only declare command.grants: {key}"),
+                        json!({"key": format!("command.{key}")}),
+                    ));
                 }
             }
-            None => {}
         }
-        // (2) Partial validate — `resolve_command_policy` が
-        // `ArgPattern::compile`・env/cwd 規則を継承する。
-        // shared validation 由来の失敗は inner code を保持し
-        // `details.layer` のみ畳み込む。
-        let validated = validate_policy_schema(
-            &Value::Object(invocation.clone()),
-            PolicySchemaMode::Partial,
-        )
-        .map_err(with_invocation_layer)?;
-        // (3) builtin + user の merge 済み `command.grants` との
-        // collision 検査 — Replace merge は同名 grant を黙って上書きする
-        // ため fail-loud。validate 通過後に行い、malformed spec が
-        // collision error を装わない。
-        let existing_grants = effective
-            .get("command")
-            .and_then(Value::as_object)
-            .and_then(|command| command.get("grants"))
-            .and_then(Value::as_object);
-        let incoming_grants = validated
-            .get("command")
-            .and_then(Value::as_object)
-            .and_then(|command| command.get("grants"))
-            .and_then(Value::as_object);
-        if let (Some(existing), Some(incoming)) = (existing_grants, incoming_grants) {
-            if let Some(name) = incoming.keys().find(|k| existing.contains_key(*k)) {
-                return Err(invocation_invalid_request(
-                    format!("invocation grant collides with an existing grant: {name}"),
-                    json!({"grant": name}),
-                ));
-            }
-        }
-        // (4) Replace merge。(5) `policy.layer` record は sibling
-        // (user/project)と同様 merge 呼出しの直前に揃える — post-merge
-        // 配置だと log 行順が merge 結果の帰属を誤読させる。
-        tracing::debug!(policy.layer = "invocation", "policy layer merged");
-        effective = merge_policy_layers(&effective, &validated, MergeMode::Replace)
-            .expect("replace-mode merge cannot fail");
+        None => {}
     }
+    // (2) Partial validate — `resolve_command_policy` が
+    // `ArgPattern::compile`・env/cwd 規則を継承する。
+    // shared validation 由来の失敗は inner code を保持し
+    // `details.layer` のみ畳み込む。
+    let validated = validate_policy_schema(
+        &Value::Object(invocation.clone()),
+        PolicySchemaMode::Partial,
+    )
+    .map_err(with_invocation_layer)?;
+    // (3) builtin + user の merge 済み `command.grants` との
+    // collision 検査 — Replace merge は同名 grant を黙って上書きする
+    // ため fail-loud。validate 通過後に行い、malformed spec が
+    // collision error を装わない。
+    let existing_grants = effective
+        .get("command")
+        .and_then(Value::as_object)
+        .and_then(|command| command.get("grants"))
+        .and_then(Value::as_object);
+    let incoming_grants = validated
+        .get("command")
+        .and_then(Value::as_object)
+        .and_then(|command| command.get("grants"))
+        .and_then(Value::as_object);
+    if let (Some(existing), Some(incoming)) = (existing_grants, incoming_grants) {
+        if let Some(name) = incoming.keys().find(|k| existing.contains_key(*k)) {
+            return Err(invocation_invalid_request(
+                format!("invocation grant collides with an existing grant: {name}"),
+                json!({"grant": name}),
+            ));
+        }
+    }
+    // (4) Replace merge。(5) `policy.layer` record は sibling
+    // (user/project)と同様 merge 呼出しの直前に揃える — post-merge
+    // 配置だと log 行順が merge 結果の帰属を誤読させる。
+    tracing::debug!(policy.layer = "invocation", "policy layer merged");
+    Ok(
+        merge_policy_layers(effective, &validated, MergeMode::Replace)
+            .expect("replace-mode merge cannot fail"),
+    )
+}
+
+fn resolve_policy_defaults(
+    effective: &Map<String, Value>,
+) -> Result<Map<String, Value>, CheaperError> {
     // After the trusted merge and before the project restriction, fill
     // legacy/partial omissions with the typed policy resolvers.
     let mut with_defaults = effective.clone();
@@ -233,43 +444,58 @@ pub fn load_policy(opts: &LoadPolicyOptions<'_>) -> Result<RuntimePolicy, Cheape
         }),
     );
     with_defaults.insert("execution".to_string(), Value::Object(execution));
-    effective = with_defaults;
+    Ok(with_defaults)
+}
 
-    let project_path = nodepath_join(opts.project_dir, "policy.yaml");
-    let mut project_task_names = std::collections::BTreeSet::new();
-    if let Some(project) = read_policy_yaml(&project_path, false)? {
-        tracing::debug!(policy.layer = "project", "policy layer merged");
-        // Option A の信頼境界: project partial schema は `command` section
-        // 全体を除外し、含む project policy は schema validation で
-        // `InvalidRuntimePolicy` に落ちる(grant authoring は trusted
-        // layer のみ)。
-        let validated_project =
-            validate_policy_schema(&Value::Object(project), PolicySchemaMode::ProjectPartial)?;
-        // task provenance(issue #165)— project 層宣言 task の名集合を
-        // merge 前に捕捉し、`normalize_policy` へ渡して
-        // `scope:"project"` を畳む。
-        project_task_names = validated_project
-            .get("process")
-            .and_then(Value::as_object)
-            .and_then(|p| p.get("tasks"))
-            .and_then(Value::as_object)
-            .map(|tasks| tasks.keys().cloned().collect())
-            .unwrap_or_default();
-        effective = merge_policy_layers(
-            &effective,
-            &validated_project,
-            MergeMode::RestrictConcurrency,
+fn validate_project_document(
+    project: &Map<String, Value>,
+) -> Result<Map<String, Value>, CheaperError> {
+    validate_policy_schema(
+        &Value::Object(project.clone()),
+        PolicySchemaMode::ProjectPartial,
+    )
+}
+
+fn merge_project_document(
+    effective: &Map<String, Value>,
+    project: &Map<String, Value>,
+) -> Result<(Map<String, Value>, std::collections::BTreeSet<String>), CheaperError> {
+    tracing::debug!(policy.layer = "project", "policy layer merged");
+    // Option A の信頼境界: project partial schema は `command` section
+    // 全体を除外し、含む project policy は schema validation で
+    // `InvalidRuntimePolicy` に落ちる(grant authoring は trusted
+    // layer のみ)。
+    let validated_project = validate_project_document(project)?;
+    // task provenance(issue #165)— project 層宣言 task の名集合を
+    // merge 前に捕捉し、`normalize_policy` へ渡して
+    // `scope:"project"` を畳む。
+    let project_task_names = validated_project
+        .get("process")
+        .and_then(Value::as_object)
+        .and_then(|p| p.get("tasks"))
+        .and_then(Value::as_object)
+        .map(|tasks| tasks.keys().cloned().collect())
+        .unwrap_or_default();
+    let merged = merge_policy_layers(
+        effective,
+        &validated_project,
+        MergeMode::RestrictConcurrency,
+    )
+    .map_err(|e| {
+        CheaperError::new(
+            ErrorCode::InvalidRuntimePolicy,
+            format!("invalid project policy duration: {}", e.input()),
         )
-        .map_err(|e| {
-            CheaperError::new(
-                ErrorCode::InvalidRuntimePolicy,
-                format!("invalid project policy duration: {}", e.input()),
-            )
-        })?;
-    }
+    })?;
+    Ok((merged, project_task_names))
+}
 
+fn complete_policy(
+    effective: Map<String, Value>,
+    project_task_names: &std::collections::BTreeSet<String>,
+) -> Result<RuntimePolicy, CheaperError> {
     let completed = validate_policy_schema(&Value::Object(effective), PolicySchemaMode::Complete)?;
-    let policy = normalize_policy(&completed, &project_task_names)?;
+    let policy = normalize_policy(&completed, project_task_names)?;
     tracing::debug!("policy resolved");
     Ok(policy)
 }
@@ -297,6 +523,106 @@ retry: {transientAttempts: 2}
     fn write(dir: &std::path::Path, name: &str, content: &str) {
         std::fs::create_dir_all(dir).unwrap();
         std::fs::write(dir.join(name), content).unwrap();
+    }
+
+    fn doc(text: &str) -> Map<String, Value> {
+        match crate::yaml::parse_yaml(text).unwrap() {
+            Value::Object(map) => map,
+            _ => panic!("policy document must be an object"),
+        }
+    }
+
+    #[test]
+    fn policy_documents_report_absent_loaded_layers() {
+        let builtin = doc(BUILTIN);
+        let user = doc("version: 1\nexecution: {timeout: 10m}\n");
+        let loaded = load_policy_documents(&LoadPolicyDocuments {
+            builtin: Some(&builtin),
+            user: Some(&user),
+            invocation: None,
+            project: None,
+        })
+        .unwrap();
+        assert_eq!(loaded.layers.builtin, PolicyLayerStatus::Loaded);
+        assert_eq!(loaded.layers.user, PolicyLayerStatus::Loaded);
+        assert_eq!(loaded.layers.project, PolicyLayerStatus::Absent);
+        assert_eq!(loaded.policy.execution.timeout_ms, 600_000);
+    }
+
+    #[test]
+    fn policy_documents_report_builtin_absent() {
+        let user = doc("version: 1\n");
+        let err = load_policy_documents(&LoadPolicyDocuments {
+            builtin: None,
+            user: Some(&user),
+            invocation: None,
+            project: None,
+        })
+        .unwrap_err();
+        assert_eq!(err.layer, PolicyDocumentLayer::Builtin);
+        assert_eq!(err.layers.builtin, PolicyLayerStatus::Absent);
+        assert_eq!(err.layers.user, PolicyLayerStatus::Loaded);
+        assert_eq!(err.layers.project, PolicyLayerStatus::Absent);
+        assert_eq!(err.error.code(), ErrorCode::InvalidRuntimePolicy);
+    }
+
+    #[test]
+    fn policy_documents_attribute_layer_schema_failures() {
+        let builtin = doc(BUILTIN);
+        let user = doc("version: 2\n");
+        let project = doc("version: 1\n");
+        let err = load_policy_documents(&LoadPolicyDocuments {
+            builtin: Some(&builtin),
+            user: Some(&user),
+            invocation: None,
+            project: Some(&project),
+        })
+        .unwrap_err();
+        assert_eq!(err.layer, PolicyDocumentLayer::User);
+        assert_eq!(err.layers.builtin, PolicyLayerStatus::Loaded);
+        assert_eq!(err.layers.user, PolicyLayerStatus::Failed);
+        assert_eq!(err.layers.project, PolicyLayerStatus::Loaded);
+        assert_eq!(err.error.code(), ErrorCode::InvalidRuntimePolicy);
+    }
+
+    #[test]
+    fn policy_documents_validate_sibling_statuses_independently() {
+        let builtin = doc(BUILTIN);
+        let user = doc("version: 2\n");
+        let project = doc("version: 2\n");
+        let err = load_policy_documents(&LoadPolicyDocuments {
+            builtin: Some(&builtin),
+            user: Some(&user),
+            invocation: None,
+            project: Some(&project),
+        })
+        .unwrap_err();
+        assert_eq!(err.layer, PolicyDocumentLayer::User);
+        assert_eq!(err.layers.builtin, PolicyLayerStatus::Loaded);
+        assert_eq!(err.layers.user, PolicyLayerStatus::Failed);
+        assert_eq!(err.layers.project, PolicyLayerStatus::Failed);
+    }
+
+    #[test]
+    fn policy_documents_attribute_post_merge_failures() {
+        let builtin = doc(&format!(
+            "{BUILTIN}\ncommand:\n  maxConcurrent: 1\n  grants:\n    shared:\n      executable: git\n"
+        ));
+        let project = doc(
+            "version: 1\nprocess:\n  tasks:\n    shared: {command: [cc], inputs: [], outputs: []}\n",
+        );
+        let err = load_policy_documents(&LoadPolicyDocuments {
+            builtin: Some(&builtin),
+            user: None,
+            invocation: None,
+            project: Some(&project),
+        })
+        .unwrap_err();
+        assert_eq!(err.layer, PolicyDocumentLayer::Merged);
+        assert_eq!(err.layers.builtin, PolicyLayerStatus::Loaded);
+        assert_eq!(err.layers.user, PolicyLayerStatus::Absent);
+        assert_eq!(err.layers.project, PolicyLayerStatus::Loaded);
+        assert_eq!(err.error.code(), ErrorCode::InvalidRuntimePolicy);
     }
 
     #[test]

@@ -83,6 +83,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHrZUE6Wzyjd1NS8 | リポジトリ構成とツールチェーン | approved | [repository-structure-toolchain.md](./repository-structure-toolchain.md) |
 | DESIGN-034A8FyPKpnV3KM2HypFGu | ResourceManager job lease と atomic operation admission 設計 | approved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | DESIGN-034IPoKswcH3LaUZdnb0XT | Restrict hook-config orphan sweep to cheaper-owned temp files | approved | [restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md](./restrict-hook-config-orphan-sweep-to-cheaper-owned-temp-files.md) |
+| DESIGN-034N3kihuoqVnngaNEt7q2 | Route check read-only diagnostics boundary | approved | [route-check-read-only-diagnostics-boundary.md](./route-check-read-only-diagnostics-boundary.md) |
 | DESIGN-034KUgF5QB3WuzFG6PmVvr | route grant-set projection — grants 宣言・viability 条件緩和・record split | approved | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | DESIGN-034KqI29dOTRXERRPTp5gV | usage.jsonl run error record の診断 field 拡充 (issue #141) | approved | [run-error-record-observability.md](./run-error-record-observability.md) |
 | DESIGN-034zSR05NE5hXXhkTRLMgW | Run-scoped artifact store | approved | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |

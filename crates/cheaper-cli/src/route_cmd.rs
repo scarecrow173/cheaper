@@ -1,11 +1,12 @@
-//! `cheaper route resolve` — route match + viability の dry-run
-//! utility command(design §route-resolve CLI、R11)。workflow・
-//! 外部 process は一切実行しない — `routes::load`/`load_policy`
-//! の file read と `route::resolve` 純粋評価のみ。
+//! `cheaper route` — route utility command の dispatch。`resolve` は
+//! route match + viability の dry-run、`check` は後続 task の
+//! read-only diagnostics へ接続する。workflow・外部 process は
+//! resolve/check ともここでは実行しない。
 //!
 //! - utility command 規約: `record_usage` は dispatch 側も含め非呼
 //!   出し(`policy`/`hook-config` と同一)。
-//! - `--command`/`--argv` は相互排他(parse 層で保証)。`--command`
+//! - `--command`/`--argv` は resolve では exactly-one、check では
+//!   at-most-one(parse 層で保証)。`--command`
 //!   は `tokenize_shell` 済み token 列を argv とし、複数 segment・
 //!   unsafe segment/token は `unsafe_command` flag として resolve
 //!   へ渡す(unsafe-command viability へ写像)。`--argv` は JSON
@@ -54,6 +55,11 @@ async fn execute_inner(
     match &args.action {
         RouteAction::Resolve { command, argv, cwd } => {
             execute_resolve(command, argv, cwd, io, hooks, started_at)
+                .await
+                .map(RouteOutput::Utility)
+        }
+        RouteAction::Check { cwd, command, argv } => {
+            crate::route::check::execute(command, argv, cwd, io, hooks, started_at)
                 .await
                 .map(RouteOutput::Utility)
         }
@@ -138,7 +144,7 @@ async fn execute_resolve(
 /// unsafe flag。tokenize 失敗(quote 不整合等)は `unsafe_command`
 /// として resolve へ渡し fail-safe に倒す(argv は空 →
 /// 分類自体は no-match にならないよう token は尽力抽出する)。
-fn parse_command(command: &str) -> Result<(Vec<String>, bool), CheaperError> {
+pub(crate) fn parse_command(command: &str) -> Result<(Vec<String>, bool), CheaperError> {
     match tokenize_shell(command) {
         Some(segments) => {
             let unsafe_command = segments.len() != 1
@@ -160,7 +166,7 @@ fn parse_command(command: &str) -> Result<(Vec<String>, bool), CheaperError> {
 }
 
 /// `--argv` — JSON string array のみ受理。
-fn parse_argv(raw: &str) -> Result<Vec<String>, CheaperError> {
+pub(crate) fn parse_argv(raw: &str) -> Result<Vec<String>, CheaperError> {
     let value: Value = serde_json::from_str(raw)
         .map_err(|_| invalid_request("invalid --argv: malformed JSON", None))?;
     let Some(items) = value.as_array() else {

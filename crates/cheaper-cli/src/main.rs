@@ -16,7 +16,8 @@
 use std::io::Read;
 use std::io::Write;
 
-use cheaper_cli::cli::{run_cli, CliHooks, CliIo, CliStdin, CliWrite};
+use cheaper_cli::args::is_route_check_invocation;
+use cheaper_cli::cli::{route_check_error_envelope, run_cli, CliHooks, CliIo, CliStdin, CliWrite};
 use cheaper_cli::envelope::{envelope_json, error_envelope};
 
 /// 実 process stdin。
@@ -57,12 +58,16 @@ impl CliWrite for ProcessStderr {
 
 /// panic payload → INTERNAL_ERROR envelope を stdout へ書き、70 を返す。
 /// panic hook が既に stderr へ trace を出している想定。
-fn panic_exit(payload: &str) -> i32 {
+fn panic_exit(payload: &str, is_route_check: bool) -> i32 {
     let err = cheaper_core::errors::CheaperError::new(
         cheaper_core::errors::ErrorCode::InternalError,
         format!("panic: {payload}"),
     );
-    let env = error_envelope(&err, None, None);
+    let env = if is_route_check {
+        route_check_error_envelope(&err, None)
+    } else {
+        error_envelope(&err, None, None)
+    };
     ProcessStdout.write_str(&envelope_json(&env));
     70
 }
@@ -84,18 +89,20 @@ fn main() {
     // entry 全体を catch_unwind で包み、future 外(runtime 構築・
     // dispatch 前後の同期処理)の unhandled panic も INTERNAL_ERROR
     // envelope + exit 70 に畳む。
+    let is_route_check = is_route_check_invocation(&argv);
     let code = std::panic::catch_unwind(|| run_process(argv)).unwrap_or_else(|payload| {
         let message = payload
             .downcast_ref::<&'static str>()
             .map(|s| (*s).to_string())
             .or_else(|| payload.downcast_ref::<String>().cloned())
             .unwrap_or_else(|| "non-string panic payload".to_string());
-        panic_exit(&message)
+        panic_exit(&message, is_route_check)
     });
     std::process::exit(code);
 }
 
 fn run_process(argv: Vec<String>) -> i32 {
+    let is_route_check = is_route_check_invocation(&argv);
     let mut stdin = ProcessStdin;
     let mut stdout = ProcessStdout;
     let mut stderr = ProcessStderr;
@@ -108,7 +115,11 @@ fn run_process(argv: Vec<String>) -> i32 {
                 cheaper_core::errors::ErrorCode::InternalError,
                 format!("process.cwd() failed: {e}"),
             );
-            let env = error_envelope(&err, None, None);
+            let env = if is_route_check {
+                route_check_error_envelope(&err, None)
+            } else {
+                error_envelope(&err, None, None)
+            };
             ProcessStdout.write_str(&envelope_json(&env));
             return 70;
         }
@@ -132,7 +143,11 @@ fn run_process(argv: Vec<String>) -> i32 {
                 cheaper_core::errors::ErrorCode::InternalError,
                 format!("tokio runtime init failed: {e}"),
             );
-            let env = error_envelope(&err, None, None);
+            let env = if is_route_check {
+                route_check_error_envelope(&err, None)
+            } else {
+                error_envelope(&err, None, None)
+            };
             ProcessStdout.write_str(&envelope_json(&env));
             return 70;
         }
@@ -148,7 +163,11 @@ fn run_process(argv: Vec<String>) -> i32 {
     match outcome {
         Ok(code) => code,
         Err(err) => {
-            let env = error_envelope(&err, None, None);
+            let env = if is_route_check {
+                route_check_error_envelope(&err, None)
+            } else {
+                error_envelope(&err, None, None)
+            };
             ProcessStdout.write_str(&envelope_json(&env));
             err.exit_code() as i32
         }

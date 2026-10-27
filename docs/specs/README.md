@@ -77,6 +77,7 @@ Directory: `docs/specs`
 | SPEC-034r05iHK8bA7g9KcsCqKj | Repair and abort hardening, telemetry consistency, and test hermeticity | implemented | [repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md](./repair-and-abort-hardening-telemetry-consistency-and-test-hermeticity.md) |
 | SPEC-034r05iHK8bA7gpcCJQya9 | Repository-owned setup contract for fresh checkouts/worktrees | implemented | [repo-owned-setup-contract-for-fresh-checkouts.md](./repo-owned-setup-contract-for-fresh-checkouts.md) |
 | SPEC-034A8kLznlxOOeccFx9SNM | ResourceManager job lifetime leases | implemented | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
+| SPEC-034MMqMYf3tBIsJoiV5qLu | Diagnose route configuration readiness with route check | proposed | [route-check-diagnostics-issue-185.md](./route-check-diagnostics-issue-185.md) |
 | SPEC-034KTMfXYD5ZlGZCRb8Paj | route grant-set projection — grants 宣言・viability 条件緩和・usage record split | approved | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | SPEC-G1ALq0d5lyFIi0h43tZsZG | usage.jsonl run record への version・実効 policy・error 診断 field の追加 (issue #141) | approved | [run-error-record-observability.md](./run-error-record-observability.md) |
 | SPEC-034zSQRLxNXgJDxjmUBBB8 | Run-scoped artifact store | approved | [run-scoped-artifact-store.md](./run-scoped-artifact-store.md) |

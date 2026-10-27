@@ -1,8 +1,8 @@
 //! `args.rs` の parse table test — `args.ts` の分類・文言規則に対応。
 
 use cheaper_cli::args::{
-    global_flag_present, global_log_flags, parse_cli_args, AuthAction, AuthTypeArg, CliFormat,
-    ParsedCli, PolicyAction,
+    global_flag_present, global_log_flags, is_route_check_invocation, parse_cli_args, AuthAction,
+    AuthTypeArg, CliFormat, ParsedCli, PolicyAction,
 };
 use cheaper_core::errors::ErrorCode;
 
@@ -809,14 +809,26 @@ fn route_resolve_command_and_argv() {
 fn route_resolve_requires_resolve_action() {
     let e = err(&["route"]);
     assert_eq!(e.code(), ErrorCode::InvalidRequest);
-    assert_eq!(e.message(), "route requires resolve | run | logs <id>");
+    assert_eq!(
+        e.message(),
+        "route requires resolve | run | logs <id> | check"
+    );
     // 未実装 action(`run`/`logs`)は unknown として reject。
     let e = err(&["route", "bogus"]);
-    assert_eq!(e.message(), "route requires resolve | run | logs <id>");
+    assert_eq!(
+        e.message(),
+        "route requires resolve | run | logs <id> | check"
+    );
     let e = err(&["route", "resolve", "extra"]);
-    assert_eq!(e.message(), "route requires resolve | run | logs <id>");
+    assert_eq!(
+        e.message(),
+        "route requires resolve | run | logs <id> | check"
+    );
     let e = err(&["route", "logs"]);
-    assert_eq!(e.message(), "route requires resolve | run | logs <id>");
+    assert_eq!(
+        e.message(),
+        "route requires resolve | run | logs <id> | check"
+    );
 }
 
 #[test]
@@ -911,5 +923,99 @@ fn route_run_rejects_missing_payload_and_foreign_flags() {
         let e = err(&argv);
         assert_eq!(e.code(), ErrorCode::InvalidRequest, "{argv:?}");
         assert!(e.message().contains("--payload"), "{argv:?}");
+    }
+}
+
+#[test]
+fn route_check_parses_zero_or_one_sample() {
+    let ParsedCli::Route(a) = parse_cli_args(&args(&["route", "check"])).unwrap() else {
+        panic!()
+    };
+    let cheaper_cli::args::RouteAction::Check { cwd, command, argv } = a.action else {
+        panic!()
+    };
+    assert_eq!(cwd, None);
+    assert_eq!(command, None);
+    assert_eq!(argv, None);
+
+    let ParsedCli::Route(a) = parse_cli_args(&args(&[
+        "route",
+        "check",
+        "--command",
+        "cargo test",
+        "--cwd",
+        "/w",
+    ]))
+    .unwrap() else {
+        panic!()
+    };
+    let cheaper_cli::args::RouteAction::Check { cwd, command, argv } = a.action else {
+        panic!()
+    };
+    assert_eq!(cwd.as_deref(), Some("/w"));
+    assert_eq!(command.as_deref(), Some("cargo test"));
+    assert_eq!(argv, None);
+
+    let ParsedCli::Route(a) =
+        parse_cli_args(&args(&["route", "check", "--argv", "[\"cargo\",\"test\"]"])).unwrap()
+    else {
+        panic!()
+    };
+    let cheaper_cli::args::RouteAction::Check { command, argv, .. } = a.action else {
+        panic!()
+    };
+    assert_eq!(command, None);
+    assert_eq!(argv.as_deref(), Some("[\"cargo\",\"test\"]"));
+}
+
+#[test]
+fn route_check_rejects_multiple_samples_and_extra_positionals() {
+    for argv in [
+        vec!["route", "check", "--command", "a", "--argv", "[]"],
+        vec!["route", "check", "--command", "a", "--command", "b"],
+        vec!["route", "check", "--argv", "[]", "--argv", "[]"],
+    ] {
+        let e = err(&argv);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "{argv:?}");
+        assert_eq!(
+            e.message(),
+            "route check accepts at most one of --command or --argv"
+        );
+    }
+    let e = err(&["route", "check", "extra"]);
+    assert_eq!(
+        e.message(),
+        "route requires resolve | run | logs <id> | check"
+    );
+}
+
+#[test]
+fn route_check_invocation_detection() {
+    for argv in [
+        vec!["route", "check"],
+        vec!["--log", "debug", "route", "check"],
+        vec!["--quiet", "route", "check"],
+        vec!["--format", "json", "route", "check"],
+        vec!["route", "--log", "debug", "check"],
+        vec!["route", "--", "check"],
+        vec!["--", "route", "check"],
+        vec!["route", "check", "--bogus"],
+        vec!["route", "check", "--log"],
+        vec!["route", "check", "extra"],
+        vec!["route", "check", "--help"],
+        vec!["route", "check", "--version"],
+    ] {
+        assert!(is_route_check_invocation(&args(&argv)), "{argv:?}");
+    }
+    for argv in [
+        vec!["route", "checks"],
+        vec!["route", "CHECK"],
+        vec!["route", "resolve"],
+        vec!["route", "checkable"],
+        vec!["usage"],
+        vec!["--log", "route", "check"],
+        vec!["route", "--log", "check"],
+    ] {
+        assert!(!is_route_check_invocation(&args(&argv)), "{argv:?}");
     }
 }

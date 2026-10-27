@@ -51,6 +51,30 @@ impl SchemaKind {
 
 const JSON_SCHEMA_2020: &str = "https://json-schema.org/draft/2020-12/schema";
 
+/// schema `{file: ...}` の content acquisition seam。validation は
+/// resolved path を error details に使い、実際の read は source が担う。
+/// filesystem 既定以外に embedded/logical catalog を差し込める。
+pub trait SchemaContentSource {
+    /// `base_dir` + declared `file` を source 固有の display/read path
+    /// へ解決する。
+    fn resolve_schema_path(&self, base_dir: &str, file: &str) -> String;
+    /// resolved path の bytes を読む。absent は `NotFound` を返す。
+    fn read_schema(&self, path: &str) -> Result<Vec<u8>, std::io::Error>;
+}
+
+/// 既存の filesystem 既定。
+pub struct FilesystemContentSource;
+
+impl SchemaContentSource for FilesystemContentSource {
+    fn resolve_schema_path(&self, base_dir: &str, file: &str) -> String {
+        nodepath::resolve(base_dir, file)
+    }
+
+    fn read_schema(&self, path: &str) -> Result<Vec<u8>, std::io::Error> {
+        std::fs::read(path)
+    }
+}
+
 /// `parseSchemaRef`.
 pub fn parse_schema_ref(
     raw: &Value,
@@ -95,6 +119,18 @@ pub fn load_schema(
     base_dir: &str,
     kind: SchemaKind,
 ) -> Result<Map<String, Value>, CheaperError> {
+    load_schema_with_source(schema_ref, base_dir, kind, &FilesystemContentSource)
+}
+
+/// `loadSchema` の source-aware 版。extension/parse/compile error
+/// mapping は filesystem 既定と同一で、base-dir 解決と read のみ
+/// injected source が担う。
+pub fn load_schema_with_source(
+    schema_ref: &SchemaRef,
+    base_dir: &str,
+    kind: SchemaKind,
+    source: &dyn SchemaContentSource,
+) -> Result<Map<String, Value>, CheaperError> {
     if let SchemaRef::Inline(inline) = schema_ref {
         return Ok(inline.clone());
     }
@@ -112,9 +148,9 @@ pub fn load_schema(
         )
         .with_details(details));
     }
-    let file_path = nodepath::resolve(base_dir, file);
+    let file_path = source.resolve_schema_path(base_dir, file);
     // Node readFile("utf8") replaces invalid UTF-8; mirror with lossy decode.
-    let bytes = std::fs::read(&file_path).map_err(|e| {
+    let bytes = source.read_schema(&file_path).map_err(|e| {
         let mut details = Map::new();
         details.insert("file".to_string(), json!(file));
         details.insert("path".to_string(), json!(file_path));

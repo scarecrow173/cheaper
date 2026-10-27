@@ -6,13 +6,47 @@ use crate::config::dirs::ConfigDirs;
 use crate::errors::{CheaperError, ErrorCode};
 use crate::nodepath;
 use crate::worker::parse::parse_worker_file;
+use crate::worker::schema::{FilesystemContentSource, SchemaContentSource};
 use crate::worker::validate::{
-    name_re, validate_worker_definition, WorkerDefinition, WorkerOrigin,
+    name_re, validate_worker_definition_with_source, WorkerDefinition, WorkerOrigin,
 };
 
-/// `fs.access`-style existence check: any error is "does not exist".
-fn exists(p: &str) -> bool {
-    std::fs::metadata(p).is_ok()
+/// worker file / worker schema の acquisition seam。`source_path` は
+/// display/logical path、`read`/`exists` は source 固有の正規化を担う。
+/// filesystem 既定では全て host path として扱う。
+pub trait WorkerContentSource {
+    /// `fs.access` 相当 — error は全て absent 扱い。
+    fn exists_worker(&self, path: &str) -> bool;
+    /// worker file bytes を読む。absent/permission 等は `io::Error`。
+    fn read_worker(&self, path: &str) -> Result<Vec<u8>, std::io::Error>;
+    /// `schema: {file: ...}` 用の schema source。
+    fn schema_source(&self) -> &dyn SchemaContentSource;
+    /// `searched`/`source_path` に使う display path。embedded source は
+    /// `\` を `/` に正規化した logical path を返す。
+    fn display_path(&self, path: &str) -> String {
+        path.to_string()
+    }
+}
+
+impl WorkerContentSource for FilesystemContentSource {
+    fn exists_worker(&self, path: &str) -> bool {
+        std::fs::metadata(path).is_ok()
+    }
+
+    fn read_worker(&self, path: &str) -> Result<Vec<u8>, std::io::Error> {
+        std::fs::read(path)
+    }
+
+    fn schema_source(&self) -> &dyn SchemaContentSource {
+        self
+    }
+}
+
+/// `resolveWorker` の 1 候補層。caller が precedence 順に渡す。
+pub struct WorkerSourceCandidate<'a> {
+    pub base_dir: String,
+    pub origin: WorkerOrigin,
+    pub source: &'a dyn WorkerContentSource,
 }
 
 /// Raw worker-file read failure. TS `loadWorker` propagates the
@@ -95,19 +129,23 @@ impl From<WorkerReadError> for ResolveWorkerError {
 fn load_worker(
     source_path: &str,
     origin: WorkerOrigin,
+    source: &dyn WorkerContentSource,
 ) -> Result<WorkerDefinition, ResolveWorkerError> {
     // TS propagates the raw read error (not a CheaperError); the CLI maps
     // unknown errors to INTERNAL_ERROR with no details — keep that
-    // shape via `WorkerReadError`.
-    let bytes = std::fs::read(source_path).map_err(|e| WorkerReadError {
-        path: source_path.to_string(),
-        source: e,
-    })?;
+    // shape via `WorkerReadError`。
+    let bytes = source
+        .read_worker(source_path)
+        .map_err(|e| WorkerReadError {
+            path: source_path.to_string(),
+            source: e,
+        })?;
     let content = String::from_utf8_lossy(&bytes);
-    Ok(validate_worker_definition(
+    Ok(validate_worker_definition_with_source(
         &parse_worker_file(&content, source_path)?,
         source_path,
         origin,
+        source.schema_source(),
     )?)
 }
 
@@ -116,6 +154,35 @@ fn load_worker(
 pub fn resolve_worker(
     name: &str,
     dirs: &ConfigDirs,
+) -> Result<WorkerDefinition, ResolveWorkerError> {
+    let filesystem = FilesystemContentSource;
+    resolve_worker_with_sources(
+        name,
+        &[
+            WorkerSourceCandidate {
+                base_dir: dirs.project_dir.to_string_lossy().into_owned(),
+                origin: WorkerOrigin::Project,
+                source: &filesystem,
+            },
+            WorkerSourceCandidate {
+                base_dir: dirs.user_config_dir.to_string_lossy().into_owned(),
+                origin: WorkerOrigin::User,
+                source: &filesystem,
+            },
+            WorkerSourceCandidate {
+                base_dir: dirs.builtin_dir.to_string_lossy().into_owned(),
+                origin: WorkerOrigin::Builtin,
+                source: &filesystem,
+            },
+        ],
+    )
+}
+
+/// `resolveWorker` の source-aware 版。candidate 順序が precedence
+/// (project → user → builtin も同じ関数を通る)。
+pub fn resolve_worker_with_sources(
+    name: &str,
+    candidates: &[WorkerSourceCandidate<'_>],
 ) -> Result<WorkerDefinition, ResolveWorkerError> {
     if !name_re().is_match(name) {
         let mut details = Map::new();
@@ -127,31 +194,18 @@ pub fn resolve_worker(
         .with_details(details)
         .into());
     }
-    let candidates: [(String, WorkerOrigin); 3] = [
-        (
-            dirs.project_dir.to_string_lossy().into_owned(),
-            WorkerOrigin::Project,
-        ),
-        (
-            dirs.user_config_dir.to_string_lossy().into_owned(),
-            WorkerOrigin::User,
-        ),
-        (
-            dirs.builtin_dir.to_string_lossy().into_owned(),
-            WorkerOrigin::Builtin,
-        ),
-    ];
     let mut searched: Vec<String> = Vec::new();
-    for (dir, origin) in candidates {
-        let p = nodepath::join(&[&dir, "workers", &format!("{name}.md")]);
-        searched.push(p.clone());
-        if exists(&p) {
-            let def = load_worker(&p, origin)?;
+    for candidate in candidates {
+        let path = nodepath::join(&[&candidate.base_dir, "workers", &format!("{name}.md")]);
+        let source_path = candidate.source.display_path(&path);
+        searched.push(source_path.clone());
+        if candidate.source.exists_worker(&path) {
+            let def = load_worker(&source_path, candidate.origin, candidate.source)?;
             // `cheaper-core` event(design §instrumentation 配置)—
             // resolved name/origin の分類値のみ(file path は載せない)。
             tracing::debug!(
                 worker.name = def.name.as_str(),
-                worker.origin = origin.as_str(),
+                worker.origin = candidate.origin.as_str(),
                 "worker resolved"
             );
             return Ok(def);
@@ -180,7 +234,8 @@ pub fn resolve_worker_file(
     cwd: &str,
 ) -> Result<WorkerDefinition, ResolveWorkerError> {
     let resolved = nodepath::resolve(cwd, file_path);
-    if !exists(&resolved) {
+    let filesystem = FilesystemContentSource;
+    if !filesystem.exists_worker(&resolved) {
         tracing::debug!(
             file.name = nodepath::basename(file_path, None).as_str(),
             error.code = ErrorCode::WorkerNotFound.as_str(),
@@ -196,7 +251,7 @@ pub fn resolve_worker_file(
         .with_details(details)
         .into());
     }
-    let def = load_worker(&resolved, WorkerOrigin::Explicit)?;
+    let def = load_worker(&resolved, WorkerOrigin::Explicit, &filesystem)?;
     tracing::debug!(
         worker.name = def.name.as_str(),
         worker.origin = WorkerOrigin::Explicit.as_str(),

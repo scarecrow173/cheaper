@@ -6,6 +6,7 @@
 mod common;
 
 use std::collections::{BTreeSet, HashMap, HashSet};
+use std::sync::Arc;
 
 use cheaper_core::errors::ErrorCode;
 use cheaper_core::nodepath;
@@ -101,10 +102,10 @@ async fn compiles_policy_process_producer_and_executes_materialized_jobs() {
         symlink_policy: SymlinkPolicy::Deny,
         tools: &tools,
     };
-    let workers = FixtureWorkers::new(fixture_worker());
+    let workers = Arc::new(FixtureWorkers::new(fixture_worker()));
     let compiler = WorkflowCompiler::new(WorkflowCompilerPorts {
         tools: &tools,
-        workers: &workers,
+        workers,
         resources: Some(&resources),
     });
     let runtime = create_invocation_tool_runtime(InvocationToolRuntimeOptions {

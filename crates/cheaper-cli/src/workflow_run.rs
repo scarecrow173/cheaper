@@ -1247,7 +1247,7 @@ pub(crate) async fn execute_routed(
     Ok(outcome)
 }
 
-fn validate_routed_convention(raw: &Value) -> Result<(), CheaperError> {
+pub(crate) fn validate_routed_convention(raw: &Value) -> Result<(), CheaperError> {
     let invalid = |reason: &'static str| {
         CheaperError::new(
             ErrorCode::InvalidRuntimePolicy,

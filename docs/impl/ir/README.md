@@ -12,6 +12,7 @@ Directory: `docs/impl/ir`
 | IMPL-034rArrYQRvXbeSRXD6HQQ | Add cheaper usage aggregation command | completed | [add-cheaper-usage-aggregation-command.md](./add-cheaper-usage-aggregation-command.md) |
 | IMPL-034JhsoS4CooCbWSXWcx77 | Add command grant exitCodes and nonzero-exit result reporting | completed | [add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md](./add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md) |
 | IMPL-034zCh129JMqV5Z5ta5wG6 | Add deterministic sibling-parallelism pin tests to runtime-pi | completed | [add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md](./add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md) |
+| IMPL-034N8MVeECVyQHIBorOfVt | Add embedded route check source supply | completed | [add-embedded-route-check-source-supply.md](./add-embedded-route-check-source-supply.md) |
 | IMPL-034JjGk8chOgCkQfzFETJY | Add hook entry route loading and eval supply | completed | [add-hook-entry-route-loading-and-eval-supply.md](./add-hook-entry-route-loading-and-eval-supply.md) |
 | IMPL-034IqeWzYxJ36cp819qQN4 | Add hook_eval_dedup integration tests | completed | [add-hook-eval-dedup-integration-tests.md](./add-hook-eval-dedup-integration-tests.md) |
 | IMPL-034JjvBItf3G44b0tll2Sh | Add hook route arm and Rewrite verdict | completed | [add-hook-route-arm-and-rewrite-verdict.md](./add-hook-route-arm-and-rewrite-verdict.md) |
@@ -25,6 +26,7 @@ Directory: `docs/impl/ir`
 | IMPL-034JimbubuiHpBv6IpimHs | Add proc full-output tee sink for route logging | completed | [add-proc-full-output-tee-sink-for-route-logging.md](./add-proc-full-output-tee-sink-for-route-logging.md) |
 | IMPL-034MHsQwuzT8Ysc0cdXxZW | Add read-only History CLI and bounded queries | completed | [add-read-only-history-cli-and-bounded-queries.md](./add-read-only-history-cli-and-bounded-queries.md) |
 | IMPL-034JjbLxN5vUbJ45QnDJdH | Add route and route-refetch usage records | completed | [add-route-and-route-refetch-usage-records.md](./add-route-and-route-refetch-usage-records.md) |
+| IMPL-034N7PuFShAmcfe3INqWrR | Add route check invocation detection and side-effect gates | completed | [add-route-check-invocation-detection-and-side-effect-gates.md](./add-route-check-invocation-detection-and-side-effect-gates.md) |
 | IMPL-034Jm123U9YXuFo4LBNbtz | Add route CLI wiring | completed | [add-route-cli-wiring.md](./add-route-cli-wiring.md) |
 | IMPL-034JiCcdU6kUQ9Hj4Sd44J | Add route context scope options and single-grant projection | completed | [add-route-context-scope-options-and-single-grant-projection.md](./add-route-context-scope-options-and-single-grant-projection.md) |
 | IMPL-034JhZPcBMjCslZpw77s0m | Add route declaration schema and three-layer loader | completed | [add-route-declaration-schema-and-three-layer-loader.md](./add-route-declaration-schema-and-three-layer-loader.md) |
@@ -110,6 +112,7 @@ Directory: `docs/impl/ir`
 | IMPL-034AGqZzIjQvvNqijsHb1N | Implement process lifecycle policy | completed | [implement-process-lifecycle-policy.md](./implement-process-lifecycle-policy.md) |
 | IMPL-034AGM8MC9yqj5X6IozzSu | Implement process tree lifecycle | completed | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
 | IMPL-034MyAvsjlrMD8xqio3RpN | Implement resources abort window phase synchronization | completed | [implement-resources-abort-window-phase-synchronization.md](./implement-resources-abort-window-phase-synchronization.md) |
+| IMPL-034NdxQhfMatCG95DXPmH1 | Implement route check diagnostics report | completed | [implement-route-check-diagnostics-report.md](./implement-route-check-diagnostics-report.md) |
 | IMPL-034MyAvYhFVOfkiKM4JOO3 | Implement stable process-command test oracles | completed | [implement-stable-windows-process-handle-termination-oracle.md](./implement-stable-windows-process-handle-termination-oracle.md) |
 | IMPL-034MphdOSZ5smrEZgDgPfh | Implement usage byError aggregation issue 184 T3 | completed | [implement-usage-byerror-aggregation-issue-184-t3.md](./implement-usage-byerror-aggregation-issue-184-t3.md) |
 | IMPL-034Mp9JnWzYzVnWA3PkOnh | Implement usage route window and byRoute aggregation issue 184 T2 | completed | [implement-usage-route-window-and-byroute-aggregation-issue-184-t2.md](./implement-usage-route-window-and-byroute-aggregation-issue-184-t2.md) |
@@ -165,6 +168,8 @@ Directory: `docs/impl/ir`
 | IMPL-034MyXn5zz5WT1tcl9CQvd | Run issue 187 cross-platform verification and closeout | completed | [run-issue-187-cross-platform-verification-and-closeout.md](./run-issue-187-cross-platform-verification-and-closeout.md) |
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
 | IMPL-xRnq2HWCVlE0nqjLTLYWWb | Rust-native benchmark harness — cheaper-bench (issue #183) | completed | [rust-native-benchmark-harness-issue-183.md](./rust-native-benchmark-harness-issue-183.md) |
+| IMPL-034NbOZbe7YzlSA1aVfJ8p | Share route sample matching and renderer capability | completed | [share-route-sample-matching-and-renderer-capability.md](./share-route-sample-matching-and-renderer-capability.md) |
+| IMPL-034Na1mwvjOE0dsqq8Am1F | Share route workflow and worker validation seams | completed | [share-route-workflow-and-worker-validation-seams.md](./share-route-workflow-and-worker-validation-seams.md) |
 | IMPL-034EPz49PYz6zXgEeh5Fly | shared managed-process machinery extraction into tools proc | completed | [shared-managed-process-machinery-extraction-into-tools-proc.md](./shared-managed-process-machinery-extraction-into-tools-proc.md) |
 | IMPL-034A6gXDwnMxGVaPiuSCxb | Shared tool scheduler | completed | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |
@@ -188,6 +193,7 @@ Directory: `docs/impl/ir`
 | IMPL-034A6mdUuMzX4DtyfiRMjx | Verify consumer acquisition and close migration | completed | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
 | IMPL-034z3CEPSQBJaEVBVxxzmL | verify launchers and apm payload | completed | [verify-launchers-and-apm-payload.md](./verify-launchers-and-apm-payload.md) |
 | IMPL-034z2rZiB6WUNTje88kRt1 | verify release workflow | completed | [verify-release-workflow.md](./verify-release-workflow.md) |
+| IMPL-034NgekixDuJNQy3znXgws | Verify route check contract and document usage | in-progress | [verify-route-check-contract-and-document-usage.md](./verify-route-check-contract-and-document-usage.md) |
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
 | IMPL-034MpJiRnTxGKRzkCAn04f | Verify usage route and error analysis chain | completed | [verify-usage-route-and-error-analysis-chain.md](./verify-usage-route-and-error-analysis-chain.md) |
 | IMPL-034APqdMTW2hYck2FYoKv1 | Verify workflow execution integration | completed | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |

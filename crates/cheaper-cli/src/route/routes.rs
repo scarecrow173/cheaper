@@ -34,6 +34,35 @@ pub enum RouteLayer {
     Project,
 }
 
+impl RouteLayer {
+    /// 宣言主体から導かれる trust — `trusted` 宣言値ではなく
+    /// layer provenance が source of truth。
+    #[allow(dead_code)]
+    pub(crate) fn trust(&self) -> RouteTrust {
+        match self {
+            Self::Builtin | Self::User => RouteTrust::Trusted,
+            Self::Project => RouteTrust::Untrusted,
+        }
+    }
+
+    /// diagnostic source の `<layer>:` 部分。
+    pub(crate) fn as_str(&self) -> &'static str {
+        match self {
+            Self::Builtin => "builtin",
+            Self::User => "user",
+            Self::Project => "project",
+        }
+    }
+}
+
+/// layer provenance から導く route trust。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+pub(crate) enum RouteTrust {
+    Trusted,
+    Untrusted,
+}
+
 /// `substitute` — substitute-exec mode の宣言ペア(R1/O1a)。
 /// `grant` は既存 `command.grants` 参照名(route は grant を
 /// 生成しない — pin が executable を供給)、`argv` は executable
@@ -147,6 +176,131 @@ pub struct EffectiveRoutes {
     pub invalid: Vec<InvalidRouteGroup>,
 }
 
+/// route 層の independent load 状態。`absent` は正常空層で、
+/// `failed` はその層だけを失敗扱いにし sibling の valid row を残す。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RouteLayerStatus {
+    Absent,
+    Loaded,
+    Failed,
+}
+
+impl RouteLayerStatus {
+    fn is_failed(&self) -> bool {
+        matches!(self, Self::Failed)
+    }
+}
+
+/// 1 層分の read/validate 結果。`error` は layer failure のみ保持し、
+/// merge は valid route と invalid bucket だけを見る。
+#[derive(Debug)]
+pub(crate) struct RouteLayerEvaluation {
+    pub(crate) layer: RouteLayer,
+    pub(crate) status: RouteLayerStatus,
+    #[allow(dead_code)]
+    pub(crate) source: String,
+    pub(crate) routes: Vec<Route>,
+    pub(crate) invalid: Vec<InvalidRouteGroup>,
+    pub(crate) error: Option<CheaperError>,
+}
+
+impl RouteLayerEvaluation {
+    pub(crate) fn absent(layer: RouteLayer, file: &Path) -> Self {
+        layer_evaluation(
+            layer,
+            diagnostic_source(layer, file),
+            RouteLayerStatus::Absent,
+            Vec::new(),
+            Vec::new(),
+            None,
+        )
+    }
+}
+
+/// route 1 行分の merge 判定。`invalid` は layer validation で
+/// 隔離された宣言、`indeterminate` は sibling layer failure で
+/// 確定できない状態を表す。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+pub(crate) enum RouteMergeStatus {
+    Active,
+    Suppressed,
+    Shadowed,
+    Invalid,
+    Indeterminate,
+}
+
+/// diagnostics 向け merge row。invalid は duplicate group の浅い
+/// provenance(name/command/layer/trust/invalidReason)だけを持つ。
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub(crate) enum RouteMergeRow {
+    Route {
+        route: Route,
+        status: RouteMergeStatus,
+    },
+    Invalid {
+        name: String,
+        command: Vec<String>,
+        layer: RouteLayer,
+        invalid_reason: &'static str,
+    },
+}
+
+#[allow(dead_code)]
+impl RouteMergeRow {
+    pub(crate) fn name(&self) -> &str {
+        match self {
+            Self::Route { route, .. } => route.name.as_str(),
+            Self::Invalid { name, .. } => name.as_str(),
+        }
+    }
+
+    pub(crate) fn layer(&self) -> RouteLayer {
+        match self {
+            Self::Route { route, .. } => route.layer,
+            Self::Invalid { layer, .. } => *layer,
+        }
+    }
+
+    pub(crate) fn status(&self) -> RouteMergeStatus {
+        match self {
+            Self::Route { status, .. } => *status,
+            Self::Invalid { .. } => RouteMergeStatus::Invalid,
+        }
+    }
+
+    pub(crate) fn route(&self) -> Option<&Route> {
+        match self {
+            Self::Route { route, .. } => Some(route),
+            Self::Invalid { .. } => None,
+        }
+    }
+
+    /// sample matching は row status を問わず宣言 `match.command`
+    /// を評価する。invalid duplicate row も shallow command を持つ。
+    pub(crate) fn command(&self) -> &[String] {
+        match self {
+            Self::Route { route, .. } => &route.command,
+            Self::Invalid { command, .. } => command,
+        }
+    }
+
+    pub(crate) fn trust(&self) -> RouteTrust {
+        self.layer().trust()
+    }
+}
+
+/// shared merge の provenance 付き結果。runtime `load` が使う
+/// `EffectiveRoutes` と、diagnostics が使う row 状態を分離する。
+#[derive(Debug)]
+#[allow(dead_code)]
+pub(crate) struct RouteMergeOutcome {
+    pub(crate) effective: EffectiveRoutes,
+    pub(crate) shadowed: Vec<Route>,
+    pub(crate) rows: Vec<RouteMergeRow>,
+}
+
 /// `load` の層 path 入力 — caller が dir 解決責務を持つ(純粋評価)。
 pub struct RouteLoadOptions<'a> {
     pub builtin_dir: &'a Path,
@@ -160,7 +314,8 @@ pub fn load(opts: &RouteLoadOptions<'_>) -> Result<EffectiveRoutes, CheaperError
     // 層起点: builtin は workflows/、user/project は routes.yaml と
     // 同 dir(宣言層を起点にすることで project route が workspace 外を
     // 指せない)。
-    let layers = [
+    let mut evaluations = Vec::with_capacity(3);
+    for (layer, file, root) in [
         (
             RouteLayer::Builtin,
             opts.builtin_dir.join("routes.yaml"),
@@ -176,18 +331,185 @@ pub fn load(opts: &RouteLoadOptions<'_>) -> Result<EffectiveRoutes, CheaperError
             opts.project_dir.join("routes.yaml"),
             opts.project_dir.to_path_buf(),
         ),
-    ];
+    ] {
+        let mut evaluation = evaluate_filesystem_layer(layer, &file, &root);
+        if let Some(error) = evaluation.error.take() {
+            return Err(error);
+        }
+        evaluations.push(evaluation);
+    }
+    Ok(merge_route_layers(&evaluations).effective)
+}
+
+/// filesystem routes.yaml を 1 層分評価する。diagnostics では
+/// sibling 層を止めず、runtime `load` は最初の failure で従来通り
+/// fail-loud する。
+pub(crate) fn evaluate_filesystem_layer(
+    layer: RouteLayer,
+    file: &Path,
+    layer_root: &Path,
+) -> RouteLayerEvaluation {
+    let source = diagnostic_source(layer, file);
+    match read_routes_file(file) {
+        Ok(None) => layer_evaluation(
+            layer,
+            source,
+            RouteLayerStatus::Absent,
+            Vec::new(),
+            Vec::new(),
+            None,
+        ),
+        Ok(Some(doc)) => evaluate_routes_doc(doc, layer, layer_root, file, source),
+        Err(error) => layer_evaluation(
+            layer,
+            source,
+            RouteLayerStatus::Failed,
+            Vec::new(),
+            Vec::new(),
+            Some(error),
+        ),
+    }
+}
+
+/// embedded/logical source から得た routes.yaml text を同じ schema・
+/// duplicate 隔離で評価する。`file` は error details と declaration
+/// source 表示に使う logical path。
+pub(crate) fn evaluate_routes_text(
+    layer: RouteLayer,
+    file: &str,
+    text: &str,
+    layer_root: &Path,
+) -> RouteLayerEvaluation {
+    let file_path = Path::new(file);
+    let source = diagnostic_source(layer, file_path);
+    match parse_routes_text(text, file) {
+        Ok(doc) => evaluate_routes_doc(doc, layer, layer_root, file_path, source),
+        Err(error) => layer_evaluation(
+            layer,
+            source,
+            RouteLayerStatus::Failed,
+            Vec::new(),
+            Vec::new(),
+            Some(error),
+        ),
+    }
+}
+
+fn evaluate_routes_doc(
+    doc: Map<String, Value>,
+    layer: RouteLayer,
+    layer_root: &Path,
+    file: &Path,
+    source: String,
+) -> RouteLayerEvaluation {
+    match validate_routes_doc(&doc, layer, layer_root, file) {
+        Ok((routes, invalid)) => layer_evaluation(
+            layer,
+            source,
+            RouteLayerStatus::Loaded,
+            routes,
+            invalid,
+            None,
+        ),
+        Err(error) => layer_evaluation(
+            layer,
+            source,
+            RouteLayerStatus::Failed,
+            Vec::new(),
+            Vec::new(),
+            Some(error),
+        ),
+    }
+}
+
+/// report へそのまま出せる layer source 形(`<layer>:<relative>`)。
+/// routes.yaml は層ごとの固定名のため basename だけを採る。
+fn diagnostic_source(layer: RouteLayer, file: &Path) -> String {
+    let relative = file
+        .file_name()
+        .map(|name| name.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_else(|| "routes.yaml".to_string());
+    format!("{}:{}", layer.as_str(), relative)
+}
+
+fn layer_evaluation(
+    layer: RouteLayer,
+    source: String,
+    status: RouteLayerStatus,
+    routes: Vec<Route>,
+    invalid: Vec<InvalidRouteGroup>,
+    error: Option<CheaperError>,
+) -> RouteLayerEvaluation {
+    RouteLayerEvaluation {
+        layer,
+        status,
+        source,
+        routes,
+        invalid,
+        error,
+    }
+}
+
+/// shared merge。runtime `load` と diagnostics が同じ precedence・
+/// quarantine・suppression 規則を通る。layer failure は route row を
+/// 作らず、merge-dependent row だけを `indeterminate` にする。
+pub(crate) fn merge_route_layers(layers: &[RouteLayerEvaluation]) -> RouteMergeOutcome {
+    let status = |layer| {
+        layers
+            .iter()
+            .find(|evaluation| evaluation.layer == layer)
+            .map(|evaluation| evaluation.status)
+            .unwrap_or(RouteLayerStatus::Absent)
+    };
+    let routes = |layer| {
+        layers
+            .iter()
+            .find(|evaluation| evaluation.layer == layer)
+            .map(|evaluation| evaluation.routes.as_slice())
+            .unwrap_or(&[])
+    };
+    let invalid = |layer| {
+        layers
+            .iter()
+            .find(|evaluation| evaluation.layer == layer)
+            .map(|evaluation| evaluation.invalid.as_slice())
+            .unwrap_or(&[])
+    };
+
+    let builtin_failed = status(RouteLayer::Builtin).is_failed();
+    let user_failed = status(RouteLayer::User).is_failed();
     let mut effective: HashMap<Vec<String>, Route> = HashMap::new();
     let mut order: Vec<Vec<String>> = Vec::new();
     let mut suppressed = Vec::new();
-    let mut invalid = Vec::new();
-    for (layer, file, root) in layers {
-        let Some(doc) = read_routes_file(&file)? else {
-            continue;
-        };
-        let (routes, layer_invalid) = validate_routes_doc(&doc, layer, &root, &file)?;
-        invalid.extend(layer_invalid);
-        for route in routes {
+    let mut all_invalid = Vec::new();
+    let mut shadowed = Vec::new();
+    let mut rows = Vec::new();
+
+    for layer in [RouteLayer::Builtin, RouteLayer::User, RouteLayer::Project] {
+        for route in routes(layer) {
+            let merge_status = match layer {
+                RouteLayer::Builtin if user_failed => RouteMergeStatus::Indeterminate,
+                RouteLayer::Builtin => {
+                    if routes(RouteLayer::User)
+                        .iter()
+                        .any(|user_route| user_route.command == route.command)
+                    {
+                        RouteMergeStatus::Shadowed
+                    } else {
+                        RouteMergeStatus::Active
+                    }
+                }
+                RouteLayer::User => RouteMergeStatus::Active,
+                RouteLayer::Project => {
+                    if effective.contains_key(&route.command) {
+                        RouteMergeStatus::Suppressed
+                    } else if builtin_failed || user_failed {
+                        RouteMergeStatus::Indeterminate
+                    } else {
+                        RouteMergeStatus::Active
+                    }
+                }
+            };
             match layer {
                 // builtin/user は key 衝突しない(層内 dup は invalid
                 // 隔離済み)。user は builtin を無条件 shadow する。
@@ -195,7 +517,9 @@ pub fn load(opts: &RouteLoadOptions<'_>) -> Result<EffectiveRoutes, CheaperError
                     if !effective.contains_key(&route.command) {
                         order.push(route.command.clone());
                     }
-                    effective.insert(route.command.clone(), route);
+                    if let Some(previous) = effective.insert(route.command.clone(), route.clone()) {
+                        shadowed.push(previous);
+                    }
                 }
                 // project 層 route は下位層を shadow しない — trust は宣言値
                 // ではなく宣言層 provenance が決める(O1a)。`match.command`
@@ -206,25 +530,43 @@ pub fn load(opts: &RouteLoadOptions<'_>) -> Result<EffectiveRoutes, CheaperError
                 RouteLayer::Project => {
                     if effective.contains_key(&route.command) {
                         suppressed.push(SuppressedRoute {
-                            name: route.name,
-                            command: route.command,
+                            name: route.name.clone(),
+                            command: route.command.clone(),
                         });
                     } else {
                         order.push(route.command.clone());
-                        effective.insert(route.command.clone(), route);
+                        effective.insert(route.command.clone(), route.clone());
                     }
                 }
             }
+            rows.push(RouteMergeRow::Route {
+                route: route.clone(),
+                status: merge_status,
+            });
         }
+        all_invalid.extend(invalid(layer).iter().cloned());
+        rows.extend(invalid(layer).iter().flat_map(|group| {
+            group.names.iter().map(|name| RouteMergeRow::Invalid {
+                name: name.clone(),
+                command: group.command.clone(),
+                layer: group.layer,
+                invalid_reason: "duplicate-match-command",
+            })
+        }));
     }
-    Ok(EffectiveRoutes {
-        routes: order
-            .into_iter()
-            .map(|key| effective.remove(&key).expect("order key from effective"))
-            .collect(),
-        suppressed,
-        invalid,
-    })
+
+    RouteMergeOutcome {
+        effective: EffectiveRoutes {
+            routes: order
+                .into_iter()
+                .map(|key| effective.remove(&key).expect("order key from effective"))
+                .collect(),
+            suppressed,
+            invalid: all_invalid,
+        },
+        shadowed,
+        rows,
+    }
 }
 
 /// routes.yaml file の read → lossy utf8 → yaml parse → object
@@ -255,14 +597,18 @@ fn read_routes_file(file: &Path) -> Result<Option<Map<String, Value>>, CheaperEr
         file.name = nodepath::basename(&file_path, None).as_str(),
         "route file read",
     );
-    let parsed: Value = cheaper_core::yaml::parse_yaml(&text).map_err(|e| {
-        route_file_error("route yaml parse failed", &file_path, "yaml-parse", Some(e))
+    parse_routes_text(&text, &file_path).map(Some)
+}
+
+fn parse_routes_text(text: &str, file_path: &str) -> Result<Map<String, Value>, CheaperError> {
+    let parsed: Value = cheaper_core::yaml::parse_yaml(text).map_err(|e| {
+        route_file_error("route yaml parse failed", file_path, "yaml-parse", Some(e))
     })?;
     match parsed {
-        Value::Object(doc) => Ok(Some(doc)),
+        Value::Object(doc) => Ok(doc),
         _ => Err(route_file_error(
             "route file is not an object",
-            &file_path,
+            file_path,
             "not-object",
             None::<std::io::Error>,
         )),
@@ -1465,5 +1811,169 @@ routes:
             );
             std::fs::remove_file(dir.join("routes.yaml")).unwrap();
         }
+    }
+
+    fn eval_fs(layer: RouteLayer, layer_root: &Path, dir: &Path) -> RouteLayerEvaluation {
+        evaluate_filesystem_layer(layer, &dir.join("routes.yaml"), layer_root)
+    }
+
+    #[test]
+    fn merge_diagnostics_exposes_shadowed_suppressed_and_invalid_provenance() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        write(&builtin, "routes.yaml", ROUTE_YAML);
+        write(
+            &user,
+            "routes.yaml",
+            &ROUTE_YAML.replace("grant: cargo-test", "grant: user-grant"),
+        );
+        write(
+            &project,
+            "routes.yaml",
+            r#"
+version: 1
+routes:
+  - name: proj-shadow
+    match: {command: [cargo, test]}
+    target: {kind: workflow, path: p.json}
+    grant: proj-grant
+  - name: proj-new
+    match: {command: [make, build]}
+    target: {kind: workflow, path: p.json}
+    grant: proj-grant
+"#,
+        );
+        // user 層の same-layer duplicate は有効 route から隔離され、
+        // merge status としても常に invalid のまま。
+        let duplicated = r#"
+version: 1
+routes:
+  - name: first
+    match: {command: [dup, run]}
+    target: {kind: workflow, path: a.json}
+    grant: g1
+  - name: second
+    match: {command: [dup, run]}
+    target: {kind: workflow, path: b.json}
+    grant: g2
+"#;
+        let mut user_eval = eval_fs(RouteLayer::User, &user, &user);
+        let extra_eval =
+            evaluate_routes_text(RouteLayer::User, "/logical/extra.yaml", duplicated, &user);
+        user_eval.invalid.extend(extra_eval.invalid);
+        user_eval.routes.extend(extra_eval.routes);
+
+        let merged = merge_route_layers(&[
+            eval_fs(RouteLayer::Builtin, &builtin.join("workflows"), &builtin),
+            user_eval,
+            eval_fs(RouteLayer::Project, &project, &project),
+        ]);
+        let statuses: Vec<_> = merged
+            .rows
+            .iter()
+            .map(|row| (row.name(), row.layer(), row.status()))
+            .collect();
+        assert_eq!(
+            statuses,
+            vec![
+                (
+                    "cargo-test",
+                    RouteLayer::Builtin,
+                    RouteMergeStatus::Shadowed
+                ),
+                ("cargo-test", RouteLayer::User, RouteMergeStatus::Active),
+                ("first", RouteLayer::User, RouteMergeStatus::Invalid),
+                ("second", RouteLayer::User, RouteMergeStatus::Invalid),
+                (
+                    "proj-shadow",
+                    RouteLayer::Project,
+                    RouteMergeStatus::Suppressed
+                ),
+                ("proj-new", RouteLayer::Project, RouteMergeStatus::Active),
+            ]
+        );
+        assert_eq!(merged.shadowed.len(), 1);
+        assert_eq!(merged.shadowed[0].layer, RouteLayer::Builtin);
+        assert_eq!(merged.effective.routes.len(), 2);
+        assert_eq!(merged.effective.suppressed.len(), 1);
+        assert_eq!(merged.effective.invalid.len(), 1);
+    }
+
+    #[test]
+    fn failed_user_layer_makes_builtin_merge_dependent_rows_indeterminate() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        write(&builtin, "routes.yaml", ROUTE_YAML);
+        write(&user, "routes.yaml", "version: [");
+        write(
+            &project,
+            "routes.yaml",
+            r#"
+version: 1
+routes:
+  - name: proj-only
+    match: {command: [make, build]}
+    target: {kind: workflow, path: p.json}
+    grant: proj-grant
+"#,
+        );
+        let layers = [
+            eval_fs(RouteLayer::Builtin, &builtin.join("workflows"), &builtin),
+            eval_fs(RouteLayer::User, &user, &user),
+            eval_fs(RouteLayer::Project, &project, &project),
+        ];
+        assert_eq!(layers[0].status, RouteLayerStatus::Loaded);
+        assert_eq!(layers[1].status, RouteLayerStatus::Failed);
+        assert_eq!(layers[2].status, RouteLayerStatus::Loaded);
+
+        let merged = merge_route_layers(&layers);
+        assert_eq!(merged.rows[0].status(), RouteMergeStatus::Indeterminate);
+        assert_eq!(merged.rows[1].status(), RouteMergeStatus::Indeterminate);
+        // merge 失敗を表現しても従来の load は最初の失敗層で
+        // fail-loud のまま。
+        let err = load(&opts(&builtin, &user, &project)).unwrap_err();
+        assert_eq!(err.code(), ErrorCode::InvalidRuntimePolicy);
+    }
+
+    #[test]
+    fn known_lower_collision_stays_suppressed_when_sibling_layer_fails() {
+        let (_tmp, builtin, user, project) = layer_dirs();
+        write(&builtin, "routes.yaml", ROUTE_YAML);
+        write(&user, "routes.yaml", "version: [");
+        write(
+            &project,
+            "routes.yaml",
+            r#"
+version: 1
+routes:
+  - name: proj-shadow
+    match: {command: [cargo, test]}
+    target: {kind: workflow, path: p.json}
+    grant: proj-grant
+"#,
+        );
+        let merged = merge_route_layers(&[
+            eval_fs(RouteLayer::Builtin, &builtin.join("workflows"), &builtin),
+            eval_fs(RouteLayer::User, &user, &user),
+            eval_fs(RouteLayer::Project, &project, &project),
+        ]);
+        assert_eq!(merged.rows[0].status(), RouteMergeStatus::Indeterminate);
+        assert_eq!(merged.rows[1].status(), RouteMergeStatus::Suppressed);
+    }
+
+    #[test]
+    fn embedded_route_document_uses_same_schema_and_merge_rules() {
+        let layer = evaluate_routes_text(
+            RouteLayer::Builtin,
+            "/builtin/routes.yaml",
+            ROUTE_YAML,
+            Path::new("/builtin/workflows"),
+        );
+        assert_eq!(layer.source, "builtin:routes.yaml");
+        let merged = merge_route_layers(&[layer]);
+        assert_eq!(merged.rows.len(), 1);
+        assert_eq!(merged.rows[0].status(), RouteMergeStatus::Active);
+        assert_eq!(
+            merged.rows[0].route().unwrap().target_path,
+            PathBuf::from("/builtin/workflows/routed-exec.workflow.json")
+        );
     }
 }

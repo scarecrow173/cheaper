@@ -33,9 +33,9 @@ use cheaper_core::workspace::paths::SymlinkPolicy;
 use cheaper_tools::catalog::ToolCatalog;
 use cheaper_tools::ToolError;
 use cheaper_workflow::{
-    load_workflow_file, LoadedWorkflow, ResourceInference, ResourceInferenceJob,
-    ResourceInferenceResult, WorkerCatalog, WorkflowCompiler, WorkflowCompilerPorts,
-    WorkflowFileOptions, WorkspaceResourceInference,
+    load_workflow_document, load_workflow_file, LoadedWorkflow, ResourceInference,
+    ResourceInferenceJob, ResourceInferenceResult, WorkerCatalog, WorkflowCompiler,
+    WorkflowCompilerPorts, WorkflowFileOptions, WorkspaceResourceInference,
 };
 use serde_json::{Map, Value};
 
@@ -97,6 +97,9 @@ impl Error for SharedToolError {
 /// を見る(`failures` は compile 時に既に `workers.get` throw として
 /// 伝播済みであり、engine の WORKER_NOT_FOUND 分岐へ到達しない)。
 pub(crate) struct WorkerIndex {
+    /// preload 対象として declaration から収集した worker 名
+    /// (code-unit sort 順 — `resolveWorker` と同じ順序)。
+    names: Vec<String>,
     workers: HashMap<String, Arc<WorkerDefinition>>,
     failures: HashMap<String, SharedToolError>,
 }
@@ -105,6 +108,13 @@ impl WorkerIndex {
     /// `workers.get(name)`(TS `workers.get` — failure は含まない)。
     pub(crate) fn worker(&self, name: &str) -> Option<Arc<WorkerDefinition>> {
         self.workers.get(name).cloned()
+    }
+
+    /// declaration から収集した preload 対象名。missing/ignored
+    /// entry も含まれるため、diagnostics は `get` 結果で分類する。
+    #[allow(dead_code)]
+    pub(crate) fn names(&self) -> &[String] {
+        &self.names
     }
 }
 
@@ -126,7 +136,18 @@ impl WorkerCatalog for WorkerIndex {
 /// に積む(TS L38-62 — `CheaperError` 以外の error(例: `Read` variant)
 /// も `failures` 行きで preserve される)。
 fn resolve_worker_index(raw: &Value, dirs: &ConfigDirs) -> WorkerIndex {
+    resolve_worker_index_with(raw, |name| resolve_worker(name, dirs))
+}
+
+/// `resolve_worker_index` の source-aware 版。worker definition
+/// 取得だけを差し替え、worker 名収集・code-unit sort・failure
+/// bucket 規則は filesystem 既定と同一に保つ。
+pub(crate) fn resolve_worker_index_with<F>(raw: &Value, mut resolver: F) -> WorkerIndex
+where
+    F: FnMut(&str) -> Result<WorkerDefinition, ResolveWorkerError>,
+{
     let mut index = WorkerIndex {
+        names: Vec::new(),
         workers: HashMap::new(),
         failures: HashMap::new(),
     };
@@ -149,8 +170,9 @@ fn resolve_worker_index(raw: &Value, dirs: &ConfigDirs) -> WorkerIndex {
     // `[...names].sort()` — JS 既定 sort は UTF-16 code unit 順。
     let mut sorted: Vec<String> = names.into_iter().collect();
     sorted.sort_by(|a, b| code_unit_compare(a, b));
+    index.names = sorted.clone();
     for name in sorted {
-        match resolve_worker(&name, dirs) {
+        match resolver(&name) {
             Ok(worker) => {
                 index.workers.insert(name, Arc::new(worker));
             }
@@ -252,6 +274,23 @@ impl WorkflowContext {
         path: &str,
         file_root: &str,
     ) -> Result<LoadedWorkflow<'a>, ToolError> {
+        self.load_workflow_from_with(path, file_root, |raw| resolve_worker_index(raw, &self.dirs))
+            .await
+    }
+
+    /// `load_workflow_from` の worker-index 注入版。file read は
+    /// canonical `load_workflow_file` の policy guard に残し、worker
+    /// definition の取得 source だけを caller 側へ差し替える。
+    #[allow(dead_code)]
+    pub(crate) async fn load_workflow_from_with<'a, F>(
+        &'a self,
+        path: &str,
+        file_root: &str,
+        index_for: F,
+    ) -> Result<LoadedWorkflow<'a>, ToolError>
+    where
+        F: FnOnce(&Value) -> WorkerIndex + 'a,
+    {
         let deny: Vec<&str> = self
             .policy
             .filesystem
@@ -265,21 +304,46 @@ impl WorkflowContext {
             symlink_policy: self.policy.filesystem.symlinks,
             denylist: create_path_denylist(&deny),
         };
-        load_workflow_file(&options, |raw| {
-            let index = Arc::new(resolve_worker_index(raw, &self.dirs));
-            // `load_workflow` は command 1 回につき 1 回しか呼ばれない
-            // (TS も prepareWorkflowContext 内で 1 回 load)。二重呼出し
-            // では既存 index をそのまま使う。
-            let _ = self.workers.set(index);
-            async move {
-                Ok(WorkflowCompiler::new(WorkflowCompilerPorts {
-                    tools: &*self.tools,
-                    workers: self.workers.get().expect("set above").as_ref() as &dyn WorkerCatalog,
-                    resources: Some(&self.inference),
-                }))
-            }
-        })
-        .await
+        load_workflow_file(&options, |raw| self.create_compiler(raw, index_for)).await
+    }
+
+    /// `load_workflow_file` の document-input 版。workflow source の
+    /// 取得層と policy-guarded file read を分離し、embedded/logical
+    /// source でも同じ compiler validation と worker index 規則を使う。
+    #[allow(dead_code)]
+    pub(crate) async fn load_workflow_document<'a, F>(
+        &'a self,
+        source: &str,
+        index_for: F,
+    ) -> Result<LoadedWorkflow<'a>, ToolError>
+    where
+        F: FnOnce(&Value) -> WorkerIndex + 'a,
+    {
+        load_workflow_document(source, |raw| self.create_compiler(raw, index_for)).await
+    }
+
+    fn create_compiler<'a, F>(
+        &'a self,
+        raw: &Value,
+        index_for: F,
+    ) -> impl Future<Output = Result<WorkflowCompiler<'a>, ToolError>> + 'a
+    where
+        F: FnOnce(&Value) -> WorkerIndex + 'a,
+    {
+        let index = Arc::new(index_for(raw));
+        let workers: Arc<dyn WorkerCatalog> = index.clone();
+        // `load_workflow` は command 1 回につき 1 回しか呼ばれない
+        // (TS も prepareWorkflowContext 内で 1 回 load)。runtime 側
+        // `worker_index()` のために最初の index を残すが、compiler
+        // 自身はこの document 用に解決した index を所有する。
+        let _ = self.workers.set(index);
+        async move {
+            Ok(WorkflowCompiler::new(WorkflowCompilerPorts {
+                tools: &*self.tools,
+                workers,
+                resources: Some(&self.inference),
+            }))
+        }
     }
 
     /// `load_workflow` が組み立てた worker index(executor/lease 経路
@@ -321,7 +385,10 @@ pub(crate) fn prepare_workflow_context(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cheaper_core::policy::load::{load_policy_documents, LoadPolicyDocuments};
+    use cheaper_workflow::WorkerCatalog;
     use serde_json::json;
+    use std::collections::HashMap;
     use std::path::PathBuf;
 
     #[tokio::test(flavor = "current_thread")]
@@ -366,5 +433,107 @@ mod tests {
             "runId": "1700000000000-1-deadbeef"
         });
         loaded.compiler.compile(raw, Some(&inputs)).await.unwrap();
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn embedded_routed_exec_document_validates_with_source_aware_workers() {
+        let tmp = tempfile::tempdir().unwrap();
+        let ws = tmp.path().join("ws");
+        let user = tmp.path().join("user");
+        std::fs::create_dir_all(&ws).unwrap();
+        std::fs::create_dir_all(&user).unwrap();
+        let env_map = HashMap::from([(
+            "CHEAPER_CONFIG_DIR".to_string(),
+            user.to_string_lossy().into_owned(),
+        )]);
+        let env = |name: &str| env_map.get(name).cloned();
+        let sources =
+            crate::route::supply::check_sources(ws.to_str().unwrap(), &env, &CliHooks::default())
+                .unwrap();
+        let evaluated = sources.evaluate_route_layers();
+        let route = evaluated
+            .merged
+            .rows
+            .iter()
+            .find_map(|row| row.route())
+            .expect("builtin route");
+        let crate::route::supply::RouteWorkflowInput::Document(document) =
+            sources.builtin.workflow_input(route)
+        else {
+            panic!("embedded workflow document")
+        };
+
+        let embedded = crate::embedded::EmbeddedResources::new();
+        let policy_text = embedded.read_text("policy.yaml").unwrap();
+        let policy_doc = cheaper_core::yaml::parse_yaml(policy_text)
+            .unwrap()
+            .as_object()
+            .unwrap()
+            .clone();
+        let policy = load_policy_documents(&LoadPolicyDocuments {
+            builtin: Some(&policy_doc),
+            user: None,
+            invocation: None,
+            project: None,
+        })
+        .unwrap()
+        .policy;
+        let ctx = WorkflowContext::from_policy(
+            sources.root.clone(),
+            ConfigDirs {
+                user_config_dir: user.clone(),
+                project_dir: ws.join(".cheaper"),
+                builtin_dir: PathBuf::from("/builtin"),
+            },
+            policy,
+        );
+        let loaded = ctx
+            .load_workflow_document(&document.text, |raw| sources.resolve_worker_index(raw))
+            .await
+            .unwrap();
+        crate::workflow_run::validate_routed_convention(loaded.definition.raw()).unwrap();
+        let index = ctx.worker_index().unwrap();
+        let worker = index.get("condense").unwrap().unwrap();
+        assert_eq!(
+            worker.origin,
+            cheaper_core::worker::validate::WorkerOrigin::Builtin
+        );
+
+        // 同一 context で 2 件目の document を検証しても、compiler
+        // はその document 用に解決した worker index を使う。
+        let other = "second-worker";
+        let other_doc = serde_json::json!({
+            "schemaVersion": 1,
+            "inputs": {},
+            "jobs": {
+                "analyze": {
+                    "kind": "worker",
+                    "worker": other,
+                    "input": {}
+                }
+            },
+            "outputs": {}
+        })
+        .to_string();
+        let other_worker = cheaper_core::worker::validate::validate_worker_definition(
+            &cheaper_core::worker::parse::parse_worker_file(
+                &format!(
+                    "---\nname: {other}\ndescription: test\ntools: [read]\ncheaper:\n  model: {{tier: high}}\n  output: {{schema: {{inline: {{type: string}}}}}}\n---\nbody\n"
+                ),
+                "second-worker.md",
+            )
+            .unwrap(),
+            "second-worker.md",
+            cheaper_core::worker::validate::WorkerOrigin::Project,
+        )
+        .unwrap();
+        ctx.load_workflow_document(&other_doc, |_| WorkerIndex {
+            names: vec![other.to_string()],
+            workers: HashMap::from([(other.to_string(), Arc::new(other_worker))]),
+            failures: HashMap::new(),
+        })
+        .await
+        .unwrap();
+        assert_eq!(worker.source_path, "/builtin/workers/condense.md");
     }
 }

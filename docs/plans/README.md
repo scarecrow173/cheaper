@@ -66,6 +66,7 @@ Directory: `docs/plans`
 | PLAN-034EO1kmKwJ8MAHSHWyCws | policy-gated command tool を実装する | completed | [implement-policy-gated-command-tool.md](./implement-policy-gated-command-tool.md) |
 | PLAN-034Jcl2O612UZMGTK2IN1n | Implement PreToolUse route resolver and delegated workflow execution | completed | [implement-pretooluse-route-resolver-and-delegated-workflow.md](./implement-pretooluse-route-resolver-and-delegated-workflow.md) |
 | PLAN-034AadQgwgheMAV59FAcIZ | ResourceManager job lease を実装する | completed | [implement-resource-manager-job-leases.md](./implement-resource-manager-job-leases.md) |
+| PLAN-034N6OiHMEfqWbPgQDUNcy | Implement route check read-only diagnostics | approved | [implement-route-check-read-only-diagnostics.md](./implement-route-check-read-only-diagnostics.md) |
 | PLAN-034Kr7PAaZlxMx7LjG34Ls | usage.jsonl run error record 診断 field 拡充の実装計画 (issue #141) | approved | [implement-run-error-record-observability.md](./implement-run-error-record-observability.md) |
 | PLAN-034zThvLa4bK934vj52jaC | Implement run-scoped artifact store | completed | [implement-run-scoped-artifact-store.md](./implement-run-scoped-artifact-store.md) |
 | PLAN-pxStSqvAk1Qr5rSUgRMp5w | Implement Rust-native benchmark harness — cheaper-bench (issue #183) | approved | [implement-rust-native-benchmark-harness-issue-183.md](./implement-rust-native-benchmark-harness-issue-183.md) |

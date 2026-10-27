@@ -163,7 +163,7 @@ impl WorkerCatalog for FixtureWorkers {
 /// `worker_mut()` で catalog 側 instance へ反映する。
 pub struct FixtureSet<'a> {
     pub tools: FixtureTools,
-    workers: FixtureWorkers,
+    workers: Arc<FixtureWorkers>,
     pub resources: Option<&'a dyn cheaper_workflow::ResourceInference>,
 }
 
@@ -171,9 +171,9 @@ impl<'a> FixtureSet<'a> {
     pub fn new() -> Self {
         Self {
             tools: FixtureTools::new(),
-            workers: FixtureWorkers {
+            workers: Arc::new(FixtureWorkers {
                 worker: fixture_worker(),
-            },
+            }),
             resources: None,
         }
     }
@@ -193,14 +193,16 @@ impl<'a> FixtureSet<'a> {
 
     /// TS `worker.tools = [...]` 等の mutation seam。
     pub fn worker_mut(&mut self) -> &mut WorkerDefinition {
-        &mut self.workers.worker
+        &mut Arc::get_mut(&mut self.workers)
+            .expect("worker mutation before compiler creation")
+            .worker
     }
 
-    /// `new WorkflowCompiler(ports)`。返す compiler は self を借用する。
+    /// `new WorkflowCompiler(ports)`。
     pub fn compiler(&self) -> WorkflowCompiler<'_> {
         WorkflowCompiler::new(WorkflowCompilerPorts {
             tools: &self.tools,
-            workers: &self.workers,
+            workers: self.workers.clone(),
             resources: self.resources,
         })
     }

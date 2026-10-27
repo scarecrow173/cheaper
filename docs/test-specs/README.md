@@ -64,6 +64,11 @@ Directory: `docs/test-specs`
 | TSPEC-034z2o64UhWCtNmYIhRT20 | Release workflow manual-dispatch and artifact contract | superseded | [release-workflow-manual-dispatch-and-artifact-contract.md](./release-workflow-manual-dispatch-and-artifact-contract.md) |
 | TSPEC-034AaXPxCwdUwH1XaYc6Jn | Resource lease の寿命とアクセス境界 | approved | [resource-manager-job-leases.md](./resource-manager-job-leases.md) |
 | TSPEC-034MyrFZfBl5JY3ODaXNme | Resources abort window phase synchronization | draft | [resources-abort-window-phase-synchronization.md](./resources-abort-window-phase-synchronization.md) |
+| TSPEC-034N7wIDvgWFtQ1Yaklezu | Route check layer and policy diagnostics | draft | [route-check-layer-and-policy-diagnostics.md](./route-check-layer-and-policy-diagnostics.md) |
+| TSPEC-034N7wKi3nujK4sqlLRk9n | Route check output and exit contract | draft | [route-check-output-and-exit-contract.md](./route-check-output-and-exit-contract.md) |
+| TSPEC-034N7wHOe8W5M8Q6Uirqv7 | Route check read-only invocation boundary | draft | [route-check-read-only-invocation-boundary.md](./route-check-read-only-invocation-boundary.md) |
+| TSPEC-034N7wJQaJuDb95eugnQne | Route check sample resolution semantics | draft | [route-check-sample-resolution-semantics.md](./route-check-sample-resolution-semantics.md) |
+| TSPEC-034N7wJlXboc0jNQpjf27C | Route check validation readiness | draft | [route-check-validation-readiness.md](./route-check-validation-readiness.md) |
 | TSPEC-034KVxaBMzQE5YtVOx4j3w | route grant-set projection の検証契約 (issue #166) | approved | [route-grant-set-projection.md](./route-grant-set-projection.md) |
 | TSPEC-034Jg5VLupBVGDPELPFf83 | Route log store and route logs CLI | draft | [route-logs.md](./route-logs.md) |
 | TSPEC-034Jg5JHetTGqIaDM2E2cr | Route declaration loading and argv resolution | draft | [route-resolution.md](./route-resolution.md) |

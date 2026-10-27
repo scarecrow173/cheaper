@@ -347,6 +347,41 @@ builtin/user 層限定の optional array）で宣言する:
   member job は自身の grant の lifecycle（cwd・env・
   `exitCodes`）で実行され、route context は適用されない。
 
+#### route diagnostics（`cheaper route check`）
+
+`route resolve` が 1 入力の dry-run であるのに対し、
+`route check` は builtin/user/project の全 route layer を独立に
+検査し、merge 後の active/shadowed/suppressed/invalid/
+indeterminate 状態・policy/grant readiness・workflow/worker/schema
+validity・static renderer capability を 1 つの deterministic
+report として返す。
+
+```bash
+cheaper route check
+cheaper route check --command 'cargo test --workspace'
+cheaper route check --argv '["cargo","test","--workspace"]'
+cheaper route check --format text
+```
+
+- `--command`/`--argv` は sample 入力として 0 個または 1 個だけ
+  指定できる。sample 未指定時は全 route が
+  `requires-sample-input` となり、動的な `runnable` 判定は行わない。
+  sample 指定時は `route resolve` と同じ normalized match・
+  viability predicate を使い、raw sample argv・command 文字列・
+  exec args・env 値は report へ serialize しない。
+- exit class は `0`（info のみ）、`1`（warning あり error なし）、
+  `2`（CLI input-stage error）、`3`（error severity diagnostic）、
+  `70`（分類不能な internal failure）。0/1/3 は `ok:true` の
+  report envelope、2/70 は sanitized `ok:false` envelope。
+- strictly read-only で、route/workflow/worker/process・hook・
+  network/auth・host integration を実行せず、config・credential・
+  Usage・History・route log・tracing log・diagnostic cache・
+  filesystem state を変更しない。builtin resource は embedded
+  catalog から読み、temporary directory へ materialize しない。
+- renderer capability は canonical rewrite renderer の静的 contract
+  のみを報告する。host registration・approval・execution は常に
+  `unverified` であり、issue #162 の実機検証は行わない。
+
 #### substitute-exec mode（`substitute` 宣言）
 
 `substitute: {grant, argv}` を宣言した route は、typed

@@ -377,6 +377,27 @@ pub struct CommandOut {
     pub model_line: Option<String>,
 }
 
+/// `route check` の generic Err path で使う sanitized error envelope。
+/// raw message/details/cause を通さず、stable code・generic message・
+/// bounded reason のみを serialize する。
+pub fn route_check_error_envelope(
+    err: &(dyn Error + Send + Sync + 'static),
+    duration_ms: Option<f64>,
+) -> Value {
+    let code = err
+        .downcast_ref::<CheaperError>()
+        .map(|e| e.code())
+        .unwrap_or(ErrorCode::InternalError);
+    let (code, reason) = match code {
+        ErrorCode::InvalidRequest | ErrorCode::InvalidInput => (code, "invalid-input"),
+        _ => (ErrorCode::InternalError, "internal-error"),
+    };
+    let mut details = Map::new();
+    details.insert("reason".to_string(), Value::from(reason));
+    let sanitized = CheaperError::new(code, "route check failed").with_details(details);
+    error_envelope(&sanitized, None, duration_ms)
+}
+
 /// `runCli`(DESIGN-0005)。戻り値は process exit code。
 pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i32 {
     // Observability init — hook 早期分岐・parse_cli_args より前
@@ -384,18 +405,30 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
     // observability crate の責務;ここでは flag/env 値を生のまま
     // `Activation` に載せる。
     let is_hook = argv.first().map(String::as_str) == Some("hook");
-    let (flag_level, flag_format) = crate::args::global_log_flags(argv);
-    let activation = cheaper_observability::Activation {
-        flag_level,
-        flag_format,
-        // `io.env` closure 経由 — test が EnvLookup で注入できる
-        // 同一経路(std::env::var 直読みはしない)。
-        env_level: (io.env)("CHEAPER_LOG"),
-        env_format: (io.env)("CHEAPER_LOG_FORMAT"),
-        log_root: resolve_log_root(argv, io),
-        // hook 経路は stderr sink を構造的に無効化 — hook stderr は
-        // target native contract の一部(windsurf deny guidance 等)。
-        stderr_enabled: !is_hook,
+    let is_route_check = crate::args::is_route_check_invocation(argv);
+    let activation = if is_route_check {
+        cheaper_observability::Activation {
+            flag_level: None,
+            flag_format: None,
+            env_level: None,
+            env_format: None,
+            log_root: PathBuf::new(),
+            stderr_enabled: false,
+        }
+    } else {
+        let (flag_level, flag_format) = crate::args::global_log_flags(argv);
+        cheaper_observability::Activation {
+            flag_level,
+            flag_format,
+            // `io.env` closure 経由 — test が EnvLookup で注入できる
+            // 同一経路(std::env::var 直読みはしない)。
+            env_level: (io.env)("CHEAPER_LOG"),
+            env_format: (io.env)("CHEAPER_LOG_FORMAT"),
+            log_root: resolve_log_root(argv, io),
+            // hook 経路は stderr sink を構造的に無効化 — hook stderr は
+            // target native contract の一部(windsurf deny guidance 等)。
+            stderr_enabled: !is_hook,
+        }
     };
     // `_log_guard` は run_cli ローカルに束縛 — dispatch・recordUsage
     // 完了後の return 時に drop → non_blocking writer が flush される。
@@ -441,11 +474,15 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
     {
         Ok(code) => code,
         Err(err) => {
-            let env = error_envelope(
-                err.as_ref(),
-                ctx.worker_name.as_deref(),
-                Some(now(hooks) - started_at),
-            );
+            let env = if is_route_check {
+                route_check_error_envelope(err.as_ref(), Some(now(hooks) - started_at))
+            } else {
+                error_envelope(
+                    err.as_ref(),
+                    ctx.worker_name.as_deref(),
+                    Some(now(hooks) - started_at),
+                )
+            };
             // 汎用 catch の warn event — field は分類値 `error.code`
             // のみ(metadata-only: message/payload は載せない)。
             let code = env
@@ -477,26 +514,28 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
                 CliFormat::Json => envelope_json(&env),
             };
             io.stdout.write_str(&out);
-            let root = ctx.run_root.clone().unwrap_or_else(|| io.cwd.clone());
-            let ucd = resolved_user_config_dir(
-                io,
-                hooks,
-                ctx.run_root.as_deref(),
-                ctx.run_user_config_dir.as_deref(),
-            );
-            let usage_appended = crate::usage_log::record_usage_with_context(
-                &env,
-                &root,
-                &ucd,
-                io.stderr,
-                quiet,
-                crate::usage_log::UsageRecordContext {
-                    execution_echo: ctx.execution_echo.as_ref(),
-                    correlation: ctx.execution_correlation.as_ref(),
-                },
-                &now_fn(hooks),
-            );
-            finalize_worker_history(&mut ctx, usage_appended);
+            if !is_route_check {
+                let root = ctx.run_root.clone().unwrap_or_else(|| io.cwd.clone());
+                let ucd = resolved_user_config_dir(
+                    io,
+                    hooks,
+                    ctx.run_root.as_deref(),
+                    ctx.run_user_config_dir.as_deref(),
+                );
+                let usage_appended = crate::usage_log::record_usage_with_context(
+                    &env,
+                    &root,
+                    &ucd,
+                    io.stderr,
+                    quiet,
+                    crate::usage_log::UsageRecordContext {
+                        execution_echo: ctx.execution_echo.as_ref(),
+                        correlation: ctx.execution_correlation.as_ref(),
+                    },
+                    &now_fn(hooks),
+                );
+                finalize_worker_history(&mut ctx, usage_appended);
+            }
             env.get("error")
                 .and_then(|e| e.get("exitCode"))
                 .and_then(Value::as_i64)
@@ -840,6 +879,7 @@ Commands:
   policy grant list          List command grants in user policy
   policy grant remove <name> Remove a command grant from user policy
   route resolve         Dry-run route matching (--command or --argv)
+  route check           Inspect every configured route (read-only diagnostics)
   route run             Execute a validated route payload (--payload)
   route logs <id>       Read a bounded page from a route log
 
@@ -868,8 +908,9 @@ Options:
   --status <status>         history list: filter by execution status
   --limit <1..500>          history list/trace page size (default: 50)
   --cursor <opaque>         history list/trace continuation cursor
-  --command <string>     route resolve: shell command to match
-  --argv <json-array>    route resolve: argv array (exclusive with --command)
+  --command <string>     route resolve/check: shell command sample
+  --argv <json-array>    route resolve/check: argv array sample
+                         (exclusive with --command; optional for check)
   --payload <token>      route run: opaque route payload
   --offset <bytes>       route logs: byte offset (default: 0)
   --max-bytes <bytes>    route logs: read size (bounded by policy)
@@ -881,4 +922,13 @@ Options:
   --quiet                Suppress stderr diagnostics
   --help                 Show this help
   --version              Show version
+
+Route check:
+  Reports builtin/user/project route state, policy/grant readiness,
+  workflow and worker validity, static renderer capability, and optional
+  sample match state without executing routes, workflows, workers, hooks,
+  or host integrations. Exit classes: 0 info, 1 warnings, 2 input errors,
+  3 error diagnostics, 70 internal failure. Renderer capability is static
+  and host registration/approval/execution remains unverified; issue #162
+  real-host validation is not performed.
 ";
