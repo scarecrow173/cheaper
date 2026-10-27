@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 
 use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirs, ConfigDirsOptions, EnvLookup};
 use cheaper_core::errors::{CheaperError, ErrorCode};
-use cheaper_core::policy::load::{load_policy, LoadPolicyOptions};
+use cheaper_core::policy::load::{load_policy, read_policy_yaml, LoadPolicyOptions};
 use cheaper_core::policy::schema::RuntimePolicy;
 use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::worker::resolve::{
@@ -24,7 +24,7 @@ use cheaper_core::worker::schema::FilesystemContentSource;
 use cheaper_core::worker::validate::{WorkerDefinition, WorkerOrigin};
 use cheaper_core::workspace::deny_paths::{create_path_denylist, PathDenylist};
 use cheaper_core::workspace::paths::canonicalize_workspace_root;
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use crate::cli::CliHooks;
 use crate::embedded::EmbeddedResources;
@@ -145,6 +145,53 @@ impl RouteLayerSource {
         }
     }
 
+    /// この層の policy document を shared `load_policy_documents`
+    /// へ渡す object として取得する。filesystem layer は既存
+    /// `read_policy_yaml` の read/parse/object 規約を再利用し、
+    /// embedded builtin は logical catalog read + 同じ YAML/object
+    /// 判定を行う。どちらも validator/merge は呼ばない。
+    pub(crate) fn policy_document(
+        &self,
+        layer: RouteLayer,
+    ) -> Result<Option<Map<String, Value>>, CheaperError> {
+        match self {
+            Self::Filesystem {
+                worker_base_dir, ..
+            } => {
+                let file = worker_base_dir.join("policy.yaml");
+                read_policy_yaml(&file.to_string_lossy(), false)
+            }
+            Self::Embedded { catalog } => {
+                let Some(bytes) = catalog.read("policy.yaml") else {
+                    return Ok(None);
+                };
+                let text = String::from_utf8_lossy(bytes);
+                let parsed = cheaper_core::yaml::parse_yaml(&text).map_err(|e| {
+                    let mut details = Map::new();
+                    details.insert("reason".to_string(), Value::from("yaml-parse"));
+                    CheaperError::new(
+                        ErrorCode::InvalidRuntimePolicy,
+                        format!("policy yaml parse failed: {}:policy.yaml", layer.as_str()),
+                    )
+                    .with_details(details)
+                    .with_cause(e)
+                })?;
+                match parsed {
+                    Value::Object(document) => Ok(Some(document)),
+                    _ => {
+                        let mut details = Map::new();
+                        details.insert("reason".to_string(), Value::from("not-object"));
+                        Err(CheaperError::new(
+                            ErrorCode::InvalidRuntimePolicy,
+                            format!("policy is not an object: {}:policy.yaml", layer.as_str()),
+                        )
+                        .with_details(details))
+                    }
+                }
+            }
+        }
+    }
+
     /// route target workflow の validation 入力を declaration 層
     /// source から解決する。filesystem は policy guard を bypass
     /// せず、`load_workflow_file` の `file_root + path` を返す。
@@ -238,6 +285,10 @@ fn route_document_source(layer: RouteLayer, layer_root: &Path, path: &Path) -> S
 #[allow(dead_code)]
 pub(crate) struct RouteCheckSources {
     pub(crate) root: String,
+    /// workflow context に渡す config-dir 解決結果。filesystem source
+    /// と同一の user/project dir を保持し、builtin sentinel は
+    /// report・host path 解決へ使わない。
+    pub(crate) dirs: ConfigDirs,
     pub(crate) builtin: RouteLayerSource,
     pub(crate) user: RouteLayerSource,
     pub(crate) project: RouteLayerSource,
@@ -329,11 +380,7 @@ pub(crate) fn check_sources(
     // `resolve_config_dirs` は builtin_dir を返すため logical root を
     // sentinel として渡すが、check source model では `ConfigDirs.builtin_dir`
     // を host path として使わない。
-    let ConfigDirs {
-        user_config_dir,
-        project_dir,
-        ..
-    } = resolve_config_dirs(&ConfigDirsOptions {
+    let dirs = resolve_config_dirs(&ConfigDirsOptions {
         cwd: Path::new(&root),
         builtin_dir: &builtin_dir,
         env: Some(env),
@@ -346,17 +393,18 @@ pub(crate) fn check_sources(
         },
     };
     let user = filesystem_source(
-        user_config_dir.join("routes.yaml"),
-        user_config_dir.clone(),
-        &user_config_dir,
+        dirs.user_config_dir.join("routes.yaml"),
+        dirs.user_config_dir.clone(),
+        &dirs.user_config_dir,
     );
     let project = filesystem_source(
-        project_dir.join("routes.yaml"),
-        project_dir.clone(),
-        &project_dir,
+        dirs.project_dir.join("routes.yaml"),
+        dirs.project_dir.clone(),
+        &dirs.project_dir,
     );
     Ok(RouteCheckSources {
         root,
+        dirs,
         builtin,
         user,
         project,

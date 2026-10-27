@@ -58,13 +58,10 @@ async fn execute_inner(
                 .await
                 .map(RouteOutput::Utility)
         }
-        RouteAction::Check { cwd, .. } => {
-            let sources = supply::check_sources(cwd.as_deref().unwrap_or(&io.cwd), io.env, hooks)?;
-            let _evaluation = sources.evaluate_route_layers();
-            Err(Box::new(CheaperError::new(
-                cheaper_core::errors::ErrorCode::InternalError,
-                "route check is not implemented",
-            )))
+        RouteAction::Check { cwd, command, argv } => {
+            crate::route::check::execute(command, argv, cwd, io, hooks, started_at)
+                .await
+                .map(RouteOutput::Utility)
         }
         RouteAction::Logs { .. } => crate::route::logs::execute(args, io, hooks, started_at)
             .await

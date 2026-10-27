@@ -263,6 +263,14 @@ fn history_show_text(result: &Value) -> String {
 
 fn utility_text(env: &Value) -> String {
     let r = get(env, "result").cloned().unwrap_or(Value::Null);
+    // `cheaper route check --format text` は generic utility fallback
+    // ではなく専用 deterministic renderer を使う。
+    if get(&r, "sampleProvided").is_some()
+        && get(&r, "routes").is_some_and(Value::is_array)
+        && get(&r, "policy").is_some_and(Value::is_object)
+    {
+        return crate::route::check::text_report(&r);
+    }
     // `cheaper usage --format text`: TS の cli.ts は formatText を通さず
     // `formatUsageReport(report)` を直接書く。Rust 側は dispatch の
     // `write_output` が envelope 経由でここへ来るため、report 形状

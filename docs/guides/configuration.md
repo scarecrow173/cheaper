@@ -229,6 +229,18 @@ trust は宣言値ではなく宣言層 provenance が決める）。
 [command ガイド](./command.md)・
 [parent-agent 連携ガイド](./parent-agent-integration.md) を参照。
 
+`cheaper route check` は、これらの route/grant 規約が実際の
+builtin/user/project layer でどう解決されるかを read-only に検査する
+診断コマンド。route 宣言・層別 load 状態・merge 状態・grant の
+missing/ineligible/pin readiness・workflow/worker/schema・
+renderer capability を deterministic report として返し、route や
+workflow/worker/process を実行しない。sample 入力（`--command` または
+`--argv`）は 0 個または 1 個だけ指定でき、未指定時は動的 runnable
+判定を行わず `requires-sample-input` を返す。exit class は
+0/1/2/3/70（info/warning/input-error/error-diagnostic/internal）で、
+host registration/approval/execution は実機検証を行わないため常に
+`unverified` として報告される。
+
 ### route.rewrite.approvalBypass（hook rewrite の approval opt-in）
 
 parent-agent hook が command を route run へ rewrite する応答で、

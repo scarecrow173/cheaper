@@ -97,6 +97,9 @@ impl Error for SharedToolError {
 /// を見る(`failures` は compile 時に既に `workers.get` throw として
 /// 伝播済みであり、engine の WORKER_NOT_FOUND 分岐へ到達しない)。
 pub(crate) struct WorkerIndex {
+    /// preload 対象として declaration から収集した worker 名
+    /// (code-unit sort 順 — `resolveWorker` と同じ順序)。
+    names: Vec<String>,
     workers: HashMap<String, Arc<WorkerDefinition>>,
     failures: HashMap<String, SharedToolError>,
 }
@@ -105,6 +108,13 @@ impl WorkerIndex {
     /// `workers.get(name)`(TS `workers.get` — failure は含まない)。
     pub(crate) fn worker(&self, name: &str) -> Option<Arc<WorkerDefinition>> {
         self.workers.get(name).cloned()
+    }
+
+    /// declaration から収集した preload 対象名。missing/ignored
+    /// entry も含まれるため、diagnostics は `get` 結果で分類する。
+    #[allow(dead_code)]
+    pub(crate) fn names(&self) -> &[String] {
+        &self.names
     }
 }
 
@@ -137,6 +147,7 @@ where
     F: FnMut(&str) -> Result<WorkerDefinition, ResolveWorkerError>,
 {
     let mut index = WorkerIndex {
+        names: Vec::new(),
         workers: HashMap::new(),
         failures: HashMap::new(),
     };
@@ -159,6 +170,7 @@ where
     // `[...names].sort()` — JS 既定 sort は UTF-16 code unit 順。
     let mut sorted: Vec<String> = names.into_iter().collect();
     sorted.sort_by(|a, b| code_unit_compare(a, b));
+    index.names = sorted.clone();
     for name in sorted {
         match resolver(&name) {
             Ok(worker) => {
@@ -262,6 +274,23 @@ impl WorkflowContext {
         path: &str,
         file_root: &str,
     ) -> Result<LoadedWorkflow<'a>, ToolError> {
+        self.load_workflow_from_with(path, file_root, |raw| resolve_worker_index(raw, &self.dirs))
+            .await
+    }
+
+    /// `load_workflow_from` の worker-index 注入版。file read は
+    /// canonical `load_workflow_file` の policy guard に残し、worker
+    /// definition の取得 source だけを caller 側へ差し替える。
+    #[allow(dead_code)]
+    pub(crate) async fn load_workflow_from_with<'a, F>(
+        &'a self,
+        path: &str,
+        file_root: &str,
+        index_for: F,
+    ) -> Result<LoadedWorkflow<'a>, ToolError>
+    where
+        F: FnOnce(&Value) -> WorkerIndex + 'a,
+    {
         let deny: Vec<&str> = self
             .policy
             .filesystem
@@ -275,10 +304,7 @@ impl WorkflowContext {
             symlink_policy: self.policy.filesystem.symlinks,
             denylist: create_path_denylist(&deny),
         };
-        load_workflow_file(&options, |raw| {
-            self.create_compiler(raw, |raw| resolve_worker_index(raw, &self.dirs))
-        })
-        .await
+        load_workflow_file(&options, |raw| self.create_compiler(raw, index_for)).await
     }
 
     /// `load_workflow_file` の document-input 版。workflow source の
@@ -502,6 +528,7 @@ mod tests {
         )
         .unwrap();
         ctx.load_workflow_document(&other_doc, |_| WorkerIndex {
+            names: vec![other.to_string()],
             workers: HashMap::from([(other.to_string(), Arc::new(other_worker))]),
             failures: HashMap::new(),
         })

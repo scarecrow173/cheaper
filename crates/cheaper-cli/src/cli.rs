@@ -380,9 +380,9 @@ pub struct CommandOut {
 /// `route check` の generic Err path で使う sanitized error envelope。
 /// raw message/details/cause を通さず、stable code・generic message・
 /// bounded reason のみを serialize する。
-fn route_check_error_envelope(
+pub fn route_check_error_envelope(
     err: &(dyn Error + Send + Sync + 'static),
-    duration_ms: f64,
+    duration_ms: Option<f64>,
 ) -> Value {
     let code = err
         .downcast_ref::<CheaperError>()
@@ -395,7 +395,7 @@ fn route_check_error_envelope(
     let mut details = Map::new();
     details.insert("reason".to_string(), Value::from(reason));
     let sanitized = CheaperError::new(code, "route check failed").with_details(details);
-    error_envelope(&sanitized, None, Some(duration_ms))
+    error_envelope(&sanitized, None, duration_ms)
 }
 
 /// `runCli`(DESIGN-0005)。戻り値は process exit code。
@@ -475,7 +475,7 @@ pub async fn run_cli(argv: &[String], io: &mut CliIo<'_>, hooks: &CliHooks) -> i
         Ok(code) => code,
         Err(err) => {
             let env = if is_route_check {
-                route_check_error_envelope(err.as_ref(), now(hooks) - started_at)
+                route_check_error_envelope(err.as_ref(), Some(now(hooks) - started_at))
             } else {
                 error_envelope(
                     err.as_ref(),
@@ -879,6 +879,7 @@ Commands:
   policy grant list          List command grants in user policy
   policy grant remove <name> Remove a command grant from user policy
   route resolve         Dry-run route matching (--command or --argv)
+  route check           Inspect every configured route (read-only diagnostics)
   route run             Execute a validated route payload (--payload)
   route logs <id>       Read a bounded page from a route log
 
@@ -907,8 +908,9 @@ Options:
   --status <status>         history list: filter by execution status
   --limit <1..500>          history list/trace page size (default: 50)
   --cursor <opaque>         history list/trace continuation cursor
-  --command <string>     route resolve: shell command to match
-  --argv <json-array>    route resolve: argv array (exclusive with --command)
+  --command <string>     route resolve/check: shell command sample
+  --argv <json-array>    route resolve/check: argv array sample
+                         (exclusive with --command; optional for check)
   --payload <token>      route run: opaque route payload
   --offset <bytes>       route logs: byte offset (default: 0)
   --max-bytes <bytes>    route logs: read size (bounded by policy)
@@ -920,4 +922,13 @@ Options:
   --quiet                Suppress stderr diagnostics
   --help                 Show this help
   --version              Show version
+
+Route check:
+  Reports builtin/user/project route state, policy/grant readiness,
+  workflow and worker validity, static renderer capability, and optional
+  sample match state without executing routes, workflows, workers, hooks,
+  or host integrations. Exit classes: 0 info, 1 warnings, 2 input errors,
+  3 error diagnostics, 70 internal failure. Renderer capability is static
+  and host registration/approval/execution remains unverified; issue #162
+  real-host validation is not performed.
 ";

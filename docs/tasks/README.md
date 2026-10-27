@@ -216,7 +216,7 @@ Directory: `docs/tasks`
 | TASK-034AGiFXd7uNwKAYJMW2TP | Implement process tree lifecycle | done | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
 | TASK-034AaXUraSXQKdlQ8s1p3p | Lease と atomic admission を実装する | done | [implement-resource-manager-admission.md](./implement-resource-manager-admission.md) |
 | TASK-034r05iHK8bA7hr4HQSPhD | Implement result and error envelope output | done | [implement-result-and-error-envelope-output.md](./implement-result-and-error-envelope-output.md) |
-| TASK-034N7DbHZTQLhRywkbRruo | Implement route check diagnostics report | todo | [implement-route-check-diagnostics-report.md](./implement-route-check-diagnostics-report.md) |
+| TASK-034N7DbHZTQLhRywkbRruo | Implement route check diagnostics report | done | [implement-route-check-diagnostics-report.md](./implement-route-check-diagnostics-report.md) |
 | TASK-034r05iHK8bA7gRZ6ARuGy | Implement runtime policy CLI restriction | done | [implement-runtime-policy-cli-restriction.md](./implement-runtime-policy-cli-restriction.md) |
 | TASK-034r05iHK8bA7gQBQpBmLM | Implement runtime policy loading order | done | [implement-runtime-policy-loading-order.md](./implement-runtime-policy-loading-order.md) |
 | TASK-034r05iHK8bA7gPbLk4c5Q | Implement runtime policy merge | done | [implement-runtime-policy-merge.md](./implement-runtime-policy-merge.md) |

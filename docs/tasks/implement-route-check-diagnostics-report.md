@@ -1,7 +1,7 @@
 ---
 id: "TASK-034N7DbHZTQLhRywkbRruo"
 type: "task"
-status: "todo"
+status: "done"
 title: "Implement route check diagnostics report"
 created: "2026-10-27"
 updated: "2026-10-27"
@@ -84,13 +84,13 @@ approved plan の step 9 に対応する implementation slice。`route::check` �
 
 ## Done When
 
-- [ ] `RouteCheckReport` が `schemaVersion`/`sampleProvided`/`merge`/`layers`/`policy`/`routes`/`summary` を持ち、canonicalized `cwd`・raw `argv`/`args`/`execArgs`/command/env 値・host path・OS error・errno・cause・`searched` path・source snippet・schema-violation free-form detail・secret を一切 serialize しない。
-- [ ] `RoutePolicyReport.layers` が per-layer `absent|loaded|failed` を保持し、post-merge 失敗のみ pseudo-layer `merged`/`policy:effective` で報告される。
-- [ ] sample 規約（`requires-sample-input`/`indeterminate`/`unknown`/non-winner viability 省略/suppressed attribution）と PATH 依存 readiness の `environment-dependent`、policy 非依存 worker/schema validity、policy 不在時の `unknown`/`unverified` が design 規約どおりに報告される。
-- [ ] exit 0/1/3 が `ok:true` report envelope、input-stage error のみ 2、その他の escape が detail/cause なし `InternalError` wrap で 70 となり、diagnosable failure が `Err` へ漏れない。
-- [ ] `--format text` が dedicated route-check renderer を使い generic `utility_text` fallback を経由せず、`--quiet` が auxiliary stderr のみ抑制して stdout/exit/必須 error diagnostic を維持する。
+- [x] `RouteCheckReport` が `schemaVersion`/`sampleProvided`/`merge`/`layers`/`policy`/`routes`/`summary` を持ち、canonicalized `cwd`・raw `argv`/`args`/`execArgs`/command/env 値・host path・OS error・errno・cause・`searched` path・source snippet・schema-violation free-form detail・secret を一切 serialize しない。
+- [x] `RoutePolicyReport.layers` が per-layer `absent|loaded|failed` を保持し、post-merge 失敗のみ pseudo-layer `merged`/`policy:effective` で報告される。
+- [x] sample 規約（`requires-sample-input`/`indeterminate`/`unknown`/non-winner viability 省略/suppressed attribution）と PATH 依存 readiness の `environment-dependent`、policy 非依存 worker/schema validity、policy 不在時の `unknown`/`unverified` が design 規約どおりに報告される。
+- [x] exit 0/1/3 が `ok:true` report envelope、input-stage error のみ 2、その他の escape が detail/cause なし `InternalError` wrap で 70 となり、diagnosable failure が `Err` へ漏れない。
+- [x] `--format text` が dedicated route-check renderer を使い generic `utility_text` fallback を経由せず、`--quiet` が auxiliary stderr のみ抑制して stdout/exit/必須 error diagnostic を維持する。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam route::check` — report shape・diagnostic fold・exit mapping・sanitized projection の unit coverage が pass する。
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_check::` — output sanitize・exit class・`--quiet`・dedicated text renderer・`environment-dependent` 表示の fixture が pass する。
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam route::check` — report shape・diagnostic fold・exit mapping・sanitized projection の unit coverage が pass する。
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_check::` — output sanitize・exit class・`--quiet`・dedicated text renderer・`environment-dependent` 表示の fixture が pass する。
