@@ -398,7 +398,7 @@ Directory: `docs/tasks`
 | TASK-034LSvYSW97wwisapzR9Uo | Verify Node boundary docs and run check pipeline | done | [verify-node-boundary-docs-and-check-pipeline.md](./verify-node-boundary-docs-and-check-pipeline.md) |
 | TASK-034LIwoKlNw7BOwWV21TuC | Verify proc_process determinism and run mise run check | done | [verify-proc-process-determinism-and-mise-check.md](./verify-proc-process-determinism-and-mise-check.md) |
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
-| TASK-034N7DciWkGuUAOgrmnr5g | Verify route check contract and document usage | todo | [verify-route-check-contract-and-document-usage.md](./verify-route-check-contract-and-document-usage.md) |
+| TASK-034N7DciWkGuUAOgrmnr5g | Verify route check contract and document usage | done | [verify-route-check-contract-and-document-usage.md](./verify-route-check-contract-and-document-usage.md) |
 | TASK-034KVxDMCEUdI5WtH1SJxd | route grant-set projection 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-route-grant-set-projection.md](./verify-route-grant-set-projection.md) |
 | TASK-034yW3DRPtMmttnAEru9Ns | Verify route test determinism and run mise run check | done | [verify-route-test-determinism-and-mise-check.md](./verify-route-test-determinism-and-mise-check.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |

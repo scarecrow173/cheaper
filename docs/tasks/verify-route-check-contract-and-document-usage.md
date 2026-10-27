@@ -1,7 +1,7 @@
 ---
 id: "TASK-034N7DciWkGuUAOgrmnr5g"
 type: "task"
-status: "todo"
+status: "done"
 title: "Verify route check contract and document usage"
 created: "2026-10-27"
 updated: "2026-10-27"
@@ -85,13 +85,13 @@ approved plan の step 10 に対応する implementation slice。`route_check` i
 
 ## Done When
 
-- [ ] `route_check` integration module が `main.rs` に登録され、named fixture（ambient logging probe、malformed/reordered detection、clean-temp embedded production path、absent/malformed layer、merge determinacy、policy failure、cargo-test no-grant/grant parity、sample/no-sample/indeterminate/unknown、output sanitize、exit class、read-only probe、renderer capability vs unverified host）を全て含む。
-- [ ] CLI `HELP` と `route` usage が `check` を含み、両 guide に usage・exit class・read-only 保証・`unverified`/`requires-sample-input` の意味・制約が記載される。
-- [ ] blocking な document/index/relations finding が無い。
-- [ ] `mise run check` が exit code 0 を返す。
+- [x] `route_check` integration module が `main.rs` に登録され、named fixture（ambient logging probe、malformed/reordered detection、clean-temp embedded production path、absent/malformed layer、merge determinacy、policy failure、cargo-test no-grant/grant parity、sample/no-sample/indeterminate/unknown、output sanitize、exit class、read-only probe、renderer capability vs unverified host）を全て含む。
+- [x] CLI `HELP` と `route` usage が `check` を含み、両 guide に usage・exit class・read-only 保証・`unverified`/`requires-sample-input` の意味・制約が記載される。
+- [x] blocking な document/index/relations finding が無い。
+- [x] `mise run check` が exit code 0 を返す。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_check::` — 全 `route_check` fixture が pass する。
-- [ ] `mise exec -- node .agents/skills/doc-status/scripts/doc_status.js audit --type all --blocking --json` — blocking document/index/relations finding が 0 件になる。
-- [ ] `mise run check` — canonical verification が exit code 0 を返す。
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_check::` — 全 `route_check` fixture が pass する。
+- [x] `mise exec -- node .agents/skills/doc-status/scripts/doc_status.js audit --type all --blocking --json` — blocking document/index/relations finding が 0 件になる。
+- [x] `mise run check` — canonical verification が exit code 0 を返す。

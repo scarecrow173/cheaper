@@ -193,6 +193,7 @@ Directory: `docs/impl/ir`
 | IMPL-034A6mdUuMzX4DtyfiRMjx | Verify consumer acquisition and close migration | completed | [verify-consumer-acquisition-and-close-migration.md](./verify-consumer-acquisition-and-close-migration.md) |
 | IMPL-034z3CEPSQBJaEVBVxxzmL | verify launchers and apm payload | completed | [verify-launchers-and-apm-payload.md](./verify-launchers-and-apm-payload.md) |
 | IMPL-034z2rZiB6WUNTje88kRt1 | verify release workflow | completed | [verify-release-workflow.md](./verify-release-workflow.md) |
+| IMPL-034NgekixDuJNQy3znXgws | Verify route check contract and document usage | in-progress | [verify-route-check-contract-and-document-usage.md](./verify-route-check-contract-and-document-usage.md) |
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
 | IMPL-034MpJiRnTxGKRzkCAn04f | Verify usage route and error analysis chain | completed | [verify-usage-route-and-error-analysis-chain.md](./verify-usage-route-and-error-analysis-chain.md) |
 | IMPL-034APqdMTW2hYck2FYoKv1 | Verify workflow execution integration | completed | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |

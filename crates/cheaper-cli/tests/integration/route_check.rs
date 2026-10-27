@@ -7,8 +7,15 @@ use std::process::Command;
 
 use serde_json::Value;
 
-fn run_check(workspace: &Path, config: &Path, temp: &Path, args: &[&str]) -> (i32, String, String) {
-    let output = Command::new(env!("CARGO_BIN_EXE_cheaper"))
+fn run_check_with_env(
+    workspace: &Path,
+    config: &Path,
+    temp: &Path,
+    args: &[&str],
+    extra_env: &[(&str, &str)],
+) -> (i32, String, String) {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_cheaper"));
+    command
         .args(args)
         .current_dir(workspace)
         .env("CHEAPER_CONFIG_DIR", config)
@@ -16,14 +23,20 @@ fn run_check(workspace: &Path, config: &Path, temp: &Path, args: &[&str]) -> (i3
         .env("CHEAPER_LOG_FORMAT", "json")
         .env("TEMP", temp)
         .env("TMP", temp)
-        .env("TMPDIR", temp)
-        .output()
-        .unwrap();
+        .env("TMPDIR", temp);
+    for (key, value) in extra_env {
+        command.env(key, value);
+    }
+    let output = command.output().unwrap();
     (
         output.status.code().unwrap_or(-1),
         String::from_utf8_lossy(&output.stdout).into_owned(),
         String::from_utf8_lossy(&output.stderr).into_owned(),
     )
+}
+
+fn run_check(workspace: &Path, config: &Path, temp: &Path, args: &[&str]) -> (i32, String, String) {
+    run_check_with_env(workspace, config, temp, args, &[])
 }
 
 fn run_check_json(
@@ -60,6 +73,18 @@ fn write_policy_grant(config: &Path) {
     write_policy_grant_executable(config, env!("CARGO_BIN_EXE_cheaper"));
 }
 
+fn write_policy_grant_spawn_probe(config: &Path, marker: &str) {
+    let executable = yaml_quote(&std::env::current_exe().unwrap().to_string_lossy());
+    let marker = yaml_quote(marker);
+    std::fs::write(
+        config.join("policy.yaml"),
+        format!(
+            "version: 1\ncommand:\n  grants:\n    cargo-test:\n      executable: {executable}\n      argv: ['*']\n    spawn-probe:\n      executable: {executable}\n      argv: ['route_check::spawn_probe', '--exact', '--nocapture']\n      env:\n        CHEAPER_ROUTE_CHECK_CHILD_MODE: spawn\n        CHEAPER_ROUTE_CHECK_CHILD_MARKER: {marker}\n"
+        ),
+    )
+    .unwrap();
+}
+
 fn builtin_workflow() -> String {
     std::fs::read_to_string(
         crate::common::builtin_dir()
@@ -79,11 +104,98 @@ fn route_by_name<'a>(report: &'a Value, name: &str) -> &'a Value {
 }
 
 #[test]
+fn spawn_probe() {
+    if std::env::var("CHEAPER_ROUTE_CHECK_CHILD_MODE").as_deref() != Ok("spawn") {
+        return;
+    }
+    if let Ok(marker) = std::env::var("CHEAPER_ROUTE_CHECK_CHILD_MARKER") {
+        std::fs::write(marker, "spawned").unwrap();
+    }
+}
+
+#[test]
+fn route_check_malformed_invocation_is_sanitized_and_has_no_side_effects() {
+    let ws = tempfile::tempdir().unwrap();
+    let cfg = tempfile::tempdir().unwrap();
+    let temp = tempfile::tempdir().unwrap();
+    let exe = env!("CARGO_BIN_EXE_cheaper");
+    let command = |argv: &[&str], env: &[(&str, &str)]| {
+        let mut cmd = Command::new(exe);
+        cmd.args(argv)
+            .current_dir(ws.path())
+            .env_clear()
+            .env("CHEAPER_CONFIG_DIR", cfg.path())
+            .env("TEMP", temp.path())
+            .env("TMP", temp.path())
+            .env("TMPDIR", temp.path());
+        for (key, value) in env {
+            cmd.env(key, value);
+        }
+        for key in [
+            "PATH",
+            "SYSTEMROOT",
+            "WINDIR",
+            "PATHEXT",
+            "COMSPEC",
+            "NUMBER_OF_PROCESSORS",
+        ] {
+            if let Some(value) = std::env::var_os(key) {
+                cmd.env(key, value);
+            }
+        }
+        cmd.output().expect("spawn cheaper route check")
+    };
+
+    let output = command(
+        &["route", "check", "--bogus"],
+        &[("CHEAPER_LOG", "debug"), ("CHEAPER_LOG_FORMAT", "json")],
+    );
+    assert_eq!(output.status.code(), Some(2));
+    let stdout: Value = serde_json::from_slice(&output.stdout).expect("sanitized error envelope");
+    assert_eq!(stdout["ok"], false);
+    assert_eq!(stdout["error"]["code"], "INVALID_REQUEST");
+    assert_eq!(stdout["error"]["message"], "route check failed");
+    assert_eq!(stdout["error"]["details"]["reason"], "invalid-input");
+    assert!(!stdout["error"].get("cause").is_some());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert_eq!(stderr, "error INVALID_REQUEST: route check failed\n");
+
+    let flag_output = command(
+        &[
+            "--log",
+            "debug",
+            "--log-format",
+            "json",
+            "route",
+            "check",
+            "--bogus",
+        ],
+        &[],
+    );
+    assert_eq!(flag_output.status.code(), Some(2));
+
+    let quiet_output = command(&["route", "check", "--bogus", "--quiet"], &[]);
+    assert_eq!(quiet_output.status.code(), Some(2));
+    assert_eq!(
+        String::from_utf8_lossy(&quiet_output.stderr),
+        "error INVALID_REQUEST: route check failed\n"
+    );
+
+    let help_output = command(&["route", "check", "--help"], &[("CHEAPER_LOG", "debug")]);
+    assert_eq!(help_output.status.code(), Some(0));
+    assert!(String::from_utf8_lossy(&help_output.stdout).starts_with("Usage: cheaper"));
+
+    assert!(!ws.path().join(".cheaper").exists());
+    assert!(!cfg.path().join("usage.jsonl").exists());
+    assert!(!cfg.path().join("history").exists());
+}
+
+#[test]
 fn route_check_production_builtin_source_reports_report_without_mutation() {
     let ws = tempfile::tempdir().unwrap();
     let config = tempfile::tempdir().unwrap();
     let temp = tempfile::tempdir().unwrap();
-    let (code, out, _stdout, _stderr) = run_check_json(
+    let (code, out, _stdout, stderr) = run_check_json(
         ws.path(),
         config.path(),
         temp.path(),
@@ -92,6 +204,7 @@ fn route_check_production_builtin_source_reports_report_without_mutation() {
     assert_eq!(code, 1);
     assert_eq!(out["ok"], true);
     assert!(out["worker"].is_null());
+    assert_eq!(stderr, "");
     let report = &out["result"];
     for key in [
         "schemaVersion",
@@ -108,7 +221,16 @@ fn route_check_production_builtin_source_reports_report_without_mutation() {
     assert_eq!(report["layers"][0]["layer"], "builtin");
     assert_eq!(report["layers"][0]["sourceKind"], "embedded");
     assert_eq!(report["layers"][0]["status"], "loaded");
+    for (index, layer) in [(1, "user"), (2, "project")] {
+        assert_eq!(report["layers"][index]["layer"], layer);
+        assert_eq!(report["layers"][index]["status"], "absent");
+        assert_eq!(report["layers"][index]["routeCount"], 0);
+        assert_eq!(report["layers"][index]["invalidCount"], 0);
+        assert!(report["layers"][index]["error"].is_null());
+    }
     assert_eq!(report["policy"]["status"], "loaded");
+    assert_eq!(report["policy"]["layers"]["user"], "absent");
+    assert_eq!(report["policy"]["layers"]["project"], "absent");
 
     let cargo = route_by_name(report, "cargo-test");
     assert_eq!(cargo["configuration"], "active");
@@ -161,6 +283,65 @@ fn route_check_production_builtin_source_reports_report_without_mutation() {
 }
 
 #[test]
+fn route_check_read_only_probe_does_not_spawn_or_touch_state() {
+    let ws = tempfile::tempdir().unwrap();
+    let config = tempfile::tempdir().unwrap();
+    let temp = tempfile::tempdir().unwrap();
+    let marker = temp.path().join("route-check-spawn.marker");
+    let marker_value = marker.to_string_lossy().into_owned();
+    write_policy_grant_spawn_probe(config.path(), &marker_value);
+    std::fs::write(
+        config.path().join("spawn-probe.workflow.json"),
+        builtin_workflow(),
+    )
+    .unwrap();
+    std::fs::write(
+        config.path().join("routes.yaml"),
+        "version: 1\nroutes:\n  - name: spawn-probe\n    match: {command: [probe]}\n    target: {kind: workflow, path: spawn-probe.workflow.json}\n    grant: spawn-probe\n",
+    )
+    .unwrap();
+    let credentials = config.path().join("credentials.json");
+    std::fs::write(&credentials, "{\"sentinel\":true}").unwrap();
+
+    let (code, stdout, stderr) = run_check_with_env(
+        ws.path(),
+        config.path(),
+        temp.path(),
+        &[
+            "route",
+            "check",
+            "--argv",
+            r#"["probe","route_check::spawn_probe","--exact","--nocapture"]"#,
+        ],
+        &[
+            ("CHEAPER_ROUTE_CHECK_CHILD_MODE", "spawn"),
+            ("CHEAPER_ROUTE_CHECK_CHILD_MARKER", marker_value.as_str()),
+        ],
+    );
+    assert_eq!(code, 0, "stdout: {stdout}; stderr: {stderr}");
+    let out: Value = serde_json::from_str(&stdout).expect("route check report");
+    assert_eq!(out["ok"], true);
+    let probe = route_by_name(&out["result"], "spawn-probe");
+    assert_eq!(probe["sample"]["viability"], "runnable");
+    assert_eq!(stderr, "");
+    assert!(
+        !marker.exists(),
+        "route check must not spawn the grant executable"
+    );
+    assert_eq!(
+        std::fs::read_to_string(&credentials).unwrap(),
+        "{\"sentinel\":true}"
+    );
+    for name in ["usage.jsonl", "history", "route-logs"] {
+        assert!(
+            !config.path().join(name).exists(),
+            "{name} must not be created"
+        );
+    }
+    assert!(!ws.path().join(".cheaper").exists());
+}
+
+#[test]
 fn route_check_sample_matches_resolve_viability_without_raw_argv() {
     let ws = tempfile::tempdir().unwrap();
     let config = tempfile::tempdir().unwrap();
@@ -190,6 +371,39 @@ fn route_check_sample_matches_resolve_viability_without_raw_argv() {
 }
 
 #[test]
+fn route_check_cargo_test_no_grant_and_granted_match_route_resolve() {
+    for (granted, expected_code, expected_viability) in
+        [(false, 1, "no-grant"), (true, 0, "runnable")]
+    {
+        let ws = tempfile::tempdir().unwrap();
+        let config = tempfile::tempdir().unwrap();
+        let temp = tempfile::tempdir().unwrap();
+        if granted {
+            write_policy_grant(config.path());
+        }
+        let sample = r#"["cargo","test","--workspace"]"#;
+        let (resolve_code, resolve, _stdout, stderr) = run_check_json(
+            ws.path(),
+            config.path(),
+            temp.path(),
+            &["route", "resolve", "--argv", sample],
+        );
+        assert_eq!(resolve_code, 0, "stderr: {stderr}");
+        assert_eq!(resolve["result"]["viability"], expected_viability);
+
+        let (check_code, check, _stdout, stderr) = run_check_json(
+            ws.path(),
+            config.path(),
+            temp.path(),
+            &["route", "check", "--argv", sample],
+        );
+        assert_eq!(check_code, expected_code, "stderr: {stderr}");
+        let cargo = route_by_name(&check["result"], "cargo-test");
+        assert_eq!(cargo["sample"]["viability"], resolve["result"]["viability"]);
+    }
+}
+
+#[test]
 fn route_check_layer_failure_preserves_valid_siblings() {
     let ws = tempfile::tempdir().unwrap();
     let config = tempfile::tempdir().unwrap();
@@ -212,6 +426,24 @@ fn route_check_layer_failure_preserves_valid_siblings() {
         .unwrap()
         .iter()
         .any(|d| d["code"] == "route.indeterminate" && d["severity"] == "error"));
+
+    let (sample_code, sample_out, _stdout, _stderr) = run_check_json(
+        ws.path(),
+        config.path(),
+        temp.path(),
+        &["route", "check", "--argv", r#"["cargo","test"]"#],
+    );
+    assert_eq!(sample_code, 3);
+    let sample_cargo = route_by_name(&sample_out["result"], "cargo-test");
+    assert_eq!(sample_cargo["sample"]["status"], "indeterminate");
+    assert_eq!(sample_cargo["sample"]["matched"], "indeterminate");
+    assert_eq!(sample_cargo["sample"]["selected"], "indeterminate");
+    assert!(sample_cargo["sample"].get("viability").is_none());
+    assert!(sample_cargo["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|d| d["code"] == "route.sample-indeterminate" && d["severity"] == "error"));
 }
 
 #[test]
@@ -243,6 +475,40 @@ fn route_check_policy_failure_reports_routes_and_unknown_readiness() {
     assert_eq!(cargo["workflow"]["status"], "unknown");
     assert_eq!(cargo["workflow"]["workers"][0]["status"], "valid");
     assert!(!stdout.contains(config.path().to_string_lossy().as_ref()));
+}
+
+#[test]
+fn route_check_policy_post_merge_failure_uses_effective_attribution() {
+    let ws = tempfile::tempdir().unwrap();
+    let config = tempfile::tempdir().unwrap();
+    let temp = tempfile::tempdir().unwrap();
+    std::fs::write(
+        config.path().join("policy.yaml"),
+        "version: 1\ncommand:\n  grants:\n    shared: {executable: git}\n",
+    )
+    .unwrap();
+    let project_dir = ws.path().join(".cheaper");
+    std::fs::create_dir(&project_dir).unwrap();
+    std::fs::write(
+        project_dir.join("policy.yaml"),
+        "version: 1\nprocess:\n  tasks:\n    shared: {command: [cc], inputs: [], outputs: []}\n",
+    )
+    .unwrap();
+
+    let (code, out, stdout, _stderr) =
+        run_check_json(ws.path(), config.path(), temp.path(), &["route", "check"]);
+    assert_eq!(code, 3, "stdout: {stdout}");
+    assert_eq!(out["ok"], true);
+    let policy = &out["result"]["policy"];
+    assert_eq!(policy["status"], "failed");
+    assert_eq!(policy["layers"]["builtin"], "loaded");
+    assert_eq!(policy["layers"]["user"], "loaded");
+    assert_eq!(policy["layers"]["project"], "loaded");
+    assert_eq!(policy["error"]["code"], "route.policy-load");
+    assert_eq!(policy["error"]["reason"], "invalid-policy");
+    assert_eq!(policy["error"]["layer"], "merged");
+    assert_eq!(policy["error"]["source"], "policy:effective");
+    assert!(!stdout.contains(project_dir.to_string_lossy().as_ref()));
 }
 
 #[test]
@@ -472,6 +738,7 @@ fn route_check_reports_project_layer_restrictions_as_layer_diagnostic() {
         report["layers"][2]["error"]["source"],
         "project:routes.yaml"
     );
+    assert_eq!(report["layers"][2]["error"]["field"], "routes[0].grants");
     assert_eq!(
         route_by_name(report, "cargo-test")["configuration"],
         "active"
@@ -655,9 +922,9 @@ fn route_check_quiet_preserves_stdout_report_and_exit_code() {
     let ws = tempfile::tempdir().unwrap();
     let config = tempfile::tempdir().unwrap();
     let temp = tempfile::tempdir().unwrap();
-    let (normal_code, normal, _normal_stdout, _normal_stderr) =
+    let (normal_code, normal, _normal_stdout, normal_stderr) =
         run_check_json(ws.path(), config.path(), temp.path(), &["route", "check"]);
-    let (quiet_code, quiet, quiet_stdout, _quiet_stderr) = run_check_json(
+    let (quiet_code, quiet, quiet_stdout, quiet_stderr) = run_check_json(
         ws.path(),
         config.path(),
         temp.path(),
@@ -667,4 +934,6 @@ fn route_check_quiet_preserves_stdout_report_and_exit_code() {
     assert_eq!(quiet["result"], normal["result"]);
     assert_eq!(quiet["ok"], true);
     assert_eq!(quiet_stdout, serde_json::to_string(&quiet).unwrap() + "\n");
+    assert_eq!(normal_stderr, "");
+    assert_eq!(quiet_stderr, "");
 }

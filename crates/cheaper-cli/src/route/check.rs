@@ -1645,6 +1645,28 @@ mod tests {
     }
 
     #[test]
+    fn internal_error_envelope_maps_to_exit_seventy_without_details_or_cause() {
+        let error = CheaperError::new(ErrorCode::InternalError, "raw internal detail")
+            .with_details(Map::from_iter([(
+                "secret".to_string(),
+                Value::from("value"),
+            )]))
+            .with_cause(std::io::Error::other("raw cause"));
+        let envelope = crate::cli::route_check_error_envelope(&error, None);
+        assert_eq!(envelope["ok"], json!(false));
+        assert_eq!(envelope["error"]["code"], json!("INTERNAL_ERROR"));
+        assert_eq!(envelope["error"]["message"], json!("route check failed"));
+        assert_eq!(envelope["error"]["exitCode"], json!(70));
+        assert_eq!(
+            envelope["error"]["details"]["reason"],
+            json!("internal-error")
+        );
+        assert!(envelope["error"].get("cause").is_none());
+        assert!(!envelope.to_string().contains("raw internal detail"));
+        assert!(!envelope.to_string().contains("secret"));
+    }
+
+    #[test]
     fn schema_violation_projection_keeps_only_normalized_field() {
         let error = CheaperError::new(ErrorCode::InvalidInput, "schema violation").with_details(
             Map::from_iter([(
