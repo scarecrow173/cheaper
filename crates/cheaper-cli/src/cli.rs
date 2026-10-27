@@ -894,7 +894,7 @@ Options:
                          (run/worker aliases only)
   --model <prov>/<id>    run: explicit model; usage: filter by model
   --provider <id>        models/usage: filter by provider
-  --tier <low|med|high>  Filter 'models' output by effective tier
+  --tier <low|medium|high>  Filter 'models' output by effective tier
   --worker <name>        Rank 'models' auto tiers by a worker's workload
   --method <id>          Auto-answer auth login select prompts (e.g. device)
   --type <oauth|api_key> Auth method for 'auth login' (default: oauth)
@@ -904,6 +904,7 @@ Options:
   --group-by <route|error>  usage: emit per-route / per-error-code sections
   --route <name>            usage: scope route aggregation to this route
   --since <Nm|Nh>           history list: only records within the period
+  --worker <name>           history list: filter by worker id
   --kind <kind>             history list: filter by execution kind
   --status <status>         history list: filter by execution status
   --limit <1..500>          history list/trace page size (default: 50)
