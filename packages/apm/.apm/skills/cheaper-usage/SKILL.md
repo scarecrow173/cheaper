@@ -20,6 +20,9 @@ cheaper <command> [options]
   doc-write              Alias for: run doc-writer
   tool-operate           Alias for: run tool-operator
   count-tokens <path>    Count canonical tokens of a workspace file
+  history list           List execution history records
+  history show <id>      Show one history record (canonical lowercase UUIDv4)
+  history trace <id>     Show a history record's causal trace (UUIDv4)
   workflow interface <path> Show the public workflow inputs and outputs
   workflow run <path>       Run a one-shot workflow
   usage                  Aggregate usage.jsonl (worker cost / measured savings)
@@ -30,21 +33,41 @@ cheaper <command> [options]
   policy grant add <name> <json>  Add a command grant to user policy
   policy grant list          List command grants in user policy
   policy grant remove <name> Remove a command grant from user policy
+  hook <event> --target <agent>  Run one hook event (invoked by agent hooks)
+  hook-config <sync|verify|remove>  Manage the Devin native hook registration
+  route resolve          Resolve which configured route would take a command
+  route check            Read-only diagnostic report for all configured routes
+  route run              Execute configured routes (--payload <token> required)
+  route logs <id>        Show or refetch a route execution log
 ```
 
 | Option | Meaning |
 |---|---|
-| `--input <file\|->` | Task input JSON (default: stdin) |
+| `--input <file\|->` | Task input JSON — `run`/aliases: default stdin; `workflow run`: default `{}`, stdin only with explicit `-` |
 | `--worker-file <path>` | Run an explicit worker file (`run` only) |
 | `--grant <json>` | Inject a command grant for this run only (repeatable; `run`/`workflow run` only) |
 | `--cwd <path>` | Workspace root (default: current directory) |
 | `--timeout <duration>` | Narrow policy timeout (e.g. `30s`, `5m`) — `run`: stall window (progress-reset); `workflow run`: absolute deadline |
 | `--resume <path>` | Resume a run from a budget-exhaustion checkpoint (`run`/worker aliases only) |
-| `--model <provider>/<id>` | `run`: explicit model, bypassing tier resolution |
+| `--model <provider>/<id>` | `run`: explicit model, bypassing tier resolution; `usage`: filter (`models` rejects it) |
+| `--worker <name>` | `usage`/`history list`: worker filter; `models`: rank auto tiers by this worker's workload profile |
+| `--provider <id>` | `usage`/`models`: provider filter |
+| `--tier <low\|medium\|high>` | `models`: tier filter |
+| `--since <dur>` | `usage` (`<value><ms\|s\|m\|h>`) and `history list` (`<N>m` or `<N>h`) window filter |
+| `--compare-model <provider>/<id>` | `usage`: estimated savings against this model |
+| `--group-by <route\|error>` | `usage`: section breakdown |
+| `--route <id>` | `usage`: route filter |
+| `--kind <kind>` | `history list` only: record-kind filter |
+| `--status <status>` | `history list` only: status filter |
+| `--limit <n>` / `--cursor <token>` | `history list`/`history trace`: pagination |
+| `--command <cmd>` / `--argv <json>` | `route resolve`: exactly one required; `route check`: at most one (sample) |
+| `--payload <token>` | `route run` (required): opaque route payload emitted by hook rewrite |
+| `--offset <n>` / `--max-bytes <n>` | `route logs`: byte window |
 | `--method <id>` | Auto-answer auth login select prompts (e.g. `device`) |
 | `--type <oauth\|api_key>` | Auth method for `auth login` (default: `oauth`) |
-| `--format <json\|text>` | Output format (default: `json`) |
+| `--format <json\|text>` | Output format (default: `json`; `history` defaults to `text`; `route run` always emits raw result text) |
 | `--quiet` | Suppress stderr diagnostics |
+| `--log` / `--log-format <fmt>` | Ambient observability logging to `<workspace>/.cheaper/logs` (global) |
 
 `count-tokens` never starts a model. It returns the canonical token count of
 one workspace file so you can measure context cost before reading it.
@@ -67,9 +90,10 @@ one workspace file so you can measure context cost before reading it.
   (`~/.cargo/bin` on POSIX, `%USERPROFILE%\.cargo\bin` on Windows) and
   restart the IDE/agent so it inherits the updated PATH. Verify with
   `cheaper --version`, then `cheaper models` as a smoke check.
-- In a workspace where cheaper was installed via APM (apm ≥0.28
+- In a workspace where cheaper was installed via APM (apm ≥0.32
   recommended — the hook packages use transitive `path:` dependencies
-  and per-dependency `targets:`, available since apm 0.22), hook
+  and per-dependency `targets:`; apm 0.30/0.31 resolve `path:`
+  dependencies incorrectly on Windows), hook
   declarations are distributed as per-target sibling packages
   (`apm-hook-*`, issue #118) — the skills package `packages/apm`
   no longer carries hooks. Each hook bundle lives under
@@ -124,14 +148,19 @@ one workspace file so you can measure context cost before reading it.
     evaluated on the materialized window/result, not the whole file
     (issue #107). Denies return
     `hookSpecificOutput.permissionDecision: "deny"` on stdout with exit 0.
-  - **Cursor** — `beforeReadFile` / `beforeShellExecution`; every
-    response is a schema-valid `{"permission": ...}` JSON, exit 0.
+  - **Cursor** — `beforeReadFile` / `beforeShellExecution` /
+    `preToolUse` (field-driven normalize of nested `tool_input`:
+    `command` → shell, `file_path` → file read); every response is a
+    schema-valid `{"permission": ...}` JSON, exit 0.
 - On **OpenAI Codex** the same `PreToolUse` registration is deployed
   and shell reads (`Bash`/`PowerShell`) are covered, but file-read
   tools do not emit `PreToolUse` (upstream gap `openai/codex#18491`),
   so file reads cannot be intercepted.
-- Hook executions do not write to `usage.jsonl`; only explicit
-  `cheaper run`/`count-tokens` calls are recorded.
+- Hook executions do not write to `usage.jsonl`. Recording covers
+  `cheaper run` (`kind:"run"`), `count-tokens` (`kind:"count"`),
+  `route run` (`kind:"route"`), and `route logs` refetches
+  (`kind:"route-refetch"`); `route resolve`/`route check`/`history`/
+  `usage` and other read-only or utility commands record nothing.
   For the per-target contract, see the canonical matrix in
   DISC-034r05iHy2gdnpdai9KGpW
   (`docs/discovery/cross-agent-hook-distribution-and-contract-matrix.md`).
