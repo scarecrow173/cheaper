@@ -7,7 +7,7 @@
 use crate::common;
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_tools::ToolError;
@@ -87,13 +87,14 @@ fn projects_public_schema_defaults_requiredness_only() {
         inner: FixtureTools::new(),
         calls: Mutex::new(Vec::new()),
     };
-    let workers = SpyWorkers {
+    let workers = Arc::new(SpyWorkers {
         inner: FixtureWorkers::new(fixture_worker()),
         calls: Mutex::new(Vec::new()),
-    };
+    });
+    let worker_catalog: Arc<dyn WorkerCatalog> = workers.clone();
     let ports = WorkflowCompilerPorts {
         tools: &tools,
-        workers: &workers,
+        workers: worker_catalog,
         resources: Some(&inference),
     };
     let compiler = WorkflowCompiler::new(ports);
@@ -203,10 +204,10 @@ async fn compiles_process_jobs_from_tool_metadata_without_executing() {
     let tools = ProcessTools {
         inner: FixtureTools::new(),
     };
-    let workers = FixtureWorkers::new(fixture_worker());
+    let workers = Arc::new(FixtureWorkers::new(fixture_worker()));
     let compiler = WorkflowCompiler::new(WorkflowCompilerPorts {
         tools: &tools,
-        workers: &workers,
+        workers,
         resources: None,
     });
     let mut raw = definition();

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034N7DaqWj9vCOHvtN2joH"
 type: "task"
-status: "todo"
+status: "done"
 title: "Share route workflow and worker validation seams"
 created: "2026-10-27"
 updated: "2026-10-27"

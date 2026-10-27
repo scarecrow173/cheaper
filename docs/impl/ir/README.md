@@ -167,6 +167,7 @@ Directory: `docs/impl/ir`
 | IMPL-034MyXn5zz5WT1tcl9CQvd | Run issue 187 cross-platform verification and closeout | completed | [run-issue-187-cross-platform-verification-and-closeout.md](./run-issue-187-cross-platform-verification-and-closeout.md) |
 | IMPL-034r05iHy2gdnpqyE8VXmQ | Run real-provider smoke test with Ollama | completed | [run-real-provider-smoke-test-with-ollama.md](./run-real-provider-smoke-test-with-ollama.md) |
 | IMPL-xRnq2HWCVlE0nqjLTLYWWb | Rust-native benchmark harness — cheaper-bench (issue #183) | completed | [rust-native-benchmark-harness-issue-183.md](./rust-native-benchmark-harness-issue-183.md) |
+| IMPL-034Na1mwvjOE0dsqq8Am1F | Share route workflow and worker validation seams | completed | [share-route-workflow-and-worker-validation-seams.md](./share-route-workflow-and-worker-validation-seams.md) |
 | IMPL-034EPz49PYz6zXgEeh5Fly | shared managed-process machinery extraction into tools proc | completed | [shared-managed-process-machinery-extraction-into-tools-proc.md](./shared-managed-process-machinery-extraction-into-tools-proc.md) |
 | IMPL-034A6gXDwnMxGVaPiuSCxb | Shared tool scheduler | completed | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
 | IMPL-034rBOXmCoWTHAK8NRcewR | Shell read candidate extraction implementation | completed | [shell-read-candidate-extraction-implementation.md](./shell-read-candidate-extraction-implementation.md) |

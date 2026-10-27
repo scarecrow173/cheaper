@@ -129,7 +129,22 @@ where
             }
         }
     }
-    let raw: Value = serde_json::from_str(&source).map_err(|_| {
+    load_workflow_document(&source, create_compiler).await
+}
+
+/// `loadWorkflowFile` の document-input 版。workflow source の取得は
+/// caller が担い、JSON parse・compiler 作成・definition validation は
+/// file loader と同一経路を共有する。route check など embedded/logical
+/// source からの read-only validation に使う。
+pub async fn load_workflow_document<'a, F, Fut>(
+    source: &str,
+    create_compiler: F,
+) -> Result<LoadedWorkflow<'a>, ToolError>
+where
+    F: FnOnce(&Value) -> Fut,
+    Fut: Future<Output = Result<WorkflowCompiler<'a>, ToolError>>,
+{
+    let raw: Value = serde_json::from_str(source).map_err(|_| {
         // JSON.parse の message は private 本文を含み得るため公開しない。
         Box::new(CheaperError::new(
             ErrorCode::InvalidInput,

@@ -17,14 +17,23 @@ use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::policy::load::{load_policy, LoadPolicyOptions};
 use cheaper_core::policy::schema::RuntimePolicy;
 use cheaper_core::policy::security::ExecDenyList;
+use cheaper_core::worker::resolve::{
+    resolve_worker_with_sources, ResolveWorkerError, WorkerSourceCandidate,
+};
+use cheaper_core::worker::schema::FilesystemContentSource;
+use cheaper_core::worker::validate::{WorkerDefinition, WorkerOrigin};
 use cheaper_core::workspace::deny_paths::{create_path_denylist, PathDenylist};
 use cheaper_core::workspace::paths::canonicalize_workspace_root;
+use serde_json::Value;
 
 use crate::cli::CliHooks;
 use crate::embedded::EmbeddedResources;
 
 use super::resolve::ExecPolicyView;
-use super::routes::{self, EffectiveRoutes, RouteLayer, RouteLoadOptions};
+use super::routes::{
+    self, EffectiveRoutes, Route, RouteLayer, RouteLayerEvaluation, RouteLoadOptions,
+    RouteMergeOutcome,
+};
 
 /// resolve の入力材料 — hook eval では firing 中に owned で保持し、
 /// `RouteEvalInput`/`ExecPolicyView` はこれへの borrow として
@@ -81,6 +90,136 @@ pub(crate) enum RouteLayerSource {
     },
 }
 
+/// route declaration 層から取得した document。`source` は report
+/// へ出せる `<layer>:<relative>` logical path、`text` は shared
+/// validator への入力。
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub(crate) struct RouteDocument {
+    pub(crate) source: String,
+    pub(crate) text: String,
+}
+
+/// route target workflow の validation 入力。filesystem layer は
+/// ここで読まず、canonical `load_workflow_file` が policy-guarded
+/// I/O を行うために `file_root` と relative `path` を返す。
+/// `file_root` は内部用の host root で、report へ serialize しない。
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub(crate) enum RouteWorkflowInput {
+    Document(RouteDocument),
+    File {
+        source: String,
+        file_root: String,
+        path: String,
+    },
+    Missing {
+        source: String,
+    },
+}
+
+static FILESYSTEM_CONTENT_SOURCE: FilesystemContentSource = FilesystemContentSource;
+
+impl RouteLayerSource {
+    /// この層の routes.yaml を shared per-layer validator へ渡す。
+    /// filesystem/embedded の取得方法だけが異なり、schema・duplicate
+    /// 隔離・trust 規則は `route::routes` の同一関数を使う。
+    pub(crate) fn evaluate_routes(&self, layer: RouteLayer) -> RouteLayerEvaluation {
+        match self {
+            Self::Filesystem {
+                routes_file,
+                workflow_root,
+                ..
+            } => routes::evaluate_filesystem_layer(layer, routes_file, workflow_root),
+            Self::Embedded { catalog } => {
+                let Some(bytes) = catalog.read("routes.yaml") else {
+                    return RouteLayerEvaluation::absent(layer, Path::new("/builtin/routes.yaml"));
+                };
+                routes::evaluate_routes_text(
+                    layer,
+                    "/builtin/routes.yaml",
+                    &String::from_utf8_lossy(bytes),
+                    Path::new("/builtin/workflows"),
+                )
+            }
+        }
+    }
+
+    /// route target workflow の validation 入力を declaration 層
+    /// source から解決する。filesystem は policy guard を bypass
+    /// せず、`load_workflow_file` の `file_root + path` を返す。
+    /// embedded builtin は `/builtin/workflows/...` を catalog key
+    /// `workflows/...` へ正規化して read-only に取得する。
+    #[allow(dead_code)]
+    pub(crate) fn workflow_input(&self, route: &Route) -> RouteWorkflowInput {
+        match self {
+            Self::Filesystem {
+                workflow_root,
+                worker_base_dir,
+                ..
+            } => RouteWorkflowInput::File {
+                source: route_document_source(route.layer, worker_base_dir, &route.target_path),
+                file_root: workflow_root.to_string_lossy().into_owned(),
+                path: relative_path(workflow_root, &route.target_path),
+            },
+            Self::Embedded { catalog } => {
+                let logical_path = route.target_path.to_string_lossy().replace('\\', "/");
+                let source = route_document_source(
+                    route.layer,
+                    Path::new(EmbeddedResources::LOGICAL_ROOT),
+                    &route.target_path,
+                );
+                match catalog.read(&logical_path) {
+                    Some(bytes) => RouteWorkflowInput::Document(RouteDocument {
+                        source,
+                        text: String::from_utf8_lossy(bytes).into_owned(),
+                    }),
+                    None => RouteWorkflowInput::Missing { source },
+                }
+            }
+        }
+    }
+
+    /// worker resolver へ渡すこの層の content source + base dir。
+    fn worker_candidate(&self, origin: WorkerOrigin) -> WorkerSourceCandidate<'_> {
+        match self {
+            Self::Filesystem {
+                worker_base_dir, ..
+            } => WorkerSourceCandidate {
+                base_dir: worker_base_dir.to_string_lossy().into_owned(),
+                origin,
+                source: &FILESYSTEM_CONTENT_SOURCE,
+            },
+            Self::Embedded { catalog } => WorkerSourceCandidate {
+                base_dir: EmbeddedResources::LOGICAL_ROOT
+                    .trim_end_matches('/')
+                    .to_string(),
+                origin,
+                source: catalog,
+            },
+        }
+    }
+}
+
+fn slash_path(path: &Path) -> String {
+    path.to_string_lossy().replace('\\', "/")
+}
+
+fn relative_path(root: &Path, path: &Path) -> String {
+    path.strip_prefix(root)
+        .ok()
+        .map(slash_path)
+        .or_else(|| {
+            path.file_name()
+                .map(|name| name.to_string_lossy().replace('\\', "/"))
+        })
+        .unwrap_or_default()
+}
+
+fn route_document_source(layer: RouteLayer, layer_root: &Path, path: &Path) -> String {
+    format!("{}:{}", layer.as_str(), relative_path(layer_root, path))
+}
+
 /// `route check` が評価する 3 層 source。`root` は内部評価専用の
 /// canonical workspace root で、report へ serialize しない。
 #[derive(Debug)]
@@ -92,6 +231,15 @@ pub(crate) struct RouteCheckSources {
     pub(crate) project: RouteLayerSource,
 }
 
+/// shared merge と層別 status の組。route-check report はこれを shallow
+/// row/layer section へ投影する。
+#[derive(Debug)]
+#[allow(dead_code)]
+pub(crate) struct RouteCheckRouteEvaluation {
+    pub(crate) layers: Vec<RouteLayerEvaluation>,
+    pub(crate) merged: RouteMergeOutcome,
+}
+
 #[allow(dead_code)]
 impl RouteCheckSources {
     pub(crate) fn layers(&self) -> [(RouteLayer, &RouteLayerSource); 3] {
@@ -100,6 +248,44 @@ impl RouteCheckSources {
             (RouteLayer::User, &self.user),
             (RouteLayer::Project, &self.project),
         ]
+    }
+
+    /// builtin/user/project を独立に評価してから shared merge する。
+    /// 1 層 failure はその層の error だけで、valid sibling の row を残す。
+    pub(crate) fn evaluate_route_layers(&self) -> RouteCheckRouteEvaluation {
+        let layers = self
+            .layers()
+            .into_iter()
+            .map(|(layer, source)| source.evaluate_routes(layer))
+            .collect::<Vec<_>>();
+        RouteCheckRouteEvaluation {
+            merged: routes::merge_route_layers(&layers),
+            layers,
+        }
+    }
+
+    /// worker resolution precedence — project → user → builtin。
+    /// filesystem layer は host path、embedded builtin は logical
+    /// `/builtin/` root を catalog read へ写像する。
+    pub(crate) fn resolve_worker(
+        &self,
+        name: &str,
+    ) -> Result<WorkerDefinition, ResolveWorkerError> {
+        resolve_worker_with_sources(
+            name,
+            &[
+                self.project.worker_candidate(WorkerOrigin::Project),
+                self.user.worker_candidate(WorkerOrigin::User),
+                self.builtin.worker_candidate(WorkerOrigin::Builtin),
+            ],
+        )
+    }
+
+    /// workflow compiler の `WorkerCatalog` port と同じ preload 規則で
+    /// worker index を組み立てる。worker definition/schema acquisition
+    /// だけが source-aware になる。
+    pub(crate) fn resolve_worker_index(&self, raw: &Value) -> crate::workflow_context::WorkerIndex {
+        crate::workflow_context::resolve_worker_index_with(raw, |name| self.resolve_worker(name))
     }
 }
 
@@ -260,6 +446,8 @@ pub fn load_or_none(
 mod tests {
     use std::collections::HashMap;
 
+    use cheaper_workflow::WorkerCatalog;
+
     use super::*;
 
     fn env_lookup<'a>(pairs: &'a HashMap<String, String>) -> impl Fn(&str) -> Option<String> + 'a {
@@ -350,5 +538,170 @@ mod tests {
         assert_eq!(workflow_root, &builtin.path().join("workflows"));
         assert_eq!(worker_base_dir, builtin.path());
         assert_eq!(crate::embedded::builtin_dir_call_count(), before);
+    }
+
+    #[test]
+    fn filesystem_workflow_input_returns_guarded_file_boundary_and_logical_source() {
+        let ws = tempfile::tempdir().unwrap();
+        let user = tempfile::tempdir().unwrap();
+        std::fs::write(
+            user.path().join("routes.yaml"),
+            r#"
+version: 1
+routes:
+  - name: user-route
+    match: {command: [user, route]}
+    target: {kind: workflow, path: workflows/user.workflow.json}
+    grant: user-grant
+"#,
+        )
+        .unwrap();
+        let env = HashMap::from([(
+            "CHEAPER_CONFIG_DIR".to_string(),
+            user.path().to_string_lossy().into_owned(),
+        )]);
+        let env = env_lookup(&env);
+        let sources =
+            check_sources(ws.path().to_str().unwrap(), &env, &CliHooks::default()).unwrap();
+        let evaluated = sources.evaluate_route_layers();
+        let route = evaluated
+            .merged
+            .rows
+            .iter()
+            .find_map(|row| row.route().filter(|route| route.layer == RouteLayer::User))
+            .expect("user route row");
+
+        let RouteWorkflowInput::File {
+            source,
+            file_root,
+            path,
+        } = sources.user.workflow_input(route)
+        else {
+            panic!("filesystem workflow must stay on the guarded file boundary")
+        };
+        assert_eq!(source, "user:workflows/user.workflow.json");
+        assert_eq!(file_root, user.path().to_string_lossy());
+        assert_eq!(path, "workflows/user.workflow.json");
+    }
+
+    #[test]
+    fn embedded_builtin_route_workflow_and_worker_share_logical_sources() {
+        let ws = tempfile::tempdir().unwrap();
+        let user = tempfile::tempdir().unwrap();
+        let env = HashMap::from([(
+            "CHEAPER_CONFIG_DIR".to_string(),
+            user.path().to_string_lossy().into_owned(),
+        )]);
+        let env = env_lookup(&env);
+        let sources =
+            check_sources(ws.path().to_str().unwrap(), &env, &CliHooks::default()).unwrap();
+
+        let evaluated = sources.evaluate_route_layers();
+        assert_eq!(evaluated.layers.len(), 3);
+        assert_eq!(evaluated.layers[0].status, routes::RouteLayerStatus::Loaded);
+        assert_eq!(evaluated.layers[1].status, routes::RouteLayerStatus::Absent);
+        assert_eq!(evaluated.layers[2].status, routes::RouteLayerStatus::Absent);
+        let route = evaluated
+            .merged
+            .rows
+            .iter()
+            .find_map(|row| row.route())
+            .expect("builtin route row");
+        assert_eq!(route.layer, RouteLayer::Builtin);
+
+        let RouteWorkflowInput::Document(document) = sources.builtin.workflow_input(route) else {
+            panic!("embedded routed workflow must be a document input")
+        };
+        assert_eq!(
+            document.source,
+            "builtin:workflows/routed-exec.workflow.json"
+        );
+        let raw: Value = serde_json::from_str(&document.text).unwrap();
+        let index = sources.resolve_worker_index(&raw);
+        let worker = index
+            .get("condense")
+            .expect("worker catalog lookup")
+            .expect("condense worker");
+        assert_eq!(worker.origin, WorkerOrigin::Builtin);
+        assert_eq!(worker.source_path, "/builtin/workers/condense.md");
+        worker
+            .input_schema
+            .as_ref()
+            .expect("embedded input schema")
+            .validate(&serde_json::json!({
+                "logRef": "1-1-abc",
+                "originalTokens": 10,
+                "command": ["cargo", "test"]
+            }))
+            .unwrap();
+        worker
+            .output_schema
+            .validate(&serde_json::json!({"summary": "ok"}))
+            .unwrap();
+    }
+
+    #[test]
+    fn source_aware_worker_resolution_preserves_project_user_builtin_order() {
+        let ws = tempfile::tempdir().unwrap();
+        let user = tempfile::tempdir().unwrap();
+        let env = HashMap::from([(
+            "CHEAPER_CONFIG_DIR".to_string(),
+            user.path().to_string_lossy().into_owned(),
+        )]);
+        let env = env_lookup(&env);
+        let sources =
+            check_sources(ws.path().to_str().unwrap(), &env, &CliHooks::default()).unwrap();
+        let write_worker = |root: &Path| {
+            let workers = root.join("workers");
+            std::fs::create_dir_all(&workers).unwrap();
+            std::fs::write(
+                workers.join("condense.md"),
+                r#"---
+name: condense
+description: override
+tools: [read]
+cheaper:
+  model: {tier: high}
+  output: {schema: {inline: {type: string}}}
+---
+override
+"#,
+            )
+            .unwrap();
+        };
+        write_worker(&ws.path().join(".cheaper"));
+        write_worker(user.path());
+        assert_eq!(
+            sources.resolve_worker("condense").unwrap().origin,
+            WorkerOrigin::Project
+        );
+        std::fs::remove_file(ws.path().join(".cheaper/workers/condense.md")).unwrap();
+        assert_eq!(
+            sources.resolve_worker("condense").unwrap().origin,
+            WorkerOrigin::User
+        );
+        std::fs::remove_file(user.path().join("workers/condense.md")).unwrap();
+        let builtin = sources.resolve_worker("condense").unwrap();
+        assert_eq!(builtin.origin, WorkerOrigin::Builtin);
+        assert_eq!(builtin.source_path, "/builtin/workers/condense.md");
+    }
+
+    #[test]
+    fn embedded_worker_not_found_is_a_diagnostic_error() {
+        let ws = tempfile::tempdir().unwrap();
+        let env_map = HashMap::new();
+        let env = env_lookup(&env_map);
+        let sources =
+            check_sources(ws.path().to_str().unwrap(), &env, &CliHooks::default()).unwrap();
+        let err = match sources.resolve_worker("missing-worker") {
+            Err(ResolveWorkerError::Cheaper(err)) => err,
+            other => panic!("expected worker-not-found CheaperError: {other:?}"),
+        };
+        assert_eq!(err.code(), ErrorCode::WorkerNotFound);
+        let searched = err.details().unwrap()["searched"].as_array().unwrap();
+        assert_eq!(
+            searched.last().unwrap().as_str().unwrap(),
+            "/builtin/workers/missing-worker.md"
+        );
     }
 }

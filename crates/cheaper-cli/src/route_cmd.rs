@@ -59,7 +59,8 @@ async fn execute_inner(
                 .map(RouteOutput::Utility)
         }
         RouteAction::Check { cwd, .. } => {
-            let _sources = supply::check_sources(cwd.as_deref().unwrap_or(&io.cwd), io.env, hooks)?;
+            let sources = supply::check_sources(cwd.as_deref().unwrap_or(&io.cwd), io.env, hooks)?;
+            let _evaluation = sources.evaluate_route_layers();
             Err(Box::new(CheaperError::new(
                 cheaper_core::errors::ErrorCode::InternalError,
                 "route check is not implemented",

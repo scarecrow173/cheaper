@@ -25,6 +25,9 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::OnceLock;
 
+use cheaper_core::nodepath;
+use cheaper_core::worker::resolve::WorkerContentSource;
+use cheaper_core::worker::schema::SchemaContentSource;
 use include_dir::{include_dir, Dir, DirEntry, File};
 
 /// `resources/workers/`(`workers/schemas/*.json` を含む)。
@@ -171,6 +174,40 @@ impl EmbeddedResources {
                 .map(|(path, contents)| (path.to_string_lossy().replace('\\', "/"), contents))
                 .collect()
         })
+    }
+}
+
+impl SchemaContentSource for EmbeddedResources {
+    fn resolve_schema_path(&self, base_dir: &str, file: &str) -> String {
+        let base_dir = base_dir.replace('\\', "/");
+        let file = file.replace('\\', "/");
+        nodepath::resolve(&base_dir, &file).replace('\\', "/")
+    }
+
+    fn read_schema(&self, path: &str) -> Result<Vec<u8>, io::Error> {
+        self.read(path)
+            .map(<[u8]>::to_vec)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "embedded schema not found"))
+    }
+}
+
+impl WorkerContentSource for EmbeddedResources {
+    fn exists_worker(&self, path: &str) -> bool {
+        self.contains(path)
+    }
+
+    fn read_worker(&self, path: &str) -> Result<Vec<u8>, io::Error> {
+        self.read(path)
+            .map(<[u8]>::to_vec)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "embedded worker not found"))
+    }
+
+    fn schema_source(&self) -> &dyn SchemaContentSource {
+        self
+    }
+
+    fn display_path(&self, path: &str) -> String {
+        path.replace('\\', "/")
     }
 }
 

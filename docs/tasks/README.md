@@ -343,7 +343,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7h2hF1efor | Scaffold runtime-pi package with Pi import smoke test | done | [scaffold-runtime-pi-package-with-pi-import-smoke-test.md](./scaffold-runtime-pi-package-with-pi-import-smoke-test.md) |
 | TASK-034MysZAmZ6pNgfgX08O8Q | Separate hook capability error diagnostics | done | [separate-hook-capability-error-diagnostics.md](./separate-hook-capability-error-diagnostics.md) |
 | TASK-034N7Db7xm6kehiQl3tj8P | Share route sample matching and renderer capability | todo | [share-route-sample-matching-and-renderer-capability.md](./share-route-sample-matching-and-renderer-capability.md) |
-| TASK-034N7DaqWj9vCOHvtN2joH | Share route workflow and worker validation seams | todo | [share-route-workflow-and-worker-validation-seams.md](./share-route-workflow-and-worker-validation-seams.md) |
+| TASK-034N7DaqWj9vCOHvtN2joH | Share route workflow and worker validation seams | done | [share-route-workflow-and-worker-validation-seams.md](./share-route-workflow-and-worker-validation-seams.md) |
 | TASK-034r05iHQeQpDqj5TapRlr | Shared limits, line framer, and path-only walker/find | done | [shared-limits-line-framer-and-path-only-walker-find.md](./shared-limits-line-framer-and-path-only-walker-find.md) |
 | TASK-034rAcEwRUaAkZ0KOCmc9J | Shared routing policy module and Windsurf adapter refactor | done | [shared-routing-policy-module-and-windsurf-adapter-refactor.md](./shared-routing-policy-module-and-windsurf-adapter-refactor.md) |
 | TASK-034zXj9La05SfBh0LjDsHA | Invocation 共有 ToolScheduler を導入する | done | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |

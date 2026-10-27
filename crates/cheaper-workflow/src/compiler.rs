@@ -20,12 +20,12 @@ use crate::types::{
     WorkflowInterface, WorkflowJobState, WorkflowResources,
 };
 
-/// `WorkflowCompilerPorts`。tool/worker catalog + optional resource
-/// inference port。全て借用参照 — workflow crate は所有しない。
-#[derive(Clone, Copy)]
+/// `WorkflowCompilerPorts`。tool/resource は借用 catalog、worker は
+/// per-document 解決済み index の共有所有権を持つ。
+#[derive(Clone)]
 pub struct WorkflowCompilerPorts<'a> {
     pub tools: &'a dyn ToolCatalog,
-    pub workers: &'a dyn WorkerCatalog,
+    pub workers: Arc<dyn WorkerCatalog>,
     pub resources: Option<&'a dyn ResourceInference>,
 }
 

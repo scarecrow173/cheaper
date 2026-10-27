@@ -12,7 +12,7 @@ use cheaper_core::workspace::paths::{realpath, SymlinkPolicy};
 use cheaper_tools::ToolError;
 use serde_json::{json, Value};
 
-use cheaper_workflow::{load_workflow_file, WorkflowFileOptions};
+use cheaper_workflow::{load_workflow_document, load_workflow_file, WorkflowFileOptions};
 
 use common::{definition, FixtureSet};
 
@@ -57,6 +57,32 @@ fn symlink_dir(target: &str, link: &str) {
     }
     #[cfg(not(windows))]
     std::os::unix::fs::symlink(target, link).expect("symlink");
+}
+
+#[tokio::test]
+async fn document_input_uses_the_same_validation_path_as_file_input() {
+    let raw = json!({
+        "schemaVersion": 1,
+        "inputs": {"target": {"type": "string"}},
+        "jobs": {
+            "scan": {
+                "kind": "tool",
+                "tool": "read",
+                "input": {"path": {"$input": "target"}}
+            }
+        },
+        "outputs": {
+            "result": {"schema": {}, "value": {"$from": "scan", "path": ""}}
+        }
+    });
+    let fixtures = FixtureSet::new();
+    let compiler = fixtures.compiler();
+    let loaded = load_workflow_document(&serde_json::to_string(&raw).unwrap(), |_raw| async move {
+        Ok::<_, ToolError>(compiler)
+    })
+    .await
+    .expect("document load");
+    assert_eq!(loaded.definition.raw(), &raw);
 }
 
 #[tokio::test]

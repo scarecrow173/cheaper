@@ -39,7 +39,7 @@ pub use engine::{
 };
 pub use interface::project_workflow_interface;
 pub use json::{clone_json, has_own, is_object};
-pub use loader::{load_workflow_file, LoadedWorkflow, WorkflowFileOptions};
+pub use loader::{load_workflow_document, load_workflow_file, LoadedWorkflow, WorkflowFileOptions};
 pub use resource_inference::WorkspaceResourceInference;
 pub use schema::{validate_definition, ValidatedDefinition, WORKFLOW_JSON_SCHEMA};
 pub use types::*;

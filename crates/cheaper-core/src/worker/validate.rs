@@ -12,8 +12,8 @@ use crate::nodepath;
 use crate::tools::vocabulary::{is_scope_gated_tool, normalize_tool_names, ToolName};
 use crate::worker::parse::ParsedWorkerFile;
 use crate::worker::schema::{
-    compile_schema, load_schema, parse_schema_ref, CompiledSchema, SchemaKind, SchemaRef,
-    MAX_DETAIL_ERRORS,
+    compile_schema, load_schema_with_source, parse_schema_ref, CompiledSchema,
+    FilesystemContentSource, SchemaContentSource, SchemaKind, SchemaRef, MAX_DETAIL_ERRORS,
 };
 
 /// `WorkerOrigin`.
@@ -138,6 +138,18 @@ pub fn validate_worker_definition(
     source_path: &str,
     origin: WorkerOrigin,
 ) -> Result<WorkerDefinition, CheaperError> {
+    validate_worker_definition_with_source(parsed, source_path, origin, &FilesystemContentSource)
+}
+
+/// `validateWorkerDefinition` の source-aware 版。frontmatter/schema
+/// rule は filesystem 既定と同一で、`schema: {file: ...}` の取得だけを
+/// injected `SchemaContentSource` に委譲する。
+pub fn validate_worker_definition_with_source(
+    parsed: &ParsedWorkerFile,
+    source_path: &str,
+    origin: WorkerOrigin,
+    schema_source: &dyn SchemaContentSource,
+) -> Result<WorkerDefinition, CheaperError> {
     let Value::Object(fm) = &parsed.frontmatter else {
         return Err(invalid(source_path, "frontmatter-not-object"));
     };
@@ -234,12 +246,12 @@ pub fn validate_worker_definition(
 
     let base_dir = nodepath::dirname(source_path);
     let output_schema = Arc::new(compile_schema(
-        load_schema(&output_ref, &base_dir, SchemaKind::Output)?,
+        load_schema_with_source(&output_ref, &base_dir, SchemaKind::Output, schema_source)?,
         SchemaKind::Output,
     )?);
     let input_schema = match &input_ref {
         Some(r) => Some(Arc::new(compile_schema(
-            load_schema(r, &base_dir, SchemaKind::Input)?,
+            load_schema_with_source(r, &base_dir, SchemaKind::Input, schema_source)?,
             SchemaKind::Input,
         )?)),
         None => None,
