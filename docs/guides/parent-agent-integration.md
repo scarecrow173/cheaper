@@ -92,11 +92,12 @@ hook の動作は target の hook event 体系に依存する。
   単一ファイルの read/grep と shell command 内の large-read を
   共有の全文 policy で判定する。deny は
   `hookSpecificOutput.permissionDecision: "deny"` + exit 0。
-- **Cursor**: `beforeReadFile` / `beforeShellExecution` event
-  経由で `cheaper hook before-read-file` / `before-shell-execution
-  --target cursor` が動作する。応答は `{"permission":"deny"}`
-  JSON（allow 経路でも `{"permission":"allow"}` を emit して
-  schema 適合を保つ）。
+- **Cursor**: `beforeReadFile` / `beforeShellExecution` /
+  `preToolUse` event 経由で `cheaper hook <event> --target cursor`
+  が動作する。`preToolUse` は nested `tool_input` を field 駆動で
+  判別する（`command` → shell、`file_path` → file read）。応答は
+  `{"permission":"deny"}` JSON（allow 経路でも
+  `{"permission":"allow"}` を emit して schema 適合を保つ）。
 - **Copilot**: `preToolUse` event（matcher `view|bash|powershell|
   shell`）経由で `cheaper hook pre-tool-use --target copilot`
   が動作する。Copilot では非 0 exit が deny 扱いになるため、
@@ -110,17 +111,20 @@ hook の動作は target の hook event 体系に依存する。
   deploy 除外は worker の利用に影響しない（issue #85）。
 - **Codex**: `PreToolUse`（Claude と同じ ASCII case-insensitive
   exact matcher と nested group 登録）経由で
-  `cheaper hook pre-tool-use --target pretooluse` が動作し、
+  `cheaper hook pre-tool-use --target codex` が動作し、
   `Bash` / `PowerShell` の shell command 内の large-read を block
   できる。**file-read interception は unsupported** — Codex の
   read 系 tool は `PreToolUse` を emit しない upstream gap
   （openai/codex#18491・#20204）が残存する。
 - **Devin CLI（Windows）**: APM が `cheaper-usage` skill と一緒に配布する
   helper を明示実行し、`.devin/config.json` の native `PreToolUse`
-  （read/grep）へ `cheaper hook pre-tool-use --target devin` を登録する。
-  deny は `{"decision":"block","reason":...}` + exit 0。native shell
-  tool は登録しない。互換 hook との競合は検出して停止し、自動移行は
-  行わない。配置・更新・解除の手順は [配布 guide](./distribution.md) を参照。
+  （read/grep/exec — case-insensitive matcher）へ
+  `cheaper hook pre-tool-use --target devin` を登録する。
+  deny は `{"decision":"block","reason":...}` + exit 0。互換 hook
+  との競合は warning として報告される（issue #128 で blocker から
+  降格 — `sync` は `legacyConflicts` を報告しつつ登録を継続する）。
+  自動移行は行わない。配置・更新・解除の手順は
+  [配布 guide](./distribution.md) を参照。
 - **agent-skills**: skills とその resource のみを deploy する target。
   native hook の自動登録はない。
 - **その他の target**: hook の配布・有効性は APM と harness の対応に
@@ -189,8 +193,8 @@ cache・version pinning を行わない。CLI 不在時は install command と
 PATH 設定の案内を stderr に出して非 0 で終了する。launcher 契約の
 詳細は [配布 guide](./distribution.md) を参照する。
 hook 経路の計測は `usage.jsonl` に
-記録されない（telemetry 対象は明示的な `cheaper run` /
-`count-tokens` のみ）。
+記録されない（telemetry 対象は `cheaper run` / `count-tokens` /
+`route run` / `route logs` — 後述の record kind 一覧を参照）。
 
 ## 連携の確認
 
@@ -448,14 +452,20 @@ no-substitute の byte-matched mode は従来どおり typed argv を
 ### hook rewrite の承認保全と fallback
 
 `hook pre-tool-use` の rewrite 出力は native adapter の
-approval 機構を通る — cheaper は承認を bypass しない:
+approval 機構を通る — cheaper は既定では承認を bypass しない
+（operator が trusted policy で opt-in した codex bypassing emit を
+除く — 後述・[configuration ガイド](./configuration.md)）:
 
 - **Claude / Devin**: `hookSpecificOutput.updatedInput.command`
   で rewrite command を返す — `permissionDecision`/`decision`
   は付けず、承認は native 側の通常経路で行われる
-- **Codex / Cursor / Copilot**: rewrite の approval-bypass
-  検証が未了のため `updatedInput` を発行しない — 従来評価の
-  fallback verdict（deny/allow）をそのまま返す
+- **Codex**: `route.rewrite.approvalBypass` に `codex` が含まれる
+  場合のみ `permissionDecision:"allow"` + `updatedInput` の
+  bypassing emit を発行する（実機確定済み・codex-cli 0.162.1）。
+  flag 無しでは従来どおり fallback verdict を返す
+- **Cursor / Copilot**: emit contract が実機未検証のため
+  `updatedInput` を発行しない（flag に列挙しても no-op）—
+  従来評価の fallback verdict（deny/allow）をそのまま返す
 - **Windsurf**: fallback verdict 毎の native shape —
   fallbackAllow は silent exit 0、fallbackDeny は stderr +
   exit 2(read candidate 評価の deny 規約をそのまま維持)

@@ -15,7 +15,7 @@
 //   - byte-level 契約: cheaper.ps1 = UTF-8 BOM + CRLF、
 //     cheaper.sh = #!/bin/sh shebang + LF
 //   - git index mode cheaper.sh = 100755(index 情報がある場合)
-//   - launcher copy 間の byte 一致(4 package の cheaper.sh 同士・
+//   - launcher copy 間の byte 一致(5 package の cheaper.sh 同士・
 //     cheaper.ps1 同士が同一 — 片方だけ更新される drift を防ぐ)
 //   - wiring: 親 packages/apm/apm.yml の dependencies.apm が全 hook
 //     package を path dep + 整合する targets: で宣言していること
