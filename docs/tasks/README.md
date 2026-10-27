@@ -24,6 +24,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpOWHdF7Wo | Add doc-writer built-in Worker | done | [add-doc-writer-worker.md](./add-doc-writer-worker.md) |
 | TASK-034rzRv1K2fmi2Igbdu5HG | Add e2e coverage, docs, bundle regen and final verification | done | [add-e2e-coverage-docs-bundle-regen-and-final-verification.md](./add-e2e-coverage-docs-bundle-regen-and-final-verification.md) |
 | TASK-034r05iHQeQpDpsYVkvsPX | Add e2e tests for non-execution CLI paths | done | [add-e2e-tests-for-non-execution-cli-paths.md](./add-e2e-tests-for-non-execution-cli-paths.md) |
+| TASK-034N7D9MYpblZB6oi3FOuw | Add embedded route check source supply | todo | [add-embedded-route-check-source-supply.md](./add-embedded-route-check-source-supply.md) |
 | TASK-034EekRVLtDbzc0slwVFX0 | T1: cheaper-core ErrorCode::from_str reverse lookup | done | [add-errorcode-from-str-reverse-lookup-in-cheaper-core.md](./add-errorcode-from-str-reverse-lookup-in-cheaper-core.md) |
 | TASK-034r05iHQeQpDpu1iPmr1q | Add fake stream hook and e2e execution tests | done | [add-fake-stream-hook-and-e2e-execution-tests.md](./add-fake-stream-hook-and-e2e-execution-tests.md) |
 | TASK-034KxDr0eOqS1QjXxMazEk | Add hook-config compat-degraded and windsurf-conflict verify findings | done | [add-hook-config-compat-degraded-findings.md](./add-hook-config-compat-degraded-findings.md) |
@@ -41,6 +42,7 @@ Directory: `docs/tasks`
 | TASK-034L59Ty2ObpwGwNFduACU | project 層 trusted 拒否の hook fail-open 回帰 test | done | [add-project-trusted-hook-fail-open-regression.md](./add-project-trusted-hook-fail-open-regression.md) |
 | TASK-034r05iHWkNF7zJyX85ZOT | Add provider plugin contract and registration order | done | [add-provider-plugin-contract-and-registration-order.md](./add-provider-plugin-contract-and-registration-order.md) |
 | TASK-034r05iHWkNF7zFyMzc7zU | Add resolveUserConfigDir helper and Pi state path wiring | done | [add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md](./add-resolveuserconfigdir-helper-and-pi-state-path-wiring.md) |
+| TASK-034N7D9cw4atBZEhXxf1qm | Add route check invocation detection and side-effect gates | done | [add-route-check-invocation-detection-and-side-effect-gates.md](./add-route-check-invocation-detection-and-side-effect-gates.md) |
 | TASK-034Jg6Irzs6nV7o5ocyN2Q | Add route subcommand CLI wiring and help docs | done | [add-route-cli-wiring.md](./add-route-cli-wiring.md) |
 | TASK-034Jg6jKK9lLmnOPTaQhAW | Add route context scope options and single-grant policy projection | done | [add-route-context-scope-options.md](./add-route-context-scope-options.md) |
 | TASK-034Jg6kYud58YUAHEYOIDt | Add route declaration schema and three-layer loader | done | [add-route-declaration-loader.md](./add-route-declaration-loader.md) |
@@ -214,6 +216,7 @@ Directory: `docs/tasks`
 | TASK-034AGiFXd7uNwKAYJMW2TP | Implement process tree lifecycle | done | [implement-process-tree-lifecycle.md](./implement-process-tree-lifecycle.md) |
 | TASK-034AaXUraSXQKdlQ8s1p3p | Lease と atomic admission を実装する | done | [implement-resource-manager-admission.md](./implement-resource-manager-admission.md) |
 | TASK-034r05iHK8bA7hr4HQSPhD | Implement result and error envelope output | done | [implement-result-and-error-envelope-output.md](./implement-result-and-error-envelope-output.md) |
+| TASK-034N7DbHZTQLhRywkbRruo | Implement route check diagnostics report | todo | [implement-route-check-diagnostics-report.md](./implement-route-check-diagnostics-report.md) |
 | TASK-034r05iHK8bA7gRZ6ARuGy | Implement runtime policy CLI restriction | done | [implement-runtime-policy-cli-restriction.md](./implement-runtime-policy-cli-restriction.md) |
 | TASK-034r05iHK8bA7gQBQpBmLM | Implement runtime policy loading order | done | [implement-runtime-policy-loading-order.md](./implement-runtime-policy-loading-order.md) |
 | TASK-034r05iHK8bA7gPbLk4c5Q | Implement runtime policy merge | done | [implement-runtime-policy-merge.md](./implement-runtime-policy-merge.md) |
@@ -339,6 +342,8 @@ Directory: `docs/tasks`
 | TASK-034r05iHK8bA7gC9ZdvYF9 | Scaffold pnpm monorepo root configuration | done | [scaffold-pnpm-monorepo-root-configuration.md](./scaffold-pnpm-monorepo-root-configuration.md) |
 | TASK-034r05iHK8bA7h2hF1efor | Scaffold runtime-pi package with Pi import smoke test | done | [scaffold-runtime-pi-package-with-pi-import-smoke-test.md](./scaffold-runtime-pi-package-with-pi-import-smoke-test.md) |
 | TASK-034MysZAmZ6pNgfgX08O8Q | Separate hook capability error diagnostics | done | [separate-hook-capability-error-diagnostics.md](./separate-hook-capability-error-diagnostics.md) |
+| TASK-034N7Db7xm6kehiQl3tj8P | Share route sample matching and renderer capability | todo | [share-route-sample-matching-and-renderer-capability.md](./share-route-sample-matching-and-renderer-capability.md) |
+| TASK-034N7DaqWj9vCOHvtN2joH | Share route workflow and worker validation seams | todo | [share-route-workflow-and-worker-validation-seams.md](./share-route-workflow-and-worker-validation-seams.md) |
 | TASK-034r05iHQeQpDqj5TapRlr | Shared limits, line framer, and path-only walker/find | done | [shared-limits-line-framer-and-path-only-walker-find.md](./shared-limits-line-framer-and-path-only-walker-find.md) |
 | TASK-034rAcEwRUaAkZ0KOCmc9J | Shared routing policy module and Windsurf adapter refactor | done | [shared-routing-policy-module-and-windsurf-adapter-refactor.md](./shared-routing-policy-module-and-windsurf-adapter-refactor.md) |
 | TASK-034zXj9La05SfBh0LjDsHA | Invocation 共有 ToolScheduler を導入する | done | [shared-tool-scheduler.md](./shared-tool-scheduler.md) |
@@ -393,6 +398,7 @@ Directory: `docs/tasks`
 | TASK-034LSvYSW97wwisapzR9Uo | Verify Node boundary docs and run check pipeline | done | [verify-node-boundary-docs-and-check-pipeline.md](./verify-node-boundary-docs-and-check-pipeline.md) |
 | TASK-034LIwoKlNw7BOwWV21TuC | Verify proc_process determinism and run mise run check | done | [verify-proc-process-determinism-and-mise-check.md](./verify-proc-process-determinism-and-mise-check.md) |
 | TASK-034z2pjfqDxeH4X4QdxAQx | Verify release workflow locally and record smoke evidence | done | [verify-release-workflow-locally-and-record-smoke-evidence.md](./verify-release-workflow-locally-and-record-smoke-evidence.md) |
+| TASK-034N7DciWkGuUAOgrmnr5g | Verify route check contract and document usage | todo | [verify-route-check-contract-and-document-usage.md](./verify-route-check-contract-and-document-usage.md) |
 | TASK-034KVxDMCEUdI5WtH1SJxd | route grant-set projection 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-route-grant-set-projection.md](./verify-route-grant-set-projection.md) |
 | TASK-034yW3DRPtMmttnAEru9Ns | Verify route test determinism and run mise run check | done | [verify-route-test-determinism-and-mise-check.md](./verify-route-test-determinism-and-mise-check.md) |
 | TASK-034z1PTkni5iNJPysyfxRN | Verify SEA PoC smoke without Node.js and record size | done | [verify-sea-poc-smoke-without-node-js-and-record-size.md](./verify-sea-poc-smoke-without-node-js-and-record-size.md) |

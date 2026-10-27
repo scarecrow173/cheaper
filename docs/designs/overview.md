@@ -4,7 +4,7 @@ type: "design"
 status: "draft"
 title: "System Design Overview"
 created: "2026-09-15"
-updated: "2026-10-10"
+updated: "2026-10-27"
 owners: ["scarecrow173"]
 relations:
   source:
@@ -144,6 +144,10 @@ relations:
 ## Execution History（Issue #192）
 
 - [Execution History storage, identity, and query design](./execution-history-issue-192.md) — accepted spec/ADR に基づき、per-execution immutable storage、ID/provenance、Worker/Workflow/Job/Route/Hook event ownership、Usage linkage、read-only bounded query と retention を実装境界へ写像する。
+
+## Route check diagnostics（Issue #185）
+
+- [Route check read-only diagnostics boundary](./route-check-read-only-diagnostics-boundary.md) — `route check` の strict read-only contract に合わせ、embedded builtin resource の非 materialize 参照、command-scoped logging suppression、layer-isolated route/policy diagnostics、shared workflow/worker/grant validation、sample-aware viability、secret-safe output projection を定義する。
 
 ## Devin native hook bootstrap（SPEC-034GssA0IjLKSiDdIHpAC8 / ADR-034GssAufIiId3hgh4jrSQ）
 

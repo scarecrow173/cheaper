@@ -104,6 +104,7 @@ Directory: `docs/adr`
 | ADR-RrljT4yH9woiGWbIny9ifG | usage.jsonl の run error record は固定 allowlist の診断 field で拡充する (issue #141) | accepted | [usage-error-record-field-contract.md](./usage-error-record-field-contract.md) |
 | ADR-034r2eId2hXJGWDjBylKVE | usage.jsonl の記録対象 contract は実装を canonical として文書を揃える | accepted | [usage-jsonl-contract-canonical.md](./usage-jsonl-contract-canonical.md) |
 | ADR-034r05iHrZUE6WljM1ZMiX | delegation 計測は userConfigDir の usage.jsonl への best-effort append とする | accepted | [usage-jsonl-in-user-config-dir-best-effort-append.md](./usage-jsonl-in-user-config-dir-best-effort-append.md) |
+| ADR-034N3bHdJMNN63xqMHvKH9 | Use a read-only embedded resource boundary for route check | proposed | [use-a-read-only-embedded-resource-boundary-for-route-check.md](./use-a-read-only-embedded-resource-boundary-for-route-check.md) |
 | ADR-034r05iHlWosDpQ6Z1LgJo | 実 provider smoke 検証に Ollama on Docker を使う | accepted | [use-ollama-on-docker-as-real-provider-for-smoke-verification.md](./use-ollama-on-docker-as-real-provider-for-smoke-verification.md) |
 | ADR-034zIOoBXZtluQdBMlJQge | Version pinned launcher acquisition | superseded | [version-pinned-launcher-acquisition.md](./version-pinned-launcher-acquisition.md) |
 | ADR-034D9BG9UKuUaVNeCIKfNo | Windows credential isolation fallback via copy-based snapshot | accepted | [windows-credential-isolation-fallback-via-copy-based-snapshot.md](./windows-credential-isolation-fallback-via-copy-based-snapshot.md) |
