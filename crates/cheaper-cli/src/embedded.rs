@@ -18,8 +18,11 @@
 //! - workspace / `.cheaper/` / `<userConfigDir>` には書かない。
 //! - override 順序(project → user → builtin)は core 側の責務で不変。
 
+use std::collections::BTreeMap;
 use std::io;
 use std::path::{Path, PathBuf};
+#[cfg(test)]
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::OnceLock;
 
 use include_dir::{include_dir, Dir, DirEntry, File};
@@ -125,6 +128,80 @@ fn builtin_resources() -> Vec<(PathBuf, &'static [u8])> {
     out
 }
 
+#[allow(dead_code)]
+static EMBEDDED_CATALOG: OnceLock<BTreeMap<String, &'static [u8]>> = OnceLock::new();
+
+/// `/builtin/` を logical root とする read-only embedded resource
+/// accessor。`route check` など no-mutation contract の caller が
+/// filesystem materialization なしに document を取得する。
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct EmbeddedResources;
+
+#[allow(dead_code)]
+impl EmbeddedResources {
+    /// route check diagnostics が使う唯一の builtin logical root。
+    pub(crate) const LOGICAL_ROOT: &'static str = "/builtin/";
+
+    pub(crate) fn new() -> Self {
+        Self
+    }
+
+    /// `/` 正規化済み logical relative key が catalog に存在するか。
+    pub(crate) fn contains(&self, key: &str) -> bool {
+        normalize_logical_key(key)
+            .map(|key| Self::catalog().contains_key(&key))
+            .unwrap_or(false)
+    }
+
+    /// `/` 正規化済み logical relative key の byte document を返す。
+    pub(crate) fn read(&self, key: &str) -> Option<&'static [u8]> {
+        let key = normalize_logical_key(key)?;
+        Self::catalog().get(&key).copied()
+    }
+
+    /// UTF-8 document の helper — YAML/JSON/worker markdown 用。
+    pub(crate) fn read_text(&self, key: &str) -> Option<&'static str> {
+        std::str::from_utf8(self.read(key)?).ok()
+    }
+
+    fn catalog() -> &'static BTreeMap<String, &'static [u8]> {
+        EMBEDDED_CATALOG.get_or_init(|| {
+            builtin_resources()
+                .into_iter()
+                .map(|(path, contents)| (path.to_string_lossy().replace('\\', "/"), contents))
+                .collect()
+        })
+    }
+}
+
+/// `/builtin/` prefix を剥がした相対 key へ normalize する。
+/// host path・親参照・drive letter は catalog key として受理しない。
+#[allow(dead_code)]
+fn normalize_logical_key(key: &str) -> Option<String> {
+    let key = key.replace('\\', "/");
+    let key = match key.strip_prefix(EmbeddedResources::LOGICAL_ROOT) {
+        Some(rest) => rest.trim_start_matches('/'),
+        None if key.starts_with('/') || key == "builtin" || key.starts_with("builtin/") => {
+            return None;
+        }
+        None => key.as_str(),
+    };
+    let mut parts = Vec::new();
+    for part in key.split('/') {
+        match part {
+            "" | "." => continue,
+            ".." => return None,
+            _ if part.contains('\0') || part.contains(':') => return None,
+            _ => parts.push(part),
+        }
+    }
+    if parts.is_empty() {
+        None
+    } else {
+        Some(parts.join("/"))
+    }
+}
+
 /// embedded resource 内容の決定的 fingerprint。
 /// `collect_files` と同じ走査の workers 全 file(path + contents)に
 /// `policy.yaml`/`version.json` を加えて hash する。
@@ -155,12 +232,22 @@ fn extract_builtin(dir: &Path) -> io::Result<()> {
 /// `CliHooks.builtin_dir` が指定された場合はそちらを使うので、
 /// この関数は `hooks.builtin_dir` 無しの default 経路専用。
 pub fn builtin_dir() -> Result<PathBuf, io::Error> {
+    #[cfg(test)]
+    BUILTIN_DIR_CALLS.fetch_add(1, Ordering::SeqCst);
     static CACHE: OnceLock<Result<PathBuf, String>> = OnceLock::new();
     let result = CACHE.get_or_init(|| materialize_builtin_dir().map_err(|e| e.to_string()));
     match result {
         Ok(p) => Ok(p.clone()),
         Err(msg) => Err(io::Error::other(msg.clone())),
     }
+}
+
+#[cfg(test)]
+static BUILTIN_DIR_CALLS: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(test)]
+pub(crate) fn builtin_dir_call_count() -> usize {
+    BUILTIN_DIR_CALLS.load(Ordering::SeqCst)
 }
 
 fn materialize_builtin_dir() -> io::Result<PathBuf> {
@@ -183,6 +270,60 @@ fn materialize_builtin_dir() -> io::Result<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn embedded_resources_reads_logical_keys_without_materializing() {
+        let before = builtin_dir_call_count();
+        let catalog = EmbeddedResources::new();
+        for key in [
+            "routes.yaml",
+            "policy.yaml",
+            "workflows/routed-exec.workflow.json",
+            "workers/condense.md",
+            "workers/schemas/condense.input.schema.json",
+            "workers/schemas/condense.output.schema.json",
+        ] {
+            assert!(catalog.contains(key), "{key}");
+            assert!(!catalog.read(key).unwrap().is_empty(), "{key}");
+        }
+        assert_eq!(catalog.read("policy.yaml"), Some(POLICY_YAML.as_bytes()));
+        assert!(catalog
+            .read_text("workflows/routed-exec.workflow.json")
+            .unwrap()
+            .contains("schemaVersion"));
+        assert_eq!(builtin_dir_call_count(), before);
+    }
+
+    #[test]
+    fn embedded_resources_normalizes_logical_keys_and_rejects_escape() {
+        let catalog = EmbeddedResources::new();
+        for key in [
+            "/builtin/routes.yaml",
+            "\\builtin\\routes.yaml",
+            "/builtin/./routes.yaml",
+            "/builtin//routes.yaml",
+        ] {
+            assert_eq!(catalog.read(key), Some(ROUTES_YAML.as_bytes()), "{key}");
+        }
+        for key in [
+            "",
+            "/",
+            "/builtin",
+            "/builtin/",
+            "//builtin/routes.yaml",
+            "/tmp/routes.yaml",
+            "builtin/routes.yaml",
+            "builtin:routes.yaml",
+            "../routes.yaml",
+            "/builtin/../routes.yaml",
+            "C:/routes.yaml",
+            "workers/../routes.yaml",
+            "routes.yaml\0",
+        ] {
+            assert!(!catalog.contains(key), "{key}");
+            assert!(catalog.read(key).is_none(), "{key}");
+        }
+    }
 
     /// fingerprint は同一 binary 内で決定的かつ 16hex 形式。
     #[test]

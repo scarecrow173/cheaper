@@ -15,6 +15,7 @@ mod models;
 mod policy;
 mod pricing;
 mod route;
+mod route_check;
 mod route_history;
 mod route_logs;
 mod route_run;

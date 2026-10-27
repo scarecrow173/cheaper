@@ -1,7 +1,7 @@
 ---
 id: "TASK-034N7D9MYpblZB6oi3FOuw"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add embedded route check source supply"
 created: "2026-10-27"
 updated: "2026-10-27"

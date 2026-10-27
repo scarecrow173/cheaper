@@ -58,10 +58,13 @@ async fn execute_inner(
                 .await
                 .map(RouteOutput::Utility)
         }
-        RouteAction::Check { .. } => Err(Box::new(CheaperError::new(
-            cheaper_core::errors::ErrorCode::InternalError,
-            "route check is not implemented",
-        ))),
+        RouteAction::Check { cwd, .. } => {
+            let _sources = supply::check_sources(cwd.as_deref().unwrap_or(&io.cwd), io.env, hooks)?;
+            Err(Box::new(CheaperError::new(
+                cheaper_core::errors::ErrorCode::InternalError,
+                "route check is not implemented",
+            )))
+        }
         RouteAction::Logs { .. } => crate::route::logs::execute(args, io, hooks, started_at)
             .await
             .map(RouteOutput::Utility),

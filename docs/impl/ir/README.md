@@ -12,6 +12,7 @@ Directory: `docs/impl/ir`
 | IMPL-034rArrYQRvXbeSRXD6HQQ | Add cheaper usage aggregation command | completed | [add-cheaper-usage-aggregation-command.md](./add-cheaper-usage-aggregation-command.md) |
 | IMPL-034JhsoS4CooCbWSXWcx77 | Add command grant exitCodes and nonzero-exit result reporting | completed | [add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md](./add-command-grant-exitcodes-and-nonzero-exit-result-reporting.md) |
 | IMPL-034zCh129JMqV5Z5ta5wG6 | Add deterministic sibling-parallelism pin tests to runtime-pi | completed | [add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md](./add-deterministic-sibling-parallelism-pin-tests-to-runtime-pi.md) |
+| IMPL-034N8MVeECVyQHIBorOfVt | Add embedded route check source supply | completed | [add-embedded-route-check-source-supply.md](./add-embedded-route-check-source-supply.md) |
 | IMPL-034JjGk8chOgCkQfzFETJY | Add hook entry route loading and eval supply | completed | [add-hook-entry-route-loading-and-eval-supply.md](./add-hook-entry-route-loading-and-eval-supply.md) |
 | IMPL-034IqeWzYxJ36cp819qQN4 | Add hook_eval_dedup integration tests | completed | [add-hook-eval-dedup-integration-tests.md](./add-hook-eval-dedup-integration-tests.md) |
 | IMPL-034JjvBItf3G44b0tll2Sh | Add hook route arm and Rewrite verdict | completed | [add-hook-route-arm-and-rewrite-verdict.md](./add-hook-route-arm-and-rewrite-verdict.md) |

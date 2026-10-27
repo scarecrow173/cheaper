@@ -12,7 +12,7 @@
 
 use std::path::{Path, PathBuf};
 
-use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirsOptions, EnvLookup};
+use cheaper_core::config::dirs::{resolve_config_dirs, ConfigDirs, ConfigDirsOptions, EnvLookup};
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::policy::load::{load_policy, LoadPolicyOptions};
 use cheaper_core::policy::schema::RuntimePolicy;
@@ -20,8 +20,11 @@ use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::workspace::deny_paths::{create_path_denylist, PathDenylist};
 use cheaper_core::workspace::paths::canonicalize_workspace_root;
 
+use crate::cli::CliHooks;
+use crate::embedded::EmbeddedResources;
+
 use super::resolve::ExecPolicyView;
-use super::routes::{self, EffectiveRoutes, RouteLoadOptions};
+use super::routes::{self, EffectiveRoutes, RouteLayer, RouteLoadOptions};
 
 /// resolve の入力材料 — hook eval では firing 中に owned で保持し、
 /// `RouteEvalInput`/`ExecPolicyView` はこれへの borrow として
@@ -58,6 +61,108 @@ impl RouteSupply {
             routes: &self.routes,
             exec_policy: self.exec_view(),
         }
+    }
+}
+
+/// `route check` の layer resource 取得先。diagnostics は
+/// filesystem/embedded の差異をこの source 経由で解決し、declared
+/// output には logical path だけを使う。
+#[derive(Debug)]
+#[allow(dead_code)]
+pub(crate) enum RouteLayerSource {
+    Filesystem {
+        routes_file: PathBuf,
+        workflow_root: PathBuf,
+        /// resolver が `workers/<name>.md` を join する layer base dir。
+        worker_base_dir: PathBuf,
+    },
+    Embedded {
+        catalog: EmbeddedResources,
+    },
+}
+
+/// `route check` が評価する 3 層 source。`root` は内部評価専用の
+/// canonical workspace root で、report へ serialize しない。
+#[derive(Debug)]
+#[allow(dead_code)]
+pub(crate) struct RouteCheckSources {
+    pub(crate) root: String,
+    pub(crate) builtin: RouteLayerSource,
+    pub(crate) user: RouteLayerSource,
+    pub(crate) project: RouteLayerSource,
+}
+
+#[allow(dead_code)]
+impl RouteCheckSources {
+    pub(crate) fn layers(&self) -> [(RouteLayer, &RouteLayerSource); 3] {
+        [
+            (RouteLayer::Builtin, &self.builtin),
+            (RouteLayer::User, &self.user),
+            (RouteLayer::Project, &self.project),
+        ]
+    }
+}
+
+/// `route check` 専用 supply builder — config-dir/root 解決規約は
+/// 実行経路と同じだが、`builtin_dir` 未指定の production path では
+/// embedded catalog を read-only source として使い、builtin temp
+/// materialization は行わない。user/project は常に filesystem。
+pub(crate) fn check_sources(
+    cwd: &str,
+    env: EnvLookup<'_>,
+    hooks: &CliHooks,
+) -> Result<RouteCheckSources, CheaperError> {
+    let root = canonicalize_workspace_root(cwd)?;
+    let builtin_dir = hooks
+        .builtin_dir
+        .clone()
+        .unwrap_or_else(|| PathBuf::from(EmbeddedResources::LOGICAL_ROOT));
+    // `resolve_config_dirs` は builtin_dir を返すため logical root を
+    // sentinel として渡すが、check source model では `ConfigDirs.builtin_dir`
+    // を host path として使わない。
+    let ConfigDirs {
+        user_config_dir,
+        project_dir,
+        ..
+    } = resolve_config_dirs(&ConfigDirsOptions {
+        cwd: Path::new(&root),
+        builtin_dir: &builtin_dir,
+        env: Some(env),
+        homedir: None,
+    });
+    let builtin = match hooks.builtin_dir.as_deref() {
+        Some(dir) => filesystem_source(dir.join("routes.yaml"), dir.join("workflows"), dir),
+        None => RouteLayerSource::Embedded {
+            catalog: EmbeddedResources::new(),
+        },
+    };
+    let user = filesystem_source(
+        user_config_dir.join("routes.yaml"),
+        user_config_dir.clone(),
+        &user_config_dir,
+    );
+    let project = filesystem_source(
+        project_dir.join("routes.yaml"),
+        project_dir.clone(),
+        &project_dir,
+    );
+    Ok(RouteCheckSources {
+        root,
+        builtin,
+        user,
+        project,
+    })
+}
+
+fn filesystem_source(
+    routes_file: PathBuf,
+    workflow_root: PathBuf,
+    worker_base_dir: &Path,
+) -> RouteLayerSource {
+    RouteLayerSource::Filesystem {
+        routes_file,
+        workflow_root,
+        worker_base_dir: worker_base_dir.to_path_buf(),
     }
 }
 
@@ -149,4 +254,101 @@ pub fn load_or_none(
             e
         })
         .ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use super::*;
+
+    fn env_lookup<'a>(pairs: &'a HashMap<String, String>) -> impl Fn(&str) -> Option<String> + 'a {
+        move |name| pairs.get(name).cloned()
+    }
+
+    #[test]
+    fn check_sources_uses_embedded_builtin_on_production_path() {
+        let ws = tempfile::tempdir().unwrap();
+        let user = tempfile::tempdir().unwrap();
+        let env = HashMap::from([(
+            "CHEAPER_CONFIG_DIR".to_string(),
+            user.path().to_string_lossy().into_owned(),
+        )]);
+        let env = env_lookup(&env);
+        let before = crate::embedded::builtin_dir_call_count();
+        let sources =
+            check_sources(ws.path().to_str().unwrap(), &env, &CliHooks::default()).unwrap();
+        assert_eq!(
+            sources.root,
+            canonicalize_workspace_root(ws.path().to_str().unwrap()).unwrap()
+        );
+        let RouteLayerSource::Embedded { catalog } = &sources.builtin else {
+            panic!("production builtin must use EmbeddedResources")
+        };
+        assert!(catalog.contains("routes.yaml"));
+        assert!(catalog.contains("policy.yaml"));
+        assert!(catalog.contains("workflows/routed-exec.workflow.json"));
+        assert!(catalog.contains("workers/condense.md"));
+        assert!(catalog.contains("workers/schemas/condense.input.schema.json"));
+        assert_eq!(crate::embedded::builtin_dir_call_count(), before);
+
+        for (layer, source) in sources.layers() {
+            match layer {
+                RouteLayer::Builtin => continue,
+                RouteLayer::User => {
+                    let RouteLayerSource::Filesystem {
+                        routes_file,
+                        workflow_root,
+                        worker_base_dir,
+                    } = source
+                    else {
+                        panic!("user layer must be filesystem")
+                    };
+                    assert_eq!(routes_file, &user.path().join("routes.yaml"));
+                    assert_eq!(workflow_root, user.path());
+                    assert_eq!(worker_base_dir, user.path());
+                }
+                RouteLayer::Project => {
+                    let project = ws.path().join(".cheaper");
+                    let RouteLayerSource::Filesystem {
+                        routes_file,
+                        workflow_root,
+                        worker_base_dir,
+                    } = source
+                    else {
+                        panic!("project layer must be filesystem")
+                    };
+                    assert_eq!(routes_file, &project.join("routes.yaml"));
+                    assert_eq!(workflow_root, &project);
+                    assert_eq!(worker_base_dir, &project);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn check_sources_uses_filesystem_builtin_only_with_hook_override() {
+        let ws = tempfile::tempdir().unwrap();
+        let builtin = tempfile::tempdir().unwrap();
+        let env_map = HashMap::new();
+        let env = env_lookup(&env_map);
+        let hooks = CliHooks {
+            builtin_dir: Some(builtin.path().to_path_buf()),
+            ..Default::default()
+        };
+        let before = crate::embedded::builtin_dir_call_count();
+        let sources = check_sources(ws.path().to_str().unwrap(), &env, &hooks).unwrap();
+        let RouteLayerSource::Filesystem {
+            routes_file,
+            workflow_root,
+            worker_base_dir,
+        } = &sources.builtin
+        else {
+            panic!("hook builtin_dir override must use filesystem")
+        };
+        assert_eq!(routes_file, &builtin.path().join("routes.yaml"));
+        assert_eq!(workflow_root, &builtin.path().join("workflows"));
+        assert_eq!(worker_base_dir, builtin.path());
+        assert_eq!(crate::embedded::builtin_dir_call_count(), before);
+    }
 }

@@ -24,7 +24,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpOWHdF7Wo | Add doc-writer built-in Worker | done | [add-doc-writer-worker.md](./add-doc-writer-worker.md) |
 | TASK-034rzRv1K2fmi2Igbdu5HG | Add e2e coverage, docs, bundle regen and final verification | done | [add-e2e-coverage-docs-bundle-regen-and-final-verification.md](./add-e2e-coverage-docs-bundle-regen-and-final-verification.md) |
 | TASK-034r05iHQeQpDpsYVkvsPX | Add e2e tests for non-execution CLI paths | done | [add-e2e-tests-for-non-execution-cli-paths.md](./add-e2e-tests-for-non-execution-cli-paths.md) |
-| TASK-034N7D9MYpblZB6oi3FOuw | Add embedded route check source supply | todo | [add-embedded-route-check-source-supply.md](./add-embedded-route-check-source-supply.md) |
+| TASK-034N7D9MYpblZB6oi3FOuw | Add embedded route check source supply | done | [add-embedded-route-check-source-supply.md](./add-embedded-route-check-source-supply.md) |
 | TASK-034EekRVLtDbzc0slwVFX0 | T1: cheaper-core ErrorCode::from_str reverse lookup | done | [add-errorcode-from-str-reverse-lookup-in-cheaper-core.md](./add-errorcode-from-str-reverse-lookup-in-cheaper-core.md) |
 | TASK-034r05iHQeQpDpu1iPmr1q | Add fake stream hook and e2e execution tests | done | [add-fake-stream-hook-and-e2e-execution-tests.md](./add-fake-stream-hook-and-e2e-execution-tests.md) |
 | TASK-034KxDr0eOqS1QjXxMazEk | Add hook-config compat-degraded and windsurf-conflict verify findings | done | [add-hook-config-compat-degraded-findings.md](./add-hook-config-compat-degraded-findings.md) |
