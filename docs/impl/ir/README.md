@@ -25,6 +25,7 @@ Directory: `docs/impl/ir`
 | IMPL-034JimbubuiHpBv6IpimHs | Add proc full-output tee sink for route logging | completed | [add-proc-full-output-tee-sink-for-route-logging.md](./add-proc-full-output-tee-sink-for-route-logging.md) |
 | IMPL-034MHsQwuzT8Ysc0cdXxZW | Add read-only History CLI and bounded queries | completed | [add-read-only-history-cli-and-bounded-queries.md](./add-read-only-history-cli-and-bounded-queries.md) |
 | IMPL-034JjbLxN5vUbJ45QnDJdH | Add route and route-refetch usage records | completed | [add-route-and-route-refetch-usage-records.md](./add-route-and-route-refetch-usage-records.md) |
+| IMPL-034N7PuFShAmcfe3INqWrR | Add route check invocation detection and side-effect gates | completed | [add-route-check-invocation-detection-and-side-effect-gates.md](./add-route-check-invocation-detection-and-side-effect-gates.md) |
 | IMPL-034Jm123U9YXuFo4LBNbtz | Add route CLI wiring | completed | [add-route-cli-wiring.md](./add-route-cli-wiring.md) |
 | IMPL-034JiCcdU6kUQ9Hj4Sd44J | Add route context scope options and single-grant projection | completed | [add-route-context-scope-options-and-single-grant-projection.md](./add-route-context-scope-options-and-single-grant-projection.md) |
 | IMPL-034JhZPcBMjCslZpw77s0m | Add route declaration schema and three-layer loader | completed | [add-route-declaration-schema-and-three-layer-loader.md](./add-route-declaration-schema-and-three-layer-loader.md) |

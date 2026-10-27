@@ -205,7 +205,7 @@ pub enum HookConfigAction {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RouteCliArgs {
-    /// `route resolve` の action。
+    /// `route` utility command の action。
     pub action: RouteAction,
     pub format: CliFormat,
     pub quiet: bool,
@@ -224,6 +224,16 @@ pub enum RouteAction {
         argv: Option<String>,
         /// `--cwd` — workspace root 解決の base。
         cwd: Option<String>,
+    },
+    /// `route check` — 全 route の read-only diagnostics。sample は
+    /// `--command`/`--argv` のどちらか 1 つまで(両方省略も可)。
+    Check {
+        /// `--cwd` — workspace root 解決の base。
+        cwd: Option<String>,
+        /// `--command <string>` — sample command 文字列。
+        command: Option<String>,
+        /// `--argv <json-array>` — sample argv 列の JSON array。
+        argv: Option<String>,
     },
     Logs {
         id: String,
@@ -403,8 +413,8 @@ const STRING_OPTIONS: &[&str] = &[
     // `run`/worker alias 専用 — budget 枯渇 checkpoint からの再開
     // (issue #111)。非 run command arm は field 検査で reject する。
     "resume",
-    // `route resolve` 専用 — 入力は `--command`/`--argv` の
-    // どちらか 1 つ。他 command arm は reject。
+    // `route resolve`/`route check` 専用 — resolve は exactly-one、
+    // check は at-most-one。他 command arm は reject。
     "command",
     "argv",
     "offset",
@@ -894,7 +904,7 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         || values.compare_model.is_some()
         || values.group_by.is_some()
         || values.route.is_some();
-    // `route resolve` 専用 option — `route` arm 以外で値を持つ
+    // `route` 専用 option — `route` arm 以外で値を持つ
     // 場合は reject する(field 検査規約。`workflow`/`hook-config`/
     // `policy` の allowlist 走査が先に発火するため、この guard は
     // field 検査式の arm — usage/count-tokens/models/auth/run —
@@ -912,13 +922,13 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         // unknown として reject する。
         let action = positionals.get(1).map(String::as_str);
         let valid_shape = match action {
-            Some("resolve") | Some("run") => positionals.len() == 2,
+            Some("resolve") | Some("run") | Some("check") => positionals.len() == 2,
             Some("logs") => positionals.len() == 3 && !positionals[2].is_empty(),
             _ => false,
         };
         if !valid_shape {
             return Err(invalid_request(
-                "route requires resolve | run | logs <id>",
+                "route requires resolve | run | logs <id> | check",
                 None,
             ));
         }
@@ -998,6 +1008,30 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                     offset,
                     max_bytes,
                     cwd: values.cwd.clone(),
+                },
+                format,
+                quiet,
+            }));
+        }
+        if action == Some("check") {
+            // `route check` の sample は 0 または 1 個。resolve の
+            // exactly-one 規約には巻き込まない。同一 option の繰返しも
+            // 2 sample として拒否する。
+            let sample_options = option_tokens
+                .iter()
+                .filter(|token| token.name == "command" || token.name == "argv")
+                .count();
+            if sample_options > 1 {
+                return Err(invalid_request(
+                    "route check accepts at most one of --command or --argv",
+                    None,
+                ));
+            }
+            return Ok(ParsedCli::Route(RouteCliArgs {
+                action: RouteAction::Check {
+                    cwd: values.cwd.clone(),
+                    command: values.command.clone(),
+                    argv: values.argv.clone(),
                 },
                 format,
                 quiet,
@@ -1574,6 +1608,63 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         format,
         quiet,
     }))
+}
+
+/// `route check` invocation の pre-parse 判定。
+///
+/// strict parse と同じ `STRING_OPTIONS`/`BOOL_OPTIONS` arity table と
+/// `--` terminator 規約で positional を畳む。unknown option は arity 0、
+/// known string option の次 token は option-like でも pre-parse では値として
+/// 消費する(ambiguous 判定は strict parse に委ねる)。先頭 positional が
+/// `route check` なら true。余分な positional を持つ malformed invocation
+/// も suppression 用に true とし、reject は strict parse が行う。
+pub fn is_route_check_invocation(argv: &[String]) -> bool {
+    let mut positionals = Vec::new();
+    let mut i = 0;
+    let mut terminated = false;
+    while i < argv.len() {
+        let arg = &argv[i];
+        if terminated {
+            positionals.push(arg.as_str());
+            i += 1;
+            continue;
+        }
+        if arg == "--" {
+            terminated = true;
+            i += 1;
+            continue;
+        }
+        if arg.len() > 2 && arg.starts_with("--") {
+            let body = &arg[2..];
+            let (name, inline_value) = match body.find('=') {
+                Some(eq) => (&body[..eq], Some(&body[eq + 1..])),
+                None => (body, None),
+            };
+            if BOOL_OPTIONS.contains(&name) {
+                i += 1;
+                continue;
+            }
+            if STRING_OPTIONS.contains(&name) {
+                i += 1;
+                if inline_value.is_none() && i < argv.len() {
+                    i += 1;
+                }
+                continue;
+            }
+            i += 1;
+            continue;
+        }
+        if arg.len() > 1 && arg.starts_with('-') {
+            i += 1;
+            continue;
+        }
+        positionals.push(arg.as_str());
+        i += 1;
+        if positionals.len() >= 2 {
+            break;
+        }
+    }
+    positionals.first() == Some(&"route") && positionals.get(1) == Some(&"check")
 }
 
 // ---------------------------------------------------------------------------
