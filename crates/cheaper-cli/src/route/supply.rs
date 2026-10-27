@@ -180,6 +180,18 @@ impl RouteLayerSource {
         }
     }
 
+    /// viability の `missing-target` 判定だけを source-aware にする。
+    /// filesystem layer は既存 runtime と同じ `Path::is_file`、
+    /// embedded builtin は logical `/builtin/` path を catalog key に
+    /// 写して `contains` で確認する(temp materialization はしない)。
+    #[allow(dead_code)]
+    pub(crate) fn target_exists(&self, route: &Route) -> bool {
+        match self {
+            Self::Filesystem { .. } => route.target_path.is_file(),
+            Self::Embedded { catalog } => catalog.contains(&slash_path(&route.target_path)),
+        }
+    }
+
     /// worker resolver へ渡すこの層の content source + base dir。
     fn worker_candidate(&self, origin: WorkerOrigin) -> WorkerSourceCandidate<'_> {
         match self {
@@ -286,6 +298,17 @@ impl RouteCheckSources {
     /// だけが source-aware になる。
     pub(crate) fn resolve_worker_index(&self, raw: &Value) -> crate::workflow_context::WorkerIndex {
         crate::workflow_context::resolve_worker_index_with(raw, |name| self.resolve_worker(name))
+    }
+
+    /// route の declaration layer に対応する source で target existence
+    /// を判定する。shared viability へ `|route| self.target_exists(route)`
+    /// として注入する。
+    #[allow(dead_code)]
+    pub(crate) fn target_exists(&self, route: &Route) -> bool {
+        self.layers()
+            .into_iter()
+            .find(|(layer, _)| *layer == route.layer)
+            .is_some_and(|(_, source)| source.target_exists(route))
     }
 }
 
@@ -582,6 +605,10 @@ routes:
         assert_eq!(source, "user:workflows/user.workflow.json");
         assert_eq!(file_root, user.path().to_string_lossy());
         assert_eq!(path, "workflows/user.workflow.json");
+        assert!(!sources.target_exists(route));
+        std::fs::create_dir_all(route.target_path.parent().unwrap()).unwrap();
+        std::fs::write(&route.target_path, "{}").unwrap();
+        assert!(sources.target_exists(route));
     }
 
     #[test]
@@ -608,6 +635,10 @@ routes:
             .find_map(|row| row.route())
             .expect("builtin route row");
         assert_eq!(route.layer, RouteLayer::Builtin);
+        assert!(sources.target_exists(route));
+        let mut missing = route.clone();
+        missing.target_path = Path::new("/builtin/workflows/missing.workflow.json").to_path_buf();
+        assert!(!sources.target_exists(&missing));
 
         let RouteWorkflowInput::Document(document) = sources.builtin.workflow_input(route) else {
             panic!("embedded routed workflow must be a document input")
@@ -638,6 +669,47 @@ routes:
             .output_schema
             .validate(&serde_json::json!({"summary": "ok"}))
             .unwrap();
+    }
+
+    #[test]
+    fn source_aware_target_exists_drives_shared_viability() {
+        let ws = tempfile::tempdir().unwrap();
+        let user = tempfile::tempdir().unwrap();
+        let env = HashMap::from([(
+            "CHEAPER_CONFIG_DIR".to_string(),
+            user.path().to_string_lossy().into_owned(),
+        )]);
+        let env = env_lookup(&env);
+        let sources =
+            check_sources(ws.path().to_str().unwrap(), &env, &CliHooks::default()).unwrap();
+        let evaluated = sources.evaluate_route_layers();
+        let argv = vec!["cargo".to_string(), "test".to_string()];
+        let policy =
+            cheaper_core::policy::exec::resolve_exec_policy(None, &ExecDenyList::default())
+                .unwrap();
+        let exec_deny = ExecDenyList::default();
+        let view = ExecPolicyView {
+            policy: &policy,
+            root: &sources.root,
+            symlink_policy: cheaper_core::workspace::paths::SymlinkPolicy::Deny,
+            denylist: None,
+            exec_deny: &exec_deny,
+        };
+        let result = crate::route::resolve::resolve_with_target_exists(
+            &crate::route::resolve::ResolveInput {
+                argv: &argv,
+                cwd: &sources.root,
+                routes: &evaluated.merged.effective,
+                exec_policy: &view,
+                unsafe_command: false,
+            },
+            |route| sources.target_exists(route),
+        );
+        assert_eq!(result.matched.selected.unwrap().name, "cargo-test");
+        assert_eq!(
+            result.resolution.viability,
+            Some(crate::route::resolve::Viability::NoGrant)
+        );
     }
 
     #[test]

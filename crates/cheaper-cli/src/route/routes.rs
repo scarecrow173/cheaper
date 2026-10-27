@@ -277,6 +277,15 @@ impl RouteMergeRow {
         }
     }
 
+    /// sample matching は row status を問わず宣言 `match.command`
+    /// を評価する。invalid duplicate row も shallow command を持つ。
+    pub(crate) fn command(&self) -> &[String] {
+        match self {
+            Self::Route { route, .. } => &route.command,
+            Self::Invalid { command, .. } => command,
+        }
+    }
+
     pub(crate) fn trust(&self) -> RouteTrust {
         self.layer().trust()
     }

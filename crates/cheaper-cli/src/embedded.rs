@@ -21,8 +21,6 @@
 use std::collections::BTreeMap;
 use std::io;
 use std::path::{Path, PathBuf};
-#[cfg(test)]
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::OnceLock;
 
 use cheaper_core::nodepath;
@@ -270,7 +268,7 @@ fn extract_builtin(dir: &Path) -> io::Result<()> {
 /// この関数は `hooks.builtin_dir` 無しの default 経路専用。
 pub fn builtin_dir() -> Result<PathBuf, io::Error> {
     #[cfg(test)]
-    BUILTIN_DIR_CALLS.fetch_add(1, Ordering::SeqCst);
+    BUILTIN_DIR_CALLS.with(|count| count.set(count.get() + 1));
     static CACHE: OnceLock<Result<PathBuf, String>> = OnceLock::new();
     let result = CACHE.get_or_init(|| materialize_builtin_dir().map_err(|e| e.to_string()));
     match result {
@@ -280,11 +278,13 @@ pub fn builtin_dir() -> Result<PathBuf, io::Error> {
 }
 
 #[cfg(test)]
-static BUILTIN_DIR_CALLS: AtomicUsize = AtomicUsize::new(0);
+thread_local! {
+    static BUILTIN_DIR_CALLS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
 
 #[cfg(test)]
 pub(crate) fn builtin_dir_call_count() -> usize {
-    BUILTIN_DIR_CALLS.load(Ordering::SeqCst)
+    BUILTIN_DIR_CALLS.with(|count| count.get())
 }
 
 fn materialize_builtin_dir() -> io::Result<PathBuf> {

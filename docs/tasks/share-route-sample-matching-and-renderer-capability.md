@@ -1,7 +1,7 @@
 ---
 id: "TASK-034N7Db7xm6kehiQl3tj8P"
 type: "task"
-status: "todo"
+status: "done"
 title: "Share route sample matching and renderer capability"
 created: "2026-10-27"
 updated: "2026-10-27"
@@ -73,14 +73,14 @@ approved plan の step 7 と step 8 に対応する implementation slice。`rout
 
 ## Done When
 
-- [ ] shared `match_command` phase が env-prefix strip・self-bypass・prefix match・longest/tie・suppressed attribution を `route resolve` と同一規約で返し、`matched`/`selected` を row 単位で提供できる。
-- [ ] `target_exists` predicate が注入可能で、既定 `Path::is_file`、route check は embedded catalog 対応の layer source predicate を渡せる。
-- [ ] viability 優先順と `missing-target` の位置が変わらず、`route resolve` との parity が保たれる。
-- [ ] `HookTarget::ALL` の静的 rewrite capability descriptor が canonical rewrite render と一致し、host registration/approval/execution が常に `unverified`、policy 不在の codex approval-bypass が `unknown` として扱える。
-- [ ] 既存 caller の挙動が変わらない。
+- [x] shared `match_command` phase が env-prefix strip・self-bypass・prefix match・longest/tie・suppressed attribution を `route resolve` と同一規約で返し、`matched`/`selected` を row 単位で提供できる。
+- [x] `target_exists` predicate が注入可能で、既定 `Path::is_file`、route check は embedded catalog 対応の layer source predicate を渡せる。
+- [x] viability 優先順と `missing-target` の位置が変わらず、`route resolve` との parity が保たれる。
+- [x] `HookTarget::ALL` の静的 rewrite capability descriptor が canonical rewrite render と一致し、host registration/approval/execution が常に `unverified`、policy 不在の codex approval-bypass が `unknown` として扱える。
+- [x] 既存 caller の挙動が変わらない。
 
 ## Verification
 
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam route::resolve` — `match_command` parity・`target_exists` 注入・viability 優先順の unit coverage が pass する。
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam hook::targets` — capability descriptor と canonical rewrite render の一致、`unverified` 固定が pass する。
-- [ ] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_check::` — sample/no-sample/indeterminate/unknown fixture と `route resolve` parity が pass する。
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam route:: --lib` — `match_command` parity・`target_exists` 注入・viability 優先順・route run guard の unit coverage が pass する。
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam hook::targets --lib` — capability descriptor と canonical rewrite render の一致、`unverified` 固定が pass する。
+- [x] `mise exec -- cargo test -p cheaper-cli --features cheaper-runtime/dev-seam,cheaper-cli/dev-seam --test integration route_check::` — production embedded source が builtin temp cache を materialize しないことが pass する。

@@ -86,13 +86,19 @@ pub(crate) fn prepare(
         return Err(rejected("argv-mismatch"));
     }
     let view = supply.exec_view();
-    let resolution = resolve::resolve(&ResolveInput {
-        argv: &payload.argv,
-        cwd: &payload_root,
-        routes: &supply.routes,
-        exec_policy: &view,
-        unsafe_command: false,
-    });
+    let resolve::RouteResolutionWithMatch {
+        resolution,
+        matched,
+    } = resolve::resolve_with_target_exists(
+        &ResolveInput {
+            argv: &payload.argv,
+            cwd: &payload_root,
+            routes: &supply.routes,
+            exec_policy: &view,
+            unsafe_command: false,
+        },
+        |route| route.target_path.is_file(),
+    );
     if !resolution.matched {
         return Err(denied("no-match"));
     }
@@ -101,12 +107,8 @@ pub(crate) fn prepare(
             resolution.viability.map_or("not-runnable", |v| v.as_str()),
         ));
     }
-    let route = supply
-        .routes
-        .routes
-        .iter()
-        .filter(|r| payload.argv.starts_with(r.command.as_slice()))
-        .max_by_key(|r| r.command.len())
+    let route = matched
+        .selected
         .filter(|r| Some(r.name.as_str()) == resolution.route.as_deref())
         .cloned()
         .ok_or_else(|| denied("route-mismatch"))?;

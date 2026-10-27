@@ -5,15 +5,13 @@
 //! 済み分を受ける)で、load 失敗は caller が `invalid-route`/
 //! `no-grant` viability へ写像する(fail-safe、R39)。
 
-use std::path::Path;
-
 use cheaper_core::policy::exec::ResolvedExecPolicy;
 use cheaper_core::policy::security::ExecDenyList;
 use cheaper_core::workspace::deny_paths::PathDenylist;
 use cheaper_core::workspace::paths::SymlinkPolicy;
 use cheaper_tools::tools::exec::{check_exec_execution, ExecToolOptions, RouteCommandContext};
 
-use super::routes::EffectiveRoutes;
+use super::routes::{EffectiveRoutes, Route};
 use crate::hook::routing_policy::{command_name, is_env_prefix, CWD_CHANGING_COMMANDS};
 
 /// viability の 1 値(R12 の固定優先順に従い最初に成立した分類)。
@@ -106,6 +104,68 @@ pub struct RouteResolution {
     /// の ambient env allowlist(`route run` の再 resolve も同じ値
     /// を使う)。no-match では空。
     pub passthrough_env: Vec<String>,
+}
+
+/// `match_command` が評価した effective route 1 行の row-level
+/// sample 状態。`matched` は宣言 `match.command` が normalized argv
+/// に prefix match すること、`selected` は longest-prefix winner
+/// であることを表す。
+#[derive(Debug)]
+#[allow(dead_code)]
+pub(crate) struct RouteCommandMatchRow<'a> {
+    pub(crate) route: &'a Route,
+    pub(crate) matched: bool,
+    pub(crate) selected: bool,
+}
+
+/// `resolve` の viability より前の shared match phase。route check は
+/// `matched_command` を effective/non-effective row の declaration に
+/// 適用し、`is_selected` を effective row へ適用する。
+#[derive(Debug)]
+#[allow(dead_code)]
+pub(crate) struct RouteCommandMatch<'a> {
+    /// env-prefix strip 後の normalized argv。
+    pub(crate) argv: Vec<String>,
+    pub(crate) executable: Option<String>,
+    /// effective route 全行の `matched`/`selected` 状態。
+    pub(crate) rows: Vec<RouteCommandMatchRow<'a>>,
+    pub(crate) selected: Option<&'a Route>,
+    pub(crate) tied: bool,
+    /// `RouteResolution.suppressed` と同じ route-name 値。
+    pub(crate) suppressed: Option<String>,
+    /// self-bypass(`cheaper ...`)では route declaration を評価しない。
+    self_bypassed: bool,
+}
+
+#[allow(dead_code)]
+impl RouteCommandMatch<'_> {
+    /// 任意の route 宣言 command(effective/suppressed/shadowed/
+    /// invalid row を問わない)が normalized argv に prefix match
+    /// するか。self-bypass と空 argv は declaration を評価しない。
+    pub(crate) fn matched_command(&self, command: &[String]) -> bool {
+        !self.self_bypassed && !self.argv.is_empty() && is_prefix(command, &self.argv)
+    }
+
+    /// effective route が shared phase の longest-prefix winner か。
+    /// merge row は `Route` clone を持つため pointer ではなく
+    /// name/layer/command の identity で比較する。
+    pub(crate) fn is_selected(&self, route: &Route) -> bool {
+        self.selected.is_some_and(|selected| {
+            selected.name == route.name
+                && selected.layer == route.layer
+                && selected.command == route.command
+        })
+    }
+}
+
+/// `resolve()` と shared match phase を合わせた結果。`route run`
+/// のように `RouteResolution` と selected `Route` の両方が必要な
+/// caller は二重に longest-match を組み立てない。
+#[derive(Debug)]
+#[allow(dead_code)]
+pub(crate) struct RouteResolutionWithMatch<'a> {
+    pub(crate) resolution: RouteResolution,
+    pub(crate) matched: RouteCommandMatch<'a>,
 }
 
 /// `passthroughEnv` 未宣言でも best-effort で routing しない
@@ -212,45 +272,135 @@ fn no_match(
     }
 }
 
-/// route match → viability の純粋評価。`ResolveInput.argv` は
-/// env-prefix を含み得る raw 列(`--argv` arm も同じく先頭 skip で
-/// 正規化されるよう resolve 側で strip する — 2 経路で結果が
-/// 乖離しない)。
-pub fn resolve(input: &ResolveInput<'_>) -> RouteResolution {
-    let (_, argv) = split_env_prefix(input.argv);
+/// env-prefix strip・self-bypass・prefix match・longest/tie・
+/// suppressed attribution を行う shared match phase。`argv` は
+/// env-prefix を含み得る raw 列、`routes` は shared merge 済みの
+/// effective/suppressed/invalid set。
+pub(crate) fn match_command<'a>(
+    argv: &[String],
+    routes: &'a EffectiveRoutes,
+) -> RouteCommandMatch<'a> {
+    let (_, argv) = split_env_prefix(argv);
+    let argv = argv.to_vec();
+    let executable = argv.first().map(|token| command_name(token));
+    let self_bypassed = executable
+        .as_deref()
+        .is_some_and(|name| name.eq_ignore_ascii_case("cheaper"));
     let suppressed = |command: &[String]| {
-        input
-            .routes
+        routes
             .suppressed
             .iter()
             .find(|s| is_prefix(&s.command, command))
             .map(|s| s.name.clone())
     };
-    if argv.is_empty() {
+
+    let mut matched_indices = Vec::new();
+    if !argv.is_empty() && !self_bypassed {
+        matched_indices.extend(
+            routes
+                .routes
+                .iter()
+                .enumerate()
+                .filter(|(_, route)| is_prefix(&route.command, &argv))
+                .map(|(index, _)| index),
+        );
+    }
+    if matched_indices.is_empty() {
+        let suppressed = if argv.is_empty() || self_bypassed {
+            None
+        } else {
+            suppressed(&argv)
+        };
+        return RouteCommandMatch {
+            argv,
+            executable,
+            rows: routes
+                .routes
+                .iter()
+                .map(|route| RouteCommandMatchRow {
+                    route,
+                    matched: false,
+                    selected: false,
+                })
+                .collect(),
+            selected: None,
+            tied: false,
+            suppressed,
+            self_bypassed,
+        };
+    }
+
+    matched_indices.sort_by_key(|index| routes.routes[*index].command.len());
+    let selected_index = matched_indices.pop().expect("nonempty");
+    let selected = &routes.routes[selected_index];
+    let tied = matched_indices
+        .last()
+        .is_some_and(|index| routes.routes[*index].command.len() == selected.command.len());
+    RouteCommandMatch {
+        argv,
+        executable,
+        rows: routes
+            .routes
+            .iter()
+            .enumerate()
+            .map(|(index, route)| RouteCommandMatchRow {
+                route,
+                matched: matched_indices.contains(&index) || index == selected_index,
+                selected: index == selected_index,
+            })
+            .collect(),
+        selected: Some(selected),
+        tied,
+        suppressed: suppressed(&selected.command),
+        self_bypassed,
+    }
+}
+
+/// route match → viability の純粋評価。`ResolveInput.argv` は
+/// env-prefix を含み得る raw 列(`--argv` arm も同じく先頭 skip で
+/// 正規化されるよう resolve 側で strip する — 2 経路で結果が
+/// 乖離しない)。
+pub(crate) fn resolve_with_target_exists<'a, F>(
+    input: &ResolveInput<'a>,
+    target_exists: F,
+) -> RouteResolutionWithMatch<'a>
+where
+    F: Fn(&Route) -> bool,
+{
+    let matched = match_command(input.argv, input.routes);
+    let resolution = resolve_matched(input, &matched, &target_exists);
+    RouteResolutionWithMatch {
+        resolution,
+        matched,
+    }
+}
+
+fn resolve_matched<F>(
+    input: &ResolveInput<'_>,
+    matched: &RouteCommandMatch<'_>,
+    target_exists: &F,
+) -> RouteResolution
+where
+    F: Fn(&Route) -> bool,
+{
+    if matched.argv.is_empty() {
         return no_match(Vec::new(), None, None);
     }
-    let executable = command_name(&argv[0]);
     // 1. self-bypass(R9)— cheaper 自身の command は match 評価
     // しない(recursion 防止)。
-    if executable.eq_ignore_ascii_case("cheaper") {
-        return no_match(Vec::new(), Some(executable), None);
+    if matched.self_bypassed {
+        return no_match(Vec::new(), matched.executable.clone(), None);
     }
-    // 2. argv prefix match(R4)+ longest match(R5)。
-    let mut matches: Vec<&super::routes::Route> = input
-        .routes
-        .routes
-        .iter()
-        .filter(|r| is_prefix(&r.command, argv))
-        .collect();
-    if matches.is_empty() {
-        return no_match(argv.to_vec(), Some(executable), suppressed(argv));
-    }
-    matches.sort_by_key(|r| r.command.len());
-    let best = matches.pop().expect("nonempty");
-    let tied = matches
-        .last()
-        .is_some_and(|r| r.command.len() == best.command.len());
-    let argv = argv.to_vec();
+    let Some(best) = matched.selected else {
+        return no_match(
+            matched.argv.clone(),
+            matched.executable.clone(),
+            matched.suppressed.clone(),
+        );
+    };
+    // 2. argv prefix match(R4)+ longest match(R5) は shared phase
+    // が確定済み。ここでは resolution projection のみを組み立てる。
+    let argv = matched.argv.clone();
     let args = argv[best.command.len()..].to_vec();
     let exec_args = argv[1..].to_vec();
     let mut out = RouteResolution {
@@ -258,29 +408,39 @@ pub fn resolve(input: &ResolveInput<'_>) -> RouteResolution {
         route: Some(best.name.clone()),
         target: Some(best.target_path.display().to_string()),
         grant: Some(best.grant.clone()),
-        executable: Some(executable.clone()),
+        executable: matched.executable.clone(),
         argv,
         args,
         exec_args,
         viability: None,
-        suppressed: suppressed(&best.command),
+        suppressed: matched.suppressed.clone(),
         passthrough_env: best.passthrough_env.clone(),
     };
     // 3. viability 固定優先順(R12)— 最初に成立した 1 値。
-    out.viability = Some(viability(input, best, &out, tied));
+    out.viability = Some(viability(input, best, &out, matched.tied, target_exists));
     out
+}
+
+/// 既存 caller 向け compatibility wrapper — target existence は
+/// 従来どおり filesystem `Path::is_file` と同値。
+pub fn resolve(input: &ResolveInput<'_>) -> RouteResolution {
+    resolve_with_target_exists(input, |route| route.target_path.is_file()).resolution
 }
 
 fn is_prefix(prefix: &[String], argv: &[String]) -> bool {
     prefix.len() <= argv.len() && argv[..prefix.len()] == *prefix
 }
 
-fn viability(
+fn viability<F>(
     input: &ResolveInput<'_>,
-    route: &super::routes::Route,
+    route: &Route,
     out: &RouteResolution,
     tied: bool,
-) -> Viability {
+    target_exists: &F,
+) -> Viability
+where
+    F: Fn(&Route) -> bool,
+{
     // unsafe-command — caller 報告の unsafe/複数 segment 入力、
     // または executable が cwd 変化 command。tokenize 済み argv の
     // metachar 内容は分類しない — authorization は grant argv 契約が
@@ -301,7 +461,9 @@ fn viability(
         return Viability::InvalidRoute;
     }
     // missing-target — 解決済み target.path の存在/load 確認。
-    if !Path::new(&route.target_path).is_file() {
+    // filesystem default か source-aware diagnostics predicate かは
+    // caller が注入し、優先順位置は R12 のまま変えない。
+    if !target_exists(route) {
         return Viability::MissingTarget;
     }
     // no-grant — `command::execute` の事前 check 全通過が必須
@@ -790,6 +952,93 @@ mod tests {
         });
         assert_eq!(out.route.as_deref(), Some("long"));
         assert_eq!(out.args, argv(&["-p", "x"]));
+    }
+
+    #[test]
+    fn shared_match_reports_row_level_state_and_declaration_predicate() {
+        let target = tempfile::tempdir().unwrap().path().join("w.json");
+        let target = target.to_string_lossy().into_owned();
+        let short = route("short", &["cargo"], "cargo-test", &target);
+        let long = route("long", &["cargo", "test"], "cargo-test", &target);
+        let unrelated = route("unrelated", &["git"], "cargo-test", &target);
+        let routes = EffectiveRoutes {
+            routes: vec![short.clone(), long.clone(), unrelated],
+            suppressed: vec![SuppressedRoute {
+                name: "suppressed-cargo".to_string(),
+                command: argv(&["cargo"]),
+            }],
+            ..Default::default()
+        };
+
+        let matched = match_command(&argv(&["CI=1", "cargo", "test", "-p", "x"]), &routes);
+        assert_eq!(matched.argv, argv(&["cargo", "test", "-p", "x"]));
+        assert_eq!(matched.executable.as_deref(), Some("cargo"));
+        assert_eq!(matched.rows.len(), 3);
+        assert!(matched.rows[0].matched);
+        assert!(!matched.rows[0].selected);
+        assert!(matched.rows[1].matched);
+        assert!(matched.rows[1].selected);
+        assert!(!matched.rows[2].matched);
+        assert!(!matched.rows[2].selected);
+        assert_eq!(matched.selected.unwrap().name, "long");
+        assert!(!matched.tied);
+        assert_eq!(matched.suppressed.as_deref(), Some("suppressed-cargo"));
+
+        // effective/non-effective row の declaration command は同じ
+        // predicate で評価する。clone 済み merge row でも selected は
+        // pointer ではなく route identity で判定できる。
+        assert!(matched.matched_command(&argv(&["cargo"])));
+        assert!(matched.matched_command(&argv(&["cargo", "test"])));
+        assert!(!matched.matched_command(&argv(&["cargo", "check"])));
+        assert!(matched.is_selected(&long));
+        assert!(!matched.is_selected(&short));
+
+        let bypass = match_command(&argv(&["cheaper", "run", "x"]), &routes);
+        assert!(bypass.rows.iter().all(|row| !row.matched && !row.selected));
+        assert!(!bypass.matched_command(&argv(&["cheaper"])));
+        assert!(bypass.selected.is_none());
+        assert!(bypass.suppressed.is_none());
+    }
+
+    #[test]
+    fn resolve_with_target_exists_injects_only_missing_target_predicate() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().to_string_lossy().into_owned();
+        let missing_target = dir.path().join("missing.workflow.json");
+        let routes = EffectiveRoutes {
+            routes: vec![route(
+                "r",
+                &["cargo", "test"],
+                "absent-grant",
+                &missing_target.to_string_lossy(),
+            )],
+            ..Default::default()
+        };
+        let policy = grant_policy();
+        let deny = ExecDenyList::default();
+        let view = policy_view(&policy, &root, &deny);
+        let input = ResolveInput {
+            argv: &argv(&["cargo", "test"]),
+            cwd: &root,
+            routes: &routes,
+            exec_policy: &view,
+            unsafe_command: false,
+        };
+
+        // filesystem default は従来どおり MissingTarget。
+        assert_eq!(resolve(&input).viability, Some(Viability::MissingTarget));
+        // diagnostics predicate が true を返せば missing-target を通過し、
+        // 次の no-grant へ進む。
+        let evaluated =
+            resolve_with_target_exists(&input, |route| route.layer == RouteLayer::Builtin);
+        assert_eq!(
+            evaluated.resolution.viability,
+            Some(Viability::NoGrant),
+            "injected target_exists must affect only missing-target"
+        );
+        assert_eq!(evaluated.matched.selected.unwrap().name, "r");
+        let missing = resolve_with_target_exists(&input, |_| false);
+        assert_eq!(missing.resolution.viability, Some(Viability::MissingTarget));
     }
 
     /// `security.execDenyPatterns`(issue #164)— grant の declared

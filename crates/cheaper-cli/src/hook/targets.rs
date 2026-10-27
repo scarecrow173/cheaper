@@ -12,6 +12,7 @@ use cheaper_core::config::dirs::EnvLookup;
 use cheaper_core::config::dirs::{resolve_user_config_dir, UserConfigDirOptions};
 use cheaper_core::json::stringify::stringify;
 use cheaper_core::nodepath;
+use cheaper_core::policy::schema::RewritePolicy;
 use serde_json::{Map, Value};
 
 use super::eval_cache;
@@ -64,6 +65,142 @@ impl HookTarget {
             HookTarget::Cursor => "cursor",
             HookTarget::Devin => "devin",
             HookTarget::Codex => "codex",
+        }
+    }
+
+    /// canonical rewrite renderer が持つ静的 capability。route check
+    /// はこの descriptor を投影し、host-side 実機検証はしない。
+    #[allow(dead_code)]
+    pub(crate) fn capability(&self) -> TargetCapability {
+        let (rewrite, approval_bypass) = match self {
+            Self::Pretooluse | Self::Devin => (
+                RewriteCapability::Supported,
+                ApprovalBypassGate::NotApplicable,
+            ),
+            Self::Codex => (
+                RewriteCapability::Supported,
+                ApprovalBypassGate::PolicyDependent,
+            ),
+            Self::Windsurf | Self::Copilot | Self::Cursor => (
+                RewriteCapability::Unsupported,
+                ApprovalBypassGate::NotApplicable,
+            ),
+        };
+        TargetCapability {
+            target: *self,
+            rewrite,
+            approval_bypass,
+            registration: HostVerification::Unverified,
+            approval: HostVerification::Unverified,
+            execution: HostVerification::Unverified,
+        }
+    }
+}
+
+/// canonical render が Rewrite verdict を target response へ emit
+/// できる静的 capability。codex の emit 自体は supported で、
+/// approval prompt bypass だけが `approval_bypass` gate になる。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+pub(crate) enum RewriteCapability {
+    Supported,
+    Unsupported,
+}
+
+#[allow(dead_code)]
+impl RewriteCapability {
+    pub(crate) fn as_str(&self) -> &'static str {
+        match self {
+            Self::Supported => "supported",
+            Self::Unsupported => "unsupported",
+        }
+    }
+}
+
+/// `route.rewrite.approvalBypass` policy が emit を gate するか。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+pub(crate) enum ApprovalBypassGate {
+    NotApplicable,
+    PolicyDependent,
+}
+
+/// policy 評価後の approval-bypass 状態。policy が無い場合は
+/// `unknown`、policy gate を持たない target は `not-applicable`。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+pub(crate) enum ApprovalBypassStatus {
+    NotApplicable,
+    Unknown,
+    Enabled,
+    Disabled,
+}
+
+#[allow(dead_code)]
+impl ApprovalBypassStatus {
+    pub(crate) fn as_str(&self) -> &'static str {
+        match self {
+            Self::NotApplicable => "not-applicable",
+            Self::Unknown => "unknown",
+            Self::Enabled => "enabled",
+            Self::Disabled => "disabled",
+        }
+    }
+}
+
+/// host registration/approval/execution は route check が実機検証
+/// しないため常に `unverified`。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+pub(crate) enum HostVerification {
+    Unverified,
+}
+
+#[allow(dead_code)]
+impl HostVerification {
+    pub(crate) fn as_str(&self) -> &'static str {
+        match self {
+            Self::Unverified => "unverified",
+        }
+    }
+}
+
+/// `HookTarget::ALL` ごとの静的 capability descriptor。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+pub(crate) struct TargetCapability {
+    pub(crate) target: HookTarget,
+    pub(crate) rewrite: RewriteCapability,
+    pub(crate) approval_bypass: ApprovalBypassGate,
+    pub(crate) registration: HostVerification,
+    pub(crate) approval: HostVerification,
+    pub(crate) execution: HostVerification,
+}
+
+#[allow(dead_code)]
+impl TargetCapability {
+    /// `HookTarget::ALL` と同じ順序の全 target descriptor。
+    pub(crate) fn all() -> [Self; 6] {
+        HookTarget::ALL.map(|target| target.capability())
+    }
+
+    /// `route.rewrite.approvalBypass` を持つ policy の有無に応じて
+    /// gate 状態を評価する。gate が無い target は policy の有無に
+    /// 関わらず `not-applicable`。
+    pub(crate) fn approval_bypass_status(
+        &self,
+        rewrite_policy: Option<&RewritePolicy>,
+    ) -> ApprovalBypassStatus {
+        match (self.approval_bypass, rewrite_policy) {
+            (ApprovalBypassGate::NotApplicable, _) => ApprovalBypassStatus::NotApplicable,
+            (ApprovalBypassGate::PolicyDependent, None) => ApprovalBypassStatus::Unknown,
+            (ApprovalBypassGate::PolicyDependent, Some(policy)) => {
+                if policy.approval_bypass_enabled(self.target.as_str()) {
+                    ApprovalBypassStatus::Enabled
+                } else {
+                    ApprovalBypassStatus::Disabled
+                }
+            }
         }
     }
 }
@@ -1137,6 +1274,122 @@ mod tests {
         Verdict::Rewrite {
             command: command.to_string(),
             fallback: Box::new(fallback),
+        }
+    }
+
+    fn emits_updated_input(response: HookResponse) -> bool {
+        response
+            .stdout
+            .as_deref()
+            .is_some_and(|stdout| stdout.contains("\"updatedInput\""))
+    }
+
+    /// route check が投影する descriptor は `HookTarget::ALL` を
+    /// 完全網羅し、canonical rewrite render と同じ support を返す。
+    /// codex は emit capability 自体が静的 supported、approval
+    /// prompt bypass だけが policy gate になる。
+    #[test]
+    fn target_capabilities_match_canonical_rewrite_render() {
+        let capabilities = TargetCapability::all();
+        for (target, capability) in HookTarget::ALL.into_iter().zip(capabilities) {
+            assert_eq!(capability.target, target);
+            assert_eq!(capability.registration, HostVerification::Unverified);
+            assert_eq!(capability.approval, HostVerification::Unverified);
+            assert_eq!(capability.execution, HostVerification::Unverified);
+            assert_eq!(capability.registration.as_str(), "unverified");
+            assert_eq!(capability.approval.as_str(), "unverified");
+            assert_eq!(capability.execution.as_str(), "unverified");
+
+            let emits = match target {
+                HookTarget::Windsurf => {
+                    emits_updated_input(windsurf_render(rewrite("cmd", Verdict::Allow)))
+                }
+                HookTarget::Copilot => {
+                    emits_updated_input(copilot_render(rewrite("cmd", Verdict::Allow)))
+                }
+                HookTarget::Pretooluse => {
+                    emits_updated_input(pretooluse_render(rewrite("cmd", Verdict::Allow)))
+                }
+                HookTarget::Cursor => {
+                    emits_updated_input(cursor_render(rewrite("cmd", Verdict::Allow)))
+                }
+                HookTarget::Devin => {
+                    emits_updated_input(devin_render(rewrite("cmd", Verdict::Allow)))
+                }
+                HookTarget::Codex => {
+                    emits_updated_input(codex_render(rewrite("cmd", Verdict::Allow), true))
+                }
+            };
+            assert_eq!(
+                capability.rewrite == RewriteCapability::Supported,
+                emits,
+                "{target:?}"
+            );
+            assert_eq!(
+                capability.rewrite.as_str(),
+                if emits { "supported" } else { "unsupported" },
+                "{target:?}"
+            );
+            assert_eq!(
+                capability.approval_bypass,
+                if target == HookTarget::Codex {
+                    ApprovalBypassGate::PolicyDependent
+                } else {
+                    ApprovalBypassGate::NotApplicable
+                }
+            );
+        }
+        // codex は policy flag が無い render では fallback するが、
+        // descriptor の静的 support は `supported` のまま。
+        assert!(!emits_updated_input(codex_render(
+            rewrite("cmd", Verdict::Allow),
+            false
+        )));
+    }
+
+    #[test]
+    fn approval_bypass_status_is_policy_dependent_only_for_codex() {
+        let codex = HookTarget::Codex.capability();
+        assert_eq!(
+            codex.approval_bypass_status(None),
+            ApprovalBypassStatus::Unknown
+        );
+        let disabled = RewritePolicy::default();
+        assert_eq!(
+            codex.approval_bypass_status(Some(&disabled)),
+            ApprovalBypassStatus::Disabled
+        );
+        assert_eq!(
+            codex.approval_bypass_status(Some(&disabled)).as_str(),
+            "disabled"
+        );
+        let enabled = RewritePolicy {
+            approval_bypass: vec!["codex".to_string()],
+        };
+        assert_eq!(
+            codex.approval_bypass_status(Some(&enabled)),
+            ApprovalBypassStatus::Enabled
+        );
+        assert_eq!(
+            codex.approval_bypass_status(Some(&enabled)).as_str(),
+            "enabled"
+        );
+
+        for target in HookTarget::ALL {
+            if target == HookTarget::Codex {
+                continue;
+            }
+            let capability = target.capability();
+            assert_eq!(
+                capability.approval_bypass_status(None),
+                ApprovalBypassStatus::NotApplicable,
+                "{target:?}"
+            );
+            assert_eq!(
+                capability.approval_bypass_status(Some(&enabled)),
+                ApprovalBypassStatus::NotApplicable,
+                "{target:?}"
+            );
         }
     }
 
