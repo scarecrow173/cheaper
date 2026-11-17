@@ -1,7 +1,7 @@
 ---
 id: "TASK-034ZiGQrT3mNkVx9sLpW7d"
 type: "task"
-status: "todo"
+status: "done"
 title: "Document workflow catalog contract and usage"
 created: "2026-11-17"
 updated: "2026-11-17"

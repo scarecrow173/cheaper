@@ -1,7 +1,7 @@
 ---
-id: "TASK-034ZiG2kRrXqHk9bVf8pQs2"
+id: "TASK-034ZiG2kRrXqHk9bVf8pQs"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add workflow list CLI command"
 created: "2026-11-17"
 updated: "2026-11-17"

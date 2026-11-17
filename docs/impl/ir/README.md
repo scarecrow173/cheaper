@@ -39,7 +39,9 @@ Directory: `docs/impl/ir`
 | IMPL-034zCh1C1Qy6Pc2cvIFlOP | Add same-turn batching guidance to buildSystemPrompt and regenerate bundle | completed | [add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md](./add-same-turn-batching-guidance-to-buildsystemprompt-and-regenerate-bundle.md) |
 | IMPL-034z1STQxtFa8POTFVCwbd | Add SEA entrypoint sea-main.ts | completed | [add-sea-entrypoint-sea-main-ts.md](./add-sea-entrypoint-sea-main-ts.md) |
 | IMPL-034rArskSHUOoayxrLW4s8 | Add usage telemetry e2e coverage docs and bundle regen | completed | [add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md](./add-usage-telemetry-e2e-coverage-docs-and-bundle-regen.md) |
+| IMPL-034Zjezcm59lyRuRGuYUnl | Add workflow catalog manifest read and diagnostics | completed | [add-workflow-catalog-manifest-read-and-diagnostics.md](./add-workflow-catalog-manifest-read-and-diagnostics.md) |
 | IMPL-034JhCuYprFfcFcaGX6qsA | Add workflow job when condition evaluation | completed | [add-workflow-job-when-condition-evaluation.md](./add-workflow-job-when-condition-evaluation.md) |
+| IMPL-034ZjfVbK9rQxNsPmHdTu3 | Add workflow list CLI command | completed | [add-workflow-list-cli-command.md](./add-workflow-list-cli-command.md) |
 | IMPL-034ATHURho1jepnqtCXbcf | Aggregate workflow benchmark evidence | completed | [aggregate-workflow-benchmark-evidence.md](./aggregate-workflow-benchmark-evidence.md) |
 | IMPL-034IQI6Q5wQd1Ql4s3At3r | Amend orphan sweep ownership docs and usage skill | completed | [amend-orphan-sweep-ownership-docs-and-usage-skill.md](./amend-orphan-sweep-ownership-docs-and-usage-skill.md) |
 | IMPL-GJ30PMdgql2TCIEuURop04 | APM hook 宣言の per-target サブパッケージ分離 | completed | [apm-hook-per-target-package-split.md](./apm-hook-per-target-package-split.md) |
@@ -82,6 +84,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z57kKSICF9N4av5oZ0f | docs for executable hook invocation | completed | [docs-for-executable-hook-invocation.md](./docs-for-executable-hook-invocation.md) |
 | IMPL-034zUCrFChJvE5zTGpzwnI | Document and verify one-dispatch release migration | completed | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
 | IMPL-034zRDctzhtdFQ6yVmTUAg | Document launcher distribution and verify acquisition | completed | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
+| IMPL-034Zji13BkaQ2V9RC2Wprw | Document workflow catalog contract and usage | draft | [document-workflow-catalog-contract-and-usage.md](./document-workflow-catalog-contract-and-usage.md) |
 | IMPL-034L8CAW785uSRtJvzJh15 | documentation honesty sweep and migration guide | completed | [documentation-honesty-sweep-and-migration-guide.md](./documentation-honesty-sweep-and-migration-guide.md) |
 | IMPL-034KKIy3KVgaEjtuv3WTrb | Exec-contract content-audit removal issue 163 | completed | [exec-contract-content-audit-removal-issue-163.md](./exec-contract-content-audit-removal-issue-163.md) |
 | IMPL-034rArrzNyFlCc39TNLU1X | Extend usage.jsonl run record with savings section | completed | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |

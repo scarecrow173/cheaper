@@ -1,7 +1,7 @@
 ---
 id: "TASK-034ZiFaW8ZtvJ5XKVksixu"
 type: "task"
-status: "todo"
+status: "done"
 title: "Add workflow catalog manifest read and diagnostics"
 created: "2026-11-17"
 updated: "2026-11-17"
