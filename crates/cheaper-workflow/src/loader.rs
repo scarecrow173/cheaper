@@ -7,7 +7,9 @@ use std::future::Future;
 use cheaper_core::errors::{CheaperError, ErrorCode};
 use cheaper_core::nodepath;
 use cheaper_core::workspace::deny_paths::PathDenylist;
-use cheaper_core::workspace::paths::{resolve_workspace_path, SymlinkPolicy};
+use cheaper_core::workspace::paths::{
+    resolve_workspace_path, ResolvedWorkspacePath, SymlinkPolicy,
+};
 use cheaper_tools::ToolError;
 use serde_json::{Map, Value};
 
@@ -42,6 +44,22 @@ fn check_denied(display: &str, denylist: &PathDenylist) -> Result<(), CheaperErr
         }
     }
     Ok(())
+}
+
+/// workflow path の deny 照合 — lexical な logical path と canonical
+/// display の双方を検査する。catalog entry 検証(`catalog.rs`)と共有。
+pub(crate) fn check_workflow_path_denied(
+    root: &str,
+    path: &str,
+    resolved: &ResolvedWorkspacePath,
+    denylist: &PathDenylist,
+) -> Result<(), CheaperError> {
+    let logical = nodepath::relative(root, &nodepath::resolve(root, path));
+    check_denied(
+        &logical.split(nodepath::SEP).collect::<Vec<_>>().join("/"),
+        denylist,
+    )?;
+    check_denied(&resolved.display, denylist)
 }
 
 /// `withCause({cause})` 用 — box 済み `ToolError` を
@@ -84,16 +102,7 @@ where
             let resolved =
                 resolve_workspace_path(&options.root, &options.path, options.symlink_policy)
                     .map_err(|e| -> ToolError { Box::new(e) })?;
-            let logical = nodepath::relative(
-                &options.root,
-                &nodepath::resolve(&options.root, &options.path),
-            );
-            check_denied(
-                &logical.split(nodepath::SEP).collect::<Vec<_>>().join("/"),
-                &options.denylist,
-            )
-            .map_err(|e| -> ToolError { Box::new(e) })?;
-            check_denied(&resolved.display, &options.denylist)
+            check_workflow_path_denied(&options.root, &options.path, &resolved, &options.denylist)
                 .map_err(|e| -> ToolError { Box::new(e) })?;
             let metadata = tokio::fs::metadata(&resolved.real)
                 .await
