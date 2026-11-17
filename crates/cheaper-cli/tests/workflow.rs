@@ -1,4 +1,5 @@
-//! `workflow interface` / `workflow run`(T7)の in-process 結合 test。
+//! `workflow list` / `workflow interface` / `workflow run`(T7)の
+//! in-process 結合 test。
 //!
 //! `packages/cli/test/workflow-run.test.ts` / `workflow-interface.test.ts`
 //! の public contract に対応する:
@@ -13,6 +14,10 @@
 //! - quiet が汎用 error diagnostic を抑える
 //! - hooks.signal の abort 伝播
 //!
+//! `workflow list`(TS 対応なし — issue 201)は catalog 射影
+//! `{catalog, workflows, diagnostics, truncated}` の utility envelope と
+//! manifest 破損時の error envelope を検証する。
+//!
 //! `CHEAPER_CONFIG_DIR` を temp dir へ向けて credential store /
 //! usage.jsonl を分離する。
 
@@ -22,6 +27,236 @@ use common::{ambient_env, Fixture};
 use cheaper_cli::cli::{run_cli, CliIo};
 use cheaper_cli::history::store::{STARTED_FILE, TERMINAL_FILE};
 use serde_json::{json, Value};
+use std::path::{Path, PathBuf};
+
+// ---------------------------------------------------------------------------
+// workflow list
+// ---------------------------------------------------------------------------
+
+fn write_catalog_text(root: &Path, text: &str) {
+    let dir = root.join(".cheaper").join("workflows");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("catalog.json"), text).unwrap();
+}
+
+fn write_catalog(root: &Path, workflows: Value) {
+    let manifest = json!({ "schemaVersion": 1, "workflows": workflows });
+    write_catalog_text(root, &manifest.to_string());
+}
+
+fn catalog_entry(id: &str, path: &str) -> Value {
+    json!({ "id": id, "path": path, "summary": format!("{id} summary") })
+}
+
+/// `(path, len)` の再帰 snapshot — read-only command の書込み検出用。
+fn tree(dir: &Path) -> Vec<(PathBuf, u64)> {
+    let mut out = Vec::new();
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(current) = stack.pop() {
+        for entry in std::fs::read_dir(&current).unwrap() {
+            let path = entry.unwrap().path();
+            let meta = std::fs::metadata(&path).unwrap();
+            if meta.is_dir() {
+                stack.push(path.clone());
+            }
+            out.push((path, meta.len()));
+        }
+    }
+    out.sort();
+    out
+}
+
+fn ids(env: &Value) -> Vec<&str> {
+    env["result"]["workflows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|w| w["id"].as_str().unwrap())
+        .collect()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_list_without_catalog_is_an_empty_index() {
+    let mut f = Fixture::new();
+    let (code, env, err) = f.run(&["workflow", "list"]).await;
+    assert_eq!(code, 0, "stderr: {err}");
+    assert_eq!(env["ok"], json!(true));
+    assert_eq!(env["worker"], Value::Null);
+    assert_eq!(
+        env["result"],
+        json!({
+            "catalog": { "path": ".cheaper/workflows/catalog.json", "present": false },
+            "workflows": [],
+            "diagnostics": [],
+            "truncated": false
+        })
+    );
+    assert!(env["meta"]["durationMs"].is_number());
+    assert!(f.usage_log().is_none(), "usage.jsonl must not be written");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_list_projects_public_fields_without_side_effects() {
+    let mut f = Fixture::new().with_workflow(json!({
+        "schemaVersion": 1,
+        "inputs": {},
+        "jobs": {
+            "scan": { "kind": "tool", "tool": "read", "input": { "path": "PRIVATE-JOB-INPUT" } }
+        },
+        "outputs": {}
+    }));
+    write_catalog(
+        &f.ws_path(),
+        json!([
+            {
+                "id": "review",
+                "path": "workflow.json",
+                "summary": "Review a change",
+                "tags": ["review"],
+                "jobs": { "leak": { "prompt": "PRIVATE-CATALOG-FIELD" } }
+            },
+            catalog_entry("untagged", "workflow.json")
+        ]),
+    );
+    let before = (tree(&f.ws_path()), tree(f.cfg.path()));
+    let (code, env, err) = f.run(&["workflow", "list"]).await;
+    assert_eq!(code, 0, "stderr: {err}");
+    assert_eq!(
+        env["result"],
+        json!({
+            "catalog": { "path": ".cheaper/workflows/catalog.json", "present": true },
+            "workflows": [
+                {
+                    "id": "review",
+                    "path": "workflow.json",
+                    "summary": "Review a change",
+                    "tags": ["review"],
+                    "status": "ok"
+                },
+                {
+                    "id": "untagged",
+                    "path": "workflow.json",
+                    "summary": "untagged summary",
+                    "tags": [],
+                    "status": "ok"
+                }
+            ],
+            "diagnostics": [],
+            "truncated": false
+        })
+    );
+    assert!(!env.to_string().contains("PRIVATE"), "envelope: {env}");
+    assert_eq!(before, (tree(&f.ws_path()), tree(f.cfg.path())));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_list_malformed_manifest_is_an_error_envelope() {
+    let mut f = Fixture::new();
+    write_catalog_text(&f.ws_path(), "{ not json");
+    let (code, env, _err) = f.run(&["workflow", "list"]).await;
+    assert_eq!(env["ok"], json!(false));
+    assert_eq!(env["error"]["code"], json!("INVALID_INPUT"));
+    assert!(
+        env.get("result").is_none(),
+        "must not degrade to an empty list"
+    );
+    assert_ne!(code, 0);
+    assert_eq!(json!(code), env["error"]["exitCode"]);
+    assert!(f.usage_log().is_none(), "usage.jsonl must not be written");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_list_reports_entry_diagnostics_without_dropping_entries() {
+    let mut f = Fixture::new().with_workflow(json!({
+        "schemaVersion": 1, "inputs": {}, "jobs": {}, "outputs": {}
+    }));
+    write_catalog(
+        &f.ws_path(),
+        json!([
+            catalog_entry("same", "workflow.json"),
+            catalog_entry("gone", "deleted.json"),
+            catalog_entry("escape", "../outside.json"),
+            catalog_entry("same", "workflow.json"),
+            catalog_entry("fine", "workflow.json"),
+        ]),
+    );
+    let (code, env, err) = f.run(&["workflow", "list"]).await;
+    assert_eq!(code, 0, "stderr: {err}");
+    assert_eq!(env["ok"], json!(true));
+    let statuses: Vec<&str> = env["result"]["workflows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|w| w["status"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        statuses,
+        ["duplicate", "missing", "invalid", "duplicate", "ok"]
+    );
+    let diagnostics: Vec<Value> = env["result"]["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| {
+            assert!(d["message"].is_string(), "diagnostic: {d}");
+            json!([d["kind"], d["index"], d["id"], d["path"]])
+        })
+        .collect();
+    assert_eq!(
+        diagnostics,
+        [
+            json!(["duplicate-id", 0, "same", "workflow.json"]),
+            json!(["missing-path", 1, "gone", "deleted.json"]),
+            json!(["path-out-of-workspace", 2, "escape", "../outside.json"]),
+            json!(["duplicate-id", 3, "same", "workflow.json"]),
+        ]
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_list_limit_truncates_workflows() {
+    let mut f = Fixture::new().with_workflow(json!({
+        "schemaVersion": 1, "inputs": {}, "jobs": {}, "outputs": {}
+    }));
+    write_catalog(
+        &f.ws_path(),
+        json!([
+            catalog_entry("a", "workflow.json"),
+            catalog_entry("b", "workflow.json"),
+            catalog_entry("c", "workflow.json"),
+        ]),
+    );
+    let (code, env, err) = f.run(&["workflow", "list", "--limit", "2"]).await;
+    assert_eq!(code, 0, "stderr: {err}");
+    assert_eq!(ids(&env), ["a", "b"]);
+    assert_eq!(env["result"]["truncated"], json!(true));
+
+    let (code, env, _err) = f.run(&["workflow", "list", "--limit", "3"]).await;
+    assert_eq!(code, 0);
+    assert_eq!(ids(&env), ["a", "b", "c"]);
+    assert_eq!(env["result"]["truncated"], json!(false));
+
+    for bad in ["0", "257", "x"] {
+        let (code, env, _err) = f.run(&["workflow", "list", "--limit", bad]).await;
+        assert_eq!(env["error"]["code"], json!("INVALID_REQUEST"), "{bad}");
+        assert_ne!(code, 0, "{bad}");
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn workflow_list_reads_the_catalog_of_cwd_workspace() {
+    let mut f = Fixture::new();
+    let sub = f.ws_path().join("sub");
+    std::fs::create_dir_all(&sub).unwrap();
+    std::fs::write(sub.join("wf.json"), "{}").unwrap();
+    write_catalog(&sub, json!([catalog_entry("nested", "wf.json")]));
+    let sub_arg = sub.to_string_lossy().into_owned();
+    let (code, env, err) = f.run(&["workflow", "list", "--cwd", &sub_arg]).await;
+    assert_eq!(code, 0, "stderr: {err}");
+    assert_eq!(env["result"]["catalog"]["present"], json!(true));
+    assert_eq!(ids(&env), ["nested"]);
+    assert_eq!(env["result"]["workflows"][0]["status"], json!("ok"));
+}
 
 // ---------------------------------------------------------------------------
 // workflow interface
