@@ -128,6 +128,69 @@ route orchestration の overhead は `route-run` − `direct-child-exec` ≈ 2.1
 
 `kind:"tool"` job が使う `tool:"process"`・`tool:"command"` の canonical 名と input shape（`{"task":...}` / `{"name","args"}`）は不変。policy 上は両者とも単一 `exec` grant namespace の grant として解決される（`process` task は `fixed:true` grant、`command` grant は `!fixed` grant — [configuration ガイド](./configuration.md) の unified `exec` grant namespace 節を参照）。workflow の resource inference（producer/consumer edge と resource manifest）は grant の `inputs`/`outputs` 宣言を参照し、未宣言の grant は保守的な workspace root subtree claim に落ちる。`outputs: []` は「副作用を宣言しない」契約で、resource claim を持たず shared access として扱われる（task の I/O 宣言規約は [managed process ガイド](./managed-process.md) を参照）。
 
+## Project workflow catalog（`workflow list`）
+
+project に保存した再利用 workflow を private DAG なしで発見できるよう、
+`<workspace>/.cheaper/workflows/catalog.json` に manifest
+（schemaVersion 1）を置く規約がある。catalog は**発見用 index** で
+あり、workflow 定義の正本・grant/policy の根拠・実行経路ではない。
+実行は従来どおり `cheaper workflow run <path>` の明示 path のみ
+（catalog の `id` で実行する named lookup は存在しない）。
+
+### manifest schema（schemaVersion: 1）
+
+```json
+{
+  "schemaVersion": 1,
+  "workflows": [
+    {
+      "id": "review-change",
+      "path": "flows/review-change.json",
+      "summary": "Review a diff and report findings",
+      "tags": ["review", "git"]
+    }
+  ]
+}
+```
+
+| field | 制約 |
+| --- | --- |
+| `id` | 必須。`[A-Za-z0-9][A-Za-z0-9._-]*`・64 文字以内・catalog 内で一意 |
+| `path` | 必須。workspace root 相対の workflow JSON path（512 文字以内。絶対 path は malformed） |
+| `summary` | 必須。500 文字以内 |
+| `tags` | 任意。16 個まで・各 64 文字以内の string array |
+
+manifest 全体は 64 KiB・256 entry まで。上限超過・JSON 不正・
+非対応 `schemaVersion`・`workflows` 非 array は manifest 破損として
+`workflow list` が error envelope（`INVALID_INPUT`）+ 非 0 exit で
+fail-closed する。
+
+### 登録・更新と検証
+
+1. workflow JSON を workspace 内（例: `.cheaper/workflows/` 配下や
+   任意の workspace-relative path）に保存する。
+2. `catalog.json` の `workflows` array に `{id,path,summary,tags?}`
+   entry を追記する（id の重複に注意）。
+3. `cheaper workflow list` で登録状態を検証する。
+
+entry ごとの `status` は `ok`（file 存在・通常 file）/
+`missing`（file 不在）/`invalid`（workspace 外・deny 対象・
+非 file・shape 不備）/`duplicate`（id 重複。該当 entry 全てに
+付き、後勝ち上書きはしない）。`diagnostics` の `kind` は
+`malformed-entry`/`duplicate-id`/`missing-path`/
+`path-out-of-workspace`/`denied-path`/`not-regular-file`。
+stale entry は一覧に残り status で報告されるだけで、実行を妨げ
+ない・自動修復もされない。catalog は read-only で、未登録の
+workflow file を走査したり `.cheaper/` を書き換えたりしない。
+
+### `workflow list` の出力
+
+`{catalog:{path,present}, workflows, diagnostics, truncated}` を
+utility envelope で返す。`workflows[]` には manifest の
+`id`/`path`/`summary`/`tags` + 検証結果の `status` のみが載り、
+workflow JSON の jobs/prompt/binding などの private field は
+出力されない。詳細は [usage ガイド](./usage.md#workflow-list)を参照。
+
 ## 再測定
 
 `benchmarks/README.md` の手順（`cargo build -p cheaper-cli --features dev-seam` → `cargo run -p cheaper-bench`）で再実行できる。scheduler、prompt、model、CLI が変わった後は、同じ seed・反復数で `benchmarks/results/` に新しい UUID artifact を作り、古い結果を上書きせず比較する。canonical `mise run check` と merge 判定は coordinator が実行する。
