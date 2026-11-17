@@ -157,6 +157,10 @@ relations:
 
 - [Bounded hook request evaluation and hook-config registration lifecycle](./bounded-hook-request-evaluation-and-hook-config-registration-lifecycle.md) — `RoutingRequest::FileRead` の `range: Option<ReadRange>`（1-based offset・`limit<1` 無効→全文縮退）と `Search` variant（`path` 省略は cwd anchor、`.git` 除外・`SEARCH_SCAN_MAX_FILES=10,000`・`count_max_bytes` scan cap・`max_results`/`head_limit` は小さい方・`output_mode` 省略/Unknown は content 評価・`-i`/`--ignore-case` 正規化）による #107 の bounded 評価。`cheaper hook-config {sync|verify|remove}`（project/user scope、atomic replace、legacy-conflict gate、`--event-stdin` の APM lifecycle 写像・post-uninstall packages gate）と `install-devin-hooks.ps1` の CLI 委譲、per-dep `targets:`/`read_config_from` 移行経路。
 
+## Workflow catalog（Issue #201）
+
+- [Workflow catalog manifest and read-only list boundary](./workflow-catalog-manifest-and-read-only-list.md) — Epic #200 の発見導線が共有する project scope catalog(`.cheaper/workflows/catalog.json`、schemaVersion 1・bounded manifest)と、read-only `workflow list`(utility envelope・per-entry status・diagnostics・`--limit`)の境界を定義する。catalog は発見用 index であり、実行・権限の正本ではない(ADR-034ZixZvVK6PLmS1LMRJqu)。
+
 ## Refine 注記（issue #169）
 
 権限モデル再設計（#151 分解 #163–#168）により、本 doc の以下の記述は現行の真実と異なる。本 design は決定時点の記録として本文は保持する。

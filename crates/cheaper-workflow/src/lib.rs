@@ -11,6 +11,7 @@
 
 pub mod artifacts;
 pub mod bindings;
+pub mod catalog;
 pub mod compiler;
 pub mod dag;
 pub mod engine;
@@ -28,6 +29,10 @@ pub use artifacts::{
 pub use bindings::{
     materialize_bindings, parse_binding, pointer_segments, resolve_pointer, scan_bindings,
     validate_pointer_schema, MaterializeOptions, ScannedBindings,
+};
+pub use catalog::{
+    read_catalog, CatalogDiagnostic, CatalogEntry, CatalogRead, DiagnosticKind, EntryStatus,
+    CATALOG_RELATIVE_PATH, MAX_CATALOG_ENTRIES,
 };
 pub use compiler::{WorkflowCompiler, WorkflowCompilerPorts};
 pub use dag::{compile_dag, DagResult};

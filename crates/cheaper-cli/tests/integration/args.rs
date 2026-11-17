@@ -2,7 +2,7 @@
 
 use cheaper_cli::args::{
     global_flag_present, global_log_flags, is_route_check_invocation, parse_cli_args, AuthAction,
-    AuthTypeArg, CliFormat, ParsedCli, PolicyAction,
+    AuthTypeArg, CliFormat, ParsedCli, PolicyAction, WorkflowListCliArgs,
 };
 use cheaper_core::errors::ErrorCode;
 
@@ -442,7 +442,92 @@ fn workflow_interface_and_run() {
     assert_eq!(e.message(), "--input is not valid for workflow interface");
 
     let e = err(&["workflow"]);
-    assert_eq!(e.message(), "workflow requires interface|run <path>");
+    assert_eq!(e.message(), "workflow requires list | interface|run <path>");
+    for argv in [
+        vec!["workflow", "interface"],
+        vec!["workflow", "run"],
+        vec!["workflow", "run", ""],
+        vec!["workflow", "unknown", "wf.json"],
+    ] {
+        assert_eq!(
+            err(&argv).message(),
+            "workflow requires list | interface|run <path>",
+            "{argv:?}"
+        );
+    }
+    // `--limit` は list 専用 — interface/run の allowlist は不変。
+    assert_eq!(
+        err(&["workflow", "interface", "wf.json", "--limit", "2"]).message(),
+        "--limit is not valid for workflow interface"
+    );
+    assert_eq!(
+        err(&["workflow", "run", "wf.json", "--limit", "2"]).message(),
+        "--limit is not valid for workflow run"
+    );
+}
+
+#[test]
+fn workflow_list_grammar() {
+    assert_eq!(
+        parse_cli_args(&args(&["workflow", "list"])).unwrap(),
+        ParsedCli::WorkflowList(WorkflowListCliArgs {
+            cwd: None,
+            format: CliFormat::Json,
+            quiet: false,
+            limit: None,
+        })
+    );
+    assert_eq!(
+        parse_cli_args(&args(&[
+            "workflow",
+            "list",
+            "--cwd",
+            "ws",
+            "--limit",
+            "2",
+            "--format",
+            "text",
+            "--quiet",
+            "--log",
+            "info",
+            "--log-format",
+            "json",
+        ]))
+        .unwrap(),
+        ParsedCli::WorkflowList(WorkflowListCliArgs {
+            cwd: Some("ws".to_string()),
+            format: CliFormat::Text,
+            quiet: true,
+            limit: Some("2".to_string()),
+        })
+    );
+    // `--limit` 値の検証は dispatch 側(history と同規約)。
+    assert!(matches!(
+        parse_cli_args(&args(&["workflow", "list", "--limit", "0"])).unwrap(),
+        ParsedCli::WorkflowList(_)
+    ));
+    let e = err(&["workflow", "list", "--input", "x"]);
+    assert_eq!(e.code(), ErrorCode::InvalidRequest);
+    assert_eq!(e.message(), "--input is not valid for workflow list");
+    for option in [
+        "--timeout",
+        "--grant",
+        "--kind",
+        "--cursor",
+        "--worker-file",
+        "--model",
+    ] {
+        let e = err(&["workflow", "list", option, "x"]);
+        assert_eq!(e.code(), ErrorCode::InvalidRequest, "{option}");
+        assert_eq!(
+            e.message(),
+            format!("{option} is not valid for workflow list")
+        );
+    }
+    assert_eq!(
+        err(&["workflow", "list", "wf.json"]).message(),
+        "workflow requires list | interface|run <path>"
+    );
 }
 
 // --- --grant(T2: repeatable / non-run reject / 64KiB bound) -------------------

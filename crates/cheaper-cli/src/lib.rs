@@ -20,6 +20,7 @@
 //!   管理 command — DESIGN-034FntkIZGiffhdU4caSkN §(f))
 //! - `hook/` — hook entry(T6)
 //! - `workflow_context.rs` / `workflow_run.rs` — workflow command(T7)
+//! - `workflow_list.rs` — `workflow list`(project catalog の read-only 一覧)
 //!
 //! process entry(`main.rs`)は panic 境界・`__grep-eval` 早期分岐・
 //! tokio runtime のみを持ち、command 実装は全てこちらに置く。
@@ -50,4 +51,5 @@ pub mod text_format;
 pub mod usage_log;
 pub mod usage_report;
 pub mod workflow_context;
+pub mod workflow_list;
 pub mod workflow_run;

@@ -529,6 +529,19 @@ route log は sensitive として扱うこと。worker postprocess の
 skip・失敗（`postprocessFailures`）は command 実行や exit
 code に影響しない — リトライもしない。
 
+## workflow の発見（project catalog）
+
+project が `<workspace>/.cheaper/workflows/catalog.json` に
+manifest を置いている場合、parent agent は
+`cheaper workflow list` で登録済み workflow の
+id・path・summary・tags を private DAG なしで列挙できる。
+catalog は**発見用 index** であり、権限・実行の正本ではない —
+workflow の実行は従来どおり `workflow run <path>` の明示 path
+のみで、catalog の `id` による named lookup・暗黙実行・grant
+付与は存在しない。entry が `missing`/`invalid`/`duplicate` と
+診断されても明示 path 実行には影響しない。manifest schema・
+登録規約は [workflow ガイド](./workflow-usage.md#project-workflow-catalogworkflow-list) を参照。
+
 ## 関連
 
 - CLI contract: [usage ガイド](./usage.md)

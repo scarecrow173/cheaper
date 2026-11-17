@@ -117,6 +117,16 @@ pub struct CountTokensCliArgs {
     pub quiet: bool,
 }
 
+/// `workflow list` — project catalog の read-only 一覧。
+#[derive(Debug, Clone, PartialEq)]
+pub struct WorkflowListCliArgs {
+    pub cwd: Option<String>,
+    pub format: CliFormat,
+    pub quiet: bool,
+    /// `--limit` の未検証値。validation は dispatch が担う(history と同規約)。
+    pub limit: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct WorkflowInterfaceCliArgs {
     pub path: String,
@@ -298,6 +308,7 @@ pub enum ParsedCli {
     Version,
     Run(RunCliArgs),
     CountTokens(CountTokensCliArgs),
+    WorkflowList(WorkflowListCliArgs),
     WorkflowInterface(WorkflowInterfaceCliArgs),
     WorkflowRun(WorkflowRunCliArgs),
     Auth(AuthCliArgs),
@@ -322,6 +333,7 @@ impl ParsedCli {
             Self::CountTokens(a) => Some(a.format),
             Self::Usage(a) => Some(a.format),
             Self::History(a) => Some(a.format),
+            Self::WorkflowList(a) => Some(a.format),
             Self::WorkflowInterface(a) => Some(a.format),
             Self::WorkflowRun(a) => Some(a.format),
             Self::Auth(a) => Some(a.format),
@@ -339,6 +351,7 @@ impl ParsedCli {
             Self::CountTokens(a) => Some(a.quiet),
             Self::Usage(a) => Some(a.quiet),
             Self::History(a) => Some(a.quiet),
+            Self::WorkflowList(a) => Some(a.quiet),
             Self::WorkflowInterface(a) => Some(a.quiet),
             Self::WorkflowRun(a) => Some(a.quiet),
             Self::Auth(a) => Some(a.quiet),
@@ -763,17 +776,19 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
     let worker_file = values.worker_file.clone();
     if command == "workflow" {
         let action = positionals.get(1).map(String::as_str);
-        if (action != Some("interface") && action != Some("run"))
-            || positionals.len() != 3
-            || positionals[2].is_empty()
-        {
+        let valid_shape = match action {
+            Some("interface" | "run") => positionals.len() == 3 && !positionals[2].is_empty(),
+            Some("list") => positionals.len() == 2,
+            _ => false,
+        };
+        if !valid_shape {
             return Err(invalid_request(
-                "workflow requires interface|run <path>",
+                "workflow requires list | interface|run <path>",
                 None,
             ));
         }
-        let allowed: &[&str] = if action == Some("run") {
-            &[
+        let allowed: &[&str] = match action {
+            Some("run") => &[
                 "input",
                 "cwd",
                 "timeout",
@@ -782,9 +797,9 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                 "quiet",
                 "log",
                 "log-format",
-            ]
-        } else {
-            &["cwd", "format", "quiet", "log", "log-format"]
+            ],
+            Some("list") => &["cwd", "format", "quiet", "log", "log-format", "limit"],
+            _ => &["cwd", "format", "quiet", "log", "log-format"],
         };
         for token in &option_tokens {
             if !allowed.contains(&token.name.as_str()) {
@@ -797,6 +812,14 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
                     None,
                 ));
             }
+        }
+        if action == Some("list") {
+            return Ok(ParsedCli::WorkflowList(WorkflowListCliArgs {
+                cwd: values.cwd.clone(),
+                format,
+                quiet,
+                limit: values.limit.clone(),
+            }));
         }
         if action == Some("run") {
             check_grant_value_bounds(&values.grants)?;
@@ -1077,13 +1100,15 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         if !values.grants.is_empty() {
             return Err(reject_grant_flag());
         }
-        if values.kind.is_some()
-            || values.status.is_some()
-            || values.limit.is_some()
-            || values.cursor.is_some()
-        {
+        if values.kind.is_some() || values.status.is_some() || values.cursor.is_some() {
             return Err(invalid_request(
-                "--kind/--status/--limit/--cursor are only valid for `history`",
+                "--kind/--status/--cursor are only valid for `history`",
+                None,
+            ));
+        }
+        if values.limit.is_some() {
+            return Err(invalid_request(
+                "--limit is only valid for `history` or `workflow list`",
                 None,
             ));
         }
@@ -1121,13 +1146,15 @@ pub fn parse_cli_args(argv: &[String]) -> Result<ParsedCli, CheaperError> {
         }));
     }
 
-    if values.kind.is_some()
-        || values.status.is_some()
-        || values.limit.is_some()
-        || values.cursor.is_some()
-    {
+    if values.kind.is_some() || values.status.is_some() || values.cursor.is_some() {
         return Err(invalid_request(
-            "--kind/--status/--limit/--cursor are only valid for `history`",
+            "--kind/--status/--cursor are only valid for `history`",
+            None,
+        ));
+    }
+    if values.limit.is_some() {
+        return Err(invalid_request(
+            "--limit is only valid for `history` or `workflow list`",
             None,
         ));
     }

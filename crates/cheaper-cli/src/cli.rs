@@ -154,26 +154,27 @@ fn resolved_user_config_dir(
         .unwrap_or_default()
 }
 
-fn history_limit(value: Option<&str>) -> Result<usize, CheaperError> {
-    let Some(value) = value else {
-        return Ok(50);
-    };
-    if !value.is_ascii() || value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
-        return Err(crate::errors::invalid_request(
-            format!("invalid --limit: {value} (expected 1..500)"),
+/// `--limit` 値の共通 parse — ASCII 10 進数のみ・`1..=max`
+/// (`history list/trace` と `workflow list` が共有)。
+pub(crate) fn parse_limit(value: &str, max: usize) -> Result<usize, CheaperError> {
+    let invalid = || {
+        crate::errors::invalid_request(
+            format!("invalid --limit: {value} (expected 1..{max})"),
             None,
-        ));
+        )
+    };
+    if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(invalid());
     }
     value
         .parse::<usize>()
         .ok()
-        .filter(|limit| (1..=500).contains(limit))
-        .ok_or_else(|| {
-            crate::errors::invalid_request(
-                format!("invalid --limit: {value} (expected 1..500)"),
-                None,
-            )
-        })
+        .filter(|limit| (1..=max).contains(limit))
+        .ok_or_else(invalid)
+}
+
+fn history_limit(value: Option<&str>) -> Result<usize, CheaperError> {
+    value.map_or(Ok(50), |value| parse_limit(value, 500))
 }
 
 fn history_since(value: &str) -> Result<RecordedAt, CheaperError> {
@@ -690,6 +691,13 @@ async fn dispatch(
             write_output(io, &out.envelope, args.format);
             Ok(out.exit_code)
         }
+        ParsedCli::WorkflowList(args) => {
+            // 読み取り専用 utility command — `record_usage` を呼ばない
+            // (usage.jsonl 記録対象外)。
+            let envelope = crate::workflow_list::execute_list(&args, io, hooks, started_at)?;
+            write_output(io, &envelope, args.format);
+            Ok(0)
+        }
         ParsedCli::WorkflowInterface(args) => {
             let out = crate::workflow_run::execute_interface(&args, io, hooks, started_at).await?;
             write_output(io, &out.envelope, args.format);
@@ -792,6 +800,7 @@ fn command_name(parsed: &ParsedCli) -> &'static str {
         ParsedCli::Version => "version",
         ParsedCli::Run(_) => "run",
         ParsedCli::CountTokens(_) => "count-tokens",
+        ParsedCli::WorkflowList(_) => "workflow-list",
         ParsedCli::WorkflowInterface(_) => "workflow-interface",
         ParsedCli::WorkflowRun(_) => "workflow-run",
         ParsedCli::Auth(_) => "auth",
@@ -864,6 +873,7 @@ Commands:
   history list           List retained execution history
   history show <uuid>    Show one execution record
   history trace <uuid>   List records in a trace
+  workflow list             List cataloged workflows (read-only)
   workflow interface <path> Show the public workflow inputs and outputs
   workflow run <path>       Run a one-shot workflow
   usage                  Aggregate usage.jsonl (worker cost / measured savings)
@@ -908,6 +918,7 @@ Options:
   --kind <kind>             history list: filter by execution kind
   --status <status>         history list: filter by execution status
   --limit <1..500>          history list/trace page size (default: 50)
+  --limit <1..256>          workflow list: max entries (default: all)
   --cursor <opaque>         history list/trace continuation cursor
   --command <string>     route resolve/check: shell command sample
   --argv <json-array>    route resolve/check: argv array sample

@@ -19,6 +19,7 @@ Commands:
   history list           List retained execution history
   history show <uuid>    Show one execution record
   history trace <uuid>   List records in a trace
+  workflow list             List cataloged workflows (read-only)
   workflow interface <path> Show the public workflow inputs and outputs
   workflow run <path>       Run a one-shot workflow
   usage                  Aggregate usage.jsonl (worker cost / measured savings)
@@ -69,7 +70,7 @@ Commands:
 
 `--method`・`--type` は `auth login` 専用（下記参照）。
 `--compare-model`・`--group-by`・`--route` は `usage` 専用（後述）。
-`--since` は `usage` と `history list` で使えるが語彙が異なる — `usage` は `<値><ms|s|m|h>`、`history list` は `<N>m` / `<N>h` のみ（後述）。`--kind`・`--status`・`--limit`・`--cursor` は `history` 専用、`--command`・`--argv`・`--payload`・`--offset`・`--max-bytes` は `route` 専用。
+`--since` は `usage` と `history list` で使えるが語彙が異なる — `usage` は `<値><ms|s|m|h>`、`history list` は `<N>m` / `<N>h` のみ（後述）。`--kind`・`--status`・`--cursor` は `history` 専用、`--limit` は `history`（上限 500）と `workflow list`（上限 256）で使える。`--command`・`--argv`・`--payload`・`--offset`・`--max-bytes` は `route` 専用。
 
 ## stdin / stdout 契約
 
@@ -531,6 +532,36 @@ event data 128 MiB、500 ms のいずれかまでです。writer の retention s
 20,000 entry、128 MiB、500 ms のいずれかで打ち切り、容量を確認できないときは
 History の新規書き込みを省略します。`show` は指定 ID の directory にある既知の
 event file を最大 3 個まで読み、それぞれ 8 KiB を上限にします。
+
+## workflow list
+
+`workflow list` は workspace の project workflow catalog
+（`<workspace>/.cheaper/workflows/catalog.json`）を read-only で
+一覧します。catalog の manifest schema・登録規約は
+[workflow ガイド](./workflow-usage.md#project-workflow-catalogworkflow-list) を参照。
+
+```bash
+cheaper workflow list [--cwd <path>] [--limit <1..256>] [--format json|text] [--quiet]
+```
+
+- 受理する option は `--cwd`・`--limit`・`--format`・`--quiet`・
+  `--log`・`--log-format` のみ。`--input`・`--timeout`・`--grant`
+  等の実行系 option は `INVALID_REQUEST` で拒否します。
+- 成功時は `worker:null` の utility envelope で `result` が
+  `{catalog:{path,present}, workflows:[{id,path,summary,tags,status}],
+  diagnostics:[{kind,index,id?,path?,message}], truncated}`。
+  catalog が存在しない workspace では `present:false`・空一覧・
+  exit 0 です。
+- manifest が壊れている（JSON 不正・非対応 `schemaVersion`・
+  上限超過）場合は `ok:false` の error envelope + 非 0 exit で
+  fail-closed。entry 単位の異常（missing/duplicate/不正 path）は
+  `status` と `diagnostics` で報告され、exit 0 のまま一覧を返します。
+- `--limit` は `workflows` のみ打ち切り `truncated:true` を立てます
+  （`diagnostics` は常に全件）。
+- workflow file の読み込み・compile・worker/model 実行・grant/
+  policy 変更・usage.jsonl への記録は一切行いません。catalog の
+  id で workflow を実行する機能（named lookup）はありません — 実行は
+  従来どおり `workflow run <path>` の明示 path のみです。
 
 ## route
 
