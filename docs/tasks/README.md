@@ -64,6 +64,8 @@ Directory: `docs/tasks`
 | TASK-034KxDgCFTiXTthZajUTX1 | Add gated pattern-to-Search normalization to windsurf pre_read_code | done | [add-windsurf-gated-pattern-search-normalization.md](./add-windsurf-gated-pattern-search-normalization.md) |
 | TASK-034KxDm7X0zR41q82TJxVY | Add windsurf range-drop deny guidance and fix deny-reason assertions | done | [add-windsurf-range-deny-guidance.md](./add-windsurf-range-deny-guidance.md) |
 | TASK-TttCTIVey8FHby8zR3UDqb | Add worker workload profile and auto tier classifier | done | [add-worker-workload-profile-and-auto-tier-classifier.md](./add-worker-workload-profile-and-auto-tier-classifier.md) |
+| TASK-034ZiFaW8ZtvJ5XKVksixu | Add workflow catalog manifest read and diagnostics | todo | [add-workflow-catalog-manifest-read-and-diagnostics.md](./add-workflow-catalog-manifest-read-and-diagnostics.md) |
+| TASK-034ZiFcp5Q20dbMjDELSMv | Add workflow list CLI command | todo | [add-workflow-list-cli-command.md](./add-workflow-list-cli-command.md) |
 | TASK-034Jg6koI5aIWEPUXfhobu | Add workflow job when condition evaluation | done | [add-workflow-when.md](./add-workflow-when.md) |
 | TASK-034AR8FLSgTI6VLWpQZrQS | Benchmark evidence 集計と workflow usage guidance | done | [aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md](./aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md) |
 | TASK-034r05iHQeQpDqx9iKaroO | Align CI with canonical setup/check entrypoints and locked install | done | [align-ci-with-canonical-entrypoints.md](./align-ci-with-canonical-entrypoints.md) |
@@ -140,6 +142,7 @@ Directory: `docs/tasks`
 | TASK-034L59YCvXZOpmmELxVllt | trusted route flag issuer redesign の docs 更新契約 | done | [document-trusted-route-flag-issuer-redesign.md](./document-trusted-route-flag-issuer-redesign.md) |
 | TASK-034KQsvyJ7l63g3i4Gjnwl | unified exec grant model の guide/reference 文書更新 | done | [document-unified-exec-grant-model.md](./document-unified-exec-grant-model.md) |
 | TASK-034KxDvREdpF6P10oziJsy | Document windsurf tool_info contract and dual-registration trap in distribution guide | done | [document-windsurf-tool-info-contract-and-registration-requirements.md](./document-windsurf-tool-info-contract-and-registration-requirements.md) |
+| TASK-034ZiFevUsKu1l1x25tdz4 | Document workflow catalog contract and usage | todo | [document-workflow-catalog-contract-and-usage.md](./document-workflow-catalog-contract-and-usage.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034MGHAM3LVWSPo5RwaMkv | Propagate explicit execution correlation and project identities | done | [execution-history-carrier-catalog.md](./execution-history-carrier-catalog.md) |
 | TASK-034MGH8FHwescRINQne4sz | Create bounded execution History core | done | [execution-history-core.md](./execution-history-core.md) |
