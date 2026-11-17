@@ -108,6 +108,7 @@ Directory: `docs/designs`
 | DESIGN-034r05iHrZUE6WrdtQIOmE | コアドメインモデル: Worker Definition・Resolver・Runtime Policy・tool vocabulary・error model | approved | [worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md](./worker-definition-resolver-runtime-policy-tool-vocabulary-error-model.md) |
 | DESIGN-LAY8HNBqNyjH7L5DFvTPc2 | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume の実装設計 | approved | [worker-run-nullable-maxturns-and-stall-timeout.md](./worker-run-nullable-maxturns-and-stall-timeout.md) |
 | DESIGN-EmeEdXi9TWZZW2PzZsp29y | worker schema magnitude 撤廃と INVALID_OUTPUT raw output 永続化の実装設計 | approved | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |
+| DESIGN-034ZiAzpyOt6fMKWKB2XEE | Workflow catalog manifest and read-only list boundary | draft | [workflow-catalog-manifest-and-read-only-list.md](./workflow-catalog-manifest-and-read-only-list.md) |
 | DESIGN-034zJ38fX1W3g0Zrceda1E | WorkflowCompiler の validation と materialization 境界 | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
 | DESIGN-034zT2MINVpakJb3AhS0m5 | Workflow file loader と interface CLI の接続設計 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | DESIGN-034AQQsGub6ocuyzZg3Fuv | Design workflow orchestration benchmark harness | approved | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |
