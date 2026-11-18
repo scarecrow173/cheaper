@@ -1,0 +1,10 @@
+{
+  "name": "logistics-gateway",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "test": "echo \"no tests yet\"",
+    "inventory": "node scripts/generate-api-inventory.mjs",
+    "inventory:check": "node scripts/generate-api-inventory.mjs --check"
+  }
+}

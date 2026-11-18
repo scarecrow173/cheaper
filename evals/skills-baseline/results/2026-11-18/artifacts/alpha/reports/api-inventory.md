@@ -1,0 +1,99 @@
+# API Endpoint Inventory
+
+Generated from `docs/*.md` by `scripts/build-api-inventory.mjs`.
+Regenerate with `npm run api-inventory`.
+
+**63 endpoints** across **6 domains** (24 doc files scanned).
+
+## billing (12)
+
+| Method | Path | Description | Source |
+|---|---|---|---|
+| GET | `/v1/credit-notes` | List credit notes issued in the period. | `docs/billing-subscriptions.md` |
+| POST | `/v1/dunning/retry` | Retry dunning for a past-due invoice. | `docs/billing-payouts.md` |
+| POST | `/v1/invoices` | Create a draft invoice for a subscription or one-off charge. | `docs/billing-overview.md` |
+| GET | `/v1/invoices/{id}` | Fetch a single invoice with line items. | `docs/billing-overview.md` |
+| POST | `/v1/invoices/{id}/void` | Void an open invoice; emits billing.invoice.voided. | `docs/billing-overview.md` |
+| POST | `/v1/payments` | Capture a payment against an invoice or customer balance. | `docs/billing-payments.md` |
+| GET | `/v1/payments/{id}` | Fetch a payment with its attempt history. | `docs/billing-payments.md` |
+| POST | `/v1/payouts` | Trigger a payout to the default settlement account. | `docs/billing-payouts.md` |
+| POST | `/v1/refunds` | Refund a captured payment, full or partial. | `docs/billing-payments.md` |
+| GET | `/v1/subscriptions` | List subscriptions for the workspace. | `docs/billing-overview.md` |
+| PATCH | `/v1/subscriptions/{id}` | Change plan, quantity, or billing anchor. | `docs/billing-subscriptions.md` |
+| GET | `/v1/tax-rates` | List tax rates applicable to the workspace. | `docs/billing-payouts.md` |
+
+## auth (12)
+
+| Method | Path | Description | Source |
+|---|---|---|---|
+| GET | `/v1/api-keys` | List API keys for the workspace. | `docs/auth-api-keys.md` |
+| POST | `/v1/api-keys` | Create an API key with scoped permissions. | `docs/auth-api-keys.md` |
+| DELETE | `/v1/api-keys/{id}` | Revoke an API key immediately. | `docs/auth-api-keys.md` |
+| POST | `/v1/mfa/enable` | Start TOTP enrollment; returns provisioning URI. | `docs/auth-mfa.md` |
+| POST | `/v1/mfa/verify` | Verify a TOTP code and activate MFA. | `docs/auth-mfa.md` |
+| POST | `/v1/oauth/revoke` | Revoke an access or refresh token. | `docs/auth-oauth.md` |
+| POST | `/v1/oauth/token` | Exchange a code or refresh token for an access token. | `docs/auth-oauth.md` |
+| GET | `/v1/oauth/userinfo` | Return claims for the presented access token. | `docs/auth-oauth.md` |
+| POST | `/v1/password/change` | Change password with current credential proof. | `docs/auth-api-keys.md` |
+| POST | `/v1/password/reset` | Send a password reset email. | `docs/auth-api-keys.md` |
+| POST | `/v1/sessions` | Create an interactive session from credentials. | `docs/auth-sessions.md` |
+| DELETE | `/v1/sessions/{id}` | Terminate a session and its refresh chain. | `docs/auth-sessions.md` |
+
+## notify (10)
+
+| Method | Path | Description | Source |
+|---|---|---|---|
+| POST | `/v1/broadcasts` | Broadcast a message to a topic. | `docs/notify-broadcasts.md` |
+| POST | `/v1/channels/email/test` | Send a test message through the email channel. | `docs/notify-channels.md` |
+| GET | `/v1/delivery/{id}` | Fetch per-recipient delivery detail. | `docs/notify-broadcasts.md` |
+| POST | `/v1/notifications` | Send a notification over one or more channels. | `docs/notify-send.md` |
+| GET | `/v1/notifications/{id}` | Fetch delivery state per channel. | `docs/notify-send.md` |
+| GET | `/v1/subscriptions/topics` | List topic subscriptions for the workspace. | `docs/notify-channels.md` |
+| POST | `/v1/templates` | Create a reusable message template. | `docs/notify-templates.md` |
+| GET | `/v1/templates/{slug}` | Fetch a template by slug. | `docs/notify-templates.md` |
+| POST | `/v1/topics` | Create a broadcast topic. | `docs/notify-broadcasts.md` |
+| POST | `/v1/webhooks` | Register a webhook endpoint for delivery events. | `docs/notify-broadcasts.md` |
+
+## ledger (9)
+
+| Method | Path | Description | Source |
+|---|---|---|---|
+| GET | `/v1/accounts` | List ledger accounts. | `docs/ledger-accounts.md` |
+| POST | `/v1/accounts` | Open a ledger account. | `docs/ledger-accounts.md` |
+| GET | `/v1/accounts/{id}/balance` | Compute the current account balance. | `docs/ledger-accounts.md` |
+| POST | `/v1/entries` | Append a double-entry transaction. | `docs/ledger-entries.md` |
+| GET | `/v1/entries/{id}` | Fetch an entry with its postings. | `docs/ledger-entries.md` |
+| GET | `/v1/journals` | List journal entries for a period. | `docs/ledger-reports.md` |
+| POST | `/v1/reconciliations` | Start an account reconciliation run. | `docs/ledger-reports.md` |
+| GET | `/v1/reports/trial-balance` | Fetch the trial balance report. | `docs/ledger-reports.md` |
+| POST | `/v1/transfers` | Move funds between accounts atomically. | `docs/ledger-transfers.md` |
+
+## catalog (10)
+
+| Method | Path | Description | Source |
+|---|---|---|---|
+| GET | `/v1/categories` | List categories. | `docs/catalog-categories.md` |
+| POST | `/v1/categories` | Create a category. | `docs/catalog-categories.md` |
+| POST | `/v1/import/jobs` | Start a CSV bulk import. | `docs/catalog-import.md` |
+| GET | `/v1/import/jobs/{id}` | Check import job progress. | `docs/catalog-import.md` |
+| GET | `/v1/products` | List products with filters. | `docs/catalog-products.md` |
+| POST | `/v1/products` | Create a product. | `docs/catalog-products.md` |
+| GET | `/v1/products/{sku}` | Fetch a product by SKU. | `docs/catalog-products.md` |
+| PATCH | `/v1/products/{sku}` | Update product fields. | `docs/catalog-products.md` |
+| DELETE | `/v1/products/{sku}` | Archive a product. | `docs/catalog-categories.md` |
+| GET | `/v1/search` | Full-text search across products and categories. | `docs/catalog-search.md` |
+
+## shipping (10)
+
+| Method | Path | Description | Source |
+|---|---|---|---|
+| GET | `/v1/addresses/{id}/validate` | Validate a stored address. | `docs/shipping-ops.md` |
+| GET | `/v1/carriers` | List enabled carriers and service levels. | `docs/shipping-carriers.md` |
+| POST | `/v1/labels` | Purchase and render a shipping label. | `docs/shipping-ops.md` |
+| GET | `/v1/pickups` | List scheduled carrier pickups. | `docs/shipping-ops.md` |
+| POST | `/v1/pickups` | Schedule a carrier pickup. | `docs/shipping-ops.md` |
+| POST | `/v1/rates/quote` | Quote shipping rates for a parcel. | `docs/shipping-rates.md` |
+| POST | `/v1/shipments` | Create a shipment from an order. | `docs/shipping-shipments.md` |
+| GET | `/v1/shipments/{id}` | Fetch a shipment with items. | `docs/shipping-shipments.md` |
+| POST | `/v1/shipments/{id}/cancel` | Cancel a shipment before pickup. | `docs/shipping-shipments.md` |
+| GET | `/v1/tracking/{tracking}` | Fetch tracking events for a label. | `docs/shipping-rates.md` |
