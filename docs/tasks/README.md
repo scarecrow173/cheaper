@@ -257,6 +257,7 @@ Directory: `docs/tasks`
 | TASK-034FppMiRb1TxdOmzgt11q | T1: invocation-policy-layer — core load_policy への合成 invocation layer（compile-forced propagation 所有） | done | [invocation-policy-layer.md](./invocation-policy-layer.md) |
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-6uOJTepTvP210AgeeaBtkq | issue-111 文書追随・回帰 fixture・最終検証 | done | [issue-111-docs-and-final-verification.md](./issue-111-docs-and-final-verification.md) |
+| TASK-034Zuh3LdPDyCROadypAO0 | L0 workflow candidate trigger implementation | done | [l0-workflow-candidate-trigger-implementation.md](./l0-workflow-candidate-trigger-implementation.md) |
 | TASK-03404zg7SVQPn5JeZ0lwDD | Make exec_infra_failure_returns_error deterministic via error code and message | done | [make-exec-infra-failure-test-deterministic.md](./make-exec-infra-failure-test-deterministic.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034MbTvAS8BfQZNoBH12OQ | Measure representative large usage.jsonl peak memory and record evidence (issue #184 T5) | done | [measure-usage-jsonl-peak-memory.md](./measure-usage-jsonl-peak-memory.md) |

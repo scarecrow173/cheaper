@@ -38,6 +38,7 @@ Directory: `docs/discovery`
 | DISC-034IdYnTDqD7Ao1nG3aoY9 | Hook duplicate firing dedup via canonical request fingerprint | resolved | [hook-duplicate-firing-dedup-via-canonical-request-fingerprint.md](./hook-duplicate-firing-dedup-via-canonical-request-fingerprint.md) |
 | DISC-034r05iHy2gdnpcXzmUKaV | Huge-file token count guard and fail-closed hook behavior | resolved | [huge-file-token-count-guard-and-fail-closed-hook-behavior.md](./huge-file-token-count-guard-and-fail-closed-hook-behavior.md) |
 | DISC-034FlIAczzK2ruZW3HTcJi | invocation-scoped command grant と grant-request フローを整理する | resolved | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |
+| DISC-034Zk080rxFtqiKnk4VQHE | L0 workflow candidate trigger rule for issue 202 | resolved | [l0-workflow-candidate-trigger-issue-202.md](./l0-workflow-candidate-trigger-issue-202.md) |
 | DISC-034A8pIq50dPYXsDhld9st | managed process の認可と lifecycle を整理する | resolved | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
 | DISC-034Aq1bAPGiJ8GsKHAeKAL | managed process lifecycle hardening | resolved | [managed-process-lifecycle-hardening.md](./managed-process-lifecycle-hardening.md) |
 | DISC-034rzGKaCRO8vRQUpNJvWd | model-pricing-catalog-and-curated-exceptions | resolved | [model-pricing-catalog-and-curated-exceptions.md](./model-pricing-catalog-and-curated-exceptions.md) |

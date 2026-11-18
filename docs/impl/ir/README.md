@@ -125,6 +125,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zTuWWp7bpifS4FoAiG2 | implement-workflow-loader | completed | [implement-workflow-loader.md](./implement-workflow-loader.md) |
 | IMPL-034AH5aBMIDz91t2o5olxp | Integrate process runtime disposal | completed | [integrate-process-runtime-disposal.md](./integrate-process-runtime-disposal.md) |
 | IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | completed | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
+| IMPL-034Zuk5KqJIYiOP5aFveMz | L0 workflow candidate trigger implementation record | completed | [l0-workflow-candidate-trigger-implementation-record.md](./l0-workflow-candidate-trigger-implementation-record.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | IMPL-034MpAHqkHvEuevjW9HP58 | Measure usage JSONL peak memory issue 184 T5 | completed | [measure-usage-jsonl-peak-memory-issue-184-t5.md](./measure-usage-jsonl-peak-memory-issue-184-t5.md) |

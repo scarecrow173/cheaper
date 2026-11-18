@@ -176,6 +176,77 @@ file-read と同一の token 計測（`count-tokens` と同じ判定経路）で
 - **明示**: parent agent（またはユーザーが skill を発動）が
   `cheaper bulk-read` 等を直接呼ぶ。
 
+## Workflow 候補の軽量判定（L0）
+
+`cheaper-usage` skill の front-matter `description` と本文末尾の
+「Workflow candidate check (L0)」節に、parent agent が通常作業中に
+Workflow 候補を見つけるための極小の常時判定規約を搭載している。
+L0 が決めるのは「L1 skill `cheaper-workflow-discover` を読むか」
+だけであり、Workflow 化判断・重複探索・コスト分析・保存は行わない。
+candidate signal（反復・明示的な反復要求、手組みの
+fan-out/fan-in・tool→worker chain、長い中間出力の内部要約価値、
+入力差替えで再利用できる定型処理）と抑制条件（session 中 1 回・
+拒否済み再提案禁止・この判定のためだけの per-turn catalog/
+`history`/`usage`/file scan 禁止）の正本は `cheaper-usage` の
+L0 節であり、ここでは重複記述せず contract のみを指す。
+
+### target 別の skill discovery と発火限界
+
+L0 は hook ではなく skill metadata に載る規約のため、parent agent
+runtime が skill をどう discovery し発火させるかに依存する。
+
+| target | APM 既定の deploy 先 | runtime の skill discovery | 発火限界 |
+|---|---|---|---|
+| Claude Code | `.claude/skills/` | native scan | description 一致の間接発火は model 判定（非保証）。明示呼出しは `/<skill>` |
+| OpenAI Codex | `.agents/skills/` | repo root + cwd 祖先を native scan | 同上。明示呼出しは `$<skill>` / `/skills` |
+| Cursor | `.agents/skills/` | Cursor 2.4+ が `.agents/skills/` を scan（`.cursor/skills/`・`.claude/skills/`・`.codex/skills/` も対象） | 同上。明示呼出しは `/` メニュー |
+| GitHub Copilot | `.agents/skills/` | Copilot CLI が `.agents/skills/` を scan（runtime により `.github/skills/`・`.claude/skills/` も対象）。IDE agent mode は version 依存 | 同上 |
+| Windsurf Cascade | `.agents/skills/` | `.agents/skills/` の cross-agent compat scan（`.devin/skills/`・`.windsurf/skills/` も対象） | 同上 |
+| agent-skills（Devin CLI 等） | `.agents/skills/` | session 開始時に skill を読み込む（本 repo で dogfood 検証済み） | 同上 |
+
+共通の限界:
+
+- description 一致の間接発火は**全 target で model の判断に依存**し、
+  「常時自動起動する」保証ではない。runtime version が Agent Skills
+  非対応なら明示呼出しのみになる。
+- `--legacy-skill-paths` で install した場合、deploy 先は
+  `.github/skills/`・`.cursor/skills/` 等の per-client dir へ変わるが、
+  各 runtime は legacy dir も scan するため discovery 自体は維持される
+  （`cheaper-usage` SKILL.md 記載の注記どおり、helper の参照には実
+  deploy path を使う）。
+- agent-skills は skill 専用 target で hook を持たない — hook 経由の
+  L0 相当の機構は存在しない。skill discovery がすべて。
+
+### 発火しない環境での fallback
+
+間接発火が保証できない・拾われなかった場合でも、ユーザーが
+「`cheaper-usage` skill の L0 節を読んで現在の作業が Workflow
+候補か判定して」と明示依頼すれば同じ判定が動く — skill 名の
+明示呼出しは auto-firing が無い環境でも機能する。L0 が候補と判定
+した場合、後続の L1 skill `cheaper-workflow-discover`（#203）が
+install 済みなら明示的に読ませる。未配布の version では L0 の
+観測結果をそのままユーザーへ報告し、存在しない skill を呼ばせない。
+
+### opt-in 最小指示テンプレート
+
+skill auto-firing に依存せず L0 相当を常時適用したい consumer は、
+自前の `AGENTS.md` / rules に以下の block を貼れる。
+
+```text
+During normal work, run cheaper's L0 workflow-candidate check: if you
+observe the same semantic procedure repeated twice or more, manual
+fan-out/fan-in across tools or workers, long intermediate outputs that
+should stay internal, or boilerplate that becomes reusable by swapping
+inputs — decide only whether the work is a workflow candidate. Do not
+run the workflow catalog, `history`, `usage`, or file scans for this
+check. Raise each distinct candidate at most once per session. If the
+cheaper-workflow-discover skill is installed, load it; if not, report
+the observed pattern to me instead.
+```
+
+この template は `cheaper-usage` の L0 節の写しではなく最小規約で
+ある — signal の完全な説明と抑制条件の正本は常に skill 側にある。
+
 ## 閾値の設定
 
 `CHEAPER_READ_TOKEN_THRESHOLD` で large-read threshold（default
