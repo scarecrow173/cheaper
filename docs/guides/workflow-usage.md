@@ -175,6 +175,13 @@ fail-closed する。
    entry を追記する（id の重複に注意）。
 3. `cheaper workflow list` で登録状態を検証する。
 
+新規 workflow の設計・検証・登録を親 agent へ委譲する場合は
+`cheaper-workflow-create` skill（APM package 同梱）がこの手順を
+担う。定義 JSON を組み立て、`cheaper workflow interface <path>`
+で静的検証し、catalog へ `{id,path,summary,tags}` を追記して
+`workflow list` で確認する。定義の保存と実行は別 — skill は
+`workflow run` を起動せず、grant/policy/Route も変更しない。
+
 entry ごとの `status` は `ok`（file 存在・通常 file）/
 `missing`（file 不在）/`invalid`（workspace 外・deny 対象・
 非 file・shape 不備）/`duplicate`（id 重複。該当 entry 全てに

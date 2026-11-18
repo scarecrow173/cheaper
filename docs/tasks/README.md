@@ -64,8 +64,8 @@ Directory: `docs/tasks`
 | TASK-034KxDgCFTiXTthZajUTX1 | Add gated pattern-to-Search normalization to windsurf pre_read_code | done | [add-windsurf-gated-pattern-search-normalization.md](./add-windsurf-gated-pattern-search-normalization.md) |
 | TASK-034KxDm7X0zR41q82TJxVY | Add windsurf range-drop deny guidance and fix deny-reason assertions | done | [add-windsurf-range-deny-guidance.md](./add-windsurf-range-deny-guidance.md) |
 | TASK-TttCTIVey8FHby8zR3UDqb | Add worker workload profile and auto tier classifier | done | [add-worker-workload-profile-and-auto-tier-classifier.md](./add-worker-workload-profile-and-auto-tier-classifier.md) |
-| TASK-034ZiFaW8ZtvJ5XKVksixu | Add workflow catalog manifest read and diagnostics | todo | [add-workflow-catalog-manifest-read-and-diagnostics.md](./add-workflow-catalog-manifest-read-and-diagnostics.md) |
-| TASK-034ZiFcp5Q20dbMjDELSMv | Add workflow list CLI command | todo | [add-workflow-list-cli-command.md](./add-workflow-list-cli-command.md) |
+| TASK-034ZiFaW8ZtvJ5XKVksixu | Add workflow catalog manifest read and diagnostics | done | [add-workflow-catalog-manifest-read-and-diagnostics.md](./add-workflow-catalog-manifest-read-and-diagnostics.md) |
+| TASK-034ZiG2kRrXqHk9bVf8pQs | Add workflow list CLI command | done | [add-workflow-list-cli-command.md](./add-workflow-list-cli-command.md) |
 | TASK-034Jg6koI5aIWEPUXfhobu | Add workflow job when condition evaluation | done | [add-workflow-when.md](./add-workflow-when.md) |
 | TASK-034AR8FLSgTI6VLWpQZrQS | Benchmark evidence 集計と workflow usage guidance | done | [aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md](./aggregate-benchmark-evidence-and-publish-workflow-usage-guidance.md) |
 | TASK-034r05iHQeQpDqx9iKaroO | Align CI with canonical setup/check entrypoints and locked install | done | [align-ci-with-canonical-entrypoints.md](./align-ci-with-canonical-entrypoints.md) |
@@ -83,6 +83,7 @@ Directory: `docs/tasks`
 | TASK-FP5YNv1aQHfB69NlhCQJbG | Auth prompt I/O boundary routing and TTY prompt tests | done | [auth-io-boundary-prompt-routing-and-tests.md](./auth-io-boundary-prompt-routing-and-tests.md) |
 | TASK-034r05iHQeQpDqpy4V1ZNo | Auth URL opener final verification and status sync | done | [auth-url-opener-final-verification.md](./auth-url-opener-final-verification.md) |
 | TASK-034r05iHQeQpDqovKmKaZC | Auth URL opener seam and test isolation | done | [auth-url-opener-seam-and-test-isolation.md](./auth-url-opener-seam-and-test-isolation.md) |
+| TASK-034ZuedgAEVT4fbOtnEEap | author cheaper-workflow-create skill | done | [author-cheaper-workflow-create-skill.md](./author-cheaper-workflow-create-skill.md) |
 | TASK-034zXj9deJ0LTUdaiGwflX | Bounded concurrency policy を導入する | done | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
 | TASK-034H3Q05R2fMnFMJwYEuLl | Bounded eval and registration docs/e2e follow-through | done | [bounded-eval-and-registration-docs-e2e.md](./bounded-eval-and-registration-docs-e2e.md) |
 | TASK-034r05iHQeQpDqkDLrHBxb | Bounded read tool and registry swap | done | [bounded-read-tool-and-registry-swap.md](./bounded-read-tool-and-registry-swap.md) |
@@ -142,7 +143,7 @@ Directory: `docs/tasks`
 | TASK-034L59YCvXZOpmmELxVllt | trusted route flag issuer redesign の docs 更新契約 | done | [document-trusted-route-flag-issuer-redesign.md](./document-trusted-route-flag-issuer-redesign.md) |
 | TASK-034KQsvyJ7l63g3i4Gjnwl | unified exec grant model の guide/reference 文書更新 | done | [document-unified-exec-grant-model.md](./document-unified-exec-grant-model.md) |
 | TASK-034KxDvREdpF6P10oziJsy | Document windsurf tool_info contract and dual-registration trap in distribution guide | done | [document-windsurf-tool-info-contract-and-registration-requirements.md](./document-windsurf-tool-info-contract-and-registration-requirements.md) |
-| TASK-034ZiFevUsKu1l1x25tdz4 | Document workflow catalog contract and usage | todo | [document-workflow-catalog-contract-and-usage.md](./document-workflow-catalog-contract-and-usage.md) |
+| TASK-034ZiGQrT3mNkVx9sLpW7d | Document workflow catalog contract and usage | done | [document-workflow-catalog-contract-and-usage.md](./document-workflow-catalog-contract-and-usage.md) |
 | TASK-034r05iHQeQpDqzPOrhXsY | Enforce grep batchMaxBytes invariant at construction | done | [enforce-grep-batch-max-bytes-invariant.md](./enforce-grep-batch-max-bytes-invariant.md) |
 | TASK-034MGHAM3LVWSPo5RwaMkv | Propagate explicit execution correlation and project identities | done | [execution-history-carrier-catalog.md](./execution-history-carrier-catalog.md) |
 | TASK-034MGH8FHwescRINQne4sz | Create bounded execution History core | done | [execution-history-core.md](./execution-history-core.md) |
@@ -258,6 +259,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-6uOJTepTvP210AgeeaBtkq | issue-111 文書追随・回帰 fixture・最終検証 | done | [issue-111-docs-and-final-verification.md](./issue-111-docs-and-final-verification.md) |
 | TASK-034Zuh3LdPDyCROadypAO0 | L0 workflow candidate trigger implementation | done | [l0-workflow-candidate-trigger-implementation.md](./l0-workflow-candidate-trigger-implementation.md) |
+| TASK-034Zuee3qE5UZ7VZ4nRMwG | link workflow create skill from guides | done | [link-workflow-create-skill-from-guides.md](./link-workflow-create-skill-from-guides.md) |
 | TASK-03404zg7SVQPn5JeZ0lwDD | Make exec_infra_failure_returns_error deterministic via error code and message | done | [make-exec-infra-failure-test-deterministic.md](./make-exec-infra-failure-test-deterministic.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034MbTvAS8BfQZNoBH12OQ | Measure representative large usage.jsonl peak memory and record evidence (issue #184 T5) | done | [measure-usage-jsonl-peak-memory.md](./measure-usage-jsonl-peak-memory.md) |

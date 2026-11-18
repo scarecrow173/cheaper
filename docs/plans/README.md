@@ -73,8 +73,9 @@ Directory: `docs/plans`
 | PLAN-034ETMVrwmwh0Z0jq4gwtt | tool-operator built-in worker と cheaper.optionalTools 縮退機構を実装する | completed | [implement-tool-operator-built-in-worker.md](./implement-tool-operator-built-in-worker.md) |
 | PLAN-034M8k2N0x4RKepPhz3J4M | Implement issue 184 usage route and error analysis | approved | [implement-usage-route-error-analysis-issue-184.md](./implement-usage-route-error-analysis-issue-184.md) |
 | PLAN-034zQHj1WyOgBNLGbDaFY8 | Implement version-pinned launcher acquisition | completed | [implement-version-pinned-launcher-acquisition.md](./implement-version-pinned-launcher-acquisition.md) |
-| PLAN-034ZiDqt5yJE77dMHMvF3G | Implement workflow catalog and read-only list | draft | [implement-workflow-catalog-and-list.md](./implement-workflow-catalog-and-list.md) |
+| PLAN-034ZiDqt5yJE77dMHMvF3G | Implement workflow catalog and read-only list | approved | [implement-workflow-catalog-and-list.md](./implement-workflow-catalog-and-list.md) |
 | PLAN-034zQ9Pet2QAuh0FP3ku3u | Workflow contract compiler を実装する | completed | [implement-workflow-contract-compiler.md](./implement-workflow-contract-compiler.md) |
+| PLAN-034ZudkXx2PLdh6cgGpRns | implement cheaper-workflow-create skill | approved | [implement-workflow-create-skill.md](./implement-workflow-create-skill.md) |
 | PLAN-034zTiB05IwVw2pDB34sLk | Workflow loader と公開 interface CLI を接続する | completed | [implement-workflow-file-interface.md](./implement-workflow-file-interface.md) |
 | PLAN-034AR2f7p2NSUDtUhSuLp6 | Implement workflow orchestration benchmarks | approved | [implement-workflow-orchestration-benchmarks.md](./implement-workflow-orchestration-benchmarks.md) |
 | PLAN-034zTu37tgDGI306OPBitz | Workflow resource inference を実装する | completed | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
