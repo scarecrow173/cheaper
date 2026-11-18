@@ -295,12 +295,38 @@ pub(crate) fn builtin_dir_call_count() -> usize {
 /// 展開され workspace へ `cheaper-builtin-*` を書き出してしまう
 /// (Windows `TMP=褰` 等)。代替 dir へ推測で fallback せず、
 /// `InvalidInput` で fail-closed にする(issue #217)。
-fn materialize_target(temp: &Path, version: &str) -> io::Result<PathBuf> {
+///
+/// さらに、absolute 化済みの temp dir が process cwd 以下に解決される
+/// 場合も reject する。Windows の `GetTempPathW` 系は relative
+/// TMP/TEMP を cwd 相対で absolutize するため、is_absolute だけでは
+/// `TMP=褰` の汚染経路(absolute temp under cwd)を塞げないことが実機
+/// 検証で判明した — containment 側が本 fix の根幹。`cwd` が
+/// `None`(解決不能)の場合は inside 性を証明できないため fail-open で
+/// skip する。
+///
+/// 既知の残余(意図的に機構を増やさない): 判定は lexical な component
+/// 一致(`Path::starts_with`)のみで canonicalize・symlink 解決を行わ
+/// ない — `..` や symlink 経由で lexical に cwd 内へ見える temp は
+/// 保守的に reject し、lexical に外へ見える alias は見逃す。Windows
+/// での case-sensitive 比較も既知の残余。
+fn materialize_target(temp: &Path, version: &str, cwd: Option<&Path>) -> io::Result<PathBuf> {
     if !temp.is_absolute() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
             format!("system temp dir is not absolute: {}", temp.display()),
         ));
+    }
+    if let Some(cwd) = cwd {
+        if temp.starts_with(cwd) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "system temp dir resolves inside current working directory: {} (cwd: {})",
+                    temp.display(),
+                    cwd.display()
+                ),
+            ));
+        }
     }
     Ok(temp.join(format!(
         "cheaper-builtin-{version}-{}",
@@ -312,7 +338,8 @@ fn materialize_builtin_dir() -> io::Result<PathBuf> {
     let version = embedded_version().ok_or_else(|| {
         io::Error::new(io::ErrorKind::NotFound, "failed to resolve package version")
     })?;
-    let target = materialize_target(&std::env::temp_dir(), &version)?;
+    let cwd = std::env::current_dir().ok();
+    let target = materialize_target(&std::env::temp_dir(), &version, cwd.as_deref())?;
     let ready = target.join(".ready");
     if ready.is_file() {
         return Ok(target);
@@ -387,7 +414,7 @@ mod tests {
     #[test]
     fn materialize_target_rejects_relative_temp_dir() {
         for temp in ["relative-tmp", "./tmp", "褰"] {
-            let err = materialize_target(Path::new(temp), "1.0.0")
+            let err = materialize_target(Path::new(temp), "1.0.0", None)
                 .expect_err("relative temp dir must be rejected");
             assert_eq!(err.kind(), io::ErrorKind::InvalidInput, "{temp}");
             assert!(
@@ -401,10 +428,62 @@ mod tests {
     /// `temp_dir()` が空 path を返す env では何も作成しない。
     #[test]
     fn materialize_target_rejects_empty_temp_dir() {
-        let err = materialize_target(Path::new(""), "1.0.0")
+        let err = materialize_target(Path::new(""), "1.0.0", None)
             .expect_err("empty temp dir must be rejected");
         assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
         assert!(err.to_string().contains("system temp dir is not absolute"));
+    }
+
+    /// issue #217: Windows では relative TMP/TEMP が cwd 相対で
+    /// absolutize され、absolute 化された temp が workspace 配下に
+    /// なる経路で汚染が観測された。cwd 以下の temp dir(同一 path を
+    /// 含む)も `InvalidInput` で reject する。
+    #[test]
+    fn materialize_target_rejects_temp_dir_inside_cwd() {
+        let cwd = tempfile::tempdir().unwrap();
+        for temp in [cwd.path().join("褰"), cwd.path().join("sub").join("deep")] {
+            let err = materialize_target(&temp, "1.0.0", Some(cwd.path()))
+                .expect_err("temp dir inside cwd must be rejected");
+            assert_eq!(err.kind(), io::ErrorKind::InvalidInput, "{temp:?}");
+            assert!(
+                err.to_string().contains("inside current working directory"),
+                "error must describe the violation: {err} for {temp:?}"
+            );
+        }
+        // temp == cwd も reject(component-wise starts_with は同一 path を含む)。
+        let err = materialize_target(cwd.path(), "1.0.0", Some(cwd.path()))
+            .expect_err("temp dir equal to cwd must be rejected");
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+    }
+
+    /// issue #217: cwd の外にある temp dir(parent・sibling)は
+    /// env が宣言した意図として許容する。cwd 非包含なら従来通り
+    /// version+fingerprint 名を join して返す。
+    #[test]
+    fn materialize_target_allows_temp_dir_outside_cwd() {
+        let sibling = tempfile::tempdir().unwrap();
+        let cwd = tempfile::tempdir().unwrap();
+        let parent = cwd.path().parent().unwrap().to_path_buf();
+        for temp in [sibling.path().to_path_buf(), parent] {
+            let target = materialize_target(&temp, "1.0.0", Some(cwd.path()))
+                .unwrap_or_else(|e| panic!("temp dir outside cwd must be allowed: {e}"));
+            assert_eq!(
+                target,
+                temp.join(format!("cheaper-builtin-1.0.0-{}", embedded_fingerprint()))
+            );
+        }
+    }
+
+    /// issue #217: cwd が解決不能(None)なら containment を判定できない
+    /// ので fail-open で skip する。non-absolute の reject は変わらない。
+    #[test]
+    fn materialize_target_skips_containment_when_cwd_unknown() {
+        let tmp = tempfile::tempdir().unwrap();
+        let target = materialize_target(tmp.path(), "1.0.0", None).unwrap();
+        assert!(target.starts_with(tmp.path()));
+        let err = materialize_target(Path::new("relative"), "1.0.0", None)
+            .expect_err("non-absolute must still be rejected without cwd");
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
     }
 
     /// absolute temp dir には `<temp>/cheaper-builtin-<version>-<fp>`
@@ -413,7 +492,7 @@ mod tests {
     fn materialize_target_joins_versioned_dir_under_absolute_temp() {
         let tmp = tempfile::tempdir().unwrap();
         assert!(tmp.path().is_absolute());
-        let target = materialize_target(tmp.path(), "1.0.0").unwrap();
+        let target = materialize_target(tmp.path(), "1.0.0", None).unwrap();
         assert_eq!(
             target,
             tmp.path()
