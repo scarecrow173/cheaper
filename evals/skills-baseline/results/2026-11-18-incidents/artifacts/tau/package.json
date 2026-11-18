@@ -1,0 +1,9 @@
+{
+  "name": "logistics-gateway",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "test": "echo \"no tests yet\"",
+    "digest": "node scripts/digest-incidents.mjs"
+  }
+}

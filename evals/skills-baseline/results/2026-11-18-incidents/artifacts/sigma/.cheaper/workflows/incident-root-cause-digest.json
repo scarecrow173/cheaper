@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "inputs": {
+    "incidentGlobs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["docs/incidents/*.md"]
+    },
+    "reportPath": {
+      "type": "string",
+      "minLength": 1,
+      "default": "reports/root-cause-digest.md"
+    }
+  },
+  "jobs": {
+    "analyze": {
+      "kind": "worker",
+      "worker": "bulk-reader",
+      "input": {
+        "task": "Quarterly incident root-cause inventory. Read every incident report under the given paths (one file per incident; the filename is the incident ID, e.g. INC-0101). Each report's root-cause statement is the first non-empty paragraph after the LAST '## ' section heading (the heading text varies: 'Root cause', 'What went wrong', 'Postmortem notes', 'Analysis'). Ignore the API-convention boilerplate paragraphs that follow the cause sentence (idempotency keys, pagination, timestamps, envelopes, rate limits). Cluster all incidents by underlying root-cause pattern into AT MOST 5 patterns (merge near-duplicates; a pattern must recur in at least 2 incidents). In 'summary', output a compact markdown digest: per pattern a heading, the member incident IDs, 1-3 representative incident IDs, one verbatim cause quote, and the fix that was applied. In 'findings', return one item per pattern: title = pattern name, detail = member incident IDs plus representative IDs plus the verbatim cause quote, locations = the incident files belonging to that pattern.",
+        "paths": { "$input": "incidentGlobs" }
+      },
+      "resources": {
+        "reads": [{ "path": "docs/incidents", "scope": "subtree" }]
+      }
+    },
+    "writeReport": {
+      "kind": "worker",
+      "worker": "doc-writer",
+      "input": {
+        "task": "Write or refresh the quarterly incident root-cause digest at the target path, based only on the supplied facts and decisions. Structure: header with generation note, pattern count, then one section per pattern (name, member incident IDs, representative incident IDs, verbatim cause quote, applied fix), then a short observations section.",
+        "documentType": "other",
+        "targets": [
+          { "path": { "$input": "reportPath" }, "intent": "update" }
+        ],
+        "decisions": [
+          "At most 5 root-cause patterns; each pattern lists its member incident IDs and 1-3 representative incident IDs.",
+          "Write the report in Japanese; keep verbatim root-cause quotes in their original English.",
+          "End with a '再実施方法' section pointing at docs/runbooks/quarterly-root-cause-digest.md."
+        ],
+        "facts": [
+          { "$from": "analyze", "path": "/summary" }
+        ],
+        "constraints": [
+          "Do not invent incidents, causes, or fixes that are not present in the supplied facts.",
+          "Incident IDs come from filenames (INC-NNNN)."
+        ]
+      },
+      "resources": {
+        "writes": [{ "path": "reports", "scope": "subtree" }]
+      }
+    }
+  },
+  "outputs": {
+    "digestMarkdown": {
+      "schema": { "type": "string" },
+      "value": { "$from": "analyze", "path": "/summary" }
+    },
+    "patterns": {
+      "schema": { "type": "array" },
+      "value": { "$from": "analyze", "path": "/findings" }
+    },
+    "reportSummary": {
+      "schema": { "type": "string" },
+      "value": { "$from": "writeReport", "path": "/summary" }
+    },
+    "unresolved": {
+      "schema": { "type": ["array", "null"] },
+      "value": { "$from": "writeReport", "path": "/unresolved" }
+    }
+  }
+}

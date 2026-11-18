@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "workflows": [
+    {
+      "id": "root-cause-digest",
+      "path": ".cheaper/workflows/root-cause-digest.json",
+      "summary": "Quarterly inventory: group docs/incidents/ reports into at most 5 recurring root-cause patterns and write reports/root-cause-digest.md",
+      "tags": ["incidents", "postmortem", "quarterly", "digest"]
+    }
+  ]
+}

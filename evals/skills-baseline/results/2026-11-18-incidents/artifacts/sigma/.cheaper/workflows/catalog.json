@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "workflows": [
+    {
+      "id": "incident-root-cause-digest",
+      "path": ".cheaper/workflows/incident-root-cause-digest.json",
+      "summary": "Cluster docs/incidents/*.md root causes into at most 5 recurring patterns with representative incident IDs (bulk-reader) and write the quarterly digest to reports/root-cause-digest.md (doc-writer).",
+      "tags": ["incident", "postmortem", "quarterly", "digest"]
+    }
+  ]
+}
