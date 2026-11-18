@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "builtin materialize fingerprint 設計"
 created: "2026-10-17"
-updated: "2026-10-17"
+updated: "2026-11-19"
 owners:
   - scarecrow173
 relations:
@@ -109,6 +109,11 @@ let target = std::env::temp_dir()
   `.ready`、extract、cache `OnceLock` は不変。
 - file header の doc comment(`<temp>/cheaper-builtin-<version>/`)も
   `cheaper-builtin-<version>-<fingerprint>` へ合わせて更新する。
+- 補足(issue #217): 上記 join は `materialize_target(temp, version)`
+  へ切り出され、join 前に temp dir の absolute が検証される。
+  non-absolute なら `InvalidInput` で fail-closed — relative 展開が
+  cwd 相対で起きて workspace を汚染する経路を塞ぐ。代替 dir への
+  fallback は行わない。
 
 ### 3. 検証
 
