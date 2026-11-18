@@ -30,7 +30,8 @@ cheaper は parent agent へ以下を配布する（APM package 経由）:
     worker への委譲方法
   - `cheaper-workflow-create`: Workflow JSON v1 の設計・
     `workflow interface` 検証・catalog 登録（定義保存と実行は
-    分離 — `workflow run` や grant/policy/Route 変更は行わない）
+    分離 — `workflow run` は行わない。grant/policy 変更と
+    command への route bind は別個の明示承認が前提）
   - `cheaper-workflow-discover`: 反復・orchestration 負荷の高い
     作業の実行選択肢（direct tool・既存 Worker・Route・catalog
     済み Workflow・新規 Workflow 候補）を同一基準で比較し、
@@ -254,6 +255,46 @@ catalog・grant・policy を一切変更せず、保存・登録は承認後の 
 （`cheaper-workflow-create`、install 済みの場合）または manual
 authoring の責務。規約の正本（収集 inputs・比較手順・evidence
 規約・出力契約）は skill 本文にある。
+
+### L2 のコマンド bind（反復 command → route 登録）
+
+agent が繰り返し実行している shell command（例: 検査 script を回して
+log を読み戻す定型作業）を workflow 化した場合、L2 は **別個の明示
+承認**のもとで project route（`<workspace>/.cheaper/routes.yaml`）を
+登録できる。以後、その command を agent が打つと PreToolUse hook が
+`cheaper route run --payload …` へ rewrite し、route 宣言の
+workflow が代わりに実行される — `output.tokenThreshold` 超過時は
+`condense` worker が出力を要約し、親 context には要約だけが戻る
+（「PreToolUse 自動 route」節の仕組み）。
+
+agent 向けの制約（skill 正本は `cheaper-workflow-create` の
+"Bind a command" 節）:
+
+- `match.command` は token **prefix** match。対象 command の
+  executable は interactive curated list（`python`/`node`/
+  `powershell`/`bash`/`sh`/`cmd` 等）に載っていてはならない —
+  script 引数があっても `stdin-unsupported` で不発となる。
+  interpreter 直叩きの反復は `npm run`/`mise run`/`just`/`make`
+  等の named task として束ね直してから bind する。
+- route の `grant` は既存 `command.grants` 名を参照するだけ —
+  project partial schema は `command` セクション全体を持てない
+  ため、grant は user 層 `policy.yaml` にのみ宣言できる。新規
+  grant の提案は user config 変更として別の承認対象になる。
+- project route は `trusted`/`substitute`/追加 `grants:` key を
+  宣言できず、`match.command` が builtin/user route と衝突すると
+  `suppressed` になる。
+- 登録後は `route check`（ready 判定）と `route resolve --command`
+  で `matched:true` かつ `viability:"runnable"` を確認する —
+  `matched` だけでは不発条件（`stdin-unsupported`/`no-grant`/
+  `missing-target`）を見落とす。`route run` の実起動は実行承認が
+  別途必要。
+- rewrite emit は Claude Code・Devin・Codex のみ（Codex は policy
+  の `route.rewrite.approvalBypass` が前提）。Windsurf・Copilot・
+  Cursor では hook が command 置換を emit できず fallback verdict
+  に倒れるため、route はその target では不活性のまま。
+
+route を張らない選択（ユーザーが decline）は常に残る — workflow は
+明示 `workflow run <path>` で従来どおり実行できる。
 
 ### opt-in 最小指示テンプレート
 
