@@ -1320,11 +1320,34 @@ pub struct ShellToken {
     pub unsafe_token: bool,
 }
 
+/// segment を区切った shell separator の種別 —
+/// `ShellSegment::preceded_by` が記録する(JS 版 `tokenizeShell`
+/// は separator を保持しない Rust 側拡張で、`cd <dir> && cmd`
+/// unwrap が `&&`/`;`/`\n` 結合のみを受理するために追加)。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ShellSeparator {
+    /// 先頭 segment(separator 無し)。
+    Start,
+    /// `;` / `\n` — 逐次実行。
+    Seq,
+    /// `&&` — 直前成功時のみ実行。
+    And,
+    /// `||` — 直前失敗時のみ実行。
+    Or,
+    /// `|` — pipe。
+    Pipe,
+    /// `&` — background 実行。
+    Background,
+}
+
 /// `ShellSegment`。
 #[derive(Debug)]
 pub struct ShellSegment {
     pub tokens: Vec<ShellToken>,
     pub unsafe_segment: bool,
+    /// 直前の segment を終端させた separator(先頭 segment は
+    /// `ShellSeparator::Start`)。
+    pub preceded_by: ShellSeparator,
 }
 
 /// `tokenizeShell` — `ShellSegment[] | null`。
@@ -1338,6 +1361,9 @@ pub fn tokenize_shell(command: &str) -> Option<Vec<ShellSegment>> {
     let mut unsafe_segment = false;
     let mut text = String::new();
     let mut token_unsafe = false;
+    // 次 segment が記録する separator — 直前の segment を終端させた
+    // 区切り(先頭 segment は `Start` のまま)。
+    let mut pending_separator = ShellSeparator::Start;
     // quote: None / Some('\'') / Some('"')
     let mut quote: Option<char> = None;
     let mut has_token = false;
@@ -1355,13 +1381,15 @@ pub fn tokenize_shell(command: &str) -> Option<Vec<ShellSegment>> {
         };
     }
     macro_rules! end_segment {
-        () => {
+        ($separator:expr) => {
             end_token!();
             segments.push(ShellSegment {
                 tokens: std::mem::take(&mut tokens),
                 unsafe_segment,
+                preceded_by: pending_separator,
             });
             unsafe_segment = false;
+            pending_separator = $separator;
         };
     }
 
@@ -1412,15 +1440,22 @@ pub fn tokenize_shell(command: &str) -> Option<Vec<ShellSegment>> {
             continue;
         }
         if ch == '\n' || ch == ';' {
-            end_segment!();
+            end_segment!(ShellSeparator::Seq);
             i += 1;
             continue;
         }
         if ch == '|' || ch == '&' {
-            if chars.get(i + 1) == Some(&ch) {
+            let doubled = chars.get(i + 1) == Some(&ch);
+            if doubled {
                 i += 1; // || or &&
             }
-            end_segment!();
+            let separator = match (ch, doubled) {
+                ('|', true) => ShellSeparator::Or,
+                ('&', true) => ShellSeparator::And,
+                ('|', false) => ShellSeparator::Pipe,
+                _ => ShellSeparator::Background,
+            };
+            end_segment!(separator);
             i += 1;
             continue;
         }
@@ -1468,8 +1503,57 @@ pub fn tokenize_shell(command: &str) -> Option<Vec<ShellSegment>> {
     segments.push(ShellSegment {
         tokens: std::mem::take(&mut tokens),
         unsafe_segment,
+        preceded_by: pending_separator,
     });
     Some(segments)
+}
+
+/// route 対象 command として受理する segment 形状を抽出する
+/// shared 規約 — hook の route arm(`evaluate_route_arm`)と
+/// `route run` の payload 再検証(`route::run::prepare`)が同一
+/// shape を受理するために共有する。
+///
+/// 受理するのは:
+///   `[cmd]`                 → `(cmd, None)`
+///   `[cd <literal>, cmd]`   → `(cmd, Some(literal))` — `cmd` が
+///                             `&&`/`;`/`\n` で結ばれた場合のみ
+///                             (`preceded_by ∈ {And, Seq}`)。
+///
+/// それ以外は全て `None` — 3+ segment・`||`/`|`/`&` 結合・
+/// `pushd`/`Set-Location` 等・`cd` の引数が 0 または 2+
+/// (`cd /d x` 等)・env-prefix 付き `cd`・いずれかの segment に
+/// unsafe 指定がある形は受理しない(caller は fail-open または
+/// reject として扱う)。`cd` 判定は `command_name` 等値(大小文字
+/// 区別 — POSIX で `CD` は非 builtin になり得るため lowercase 化
+/// しない)。
+pub(crate) fn routed_command_segment(
+    segments: &[ShellSegment],
+) -> Option<(&ShellSegment, Option<&str>)> {
+    fn safe(segment: &ShellSegment) -> bool {
+        !segment.unsafe_segment && segment.tokens.iter().all(|t| !t.unsafe_token)
+    }
+    match segments {
+        [segment] if safe(segment) && !segment.tokens.is_empty() => Some((segment, None)),
+        [cd_segment, segment]
+            if matches!(
+                segment.preceded_by,
+                ShellSeparator::And | ShellSeparator::Seq
+            ) && safe(cd_segment)
+                && safe(segment)
+                && !segment.tokens.is_empty() =>
+        {
+            let [head, literal] = cd_segment.tokens.as_slice() else {
+                return None;
+            };
+            // 空 literal(`cd ""`)は受理しない — 解決不能側の
+            // fail-open と同じく生 command の semantics を変えない。
+            if literal.text.is_empty() || command_name(&head.text) != "cd" {
+                return None;
+            }
+            Some((segment, Some(literal.text.as_str())))
+        }
+        _ => None,
+    }
 }
 
 // Read command と separate value token を消費する option。
@@ -1714,12 +1798,33 @@ fn route_reason_code(
     }
 }
 
-/// route arm — 単一 safe segment かつ routes/policy が供給されて
-/// いる場合のみ `route::resolve` を呼ぶ。runnable match では
+/// `cd <literal>` prefix の移動先を request cwd 起点で canonical
+/// 解決する。受理条件は「既存 dir」かつ「request cwd の canonical
+/// 内部(同一 dir を含む)」の両方 — 外部・不存在・file 指定・
+/// canonicalize 不能のいずれも `None` を返し、caller は従来評価へ
+/// fallthrough する(fail-open — deny にはしない)。
+fn resolve_routed_cd_target(cwd: &str, literal: &str) -> Option<String> {
+    let target = canonicalize_workspace_root(&nodepath::resolve(cwd, literal)).ok()?;
+    if !PathBuf::from(&target).is_dir() {
+        return None;
+    }
+    let root = canonicalize_workspace_root(cwd).ok()?;
+    if !PathBuf::from(&target).starts_with(PathBuf::from(&root)) {
+        return None;
+    }
+    Some(target)
+}
+
+/// route arm — 単一 safe segment(または `cd <dir>` + `&&`/`;`/`\n`
+/// 結合の 2 segment)かつ routes/policy が供給されている場合のみ
+/// `route::resolve` を呼ぶ。cd prefix 形では移動先を canonical
+/// 解決し、command の意図 cwd として resolve/payload へ渡す
+/// (routed child はその dir で実行される)。runnable match では
 /// `route run --payload` rewrite command を生成し、fallback には
 /// 従来評価の生 verdict を載せて `Verdict::Rewrite` を返す。
-/// match しない・runnable でない・segment が unsafe/複数・入力
-/// 未供給のいずれかは `None`(caller が従来評価へ fallthrough)。
+/// match しない・runnable でない・segment 形状不適合・cd 移動先
+/// 解決不能・入力未供給のいずれかは `None`(caller が従来評価へ
+/// fallthrough)。
 async fn evaluate_route_arm(
     command: &str,
     cwd: &str,
@@ -1727,18 +1832,18 @@ async fn evaluate_route_arm(
 ) -> Option<RouteArmEvaluation> {
     let route_input = opts.route?;
     let segments = tokenize_shell(command)?;
-    let [segment] = segments.as_slice() else {
-        return None;
+    let (segment, cd_literal) = routed_command_segment(&segments)?;
+    // cd prefix の実効 cwd — `None` なら request cwd のまま。
+    let effective_cwd = match cd_literal {
+        Some(literal) => resolve_routed_cd_target(cwd, literal)?,
+        None => cwd.to_string(),
     };
-    if segment.unsafe_segment || segment.tokens.iter().any(|t| t.unsafe_token) {
-        return None;
-    }
     // env-prefix は argv に含めない — resolve が先頭 `KEY=VALUE`
     // token を strip する(ここでは raw token 列をそのまま渡す)。
     let argv: Vec<String> = segment.tokens.iter().map(|t| t.text.clone()).collect();
     let res = crate::route::resolve::resolve(&crate::route::resolve::ResolveInput {
         argv: &argv,
-        cwd,
+        cwd: &effective_cwd,
         routes: route_input.routes,
         exec_policy: &route_input.exec_policy,
         unsafe_command: false,
@@ -1748,7 +1853,7 @@ async fn evaluate_route_arm(
             .viability
             .is_some_and(crate::route::resolve::Viability::is_executable)
     {
-        build_rewrite_command(command, cwd, &res, opts.env)
+        build_rewrite_command(command, &effective_cwd, &res, opts.env)
     } else {
         None
     };
@@ -2036,6 +2141,25 @@ mod tests {
         let segs = tokenize_shell("cat < big.txt").unwrap();
         assert!(segs[0].unsafe_segment);
         assert_eq!(segs[0].tokens[0].text, "cat");
+    }
+
+    #[test]
+    fn tokenize_records_preceding_separator() {
+        let kinds = |command: &str| -> Vec<ShellSeparator> {
+            tokenize_shell(command)
+                .unwrap()
+                .iter()
+                .map(|s| s.preceded_by)
+                .collect()
+        };
+        use ShellSeparator::{And, Background, Or, Pipe, Seq, Start};
+        assert_eq!(kinds("a"), [Start]);
+        assert_eq!(kinds("a|b"), [Start, Pipe]);
+        assert_eq!(kinds("a && b"), [Start, And]);
+        assert_eq!(kinds("a||b"), [Start, Or]);
+        assert_eq!(kinds("a;b"), [Start, Seq]);
+        assert_eq!(kinds("a\nb"), [Start, Seq]);
+        assert_eq!(kinds("a&b"), [Start, Background]);
     }
 
     #[test]
@@ -2588,6 +2712,104 @@ mod tests {
                 evaluate(&shell("cargo test --workspace", &root), &plain_opts).await,
                 Verdict::Allow
             ));
+        }
+
+        /// `cd <subdir> && <routable>`(および `;`/`\n` 結合)—
+        /// rewrite を emit し、payload.cwd には canonical 済みの
+        /// 移動先、payload.command には原 command 全文が載る
+        /// (`route run` 側が cd 分を剥がして subdir で実行する)。
+        #[tokio::test(flavor = "current_thread")]
+        async fn cd_prefix_rewrites_with_subdir_cwd() {
+            let dir = tempfile::tempdir().unwrap();
+            let root = dir.path().to_string_lossy().into_owned();
+            for rel in ["sub", "sub dir"] {
+                std::fs::create_dir_all(dir.path().join(rel)).unwrap();
+            }
+            let target = dir.path().join("w.json");
+            std::fs::write(&target, "{}").unwrap();
+            let routes = EffectiveRoutes {
+                routes: vec![route("cargo-test", &["cargo", "test"], "g", &target)],
+                ..Default::default()
+            };
+            let policy = grant_policy(&["test", "*"]);
+            let pairs: [(&str, &str); 0] = [];
+            let lookup = env_of(&pairs);
+            let deny = ExecDenyList::default();
+            let opts = route_opts(&lookup, &routes, &policy, &deny, &root);
+            for (command, rel) in [
+                ("cd sub && cargo test --workspace", "sub"),
+                ("cd sub;cargo test --workspace", "sub"),
+                ("cd sub\ncargo test --workspace", "sub"),
+                ("cd \"sub dir\" && cargo test --workspace", "sub dir"),
+                ("cd . && cargo test --workspace", "."),
+            ] {
+                let verdict = evaluate(&shell(command, &root), &opts).await;
+                let Verdict::Rewrite {
+                    command: rewrite, ..
+                } = verdict
+                else {
+                    panic!("expected rewrite for {command}, got {verdict:?}")
+                };
+                let token = rewrite.rsplit(' ').next().unwrap();
+                let payload = crate::route::payload::decode(token).unwrap();
+                // payload.command は原文(cd prefix 付き)のまま —
+                // cd 分の strip は `route run` 側の規約。
+                assert_eq!(payload.command, command);
+                assert_eq!(payload.argv, vec!["cargo", "test", "--workspace"]);
+                let expected =
+                    canonicalize_workspace_root(&dir.path().join(rel).to_string_lossy()).unwrap();
+                assert_eq!(payload.cwd, expected, "{command}");
+            }
+        }
+
+        /// 受理外の compound 形・workspace 外/不存在/file 指定の
+        /// cd 移動先は rewrite を emit せず従来評価へ fallthrough
+        /// する(fail-open — deny にはしない)。
+        #[tokio::test(flavor = "current_thread")]
+        async fn cd_prefix_fail_open_falls_through() {
+            let dir = tempfile::tempdir().unwrap();
+            let root = dir.path().to_string_lossy().into_owned();
+            std::fs::create_dir_all(dir.path().join("sub")).unwrap();
+            let target = dir.path().join("w.json");
+            std::fs::write(&target, "{}").unwrap();
+            let routes = EffectiveRoutes {
+                routes: vec![route("cargo-test", &["cargo", "test"], "g", &target)],
+                ..Default::default()
+            };
+            let policy = grant_policy(&["test", "*"]);
+            let pairs: [(&str, &str); 0] = [];
+            let lookup = env_of(&pairs);
+            let deny = ExecDenyList::default();
+            let opts = route_opts(&lookup, &routes, &policy, &deny, &root);
+            for command in [
+                // workspace 外・不存在・file 指定の移動先。
+                "cd .. && cargo test --workspace",
+                "cd missing && cargo test --workspace",
+                "cd w.json && cargo test --workspace",
+                // 受理しない結合子(||/|/& は fail-open)。
+                "cd sub || cargo test --workspace",
+                "cd sub | cargo test --workspace",
+                "cd sub & cargo test --workspace",
+                // 3+ segment・非受理の cd 形。
+                "cd sub && cargo test --workspace && echo done",
+                "cd && cargo test --workspace",
+                "cd /d sub && cargo test --workspace",
+                "pushd sub && cargo test --workspace",
+                "FOO=1 cd sub && cargo test --workspace",
+                "cd sub && cd sub && cargo test --workspace",
+                "cd \"\" && cargo test --workspace",
+                // unsafe token の cd literal。
+                "cd $HOME && cargo test --workspace",
+                "cd * && cargo test --workspace",
+            ] {
+                assert!(
+                    matches!(
+                        evaluate(&shell(command, &root), &opts).await,
+                        Verdict::Allow
+                    ),
+                    "{command} must fall through to Allow"
+                );
+            }
         }
     }
 }

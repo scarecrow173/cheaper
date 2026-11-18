@@ -1510,6 +1510,80 @@ async fn e2e_hook_rewrite_to_cli_route_run() {
     }
 }
 
+/// `cd <subdir> && <routable>` — hook が mint する cd unwrap
+/// payload の subdir cwd で routed child が実行される観測可能な
+/// 証明(envdump child が自身の cwd を file へ記録する)。
+#[tokio::test(flavor = "current_thread")]
+async fn e2e_cd_prefix_unwrap_runs_child_in_subdir() {
+    let mut f = Fixture::new();
+    let sub = f.ws.path().join("sub");
+    std::fs::create_dir_all(&sub).unwrap();
+    let dump = f.ws.path().join("env-dump.txt");
+    routed_fx(
+        &f,
+        &exec_only_workflow(json!({}), json!({})),
+        &grant_env(
+            "envdump",
+            &format!(
+                "        CHEAPER_ROUTE_CHILD_OUT: '{}'\n",
+                dump.to_string_lossy()
+                    .replace('\\', "\\\\")
+                    .replace('\'', "''")
+            ),
+        ),
+        "",
+        "",
+    );
+    // hook(pretooluse)の Rewrite command 経由で mint — payload.cwd
+    // は canonical 済み subdir、payload.command は原文のまま。
+    let raw = format!("cd sub && routed {CHILD_ARGV}");
+    let token = hook_route_payload(&mut f, &raw).await;
+    assert!(!dump.exists(), "hook is dry-run — no side effect");
+    let (code, out, err) = run_cli_raw(&mut f, &["route", "run", "--payload", &token]).await;
+    assert_eq!(code, 0, "out={out} err={err}");
+    let dumped = std::fs::read_to_string(&dump).unwrap();
+    let expected =
+        cheaper_core::workspace::paths::canonicalize_workspace_root(&sub.to_string_lossy())
+            .unwrap();
+    assert!(dumped.contains(&format!("CWD={expected}")), "{dumped}");
+}
+
+/// 受理外の cd 形・workspace 外/不存在の移動先は rewrite を emit
+/// しない — hook は fail-open(deny ではなく command 素通し)。
+#[tokio::test(flavor = "current_thread")]
+async fn e2e_cd_prefix_fail_open_emits_no_rewrite() {
+    let mut f = Fixture::new();
+    let sub = f.ws.path().join("sub");
+    std::fs::create_dir_all(&sub).unwrap();
+    routed_fx(
+        &f,
+        &exec_only_workflow(json!({}), json!({})),
+        &grant_env("ok", ""),
+        "",
+        "",
+    );
+    for raw in [
+        format!("cd .. && routed {CHILD_ARGV}"),
+        format!("cd missing && routed {CHILD_ARGV}"),
+        format!("cd sub || routed {CHILD_ARGV}"),
+        format!("cd sub | routed {CHILD_ARGV}"),
+        format!("cd sub && routed {CHILD_ARGV} && echo done"),
+        format!("pushd sub && routed {CHILD_ARGV}"),
+        format!("FOO=1 cd sub && routed {CHILD_ARGV}"),
+    ] {
+        f.stdin.data = serde_json::json!({
+            "tool_name": "Bash",
+            "tool_input": {"command": raw}
+        })
+        .to_string()
+        .into_bytes();
+        let (code, out, err) =
+            run_cli_raw(&mut f, &["hook", "pre-tool-use", "--target", "pretooluse"]).await;
+        assert_eq!(code, 0, "{raw}: err={err}");
+        assert!(!out.contains("route run --payload"), "{raw}: {out}");
+    }
+}
+
 #[tokio::test(flavor = "current_thread")]
 async fn e2e_bounded_output_full_log_and_refetch() {
     let mut f = Fixture::new();

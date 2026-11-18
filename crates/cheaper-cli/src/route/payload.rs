@@ -26,7 +26,10 @@ pub struct RoutePayload {
     pub argv: Vec<String>,
     /// post-prefix args(`argv[len(match.command)..]`)。
     pub args: Vec<String>,
-    /// workspace root(exec cwd 復元の基準)。
+    /// 原 command の意図 cwd — `cd <dir>` prefix unwrap では
+    /// canonical 済みの移動先、それ以外は request cwd。
+    /// `route run` は workspace root 内部(同一を含む)であることを
+    /// 再検証した上で routed child の exec cwd として使う。
     pub cwd: String,
     /// ambient env の allowlist 部分集合。
     #[serde(default)]
