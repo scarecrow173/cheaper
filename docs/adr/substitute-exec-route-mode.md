@@ -780,3 +780,25 @@ exit/record の anchor 切替規約・Option E との境界。
   含めない。`route.grant` field は Option E でも firing
   gate として留保される確定設計と整合する形で required
   を維持した。
+
+## Refine 注記（stdin 分類の tri-state 化）
+
+O6a の「両側分類」は維持されるが、分類器は `is_interactive`
+boolean から `classify_interaction`（`Batch`/`Approval`/
+`Structural` の ordered tri-state）へ拡張された。最悪階層を
+採る union の対象は typed 側・substitute 宣言名・pin 解決名に
+加え、**byte-matched 経路でも `route.grant` の宣言 executable
+basename と pin 解決 basename** を含む — match token
+(`mypy` 等)が interpreter でなくても grant executable 名で
+分類される（code review B-F2）。分類は executable 名の
+curated exact-list ではなく family 判定（version suffix
+`python3.11`・`node20` 等を吸収）+ argv scan（grouped
+`-lc`・attached・`--eval`・pwsh prefix/slash 形・`cmd /c`、
+`-i`/`-t` cluster と `--interactive=true` 等の container
+flag）で、launcher wrapper（`env`・`timeout`・`xargs` 等）は
+inner command へ再帰する。`Structural` → `StdinUnsupported`、
+`Approval` → `ApprovalRequired`（hook rewrite は emit されるが
+承認 bypass 決定は併記されない）、`Batch` → `Runnable`。
+script 付き interpreter 起動（`python check.py` 等）は
+`Batch` として routable になり、bare REPL・UI app・stdin
+program のみが `StdinUnsupported` に残る。

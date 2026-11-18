@@ -1836,6 +1836,104 @@ async fn codex_hook_rewrite_without_flag_renders_fallback_only() {
     }
 }
 
+/// approval-required tier — inline code flag(`bash -c`)を持つ typed
+/// command は `approval-required` viability で rewrite emit されるが、
+/// `route.rewrite.approvalBypass` opt-in の有無に関わらず
+/// `permissionDecision:"allow"` を併記しない(host 承認 prompt が残る、
+/// R33bis)。codex は「承認付き置換」を表現できないため fallback
+/// verdict へ倒れる。bare `bash`(positional 無し)は structural
+/// `stdin-unsupported` で emit されない。
+#[tokio::test(flavor = "current_thread")]
+async fn approval_tier_rewrite_never_emits_bypass_decision() {
+    const BASH_ROUTES_YAML: &str = "version: 1\nroutes:\n  - name: child-run\n    match: {command: [bash]}\n    target: {kind: workflow, path: routed-exec.workflow.json}\n    grant: child-run\n";
+    let policy = |bypass: &str| {
+        format!(
+            "version: 1\nroute:\n  rewrite:\n    approvalBypass: [{bypass}]\ncommand:\n  grants:\n    child-run:\n      executable: '{}'\n      argv: ['*']\n      timeout: '600s'\n      env:\n        CHEAPER_ROUTE_CHILD_MODE: ok\n",
+            std::env::current_exe()
+                .unwrap()
+                .to_string_lossy()
+                .replace('\'', "''"),
+        )
+    };
+    // devin — bypass opt-in ありでも approval tier は
+    // `permissionDecision` を併記せず updatedInput のみ emit。
+    for bypass in ["", "devin"] {
+        let mut f = Fixture::new();
+        let marker = f.ws.path().join("marker.txt");
+        reject_fx(&f, BASH_ROUTES_YAML, "", &marker);
+        std::fs::write(f.cfg.path().join("policy.yaml"), policy(bypass)).unwrap();
+        f.stdin.data = serde_json::json!({
+            "hook_event_name": "PreToolUse",
+            "tool_name": "exec",
+            "tool_input": {"command": "bash -c 'echo hi'"}
+        })
+        .to_string()
+        .into_bytes();
+        let (code, hook_out, _err) =
+            run_cli_raw(&mut f, &["hook", "pre-tool-use", "--target", "devin"]).await;
+        assert_eq!(code, 0, "hook out={hook_out}");
+        let hook: Value = serde_json::from_str(&hook_out).unwrap();
+        let command = hook
+            .pointer("/hookSpecificOutput/updatedInput/command")
+            .and_then(Value::as_str)
+            .unwrap_or_else(|| panic!("bypass={bypass:?}: updatedInput 無し: {hook}"));
+        assert!(command.contains(" route run --payload "), "{command}");
+        assert!(
+            hook.pointer("/hookSpecificOutput/permissionDecision")
+                .is_none(),
+            "bypass={bypass:?}: approval tier で allow 併記は不可: {hook}"
+        );
+        assert!(!marker.exists());
+    }
+    // codex — bypass opt-in ありでも approval tier は fallback
+    // verdict(render 不可能な emit shape)へ倒れる。
+    {
+        let mut f = Fixture::new();
+        let marker = f.ws.path().join("marker.txt");
+        reject_fx(&f, BASH_ROUTES_YAML, "", &marker);
+        std::fs::write(f.cfg.path().join("policy.yaml"), policy("codex")).unwrap();
+        f.stdin.data = serde_json::json!({
+            "tool_name": "Bash",
+            "tool_input": {"command": "bash -c 'echo hi'"}
+        })
+        .to_string()
+        .into_bytes();
+        let (code, hook_out, _err) =
+            run_cli_raw(&mut f, &["hook", "pre-tool-use", "--target", "codex"]).await;
+        assert_eq!(code, 0, "hook out={hook_out}");
+        let hook: Value = serde_json::from_str(&hook_out).unwrap_or(Value::Null);
+        assert!(
+            hook.pointer("/hookSpecificOutput/updatedInput").is_none(),
+            "codex approval tier は updatedInput を emit しない: {hook_out}"
+        );
+        assert!(!marker.exists());
+    }
+    // devin — bare `bash` は structural `stdin-unsupported` で
+    // rewrite emit されない。
+    {
+        let mut f = Fixture::new();
+        let marker = f.ws.path().join("marker.txt");
+        reject_fx(&f, BASH_ROUTES_YAML, "", &marker);
+        std::fs::write(f.cfg.path().join("policy.yaml"), policy("devin")).unwrap();
+        f.stdin.data = serde_json::json!({
+            "hook_event_name": "PreToolUse",
+            "tool_name": "exec",
+            "tool_input": {"command": "bash"}
+        })
+        .to_string()
+        .into_bytes();
+        let (code, hook_out, _err) =
+            run_cli_raw(&mut f, &["hook", "pre-tool-use", "--target", "devin"]).await;
+        assert_eq!(code, 0, "hook out={hook_out}");
+        let hook: Value = serde_json::from_str(&hook_out).unwrap_or(Value::Null);
+        assert!(
+            hook.pointer("/hookSpecificOutput/updatedInput").is_none(),
+            "structural shape は emit しない: {hook_out}"
+        );
+        assert!(!marker.exists());
+    }
+}
+
 /// codex — untrusted project 層 `.cheaper/policy.yaml` の `route` key は
 /// project partial schema 違反で `load_policy` 全体を失敗させ、
 /// `load_or_none` → `None` → route arm 不活性 + bypass 無効となる。

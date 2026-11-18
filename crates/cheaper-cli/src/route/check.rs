@@ -206,6 +206,7 @@ fn merge_status(status: RouteMergeStatus) -> &'static str {
 fn viability_str(viability: Viability) -> &'static str {
     match viability {
         Viability::Runnable => "runnable",
+        Viability::ApprovalRequired => "approval-required",
         Viability::NoGrant => "no-grant",
         Viability::MissingTarget => "missing-target",
         Viability::InvalidRoute => "invalid-route",
@@ -997,6 +998,15 @@ fn sample_json(
                 Some(&name),
                 None,
                 "sample command requires stdin that routed execution does not provide",
+                None,
+            )),
+            "approval-required" => diagnostics.push(Diagnostic::new(
+                "route.approval-required",
+                Severity::Info,
+                layer,
+                Some(&name),
+                None,
+                "sample command rewrites with host approval preserved (no bypass emit)",
                 None,
             )),
             "no-grant" => diagnostics.push(Diagnostic::new(

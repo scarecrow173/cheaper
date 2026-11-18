@@ -128,6 +128,7 @@ pub enum HookCacheProvenance {
 #[serde(rename_all = "kebab-case")]
 pub enum RouteViability {
     Runnable,
+    ApprovalRequired,
     NoGrant,
     MissingTarget,
     InvalidRoute,

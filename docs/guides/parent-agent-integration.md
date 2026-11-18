@@ -270,12 +270,27 @@ workflow が代わりに実行される — `output.tokenThreshold` 超過時は
 agent 向けの制約（skill 正本は `cheaper-workflow-create` の
 "Bind a command" 節）:
 
-- `match.command` は token **prefix** match。対象 command の
-  executable は interactive curated list（`python`/`node`/
-  `powershell`/`bash`/`sh`/`cmd` 等）に載っていてはならない —
-  script 引数があっても `stdin-unsupported` で不発となる。
-  interpreter 直叩きの反復は `npm run`/`mise run`/`just`/`make`
-  等の named task として束ね直してから bind する。
+- `match.command` は token **prefix** match。viability は
+  executable + argv 形状の tri-state で決まる:
+  batch 形状（`python check.py`・`node build.js`・
+  `pwsh -File x.ps1` 等 script 付き interpreter 起動を含む）は
+  `runnable` で素通し route される。interactive intent・inline
+  code・特権/remote 副作用を持つ形状は `approval-required` —
+  分類は executable family 判定（`python3.11` 等 version suffix
+  を吸収）＋ argv scan で、`-i`/`-c`/`-e`/`-lc` 等の
+  grouped/attached flag、`--eval`/`--print`、pwsh の
+  `-Command`/`-EncodedCommand`/abbreviation/slash 形、`cmd /c`、
+  positional program 文字列（`awk`/`sed`/DB query）、
+  `ssh`/`sudo`/`su`、launcher wrapper（`env`/`timeout` 等）の
+  inner command が該当する。rewrite は emit されるが承認 bypass
+  決定は併記されず、host 側の承認 prompt が残る（codex では
+  「承認付き置換」を表現できないため fallback に倒れる）。
+  stdin/TTY なしに成立しない形状（bare `python`/`node`、
+  `vim`/`less` 等の UI app、stdin program 指示 `-`、
+  `docker -it`/`--interactive=true` 等）は
+  `stdin-unsupported` で不発となる。named task（`npm run`/`mise run`/`just`）への束ね
+  直しは必須ではなくなったが、semantic name と file rename 耐性
+  の観点では依然として推奨形。
 - route の `grant` は既存 `command.grants` 名を参照するだけ —
   project partial schema は `command` セクション全体を持てない
   ため、grant は user 層 `policy.yaml` にのみ宣言できる。新規
@@ -284,14 +299,20 @@ agent 向けの制約（skill 正本は `cheaper-workflow-create` の
   宣言できず、`match.command` が builtin/user route と衝突すると
   `suppressed` になる。
 - 登録後は `route check`（ready 判定）と `route resolve --command`
-  で `matched:true` かつ `viability:"runnable"` を確認する —
-  `matched` だけでは不発条件（`stdin-unsupported`/`no-grant`/
-  `missing-target`）を見落とす。`route run` の実起動は実行承認が
+  で `matched:true` かつ `viability:"runnable"|"approval-required"`
+  を確認する — `matched` だけでは不発条件（`stdin-unsupported`/
+  `no-grant`/`missing-target`）を見落とす。`approval-required` は
+  host 承認付きで route される。`route run` の実起動は実行承認が
   別途必要。
-- rewrite emit は Claude Code・Devin・Codex のみ（Codex は policy
-  の `route.rewrite.approvalBypass` が前提）。Windsurf・Copilot・
-  Cursor では hook が command 置換を emit できず fallback verdict
-  に倒れるため、route はその target では不活性のまま。
+- rewrite emit は Claude Code・Devin・Codex のみ。Claude/Devin は
+  `updatedInput` で常に emit し、policy の
+  `route.rewrite.approvalBypass` opt-in 時のみ
+  `permissionDecision:"allow"` が併記される（approval-required
+  route には opt-in 下でも併記しない）。Codex は batch route が
+  bypass opt-in 済みの場合のみ emit し、それ以外と全
+  approval-required route は fallback verdict に倒れる。
+  Windsurf・Copilot・Cursor では hook が command 置換を emit
+  できず route は不活性のまま。
 
 route を張らない選択（ユーザーが decline）は常に残る — workflow は
 明示 `workflow run <path>` で従来どおり実行できる。
@@ -556,12 +577,13 @@ substitute.argv}` へ差し替える **substitute-exec mode** で動作
   lifecycle 検査）は `{substitute.grant, substitute.argv}` を
   対象に行い、失敗は `no-grant` viability へ畳まれる。
 - **interactive 分類は両側** — typed command 側は従来どおり
-  （interactive な typed command は substitute 宣言の有無に
+  （`Structural` な typed command は substitute 宣言の有無に
   関わらず routing しない）。substitute 側は宣言 executable
-  名と pin 解決済み実体名の union で interactive 判定し
+  名と pin 解決済み実体名の union で tri-state 判定し
   （`python3`→`python3.11` の canonical 名ずらしや shim 名で
-  回避されない）、interactive な substitute は
-  `stdin-unsupported` で不発となる。
+  回避されない）、typed/substitute いずれかが `Structural` なら
+  `stdin-unsupported`、`Approval` なら `approval-required` で、
+  最悪階層が採られる。
 - **`substitute` は trusted 層（builtin/user）限定** —
   project 層 routes.yaml の entry に `substitute` key が存在
   すると、値の形状に関わらず route load 全体が

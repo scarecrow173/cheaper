@@ -73,11 +73,7 @@ impl HookTarget {
     #[allow(dead_code)]
     pub(crate) fn capability(&self) -> TargetCapability {
         let (rewrite, approval_bypass) = match self {
-            Self::Pretooluse | Self::Devin => (
-                RewriteCapability::Supported,
-                ApprovalBypassGate::NotApplicable,
-            ),
-            Self::Codex => (
+            Self::Pretooluse | Self::Devin | Self::Codex => (
                 RewriteCapability::Supported,
                 ApprovalBypassGate::PolicyDependent,
             ),
@@ -860,8 +856,9 @@ fn updated_input(command: &str) -> Value {
 /// `hookSpecificOutput` rewrite emit — `approval_bypass` 時のみ
 /// `permissionDecision:"allow"` を hookEventName と updatedInput の
 /// 間に挿入する(field 挿入順は probe 観測順、`stringify_ordered`
-/// byte 互換規約)。flag 非対称の claude(`pretooluse`)/devin は常に
-/// `false` で emit byte を現行と完全一致に保つ(D3)。
+/// byte 互換規約)。`approval_bypass` は render 側で
+/// `policy opt-in && !approval_required` に畳み込まれた値 —
+/// approval-required route には policy 状態に関わらず併記しない。
 fn hook_specific_output_rewrite(command: &str, approval_bypass: bool) -> HookResponse {
     HookResponse {
         stdout: Some(format!(
@@ -885,13 +882,20 @@ fn hook_specific_output_rewrite(command: &str, approval_bypass: bool) -> HookRes
 }
 
 /// claude(`--target pretooluse`)— Rewrite は
-/// `hookSpecificOutput.updatedInput` で emit する
-/// (`permissionDecision` は emit しない、D3)。
-fn pretooluse_render(verdict: Verdict) -> HookResponse {
+/// `hookSpecificOutput.updatedInput` で emit する。`route.rewrite.
+/// approvalBypass` に `"pretooluse"` が含まれる場合のみ
+/// `permissionDecision:"allow"` 併記の bypassing emit を発行する —
+/// approval-required route の rewrite には policy 状態に関わらず
+/// 併記しない(host 側の承認 prompt を常に残す)。
+fn pretooluse_render(verdict: Verdict, approval_bypass: bool) -> HookResponse {
     match verdict {
         Verdict::Deny { reason } => hook_specific_output_deny(&reason),
         Verdict::Allow => silent_allow(),
-        Verdict::Rewrite { command, .. } => hook_specific_output_rewrite(&command, false),
+        Verdict::Rewrite {
+            command,
+            approval_required,
+            ..
+        } => hook_specific_output_rewrite(&command, approval_bypass && !approval_required),
     }
 }
 
@@ -902,14 +906,17 @@ fn pretooluse_render(verdict: Verdict) -> HookResponse {
 /// fallback verdict を render し `updatedInput` を emit しない。
 /// `updatedInput` 単独・`"ask"` 併記は codex が無視する silent
 /// no-op(実機確認済み)のため、いかなる flag 状態でも発行しない
-/// (R7/D2)。
+/// (R7/D2) — approval-required route は codex で「承認付き置換」を
+/// 表現できないため常に fallback へ倒す。
 fn codex_render(verdict: Verdict, approval_bypass: bool) -> HookResponse {
     match verdict {
         Verdict::Deny { reason } => hook_specific_output_deny(&reason),
         Verdict::Allow => silent_allow(),
-        Verdict::Rewrite { command, .. } if approval_bypass => {
-            hook_specific_output_rewrite(&command, true)
-        }
+        Verdict::Rewrite {
+            command,
+            approval_required: false,
+            ..
+        } if approval_bypass => hook_specific_output_rewrite(&command, true),
         Verdict::Rewrite { fallback, .. } => codex_render(*fallback, approval_bypass),
     }
 }
@@ -941,7 +948,7 @@ fn devin_normalize(event: &str, input: &Value, deps: &HookDeps<'_>) -> Option<Ro
     tool_use_normalize(input, &cwd, "devin", DEVIN_SHELL_TOOLS)
 }
 
-fn devin_render(verdict: Verdict) -> HookResponse {
+fn devin_render(verdict: Verdict, approval_bypass: bool) -> HookResponse {
     match verdict {
         Verdict::Deny { reason } => HookResponse {
             stdout: Some(format!(
@@ -957,8 +964,14 @@ fn devin_render(verdict: Verdict) -> HookResponse {
         Verdict::Allow => silent_allow(),
         // devin 応答 envelope は `hookSpecificOutput` 規約 — Rewrite
         // は `hookSpecificOutput.updatedInput.command` で input
-        // rewrite を通知する(C4)。
-        Verdict::Rewrite { command, .. } => hook_specific_output_rewrite(&command, false),
+        // rewrite を通知する(C4)。pretooluse と同じく bypass opt-in
+        // のみ `permissionDecision:"allow"` を併記し、approval-
+        // required route には併記しない。
+        Verdict::Rewrite {
+            command,
+            approval_required,
+            ..
+        } => hook_specific_output_rewrite(&command, approval_bypass && !approval_required),
     }
 }
 
@@ -1074,10 +1087,10 @@ fn request_cwd(request: &RoutingRequest) -> &str {
 /// 供給する(C1 — firing あたり 1 回の load に集約。per-candidate
 /// reload はしない)。load 失敗は `route: None`(route arm 不活性)
 /// へ畳み eval 自体は従来どおり走る — hook の fail-open 規約。
-/// load 済み `RouteSupply` を verdict と共に返す — codex arm が
-/// `route.rewrite.approvalBypass` flag を render 層へ供給する経路
-/// (`load_or_none` → `None` は flag 未供給 = bypass 無効の
-/// conservative default)。
+/// load 済み `RouteSupply` を verdict と共に返す — rewrite 対応
+/// arm(pretooluse/devin/codex)が `route.rewrite.approvalBypass`
+/// flag を render 層へ供給する経路(`load_or_none` → `None` は
+/// flag 未供給 = bypass 無効の conservative default)。
 async fn evaluate_with_routes(
     request: &RoutingRequest,
     deps: &HookDeps<'_>,
@@ -1190,19 +1203,33 @@ pub async fn handle_hook(
         HookTarget::Pretooluse => match pretooluse_normalize(input, deps.cwd) {
             None => ("allow", false, silent_allow()),
             Some(request) => {
-                let (evaluation, _supply) = evaluate_with_routes(&request, deps).await;
+                let (evaluation, supply) = evaluate_with_routes(&request, deps).await;
+                let bypass = supply
+                    .as_ref()
+                    .is_some_and(|s| s.policy.route.rewrite.approval_bypass_enabled("pretooluse"));
                 let verdict = evaluation.evaluation.verdict.clone();
                 persist_hook_decision(deps, &evaluation, history_native_verdict(&verdict, true));
-                (verdict_name(&verdict), false, pretooluse_render(verdict))
+                (
+                    verdict_name(&verdict),
+                    bypass,
+                    pretooluse_render(verdict, bypass),
+                )
             }
         },
         HookTarget::Devin => match devin_normalize(event, input, deps) {
             None => ("allow", false, silent_allow()),
             Some(request) => {
-                let (evaluation, _supply) = evaluate_with_routes(&request, deps).await;
+                let (evaluation, supply) = evaluate_with_routes(&request, deps).await;
+                let bypass = supply
+                    .as_ref()
+                    .is_some_and(|s| s.policy.route.rewrite.approval_bypass_enabled("devin"));
                 let verdict = evaluation.evaluation.verdict.clone();
                 persist_hook_decision(deps, &evaluation, history_native_verdict(&verdict, true));
-                (verdict_name(&verdict), false, devin_render(verdict))
+                (
+                    verdict_name(&verdict),
+                    bypass,
+                    devin_render(verdict, bypass),
+                )
             }
         },
         HookTarget::Cursor => match cursor_normalize(input, deps.cwd) {
@@ -1222,14 +1249,28 @@ pub async fn handle_hook(
             None => ("allow", false, silent_allow()),
             Some(request) => {
                 let (evaluation, supply) = evaluate_with_routes(&request, deps).await;
-                // bypassing emit の許可は codex arm のみで読む —
                 // `load_or_none` → `None` は flag 未供給 = bypass 無効
                 // (conservative default、R15)。
                 let bypass = supply
                     .as_ref()
                     .is_some_and(|s| s.policy.route.rewrite.approval_bypass_enabled("codex"));
                 let verdict = evaluation.evaluation.verdict.clone();
-                persist_hook_decision(deps, &evaluation, history_native_verdict(&verdict, bypass));
+                // approval-required tier は render が fallback verdict
+                // へ倒すため、history も同じ条件で判定する — flag の
+                // 有無だけで見ると fallback emit を `rewrite` と誤記する。
+                let native_rewrite = bypass
+                    && !matches!(
+                        verdict,
+                        Verdict::Rewrite {
+                            approval_required: true,
+                            ..
+                        }
+                    );
+                persist_hook_decision(
+                    deps,
+                    &evaluation,
+                    history_native_verdict(&verdict, native_rewrite),
+                );
                 (
                     verdict_name(&verdict),
                     bypass,
@@ -1242,8 +1283,9 @@ pub async fn handle_hook(
     // `verdict` 分類値 + 出力 byte 長のみ(deny reason・payload 本文は
     // metadata-only 規約で載せない)。`bypass` は approval-bypass
     // emit の観測面 — bypassing emit は silent exit 0 で stderr 痕跡を
-    // 持たないためこの field が唯一の観測経路(codex arm でのみ
-    // `true` になり得る)。
+    // 持たないためこの field が唯一の観測経路(policy opt-in 状態を
+    // 載せる。approval-required tier では emit されない点に注意 —
+    // render 側の畳み込み条件は `bypass && !approval_required`)。
     tracing::debug!(
         verdict = verdict,
         bypass = bypass,
@@ -1274,6 +1316,15 @@ mod tests {
         Verdict::Rewrite {
             command: command.to_string(),
             fallback: Box::new(fallback),
+            approval_required: false,
+        }
+    }
+
+    fn approval_rewrite(command: &str, fallback: Verdict) -> Verdict {
+        Verdict::Rewrite {
+            command: command.to_string(),
+            fallback: Box::new(fallback),
+            approval_required: true,
         }
     }
 
@@ -1308,13 +1359,13 @@ mod tests {
                     emits_updated_input(copilot_render(rewrite("cmd", Verdict::Allow)))
                 }
                 HookTarget::Pretooluse => {
-                    emits_updated_input(pretooluse_render(rewrite("cmd", Verdict::Allow)))
+                    emits_updated_input(pretooluse_render(rewrite("cmd", Verdict::Allow), false))
                 }
                 HookTarget::Cursor => {
                     emits_updated_input(cursor_render(rewrite("cmd", Verdict::Allow)))
                 }
                 HookTarget::Devin => {
-                    emits_updated_input(devin_render(rewrite("cmd", Verdict::Allow)))
+                    emits_updated_input(devin_render(rewrite("cmd", Verdict::Allow), false))
                 }
                 HookTarget::Codex => {
                     emits_updated_input(codex_render(rewrite("cmd", Verdict::Allow), true))
@@ -1332,7 +1383,10 @@ mod tests {
             );
             assert_eq!(
                 capability.approval_bypass,
-                if target == HookTarget::Codex {
+                if matches!(
+                    target,
+                    HookTarget::Codex | HookTarget::Pretooluse | HookTarget::Devin
+                ) {
                     ApprovalBypassGate::PolicyDependent
                 } else {
                     ApprovalBypassGate::NotApplicable
@@ -1348,35 +1402,62 @@ mod tests {
     }
 
     #[test]
-    fn approval_bypass_status_is_policy_dependent_only_for_codex() {
-        let codex = HookTarget::Codex.capability();
-        assert_eq!(
-            codex.approval_bypass_status(None),
-            ApprovalBypassStatus::Unknown
-        );
-        let disabled = RewritePolicy::default();
-        assert_eq!(
-            codex.approval_bypass_status(Some(&disabled)),
-            ApprovalBypassStatus::Disabled
-        );
-        assert_eq!(
-            codex.approval_bypass_status(Some(&disabled)).as_str(),
-            "disabled"
-        );
-        let enabled = RewritePolicy {
-            approval_bypass: vec!["codex".to_string()],
-        };
-        assert_eq!(
-            codex.approval_bypass_status(Some(&enabled)),
-            ApprovalBypassStatus::Enabled
-        );
-        assert_eq!(
-            codex.approval_bypass_status(Some(&enabled)).as_str(),
-            "enabled"
-        );
+    fn approval_bypass_status_is_policy_dependent_for_rewrite_targets() {
+        for target in [HookTarget::Codex, HookTarget::Pretooluse, HookTarget::Devin] {
+            let capability = target.capability();
+            assert_eq!(
+                capability.approval_bypass_status(None),
+                ApprovalBypassStatus::Unknown,
+                "{target:?}"
+            );
+            let disabled = RewritePolicy::default();
+            assert_eq!(
+                capability.approval_bypass_status(Some(&disabled)),
+                ApprovalBypassStatus::Disabled,
+                "{target:?}"
+            );
+            assert_eq!(
+                capability.approval_bypass_status(Some(&disabled)).as_str(),
+                "disabled",
+                "{target:?}"
+            );
+            // bypass は target 名で opt-in — 他 target の flag だけを
+            // 有効化してもこの target には適用されない。
+            let other_enabled = RewritePolicy {
+                approval_bypass: vec!["codex".to_string()],
+            };
+            let own_enabled = RewritePolicy {
+                approval_bypass: vec![target.as_str().to_string()],
+            };
+            let expected = if target == HookTarget::Codex {
+                ApprovalBypassStatus::Enabled
+            } else {
+                ApprovalBypassStatus::Disabled
+            };
+            assert_eq!(
+                capability.approval_bypass_status(Some(&other_enabled)),
+                expected,
+                "{target:?}"
+            );
+            assert_eq!(
+                capability.approval_bypass_status(Some(&own_enabled)),
+                ApprovalBypassStatus::Enabled,
+                "{target:?}"
+            );
+            assert_eq!(
+                capability
+                    .approval_bypass_status(Some(&own_enabled))
+                    .as_str(),
+                "enabled",
+                "{target:?}"
+            );
+        }
 
         for target in HookTarget::ALL {
-            if target == HookTarget::Codex {
+            if matches!(
+                target,
+                HookTarget::Codex | HookTarget::Pretooluse | HookTarget::Devin
+            ) {
                 continue;
             }
             let capability = target.capability();
@@ -1385,6 +1466,9 @@ mod tests {
                 ApprovalBypassStatus::NotApplicable,
                 "{target:?}"
             );
+            let enabled = RewritePolicy {
+                approval_bypass: vec![target.as_str().to_string()],
+            };
             assert_eq!(
                 capability.approval_bypass_status(Some(&enabled)),
                 ApprovalBypassStatus::NotApplicable,
@@ -1397,10 +1481,10 @@ mod tests {
     /// emit し `permissionDecision` を載せない(D3)。exit 0。
     #[test]
     fn pretooluse_rewrite_emits_updated_input_without_permission() {
-        let r = pretooluse_render(rewrite(
-            "\"/x/cheaper\" route run --payload aa",
-            Verdict::Allow,
-        ));
+        let r = pretooluse_render(
+            rewrite("\"/x/cheaper\" route run --payload aa", Verdict::Allow),
+            false,
+        );
         assert_eq!(r.exit, 0);
         let stdout = r.stdout.unwrap();
         let v: Value = serde_json::from_str(&stdout).unwrap();
@@ -1421,7 +1505,7 @@ mod tests {
     /// target 向けの verdict 構造であり、claude render は参照しない。
     #[test]
     fn pretooluse_rewrite_ignores_fallback_for_render() {
-        let r = pretooluse_render(rewrite("cmd", Verdict::Deny { reason: "x".into() }));
+        let r = pretooluse_render(rewrite("cmd", Verdict::Deny { reason: "x".into() }), false);
         assert_eq!(r.exit, 0);
         let v: Value = serde_json::from_str(&r.stdout.unwrap()).unwrap();
         assert!(v
@@ -1433,7 +1517,7 @@ mod tests {
     /// のみを返す(承認判定 field は付けない)。
     #[test]
     fn devin_rewrite_emits_updated_input_without_permission() {
-        let r = devin_render(rewrite("new-cmd", Verdict::Allow));
+        let r = devin_render(rewrite("new-cmd", Verdict::Allow), false);
         assert_eq!(r.exit, 0);
         let v: Value = serde_json::from_str(&r.stdout.unwrap()).unwrap();
         assert!(v.get("decision").is_none());
@@ -1451,6 +1535,79 @@ mod tests {
         assert!(v
             .pointer("/hookSpecificOutput/permissionDecision")
             .is_none());
+    }
+
+    /// claude/devin — `route.rewrite.approvalBypass` opt-in の
+    /// batch rewrite は `permissionDecision:"allow"` 併記で emit
+    /// できるが、approval-required rewrite は flag の有無に関わらず
+    /// `permissionDecision` を併記しない(host 承認 prompt を残す)。
+    #[test]
+    fn approval_tier_never_bypasses_on_prompt_capable_targets() {
+        for flag in [false, true] {
+            for render in [
+                (|v: Verdict, b: bool| pretooluse_render(v, b))
+                    as fn(Verdict, bool) -> HookResponse,
+                (|v: Verdict, b: bool| devin_render(v, b)) as fn(Verdict, bool) -> HookResponse,
+            ] {
+                // batch + bypass opt-in → allow 併記の bypassing emit。
+                let r = render(rewrite("cmd", Verdict::Allow), flag);
+                let stdout = r.stdout.unwrap();
+                let decision = serde_json::from_str::<Value>(&stdout)
+                    .unwrap()
+                    .pointer("/hookSpecificOutput/permissionDecision")
+                    .and_then(Value::as_str)
+                    .map(str::to_string);
+                assert_eq!(
+                    decision.as_deref(),
+                    if flag { Some("allow") } else { None },
+                    "{stdout}"
+                );
+                // approval-required → flag の有無に関わらず
+                // permissionDecision 不併記(`"ask"` 等の他値も emit
+                // しない — emit 可能な値は `"allow"` のみ)。
+                let r = render(approval_rewrite("cmd", Verdict::Allow), flag);
+                let stdout = r.stdout.unwrap();
+                let v: Value = serde_json::from_str(&stdout).unwrap();
+                assert!(
+                    v.pointer("/hookSpecificOutput/updatedInput").is_some(),
+                    "{stdout}"
+                );
+                assert!(
+                    v.pointer("/hookSpecificOutput/permissionDecision")
+                        .is_none(),
+                    "{stdout}"
+                );
+            }
+        }
+    }
+
+    /// codex — approval-required rewrite は「承認付き置換」を表現
+    /// できないため、policy opt-in の有無に関わらず fallback verdict
+    /// を render する(`updatedInput` 単独は codex が silent no-op
+    /// として無視するため発行しない)。
+    #[test]
+    fn codex_approval_tier_falls_back_even_with_bypass() {
+        for flag in [false, true] {
+            let r = codex_render(
+                approval_rewrite(
+                    "cmd",
+                    Verdict::Deny {
+                        reason: "nope".into(),
+                    },
+                ),
+                flag,
+            );
+            let v: Value = serde_json::from_str(&r.stdout.unwrap()).unwrap();
+            assert_eq!(
+                v.pointer("/hookSpecificOutput/permissionDecision")
+                    .and_then(Value::as_str),
+                Some("deny")
+            );
+            assert!(v.pointer("/hookSpecificOutput/updatedInput").is_none());
+
+            let r = codex_render(approval_rewrite("cmd", Verdict::Allow), flag);
+            assert!(r.stdout.is_none() && r.stderr.is_none());
+        }
     }
 
     /// codex — flag 無しの Rewrite は `updatedInput` を発行せず

@@ -106,8 +106,10 @@ pub struct RoutePolicy {
 pub struct RewritePolicy {
     /// `permissionDecision:"allow"` 併記の rewrite emit(親 agent の
     /// approval prompt を素通しする応答)を許可する hook target 名
-    /// (`codex`/`cursor`/`copilot`)。未指定・`null`・空配列は `[]`
-    /// 等価 = bypassing emit 無効(conservative default)。
+    /// (`codex`/`pretooluse`/`devin`/`cursor`/`copilot`)。未指定・
+    /// `null`・空配列は `[]` 等価 = bypassing emit 無効
+    /// (conservative default)。approval-required route には target
+    /// 列挙の有無に関わらず emit されない。
     #[serde(rename = "approvalBypass")]
     pub approval_bypass: Vec<String>,
 }
@@ -283,7 +285,10 @@ fn route_properties() -> Value {
         "rewrite": object_schema(&[], json!({
             "approvalBypass": {
                 "type": ["array", "null"],
-                "items": {"type": "string", "enum": ["codex", "cursor", "copilot"]},
+                "items": {
+                    "type": "string",
+                    "enum": ["codex", "cursor", "copilot", "pretooluse", "devin"],
+                },
                 "uniqueItems": true,
             },
         })),

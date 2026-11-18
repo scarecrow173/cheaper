@@ -447,16 +447,22 @@ Rules:
 - `match.command` is a token **prefix**: `[npm, run, inspect]`
   matches `npm run inspect -- --fast`. Pick tokens that capture
   the repeated command without swallowing unrelated ones.
-- **The command's executable must be non-interactive.** Routes whose
-  executable is `python`, `python3`, `node`, `ruby`, `perl`, `bash`,
-  `sh`, `zsh`, `fish`, `pwsh`, `powershell`, `cmd`, `code`, `vim`,
-  `less`, `ssh`, `sudo`, `psql`, `sqlite3`, `top`, `man` (the curated
-  interactive list) resolve `stdin-unsupported` — the hook never
-  rewrites them. That includes script invocations:
-  `python check.py` is unroutable. The fix is a named task entry —
-  wrap the repeated command in `npm run <task>`, `mise run <task>`,
-  `just <task>`, `make <task>`, `cargo <task>`, or a directly invoked
-  project script whose basename isn't on the list — and match on that.
+- **Viability is a tri-state over executable + argv shape.** Batch
+  shapes — including interpreter invocations with a script
+  (`python check.py`, `node build.js`, `pwsh -File check.ps1`,
+  `bash run.sh`) — resolve `runnable` and route directly. Shapes
+  with interactive intent, inline code, or privileged/remote side
+  effects (`-i`/`-c`/`-e`/`-Command`/`-NoExit`/`--interactive`
+  flags, `ssh`/`sudo`/`su`) resolve `approval-required`: the hook
+  still rewrites them, but never attaches an approval-bypass
+  decision, so the host's own approval prompt remains (on Codex,
+  which cannot express that, they fall back instead of routing).
+  Shapes that cannot run without stdin/TTY (bare `python`/`node`,
+  `vim`/`less`/`top`, `-` stdin program, `docker -it`,
+  `kubectl --tty`) resolve `stdin-unsupported` and never fire.
+  A named task (`npm run <task>`, `mise run <task>`, `just <task>`)
+  is no longer required for interpreters, but remains the better
+  binding target — semantic names survive script renames.
 - `grant` names an existing `command.grants` entry — routes never
   create grants, and **project policy cannot declare `command.grants`
   at all** (the project partial schema excludes the `command`
@@ -475,13 +481,19 @@ Rules:
   captured `logRef`. Keep that contract; don't invent other names.
 - Verify with `cheaper route check` (your route reports ready, not
   `suppressed`/`invalid`) and `cheaper route resolve --command '<cmd>'`
-  → `matched:true` **and `viability:"runnable"`** — `matched` alone is
-  not enough (`stdin-unsupported`/`no-grant`/`missing-target` never
-  fire). Do **not** run `cheaper route run` — that is execution and
-  needs its own approval.
-- Command rewrite is emitted on **Claude Code, Devin, and Codex**
-  (Codex only when `route.rewrite.approvalBypass` is set in policy).
-  On Windsurf, Copilot, and Cursor the hook cannot substitute the
+  → `matched:true` **and `viability:"runnable"|"approval-required"`** —
+  `matched` alone is not enough (`stdin-unsupported`/`no-grant`/
+  `missing-target` never fire). `approval-required` still routes, but
+  the host's approval prompt is preserved — say so. Do **not** run
+  `cheaper route run` — that is execution and needs its own approval.
+- Command rewrite is emitted on **Claude Code, Devin, and Codex**.
+  Claude/Devin always emit the `updatedInput` rewrite; setting
+  `route.rewrite.approvalBypass` in policy adds
+  `permissionDecision:"allow"` for `runnable` routes (never for
+  `approval-required`). Codex emits only for `runnable` routes when
+  its bypass flag is set — everything else, and every
+  `approval-required` route, falls back to the normal verdict. On
+  Windsurf, Copilot, and Cursor the hook cannot substitute the
   command, so the route stays inert there — say which target this
   workspace's hooks serve before promising interception.
 - If the user declines the route, the workflow still works via
