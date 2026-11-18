@@ -15,6 +15,7 @@ Directory: `docs/test-specs`
 | TSPEC-034Jg5X0Tcrvv5lp9x578v | Builtin route resources and embedded materialize | draft | [builtin-route-resources.md](./builtin-route-resources.md) |
 | TSPEC-034zQr5gZxyNe4nWC1uHHg | Canonical Tool Runtime の adapter parity と所有境界 | proposed | [canonical-tool-runtime.md](./canonical-tool-runtime.md) |
 | TSPEC-tcLTueFfBvt2PbpNF7NRof | cheaper-bench harness contract — manifest v2, schema v2 claim boundary, aggregation invariants (issue #183) | draft | [cheaper-bench-harness-contract-issue-183.md](./cheaper-bench-harness-contract-issue-183.md) |
+| TSPEC-034sgJmI7QQzZ1S9NbESEe | cd prefix unwrap — hook route arm と route run の subdir cwd 検証 | draft | [route-cd-prefix-unwrap.md](./route-cd-prefix-unwrap.md) |
 | TSPEC-034z50PbuzTYDWvQXYdvaG | cheaper hook subcommands and hooks.json executable contract | superseded | [cheaper-hook-subcommands-and-hooks-json-executable-contract.md](./cheaper-hook-subcommands-and-hooks-json-executable-contract.md) |
 | TSPEC-034KsKGUDFHh6p9yWNcOHQ | Codex hook rewrite emit under approvalBypass opt-in (issue #150) | draft | [codex-hook-rewrite-emit.md](./codex-hook-rewrite-emit.md) |
 | TSPEC-034Jg5UNPJ1sKpPwYxH8L3 | Command grant exitCodes and route context options | draft | [command-exitcodes-and-options.md](./command-exitcodes-and-options.md) |
