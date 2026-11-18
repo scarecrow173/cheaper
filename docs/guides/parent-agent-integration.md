@@ -21,12 +21,15 @@ task JSON を渡して stdout の envelope を読む（詳細は
 
 cheaper は parent agent へ以下を配布する（APM package 経由）:
 
-- **skills**（5 件）:
+- **skills**（6 件）:
   - `cheaper-usage`: CLI contract（command・envelope・exit code・
     provider/model 設定）を agent へ教える
   - `cheaper-bulk-read` / `cheaper-code-write` /
     `cheaper-doc-write` / `cheaper-tool-operate`: 各 built-in
     worker への委譲方法
+  - `cheaper-workflow-create`: Workflow JSON v1 の設計・
+    `workflow interface` 検証・catalog 登録（定義保存と実行は
+    分離 — `workflow run` や grant/policy/Route 変更は行わない）
 - **hooks**（`pre_read_code` + shell hook）: read 前に
   `count-tokens` を実行し、threshold（default 8192 token、
   `CHEAPER_READ_TOKEN_THRESHOLD` で上書き）を超える file の
