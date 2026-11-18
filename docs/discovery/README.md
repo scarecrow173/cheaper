@@ -82,8 +82,9 @@ Directory: `docs/discovery`
 | DISC-034r05iHy2gdnp9dPPZ28N | Windsurf Cascade hooks and APM hook deployment for pre-read delegation | resolved | [windsurf-cascade-hooks-and-apm-hook-deployment.md](./windsurf-cascade-hooks-and-apm-hook-deployment.md) |
 | DISC-034Kqi8LcVZaxgz7wxHfg4 | worker run 失敗率 31% の要因調査 (issue #141) | resolved | [worker-run-failure-rate-31pct-investigation.md](./worker-run-failure-rate-31pct-investigation.md) |
 | DISC-z4FTQSzd835hAlRqSPb7QY | worker schema の magnitude 制約と INVALID_OUTPUT 回復不能性の構造分析 | resolved | [worker-schema-magnitude-constraints-and-output-recovery.md](./worker-schema-magnitude-constraints-and-output-recovery.md) |
-| DISC-034ZivKUnqfir09E2bIRBc | Workflow catalog and read-only list for issue 201 | draft | [workflow-catalog-issue-201.md](./workflow-catalog-issue-201.md) |
+| DISC-034ZivKUnqfir09E2bIRBc | Workflow catalog and read-only list for issue 201 | active | [workflow-catalog-issue-201.md](./workflow-catalog-issue-201.md) |
 | DISC-034zIKizOrTom96Q19mbYE | Workflow contract compiler の責務と検証境界 | resolved | [workflow-compiler-boundaries.md](./workflow-compiler-boundaries.md) |
+| DISC-034Zu8VG1BDxLMjnX4WKTr | cheaper-workflow-create skill for issue 204 | active | [workflow-create-skill-issue-204.md](./workflow-create-skill-issue-204.md) |
 | DISC-034zSVnLYkkFBYQvt56QNJ | Workflow file と compiler の接続境界を調査する | resolved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | DISC-034AQMgmHD0r6s13EoPlQ9 | Benchmark workflow orchestration overhead | resolved | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |
 | DISC-034zSWuKOprLRHraOiRn31 | Workflow inference の責務と情報源 | resolved | [workflow-resource-inference.md](./workflow-resource-inference.md) |

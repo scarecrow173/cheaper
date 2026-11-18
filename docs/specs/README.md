@@ -103,8 +103,9 @@ Directory: `docs/specs`
 | SPEC-034KwuiFzl4WvVQKdjfSnM | Windsurf-compat bounded evaluation coverage and Devin registration surfacing (issue #161) | approved | [windsurf-compat-range-normalization-and-devin-registration-surfacing.md](./windsurf-compat-range-normalization-and-devin-registration-surfacing.md) |
 | SPEC-onzPU8E4tKg3C6Iv4s9VK0 | execution.maxTurns nullable 化・stall timeout・budget 枯渇 checkpoint/resume | implemented | [worker-run-nullable-maxturns-and-stall-timeout.md](./worker-run-nullable-maxturns-and-stall-timeout.md) |
 | SPEC-s8dMxk0QAbLuWaOrsuikSp | worker schema の magnitude 制約撤廃と INVALID_OUTPUT raw output の回復経路 | implemented | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |
-| SPEC-034ZixoNtKPep3iXNKSv5n | Workflow catalog and read-only list for issue 201 | draft | [workflow-catalog-issue-201.md](./workflow-catalog-issue-201.md) |
+| SPEC-034ZixoNtKPep3iXNKSv5n | Workflow catalog and read-only list for issue 201 | approved | [workflow-catalog-issue-201.md](./workflow-catalog-issue-201.md) |
 | SPEC-034zIKj7DJcwZFr3FvjLrP | Workflow JSON v1 を検証済み DAG へ compile する | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
+| SPEC-034Zu8Xj0Y5x6ii9aDOGuS | cheaper-workflow-create skill for issue 204 | approved | [workflow-create-skill-issue-204.md](./workflow-create-skill-issue-204.md) |
 | SPEC-034zSVZlWjFAMpwmhsLTkx | 明示 workflow loader と公開 interface command の契約 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | SPEC-034AQOi1TPvVMDkNrhfTM5 | Benchmark workflow orchestration overhead | approved | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |
 | SPEC-034zSWvgiB9gHQpjguNJ3M | Workflow resource inference 契約 | approved | [workflow-resource-inference.md](./workflow-resource-inference.md) |
