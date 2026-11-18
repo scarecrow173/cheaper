@@ -124,6 +124,8 @@ route orchestration の overhead は `route-run` − `direct-child-exec` ≈ 2.1
 - **繰り返し利用する workflow:** saved workflow の定義はこの例で dynamic definition より 50 bytes 小さく、interface は同じ 82 bytes だった。反復間 wall time のばらつきから saved 実行が速いとは判断しない。定義を再生成せず、公開 interface で呼び出せる運用上の再利用性を基準に選ぶ。
 - **親へ DAG 全体を公開する必要がない場合:** `cheaper workflow interface <path>` を使う。測定した interface object は private definition より 272 bytes 小さかった。親 token telemetry は unavailable なので、実際の parent-token savings は未測定である。
 
+`cheaper-usage` skill の L0 判定規約（通常作業中の Workflow 候補検出）と後続の `cheaper-workflow-discover`（L1、#203）は「候補を見つける」入口であり、上記の選択基準が Workflow 化の可否を決める正本である — L0/L1 が候補と判定しても本節の基準で不適と結論付けられる場合がある。詳細は [parent-agent 連携ガイド](./parent-agent-integration.md#workflow-候補の軽量判定l0) を参照。
+
 ## tool job の exec grant 参照
 
 `kind:"tool"` job が使う `tool:"process"`・`tool:"command"` の canonical 名と input shape（`{"task":...}` / `{"name","args"}`）は不変。policy 上は両者とも単一 `exec` grant namespace の grant として解決される（`process` task は `fixed:true` grant、`command` grant は `!fixed` grant — [configuration ガイド](./configuration.md) の unified `exec` grant namespace 節を参照）。workflow の resource inference（producer/consumer edge と resource manifest）は grant の `inputs`/`outputs` 宣言を参照し、未宣言の grant は保守的な workspace root subtree claim に落ちる。`outputs: []` は「副作用を宣言しない」契約で、resource claim を持たず shared access として扱われる（task の I/O 宣言規約は [managed process ガイド](./managed-process.md) を参照）。

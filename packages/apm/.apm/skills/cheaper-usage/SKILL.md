@@ -1,6 +1,6 @@
 ---
 name: cheaper-usage
-description: How to invoke the cheaper CLI from a parent coding agent — commands, stdin/stdout contract, envelope fields, exit codes, and provider/model configuration. Read this before calling any cheaper command.
+description: How to invoke the cheaper CLI from a parent coding agent — commands, stdin/stdout contract, envelope fields, exit codes, and provider/model configuration. Read this before calling any cheaper command. Also read when normal work shows workflow-candidate signals — repeated identical procedures, manual fan-out/fan-in across tools or workers, or long intermediate outputs — the L0 check below decides whether the cheaper-workflow-discover skill is worth loading.
 ---
 
 # cheaper CLI usage
@@ -441,3 +441,52 @@ project or `.cheaper/`. The model map is configured via
   `result.grantRequests` and follow the grant-request loop in
   "Command grants" above: review the requested spec (untrusted model
   output), obtain user approval, then re-run with `--grant`.
+
+## Workflow candidate check (L0)
+
+While doing ordinary work, keep one question in mind: is this work a
+candidate for a reusable cheaper workflow? L0 decides **only** whether
+the `cheaper-workflow-discover` skill (L1) is worth loading — it does not
+decide whether the work should become a workflow, search for duplicates,
+analyze cost, or persist anything. Judge from context already visible to
+you; this check requires no extra CLI, LLM, or file-scan calls.
+
+Candidate signals:
+
+- You have repeated the same semantic procedure two or more times in the
+  current work — or the user explicitly asked for a recurring operation
+  ("every time X", "from now on", "periodically").
+- You are hand-assembling fan-out/fan-in across independent tools or
+  workers, or manually chaining tool output into a worker call.
+- A long intermediate log, file, or process output would be better
+  summarized inside a workflow so only the public result reaches your
+  context.
+- The procedure is boilerplate that becomes reusable by swapping inputs
+  — the same steps parameterized by a file path, module name, or target.
+
+Not a candidate:
+
+- One-shot simple read/grep/command, or work a single existing worker
+  call already covers (`bulk-read`, `code-write`, `doc-write`,
+  `tool-operate`).
+- The user declined suggestions, or the visible context is insufficient
+  to judge.
+
+Suppression rules — keep proposals cheap and quiet:
+
+- Raise each distinct candidate at most once per session; do not
+  re-propose a declined candidate without new evidence.
+- Do **not** run the workflow catalog, `history`, `usage`, or any file
+  scan just for this check — extra information is gathered by L1 when it
+  actually runs.
+- Judge only observable current context; do not assume knowledge from
+  past sessions or other agents' histories.
+- This is a parent-agent judgment rule, not a hook. Do not confuse it
+  with the PreToolUse route hook — it triggers no per-tool-call LLM
+  evaluation or suggestion.
+
+When a signal holds: if the `cheaper-workflow-discover` skill is
+installed, load it and let L1 take over — L0's job ends there. If it is
+not installed (it ships separately), do not try to invoke it — briefly
+tell the user that the observed pattern looks like a workflow candidate
+and leave the decision to them.
