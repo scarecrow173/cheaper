@@ -135,7 +135,8 @@ mise exec -- cargo test --workspace --features cheaper-runtime/dev-seam,cheaper-
 
 runtime の `run_dev_seam` / `run_fixture_test` の feature gate と `ollama_e2e`、
 workflow の `engine` / `process` / `exhaustive`（engine scheduler の
-exhaustive DAG 検証）は独立 target として維持する。
+exhaustive DAG 検証）、core の `exhaustive_policy`（exec policy の
+fail-closed 境界の exhaustive 検証）は独立 target として維持する。
 
 ## 検証用 Ollama コンテナ
 
