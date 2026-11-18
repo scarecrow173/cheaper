@@ -215,6 +215,7 @@ Directory: `docs/impl/ir`
 | IMPL-UAM3loJyQptDIIrWiEJ3me | issue-111: nullable maxTurns・stall timeout・budget 枯渇 checkpoint/resume の実装 | completed | [worker-run-nullable-maxturns-stall-timeout-and-resume.md](./worker-run-nullable-maxturns-stall-timeout-and-resume.md) |
 | IMPL-Dc1ijUuRtOtwRZigVnv16d | worker schema の構造検証原則と INVALID_OUTPUT raw output 永続化 | completed | [worker-schema-structure-not-magnitude.md](./worker-schema-structure-not-magnitude.md) |
 | IMPL-034rC4j788MZLcUE8xHHP2 | Worker workload profile と auto tier classifier の core 実装 | completed | [worker-workload-profile-auto-tier-classifier-core.md](./worker-workload-profile-auto-tier-classifier-core.md) |
+| IMPL-03466yClZgunJa94h9lzJV | Workflow discover skill implementation record | completed | [workflow-discover-skill-implementation-record.md](./workflow-discover-skill-implementation-record.md) |
 | IMPL-034zUfCug3Fz5ZzcrI1yhg | Workflow resource inference compilation | completed | [workflow-resource-inference-compilation.md](./workflow-resource-inference-compilation.md) |
 | IMPL-034zTWHPv92Mp7Ql9gnE5d | Workflow resource inference implementation | completed | [workflow-resource-inference-implementation.md](./workflow-resource-inference-implementation.md) |
 | IMPL-034AOjFln9ikSd8laLlspo | Workflow run CLI と public envelope を統合する | completed | [workflow-run-cli-public-envelope.md](./workflow-run-cli-public-envelope.md) |

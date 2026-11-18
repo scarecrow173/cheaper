@@ -200,6 +200,22 @@ utility envelope で返す。`workflows[]` には manifest の
 workflow JSON の jobs/prompt/binding などの private field は
 出力されない。詳細は [usage ガイド](./usage.md#workflow-list)を参照。
 
+## Workflow 候補の発見と提案（L1）
+
+`cheaper-workflow-discover` skill（L1、#203）は、L0 が検出した
+候補またはユーザーの明示的な検討要求に対し、上記 catalog と
+`workflow interface` を使って既存 Workflow・direct tool・
+Worker・Route・新規 Workflow を比較する評価層である。
+比較基準（tool-only 処理の overhead・親 token 未観測の claim
+境界・fan-in/中間出力の扱い）の正本は本ガイドの
+[選択基準](#選択基準)節、evidence label
+（measured/estimated/unknown）を含む比較手順・出力契約の
+規約の正本は skill 本文であり、guide はそれを適用・参照する —
+L1 の提案は作成でも実行でもなく、永続化・登録・実行は別途
+承認が要る。親 agent 側の導線詳細は
+[parent-agent 連携ガイド](./parent-agent-integration.md#l0--l1-handoff-で読まれた後の-cheaper-workflow-discover)
+を参照。
+
 ## 再測定
 
 `benchmarks/README.md` の手順（`cargo build -p cheaper-cli --features dev-seam` → `cargo run -p cheaper-bench`）で再実行できる。scheduler、prompt、model、CLI が変わった後は、同じ seed・反復数で `benchmarks/results/` に新しい UUID artifact を作り、古い結果を上書きせず比較する。canonical `mise run check` と merge 判定は coordinator が実行する。

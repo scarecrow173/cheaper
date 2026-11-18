@@ -76,6 +76,7 @@ Directory: `docs/plans`
 | PLAN-034ZiDqt5yJE77dMHMvF3G | Implement workflow catalog and read-only list | approved | [implement-workflow-catalog-and-list.md](./implement-workflow-catalog-and-list.md) |
 | PLAN-034zQ9Pet2QAuh0FP3ku3u | Workflow contract compiler を実装する | completed | [implement-workflow-contract-compiler.md](./implement-workflow-contract-compiler.md) |
 | PLAN-034ZudkXx2PLdh6cgGpRns | implement cheaper-workflow-create skill | approved | [implement-workflow-create-skill.md](./implement-workflow-create-skill.md) |
+| PLAN-034Y9sqpRWawlMTaY1PIyP | Implement workflow discover skill (L1) | approved | [implement-workflow-discover-skill.md](./implement-workflow-discover-skill.md) |
 | PLAN-034zTiB05IwVw2pDB34sLk | Workflow loader と公開 interface CLI を接続する | completed | [implement-workflow-file-interface.md](./implement-workflow-file-interface.md) |
 | PLAN-034AR2f7p2NSUDtUhSuLp6 | Implement workflow orchestration benchmarks | approved | [implement-workflow-orchestration-benchmarks.md](./implement-workflow-orchestration-benchmarks.md) |
 | PLAN-034zTu37tgDGI306OPBitz | Workflow resource inference を実装する | completed | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |

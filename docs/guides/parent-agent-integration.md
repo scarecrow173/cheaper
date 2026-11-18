@@ -21,15 +21,21 @@ task JSON を渡して stdout の envelope を読む（詳細は
 
 cheaper は parent agent へ以下を配布する（APM package 経由）:
 
-- **skills**（6 件）:
+- **skills**（7 件）:
   - `cheaper-usage`: CLI contract（command・envelope・exit code・
-    provider/model 設定）を agent へ教える
+    provider/model 設定）を agent へ教える。末尾の L0 節が通常
+    作業中の Workflow 候補を検出する入口も担う
   - `cheaper-bulk-read` / `cheaper-code-write` /
     `cheaper-doc-write` / `cheaper-tool-operate`: 各 built-in
     worker への委譲方法
   - `cheaper-workflow-create`: Workflow JSON v1 の設計・
     `workflow interface` 検証・catalog 登録（定義保存と実行は
     分離 — `workflow run` や grant/policy/Route 変更は行わない）
+  - `cheaper-workflow-discover`: 反復・orchestration 負荷の高い
+    作業の実行選択肢（direct tool・既存 Worker・Route・catalog
+    済み Workflow・新規 Workflow 候補）を同一基準で比較し、
+    evidence 付きの推奨（Workflow 化しない判断を含む）を返す
+    L1 skill。提案のみで作成・実行・永続化は行わない
 - **hooks**（`pre_read_code` + shell hook）: read 前に
   `count-tokens` を実行し、threshold（default 8192 token、
   `CHEAPER_READ_TOKEN_THRESHOLD` で上書き）を超える file の
@@ -229,6 +235,25 @@ runtime が skill をどう discovery し発火させるかに依存する。
 した場合、後続の L1 skill `cheaper-workflow-discover`（#203）が
 install 済みなら明示的に読ませる。未配布の version では L0 の
 観測結果をそのままユーザーへ報告し、存在しない skill を呼ばせない。
+
+### L0 → L1 handoff で読まれた後の `cheaper-workflow-discover`
+
+L1 skill が読まれると、親 agent は read-only の inspection だけで
+候補を評価する: `cheaper workflow list`（catalog の発見
+metadata）と `workflow interface <明示 path>`（公開 input/output
+契約）で既存候補を調べ、必要に応じて `route check` /
+`route resolve`（dry-run）・`usage` / `count-tokens` /
+`models` を evidence 入力に使う。workflow 定義 file を inspect
+目的で読むことはない。比較は reuse 優先で同一基準（再利用価値・
+latency・cost・uncertainty・制約）により行われ、結果は
+`reuse` / `modify` / `create` / `direct-tool` / `direct-worker` /
+`route` / `not-recommended` のいずれか 1 つと alternatives・
+measured/estimated/unknown の evidence label を伴う提案として
+ユーザーへ返る。**提案は作成でも実行でもない** — L1 は file・
+catalog・grant・policy を一切変更せず、保存・登録は承認後の L2
+（`cheaper-workflow-create`、install 済みの場合）または manual
+authoring の責務。規約の正本（収集 inputs・比較手順・evidence
+規約・出力契約）は skill 本文にある。
 
 ### opt-in 最小指示テンプレート
 
