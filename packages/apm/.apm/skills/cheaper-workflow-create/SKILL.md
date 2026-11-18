@@ -1,6 +1,6 @@
 ---
 name: cheaper-workflow-create
-description: Design, statically validate, and register a reusable Workflow JSON v1 definition (`.cheaper/workflows/*.json` + project catalog) when the user explicitly asks to create a workflow or approves a discover suggestion. Verified with `cheaper workflow interface`; never runs the workflow or changes grants, policy, or routes.
+description: Design, statically validate, and register a reusable Workflow JSON v1 definition (`.cheaper/workflows/*.json` + project catalog) when the user explicitly asks to create a workflow or approves a discover suggestion. Verified with `cheaper workflow interface`; never runs the workflow. Grants, policy, and command-binding routes are separate explicit approvals — never written silently.
 ---
 
 # Create a cheaper workflow
@@ -28,12 +28,15 @@ conditional jobs), not for one-shot operations.
 - **Saving a definition is not running it.** Never launch
   `cheaper workflow run` or any side-effecting smoke (command/process
   grants, file writes, billable model calls) without explicit user
-  approval. This skill's own writes are limited to the workflow file and
-  the catalog entry.
+  approval. Without further approval, this skill's own writes are
+  limited to the workflow file and the catalog entry.
 - **Never modify grants, policy, or routes** to make a definition work.
   If the definition needs a capability the policy doesn't allow
   (e.g. a `command`/`process` grant name), say so and let the user
-  decide — any grant proposal is the user's to approve.
+  decide — any grant proposal is the user's to approve. Binding a
+  command to the finished workflow via `routes.yaml` is likewise a
+  **separate, explicit approval** (see "Bind a command") — it changes
+  what the pre-command hook does to future commands.
 - **Ask before overwriting** an existing workflow file or replacing a
   catalog entry; keep catalog edits as reviewable diffs, never silent
   last-wins.
@@ -65,8 +68,11 @@ conditional jobs), not for one-shot operations.
 7. **Register** in `.cheaper/workflows/catalog.json` (see "Register").
 8. **Confirm** with `cheaper workflow list --cwd <workspace>` — your
    entry should report `status: "ok"`.
-9. **Report** the saved path, contract summary, validation result, and
-   invocation examples (see "Report back").
+9. *(Optional — separate approval)* **Bind** the repeated command to
+   the workflow via `.cheaper/routes.yaml` so the pre-command hook
+   routes future invocations through it (see "Bind a command").
+10. **Report** the saved path, contract summary, validation result, and
+    invocation examples (see "Report back").
 
 ## Workflow JSON v1 anatomy
 
@@ -408,7 +414,78 @@ After validation, append one entry to
 - Confirm with `cheaper workflow list --cwd <workspace>`: the new entry
   should be `status:"ok"` with no `missing-path`/`duplicate-id`
   diagnostics. Catalog is a discovery index only — there is no
-  `workflow run <id>` lookup; execution stays explicit-path.
+  `workflow run <id>` lookup; execution stays explicit-path unless a
+  route binds it (below).
+
+## Bind a command (optional — separate approval)
+
+If the workflow exists so that a repeated shell command can run through
+it (e.g. you kept re-running the same inspection command and reading its
+output back), offer to register a **project route**. On approval, write
+or extend `<workspace>/.cheaper/routes.yaml`:
+
+```yaml
+version: 1
+routes:
+  - name: inspect-and-summarize
+    match: {command: [npm, run, inspect]}
+    target: {kind: workflow, path: workflows/inspect-and-summarize.json}
+    grant: npm-inspect
+    output: {tokenThreshold: 8192}
+```
+
+Once registered, the pre-command hook rewrites a matching typed command
+to `cheaper route run --payload …` and the workflow executes instead —
+the command output can be summarized inside the workflow so only the
+public result reaches your context.
+
+Rules:
+
+- `target.path` is relative to the directory holding `routes.yaml` —
+  `.cheaper/workflows/<name>.json` is written `workflows/<name>.json`.
+  Absolute paths, `..`, and NUL are config errors.
+- `match.command` is a token **prefix**: `[npm, run, inspect]`
+  matches `npm run inspect -- --fast`. Pick tokens that capture
+  the repeated command without swallowing unrelated ones.
+- **The command's executable must be non-interactive.** Routes whose
+  executable is `python`, `python3`, `node`, `ruby`, `perl`, `bash`,
+  `sh`, `zsh`, `fish`, `pwsh`, `powershell`, `cmd`, `code`, `vim`,
+  `less`, `ssh`, `sudo`, `psql`, `sqlite3`, `top`, `man` (the curated
+  interactive list) resolve `stdin-unsupported` — the hook never
+  rewrites them. That includes script invocations:
+  `python check.py` is unroutable. The fix is a named task entry —
+  wrap the repeated command in `npm run <task>`, `mise run <task>`,
+  `just <task>`, `make <task>`, `cargo <task>`, or a directly invoked
+  project script whose basename isn't on the list — and match on that.
+- `grant` names an existing `command.grants` entry — routes never
+  create grants, and **project policy cannot declare `command.grants`
+  at all** (the project partial schema excludes the `command`
+  section). Grants live in the user-layer `policy.yaml` — proposing
+  one is a user-config change and needs its own explicit approval.
+  A route without its grant resolves `no-grant`, never runnable.
+- Project-layer routes may **not** declare `trusted`, `substitute`, or
+  extra `grants:` — those keys are builtin/user layer only and make the
+  file a load error. A `match.command` that collides with a builtin or
+  user route is `suppressed`, not applied.
+- A command-bound workflow must accept the inputs `route run` injects:
+  `grant`, `executable`, `argv` (the typed tokens), `execArgs` (the
+  resolved args), `cwd`, `tokenThreshold`, `runId`. The builtin
+  `routed-exec` shape is the reference — an exec job plus a `condense`
+  worker gated by `when: outputTokens > tokenThreshold` reading the
+  captured `logRef`. Keep that contract; don't invent other names.
+- Verify with `cheaper route check` (your route reports ready, not
+  `suppressed`/`invalid`) and `cheaper route resolve --command '<cmd>'`
+  → `matched:true` **and `viability:"runnable"`** — `matched` alone is
+  not enough (`stdin-unsupported`/`no-grant`/`missing-target` never
+  fire). Do **not** run `cheaper route run` — that is execution and
+  needs its own approval.
+- Command rewrite is emitted on **Claude Code, Devin, and Codex**
+  (Codex only when `route.rewrite.approvalBypass` is set in policy).
+  On Windsurf, Copilot, and Cursor the hook cannot substitute the
+  command, so the route stays inert there — say which target this
+  workspace's hooks serve before promising interception.
+- If the user declines the route, the workflow still works via
+  `workflow run <path>` — say so and stop.
 
 ## Report back
 
@@ -420,6 +497,8 @@ Tell the user:
 - validation result (`workflow interface` pass; state anything left
   unverified as unverified),
 - catalog state: registered id or "not registered" and why,
+- route state: bound command (`match.command` tokens + route name),
+  "proposed, awaiting approval", or "not bound",
 - required permissions/dependencies (grant names, custom workers,
   authorized `process` tasks) the run will need,
 - invocation examples:
@@ -447,6 +526,7 @@ Tell the user:
 | Real names: `bulk-reader`, `grep`, `command` | Invented names: `"summarizer"`, `"run-tests"`, `"write-file"` — `interface` rejects them |
 | `cheaper workflow run <path> --input inputs.json` | `cheaper workflow run <path> --input '{"task":"x"}'` (inline JSON is not accepted) |
 | Ask the user before a `command`/`process` grant, then document it | Auto-adding grants/policy/routes to make a definition run |
+| Offer a `routes.yaml` binding, write it only on approval, verify with `route resolve` | Writing `routes.yaml` unapproved, or declaring `trusted`/`substitute` at project layer |
 | Register after `interface` passes, verify with `workflow list` | Registering unverified definitions or silently replacing a duplicate id |
 
 ## Related skills

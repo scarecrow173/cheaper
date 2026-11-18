@@ -455,7 +455,10 @@ Candidate signals:
 
 - You have repeated the same semantic procedure two or more times in the
   current work — or the user explicitly asked for a recurring operation
-  ("every time X", "from now on", "periodically").
+  ("every time X", "from now on", "periodically"). A concrete shape:
+  you keep re-running the same inspection command (python/node/
+  powershell script, build, query) and then bulk-reading its log or
+  output back into context.
 - You are hand-assembling fan-out/fan-in across independent tools or
   workers, or manually chaining tool output into a worker call.
 - A long intermediate log, file, or process output would be better

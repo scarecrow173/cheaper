@@ -162,10 +162,24 @@ End with a short report to the user containing:
    existingWorkflowPath: null  # explicit workspace-relative path, only when known
    proposedInputs: ["..."]
    proposedOutputs: ["..."]
+   proposedRoute: null  # when the repeated work starts from a shell command: {name, matchCommand: [token, ...], grant: "<existing grant name>"} so L2 can bind it in .cheaper/routes.yaml — else null
    benefit: {status: "measured|estimated|unknown", rationale: "...", assumptions: []}
    risksAndEffects: ["..."]
    approval: "required-before-persist"
    ```
+
+   Fill `proposedRoute` only when the trigger is a repeated shell
+   command — the hook can then intercept that command and run the
+   workflow in its place. `grant` must name an existing
+   `command.grants` entry; if none exists, flag the missing grant as a
+   risk and leave the decision to the user rather than implying it is
+   covered. Two constraints shape `matchCommand`: it is a token
+   **prefix**, and the resolved executable must be non-interactive —
+   `python`/`node`/`powershell`/`bash` and friends resolve
+   `stdin-unsupported` and never fire, even with a script argument.
+   When the repeated command is an interpreter invocation, propose the
+   binding on a named task entry instead (`npm run <task>`,
+   `mise run <task>`, `just <task>`).
 
 5. **The disclaimer** — state plainly that this is a proposal: nothing
    was created, saved, registered, or executed, and nothing will be

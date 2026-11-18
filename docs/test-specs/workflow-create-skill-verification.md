@@ -79,6 +79,12 @@ catalog 登録手順は `{id,path,summary,tags}` 追記 + `workflow list`
   stdin 定義・YAML を skill が提案しない。
 - 承認なしに定義 file・catalog・grant・policy・Route を書き換えず、
   `workflow run` を起動しない。
+- command への route bind（project `.cheaper/routes.yaml` entry）は
+  定義保存・catalog 登録とは別の明示承認が前提。route の `grant`
+  は既存 `command.grants` 名を参照するだけで、新規 grant は
+  user 層 `policy.yaml` への承認対象変更（project partial schema
+  は `command` セクションを持てない）。`route resolve` が
+  `matched:true` かつ `viability:"runnable"` の場合のみ発火可能。
 
 ## Examples
 
@@ -105,6 +111,15 @@ catalog 登録手順は `{id,path,summary,tags}` 追記 + `workflow list`
   diagnostics。
 - Given missing path の entry、when `workflow list` すると、
   `status:"missing"` + `missing-path` diagnostics。
+- Given `[python, tools/check.py]` に match する project route
+  （grant executable `python`）、when `route resolve --command
+  'python tools/check.py'` すると、`matched:true` かつ
+  `viability:"stdin-unsupported"` — interpreter 直 route は
+  script 引数があっても不発。
+- Given `[npm, run, inspect]` に match する project route、when
+  `route resolve --command 'npm run inspect -- --fast'` すると、
+  `matched:true` かつ `viability:"runnable"` で hook rewrite が
+  emit される。
 
 ## Guarantees
 
