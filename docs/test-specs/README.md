@@ -99,8 +99,9 @@ Directory: `docs/test-specs`
 | TSPEC-034AJ8C35s1GpJJoxU3sey | Workflow における明示 bounded artifact read | proposed | [workflow-artifact-publication-and-consumption.md](./workflow-artifact-publication-and-consumption.md) |
 | TSPEC-034AR5JjpeSFMmwDJ2ohy3 | Workflow benchmark accounting integrity | proposed | [workflow-benchmark-accounting-integrity.md](./workflow-benchmark-accounting-integrity.md) |
 | TSPEC-034AR5IRUTHkZBxfcQJFgM | Workflow benchmark scenario determinism | proposed | [workflow-benchmark-scenario-determinism.md](./workflow-benchmark-scenario-determinism.md) |
-| TSPEC-034ZiF8TCafeWV4OHI9beT | Workflow catalog manifest and list contract | draft | [workflow-catalog-manifest-and-list-contract.md](./workflow-catalog-manifest-and-list-contract.md) |
+| TSPEC-034ZiF8TCafeWV4OHI9beT | Workflow catalog manifest and list contract | proposed | [workflow-catalog-manifest-and-list-contract.md](./workflow-catalog-manifest-and-list-contract.md) |
 | TSPEC-034zQvKPjNkXAEgbZlzdcQ | Workflow compiler の契約保証 | proposed | [workflow-compiler-contract-guarantees.md](./workflow-compiler-contract-guarantees.md) |
+| TSPEC-034ZubPv1oKQMgmITu1e4y | workflow create skill verification contract | proposed | [workflow-create-skill-verification.md](./workflow-create-skill-verification.md) |
 | TSPEC-034AJ8stqUyJWIgj6oaOzt | Workflow の policy・schema・literal scope 境界 | proposed | [workflow-execution-contract-boundaries.md](./workflow-execution-contract-boundaries.md) |
 | TSPEC-034AJ8RBszSVnXlZydfnyU | Workflow verification evidence と dependency direction | proposed | [workflow-execution-verification-boundaries.md](./workflow-execution-verification-boundaries.md) |
 | TSPEC-034MGCzUAhlbOn8zU2Mnal | Workflow Job History lifecycle | proposed | [workflow-job-history-lifecycle.md](./workflow-job-history-lifecycle.md) |
