@@ -197,69 +197,738 @@ pub(crate) enum Interaction {
 /// UI/TTY app — stdin 非接続では表示・対話が成立しないため
 /// 常に `Structural`(R33 継承の安全側)。
 const UI_STRUCTURAL_COMMANDS: &[&str] = &[
-    // editors
-    "vi", "vim", "nvim", "nano", "emacs", "code", "subl", // pagers・TTY monitors
+    // editors — `vim.basic` 等の Debian alternatives 名は union の
+    // 解決名側で拾えないため別綴りを列挙する
+    "vi", "vim", "nvim", "nano", "emacs", "code", "codium", "subl", "view", "gvim", "gview", "rvim",
+    "rview", "ex", "eview", "vimdiff", "nvi", // pagers・TTY monitors
     "less", "more", "man", "top", "htop", "watch", // interactive session tools
     "ftp", "sftp", "telnet",
 ];
 
-/// 特権・remote 副作用 command — batch 形状でも実行を承認へ回す。
-const PRIVILEGED_COMMANDS: &[&str] = &["ssh", "sudo", "su"];
-
-/// REPL/interpreter — bare invocation は stdin 由来 program で
-/// `Structural`、positional arg(script/file)を持つ batch 形状は
-/// `Batch`、interactive intent・inline code flag を含む形状は
-/// `Approval`。
-const REPL_SHELL_COMMANDS: &[&str] = &[
-    "python",
-    "python3",
-    "node",
-    "ruby",
-    "irb",
-    "perl",
-    "psql",
-    "mysql",
-    "sqlite3",
-    "redis-cli",
-    "bash",
-    "zsh",
-    "sh",
-    "fish",
-    "csh",
-    "tcsh",
-    "pwsh",
-    "powershell",
-    "cmd",
+/// 特権・remote・detached/scheduled 副作用 command — batch 形状でも
+/// 実行を承認へ回す。`xargs`/`parallel` のような arbitrary-command
+/// forwarder は argv 内容によらず `Approval`。
+const PRIVILEGED_COMMANDS: &[&str] = &[
+    // privilege escalation
+    "sudo", "su", "doas", "pkexec", "run0", "sudoedit", "pfexec", // remote execution / copy
+    "ssh", "scp", "slogin", "rsh", "rlogin", "mosh", "expect",
+    "vagrant", // exec-capable sockets / forwarders
+    "nc", "ncat", "netcat", "socat", "xargs", "parallel", // detached / scheduled side effects
+    "tmux", "screen", "at", "batch", "crontab",
 ];
 
-/// REPL/shell の argv で program を stdin から読む指示 —
-/// script を渡しても spawn 意味が成立しない `Structural`。
-const STDIN_PROGRAM_ARGS: &[&str] = &["-"];
+/// `python3.11`・`node20` のような version suffix 付き名を base 名
+/// として認識する — suffix は `[0-9._-]` 列のみ許容し、
+/// `pythonic` のような語の伸長は別名扱い。
+fn is_versioned_name(name: &str, base: &str) -> bool {
+    name.strip_prefix(base).is_some_and(|rest| {
+        !rest.is_empty()
+            && rest
+                .chars()
+                .all(|c| c.is_ascii_digit() || matches!(c, '.' | '_' | '-'))
+    })
+}
 
-/// REPL/shell の argv で interactive intent・inline code を示す
-/// flag — 実行自体は stdin 非接続でも可能だが承認を要する
-/// `Approval`。`-i`(python/bash/node interactive)・`-c`/`-e`/
-/// `-Command`(inline code)・`-NoExit`/`-Interactive`/`--interactive`。
-const INTERACTIVE_INTENT_FLAGS: &[&str] = &[
-    "-i",
+fn name_is(name: &str, bases: &[&str]) -> bool {
+    bases
+        .iter()
+        .any(|b| name == *b || is_versioned_name(name, b))
+}
+
+/// REPL/interpreter family の argv 分類規則。scan は flag 1 個で
+/// early return せず全 arg の最悪 tier を採る — `-`(stdin program)
+/// の `Structural` が `Approval` flag より常に優先される。
+struct ReplSpec {
+    /// positional arg(script/module/data file)を持つ形状の tier。
+    /// `Batch`: script 実行で stdin 非依存。`Approval`: positional
+    /// 自体が program 文字列(awk/sed/redis-cli)。`Structural`:
+    /// positional があっても対話 session に落ちる(psql/mysql)。
+    positional: Interaction,
+    /// `-xyz` single-dash cluster 内で `Approval` の letter
+    /// (case-sensitive — `python -I` と `-i`・`sh -e` errexit と
+    /// eval `-e` は別物)。
+    intent_letters: &'static str,
+    /// 同・case-insensitive 追加(perl `-e`/`-E`、sqlcmd `-q`/`-Q`)。
+    intent_letters_ci: &'static str,
+    /// `-`/`--`/`/` prefix を剥がした lowercase 名の完全一致で
+    /// `Approval`(node `--eval`・cmd `/c`・pwsh `/Command`)。
+    intent_long: &'static [&'static str],
+    /// pwsh 型 unambiguous-prefix parameter — arg が canonical 名の
+    /// 先頭一致なら `Approval`(`-Com`…`-Command`・`-Enc`…の省略形)。
+    intent_prefixes: &'static [&'static str],
+    /// 同・prefix 一致で `Structural`(`-Interactive`/`-NoExit` —
+    /// script 実行後も TTY に残る)。
+    structural_prefixes: &'static [&'static str],
+    /// 同・完全一致で `Structural`(docker 系 `--interactive`)。
+    structural_long: &'static [&'static str],
+    /// `-f FILE`/`--file FILE` 形式で値を取り、以降の positional を
+    /// data file として `Batch` 化する script-file flag。
+    file_flags: &'static [&'static str],
+    /// file_flags の pwsh 型 prefix 版(`-F`…`-File`)。
+    file_prefixes: &'static [&'static str],
+    /// cluster 内で `Structural` の letter(php `-a`・redis-cli `-x`)。
+    structural_letters: &'static str,
+    /// positional token 自体が inline program 相当(deno `eval`)。
+    approval_positionals: &'static [&'static str],
+    /// positional token が対話 session(deno `repl`)。
+    structural_positionals: &'static [&'static str],
+}
+
+#[allow(clippy::too_many_arguments)] // 表駆動 spec の宣言的な形を維持
+const fn spec(
+    positional: Interaction,
+    intent_letters: &'static str,
+    intent_letters_ci: &'static str,
+    intent_long: &'static [&'static str],
+    intent_prefixes: &'static [&'static str],
+    structural_prefixes: &'static [&'static str],
+    structural_long: &'static [&'static str],
+    file_flags: &'static [&'static str],
+    file_prefixes: &'static [&'static str],
+    structural_letters: &'static str,
+    approval_positionals: &'static [&'static str],
+    structural_positionals: &'static [&'static str],
+) -> ReplSpec {
+    ReplSpec {
+        positional,
+        intent_letters,
+        intent_letters_ci,
+        intent_long,
+        intent_prefixes,
+        structural_prefixes,
+        structural_long,
+        file_flags,
+        file_prefixes,
+        structural_letters,
+        approval_positionals,
+        structural_positionals,
+    }
+}
+
+/// shell 系 — `-c`/`/k` 相当の inline code と `-i` の interactive
+/// intent が `Approval`。`-e` は errexit で eval ではないため含め
+/// ない(`sh -e run.sh` は `Batch`)。
+const SHELL_SPEC: ReplSpec = spec(
+    Interaction::Batch,
+    "ci",
+    "",
+    &["command"], // fish `--command`
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "",
+    &[],
+    &[],
+);
+const PYTHON_SPEC: ReplSpec = spec(
+    Interaction::Batch,
+    "ci", // `-c` eval・`-i` interactive;`-I`(isolated)は別物
+    "",
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "",
+    &[],
+    &[],
+);
+const NODE_SPEC: ReplSpec = spec(
+    Interaction::Batch,
+    "epi", // `-e`/`--eval`・`-p`/`--print`・`-i`
+    "",
+    &["eval", "print", "interactive"],
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "",
+    &[],
+    &[],
+);
+const DENO_SPEC: ReplSpec = spec(
+    Interaction::Batch,
+    "ei",
+    "",
+    &["eval", "print"],
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "",
+    &["eval"], // `deno eval` inline code subcommand
+    &["repl"], // `deno repl` は対話 session
+);
+const RUBY_SPEC: ReplSpec = spec(
+    Interaction::Batch,
+    "e",
+    "",
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "",
+    &[],
+    &[],
+);
+/// `irb file.rb` も file 実行後に REPL へ残るため常に対話。
+const IRB_SPEC: ReplSpec = spec(
+    Interaction::Structural,
+    "",
+    "",
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "",
+    &[],
+    &[],
+);
+/// perl `-e`/`-E` は両方 eval(`-E` は feature 有効版)で `-pe` の
+/// ような cluster + attached code が常套形。
+const PERL_SPEC: ReplSpec = spec(
+    Interaction::Batch,
+    "",
+    "e",
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "",
+    &[],
+    &[],
+);
+const PHP_SPEC: ReplSpec = spec(
+    Interaction::Batch,
+    "r",
+    "rb", // `-r`/`-R`/`-B` code 系 flag
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "a", // `php -a` interactive shell
+    &[],
+    &[],
+);
+const LUA_SPEC: ReplSpec = spec(
+    Interaction::Batch,
+    "ei",
+    "",
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "",
+    &[],
+    &[],
+);
+/// pwsh/powershell — parameter は case-insensitive で unambiguous
+/// prefix が効く(`-Com`→`-Command`・`-Enc`→`-EncodedCommand`)。
+/// `-e`/`-ec` は実装が受け付ける省略綴りとして安全側に含める。
+/// `-File` prefix(`-f`…`-File`)は script file で `Batch`。
+const PWSH_SPEC: ReplSpec = spec(
+    Interaction::Batch,
+    "",
+    "",
+    &["c", "e", "ec"],
+    &["command", "encodedcommand", "commandwithargs"],
+    &["interactive", "noexit", "interactivewithargs"],
+    &[],
+    &[],
+    &["file"],
+    "",
+    &[],
+    &[],
+);
+/// `cmd /c`・`/k` は inline code 実行で `bash -c` 相当の `Approval`。
+const CMD_SPEC: ReplSpec = spec(
+    Interaction::Batch,
+    "",
+    "",
+    &["c", "k"],
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "",
+    &[],
+    &[],
+);
+/// psql/mysql 系 — positional(db 名)だけでは対話 session に落ちる。
+/// `-c`/`-e`/`-q` inline query は `Approval`、`-f FILE` は `Batch`。
+const DB_SESSION_SPEC: ReplSpec = spec(
+    Interaction::Structural,
+    "ce",
+    "q",
+    &["command", "execute", "query", "eval"],
+    &[],
+    &[],
+    &[],
+    &["f", "file"],
+    &[],
+    "",
+    &[],
+    &[],
+);
+/// positional が query/command 文字列そのものの DB CLI。
+const DB_COMMAND_SPEC: ReplSpec = spec(
+    Interaction::Approval,
+    "ce",
+    "q",
+    &["command", "execute", "query", "eval"],
+    &[],
+    &[],
+    &[],
+    &["f", "file"],
+    &[],
+    "",
+    &[],
+    &[],
+);
+/// redis-cli — `-x` は最後の arg を stdin から読む。
+const REDIS_SPEC: ReplSpec = spec(
+    Interaction::Approval,
+    "",
+    "",
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "x",
+    &[],
+    &[],
+);
+/// awk 系 — positional は program 文字列(`system()` で command
+/// 実行可能)で `Approval`。`-f FILE` で file 化すれば `Batch`。
+const AWK_SPEC: ReplSpec = spec(
+    Interaction::Approval,
+    "e",
+    "",
+    &["file", "exec"], // gawk `-e`/`--exec` program text
+    &[],
+    &[],
+    &[],
+    &["f", "file"],
+    &[],
+    "",
+    &[],
+    &[],
+);
+const SED_SPEC: ReplSpec = spec(
+    Interaction::Approval,
+    "e",
+    "",
+    &["expression"],
+    &[],
+    &[],
+    &[],
+    &["f", "file"],
+    &[],
+    "",
+    &[],
+    &[],
+);
+/// 汎用 REPL/jit — `-e`/`--eval`・`-c` 系 eval flag と `-i` を
+/// `Approval`、positional script は `Batch`、bare は `Structural`。
+const GENERIC_REPL_SPEC: ReplSpec = spec(
+    Interaction::Batch,
+    "cei",
+    "e",
+    &["eval", "exec", "execute", "command"],
+    &[],
+    &[],
+    &[],
+    &[],
+    &[],
+    "",
+    &[],
+    &[],
+);
+
+/// 名 → REPL spec。version suffix は `is_versioned_name` で吸収
+/// する(`python3.11`・`node20`・`ruby3.2`・`lua5.4` 等)。
+fn repl_spec(name: &str) -> Option<ReplSpec> {
+    if [
+        "bash", "sh", "zsh", "fish", "dash", "ksh", "mksh", "ash", "csh", "tcsh", "posh", "yash",
+    ]
+    .contains(&name)
+    {
+        return Some(SHELL_SPEC);
+    }
+    if name_is(name, &["python", "pypy"]) {
+        return Some(PYTHON_SPEC);
+    }
+    if name_is(name, &["node", "nodejs"]) {
+        return Some(NODE_SPEC);
+    }
+    if ["deno", "bun"].contains(&name) {
+        return Some(DENO_SPEC);
+    }
+    if name_is(name, &["ruby", "jruby"]) {
+        return Some(RUBY_SPEC);
+    }
+    if name == "irb" {
+        return Some(IRB_SPEC);
+    }
+    if name_is(name, &["perl"]) {
+        return Some(PERL_SPEC);
+    }
+    if name_is(name, &["php"]) {
+        return Some(PHP_SPEC);
+    }
+    if name_is(name, &["lua", "luajit"]) {
+        return Some(LUA_SPEC);
+    }
+    if name_is(name, &["pwsh", "powershell"])
+        || ["pwsh-preview", "powershell-preview"].contains(&name)
+    {
+        return Some(PWSH_SPEC);
+    }
+    if name == "cmd" {
+        return Some(CMD_SPEC);
+    }
+    if [
+        "psql", "mysql", "mariadb", "mongosh", "mongo", "sqlcmd", "influx",
+    ]
+    .contains(&name)
+    {
+        return Some(DB_SESSION_SPEC);
+    }
+    if ["sqlite3", "duckdb"].contains(&name) {
+        return Some(DB_COMMAND_SPEC);
+    }
+    if name == "redis-cli" {
+        return Some(REDIS_SPEC);
+    }
+    if ["awk", "gawk", "mawk", "nawk"].contains(&name) {
+        return Some(AWK_SPEC);
+    }
+    if ["sed", "gsed", "ssed"].contains(&name) {
+        return Some(SED_SPEC);
+    }
+    if name_is(name, &["julia", "rscript"])
+        || [
+            "r",
+            "ipython",
+            "groovy",
+            "osascript",
+            "tclsh",
+            "wish",
+            "ghci",
+            "runghc",
+            "runhaskell",
+            "nu",
+            "xonsh",
+            "iex",
+            "elixir",
+            "swift",
+            "scala",
+            "clj",
+            "clojure",
+            "octave",
+            "racket",
+            "gjs",
+            "qjs",
+            "jsc",
+            "v8",
+            "d8",
+        ]
+        .contains(&name)
+    {
+        return Some(GENERIC_REPL_SPEC);
+    }
+    None
+}
+
+/// 別 command へ実行を委譲する launcher/forwarder — inner command
+/// を再帰分類する(`env sudo x`・`timeout 5 bash -c x` で argv0 名
+/// だけ見ると危険側が `Batch` に漏れる)。`command`/`builtin`/`exec`
+/// は shell builtin だが argv0 として現れ得るため含める。
+const LAUNCHER_COMMANDS: &[&str] = &[
+    "env",
+    "nohup",
+    "nice",
+    "ionice",
+    "stdbuf",
+    "setsid",
+    "command",
+    "builtin",
+    "exec",
+    "linux32",
+    "linux64",
+    "setarch",
+    "arch",
+    "unshare",
+    "nsenter",
+    "chroot",
+    "timeout",
+    "taskset",
+    "flock",
+    "busybox",
+    "toybox",
+    "firejail",
+    "bwrap",
+    "flatpak-spawn",
+    "systemd-run",
+];
+
+/// launcher の「値を取る」flag — 値 token を inner command 候補から
+/// 外すための主要 flag の superset(per-command 厳密 parse は
+/// しない — bool flag を値取り扱いすると実 inner を食い違えて
+/// 検査が潜る側に倒れるため、確実に値を取るものだけを列挙する。
+/// 値を positional と誤認しても tail-scan が残りを拾う)。
+const LAUNCHER_VALUE_FLAGS: &[&str] = &[
+    "-u",
+    "--unset",
+    "-C",
+    "--chdir",
+    "-S",
+    "--split-string",
+    "-s",
+    "--signal",
+    "-k",
+    "--kill-after",
+    "-n",
+    "--adjustment",
     "-c",
-    "-e",
-    "-command",
-    "-noexit",
-    "-interactive",
-    "--interactive",
+    "--cpu-list",
+    "-w",
+    "--wait",
+    "-t",
+    "--target",
+    "-p",
+    "--pid",
+    "-a",
+    "--argv0",
+    "-d",
+    "--dir",
+    "-f",
+    "--file",
+    "--block-signal",
+    "--default-signal",
+    "--ignore-signal",
 ];
 
-/// `docker`/`kubectl`/`podman` の interactive flag — `-it`・`-i`・
-/// `--interactive`/`--tty` を argv に含む場合 stdin 依存と見なす。
-const INTERACTIVE_FLAG_COMMANDS: &[&str] = &["docker", "kubectl", "podman"];
+/// `docker`/`kubectl`/`podman` 系 container CLI — stdin/TTY flag の
+/// 綴り(permutation・`--x=y`・`--stdin`)を argv から拾う。
+const CONTAINER_COMMANDS: &[&str] = &[
+    "docker",
+    "kubectl",
+    "podman",
+    "nerdctl",
+    "buildah",
+    "crictl",
+    "oc",
+    "docker-compose",
+    "podman-compose",
+];
+
+/// REPL family の argv scan — `-` stdin program は `Structural`、
+/// intent flag/綴りは `Approval`、positional は spec 階層。file
+/// flag(script file 指定)があれば positional を data file として
+/// `Batch` 化。positional・file 指定のどちらも無い形状は対話
+/// session 前提で `Structural`。全 arg の最悪 tier を返す。
+fn scan_repl_args(spec: &ReplSpec, exec_args: &[String]) -> Interaction {
+    let mut tier = Interaction::Batch;
+    let mut positional = false;
+    let mut file_program = false;
+    let mut saw_intent = false;
+    let mut after_ddash = false;
+    let mut i = 0;
+    // intent/file flag は値を別 arg で取る — 次 arg を値として消費
+    // する(`psql -c 'sql'` の `'sql'` を positional と誤認しない)。
+    // `-`/`--` は消費しない(stdin program の `Structural` 判定を
+    // 守る)。
+    let consume_value = |exec_args: &[String], i: &mut usize| {
+        if exec_args.get(*i).is_some_and(|n| n != "-" && n != "--") {
+            *i += 1;
+        }
+    };
+    while let Some(arg) = exec_args.get(i) {
+        i += 1;
+        if after_ddash {
+            positional = true;
+            continue;
+        }
+        let a = arg.as_str();
+        if a == "--" {
+            after_ddash = true;
+            continue;
+        }
+        if a == "-" {
+            return Interaction::Structural;
+        }
+        let stripped = a.trim_start_matches(['-', '/']);
+        if stripped.len() != a.len() && !stripped.is_empty() {
+            let lower = stripped.to_ascii_lowercase();
+            let (name_part, value) = match lower.split_once('=') {
+                Some((n, v)) => (n, Some(v)),
+                None => (lower.as_str(), None),
+            };
+            let disabled = matches!(value, Some("false" | "0" | "no"));
+            if spec.file_flags.contains(&name_part)
+                || spec.file_prefixes.iter().any(|p| p.starts_with(name_part))
+            {
+                file_program = true;
+                if value.is_none() {
+                    consume_value(exec_args, &mut i);
+                }
+                continue;
+            }
+            if !disabled {
+                if spec.intent_long.contains(&name_part)
+                    || spec
+                        .intent_prefixes
+                        .iter()
+                        .any(|p| p.starts_with(name_part))
+                {
+                    tier = tier.max(Interaction::Approval);
+                    saw_intent = true;
+                    if value.is_none() {
+                        consume_value(exec_args, &mut i);
+                    }
+                }
+                if spec.structural_long.contains(&name_part)
+                    || spec
+                        .structural_prefixes
+                        .iter()
+                        .any(|p| p.starts_with(name_part))
+                {
+                    tier = tier.max(Interaction::Structural);
+                }
+            }
+            // single-dash cluster(`-lc`・`-pe`・`-c'code'` 等)の
+            // letter scan。`--x`・`/x` は cluster にしない。
+            if a.starts_with('-') && !a.starts_with("--") {
+                let mut cluster_intent = false;
+                for ch in stripped.chars() {
+                    if spec.intent_letters.contains(ch)
+                        || spec.intent_letters_ci.contains(ch.to_ascii_lowercase())
+                    {
+                        tier = tier.max(Interaction::Approval);
+                        cluster_intent = true;
+                    }
+                    if spec.structural_letters.contains(ch) {
+                        tier = tier.max(Interaction::Structural);
+                    }
+                }
+                // cluster 内の intent flag は値を次 arg から取る
+                // (`bash -c x`・`perl -pe 'code'`・`python -i`)。
+                // bool 系(`-i` 等)でも値を消費しても tier は変わら
+                // ないため、区別せず消費する。
+                saw_intent |= cluster_intent;
+                if cluster_intent && value.is_none() {
+                    consume_value(exec_args, &mut i);
+                }
+            }
+            continue;
+        }
+        // positional token — spec.positional tier は scan 完了後に
+        // 適用する(file flag が後から来ても positional を data file
+        // と誤認しないよう遅延する)。
+        let lower = a.to_ascii_lowercase();
+        if spec.approval_positionals.contains(&lower.as_str()) {
+            tier = tier.max(Interaction::Approval);
+            saw_intent = true;
+        } else if spec.structural_positionals.contains(&lower.as_str()) {
+            tier = tier.max(Interaction::Structural);
+        } else {
+            positional = true;
+        }
+    }
+    if file_program {
+        // script file 指定済み — positional は data file で
+        // spec.positional を適用しない(`awk -f prog data`・
+        // `psql -f x.sql` は `Batch`)。flag 由来の tier は残す
+        // (`pwsh -NoExit -File x` は `-NoExit` で `Structural`)。
+        return tier;
+    }
+    match (positional, tier) {
+        // intent flag 検出済みの positional は flag 値・db 名等の
+        // 残り引数で spec.positional に畳まない(`psql -c x db` は
+        // session でなく inline query 実行 — `Approval` のまま)。
+        (true, t) if saw_intent => t,
+        (true, t) => t.max(spec.positional),
+        (false, Interaction::Batch) => Interaction::Structural,
+        (false, t) => t,
+    }
+}
+
+/// launcher argv を走査し、value-flag pair と `KEY=VALUE` 代入を除く
+/// 各 positional token を「inner command + 以降の argv」として再帰
+/// 分類する。positional が無ければ `Batch`(`env` 単独等)。
+fn classify_launcher_args(exec_args: &[String]) -> Interaction {
+    let mut tier = Interaction::Batch;
+    let mut i = 0;
+    while let Some(arg) = exec_args.get(i) {
+        i += 1;
+        let a = arg.as_str();
+        if LAUNCHER_VALUE_FLAGS.contains(&a) {
+            i += 1;
+            continue;
+        }
+        if a.starts_with('-') {
+            continue;
+        }
+        if is_env_prefix(a) {
+            continue;
+        }
+        // inner command 候補 — 以降の argv を伴って再帰分類。
+        tier = tier.max(classify_interaction(&command_name(a), &exec_args[i..]));
+    }
+    tier
+}
+
+/// container CLI の argv scan — `--` 以降は container 内 command の
+/// 引数であり local の stdin/TTY 意味論を持たないため flag 部分の
+/// みを見る。single-dash cluster の `i`/`t`(`-it`・`-ti`・`-itd`)
+/// と long flag(`--interactive`・`--tty`・`--stdin`、`=false` は
+/// 無効扱い)で `Structural`。
+fn scan_container_args(exec_args: &[String]) -> Interaction {
+    for arg in exec_args.iter().take_while(|a| a.as_str() != "--") {
+        let a = arg.as_str();
+        if let Some(rest) = a.strip_prefix("--") {
+            let name = rest.split('=').next().unwrap_or_default();
+            let enabled = !a.contains("=false") && !a.contains("=0");
+            if enabled && matches!(name, "interactive" | "tty" | "stdin") {
+                return Interaction::Structural;
+            }
+        } else if a.starts_with('-')
+            && a.len() > 1
+            && a[1..].chars().any(|c| matches!(c, 'i' | 't'))
+        {
+            return Interaction::Structural;
+        }
+    }
+    Interaction::Batch
+}
 
 /// executable 名 + argv 形状から routed exec の stdin 依存階層を
-/// 分類する。判定順: UI/TTY → 特権/remote → REPL/shell の flag
-/// scan(stdin program > interactive intent > positional batch) →
-/// docker 系 flag → `Batch`。REPL 系で flag のみ(例 `python -V`)
-/// でも positional が無ければ `Structural` — batch 確証が取れない
-/// 形状は安全側に倒す。
+/// 分類する。判定順: UI/TTY(`Structural`)→ 特権/remote/forwarder
+/// (`Approval`)→ `find -exec` 系(`Approval`)→ launcher(inner
+/// command 再帰)→ REPL/interpreter family(scan) → container flag
+/// → `Batch`。family 判定は version suffix 付き名
+/// (`python3.11`・`node20`)を吸収する — 未列挙の新規名は安全側
+/// ではなく `Batch` に倒れる既知の残余リスク(curated-list の
+/// 限界、design doc 参照)。
 pub(crate) fn classify_interaction(executable: &str, exec_args: &[String]) -> Interaction {
     let name = executable.to_ascii_lowercase();
     if UI_STRUCTURAL_COMMANDS.contains(&name.as_str()) {
@@ -268,36 +937,24 @@ pub(crate) fn classify_interaction(executable: &str, exec_args: &[String]) -> In
     if PRIVILEGED_COMMANDS.contains(&name.as_str()) {
         return Interaction::Approval;
     }
-    if REPL_SHELL_COMMANDS.contains(&name.as_str()) {
-        let mut positional = false;
-        let mut after_ddash = false;
-        for arg in exec_args {
-            if after_ddash {
-                positional = true;
-                continue;
-            }
-            match arg.as_str() {
-                "--" => after_ddash = true,
-                a if STDIN_PROGRAM_ARGS.contains(&a) => return Interaction::Structural,
-                a if INTERACTIVE_INTENT_FLAGS.contains(&a.to_ascii_lowercase().as_str()) => {
-                    return Interaction::Approval;
-                }
-                a if !a.starts_with('-') => positional = true,
-                _ => {}
-            }
-        }
-        return if positional {
-            Interaction::Batch
+    if name == "find" {
+        return if exec_args
+            .iter()
+            .any(|a| matches!(a.as_str(), "-exec" | "-execdir" | "-ok" | "-okdir"))
+        {
+            Interaction::Approval
         } else {
-            Interaction::Structural
+            Interaction::Batch
         };
     }
-    if INTERACTIVE_FLAG_COMMANDS.contains(&name.as_str())
-        && exec_args
-            .iter()
-            .any(|a| matches!(a.as_str(), "-it" | "-i" | "--interactive" | "--tty" | "-t"))
-    {
-        return Interaction::Structural;
+    if LAUNCHER_COMMANDS.contains(&name.as_str()) {
+        return classify_launcher_args(exec_args);
+    }
+    if let Some(spec) = repl_spec(&name) {
+        return scan_repl_args(&spec, exec_args);
+    }
+    if CONTAINER_COMMANDS.contains(&name.as_str()) {
+        return scan_container_args(exec_args);
     }
     Interaction::Batch
 }
@@ -620,23 +1277,28 @@ where
             return Viability::NoGrant;
         }
     }
-    // stdin 分類 — typed 側と substitute 側(宣言 executable 名と
-    // pin 解決済み実体名の union — 片側だけだと canonical 名ずらし
-    // (`python3`→`python3.11`・`vim`→`vim.basic`・`vi`→`nvi`)や
-    // shim 名で系統的に回避される、O6a/R10)を合成し、最悪階層を
-    // 採る。`Structural` は stdin/TTY なしに実行不能なため不発、
+    // stdin 分類 — typed argv0 名・grant 宣言 executable 名・pin
+    // 解決済み実体名の union を実行 argv で分類し、最悪階層を採る。
+    // 片側だけだと canonical 名ずらし(`python3`→`python3.11`・
+    // `vim`→`vim.basic`・`vi`→`nvi`)や「route 名と grant executable
+    // が別名」な byte-matched 経路(`match:[mypy]`+executable:python3
+    // で `mypy -c` が `python3 -c` として spawn されるのに typed 名
+    // 側しか見ない漏れ)で系統的に回避される — substitute 側だけで
+    // なく byte-matched 側にも同じ union を掛ける(O6a/R10)。
+    // `exec_pair` は byte-matched では {route.grant, 原 exec_args}、
+    // substitute では {substitute.grant, substitute.argv} を返す
+    // ため、exec_args に対する宣言/解決名の union は両 mode で同一
+    // 形になる。`Structural` は stdin/TTY なしに実行不能なため不発、
     // `Approval` は実行可能だが承認必須、`Batch` のみ素通しで
     // routable(typed 側 invariant 維持: structural な typed
     // command は substitute 宣言の有無に関わらず置き換えない)。
     let tier = [Interaction::Batch]
         .into_iter()
         .chain([classify_interaction(name, &out.exec_args)])
-        .chain(route.substitute.iter().flat_map(|s| {
-            [
-                classify_interaction(&command_name(&grant.executable), &s.argv),
-                classify_interaction(&command_name(&pinned), &s.argv),
-            ]
-        }))
+        .chain([
+            classify_interaction(&command_name(&grant.executable), exec_args),
+            classify_interaction(&command_name(&pinned), exec_args),
+        ])
         .max()
         .unwrap_or(Interaction::Batch);
     match tier {
@@ -1555,6 +2217,64 @@ mod tests {
         );
     }
 
+    /// byte-matched 経路でも grant 宣言 executable 名・pin 解決済み
+    /// 実体名を実行 argv で分類する(substitute 側と同じ union)。
+    /// route 名と spawn executable が別名の構成(`match:[mypy]` +
+    /// `executable:python3`)で typed 名だけ見ると `mypy -c x` が
+    /// `Batch` に漏れる — spawn される `python3 -c x` の意味で
+    /// `Approval` になることを pin する。grant executable は pin
+    /// 解決が要るため test binary を interpreter 名で複写する
+    /// (`command_name` は dir+`.exe` を剥がすため basename で
+    /// 分類される)。
+    #[test]
+    fn byte_match_classifies_grant_executable_names() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().to_string_lossy().into_owned();
+        let target = dir.path().join("w.json");
+        std::fs::write(&target, "{}").unwrap();
+        let target_str = target.to_string_lossy().into_owned();
+        let deny = ExecDenyList::default();
+        #[cfg(windows)]
+        let pyname = "python3.exe";
+        #[cfg(not(windows))]
+        let pyname = "python3";
+        std::fs::copy(std::env::current_exe().unwrap(), dir.path().join(pyname)).unwrap();
+        let policy = resolve_exec_policy(
+            Some(&json!({
+                "grants": {
+                    "py": {"executable": format!("./{pyname}"), "argv": ["*"]},
+                }
+            })),
+            &ExecDenyList::default(),
+        )
+        .unwrap();
+        let view = policy_view(&policy, &root, &deny);
+        let routes = EffectiveRoutes {
+            routes: vec![route("r", &["mypy"], "py", &target_str)],
+            ..Default::default()
+        };
+        let run = |tokens: &[&str]| {
+            resolve(&ResolveInput {
+                argv: &argv(tokens),
+                cwd: &root,
+                routes: &routes,
+                exec_policy: &view,
+                unsafe_command: false,
+            })
+            .viability
+        };
+        // 宣言 executable 名 `python3` + `-c` inline code →
+        // Approval(typed `mypy` 名だけ見ると `Batch` に漏れる)。
+        assert_eq!(run(&["mypy", "-c", "x"]), Some(Viability::ApprovalRequired));
+        // 宣言 executable が bare REPL 相当でも同じ union で
+        // Structural — typed positional は substitute の有無に
+        // 関わらず `python3` argv として解釈されるため。
+        assert_eq!(run(&["mypy"]), Some(Viability::StdinUnsupported));
+        // script positional 相当の exec_args は `python3 x.py`
+        // として `Batch`。
+        assert_eq!(run(&["mypy", "x.py"]), Some(Viability::Runnable));
+    }
+
     /// `classify_interaction` の分類行列 — Batch(自動 route
     /// 可)/Approval(承認必須で route 可)/Structural(routing 不可)
     /// の境界を pin する。
@@ -1563,45 +2283,100 @@ mod tests {
         let classify = |exe: &str, args: &[&str]| {
             classify_interaction(exe, &args.iter().map(|s| s.to_string()).collect::<Vec<_>>())
         };
-        // Batch — interpreter + script、task runner、plain command。
+        // Batch — interpreter + script、task runner、plain command、
+        // file flag(script file 指定)、errexit 等の benign flag。
         for (exe, args) in [
             ("python", &["check.py"][..]),
             ("python3", &["-u", "check.py", "--flag"][..]),
+            ("python3.11", &["check.py"][..]),
             ("node", &["tools/build.js"][..]),
             ("ruby", &["gen.rb"][..]),
             ("pwsh", &["-File", "check.ps1"][..]),
+            ("pwsh", &["-f", "check.ps1"][..]),
             ("powershell", &["-File", "check.ps1"][..]),
-            ("cmd", &["/c", "dir"][..]),
+            ("pwsh", &["-NonInteractive", "-File", "x.ps1"][..]),
             ("bash", &["run.sh"][..]),
             ("sh", &["deploy.sh", "prod"][..]),
+            // `-e` は errexit(eval ではない)— 偽陽性にならない。
+            ("sh", &["-e", "deploy.sh"][..]),
+            ("python", &["-I", "x.py"][..]),
             ("npm", &["run", "inspect"][..]),
             ("cargo", &["test"][..]),
             ("git", &["push", "origin", "main"][..]),
             ("docker", &["run", "img"][..]),
+            ("docker", &["run", "-d", "img"][..]),
             ("kubectl", &["get", "pods"][..]),
             ("docker", &["exec", "ctr", "ls"][..]),
+            ("psql", &["-f", "migration.sql"][..]),
+            ("awk", &["-f", "prog.awk", "data.txt"][..]),
+            ("sed", &["-f", "script.sed", "f.txt"][..]),
+            ("env", &["FOO=bar", "python", "x.py"][..]),
+            ("timeout", &["30", "cargo", "test"][..]),
+            ("nice", &["-n", "5", "make"][..]),
         ] {
             assert_eq!(classify(exe, args), Interaction::Batch, "{exe} {args:?}");
         }
         // Approval — interactive intent / inline code flag、特権・
-        // remote 副作用 command。spawn は成立するが承認を残す。
+        // remote・detached 副作用 command、launcher 経由の inner
+        // command、positional program 文字列(awk/sed/DB CLI)。
         for (exe, args) in [
             ("python", &["-i", "x.py"][..]),
             ("python", &["-c", "print(1)"][..]),
+            // version suffix 付き名・attached code も同じ tier。
+            ("python3.11", &["-c", "x"][..]),
             ("node", &["-e", "console.log(1)"][..]),
+            ("node", &["--eval", "x"][..]),
+            ("node", &["-pe", "x"][..]),
+            ("deno", &["eval", "x"][..]),
             ("bash", &["-c", "echo hi"][..]),
             ("sh", &["-c", "ls"][..]),
-            ("pwsh", &["-NoExit", "-File", "x.ps1"][..]),
+            // grouped short flag cluster(`-lc`・`-ec`)。
+            ("bash", &["-lc", "id"][..]),
+            ("sh", &["-ec", "x"][..]),
+            ("zsh", &["-fc", "x"][..]),
+            ("perl", &["-pe", "code", "f"][..]),
+            ("ruby", &["-e", "x"][..]),
+            ("pwsh", &["-Command", "Get-Date"][..]),
             ("powershell", &["-Command", "Get-Date"][..]),
+            // pwsh の unambiguous-prefix・encoded・`/` 綴り。
+            ("pwsh", &["-Com", "x"][..]),
+            ("pwsh", &["-EncodedCommand", "b64"][..]),
+            ("pwsh", &["-enc", "b64"][..]),
+            ("pwsh", &["-ec", "b64"][..]),
+            ("pwsh", &["/Command", "x"][..]),
+            ("powershell", &["/EncodedCommand", "b64"][..]),
+            // `cmd /c`・`/k` は inline code 実行で `bash -c` 相当。
+            ("cmd", &["/c", "dir"][..]),
+            ("cmd", &["/k", "x"][..]),
             ("node", &["--interactive", "x.js"][..]),
             ("sudo", &["systemctl", "restart", "x"][..]),
             ("ssh", &["host", "uptime"][..]),
             ("su", &["-", "root"][..]),
+            ("doas", &["x"][..]),
+            ("pkexec", &["x"][..]),
+            ("tmux", &["new", "-d", "x"][..]),
+            ("crontab", &["-e"][..]),
+            ("xargs", &["rm"][..]),
+            // launcher 経由の inner command 再帰。
+            ("env", &["sudo", "rm", "-rf", "/"][..]),
+            ("env", &["FOO=x", "bash", "-c", "id"][..]),
+            ("env", &["-i", "bash", "-i"][..]),
+            ("timeout", &["5", "bash", "-i"][..]),
+            ("exec", &["bash", "-i"][..]),
+            ("find", &[".", "-exec", "bash", "-c", "id", "+"][..]),
+            // positional program 文字列。
+            ("awk", &["{print $1}", "f"][..]),
+            ("sed", &["s/a/b/", "f"][..]),
+            ("redis-cli", &["SET", "k", "v"][..]),
+            ("sqlite3", &["db", "DELETE FROM t"][..]),
+            ("psql", &["-c", "sql"][..]),
+            ("mysql", &["-e", "sql"][..]),
         ] {
             assert_eq!(classify(exe, args), Interaction::Approval, "{exe} {args:?}");
         }
         // Structural — stdin/TTY なしには成立しない: UI app、bare
-        // REPL、stdin program(`-`)、docker 系 interactive flag。
+        // REPL、stdin program(`-`)、対話 session 化・container
+        // interactive flag の全綴り。
         for (exe, args) in [
             ("vim", &["file.txt"][..]),
             ("nvim", &[""][..]),
@@ -1610,14 +2385,28 @@ mod tests {
             ("watch", &["ls"][..]),
             ("telnet", &["host", "80"][..]),
             ("python", &[][..]),
+            ("python3.12", &[][..]),
             ("node", &[][..]),
             ("bash", &[][..]),
             ("python", &["-V"][..]),
             ("python", &["-"][..]),
             ("sh", &["-"][..]),
+            // `-` は `Approval` flag より常に優先(worst-tier scan)。
+            ("python", &["-i", "-"][..]),
+            ("python", &["-", "-i"][..]),
+            ("irb", &["x.rb"][..]),
+            ("psql", &["mydb"][..]),
+            ("mysql", &["-u", "root", "db"][..]),
+            ("deno", &["repl"][..]),
+            ("pwsh", &["-NoExit", "-File", "x.ps1"][..]),
+            ("pwsh", &["-Interactive", "-File", "x.ps1"][..]),
             ("docker", &["run", "-it", "img"][..]),
+            ("docker", &["run", "-ti", "img"][..]),
             ("docker", &["exec", "-i", "ctr", "sh"][..]),
             ("kubectl", &["exec", "--tty", "pod"][..]),
+            ("kubectl", &["exec", "--stdin", "pod", "--", "x"][..]),
+            ("docker", &["run", "--interactive=true", "img"][..]),
+            ("nerdctl", &["run", "-it", "img"][..]),
         ] {
             assert_eq!(
                 classify(exe, args),
@@ -1634,6 +2423,12 @@ mod tests {
         assert_eq!(classify("VIM", &["x"]), Interaction::Structural);
         assert_eq!(
             classify("powershell", &["-FILE", "x.ps1"]),
+            Interaction::Batch
+        );
+        // `--interactive=false` は disabled 扱い — positional があれば
+        // Batch、無ければ flag のみ形状で Structural(安全側)。
+        assert_eq!(
+            classify("docker", &["run", "--interactive=false", "img"]),
             Interaction::Batch
         );
     }

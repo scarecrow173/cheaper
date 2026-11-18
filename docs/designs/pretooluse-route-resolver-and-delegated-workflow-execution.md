@@ -403,8 +403,9 @@ resolve 手順(hook eval・`route resolve`・`route run` が共有):
    missing-target → no-grant → {stdin-unsupported | approval-required
    | runnable}`(R12)で最初に成立した値を 1 値として返す。最終段は
    executable + argv 形状の tri-state 分類(`classify_interaction`
-   — `Structural`/`Approval`/`Batch` の最悪階層を typed 側と
-   substitute 側の union で採る)で、3 値は同じ段から排他的に
+   — `Structural`/`Approval`/`Batch` の最悪階層を typed 側・
+   substitute 宣言名/pin 解決名・byte-matched `route.grant` の
+   executable 名の union で採る)で、3 値は同じ段から排他的に
    出る(R33/R33bis):
    - `unsafe-command`: `tokenize_shell` の segment 数 ≠ 1・
      `unsafe_segment`・`unsafe_token` 含有・`command_name` が
@@ -441,21 +442,32 @@ resolve 手順(hook eval・`route resolve`・`route run` が共有):
      不能な形状 — UI/TTY app(editors・pagers・`top`/`watch`・
      `ftp`/`telnet` 等)、bare REPL/shell(`python`・`node`・
      `bash` 等に positional program が無い)、stdin program
-     指示(`-`)、`docker`/`kubectl`/`podman` の
-     `-it`/`-i`/`--interactive`/`--tty`/`-t` flag。検出は
-     best-effort で、判定不能な stdin 依存 command は構造的に
-     stdin 非接続で安全側に倒れる(R33 — 網羅性ではなく構造
-     保証に依る)。
+     指示(`-`)、`docker`/`kubectl`/`podman` 等 container CLI の
+     stdin/TTY flag(`-it`/`-ti` permutation・`-i`/`-t` 含有
+     cluster・`--interactive`/`--tty`/`--stdin` の `=false`
+     でない形)。検出は executable family 判定(version suffix
+     `python3.11`・`node20` 等を吸収)+ argv scan —
+     REPL/interpreter の structural intent(`-NoExit`/
+     `-Interactive` 等の pwsh prefix・slash 形を含む)と
+     bare session、container flag で最悪階層を採る。判定不能な
+     stdin 依存 command は構造的に stdin 非接続で安全側に
+     倒れる(R33 — 網羅性ではなく構造保証に依る)。
    - `approval-required`: stdin 非接続でも spawn 可能だが
      interactive intent・inline code・特権/remote 副作用を持つ
-     — REPL/shell の `-i`/`-c`/`-e`/`-Command`/`-NoExit`/
-     `--interactive` flag、または `ssh`/`sudo`/`su`。hook は
-     Rewrite を emit するが `permissionDecision:"allow"` は
-     一切併記せず host 承認 prompt を残す(R33bis —
-     `route.rewrite.approvalBypass` opt-in があってもこの
-     tier には適用しない)。codex は「承認付き置換」を表現
-     できないため fallback verdict へ倒す。`route run` 側は
-     `runnable` と同じく実行受理する。
+     — REPL/shell の inline code(`-c`/`-e`/`-lc` 等の
+     grouped/attached 形・`--eval`/`--print`・pwsh
+     `-Command`/`-EncodedCommand` の unambiguous prefix と
+     `/Command` slash 形・`cmd /c`/`/k`)、interactive intent
+     (`-i` 等)、positional program 文字列(`awk`/`sed`/DB CLI
+     の query/expr — `-f FILE` 指定なら `Batch`)、
+     `ssh`/`sudo`/`su` 系の特権/remote、launcher wrapper
+     (`env`・`timeout`・`xargs`・`exec`・`find -exec` 等)の
+     inner command 再帰結果。hook は Rewrite を emit するが
+     `permissionDecision:"allow"` は一切併記せず host 承認
+     prompt を残す(R33bis — `route.rewrite.approvalBypass`
+     opt-in があってもこの tier には適用しない)。codex は
+     「承認付き置換」を表現できないため fallback verdict へ
+     倒す。`route run` 側は `runnable` と同じく実行受理する。
    - `runnable`: 上記いずれも不成立(batch 形状 —
      `python check.py`・`node build.js`・`pwsh -File x.ps1`
      等の script 付き interpreter 起動を含む)。

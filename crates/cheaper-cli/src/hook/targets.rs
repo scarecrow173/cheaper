@@ -856,8 +856,9 @@ fn updated_input(command: &str) -> Value {
 /// `hookSpecificOutput` rewrite emit — `approval_bypass` 時のみ
 /// `permissionDecision:"allow"` を hookEventName と updatedInput の
 /// 間に挿入する(field 挿入順は probe 観測順、`stringify_ordered`
-/// byte 互換規約)。flag 非対称の claude(`pretooluse`)/devin は常に
-/// `false` で emit byte を現行と完全一致に保つ(D3)。
+/// byte 互換規約)。`approval_bypass` は render 側で
+/// `policy opt-in && !approval_required` に畳み込まれた値 —
+/// approval-required route には policy 状態に関わらず併記しない。
 fn hook_specific_output_rewrite(command: &str, approval_bypass: bool) -> HookResponse {
     HookResponse {
         stdout: Some(format!(
@@ -1086,10 +1087,10 @@ fn request_cwd(request: &RoutingRequest) -> &str {
 /// 供給する(C1 — firing あたり 1 回の load に集約。per-candidate
 /// reload はしない)。load 失敗は `route: None`(route arm 不活性)
 /// へ畳み eval 自体は従来どおり走る — hook の fail-open 規約。
-/// load 済み `RouteSupply` を verdict と共に返す — codex arm が
-/// `route.rewrite.approvalBypass` flag を render 層へ供給する経路
-/// (`load_or_none` → `None` は flag 未供給 = bypass 無効の
-/// conservative default)。
+/// load 済み `RouteSupply` を verdict と共に返す — rewrite 対応
+/// arm(pretooluse/devin/codex)が `route.rewrite.approvalBypass`
+/// flag を render 層へ供給する経路(`load_or_none` → `None` は
+/// flag 未供給 = bypass 無効の conservative default)。
 async fn evaluate_with_routes(
     request: &RoutingRequest,
     deps: &HookDeps<'_>,
@@ -1248,14 +1249,28 @@ pub async fn handle_hook(
             None => ("allow", false, silent_allow()),
             Some(request) => {
                 let (evaluation, supply) = evaluate_with_routes(&request, deps).await;
-                // bypassing emit の許可は codex arm のみで読む —
                 // `load_or_none` → `None` は flag 未供給 = bypass 無効
                 // (conservative default、R15)。
                 let bypass = supply
                     .as_ref()
                     .is_some_and(|s| s.policy.route.rewrite.approval_bypass_enabled("codex"));
                 let verdict = evaluation.evaluation.verdict.clone();
-                persist_hook_decision(deps, &evaluation, history_native_verdict(&verdict, bypass));
+                // approval-required tier は render が fallback verdict
+                // へ倒すため、history も同じ条件で判定する — flag の
+                // 有無だけで見ると fallback emit を `rewrite` と誤記する。
+                let native_rewrite = bypass
+                    && !matches!(
+                        verdict,
+                        Verdict::Rewrite {
+                            approval_required: true,
+                            ..
+                        }
+                    );
+                persist_hook_decision(
+                    deps,
+                    &evaluation,
+                    history_native_verdict(&verdict, native_rewrite),
+                );
                 (
                     verdict_name(&verdict),
                     bypass,
@@ -1268,8 +1283,9 @@ pub async fn handle_hook(
     // `verdict` 分類値 + 出力 byte 長のみ(deny reason・payload 本文は
     // metadata-only 規約で載せない)。`bypass` は approval-bypass
     // emit の観測面 — bypassing emit は silent exit 0 で stderr 痕跡を
-    // 持たないためこの field が唯一の観測経路(codex arm でのみ
-    // `true` になり得る)。
+    // 持たないためこの field が唯一の観測経路(policy opt-in 状態を
+    // 載せる。approval-required tier では emit されない点に注意 —
+    // render 側の畳み込み条件は `bypass && !approval_required`)。
     tracing::debug!(
         verdict = verdict,
         bypass = bypass,

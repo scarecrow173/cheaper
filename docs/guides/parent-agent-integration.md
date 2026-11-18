@@ -275,14 +275,20 @@ agent 向けの制約（skill 正本は `cheaper-workflow-create` の
   batch 形状（`python check.py`・`node build.js`・
   `pwsh -File x.ps1` 等 script 付き interpreter 起動を含む）は
   `runnable` で素通し route される。interactive intent・inline
-  code・特権/remote 副作用を持つ形状（`-i`/`-c`/`-e`/`-Command`/
-  `-NoExit` flag、`ssh`/`sudo`/`su`）は `approval-required` —
-  rewrite は emit されるが承認 bypass 決定は併記されず、host
-  側の承認 prompt が残る（codex では「承認付き置換」を表現
-  できないため fallback に倒れる）。stdin/TTY なしに成立しない
-  形状（bare `python`/`node`、`vim`/`less` 等の UI app、stdin
-  program 指示 `-`、`docker -it` 等）は `stdin-unsupported` で
-  不発となる。named task（`npm run`/`mise run`/`just`）への束ね
+  code・特権/remote 副作用を持つ形状は `approval-required` —
+  分類は executable family 判定（`python3.11` 等 version suffix
+  を吸収）＋ argv scan で、`-i`/`-c`/`-e`/`-lc` 等の
+  grouped/attached flag、`--eval`/`--print`、pwsh の
+  `-Command`/`-EncodedCommand`/abbreviation/slash 形、`cmd /c`、
+  positional program 文字列（`awk`/`sed`/DB query）、
+  `ssh`/`sudo`/`su`、launcher wrapper（`env`/`timeout` 等）の
+  inner command が該当する。rewrite は emit されるが承認 bypass
+  決定は併記されず、host 側の承認 prompt が残る（codex では
+  「承認付き置換」を表現できないため fallback に倒れる）。
+  stdin/TTY なしに成立しない形状（bare `python`/`node`、
+  `vim`/`less` 等の UI app、stdin program 指示 `-`、
+  `docker -it`/`--interactive=true` 等）は
+  `stdin-unsupported` で不発となる。named task（`npm run`/`mise run`/`just`）への束ね
   直しは必須ではなくなったが、semantic name と file rename 耐性
   の観点では依然として推奨形。
 - route の `grant` は既存 `command.grants` 名を参照するだけ —
