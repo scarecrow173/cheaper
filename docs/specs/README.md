@@ -107,6 +107,7 @@ Directory: `docs/specs`
 | SPEC-034zIKj7DJcwZFr3FvjLrP | Workflow JSON v1 を検証済み DAG へ compile する | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
 | SPEC-034Zu8Xj0Y5x6ii9aDOGuS | cheaper-workflow-create skill for issue 204 | approved | [workflow-create-skill-issue-204.md](./workflow-create-skill-issue-204.md) |
 | SPEC-034LNA8FqEjwFaDnqvIUc5 | Workflow discover skill (L1) for issue 203 | implemented | [workflow-discover-skill-issue-203.md](./workflow-discover-skill-issue-203.md) |
+| SPEC-034ZwWcCiBMmFi9qIIBUhp | Workflow E2E and APM distribution verification contract for issue 205 | implemented | [workflow-e2e-verification-issue-205.md](./workflow-e2e-verification-issue-205.md) |
 | SPEC-034zSVZlWjFAMpwmhsLTkx | 明示 workflow loader と公開 interface command の契約 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | SPEC-034AQOi1TPvVMDkNrhfTM5 | Benchmark workflow orchestration overhead | approved | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |
 | SPEC-034zSWvgiB9gHQpjguNJ3M | Workflow resource inference 契約 | approved | [workflow-resource-inference.md](./workflow-resource-inference.md) |

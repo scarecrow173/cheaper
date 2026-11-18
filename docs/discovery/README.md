@@ -86,6 +86,7 @@ Directory: `docs/discovery`
 | DISC-034zIKizOrTom96Q19mbYE | Workflow contract compiler の責務と検証境界 | resolved | [workflow-compiler-boundaries.md](./workflow-compiler-boundaries.md) |
 | DISC-034Zu8VG1BDxLMjnX4WKTr | cheaper-workflow-create skill for issue 204 | active | [workflow-create-skill-issue-204.md](./workflow-create-skill-issue-204.md) |
 | DISC-0349RTCACbyKZHJy1Cvnpv | Workflow discover skill (L1) for issue 203 | resolved | [workflow-discover-skill-issue-203.md](./workflow-discover-skill-issue-203.md) |
+| DISC-034ZwWbWY4BGMQ7jf5Jjyd | Workflow discovery+authoring E2E, APM distribution, and docs verification for issue 205 | resolved | [workflow-e2e-verification-issue-205.md](./workflow-e2e-verification-issue-205.md) |
 | DISC-034zSVnLYkkFBYQvt56QNJ | Workflow file と compiler の接続境界を調査する | resolved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | DISC-034AQMgmHD0r6s13EoPlQ9 | Benchmark workflow orchestration overhead | resolved | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |
 | DISC-034zSWuKOprLRHraOiRn31 | Workflow inference の責務と情報源 | resolved | [workflow-resource-inference.md](./workflow-resource-inference.md) |
