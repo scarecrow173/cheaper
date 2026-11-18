@@ -89,7 +89,7 @@ catalog 登録手順は `{id,path,summary,tags}` 追記 + `workflow list`
   `when:{left:$from exec /details/outputTokens, op:gt, right:$input
   tokenThreshold}`)、when interface すると、`ok:true` で
   `tokenThreshold` が `required:false`(default あり)になる。
-- Given fan-in template(grep+find→bulk-reader)、when interface
+- Given fan-in template(grep+find→tool-operator)、when interface
   すると、`ok:true` で両 producer が `needs`/`$from` で fan-in する。
 - Given unknown worker `nonexistent-worker` の定義、when interface
   すると、`INVALID_REQUEST: unknown worker` + exit 2。

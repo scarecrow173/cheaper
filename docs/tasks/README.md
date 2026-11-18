@@ -83,7 +83,7 @@ Directory: `docs/tasks`
 | TASK-FP5YNv1aQHfB69NlhCQJbG | Auth prompt I/O boundary routing and TTY prompt tests | done | [auth-io-boundary-prompt-routing-and-tests.md](./auth-io-boundary-prompt-routing-and-tests.md) |
 | TASK-034r05iHQeQpDqpy4V1ZNo | Auth URL opener final verification and status sync | done | [auth-url-opener-final-verification.md](./auth-url-opener-final-verification.md) |
 | TASK-034r05iHQeQpDqovKmKaZC | Auth URL opener seam and test isolation | done | [auth-url-opener-seam-and-test-isolation.md](./auth-url-opener-seam-and-test-isolation.md) |
-| TASK-034ZuedgAEVT4fbOtnEEap | author cheaper-workflow-create skill | todo | [author-cheaper-workflow-create-skill.md](./author-cheaper-workflow-create-skill.md) |
+| TASK-034ZuedgAEVT4fbOtnEEap | author cheaper-workflow-create skill | done | [author-cheaper-workflow-create-skill.md](./author-cheaper-workflow-create-skill.md) |
 | TASK-034zXj9deJ0LTUdaiGwflX | Bounded concurrency policy を導入する | done | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
 | TASK-034H3Q05R2fMnFMJwYEuLl | Bounded eval and registration docs/e2e follow-through | done | [bounded-eval-and-registration-docs-e2e.md](./bounded-eval-and-registration-docs-e2e.md) |
 | TASK-034r05iHQeQpDqkDLrHBxb | Bounded read tool and registry swap | done | [bounded-read-tool-and-registry-swap.md](./bounded-read-tool-and-registry-swap.md) |
@@ -259,7 +259,7 @@ Directory: `docs/tasks`
 | TASK-034r05iHQeQpDpKWISE2NB | Isolate unit tests from user and project config via env | done | [isolate-unit-tests-from-user-and-project-config-via-env.md](./isolate-unit-tests-from-user-and-project-config-via-env.md) |
 | TASK-6uOJTepTvP210AgeeaBtkq | issue-111 文書追随・回帰 fixture・最終検証 | done | [issue-111-docs-and-final-verification.md](./issue-111-docs-and-final-verification.md) |
 | TASK-034Zuh3LdPDyCROadypAO0 | L0 workflow candidate trigger implementation | done | [l0-workflow-candidate-trigger-implementation.md](./l0-workflow-candidate-trigger-implementation.md) |
-| TASK-034Zuee3qE5UZ7VZ4nRMwG | link workflow create skill from guides | todo | [link-workflow-create-skill-from-guides.md](./link-workflow-create-skill-from-guides.md) |
+| TASK-034Zuee3qE5UZ7VZ4nRMwG | link workflow create skill from guides | done | [link-workflow-create-skill-from-guides.md](./link-workflow-create-skill-from-guides.md) |
 | TASK-03404zg7SVQPn5JeZ0lwDD | Make exec_infra_failure_returns_error deterministic via error code and message | done | [make-exec-infra-failure-test-deterministic.md](./make-exec-infra-failure-test-deterministic.md) |
 | TASK-034rzRtRHEEtyWvIINcDnL | Measure tool output tokens and expose meta.savings | done | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | TASK-034MbTvAS8BfQZNoBH12OQ | Measure representative large usage.jsonl peak memory and record evidence (issue #184 T5) | done | [measure-usage-jsonl-peak-memory.md](./measure-usage-jsonl-peak-memory.md) |

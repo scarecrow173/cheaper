@@ -320,7 +320,6 @@ is for ordering without data flow.
     "analyze": {
       "kind": "worker",
       "worker": "condense",
-      "needs": ["exec"],
       "when": {
         "left": { "$from": "exec", "path": "/details/outputTokens" },
         "op": "gt",
