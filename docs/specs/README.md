@@ -50,7 +50,7 @@ Directory: `docs/specs`
 | SPEC-034Ie1ZEdUR2aBFVoqkBay | Hook duplicate firing single-evaluation dedup | approved | [hook-duplicate-firing-single-evaluation-dedup.md](./hook-duplicate-firing-single-evaluation-dedup.md) |
 | SPEC-034r05iHK8bA7gjwZTji8t | Huge-file token count guard with fail-closed hook blocking | implemented | [huge-file-token-count-guard-with-fail-closed-hook-blocking.md](./huge-file-token-count-guard-with-fail-closed-hook-blocking.md) |
 | SPEC-034FlOz4hiN9m0nQW7lBN2 | invocation-scoped command grant と grant-request フロー | approved | [invocation-scoped-command-grants.md](./invocation-scoped-command-grants.md) |
-| SPEC-034Zk1kCap2wKUvTt21Sil | L0 workflow candidate trigger rule for issue 202 | draft | [l0-workflow-candidate-trigger-issue-202.md](./l0-workflow-candidate-trigger-issue-202.md) |
+| SPEC-034Zk1kCap2wKUvTt21Sil | L0 workflow candidate trigger rule for issue 202 | implemented | [l0-workflow-candidate-trigger-issue-202.md](./l0-workflow-candidate-trigger-issue-202.md) |
 | SPEC-034A8q6kmxcBsNF8zS9Cwn | policy-defined managed process を canonical tool として提供する | implemented | [managed-process-canonical-tool.md](./managed-process-canonical-tool.md) |
 | SPEC-034Aq1jA258sf4IaRxgCrq | managed process lifecycle hardening | implemented | [managed-process-lifecycle-hardening.md](./managed-process-lifecycle-hardening.md) |
 | SPEC-034rzI0xebTv8HszaX6Tvw | Model pricing catalog and curated exceptions | approved | [model-pricing-catalog.md](./model-pricing-catalog.md) |
