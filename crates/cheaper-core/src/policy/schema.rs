@@ -283,7 +283,10 @@ fn route_properties() -> Value {
         "rewrite": object_schema(&[], json!({
             "approvalBypass": {
                 "type": ["array", "null"],
-                "items": {"type": "string", "enum": ["codex", "cursor", "copilot"]},
+                "items": {
+                    "type": "string",
+                    "enum": ["codex", "cursor", "copilot", "pretooluse", "devin"],
+                },
                 "uniqueItems": true,
             },
         })),

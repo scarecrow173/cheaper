@@ -386,3 +386,22 @@ routes 宣言そのものと区別)。
 権限モデル再設計（#151 分解 #163–#168）の周辺表現は変わったが、本 ADR の決定（per-target hook rewrite の approvalBypass trusted gating）は #163–#168 と整合を保つ。#163 の内容審査除去・#168 の `trusted` flag 再設計の影響はなく、approval bypass は trusted 層 opt-in のまま変更なし。
 
 governing: [ADR-034L6ihibvbjmSnKmSffWH](./documentation-honesty-sweep-and-migration-guide.md)（canonical 文言・訂正方式）・[SPEC-034L6i3XmfCaWRHAiw8TTT](../specs/documentation-honesty-sweep-and-breaking-change-migration-guide.md) R5・[migration guide](../guides/migration.md)
+
+## Refine 注記（approval tier / domain 拡張）
+
+`route.rewrite.approvalBypass` の値 domain は `codex`/`cursor`/
+`copilot` に加えて `pretooluse`/`devin` を含むよう拡張された —
+Claude Code・Devin は従来 `updatedInput` のみを emit して host
+承認 prompt を残していたが、opt-in により batch tier の route で
+`permissionDecision:"allow"` 併記の bypassing emit を発行できる。
+
+同時に viability は tri-state 化され、interactive intent・inline
+code・特権/remote 副作用を持つ command は `approval-required`
+として分類される。この tier 由来の Rewrite は **いかなる
+`approvalBypass` opt-in 下でも `permissionDecision:"allow"` を
+併記しない** — bypass flag は batch tier の route にのみ作用し、
+承認を要求する route は host 承認 prompt が常に残る。codex は
+「承認付き置換」を wire で表現できないため、approval-required
+route は flag 有無に関わらず fallback verdict へ倒れる
+（`updatedInput` 単独は codex が silent no-op として無視する
+実機確認済みの制約と整合）。

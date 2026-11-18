@@ -400,8 +400,12 @@ resolve 手順(hook eval・`route resolve`・`route run` が共有):
    `cargo test --workspace` が `cargo --workspace` として実行
    される)。grant pattern は spawn argv 基準(例 `["test","*"]`)。
 3. viability 評価 — 固定優先順 `unsafe-command → invalid-route →
-   missing-target → no-grant → stdin-unsupported → runnable`
-   (R12)で最初に成立した値を 1 値として返す:
+   missing-target → no-grant → {stdin-unsupported | approval-required
+   | runnable}`(R12)で最初に成立した値を 1 値として返す。最終段は
+   executable + argv 形状の tri-state 分類(`classify_interaction`
+   — `Structural`/`Approval`/`Batch` の最悪階層を typed 側と
+   substitute 側の union で採る)で、3 値は同じ段から排他的に
+   出る(R33/R33bis):
    - `unsafe-command`: `tokenize_shell` の segment 数 ≠ 1・
      `unsafe_segment`・`unsafe_token` 含有・`command_name` が
      `CWD_CHANGING_COMMANDS` 該当(R8)。--command 由来の shell
@@ -433,13 +437,28 @@ resolve 手順(hook eval・`route resolve`・`route run` が共有):
      metachar(`argv_shell_re`)該当は `unsafe-command` 側に分類
      する(token 化済み argv であっても grant 側は metachar を
      拒否するため、実行不可の安全性問題として扱う)。
-   - `stdin-unsupported`: executable が INTERACTIVE_COMMANDS
-     curated list(editors・pagers・REPL・ssh・sudo・login
-     shell・`docker`/`kubectl` の `-it`/`-i`/`--interactive`
-     flag)に該当。検出は best-effort で、判定不能な stdin 依存
-     command は構造的に stdin 非接続で安全側に倒れる(R33 —
-     網羅性ではなく構造保証に依る)。
-   - `runnable`: 上記いずれも不成立。
+   - `stdin-unsupported`: stdin/TTY 非接続では構造的に実行
+     不能な形状 — UI/TTY app(editors・pagers・`top`/`watch`・
+     `ftp`/`telnet` 等)、bare REPL/shell(`python`・`node`・
+     `bash` 等に positional program が無い)、stdin program
+     指示(`-`)、`docker`/`kubectl`/`podman` の
+     `-it`/`-i`/`--interactive`/`--tty`/`-t` flag。検出は
+     best-effort で、判定不能な stdin 依存 command は構造的に
+     stdin 非接続で安全側に倒れる(R33 — 網羅性ではなく構造
+     保証に依る)。
+   - `approval-required`: stdin 非接続でも spawn 可能だが
+     interactive intent・inline code・特権/remote 副作用を持つ
+     — REPL/shell の `-i`/`-c`/`-e`/`-Command`/`-NoExit`/
+     `--interactive` flag、または `ssh`/`sudo`/`su`。hook は
+     Rewrite を emit するが `permissionDecision:"allow"` は
+     一切併記せず host 承認 prompt を残す(R33bis —
+     `route.rewrite.approvalBypass` opt-in があってもこの
+     tier には適用しない)。codex は「承認付き置換」を表現
+     できないため fallback verdict へ倒す。`route run` 側は
+     `runnable` と同じく実行受理する。
+   - `runnable`: 上記いずれも不成立(batch 形状 —
+     `python check.py`・`node build.js`・`pwsh -File x.ps1`
+     等の script 付き interpreter 起動を含む)。
 
 ### hook eval への Rewrite arm(`routing_policy`)
 
@@ -895,7 +914,7 @@ raw bytes を log file へ append する tee。
   しない(skip 含みでも他 job 成功 + output 成立なら `ok:true`
   の有効 result、R25)。
 
-### env passthrough / stdin 除外(R32/R33、D8)
+### env passthrough / stdin 除外・approval tier(R32/R33/R33bis、D8)
 
 - `passthroughEnv`: route 宣言の allowlist env 名のみ hook 評価時に
   ambient env から capture して payload `env` へ載せ、`route run`
@@ -905,8 +924,17 @@ raw bytes を log file へ append する tee。
   のみ存在し、scope options の `extra_env` にのみ使われる)。
 - stdin: `route run` は子 process の stdin を接続しない
   (`proc::run` は spawn 時 stdin ignore 済み)。stdin 依存 command
-  の検出は INTERACTIVE_COMMANDS curated list による best-effort
-  viability で、構造保証は stdin 非接続そのもの(R33)。
+  の検出は executable + argv 形状の tri-state 分類による
+  best-effort viability で、構造保証は stdin 非接続そのもの(R33)。
+- approval tier(R33bis): 構造的には実行可能だが interactive
+  intent・inline code・特権/remote 副作用を持つ command は
+  `approval-required` と分類し、Rewrite は emit するが承認 bypass
+  決定(`permissionDecision:"allow"`)は一切併記しない — host 側
+  の承認 prompt が残る。`route.rewrite.approvalBypass` の opt-in
+  対象は `codex`・`cursor`・`copilot`・`pretooluse`・`devin` で
+  あるが、approval-required tier はいかなる opt-in 下でも bypass
+  emit を行わない(codex は「承認付き置換」を表現できないため
+  fallback verdict へ倒す)。
 - user-facing doc に hook env ≠ shell env を明記。
 
 ### usage record(`usage_log.rs`)

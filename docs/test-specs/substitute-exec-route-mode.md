@@ -236,18 +236,18 @@ provenance へ記録する。
     anchor・投影 member・member job からの呼出し対象として
     残る(完全検査の対象ではなくなるだけ)。
 
-- Rule: **stdin-unsupported 両側分類 — 宣言名∪解決名の
-  union**(spec R10・ADR O6a — `resolve.rs` unit)
-  - typed 側維持: 原 executable/原 exec_args が interactive
+- Rule: **stdin 分類は両側 tri-state — 宣言名∪解決名の
+  union で最悪階層**(spec R10・ADR O6a — `resolve.rs` unit)
+  - typed 側維持: 原 executable/原 exec_args が `Structural`
     なら substitute 宣言の有無に関わらず `StdinUnsupported`
-    (「interactive typed command は routing で置き換えない」
+    (「stdin 依存 typed command は routing で置き換えない」
     invariant)。
-  - substitute 側追加: `is_interactive` を **宣言 basename**
+  - substitute 側追加: `classify_interaction` を **宣言 basename**
     (`command_name(&grant.executable)`)と **pin 解決済み
     basename**(`command_name(&pinned)`)の union +
-    `substitute.argv` へ適用 — どちらかが
-    `INTERACTIVE_COMMANDS`・interactive flag に該当すれば
-    `StdinUnsupported`。
+    `substitute.argv` へ適用 — いずれかが `Structural` なら
+    `StdinUnsupported`、`Approval` なら `ApprovalRequired`、
+    全て `Batch` なら `Runnable`(最悪階層を採る)。
   - union の両側を pin: (a) 宣言名が list 内で pin 解決先が
     canonical 名ずらし(`python3`→`python3.11`、`vim`→
     `vim.basic`、`vi`→`nvi` 相当の fixture)でも
@@ -450,11 +450,13 @@ provenance へ記録する。
   未存在・`scope:"project"`・`fixed`・pin 不能 → `no-grant`
   (member 級降格 — spec AC4)。
 - Example: `substitute.grant` の宣言 executable が `python3`
-  で pin 解決先が `python3.11`(canonical 名ずらし)→
-  宣言名側で `stdin-unsupported`。宣言名が `mypython`
+  で pin 解決先が `python3.11`(canonical 名ずらし)→ bare
+  argv では宣言名側で `stdin-unsupported`、positional argv
+  `["x.py"]` では `runnable`。宣言名が `mypython`
   (list 外)でも pin 解決済み実体名が `python3.11` なら
-  解決名側で `stdin-unsupported`。`substitute.argv` に
-  interactive flag 含有でも同じ(spec AC9)。
+  bare argv で解決名側 `stdin-unsupported`。`substitute.argv`
+  に `docker -it` 等の interactive flag 含有でも同じ
+  `stdin-unsupported`(spec AC9)。
 - Example: substitute route の routed workflow(builtin
   `routed-exec.workflow.json` 無変更)で exec job が
   `{name: substitute.grant, args: substitute.argv}` を実行し

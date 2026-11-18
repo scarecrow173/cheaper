@@ -174,12 +174,15 @@ End with a short report to the user containing:
    `command.grants` entry; if none exists, flag the missing grant as a
    risk and leave the decision to the user rather than implying it is
    covered. Two constraints shape `matchCommand`: it is a token
-   **prefix**, and the resolved executable must be non-interactive —
-   `python`/`node`/`powershell`/`bash` and friends resolve
-   `stdin-unsupported` and never fire, even with a script argument.
-   When the repeated command is an interpreter invocation, propose the
-   binding on a named task entry instead (`npm run <task>`,
-   `mise run <task>`, `just <task>`).
+   **prefix**, and viability follows the executable + argv shape —
+   batch shapes (including `python check.py`, `node build.js`) route
+   directly, dangerous/interactive-intent shapes (`sudo`, `ssh`,
+   `-c`/`-i`/`-e` flags) route as `approval-required` with the host's
+   approval prompt preserved, and structural stdin/TTY shapes (bare
+   interpreters, editors, `docker -it`) resolve `stdin-unsupported`
+   and never fire. Prefer a named task (`npm run <task>`,
+   `mise run <task>`, `just <task>`) when the repeated command is a
+   script path — semantic names survive renames.
 
 5. **The disclaimer** — state plainly that this is a proposal: nothing
    was created, saved, registered, or executed, and nothing will be

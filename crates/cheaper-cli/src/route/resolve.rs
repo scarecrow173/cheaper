@@ -18,6 +18,12 @@ use crate::hook::routing_policy::{command_name, is_env_prefix, CWD_CHANGING_COMM
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Viability {
     Runnable,
+    /// stdin 非接続でも実行可能だが、interactive intent・inline
+    /// code・特権/remote 副作用を持つため承認なしには置き換えない
+    /// (R33bis — 構造的に実行不能な `stdin-unsupported` とは別階層)。
+    /// hook は Rewrite を emit するが bypass-不可(`permissionDecision:
+    /// "allow"` 併記は行わない)ため、host 側の承認 prompt が残る。
+    ApprovalRequired,
     NoGrant,
     MissingTarget,
     InvalidRoute,
@@ -30,12 +36,19 @@ impl Viability {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Runnable => "runnable",
+            Self::ApprovalRequired => "approval-required",
             Self::NoGrant => "no-grant",
             Self::MissingTarget => "missing-target",
             Self::InvalidRoute => "invalid-route",
             Self::UnsafeCommand => "unsafe-command",
             Self::StdinUnsupported => "stdin-unsupported",
         }
+    }
+
+    /// hook の route arm が Rewrite を emit しうる viability。
+    /// `route run` 側の実行受理もこの集合で判定する。
+    pub fn is_executable(self) -> bool {
+        matches!(self, Self::Runnable | Self::ApprovalRequired)
     }
 }
 
@@ -169,22 +182,35 @@ pub(crate) struct RouteResolutionWithMatch<'a> {
 }
 
 /// `passthroughEnv` 未宣言でも best-effort で routing しない
-/// stdin 依存 command の curated list(R33 — 網羅性ではなく
-/// stdin 非接続の構造保証を補助する分類)。editors・pagers・
-/// REPL・ssh・sudo・login shell。
-const INTERACTIVE_COMMANDS: &[&str] = &[
+/// stdin 依存 command の分類(R33 — 網羅性ではなく構造保証補助)。
+/// `Approval`: stdin 非接続でも spawn 可能だが interactive intent・
+///   inline code・特権/remote 副作用を持つため承認を要する。
+/// `Structural`: stdin/TTY なしでは有意に実行できない(UI app・
+///   REPL bare・stdin 由来 program) — approval でも救えない。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum Interaction {
+    Batch,
+    Approval,
+    Structural,
+}
+
+/// UI/TTY app — stdin 非接続では表示・対話が成立しないため
+/// 常に `Structural`(R33 継承の安全側)。
+const UI_STRUCTURAL_COMMANDS: &[&str] = &[
     // editors
-    "vi",
-    "vim",
-    "nvim",
-    "nano",
-    "emacs",
-    "code",
-    "subl",
-    // pagers
-    "less",
-    "more",
-    // REPL/interpreters(bare invocation は stdin 駆動)
+    "vi", "vim", "nvim", "nano", "emacs", "code", "subl", // pagers・TTY monitors
+    "less", "more", "man", "top", "htop", "watch", // interactive session tools
+    "ftp", "sftp", "telnet",
+];
+
+/// 特権・remote 副作用 command — batch 形状でも実行を承認へ回す。
+const PRIVILEGED_COMMANDS: &[&str] = &["ssh", "sudo", "su"];
+
+/// REPL/interpreter — bare invocation は stdin 由来 program で
+/// `Structural`、positional arg(script/file)を持つ batch 形状は
+/// `Batch`、interactive intent・inline code flag を含む形状は
+/// `Approval`。
+const REPL_SHELL_COMMANDS: &[&str] = &[
     "python",
     "python3",
     "node",
@@ -195,14 +221,6 @@ const INTERACTIVE_COMMANDS: &[&str] = &[
     "mysql",
     "sqlite3",
     "redis-cli",
-    // remote/credential prompts
-    "ssh",
-    "sudo",
-    "su",
-    "ftp",
-    "sftp",
-    "telnet",
-    // login shells
     "bash",
     "zsh",
     "sh",
@@ -212,26 +230,76 @@ const INTERACTIVE_COMMANDS: &[&str] = &[
     "pwsh",
     "powershell",
     "cmd",
-    // misc TTY consumers
-    "top",
-    "htop",
-    "watch",
-    "man",
+];
+
+/// REPL/shell の argv で program を stdin から読む指示 —
+/// script を渡しても spawn 意味が成立しない `Structural`。
+const STDIN_PROGRAM_ARGS: &[&str] = &["-"];
+
+/// REPL/shell の argv で interactive intent・inline code を示す
+/// flag — 実行自体は stdin 非接続でも可能だが承認を要する
+/// `Approval`。`-i`(python/bash/node interactive)・`-c`/`-e`/
+/// `-Command`(inline code)・`-NoExit`/`-Interactive`/`--interactive`。
+const INTERACTIVE_INTENT_FLAGS: &[&str] = &[
+    "-i",
+    "-c",
+    "-e",
+    "-command",
+    "-noexit",
+    "-interactive",
+    "--interactive",
 ];
 
 /// `docker`/`kubectl`/`podman` の interactive flag — `-it`・`-i`・
 /// `--interactive`/`--tty` を argv に含む場合 stdin 依存と見なす。
 const INTERACTIVE_FLAG_COMMANDS: &[&str] = &["docker", "kubectl", "podman"];
 
-fn is_interactive(executable: &str, exec_args: &[String]) -> bool {
+/// executable 名 + argv 形状から routed exec の stdin 依存階層を
+/// 分類する。判定順: UI/TTY → 特権/remote → REPL/shell の flag
+/// scan(stdin program > interactive intent > positional batch) →
+/// docker 系 flag → `Batch`。REPL 系で flag のみ(例 `python -V`)
+/// でも positional が無ければ `Structural` — batch 確証が取れない
+/// 形状は安全側に倒す。
+pub(crate) fn classify_interaction(executable: &str, exec_args: &[String]) -> Interaction {
     let name = executable.to_ascii_lowercase();
-    if INTERACTIVE_COMMANDS.contains(&name.as_str()) {
-        return true;
+    if UI_STRUCTURAL_COMMANDS.contains(&name.as_str()) {
+        return Interaction::Structural;
     }
-    INTERACTIVE_FLAG_COMMANDS.contains(&name.as_str())
+    if PRIVILEGED_COMMANDS.contains(&name.as_str()) {
+        return Interaction::Approval;
+    }
+    if REPL_SHELL_COMMANDS.contains(&name.as_str()) {
+        let mut positional = false;
+        let mut after_ddash = false;
+        for arg in exec_args {
+            if after_ddash {
+                positional = true;
+                continue;
+            }
+            match arg.as_str() {
+                "--" => after_ddash = true,
+                a if STDIN_PROGRAM_ARGS.contains(&a) => return Interaction::Structural,
+                a if INTERACTIVE_INTENT_FLAGS.contains(&a.to_ascii_lowercase().as_str()) => {
+                    return Interaction::Approval;
+                }
+                a if !a.starts_with('-') => positional = true,
+                _ => {}
+            }
+        }
+        return if positional {
+            Interaction::Batch
+        } else {
+            Interaction::Structural
+        };
+    }
+    if INTERACTIVE_FLAG_COMMANDS.contains(&name.as_str())
         && exec_args
             .iter()
             .any(|a| matches!(a.as_str(), "-it" | "-i" | "--interactive" | "--tty" | "-t"))
+    {
+        return Interaction::Structural;
+    }
+    Interaction::Batch
 }
 
 /// 先頭の `KEY=VALUE` token 列を env-prefix として分離する
@@ -552,26 +620,30 @@ where
             return Viability::NoGrant;
         }
     }
-    // stdin-unsupported — interactive command curated list(typed 側
-    // invariant 維持: interactive な typed command は substitute
-    // 宣言の有無に関わらず routing で置き換えない)。
-    if is_interactive(name, &out.exec_args) {
-        return Viability::StdinUnsupported;
+    // stdin 分類 — typed 側と substitute 側(宣言 executable 名と
+    // pin 解決済み実体名の union — 片側だけだと canonical 名ずらし
+    // (`python3`→`python3.11`・`vim`→`vim.basic`・`vi`→`nvi`)や
+    // shim 名で系統的に回避される、O6a/R10)を合成し、最悪階層を
+    // 採る。`Structural` は stdin/TTY なしに実行不能なため不発、
+    // `Approval` は実行可能だが承認必須、`Batch` のみ素通しで
+    // routable(typed 側 invariant 維持: structural な typed
+    // command は substitute 宣言の有無に関わらず置き換えない)。
+    let tier = [Interaction::Batch]
+        .into_iter()
+        .chain([classify_interaction(name, &out.exec_args)])
+        .chain(route.substitute.iter().flat_map(|s| {
+            [
+                classify_interaction(&command_name(&grant.executable), &s.argv),
+                classify_interaction(&command_name(&pinned), &s.argv),
+            ]
+        }))
+        .max()
+        .unwrap_or(Interaction::Batch);
+    match tier {
+        Interaction::Structural => Viability::StdinUnsupported,
+        Interaction::Approval => Viability::ApprovalRequired,
+        Interaction::Batch => Viability::Runnable,
     }
-    // substitute 側 — stdin 非接続で実際に spawn されるのは
-    // substitute ペアであり、interactive な substitute は発火後に
-    // grant timeout まで hang してから失敗する。分類名は宣言
-    // executable 名と pin 解決済み実体名の union — 片側だけだと
-    // canonical 名ずらし(`python3`→`python3.11`・`vim`→`vim.basic`・
-    // `vi`→`nvi`)や shim 名で系統的に回避される(O6a/R10)。
-    if let Some(substitute) = &route.substitute {
-        if is_interactive(&command_name(&grant.executable), &substitute.argv)
-            || is_interactive(&command_name(&pinned), &substitute.argv)
-        {
-            return Viability::StdinUnsupported;
-        }
-    }
-    Viability::Runnable
 }
 
 #[cfg(test)]
@@ -779,15 +851,23 @@ mod tests {
         };
         let out = run(&routes, &["cargo", "test"]);
         assert_eq!(out.viability, Some(Viability::NoGrant));
-        // stdin-unsupported — interactive executable(bash)。
+        // stdin-unsupported — structural executable(vim)。
         let routes = EffectiveRoutes {
-            routes: vec![route("r", &["bash"], "cargo-test", &target_str)],
+            routes: vec![route("r", &["vim"], "cargo-test", &target_str)],
             ..Default::default()
         };
         // exec_args が grant pattern に適合する形で stdin-unsupported
         // を単独検証する(no-grant が優先されるため)。
-        let out = run(&routes, &["bash", "test", "-c", "x"]);
+        let out = run(&routes, &["vim", "test", "x"]);
         assert_eq!(out.viability, Some(Viability::StdinUnsupported));
+        // approval-required — batch 形状でも inline code flag(`-c`)
+        // を持つ shell は承認必須。
+        let routes = EffectiveRoutes {
+            routes: vec![route("r", &["bash"], "cargo-test", &target_str)],
+            ..Default::default()
+        };
+        let out = run(&routes, &["bash", "test", "-c", "x"]);
+        assert_eq!(out.viability, Some(Viability::ApprovalRequired));
         // suppressed provenance — effective 無しで suppressed match。
         let routes = EffectiveRoutes {
             suppressed: vec![SuppressedRoute {
@@ -1279,11 +1359,11 @@ mod tests {
     }
 
     /// stdin-unsupported の両側分類(#167 O6a/R10)— typed 側は
-    /// substitute 宣言の有無に関わらず interactive なら不発
-    /// (「interactive typed command は routing で置き換えない」
+    /// substitute 宣言の有無に関わらず `Structural` なら不発
+    /// (「stdin 依存 typed command は routing で置き換えない」
     /// invariant)。substitute 側は宣言 executable 名と pin 解決済み
-    /// 実体名の union + `substitute.argv` の interactive flag で
-    /// 分類する。
+    /// 実体名の union + `substitute.argv` の flag で tri-state に
+    /// 分類し、最悪階層(Structural > Approval > Batch)を採る。
     #[test]
     fn substitute_interactive_union() {
         let dir = tempfile::tempdir().unwrap();
@@ -1366,21 +1446,24 @@ mod tests {
             &["git", "push", "origin", "main"],
         );
         assert_eq!(out.viability, Some(Viability::Runnable));
-        // typed 側 interactive — substitute 宣言があっても
-        // `bash` typed command は不発(invariant 維持)。
-        let mut r = route("r", &["bash"], "cargo-test", &target_str);
+        // typed 側 structural — substitute 宣言があっても `vim`
+        // typed command は不発(invariant 維持)。`bash -c` は
+        // approval tier へ降格されるため別 tier で検証済み。
+        let mut r = route("r", &["vim"], "cargo-test", &target_str);
         r.substitute = Some(sub("docker-sub", &["ps"]));
-        let out = run(&policy, r, &["bash", "test", "-c", "x"]);
+        let out = run(&policy, r, &["vim", "test", "x"]);
         assert_eq!(out.viability, Some(Viability::StdinUnsupported));
     }
 
     /// canonical 名ずらし・shim 名の union 両側 pin(#167 AC9 —
     /// declared ≠ resolved は symlink のみで構成できるため unix
     /// gate、`SymlinkPolicy::WithinWorkspace` で pin 解決を通す)。
-    /// (a) 宣言名 `python3` が list 内・解決先 `python3.11` が list
-    /// 外でも宣言名側で `StdinUnsupported`、(b) 宣言名 `shim-python`
-    /// が list 外でも解決済み実体名 `python3` が list 内なら解決
-    /// 名側で `StdinUnsupported`。
+    /// substitute argv を空(bare invocation = `Structural`)にした
+    /// 場合、(a) 宣言名 `python3` が REPL list 内・解決先
+    /// `python3.11` が list 外でも宣言名側で `StdinUnsupported`、
+    /// (b) 宣言名 `shim-python` が list 外でも解決済み実体名
+    /// `python3` が list 内なら解決名側で `StdinUnsupported`。
+    /// positional arg を持つ `python3 x` は `Batch` で routable。
     #[cfg(unix)]
     #[test]
     fn substitute_interactive_union_canonical_names() {
@@ -1428,9 +1511,9 @@ mod tests {
                 unsafe_command: false,
             })
         };
-        let sub_route = |grant: &str| {
+        let sub_route = |grant: &str, args: &[&str]| {
             let mut r = route("r", &["git", "push"], "cargo-test", &target_str);
-            r.substitute = Some(sub(grant, &["x"]));
+            r.substitute = Some(sub(grant, args));
             r
         };
         let policy = |name: &str, sub_exe: &str| {
@@ -1446,22 +1529,112 @@ mod tests {
             .unwrap()
         };
         // (a) 宣言 `python3`(list 内)→ 解決 `python3.11`(list 外)。
+        // bare argv で `Structural`。
         let p = policy("versioned", "./python3");
         assert_eq!(
-            run(&p, sub_route("versioned")).viability,
+            run(&p, sub_route("versioned", &[])).viability,
             Some(Viability::StdinUnsupported)
+        );
+        // positional arg の batch 形状は `Runnable` — declared 側が
+        // REPL でも script を持つ spawn は stdin 非依存。
+        assert_eq!(
+            run(&p, sub_route("versioned", &["x.py"])).viability,
+            Some(Viability::Runnable)
         );
         // (b) 宣言 `shim-python`(list 外)→ 解決 `python3`(list 内)。
         let p = policy("shimmed", "./shim-python");
         assert_eq!(
-            run(&p, sub_route("shimmed")).viability,
+            run(&p, sub_route("shimmed", &[])).viability,
             Some(Viability::StdinUnsupported)
         );
         // 非 interactive 宣言+解決は Runnable(union 非該当の対照)。
         let p = policy("plain", "./mypython");
         assert_eq!(
-            run(&p, sub_route("plain")).viability,
+            run(&p, sub_route("plain", &["x"])).viability,
             Some(Viability::Runnable)
+        );
+    }
+
+    /// `classify_interaction` の分類行列 — Batch(自動 route
+    /// 可)/Approval(承認必須で route 可)/Structural(routing 不可)
+    /// の境界を pin する。
+    #[test]
+    fn classify_interaction_matrix() {
+        let classify = |exe: &str, args: &[&str]| {
+            classify_interaction(exe, &args.iter().map(|s| s.to_string()).collect::<Vec<_>>())
+        };
+        // Batch — interpreter + script、task runner、plain command。
+        for (exe, args) in [
+            ("python", &["check.py"][..]),
+            ("python3", &["-u", "check.py", "--flag"][..]),
+            ("node", &["tools/build.js"][..]),
+            ("ruby", &["gen.rb"][..]),
+            ("pwsh", &["-File", "check.ps1"][..]),
+            ("powershell", &["-File", "check.ps1"][..]),
+            ("cmd", &["/c", "dir"][..]),
+            ("bash", &["run.sh"][..]),
+            ("sh", &["deploy.sh", "prod"][..]),
+            ("npm", &["run", "inspect"][..]),
+            ("cargo", &["test"][..]),
+            ("git", &["push", "origin", "main"][..]),
+            ("docker", &["run", "img"][..]),
+            ("kubectl", &["get", "pods"][..]),
+            ("docker", &["exec", "ctr", "ls"][..]),
+        ] {
+            assert_eq!(classify(exe, args), Interaction::Batch, "{exe} {args:?}");
+        }
+        // Approval — interactive intent / inline code flag、特権・
+        // remote 副作用 command。spawn は成立するが承認を残す。
+        for (exe, args) in [
+            ("python", &["-i", "x.py"][..]),
+            ("python", &["-c", "print(1)"][..]),
+            ("node", &["-e", "console.log(1)"][..]),
+            ("bash", &["-c", "echo hi"][..]),
+            ("sh", &["-c", "ls"][..]),
+            ("pwsh", &["-NoExit", "-File", "x.ps1"][..]),
+            ("powershell", &["-Command", "Get-Date"][..]),
+            ("node", &["--interactive", "x.js"][..]),
+            ("sudo", &["systemctl", "restart", "x"][..]),
+            ("ssh", &["host", "uptime"][..]),
+            ("su", &["-", "root"][..]),
+        ] {
+            assert_eq!(classify(exe, args), Interaction::Approval, "{exe} {args:?}");
+        }
+        // Structural — stdin/TTY なしには成立しない: UI app、bare
+        // REPL、stdin program(`-`)、docker 系 interactive flag。
+        for (exe, args) in [
+            ("vim", &["file.txt"][..]),
+            ("nvim", &[""][..]),
+            ("less", &["out.log"][..]),
+            ("top", &[][..]),
+            ("watch", &["ls"][..]),
+            ("telnet", &["host", "80"][..]),
+            ("python", &[][..]),
+            ("node", &[][..]),
+            ("bash", &[][..]),
+            ("python", &["-V"][..]),
+            ("python", &["-"][..]),
+            ("sh", &["-"][..]),
+            ("docker", &["run", "-it", "img"][..]),
+            ("docker", &["exec", "-i", "ctr", "sh"][..]),
+            ("kubectl", &["exec", "--tty", "pod"][..]),
+        ] {
+            assert_eq!(
+                classify(exe, args),
+                Interaction::Structural,
+                "{exe} {args:?}"
+            );
+        }
+        // 判定順 — `python -i x.py` は positional を持っても
+        // Approval(flag が先に評価される)。`vim` は argv 形状を
+        // 見ず常に Structural。
+        assert_eq!(classify("python", &["x.py", "-i"]), Interaction::Approval);
+        assert_eq!(classify("vim", &[]), Interaction::Structural);
+        // case 不問 — `VIM`・`-FILE` は lowercase 正規化後も同 tier。
+        assert_eq!(classify("VIM", &["x"]), Interaction::Structural);
+        assert_eq!(
+            classify("powershell", &["-FILE", "x.ps1"]),
+            Interaction::Batch
         );
     }
 

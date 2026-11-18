@@ -780,3 +780,16 @@ exit/record の anchor 切替規約・Option E との境界。
   含めない。`route.grant` field は Option E でも firing
   gate として留保される確定設計と整合する形で required
   を維持した。
+
+## Refine 注記（stdin 分類の tri-state 化）
+
+O6a の「両側分類」は維持されるが、分類器は `is_interactive`
+boolean から `classify_interaction`（`Batch`/`Approval`/
+`Structural` の ordered tri-state）へ拡張された。typed 側・
+substitute 宣言名・pin 解決名の union から **最悪階層** を採る
+規約は不変: `Structural` → `StdinUnsupported`、`Approval` →
+`ApprovalRequired`（hook rewrite は emit されるが承認 bypass
+決定は併記されない）、`Batch` → `Runnable`。script 付き
+interpreter 起動（`python check.py` 等）は `Batch` として
+routable になり、bare REPL・UI app・stdin program のみが
+`StdinUnsupported` に残る。

@@ -84,7 +84,9 @@ catalog 登録手順は `{id,path,summary,tags}` 追記 + `workflow list`
   は既存 `command.grants` 名を参照するだけで、新規 grant は
   user 層 `policy.yaml` への承認対象変更（project partial schema
   は `command` セクションを持てない）。`route resolve` が
-  `matched:true` かつ `viability:"runnable"` の場合のみ発火可能。
+  `matched:true` かつ `viability:"runnable"|"approval-required"`
+  の場合のみ発火可能（`approval-required` は host 承認を残して
+  route される）。
 
 ## Examples
 
@@ -111,11 +113,18 @@ catalog 登録手順は `{id,path,summary,tags}` 追記 + `workflow list`
   diagnostics。
 - Given missing path の entry、when `workflow list` すると、
   `status:"missing"` + `missing-path` diagnostics。
-- Given `[python, tools/check.py]` に match する project route
-  （grant executable `python`）、when `route resolve --command
-  'python tools/check.py'` すると、`matched:true` かつ
-  `viability:"stdin-unsupported"` — interpreter 直 route は
-  script 引数があっても不発。
+- Given `[python]` に match する project route（grant executable
+  `python`）、when `route resolve --command 'python check.py'`
+  すると、`matched:true` かつ `viability:"runnable"` — script
+  付き interpreter 起動は batch として route される。bare
+  `python` は `stdin-unsupported` で不発。
+- Given `[sudo]` に match する project route（grant executable
+  `sudo`）、when `route resolve --command 'sudo systemctl restart
+  x'` すると、`matched:true` かつ `viability:"approval-required"` —
+  hook rewrite は emit されるが `permissionDecision:"allow"` は
+  policy opt-in（`route.rewrite.approvalBypass`）下でも併記されず
+  host 承認 prompt が残る。codex target では approval-required
+  route は fallback に倒れる。
 - Given `[npm, run, inspect]` に match する project route、when
   `route resolve --command 'npm run inspect -- --fast'` すると、
   `matched:true` かつ `viability:"runnable"` で hook rewrite が

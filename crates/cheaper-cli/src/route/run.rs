@@ -18,7 +18,7 @@ use serde_json::{json, Map, Value};
 
 use super::log_store::{is_valid_run_id, new_run_id, RouteLogStore, RouteLogWriter};
 use super::payload::{self, RoutePayload};
-use super::resolve::{self, ResolveInput, RouteResolution, Viability};
+use super::resolve::{self, ResolveInput, RouteResolution};
 use super::routes::{Route, RouteLayer};
 use super::supply::{self, RouteSupply};
 use crate::cli::{now, BoxError, CliHooks, CliIo};
@@ -102,7 +102,7 @@ pub(crate) fn prepare(
     if !resolution.matched {
         return Err(denied("no-match"));
     }
-    if resolution.viability != Some(Viability::Runnable) {
+    if !matches!(resolution.viability, Some(v) if v.is_executable()) {
         return Err(denied(
             resolution.viability.map_or("not-runnable", |v| v.as_str()),
         ));

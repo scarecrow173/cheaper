@@ -130,6 +130,14 @@ pub enum Verdict {
     Rewrite {
         command: String,
         fallback: Box<Verdict>,
+        /// approval-required route(interactive intent・inline code・
+        /// 特権/remote executable)由来の rewrite — render は
+        /// `permissionDecision:"allow"` bypass を一切併記せず、
+        /// host 側の承認 prompt を残す経路のみ採る。wire 未記録
+        /// の旧 record では `false`(dedup cache には persist
+        /// されないため default は後方互換のみの保険)。
+        #[serde(default)]
+        approval_required: bool,
     },
 }
 
@@ -244,6 +252,7 @@ fn decision_verdict(verdict: &Verdict) -> DecisionVerdict {
 fn history_route_viability(value: crate::route::resolve::Viability) -> RouteViability {
     match value {
         crate::route::resolve::Viability::Runnable => RouteViability::Runnable,
+        crate::route::resolve::Viability::ApprovalRequired => RouteViability::ApprovalRequired,
         crate::route::resolve::Viability::NoGrant => RouteViability::NoGrant,
         crate::route::resolve::Viability::MissingTarget => RouteViability::MissingTarget,
         crate::route::resolve::Viability::InvalidRoute => RouteViability::InvalidRoute,
@@ -1655,6 +1664,10 @@ async fn evaluate_shell(command: &str, cwd: &str, opts: &EvaluateOptions<'_>) ->
             Verdict::Rewrite {
                 command: rewrite_command,
                 fallback: Box::new(fallback.verdict.clone()),
+                approval_required: matches!(
+                    route_evaluation.resolution.viability,
+                    Some(crate::route::resolve::Viability::ApprovalRequired)
+                ),
             },
             Some(ReasonCode::RouteRewriteEmitted),
         )
@@ -1689,10 +1702,11 @@ fn route_reason_code(
     match resolution.viability {
         Some(crate::route::resolve::Viability::NoGrant) => Some(ReasonCode::RouteNoGrant),
         Some(crate::route::resolve::Viability::MissingTarget) => Some(ReasonCode::RouteNoPin),
-        // The resolver marked the route runnable, but building its rewrite
-        // failed. Preserve route identity/viability and fallback evidence
-        // without claiming the route itself was not runnable.
-        Some(crate::route::resolve::Viability::Runnable) => None,
+        // The resolver marked the route executable, but building its
+        // rewrite failed. Preserve route identity/viability and fallback
+        // evidence without claiming the route itself was not runnable.
+        Some(crate::route::resolve::Viability::Runnable)
+        | Some(crate::route::resolve::Viability::ApprovalRequired) => None,
         Some(crate::route::resolve::Viability::InvalidRoute)
         | Some(crate::route::resolve::Viability::UnsafeCommand)
         | Some(crate::route::resolve::Viability::StdinUnsupported)
@@ -1729,12 +1743,15 @@ async fn evaluate_route_arm(
         exec_policy: &route_input.exec_policy,
         unsafe_command: false,
     });
-    let rewrite =
-        if res.matched && res.viability == Some(crate::route::resolve::Viability::Runnable) {
-            build_rewrite_command(command, cwd, &res, opts.env)
-        } else {
-            None
-        };
+    let rewrite = if res.matched
+        && res
+            .viability
+            .is_some_and(crate::route::resolve::Viability::is_executable)
+    {
+        build_rewrite_command(command, cwd, &res, opts.env)
+    } else {
+        None
+    };
     Some(RouteArmEvaluation {
         resolution: res,
         rewrite,
@@ -2428,6 +2445,7 @@ mod tests {
                 fallback: Box::new(Verdict::Deny {
                     reason: "r".to_string(),
                 }),
+                approval_required: true,
             };
             let value = serde_json::to_value(&v).unwrap();
             assert_eq!(
@@ -2436,6 +2454,7 @@ mod tests {
                     "decision": "rewrite",
                     "command": "cheaper route run --payload tok",
                     "fallback": {"decision": "deny", "reason": "r"},
+                    "approval_required": true,
                 })
             );
             assert_eq!(serde_json::from_value::<Verdict>(value).unwrap(), v);
@@ -2463,9 +2482,15 @@ mod tests {
             let deny = ExecDenyList::default();
             let opts = route_opts(&lookup, &routes, &policy, &deny, &root);
             let verdict = evaluate(&shell("cargo test --workspace", &root), &opts).await;
-            let Verdict::Rewrite { command, fallback } = verdict else {
+            let Verdict::Rewrite {
+                command,
+                fallback,
+                approval_required,
+            } = verdict
+            else {
                 panic!("expected rewrite, got {verdict:?}")
             };
+            assert!(!approval_required);
             // `<exe> route run --payload <b64>` の単一 segment。
             assert!(command.contains(" route run --payload "), "{command}");
             let token = command.rsplit(' ').next().unwrap();
