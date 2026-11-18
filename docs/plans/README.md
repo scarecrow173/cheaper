@@ -78,6 +78,7 @@ Directory: `docs/plans`
 | PLAN-034AR2f7p2NSUDtUhSuLp6 | Implement workflow orchestration benchmarks | approved | [implement-workflow-orchestration-benchmarks.md](./implement-workflow-orchestration-benchmarks.md) |
 | PLAN-034zTu37tgDGI306OPBitz | Workflow resource inference を実装する | completed | [implement-workflow-resource-inference.md](./implement-workflow-resource-inference.md) |
 | PLAN-034z2bk7AEzZ66Mt0uXCyJ | Integrate SEA executables into tag-triggered GitHub Release workflow | completed | [integrate-sea-executables-into-tag-triggered-github-release-workflow.md](./integrate-sea-executables-into-tag-triggered-github-release-workflow.md) |
+| PLAN-034ZufPdNasDwkcklErIMy | L0 workflow candidate trigger implementation plan | draft | [l0-workflow-candidate-trigger-plan.md](./l0-workflow-candidate-trigger-plan.md) |
 | PLAN-034Bcr7oMH85Ak8UCpCDmy | Migrate cheaper runtime to Rust + Rig | approved | [migrate-cheaper-runtime-to-rust-rig.md](./migrate-cheaper-runtime-to-rust-rig.md) |
 | PLAN-034r05iHE1FbkpcKKUUZ58 | Real-provider worker E2E via Ollama — implementation plan | completed | [ollama-real-provider-worker-e2e.md](./ollama-real-provider-worker-e2e.md) |
 | PLAN-034A90VLWrJyT2IhkiTsA0 | Operation execution metrics | completed | [operation-execution-metrics.md](./operation-execution-metrics.md) |
