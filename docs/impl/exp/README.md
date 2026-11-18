@@ -13,3 +13,4 @@ Directory: `docs/impl/exp`
 | [pi-sdk-probe-and-test-stream-seam.jsonl](./pi-sdk-probe-and-test-stream-seam.jsonl) |
 | [rig-poc-go-no-go-conditions-measurement.jsonl](./rig-poc-go-no-go-conditions-measurement.jsonl) |
 | [usage-jsonl-peak-memory-measurement.jsonl](./usage-jsonl-peak-memory-measurement.jsonl) |
+| [workflow-e2e-and-apm-distribution-verification-issue-205.jsonl](./workflow-e2e-and-apm-distribution-verification-issue-205.jsonl) |

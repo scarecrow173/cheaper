@@ -202,6 +202,7 @@ Directory: `docs/impl/ir`
 | IMPL-034NgekixDuJNQy3znXgws | Verify route check contract and document usage | completed | [verify-route-check-contract-and-document-usage.md](./verify-route-check-contract-and-document-usage.md) |
 | IMPL-034z1SUIDKBAfvsAeKimVK | Verify SEA PoC smoke without Node.js | completed | [verify-sea-poc-smoke-without-node-js.md](./verify-sea-poc-smoke-without-node-js.md) |
 | IMPL-034MpJiRnTxGKRzkCAn04f | Verify usage route and error analysis chain | completed | [verify-usage-route-and-error-analysis-chain.md](./verify-usage-route-and-error-analysis-chain.md) |
+| IMPL-034ZwWwZ3zfEltfI2xS2F7 | Verify workflow discovery+authoring E2E and APM distribution (issue 205) | completed | [verify-workflow-discovery-authoring-e2e-and-apm-distribution-issue-205.md](./verify-workflow-discovery-authoring-e2e-and-apm-distribution-issue-205.md) |
 | IMPL-034APqdMTW2hYck2FYoKv1 | Verify workflow execution integration | completed | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | IMPL-034D9oWccQJEPfXsMNRpH5 | Volume-root workspace boundary predicate の trailing separator guard | completed | [volume-root-workspace-boundary-predicate-trailing-separator-guard.md](./volume-root-workspace-boundary-predicate-trailing-separator-guard.md) |
 | IMPL-034KyCatPzZz2THKRqjLIe | Windsurf-compat range normalization and registration surfacing issue 161 | completed | [windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md](./windsurf-compat-range-normalization-and-registration-surfacing-issue-161.md) |

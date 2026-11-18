@@ -113,6 +113,7 @@ Directory: `docs/designs`
 | DESIGN-034zJ38fX1W3g0Zrceda1E | WorkflowCompiler の validation と materialization 境界 | approved | [workflow-contract-compiler.md](./workflow-contract-compiler.md) |
 | DESIGN-034ZubMMzFoN5Put3FrXWi | cheaper-workflow-create skill authoring and validation flow | approved | [workflow-create-skill.md](./workflow-create-skill.md) |
 | DESIGN-034ziRfYArWAlH3iiItcAR | Workflow discover skill (L1) structure and guide integration | approved | [workflow-discover-skill-structure.md](./workflow-discover-skill-structure.md) |
+| DESIGN-034ZwWdAPNPIYtwcSU1r5S | Workflow E2E and APM distribution verification approach | approved | [workflow-e2e-verification.md](./workflow-e2e-verification.md) |
 | DESIGN-034zT2MINVpakJb3AhS0m5 | Workflow file loader と interface CLI の接続設計 | approved | [workflow-file-interface.md](./workflow-file-interface.md) |
 | DESIGN-034AQQsGub6ocuyzZg3Fuv | Design workflow orchestration benchmark harness | approved | [workflow-orchestration-benchmark.md](./workflow-orchestration-benchmark.md) |
 | DESIGN-034zSWw1LYrRvcB471oQm2 | Workflow resource inference port 実装 | approved | [workflow-resource-inference.md](./workflow-resource-inference.md) |

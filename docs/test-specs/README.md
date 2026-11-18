@@ -102,6 +102,7 @@ Directory: `docs/test-specs`
 | TSPEC-034ZiF8TCafeWV4OHI9beT | Workflow catalog manifest and list contract | proposed | [workflow-catalog-manifest-and-list-contract.md](./workflow-catalog-manifest-and-list-contract.md) |
 | TSPEC-034zQvKPjNkXAEgbZlzdcQ | Workflow compiler の契約保証 | proposed | [workflow-compiler-contract-guarantees.md](./workflow-compiler-contract-guarantees.md) |
 | TSPEC-034ZubPv1oKQMgmITu1e4y | workflow create skill verification contract | proposed | [workflow-create-skill-verification.md](./workflow-create-skill-verification.md) |
+| TSPEC-034ZwWOpIL6QGfZGmkj7uq | workflow E2E and APM distribution verification contract | approved | [workflow-e2e-verification-contract.md](./workflow-e2e-verification-contract.md) |
 | TSPEC-034AJ8stqUyJWIgj6oaOzt | Workflow の policy・schema・literal scope 境界 | proposed | [workflow-execution-contract-boundaries.md](./workflow-execution-contract-boundaries.md) |
 | TSPEC-034AJ8RBszSVnXlZydfnyU | Workflow verification evidence と dependency direction | proposed | [workflow-execution-verification-boundaries.md](./workflow-execution-verification-boundaries.md) |
 | TSPEC-034MGCzUAhlbOn8zU2Mnal | Workflow Job History lifecycle | proposed | [workflow-job-history-lifecycle.md](./workflow-job-history-lifecycle.md) |

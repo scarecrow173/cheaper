@@ -413,6 +413,7 @@ Directory: `docs/tasks`
 | TASK-034L59Zaf7xiLEfPo8rlQF | trusted route flag issuer redesign 最終検証 — targeted tests・doc-id・audit_docs・mise run check | done | [verify-trusted-route-flag-issuer-redesign.md](./verify-trusted-route-flag-issuer-redesign.md) |
 | TASK-034KQsAwXBVQJ56nGgagYT | unified exec grant model の最終検証と status/evidence 更新 | done | [verify-unified-exec-grant-model.md](./verify-unified-exec-grant-model.md) |
 | TASK-034MbTCpfWxoiFfeKTaOMs | Run focused and canonical verification, doc-status audit, and final scope/privacy review (issue #184 T6) | done | [verify-usage-analysis-chain-and-audit.md](./verify-usage-analysis-chain-and-audit.md) |
+| TASK-034ZwWqvlfhc5tBcqkkFUR | verify workflow discovery+authoring E2E and APM distribution (issue 205) | done | [verify-workflow-e2e-issue-205.md](./verify-workflow-e2e-issue-205.md) |
 | TASK-034AJd9d4eo1B6Yt81QjdO | Workflow 統合を検証して review/exit-audit を記録する | done | [verify-workflow-execution-integration.md](./verify-workflow-execution-integration.md) |
 | TASK-vhu8Z2b2Ylehk8LEqt43Ke | Wire auto classification into resolver, runtime, and CLI | done | [wire-auto-classification-into-resolver-and-cli.md](./wire-auto-classification-into-resolver-and-cli.md) |
 | TASK-oxOS7kvPXiqJ0LEOT1edeB | Wire cheaper-bench into check pipeline and sync docs — mise.toml, AGENTS/CONTRIBUTING, benchmarks docs, biome glob, #182 addendum, workflow-usage placeholder | done | [wire-bench-check-pipeline-and-sync-docs.md](./wire-bench-check-pipeline-and-sync-docs.md) |
