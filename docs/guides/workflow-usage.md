@@ -207,9 +207,10 @@ workflow JSON の jobs/prompt/binding などの private field は
 `workflow interface` を使って既存 Workflow・direct tool・
 Worker・Route・新規 Workflow を比較する評価層である。
 比較基準（tool-only 処理の overhead・親 token 未観測の claim
-境界・fan-in/中間出力の扱い）と evidence label
-（measured/estimated/unknown）の正本は本ガイドの
-[選択基準](#選択基準)節であり、skill はそれを適用する —
+境界・fan-in/中間出力の扱い）の正本は本ガイドの
+[選択基準](#選択基準)節、evidence label
+（measured/estimated/unknown）を含む比較手順・出力契約の
+規約の正本は skill 本文であり、guide はそれを適用・参照する —
 L1 の提案は作成でも実行でもなく、永続化・登録・実行は別途
 承認が要る。親 agent 側の導線詳細は
 [parent-agent 連携ガイド](./parent-agent-integration.md#l0--l1-handoff-で読まれた後の-cheaper-workflow-discover)
