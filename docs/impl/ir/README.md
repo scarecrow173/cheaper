@@ -48,6 +48,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zCh2bBRGkSHaq79bBvu | Append sibling tool-call parallelism section to execution-engine design doc | completed | [append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md](./append-sibling-tool-call-parallelism-section-to-execution-engine-design-doc.md) |
 | IMPL-2OYQijUxRdsfa8Cig2DuQe | Auth text/select prompt I/O boundary routing (PLAN-zDQIdChPXY1lrGJyzZTiQc) | completed | [auth-io-boundary.md](./auth-io-boundary.md) |
 | IMPL-034r05iHy2gdnpt2vgHZ55 | Auth URL opener seam (PLAN-034r05iHE1Fbkp4xxlyMdV) | completed | [auth-url-opener-seam.md](./auth-url-opener-seam.md) |
+| IMPL-034ZusOsqpn5CG7IWNftoR | Author cheaper-workflow-create skill | completed | [author-cheaper-workflow-create-skill.md](./author-cheaper-workflow-create-skill.md) |
 | IMPL-034rC4jywjUQYNL42ruw7Q | auto 分類の resolver / runtime-pi / CLI 統合 | completed | [auto-resolver-runtime-pi-cli.md](./auto-resolver-runtime-pi-cli.md) |
 | IMPL-034rC4k38aJJf0vfVaefeV | auto tier 分類ガイドの更新 | completed | [auto-tier.md](./auto-tier.md) |
 | IMPL-034A64NK6xfzCOIY0zLm75 | Bounded concurrency policy | completed | [bounded-concurrency-policy.md](./bounded-concurrency-policy.md) |
@@ -84,7 +85,7 @@ Directory: `docs/impl/ir`
 | IMPL-034z57kKSICF9N4av5oZ0f | docs for executable hook invocation | completed | [docs-for-executable-hook-invocation.md](./docs-for-executable-hook-invocation.md) |
 | IMPL-034zUCrFChJvE5zTGpzwnI | Document and verify one-dispatch release migration | completed | [document-and-verify-one-dispatch-release-migration.md](./document-and-verify-one-dispatch-release-migration.md) |
 | IMPL-034zRDctzhtdFQ6yVmTUAg | Document launcher distribution and verify acquisition | completed | [document-launcher-distribution-and-verify-acquisition.md](./document-launcher-distribution-and-verify-acquisition.md) |
-| IMPL-034Zji13BkaQ2V9RC2Wprw | Document workflow catalog contract and usage | draft | [document-workflow-catalog-contract-and-usage.md](./document-workflow-catalog-contract-and-usage.md) |
+| IMPL-034Zji13BkaQ2V9RC2Wprw | Document workflow catalog contract and usage | completed | [document-workflow-catalog-contract-and-usage.md](./document-workflow-catalog-contract-and-usage.md) |
 | IMPL-034L8CAW785uSRtJvzJh15 | documentation honesty sweep and migration guide | completed | [documentation-honesty-sweep-and-migration-guide.md](./documentation-honesty-sweep-and-migration-guide.md) |
 | IMPL-034KKIy3KVgaEjtuv3WTrb | Exec-contract content-audit removal issue 163 | completed | [exec-contract-content-audit-removal-issue-163.md](./exec-contract-content-audit-removal-issue-163.md) |
 | IMPL-034rArrzNyFlCc39TNLU1X | Extend usage.jsonl run record with savings section | completed | [extend-usage-jsonl-run-record-with-savings-section.md](./extend-usage-jsonl-run-record-with-savings-section.md) |
@@ -127,6 +128,7 @@ Directory: `docs/impl/ir`
 | IMPL-034zQM35ydxC5Mucz5GUQJ | Invocation tool lifetime | completed | [invocation-tool-lifetime.md](./invocation-tool-lifetime.md) |
 | IMPL-034Zuk5KqJIYiOP5aFveMz | L0 workflow candidate trigger implementation record | completed | [l0-workflow-candidate-trigger-implementation-record.md](./l0-workflow-candidate-trigger-implementation-record.md) |
 | IMPL-034z57kkaNGIsoFKFnVOwn | launcher deploy verify and hooks.json switch | completed | [launcher-deploy-verify-and-hooks-json-switch.md](./launcher-deploy-verify-and-hooks-json-switch.md) |
+| IMPL-034ZulA2jDGtiiAEJW5oC4 | Link workflow create skill from guides | completed | [link-workflow-create-skill-from-guides.md](./link-workflow-create-skill-from-guides.md) |
 | IMPL-034rArrb2uZO7zl0EEFqea | Measure tool output tokens and expose meta.savings | completed | [measure-tool-output-tokens-and-expose-meta-savings.md](./measure-tool-output-tokens-and-expose-meta-savings.md) |
 | IMPL-034MpAHqkHvEuevjW9HP58 | Measure usage JSONL peak memory issue 184 T5 | completed | [measure-usage-jsonl-peak-memory-issue-184-t5.md](./measure-usage-jsonl-peak-memory-issue-184-t5.md) |
 | IMPL-034A6i3cxbZXoHqDxhuyjB | Migrate native workflows and release guidance | completed | [migrate-native-workflows-and-release-guidance.md](./migrate-native-workflows-and-release-guidance.md) |

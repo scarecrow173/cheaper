@@ -1,7 +1,7 @@
 ---
 id: "TASK-034ZuedgAEVT4fbOtnEEap"
 type: "task"
-status: "todo"
+status: "done"
 title: "author cheaper-workflow-create skill"
 created: "2026-11-18"
 updated: "2026-11-18"
@@ -18,7 +18,8 @@ relations:
     generated: []
   implements:
     - "docs/plans/implement-workflow-create-skill.md"
-  implemented-by: []
+  implemented-by:
+    - "docs/impl/ir/author-cheaper-workflow-create-skill.md"
   depends-on:
     - "docs/plans/implement-workflow-create-skill.md"
   blocks:

@@ -1,7 +1,7 @@
 ---
 id: "TASK-034Zuee3qE5UZ7VZ4nRMwG"
 type: "task"
-status: "todo"
+status: "done"
 title: "link workflow create skill from guides"
 created: "2026-11-18"
 updated: "2026-11-18"
