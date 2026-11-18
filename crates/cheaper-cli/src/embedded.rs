@@ -287,14 +287,32 @@ pub(crate) fn builtin_dir_call_count() -> usize {
     BUILTIN_DIR_CALLS.with(|count| count.get())
 }
 
+/// `temp_dir()` → materialize target dir への変換を `builtin_dir()` の
+/// `OnceLock` cache より下の独立 step として切り出したもの。
+/// process env・global cache に依存せず検証できる(issue #217)。
+///
+/// temp dir が absolute でない場合、そのまま join すると cwd 相対に
+/// 展開され workspace へ `cheaper-builtin-*` を書き出してしまう
+/// (Windows `TMP=褰` 等)。代替 dir へ推測で fallback せず、
+/// `InvalidInput` で fail-closed にする(issue #217)。
+fn materialize_target(temp: &Path, version: &str) -> io::Result<PathBuf> {
+    if !temp.is_absolute() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("system temp dir is not absolute: {}", temp.display()),
+        ));
+    }
+    Ok(temp.join(format!(
+        "cheaper-builtin-{version}-{}",
+        embedded_fingerprint()
+    )))
+}
+
 fn materialize_builtin_dir() -> io::Result<PathBuf> {
     let version = embedded_version().ok_or_else(|| {
         io::Error::new(io::ErrorKind::NotFound, "failed to resolve package version")
     })?;
-    let target = std::env::temp_dir().join(format!(
-        "cheaper-builtin-{version}-{}",
-        embedded_fingerprint()
-    ));
+    let target = materialize_target(&std::env::temp_dir(), &version)?;
     let ready = target.join(".ready");
     if ready.is_file() {
         return Ok(target);
@@ -360,6 +378,47 @@ mod tests {
             assert!(!catalog.contains(key), "{key}");
             assert!(catalog.read(key).is_none(), "{key}");
         }
+    }
+
+    /// issue #217: `temp_dir()` が relative path を返した場合、そのまま
+    /// join すると cwd 相対に展開され workspace へ `cheaper-builtin-*` を
+    /// 書き出してしまう(Windows `TMP=褰` 等)。代替 dir への fallback は
+    /// せず `InvalidInput` で fail-closed。
+    #[test]
+    fn materialize_target_rejects_relative_temp_dir() {
+        for temp in ["relative-tmp", "./tmp", "褰"] {
+            let err = materialize_target(Path::new(temp), "1.0.0")
+                .expect_err("relative temp dir must be rejected");
+            assert_eq!(err.kind(), io::ErrorKind::InvalidInput, "{temp}");
+            assert!(
+                err.to_string().contains(temp),
+                "error must name the offending value: {err} for {temp}"
+            );
+        }
+    }
+
+    /// issue #217: 空の temp dir も relative 扱いで `InvalidInput`。
+    /// `temp_dir()` が空 path を返す env では何も作成しない。
+    #[test]
+    fn materialize_target_rejects_empty_temp_dir() {
+        let err = materialize_target(Path::new(""), "1.0.0")
+            .expect_err("empty temp dir must be rejected");
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+        assert!(err.to_string().contains("system temp dir is not absolute"));
+    }
+
+    /// absolute temp dir には `<temp>/cheaper-builtin-<version>-<fp>`
+    /// を join して返す(従来通りの命名・fingerprint 混入を維持)。
+    #[test]
+    fn materialize_target_joins_versioned_dir_under_absolute_temp() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert!(tmp.path().is_absolute());
+        let target = materialize_target(tmp.path(), "1.0.0").unwrap();
+        assert_eq!(
+            target,
+            tmp.path()
+                .join(format!("cheaper-builtin-1.0.0-{}", embedded_fingerprint()))
+        );
     }
 
     /// fingerprint は同一 binary 内で決定的かつ 16hex 形式。
