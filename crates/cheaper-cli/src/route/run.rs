@@ -30,7 +30,7 @@ use crate::history::schema::{
     RouteViability,
 };
 use crate::history::store::HistoryStore;
-use crate::hook::routing_policy::tokenize_shell;
+use crate::hook::routing_policy::{routed_command_segment, tokenize_shell};
 use crate::usage_log::{record_route_with_correlation, RouteRecordInput, UsageCorrelation};
 use crate::workflow_context::WorkflowContext;
 
@@ -39,6 +39,10 @@ pub(crate) struct PreparedRoute {
     pub resolution: RouteResolution,
     pub route: Route,
     pub extra_env: Map<String, Value>,
+    /// routed child の実行 cwd — payload `cwd` の canonical 値
+    /// (workspace root 内部に検証済み。`cd <dir>` unwrap では
+    /// 移動先 subdir、通常は workspace root と同値)。
+    pub exec_cwd: String,
 }
 
 fn rejected(reason: &'static str) -> CheaperError {
@@ -66,17 +70,21 @@ pub(crate) fn prepare(
     let mut supply = supply::load(cwd, env, builtin_dir)?;
     let payload_root =
         canonicalize_workspace_root(&payload.cwd).map_err(|_| rejected("cwd-mismatch"))?;
-    if payload_root != supply.root {
+    // payload cwd は workspace root 内部(同一を含む)に限り受理 —
+    // `cd <dir> && cmd` unwrap が mint する payload は subdir cwd
+    // を運び、hook 側の containment 検証をここで再適用する。
+    if !Path::new(&payload_root).starts_with(Path::new(&supply.root)) {
         return Err(rejected("cwd-mismatch"));
     }
     let segments = tokenize_shell(&payload.command);
-    let segment = match segments.as_deref() {
-        Some([segment]) if !segment.tokens.is_empty() => segment,
-        _ => return Err(rejected("unsafe-command")),
-    };
-    if segment.unsafe_segment || segment.tokens.iter().any(|t| t.unsafe_token) {
+    // `cd <literal>` prefix + `&&`/`;`/`\n` 結合の 2 segment 形も
+    // 受理する — cmd segment の token 列が以降の argv 照合を
+    // 駆動する(hook 側と同一の `routed_command_segment` 規約)。
+    // cd literal と payload.cwd の一致は再検証しない — payload は
+    // self-asserted であり、boundary は上記の containment のみ。
+    let Some((segment, _cd_literal)) = segments.as_deref().and_then(routed_command_segment) else {
         return Err(rejected("unsafe-command"));
-    }
+    };
     let tokens: Vec<String> = segment.tokens.iter().map(|t| t.text.clone()).collect();
     let (prefix, rest) = resolve::split_env_prefix(&tokens);
     if payload.argv.is_empty()
@@ -134,6 +142,7 @@ pub(crate) fn prepare(
         resolution,
         route,
         extra_env,
+        exec_cwd: payload_root,
     })
 }
 
@@ -524,7 +533,7 @@ async fn execute_prepared(
     let route_exec = Arc::new(RouteExecution::new(
         RouteLogStore::new(&layout.dirs.user_config_dir),
         prepared.extra_env.clone(),
-        prepared.supply.root.clone(),
+        prepared.exec_cwd.clone(),
         exec_grant,
         exec_argv,
         count_cap,
@@ -540,7 +549,8 @@ async fn execute_prepared(
         ("argv".to_string(), json!(prepared.resolution.argv)),
         ("args".to_string(), json!(prepared.resolution.args)),
         ("execArgs".to_string(), json!(exec_argv)),
-        ("cwd".to_string(), json!(prepared.supply.root)),
+        // command の意図 cwd — `cd <dir>` unwrap では移動先 subdir。
+        ("cwd".to_string(), json!(prepared.exec_cwd)),
         (
             "tokenThreshold".to_string(),
             json!(prepared.route.token_threshold.unwrap_or(8192.0)),
@@ -1071,6 +1081,95 @@ mod tests {
         p.cwd = other.path().to_string_lossy().into_owned();
         let err = prepare(&p, &fx.ws, &env, Some(&fx.builtin)).err().unwrap();
         assert_eq!(err.code(), ErrorCode::InvalidRequest);
+    }
+
+    /// `cd <dir> && cmd` 形 payload — workspace 内 subdir cwd は
+    /// containment 検証を通り受理され、cmd segment の token 列が
+    /// argv 照合を駆動する。`exec_cwd` は canonical 済み subdir。
+    #[test]
+    fn prepare_accepts_cd_prefix_with_subdir_cwd() {
+        let fx = routed_fx();
+        let sub = Path::new(&fx.ws).join("sub");
+        std::fs::create_dir_all(&sub).unwrap();
+        let env = env_lookup(&fx.cfg);
+        for command in [
+            "cd sub && cargo test",
+            "cd sub;cargo test",
+            "cd sub\ncargo test",
+        ] {
+            let mut p = payload(&fx.ws, command, &["cargo", "test"], BTreeMap::new());
+            p.cwd = sub.to_string_lossy().into_owned();
+            let out = prepare(&p, &fx.ws, &env, Some(&fx.builtin))
+                .unwrap_or_else(|e| panic!("{command}: {e}"));
+            assert_eq!(out.route.name, "cargo-test");
+            assert_eq!(out.resolution.exec_args, vec!["test"]);
+            let expected = canonicalize_workspace_root(&sub.to_string_lossy()).unwrap();
+            assert_eq!(out.exec_cwd, expected, "{command}");
+        }
+        // cd literal と payload.cwd の一致は再検証しない
+        // (self-asserted — boundary は workspace containment のみ)。
+        // `cd missing` ・root 直指定でも同じ検証経路で受理される。
+        let mut p = payload(
+            &fx.ws,
+            "cd missing && cargo test",
+            &["cargo", "test"],
+            BTreeMap::new(),
+        );
+        p.cwd = sub.to_string_lossy().into_owned();
+        assert!(prepare(&p, &fx.ws, &env, Some(&fx.builtin)).is_ok());
+        let p = payload(
+            &fx.ws,
+            "cd sub && cargo test",
+            &["cargo", "test"],
+            BTreeMap::new(),
+        );
+        let out = prepare(&p, &fx.ws, &env, Some(&fx.builtin)).unwrap();
+        assert_eq!(out.exec_cwd, out.supply.root);
+    }
+
+    /// cd prefix 形でも workspace 外 payload.cwd は拒否 —
+    /// containment の緩和は workspace 内部への拡張のみ。
+    #[test]
+    fn prepare_rejects_cd_prefix_outside_root() {
+        let fx = routed_fx();
+        let other = tempfile::tempdir().unwrap();
+        let env = env_lookup(&fx.cfg);
+        let mut p = payload(
+            &fx.ws,
+            "cd sub && cargo test",
+            &["cargo", "test"],
+            BTreeMap::new(),
+        );
+        p.cwd = other.path().to_string_lossy().into_owned();
+        let err = prepare(&p, &fx.ws, &env, Some(&fx.builtin)).err().unwrap();
+        assert_eq!(err.code(), ErrorCode::InvalidRequest);
+    }
+
+    /// `||`/`|`/`&` 結合・3+ segment・非受理 cd 形の payload は
+    /// 従来どおり unsafe-command 系で拒否する。
+    #[test]
+    fn prepare_rejects_unaccepted_compound_forms() {
+        let fx = routed_fx();
+        let sub = Path::new(&fx.ws).join("sub");
+        std::fs::create_dir_all(&sub).unwrap();
+        let env = env_lookup(&fx.cfg);
+        for command in [
+            "cd sub || cargo test",
+            "cd sub | cargo test",
+            "cd sub & cargo test",
+            "cd sub && cargo test && echo done",
+            "cd && cargo test",
+            "cd /d sub && cargo test",
+            "pushd sub && cargo test",
+            "FOO=1 cd sub && cargo test",
+        ] {
+            let mut p = payload(&fx.ws, command, &["cargo", "test"], BTreeMap::new());
+            p.cwd = sub.to_string_lossy().into_owned();
+            assert!(
+                prepare(&p, &fx.ws, &env, Some(&fx.builtin)).is_err(),
+                "{command}"
+            );
+        }
     }
 
     #[test]

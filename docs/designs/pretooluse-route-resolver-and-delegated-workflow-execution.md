@@ -489,16 +489,19 @@ read-candidate Deny が windsurf/codex 系で素通しになるため)。
 ```text
 evaluate_shell(command, cwd, opts):
   if let Some(segments) = tokenize_shell(command):
-    if segments.len() == 1 && segment is safe:
+    if let (segment, cd) = routed_command_segment(segments):
+      # [safe cmd] または [cd <literal>, safe cmd](&&/;/\n 結合、R41)
       env_prefix = 先頭の is_env_prefix token 列(KEY=VALUE 分解)
       argv = 残り token の text 列
         (extract_read_candidates と同じ先頭 env-prefix skip 規約 —
           env prefix は argv に含めない)
-      res = route::resolve::resolve(argv, cwd, opts)
+      eff_cwd = cd ? canonical(cwd + cd.literal)  # workspace 内のみ、R41
+                : cwd
+      res = route::resolve::resolve(argv, eff_cwd, opts)
       if res.matched && res.viability == Runnable:
         fallback = 従来の read-candidate 評価(下の loop と同一)
         return Verdict::Rewrite {
-          command: build_route_run_command(res, command, cwd, env),
+          command: build_route_run_command(res, command, eff_cwd, env),
           fallback: Box::new(fallback),
         }
   // runnable でない・match しない・gate 不成立 → 従来経路
@@ -625,9 +628,14 @@ claude/codex を区別できない(C7 — `tool_name` discriminator は
      畳み込み、優先順位は `env-prefix > ambient > grant.env`。
    - `exec_cwd: Option<String>` — payload `cwd`(正規化)を
      子 process cwd として直接使う override(R18)。grant.cwd
-     経路を bypass し、存在確認 + denylist 検査のみ行う
-     (workspace containment は課さない — 原 command がその
-     cwd で動くはずだったという user intent を復元する)。
+     経路を bypass し、存在確認 + denylist 検査のみ行う。
+     payload `cwd` は revalidate 入口で workspace root 内部
+     (同一を含む)への containment を課す(R41 — `cd <dir>`
+     prefix unwrap が mint する payload は subdir cwd を運ぶ。
+     検証は `payload_root.starts_with(supply.root)` で行い、
+     cd literal と payload.cwd の一致自体は再検証しない —
+     payload は self-asserted であり、改竄 payload でも
+     workspace 外へは出られない containment が boundary)。
    - `accept_any_exit_code: bool` — routed scope では任意の
      completed exit を result data 化する(user grant の
      `exitCodes` 設定に依らず exit-code mirror を成立させる
@@ -948,6 +956,47 @@ raw bytes を log file へ append する tee。
   emit を行わない(codex は「承認付き置換」を表現できないため
   fallback verdict へ倒す)。
 - user-facing doc に hook env ≠ shell env を明記。
+
+### `cd <dir>` prefix unwrap(R41)
+
+agent が `workdir` 指定を持たず・使わず、`cd X && <cmd>` 形で
+発行する compound command は、従来「複数 segment」で route arm
+が不活性だった。実用上の支配的 pattern である `cd <literal>
+&& <routable>`(および `;`/`\n` 結合)に限り unwrap を許容する:
+
+- **受理 shape** — `routed_command_segment`(hook arm と
+  `route run` revalidate が共有する single source):
+  `[cmd]`(従来どおり)または `[cd <literal>, cmd]` — 2 番目
+  segment の `preceded_by ∈ {&&, ;, \n}`、cd segment はちょうど
+  2 個の safe token(`cd` + literal)に限る。`||`/`|`/`&` 結合、
+  3+ segment、`pushd`/`Set-Location`、`cd` の引数 0/2+(`cd /d x`)、
+  env-prefix 付き `cd`、大小文字違い(`CD`)、空 literal(`cd ""`)、
+  unsafe token/segment を含む形は全て非受理 — caller は
+  fail-open(hook: rewrite 不 emit → 従来評価、`route run`:
+  `unsafe-command` reject)。
+- **separator の記録** — `tokenize_shell` が `ShellSegment.
+  preceded_by: ShellSeparator`(`Start/Seq/And/Or/Pipe/Background`)
+  を保持する Rust 側拡張(JS 版は保持しない)。`||` 結合を外す
+  理由は `cd X || cmd` の「cd 失敗時のみ旧 cwd で cmd 実行」
+  semantics を rewrite が変えてしまうため。`|`/`&` も同様に
+  stdin/cwd semantics が変わる。
+- **cd 移動先の解決** — literal を request cwd 起点で lexical
+  join → `canonicalize_workspace_root` → 既存 dir かつ canonical
+  request cwd 内部(同一含む)の場合のみ受理。外部・不存在・
+  file 指定は rewrite せず fail-open(deny にはしない — 元の
+  compound は生 command として正常に動くべきもの)。
+- **payload** — `cwd` は canonical 済みの実効 cwd(cd unwrap
+  では移動先、通常は request cwd)。`command` は cd prefix 付き
+  原文のまま — argv 照合側は `route run` が同一の
+  `routed_command_segment` 規約で cmd segment を抽出する。
+- **実行** — `route run` の `prepare` は `payload_root ⊆
+  supply.root`(equality 含む containment)を課し、`exec_cwd =
+  payload_root` を子 process cwd へ渡す(R18 の本来意図 —
+  command がその cwd で動くはずだったという user intent の
+  復元)。emitted command は `… route run --payload` のみで
+  `cd` を残さない — `route run` 自身の cwd が subdir になると
+  `.cheaper` 層解決(ancestor walk 無し)が破れて route 解決
+  不能になるため。
 
 ### usage record(`usage_log.rs`)
 

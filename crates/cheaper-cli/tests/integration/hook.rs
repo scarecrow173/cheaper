@@ -1043,6 +1043,63 @@ async fn routed_shell_per_target_render_contract() {
     assert!(v.pointer("/hookSpecificOutput/updatedInput").is_none());
 }
 
+/// `cd <subdir> && <routable>` — firing load 経由でも cd prefix
+/// unwrap の rewrite を emit し、payload.cwd は canonical 済みの
+/// 移動先、payload.command は原 command 全文を保持する。
+/// workspace 外の移動先は rewrite せず fail-open(silent Allow)。
+#[tokio::test(flavor = "current_thread")]
+async fn routed_shell_cd_prefix_rewrite_carries_subdir_cwd() {
+    let fx = routed_shell_fixture();
+    std::fs::create_dir_all(fx.ws.join("sub")).unwrap();
+    let r = run_hook(
+        &fx,
+        &["pre-tool-use", "--target", "pretooluse"],
+        &tool_use_payload("Bash", "{\"command\":\"cd sub && cat small.txt\"}"),
+        &[],
+    )
+    .await;
+    assert_eq!(r.code, 0, "{}", r.stderr);
+    let v: serde_json::Value = serde_json::from_str(r.stdout.trim()).unwrap();
+    let cmd = v
+        .pointer("/hookSpecificOutput/updatedInput/command")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_else(|| panic!("updatedInput 無し: {}", r.stdout));
+    assert!(cmd.contains("route run --payload"), "{cmd}");
+    let token = cmd.rsplit(' ').next().unwrap();
+    let payload = cheaper_cli::route::payload::decode(token).unwrap();
+    assert_eq!(payload.command, "cd sub && cat small.txt");
+    assert_eq!(payload.argv, vec!["cat", "small.txt"]);
+    let expected = cheaper_core::workspace::paths::canonicalize_workspace_root(
+        &fx.ws.join("sub").to_string_lossy(),
+    )
+    .unwrap();
+    assert_eq!(payload.cwd, expected);
+
+    // 対照 — workspace 外の移動先は rewrite を emit しない
+    // (fail-open — deny ではなく command 素通し)。
+    for command in ["cd .. && cat small.txt", "cd missing && cat small.txt"] {
+        let r = run_hook(
+            &fx,
+            &["pre-tool-use", "--target", "pretooluse"],
+            &tool_use_payload(
+                "Bash",
+                &format!(
+                    "{{\"command\":{}}}",
+                    serde_json::to_string(command).unwrap()
+                ),
+            ),
+            &[],
+        )
+        .await;
+        assert_eq!(r.code, 0, "{command}: {}", r.stderr);
+        assert!(
+            !r.stdout.contains("route run --payload"),
+            "{command}: {}",
+            r.stdout
+        );
+    }
+}
+
 #[tokio::test(flavor = "current_thread")]
 async fn evaluate_typed_entry_matches_ts_verdicts() {
     // routing-policy.test.ts の file-read/shell verdict 相当を
