@@ -4,7 +4,7 @@ type: "design"
 status: "approved"
 title: "builtin materialize fingerprint 設計"
 created: "2026-10-17"
-updated: "2026-10-17"
+updated: "2026-11-19"
 owners:
   - scarecrow173
 relations:
@@ -109,6 +109,15 @@ let target = std::env::temp_dir()
   `.ready`、extract、cache `OnceLock` は不変。
 - file header の doc comment(`<temp>/cheaper-builtin-<version>/`)も
   `cheaper-builtin-<version>-<fingerprint>` へ合わせて更新する。
+- 補足(issue #217): 上記 join は `materialize_target(temp, version,
+  cwd)` へ切り出され、join 前に temp dir が検証される。non-absolute
+  なら `InvalidInput` で fail-closed。さらに absolute 化後の解決先が
+  process cwd 以下(lexical `starts_with`、temp == cwd を含む)の場合
+  も `InvalidInput` — Windows では relative TMP/TEMP が cwd 相対で
+  absolutize されるため、後者が実機で観測された汚染経路の本体。
+  cwd が解決不能なら containment を skip(fail-open)。代替 dir への
+  fallback は行わない。判定は lexical 一致のみで canonicalize・
+  symlink 解決・case-insensitive 比較は行わない(既知の残余)。
 
 ### 3. 検証
 
